@@ -85,13 +85,13 @@ typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
 /**
  * Device relocation callback.
  *
- * When this callback is called the device instance data, and if the
- * device have a GC component, is being relocated, or/and the selectors
- * have been changed. The device must use the chance to perform the
- * necessary pointer relocations and data updates.
+ * This is called when the instance data has been relocated in raw-mode context
+ * (RC).  It is also called when the RC hypervisor selects changes.  The device
+ * must fixup all necessary pointers and re-query all interfaces to other RC
+ * devices and drivers.
  *
- * Before the GC code is executed the first time, this function will be
- * called with a 0 delta so GC pointer calculations can be one in one place.
+ * Before the RC code is executed the first time, this function will be called
+ * with a 0 delta so RC pointer calculations can be one in one place.
  *
  * @param   pDevIns     Pointer to the device instance.
  * @param   offDelta    The relocation delta relative to the old location.
@@ -101,7 +101,6 @@ typedef FNPDMDEVDESTRUCT *PFNPDMDEVDESTRUCT;
 typedef DECLCALLBACK(void) FNPDMDEVRELOCATE(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 /** Pointer to a FNPDMDEVRELOCATE() function. */
 typedef FNPDMDEVRELOCATE *PFNPDMDEVRELOCATE;
-
 
 /**
  * Device I/O Control interface.
@@ -237,10 +236,11 @@ typedef FNPDMDEVINITCOMPLETE *PFNPDMDEVINITCOMPLETE;
 
 
 
-/** PDM Device Registration Structure,
- * This structure is used when registering a device from
- * VBoxInitDevices() in HC Ring-3. PDM will continue use till
- * the VM is terminated.
+/**
+ * PDM Device Registration Structure.
+ *
+ * This structure is used when registering a device from VBoxInitDevices() in HC
+ * Ring-3.  PDM will continue use till the VM is terminated.
  */
 typedef struct PDMDEVREG
 {
@@ -259,13 +259,13 @@ typedef struct PDMDEVREG
     const char         *pszDescription;
 
     /** Flags, combination of the PDM_DEVREG_FLAGS_* \#defines. */
-    RTUINT              fFlags;
+    uint32_t            fFlags;
     /** Device class(es), combination of the PDM_DEVREG_CLASS_* \#defines. */
-    RTUINT              fClass;
+    uint32_t            fClass;
     /** Maximum number of instances (per VM). */
-    RTUINT              cMaxInstances;
+    uint32_t            cMaxInstances;
     /** Size of the instance data. */
-    RTUINT              cbInstance;
+    uint32_t            cbInstance;
 
     /** Construct instance - required. */
     PFNPDMDEVCONSTRUCT  pfnConstruct;

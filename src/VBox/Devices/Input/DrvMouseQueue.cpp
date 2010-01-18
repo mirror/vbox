@@ -227,8 +227,8 @@ static DECLCALLBACK(void) drvMouseQueuePowerOff(PPDMDRVINS pDrvIns)
 
 
 /**
- * Construct a mouse driver instance. 
- *  
+ * Construct a mouse driver instance.
+ *
  * @copydoc FNPDMDRVCONSTRUCT
  */
 static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
@@ -321,6 +321,10 @@ const PDMDRVREG g_DrvMouseQueue =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MouseQueue",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Mouse queue driver to plug in between the key source and the device to do queueing and inter-thread transport.",
     /* fFlags */
@@ -333,6 +337,8 @@ const PDMDRVREG g_DrvMouseQueue =
     sizeof(DRVMOUSEQUEUE),
     /* pfnConstruct */
     drvMouseQueueConstruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnDestruct */
     NULL,
     /* pfnIOCtl */

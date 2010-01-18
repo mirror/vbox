@@ -218,6 +218,10 @@ const PDMDRVREG g_DrvRawFile =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "RawFile",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "RawFile stream driver.",
     /* fFlags */
@@ -232,6 +236,8 @@ const PDMDRVREG g_DrvRawFile =
     drvRawFileConstruct,
     /* pfnDestruct */
     drvRawFileDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

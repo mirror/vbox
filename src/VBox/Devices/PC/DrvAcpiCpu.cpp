@@ -88,7 +88,7 @@ static DECLCALLBACK(int) drvACPICpuConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     /*
      * Check that no-one is attached to us.
      */
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -104,6 +104,10 @@ const PDMDRVREG g_DrvAcpiCpu =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "ACPICpu",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "ACPI CPU Driver",
     /* fFlags */
@@ -118,6 +122,8 @@ const PDMDRVREG g_DrvAcpiCpu =
     drvACPICpuConstruct,
     /* pfnDestruct */
     drvACPICpuDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -131,9 +137,9 @@ const PDMDRVREG g_DrvAcpiCpu =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

@@ -303,7 +303,7 @@ static DECLCALLBACK(int) drvCharSetBreak(PPDMICHAR pInterface, bool fBreak)
 
 /**
  * Construct a char driver instance.
- *  
+ *
  * @copydoc FNPDMDRVCONSTRUCT
  */
 static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
@@ -342,7 +342,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     if (!pThis->pDrvStream)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW, RT_SRC_POS, N_("Char#%d has no stream interface below"), pDrvIns->iInstance);
 
-    /* 
+    /*
      * Don't start the receive thread if the driver doesn't support reading
      */
     if (pThis->pDrvStream->pfnRead)
@@ -413,6 +413,10 @@ const PDMDRVREG g_DrvChar =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "Char",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Generic char driver.",
     /* fFlags */
@@ -427,6 +431,8 @@ const PDMDRVREG g_DrvChar =
     drvCharConstruct,
     /* pfnDestruct */
     drvCharDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -440,9 +446,9 @@ const PDMDRVREG g_DrvChar =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

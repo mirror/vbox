@@ -318,6 +318,10 @@ const PDMDRVREG g_DrvMediaISO =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MediaISO",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "ISO media access driver.",
     /* fFlags */
@@ -332,6 +336,8 @@ const PDMDRVREG g_DrvMediaISO =
     drvMediaISOConstruct,
     /* pfnDestruct */
     drvMediaISODestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -345,9 +351,9 @@ const PDMDRVREG g_DrvMediaISO =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

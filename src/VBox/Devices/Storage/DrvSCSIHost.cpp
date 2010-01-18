@@ -499,6 +499,10 @@ const PDMDRVREG g_DrvSCSIHost =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "SCSIHost",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Host SCSI driver.",
     /* fFlags */
@@ -513,6 +517,8 @@ const PDMDRVREG g_DrvSCSIHost =
     drvscsihostConstruct,
     /* pfnDestruct */
     drvscsihostDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

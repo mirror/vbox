@@ -1317,6 +1317,10 @@ const PDMDRVREG g_DrvVD =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "VD",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Generic VBox disk media driver.",
     /* fFlags */
@@ -1331,6 +1335,8 @@ const PDMDRVREG g_DrvVD =
     drvvdConstruct,
     /* pfnDestruct */
     drvvdDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

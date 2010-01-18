@@ -616,6 +616,10 @@ const PDMDRVREG g_DrvNamedPipe =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "NamedPipe",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Named Pipe stream driver.",
     /* fFlags */
@@ -630,6 +634,8 @@ const PDMDRVREG g_DrvNamedPipe =
     drvNamedPipeConstruct,
     /* pfnDestruct */
     drvNamedPipeDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

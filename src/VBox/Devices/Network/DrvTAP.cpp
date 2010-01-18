@@ -1066,6 +1066,10 @@ const PDMDRVREG g_DrvHostInterface =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "HostInterface",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "TAP Network Transport Driver",
     /* fFlags */
@@ -1080,6 +1084,8 @@ const PDMDRVREG g_DrvHostInterface =
     drvTAPConstruct,
     /* pfnDestruct */
     drvTAPDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

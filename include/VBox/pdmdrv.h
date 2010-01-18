@@ -91,6 +91,26 @@ typedef DECLCALLBACK(void)   FNPDMDRVDESTRUCT(PPDMDRVINS pDrvIns);
 typedef FNPDMDRVDESTRUCT *PFNPDMDRVDESTRUCT;
 
 /**
+ * Driver relocation callback.
+ *
+ * This is called when the instance data has been relocated in raw-mode context
+ * (RC).  It is also called when the RC hypervisor selects changes.  The driver
+ * must fixup all necessary pointers and re-query all interfaces to other RC
+ * devices and drivers.
+ *
+ * Before the RC code is executed the first time, this function will be called
+ * with a 0 delta so RC pointer calculations can be one in one place.
+ *
+ * @param   pDrvIns     Pointer to the driver instance.
+ * @param   offDelta    The relocation delta relative to the old location.
+ *
+ * @remark  A relocation CANNOT fail.
+ */
+typedef DECLCALLBACK(void) FNPDMDRVRELOCATE(PPDMDRVINS pDrvIns, RTGCINTPTR offDelta);
+/** Pointer to a FNPDMDRVRELOCATE() function. */
+typedef FNPDMDRVRELOCATE *PFNPDMDRVRELOCATE;
+
+/**
  * Driver I/O Control interface.
  *
  * This is used by external components, such as the COM interface, to
@@ -106,9 +126,9 @@ typedef FNPDMDRVDESTRUCT *PFNPDMDRVDESTRUCT;
  * @param   cbOut       Size of output data.
  * @param   pcbOut      Where to store the actual size of the output data.
  */
-typedef DECLCALLBACK(int) FNPDMDRVIOCTL(PPDMDRVINS pDrvIns, RTUINT uFunction,
-                                        void *pvIn, RTUINT cbIn,
-                                        void *pvOut, RTUINT cbOut, PRTUINT pcbOut);
+typedef DECLCALLBACK(int) FNPDMDRVIOCTL(PPDMDRVINS pDrvIns, uint32_t uFunction,
+                                        void *pvIn, uint32_t cbIn,
+                                        void *pvOut, uint32_t cbOut, uint32_t *pcbOut);
 /** Pointer to a FNPDMDRVIOCTL() function. */
 typedef FNPDMDRVIOCTL *PFNPDMDRVIOCTL;
 
@@ -194,10 +214,11 @@ typedef FNPDMDRVDETACH *PFNPDMDRVDETACH;
 
 
 
-/** PDM Driver Registration Structure,
- * This structure is used when registering a driver from
- * VBoxInitDrivers() (HC Ring-3). PDM will continue use till
- * the VM is terminated.
+/**
+ * PDM Driver Registration Structure.
+ *
+ * This structure is used when registering a driver from VBoxInitDrivers() (in
+ * host ring-3 context).  PDM will continue use till the VM is terminated.
  */
 typedef struct PDMDRVREG
 {
@@ -205,23 +226,31 @@ typedef struct PDMDRVREG
     uint32_t            u32Version;
     /** Driver name. */
     char                szDriverName[32];
+    /** Name of the raw-mode context module (no path).
+     * Only evalutated if PDM_DRVREG_FLAGS_RC is set. */
+    char                szRCMod[32];
+    /** Name of the ring-0 module (no path).
+     * Only evalutated if PDM_DRVREG_FLAGS_R0 is set. */
+    char                szR0Mod[32];
     /** The description of the driver. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;
 
     /** Flags, combination of the PDM_DRVREG_FLAGS_* \#defines. */
-    RTUINT              fFlags;
+    uint32_t            fFlags;
     /** Driver class(es), combination of the PDM_DRVREG_CLASS_* \#defines. */
-    RTUINT              fClass;
+    uint32_t            fClass;
     /** Maximum number of instances (per VM). */
-    RTUINT              cMaxInstances;
+    uint32_t            cMaxInstances;
     /** Size of the instance data. */
-    RTUINT              cbInstance;
+    uint32_t            cbInstance;
 
     /** Construct instance - required. */
     PFNPDMDRVCONSTRUCT  pfnConstruct;
     /** Destruct instance - optional. */
     PFNPDMDRVDESTRUCT   pfnDestruct;
+    /** Relocation command - optional. */
+    PFNPDMDRVRELOCATE   pfnRelocate;
     /** I/O control - optional. */
     PFNPDMDRVIOCTL      pfnIOCtl;
     /** Power on notification - optional. */
@@ -249,7 +278,7 @@ typedef PDMDRVREG *PPDMDRVREG;
 typedef PDMDRVREG const *PCPDMDRVREG;
 
 /** Current DRVREG version number. */
-#define PDM_DRVREG_VERSION  UINT32_C(0x80030000)
+#define PDM_DRVREG_VERSION                      UINT32_C(0x80030000)
 
 /** PDM Driver Flags.
  * @{ */
@@ -598,7 +627,7 @@ typedef struct PDMDRVHLPR3
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                                  PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
@@ -971,7 +1000,7 @@ DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 /**
  * @copydoc PDMDRVHLP::pfnPDMQueueCreate
  */
-DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                         PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
     return pDrvIns->pDrvHlpR3->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);

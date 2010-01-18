@@ -1467,7 +1467,11 @@ const PDMDRVREG g_DrvHostSerial =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "Host Serial",
-    /* pszDescription */
+        /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
+/* pszDescription */
     "Host serial driver.",
     /* fFlags */
     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
@@ -1481,6 +1485,8 @@ const PDMDRVREG g_DrvHostSerial =
     drvHostSerialConstruct,
     /* pfnDestruct */
     drvHostSerialDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

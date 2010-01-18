@@ -156,8 +156,8 @@ DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
 
 
 /**
- * Construct a AudioSniffer driver instance. 
- *  
+ * Construct a AudioSniffer driver instance.
+ *
  * @copydoc FNPDMDRVCONSTRUCT
  */
 DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
@@ -171,7 +171,7 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "Object\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -220,6 +220,10 @@ const PDMDRVREG AudioSniffer::DrvReg =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MainAudioSniffer",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Main Audio Sniffer driver (Main as in the API).",
     /* fFlags */
@@ -234,6 +238,8 @@ const PDMDRVREG AudioSniffer::DrvReg =
     AudioSniffer::drvConstruct,
     /* pfnDestruct */
     AudioSniffer::drvDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -247,9 +253,9 @@ const PDMDRVREG AudioSniffer::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

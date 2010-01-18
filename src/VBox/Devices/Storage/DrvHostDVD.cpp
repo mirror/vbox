@@ -829,6 +829,10 @@ const PDMDRVREG g_DrvHostDVD =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "HostDVD",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Host DVD Block Driver.",
     /* fFlags */
@@ -843,6 +847,8 @@ const PDMDRVREG g_DrvHostDVD =
     drvHostDvdConstruct,
     /* pfnDestruct */
     drvHostDvdDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
