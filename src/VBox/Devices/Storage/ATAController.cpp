@@ -4692,6 +4692,12 @@ int ataControllerIOPortReadStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR 
 
         cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
 #ifndef IN_RING3
+        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
+        if (!cTransAvailable)
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            return VINF_IOM_HC_IOPORT_READ;
+        }
         /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
         cTransAvailable--;
 #endif /* !IN_RING3 */
@@ -4738,6 +4744,12 @@ int ataControllerIOPortWriteStr1(PAHCIATACONTROLLER pCtl, RTIOPORT Port, RTGCPTR
 
         cTransAvailable = (s->iIOBufferPIODataEnd - s->iIOBufferPIODataStart) / cb;
 #ifndef IN_RING3
+        /* Deal with the unlikely case where no data (or not enough for the read length operation) is available; go back to ring 3. */
+        if (!cTransAvailable)
+        {
+            PDMCritSectLeave(&pCtl->lock);
+            return VINF_IOM_HC_IOPORT_WRITE;
+        }
         /* The last transfer unit cannot be handled in GC, as it involves thread communication. */
         cTransAvailable--;
 #endif /* !IN_RING3 */
