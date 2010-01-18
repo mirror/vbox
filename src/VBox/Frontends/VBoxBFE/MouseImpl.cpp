@@ -273,6 +273,10 @@ const PDMDRVREG Mouse::DrvReg =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MainMouse",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Main mouse driver (Main as in the API).",
     /* fFlags */
@@ -287,6 +291,8 @@ const PDMDRVREG Mouse::DrvReg =
     Mouse::drvConstruct,
     /* pfnDestruct */
     Mouse::drvDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

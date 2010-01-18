@@ -333,6 +333,10 @@ const PDMDRVREG g_DrvKeyboardQueue =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "KeyboardQueue",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Keyboard queue driver to plug in between the key source and the device to do queueing and inter-thread transport.",
     /* fFlags */
@@ -345,6 +349,8 @@ const PDMDRVREG g_DrvKeyboardQueue =
     sizeof(DRVKBDQUEUE),
     /* pfnConstruct */
     drvKbdQueueConstruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnDestruct */
     NULL,
     /* pfnIOCtl */

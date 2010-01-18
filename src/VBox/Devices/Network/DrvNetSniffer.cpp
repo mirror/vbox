@@ -489,6 +489,10 @@ const PDMDRVREG g_DrvNetSniffer =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "NetSniffer",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Network Sniffer Filter Driver",
     /* fFlags */
@@ -503,6 +507,8 @@ const PDMDRVREG g_DrvNetSniffer =
     drvNetSnifferConstruct,
     /* pfnDestruct */
     drvNetSnifferDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

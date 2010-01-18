@@ -106,5 +106,5 @@ private:
     bool                    mfVMMDevInited;
 };
 
-#endif // ____H_KEYBOARDIMPL
+#endif // !____H_KEYBOARDIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

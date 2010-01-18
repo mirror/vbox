@@ -203,6 +203,10 @@ const PDMDRVREG g_DrvHostFloppy =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "HostFloppy",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Host Floppy Block Driver.",
     /* fFlags */
@@ -217,6 +221,8 @@ const PDMDRVREG g_DrvHostFloppy =
     drvHostFloppyConstruct,
     /* pfnDestruct */
     DRVHostBaseDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -230,9 +236,9 @@ const PDMDRVREG g_DrvHostFloppy =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

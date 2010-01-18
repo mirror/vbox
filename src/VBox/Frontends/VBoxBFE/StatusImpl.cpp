@@ -140,7 +140,7 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      */
     if (!CFGMR3AreValuesValid(pCfgHandle, "papLeds\0First\0Last\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER, 
+    AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
                     VERR_PDM_DRVINS_NO_ATTACH);
 
@@ -210,6 +210,10 @@ const PDMDRVREG VMStatus::DrvReg =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MainStatus",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Main status driver (Main as in the API).",
     /* fFlags */
@@ -224,6 +228,8 @@ const PDMDRVREG VMStatus::DrvReg =
     VMStatus::drvConstruct,
     /* pfnDestruct */
     VMStatus::drvDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -237,9 +243,9 @@ const PDMDRVREG VMStatus::DrvReg =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

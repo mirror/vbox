@@ -240,7 +240,7 @@ static DECLCALLBACK(int) drvNATRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         RTReqProcess(pThis->pRecvReqQueue, 0);
-        if (ASMAtomicReadU32(&pThis->cPkt) == 0) 
+        if (ASMAtomicReadU32(&pThis->cPkt) == 0)
             RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
     }
     return VINF_SUCCESS;
@@ -267,7 +267,7 @@ static DECLCALLBACK(int) drvNATUrgRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
         RTReqProcess(pThis->pUrgRecvReqQueue, 0);
-        if (ASMAtomicReadU32(&pThis->cUrgPkt) == 0) 
+        if (ASMAtomicReadU32(&pThis->cUrgPkt) == 0)
         {
             int rc = RTSemEventWait(pThis->EventUrgRecv, RT_INDEFINITE_WAIT);
             AssertRC(rc);
@@ -294,18 +294,18 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
         AssertRC(rc);
     }
-    else if (   RT_FAILURE(rc) 
+    else if (   RT_FAILURE(rc)
              && (  rc == VERR_TIMEOUT
                 && rc == VERR_INTERRUPTED))
     {
         AssertRC(rc);
-    } 
+    }
 
     rc = RTCritSectLeave(&pThis->csDevAccess);
     AssertRC(rc);
 
     slirp_ext_m_free(pThis->pNATState, pvArg);
-    if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0) 
+    if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0)
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
         drvNATNotifyNATThread(pThis);
@@ -323,10 +323,10 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     while(ASMAtomicReadU32(&pThis->cUrgPkt) != 0)
     {
         rc = RTSemEventWait(pThis->EventRecv, RT_INDEFINITE_WAIT);
-        if (   RT_FAILURE(rc) 
+        if (   RT_FAILURE(rc)
             && ( rc == VERR_TIMEOUT
                  || rc == VERR_INTERRUPTED))
-            goto done_unlocked; 
+            goto done_unlocked;
     }
 
     rc = RTCritSectEnter(&pThis->csDevAccess);
@@ -336,8 +336,8 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     {
         rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
         AssertRC(rc);
-    } 
-    else if (   RT_FAILURE(rc) 
+    }
+    else if (   RT_FAILURE(rc)
              && (  rc != VERR_TIMEOUT
                 && rc != VERR_INTERRUPTED))
     {
@@ -1147,9 +1147,9 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             rc = RTSemEventCreate(&pThis->EventRecv);
             rc = RTSemEventCreate(&pThis->EventUrgRecv);
             rc = RTCritSectInit(&pThis->csDevAccess);
-            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATSlowTimer, 
+            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATSlowTimer,
                     pThis, TMTIMER_FLAGS_NO_CRIT_SECT/*flags*/, "NATSlowTmr", &pThis->pTmrSlow);
-            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATFastTimer, 
+            rc = PDMDrvHlpTMTimerCreate(pThis->pDrvIns, TMCLOCK_REAL/*enmClock*/, drvNATFastTimer,
                     pThis, TMTIMER_FLAGS_NO_CRIT_SECT/*flags*/, "NATFastTmr", &pThis->pTmrFast);
 
 #ifndef RT_OS_WINDOWS
@@ -1210,6 +1210,10 @@ const PDMDRVREG g_DrvNAT =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "NAT",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "NAT Network Transport Driver",
     /* fFlags */
@@ -1224,6 +1228,8 @@ const PDMDRVREG g_DrvNAT =
     drvNATConstruct,
     /* pfnDestruct */
     drvNATDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

@@ -91,9 +91,9 @@ static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMI
 
 /**
  * Construct a raw image driver instance.
- *  
+ *
  * @copydoc FNPDMDRVCONSTRUCT
- */ 
+ */
 static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
@@ -368,6 +368,10 @@ const PDMDRVREG g_DrvRawImage =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "RawImage",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Raw image access driver.",
     /* fFlags */
@@ -382,6 +386,8 @@ const PDMDRVREG g_DrvRawImage =
     drvRawImageConstruct,
     /* pfnDestruct */
     drvRawImageDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
@@ -395,9 +401,9 @@ const PDMDRVREG g_DrvRawImage =
     /* pfnAttach */
     NULL,
     /* pfnDetach */
-    NULL, 
+    NULL,
     /* pfnPowerOff */
-    NULL, 
+    NULL,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */

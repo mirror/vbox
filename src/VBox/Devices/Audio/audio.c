@@ -2055,6 +2055,10 @@ const PDMDRVREG g_DrvAUDIO =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "AUDIO",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "AUDIO Driver",
     /* fFlags */
@@ -2069,6 +2073,8 @@ const PDMDRVREG g_DrvAUDIO =
     drvAudioConstruct,
     /* pfnDestruct */
     drvAudioDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

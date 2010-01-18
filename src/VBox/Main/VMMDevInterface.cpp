@@ -835,6 +835,10 @@ const PDMDRVREG VMMDev::DrvReg =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "HGCM",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Main VMMDev driver (Main as in the API).",
     /* fFlags */
@@ -849,6 +853,8 @@ const PDMDRVREG VMMDev::DrvReg =
     VMMDev::drvConstruct,
     /* pfnDestruct */
     VMMDev::drvDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

@@ -405,6 +405,10 @@ const PDMDRVREG g_DrvHostParallel =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "HostParallel",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Parallel host driver.",
     /* fFlags */
@@ -419,6 +423,8 @@ const PDMDRVREG g_DrvHostParallel =
     drvHostParallelConstruct,
     /* pfnDestruct */
     drvHostParallelDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

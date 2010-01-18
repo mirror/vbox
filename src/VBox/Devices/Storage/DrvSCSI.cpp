@@ -1027,6 +1027,10 @@ const PDMDRVREG g_DrvSCSI =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "SCSI",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Generic SCSI driver.",
     /* fFlags */
@@ -1041,6 +1045,8 @@ const PDMDRVREG g_DrvSCSI =
     drvscsiConstruct,
     /* pfnDestruct */
     drvscsiDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

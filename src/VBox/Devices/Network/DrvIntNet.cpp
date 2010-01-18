@@ -1136,6 +1136,10 @@ const PDMDRVREG g_DrvIntNet =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "IntNet",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Internal Networking Transport Driver",
     /* fFlags */
@@ -1150,6 +1154,8 @@ const PDMDRVREG g_DrvIntNet =
     drvIntNetConstruct,
     /* pfnDestruct */
     drvIntNetDestruct,
+    /* pfnRelocate */
+    NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */

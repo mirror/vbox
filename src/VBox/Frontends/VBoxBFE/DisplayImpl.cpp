@@ -1248,6 +1248,10 @@ const PDMDRVREG VMDisplay::DrvReg =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "MainDisplay",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Main display driver (Main as in the API).",
     /* fFlags */
@@ -1261,6 +1265,8 @@ const PDMDRVREG VMDisplay::DrvReg =
     /* pfnConstruct */
     VMDisplay::drvConstruct,
     /* pfnDestruct */
+    NULL,
+    /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
     NULL,

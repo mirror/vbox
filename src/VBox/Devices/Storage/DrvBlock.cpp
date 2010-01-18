@@ -902,6 +902,10 @@ const PDMDRVREG g_DrvBlock =
     PDM_DRVREG_VERSION,
     /* szDriverName */
     "Block",
+    /* szRCMod */
+    "",
+    /* szR0Mod */
+    "",
     /* pszDescription */
     "Generic block driver.",
     /* fFlags */
@@ -915,6 +919,8 @@ const PDMDRVREG g_DrvBlock =
     /* pfnConstruct */
     drvblockConstruct,
     /* pfnDestruct */
+    NULL,
+    /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
     NULL,
