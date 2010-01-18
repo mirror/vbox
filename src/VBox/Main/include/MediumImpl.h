@@ -312,6 +312,9 @@ private:
     HRESULT taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool fIsAsync);
     HRESULT taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAsync);
     HRESULT taskThreadClone(Task &task, void *pvdOperationIfaces);
+    HRESULT taskThreadDelete();
+    HRESULT taskThreadReset(void *pvdOperationIfaces, bool fIsAsync);
+    HRESULT taskThreadCompact(Task &task, void *pvdOperationIfaces);
 
     static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
 
