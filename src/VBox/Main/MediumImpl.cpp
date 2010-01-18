@@ -5640,6 +5640,267 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
     return rc;
 }
 
+/**
+ * Implementation code called from Medium::taskThread for the "delete" task.
+ * @return
+ */
+HRESULT Medium::taskThreadDelete()
+{
+    HRESULT rc = S_OK;
+
+    /* The lock is also used as a signal from the task initiator (which
+     * releases it only after RTThreadCreate()) that we can start the job */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Utf8Str format(m->strFormat);
+        Utf8Str location(m->strLocationFull);
+
+        /* unlock before the potentially lengthy operation */
+        Assert(m->state == MediumState_Deleting);
+        thisLock.leave();
+
+        try
+        {
+            vrc = VDOpen(hdd,
+                         format.c_str(),
+                         location.c_str(),
+                         VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                         m->vdDiskIfaces);
+            if (RT_SUCCESS(vrc))
+                vrc = VDClose(hdd, true /* fDelete */);
+
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                                tr("Could not delete the hard disk storage unit '%s'%s"),
+                                location.raw(), vdError(vrc).raw());
+
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    thisLock.maybeEnter();
+
+    /* go to the NotCreated state even on failure since the storage
+        * may have been already partially deleted and cannot be used any
+        * more. One will be able to manually re-open the storage if really
+        * needed to re-register it. */
+    m->state = MediumState_NotCreated;
+
+    /* Reset UUID to prevent Create* from reusing it again */
+    unconst(m->id).clear();
+
+    return rc;
+}
+
+/**
+ * Implementation code called from Medium::taskThread for the "reset" task.
+ * @param task
+ * @param pvdOperationIfaces
+ * @return
+ */
+HRESULT Medium::taskThreadReset(void *pvdOperationIfaces, bool fIsAsync)
+{
+    HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    /* The lock is also used as a signal from the task initiator (which
+     * releases it only after RTThreadCreate()) that we can start the job */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    /// @todo Below we use a pair of delete/create operations to reset
+    /// the diff contents but the most efficient way will of course be
+    /// to add a VDResetDiff() API call
+
+    uint64_t size = 0, logicalSize = 0;
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Guid id = m->id;
+        Utf8Str format(m->strFormat);
+        Utf8Str location(m->strLocationFull);
+
+        Medium *pParent = m->pParent;
+        Guid parentId = pParent->m->id;
+        Utf8Str parentFormat(pParent->m->strFormat);
+        Utf8Str parentLocation(pParent->m->strLocationFull);
+
+        Assert(m->state == MediumState_LockedWrite);
+
+        /* unlock before the potentially lengthy operation */
+        thisLock.leave();
+
+        try
+        {
+            /* first, delete the storage unit */
+            vrc = VDOpen(hdd, format.c_str(), location.c_str(),
+                            VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                            m->vdDiskIfaces);
+            if (RT_SUCCESS(vrc))
+                vrc = VDClose(hdd, true /* fDelete */);
+
+            if (RT_FAILURE(vrc))
+            {
+                throw setError(E_FAIL,
+                                tr("Could not delete the hard disk storage unit '%s'%s"),
+                                location.raw(), vdError(vrc).raw());
+            }
+
+            /* next, create it again */
+            vrc = VDOpen(hdd, parentFormat.c_str(), parentLocation.c_str(),
+                            VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                            m->vdDiskIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                throw setError(E_FAIL,
+                                tr("Could not open the hard disk storage unit '%s'%s"),
+                                parentLocation.raw(), vdError(vrc).raw());
+            }
+
+            vrc = VDCreateDiff(hdd, format.c_str(), location.c_str(),
+                                /// @todo use the same image variant as before
+                                VD_IMAGE_FLAGS_NONE,
+                                NULL, id.raw(),
+                                parentId.raw(),
+                                VD_OPEN_FLAGS_NORMAL,
+                                m->vdDiskIfaces,
+                                vdOperationIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                throw setError(E_FAIL,
+                                tr("Could not create the differencing hard disk storage unit '%s'%s"),
+                                location.raw(), vdError(vrc).raw());
+            }
+
+            size = VDGetFileSize(hdd, 1);
+            logicalSize = VDGetSize(hdd, 1) / _1M;
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    thisLock.enter();
+
+    m->size = size;
+    m->logicalSize = logicalSize;
+
+    if (fIsAsync)
+    {
+        /* unlock ourselves when done */
+        HRESULT rc2 = UnlockWrite(NULL);
+        AssertComRC(rc2);
+    }
+
+    /* Note that in sync mode, it's the caller's responsibility to
+     * unlock the hard disk */
+
+    return rc;
+}
+
+/**
+ * Implementation code called from Medium::taskThread for the "compact" task.
+ * @param pvdOperationIfaces
+ * @return
+ */
+HRESULT Medium::taskThreadCompact(Task &task, void *pvdOperationIfaces)
+{
+    HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    /* Lock all in {parent,child} order. The lock is also used as a
+     * signal from the task initiator (which releases it only after
+     * RTThreadCreate()) that we can start the job. */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    ImageChain *imgChain = task.d.images.get();
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        try
+        {
+            /* Open all hard disk images in the chain. */
+            MediaList::const_iterator last = imgChain->end();
+            last--;
+            for (MediaList::const_iterator it = imgChain->begin();
+                 it != imgChain->end();
+                 ++it)
+            {
+                /* sanity check */
+                if (it == last)
+                    Assert((*it)->m->state == MediumState_LockedWrite);
+                else
+                    Assert((*it)->m->state == MediumState_LockedRead);
+
+                /** Open all images but last in read-only mode. */
+                vrc = VDOpen(hdd,
+                             (*it)->m->strFormat.c_str(),
+                             (*it)->m->strLocationFull.c_str(),
+                             (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
+                             (*it)->m->vdDiskIfaces);
+                if (RT_FAILURE(vrc))
+                    throw setError(E_FAIL,
+                                   tr("Could not open the hard disk storage unit '%s'%s"),
+                                   (*it)->m->strLocationFull.raw(),
+                                   vdError(vrc).raw());
+            }
+
+            Assert(m->state == MediumState_LockedWrite);
+
+            Utf8Str location(m->strLocationFull);
+
+            /* unlock before the potentially lengthy operation */
+            thisLock.leave();
+
+            vrc = VDCompact(hdd, VD_LAST_IMAGE, vdOperationIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                if (vrc == VERR_NOT_SUPPORTED)
+                    throw setError(VBOX_E_NOT_SUPPORTED,
+                                   tr("Compacting is not yet supported for hard disk '%s'"),
+                                   location.raw());
+                else if (vrc == VERR_NOT_IMPLEMENTED)
+                    throw setError(E_NOTIMPL,
+                                   tr("Compacting is not implemented, hard disk '%s'"),
+                                   location.raw());
+                else
+                    throw setError(E_FAIL,
+                                   tr("Could not compact hard disk '%s'%s"),
+                                   location.raw(),
+                                   vdError(vrc).raw());
+            }
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    /* Everything is explicitly unlocked when the task exits,
+     * as the task destruction also destroys the image chain. */
+
+    return rc;
+}
+
 
 /**
  * Thread function for time-consuming tasks.
@@ -5675,9 +5936,6 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                              &vdOperationIfaces);
     AssertRCReturn(vrc1, E_FAIL);
 
-    /// @todo ugly hack, fix ComAssert... later
-    #define setError that->setError
-
     /* Note: no need in AutoCaller because Task does that */
 
     LogFlowFuncEnter();
@@ -5706,243 +5964,16 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
         break;
 
         case Task::Delete:
-        {
-            /* The lock is also used as a signal from the task initiator (which
-             * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                Utf8Str format(that->m->strFormat);
-                Utf8Str location(that->m->strLocationFull);
-
-                /* unlock before the potentially lengthy operation */
-                Assert(that->m->state == MediumState_Deleting);
-                thatLock.leave();
-
-                try
-                {
-                    vrc = VDOpen(hdd, format.c_str(), location.c_str(),
-                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                 that->m->vdDiskIfaces);
-                    if (RT_SUCCESS(vrc))
-                        vrc = VDClose(hdd, true /* fDelete */);
-
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not delete the hard disk storage unit '%s'%s"),
-                                       location.raw(), that->vdError(vrc).raw());
-                    }
-
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            thatLock.maybeEnter();
-
-            /* go to the NotCreated state even on failure since the storage
-             * may have been already partially deleted and cannot be used any
-             * more. One will be able to manually re-open the storage if really
-             * needed to re-register it. */
-            that->m->state = MediumState_NotCreated;
-
-            /* Reset UUID to prevent Create* from reusing it again */
-            unconst(that->m->id).clear();
-
-            break;
-        }
+            rc = that->taskThreadDelete();
+        break;
 
         case Task::Reset:
-        {
-            /* The lock is also used as a signal from the task initiator (which
-             * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-
-            /// @todo Below we use a pair of delete/create operations to reset
-            /// the diff contents but the most efficient way will of course be
-            /// to add a VDResetDiff() API call
-
-            uint64_t size = 0, logicalSize = 0;
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                Guid id = that->m->id;
-                Utf8Str format(that->m->strFormat);
-                Utf8Str location(that->m->strLocationFull);
-
-                Medium *pParent = that->m->pParent;
-                Guid parentId = pParent->m->id;
-                Utf8Str parentFormat(pParent->m->strFormat);
-                Utf8Str parentLocation(pParent->m->strLocationFull);
-
-                Assert(that->m->state == MediumState_LockedWrite);
-
-                /* unlock before the potentially lengthy operation */
-                thatLock.leave();
-
-                try
-                {
-                    /* first, delete the storage unit */
-                    vrc = VDOpen(hdd, format.c_str(), location.c_str(),
-                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                 that->m->vdDiskIfaces);
-                    if (RT_SUCCESS(vrc))
-                        vrc = VDClose(hdd, true /* fDelete */);
-
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not delete the hard disk storage unit '%s'%s"),
-                                       location.raw(), that->vdError(vrc).raw());
-                    }
-
-                    /* next, create it again */
-                    vrc = VDOpen(hdd, parentFormat.c_str(), parentLocation.c_str(),
-                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                 that->m->vdDiskIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not open the hard disk storage unit '%s'%s"),
-                                       parentLocation.raw(), that->vdError(vrc).raw());
-                    }
-
-                    vrc = VDCreateDiff(hdd, format.c_str(), location.c_str(),
-                                       /// @todo use the same image variant as before
-                                       VD_IMAGE_FLAGS_NONE,
-                                       NULL, id.raw(),
-                                       parentId.raw(),
-                                       VD_OPEN_FLAGS_NORMAL,
-                                       that->m->vdDiskIfaces,
-                                       vdOperationIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not create the differencing hard disk storage unit '%s'%s"),
-                                       location.raw(), that->vdError(vrc).raw());
-                    }
-
-                    size = VDGetFileSize(hdd, 1);
-                    logicalSize = VDGetSize(hdd, 1) / _1M;
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            thatLock.enter();
-
-            that->m->size = size;
-            that->m->logicalSize = logicalSize;
-
-            if (fIsAsync)
-            {
-                /* unlock ourselves when done */
-                HRESULT rc2 = that->UnlockWrite(NULL);
-                AssertComRC(rc2);
-            }
-
-            /* Note that in sync mode, it's the caller's responsibility to
-             * unlock the hard disk */
-
-            break;
-        }
-
-        ////////////////////////////////////////////////////////////////////////
+            rc = that->taskThreadReset((void*)vdOperationIfaces, fIsAsync);
+        break;
 
         case Task::Compact:
-        {
-            /* Lock all in {parent,child} order. The lock is also used as a
-             * signal from the task initiator (which releases it only after
-             * RTThreadCreate()) that we can start the job. */
-            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-
-            ImageChain *imgChain = task->d.images.get();
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                try
-                {
-                    /* Open all hard disk images in the chain. */
-                    MediaList::const_iterator last = imgChain->end();
-                    last--;
-                    for (MediaList::const_iterator it = imgChain->begin();
-                         it != imgChain->end();
-                         ++it)
-                    {
-                        /* sanity check */
-                        if (it == last)
-                            Assert((*it)->m->state == MediumState_LockedWrite);
-                        else
-                            Assert((*it)->m->state == MediumState_LockedRead);
-
-                        /** Open all images but last in read-only mode. */
-                        vrc = VDOpen(hdd, (*it)->m->strFormat.c_str(),
-                                     (*it)->m->strLocationFull.c_str(),
-                                     (it == last) ? VD_OPEN_FLAGS_NORMAL : VD_OPEN_FLAGS_READONLY,
-                                     (*it)->m->vdDiskIfaces);
-                        if (RT_FAILURE(vrc))
-                        {
-                            throw setError(E_FAIL,
-                                           tr("Could not open the hard disk storage unit '%s'%s"),
-                                           (*it)->m->strLocationFull.raw(),
-                                           that->vdError(vrc).raw());
-                        }
-                    }
-
-                    Assert(that->m->state == MediumState_LockedWrite);
-
-                    Utf8Str location(that->m->strLocationFull);
-
-                    /* unlock before the potentially lengthy operation */
-                    thatLock.leave();
-
-                    vrc = VDCompact(hdd, VD_LAST_IMAGE, vdOperationIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        if (vrc == VERR_NOT_SUPPORTED)
-                            throw setError(VBOX_E_NOT_SUPPORTED,
-                                           tr("Compacting is not yet supported for hard disk '%s'"),
-                                           location.raw());
-                        else if (vrc == VERR_NOT_IMPLEMENTED)
-                            throw setError(E_NOTIMPL,
-                                           tr("Compacting is not implemented, hard disk '%s'"),
-                                           location.raw());
-                        else
-                            throw setError(E_FAIL,
-                                           tr("Could not compact hard disk '%s'%s"),
-                                           location.raw(),
-                                           that->vdError(vrc).raw());
-                    }
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            /* Everything is explicitly unlocked when the task exits,
-             * as the task destruction also destroys the image chain. */
-
-            break;
-        }
+            rc = that->taskThreadCompact(*task, (void*)vdOperationIfaces);
+        break;
 
         default:
             AssertFailedReturn(VERR_GENERAL_FAILURE);
