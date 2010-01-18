@@ -174,13 +174,13 @@ struct VirtualBox::Data
 {
     Data()
         : pMainConfigFile(NULL),
-          ollMachines(LOCKCLASS_VIRTUALBOXLIST),
-          ollGuestOSTypes(LOCKCLASS_VIRTUALBOXLIST),
-          ollHardDisks(LOCKCLASS_VIRTUALBOXLIST),
-          ollDVDImages(LOCKCLASS_VIRTUALBOXLIST),
-          ollFloppyImages(LOCKCLASS_VIRTUALBOXLIST),
-          ollSharedFolders(LOCKCLASS_VIRTUALBOXLIST),
-          ollDHCPServers(LOCKCLASS_VIRTUALBOXLIST),
+          ollMachines(LOCKCLASS_LISTOFMACHINES),
+          ollGuestOSTypes(LOCKCLASS_LISTOFOTHEROBJECTS),
+          ollHardDisks(LOCKCLASS_LISTOFMEDIA),
+          ollDVDImages(LOCKCLASS_LISTOFMEDIA),
+          ollFloppyImages(LOCKCLASS_LISTOFMEDIA),
+          ollSharedFolders(LOCKCLASS_LISTOFOTHEROBJECTS),
+          ollDHCPServers(LOCKCLASS_LISTOFOTHEROBJECTS),
           mtxProgressOperations(LOCKCLASS_PROGRESSLIST),
           updateReq(UPDATEREQARG),
           threadClientWatcher(NIL_RTTHREAD),
@@ -3657,7 +3657,7 @@ HRESULT VirtualBox::updateSettings(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    ObjectsList<Medium> ollAll(LOCKCLASS_VIRTUALBOXLIST);
+    ObjectsList<Medium> ollAll(LOCKCLASS_LISTOFMEDIA);
     ollAll.appendOtherList(m->ollDVDImages);
     ollAll.appendOtherList(m->ollFloppyImages);
     ollAll.appendOtherList(m->ollHardDisks);
