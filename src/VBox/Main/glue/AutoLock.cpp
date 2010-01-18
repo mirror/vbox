@@ -623,31 +623,6 @@ void AutoWriteLockBase::enter()
     }
 }
 
-/**
- * Same as #enter() but checks if the current thread actally owns the lock
- * and only proceeds if not. As a result, as opposed to #enter(), doesn't
- * assert when called with the lock already being held.
- */
-void AutoWriteLockBase::maybeEnter()
-{
-    uint32_t i = 0;
-    for (HandlesVector::iterator it = m->aHandles.begin();
-         it != m->aHandles.end();
-         ++it)
-    {
-        LockHandle *pHandle = *it;
-        if (pHandle)
-        {
-            if (!pHandle->isWriteLockOnCurrentThread())
-            {
-                for (; m->acUnlockedInLeave[i]; --m->acUnlockedInLeave[i])
-                    callLockImpl(*pHandle);
-            }
-        }
-        ++i;
-    }
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // AutoWriteLock

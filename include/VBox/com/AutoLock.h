@@ -396,7 +396,7 @@ public:
  * which derive from this.
  *
  * In addition to utility methods for subclasses, this implements the public
- * leave/enter/maybeEnter methods, which are common to all
+ * leave/enter methods, which are common to all
  * write locks.
  */
 class AutoWriteLockBase : public AutoLockBase
@@ -425,7 +425,6 @@ protected:
 public:
     void leave();
     void enter();
-    void maybeEnter();
 };
 
 ////////////////////////////////////////////////////////////////////////////////
