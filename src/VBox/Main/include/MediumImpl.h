@@ -309,6 +309,7 @@ private:
     friend struct Task;
 
     HRESULT taskThreadCreateBase(Task &task, void *pvdOperationIfaces);
+    HRESULT taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool fIsAsync);
 
     static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
 

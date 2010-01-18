@@ -4864,11 +4864,17 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
     return VINF_SUCCESS;
 }
 
+/**
+ * Implementation code called from Medium::taskThread for the "create base" task.
+ * @param task
+ * @param pvdOperationIfaces
+ * @return
+ */
 HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
 {
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
-
     HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
 
     /* The lock is also used as a signal from the task initiator (which
     * releases it only after RTThreadCreate()) that we can start the job */
@@ -4968,6 +4974,174 @@ HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
     return rc;
 }
 
+/**
+ * Implementation code called from Medium::taskThread for the "create diff" task.
+ * @param task
+ * @param pvdOperationIfaces
+ * @return
+ */
+HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool fIsAsync)
+{
+    HRESULT rc = S_OK;
+
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    ComObjPtr<Medium> &pTarget = task.d.target;
+
+    /* Lock both in {parent,child} order. The lock is also used as a
+     * signal from the task initiator (which releases it only after
+     * RTThreadCreate()) that we can start the job*/
+    AutoMultiWriteLock2 thisLock(this, pTarget COMMA_LOCKVAL_SRC_POS);
+
+    uint64_t size = 0, logicalSize = 0;
+
+    /* The object may request a specific UUID (through a special form of
+     * the setLocation() argument). Otherwise we have to generate it */
+    Guid targetId = pTarget->m->id;
+    bool generateUuid = targetId.isEmpty();
+    if (generateUuid)
+    {
+        targetId.create();
+        /* VirtualBox::registerHardDisk() will need UUID */
+        unconst(pTarget->m->id) = targetId;
+    }
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Guid id = m->id;
+        Utf8Str format(m->strFormat);
+        Utf8Str location(m->strLocationFull);
+
+        Utf8Str targetFormat(pTarget->m->strFormat);
+        Utf8Str targetLocation(pTarget->m->strLocationFull);
+
+        Assert(pTarget->m->state == MediumState_Creating);
+
+        /* Note: MediumState_LockedWrite is ok when taking an online
+         * snapshot */
+        Assert(    m->state == MediumState_LockedRead
+                || m->state == MediumState_LockedWrite);
+
+        /* unlock before the potentially lengthy operation */
+        thisLock.leave();
+
+        try
+        {
+            vrc = VDOpen(hdd,
+                         format.c_str(),
+                         location.c_str(),
+                         VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
+                         m->vdDiskIfaces);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                                tr("Could not open the hard disk storage unit '%s'%s"),
+                                location.raw(), vdError(vrc).raw());
+
+            /* ensure the target directory exists */
+            rc = VirtualBox::ensureFilePathExists(targetLocation);
+            if (FAILED(rc)) throw rc;
+
+            /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
+                * be on the safe side. */
+            vrc = VDCreateDiff(hdd,
+                               targetFormat.c_str(),
+                               targetLocation.c_str(),
+                               task.d.variant,
+                               NULL,
+                               targetId.raw(),
+                               id.raw(),
+                               VD_OPEN_FLAGS_NORMAL,
+                               pTarget->m->vdDiskIfaces,
+                               vdOperationIfaces);
+            if (RT_FAILURE(vrc))
+                throw setError(E_FAIL,
+                                tr("Could not create the differencing hard disk storage unit '%s'%s"),
+                                targetLocation.raw(), vdError(vrc).raw());
+
+            size = VDGetFileSize(hdd, 1);
+            logicalSize = VDGetSize(hdd, 1) / _1M;
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        /* we set mParent & children() (note that thatLock is released
+         * here), but lock VirtualBox first to follow the rule */
+        AutoWriteLock alock1(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock alock2(m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        Assert(pTarget->m->pParent.isNull());
+
+        /* associate the child with the parent */
+        pTarget->m->pParent = this;
+        m->llChildren.push_back(pTarget);
+
+        /** @todo r=klaus neither target nor base() are locked,
+            * potential race! */
+        /* diffs for immutable hard disks are auto-reset by default */
+        pTarget->m->autoReset =   getBase()->m->type == MediumType_Immutable
+                               ? TRUE
+                               : FALSE;
+
+        /* register with mVirtualBox as the last step and move to
+         * Created state only on success (leaving an orphan file is
+         * better than breaking media registry consistency) */
+        rc = m->pVirtualBox->registerHardDisk(pTarget);
+
+        if (FAILED(rc))
+            /* break the parent association on failure to register */
+            deparent();
+    }
+
+    thisLock.maybeEnter();
+
+    if (SUCCEEDED(rc))
+    {
+        pTarget->m->state = MediumState_Created;
+
+        pTarget->m->size = size;
+        pTarget->m->logicalSize = logicalSize;
+    }
+    else
+    {
+        /* back to NotCreated on failure */
+        pTarget->m->state = MediumState_NotCreated;
+
+        pTarget->m->autoReset = FALSE;
+
+        /* reset UUID to prevent it from being reused next time */
+        if (generateUuid)
+            unconst(pTarget->m->id).clear();
+    }
+
+    if (fIsAsync)
+    {
+        /* unlock ourselves when done (unless in MediumState_LockedWrite
+         * state because of taking the online snapshot*/
+        if (m->state != MediumState_LockedWrite)
+        {
+            HRESULT rc2 = UnlockRead(NULL);
+            AssertComRC(rc2);
+        }
+    }
+
+    /* deregister the task registered in createDiffStorage() */
+    Assert(m->numCreateDiffTasks != 0);
+    --m->numCreateDiffTasks;
+
+    /* Note that in sync mode, it's the caller's responsibility to
+     * unlock the hard disk */
+
+    return rc;
+}
 
 /**
  * Thread function for time-consuming tasks.
@@ -4983,7 +5157,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
     std::auto_ptr<Task> task(static_cast<Task*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
-    bool isAsync = thread != NIL_RTTHREAD;
+    bool fIsAsync = thread != NIL_RTTHREAD;
 
     Medium *that = task->that;
 
@@ -5021,166 +5195,9 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             rc = that->taskThreadCreateBase(*task, (void*)vdOperationIfaces);
         break;
 
-        ////////////////////////////////////////////////////////////////////////
-
         case Task::CreateDiff:
-        {
-            ComObjPtr<Medium> &target = task->d.target;
-
-            /* Lock both in {parent,child} order. The lock is also used as a
-             * signal from the task initiator (which releases it only after
-             * RTThreadCreate()) that we can start the job*/
-            AutoMultiWriteLock2 thatLock(that, target COMMA_LOCKVAL_SRC_POS);
-
-            uint64_t size = 0, logicalSize = 0;
-
-            /* The object may request a specific UUID (through a special form of
-             * the setLocation() argument). Otherwise we have to generate it */
-            Guid targetId = target->m->id;
-            bool generateUuid = targetId.isEmpty();
-            if (generateUuid)
-            {
-                targetId.create();
-                /* VirtualBox::registerHardDisk() will need UUID */
-                unconst(target->m->id) = targetId;
-            }
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                Guid id = that->m->id;
-                Utf8Str format(that->m->strFormat);
-                Utf8Str location(that->m->strLocationFull);
-
-                Utf8Str targetFormat(target->m->strFormat);
-                Utf8Str targetLocation(target->m->strLocationFull);
-
-                Assert(target->m->state == MediumState_Creating);
-
-                /* Note: MediumState_LockedWrite is ok when taking an online
-                 * snapshot */
-                Assert(that->m->state == MediumState_LockedRead ||
-                       that->m->state == MediumState_LockedWrite);
-
-                /* unlock before the potentially lengthy operation */
-                thatLock.leave();
-
-                try
-                {
-                    vrc = VDOpen(hdd, format.c_str(), location.c_str(),
-                                 VD_OPEN_FLAGS_READONLY | VD_OPEN_FLAGS_INFO,
-                                 that->m->vdDiskIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not open the hard disk storage unit '%s'%s"),
-                                       location.raw(), that->vdError(vrc).raw());
-                    }
-
-                    /* ensure the target directory exists */
-                    rc = VirtualBox::ensureFilePathExists(targetLocation);
-                    if (FAILED(rc)) throw rc;
-
-                    /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
-                     * be on the safe side. */
-                    vrc = VDCreateDiff(hdd, targetFormat.c_str(),
-                                       targetLocation.c_str(),
-                                       task->d.variant,
-                                       NULL, targetId.raw(),
-                                       id.raw(),
-                                       VD_OPEN_FLAGS_NORMAL,
-                                       target->m->vdDiskIfaces,
-                                       vdOperationIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not create the differencing hard disk storage unit '%s'%s"),
-                                       targetLocation.raw(), that->vdError(vrc).raw());
-                    }
-
-                    size = VDGetFileSize(hdd, 1);
-                    logicalSize = VDGetSize(hdd, 1) / _1M;
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            if (SUCCEEDED(rc))
-            {
-                /* we set mParent & children() (note that thatLock is released
-                 * here), but lock VirtualBox first to follow the rule */
-                AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-                AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
-                Assert(target->m->pParent.isNull());
-
-                /* associate the child with the parent */
-                target->m->pParent = that;
-                that->m->llChildren.push_back(target);
-
-                /** @todo r=klaus neither target nor that->base() are locked,
-                 * potential race! */
-                /* diffs for immutable hard disks are auto-reset by default */
-                target->m->autoReset =
-                    that->getBase()->m->type == MediumType_Immutable ?
-                    TRUE : FALSE;
-
-                /* register with mVirtualBox as the last step and move to
-                 * Created state only on success (leaving an orphan file is
-                 * better than breaking media registry consistency) */
-                rc = that->m->pVirtualBox->registerHardDisk(target);
-
-                if (FAILED(rc))
-                    /* break the parent association on failure to register */
-                    that->deparent();
-            }
-
-            thatLock.maybeEnter();
-
-            if (SUCCEEDED(rc))
-            {
-                target->m->state = MediumState_Created;
-
-                target->m->size = size;
-                target->m->logicalSize = logicalSize;
-            }
-            else
-            {
-                /* back to NotCreated on failure */
-                target->m->state = MediumState_NotCreated;
-
-                target->m->autoReset = FALSE;
-
-                /* reset UUID to prevent it from being reused next time */
-                if (generateUuid)
-                    unconst(target->m->id).clear();
-            }
-
-            if (isAsync)
-            {
-                /* unlock ourselves when done (unless in MediumState_LockedWrite
-                 * state because of taking the online snapshot*/
-                if (that->m->state != MediumState_LockedWrite)
-                {
-                    HRESULT rc2 = that->UnlockRead(NULL);
-                    AssertComRC(rc2);
-                }
-            }
-
-            /* deregister the task registered in createDiffStorage() */
-            Assert(that->m->numCreateDiffTasks != 0);
-            --that->m->numCreateDiffTasks;
-
-            /* Note that in sync mode, it's the caller's responsibility to
-             * unlock the hard disk */
-
-            break;
-        }
+            rc = that->taskThreadCreateDiff(*task, (void*)vdOperationIfaces, fIsAsync);
+        break;
 
         ////////////////////////////////////////////////////////////////////////
 
@@ -5328,35 +5345,34 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                 AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
                 AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-                Medium *source = chain->source();
-                Medium *target = chain->target();
+                Medium *pSource = chain->source();
+                Medium *pTarget = chain->target();
 
                 if (chain->isForward())
                 {
                     /* first, unregister the target since it may become a base
                      * hard disk which needs re-registration */
-                    rc2 = target->m->pVirtualBox->unregisterHardDisk(target, false /* aSaveSettings */);
+                    rc2 = pTarget->m->pVirtualBox->unregisterHardDisk(pTarget, false /* aSaveSettings */);
                     AssertComRC(rc2);
 
                     /* then, reparent it and disconnect the deleted branch at
                      * both ends (chain->parent() is source's parent) */
-                    target->deparent();
-                    target->m->pParent = chain->parent();
-                    if (target->m->pParent)
+                    pTarget->deparent();
+                    pTarget->m->pParent = chain->parent();
+                    if (pTarget->m->pParent)
                     {
-                        target->m->pParent->m->llChildren.push_back(target);
-                        source->deparent();
+                        pTarget->m->pParent->m->llChildren.push_back(pTarget);
+                        pSource->deparent();
                     }
 
                     /* then, register again */
-                    rc2 = target->m->pVirtualBox->
-                        registerHardDisk(target, false /* aSaveSettings */);
+                    rc2 = pTarget->m->pVirtualBox->registerHardDisk(pTarget, false /* aSaveSettings */);
                     AssertComRC(rc2);
                 }
                 else
                 {
-                    Assert(target->getChildren().size() == 1);
-                    Medium *targetChild = target->getChildren().front();
+                    Assert(pTarget->getChildren().size() == 1);
+                    Medium *targetChild = pTarget->getChildren().front();
 
                     /* disconnect the deleted branch at the elder end */
                     targetChild->deparent();
@@ -5368,7 +5384,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     if (children.size() > 0)
                     {
                         /* obey {parent,child} lock order */
-                        AutoWriteLock sourceLock(source COMMA_LOCKVAL_SRC_POS);
+                        AutoWriteLock sourceLock(pSource COMMA_LOCKVAL_SRC_POS);
 
                         for (MediaList::const_iterator it = children.begin();
                              it != children.end();
@@ -5378,8 +5394,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
                             Medium *p = *it;
                             p->deparent();  // removes p from source
-                            target->m->llChildren.push_back(p);
-                            p->m->pParent = target;
+                            pTarget->m->llChildren.push_back(p);
+                            p->m->pParent = pTarget;
                         }
                     }
                 }
@@ -5424,7 +5440,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                          * uninit() */
                         (*it)->releaseCaller();
 
-                        if (isAsync || *it != that)
+                        if (fIsAsync || *it != that)
                             (*it)->uninit();
 
                         /* delete (to prevent uninitialization in MergeChain
@@ -5462,7 +5478,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                  * in the mergeTo() docs. The latter also implies that we
                  * don't own the merge chain, so release it in this case. */
 
-                if (!isAsync)
+                if (!fIsAsync)
                     task->d.chain.release();
 
                 NOREF(saveSettingsFailed);
@@ -5475,13 +5491,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
         case Task::Clone:
         {
-            ComObjPtr<Medium> &target = task->d.target;
-            ComObjPtr<Medium> &parent = task->d.parentDisk;
+            ComObjPtr<Medium> &pTarget = task->d.target;
+            ComObjPtr<Medium> &pParent = task->d.parentDisk;
 
             /* Lock all in {parent,child} order. The lock is also used as a
              * signal from the task initiator (which releases it only after
              * RTThreadCreate()) that we can start the job. */
-            AutoMultiWriteLock3 thatLock(that, target, parent COMMA_LOCKVAL_SRC_POS);
+            AutoMultiWriteLock3 thatLock(that, pTarget, pParent COMMA_LOCKVAL_SRC_POS);
 
             ImageChain *srcChain = task->d.source.get();
             ImageChain *parentChain = task->d.parent.get();
@@ -5490,13 +5506,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 
             /* The object may request a specific UUID (through a special form of
              * the setLocation() argument). Otherwise we have to generate it */
-            Guid targetId = target->m->id;
+            Guid targetId = pTarget->m->id;
             bool generateUuid = targetId.isEmpty();
             if (generateUuid)
             {
                 targetId.create();
                 /* VirtualBox::registerHardDisk() will need UUID */
-                unconst(target->m->id) = targetId;
+                unconst(pTarget->m->id) = targetId;
             }
 
             try
@@ -5529,13 +5545,13 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         }
                     }
 
-                    Utf8Str targetFormat(target->m->strFormat);
-                    Utf8Str targetLocation(target->m->strLocationFull);
+                    Utf8Str targetFormat(pTarget->m->strFormat);
+                    Utf8Str targetLocation(pTarget->m->strLocationFull);
 
-                    Assert(    target->m->state == MediumState_Creating
-                           ||  target->m->state == MediumState_LockedWrite);
+                    Assert(    pTarget->m->state == MediumState_Creating
+                           ||  pTarget->m->state == MediumState_LockedWrite);
                     Assert(that->m->state == MediumState_LockedRead);
-                    Assert(parent.isNull() || parent->m->state == MediumState_LockedRead);
+                    Assert(pParent.isNull() || pParent->m->state == MediumState_LockedRead);
 
                     /* unlock before the potentially lengthy operation */
                     thatLock.leave();
@@ -5578,10 +5594,10 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                         /** @todo r=klaus target isn't locked, race getting the state */
                         vrc = VDCopy(hdd, VD_LAST_IMAGE, targetHdd,
                                      targetFormat.c_str(),
-                                     target->m->state == MediumState_Creating ? targetLocation.raw() : (char *)NULL,
+                                     pTarget->m->state == MediumState_Creating ? targetLocation.raw() : (char *)NULL,
                                      false, 0,
                                      task->d.variant, targetId.raw(), NULL,
-                                     target->m->vdDiskIfaces,
+                                     pTarget->m->vdDiskIfaces,
                                      vdOperationIfaces);
                         if (RT_FAILURE(vrc))
                         {
@@ -5603,7 +5619,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             catch (HRESULT aRC) { rc = aRC; }
 
             /* Only do the parent changes for newly created images. */
-            if (target->m->state == MediumState_Creating)
+            if (pTarget->m->state == MediumState_Creating)
             {
                 if (SUCCEEDED(rc))
                 {
@@ -5612,51 +5628,51 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
                     AutoWriteLock alock1(that->m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
                     AutoWriteLock alock2(that->m->pVirtualBox->hardDiskTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-                    Assert(target->m->pParent.isNull());
+                    Assert(pTarget->m->pParent.isNull());
 
-                    if (parent)
+                    if (pParent)
                     {
                         /* associate the clone with the parent and deassociate
                          * from VirtualBox */
-                        target->m->pParent = parent;
-                        parent->m->llChildren.push_back(target);
+                        pTarget->m->pParent = pParent;
+                        pParent->m->llChildren.push_back(pTarget);
 
                         /* register with mVirtualBox as the last step and move to
                          * Created state only on success (leaving an orphan file is
                          * better than breaking media registry consistency) */
-                        rc = parent->m->pVirtualBox->registerHardDisk(target);
+                        rc = pParent->m->pVirtualBox->registerHardDisk(pTarget);
 
                         if (FAILED(rc))
                             /* break parent association on failure to register */
-                            target->deparent();     // removes target from parent
+                            pTarget->deparent();     // removes target from parent
                     }
                     else
                     {
                         /* just register  */
-                        rc = that->m->pVirtualBox->registerHardDisk(target);
+                        rc = that->m->pVirtualBox->registerHardDisk(pTarget);
                     }
                 }
             }
 
             thatLock.maybeEnter();
 
-            if (target->m->state == MediumState_Creating)
+            if (pTarget->m->state == MediumState_Creating)
             {
                 if (SUCCEEDED(rc))
                 {
-                    target->m->state = MediumState_Created;
+                    pTarget->m->state = MediumState_Created;
 
-                    target->m->size = size;
-                    target->m->logicalSize = logicalSize;
+                    pTarget->m->size = size;
+                    pTarget->m->logicalSize = logicalSize;
                 }
                 else
                 {
                     /* back to NotCreated on failure */
-                    target->m->state = MediumState_NotCreated;
+                    pTarget->m->state = MediumState_NotCreated;
 
                     /* reset UUID to prevent it from being reused next time */
                     if (generateUuid)
-                        unconst(target->m->id).clear();
+                        unconst(pTarget->m->id).clear();
                 }
             }
 
@@ -5815,7 +5831,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
             that->m->size = size;
             that->m->logicalSize = logicalSize;
 
-            if (isAsync)
+            if (fIsAsync)
             {
                 /* unlock ourselves when done */
                 HRESULT rc2 = that->UnlockWrite(NULL);
@@ -5916,7 +5932,7 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
     }
 
     /* complete the progress if run asynchronously */
-    if (isAsync)
+    if (fIsAsync)
     {
         if (!task->m_pProgress.isNull())
             task->m_pProgress->notifyComplete(rc);
