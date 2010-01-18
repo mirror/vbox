@@ -4864,6 +4864,111 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
     return VINF_SUCCESS;
 }
 
+HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
+{
+    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
+
+    HRESULT rc = S_OK;
+
+    /* The lock is also used as a signal from the task initiator (which
+    * releases it only after RTThreadCreate()) that we can start the job */
+    AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
+
+    /* these parameters we need after creation */
+    uint64_t size = 0, logicalSize = 0;
+
+    /* The object may request a specific UUID (through a special form of
+    * the setLocation() argument). Otherwise we have to generate it */
+    Guid id = m->id;
+    bool generateUuid = id.isEmpty();
+    if (generateUuid)
+    {
+        id.create();
+        /* VirtualBox::registerHardDisk() will need UUID */
+        unconst(m->id) = id;
+    }
+
+    try
+    {
+        PVBOXHDD hdd;
+        int vrc = VDCreate(m->vdDiskIfaces, &hdd);
+        ComAssertRCThrow(vrc, E_FAIL);
+
+        Utf8Str format(m->strFormat);
+        Utf8Str location(m->strLocationFull);
+        /* uint64_t capabilities = */ m->formatObj->capabilities();
+
+        /* unlock before the potentially lengthy operation */
+        Assert(m->state == MediumState_Creating);
+        thisLock.leave();
+
+        try
+        {
+            /* ensure the directory exists */
+            rc = VirtualBox::ensureFilePathExists(location);
+            if (FAILED(rc)) throw rc;
+
+            PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
+
+            vrc = VDCreateBase(hdd,
+                               format.c_str(),
+                               location.c_str(),
+                               task.d.size * _1M,
+                               task.d.variant,
+                               NULL,
+                               &geo,
+                               &geo,
+                               id.raw(),
+                               VD_OPEN_FLAGS_NORMAL,
+                               NULL,
+                               vdOperationIfaces);
+            if (RT_FAILURE(vrc))
+            {
+                throw setError(E_FAIL,
+                            tr("Could not create the hard disk storage unit '%s'%s"),
+                            location.raw(), vdError(vrc).raw());
+            }
+
+            size = VDGetFileSize(hdd, 0);
+            logicalSize = VDGetSize(hdd, 0) / _1M;
+        }
+        catch (HRESULT aRC) { rc = aRC; }
+
+        VDDestroy(hdd);
+    }
+    catch (HRESULT aRC) { rc = aRC; }
+
+    if (SUCCEEDED(rc))
+    {
+        /* register with mVirtualBox as the last step and move to
+        * Created state only on success (leaving an orphan file is
+        * better than breaking media registry consistency) */
+        rc = m->pVirtualBox->registerHardDisk(this);
+    }
+
+    thisLock.maybeEnter();
+
+    if (SUCCEEDED(rc))
+    {
+        m->state = MediumState_Created;
+
+        m->size = size;
+        m->logicalSize = logicalSize;
+    }
+    else
+    {
+        /* back to NotCreated on failure */
+        m->state = MediumState_NotCreated;
+
+        /* reset UUID to prevent it from being reused next time */
+        if (generateUuid)
+            unconst(m->id).clear();
+    }
+
+    return rc;
+}
+
+
 /**
  * Thread function for time-consuming tasks.
  *
@@ -4875,7 +4980,7 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
 /* static */
 DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
 {
-    std::auto_ptr <Task> task(static_cast <Task *>(pvUser));
+    std::auto_ptr<Task> task(static_cast<Task*>(pvUser));
     AssertReturn(task.get(), VERR_GENERAL_FAILURE);
 
     bool isAsync = thread != NIL_RTTHREAD;
@@ -4913,98 +5018,8 @@ DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
         ////////////////////////////////////////////////////////////////////////
 
         case Task::CreateBase:
-        {
-            /* The lock is also used as a signal from the task initiator (which
-             * releases it only after RTThreadCreate()) that we can start the job */
-            AutoWriteLock thatLock(that COMMA_LOCKVAL_SRC_POS);
-
-            /* these parameters we need after creation */
-            uint64_t size = 0, logicalSize = 0;
-
-            /* The object may request a specific UUID (through a special form of
-             * the setLocation() argument). Otherwise we have to generate it */
-            Guid id = that->m->id;
-            bool generateUuid = id.isEmpty();
-            if (generateUuid)
-            {
-                id.create();
-                /* VirtualBox::registerHardDisk() will need UUID */
-                unconst(that->m->id) = id;
-            }
-
-            try
-            {
-                PVBOXHDD hdd;
-                int vrc = VDCreate(that->m->vdDiskIfaces, &hdd);
-                ComAssertRCThrow(vrc, E_FAIL);
-
-                Utf8Str format(that->m->strFormat);
-                Utf8Str location(that->m->strLocationFull);
-                /* uint64_t capabilities = */ that->m->formatObj->capabilities();
-
-                /* unlock before the potentially lengthy operation */
-                Assert(that->m->state == MediumState_Creating);
-                thatLock.leave();
-
-                try
-                {
-                    /* ensure the directory exists */
-                    rc = VirtualBox::ensureFilePathExists(location);
-                    if (FAILED(rc)) throw rc;
-
-                    PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
-
-                    vrc = VDCreateBase(hdd, format.c_str(), location.c_str(),
-                                       task->d.size * _1M,
-                                       task->d.variant,
-                                       NULL, &geo, &geo, id.raw(),
-                                       VD_OPEN_FLAGS_NORMAL,
-                                       NULL, vdOperationIfaces);
-                    if (RT_FAILURE(vrc))
-                    {
-                        throw setError(E_FAIL,
-                                       tr("Could not create the hard disk storage unit '%s'%s"),
-                                       location.raw(), that->vdError(vrc).raw());
-                    }
-
-                    size = VDGetFileSize(hdd, 0);
-                    logicalSize = VDGetSize(hdd, 0) / _1M;
-                }
-                catch (HRESULT aRC) { rc = aRC; }
-
-                VDDestroy(hdd);
-            }
-            catch (HRESULT aRC) { rc = aRC; }
-
-            if (SUCCEEDED(rc))
-            {
-                /* register with mVirtualBox as the last step and move to
-                 * Created state only on success (leaving an orphan file is
-                 * better than breaking media registry consistency) */
-                rc = that->m->pVirtualBox->registerHardDisk(that);
-            }
-
-            thatLock.maybeEnter();
-
-            if (SUCCEEDED(rc))
-            {
-                that->m->state = MediumState_Created;
-
-                that->m->size = size;
-                that->m->logicalSize = logicalSize;
-            }
-            else
-            {
-                /* back to NotCreated on failure */
-                that->m->state = MediumState_NotCreated;
-
-                /* reset UUID to prevent it from being reused next time */
-                if (generateUuid)
-                    unconst(that->m->id).clear();
-            }
-
-            break;
-        }
+            rc = that->taskThreadCreateBase(*task, (void*)vdOperationIfaces);
+        break;
 
         ////////////////////////////////////////////////////////////////////////
 

@@ -305,10 +305,12 @@ private:
     static DECLCALLBACK(int) vdConfigQuery(void *pvUser, const char *pszName,
                                            char *pszValue, size_t cchValue);
 
-    static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
-
     struct Task;
     friend struct Task;
+
+    HRESULT taskThreadCreateBase(Task &task, void *pvdOperationIfaces);
+
+    static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
