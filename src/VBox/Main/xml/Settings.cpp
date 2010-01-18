@@ -2927,8 +2927,7 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
 
                 case DeviceType_DVD:
                     pcszType = "DVD";
-                    if (att.fPassThrough)
-                        pelmDevice->setAttribute("passthrough", att.fPassThrough);
+                    pelmDevice->setAttribute("passthrough", att.fPassThrough);
                 break;
 
                 case DeviceType_Floppy:
