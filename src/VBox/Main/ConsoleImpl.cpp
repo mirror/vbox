@@ -1741,7 +1741,7 @@ DECLCALLBACK(int) Console::unplugCpu(Console *pThis, unsigned uCpu)
     return vrc;
 }
 
-STDMETHODIMP Console::doCPURemove(ULONG aCpu)
+HRESULT Console::doCPURemove(ULONG aCpu)
 {
     HRESULT rc = S_OK;
 
@@ -1894,7 +1894,7 @@ DECLCALLBACK(int) Console::plugCpu(Console *pThis, unsigned uCpu)
     return VINF_SUCCESS;
 }
 
-STDMETHODIMP Console::doCPUAdd(ULONG aCpu)
+HRESULT Console::doCPUAdd(ULONG aCpu)
 {
     HRESULT rc = S_OK;
 
