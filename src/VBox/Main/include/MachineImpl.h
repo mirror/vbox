@@ -888,8 +888,9 @@ protected:
     HRESULT createImplicitDiffs(const Bstr &aFolder,
                                 IProgress *aProgress,
                                 ULONG aWeight,
-                                bool aOnline);
-    HRESULT deleteImplicitDiffs();
+                                bool aOnline,
+                                bool *pfNeedsSaveSettings);
+    HRESULT deleteImplicitDiffs(bool *pfNeedsSaveSettings);
 
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      IN_BSTR aControllerName,
@@ -900,7 +901,8 @@ protected:
     MediumAttachment* findAttachment(const MediaData::AttachmentList &ll,
                                      Guid &id);
 
-    void fixupMedia(bool aCommit, bool aOnline = false);
+    void commitMedia(bool aOnline = false);
+    void rollbackMedia();
 
     bool isInOwnDir(Utf8Str *aSettingsDir = NULL);
 
@@ -1087,7 +1089,6 @@ private:
     void uninit(Uninit::Reason aReason);
 
     HRESULT endSavingState(BOOL aSuccess);
-    HRESULT endTakingSnapshot(BOOL aSuccess);
 
     typedef std::map<ComObjPtr<Machine>, MachineState_T> AffectedMachines;
 
