@@ -62,6 +62,25 @@ void EEPROM93C46::storeWord(uint32_t u32Addr, uint16_t u16Value)
 }
 
 /**
+ * Reads one word at specified location.
+ *
+ * @returns True if read was successful.
+ *
+ * @param   u32Addr     Address to read from
+ * @param   pu16Value   Placeholder to store the value
+ */
+bool EEPROM93C46::readWord(uint32_t u32Addr, uint16_t *pu16Value)
+{
+    if (u32Addr < SIZE)
+    {
+        *pu16Value = m_au16Data[u32Addr];
+        return true;
+    }
+
+    return false;
+}
+
+/**
  * Fetch next word pointer by m_u16Addr.
  *
  * m_u16Addr is advanced and mask is reset to support sequential reads.

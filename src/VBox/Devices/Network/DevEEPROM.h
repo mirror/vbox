@@ -121,6 +121,7 @@ struct EEPROM93C46 {
 #ifdef IN_RING3
     uint32_t read();
     void     write(uint32_t u32Wires);
+    bool     readWord(uint32_t u32Addr, uint16_t *pu16Value);
 
     void init(const uint16_t *pu16Initial = 0);
 
