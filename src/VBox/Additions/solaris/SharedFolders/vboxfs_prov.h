@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VirtualBox File System for Solaris Guests, provider implementation.
+ * VirtualBox File System for Solaris Guests, provider header.
  */
 
 /*
@@ -19,8 +19,8 @@
  * additional information or have any questions.
  */
 
-#ifndef	__VBoxFS_prov_Solaris_h
-#define	__VBoxFS_prov_Solaris_h
+#ifndef	___VBoxFS_prov_Solaris_h
+#define	___VBoxFS_prov_Solaris_h
 
 #ifdef	__cplusplus
 extern "C" {
@@ -117,4 +117,4 @@ extern int sfprov_readdir(sfp_mount_t *mnt, char *path, void **buffer,
 }
 #endif
 
-#endif	/* __VBoxFS_prov_Solaris_h */
+#endif	/* !___VBoxFS_prov_Solaris_h */
