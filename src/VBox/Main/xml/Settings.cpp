@@ -29,7 +29,7 @@
  *
  *   3) In the settings writer method, write the setting _only_ if the current settings
  *      version (stored in m->sv) is high enough. That is, for VirtualBox 3.2, write it
- *      only if (m->sv >= SettingsVersion_v1_11).
+ *      only if (m->sv >= SettingsVersion_v1_10).
  *
  *   4) In MachineConfigFile::bumpSettingsVersionIfNeeded(), check if the new setting has
  *      a non-default value (i.e. that differs from the constructor). If so, bump the
@@ -81,7 +81,7 @@ using namespace settings;
 #define VBOX_XML_NAMESPACE      "http://www.innotek.de/VirtualBox-settings"
 
 /** VirtualBox XML settings version number substring ("x.y")  */
-#define VBOX_XML_VERSION        "1.11"
+#define VBOX_XML_VERSION        "1.10"
 
 /** VirtualBox XML settings version platform substring */
 #if defined (RT_OS_DARWIN)
@@ -281,9 +281,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
                     m->sv = SettingsVersion_v1_9;
                 else if (ulMinor == 10)
                     m->sv = SettingsVersion_v1_10;
-                else if (ulMinor == 11)
-                    m->sv = SettingsVersion_v1_11;
-                else if (ulMinor > 11)
+                else if (ulMinor > 10)
                     m->sv = SettingsVersion_Future;
             }
             else if (ulMajor > 1)
@@ -303,7 +301,7 @@ ConfigFileBase::ConfigFileBase(const com::Utf8Str *pstrFilename)
     {
         // creating new settings file:
         m->strSettingsVersionFull = VBOX_XML_VERSION_FULL;
-        m->sv = SettingsVersion_v1_11;
+        m->sv = SettingsVersion_v1_10;
     }
 }
 
@@ -557,15 +555,10 @@ void ConfigFileBase::createStubDocument()
             break;
 
         case SettingsVersion_v1_10:
-            pcszVersion = "1.10";
-            m->sv = SettingsVersion_v1_10;
-            break;
-
-        case SettingsVersion_v1_11:
         case SettingsVersion_Future:                // can be set if this code runs on XML files that were created by a future version of VBox;
                                                     // in that case, downgrade to current version when writing since we can't write future versions...
-            pcszVersion = "1.11";
-            m->sv = SettingsVersion_v1_11;
+            pcszVersion = "1.10";
+            m->sv = SettingsVersion_v1_10;
             break;
 
         default:
@@ -2505,7 +2498,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
 
-    if (m->sv >= SettingsVersion_v1_11)
+    if (m->sv >= SettingsVersion_v1_10)
     {
         pelmCPU->setAttribute("hotplug", hw.fCpuHotPlug);
 
@@ -3133,16 +3126,11 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     }
 
     if (    m->sv < SettingsVersion_v1_10
-         && (  fRTCUseUTC
+         && (    fRTCUseUTC
+              || hardwareMachine.fCpuHotPlug
             )
        )
         m->sv = SettingsVersion_v1_10;
-
-    // Version 1.11 is required for CPU hotplugging
-    if (   (m->sv < SettingsVersion_v1_11)
-        && (hardwareMachine.fCpuHotPlug)
-       )
-        m->sv = SettingsVersion_v1_11;
 }
 
 /**
