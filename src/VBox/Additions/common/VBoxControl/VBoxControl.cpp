@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -60,13 +60,17 @@ int g_cVerbosity = 0;
 /** Helper function */
 static void doUsage(char const *line, char const *name = "", char const *command = "")
 {
-    RTPrintf("%s %-*s%s", name, 32 - strlen(name), command, line);
+    /* Allow for up to 15 characters command name length (VBoxControl.exe) with
+     * perfect column alignment. Beyond that there's at least one space between
+     * the command if there are command line parameters. */
+    RTPrintf("%s %-*s%s%s\n", name, strlen(line) ? 35 - strlen(name) : 1,
+                              command, strlen(line) ? " " : "", line);
 }
 
 /** Enumerate the different parts of the usage we might want to print out */
 enum g_eUsage
 {
-#ifdef RT_OS_WINDOWS
+#ifdef RT_OS_LINUX
     GET_VIDEO_ACCEL,
     SET_VIDEO_ACCEL,
     LIST_CUST_MODES,
@@ -83,33 +87,35 @@ enum g_eUsage
 static void usage(g_eUsage eWhich = USAGE_ALL)
 {
     RTPrintf("Usage:\n\n");
-    RTPrintf("%s [-v|-version]        print version number and exit\n", g_pszProgName);
-    RTPrintf("%s -nologo ...          suppress the logo\n\n", g_pszProgName);
+    doUsage("print version number and exit", g_pszProgName, "[-v|-version]");
+    doUsage("suppress the logo", g_pszProgName, "-nologo ...");
+    RTPrintf("\n");
 
 /* Exclude the Windows bits from the test version.  Anyone who needs to test
  * them can fix this. */
-#if defined(RT_OS_WINDOWS) && !defined(VBOX_CONTROL_TEST)
+#if defined(RT_OS_LINUX) && !defined(VBOX_CONTROL_TEST)
     if ((GET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("\n", g_pszProgName, "getvideoacceleration");
+        doUsage("", g_pszProgName, "getvideoacceleration");
     if ((SET_VIDEO_ACCEL == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<on|off>\n", g_pszProgName, "setvideoacceleration");
+        doUsage("<on|off>", g_pszProgName, "setvideoacceleration");
     if ((LIST_CUST_MODES == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("\n", g_pszProgName, "listcustommodes");
+        doUsage("", g_pszProgName, "listcustommodes");
     if ((ADD_CUST_MODE == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<width> <height> <bpp>\n", g_pszProgName, "addcustommode");
+        doUsage("<width> <height> <bpp>", g_pszProgName, "addcustommode");
     if ((REMOVE_CUST_MODE == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<width> <height> <bpp>\n", g_pszProgName, "removecustommode");
+        doUsage("<width> <height> <bpp>", g_pszProgName, "removecustommode");
     if ((SET_VIDEO_MODE == eWhich) || (USAGE_ALL == eWhich))
-        doUsage("<width> <height> <bpp> <screen>\n", g_pszProgName, "setvideomode");
+        doUsage("<width> <height> <bpp> <screen>", g_pszProgName, "setvideomode");
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
     if ((GUEST_PROP == eWhich) || (USAGE_ALL == eWhich))
     {
-        doUsage("get <property> [-verbose]\n", g_pszProgName, "guestproperty");
-        doUsage("set <property> [<value> [-flags <flags>]]\n", g_pszProgName, "guestproperty");
-        doUsage("enumerate [-patterns <patterns>]\n", g_pszProgName, "guestproperty");
-        doUsage("wait <patterns> [-timestamp <last timestamp>]\n", g_pszProgName, "guestproperty");
-        doUsage("[-timeout <timeout in ms>\n");
+        doUsage("get <property> [-verbose]", g_pszProgName, "guestproperty");
+        doUsage("set <property> [<value> [-flags <flags>]]", g_pszProgName, "guestproperty");
+        doUsage("enumerate [-patterns <patterns>]", g_pszProgName, "guestproperty");
+        doUsage("wait <patterns>", g_pszProgName, "guestproperty");
+        doUsage("[-timestamp <last timestamp>]");
+        doUsage("[-timeout <timeout in ms>");
     }
 #endif
 }
@@ -1341,7 +1347,7 @@ int main(int argc, char **argv)
     if (showlogo)
         RTPrintf("VirtualBox Guest Additions Command Line Management Interface Version "
                  VBOX_VERSION_STRING "\n"
-                 "(C) 2008 Sun Microsystems, Inc.\n"
+                 "(C) 2008-2010 Sun Microsystems, Inc.\n"
                  "All rights reserved.\n\n");
     if (dohelp)
         usage();
