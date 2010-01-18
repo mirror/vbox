@@ -1225,8 +1225,10 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    // if this becomes true, we need to call VirtualBox::saveSettings() in the end
+    bool fNeedsSaveSettings = false;
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(    !Global::IsOnlineOrTransient(mData->mMachineState)
                   || mData->mMachineState == MachineState_Running
@@ -1240,8 +1242,13 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     {
         /* save all current settings to ensure current changes are committed and
          * hard disks are fixed up */
+        alock.release();
+
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
         HRESULT rc = saveSettings();
         if (FAILED(rc)) return rc;
+
+        alock.acquire();
     }
 
     /* create an ID for the snapshot */
@@ -1304,7 +1311,8 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
                                  aConsoleProgress,
                                  1,            // operation weight; must be the same as in Console::TakeSnapshot()
-                                 !!fTakingSnapshotOnline);
+                                 !!fTakingSnapshotOnline,
+                                 &fNeedsSaveSettings);
         if (FAILED(rc))
             throw rc;
 
@@ -1319,9 +1327,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
             aConsoleProgress->SetNextOperation(Bstr(tr("Copying the execution state")),
                                                1);        // weight
 
-            /* Leave the lock before a lengthy operation (mMachineState is
-            * MachineState_Saving here) */
-            alock.leave();
+            /* Leave the lock before a lengthy operation (machine is protected
+             * by "Saving" machine state now) */
+            alock.release();
 
             /* copy the state file */
             int vrc = RTFileCopyEx(stateFrom.c_str(),
@@ -1329,26 +1337,24 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
                                    0,
                                    progressCallback,
                                    aConsoleProgress);
-            alock.enter();
+            alock.acquire();
 
             if (RT_FAILURE(vrc))
-            {
                 /** @todo r=bird: Delete stateTo when appropriate. */
                 throw setError(E_FAIL,
                                tr("Could not copy the state file '%s' to '%s' (%Rrc)"),
                                stateFrom.raw(),
                                stateTo.raw(),
                                vrc);
-            }
         }
     }
     catch (HRESULT hrc)
     {
         LogThisFunc(("Caught %Rhrc [%s]\n", hrc, Global::stringifyMachineState(mData->mMachineState) ));
         if (    mSnapshotData.mLastState != mData->mMachineState
-            &&  (  mSnapshotData.mLastState == MachineState_Running
-                 ? mData->mMachineState == MachineState_LiveSnapshotting
-                 : mData->mMachineState == MachineState_Saving)
+             && (   mSnapshotData.mLastState == MachineState_Running
+                  ? mData->mMachineState == MachineState_LiveSnapshotting
+                  : mData->mMachineState == MachineState_Saving)
            )
             setMachineState(mSnapshotData.mLastState);
 
@@ -1358,12 +1364,18 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
         mSnapshotData.mSnapshot.setNull();
 
         rc = hrc;
+
+        // @todo r=dj what with the implicit diff that we created above? this is never cleaned up
     }
 
     if (fTakingSnapshotOnline && SUCCEEDED(rc))
         strStateFilePath.cloneTo(aStateFilePath);
     else
         *aStateFilePath = NULL;
+
+    // @todo r=dj normally we would need to save the settings if fNeedsSaveSettings was set to true,
+    // but since we have no error handling that cleans up the diff image that might have gotten created,
+    // there's no point in saving the disk registry at this point either... this needs fixing.
 
     LogFlowThisFunc(("LEAVE - %Rhrc [%s]\n", rc, Global::stringifyMachineState(mData->mMachineState) ));
     return rc;
@@ -1378,7 +1390,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
  * This also gets called if the console part of snapshotting failed after the
  * BeginTakingSnapshot() call, to clean up the server side.
  *
- * @note Locks this object for writing.
+ * @note Locks VirtualBox and this object for writing.
  *
  * @param aSuccess Whether Console was successful with the client-side snapshot things.
  * @return
@@ -1390,13 +1402,13 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   !aSuccess
                  || (    (    mData->mMachineState == MachineState_Saving
-                          ||  mData->mMachineState == MachineState_LiveSnapshotting)
-                     &&  mSnapshotData.mLastState != MachineState_Null
-                     &&  !mSnapshotData.mSnapshot.isNull()
+                           || mData->mMachineState == MachineState_LiveSnapshotting)
+                      && mSnapshotData.mLastState != MachineState_Null
+                      && !mSnapshotData.mSnapshot.isNull()
                     )
                  , E_FAIL);
 
@@ -1406,46 +1418,17 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
      * If the state was Running, then let Console::fntTakeSnapshotWorker do it
      * all to avoid races.
      */
-    if (   mData->mMachineState != mSnapshotData.mLastState
-        && mSnapshotData.mLastState != MachineState_Running)
+    if (    mData->mMachineState != mSnapshotData.mLastState
+         && mSnapshotData.mLastState != MachineState_Running
+       )
         setMachineState(mSnapshotData.mLastState);
-
-    return endTakingSnapshot(aSuccess);
-}
-
-/**
- * Internal helper method to finalize taking a snapshot. Gets called from
- * SessionMachine::EndTakingSnapshot() to finalize the server-side
- * parts of snapshotting.
- *
- * This also gets called from SessionMachine::uninit() if an untaken
- * snapshot needs cleaning up.
- *
- * Expected to be called after completing *all* the tasks related to
- * taking the snapshot, either successfully or unsuccessfilly.
- *
- * @param aSuccess  TRUE if the snapshot has been taken successfully.
- *
- * @note Locks this objects for writing.
- */
-HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
-{
-    LogFlowThisFuncEnter();
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
-
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
-            // saveSettings needs VirtualBox lock
-
-    AssertReturn(!mSnapshotData.mSnapshot.isNull(), E_FAIL);
-
-    MultiResult rc(S_OK);
 
     ComObjPtr<Snapshot> pOldFirstSnap = mData->mFirstSnapshot;
     ComObjPtr<Snapshot> pOldCurrentSnap = mData->mCurrentSnapshot;
 
     bool fOnline = Global::IsOnline(mSnapshotData.mLastState);
+
+    HRESULT rc = S_OK;
 
     if (aSuccess)
     {
@@ -1467,7 +1450,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
     if (aSuccess && SUCCEEDED(rc))
     {
         /* associate old hard disks with the snapshot and do locking/unlocking*/
-        fixupMedia(true /* aCommit */, fOnline);
+        commitMedia(fOnline);
 
         /* inform callbacks */
         mParent->onSnapshotTaken(mData->mUuid,
@@ -1477,7 +1460,7 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
     {
         /* delete all differencing hard disks created (this will also attach
          * their parents back by rolling back mMediaData) */
-        fixupMedia(false /* aCommit */);
+        rollbackMedia();
 
         mData->mFirstSnapshot = pOldFirstSnap;      // might have been changed above
         mData->mCurrentSnapshot = pOldCurrentSnap;      // might have been changed above
@@ -1493,7 +1476,6 @@ HRESULT SessionMachine::endTakingSnapshot(BOOL aSuccess)
     mSnapshotData.mLastState = MachineState_Null;
     mSnapshotData.mSnapshot.setNull();
 
-    LogFlowThisFuncLeave();
     return rc;
 }
 
@@ -1662,14 +1644,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         return;
     }
 
-    /* saveSettings() needs mParent lock */
-    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-
-    /* @todo We don't need mParent lock so far so unlock() it. Better is to
-     * provide an AutoWriteLock argument that lets create a non-locking
-     * instance */
-    vboxLock.release();
-
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* discard all current changes to mUserData (name, OSType etc.) (note that
@@ -1681,6 +1655,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     HRESULT rc = S_OK;
 
     bool stateRestored = false;
+    bool fNeedsSaveSettings = false;
 
     try
     {
@@ -1723,7 +1698,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             rc = createImplicitDiffs(mUserData->mSnapshotFolderFull,
                                      aTask.pProgress,
                                      1,
-                                     false /* aOnline */);
+                                     false /* aOnline */,
+                                     &fNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 
             alock.enter();
@@ -1809,14 +1785,6 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
         int saveFlags = 0;
 
-        /* @todo saveSettings() below needs a VirtualBox write lock and we need
-         * to leave this object's lock to do this to follow the {parent-child}
-         * locking rule. This is the last chance to do that while we are still
-         * in a protective state which allows us to temporarily leave the lock*/
-        alock.release();
-        vboxLock.acquire();
-        alock.acquire();
-
         /* we have already discarded the current state, so set the execution
          * state accordingly no matter of the discard snapshot result */
         if (!mSSData->mStateFilePath.isEmpty())
@@ -1863,6 +1831,15 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             llDiffsToDelete.push_back(pMedium);
         }
 
+        alock.leave();
+
+        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        if (fNeedsSaveSettings)
+            // VirtualBox.xml needs saving too: must not hold machine lock at this point!
+            mParent->saveSettings();
+
+        alock.enter();
+
         // save all settings, reset the modified flag and commit;
         rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
         if (FAILED(rc)) throw rc;
@@ -1876,7 +1853,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             ComObjPtr<Medium> &pMedium = *it;
             LogFlowThisFunc(("Deleting old current state in differencing image '%s'\n", pMedium->getName().raw()));
 
-            HRESULT rc2 = pMedium->deleteStorageAndWait();
+            HRESULT rc2 = pMedium->deleteStorageAndWait(NULL /*aProgress*/, NULL /*pfNeedsSaveSettings*/ );
             // ignore errors here because we cannot roll back after saveSettings() above
             if (SUCCEEDED(rc2))
                 pMedium->uninit();
@@ -2143,7 +2120,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
     MediumDiscardRecList toDiscard;
 
-    bool settingsChanged = false;
+    bool fMachineSettingsChanged = false;       // Machine
+    bool fNeedsSaveSettings = false;            // VirtualBox.xml
 
     try
     {
@@ -2305,7 +2283,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
          * saved too */
         /// @todo NEWMEDIA maybe save everything in one operation in place of
         ///  saveSnapshotSettings() above
-        settingsChanged = true;
+        fMachineSettingsChanged = true;
 
         /* third pass: */
         LogFlowThisFunc(("3: Performing actual hard disk merging...\n"));
@@ -2322,7 +2300,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         {
             rc = it->hd->discard(aTask.pProgress,
                                  (ULONG)(it->hd->getSize() / _1M),          // weight
-                                 it->chain);
+                                 it->chain,
+                                 &fNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 
             /* prevent from calling cancelDiscard() */
@@ -2375,14 +2354,20 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         setMachineState(aTask.machineStateBackup);
         updateMachineStateOnClient();
 
-        if (settingsChanged)
+        if (fMachineSettingsChanged || fNeedsSaveSettings)
         {
             // saveSettings needs VirtualBox write lock in addition to our own
             // (parent -> child locking order!)
             AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-            alock.acquire();
 
-            saveSettings(SaveS_InformCallbacksAnyway);
+            if (fMachineSettingsChanged)
+            {
+                alock.acquire();
+                saveSettings(SaveS_InformCallbacksAnyway);
+            }
+
+            if (fNeedsSaveSettings)
+                mParent->saveSettings();
         }
     }
 

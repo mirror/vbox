@@ -1128,7 +1128,7 @@ STDMETHODIMP Machine::COMGETTER(CPUHotPlugEnabled) (BOOL *enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *enabled = mHWData->mCPUHotPlugEnabled;
 
@@ -1142,7 +1142,7 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled) (BOOL enabled)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -2425,11 +2425,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* VirtualBox::findHardDisk() and the corresponding other methods for
-     * DVD and floppy media need *write* lock (for getting rid of unneeded
-     * host drives which got enumerated); also we want to make sure the
-     * media object we pick up doesn't get unregistered before we finish. */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    // if this becomes true then we need to call saveSettings in the end
+    // @todo r=dj there is no error handling so far...
+    bool fNeedsSaveSettings = false;
+
+    /* protect the media tree all the while we're in here, as well as our member variables */
+    AutoMultiWriteLock2 alock(this->lockHandle(), &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -2504,7 +2505,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             if (FAILED(rc)) return rc;
             break;
 
-        case DeviceType_DVD:
+        case DeviceType_DVD: // @todo r=dj eliminate this, replace with findDVDImage
             if (!uuid.isEmpty())
             {
                 /* first search for host drive */
@@ -2537,7 +2538,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
             }
             break;
 
-        case DeviceType_Floppy:
+        case DeviceType_Floppy: // @todo r=dj eliminate this, replace with findFloppyImage
             if (!uuid.isEmpty())
             {
                 /* first search for host drive */
@@ -2581,13 +2582,12 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 
     AutoWriteLock mediumLock(medium COMMA_LOCKVAL_SRC_POS);
 
-    if (   (pAttachTemp = findAttachment(mMediaData->mAttachments, medium))
-        && !medium.isNull())
-    {
+    if (    (pAttachTemp = findAttachment(mMediaData->mAttachments, medium))
+         && !medium.isNull()
+       )
         return setError(VBOX_E_OBJECT_IN_USE,
                         tr("Medium '%s' is already attached to this virtual machine"),
                         medium->getLocationFull().raw());
-    }
 
     bool indirect = false;
     if (!medium.isNull())
@@ -2773,7 +2773,8 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         rc = diff->init(mParent,
                         medium->preferredDiffFormat().raw(),
                         BstrFmt("%ls"RTPATH_SLASH_STR,
-                                 mUserData->mSnapshotFolderFull.raw()).raw());
+                                 mUserData->mSnapshotFolderFull.raw()).raw(),
+                        &fNeedsSaveSettings);
         if (FAILED(rc)) return rc;
 
         /* make sure the hard disk is not modified before createDiffStorage() */
@@ -2788,7 +2789,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
         mediumLock.leave();
         alock.leave();
 
-        rc = medium->createDiffStorageAndWait(diff, MediumVariant_Standard);
+        rc = medium->createDiffStorageAndWait(diff, MediumVariant_Standard, &fNeedsSaveSettings);
 
         alock.enter();
         mediumLock.enter();
@@ -2825,6 +2826,15 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     mMediaData.backup();
     mMediaData->mAttachments.push_back(attachment);
 
+    if (fNeedsSaveSettings)
+    {
+        mediumLock.release();
+        alock.release();
+
+        AutoWriteLock(mParent COMMA_LOCKVAL_SRC_POS);
+        mParent->saveSettings();
+    }
+
     return rc;
 }
 
@@ -2838,6 +2848,8 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    bool fNeedsSaveSettings = false;
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -2880,7 +2892,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
         alock.leave();
 
-        rc = oldmedium->deleteStorageAndWait();
+        rc = oldmedium->deleteStorageAndWait(NULL /*aProgress*/, &fNeedsSaveSettings);
 
         alock.enter();
 
@@ -2899,6 +2911,13 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
     /* For non-hard disk media, detach straight away. */
     if (mediumType != DeviceType_HardDisk && !oldmedium.isNull())
         oldmedium->detachFrom(mData->mUuid);
+
+    if (fNeedsSaveSettings)
+    {
+        alock.release();
+        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+        saveSettings();
+    }
 
     return S_OK;
 }
@@ -4359,7 +4378,7 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mHWData->mCPUHotPlugEnabled)
         return setError(E_INVALIDARG, tr("CPU hotplug is not enabled"));
@@ -4393,7 +4412,7 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mHWData->mCPUHotPlugEnabled)
         return setError(E_INVALIDARG, tr("CPU hotplug is not enabled"));
@@ -4436,7 +4455,7 @@ STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /* If hotplug is enabled the CPU is always enabled. */
     if (!mHWData->mCPUHotPlugEnabled)
@@ -6965,7 +6984,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
  *    correspond to the settings from the current snapshot.
  *  - SaveS_InformCallbacksAnyway: Callbacks will be informed even if
  *    #isReallyModified() returns false. This is necessary for cases when we
- *    change machine data diectly, not through the backup()/commit() mechanism.
+ *    change machine data directly, not through the backup()/commit() mechanism.
  *
  * @note Must be called from under mParent write lock (sometimes needed by
  * #prepareSaveSettings()) and this object's write lock. Locks children for
@@ -7519,6 +7538,8 @@ HRESULT Machine::saveStateSettings(int aFlags)
  *                          many operations left as the number of hard disks
  *                          attached).
  * @param aOnline           Whether the VM was online prior to this operation.
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
  * @note The progress object is not marked as completed, neither on success nor
  *       on failure. This is a responsibility of the caller.
@@ -7528,7 +7549,8 @@ HRESULT Machine::saveStateSettings(int aFlags)
 HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
                                      IProgress *aProgress,
                                      ULONG aWeight,
-                                     bool aOnline)
+                                     bool aOnline,
+                                     bool *pfNeedsSaveSettings)
 {
     AssertReturn(!aFolder.isEmpty(), E_FAIL);
 
@@ -7624,7 +7646,8 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
             rc = diff->init(mParent,
                             medium->preferredDiffFormat().raw(),
                             BstrFmt("%ls"RTPATH_SLASH_STR,
-                                    mUserData->mSnapshotFolderFull.raw()).raw());
+                                    mUserData->mSnapshotFolderFull.raw()).raw(),
+                            pfNeedsSaveSettings);
             if (FAILED(rc)) throw rc;
 
             /* leave the lock before the potentially lengthy operation */
@@ -7632,7 +7655,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
 
             rc = medium->createDiffStorageAndWait(diff,
                                                   MediumVariant_Standard,
-                                                  NULL);
+                                                  pfNeedsSaveSettings);
 
             /** @todo r=bird: How is the locking and diff image cleaned up if we fail before
              *        the push_back?  Looks like we're going to leave medium with the
@@ -7692,7 +7715,7 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
     {
         MultiResultRef mrc (rc);
 
-        mrc = deleteImplicitDiffs();
+        mrc = deleteImplicitDiffs(pfNeedsSaveSettings);
     }
 
     return rc;
@@ -7705,9 +7728,12 @@ HRESULT Machine::createImplicitDiffs(const Bstr &aFolder,
  * Note that to delete hard disks created by #AttachMedium() this method is
  * called from #fixupMedia() when the changes are rolled back.
  *
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ *
  * @note Locks this object for writing.
  */
-HRESULT Machine::deleteImplicitDiffs()
+HRESULT Machine::deleteImplicitDiffs(bool *pfNeedsSaveSettings)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
@@ -7782,13 +7808,13 @@ HRESULT Machine::deleteImplicitDiffs()
             LogFlowThisFunc(("Deleting '%s'\n", (*it)->getLogName()));
             ComObjPtr<Medium> hd = (*it)->getMedium();
 
-            rc = hd->deleteStorageAndWait();
+            rc = hd->deleteStorageAndWait(NULL /*aProgress*/, pfNeedsSaveSettings);
 #if 1 /* HACK ALERT: Just make it kind of work */ /** @todo Fix this hack properly. The LockWrite / UnlockWrite / LockRead changes aren't undone! */
             if (rc == VBOX_E_INVALID_OBJECT_STATE)
             {
                 LogFlowFunc(("Applying unlock hack on '%s'! FIXME!\n", (*it)->getLogName()));
                 hd->UnlockWrite(NULL);
-                rc = hd->deleteStorageAndWait();
+                rc = hd->deleteStorageAndWait(NULL /*aProgress*/, pfNeedsSaveSettings);
             }
 #endif
             AssertMsg(SUCCEEDED(rc), ("rc=%Rhrc it=%s hd=%s\n", rc, (*it)->getLogName(), hd->getLocationFull().c_str() ));
@@ -7889,33 +7915,27 @@ MediumAttachment* Machine::findAttachment(const MediaData::AttachmentList &ll,
 }
 
 /**
- * Perform deferred hard disk detachments on success and deletion of implicitly
- * created diffs on failure.
+ * Perform deferred hard disk detachments.
  *
  * Does nothing if the hard disk attachment data (mMediaData) is not changed (not
  * backed up).
  *
- * When the data is backed up, this method will commit mMediaData if @a aCommit is
- * @c true and rollback it otherwise before returning.
+ * If @a aOnline is @c true then this method will also unlock the old hard disks
+ * for which the new implicit diffs were created and will lock these new diffs for
+ * writing.
  *
- * If @a aOnline is @c true then this method called with @a aCommit = @c true
- * will also unlock the old hard disks for which the new implicit diffs were
- * created and will lock these new diffs for writing. When @a aCommit is @c
- * false, this argument is ignored.
- *
- * @param aCommit       @c true if called on success.
  * @param aOnline       Whether the VM was online prior to this operation.
  *
  * @note Locks this object for writing!
  */
-void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
+void Machine::commitMedia(bool aOnline /*= false*/)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogFlowThisFunc(("Entering, aCommit=%d, aOnline=%d\n", aCommit, aOnline));
+    LogFlowThisFunc(("Entering, aOnline=%d\n", aOnline));
 
     HRESULT rc = S_OK;
 
@@ -7923,168 +7943,192 @@ void Machine::fixupMedia(bool aCommit, bool aOnline /*= false*/)
     if (!mMediaData.isBackedUp())
         return;
 
-    if (aCommit)
+    MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
+
+    /* enumerate new attachments */
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+            it != mMediaData->mAttachments.end();
+            ++it)
     {
-        MediaData::AttachmentList &oldAtts = mMediaData.backedUpData()->mAttachments;
+        MediumAttachment *pAttach = *it;
 
-        /* enumerate new attachments */
-        for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-             it != mMediaData->mAttachments.end();
-             ++it)
-        {
-            MediumAttachment *pAttach = *it;
+        pAttach->commit();
 
-            pAttach->commit();
+        Medium* pMedium = pAttach->getMedium();
+        bool fImplicit = pAttach->isImplicit();
 
-            Medium* pMedium = pAttach->getMedium();
-            bool fImplicit = pAttach->isImplicit();
-
-            LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
-                             (pMedium) ? pMedium->getName().raw() : "NULL",
-                             fImplicit));
-
-            /** @todo convert all this Machine-based voodoo to MediumAttachment
-            * based commit logic. */
-            if (fImplicit)
-            {
-                /* convert implicit attachment to normal */
-                pAttach->setImplicit(false);
-
-                if (    aOnline
-                     && pMedium
-                     && pAttach->getType() == DeviceType_HardDisk
-                   )
-                {
-                    rc = pMedium->LockWrite(NULL);
-                    AssertComRC(rc);
-
-                    mData->mSession.mLockedMedia.push_back(
-                        Data::Session::LockedMedia::value_type(
-                            ComPtr<IMedium>(pMedium), true));
-
-                    /* also, relock the old hard disk which is a base for the
-                    * new diff for reading if the VM is online */
-
-                    ComObjPtr<Medium> parent = pMedium->getParent();
-                    /* make the relock atomic */
-                    AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
-                    rc = parent->UnlockWrite(NULL);
-                    AssertComRC(rc);
-                    rc = parent->LockRead(NULL);
-                    AssertComRC(rc);
-
-                    /* XXX actually we should replace the old entry in that
-                    * vector (write lock => read lock) but this would take
-                    * some effort. So lets just ignore the error code in
-                    * SessionMachine::unlockMedia(). */
-                    mData->mSession.mLockedMedia.push_back(
-                        Data::Session::LockedMedia::value_type (
-                            ComPtr<IMedium>(parent), false));
-                }
-
-                continue;
-            }
-
-            if (pMedium)
-            {
-                /* was this medium attached before? */
-                for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
-                     oldIt != oldAtts.end();
-                     ++oldIt)
-                {
-                    MediumAttachment *pOldAttach = *oldIt;
-                    if (pOldAttach->getMedium().equalsTo(pMedium))
-                    {
-                        LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().raw()));
-
-                        /* yes: remove from old to avoid de-association */
-                        oldAtts.erase(oldIt);
-                        break;
-                    }
-                }
-            }
-        }
-
-        /* enumerate remaining old attachments and de-associate from the
-         * current machine state */
-        for (MediaData::AttachmentList::const_iterator it = oldAtts.begin();
-             it != oldAtts.end();
-             ++it)
-        {
-            MediumAttachment *pAttach = *it;
-            Medium* pMedium = pAttach->getMedium();
-
-            /* Detach only hard disks, since DVD/floppy media is detached
-             * instantly in MountMedium. */
-            if (pAttach->getType() == DeviceType_HardDisk && pMedium)
-            {
-                LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().raw()));
-
-                /* now de-associate from the current machine state */
-                rc = pMedium->detachFrom(mData->mUuid);
-                AssertComRC(rc);
-
-                if (    aOnline
-                     && pAttach->getType() == DeviceType_HardDisk)
-                {
-                    /* unlock since not used anymore */
-                    MediumState_T state;
-                    rc = pMedium->UnlockWrite(&state);
-                    /* the disk may be alredy relocked for reading above */
-                    Assert (SUCCEEDED(rc) || state == MediumState_LockedRead);
-                }
-            }
-        }
-
-        /* commit the hard disk changes */
-        mMediaData.commit();
-
-        if (getClassID() == clsidSessionMachine)
-        {
-            /* attach new data to the primary machine and reshare it */
-            mPeer->mMediaData.attach(mMediaData);
-        }
-    }
-    else
-    {
-        /* enumerate new attachments */
-        for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
-             it != mMediaData->mAttachments.end();
-             ++it)
-        {
-            MediumAttachment *pAttach = *it;
-            /* Fix up the backrefs for DVD/floppy media. */
-            if (pAttach->getType() != DeviceType_HardDisk)
-            {
-                Medium* pMedium = pAttach->getMedium();
-                if (pMedium)
-                {
-                    rc = pMedium->detachFrom(mData->mUuid);
-                    AssertComRC(rc);
-                }
-            }
-
-            (*it)->rollback();
-
-            pAttach = *it;
-            /* Fix up the backrefs for DVD/floppy media. */
-            if (pAttach->getType() != DeviceType_HardDisk)
-            {
-                Medium* pMedium = pAttach->getMedium();
-                if (pMedium)
-                {
-                    rc = pMedium->attachTo(mData->mUuid);
-                    AssertComRC(rc);
-                }
-            }
-        }
+        LogFlowThisFunc(("Examining current medium '%s' (implicit: %d)\n",
+                            (pMedium) ? pMedium->getName().raw() : "NULL",
+                            fImplicit));
 
         /** @todo convert all this Machine-based voodoo to MediumAttachment
-         * based rollback logic. */
-        // @todo r=dj the below totally fails if this gets called from Machine::rollback(),
-        // which gets called if Machine::registeredInit() fails...
-        deleteImplicitDiffs();
+        * based commit logic. */
+        if (fImplicit)
+        {
+            /* convert implicit attachment to normal */
+            pAttach->setImplicit(false);
+
+            if (    aOnline
+                    && pMedium
+                    && pAttach->getType() == DeviceType_HardDisk
+                )
+            {
+                rc = pMedium->LockWrite(NULL);
+                AssertComRC(rc);
+
+                mData->mSession.mLockedMedia.push_back(
+                    Data::Session::LockedMedia::value_type(
+                        ComPtr<IMedium>(pMedium), true));
+
+                /* also, relock the old hard disk which is a base for the
+                * new diff for reading if the VM is online */
+
+                ComObjPtr<Medium> parent = pMedium->getParent();
+                /* make the relock atomic */
+                AutoWriteLock parentLock(parent COMMA_LOCKVAL_SRC_POS);
+                rc = parent->UnlockWrite(NULL);
+                AssertComRC(rc);
+                rc = parent->LockRead(NULL);
+                AssertComRC(rc);
+
+                /* XXX actually we should replace the old entry in that
+                * vector (write lock => read lock) but this would take
+                * some effort. So lets just ignore the error code in
+                * SessionMachine::unlockMedia(). */
+                mData->mSession.mLockedMedia.push_back(
+                    Data::Session::LockedMedia::value_type (
+                        ComPtr<IMedium>(parent), false));
+            }
+
+            continue;
+        }
+
+        if (pMedium)
+        {
+            /* was this medium attached before? */
+            for (MediaData::AttachmentList::iterator oldIt = oldAtts.begin();
+                    oldIt != oldAtts.end();
+                    ++oldIt)
+            {
+                MediumAttachment *pOldAttach = *oldIt;
+                if (pOldAttach->getMedium().equalsTo(pMedium))
+                {
+                    LogFlowThisFunc(("--> medium '%s' was attached before, will not remove\n", pMedium->getName().raw()));
+
+                    /* yes: remove from old to avoid de-association */
+                    oldAtts.erase(oldIt);
+                    break;
+                }
+            }
+        }
     }
+
+    /* enumerate remaining old attachments and de-associate from the
+        * current machine state */
+    for (MediaData::AttachmentList::const_iterator it = oldAtts.begin();
+            it != oldAtts.end();
+            ++it)
+    {
+        MediumAttachment *pAttach = *it;
+        Medium* pMedium = pAttach->getMedium();
+
+        /* Detach only hard disks, since DVD/floppy media is detached
+            * instantly in MountMedium. */
+        if (pAttach->getType() == DeviceType_HardDisk && pMedium)
+        {
+            LogFlowThisFunc(("detaching medium '%s' from machine\n", pMedium->getName().raw()));
+
+            /* now de-associate from the current machine state */
+            rc = pMedium->detachFrom(mData->mUuid);
+            AssertComRC(rc);
+
+            if (    aOnline
+                    && pAttach->getType() == DeviceType_HardDisk)
+            {
+                /* unlock since not used anymore */
+                MediumState_T state;
+                rc = pMedium->UnlockWrite(&state);
+                /* the disk may be alredy relocked for reading above */
+                Assert (SUCCEEDED(rc) || state == MediumState_LockedRead);
+            }
+        }
+    }
+
+    /* commit the hard disk changes */
+    mMediaData.commit();
+
+    if (getClassID() == clsidSessionMachine)
+    {
+        /* attach new data to the primary machine and reshare it */
+        mPeer->mMediaData.attach(mMediaData);
+    }
+
+    return;
+}
+
+/**
+ * Perform deferred deletion of implicitly created diffs.
+ *
+ * Does nothing if the hard disk attachment data (mMediaData) is not changed (not
+ * backed up).
+ *
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
+ *
+ * @note Locks this object for writing!
+ */
+void Machine::rollbackMedia()
+{
+    AutoCaller autoCaller(this);
+    AssertComRCReturnVoid (autoCaller.rc());
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    LogFlowThisFunc(("Entering\n"));
+
+    HRESULT rc = S_OK;
+
+    /* no attach/detach operations -- nothing to do */
+    if (!mMediaData.isBackedUp())
+        return;
+
+    /* enumerate new attachments */
+    for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
+            it != mMediaData->mAttachments.end();
+            ++it)
+    {
+        MediumAttachment *pAttach = *it;
+        /* Fix up the backrefs for DVD/floppy media. */
+        if (pAttach->getType() != DeviceType_HardDisk)
+        {
+            Medium* pMedium = pAttach->getMedium();
+            if (pMedium)
+            {
+                rc = pMedium->detachFrom(mData->mUuid);
+                AssertComRC(rc);
+            }
+        }
+
+        (*it)->rollback();
+
+        pAttach = *it;
+        /* Fix up the backrefs for DVD/floppy media. */
+        if (pAttach->getType() != DeviceType_HardDisk)
+        {
+            Medium* pMedium = pAttach->getMedium();
+            if (pMedium)
+            {
+                rc = pMedium->attachTo(mData->mUuid);
+                AssertComRC(rc);
+            }
+        }
+    }
+
+    /** @todo convert all this Machine-based voodoo to MediumAttachment
+     * based rollback logic. */
+    // @todo r=dj the below totally fails if this gets called from Machine::rollback(),
+    // which gets called if Machine::registeredInit() fails...
+    deleteImplicitDiffs(NULL /*pfNeedsSaveSettings*/);
 
     return;
 }
@@ -8306,7 +8350,7 @@ void Machine::rollback (bool aNotify)
     mHWData.rollback();
 
     if (mMediaData.isBackedUp())
-        fixupMedia(false /* aCommit */);
+        rollbackMedia();
 
     /* check for changes in child objects */
 
@@ -8401,7 +8445,7 @@ void Machine::commit()
     mHWData.commit();
 
     if (mMediaData.isBackedUp())
-        fixupMedia(true /* aCommit */);
+        commitMedia();
 
     mBIOSSettings->commit();
 #ifdef VBOX_WITH_VRDP
@@ -8912,12 +8956,20 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (!mSnapshotData.mStateFilePath.isEmpty())
     {
         LogWarningThisFunc(("canceling failed save state request!\n"));
-        endSavingState (FALSE /* aSuccess  */);
+        endSavingState(FALSE /* aSuccess  */);
     }
     else if (!mSnapshotData.mSnapshot.isNull())
     {
         LogWarningThisFunc(("canceling untaken snapshot!\n"));
-        endTakingSnapshot (FALSE /* aSuccess  */);
+
+        /* delete all differencing hard disks created (this will also attach
+         * their parents back by rolling back mMediaData) */
+        rollbackMedia();
+        /* delete the saved state file (it might have been already created) */
+        if (mSnapshotData.mSnapshot->stateFilePath().length())
+            RTFileDelete(mSnapshotData.mSnapshot->stateFilePath().c_str());
+
+        mSnapshotData.mSnapshot->uninit();
     }
 
 #ifdef VBOX_WITH_USB

@@ -77,7 +77,8 @@ public:
     // public initializer/uninitializer for internal purposes only
     HRESULT init(VirtualBox *aVirtualBox,
                  CBSTR aFormat,
-                 CBSTR aLocation);
+                 CBSTR aLocation,
+                 bool *pfNeedsSaveSettings);
     HRESULT init(VirtualBox *aVirtualBox,
                  CBSTR aLocation,
                  HDDOpenMode enOpenMode,
@@ -192,14 +193,14 @@ public:
      * and implies the progress object will be used for waiting.
      */
     HRESULT deleteStorageNoWait(ComObjPtr<Progress> &aProgress)
-    { return deleteStorage(&aProgress, false /* aWait */); }
+    { return deleteStorage(&aProgress, false /* aWait */, NULL /* pfNeedsSaveSettings */); }
 
     /**
      * Shortcut to #deleteStorage() that wait for operation completion by
      * blocking the current thread.
      */
-    HRESULT deleteStorageAndWait(ComObjPtr<Progress> *aProgress = NULL)
-    { return deleteStorage(aProgress, true /* aWait */); }
+    HRESULT deleteStorageAndWait(ComObjPtr<Progress> *aProgress, bool *pfNeedsSaveSettings)
+    { return deleteStorage(aProgress, true /* aWait */, pfNeedsSaveSettings); }
 
     /**
      * Shortcut to #createDiffStorage() that doesn't wait for operation
@@ -208,7 +209,7 @@ public:
     HRESULT createDiffStorageNoWait(ComObjPtr<Medium> &aTarget,
                                     MediumVariant_T aVariant,
                                     ComObjPtr<Progress> &aProgress)
-    { return createDiffStorage(aTarget, aVariant, &aProgress, false /* aWait */); }
+    { return createDiffStorage(aTarget, aVariant, &aProgress, false /* aWait */, NULL /* pfNeedsSaveSettings*/ ); }
 
     /**
      * Shortcut to #createDiffStorage() that wait for operation completion by
@@ -216,8 +217,8 @@ public:
      */
     HRESULT createDiffStorageAndWait(ComObjPtr<Medium> &aTarget,
                                      MediumVariant_T aVariant,
-                                     ComObjPtr<Progress> *aProgress = NULL)
-    { return createDiffStorage(aTarget, aVariant, aProgress, true /* aWait */); }
+                                     bool *pfNeedsSaveSettings)
+    { return createDiffStorage(aTarget, aVariant, NULL /*aProgress*/, true /* aWait */, pfNeedsSaveSettings); }
 
     HRESULT prepareMergeTo(Medium *aTarget, MergeChain * &aChain,
                             bool aIgnoreAttachments = false);
@@ -228,22 +229,23 @@ public:
      */
     HRESULT mergeToNoWait(MergeChain *aChain,
                           ComObjPtr<Progress> &aProgress)
-    { return mergeTo(aChain, &aProgress, false /* aWait */); }
+    { return mergeTo(aChain, &aProgress, false /* aWait */, NULL /*pfNeedsSaveSettings*/); }
 
     /**
      * Shortcut to #mergeTo() that wait for operation completion by
      * blocking the current thread.
      */
     HRESULT mergeToAndWait(MergeChain *aChain,
-                           ComObjPtr<Progress> *aProgress = NULL)
-    { return mergeTo(aChain, aProgress, true /* aWait */); }
+                           ComObjPtr<Progress> *aProgress,
+                           bool *pfNeedsSaveSettings)
+    { return mergeTo(aChain, aProgress, true /* aWait */, pfNeedsSaveSettings); }
 
     void cancelMergeTo(MergeChain *aChain);
 
     Utf8Str getName();
 
     HRESULT prepareDiscard(MergeChain * &aChain);
-    HRESULT discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain);
+    HRESULT discard(ComObjPtr<Progress> &aProgress, ULONG ulWeight, MergeChain *aChain, bool *pfNeedsSaveSettings);
     void cancelDiscard(MergeChain *aChain);
 
     /** Returns a preferred format for a differencing hard disk. */
@@ -272,20 +274,22 @@ private:
      * Unregisters this medium with mVirtualBox. Called by Close() from within
      * this object's AutoMayUninitSpan and from under mVirtualBox write lock.
      */
-    HRESULT unregisterWithVirtualBox();
+    HRESULT unregisterWithVirtualBox(bool *pfNeedsSaveSettings);
 
     HRESULT setStateError();
 
-    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait);
+    HRESULT deleteStorage(ComObjPtr<Progress> *aProgress, bool aWait, bool *pfNeedsSaveSettings);
 
     HRESULT createDiffStorage(ComObjPtr<Medium> &aTarget,
                               MediumVariant_T aVariant,
                               ComObjPtr<Progress> *aProgress,
-                              bool aWait);
+                              bool aWait,
+                              bool *pfNeedsSaveSettings);
 
     HRESULT mergeTo(MergeChain *aChain,
                     ComObjPtr<Progress> *aProgress,
-                    bool aWait);
+                    bool aWait,
+                    bool *pfNeedsSaveSettings);
 
     HRESULT setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat = Utf8Str());
     HRESULT setFormat(CBSTR aFormat);

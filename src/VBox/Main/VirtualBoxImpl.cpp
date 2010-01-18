@@ -519,6 +519,8 @@ HRESULT VirtualBox::initMachines()
 
 HRESULT VirtualBox::initMedia()
 {
+    AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
     HRESULT rc = S_OK;
     settings::MediaList::const_iterator it;
     for (it = m->pMainConfigFile->llHardDisks.begin();
@@ -535,7 +537,7 @@ HRESULT VirtualBox::initMedia()
                                  xmlHD);         // XML data; this recurses to processes the children
         if (FAILED(rc)) return rc;
 
-        rc = registerHardDisk(pHardDisk, false /* aSaveRegistry */);
+        rc = registerHardDisk(pHardDisk, NULL /*pfNeedsSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
 
@@ -550,7 +552,7 @@ HRESULT VirtualBox::initMedia()
             rc = pImage->init(this, NULL, DeviceType_DVD, xmlDvd);
         if (FAILED(rc)) return rc;
 
-        rc = registerImage(pImage, DeviceType_DVD, false /* aSaveRegistry */);
+        rc = registerImage(pImage, DeviceType_DVD, NULL /*pfNeedsSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
 
@@ -565,7 +567,7 @@ HRESULT VirtualBox::initMedia()
             rc = pImage->init(this, NULL, DeviceType_Floppy, xmlFloppy);
         if (FAILED(rc)) return rc;
 
-        rc = registerImage(pImage, DeviceType_Floppy, false /* aSaveRegistry */);
+        rc = registerImage(pImage, DeviceType_Floppy, NULL /*pfNeedsSaveSettings*/ );
         if (FAILED(rc)) return rc;
     }
 
@@ -1318,12 +1320,20 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
     HRESULT rc = E_FAIL;
 
+    bool fNeedsSaveSettings = false;
+
     ComObjPtr<Medium> hardDisk;
     hardDisk.createObject();
-    rc = hardDisk->init(this, format.raw(), aLocation);
+    rc = hardDisk->init(this, format.raw(), aLocation, &fNeedsSaveSettings);
 
     if (SUCCEEDED(rc))
         hardDisk.queryInterfaceTo(aHardDisk);
+
+    if (fNeedsSaveSettings)
+    {
+        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+        saveSettings();
+    }
 
     return rc;
 }
@@ -1361,12 +1371,15 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
                         aLocation,
                         (accessMode == AccessMode_ReadWrite) ? Medium::OpenReadWrite : Medium::OpenReadOnly,
                         DeviceType_HardDisk,
-                        aSetImageId, imageId,
-                        aSetParentId, parentId);
+                        aSetImageId,
+                        imageId,
+                        aSetParentId,
+                        parentId);
 
     if (SUCCEEDED(rc))
     {
-        rc = registerHardDisk (hardDisk);
+        bool fNeedsSaveSettings = false;
+        rc = registerHardDisk(hardDisk, &fNeedsSaveSettings);
 
         /* Note that it's important to call uninit() on failure to register
          * because the differencing hard disk would have been already associated
@@ -1376,6 +1389,12 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
             hardDisk.queryInterfaceTo(aHardDisk);
         else
             hardDisk->uninit();
+
+        if (fNeedsSaveSettings)
+        {
+            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+            saveSettings();
+        }
     }
 
     return rc;
@@ -1439,10 +1458,17 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
     rc = image->init (this, aLocation, Medium::OpenReadOnly, DeviceType_DVD, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
-        rc = registerImage(image, DeviceType_DVD);
+        bool fNeedsSaveSettings = false;
+        rc = registerImage(image, DeviceType_DVD, &fNeedsSaveSettings);
 
         if (SUCCEEDED(rc))
             image.queryInterfaceTo(aDVDImage);
+
+        if (fNeedsSaveSettings)
+        {
+            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+            saveSettings();
+        }
     }
 
     return rc;
@@ -1506,10 +1532,17 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
     rc = image->init (this, aLocation, Medium::OpenReadWrite, DeviceType_Floppy, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
-        rc = registerImage(image, DeviceType_Floppy);
+        bool fNeedsSaveSettings = false;
+        rc = registerImage(image, DeviceType_Floppy, &fNeedsSaveSettings);
 
         if (SUCCEEDED(rc))
             image.queryInterfaceTo(aFloppyImage);
+
+        if (fNeedsSaveSettings)
+        {
+            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+            saveSettings();
+        }
     }
 
     return rc;
@@ -2765,7 +2798,7 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
  *
  * @return S_OK when found or E_INVALIDARG when not found.
  *
- * @note Locks this object and hard disk objects for reading.
+ * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findHardDisk(const Guid *aId,
                                  CBSTR aLocation,
@@ -2846,7 +2879,7 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
  *
  * @return S_OK when found or E_INVALIDARG when not found.
  *
- * @note Locks this object and image objects for reading.
+ * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findDVDImage(const Guid *aId,
                                  CBSTR aLocation,
@@ -2924,9 +2957,10 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
  *
  * @return S_OK when found or E_INVALIDARG when not found.
  *
- * @note Locks this object and image objects for reading.
+ * @note Locks the media tree for reading.
  */
-HRESULT VirtualBox::findFloppyImage(const Guid *aId, CBSTR aLocation,
+HRESULT VirtualBox::findFloppyImage(const Guid *aId,
+                                    CBSTR aLocation,
                                     bool aSetError,
                                     ComObjPtr<Medium> *aImage /* = NULL */)
 {
@@ -3143,7 +3177,7 @@ void VirtualBox::calculateRelativePath(const Utf8Str &strPath, Utf8Str &aResult)
  * @param aLocation     Location to check.
  * @param aConflict     Where to return parameters of the conflicting medium.
  *
- * @note Locks this object and media objects for reading.
+ * @note Locks the media tree and media objects for reading.
  */
 HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
                                             const Utf8Str &aLocation,
@@ -3153,7 +3187,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     AssertReturn(!aId.isEmpty() && !aLocation.isEmpty(), E_FAIL);
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
 
@@ -3175,7 +3209,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findDVDImage (&aId, bstrLocation, false /* aSetError */, &image);
+        rc = findDVDImage(&aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -3393,19 +3427,13 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
  * Remembers the given hard disk by storing it in the hard disk registry.
  *
  * @param aHardDisk     Hard disk object to remember.
- * @param aSaveRegistry Whether to save the registry after adding the new disk; this is @c false when this gets called during VirtualBox initialization.
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
- * When @a aSaveRegistry is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the hard disk object
- * will not be remembered. It is therefore the responsibility of the caller to
- * call this method as the last step of some action that requires registration
- * in order to make sure that only fully functional hard disk objects get
- * registered.
- *
- * @note Locks this object for writing and @a aHardDisk for reading.
+ * @note Caller must hold the media tree lock for writing; in addition, this locks @a aHardDisk for reading
  */
 HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
-                                     bool aSaveRegistry /*= true*/)
+                                     bool *pfNeedsSaveSettings)
 {
     AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
@@ -3414,6 +3442,9 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
 
     AutoCaller hardDiskCaller(aHardDisk);
     AssertComRCReturn(hardDiskCaller.rc(), hardDiskCaller.rc());
+
+    // caller must hold the media tree write lock
+    Assert(getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     Guid id;
     Utf8Str strLocationFull;
@@ -3426,38 +3457,31 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
     }
 
     HRESULT rc;
-    {
-        // lock the hard disk lists (list + map) while checking for conflicts
-        AutoWriteLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str strConflict;
-        rc = checkMediaForConflicts2(id,
-                                     strLocationFull,
-                                     strConflict);
-        if (FAILED(rc)) return rc;
-        if (strConflict.length())
-            return setError(E_INVALIDARG,
-                            tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                            strLocationFull.raw(),
-                            id.raw(),
-                            strConflict.raw(),
-                            m->strSettingsFilePath.raw());
+    Utf8Str strConflict;
+    rc = checkMediaForConflicts2(id,
+                                 strLocationFull,
+                                 strConflict);
+    if (FAILED(rc)) return rc;
 
-        // store base (root) hard disks in the list
-        if (pParent.isNull())
-            m->ollHardDisks.getList().push_back(aHardDisk);
-                    // access the list directly because we already locked the list above
+    if (strConflict.length())
+        return setError(E_INVALIDARG,
+                        tr("Cannot register the hard disk '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        strLocationFull.raw(),
+                        id.raw(),
+                        strConflict.raw(),
+                        m->strSettingsFilePath.raw());
 
-        // store all hard disks (even differencing images) in the map
-        m->mapHardDisks[id] = aHardDisk;
-    }
+    // store base (root) hard disks in the list
+    if (pParent.isNull())
+        m->ollHardDisks.getList().push_back(aHardDisk);
+                // access the list directly because we already locked the list above
 
-    if (aSaveRegistry)
-    {
-        rc = saveSettings();
-        if (FAILED(rc))
-            unregisterHardDisk(aHardDisk, false /* aSaveRegistry */);
-    }
+    // store all hard disks (even differencing images) in the map
+    m->mapHardDisks[id] = aHardDisk;
+
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
 
     return rc;
 }
@@ -3466,19 +3490,13 @@ HRESULT VirtualBox::registerHardDisk(Medium *aHardDisk,
  * Removes the given hard disk from the hard disk registry.
  *
  * @param aHardDisk     Hard disk object to remove.
- * @param aSaveRegistry @c true to save hard disk registry to disk (default).
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
- * When @a aSaveRegistry is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the hard disk object
- * will NOT be removed from the registry when this method returns. It is
- * therefore the responsibility of the caller to call this method as the first
- * step of some action that requires unregistration, before calling uninit() on
- * @a aHardDisk.
- *
- * @note Locks this object for writing and @a aHardDisk for reading.
+ * @note Caller must hold the media tree lock for writing; in addition, this locks @a aHardDisk for reading
  */
 HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
-                                       bool aSaveRegistry /*= true*/)
+                                       bool *pfNeedsSaveSettings)
 {
     AssertReturn(aHardDisk != NULL, E_INVALIDARG);
 
@@ -3488,6 +3506,9 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
     AutoCaller hardDiskCaller (aHardDisk);
     AssertComRCReturn(hardDiskCaller.rc(), hardDiskCaller.rc());
 
+    // caller must hold the media tree write lock
+    Assert(getMediaTreeLockHandle().isWriteLockOnCurrentThread());
+
     Guid id;
     ComObjPtr<Medium> pParent;
     {
@@ -3496,31 +3517,20 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
         pParent = aHardDisk->getParent();
     }
 
-    {
-        // lock the hard disk lists (list + map)
-        AutoWriteLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // remove base (root) hard disks from the list
+    if (pParent.isNull())
+        m->ollHardDisks.getList().remove(aHardDisk);
+                // access the list directly because caller must have locked the list
 
-        // remove base (root) hard disks from the list
-        if (pParent.isNull())
-            m->ollHardDisks.getList().remove(aHardDisk);
-                    // access the list directly because we already locked the list above
+    // remove all hard disks (even differencing images) from map
+    size_t cnt = m->mapHardDisks.erase(id);
+    Assert(cnt == 1);
+    NOREF(cnt);
 
-        // remove all hard disks (even differencing images) from map
-        size_t cnt = m->mapHardDisks.erase(id);
-        Assert(cnt == 1);
-        NOREF(cnt);
-    }
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
 
-    HRESULT rc = S_OK;
-
-    if (aSaveRegistry)
-    {
-        rc = saveSettings();
-        if (FAILED(rc))
-            registerHardDisk(aHardDisk, false /* aSaveRegistry */);
-    }
-
-    return rc;
+    return S_OK;
 }
 
 /**
@@ -3528,20 +3538,14 @@ HRESULT VirtualBox::unregisterHardDisk(Medium *aHardDisk,
  *
  * @param argImage      Image object to remember.
  * @param argType       Either DeviceType_DVD or DeviceType_Floppy.
- * @param aSaveRegistry @c true to save the image registry to disk (default).
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
- * When @a aSaveRegistry is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the image object
- * will not be remembered. It is therefore the responsibility of the caller to
- * call this method as the last step of some action that requires registration
- * in order to make sure that only fully functional image objects get
- * registered.
- *
- * @note Locks this object for writing and @a aImage for reading.
+ * @note Caller must hold the media tree lock for writing; in addition, this locks @a argImage for reading
  */
 HRESULT VirtualBox::registerImage(Medium *argImage,
                                   DeviceType_T argType,
-                                  bool argSaveRegistry /*= true*/)
+                                  bool *pfNeedsSaveSettings)
 {
     AssertReturn(argImage != NULL, E_INVALIDARG);
 
@@ -3550,6 +3554,9 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
 
     AutoCaller imageCaller(argImage);
     AssertComRCReturn(imageCaller.rc(), imageCaller.rc());
+
+    // caller must hold the media tree write lock
+    Assert(getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     Guid id;
     Utf8Str strLocationFull;
@@ -3565,35 +3572,29 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
     ObjectsList<Medium> &oll = (argType == DeviceType_DVD) ? m->ollDVDImages : m->ollFloppyImages;
 
     HRESULT rc;
-    {
-        // lock the images lists (list + map) while checking for conflicts
-        AutoWriteLock al(oll.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // lock the images lists (list + map) while checking for conflicts
+    AutoWriteLock al(oll.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
-        Utf8Str strConflict;
-        rc = checkMediaForConflicts2(id,
-                                     strLocationFull,
-                                     strConflict);
-        if (FAILED(rc)) return rc;
+    Utf8Str strConflict;
+    rc = checkMediaForConflicts2(id,
+                                    strLocationFull,
+                                    strConflict);
+    if (FAILED(rc)) return rc;
 
-        if (strConflict.length())
-            return setError(VBOX_E_INVALID_OBJECT_STATE,
-                            tr("Cannot register the image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
-                            strLocationFull.raw(),
-                            id.raw(),
-                            strConflict.raw(),
-                            m->strSettingsFilePath.raw());
+    if (strConflict.length())
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("Cannot register the image '%s' with UUID {%RTuuid} because a %s already exists in the media registry ('%s')"),
+                        strLocationFull.raw(),
+                        id.raw(),
+                        strConflict.raw(),
+                        m->strSettingsFilePath.raw());
 
-        // add to the collection
-        oll.getList().push_back(argImage);
-                // access the list directly because we already locked the list above
-    }
+    // add to the collection
+    oll.getList().push_back(argImage);
+            // access the list directly because we already locked the list above
 
-    if (argSaveRegistry)
-    {
-        rc = saveSettings();
-        if (FAILED(rc))
-            unregisterImage(argImage, argType, false /* aSaveRegistry */);
-    }
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
 
     return rc;
 }
@@ -3603,20 +3604,14 @@ HRESULT VirtualBox::registerImage(Medium *argImage,
  *
  * @param argImage        Image object to remove.
  * @param argType         Either DeviceType_DVD or DeviceType_Floppy.
- * @param argSaveRegistry @c true to save hard disk registry to disk (default).
+ * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
+ *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
  *
- * When @a aSaveRegistry is @c true, this operation may fail because of the
- * failed #saveSettings() method it calls. In this case, the image object
- * will NOT be removed from the registry when this method returns. It is
- * therefore the responsibility of the caller to call this method as the first
- * step of some action that requires unregistration, before calling uninit() on
- * @a aImage.
- *
- * @note Locks this object for writing and @a aImage for reading.
+ * @note Caller must hold the media tree lock for writing; in addition, this locks @a argImage for reading
  */
 HRESULT VirtualBox::unregisterImage(Medium *argImage,
                                     DeviceType_T argType,
-                                    bool argSaveRegistry /*= true*/)
+                                    bool *pfNeedsSaveSettings)
 {
     AssertReturn(argImage != NULL, E_INVALIDARG);
 
@@ -3625,6 +3620,9 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     AutoCaller imageCaller(argImage);
     AssertComRCReturn(imageCaller.rc(), imageCaller.rc());
+
+    // caller must hold the media tree write lock
+    Assert(getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     Guid id;
     ComObjPtr<Medium> pParent;
@@ -3637,16 +3635,13 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
     // work on DVDs or floppies list?
     ObjectsList<Medium> &oll = (argType == DeviceType_DVD) ? m->ollDVDImages : m->ollFloppyImages;
 
-    oll.removeChild(argImage);
+    // access the list directly because the caller must have requested the lock
+    oll.getList().remove(argImage);
 
     HRESULT rc = S_OK;
 
-    if (argSaveRegistry)
-    {
-        rc = saveSettings();
-        if (FAILED(rc))
-            registerImage(argImage, argType, false /* aSaveRegistry */);
-    }
+    if (pfNeedsSaveSettings)
+        *pfNeedsSaveSettings = true;
 
     return rc;
 }
@@ -3778,22 +3773,16 @@ const Utf8Str& VirtualBox::settingsFilePath()
 }
 
 /**
- * Returns a lock handle used to protect changes to the hard disk hierarchy
- * (e.g. serialize access to the Medium::mParent fields and methods
- * adding/removing children). When using this lock, the following rules must
- * be obeyed:
- *
- * 1. The write lock on this handle must be either held alone on the thread
- *    or requested *after* the VirtualBox object lock. Mixing with other
- *    locks is prohibited.
- *
- * 2. The read lock on this handle may be intermixed with any other lock
- *    with the exception that it must be requested *after* the VirtualBox
- *    object lock.
+ * Returns the lock handle which protects the media trees (hard disks,
+ * DVDs, floppies). As opposed to version 3.1 and earlier, these lists
+ * are no longer protected by the VirtualBox lock, but by this more
+ * specialized lock. Mind the locking order: always request this lock
+ * after the VirtualBox object lock but before the locks of the media
+ * objects contained in these lists. See AutoLock.h.
  */
-RWLockHandle& VirtualBox::hardDiskTreeLockHandle()
+RWLockHandle& VirtualBox::getMediaTreeLockHandle()
 {
-    return m->ollHardDisks.getLockHandle();
+    return m->lockMedia;
 }
 
 /**
