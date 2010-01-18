@@ -717,6 +717,17 @@ RTDECL(void) RTLockValidatorRecSharedAddOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD h
 RTDECL(void) RTLockValidatorRecSharedRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread);
 
 /**
+ * Checks if the specified thread is one of the owners.
+ *
+ * @returns true if it is, false if not.
+ *
+ * @param   pRec                The validator record.
+ * @param   hThread             The thread handle of the owner.  NIL_RTTHREAD is
+ *                              an alias for the current thread.
+ */
+RTDECL(bool) RTLockValidatorRecSharedIsOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread);
+
+/**
  * Check the exit order and release (unset) the shared ownership.
  *
  * This is called by routines implementing releasing the read/write lock.

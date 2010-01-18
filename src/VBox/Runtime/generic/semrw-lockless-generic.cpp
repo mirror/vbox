@@ -875,6 +875,52 @@ RTDECL(bool) RTSemRWIsWriteOwner(RTSEMRW hRWSem)
 RT_EXPORT_SYMBOL(RTSemRWIsWriteOwner);
 
 
+RTDECL(bool)  RTSemRWIsReadOwner(RTSEMRW hRWSem, bool fWannaHear)
+{
+    /*
+     * Validate handle.
+     */
+    struct RTSEMRWINTERNAL *pThis = hRWSem;
+    AssertPtrReturn(pThis, false);
+    AssertReturn(pThis->u32Magic == RTSEMRW_MAGIC, false);
+
+    /*
+     * Inspect the state.
+     */
+    uint64_t u64State = ASMAtomicReadU64(&pThis->u64State);
+    if ((u64State & RTSEMRW_DIR_MASK) == (RTSEMRW_DIR_WRITE << RTSEMRW_DIR_SHIFT))
+    {
+        /*
+         * It's in write mode, so we can only be a reader if we're also the
+         * current writer.
+         */
+        RTNATIVETHREAD hNativeSelf = RTThreadNativeSelf();
+        RTNATIVETHREAD hWriter;
+        ASMAtomicUoReadHandle(&pThis->hWriter, &hWriter);
+        return hWriter == hNativeSelf;
+    }
+
+    /*
+     * Read mode.  If there are no current readers, then we cannot be a reader.
+     */
+    if (!(u64State & RTSEMRW_CNT_RD_MASK))
+        return false;
+
+#ifdef RTSEMRW_STRICT
+    /*
+     * Ask the lock validator.
+     */
+    return RTLockValidatorRecSharedIsOwner(&pThis->ValidatorRead, NIL_RTTHREAD);
+#else
+    /*
+     * Ok, we don't know, just tell the caller what he want to hear.
+     */
+    return fWannaHear;
+#endif
+}
+RT_EXPORT_SYMBOL(RTSemRWIsReadOwner);
+
+
 RTDECL(uint32_t) RTSemRWGetWriteRecursion(RTSEMRW hRWSem)
 {
     /*

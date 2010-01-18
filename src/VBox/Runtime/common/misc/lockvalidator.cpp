@@ -4017,7 +4017,11 @@ RTDECL(void) RTLockValidatorRecSharedRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREA
     AssertReturnVoid(pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC);
     if (!pRec->fEnabled)
         return;
-    AssertReturnVoid(hThread != NIL_RTTHREAD);
+    if (hThread == NIL_RTTHREAD)
+    {
+        hThread = RTThreadSelfAutoAdopt();
+        AssertReturnVoid(hThread != NIL_RTTHREAD);
+    }
     AssertReturnVoid(hThread->u32Magic == RTTHREADINT_MAGIC);
 
     /*
@@ -4042,6 +4046,26 @@ RTDECL(void) RTLockValidatorRecSharedRemoveOwner(PRTLOCKVALRECSHRD pRec, RTTHREA
     }
 }
 RT_EXPORT_SYMBOL(RTLockValidatorRecSharedRemoveOwner);
+
+
+RTDECL(bool) RTLockValidatorRecSharedIsOwner(PRTLOCKVALRECSHRD pRec, RTTHREAD hThread)
+{
+    /* Validate and resolve input. */
+    AssertReturn(pRec->Core.u32Magic == RTLOCKVALRECSHRD_MAGIC, false);
+    if (!pRec->fEnabled)
+        return false;
+    if (hThread == NIL_RTTHREAD)
+    {
+        hThread = RTThreadSelfAutoAdopt();
+        AssertReturn(hThread != NIL_RTTHREAD, false);
+    }
+    AssertReturn(hThread->u32Magic == RTTHREADINT_MAGIC, false);
+
+    /* Do the job. */
+    PRTLOCKVALRECUNION pEntry = rtLockValidatorRecSharedFindOwner(pRec, hThread, NULL);
+    return pEntry != NULL;
+}
+RT_EXPORT_SYMBOL(RTLockValidatorRecSharedIsOwner);
 
 
 RTDECL(int) RTLockValidatorRecSharedCheckAndRelease(PRTLOCKVALRECSHRD pRec, RTTHREAD hThreadSelf)
