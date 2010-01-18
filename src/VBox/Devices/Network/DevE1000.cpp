@@ -181,6 +181,13 @@ struct E1kChips
 #define EECD_EE_REQ   0x40
 #define EECD_EE_GNT   0x80
 
+#define EERD_START       0x00000001
+#define EERD_DONE        0x00000010
+#define EERD_DATA_MASK   0xFFFF0000
+#define EERD_DATA_SHIFT  16
+#define EERD_ADDR_MASK   0x0000FF00
+#define EERD_ADDR_SHIFT  8
+
 #define MDIC_DATA_MASK  0x0000FFFF
 #define MDIC_DATA_SHIFT 0
 #define MDIC_REG_MASK   0x001F0000
@@ -575,6 +582,11 @@ class E1kEEPROM
         void write(uint32_t u32Wires)
         {
             eeprom.write(u32Wires);
+        }
+
+        bool readWord(uint32_t u32Addr, uint16_t *pu16Value)
+        {
+            return eeprom.readWord(u32Addr, pu16Value);
         }
 
         int load(PSSMHANDLE pSSM)
@@ -1033,6 +1045,7 @@ static int e1kRegReadCTRL          (E1KSTATE* pState, uint32_t offset, uint32_t 
 static int e1kRegWriteCTRL         (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 static int e1kRegReadEECD          (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 static int e1kRegWriteEECD         (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
+static int e1kRegWriteEERD         (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 static int e1kRegWriteMDIC         (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
 static int e1kRegReadICR           (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t *pu32Value);
 static int e1kRegWriteICR          (E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t u32Value);
@@ -1081,7 +1094,7 @@ const static struct E1kRegMap_st
     { 0x00000, 0x00004, 0xDBF31BE9, 0xDBF31BE9, e1kRegReadDefault      , e1kRegWriteCTRL         , "CTRL"    , "Device Control" },
     { 0x00008, 0x00004, 0x0000FDFF, 0x00000000, e1kRegReadDefault      , e1kRegWriteUnimplemented, "STATUS"  , "Device Status" },
     { 0x00010, 0x00004, 0x000027F0, 0x00000070, e1kRegReadEECD         , e1kRegWriteEECD         , "EECD"    , "EEPROM/Flash Control/Data" },
-    { 0x00014, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "EERD"    , "EEPROM Read" },
+    { 0x00014, 0x00004, 0xFFFFFF10, 0xFFFFFF00, e1kRegReadDefault      , e1kRegWriteEERD         , "EERD"    , "EEPROM Read" },
     { 0x00018, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "CTRL_EXT", "Extended Device Control" },
     { 0x0001c, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadUnimplemented, e1kRegWriteUnimplemented, "FLA"     , "Flash Access (N/A)" },
     { 0x00020, 0x00004, 0xFFFFFFFF, 0xFFFFFFFF, e1kRegReadDefault      , e1kRegWriteMDIC         , "MDIC"    , "MDI Control" },
@@ -2182,6 +2195,42 @@ static int e1kRegReadEECD(E1KSTATE* pState, uint32_t offset, uint32_t index, uin
     return VINF_IOM_HC_MMIO_READ;
 #endif /* !IN_RING3 */
 }
+
+/**
+ * Write handler for EEPROM Read register.
+ *
+ * Handles EEPROM word access requests, reads EEPROM and stores the result
+ * into DATA field.
+ *
+ * @param   pState      The device state structure.
+ * @param   offset      Register offset in memory-mapped frame.
+ * @param   index       Register index in register array.
+ * @param   value       The value to store.
+ * @param   mask        Used to implement partial writes (8 and 16-bit).
+ * @thread  EMT
+ */
+static int e1kRegWriteEERD(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
+{
+#ifdef IN_RING3
+    /* Make use of 'writable' and 'readable' masks. */
+    e1kRegWriteDefault(pState, offset, index, value);
+    /* DONE and DATA are set only if read was triggered by START. */
+    if (value & EERD_START)
+    {
+        uint16_t tmp;
+        STAM_PROFILE_ADV_START(&pState->StatEEPROMRead, a);
+        if (pState->eeprom.readWord(GET_BITS_V(value, EERD, ADDR), &tmp))
+            SET_BITS(EERD, DATA, tmp);
+        EERD |= EERD_DONE;
+        STAM_PROFILE_ADV_STOP(&pState->StatEEPROMRead, a);
+    }
+
+    return VINF_SUCCESS;
+#else /* !IN_RING3 */
+    return VINF_IOM_HC_MMIO_WRITE;
+#endif /* !IN_RING3 */
+}
+
 
 /**
  * Write handler for MDI Control register.
