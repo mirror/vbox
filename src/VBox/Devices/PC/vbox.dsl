@@ -888,6 +888,27 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                 }
 
+                // High Precision Event Timer
+                Device(HPET) {
+                Name(_HID,  EISAID("PNP0103"))
+                Name (_CID, 0x010CD041)
+                Name(_UID, 0)
+                Method (_STA, 0, NotSerialized) {
+                    Return(UHPT)
+                }
+                Name(_CRS, ResourceTemplate() {
+                 IRQNoFlags ()
+                            {0}
+                 IRQNoFlags ()
+                            {8}
+                 Memory32Fixed (ReadWrite,
+                            0xFED00000,         // Address Base
+                            0x00000400,         // Address Length
+                            _Y16)
+                  })
+                }
+
+
                 // System Management Controller
                 Device (SMC)
                 {
@@ -1185,27 +1206,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
     Scope (\_SB)
     {
-         // High Precision Event Timer
-        Device(HPET) {
-            Name(_HID,  EISAID("PNP0103"))
-            Name (_CID, 0x010CD041)
-            Name(_UID, 0)
-            Method (_STA, 0, NotSerialized) {
-                    Return(UHPT)
-            }
-            Name(_CRS, ResourceTemplate() {
-                DWordMemory(
-                    ResourceConsumer, PosDecode, MinFixed, MaxFixed,
-                    NonCacheable, ReadWrite,
-                    0x00000000,
-                    0xFED00000,
-                    0xFED003FF,
-                    0x00000000,
-                    0x00000400 /* 1K memory: FED00000 - FED003FF */
-                )
-            })
-        }
-        
         // Fields within PIIX3 configuration[0x60..0x63] with
         // IRQ mappings
         Field (\_SB.PCI0.SBRG.PCIC, ByteAcc, NoLock, Preserve)
