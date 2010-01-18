@@ -125,7 +125,7 @@ BOOL credentialsToUI(HWND hwndUserId, HWND hwndPassword, HWND hwndDomain)
             SendMessage(hwndDomain, CB_SETCURSEL, (WPARAM) dwIndex, 0);
             EnableWindow(hwndDomain, FALSE);
         }
-        else 
+        else
         {
             Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain not found in combo box ...\n"));
 
@@ -142,13 +142,25 @@ BOOL credentialsToUI(HWND hwndUserId, HWND hwndPassword, HWND hwndDomain)
             if (l > 255)
                 Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Warning! FQDN is too long (max 255 bytes), will be truncated!\n"));
 
-            if (   l > 0 
-                && wcslen(g_Username) > 0
-                && wcsstr(g_Domain, L".") != NULL) /* if we found a dot (.) in the domain name, this has to be a FQDN */
+            if (wcslen(g_Username) > 0) /* We need a user name that we can use in caes of a FQDN */
             {
-                Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN!\n"));
-                swprintf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), L"%s@%s", g_Username, g_Domain);
-                bIsFQDN = TRUE;
+                if (l > 16) /* Domain name is longer than 16 chars, cannot be a NetBIOS name anymore */
+                {
+                    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN (length)!\n"));
+                    bIsFQDN = TRUE;
+                }
+                else if (   l > 0
+                         && wcsstr(g_Domain, L".") != NULL) /* if we found a dot (.) in the domain name, this has to be a FQDN */
+                {
+                    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN (dot)!\n"));
+                    bIsFQDN = TRUE;
+                }
+    
+                if (bIsFQDN)
+                {
+                    swprintf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), L"%s@%s", g_Username, g_Domain);
+                    Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: FQDN user name is now: %s!\n", szUserFQDN));
+                }
             }
         }
     }
@@ -157,7 +169,7 @@ BOOL credentialsToUI(HWND hwndUserId, HWND hwndPassword, HWND hwndDomain)
         if (!bIsFQDN)
             SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)g_Username);
         else
-            SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)szUserFQDN);                               
+            SendMessage(hwndUserId, WM_SETTEXT, 0, (LPARAM)szUserFQDN);
     }
     if (hwndPassword)
         SendMessage(hwndPassword, WM_SETTEXT, 0, (LPARAM)g_Password);
@@ -217,7 +229,7 @@ INT_PTR CALLBACK MyWlxLoggedOutSASDlgProc(HWND   hwndDlg,  // handle to dialog b
 
                     /* we got the credentials, null them out */
                     credentialsReset();
-                
+
                     /* confirm the logon dialog, simulating the user pressing "OK" */
                     WPARAM wParam = MAKEWPARAM(IDOK, BN_CLICKED);
                     PostMessage(hwndDlg, WM_COMMAND, wParam, 0);
