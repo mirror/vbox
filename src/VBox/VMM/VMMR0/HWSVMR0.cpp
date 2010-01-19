@@ -2677,12 +2677,8 @@ static int svmR0InterpretInvlPg(PVMCPU pVCpu, PDISCPUSTATE pCpu, PCPUMCTXCORE pR
      */
     rc = PGMInvalidatePage(pVCpu, addr);
     if (RT_SUCCESS(rc))
-    {
-        /* Manually invalidate the page for the VM's TLB. */
-        Log(("SVMR0InvlpgA %RGv ASID=%d\n", addr, uASID));
-        SVMR0InvlpgA(addr, uASID);
         return VINF_SUCCESS;
-    }
+
     AssertRC(rc);
     return rc;
 }
@@ -2724,9 +2720,8 @@ static int svmR0InterpretInvpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, ui
                 Assert(cbOp == pDis->opsize);
                 rc = svmR0InterpretInvlPg(pVCpu, pDis, pRegFrame, uASID);
                 if (RT_SUCCESS(rc))
-                {
                     pRegFrame->rip += cbOp; /* Move on to the next instruction. */
-                }
+
                 return rc;
             }
         }
