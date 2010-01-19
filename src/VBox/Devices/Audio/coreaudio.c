@@ -832,8 +832,6 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
         return -1;
     }
 
-    caDebugOutputAudioStreamBasicDescription("CoreAudio: [Output] device again", &caVoice->deviceFormat);
-
     /* Also set the frame buffer size off the device on our AudioUnit. This
        should make sure that the frames count which we receive in the render
        thread is as we like. */
