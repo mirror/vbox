@@ -751,6 +751,9 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     pgmUnlock(pVM);
     STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePage), a);
 
+    /* Invalidate the TLB entry; might already be done by InvalidatePage (@todo) */
+    PGM_INVL_PG(pVCpu, GCPtrPage);
+
 #ifdef IN_RING3
     /*
      * Check if we have a pending update of the CR3 monitoring.
