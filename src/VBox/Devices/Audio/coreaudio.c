@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,18 +32,21 @@
 #include <CoreAudio/CoreAudio.h>
 #include <CoreServices/CoreServices.h>
 #include <AudioUnit/AudioUnit.h>
+#include <AudioToolbox/AudioConverter.h>
 
 /* todo:
  * - checking for properties changes of the devices
- * - set frame size (use config)
- * - AudioUnit converter for changing the sample rate
- * - maybe get rid of the extra input sample buffer
- * - maybe make sure the thread is immediately stopped if playing/recording stops
+ * - checking for changing of the default device
+ * - let the user set the device used (use config)
+ * - try to set frame size (use config)
+ * - maybe make sure the threads are immediately stopped if playing/recording stops
  */
 
 /* Most of this is based on:
  * http://developer.apple.com/mac/library/technotes/tn2004/tn2097.html
  * http://developer.apple.com/mac/library/technotes/tn2002/tn2091.html
+ * http://developer.apple.com/mac/library/qa/qa2007/qa1533.html
+ * http://developer.apple.com/mac/library/qa/qa2001/qa1317.html
  * http://developer.apple.com/mac/library/documentation/AudioUnit/Reference/AUComponentServicesReference/Reference/reference.html
  */
 
@@ -54,7 +57,9 @@
  ******************************************************************************/
 
 /* Implementation of a lock free ring buffer which could be used in a multi
- * threaded environment. */
+ * threaded environment. Note that only the acquire, release and getter
+ * functions are threading aware. So don't use reset if the ring buffer is
+ * still in use. */
 typedef struct IORINGBUFFER
 {
     /* The current read position in the buffer */
@@ -122,6 +127,12 @@ DECL_FORCE_INLINE(uint32_t) IORingBufferUsed(PIORINGBUFFER pBuffer)
 {
     AssertPtr(pBuffer);
     return pBuffer->cBufferUsed;
+}
+
+DECL_FORCE_INLINE(uint32_t) IORingBufferSize(PIORINGBUFFER pBuffer)
+{
+    AssertPtr(pBuffer);
+    return pBuffer->cBufSize;
 }
 
 static void IORingBufferAquireReadBlock(PIORINGBUFFER pBuffer, uint32_t cReqSize, char **ppStart, uint32_t *pcSize)
@@ -289,6 +300,99 @@ static void caAudioSettingsToAudioStreamBasicDescription(const audsettings_t *pA
     pStreamDesc->mBytesPerPacket = pStreamDesc->mFramesPerPacket * pStreamDesc->mBytesPerFrame;
 }
 
+static OSStatus caSetFrameBufferSize(AudioDeviceID device, bool fInput, UInt32 cReqSize, UInt32 *pcActSize)
+{
+    OSStatus err = noErr;
+    UInt32 cSize = 0;
+    AudioValueRange *pRange = NULL;
+    size_t a = 0;
+    Float64 cMin = -1;
+    Float64 cMax = -1;
+
+    /* First try to set the new frame buffer size. */
+    AudioDeviceSetProperty(device,
+                           NULL,
+                           0,
+                           fInput,
+                           kAudioDevicePropertyBufferFrameSize,
+                           sizeof(cReqSize),
+                           &cReqSize);
+    /* Check if it really was set. */
+    cSize = sizeof(*pcActSize);
+    err = AudioDeviceGetProperty(device,
+                                 0,
+                                 fInput,
+                                 kAudioDevicePropertyBufferFrameSize,
+                                 &cSize,
+                                 pcActSize);
+    if (RT_UNLIKELY(err != noErr))
+        return err;
+    /* If both sizes are the same, we are done. */
+    if (cReqSize == *pcActSize)
+        return noErr;
+    /* If not we have to check the limits of the device. First get the size of
+       the buffer size range property. */
+    err = AudioDeviceGetPropertyInfo(device,
+                                     0,
+                                     fInput,
+                                     kAudioDevicePropertyBufferSizeRange,
+                                     &cSize,
+                                     NULL);
+    if (RT_UNLIKELY(err != noErr))
+        return err;
+    pRange = RTMemAllocZ(cSize);
+    if (VALID_PTR(pRange))
+    {
+        err = AudioDeviceGetProperty(device,
+                                     0,
+                                     fInput,
+                                     kAudioDevicePropertyBufferSizeRange,
+                                     &cSize,
+                                     pRange);
+        if (RT_LIKELY(err == noErr))
+        {
+            for (a=0; a < cSize/sizeof(AudioValueRange); ++a)
+            {
+                /* Search for the absolute minimum. */
+                if (   pRange[a].mMinimum < cMin
+                    || cMin == -1)
+                    cMin = pRange[a].mMinimum;
+                /* Search for the best maximum which isn't bigger than
+                   cReqSize. */
+                if (pRange[a].mMaximum < cReqSize)
+                {
+                    if (pRange[a].mMaximum > cMax)
+                        cMax = pRange[a].mMaximum;
+                }
+            }
+            if (cMax == -1)
+                cMax = cMin;
+            cReqSize = cMax;
+            /* First try to set the new frame buffer size. */
+            AudioDeviceSetProperty(device,
+                                   NULL,
+                                   0,
+                                   fInput,
+                                   kAudioDevicePropertyBufferFrameSize,
+                                   sizeof(cReqSize),
+                                   &cReqSize);
+            /* Check if it really was set. */
+            cSize = sizeof(*pcActSize);
+            err = AudioDeviceGetProperty(device,
+                                         0,
+                                         fInput,
+                                         kAudioDevicePropertyBufferFrameSize,
+                                         &cSize,
+                                         pcActSize);
+        }
+    }
+    else
+        return notEnoughMemoryErr;
+
+    RTMemFree(pRange);
+    return err;
+}
+
 DECL_FORCE_INLINE(bool) caIsRunning(AudioDeviceID deviceID)
 {
     OSStatus err = noErr;
@@ -321,7 +425,7 @@ struct
 
 typedef struct caVoiceOut
 {
-    /* HW voice output struture defined by VBox */
+    /* HW voice output structure defined by VBox */
     HWVoiceOut hw;
     /* Stream description which is default on the device */
     AudioStreamBasicDescription deviceFormat;
@@ -331,13 +435,13 @@ typedef struct caVoiceOut
     AudioDeviceID audioDeviceId;
     /* The AudioUnit used */
     AudioUnit audioUnit;
-    /* A ring buffer for transfering data to the playback thread */
+    /* A ring buffer for transferring data to the playback thread */
     PIORINGBUFFER pBuf;
 } caVoiceOut;
 
 typedef struct caVoiceIn
 {
-    /* HW voice input struture defined by VBox */
+    /* HW voice input structure defined by VBox */
     HWVoiceIn hw;
     /* Stream description which is default on the device */
     AudioStreamBasicDescription deviceFormat;
@@ -347,12 +451,20 @@ typedef struct caVoiceIn
     AudioDeviceID audioDeviceId;
     /* The AudioUnit used */
     AudioUnit audioUnit;
+    /* The audio converter if necessary */
+    AudioConverterRef converter;
+    /* A temporary position value used in the caConverterCallback function */
+    uint32_t rpos;
+    /* The ratio between the device & the stream sample rate */
+    Float64 sampleRatio;
     /* An extra buffer used for render the audio data in the recording thread */
-    AudioBufferList *pcaBufferList;
-    /* A ring buffer for transfering from to the recording thread */
+    AudioBufferList bufferList;
+    /* A ring buffer for transferring data from the recording thread */
     PIORINGBUFFER pBuf;
 } caVoiceIn;
 
+/* Error code which indicates "End of data" */
+static const OSStatus caConverterEOFDErr = 0x656F6664; /* 'eofd' */
 
 /*******************************************************************************
  *
@@ -360,7 +472,7 @@ typedef struct caVoiceIn
  *
  ******************************************************************************/
 
-/* callback to feed audiooutput buffer */
+/* callback to feed audio output buffer */
 static OSStatus caPlaybackCallback(void* inRefCon,
                                    AudioUnitRenderActionFlags* ioActionFlags,
                                    const AudioTimeStamp* inTimeStamp,
@@ -468,6 +580,54 @@ static int coreaudio_write(SWVoiceOut *sw, void *buf, int len)
     return audio_pcm_sw_write (sw, buf, len);
 }
 
+static int coreaudio_ctl_out(HWVoiceOut *hw, int cmd, ...)
+{
+    OSStatus err = noErr;
+    caVoiceOut *caVoice = (caVoiceOut *) hw;
+
+    switch (cmd)
+    {
+        case VOICE_ENABLE:
+            {
+                /* Only start the device if it is actually stopped */
+                if (!caIsRunning(caVoice->audioDeviceId))
+                {
+                    IORingBufferReset(caVoice->pBuf);
+                    err = AudioOutputUnitStart(caVoice->audioUnit);
+                    if (RT_UNLIKELY(err != noErr))
+                    {
+                        LogRel(("CoreAudio: [Output] Failed to start playback (%RI32)\n", err));
+                        return -1;
+                    }
+                }
+                break;
+            }
+        case VOICE_DISABLE:
+            {
+                /* Only stop the device if it is actually running */
+                if (caIsRunning(caVoice->audioDeviceId))
+                {
+                    err = AudioOutputUnitStop(caVoice->audioUnit);
+                    if (RT_UNLIKELY(err != noErr))
+                    {
+                        LogRel(("CoreAudio: [Output] Failed to stop playback (%RI32)\n", err));
+                        return -1;
+                    }
+                    err = AudioUnitReset(caVoice->audioUnit,
+                                         kAudioUnitScope_Input,
+                                         0);
+                    if (RT_UNLIKELY(err != noErr))
+                    {
+                        LogRel(("CoreAudio: [Output] Failed to reset AudioUnit (%RI32)\n", err));
+                        return -1;
+                    }
+                }
+                break;
+            }
+    }
+    return 0;
+}
+
 static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
 {
     OSStatus err = noErr;
@@ -481,6 +641,9 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
     UInt32 cFrames; /* default frame count */
 
     caVoiceOut *caVoice = (caVoiceOut *) hw;
+
+    caVoice->audioUnit = NULL;
+    caVoice->audioDeviceId = kAudioDeviceUnknown;
 
     /* Initialize the hardware info section with the audio settings */
     audio_pcm_init_info(&hw->info, as);
@@ -514,6 +677,32 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
     }
     else
         LogRel(("CoreAudio: [Output] Unable to get output device name (%RI32)\n", err));
+
+    /* Get the default frames buffer size, so that we can setup our internal
+     * buffers. */
+    uSize = sizeof(cFrames);
+    err = AudioDeviceGetProperty(caVoice->audioDeviceId,
+                                 0,
+                                 false,
+                                 kAudioDevicePropertyBufferFrameSize,
+                                 &uSize,
+                                 &cFrames);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to get frame buffer size of the audio device (%RI32)\n", err));
+        return -1;
+    }
+    /* Set the frame buffer size and honor any minimum/maximum restrictions on
+       the device. */
+    err = caSetFrameBufferSize(caVoice->audioDeviceId,
+                               false,
+                               cFrames,
+                               &cFrames);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to set frame buffer size on the audio device (%RI32)\n", err));
+        return -1;
+    }
 
     cd.componentType = kAudioUnitType_Output;
     cd.componentSubType = kAudioUnitSubType_HALOutput;
@@ -551,15 +740,28 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
         return -1;
     }
 
+    /* Set the default audio output device as the device for the new AudioUnit. */
+    err = AudioUnitSetProperty(caVoice->audioUnit,
+                               kAudioOutputUnitProperty_CurrentDevice,
+                               kAudioUnitScope_Output,
+                               0,
+                               &caVoice->audioDeviceId,
+                               sizeof(caVoice->audioDeviceId));
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to set current device (%RI32)\n", err));
+        return -1;
+    }
+
     /* CoreAudio will inform us on a second thread when it needs more data for
-     * output. Therfor register an callback function which will provide the new
+     * output. Therefor register an callback function which will provide the new
      * data. */
     cb.inputProc = caPlaybackCallback;
     cb.inputProcRefCon = caVoice;
 
     err = AudioUnitSetProperty(caVoice->audioUnit,
                                kAudioUnitProperty_SetRenderCallback,
-                               kAudioUnitScope_Global,
+                               kAudioUnitScope_Input,
                                0,
                                &cb,
                                sizeof(cb));
@@ -569,18 +771,17 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
         return -1;
     }
 
-    /* Set the default audio output device as the device for the new AudioUnit. */
-    err = AudioUnitSetProperty(caVoice->audioUnit,
-                               kAudioOutputUnitProperty_CurrentDevice,
-                               kAudioUnitScope_Global,
-                               0,
-                               &caVoice->audioDeviceId,
-                               sizeof(caVoice->audioDeviceId));
-    if (RT_UNLIKELY(err != noErr))
-    {
-        LogRel(("CoreAudio: [Output] Failed to set current device (%RI32)\n", err));
-        return -1;
-    }
+    /* Set the quality of the output render to the maximum. */
+/*    uFlag = kRenderQuality_High;*/
+/*    err = AudioUnitSetProperty(caVoice->audioUnit,*/
+/*                               kAudioUnitProperty_RenderQuality,*/
+/*                               kAudioUnitScope_Global,*/
+/*                               0,*/
+/*                               &uFlag,*/
+/*                               sizeof(uFlag));*/
+    /* Not fatal */
+/*    if (RT_UNLIKELY(err != noErr))*/
+/*        LogRel(("CoreAudio: [Output] Failed to set the render quality to the maximum (%RI32)\n", err));*/
 
     /* Fetch the current stream format of the device. */
     uSize = sizeof(caVoice->deviceFormat);
@@ -618,39 +819,57 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
         return -1;
     }
 
-    /* Get the default frames buffer size, so that we can setup our internal
-     * buffers. */
+    uSize = sizeof(caVoice->deviceFormat);
+    err = AudioUnitGetProperty(caVoice->audioUnit,
+                               kAudioUnitProperty_StreamFormat,
+                               kAudioUnitScope_Input,
+                               0,
+                               &caVoice->deviceFormat,
+                               &uSize);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to get device format (%RI32)\n", err));
+        return -1;
+    }
+
+    caDebugOutputAudioStreamBasicDescription("CoreAudio: [Output] device again", &caVoice->deviceFormat);
+
+    /* Also set the frame buffer size off the device on our AudioUnit. This
+       should make sure that the frames count which we receive in the render
+       thread is as we like. */
+    err = AudioUnitSetProperty(caVoice->audioUnit,
+                               kAudioUnitProperty_MaximumFramesPerSlice,
+                               kAudioUnitScope_Global,
+                               0,
+                               &cFrames,
+                               sizeof(cFrames));
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to set maximum frame buffer size on the AudioUnit (%RI32)\n", err));
+        return -1;
+    }
+
+    /* Finally initialize the new AudioUnit. */
+    err = AudioUnitInitialize(caVoice->audioUnit);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Output] Failed to initialize the AudioUnit (%RI32)\n", err));
+        return -1;
+    }
+
+    /* There are buggy devices (e.g. my bluetooth headset) which doesn't honor
+     * the frame buffer size set in the previous calls. So finally get the
+     * frame buffer size after the AudioUnit was initialized. */
     uSize = sizeof(cFrames);
     err = AudioUnitGetProperty(caVoice->audioUnit,
-                               kAudioDevicePropertyBufferFrameSize,
-                               kAudioUnitScope_Output,
+                               kAudioUnitProperty_MaximumFramesPerSlice,
+                               kAudioUnitScope_Global,
                                0,
                                &cFrames,
                                &uSize);
     if (RT_UNLIKELY(err != noErr))
     {
-        LogRel(("CoreAudio: [Output] Failed to get frame buffer size (%RI32)\n", err));
-        return -1;
-    }
-
-/*    cFrames = 1024;*/
-/*    err = AudioUnitSetProperty(caVoice->audioUnit,*/
-/*                               kAudioDevicePropertyBufferFrameSize,*/
-/*                               kAudioUnitScope_Output,*/
-/*                               0,*/
-/*                               &cFrames,*/
-/*                               sizeof(cFrames));*/
-/*    if (RT_UNLIKELY(err != noErr))*/
-/*    {*/
-/*        LogRel(("CoreAudio: [Output] Failed to set frame buffer size (%RI32)\n", err));*/
-/*        return -1;*/
-/*    }*/
-
-    /* Finaly init the new AudioUnit. */
-    err = AudioUnitInitialize(caVoice->audioUnit);
-    if (RT_UNLIKELY(err != noErr))
-    {
-        LogRel(("CoreAudio: [Output] Failed to initialize the AudioUnit (%RI32)\n", err));
+        LogRel(("CoreAudio: [Output] Failed to get maximum frame buffer size from the AudioUnit (%RI32)\n", err));
         return -1;
     }
 
@@ -671,19 +890,25 @@ static int coreaudio_init_out(HWVoiceOut *hw, audsettings_t *as)
 
 static void coreaudio_fini_out(HWVoiceOut *hw)
 {
+    int rc = 0;
     OSStatus err = noErr;
     caVoiceOut *caVoice = (caVoiceOut *) hw;
 
-    /* Only stop the device if it is actually running */
-    if (caIsRunning(caVoice->audioDeviceId))
-        err = AudioOutputUnitStop(caVoice->audioUnit);
-    if (RT_LIKELY(err == noErr))
+    rc = coreaudio_ctl_out(hw, VOICE_DISABLE);
+    if (RT_LIKELY(rc == 0))
     {
         err = AudioUnitUninitialize(caVoice->audioUnit);
         if (RT_LIKELY(err == noErr))
         {
-            caVoice->audioDeviceId = kAudioDeviceUnknown;
-            IORingBufferDestroy(caVoice->pBuf);
+            err = CloseComponent(caVoice->audioUnit);
+            if (RT_LIKELY(err == noErr))
+            {
+                caVoice->audioUnit = NULL;
+                caVoice->audioDeviceId = kAudioDeviceUnknown;
+                IORingBufferDestroy(caVoice->pBuf);
+            }
+            else
+                LogRel(("CoreAudio: [Output] Failed to close the AudioUnit (%RI32)\n", err));
         }
         else
             LogRel(("CoreAudio: [Output] Failed to uninitialize the AudioUnit (%RI32)\n", err));
@@ -692,49 +917,54 @@ static void coreaudio_fini_out(HWVoiceOut *hw)
         LogRel(("CoreAudio: [Output] Failed to stop playback (%RI32)\n", err));
 }
 
-static int coreaudio_ctl_out(HWVoiceOut *hw, int cmd, ...)
-{
-    OSStatus err = noErr;
-    caVoiceOut *caVoice = (caVoiceOut *) hw;
-
-    switch (cmd)
-    {
-        case VOICE_ENABLE:
-            {
-                /* Only start the device if it is actually stopped */
-                if (!caIsRunning(caVoice->audioDeviceId))
-                {
-                    IORingBufferReset(caVoice->pBuf);
-                    err = AudioOutputUnitStart(caVoice->audioUnit);
-                }
-                if (RT_UNLIKELY(err != noErr))
-                {
-                    LogRel(("CoreAudio: [Output] Failed to start playback (%RI32)\n", err));
-                    return -1;
-                }
-                break;
-            }
-        case VOICE_DISABLE:
-            {
-                /* Only stop the device if it is actually running */
-                if (caIsRunning(caVoice->audioDeviceId))
-                    err = AudioOutputUnitStop(caVoice->audioUnit);
-                if (RT_UNLIKELY(err != noErr))
-                {
-                    LogRel(("CoreAudio: [Input] Failed to stop playback (%RI32)\n", err));
-                    return -1;
-                }
-                break;
-            }
-    }
-    return 0;
-}
-
 /*******************************************************************************
  *
  * CoreAudio input section
  *
  ******************************************************************************/
+
+/* callback to convert audio input data from one format to another */
+static OSStatus caConverterCallback(AudioConverterRef inAudioConverter,
+                                    UInt32 *ioNumberDataPackets,
+                                    AudioBufferList *ioData,
+                                    AudioStreamPacketDescription **outDataPacketDescription,
+                                    void *inUserData)
+{
+    /* In principle we had to check here if the source is non interleaved & if
+     * so go through all buffers not only the first one like now. */
+    UInt32 cSize = 0;
+
+    caVoiceIn *caVoice = (caVoiceIn *) inUserData;
+
+    const AudioBufferList *pBufferList = &caVoice->bufferList;
+/*    Log2(("converting .... ################ %RU32  %RU32 %RU32 %RU32 %RU32\n", *ioNumberDataPackets, bufferList->mBuffers[i].mNumberChannels, bufferList->mNumberBuffers, bufferList->mBuffers[i].mDataByteSize, ioData->mNumberBuffers));*/
+
+    /* Use the lower one of the packets to process & the available packets in
+     * the buffer */
+    cSize = RT_MIN(*ioNumberDataPackets * caVoice->deviceFormat.mBytesPerPacket,
+                   pBufferList->mBuffers[0].mDataByteSize - caVoice->rpos);
+    /* Set the new size on output, so the caller know what we have processed. */
+    *ioNumberDataPackets = cSize / caVoice->deviceFormat.mBytesPerPacket;
+    /* If no data is available anymore we return with an error code. This error
+     * code will be returned from AudioConverterFillComplexBuffer. */
+    if (*ioNumberDataPackets == 0)
+    {
+        ioData->mBuffers[0].mDataByteSize = 0;
+        ioData->mBuffers[0].mData = NULL;
+        return caConverterEOFDErr;
+    }
+    else
+    {
+        ioData->mBuffers[0].mNumberChannels = pBufferList->mBuffers[0].mNumberChannels;
+        ioData->mBuffers[0].mDataByteSize = cSize;
+        ioData->mBuffers[0].mData = (char*)pBufferList->mBuffers[0].mData + caVoice->rpos;
+        caVoice->rpos += cSize;
+
+        /*    Log2(("converting .... ################ %RU32 %RU32\n", size, caVoice->rpos));*/
+    }
+
+    return noErr;
+}
 
 /* callback to feed audio input buffer */
 static OSStatus caRecordingCallback(void* inRefCon,
@@ -750,6 +980,8 @@ static OSStatus caRecordingCallback(void* inRefCon,
     uint32_t cbToWrite = 0;
     uint32_t csWritten = 0;
     char *pcDst = NULL;
+    AudioBufferList tmpList;
+    UInt32 ioOutputDataPacketSize = 0;
 
     caVoiceIn *caVoice = (caVoiceIn *) inRefCon;
 
@@ -757,57 +989,144 @@ static OSStatus caRecordingCallback(void* inRefCon,
     if (inNumberFrames == 0)
         return noErr;
 
-    caVoice->pcaBufferList->mBuffers[0].mDataByteSize = caVoice->streamFormat.mBytesPerFrame * inNumberFrames;
-    caVoice->pcaBufferList->mBuffers[0].mData = RTMemAlloc(caVoice->pcaBufferList->mBuffers[0].mDataByteSize);
-
-    err = AudioUnitRender(caVoice->audioUnit,
-                          ioActionFlags,
-                          inTimeStamp,
-                          inBusNumber,
-                          inNumberFrames,
-                          caVoice->pcaBufferList);
-    if(RT_UNLIKELY(err != noErr))
+    /* Are we using an converter? */
+    if (VALID_PTR(caVoice->converter))
     {
-        Log(("CoreAudio: [Input] Failed to render audio data (%RI32)\n", err));
-        RTMemFree(caVoice->pcaBufferList->mBuffers[0].mData);
-        return err;
+        /* Firstly render the data as usual */
+        caVoice->bufferList.mBuffers[0].mNumberChannels = caVoice->deviceFormat.mChannelsPerFrame;
+        caVoice->bufferList.mBuffers[0].mDataByteSize = caVoice->deviceFormat.mBytesPerFrame * inNumberFrames;
+        caVoice->bufferList.mBuffers[0].mData = RTMemAlloc(caVoice->bufferList.mBuffers[0].mDataByteSize);
+
+        err = AudioUnitRender(caVoice->audioUnit,
+                              ioActionFlags,
+                              inTimeStamp,
+                              inBusNumber,
+                              inNumberFrames,
+                              &caVoice->bufferList);
+        if(RT_UNLIKELY(err != noErr))
+        {
+            Log(("CoreAudio: [Input] Failed to render audio data (%RI32)\n", err));
+            RTMemFree(caVoice->bufferList.mBuffers[0].mData);
+            return err;
+        }
+
+        /* How much space is free in the ring buffer? */
+        csAvail = IORingBufferFree(caVoice->pBuf) >> caVoice->hw.info.shift; /* bytes -> samples */
+        /* How much space is used in the core audio buffer. Use the smaller size of
+         * the too. */
+        csAvail = RT_MIN(csAvail, (uint32_t)((caVoice->bufferList.mBuffers[0].mDataByteSize / caVoice->deviceFormat.mBytesPerFrame) * caVoice->sampleRatio));
+
+        Log2(("CoreAudio: [Input] Start writing buffer with %RU32 samples (%RU32 bytes)\n", csAvail, csAvail << caVoice->hw.info.shift));
+        /* Initialize the temporary output buffer */
+        tmpList.mNumberBuffers = 1;
+        tmpList.mBuffers[0].mNumberChannels = caVoice->streamFormat.mChannelsPerFrame;
+        /* Set the read position to zero. */
+        caVoice->rpos = 0;
+        /* Iterate as long as data is available */
+        while(csWritten < csAvail)
+        {
+            /* How much is left? */
+            csToWrite = csAvail - csWritten;
+            cbToWrite = csToWrite << caVoice->hw.info.shift;
+            Log2(("CoreAudio: [Input] Try writing %RU32 samples (%RU32 bytes)\n", csToWrite, cbToWrite));
+            /* Try to acquire the necessary space from the ring buffer. */
+            IORingBufferAquireWriteBlock(caVoice->pBuf, cbToWrite, &pcDst, &cbToWrite);
+            /* How much to we get? */
+            csToWrite = cbToWrite >> caVoice->hw.info.shift;
+            Log2(("CoreAudio: [Input] There is space for %RU32 samples (%RU32 bytes) available\n", csToWrite, cbToWrite));
+            /* Break if nothing is free anymore. */
+            if (RT_UNLIKELY(cbToWrite == 0))
+                break;
+
+            /* Now set how much space is available for output */
+            ioOutputDataPacketSize = cbToWrite / caVoice->streamFormat.mBytesPerPacket;
+            /* Set our ring buffer as target. */
+            tmpList.mBuffers[0].mDataByteSize = cbToWrite;
+            tmpList.mBuffers[0].mData = pcDst;
+            AudioConverterReset(caVoice->converter);
+            err = AudioConverterFillComplexBuffer(caVoice->converter,
+                                                  caConverterCallback,
+                                                  caVoice,
+                                                  &ioOutputDataPacketSize,
+                                                  &tmpList,
+                                                  NULL);
+            if(   RT_UNLIKELY(err != noErr)
+               && err != caConverterEOFDErr)
+            {
+                Log(("CoreAudio: [Input] Failed to convert audio data (%RI32:%c%c%c%c)\n", err, RT_BYTE4(err), RT_BYTE3(err), RT_BYTE2(err), RT_BYTE1(err)));
+                break;
+            }
+            /* Check in any case what processed size is returned. It could be
+             * much littler than we expected. */
+            cbToWrite = ioOutputDataPacketSize * caVoice->streamFormat.mBytesPerPacket;
+            csToWrite = cbToWrite >> caVoice->hw.info.shift;
+            /* Release the ring buffer, so the main thread could start reading this data. */
+            IORingBufferReleaseWriteBlock(caVoice->pBuf, cbToWrite);
+            csWritten += csToWrite;
+            /* If the error is "End of Data" it means there is no data anymore
+             * which could be converted. So end here now. */
+            if (err == caConverterEOFDErr)
+                break;
+        }
+        /* Cleanup */
+        RTMemFree(caVoice->bufferList.mBuffers[0].mData);
+        Log2(("CoreAudio: [Input] Finished writing buffer with %RU32 samples (%RU32 bytes)\n", csWritten, csWritten << caVoice->hw.info.shift));
+    }
+    else
+    {
+        caVoice->bufferList.mBuffers[0].mNumberChannels = caVoice->streamFormat.mChannelsPerFrame;
+        caVoice->bufferList.mBuffers[0].mDataByteSize = caVoice->streamFormat.mBytesPerFrame * inNumberFrames;
+        caVoice->bufferList.mBuffers[0].mData = RTMemAlloc(caVoice->bufferList.mBuffers[0].mDataByteSize);
+
+        err = AudioUnitRender(caVoice->audioUnit,
+                              ioActionFlags,
+                              inTimeStamp,
+                              inBusNumber,
+                              inNumberFrames,
+                              &caVoice->bufferList);
+        if(RT_UNLIKELY(err != noErr))
+        {
+            Log(("CoreAudio: [Input] Failed to render audio data (%RI32)\n", err));
+            RTMemFree(caVoice->bufferList.mBuffers[0].mData);
+            return err;
+        }
+
+        /* How much space is free in the ring buffer? */
+        csAvail = IORingBufferFree(caVoice->pBuf) >> caVoice->hw.info.shift; /* bytes -> samples */
+        /* How much space is used in the core audio buffer. Use the smaller size of
+         * the too. */
+        csAvail = RT_MIN(csAvail, caVoice->bufferList.mBuffers[0].mDataByteSize >> caVoice->hw.info.shift);
+
+        Log2(("CoreAudio: [Input] Start writing buffer with %RU32 samples (%RU32 bytes)\n", csAvail, csAvail << caVoice->hw.info.shift));
+
+        /* Iterate as long as data is available */
+        while(csWritten < csAvail)
+        {
+            /* How much is left? */
+            csToWrite = csAvail - csWritten;
+            cbToWrite = csToWrite << caVoice->hw.info.shift;
+            Log2(("CoreAudio: [Input] Try writing %RU32 samples (%RU32 bytes)\n", csToWrite, cbToWrite));
+            /* Try to aquire the necessary space from the ring buffer. */
+            IORingBufferAquireWriteBlock(caVoice->pBuf, cbToWrite, &pcDst, &cbToWrite);
+            /* How much to we get? */
+            csToWrite = cbToWrite >> caVoice->hw.info.shift;
+            Log2(("CoreAudio: [Input] There is space for %RU32 samples (%RU32 bytes) available\n", csToWrite, cbToWrite));
+            /* Break if nothing is free anymore. */
+            if (RT_UNLIKELY(cbToWrite == 0))
+                break;
+            /* Copy the data from the core audio buffer to the ring buffer. */
+            memcpy(pcDst, (char*)caVoice->bufferList.mBuffers[0].mData + (csWritten << caVoice->hw.info.shift), cbToWrite);
+            /* Release the ring buffer, so the main thread could start reading this data. */
+            IORingBufferReleaseWriteBlock(caVoice->pBuf, cbToWrite);
+            csWritten += csToWrite;
+        }
+        /* Cleanup */
+        RTMemFree(caVoice->bufferList.mBuffers[0].mData);
+
+        Log2(("CoreAudio: [Input] Finished writing buffer with %RU32 samples (%RU32 bytes)\n", csWritten, csWritten << caVoice->hw.info.shift));
     }
 
-    /* How much space is free in the ring buffer? */
-    csAvail = IORingBufferFree(caVoice->pBuf) >> caVoice->hw.info.shift; /* bytes -> samples */
-    /* How much space is used in the core audio buffer. Use the smaller size of
-     * the too. */
-    csAvail = RT_MIN(csAvail, caVoice->pcaBufferList->mBuffers[0].mDataByteSize >> caVoice->hw.info.shift);
-
-    Log2(("CoreAudio: [Input] Start writing buffer with %RU32 samples (%RU32 bytes)\n", csAvail, csAvail << caVoice->hw.info.shift));
-
-    /* Iterate as long as data is available */
-    while(csWritten < csAvail)
-    {
-        /* How much is left? */
-        csToWrite = csAvail - csWritten;
-        cbToWrite = csToWrite << caVoice->hw.info.shift;
-        Log2(("CoreAudio: [Input] Try writing %RU32 samples (%RU32 bytes)\n", csToWrite, cbToWrite));
-        /* Try to aquire the necessary space from the ring buffer. */
-        IORingBufferAquireWriteBlock(caVoice->pBuf, cbToWrite, &pcDst, &cbToWrite);
-        /* How much to we get? */
-        csToWrite = cbToWrite >> caVoice->hw.info.shift;
-        Log2(("CoreAudio: [Input] There is space for %RU32 samples (%RU32 bytes) available\n", csToWrite, cbToWrite));
-        /* Break if nothing is free anymore. */
-        if (RT_UNLIKELY(cbToWrite == 0))
-            break;
-        /* Copy the data from the core audio buffer to the ring buffer. */
-        memcpy(pcDst, (char*)caVoice->pcaBufferList->mBuffers[0].mData + (csWritten << caVoice->hw.info.shift), cbToWrite);
-        /* Release the ring buffer, so the main thread could start reading this data. */
-        IORingBufferReleaseWriteBlock(caVoice->pBuf, cbToWrite);
-        csWritten += csToWrite;
-    }
-    /* Cleanup */
-    RTMemFree(caVoice->pcaBufferList->mBuffers[0].mData);
-
-    Log2(("CoreAudio: [Input] Finished writing buffer with %RU32 samples (%RU32 bytes)\n", csWritten, csWritten << caVoice->hw.info.shift));
-
-    return noErr;
+    return err;
 }
 
 static int coreaudio_run_in(HWVoiceIn *hw)
@@ -864,6 +1183,54 @@ static int coreaudio_read(SWVoiceIn *sw, void *buf, int size)
     return audio_pcm_sw_read (sw, buf, size);
 }
 
+static int coreaudio_ctl_in(HWVoiceIn *hw, int cmd, ...)
+{
+    OSStatus err = noErr;
+    caVoiceIn *caVoice = (caVoiceIn *) hw;
+
+    switch (cmd)
+    {
+        case VOICE_ENABLE:
+            {
+                /* Only start the device if it is actually stopped */
+                if (!caIsRunning(caVoice->audioDeviceId))
+                {
+                    IORingBufferReset(caVoice->pBuf);
+                    err = AudioOutputUnitStart(caVoice->audioUnit);
+                }
+                if (RT_UNLIKELY(err != noErr))
+                {
+                    LogRel(("CoreAudio: [Input] Failed to start recording (%RI32)\n", err));
+                    return -1;
+                }
+                break;
+            }
+        case VOICE_DISABLE:
+            {
+                /* Only stop the device if it is actually running */
+                if (caIsRunning(caVoice->audioDeviceId))
+                {
+                    err = AudioOutputUnitStop(caVoice->audioUnit);
+                    if (RT_UNLIKELY(err != noErr))
+                    {
+                        LogRel(("CoreAudio: [Input] Failed to stop recording (%RI32)\n", err));
+                        return -1;
+                    }
+                    err = AudioUnitReset(caVoice->audioUnit,
+                                         kAudioUnitScope_Input,
+                                         0);
+                    if (RT_UNLIKELY(err != noErr))
+                    {
+                        LogRel(("CoreAudio: [Input] Failed to reset AudioUnit (%RI32)\n", err));
+                        return -1;
+                    }
+                }
+                break;
+            }
+    }
+    return 0;
+}
+
 static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
 {
     OSStatus err = noErr;
@@ -876,8 +1243,14 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
     Component cp; /* an audio component */
     AURenderCallbackStruct cb; /* holds the callback structure */
     UInt32 cFrames; /* default frame count */
+    const SInt32 channelMap[2] = {0, 0}; /* Channel map for mono -> stereo */
 
     caVoiceIn *caVoice = (caVoiceIn *) hw;
+
+    caVoice->audioUnit = NULL;
+    caVoice->audioDeviceId = kAudioDeviceUnknown;
+    caVoice->converter = NULL;
+    caVoice->sampleRatio = 1;
 
     /* Initialize the hardware info section with the audio settings */
     audio_pcm_init_info(&hw->info, as);
@@ -911,6 +1284,32 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
     }
     else
         LogRel(("CoreAudio: [Input] Unable to get input device name (%RI32)\n", err));
+
+    /* Get the default frames buffer size, so that we can setup our internal
+     * buffers. */
+    uSize = sizeof(cFrames);
+    err = AudioDeviceGetProperty(caVoice->audioDeviceId,
+                                 0,
+                                 true,
+                                 kAudioDevicePropertyBufferFrameSize,
+                                 &uSize,
+                                 &cFrames);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Input] Failed to get frame buffer size of the audio device (%RI32)\n", err));
+        return -1;
+    }
+    /* Set the frame buffer size and honor any minimum/maximum restrictions on
+       the device. */
+    err = caSetFrameBufferSize(caVoice->audioDeviceId,
+                               true,
+                               cFrames,
+                               &cFrames);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Input] Failed to set frame buffer size on the audio device (%RI32)\n", err));
+        return -1;
+    }
 
     cd.componentType = kAudioUnitType_Output;
     cd.componentSubType = kAudioUnitSubType_HALOutput;
@@ -963,8 +1362,21 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
         return -1;
     }
 
+    /* Set the default audio input device as the device for the new AudioUnit. */
+    err = AudioUnitSetProperty(caVoice->audioUnit,
+                               kAudioOutputUnitProperty_CurrentDevice,
+                               kAudioUnitScope_Global,
+                               0,
+                               &caVoice->audioDeviceId,
+                               sizeof(caVoice->audioDeviceId));
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Input] Failed to set current device (%RI32)\n", err));
+        return -1;
+    }
+
     /* CoreAudio will inform us on a second thread for new incoming audio data.
-     * Therfor register an callback function, which will process the new data.
+     * Therefor register an callback function, which will process the new data.
      * */
     cb.inputProc = caRecordingCallback;
     cb.inputProcRefCon = caVoice;
@@ -980,31 +1392,6 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
         LogRel(("CoreAudio: [Input] Failed to set callback (%RI32)\n", err));
         return -1;
     }
-
-    /* Set the default audio input device as the device for the new AudioUnit. */
-    err = AudioUnitSetProperty(caVoice->audioUnit,
-                               kAudioOutputUnitProperty_CurrentDevice,
-                               kAudioUnitScope_Global,
-                               0,
-                               &caVoice->audioDeviceId,
-                               sizeof(caVoice->audioDeviceId));
-    if (RT_UNLIKELY(err != noErr))
-    {
-        LogRel(("CoreAudio: [Input] Failed to set current device (%RI32)\n", err));
-        return -1;
-    }
-
-/*    UInt32 fpb = 1024;*/
-/*    if (AudioDeviceSetProperty(core->audioDeviceId,*/
-/*                               NULL,*/
-/*                               0,*/
-/*                               1,*/
-/*                               kAudioDevicePropertyBufferSize,*/
-/*                               sizeof(fpb), &fpb) != noErr)*/
-/*    {*/
-/*        LogRel(("CoreAudio: [Input] Unable to set frame buffer size)\n"));*/
-/*        return -1;*/
-/*    }*/
 
     /* Fetch the current stream format of the device. */
     uSize = sizeof(caVoice->deviceFormat);
@@ -1030,17 +1417,71 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
 #endif /* DEBUG */
 
     /* If the frequency of the device is different from the requested one we
-     * need a converter. */
-    if (caVoice->deviceFormat.mSampleRate != caVoice->streamFormat.mSampleRate)
+     * need a converter. The same count if the number of channels is different. */
+    if (   caVoice->deviceFormat.mSampleRate != caVoice->streamFormat.mSampleRate
+        || caVoice->deviceFormat.mChannelsPerFrame != caVoice->streamFormat.mChannelsPerFrame)
     {
+        err = AudioConverterNew(&caVoice->deviceFormat,
+                                &caVoice->streamFormat,
+                                &caVoice->converter);
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: [Input] Failed to create the audio converter (%RI32)\n", err));
+            return -1;
+        }
+
+        if (caVoice->deviceFormat.mChannelsPerFrame == 1 &&
+            caVoice->streamFormat.mChannelsPerFrame == 2)
+        {
+            /* If the channel count is different we have to tell this the converter
+               and supply a channel mapping. For now we only support mapping
+               from mono to stereo. For all other cases the core audio defaults
+               are used, which means dropping additional channels in most
+               cases. */
+            err = AudioConverterSetProperty(caVoice->converter,
+                                            kAudioConverterChannelMap,
+                                            sizeof(channelMap),
+                                            channelMap);
+            if (RT_UNLIKELY(err != noErr))
+            {
+                LogRel(("CoreAudio: [Input] Failed to add a channel mapper to the audio converter (%RI32)\n", err));
+                return -1;
+            }
+        }
+        /* Set sample rate converter quality to maximum */
+/*        uFlag = kAudioConverterQuality_Max;*/
+/*        err = AudioConverterSetProperty(caVoice->converter,*/
+/*                                        kAudioConverterSampleRateConverterQuality,*/
+/*                                        sizeof(uFlag),*/
+/*                                        &uFlag);*/
+        /* Not fatal */
+/*        if (RT_UNLIKELY(err != noErr))*/
+/*            LogRel(("CoreAudio: [Input] Failed to set the audio converter quality to the maximum (%RI32)\n", err));*/
+
         Log(("CoreAudio: [Input] Converter in use\n"));
-        /* Set the device format description for the stream. */
+        /* Set the new format description for the stream. */
         err = AudioUnitSetProperty(caVoice->audioUnit,
                                    kAudioUnitProperty_StreamFormat,
                                    kAudioUnitScope_Output,
                                    1,
                                    &caVoice->deviceFormat,
                                    sizeof(caVoice->deviceFormat));
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: [Input] Failed to set stream format (%RI32)\n", err));
+            return -1;
+        }
+        err = AudioUnitSetProperty(caVoice->audioUnit,
+                                   kAudioUnitProperty_StreamFormat,
+                                   kAudioUnitScope_Input,
+                                   1,
+                                   &caVoice->deviceFormat,
+                                   sizeof(caVoice->deviceFormat));
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: [Input] Failed to set stream format (%RI32)\n", err));
+            return -1;
+        }
     }
     else
     {
@@ -1051,29 +1492,29 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
                                    1,
                                    &caVoice->streamFormat,
                                    sizeof(caVoice->streamFormat));
-    }
-    if (RT_UNLIKELY(err != noErr))
-    {
-        LogRel(("CoreAudio: [Input] Failed to set stream format (%RI32)\n", err));
-        return -1;
+        if (RT_UNLIKELY(err != noErr))
+        {
+            LogRel(("CoreAudio: [Input] Failed to set stream format (%RI32)\n", err));
+            return -1;
+        }
     }
 
-    /* Get the default frames per slice size, so that we can setup our internal
-     * buffers. */
-    uSize = sizeof(cFrames);
-    err = AudioUnitGetProperty(caVoice->audioUnit,
-                               kAudioDevicePropertyBufferFrameSize,
+    /* Also set the frame buffer size off the device on our AudioUnit. This
+       should make sure that the frames count which we receive in the render
+       thread is as we like. */
+    err = AudioUnitSetProperty(caVoice->audioUnit,
+                               kAudioUnitProperty_MaximumFramesPerSlice,
                                kAudioUnitScope_Global,
-                               0,
+                               1,
                                &cFrames,
-                               &uSize);
+                               sizeof(cFrames));
     if (RT_UNLIKELY(err != noErr))
     {
-        LogRel(("CoreAudio: [Input] Failed to get maximum frame per slice (%RI32)\n", err));
+        LogRel(("CoreAudio: [Input] Failed to set maximum frame buffer size on the AudioUnit (%RI32)\n", err));
         return -1;
     }
 
-    /* Finaly init the new AudioUnit. */
+    /* Finally initialize the new AudioUnit. */
     err = AudioUnitInitialize(caVoice->audioUnit);
     if (RT_UNLIKELY(err != noErr))
     {
@@ -1081,34 +1522,64 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
         return -1;
     }
 
+    uSize = sizeof(caVoice->deviceFormat);
+    err = AudioUnitGetProperty(caVoice->audioUnit,
+                               kAudioUnitProperty_StreamFormat,
+                               kAudioUnitScope_Output,
+                               1,
+                               &caVoice->deviceFormat,
+                               &uSize);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Input] Failed to get device format (%RI32)\n", err));
+        return -1;
+    }
+
+    /* There are buggy devices (e.g. my bluetooth headset) which doesn't honor
+     * the frame buffer size set in the previous calls. So finally get the
+     * frame buffer size after the AudioUnit was initialized. */
+    uSize = sizeof(cFrames);
+    err = AudioUnitGetProperty(caVoice->audioUnit,
+                               kAudioUnitProperty_MaximumFramesPerSlice,
+                               kAudioUnitScope_Global,
+                               0,
+                               &cFrames,
+                               &uSize);
+    if (RT_UNLIKELY(err != noErr))
+    {
+        LogRel(("CoreAudio: [Input] Failed to get maximum frame buffer size from the AudioUnit (%RI32)\n", err));
+        return -1;
+    }
+
+    /* Calculate the ratio between the device and the stream sample rate. */
+    caVoice->sampleRatio = caVoice->streamFormat.mSampleRate / caVoice->deviceFormat.mSampleRate;
+
     /* Set to zero first */
-    caVoice->pcaBufferList = NULL;
     caVoice->pBuf = NULL;
     /* Create the AudioBufferList structure with one buffer. */
-    caVoice->pcaBufferList = RTMemAllocZ(sizeof(AudioBufferList) + sizeof(AudioBuffer));
-    if (VALID_PTR(caVoice->pcaBufferList))
-    {
-        caVoice->pcaBufferList->mNumberBuffers = 1;
-        /* Initialize the buffer to nothing. */
-        caVoice->pcaBufferList->mBuffers[0].mNumberChannels = caVoice->streamFormat.mChannelsPerFrame;
-        caVoice->pcaBufferList->mBuffers[0].mDataByteSize = 0;
-        caVoice->pcaBufferList->mBuffers[0].mData = NULL;
+    caVoice->bufferList.mNumberBuffers = 1;
+    /* Initialize the buffer to nothing. */
+    caVoice->bufferList.mBuffers[0].mNumberChannels = caVoice->streamFormat.mChannelsPerFrame;
+    caVoice->bufferList.mBuffers[0].mDataByteSize = 0;
+    caVoice->bufferList.mBuffers[0].mData = NULL;
 
-        /* Create the internal ring buffer. */
-        hw->samples = cFrames * caVoice->streamFormat.mChannelsPerFrame;
-        IORingBufferCreate(&caVoice->pBuf, hw->samples << hw->info.shift);
-        if (VALID_PTR(caVoice->pBuf))
-            rc = 0;
-        else
-            LogRel(("CoreAudio: [Input] Failed to create internal ring buffer\n"));
-    }
+    /* Make sure that the ring buffer is big enough to hold the recording
+     * data. Compare the maximum frames per slice value with the frames
+     * necessary when using the converter where the sample rate could differ.
+     * The result is always multiplied by the channels per frame to get the
+     * samples count. */
+    hw->samples = RT_MAX( cFrames,
+                         (cFrames * caVoice->deviceFormat.mBytesPerFrame * caVoice->sampleRatio) / caVoice->streamFormat.mBytesPerFrame)
+                  * caVoice->streamFormat.mChannelsPerFrame;
+    /* Create the internal ring buffer. */
+    IORingBufferCreate(&caVoice->pBuf, hw->samples << hw->info.shift);
+    if (VALID_PTR(caVoice->pBuf))
+        rc = 0;
     else
-        LogRel(("CoreAudio: [Input] Failed to create the audio buffer list\n"));
+        LogRel(("CoreAudio: [Input] Failed to create internal ring buffer\n"));
 
     if (rc != 0)
     {
-        if (caVoice->pcaBufferList)
-            RTMemFree(caVoice->pcaBufferList);
         if (caVoice->pBuf)
             IORingBufferDestroy(caVoice->pBuf);
         AudioUnitUninitialize(caVoice->audioUnit);
@@ -1121,64 +1592,33 @@ static int coreaudio_init_in(HWVoiceIn *hw, audsettings_t *as)
 
 static void coreaudio_fini_in(HWVoiceIn *hw)
 {
+    int rc = 0;
     OSStatus err = noErr;
     caVoiceIn *caVoice = (caVoiceIn *) hw;
 
-    /* Only stop the device if it is actually running */
-    if (caIsRunning(caVoice->audioDeviceId))
-        err = AudioOutputUnitStop(caVoice->audioUnit);
-    if (RT_LIKELY(err == noErr))
+    rc = coreaudio_ctl_in(hw, VOICE_DISABLE);
+    if (RT_LIKELY(rc == 0))
     {
+        if (caVoice->converter)
+            AudioConverterDispose(caVoice->converter);
         err = AudioUnitUninitialize(caVoice->audioUnit);
         if (RT_LIKELY(err == noErr))
         {
-            caVoice->audioDeviceId = kAudioDeviceUnknown;
-            IORingBufferDestroy(caVoice->pBuf);
-            RTMemFree(caVoice->pcaBufferList);
+            err = CloseComponent(caVoice->audioUnit);
+            if (RT_LIKELY(err == noErr))
+            {
+                caVoice->audioUnit = NULL;
+                caVoice->audioDeviceId = kAudioDeviceUnknown;
+                IORingBufferDestroy(caVoice->pBuf);
+            }
+            else
+                LogRel(("CoreAudio: [Input] Failed to close the AudioUnit (%RI32)\n", err));
         }
         else
             LogRel(("CoreAudio: [Input] Failed to uninitialize the AudioUnit (%RI32)\n", err));
     }
     else
         LogRel(("CoreAudio: [Input] Failed to stop recording (%RI32)\n", err));
-}
-
-static int coreaudio_ctl_in(HWVoiceIn *hw, int cmd, ...)
-{
-    OSStatus err = noErr;
-    caVoiceIn *caVoice = (caVoiceIn *) hw;
-
-    switch (cmd)
-    {
-        case VOICE_ENABLE:
-            {
-                /* Only start the device if it is actually stopped */
-                if (!caIsRunning(caVoice->audioDeviceId))
-                {
-                    IORingBufferReset(caVoice->pBuf);
-                    err = AudioOutputUnitStart(caVoice->audioUnit);
-                }
-                if (RT_UNLIKELY(err != noErr))
-                {
-                    LogRel(("CoreAudio: [Input] Failed to start recording (%RI32)\n", err));
-                    return -1;
-                }
-                break;
-            }
-        case VOICE_DISABLE:
-            {
-                /* Only stop the device if it is actually running */
-                if (caIsRunning(caVoice->audioDeviceId))
-                    err = AudioOutputUnitStop(caVoice->audioUnit);
-                if (RT_UNLIKELY(err != noErr))
-                {
-                    LogRel(("CoreAudio: [Input] Failed to stop recording (%RI32)\n", err));
-                    return -1;
-                }
-                break;
-            }
-    }
-    return 0;
 }
 
 /*******************************************************************************
