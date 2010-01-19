@@ -5786,9 +5786,14 @@ void Machine::uninitDataAndChildObjects()
 
     if (getClassID() == clsidMachine)
     {
-        /* reset some important fields of mData */
+        // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children recursively)
+        if (mData->mFirstSnapshot)
+        {
+            mData->mFirstSnapshot->uninit();
+            mData->mFirstSnapshot.setNull();
+        }
+
         mData->mCurrentSnapshot.setNull();
-        mData->mFirstSnapshot.setNull();
     }
 
     /* free data structures (the essential mData structure is not freed here
