@@ -314,7 +314,7 @@ endif
 #
 $(addprefix $(SOLARIS_VBOXADDINST_DIR_32)/,$(SOLARIS_ADD_STRIP_BINS)): \
 		$(SOLARIS_VBOXADDINST_DIR_32)/% : $(SOLARIS_ADD_OUT_BIN_32)/% | $$(dir $$@)
-	$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s,) $< $@
+	$(INSTALL) -m 0755 $(if $(VBOX_DO_STRIP),-s,) $< $@
 
 $(addprefix $(SOLARIS_ADD_SYSLIBINST_DIR_32)/,$(SOLARIS_ADD_SYSLIBS)): \
 		$(SOLARIS_ADD_SYSLIBINST_DIR_32)/% : $(SOLARIS_ADD_OUT_BIN_32)/% | $$(dir $$@)
