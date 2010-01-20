@@ -255,9 +255,12 @@ RTDECL(void) RTPathStripExt(char *pszPath);
 /**
  * Strips the trailing slashes of a path name.
  *
+ * Won't strip root slashes.
+ *
+ * @returns The new length of pszPath.
  * @param   pszPath     Path to strip.
  */
-RTDECL(void) RTPathStripTrailingSlash(char *pszPath);
+RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 
 /**
  * Parses a path.
