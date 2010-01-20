@@ -33,6 +33,7 @@
 #include <iprt/env.h>
 #include <iprt/initterm.h>
 #include <iprt/path.h>
+#include <iprt/param.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <VBox/VBoxGuestLib.h>
@@ -49,7 +50,7 @@ static int (*gpfnOldIOErrorHandler)(Display *) = NULL;
 VBoxClient::Service *g_pService;
 /** The name of our pidfile.  It is global for the benefit of the cleanup
  * routine. */
-static char *g_pszPidFile;
+static char g_szPidFile[RTPATH_MAX];
 /** The file handle of our pidfile.  It is global for the benefit of the
  * cleanup routine. */
 static RTFILE g_hPidFile;
@@ -63,8 +64,8 @@ void VBoxClient::CleanUp()
         g_pService->cleanup();
         delete g_pService;
     }
-    if (g_pszPidFile && g_hPidFile)
-        VbglR3ClosePidFile(g_pszPidFile, g_hPidFile);
+    if (g_szPidFile && g_hPidFile)
+        VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
     VbglR3Term();
     exit(0);
 }
@@ -229,20 +230,23 @@ int main(int argc, char *argv[])
             return 1;
         }
     }
-    const char *pszHome = RTEnvGet("HOME");
-    if (pszHome == NULL)
+    /** @todo explain why we aren't using RTPathUserHome here so it doesn't get
+     *        changed accidentally during some cleanup effort. */
+    rc = RTEnvGetEx(RTENV_DEFAULT, "HOME", g_szPidFile, sizeof(g_szPidFile), NULL);
+    if (RT_FAILURE(rc))
     {
-        RTPrintf("VBoxClient: failed to get home directory.  Exiting.\n");
-        Log(("VBoxClient: failed to get home directory.  Exiting.\n"));
+        RTPrintf("VBoxClient: failed to get home directory, rc=%Rrc.  Exiting.\n", rc);
+        Log(("VBoxClient: failed to get home directory, rc=%Rrc.  Exiting.\n", rc));
         return 1;
     }
-    if (RTStrAPrintf(&g_pszPidFile, "%s/%s", pszHome, g_pService->getPidFilePath()) == -1)
-    if (pszHome == NULL)
+    rc = RTPathAppend(g_szPidFile, sizeof(g_szPidFile), g_pService->getPidFilePath());
+    if (RT_FAILURE(rc))
     {
-        RTPrintf("VBoxClient: out of memory.  Exiting.\n");
-        Log(("VBoxClient: out of memory.  Exiting.\n"));
+        RTPrintf("VBoxClient: RTPathAppend failed with rc=%Rrc.  Exiting.\n", rc);
+        Log(("VBoxClient: RTPathAppend failed with rc=%Rrc.  Exiting.\n", rc));
         return 1;
     }
+
     /* Initialise the guest library. */
     if (RT_FAILURE(VbglR3InitUser()))
     {
@@ -250,7 +254,7 @@ int main(int argc, char *argv[])
         Log(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
     }
-    if (g_pszPidFile && RT_FAILURE(VbglR3PidFile(g_pszPidFile, &g_hPidFile)))
+    if (g_szPidFile && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
     {
         RTPrintf("Failed to create a pidfile.  Exiting.\n");
         Log(("Failed to create a pidfile.  Exiting.\n"));

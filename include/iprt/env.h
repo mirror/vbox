@@ -129,6 +129,7 @@ RTDECL(const char *) RTEnvGet(const char *pszVar);
  * Gets an environment variable in a specific environment block.
  *
  * @returns IPRT status code.
+ * @retval  VERR_ENV_VAR_NOT_FOUND if the variable was not found.
  *
  * @param   Env         The environment handle.
  * @param   pszVar      The environment variable name.
@@ -210,6 +211,17 @@ RTDECL(int) RTEnvUnset(const char *pszVar);
  * @param   pszVar      The environment variable name.
  */
 RTDECL(int) RTEnvUnsetEx(RTENV Env, const char *pszVar);
+
+/**
+ * Duplicates the value of a environment variable if it exists.
+ *
+ * @returns Pointer to a string containing the value, free it using RTStrFree.
+ *          NULL if the variable was not found or we're out of memory.
+ *
+ * @param   Env         The environment handle.
+ * @param   pszVar      The environment variable name.
+ */
+RTDECL(char *) RTEnvDupEx(RTENV Env, const char *pszVar);
 
 #endif /* IN_RING3 */
 

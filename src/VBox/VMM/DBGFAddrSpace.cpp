@@ -642,10 +642,16 @@ static int dbgfR3AsSearchPath(const char *pszFilename, const char *pszPath, PFND
  */
 static int dbgfR3AsSearchEnvPath(const char *pszFilename, const char *pszEnvVar, PFNDBGFR3ASSEARCHOPEN pfnOpen, void *pvUser)
 {
-    const char *pszPath = RTEnvGet(pszEnvVar);
-    if (!pszPath)
-        pszPath = ".";
-    return dbgfR3AsSearchPath(pszFilename, pszPath, pfnOpen, pvUser);
+    int     rc;
+    char   *pszPath = RTEnvDupEx(RTENV_DEFAULT, pszEnvVar);
+    if (pszPath)
+    {
+        rc = dbgfR3AsSearchPath(pszFilename, pszPath, pfnOpen, pvUser);
+        RTStrFree(pszPath);
+    }
+    else
+        rc = dbgfR3AsSearchPath(pszFilename, ".", pfnOpen, pvUser);
+    return rc;
 }
 
 

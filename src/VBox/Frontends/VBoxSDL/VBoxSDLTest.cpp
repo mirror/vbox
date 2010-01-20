@@ -94,7 +94,7 @@ main(int argc, char **argv)
 
 #ifdef RT_OS_WINDOWS
     /* Default to DirectX if nothing else set. "windib" would be possible.  */
-    if (!RTEnvGet("SDL_VIDEODRIVER"))
+    if (!RTEnvExist("SDL_VIDEODRIVER"))
     {
         _putenv("SDL_VIDEODRIVER=directx");
     }

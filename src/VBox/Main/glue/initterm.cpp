@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,35 +20,35 @@
  * additional information or have any questions.
  */
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
-#include <objbase.h>
+# include <objbase.h>
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-#include <stdlib.h>
+# include <stdlib.h>
 
-/* XPCOM_GLUE is defined when the client uses the standalone glue
- * (i.e. dynamically picks up the existing XPCOM shared library installation).
- * This is not the case for VirtualBox XPCOM clients (they are always
- * distrubuted with the self-built XPCOM library, and therefore have a binary
- * dependency on it) but left here for clarity.
- */
-#if defined (XPCOM_GLUE)
-#include <nsXPCOMGlue.h>
-#endif
+  /* XPCOM_GLUE is defined when the client uses the standalone glue
+   * (i.e. dynamically picks up the existing XPCOM shared library installation).
+   * This is not the case for VirtualBox XPCOM clients (they are always
+   * distrubuted with the self-built XPCOM library, and therefore have a binary
+   * dependency on it) but left here for clarity.
+   */
+# if defined(XPCOM_GLUE)
+#  include <nsXPCOMGlue.h>
+# endif
 
-#include <nsIComponentRegistrar.h>
-#include <nsIServiceManager.h>
-#include <nsCOMPtr.h>
-#include <nsEventQueueUtils.h>
-#include <nsEmbedString.h>
+# include <nsIComponentRegistrar.h>
+# include <nsIServiceManager.h>
+# include <nsCOMPtr.h>
+# include <nsEventQueueUtils.h>
+# include <nsEmbedString.h>
 
-#include <nsILocalFile.h>
-#include <nsIDirectoryService.h>
-#include <nsDirectoryServiceDefs.h>
+# include <nsILocalFile.h>
+# include <nsIDirectoryService.h>
+# include <nsDirectoryServiceDefs.h>
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
 #include "VBox/com/com.h"
 #include "VBox/com/assert.h"
@@ -69,7 +69,7 @@
 namespace com
 {
 
-#if defined (VBOX_WITH_XPCOM)
+#if defined(VBOX_WITH_XPCOM)
 
 class DirectoryServiceProvider : public nsIDirectoryServiceProvider
 {
@@ -78,49 +78,52 @@ public:
     NS_DECL_ISUPPORTS
 
     DirectoryServiceProvider()
-        : mCompRegLocation (NULL), mXPTIDatLocation (NULL)
-        , mComponentDirLocation (NULL), mCurrProcDirLocation (NULL)
+        : mCompRegLocation(NULL), mXPTIDatLocation(NULL)
+        , mComponentDirLocation(NULL), mCurrProcDirLocation(NULL)
         {}
 
     virtual ~DirectoryServiceProvider();
 
-    HRESULT init (const char *aCompRegLocation,
-                  const char *aXPTIDatLocation,
-                  const char *aComponentDirLocation,
-                  const char *aCurrProcDirLocation);
+    HRESULT init(const char *aCompRegLocation,
+                 const char *aXPTIDatLocation,
+                 const char *aComponentDirLocation,
+                 const char *aCurrProcDirLocation);
 
     NS_DECL_NSIDIRECTORYSERVICEPROVIDER
 
 private:
-
+    /** @remarks This is not a UTF-8 string. */
     char *mCompRegLocation;
+    /** @remarks This is not a UTF-8 string. */
     char *mXPTIDatLocation;
+    /** @remarks This is not a UTF-8 string. */
     char *mComponentDirLocation;
+    /** @remarks This is not a UTF-8 string. */
     char *mCurrProcDirLocation;
 };
 
-NS_IMPL_ISUPPORTS1 (DirectoryServiceProvider, nsIDirectoryServiceProvider)
+NS_IMPL_ISUPPORTS1(DirectoryServiceProvider, nsIDirectoryServiceProvider)
 
 DirectoryServiceProvider::~DirectoryServiceProvider()
 {
     if (mCompRegLocation)
     {
-        RTStrFree (mCompRegLocation);
+        RTStrFree(mCompRegLocation);
         mCompRegLocation = NULL;
     }
     if (mXPTIDatLocation)
     {
-        RTStrFree (mXPTIDatLocation);
+        RTStrFree(mXPTIDatLocation);
         mXPTIDatLocation = NULL;
     }
     if (mComponentDirLocation)
     {
-        RTStrFree (mComponentDirLocation);
+        RTStrFree(mComponentDirLocation);
         mComponentDirLocation = NULL;
     }
     if (mCurrProcDirLocation)
     {
-        RTStrFree (mCurrProcDirLocation);
+        RTStrFree(mCurrProcDirLocation);
         mCurrProcDirLocation = NULL;
     }
 }
@@ -130,29 +133,34 @@ DirectoryServiceProvider::~DirectoryServiceProvider()
  *  @param aXPTIDatLocation Path to xpti.data, in Utf8.
  */
 HRESULT
-DirectoryServiceProvider::init (const char *aCompRegLocation,
-                                const char *aXPTIDatLocation,
-                                const char *aComponentDirLocation,
-                                const char *aCurrProcDirLocation)
+DirectoryServiceProvider::init(const char *aCompRegLocation,
+                               const char *aXPTIDatLocation,
+                               const char *aComponentDirLocation,
+                               const char *aCurrProcDirLocation)
 {
     AssertReturn(aCompRegLocation, NS_ERROR_INVALID_ARG);
     AssertReturn(aXPTIDatLocation, NS_ERROR_INVALID_ARG);
 
-    int vrc = RTStrUtf8ToCurrentCP (&mCompRegLocation, aCompRegLocation);
+/** @todo r=bird: Gotta check how this encoding stuff plays out on darwin!
+ *  We get down to [VBoxNsxp]NS_NewNativeLocalFile and that file isn't
+ *  nsLocalFileUnix.cpp on 32-bit darwin.  On 64-bit darwin it's a question
+ *  of what we're doing in IPRT and such...  We should probably add a
+ *  RTPathConvertToNative for use here. */
+    int vrc = RTStrUtf8ToCurrentCP(&mCompRegLocation, aCompRegLocation);
     if (RT_SUCCESS(vrc))
-        vrc = RTStrUtf8ToCurrentCP (&mXPTIDatLocation, aXPTIDatLocation);
+        vrc = RTStrUtf8ToCurrentCP(&mXPTIDatLocation, aXPTIDatLocation);
     if (RT_SUCCESS(vrc) && aComponentDirLocation)
-        vrc = RTStrUtf8ToCurrentCP (&mComponentDirLocation, aComponentDirLocation);
+        vrc = RTStrUtf8ToCurrentCP(&mComponentDirLocation, aComponentDirLocation);
     if (RT_SUCCESS(vrc) && aCurrProcDirLocation)
-        vrc = RTStrUtf8ToCurrentCP (&mCurrProcDirLocation, aCurrProcDirLocation);
+        vrc = RTStrUtf8ToCurrentCP(&mCurrProcDirLocation, aCurrProcDirLocation);
 
     return RT_SUCCESS(vrc) ? NS_OK : NS_ERROR_OUT_OF_MEMORY;
 }
 
 NS_IMETHODIMP
-DirectoryServiceProvider::GetFile (const char *aProp,
-                                   PRBool *aPersistent,
-                                   nsIFile **aRetval)
+DirectoryServiceProvider::GetFile(const char *aProp,
+                                  PRBool *aPersistent,
+                                  nsIFile **aRetval)
 {
     nsCOMPtr <nsILocalFile> localFile;
     nsresult rv = NS_ERROR_FAILURE;
@@ -162,24 +170,23 @@ DirectoryServiceProvider::GetFile (const char *aProp,
 
     const char *fileLocation = NULL;
 
-    if (strcmp (aProp, NS_XPCOM_COMPONENT_REGISTRY_FILE) == 0)
+    if (strcmp(aProp, NS_XPCOM_COMPONENT_REGISTRY_FILE) == 0)
         fileLocation = mCompRegLocation;
-    else if (strcmp (aProp, NS_XPCOM_XPTI_REGISTRY_FILE) == 0)
+    else if (strcmp(aProp, NS_XPCOM_XPTI_REGISTRY_FILE) == 0)
         fileLocation = mXPTIDatLocation;
-    else if (mComponentDirLocation && strcmp (aProp, NS_XPCOM_COMPONENT_DIR) == 0)
+    else if (mComponentDirLocation && strcmp(aProp, NS_XPCOM_COMPONENT_DIR) == 0)
         fileLocation = mComponentDirLocation;
-    else if (mCurrProcDirLocation && strcmp (aProp, NS_XPCOM_CURRENT_PROCESS_DIR) == 0)
+    else if (mCurrProcDirLocation && strcmp(aProp, NS_XPCOM_CURRENT_PROCESS_DIR) == 0)
         fileLocation = mCurrProcDirLocation;
     else
         return NS_ERROR_FAILURE;
 
-    rv = NS_NewNativeLocalFile (nsEmbedCString (fileLocation),
-                                PR_TRUE, getter_AddRefs (localFile));
+    rv = NS_NewNativeLocalFile(nsEmbedCString(fileLocation),
+                               PR_TRUE, getter_AddRefs(localFile));
     if (NS_FAILED(rv))
         return rv;
 
-    return localFile->QueryInterface (NS_GET_IID (nsIFile),
-                                      (void **) aRetval);
+    return localFile->QueryInterface(NS_GET_IID (nsIFile), (void **)aRetval);
 }
 
 /**
@@ -247,13 +254,13 @@ HRESULT Initialize()
 {
     HRESULT rc = E_FAIL;
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
-    DWORD flags = COINIT_MULTITHREADED |
-                  COINIT_DISABLE_OLE1DDE |
-                  COINIT_SPEED_OVER_MEMORY;
+    DWORD flags = COINIT_MULTITHREADED
+                | COINIT_DISABLE_OLE1DDE
+                | COINIT_SPEED_OVER_MEMORY;
 
-    rc = CoInitializeEx (NULL, flags);
+    rc = CoInitializeEx(NULL, flags);
 
     /// @todo the below rough method of changing the aparment type doesn't
     /// work on some systems for unknown reason (CoUninitialize() simply does
@@ -278,14 +285,14 @@ HRESULT Initialize()
          * neutral threaded apartment -- in this case there is no need to
          * worry at all. */
 
-        rc = CoInitializeEx (NULL, COINIT_APARTMENTTHREADED);
+        rc = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
         if (rc == RPC_E_CHANGED_MODE)
         {
             /* This is a neutral apartment, reset the error */
             rc = S_OK;
 
-            LogFlowFunc (("COM is already initialized in neutral threaded "
-                          "apartment mode,\nwill accept it.\n"));
+            LogFlowFunc(("COM is already initialized in neutral threaded "
+                         "apartment mode,\nwill accept it.\n"));
         }
         else if (rc == S_FALSE)
         {
@@ -293,70 +300,70 @@ HRESULT Initialize()
             CoUninitialize();
             rc = RPC_E_CHANGED_MODE;
 
-            LogFlowFunc (("COM is already initialized in single threaded "
-                          "apartment mode,\nwill reinitialize as "
-                          "multi threaded.\n"));
+            LogFlowFunc(("COM is already initialized in single threaded "
+                         "apartment mode,\nwill reinitialize as "
+                         "multi threaded.\n"));
 
             enum { MaxTries = 10000 };
             int tries = MaxTries;
             while (rc == RPC_E_CHANGED_MODE && tries --)
             {
                 CoUninitialize();
-                rc = CoInitializeEx (NULL, flags);
+                rc = CoInitializeEx(NULL, flags);
                 if (rc == S_OK)
                 {
                     /* We've successfully reinitialized COM; restore the
                      * initialization reference counter */
 
-                    LogFlowFunc (("Will call CoInitializeEx() %d times.\n",
-                                  MaxTries - tries));
+                    LogFlowFunc(("Will call CoInitializeEx() %d times.\n",
+                                 MaxTries - tries));
 
                     while (tries ++ < MaxTries)
                     {
-                        rc = CoInitializeEx (NULL, flags);
-                        Assert (rc == S_FALSE);
+                        rc = CoInitializeEx(NULL, flags);
+                        Assert(rc == S_FALSE);
                     }
                 }
             }
         }
         else
-            AssertMsgFailed (("rc=%08X\n", rc));
+            AssertMsgFailed(("rc=%08X\n", rc));
     }
 # endif
 
     /* the overall result must be either S_OK or S_FALSE (S_FALSE means
      * "already initialized using the same apartment model") */
-    AssertMsg (rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
+    AssertMsg(rc == S_OK || rc == S_FALSE, ("rc=%08X\n", rc));
 
     /* To be flow compatible with the XPCOM case, we return here if this isn't
      * the main thread or if it isn't its first initialization call.
      * Note! CoInitializeEx and CoUninitialize does it's own reference
      *       counting, so this exercise is entirely for the EventQueue init. */
     bool fRc;
-    RTTHREAD hSelf = RTThreadSelf ();
+    RTTHREAD hSelf = RTThreadSelf();
     if (hSelf != NIL_RTTHREAD)
-        ASMAtomicCmpXchgHandle (&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
+        ASMAtomicCmpXchgHandle(&gCOMMainThread, hSelf, NIL_RTTHREAD, fRc);
     else
         fRc = false;
     if (!fRc)
     {
         if (   gCOMMainThread == hSelf
-            && SUCCEEDED (rc))
+            && SUCCEEDED(rc))
             gCOMMainInitCount++;
 
-        AssertComRC (rc);
+        AssertComRC(rc);
         return rc;
     }
-    Assert (RTThreadIsMain (hSelf));
+    Assert(RTThreadIsMain(hSelf));
 
     /* this is the first main thread initialization */
-    Assert (gCOMMainInitCount == 0);
-    if (SUCCEEDED (rc))
+    Assert(gCOMMainInitCount == 0);
+    if (SUCCEEDED(rc))
         gCOMMainInitCount = 1;
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-    if (ASMAtomicXchgBool (&gIsXPCOMInitialized, true) == true)
+    if (ASMAtomicXchgBool(&gIsXPCOMInitialized, true) == true)
     {
         /* XPCOM is already initialized on the main thread, no special
          * initialization is necessary on additional threads. Just increase
@@ -364,45 +371,44 @@ HRESULT Initialize()
          * nested calls to Initialize()/Shutdown() for compatibility with
          * Win32). */
 
-        nsCOMPtr <nsIEventQueue> eventQ;
-        rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
+        nsCOMPtr<nsIEventQueue> eventQ;
+        rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
 
         if (NS_SUCCEEDED(rc))
         {
             PRBool isOnMainThread = PR_FALSE;
-            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
+            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
             if (NS_SUCCEEDED(rc) && isOnMainThread)
-                ++ gXPCOMInitCount;
+                ++gXPCOMInitCount;
         }
 
-        AssertComRC (rc);
+        AssertComRC(rc);
         return rc;
     }
-    Assert (RTThreadIsMain (RTThreadSelf()));
+    Assert(RTThreadIsMain(RTThreadSelf()));
 
     /* this is the first initialization */
     gXPCOMInitCount = 1;
     bool const fInitEventQueues = true;
 
     /* prepare paths for registry files */
-    char userHomeDir [RTPATH_MAX];
-    int vrc = GetVBoxUserHomeDirectory (userHomeDir, sizeof (userHomeDir));
-    AssertRCReturn (vrc, NS_ERROR_FAILURE);
+    char szCompReg[RTPATH_MAX];
+    char szXptiDat[RTPATH_MAX];
 
-    char compReg [RTPATH_MAX];
-    char xptiDat [RTPATH_MAX];
+    int vrc = GetVBoxUserHomeDirectory(szCompReg, sizeof(szCompReg));
+    AssertRCReturn(vrc, NS_ERROR_FAILURE);
+    strcpy(szXptiDat, szCompReg);
 
-    /** @todo use RTPathAppend */
-    RTStrPrintf (compReg, sizeof (compReg), "%s%c%s",
-                 userHomeDir, RTPATH_DELIMITER, "compreg.dat");
-    RTStrPrintf (xptiDat, sizeof (xptiDat), "%s%c%s",
-                 userHomeDir, RTPATH_DELIMITER, "xpti.dat");
+    vrc = RTPathAppend(szCompReg, sizeof(szCompReg), "compreg.dat");
+    AssertRCReturn(vrc, NS_ERROR_FAILURE);
+    vrc = RTPathAppend(szXptiDat, sizeof(szXptiDat), "xpti.dat");
+    AssertRCReturn(vrc, NS_ERROR_FAILURE);
 
-    LogFlowFunc (("component registry  : \"%s\"\n", compReg));
-    LogFlowFunc (("XPTI data file      : \"%s\"\n", xptiDat));
+    LogFlowFunc(("component registry  : \"%s\"\n", szCompReg));
+    LogFlowFunc(("XPTI data file      : \"%s\"\n", szXptiDat));
 
 #if defined (XPCOM_GLUE)
-    XPCOMGlueStartup (nsnull);
+    XPCOMGlueStartup(nsnull);
 #endif
 
     static const char *kAppPathsToProbe[] =
@@ -421,49 +427,53 @@ HRESULT Initialize()
     };
 
     /* Find out the directory where VirtualBox binaries are located */
-    for (size_t i = 0; i < RT_ELEMENTS (kAppPathsToProbe); ++ i)
+    for (size_t i = 0; i < RT_ELEMENTS(kAppPathsToProbe); ++ i)
     {
-        char appHomeDir [RTPATH_MAX];
-        appHomeDir [RTPATH_MAX - 1] = '\0';
+        char szAppHomeDir[RTPATH_MAX];
 
         if (i == 0)
         {
             /* Use VBOX_APP_HOME if present */
-            if (!RTEnvExist ("VBOX_APP_HOME"))
+            vrc = RTEnvGetEx(RTENV_DEFAULT, "VBOX_APP_HOME", szAppHomeDir, sizeof(szAppHomeDir), NULL);
+            if (vrc == VERR_ENV_VAR_NOT_FOUND)
                 continue;
-
-            strncpy (appHomeDir, RTEnvGet ("VBOX_APP_HOME"), RTPATH_MAX - 1); /** @todo r=bird: Use RTEnvGetEx. */
+            AssertRC(vrc);
         }
         else if (i == 1)
         {
             /* Use RTPathAppPrivateArch() first */
-            vrc = RTPathAppPrivateArch (appHomeDir, sizeof (appHomeDir));
+            vrc = RTPathAppPrivateArch(szAppHomeDir, sizeof(szAppHomeDir));
             AssertRC (vrc);
-            if (RT_FAILURE(vrc))
-            {
-                rc = NS_ERROR_FAILURE;
-                continue;
-            }
         }
         else
         {
             /* Iterate over all other paths */
-            strncpy (appHomeDir, kAppPathsToProbe [i], RTPATH_MAX - 1);
+            szAppHomeDir[RTPATH_MAX - 1] = '\0';
+            strncpy(szAppHomeDir, kAppPathsToProbe [i], RTPATH_MAX - 1);
+            vrc = VINF_SUCCESS;
+        }
+        if (RT_FAILURE(vrc))
+        {
+            rc = NS_ERROR_FAILURE;
+            continue;
         }
 
-        nsCOMPtr <DirectoryServiceProvider> dsProv;
+        char szCompDir[RTPATH_MAX];
+        vrc = RTPathAppend(strcpy(szCompDir, szAppHomeDir), sizeof(szCompDir), "components");
+        if (RT_FAILURE(vrc))
+        {
+            rc = NS_ERROR_FAILURE;
+            continue;
+        }
+        LogFlowFunc(("component directory : \"%s\"\n", szCompDir));
 
-        char compDir [RTPATH_MAX];
-        RTStrPrintf (compDir, sizeof (compDir), "%s%c%s",
-                     appHomeDir, RTPATH_DELIMITER, "components");
-        LogFlowFunc (("component directory : \"%s\"\n", compDir));
-
+        nsCOMPtr<DirectoryServiceProvider> dsProv;
         dsProv = new DirectoryServiceProvider();
         if (dsProv)
-            rc = dsProv->init (compReg, xptiDat, compDir, appHomeDir);
+            rc = dsProv->init(szCompReg, szXptiDat, szCompDir, szAppHomeDir);
         else
             rc = NS_ERROR_OUT_OF_MEMORY;
-        if (NS_FAILED (rc))
+        if (NS_FAILED(rc))
             break;
 
         /* Setup the application path for NS_InitXPCOM2. Note that we properly
@@ -474,53 +484,43 @@ HRESULT Initialize()
         nsCOMPtr <nsIFile> appDir;
         {
             char *appDirCP = NULL;
-            vrc = RTStrUtf8ToCurrentCP (&appDirCP, appHomeDir);
+            vrc = RTStrUtf8ToCurrentCP(&appDirCP, szAppHomeDir);
             if (RT_SUCCESS(vrc))
             {
-                nsCOMPtr <nsILocalFile> file;
-                rc = NS_NewNativeLocalFile (nsEmbedCString (appDirCP),
-                                            PR_FALSE, getter_AddRefs (file));
+                nsCOMPtr<nsILocalFile> file;
+                rc = NS_NewNativeLocalFile(nsEmbedCString(appDirCP),
+                                           PR_FALSE, getter_AddRefs(file));
                 if (NS_SUCCEEDED(rc))
-                    appDir = do_QueryInterface (file, &rc);
+                    appDir = do_QueryInterface(file, &rc);
 
-                RTStrFree (appDirCP);
+                RTStrFree(appDirCP);
             }
             else
                 rc = NS_ERROR_FAILURE;
         }
-        if (NS_FAILED (rc))
+        if (NS_FAILED(rc))
             break;
 
         /* Set VBOX_XPCOM_HOME to the same app path to make XPCOM sources that
          * still use it instead of the directory service happy */
-        {
-            char *pathCP = NULL;
-            vrc = RTStrUtf8ToCurrentCP (&pathCP, appHomeDir);
-            if (RT_SUCCESS(vrc))
-            {
-                vrc = RTEnvSet ("VBOX_XPCOM_HOME", pathCP);
-                RTStrFree (pathCP);
-            }
-            AssertRC (vrc);
-        }
+        vrc = RTEnvSetEx(RTENV_DEFAULT, "VBOX_XPCOM_HOME", szAppHomeDir);
+        AssertRC(vrc);
 
         /* Finally, initialize XPCOM */
         {
-            nsCOMPtr <nsIServiceManager> serviceManager;
-            rc = NS_InitXPCOM2 (getter_AddRefs (serviceManager),
-                                appDir, dsProv);
-
+            nsCOMPtr<nsIServiceManager> serviceManager;
+            rc = NS_InitXPCOM2(getter_AddRefs(serviceManager), appDir, dsProv);
             if (NS_SUCCEEDED(rc))
             {
-                nsCOMPtr <nsIComponentRegistrar> registrar =
-                    do_QueryInterface (serviceManager, &rc);
+                nsCOMPtr<nsIComponentRegistrar> registrar =
+                    do_QueryInterface(serviceManager, &rc);
                 if (NS_SUCCEEDED(rc))
                 {
-                    rc = registrar->AutoRegister (nsnull);
+                    rc = registrar->AutoRegister(nsnull);
                     if (NS_SUCCEEDED(rc))
                     {
                         /* We succeeded, stop probing paths */
-                        LogFlowFunc (("Succeeded.\n"));
+                        LogFlowFunc(("Succeeded.\n"));
                         break;
                     }
                 }
@@ -528,7 +528,7 @@ HRESULT Initialize()
         }
 
         /* clean up before the new try */
-        rc = NS_ShutdownXPCOM (nsnull);
+        rc = NS_ShutdownXPCOM(nsnull);
 
         if (i == 0)
         {
@@ -544,12 +544,12 @@ HRESULT Initialize()
     Assert(RTThreadIsMain(RTThreadSelf()));
     util::InitAutoLockSystem();
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
     /*
      * Init the main event queue (ASSUMES it cannot fail).
      */
-    if (SUCCEEDED (rc))
+    if (SUCCEEDED(rc))
         EventQueue::init();
 
     return rc;
@@ -559,7 +559,7 @@ HRESULT Shutdown()
 {
     HRESULT rc = S_OK;
 
-#if !defined (VBOX_WITH_XPCOM)
+#if !defined(VBOX_WITH_XPCOM)
 
     /* EventQueue::uninit reference counting fun. */
     RTTHREAD hSelf = RTThreadSelf();
@@ -569,7 +569,7 @@ HRESULT Shutdown()
         if (-- gCOMMainInitCount == 0)
         {
             EventQueue::uninit();
-            ASMAtomicWriteHandle (&gCOMMainThread, NIL_RTTHREAD);
+            ASMAtomicWriteHandle(&gCOMMainThread, NIL_RTTHREAD);
         }
     }
 
@@ -577,8 +577,8 @@ HRESULT Shutdown()
 
 #else /* !defined (VBOX_WITH_XPCOM) */
 
-    nsCOMPtr <nsIEventQueue> eventQ;
-    rc = NS_GetMainEventQ (getter_AddRefs (eventQ));
+    nsCOMPtr<nsIEventQueue> eventQ;
+    rc = NS_GetMainEventQ(getter_AddRefs(eventQ));
 
     if (NS_SUCCEEDED(rc) || rc == NS_ERROR_NOT_AVAILABLE)
     {
@@ -592,7 +592,7 @@ HRESULT Shutdown()
         PRBool isOnMainThread = PR_FALSE;
         if (NS_SUCCEEDED(rc))
         {
-            rc = eventQ->IsOnCurrentThread (&isOnMainThread);
+            rc = eventQ->IsOnCurrentThread(&isOnMainThread);
             eventQ = nsnull; /* early release before shutdown */
         }
         else
@@ -605,27 +605,27 @@ HRESULT Shutdown()
         {
             /* only the main thread needs to uninitialize XPCOM and only if
              * init counter drops to zero */
-            if (-- gXPCOMInitCount == 0)
+            if (--gXPCOMInitCount == 0)
             {
                 EventQueue::uninit();
-                rc = NS_ShutdownXPCOM (nsnull);
+                rc = NS_ShutdownXPCOM(nsnull);
 
                 /* This is a thread initialized XPCOM and set gIsXPCOMInitialized to
                  * true. Reset it back to false. */
-                bool wasInited = ASMAtomicXchgBool (&gIsXPCOMInitialized, false);
-                Assert (wasInited == true);
-                NOREF (wasInited);
+                bool wasInited = ASMAtomicXchgBool(&gIsXPCOMInitialized, false);
+                Assert(wasInited == true);
+                NOREF(wasInited);
 
-#if defined (XPCOM_GLUE)
+# if defined (XPCOM_GLUE)
                 XPCOMGlueShutdown();
-#endif
+# endif
             }
         }
     }
 
-#endif /* !defined (VBOX_WITH_XPCOM) */
+#endif /* !defined(VBOX_WITH_XPCOM) */
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
     return rc;
 }

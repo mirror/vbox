@@ -561,7 +561,7 @@ static void clipUninit(CLIPBACKEND *pCtx)
  * thread. */
 static void clipStopEventThreadWorker(XtPointer pUserData, XtIntervalId *)
 {
-    
+
     CLIPBACKEND *pCtx = (CLIPBACKEND *)pUserData;
 
     /* This might mean that we are getting stopped twice. */
@@ -707,7 +707,7 @@ CLIPBACKEND *ClipConstructX11(VBOXCLIPBOARDCONTEXT *pFrontend)
 
     CLIPBACKEND *pCtx = (CLIPBACKEND *)
                     RTMemAllocZ(sizeof(CLIPBACKEND));
-    if (pCtx && !RTEnvGet("DISPLAY"))
+    if (pCtx && !RTEnvExist("DISPLAY"))
     {
         /*
          * If we don't find the DISPLAY environment variable we assume that
@@ -1471,7 +1471,7 @@ static int clipLatin1ToWinTxt(char *pcSrc, unsigned cbSrc,
 
 /** A structure containing information about where to store a request
  * for the X11 clipboard contents. */
-struct _CLIPREADX11CBREQ 
+struct _CLIPREADX11CBREQ
 {
     /** The format VBox would like the data in */
     uint32_t mFormat;
@@ -2574,7 +2574,7 @@ int main()
     rc = VINF_SUCCESS;
     /* We can't test anything without an X session, so just return success
      * in that case. */
-    if (!RTEnvGet("DISPLAY"))
+    if (!RTEnvExist("DISPLAY"))
     {
         RTTestPrintf(hTest, RTTESTLVL_INFO,
                      "X11 not available, not running test\n");

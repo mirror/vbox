@@ -429,9 +429,9 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
         // Not all Solaris versions ship with libhal.
         // So use a fallback approach similar to Linux.
         {
-            if (RTEnvGet("VBOX_CDROM"))
+            if (RTEnvExistEx(RTENV_DEFAULT, "VBOX_CDROM"))
             {
-                char *cdromEnv = strdup(RTEnvGet("VBOX_CDROM"));
+                char *cdromEnv = RTEnvDupEx(RTENV_DEFAULT, "VBOX_CDROM");
                 char *saveStr = NULL;
                 char *cdromDrive = NULL;
                 if (cdromEnv)
@@ -447,7 +447,7 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
                     }
                     cdromDrive = strtok_r(NULL, ":", &saveStr);
                 }
-                free(cdromEnv);
+                RTStrFree(cdromEnv);
             }
             else
             {

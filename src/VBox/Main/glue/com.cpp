@@ -137,7 +137,7 @@ void GetInterfaceNameByIID (const GUID &aIID, BSTR *aName)
 #endif /* !defined (VBOX_WITH_XPCOM) */
 }
 
-int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
+int GetVBoxUserHomeDirectory(char *aDir, size_t aDirLen)
 {
     AssertReturn(aDir, VERR_INVALID_POINTER);
     AssertReturn(aDirLen > 0, VERR_BUFFER_OVERFLOW);
@@ -145,7 +145,7 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
     /* start with null */
     *aDir = 0;
 
-    const char *VBoxUserHome = RTEnvGet ("VBOX_USER_HOME");
+    const char *VBoxUserHome = RTEnvGet("VBOX_USER_HOME");
 
     char path [RTPATH_MAX];
     int vrc = VINF_SUCCESS;
@@ -154,38 +154,37 @@ int GetVBoxUserHomeDirectory (char *aDir, size_t aDirLen)
     {
         /* get the full path name */
         char *VBoxUserHomeUtf8 = NULL;
-        vrc = RTStrCurrentCPToUtf8 (&VBoxUserHomeUtf8, VBoxUserHome);
+        vrc = RTStrCurrentCPToUtf8(&VBoxUserHomeUtf8, VBoxUserHome);
         if (RT_SUCCESS(vrc))
         {
-            vrc = RTPathAbs (VBoxUserHomeUtf8, path, sizeof (path));
+            vrc = RTPathAbs(VBoxUserHomeUtf8, path, sizeof (path));
             if (RT_SUCCESS(vrc))
             {
-                if (aDirLen < strlen (path) + 1)
+                if (aDirLen < strlen(path) + 1)
                     vrc = VERR_BUFFER_OVERFLOW;
                 else
-                    strcpy (aDir, path);
+                    strcpy(aDir, path);
             }
-            RTStrFree (VBoxUserHomeUtf8);
+            RTStrFree(VBoxUserHomeUtf8);
         }
     }
     else
     {
         /* compose the config directory (full path) */
-        vrc = RTPathUserHome (path, sizeof (path));
+        vrc = RTPathUserHome(path, sizeof(path));
         if (RT_SUCCESS(vrc))
         {
-            size_t len =
-                RTStrPrintf (aDir, aDirLen, "%s%c%s",
-                             path, RTPATH_DELIMITER, VBOX_USER_HOME_SUFFIX);
-            if (len != strlen (path) + 1 + strlen (VBOX_USER_HOME_SUFFIX))
+            size_t len = RTStrPrintf(aDir, aDirLen, "%s%c%s",
+                                     path, RTPATH_DELIMITER, VBOX_USER_HOME_SUFFIX);
+            if (len != strlen(path) + 1 + strlen (VBOX_USER_HOME_SUFFIX))
                 vrc = VERR_BUFFER_OVERFLOW;
         }
     }
 
     /* ensure the home directory exists */
     if (RT_SUCCESS(vrc))
-        if (!RTDirExists (aDir))
-            vrc = RTDirCreateFullPath (aDir, 0777);
+        if (!RTDirExists(aDir))
+            vrc = RTDirCreateFullPath(aDir, 0777);
 
     return vrc;
 }

@@ -143,11 +143,10 @@ static char *solaudio_getdevice (void)
      * This is for multiple audio devices where env. var determines current one,
      * otherwise else we fallback to default.
      */
-    const char *pszAudioDev = RTEnvGet("AUDIODEV");
-    if (pszAudioDev)
-        return RTStrDup(pszAudioDev);
-
-    return RTStrDup("/dev/audio");
+    const char *pszAudioDev = RTEnvDupEx(RTENV_DEFAULT, "AUDIODEV");
+    if (!pszAudioDev)
+        pszAudioDev = RTStrDup("/dev/audio");
+    return pszAudioDev;
 }
 
 
