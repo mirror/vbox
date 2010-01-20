@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,33 +35,34 @@
 #include "internal/iprt.h"
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/ctype.h>
 
 
 
-/**
- * Strips the trailing slashes of a path name.
- *
- * @param   pszPath     Path to strip.
- *
- * @todo    This isn't safe for a root element! Needs fixing.
- */
-RTDECL(void) RTPathStripTrailingSlash(char *pszPath)
+RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath)
 {
-    char *pszEnd = strchr(pszPath, '\0');
-    while (pszEnd-- > pszPath)
+    size_t off = strlen(pszPath);
+    while (off > 1)
     {
-        switch (*pszEnd)
+        off--;
+        switch (pszPath[off])
         {
             case '/':
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
             case '\\':
+                if (    off == 2
+                    &&  pszPath[1] == ':'
+                    &&  RT_C_IS_ALPHA(pszPath[0]))
+                    return cch + 1;
 #endif
-                *pszEnd = '\0';
+                pszPath[off] = '\0';
                 break;
+
             default:
-                return;
+                return off + 1;
         }
     }
-    return;
+
+    return 1;
 }
 
