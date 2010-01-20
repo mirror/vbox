@@ -265,11 +265,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pRoot, "RamHoleSize",          cbRamHole);             RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "NumCPUs",              cCpus);                 RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "TimerMillies",         10);                    RC_CHECK();
+#ifdef VBOX_WITH_RAW_MODE
     rc = CFGMR3InsertInteger(pRoot, "RawR3Enabled",         1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "RawR0Enabled",         1);     /* boolean */   RC_CHECK();
     /** @todo Config: RawR0, PATMEnabled and CSAMEnabled needs attention later. */
     rc = CFGMR3InsertInteger(pRoot, "PATMEnabled",          1);     /* boolean */   RC_CHECK();
     rc = CFGMR3InsertInteger(pRoot, "CSAMEnabled",          1);     /* boolean */   RC_CHECK();
+#endif
 
     /* cpuid leaf overrides. */
     static uint32_t const s_auCpuIdRanges[] =
@@ -309,21 +311,25 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* hardware virtualization extensions */
     BOOL fHWVirtExEnabled;
+    BOOL fHwVirtExtForced;
+#ifdef VBOX_WITH_RAW_MODE
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_Enabled, &fHWVirtExEnabled); H();
     if (cCpus > 1) /** @todo SMP: This isn't nice, but things won't work on mac otherwise. */
         fHWVirtExEnabled = TRUE;
-
-#ifdef RT_OS_DARWIN
-    rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHWVirtExEnabled);      RC_CHECK();
-#else
+# ifdef RT_OS_DARWIN
+    fHwVirtExtForced = fHWVirtExEnabled;
+# else
     /* - With more than 4GB PGM will use different RAMRANGE sizes for raw
          mode and hv mode to optimize lookup times.
        - With more than one virtual CPU, raw-mode isn't a fallback option. */
-    BOOL fHwVirtExtForced = fHWVirtExEnabled
-                         && (   cbRam > (_4G - cbRamHole)
-                             || cCpus > 1);
+    fHwVirtExtForced = fHWVirtExEnabled
+                    && (   cbRam > (_4G - cbRamHole)
+                        || cCpus > 1);
+# endif
+#else  /* !VBOX_WITH_RAW_MODE */
+    fHWVirtExEnabled = fHwVirtExtForced = TRUE;
+#endif /* !VBOX_WITH_RAW_MODE */
     rc = CFGMR3InsertInteger(pRoot, "HwVirtExtForced",      fHwVirtExtForced);      RC_CHECK();
-#endif
 
     PCFGMNODE pHWVirtExt;
     rc = CFGMR3InsertNode(pRoot, "HWVirtExt", &pHWVirtExt);                         RC_CHECK();
@@ -360,7 +366,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         }
 #endif
 
-        /* @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
+        /** @todo Not exactly pretty to check strings; VBOXOSTYPE would be better, but that requires quite a bit of API change in Main. */
         if (    !fIs64BitGuest
             &&  fIOAPIC
             &&  (   osTypeId == "WindowsNT4"

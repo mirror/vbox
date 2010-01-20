@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Sub-Makefile for the Devices testcases.
+# Sub-Makefile for the device testcases.
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -45,47 +45,49 @@ TESTING += \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
 
 
-#
-# The testcase generator.
-#
-PROGRAMS += tstDeviceStructSizeGC
-tstDeviceStructSizeGC_TEMPLATE  = VBOXGCEXE
-tstDeviceStructSizeGC_DEFS      =
-ifdef VBOX_WITH_USB
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_USB IN_USB_GC
-endif
-ifdef VBOX_WITH_AHCI
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_AHCI
-endif
-ifdef VBOX_WITH_E1000
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_E1000
-endif
-ifdef VBOX_WITH_VIRTIO
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_VIRTIO
-endif
-ifdef VBOX_WITH_BUSLOGIC
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_BUSLOGIC
-endif
-ifdef VBOX_WITH_SCSI
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_SCSI
-endif
-ifdef VBOX_WITH_LSILOGIC
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_LSILOGIC
-endif
-ifdef VBOX_WITH_HPET
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_HPET
-endif
-ifdef VBOX_WITH_HGSMI
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_HGSMI
-endif
-ifdef VBOX_WITH_VIDEOHWACCEL
-tstDeviceStructSizeGC_DEFS     += VBOX_WITH_VIDEOHWACCEL
-endif
-tstDeviceStructSizeGC_SOURCES   = tstDeviceStructSizeGC.cpp
-tstDeviceStructSizeGC_INCS      = \
-	$(VBOX_PATH_DEVICES_SRC) \
-	$(VBOX_PATH_DEVICES_SRC)/Bus \
-	$(VBOX_DEVICES_TEST_OUT_DIR)
+ifdef VBOX_WITH_RAW_MODE
+ #
+ # The testcase generator.
+ #
+ PROGRAMS += tstDeviceStructSizeRC
+ tstDeviceStructSizeRC_TEMPLATE  = VBOXGCEXE
+ tstDeviceStructSizeRC_DEFS      = VBOX_WITH_RAW_MODE
+ ifdef VBOX_WITH_USB
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_USB
+ endif
+ ifdef VBOX_WITH_AHCI
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_AHCI
+ endif
+ ifdef VBOX_WITH_E1000
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_E1000
+ endif
+ ifdef VBOX_WITH_VIRTIO
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VIRTIO
+ endif
+ ifdef VBOX_WITH_BUSLOGIC
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_BUSLOGIC
+ endif
+ ifdef VBOX_WITH_SCSI
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_SCSI
+ endif
+ ifdef VBOX_WITH_LSILOGIC
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_LSILOGIC
+ endif
+ ifdef VBOX_WITH_HPET
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HPET
+ endif
+ ifdef VBOX_WITH_HGSMI
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_HGSMI
+ endif
+ ifdef VBOX_WITH_VIDEOHWACCEL
+  tstDeviceStructSizeRC_DEFS    += VBOX_WITH_VIDEOHWACCEL
+ endif
+ tstDeviceStructSizeRC_SOURCES   = tstDeviceStructSizeRC.cpp
+ tstDeviceStructSizeRC_INCS      = \
+ 	$(VBOX_PATH_DEVICES_SRC) \
+ 	$(VBOX_PATH_DEVICES_SRC)/Bus \
+ 	$(VBOX_DEVICES_TEST_OUT_DIR)
+endif # VBOX_WITH_RAW_MODE
 
 #
 # The testcase it self.
@@ -94,37 +96,40 @@ PROGRAMS += tstDeviceStructSize
 tstDeviceStructSize_TEMPLATE = VBOXR3AUTOTST
 tstDeviceStructSize_DEFS     =
 ifdef VBOX_WITH_USB
-tstDeviceStructSize_DEFS    += VBOX_WITH_USB IN_USB_GC
+ tstDeviceStructSize_DEFS   += VBOX_WITH_USB
 endif
 ifdef VBOX_WITH_AHCI
-tstDeviceStructSize_DEFS     += VBOX_WITH_AHCI
+ tstDeviceStructSize_DEFS   += VBOX_WITH_AHCI
 endif
 ifdef VBOX_WITH_E1000
-tstDeviceStructSize_DEFS     += VBOX_WITH_E1000
+ tstDeviceStructSize_DEFS   += VBOX_WITH_E1000
 endif
 ifdef VBOX_WITH_VIRTIO
-tstDeviceStructSize_DEFS     += VBOX_WITH_VIRTIO
+ tstDeviceStructSize_DEFS   += VBOX_WITH_VIRTIO
 endif
 ifdef VBOX_WITH_BUSLOGIC
-tstDeviceStructSize_DEFS     += VBOX_WITH_BUSLOGIC
+ tstDeviceStructSize_DEFS   += VBOX_WITH_BUSLOGIC
 endif
 ifdef VBOX_WITH_LSILOGIC
-tstDeviceStructSize_DEFS     += VBOX_WITH_LSILOGIC
+ tstDeviceStructSize_DEFS   += VBOX_WITH_LSILOGIC
 endif
 ifdef VBOX_WITH_HPET
-tstDeviceStructSize_DEFS     += VBOX_WITH_HPET
+ tstDeviceStructSize_DEFS   += VBOX_WITH_HPET
 endif
 ifdef VBOX_WITH_SMC
-tstDeviceStructSize_DEFS     += VBOX_WITH_SMC
+ tstDeviceStructSize_DEFS   += VBOX_WITH_SMC
 endif
 ifdef VBOX_WITH_LPC
-tstDeviceStructSize_DEFS     += VBOX_WITH_LPC
+ tstDeviceStructSize_DEFS   += VBOX_WITH_LPC
 endif
 ifdef VBOX_WITH_HGSMI
-tstDeviceStructSize_DEFS     += VBOX_WITH_HGSMI
+ tstDeviceStructSize_DEFS   += VBOX_WITH_HGSMI
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
-tstDeviceStructSize_DEFS     += VBOX_WITH_VIDEOHWACCEL
+ tstDeviceStructSize_DEFS   += VBOX_WITH_VIDEOHWACCEL
+endif
+ifdef VBOX_WITH_RAW_MODE
+ tstDeviceStructSize_DEFS   += VBOX_WITH_RAW_MODE
 endif
 tstDeviceStructSize_INCS     = \
 	$(VBOX_PATH_DEVICES_SRC) \
@@ -132,9 +137,11 @@ tstDeviceStructSize_INCS     = \
 	$(VBOX_DEVICES_TEST_OUT_DIR)
 tstDeviceStructSize_SOURCES  = tstDeviceStructSize.cpp
 tstDeviceStructSize_CLEAN    = \
-	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h \
+	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h \
 	$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run
-tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h
+ifdef VBOX_WITH_RAW_MODE
+ tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h
+endif
 
 #
 # Run rule for tstDeviceStructSize.
@@ -144,10 +151,12 @@ tstDeviceStructSize.cpp_DEPS = $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeG
 # 2. Generate a testcase from the dump
 ## future
 
+ifdef VBOX_WITH_RAW_MODE
 # 1&2. Manually dump selected structures and members.
-$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeGC.h: $$(INSTARGET_tstDeviceStructSizeGC) | $$(dir $$@)
+$(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSizeRC.h: $$(INSTARGET_tstDeviceStructSizeRC) | $$(dir $$@)
 	$(call MSG_GENERATE,,$@)
 	$(QUIET)$(REDIRECT) -wo $@ -- $^
+endif
 
 # 3. run it.
 $(VBOX_DEVICES_TEST_OUT_DIR)/tstDeviceStructSize.run: $$(INSTARGET_tstDeviceStructSize) | $$(dir $$@)

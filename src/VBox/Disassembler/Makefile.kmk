@@ -49,14 +49,16 @@ DisasmCoreR3_SOURCES    = \
 	DisasmTables.cpp \
 	DisasmTablesX64.cpp
 
-LIBRARIES              += DisasmGC
-DisasmGC_TEMPLATE       = VBOXGC
-DisasmGC_DEFS           = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
-DisasmGC_SOURCES        = \
-	DisasmCore.cpp \
-	DisasmReg.cpp \
-	DisasmTables.cpp \
-	DisasmTablesX64.cpp
+ifdef VBOX_WITH_RAW_MODE
+ LIBRARIES              += DisasmGC
+ DisasmGC_TEMPLATE       = VBOXGC
+ DisasmGC_DEFS           = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
+ DisasmGC_SOURCES        = \
+ 	DisasmCore.cpp \
+ 	DisasmReg.cpp \
+ 	DisasmTables.cpp \
+ 	DisasmTablesX64.cpp
+endif # VBOX_WITH_RAW_MODE
 
 LIBRARIES              += DisasmR0
 DisasmR0_TEMPLATE       = VBOXR0

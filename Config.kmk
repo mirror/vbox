@@ -7,7 +7,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -269,7 +269,9 @@ endif
 
 ## @name VMM related settings.
 ## @{
-# Enable 64 bits guest pointers.
+# Enable the tradition raw-mode virtualization.
+VBOX_WITH_RAW_MODE = 1
+# Enable support for 64-bit guests.
 VBOX_WITH_64_BITS_GUESTS = 1
 # Enable multi-core VCPUs.
 VBOX_WITH_MULTI_CORE = 1
@@ -2101,127 +2103,129 @@ ifeq ($(KBUILD_TARGET),solaris)
  endif
 endif
 
-#
-# Template for building GC things.
-#
-TEMPLATE_VBOXGC = VBox GC
-TEMPLATE_VBOXGC_ASTOOL              = $(VBOX_ASTOOL)
-TEMPLATE_VBOXGC_ASFLAGS             = $(VBOX_ASFLAGS32)
-TEMPLATE_VBOXGC_DEFS                = IN_RC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
-TEMPLATE_VBOXGC_INCS                = $(PATH_ROOT)/include/iprt/nocrt
-TEMPLATE_VBOXGC_SYSSUFF             = .gc
-TEMPLATE_VBOXGC_BLD_TRG_ARCH        = x86
+ifdef VBOX_WITH_RAW_MODE
+ #
+ # Template for building RC things.
+ #
+ TEMPLATE_VBOXGC = VBox Raw-Mode Context
+ TEMPLATE_VBOXGC_ASTOOL              = $(VBOX_ASTOOL)
+ TEMPLATE_VBOXGC_ASFLAGS             = $(VBOX_ASFLAGS32)
+ TEMPLATE_VBOXGC_DEFS                = IN_RC IPRT_NO_CRT RT_WITH_NOCRT_ALIASES $(ARCH_BITS_DEFS)
+ TEMPLATE_VBOXGC_INCS                = $(PATH_ROOT)/include/iprt/nocrt
+ TEMPLATE_VBOXGC_SYSSUFF             = .gc
+ TEMPLATE_VBOXGC_BLD_TRG_ARCH        = x86
 
-ifeq ($(VBOX_LDR_FMT32),pe)
- ifdef VBOX_USE_VCC80
-  TEMPLATE_VBOXGC_TOOL              = VCC80X86
-  TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
- else
-  TEMPLATE_VBOXGC_TOOL              = VCC70
-  TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
- endif
- TEMPLATE_VBOXGC_CFLAGS             = $(TEMPLATE_VBOXGC_CXXFLAGS)
- TEMPLATE_VBOXGC_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
- ifndef VBOX_NOINC_MISC
-  include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
- endif
- TEMPLATE_VBOXGC_LIBS               = \
- 	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
- TEMPLATE_VBOXGC_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
-endif # pe
-
-ifeq ($(VBOX_LDR_FMT32),elf)
-TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
-TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) -fno-rtti
-TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
- ifeq ($(KBUILD_TARGET),solaris)
-  TEMPLATE_VBOXGC_LDFLAGS           = -r
- else
-  TEMPLATE_VBOXGC_LDFLAGS           = -nostdlib -Bsymbolic
-  # "temporarily", must fix the loader.
-  TEMPLATE_VBOXGC_LDFLAGS          += $(if $(VBOX_DO_STRIP_MODULES),-S,)
-  TEMPLATE_VBOXGC_LDFLAGS.release   = $(if $(VBOX_DO_STRIP_MODULES),-S,)
- endif
- ifn1of ($(KBUILD_TARGET), solaris freebsd)
+ ifeq ($(VBOX_LDR_FMT32),pe)
+  ifdef VBOX_USE_VCC80
+   TEMPLATE_VBOXGC_TOOL              = VCC80X86
+   TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -wd4996 -Zc:wchar_t- -Gs8192 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
+  else
+   TEMPLATE_VBOXGC_TOOL              = VCC70
+   TEMPLATE_VBOXGC_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP)
+  endif
+  TEMPLATE_VBOXGC_CFLAGS             = $(TEMPLATE_VBOXGC_CXXFLAGS)
+  TEMPLATE_VBOXGC_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD
+  ifndef VBOX_NOINC_MISC
+   include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
+  endif
   TEMPLATE_VBOXGC_LIBS               = \
-  	$(VBOX_GCC32_LIBGCC) # instricts
+  	$(PATH_SDK_W2K3DDKX86_LIB)/int64.lib
+  TEMPLATE_VBOXGC_POST_CMDS          = $(VBOX_SIGN_IMAGE_CMDS)
+ endif # pe
+
+ ifeq ($(VBOX_LDR_FMT32),elf)
+ TEMPLATE_VBOXGC_TOOL                = $(VBOX_GCC32_TOOL)
+ TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden) $(VBOX_GCC_fvisibility-inlines-hidden) -fno-rtti
+ TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing $(VBOX_GCC_fno-stack-protector) $(VBOX_GCC_fvisibility-hidden)
+  ifeq ($(KBUILD_TARGET),solaris)
+   TEMPLATE_VBOXGC_LDFLAGS           = -r
+  else
+   TEMPLATE_VBOXGC_LDFLAGS           = -nostdlib -Bsymbolic
+   # "temporarily", must fix the loader.
+   TEMPLATE_VBOXGC_LDFLAGS          += $(if $(VBOX_DO_STRIP_MODULES),-S,)
+   TEMPLATE_VBOXGC_LDFLAGS.release   = $(if $(VBOX_DO_STRIP_MODULES),-S,)
+  endif
+  ifn1of ($(KBUILD_TARGET), solaris freebsd)
+   TEMPLATE_VBOXGC_LIBS               = \
+   	$(VBOX_GCC32_LIBGCC) # instricts
+  endif
  endif
-endif
 
-ifeq ($(VBOX_LDR_FMT32),macho)
-TEMPLATE_VBOXGC_TOOL                = GXX4MACHO
-TEMPLATE_VBOXGC_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
-TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-rtti
-TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
-TEMPLATE_VBOXGC_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -m32 -nostdlib
-#TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
-endif
-
-ifeq ($(VBOX_LDR_FMT32),lx)
-TEMPLATE_VBOXGC_TOOL                = GXX3OMF
-TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
-TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions
-TEMPLATE_VBOXGC_LDFLAGS             = -Zdll -nostdlib
-TEMPLATE_VBOXGC_LIBS                = \
-	$(VBOX_GCC32_LIBGCC) \
-	$(VBOX_OBJ_SYS0) \
-	end
-endif
-
-
-#
-# Template for building a GC ring-3 testcase (tstVMStructGC, tstDevStructGC).
-#
-TEMPLATE_VBOXGCEXE = VBox GC as ring-3 testcase
-TEMPLATE_VBOXGCEXE_EXTENDS = VBOXGC
-TEMPLATE_VBOXGCEXE_DEFS = $(filter-out IPRT_NO_CRT RT_WITH_NOCRT_ALIASES,$(TEMPLATE_VBOXGC_DEFS))
-TEMPLATE_VBOXGCEXE_INCS = $(NO_SUCH_VARIABLE)
-
-ifeq ($(VBOX_LDR_FMT32),pe)
- TEMPLATE_VBOXGCEXE_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
- TEMPLATE_VBOXGCEXE_SDKS    = WIN32SDK
- ifdef VBOX_USE_VCC80
-  TEMPLATE_VBOXGCEXE_LIBS   = \
-	$(PATH_TOOL_VCC80X86_LIB)/libcmt.lib \
-	$(PATH_TOOL_VCC80X86_LIB)/oldnames.lib
- else
-  TEMPLATE_VBOXGCEXE_LIBS   = \
-	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
-	$(PATH_TOOL_VCC70_LIB)/oldnames.lib
+ ifeq ($(VBOX_LDR_FMT32),macho)
+ TEMPLATE_VBOXGC_TOOL                = GXX4MACHO
+ TEMPLATE_VBOXGC_DEFS               += $(VBOX_DARWIN_DEF_SDK_DEFS)
+ TEMPLATE_VBOXGC_CXXFLAGS            = $(VBOX_DARWIN_DEF_SDK_CXXFLAGS) -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-rtti
+ TEMPLATE_VBOXGC_CFLAGS              = $(VBOX_DARWIN_DEF_SDK_CFLAGS)   -m32 -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) -fno-common -msoft-float -static $(VBOX_GCC_fno-stack-protector) -fno-exceptions $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing
+ TEMPLATE_VBOXGC_LDFLAGS             = $(VBOX_DARWIN_DEF_SDK_LDFLAGS)  -m32 -nostdlib
+ #TEMPLATE_VBOXGC_LDFLAGS.release     = -Wl,-S ???
  endif
-endif
 
-ifeq ($(VBOX_LDR_FMT32),elf)
- TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
- TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
- TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
- TEMPLATE_VBOXGCEXE_LDFLAGS.dbgopt = -g
- TEMPLATE_VBOXGCEXE_LDFLAGS.strict = -g
- TEMPLATE_VBOXGCEXE_LDFLAGS.release = -g
- if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd.amd64)
-  # The FreeBSD port of gcc isn't picking up -m32 where it should. the .o order below isn't
-  # quite right (target source comes first), if it stops working we'll have to write a linker tool.
-  TEMPLATE_VBOXGCEXE_DEFS.$(KBUILD_TARGET)    = $(TEMPLATE_VBOXGC_DEFS.$(KBUILD_TARGET))    IPRT_DONT_USE_SYSTEM_STDINT_H
-  TEMPLATE_VBOXGCEXE_LDFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBOXGC_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
-  TEMPLATE_VBOXGCEXE_SOURCES.$(KBUILD_TARGET) = /usr/lib32/crtend.o /usr/lib32/crtn.o
-  TEMPLATE_VBOXGCEXE_SOURCES                  =	/usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o
-  TEMPLATE_VBOXGCEXE_LIBPATH.$(KBUILD_TARGET) = /usr/lib32
-  TEMPLATE_VBOXGCEXE_LIBS.$(KBUILD_TARGET)    = /usr/lib32/libc.so
+ ifeq ($(VBOX_LDR_FMT32),lx)
+ TEMPLATE_VBOXGC_TOOL                = GXX3OMF
+ TEMPLATE_VBOXGC_CXXFLAGS            = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_CXX) $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions -fno-rtti
+ TEMPLATE_VBOXGC_CFLAGS              = -nostdinc -g -pipe $(VBOX_GCC_PEDANTIC_C)   $(VBOX_GCC32_Wno-variadic-macros) $(VBOX_GCC_GC_OPT) $(VBOX_GCC_GC_FP) -fno-strict-aliasing -fno-exceptions
+ TEMPLATE_VBOXGC_LDFLAGS             = -Zdll -nostdlib
+ TEMPLATE_VBOXGC_LIBS                = \
+ 	$(VBOX_GCC32_LIBGCC) \
+ 	$(VBOX_OBJ_SYS0) \
+ 	end
  endif
-endif
 
-ifeq ($(VBOX_LDR_FMT32),macho)
- TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
- TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
- TEMPLATE_VBOXGCEXE_LDFLAGS  = -g -m32
-endif
 
-ifeq ($(VBOX_LDR_FMT32),lx)
- TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
- TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
- TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
- TEMPLATE_VBOXGCEXE_LIBS     = $(NO_SUCH_VARIABLE)
-endif
+ #
+ # Template for building a RC ring-3 testcase (tstVMStructGC, tstDevStructGC).
+ #
+ TEMPLATE_VBOXGCEXE = VBox Raw-Mode as ring-3 testcase
+ TEMPLATE_VBOXGCEXE_EXTENDS = VBOXGC
+ TEMPLATE_VBOXGCEXE_DEFS = $(filter-out IPRT_NO_CRT RT_WITH_NOCRT_ALIASES,$(TEMPLATE_VBOXGC_DEFS))
+ TEMPLATE_VBOXGCEXE_INCS = $(NO_SUCH_VARIABLE)
+
+ ifeq ($(VBOX_LDR_FMT32),pe)
+  TEMPLATE_VBOXGCEXE_LDFLAGS = -Incremental:NO -MapInfo:Exports -NoD -Debug
+  TEMPLATE_VBOXGCEXE_SDKS    = WIN32SDK
+  ifdef VBOX_USE_VCC80
+   TEMPLATE_VBOXGCEXE_LIBS   = \
+ 	$(PATH_TOOL_VCC80X86_LIB)/libcmt.lib \
+ 	$(PATH_TOOL_VCC80X86_LIB)/oldnames.lib
+  else
+   TEMPLATE_VBOXGCEXE_LIBS   = \
+ 	$(PATH_TOOL_VCC70_LIB)/libcmt.lib \
+ 	$(PATH_TOOL_VCC70_LIB)/oldnames.lib
+  endif
+ endif
+
+ ifeq ($(VBOX_LDR_FMT32),elf)
+  TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+  TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
+  TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
+  TEMPLATE_VBOXGCEXE_LDFLAGS.dbgopt = -g
+  TEMPLATE_VBOXGCEXE_LDFLAGS.strict = -g
+  TEMPLATE_VBOXGCEXE_LDFLAGS.release = -g
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), freebsd.amd64)
+   # The FreeBSD port of gcc isn't picking up -m32 where it should. the .o order below isn't
+   # quite right (target source comes first), if it stops working we'll have to write a linker tool.
+   TEMPLATE_VBOXGCEXE_DEFS.$(KBUILD_TARGET)    = $(TEMPLATE_VBOXGC_DEFS.$(KBUILD_TARGET))    IPRT_DONT_USE_SYSTEM_STDINT_H
+   TEMPLATE_VBOXGCEXE_LDFLAGS.$(KBUILD_TARGET) = $(TEMPLATE_VBOXGC_LDFLAGS.$(KBUILD_TARGET)) -nostdlib -v
+   TEMPLATE_VBOXGCEXE_SOURCES.$(KBUILD_TARGET) = /usr/lib32/crtend.o /usr/lib32/crtn.o
+   TEMPLATE_VBOXGCEXE_SOURCES                  =	/usr/lib32/crt1.o /usr/lib32/crti.o /usr/lib32/crtbegin.o
+   TEMPLATE_VBOXGCEXE_LIBPATH.$(KBUILD_TARGET) = /usr/lib32
+   TEMPLATE_VBOXGCEXE_LIBS.$(KBUILD_TARGET)    = /usr/lib32/libc.so
+  endif
+ endif
+
+ ifeq ($(VBOX_LDR_FMT32),macho)
+  TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+  TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -static -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
+  TEMPLATE_VBOXGCEXE_LDFLAGS  = -g -m32
+ endif
+
+ ifeq ($(VBOX_LDR_FMT32),lx)
+  TEMPLATE_VBOXGCEXE_CFLAGS   = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CFLAGS))
+  TEMPLATE_VBOXGCEXE_CXXFLAGS = $(filter-out -nostdinc,$(TEMPLATE_VBOXGC_CXXFLAGS))
+  TEMPLATE_VBOXGCEXE_LDFLAGS  = -g
+  TEMPLATE_VBOXGCEXE_LIBS     = $(NO_SUCH_VARIABLE)
+ endif
+endif # VBOX_WITH_RAW_MODE
 
 
 #

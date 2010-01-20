@@ -131,10 +131,12 @@ PROGRAMS.l4 += \
 PROGRAMS.darwin += \
 	tstDarwinSched
 SYSMODS += \
-	tstLdrObj \
 	tstLdrObjR0 \
 	tstRTR0MemUserKernel \
 	tstR0ThreadPreemption
+ifdef VBOX_WITH_RAW_MODE
+ SYSMODS += tstLdrObj
+endif
 if1of ($(VBOX_LDR_FMT)), lx pe)
 LIBRARIES += \
 	tstLdr-4Imp
@@ -225,29 +227,31 @@ tstLdr-2_DEFS = IN_DIS
 tstLdr-2_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
-tstLdrObj_TEMPLATE = VBOXGC
-tstLdrObj_INST = $(INST_TESTCASE)
-tstLdrObj_SYSSUFF = .gc
-tstLdrObj_SOURCES = tstLdrObj.cpp
-tstLdrObj_DEFS = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
-ifeq ($(VBOX_LDR_FMT32),elf)
-tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
-endif
-tstLdrObj_LIBS = \
-	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
-ifeq ($(VBOX_LDR_FMT32),pe)
-tstLdrObj_LDFLAGS = -Entry:Entrypoint
-tstLdrObj_LIBS += \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
-endif # PE
-ifeq ($(VBOX_LDR_FMT32),elf)
-tstLdrObj_LDFLAGS = -e Entrypoint
-endif
-ifeq ($(VBOX_LDR_FMT32),lx)
-tstLdrObj_LIBS += \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
-endif
+ifdef VBOX_WITH_RAW_MODE
+ tstLdrObj_TEMPLATE = VBOXGC
+ tstLdrObj_INST = $(INST_TESTCASE)
+ tstLdrObj_SYSSUFF = .gc
+ tstLdrObj_SOURCES = tstLdrObj.cpp
+ tstLdrObj_DEFS = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
+ ifeq ($(VBOX_LDR_FMT32),elf)
+ tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
+ endif
+ tstLdrObj_LIBS = \
+ 	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ ifeq ($(VBOX_LDR_FMT32),pe)
+ tstLdrObj_LDFLAGS = -Entry:Entrypoint
+ tstLdrObj_LIBS += \
+ 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+ endif # PE
+ ifeq ($(VBOX_LDR_FMT32),elf)
+ tstLdrObj_LDFLAGS = -e Entrypoint
+ endif
+ ifeq ($(VBOX_LDR_FMT32),lx)
+ tstLdrObj_LIBS += \
+ 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
+ endif
+endif # VBOX_WITH_RAW_MODE
 
 tstLdr-3_SOURCES = tstLdr-3.cpp
 tstLdr-3_DEFS = IN_DIS

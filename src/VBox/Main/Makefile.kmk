@@ -44,7 +44,7 @@ ifdef VBOX_ONLY_SDK
  # I'm Evil! Dr. Evil.
  include $(KBUILD_PATH)/tools/VCC70.kmk
  include $(KBUILD_PATH)/sdks/WINPSDK.kmk
-endif #!VBOX_ONLY_SDK
+endif # !VBOX_ONLY_SDK
 
 
 # Construct VBOX_MAIN_DEFS
@@ -55,10 +55,11 @@ ifneq ($(KBUILD_TARGET),win)
   $(error "VBox: VBOX_WITH_XPCOM isn't defined")
  endif
  ifneq ($(KBUILD_TARGET),os2)
-  VBOX_MAIN_DEFS+= VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
+  VBOX_MAIN_DEFS += VBOX_WITH_SYS_V_IPC_SESSION_WATCHER
  endif
 endif
 VBOX_MAIN_DEFS += \
+	$(if $(VBOX_WITH_RAW_MODE),VBOX_WITH_RAW_MODE,) \
 	$(if $(VBOX_WITH_NETFLT),VBOX_WITH_NETFLT,) \
 	$(if $(VBOX_WITH_CROGL),VBOX_WITH_CROGL,) \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,) \

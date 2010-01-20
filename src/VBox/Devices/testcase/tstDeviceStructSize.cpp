@@ -1,12 +1,12 @@
 /* $Id$ */
 /** @file
  * tstDeviceStructSize - testcase for check structure sizes/alignment
- *                       and to verify that HC and GC uses the same
+ *                       and to verify that HC and RC uses the same
  *                       representation of the structures.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -311,11 +311,13 @@ int main()
     CHECK_MEMBER_ALIGNMENT(VPCISTATE, Queues, 8);
 #endif
 
+#ifdef VBOX_WITH_RAW_MODE
     /*
-     * Compare HC and GC.
+     * Compare HC and RC.
      */
-    printf("tstDeviceStructSize: Comparing HC and GC...\n");
-#include "tstDeviceStructSizeGC.h"
+    printf("tstDeviceStructSize: Comparing HC and RC...\n");
+# include "tstDeviceStructSizeRC.h"
+#endif
 
     /*
      * Report result.
@@ -326,3 +328,4 @@ int main()
         printf("tstDeviceStructSize: SUCCESS\n");
     return rc;
 }
+
