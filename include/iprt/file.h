@@ -778,7 +778,7 @@ RTR3DECL(int) RTFileQueryFsSizes(RTFILE hFile, PRTFOFF pcbTotal, RTFOFF *pcbFree
  *          means that the return memory may reflect the state of the file when it's
  *          accessed instead of when this call was done. So, in short, don't use this
  *          API for volatile files, then rather use the extended variant with a
- *          yet-to-be-defined.
+ *          yet-to-be-defined flag.
  */
 RTDECL(int) RTFileReadAll(const char *pszFilename, void **ppvFile, size_t *pcbFile);
 
