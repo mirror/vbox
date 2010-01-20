@@ -141,8 +141,7 @@ void hwaccmMpPokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
             STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPokeFailed, z);
             
         /* Spin until the VCPU has switched back. */
-        while (     VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC
-               &&   pVCpu->hwaccm.s.fCheckedTLBFlush
+        while (     pVCpu->hwaccm.s.fCheckedTLBFlush
                &&   cWorldSwitchExit == pVCpu->hwaccm.s.cWorldSwitchExit)
         {
             ASMNopPause();
@@ -184,8 +183,7 @@ VMMDECL(int) HWACCMInvalidatePageOnAllVCpus(PVM pVM, RTGCPTR GCPtr)
         else
         {
             hwaccmQueueInvlPage(pVCpu, GCPtr);
-            if (    VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC
-                &&  pVCpu->hwaccm.s.fCheckedTLBFlush)
+            if (pVCpu->hwaccm.s.fCheckedTLBFlush)
             {
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdown);
 #ifdef IN_RING0
@@ -232,8 +230,7 @@ VMMDECL(int) HWACCMFlushTLBOnAllVCpus(PVM pVM)
         if (idThisCpu == idCpu)
             continue;
 
-        if (    VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC
-            &&  pVCpu->hwaccm.s.fCheckedTLBFlush)
+        if (pVCpu->hwaccm.s.fCheckedTLBFlush)
         {
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
 #ifdef IN_RING0
@@ -308,8 +305,7 @@ VMMDECL(int) HWACCMInvalidatePhysPage(PVM pVM, RTGCPHYS GCPhys)
             }
 
             VMCPU_FF_SET(pVCpu, VMCPU_FF_TLB_FLUSH);
-            if (    VMCPU_GET_STATE(pVCpu) == VMCPUSTATE_STARTED_EXEC
-                &&  pVCpu->hwaccm.s.fCheckedTLBFlush)
+            if (pVCpu->hwaccm.s.fCheckedTLBFlush)
             {
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatTlbShootdownFlush);
 # ifdef IN_RING0
