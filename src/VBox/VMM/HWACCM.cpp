@@ -658,7 +658,23 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
         LogRel(("HWACCM: No VT-x or AMD-V CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
         if (VMMIsHwVirtExtForced(pVM))
-            return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
+        {
+            switch (pVM->hwaccm.s.lLastError)
+            {
+            case VERR_VMX_NO_VMX:
+                return VM_SET_ERROR(pVM, VERR_VMX_NO_VMX, "VT-x is not available.");
+            case VERR_VMX_IN_VMX_ROOT_MODE:
+                return VM_SET_ERROR(pVM, VERR_VMX_IN_VMX_ROOT_MODE, "VT-x is being used by another hypervisor.");
+            case VERR_SVM_IN_USE:
+                return VM_SET_ERROR(pVM, VERR_SVM_IN_USE, "AMD-V is being used by another hypervisor.");
+            case VERR_SVM_NO_SVM:
+                return VM_SET_ERROR(pVM, VERR_SVM_NO_SVM, "AMD-V is not available.");
+            case VERR_SVM_DISABLED:
+                return VM_SET_ERROR(pVM, VERR_SVM_DISABLED, "AMD-V is disabled in the BIOS.");
+            default:
+                return pVM->hwaccm.s.lLastError;
+            }
+        }
         return VINF_SUCCESS;
     }
 
