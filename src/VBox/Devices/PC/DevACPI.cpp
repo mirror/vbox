@@ -465,6 +465,19 @@ struct ACPITBLIOAPIC
 };
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
+
+
+/* HPET Descriptor Structure */
+struct ACPITBLHPET
+{
+    ACPITBLHEADER aHeader;
+    uint32_t      u32Id;
+    ACPIGENADDR   HpetAddr;
+    uint8_t       u32Number;
+    uint16_t      u32MinTick;
+    uint8_t       u8Attributes;
+};
+
 # ifdef IN_RING3 /** @todo r=bird: Move this down to where it's used. */
 
 #  define PCAT_COMPAT   0x1                     /**< system has also a dual-8259 setup */
@@ -869,6 +882,33 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
     /* Save for attach/detach notifications. */
     s->GCPhysMADTBase = addr;
     s->cbMADT         = madt.size();
+}
+
+
+/** High Performance Event Timer (HPET) descriptor */
+static void acpiSetupHPET(ACPIState *s, RTGCPHYS32 addr)
+{
+    ACPITBLHPET hpet;
+
+    memset(&hpet, 0, sizeof(hpet));
+
+    acpiPrepareHeader(&hpet.aHeader, "HPET", sizeof(hpet), 1);
+    /* Keep base address consistent with appropriate DSDT entry  (vbox.dsl) */
+    acpiWriteGenericAddr(&hpet.HpetAddr,
+                         0  /* Memory address space */,
+                         64 /* Register bit width */,
+                         0  /* Bit offset */,
+                         0, /* Register access size, is it correct? */
+                         0xfed00000 /* Address */);
+
+    hpet.u32Id        = 0x8086a201; /* must match what HPET ID returns, is it correct ? */
+    hpet.u32Number    = 0;
+    hpet.u32MinTick   = 4096;
+    hpet.u8Attributes = 0;
+
+    hpet.aHeader.u8Checksum = acpiChecksum((uint8_t *)&hpet, sizeof(hpet));
+
+    acpiPhyscpy(s, addr, (const uint8_t *)&hpet, sizeof(hpet));
 }
 
 /* SCI IRQ */
@@ -1922,17 +1962,21 @@ static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, PDMINTERFAC
 static int acpiPlantTables(ACPIState *s)
 {
     int        rc;
-    RTGCPHYS32 rsdt_addr, xsdt_addr, fadt_acpi1_addr, fadt_acpi2_addr, facs_addr, dsdt_addr, last_addr, apic_addr = 0;
+    RTGCPHYS32 cur_addr, rsdt_addr, xsdt_addr, fadt_acpi1_addr, fadt_acpi2_addr, facs_addr, dsdt_addr, hpet_addr, apic_addr = 0;
     uint32_t   addend = 0;
     RTGCPHYS32 rsdt_addrs[4];
     RTGCPHYS32 xsdt_addrs[4];
-    uint32_t   cAddr;
+    uint32_t   cAddr, madt_index, hpet_index;
     size_t     rsdt_tbl_len = sizeof(ACPITBLHEADER);
     size_t     xsdt_tbl_len = sizeof(ACPITBLHEADER);
 
     cAddr = 1;           /* FADT */
     if (s->u8UseIOApic)
-        cAddr++;         /* MADT */
+        madt_index = cAddr++;         /* MADT */
+
+
+    if (s->fUseHpet)
+        hpet_index = cAddr++;         /* HPET */
 
     rsdt_tbl_len += cAddr*4;  /* each entry: 32 bits phys. address. */
     xsdt_tbl_len += cAddr*8;  /* each entry: 64 bits phys. address. */
@@ -1963,24 +2007,34 @@ static int acpiPlantTables(ACPIState *s)
     }
     s->cbRamLow = (uint32_t)cbRamLow;
 
-    rsdt_addr = 0;
-    xsdt_addr = RT_ALIGN_32(rsdt_addr + rsdt_tbl_len, 16);
-    fadt_acpi1_addr = RT_ALIGN_32(xsdt_addr       + xsdt_tbl_len, 16);
-    fadt_acpi2_addr = RT_ALIGN_32(fadt_acpi1_addr + ACPITBLFADT_VERSION1_SIZE, 16);
+    cur_addr = 0;
+
+    rsdt_addr = cur_addr;
+    cur_addr = RT_ALIGN_32(cur_addr + rsdt_tbl_len, 16);
+
+    xsdt_addr = cur_addr;
+    cur_addr = RT_ALIGN_32(cur_addr       + xsdt_tbl_len, 16);
+
+    fadt_acpi1_addr = cur_addr;
+    cur_addr = RT_ALIGN_32(cur_addr + ACPITBLFADT_VERSION1_SIZE, 16);
+
+    fadt_acpi2_addr = cur_addr;
     /** @todo ACPI 3.0 doc says it needs to be aligned on a 64 byte boundary. */
-    facs_addr = RT_ALIGN_32(fadt_acpi2_addr + sizeof(ACPITBLFADT), 16);
+    cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLFADT), 16);
+
+
+    facs_addr = cur_addr;
+    cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLFACS), 16);
+
     if (s->u8UseIOApic)
     {
-        apic_addr = RT_ALIGN_32(facs_addr + sizeof(ACPITBLFACS), 16);
-        /**
-         * @todo nike: maybe some refactoring needed to compute tables layout,
-         * but as this code is executed only once it doesn't make sense to optimize much
-         */
-        dsdt_addr = RT_ALIGN_32(apic_addr + AcpiTableMADT::sizeFor(s), 16);
+        apic_addr = cur_addr;
+        cur_addr = RT_ALIGN_32(cur_addr + AcpiTableMADT::sizeFor(s), 16);
     }
-    else
+    if (s->fUseHpet)
     {
-        dsdt_addr = RT_ALIGN_32(facs_addr + sizeof(ACPITBLFACS), 16);
+        hpet_addr = cur_addr;
+        cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLHPET), 16);
     }
 
     void*  pDsdtCode = NULL;
@@ -1989,8 +2043,10 @@ static int acpiPlantTables(ACPIState *s)
     if (RT_FAILURE(rc))
         return rc;
 
-    last_addr = RT_ALIGN_32(dsdt_addr + uDsdtSize, 16);
-    if (last_addr > 0x10000)
+    dsdt_addr = cur_addr;
+    cur_addr = RT_ALIGN_32(cur_addr + uDsdtSize, 16);
+
+    if (cur_addr > 0x10000)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_TOO_MUCH_DATA,
                                 N_("Error: ACPI tables > 64KB"));
 
@@ -1999,6 +2055,10 @@ static int acpiPlantTables(ACPIState *s)
     Log(("RSDT 0x%08X XSDT 0x%08X\n", rsdt_addr + addend, xsdt_addr + addend));
     Log(("FACS 0x%08X FADT (1.0) 0x%08X, FADT (2+) 0x%08X\n", facs_addr + addend, fadt_acpi1_addr + addend, fadt_acpi2_addr + addend));
     Log(("DSDT 0x%08X\n", dsdt_addr + addend));
+    if (s->fUseHpet)
+    {
+        Log(("HPET 0x%08X\n", hpet_addr + addend));
+    }
     acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, rsdt_addr + addend, xsdt_addr + addend);
     acpiSetupDSDT(s, dsdt_addr + addend, pDsdtCode, uDsdtSize);
     acpiCleanupDsdt(s->pDevIns, pDsdtCode);
@@ -2010,8 +2070,14 @@ static int acpiPlantTables(ACPIState *s)
     if (s->u8UseIOApic)
     {
         acpiSetupMADT(s, apic_addr + addend);
-        rsdt_addrs[1] = apic_addr + addend;
-        xsdt_addrs[1] = apic_addr + addend;
+        rsdt_addrs[madt_index] = apic_addr + addend;
+        xsdt_addrs[madt_index] = apic_addr + addend;
+    }
+    if (s->fUseHpet)
+    {
+        acpiSetupHPET(s, hpet_addr + addend);
+        rsdt_addrs[hpet_index] = hpet_addr + addend;
+        xsdt_addrs[hpet_index] = hpet_addr + addend;
     }
 
     rc = acpiSetupRSDT(s, rsdt_addr + addend, cAddr, rsdt_addrs);

@@ -890,22 +890,27 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
 
                 // High Precision Event Timer
                 Device(HPET) {
-                Name(_HID,  EISAID("PNP0103"))
-                Name (_CID, 0x010CD041)
+                Name (_HID,  EISAID("PNP0103"))
+                Name (_CID, EISAID("PNP0C01"))
                 Name(_UID, 0)
                 Method (_STA, 0, NotSerialized) {
                     Return(UHPT)
                 }
-                Name(_CRS, ResourceTemplate() {
+                Name(CRS, ResourceTemplate() {
                  IRQNoFlags ()
                             {0}
                  IRQNoFlags ()
                             {8}
                  Memory32Fixed (ReadWrite,
                             0xFED00000,         // Address Base
-                            0x00000400,         // Address Length
-                            _Y16)
+                            0x00000400         // Address Length
+                            )
                   })
+                
+                }
+                Method (_CRS, 0, NotSerialized)
+                {
+                     Return (CRS)
                 }
 
 
