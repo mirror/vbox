@@ -5791,6 +5791,10 @@ void Machine::uninitDataAndChildObjects()
         // clean up the snapshots list (Snapshot::uninit() will handle the snapshot's children recursively)
         if (mData->mFirstSnapshot)
         {
+            // snapshots tree is protected by media write lock; strictly
+            // this isn't necessary here since we're deleting the entire
+            // machine, but otherwise we assert in Snapshot::uninit()
+            AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
             mData->mFirstSnapshot->uninit();
             mData->mFirstSnapshot.setNull();
         }

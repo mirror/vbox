@@ -83,7 +83,7 @@ struct Snapshot::Data
     ~Data()
     {}
 
-    Guid                        uuid;
+    const Guid                  uuid;
     Utf8Str                     strName;
     Utf8Str                     strDescription;
     RTTIMESPEC                  timeStamp;
@@ -148,7 +148,7 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
 
     m->pParent = aParent;
 
-    m->uuid = aId;
+    unconst(m->uuid) = aId;
     m->strName = aName;
     m->strDescription = aDescription;
     m->timeStamp = aTimeStamp;
@@ -167,6 +167,9 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
  *  Uninitializes the instance and sets the ready flag to FALSE.
  *  Called either from FinalRelease(), by the parent when it gets destroyed,
  *  or by a third party when it decides this object is no more valid.
+ *
+ *  Since this manipulates the snapshots tree, the caller must hold the
+ *  machine lock in write mode (which protects the snapshots tree)!
  */
 void Snapshot::uninit()
 {
@@ -176,6 +179,8 @@ void Snapshot::uninit()
     AutoUninitSpan autoUninitSpan(this);
     if (autoUninitSpan.uninitDone())
         return;
+
+    Assert(m->pMachine->isWriteLockOnCurrentThread());
 
     // uninit all children
     SnapshotsList::iterator it;
@@ -210,8 +215,9 @@ void Snapshot::uninit()
  *  that from here because if we do, the AutoUninitSpan waits forever for
  *  the number of callers to become 0 (it is 1 because of the AutoCaller in here).
  *
- *  NOTE: this does NOT lock the snapshot, it is assumed that the caller has
- *  locked a) the machine and b) the snapshots tree in write mode!
+ *  NOTE: this does NOT lock the snapshot, it is assumed that the machine state
+ *  (and the snapshots tree) is protected by the caller having requested the machine
+ *  lock in write mode AND the machine state must be DeletingSnapshot.
  */
 void Snapshot::beginDiscard()
 {
@@ -219,8 +225,11 @@ void Snapshot::beginDiscard()
     if (FAILED(autoCaller.rc()))
         return;
 
-    /* for now, the snapshot must have only one child when discarded,
-        * or no children at all */
+    // caller must have acquired the machine's write lock
+    Assert(m->pMachine->mData->mMachineState == MachineState_DeletingSnapshot);
+    Assert(m->pMachine->isWriteLockOnCurrentThread());
+
+    // the snapshot must have only one child when discarded or no children at all
     AssertReturnVoid(m->llChildren.size() <= 1);
 
     ComObjPtr<Snapshot> parentSnapshot = m->pParent;
@@ -258,8 +267,7 @@ void Snapshot::beginDiscard()
          ++it)
     {
         ComObjPtr<Snapshot> child = *it;
-        AutoWriteLock childLock(child COMMA_LOCKVAL_SRC_POS);
-
+        // no need to lock, snapshots tree is protected by machine lock
         child->m->pParent = m->pParent;
         if (m->pParent)
             m->pParent->m->llChildren.push_back(child);
@@ -273,10 +281,12 @@ void Snapshot::beginDiscard()
  * Internal helper that removes "this" from the list of children of its
  * parent. Used in uninit() and other places when reparenting is necessary.
  *
- * The caller must hold the snapshots tree lock!
+ * The caller must hold the machine lock in write mode (which protects the snapshots tree)!
  */
 void Snapshot::deparent()
 {
+    Assert(m->pMachine->isWriteLockOnCurrentThread());
+
     SnapshotsList &llParent = m->pParent->m->llChildren;
     for (SnapshotsList::iterator it = llParent.begin();
          it != llParent.end();
@@ -576,7 +586,8 @@ RTTIMESPEC Snapshot::getTimeStamp() const
 /**
  *  Searches for a snapshot with the given ID among children, grand-children,
  *  etc. of this snapshot. This snapshot itself is also included in the search.
- *  Caller must hold the snapshots tree lock!
+ *
+ *  Caller must hold the machine lock (which protects the snapshots tree!)
  */
 ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
 {
@@ -585,13 +596,11 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
+    // no need to lock, uuid is const
     if (m->uuid == aId)
         child = this;
     else
     {
-        alock.release();
         for (SnapshotsList::const_iterator it = m->llChildren.begin();
              it != m->llChildren.end();
              ++it)
@@ -608,7 +617,8 @@ ComObjPtr<Snapshot> Snapshot::findChildOrSelf(IN_GUID aId)
  *  Searches for a first snapshot with the given name among children,
  *  grand-children, etc. of this snapshot. This snapshot itself is also included
  *  in the search.
- *  Caller must hold the snapshots tree lock!
+ *
+ *  Caller must hold the machine lock (which protects the snapshots tree!)
  */
 ComObjPtr<Snapshot> Snapshot::findChildOrSelf(const Utf8Str &aName)
 {
@@ -677,7 +687,7 @@ void Snapshot::updateSavedStatePathsImpl(const char *aOldPath, const char *aNewP
  *  @param aOldPath old path (full)
  *  @param aNewPath new path (full)
  *
- *  @note Locks this object + children for writing.
+ *  @note Locks the machine (for the snapshots tree) +  this object + children for writing.
  */
 void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
 {
@@ -2035,7 +2045,9 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
         return E_FAIL;
     }
 
-    /* set the proper machine state (note: after creating a Task instance) */
+    // the task might start running but will block on acquiring the machine's write lock
+    // which we acquired above; once this function leaves, the task will be unblocked;
+    // set the proper machine state here now (note: after creating a Task instance)
     setMachineState(MachineState_DeletingSnapshot);
 
     /* return the progress to the caller */
@@ -2094,7 +2106,11 @@ typedef std::list <MediumDiscardRec> MediumDiscardRecList;
  * The DeleteSnapshotTask contains the progress object returned to the console by
  * SessionMachine::DeleteSnapshot, through which progress and results are reported.
  *
- * @note Locks mParent + this + child objects for writing!
+ * SessionMachine::DeleteSnapshot() has set the machne state to MachineState_DeletingSnapshot
+ * right after creating this task. Since we block on the machine write lock at the beginning,
+ * once that has been acquired, we can assume that the machine state is indeed that.
+ *
+ * @note Locks the machine + the snapshot + the media tree for writing!
  *
  * @param aTask Task data.
  */
@@ -2117,28 +2133,32 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         return;
     }
 
-    /* Locking order:  */
-    AutoMultiWriteLock3 alock(this->lockHandle(),
-                              aTask.pSnapshot->lockHandle(),
-                              &mParent->getMediaTreeLockHandle()
-                              COMMA_LOCKVAL_SRC_POS);
-
-    ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
-    /* no need to lock the snapshot machine since it is const by definiton */
+    MediumDiscardRecList toDiscard;
 
     HRESULT rc = S_OK;
-
-    /* save the snapshot ID (for callbacks) */
-    Guid snapshotId1 = aTask.pSnapshot->getId();
-
-    MediumDiscardRecList toDiscard;
 
     bool fMachineSettingsChanged = false;       // Machine
     bool fNeedsSaveSettings = false;            // VirtualBox.xml
 
+    Guid snapshotId1;
+
     try
     {
-        /* first pass: */
+        /* Locking order:  */
+        AutoMultiWriteLock3 multiLock(this->lockHandle(),                   // machine
+                                      aTask.pSnapshot->lockHandle(),        // snapshot
+                                      &mParent->getMediaTreeLockHandle()    // media tree
+                                      COMMA_LOCKVAL_SRC_POS);
+            // once we have this lock, we know that SessionMachine::DeleteSnapshot()
+            // has exited after setting the machine state to MachineState_DeletingSnapshot
+
+        ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
+        // no need to lock the snapshot machine since it is const by definiton
+
+        // save the snapshot ID (for callbacks)
+        snapshotId1 = aTask.pSnapshot->getId();
+
+        // first pass:
         LogFlowThisFunc(("1: Checking hard disk merge prerequisites...\n"));
 
         // go thru the attachments of the snapshot machine
@@ -2147,8 +2167,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         // medium, we will need to merge it with its one and only child (the
         // diff image holding the changes written after the snapshot was taken)
         for (MediaData::AttachmentList::iterator it = pSnapMachine->mMediaData->mAttachments.begin();
-            it != pSnapMachine->mMediaData->mAttachments.end();
-            ++it)
+             it != pSnapMachine->mMediaData->mAttachments.end();
+             ++it)
         {
             ComObjPtr<MediumAttachment> &pAttach = *it;
             AutoReadLock attachLock(pAttach COMMA_LOCKVAL_SRC_POS);
@@ -2250,6 +2270,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             }
         }
 
+        // we can release the lock now since the machine state is MachineState_DeletingSnapshot
+        multiLock.release();
+
         /* Now we checked that we can successfully merge all normal hard disks
          * (unless a runtime error like end-of-disc happens). Prior to
          * performing the actual merge, we want to discard the snapshot itself
@@ -2261,20 +2284,24 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         LogFlowThisFunc(("2: Discarding snapshot...\n"));
 
         {
+            // saveAllSnapshots() needs a machine lock, and the snapshots
+            // tree is protected by the machine lock as well
+            AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
+
             ComObjPtr<Snapshot> parentSnapshot = aTask.pSnapshot->getParent();
             Utf8Str stateFilePath = aTask.pSnapshot->stateFilePath();
 
-            /* Note that discarding the snapshot will deassociate it from the
-             * hard disks which will allow the merge+delete operation for them*/
+            // Note that discarding the snapshot will deassociate it from the
+            // hard disks which will allow the merge+delete operation for them
             aTask.pSnapshot->beginDiscard();
             aTask.pSnapshot->uninit();
+                    // this requests the machine lock in turn when deleting all the children
+                    // in the snapshot machine
 
             rc = saveAllSnapshots();
+            machineLock.release();
             if (FAILED(rc)) throw rc;
 
-            /// @todo (dmik)
-            //  if we implement some warning mechanism later, we'll have
-            //  to return a warning if the state file path cannot be deleted
             if (!stateFilePath.isEmpty())
             {
                 aTask.pProgress->SetNextOperation(Bstr(tr("Discarding the execution state")),
@@ -2301,13 +2328,9 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
         /* third pass: */
         LogFlowThisFunc(("3: Performing actual hard disk merging...\n"));
 
-        /* leave the locks before the potentially lengthy operation */
-        alock.leave();
-
         /// @todo NEWMEDIA turn the following errors into warnings because the
         /// snapshot itself has been already deleted (and interpret these
         /// warnings properly on the GUI side)
-
         for (MediumDiscardRecList::iterator it = toDiscard.begin();
              it != toDiscard.end();)
         {
@@ -2320,10 +2343,6 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             /* prevent from calling cancelDiscard() */
             it = toDiscard.erase(it);
         }
-
-        LogFlowThisFunc(("Entering locks again...\n"));
-        alock.enter();
-        LogFlowThisFunc(("Entered locks OK\n"));
     }
     catch (HRESULT aRC) { rc = aRC; }
 
@@ -2331,20 +2350,23 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
     {
         HRESULT rc2 = S_OK;
 
-        /* un-prepare the remaining hard disks */
+        AutoMultiWriteLock2 multiLock(this->lockHandle(),                   // machine
+                                      &mParent->getMediaTreeLockHandle()    // media tree
+                                      COMMA_LOCKVAL_SRC_POS);
+
+        // un-prepare the remaining hard disks
         for (MediumDiscardRecList::const_iterator it = toDiscard.begin();
-             it != toDiscard.end(); ++it)
+             it != toDiscard.end();
+             ++it)
         {
-            it->hd->cancelDiscard (it->chain);
+            it->hd->cancelDiscard(it->chain);
 
             if (!it->replaceHd.isNull())
             {
-                /* undo hard disk replacement */
-
                 rc2 = it->replaceHd->attachTo(mData->mUuid, it->snapshotId);
                 AssertComRC(rc2);
 
-                rc2 = it->hd->detachFrom (mData->mUuid, it->snapshotId);
+                rc2 = it->hd->detachFrom(mData->mUuid, it->snapshotId);
                 AssertComRC(rc2);
 
                 AutoWriteLock attLock(it->replaceHda COMMA_LOCKVAL_SRC_POS);
@@ -2352,8 +2374,6 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
             }
         }
     }
-
-    alock.release();
 
     // whether we were successful or not, we need to set the machine
     // state and save the machine settings;
@@ -2375,7 +2395,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
             if (fMachineSettingsChanged)
             {
-                alock.acquire();
+                AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
                 saveSettings(SaveS_InformCallbacksAnyway);
             }
 
