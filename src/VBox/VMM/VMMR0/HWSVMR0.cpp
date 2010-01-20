@@ -77,7 +77,17 @@ VMMR0DECL(int) SVMR0EnableCpu(PHWACCM_CPUINFO pCpu, PVM pVM, void *pvPageCpu, RT
     /* We must turn on AMD-V and setup the host state physical address, as those MSRs are per-cpu/core. */
     uint64_t val = ASMRdMsr(MSR_K6_EFER);
     if (val & MSR_K6_EFER_SVME)
-        return VERR_SVM_IN_USE;
+    {
+        /* If the VBOX_HWVIRTEX_IGNORE_SVM_IN_USE hack is active, then we blindly use AMD-V. */
+        if (    pVM
+            &&  pVM->hwaccm.s.svm.fIgnoreInUseError)
+        {
+            pCpu->fIgnoreAMDVInUseError = true;
+        }
+
+        if (!pCpu->fIgnoreAMDVInUseError)
+            return VERR_SVM_IN_USE;
+    }
 
     /* Turn on AMD-V in the EFER MSR. */
     ASMWrMsr(MSR_K6_EFER, val | MSR_K6_EFER_SVME);

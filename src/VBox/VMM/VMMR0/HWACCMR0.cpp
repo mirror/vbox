@@ -148,7 +148,8 @@ static struct
  */
 VMMR0DECL(int) HWACCMR0Init(void)
 {
-    int        rc;
+    int     rc;
+    bool    fAMDVPresent = false;
 
     memset(&HWACCMR0Globals, 0, sizeof(HWACCMR0Globals));
     HWACCMR0Globals.enmHwAccmState = HWACCMSTATE_UNINITIALIZED;
@@ -353,6 +354,11 @@ VMMR0DECL(int) HWACCMR0Init(void)
                 int     aRc[RTCPUSET_MAX_CPUS];
                 RTCPUID idCpu = 0;
 
+                fAMDVPresent = true;
+
+                /* Query AMD features. */
+                ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
+
                 /* We need to check if AMD-V has been properly initialized on all CPUs. Some BIOSes might do a poor job. */
                 memset(aRc, 0, sizeof(aRc));
                 rc = RTMpOnAll(HWACCMR0InitCPU, (void *)u32VendorEBX, aRc);
@@ -367,8 +373,6 @@ VMMR0DECL(int) HWACCMR0Init(void)
 #endif
                 if (RT_SUCCESS(rc))
                 {
-                    /* Query AMD features. */
-                    ASMCpuId(0x8000000A, &HWACCMR0Globals.svm.u32Rev, &HWACCMR0Globals.uMaxASID, &u32Dummy, &HWACCMR0Globals.svm.u32Features);
                     /* Read the HWCR msr for diagnostics. */
                     HWACCMR0Globals.svm.msrHWCR    = ASMRdMsr(MSR_K8_HWCR);
                     HWACCMR0Globals.svm.fSupported = true;
@@ -399,7 +403,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
         HWACCMR0Globals.pfnSetupVM          = VMXR0SetupVM;
     }
     else
-    if (HWACCMR0Globals.svm.fSupported)
+    if (fAMDVPresent)
     {
         HWACCMR0Globals.pfnEnterSession     = SVMR0Enter;
         HWACCMR0Globals.pfnLeaveSession     = SVMR0Leave;

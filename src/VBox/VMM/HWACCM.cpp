@@ -45,6 +45,7 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/env.h>
 #include <iprt/thread.h>
 
 /*******************************************************************************
@@ -652,11 +653,25 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 {
     int rc;
 
+    /* Hack to allow users to work around broken BIOSes that incorrectly set EFER.SVME, which makes us believe somebody else
+     * is already using AMD-V. 
+     */
+    if (    !pVM->hwaccm.s.vmx.fSupported
+        &&  !pVM->hwaccm.s.svm.fSupported
+        &&  pVM->hwaccm.s.lLastError == VERR_SVM_IN_USE /* implies functional AMD-V */
+        &&  RTEnvGet("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
+    {
+        LogRel(("HWACCM: VBOX_HWVIRTEX_IGNORE_SVM_IN_USE active!\n"));
+        pVM->hwaccm.s.svm.fSupported        = true;
+        pVM->hwaccm.s.svm.fIgnoreInUseError = true;
+    }
+    else
     if (    !pVM->hwaccm.s.vmx.fSupported
         &&  !pVM->hwaccm.s.svm.fSupported)
     {
         LogRel(("HWACCM: No VT-x or AMD-V CPU extension found. Reason %Rrc\n", pVM->hwaccm.s.lLastError));
         LogRel(("HWACCM: VMX MSR_IA32_FEATURE_CONTROL=%RX64\n", pVM->hwaccm.s.vmx.msr.feature_ctrl));
+
         if (VMMIsHwVirtExtForced(pVM))
         {
             switch (pVM->hwaccm.s.lLastError)
