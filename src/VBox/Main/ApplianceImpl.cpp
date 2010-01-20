@@ -935,8 +935,9 @@ int Appliance::readFS(TaskImportOVF *pTask)
         char *pszDigest;
         int vrc = RTSha1Digest(pTask->locInfo.strPath.c_str(), &pszDigest);
         if (RT_FAILURE(vrc))
-            throw OVFLogicError(tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
-                                RTPathFilename(pTask->locInfo.strPath.c_str()), vrc);
+            throw setError(VBOX_E_FILE_ERROR,
+                           tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
+                           RTPathFilename(pTask->locInfo.strPath.c_str()), vrc);
         m->strOVFSHA1Digest = pszDigest;
         RTStrFree(pszDigest);
     }
@@ -944,6 +945,10 @@ int Appliance::readFS(TaskImportOVF *pTask)
     {
         rc = setError(VBOX_E_FILE_ERROR,
                       x.what());
+    }
+    catch(HRESULT aRC)
+    {
+        rc = aRC;
     }
 
     pTask->rc = rc;
