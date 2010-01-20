@@ -271,6 +271,9 @@ RTR3DECL(int) RTStrmOpen(const char *pszFilename, const char *pszMode, PRTSTREAM
     {
         pStream->u32Magic = RTSTREAM_MAGIC;
         pStream->i32Error = VINF_SUCCESS;
+#ifndef HAVE_FWRITE_UNLOCKED
+        pStream->pCritSect = NULL;
+#endif /* HAVE_FWRITE_UNLOCKED */
         pStream->pFile = fopen(pszFilename, pszMode);
         if (pStream->pFile)
         {
