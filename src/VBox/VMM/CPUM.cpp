@@ -103,7 +103,9 @@ static CPUMCPUVENDOR cpumR3DetectVendor(uint32_t uEAX, uint32_t uEBX, uint32_t u
 static int cpumR3CpuIdInit(PVM pVM);
 static DECLCALLBACK(int)  cpumR3LiveExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uPass);
 static DECLCALLBACK(int)  cpumR3SaveExec(PVM pVM, PSSMHANDLE pSSM);
+static DECLCALLBACK(int)  cpumR3LoadPrep(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(int)  cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+static DECLCALLBACK(int)  cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM);
 static DECLCALLBACK(void) cpumR3InfoAll(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuest(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 static DECLCALLBACK(void) cpumR3InfoGuestInstr(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
@@ -213,7 +215,7 @@ VMMR3DECL(int) CPUMR3Init(PVM pVM)
     int rc = SSMR3RegisterInternal(pVM, "cpum", 1, CPUM_SAVED_STATE_VERSION, sizeof(CPUM),
                                    NULL, cpumR3LiveExec, NULL,
                                    NULL, cpumR3SaveExec, NULL,
-                                   NULL, cpumR3LoadExec, NULL);
+                                   cpumR3LoadPrep, cpumR3LoadExec, cpumR3LoadDone);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1875,13 +1877,17 @@ static void cpumR3LoadCPUM1_6(PVM pVM, CPUMCTX_VER1_6 *pCpumctx16)
 
 
 /**
- * Execute state load operation.
- *
- * @returns VBox status code.
- * @param   pVM             VM Handle.
- * @param   pSSM            SSM operation handle.
- * @param   uVersion        Data layout version.
- * @param   uPass           The data pass.
+ * @copydoc FNSSMINTLOADPREP
+ */
+static DECLCALLBACK(int) cpumR3LoadPrep(PVM pVM, PSSMHANDLE pSSM)
+{
+    pVM->cpum.s.fPendingRestore = true;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * @copydoc FNSSMINTLOADEXEC
  */
 static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass)
 {
@@ -1959,6 +1965,8 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
             }
         }
     }
+
+    pVM->cpum.s.fPendingRestore = false;
 
     /*
      * Guest CPUIDs.
@@ -2077,6 +2085,37 @@ static DECLCALLBACK(int) cpumR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVers
     }
 
     return rc;
+}
+
+
+/**
+ * @copydoc FNSSMINTLOADPREP
+ */
+static DECLCALLBACK(int) cpumR3LoadDone(PVM pVM, PSSMHANDLE pSSM)
+{
+    if (RT_FAILURE(SSMR3HandleGetStatus(pSSM)))
+        return VINF_SUCCESS;
+
+    /* just check this since we can. */ /** @todo Add a SSM unit flag for indicating that it's mandatory during a restore.  */
+    if (pVM->cpum.s.fPendingRestore)
+    {
+        LogRel(("CPUM: Missing state!\n"));
+        return VERR_INTERNAL_ERROR_2;
+    }
+
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks if the CPUM state restore is still pending.
+ *
+ * @returns true / false.
+ * @param   pVM                 The VM handle.
+ */
+VMMDECL(bool) CPUMR3IsStateRestorePending(PVM pVM)
+{
+    return pVM->cpum.s.fPendingRestore;
 }
 
 
@@ -3470,7 +3509,7 @@ VMMR3DECL(void) CPUMR3DisasmInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, RTGCPTR 
  */
 VMMR3DECL(void) CPUMR3SaveEntryCtx(PVM pVM)
 {
-    /* @todo SMP support!! */
+    /** @todo SMP support!! */
     pVM->cpum.s.GuestEntry = *CPUMQueryGuestCtxPtr(VMMGetCpu(pVM));
 }
 

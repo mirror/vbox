@@ -72,10 +72,11 @@ struc CPUM
     ; entered rawmode?
     .fRawEntered          resb    1
     .fSyntheticCpu        resb    1
+    .fPendingRestore      resb    1
 %if RTHCPTR_CB == 8
-    .abPadding            resb    6
+    .abPadding            resb    5
 %else
-    .abPadding            resb    2
+    .abPadding            resb    1
 %endif
 
     ; CPUID leafs

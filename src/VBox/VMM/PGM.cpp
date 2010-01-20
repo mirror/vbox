@@ -637,7 +637,6 @@ static PGMMODE            pgmR3CalcShadowMode(PVM pVM, PGMMODE enmGuestMode, SUP
 #ifdef VBOX_WITH_DEBUGGER
 /** @todo Convert the first two commands to 'info' items. */
 static DECLCALLBACK(int)  pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
-static DECLCALLBACK(int)  pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdError(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdSync(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
 static DECLCALLBACK(int)  pgmR3CmdSyncAlways(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult);
@@ -671,7 +670,6 @@ static const DBGCCMD    g_aCmds[] =
 {
     /* pszCmd,  cArgsMin, cArgsMax, paArgDesc,                cArgDescs,    pResultDesc,        fFlags,     pfnHandler          pszSyntax,          ....pszDescription */
     { "pgmram",        0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdRam,        "",                     "Display the ram ranges." },
-    { "pgmmap",        0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdMap,        "",                     "Display the mapping ranges." },
     { "pgmsync",       0, 0,        NULL,                     0,            NULL,               0,          pgmR3CmdSync,       "",                     "Sync the CR3 page." },
     { "pgmerror",      0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Enables inject runtime of errors into parts of PGM." },
     { "pgmerroroff",   0, 1,        &g_aPgmErrorArgs[0],      1,            NULL,               0,          pgmR3CmdError,      "",                     "Disables inject runtime errors into parts of PGM." },
@@ -2223,11 +2221,13 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     /*
      * Unfix any fixed mappings and disable CR3 monitoring.
      */
-    pVM->pgm.s.fMappingsFixed    = false;
-    pVM->pgm.s.GCPtrMappingFixed = 0;
-    pVM->pgm.s.cbMappingFixed    = 0;
+    pVM->pgm.s.fMappingsFixed         = false;
+    pVM->pgm.s.fMappingsFixedRestored = false;
+    pVM->pgm.s.GCPtrMappingFixed      = NIL_RTGCPTR;
+    pVM->pgm.s.cbMappingFixed         = 0;
 
-    /* Exit the guest paging mode before the pgm pool gets reset.
+    /*
+     * Exit the guest paging mode before the pgm pool gets reset.
      * Important to clean up the amd64 case.
      */
     for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -4024,50 +4024,6 @@ static DECLCALLBACK(int) pgmR3CmdRam(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pV
         rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
             "%RGp - %RGp  %p\n",
             pRam->GCPhys, pRam->GCPhysLast, pRam->pvR3);
-        if (RT_FAILURE(rc))
-            return rc;
-    }
-
-    return VINF_SUCCESS;
-}
-
-
-/**
- * The '.pgmmap' command.
- *
- * @returns VBox status.
- * @param   pCmd        Pointer to the command descriptor (as registered).
- * @param   pCmdHlp     Pointer to command helper functions.
- * @param   pVM         Pointer to the current VM (if any).
- * @param   paArgs      Pointer to (readonly) array of arguments.
- * @param   cArgs       Number of arguments in the array.
- */
-static DECLCALLBACK(int) pgmR3CmdMap(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, PVM pVM, PCDBGCVAR paArgs, unsigned cArgs, PDBGCVAR pResult)
-{
-    /*
-     * Validate input.
-     */
-    if (!pVM)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "error: The command requires a VM to be selected.\n");
-    if (!pVM->pgm.s.pMappingsR3)
-        return pCmdHlp->pfnPrintf(pCmdHlp, NULL, "Sorry, no mappings are registered.\n");
-
-    /*
-     * Print message about the fixedness of the mappings.
-     */
-    int rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL, pVM->pgm.s.fMappingsFixed ? "The mappings are FIXED.\n" : "The mappings are FLOATING.\n");
-    if (RT_FAILURE(rc))
-        return rc;
-
-    /*
-     * Dump the ranges.
-     */
-    PPGMMAPPING pCur;
-    for (pCur = pVM->pgm.s.pMappingsR3; pCur; pCur = pCur->pNextR3)
-    {
-        rc = pCmdHlp->pfnPrintf(pCmdHlp, NULL,
-            "%08x - %08x %s\n",
-            pCur->GCPtr, pCur->GCPtrLast, pCur->pszDesc);
         if (RT_FAILURE(rc))
             return rc;
     }

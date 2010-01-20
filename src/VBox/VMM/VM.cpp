@@ -1018,7 +1018,7 @@ static int vmR3InitRing0(PVM pVM)
     if (RT_SUCCESS(rc))
         rc = vmR3InitDoCompleted(pVM, VMINITCOMPLETED_RING0);
 
-    /** todo: move this to the VMINITCOMPLETED_RING0 notification handler once implemented */
+    /** @todo Move this to the VMINITCOMPLETED_RING0 notification handler. */
     if (RT_SUCCESS(rc))
         rc = HWACCMR3InitFinalizeR0(pVM);
 

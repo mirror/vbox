@@ -305,7 +305,6 @@ VMMDECL(int)        PGMMapSetPage(PVM pVM, RTGCPTR GCPtr, uint64_t cb, uint64_t 
 VMMDECL(int)        PGMMapModifyPage(PVM pVM, RTGCPTR GCPtr, size_t cb, uint64_t fFlags, uint64_t fMask);
 #ifndef IN_RING0
 VMMDECL(bool)       PGMMapHasConflicts(PVM pVM);
-VMMDECL(int)        PGMMapResolveConflicts(PVM pVM);
 #endif
 #ifdef VBOX_STRICT
 VMMDECL(void)       PGMMapCheck(PVM pVM);
@@ -487,10 +486,11 @@ VMMDECL(void)       PGMR3PhysSetA20(PVMCPU pVCpu, bool fEnable);
 VMMR3DECL(int)      PGMR3MapPT(PVM pVM, RTGCPTR GCPtr, uint32_t cb, uint32_t fFlags, PFNPGMRELOCATE pfnRelocate, void *pvUser, const char *pszDesc);
 VMMR3DECL(int)      PGMR3UnmapPT(PVM pVM, RTGCPTR GCPtr);
 VMMR3DECL(int)      PGMR3FinalizeMappings(PVM pVM);
+VMMR3DECL(int)      PGMR3MappingsDisable(PVM pVM);
 VMMR3DECL(int)      PGMR3MappingsSize(PVM pVM, uint32_t *pcb);
 VMMR3DECL(int)      PGMR3MappingsFix(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 VMMR3DECL(int)      PGMR3MappingsUnfix(PVM pVM);
-VMMR3DECL(int)      PGMR3MappingsDisable(PVM pVM);
+VMMR3DECL(bool)     PGMR3MappingsNeedReFixing(PVM pVM);
 VMMR3DECL(int)      PGMR3MapIntermediate(PVM pVM, RTUINTPTR Addr, RTHCPHYS HCPhys, unsigned cbPages);
 VMMR3DECL(int)      PGMR3MapRead(PVM pVM, void *pvDst, RTGCPTR GCPtrSrc, size_t cb);
 

@@ -2515,13 +2515,19 @@ typedef struct PGM
     /** Indicates that PGMR3FinalizeMappings has been called and that further
      * PGMR3MapIntermediate calls will be rejected. */
     bool                            fFinalizedMappings;
-    /** If set no conflict checks are required.  (boolean) */
+    /** If set no conflict checks are required. */
     bool                            fMappingsFixed;
-    /** If set, then no mappings are put into the shadow page table. (boolean) */
-    bool                            fDisableMappings;
-    /** Size of fixed mapping */
+    /** If set if restored as fixed but we were unable to re-fixate at the old
+     *  location because of room or address incompatibilities. */
+    bool                            fMappingsFixedRestored;
+    /** If set, then no mappings are put into the shadow page table.
+     * Use pgmMapAreMappingsEnabled() instead of direct access. */
+    bool                            fMappingsDisabled;
+    /** Size of fixed mapping.
+     * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     uint32_t                        cbMappingFixed;
-    /** Base address (GC) of fixed mapping */
+    /** Base address (GC) of fixed mapping.
+     * This is valid if either fMappingsFixed or fMappingsFixedRestored is set. */
     RTGCPTR                         GCPtrMappingFixed;
     /** The address of the previous RAM range mapping. */
     RTGCPTR                         GCPtrPrevRamRangeMapping;
@@ -3242,10 +3248,11 @@ RT_C_DECLS_BEGIN
 int             pgmLock(PVM pVM);
 void            pgmUnlock(PVM pVM);
 
+int             pgmR3MappingsFixInternal(PVM pVM, RTGCPTR GCPtrBase, uint32_t cb);
 int             pgmR3SyncPTResolveConflict(PVM pVM, PPGMMAPPING pMapping, PX86PD pPDSrc, RTGCPTR GCPtrOldMapping);
 int             pgmR3SyncPTResolveConflictPAE(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping);
 PPGMMAPPING     pgmGetMapping(PVM pVM, RTGCPTR GCPtr);
-void            pgmR3MapRelocate(PVM pVM, PPGMMAPPING pMapping, RTGCPTR GCPtrOldMapping, RTGCPTR GCPtrNewMapping);
+int             pgmMapResolveConflicts(PVM pVM);
 DECLCALLBACK(void) pgmR3MapInfo(PVM pVM, PCDBGFINFOHLP pHlp, const char *pszArgs);
 
 void            pgmR3HandlerPhysicalUpdateAll(PVM pVM);
@@ -4888,20 +4895,40 @@ DECLINLINE(bool) pgmPoolIsPageLocked(PPGM pPGM, PPGMPOOLPAGE pPage)
     return false;
 }
 
+
 /**
- * Tells if mappings are to be put into the shadow page table or not
+ * Tells if mappings are to be put into the shadow page table or not.
  *
  * @returns boolean result
  * @param   pVM         VM handle.
  */
-DECLINLINE(bool) pgmMapAreMappingsEnabled(PPGM pPGM)
+DECL_FORCE_INLINE(bool) pgmMapAreMappingsEnabled(PPGM pPGM)
 {
-#ifdef IN_RING0
+#ifdef PGM_WITHOUT_MAPPINGS
     /* There are no mappings in VT-x and AMD-V mode. */
-    Assert(pPGM->fDisableMappings);
+    Assert(pPGM->fMappingsDisabled);
     return false;
 #else
-    return !pPGM->fDisableMappings;
+    return !pPGM->fMappingsDisabled;
+#endif
+}
+
+
+/**
+ * Checks if the mappings are floating and enabled.
+ *
+ * @returns true / false.
+ * @param   pVM         The VM handle.
+ */
+DECL_FORCE_INLINE(bool) pgmMapAreMappingsFloating(PPGM pPGM)
+{
+#ifdef PGM_WITHOUT_MAPPINGS
+    /* There are no mappings in VT-x and AMD-V mode. */
+    Assert(pPGM->fMappingsDisabled);
+    return false;
+#else
+    return !pPGM->fMappingsDisabled
+        && !pPGM->fMappingsFixed;
 #endif
 }
 
