@@ -63,7 +63,7 @@ RTR3DECL(int) RTSha1Digest(const char *pszFile, char **ppszDigest)
 
     /* Open the file to calculate a SHA1 sum of */
     PRTSTREAM pStream;
-    int rc = RTStrmOpen(pszFile, "r+b", &pStream);
+    int rc = RTStrmOpen(pszFile, "rb", &pStream);
     if (RT_FAILURE(rc))
         return rc;
 
