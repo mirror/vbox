@@ -659,7 +659,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     if (    !pVM->hwaccm.s.vmx.fSupported
         &&  !pVM->hwaccm.s.svm.fSupported
         &&  pVM->hwaccm.s.lLastError == VERR_SVM_IN_USE /* implies functional AMD-V */
-        &&  RTEnvExist("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
+        &&  RTEnvGet("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
     {
         LogRel(("HWACCM: VBOX_HWVIRTEX_IGNORE_SVM_IN_USE active!\n"));
         pVM->hwaccm.s.svm.fSupported        = true;
