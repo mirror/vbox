@@ -207,6 +207,8 @@ VBOX_PACKAGE_STRING = $(VBOX_PACKAGE_OS)_$(VBOX_PACKAGE_ARCH)_$(VBOX_PACKAGE_DIS
 # If undefined, the tranditional recursive make method will be used.
 VBOX_SINGLE_MAKEFILE = 1
 
+## @name Additions
+## @{
 # This indicates that additions (of some kind or another) is being _built_.
 # VBOX_WITHOUT_ADDITIONS overrides it.
 #if1of ($(KBUILD_TARGET), freebsd linux os2 solaris win)
@@ -230,25 +232,24 @@ VBOX_WITH_OS2_ADDITIONS_BIN = 1
 #VBOX_WITH_ADDITIONS_FROM_BUILD_SERVER = 1
 # Include additions in the package
 VBOX_WITH_ADDITIONS_PACKING = 1
-# Don't bother with additions, overrides VBOX_WITH_ADDITIONS.
-# This is not used by makefiles, only Config.kmk, see below.
-#VBOX_WITHOUT_ADDITIONS = 1
 # Only build the additions (for the additions build server).
 #VBOX_ONLY_ADDITIONS = 1
 ifdef VBOX_ADDITIONS_ONLY # typical mistake.
  $(error It is VBOX_ONLY_ADDITIONS=1 not VBOX_ADDITIONS_ONLY!)
 endif
-
-# When build SDK-only, no need for additions
+# Don't bother with additions, overrides VBOX_WITH_ADDITIONS.
+# This is not used by makefiles, only Config.kmk, see below.
 ifdef VBOX_ONLY_SDK
- VBOX_WITHOUT_ADDITIONS=1
+ VBOX_WITHOUT_ADDITIONS = 1
 endif
-
 # Don't create the additions ISO.
 # (Used by the additions build server, don't invert it.)
 #VBOX_WITHOUT_ADDITIONS_ISO = 1
+## @}
 
-# the documentation
+## @name Documentation
+## @{
+# The documentation
 VBOX_WITH_DOCS = 1
 # Use documentation from the build server.
 #VBOX_WITH_DOCS_FROM_BUILD_SERVER = 1
@@ -264,46 +265,30 @@ VBOX_WITH_DOCS_CHM = 1
 ifdef VBOX_DOCS_ONLY # typical mistake.
  $(error It is VBOX_ONLY_DOCS=1 not VBOX_DOCS_ONLY!)
 endif
+## @}
 
-# build the installer
-VBOX_WITH_INSTALLER = 1
-# enable VRDP server
-VBOX_WITH_VRDP = 1
-# build VRDP authentication modules
-VBOX_WITH_VRDP_AUTHMOD = 1
-# build enhanced version of rdesktop
-VBOX_WITH_VRDP_RDESKTOP = 1
+## @name VMM related settings.
+## @{
+# Enable 64 bits guest pointers.
+VBOX_WITH_64_BITS_GUESTS = 1
+# Enable multi-core VCPUs.
+VBOX_WITH_MULTI_CORE = 1
 # Activate this to force the VM to pre-allocate the guest RAM before startup
 VBOX_WITH_PREALLOC_RAM_BY_DEFAULT =
-# The kernel driver/module and related runtime libraries.
-VBOX_WITH_VBOXDRV = 1
-# build with secure label support
-ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much work with freetype and all that.
-VBOX_WITH_SECURELABEL = 1
-endif
-
-# The main api.
-VBOX_WITH_MAIN = 1
-# The webservices api.
-VBOX_WITH_WEBSERVICES = 1
-# The SDL based GUI.
-VBOX_WITH_VBOXSDL = 1
-# The basic frontend (w/o Main).
-VBOX_WITH_VBOXBFE = 1
-# The Qt 4 GUI.
-VBOX_WITH_QTGUI = 1
-# Indicates the Qt is Cocoa based on the Mac.
-ifeq ($(KBUILD_TARGET),darwin)
- VBOX_WITH_COCOA_QT = 1
-endif
-# The headless frontend.
-VBOX_WITH_HEADLESS = 1
-## the Direct Framebuffer GUI
-#VBOX_WITH_VBOXFB = 1
 # Enable the debugger.
 VBOX_WITH_DEBUGGER = 1
 # Enable the debugger GUI.
 VBOX_WITH_DEBUGGER_GUI = 1
+# Disable VMI BIOS (not yet ready).
+VBOX_WITH_VMI =
+# Enable the PDM Lock and let I/O threads call into the PICs.
+# TODO: Eliminate VBOX_WITH_PDM_LOCK.
+VBOX_WITH_PDM_LOCK = 1
+## @}
+
+
+## @name Devices, Drivers,
+## @{
 # Build the Host Guest Communication Manager component.
 VBOX_WITH_HGCM = 1
 ## Build the bugcheck detection code.
@@ -312,8 +297,9 @@ VBOX_WITH_HGCM = 1
 VBOX_WITH_USB = 1
 # Enable the USB 2.0 controller.
 VBOX_WITH_EHCI = 1
-# Enable the ISCSI feature, with INIP support.
+# Enable the ISCSI feature.
 VBOX_WITH_ISCSI = 1
+# Enable INIP support in the ISCSI feature.
 VBOX_WITH_INIP = 1
 # Enable the E1000 feature.
 VBOX_WITH_E1000 = 1
@@ -329,34 +315,8 @@ if1of ($(KBUILD_TARGET), linux solaris)
 endif
 # Disable WINMM support for Windows (not implemented).
 VBOX_WITH_WINMM =
-# Disable VMI BIOS (not yet ready).
-VBOX_WITH_VMI =
-# Enable the kchmviewer.
-VBOX_WITH_KCHMVIEWER = 1
-# Build the testsuite.
-VBOX_WITH_TESTSUITE = 1
-# Build the testcases.
-VBOX_WITH_TESTCASES = 1
-# Set this to not use COM or XPCOM in places where it can be avoided.
-#VBOX_WITHOUT_COM = 1
-# Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
-# caused by our XPCOM library polluting the symbol namespace for system libs.
-if1of ($(KBUILD_TARGET), linux solaris)
- VBOX_WITH_XPCOM_NAMESPACE_CLEANUP = 1
-endif
-# Set this to skip installing the redistributable compiler runtime.
-#VBOX_WITHOUT_COMPILER_REDIST = 1
 # Enabled internal networking.
 VBOX_WITH_INTERNAL_NETWORKING = 1
-# Enables the ffmpeg module for recording test runs.
-# Enable this for non-Linux builds later.
-ifeq ($(KBUILD_TARGET),linux)
-# VBOX_WITH_FFMPEG = 1
-endif
-# Enable crOpenGL service
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
- VBOX_WITH_CROGL = 1
-endif
 # Enable Host Guest Shared Memory Interface
 VBOX_WITH_HGSMI=1
 # Enable Video 2D Acceleration
@@ -365,28 +325,22 @@ if1of ($(KBUILD_TARGET), darwin linux win)
 endif
 # Enable VBVA lock
 VBOX_WITH_OLD_VBVA_LOCK = 1
-# Enable shared folders
-VBOX_WITH_SHARED_FOLDERS = 1
-# Enable shared clipboard
-VBOX_WITH_SHARED_CLIPBOARD = 1
 # Enable the Intel PXE ROM (replaces Etherboot).
 VBOX_WITH_INTEL_PXE = 1
-# Strip binaries of release and profile builds
-VBOX_DO_STRIP = $(if $(filter release profile,$(KBUILD_TYPE)),1,)
-# Strip R0/GC modules (current requirement for our loader)
-VBOX_DO_STRIP_MODULES = 1
+# Enable EFI support
+VBOX_WITH_EFI = 1
+# Fetch EFI firmware image from the build server
+#VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
+# Include the EFI firmware into the package
+VBOX_WITH_EFIFW_PACKING = 1
 # Use kStuff for MACH-O and LX binary loading.
 if1of ($(KBUILD_TARGET), darwin os2)
-IPRT_WITH_KSTUFF = 1
+ IPRT_WITH_KSTUFF = 1
 endif
 # Enable Crossbow support for Solaris TAP driver.
 VBOX_WITH_CROSSBOW = 1
-# Enable setuid wrapper for Solaris.
+# Enable setuid wrapper for Solaris host DVD.
 #VBOX_WITH_SUID_WRAPPER = 1
-# Enable the PDM Lock and let I/O threads call into the PICs.
-VBOX_WITH_PDM_LOCK = 1
-# Enable Seamless mode
-VBOX_X11_SEAMLESS_GUEST = 1
 # Enable the virtual SATA/AHCI controller
 VBOX_WITH_AHCI = 1
 # Enable the new async completion manager
@@ -405,18 +359,8 @@ ifdef VBOX_WITH_DBUS
 endif
 # Use the new VBI module on Solaris.
 #VBOX_WITH_SOLARIS_VBI = 1
-# Enable 64 bits guest pointers.
-VBOX_WITH_64_BITS_GUESTS = 1
-# Enable multi-core VCPUs.
-VBOX_WITH_MULTI_CORE = 1
-# Enable the host/guest information service (aka guest properties).
-VBOX_WITH_GUEST_PROPS = 1
-# Enable this to prevent the guest from writing guest properties
-VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
 # Enable performance API.
 VBOX_WITH_RESOURCE_USAGE_API = 1
-# Enables all the doxgen bits.
-VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Enable BusLogic SCSI host adapter
 VBOX_WITH_BUSLOGIC = 1
 # Enable LsiLogic SCSI host adapter
@@ -425,12 +369,6 @@ VBOX_WITH_LSILOGIC = 1
 VBOX_WITH_HPET = 1
 # Enable LPC device
 VBOX_WITH_LPC = 1
-# Enable EFI support
-VBOX_WITH_EFI = 1
-# Fetch EFI firmware image from the build server
-# VBOX_WITH_EFIFW_FROM_BUILD_SERVER = 1
-# Include the EFI firmware into the package
-VBOX_WITH_EFIFW_PACKING = 1
 # Enable SCSI drivers
 VBOX_WITH_SCSI = 1
 # Enable changing network attachments dynamically.
@@ -441,12 +379,99 @@ VBOX_BIOS_DMI_FALLBACK =
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_HOSTNETIF_API = 1
 endif
+# Enable the new storage I/O path.
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
+ VBOX_WITH_NEW_IO_CODE = 1
+endif
+## @}
+
+
+## @name Other Component
+## @{
+# Build the installer.
+VBOX_WITH_INSTALLER = 1
+# The kernel driver/module and related runtime libraries.
+VBOX_WITH_VBOXDRV = 1
+# The main api.
+VBOX_WITH_MAIN = 1
+# Set this to prefix all C symbols in XPCOM, to avoid dynamic linking problems
+# caused by our XPCOM library polluting the symbol namespace for system libs.
+if1of ($(KBUILD_TARGET), linux solaris)
+ VBOX_WITH_XPCOM_NAMESPACE_CLEANUP = 1
+endif
+# Set this to not use COM or XPCOM in places where it can be avoided.
+#VBOX_WITHOUT_COM = 1
+# The webservices api.
+VBOX_WITH_WEBSERVICES = 1
+# The Qt 4 GUI.
+VBOX_WITH_QTGUI = 1
+# Indicates the Qt is Cocoa based on the Mac.
+ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_WITH_COCOA_QT = 1
+endif
+# The SDL based GUI.
+VBOX_WITH_VBOXSDL = 1
+# Build VBoxSDL with secure label support.
+ifeq ($(filter win.amd64,$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH)),) # too much work with freetype and all that.
+VBOX_WITH_SECURELABEL = 1
+endif
+# The headless frontend.
+VBOX_WITH_HEADLESS = 1
+# Enable the VRDP server.
+VBOX_WITH_VRDP = 1
+# Build the VRDP authentication modules.
+VBOX_WITH_VRDP_AUTHMOD = 1
+# Build enhanced version of rdesktop.
+VBOX_WITH_VRDP_RDESKTOP = 1
+# The basic frontend (w/o Main).
+VBOX_WITH_VBOXBFE = 1
+## The Direct Framebuffer GUI.
+#VBOX_WITH_VBOXFB = 1
 # Enables the Python<->XPCOM and Python<->COM bindings.
 VBOX_WITH_PYTHON ?= 1
 # Build multiple Python<->XPCOM bridges for different Python version
 ifn1of ($(KBUILD_TARGET), darwin)
  VBOX_WITH_MULTIVERSION_PYTHON ?= 1
 endif
+# Enable the kchmviewer.
+VBOX_WITH_KCHMVIEWER = 1
+# Build the testsuite.
+VBOX_WITH_TESTSUITE = 1
+# Build the testcases.
+VBOX_WITH_TESTCASES = 1
+# Enables the ffmpeg module for recording test runs.
+# TODO: Enable this for normal build server builds?
+#if1of ($(KBUILD_TARGET), linux)
+# VBOX_WITH_FFMPEG = 1
+#endif
+# Enable shared folders
+VBOX_WITH_SHARED_FOLDERS = 1
+# Enable shared clipboard
+VBOX_WITH_SHARED_CLIPBOARD = 1
+# Enable the host/guest information service (aka guest properties).
+VBOX_WITH_GUEST_PROPS = 1
+# Enable this to prevent the guest from writing guest properties
+VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
+# Enable crOpenGL service
+if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
+ VBOX_WITH_CROGL = 1
+endif
+## @}
+
+
+## @name Misc
+## @{
+# Enable Seamless mode
+VBOX_X11_SEAMLESS_GUEST = 1
+# Enables all the doxgen bits.
+VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
+# Set this to skip installing the redistributable compiler runtime.
+#VBOX_WITHOUT_COMPILER_REDIST = 1
+## @}
+
+
+## @name Hardening
+## @{
 # Enables hardening.
 # Most developers will want to disable this in their LocalConfig.kmk.
 ifn1of ($(KBUILD_TARGET), win)
@@ -523,10 +548,15 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
   VBOX_WITH_NETADP = 1
  endif
 endif
-# Enable the new I/O path
-if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
- VBOX_WITH_NEW_IO_CODE = 1
-endif
+## @}
+
+## @todo why is this stuff up here? It doesn't have to be (=?), but if it should be here then use := assignment!
+# Strip binaries of release and profile builds
+VBOX_DO_STRIP = $(if $(filter release profile,$(KBUILD_TYPE)),1,)
+# Strip R0/GC modules (current requirement for our loader)
+# TODO: This shouldn't be a requirement any longer. FIXME XXX
+VBOX_DO_STRIP_MODULES = 1
+
 
 #
 # Config items for enabling work in progress.
