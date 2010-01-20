@@ -654,12 +654,12 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
     int rc;
 
     /* Hack to allow users to work around broken BIOSes that incorrectly set EFER.SVME, which makes us believe somebody else
-     * is already using AMD-V. 
+     * is already using AMD-V.
      */
     if (    !pVM->hwaccm.s.vmx.fSupported
         &&  !pVM->hwaccm.s.svm.fSupported
         &&  pVM->hwaccm.s.lLastError == VERR_SVM_IN_USE /* implies functional AMD-V */
-        &&  RTEnvGet("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
+        &&  RTEnvExist("VBOX_HWVIRTEX_IGNORE_SVM_IN_USE"))
     {
         LogRel(("HWACCM: VBOX_HWVIRTEX_IGNORE_SVM_IN_USE active!\n"));
         pVM->hwaccm.s.svm.fSupported        = true;

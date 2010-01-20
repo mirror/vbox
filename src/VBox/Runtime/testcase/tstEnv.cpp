@@ -194,6 +194,27 @@ int main()
     CHECK_STR(szBuf, "MyValue15");
 
     /*
+     * Dup.
+     */
+    char *psz1;
+    CHECK(RTEnvDupEx(Env, "NonExistantVariable") == NULL);
+    psz1 = RTEnvDupEx(Env, "IPRTMyNewVar15");
+    CHECK(psz1);
+    if (psz1)
+        CHECK_STR(psz1, "MyValue15");
+    RTStrFree(psz1);
+
+    static char s_szBigValue[10999];
+    memset(s_szBigValue, 'a', sizeof(s_szBigValue));
+    s_szBigValue[sizeof(s_szBigValue) - 1] = '\0';
+    CHECK_RC(RTEnvSetEx(Env, "IPRTBigValue", s_szBigValue), VINF_SUCCESS);
+    psz1 = RTEnvDupEx(Env, "IPRTBigValue");
+    CHECK(psz1);
+    if (psz1)
+        CHECK_STR(psz1, s_szBigValue);
+    RTStrFree(psz1);
+
+    /*
      * Another cloning.
      */
     RTENV Env2;

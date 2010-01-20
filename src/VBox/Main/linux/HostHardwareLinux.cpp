@@ -580,10 +580,11 @@ int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
                  pList, isDVD, pfSuccess));
     int rc = VINF_SUCCESS;
     bool success = false;
+    char *pszFreeMe = RTEnvDupEx(RTENV_DEFAULT, pcszVar);
 
     try
     {
-        const char *pcszCurrent = RTEnvGet (pcszVar);
+        const char *pcszCurrent = pszFreeMe;
         while (pcszCurrent && *pcszCurrent != '\0')
         {
             const char *pcszNext = strchr(pcszCurrent, ':');
@@ -610,7 +611,8 @@ int getDriveInfoFromEnv(const char *pcszVar, DriveInfoList *pList,
     {
         rc = VERR_NO_MEMORY;
     }
-    LogFlowFunc (("rc=%Rrc, success=%d\n", rc, success));
+    RTStrFree(pszFreeMe);
+    LogFlowFunc(("rc=%Rrc, success=%d\n", rc, success));
     return rc;
 }
 
