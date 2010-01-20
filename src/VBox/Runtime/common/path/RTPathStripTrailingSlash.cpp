@@ -53,7 +53,7 @@ RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath)
                 if (    off == 2
                     &&  pszPath[1] == ':'
                     &&  RT_C_IS_ALPHA(pszPath[0]))
-                    return cch + 1;
+                    return off + 1;
 #endif
                 pszPath[off] = '\0';
                 break;
