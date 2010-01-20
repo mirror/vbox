@@ -198,10 +198,7 @@ VBoxOGL_LIBS = \
 	$(PATH_LIB)/additions/VBoxOGLspuload$(VBOX_SUFF_LIB)
 if1of ($(KBUILD_TARGET), linux solaris freebsd)
  VBoxOGL_LIBS += \
- 	$(PATH_LIB)/libXcomposite.so \
- 	$(PATH_LIB)/libXdamage.so \
- 	$(PATH_LIB)/libXext.so \
- 	$(PATH_LIB)/libXfixes.so
+ 	$(PATH_LIB)/libXcomposite.so
  ifdef VBoxOGL_FAKEDRI
   VBoxOGL_LIBS += \
   	dl
