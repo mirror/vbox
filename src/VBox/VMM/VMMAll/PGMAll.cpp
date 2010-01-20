@@ -722,7 +722,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     /*
      * Check for conflicts and pending CR3 monitoring updates.
      */
-    if (!pVM->pgm.s.fMappingsFixed)
+    if (pgmMapAreMappingsFloating(&pVM->pgm.s))
     {
         if (    pgmGetMapping(pVM, GCPtrPage)
             &&  PGMGstGetPage(pVCpu, GCPtrPage, NULL, NULL) != VERR_PAGE_TABLE_NOT_PRESENT)
@@ -762,7 +762,7 @@ VMMDECL(int) PGMInvalidatePage(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         &&  (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3))
     {
         pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-        Assert(!pVM->pgm.s.fMappingsFixed);
+        Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
     }
 
     /*
@@ -1689,10 +1689,8 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         rc = PGM_BTH_PFN(MapCR3, pVCpu)(pVCpu, GCPhysCR3);
         if (RT_LIKELY(rc == VINF_SUCCESS))
         {
-            if (!pVM->pgm.s.fMappingsFixed)
-            {
+            if (pgmMapAreMappingsFloating(&pVM->pgm.s))
                 pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            }
         }
         else
         {
@@ -1700,7 +1698,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
             Assert(VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_PGM_SYNC_CR3));
             pVCpu->pgm.s.GCPhysCR3 = GCPhysOldCR3;
             pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MAP_CR3;
-            if (!pVM->pgm.s.fMappingsFixed)
+            if (pgmMapAreMappingsFloating(&pVM->pgm.s))
                 pVCpu->pgm.s.fSyncFlags |= PGM_SYNC_MONITOR_CR3;
         }
 
@@ -1726,7 +1724,7 @@ VMMDECL(int) PGMFlushTLB(PVMCPU pVCpu, uint64_t cr3, bool fGlobal)
         if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
         {
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVM->pgm.s.fMappingsFixed);
+            Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
         }
         if (fGlobal)
             STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,FlushTLBSameCR3Global));
@@ -1763,9 +1761,9 @@ VMMDECL(int) PGMUpdateCR3(PVMCPU pVCpu, uint64_t cr3)
     LogFlow(("PGMUpdateCR3: cr3=%RX64 OldCr3=%RX64\n", cr3, pVCpu->pgm.s.GCPhysCR3));
 
     /* We assume we're only called in nested paging mode. */
-    Assert(pVM->pgm.s.fMappingsFixed);
-    Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
     Assert(HWACCMIsNestedPagingActive(pVM) || pVCpu->pgm.s.enmShadowMode == PGMMODE_EPT);
+    Assert(pVM->pgm.s.fMappingsDisabled);
+    Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3));
 
     /*
      * Remap the CR3 content and adjust the monitoring if CR3 was actually changed.
@@ -1910,7 +1908,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_MONITOR_CR3)
         {
             pVCpu->pgm.s.fSyncFlags &= ~PGM_SYNC_MONITOR_CR3;
-            Assert(!pVM->pgm.s.fMappingsFixed);
+            Assert(!pVM->pgm.s.fMappingsFixed); Assert(!pVM->pgm.s.fMappingsDisabled);
         }
     }
 
