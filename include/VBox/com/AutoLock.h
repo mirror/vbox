@@ -74,18 +74,17 @@ enum VBoxLockingClass
     LOCKCLASS_HOSTOBJECT = 3,               // Host object lock
     LOCKCLASS_LISTOFMACHINES = 4,           // list of machines in VirtualBox object
     LOCKCLASS_MACHINEOBJECT = 5,            // Machine object lock
-    LOCKCLASS_LISTOFSNAPSHOTS = 6,          // list of snapshots in Machine object
-    LOCKCLASS_SNAPSHOTOBJECT = 7,           // snapshot object locks (need to have lower order
-                                            // than both MACHINEOBJECT and LOCKCLASS_MACHINELIST since
-                                            // the list of snapshots in Machine is LOCKCLASS_MACHINELIST)
-    LOCKCLASS_LISTOFMEDIA = 8,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
-    LOCKCLASS_LISTOFOTHEROBJECTS = 9,       // any other list of objects
-    LOCKCLASS_OTHEROBJECT = 10,             // any regular object member variable lock
-    LOCKCLASS_USBLIST = 11,                 // temporary hack to avoid having to clean up the USB filters
+    LOCKCLASS_SNAPSHOTOBJECT = 6,           // snapshot object locks
+                                            // (the snapshots tree, including the child pointers in Snapshot,
+                                            // is protected by the normal Machine object lock)
+    LOCKCLASS_LISTOFMEDIA = 7,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
+    LOCKCLASS_LISTOFOTHEROBJECTS = 8,       // any other list of objects
+    LOCKCLASS_OTHEROBJECT = 9,              // any regular object member variable lock
+    LOCKCLASS_USBLIST = 10,                 // temporary hack to avoid having to clean up the USB filters
                                             // too much @todo r=dj get rid of this!
-    LOCKCLASS_PROGRESSLIST = 12,            // list of progress objects in VirtualBox; no other object lock
+    LOCKCLASS_PROGRESSLIST = 11,            // list of progress objects in VirtualBox; no other object lock
                                             // may be held after this!
-    LOCKCLASS_OBJECTSTATE = 13              // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_OBJECTSTATE = 12              // object state lock (handled by AutoCaller classes)
 };
 
 void InitAutoLockSystem();

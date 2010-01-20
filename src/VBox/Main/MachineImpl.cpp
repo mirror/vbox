@@ -96,7 +96,6 @@
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Data::Data()
-    : mSnapshotsTreeLockHandle(LOCKCLASS_LISTOFSNAPSHOTS)
 {
     mRegistered = FALSE;
     mAccessible = FALSE;
@@ -603,7 +602,7 @@ HRESULT Machine::registeredInit()
                     mData->mAccessError.getText().raw()));
 
         /* rollback all changes */
-        rollback (false /* aNotify */);
+        rollback(false /* aNotify */);
 
         /* uninitialize the common part to make sure all data is reset to
          * default (null) values */
@@ -739,8 +738,8 @@ STDMETHODIMP Machine::COMGETTER(Accessible) (BOOL *aAccessible)
 
         if (mData->m_pMachineConfigFile)
         {
-            // @todo why are we parsing this several times?
-            // this is hugely inefficient
+            // reset the XML file to force loadSettings() (called from registeredInit())
+            // to parse it again; the file might have changed
             delete mData->m_pMachineConfigFile;
             mData->m_pMachineConfigFile = NULL;
         }
@@ -5699,9 +5698,9 @@ HRESULT Machine::initDataAndChildObjects()
 void Machine::uninitDataAndChildObjects()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturnVoid (autoCaller.rc());
-    AssertComRCReturnVoid (autoCaller.state() == InUninit ||
-                           autoCaller.state() == Limited);
+    AssertComRCReturnVoid(autoCaller.rc());
+    AssertComRCReturnVoid(    autoCaller.state() == InUninit
+                           || autoCaller.state() == Limited);
 
     /* uninit all children using addDependentChild()/removeDependentChild()
      * in their init()/uninit() methods */
@@ -5709,7 +5708,7 @@ void Machine::uninitDataAndChildObjects()
 
     /* tell all our other child objects we've been uninitialized */
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
         if (mNetworkAdapters[slot])
         {
@@ -5730,7 +5729,7 @@ void Machine::uninitDataAndChildObjects()
         unconst(mAudioAdapter).setNull();
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
         if (mParallelPorts[slot])
         {
@@ -5739,7 +5738,7 @@ void Machine::uninitDataAndChildObjects()
         }
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
         if (mSerialPorts[slot])
         {
@@ -5770,7 +5769,10 @@ void Machine::uninitDataAndChildObjects()
      * a result of unregistering or discarding the snapshot), outdated hard
      * disk attachments will already be uninitialized and deleted, so this
      * code will not affect them. */
-    if (!!mMediaData && (getClassID() == clsidMachine || getClassID() == clsidSnapshotMachine))
+    VBoxClsID clsid = getClassID();
+    if (    !!mMediaData
+         && (clsid == clsidMachine || clsid == clsidSnapshotMachine)
+       )
     {
         for (MediaData::AttachmentList::const_iterator it = mMediaData->mAttachments.begin();
              it != mMediaData->mAttachments.end();
@@ -6024,10 +6026,11 @@ HRESULT Machine::loadSettings(bool aRegistered)
         mUserData.commitCopy();
 
         /* Snapshot node (optional) */
-        if (mData->m_pMachineConfigFile->llFirstSnapshot.size())
+        size_t cRootSnapshots;
+        if ((cRootSnapshots = mData->m_pMachineConfigFile->llFirstSnapshot.size()))
         {
-            // there can only be one root snapshot
-            Assert(mData->m_pMachineConfigFile->llFirstSnapshot.size() == 1);
+            // there must be only one root snapshot
+            Assert(cRootSnapshots == 1);
 
             settings::Snapshot &snap = mData->m_pMachineConfigFile->llFirstSnapshot.front();
 
@@ -6074,7 +6077,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
     }
     catch (...)
     {
-        rc = VirtualBox::handleUnexpectedExceptions (RT_SRC_POS);
+        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
     }
 
     LogFlowThisFuncLeave();
@@ -6538,7 +6541,8 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
                 rc = mParent->findHardDisk(&dev.uuid, NULL, true /* aDoSetError */, &medium);
                 if (FAILED(rc))
                 {
-                    if (getClassID() == clsidSnapshotMachine)
+                    VBoxClsID clsid = getClassID();
+                    if (clsid == clsidSnapshotMachine)
                     {
                         // wrap another error message around the "cannot find hard disk" set by findHardDisk
                         // so the user knows that the bad disk is in a snapshot somewhere
@@ -6629,12 +6633,12 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
             else
                 rc = medium->attachTo(mData->mUuid);
         }
+
         if (FAILED(rc))
             break;
 
-        /* backup mMediaData to let registeredInit() properly rollback on failure
+        /* back up mMediaData to let registeredInit() properly rollback on failure
          * (= limited accessibility) */
-
         mMediaData.backup();
         mMediaData->mAttachments.push_back(pAttachment);
     }
@@ -6653,7 +6657,7 @@ HRESULT Machine::findSnapshot(const Guid &aId,
                               ComObjPtr<Snapshot> &aSnapshot,
                               bool aSetError /* = false */)
 {
-    AutoReadLock chlock(snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock chlock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mFirstSnapshot)
     {
@@ -6693,7 +6697,7 @@ HRESULT Machine::findSnapshot(IN_BSTR aName,
 {
     AssertReturn(aName, E_INVALIDARG);
 
-    AutoReadLock chlock(snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock chlock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mFirstSnapshot)
     {
@@ -8279,7 +8283,7 @@ bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
  *
  * @note Locks objects for writing!
  */
-void Machine::rollback (bool aNotify)
+void Machine::rollback(bool aNotify)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), (void) 0);
@@ -8292,23 +8296,21 @@ void Machine::rollback (bool aNotify)
 
     if (aNotify && mHWData.isBackedUp())
     {
-        if (mHWData->mSharedFolders.size() !=
-            mHWData.backedUpData()->mSharedFolders.size())
+        if (mHWData->mSharedFolders.size() != mHWData.backedUpData()->mSharedFolders.size())
             sharedFoldersChanged = true;
         else
         {
-            for (HWData::SharedFolderList::iterator rit =
-                     mHWData->mSharedFolders.begin();
+            for (HWData::SharedFolderList::iterator rit = mHWData->mSharedFolders.begin();
                  rit != mHWData->mSharedFolders.end() && !sharedFoldersChanged;
                  ++rit)
             {
-                for (HWData::SharedFolderList::iterator cit =
-                         mHWData.backedUpData()->mSharedFolders.begin();
+                for (HWData::SharedFolderList::iterator cit = mHWData.backedUpData()->mSharedFolders.begin();
                      cit != mHWData.backedUpData()->mSharedFolders.end();
                      ++cit)
                 {
-                    if ((*cit)->getName() != (*rit)->getName() ||
-                        (*cit)->getHostPath() != (*rit)->getHostPath())
+                    if (    (*cit)->getName() != (*rit)->getName()
+                         || (*cit)->getHostPath() != (*rit)->getHostPath()
+                       )
                     {
                         sharedFoldersChanged = true;
                         break;
@@ -8327,8 +8329,9 @@ void Machine::rollback (bool aNotify)
             StorageControllerList *backedList = mStorageControllers.backedUpData();
             while (it != mStorageControllers->end())
             {
-                if (std::find (backedList->begin(), backedList->end(), *it ) ==
-                    backedList->end())
+                if (   std::find(backedList->begin(), backedList->end(), *it)
+                    == backedList->end()
+                   )
                 {
                     (*it)->uninit();
                 }
@@ -8358,12 +8361,11 @@ void Machine::rollback (bool aNotify)
         rollbackMedia();
 
     /* check for changes in child objects */
-
     bool vrdpChanged = false, usbChanged = false;
 
-    ComPtr<INetworkAdapter> networkAdapters [RT_ELEMENTS (mNetworkAdapters)];
-    ComPtr<ISerialPort> serialPorts [RT_ELEMENTS (mSerialPorts)];
-    ComPtr<IParallelPort> parallelPorts [RT_ELEMENTS (mParallelPorts)];
+    ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
+    ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
+    ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
@@ -8379,20 +8381,20 @@ void Machine::rollback (bool aNotify)
     if (mUSBController)
         usbChanged = mUSBController->rollback();
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        if (mNetworkAdapters [slot])
-            if (mNetworkAdapters [slot]->rollback())
-                networkAdapters [slot] = mNetworkAdapters [slot];
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+        if (mNetworkAdapters[slot])
+            if (mNetworkAdapters[slot]->rollback())
+                networkAdapters[slot] = mNetworkAdapters[slot];
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        if (mSerialPorts [slot])
-            if (mSerialPorts [slot]->rollback())
-                serialPorts [slot] = mSerialPorts [slot];
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
+        if (mSerialPorts[slot])
+            if (mSerialPorts[slot]->rollback())
+                serialPorts[slot] = mSerialPorts[slot];
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        if (mParallelPorts [slot])
-            if (mParallelPorts [slot]->rollback())
-                parallelPorts [slot] = mParallelPorts [slot];
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
+        if (mParallelPorts[slot])
+            if (mParallelPorts[slot]->rollback())
+                parallelPorts[slot] = mParallelPorts[slot];
 
     if (aNotify)
     {
@@ -8409,15 +8411,15 @@ void Machine::rollback (bool aNotify)
         if (usbChanged)
             that->onUSBControllerChange();
 
-        for (ULONG slot = 0; slot < RT_ELEMENTS (networkAdapters); slot ++)
-            if (networkAdapters [slot])
-                that->onNetworkAdapterChange (networkAdapters [slot], FALSE);
-        for (ULONG slot = 0; slot < RT_ELEMENTS (serialPorts); slot ++)
-            if (serialPorts [slot])
-                that->onSerialPortChange (serialPorts [slot]);
-        for (ULONG slot = 0; slot < RT_ELEMENTS (parallelPorts); slot ++)
-            if (parallelPorts [slot])
-                that->onParallelPortChange (parallelPorts [slot]);
+        for (ULONG slot = 0; slot < RT_ELEMENTS(networkAdapters); slot ++)
+            if (networkAdapters[slot])
+                that->onNetworkAdapterChange(networkAdapters[slot], FALSE);
+        for (ULONG slot = 0; slot < RT_ELEMENTS(serialPorts); slot ++)
+            if (serialPorts[slot])
+                that->onSerialPortChange(serialPorts[slot]);
+        for (ULONG slot = 0; slot < RT_ELEMENTS(parallelPorts); slot ++)
+            if (parallelPorts[slot])
+                that->onParallelPortChange(parallelPorts[slot]);
 
         if (storageChanged)
             that->onStorageControllerChange();

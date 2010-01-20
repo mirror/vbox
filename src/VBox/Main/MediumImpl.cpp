@@ -2731,9 +2731,9 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
                         m->id.raw(),
                         m->numCreateDiffTasks);
 
-    BackRefList::iterator it =
-        std::find_if(m->backRefs.begin(), m->backRefs.end(),
-                     BackRef::EqualsTo(aMachineId));
+    BackRefList::iterator it = std::find_if(m->backRefs.begin(),
+                                            m->backRefs.end(),
+                                            BackRef::EqualsTo(aMachineId));
     if (it == m->backRefs.end())
     {
         BackRef ref(aMachineId, aSnapshotId);
@@ -2764,12 +2764,17 @@ HRESULT Medium::attachTo(const Guid &aMachineId,
         const Guid &idOldSnapshot = *jt;
 
         if (idOldSnapshot == aSnapshotId)
+        {
+#ifdef DEBUG
+            dumpBackRefs();
+#endif
             return setError(E_FAIL,
-                            tr("Cannot attach medium '%s' {%RTuuid} from snapshot '%RTuuid': medium is already in use by snapshot '%RTuuid'"),
+                            tr("Cannot attach medium '%s' {%RTuuid} from snapshot '%RTuuid': medium is already in use by this snapshot!"),
                             m->strLocationFull.raw(),
                             m->id.raw(),
                             aSnapshotId.raw(),
                             idOldSnapshot.raw());
+        }
     }
 
     it->llSnapshotIds.push_back(aSnapshotId);
@@ -3176,8 +3181,8 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
  * @param aChain        Where to store the created merge chain (may return NULL
  *                      if no real merge is necessary).
  *
- * @note Locks getTreeLock() for reading. Locks this object, aTarget and all
- *       intermediate hard disks for writing.
+ * @note Caller must hold media tree lock for writing. This locks this object
+ *       and every medium object on the merge chain for writing.
  */
 HRESULT Medium::prepareDiscard(MergeChain * &aChain)
 {
@@ -3188,8 +3193,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    /* we access mParent & children() */
-    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
     AssertReturn(m->type == MediumType_Normal, E_FAIL);
 

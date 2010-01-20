@@ -1012,7 +1012,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
          * deleted from the list by removeDependentChild() called from there.
          * Do some checks to avoid endless loops when the user is forgetful */
         -- count;
-        Assert (count == mDependentChildren.size());
+        Assert(count == mDependentChildren.size());
         if (count != mDependentChildren.size())
             mDependentChildren.erase (it);
 
