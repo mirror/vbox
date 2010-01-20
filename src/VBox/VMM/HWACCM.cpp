@@ -1103,6 +1103,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                 }
+                else
+                /* Turn on NXE if PAE has been enabled. */
+                if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
+                    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
+
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM: 32-bit and 64-bit guests supported.\n"
                         : "HWACCM: 32-bit guests supported.\n"));
@@ -1248,7 +1253,12 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_LAHF);
                 }
+                else
+                /* Turn on NXE if PAE has been enabled. */
+                if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
+                    CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
 #endif
+
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests
                         ? "HWACCM:    32-bit and 64-bit guest supported.\n"
                         : "HWACCM:    32-bit guest supported.\n"));
