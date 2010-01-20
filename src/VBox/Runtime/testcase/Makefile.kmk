@@ -83,7 +83,7 @@ PROGRAMS += \
 	tstMp-1 \
 	tstNoCrt-1 \
 	tstOnce \
-	tstPath \
+	tstRTPath \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
@@ -336,7 +336,8 @@ tstNoCrt-1_SOURCES = \
 
 tstOnce_SOURCES = tstOnce.cpp
 
-tstPath_SOURCES = tstPath.cpp
+tstRTPath_TEMPLATE = VBOXR3TSTEXE
+tstRTPath_SOURCES  = tstRTPath.cpp
 
 tstPrfRT_SOURCES = tstPrfRT.cpp
 
