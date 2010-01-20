@@ -1088,7 +1088,7 @@ static int buslogicDataBufferAlloc(PBUSLOGICTASKSTATE pTaskState)
             }
 
         }
-        else if (pTaskState->CommandControlBlockGuest.uDataDirection == BUSLOGIC_CCB_DIRECTION_OUT)
+        else if (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB)
         {
             /* The buffer is not scattered. */
             RTGCPHYS GCPhysAddrDataBase     = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
@@ -1169,7 +1169,7 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
             } while (cScatterGatherGCLeft > 0);
 
         }
-        else
+        else if (pTaskState->CommandControlBlockGuest.uOpcode == BUSLOGIC_CCB_OPCODE_INITIATOR_CCB)
         {
             /* The buffer is not scattered. */
             RTGCPHYS GCPhysAddrDataBase = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrData;
@@ -1502,8 +1502,7 @@ static int buslogicRegisterRead(PBUSLOGIC pBusLogic, unsigned iRegister, uint32_
             break;
         }
         default:
-            AssertMsgFailed(("Register not available\n"));
-            rc = VERR_IOM_IOPORT_UNUSED;
+            *pu32 = UINT32_C(0xffffffff);
     }
 
     Log2(("%s: pu32=%p:{%.*Rhxs} iRegister=%d rc=%Rrc\n",
