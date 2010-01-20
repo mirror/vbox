@@ -50,7 +50,7 @@ int main()
      * Init RT+Test.
      */
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstPath", &hTest);
+    int rc = RTTestInitAndCreate("tstRTPath", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
