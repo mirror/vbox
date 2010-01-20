@@ -1,13 +1,14 @@
 /* $Id$ */
 /** @file
- * tstVMMStructGC - Generate structure member and size checks from the GC perspective.
+ * tstVMMStructRC - Generate structure member and size checks from the
+ *                  RC perspective.
  *
- * This is built using the VBOXGC template but linked into a host
+ * This is built using the VBOXRC template but linked into a host
  * ring-3 executable, rather hacky.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -95,7 +96,7 @@ int main()
 {
     GEN_CHECK_SIZE(CFGM);
 
-    GEN_CHECK_SIZE(CPUM); // has .mac
+    GEN_CHECK_SIZE(CPUM);    // has .mac
     GEN_CHECK_SIZE(CPUMCPU); // has .mac
     GEN_CHECK_SIZE(CPUMHOSTCTX);
     GEN_CHECK_SIZE(CPUMCTX);

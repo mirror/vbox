@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,10 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeR0 RuntimeGC RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ ifdef VBOX_WITH_RAW_MODE
+  LIBRARIES += RuntimeGC
+ endif
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
  endif
@@ -1534,89 +1537,91 @@ RuntimeGuestR0NT4_EXTENDS_BY = appending
 RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
 
 
-#
-# RuntimeGC - Guest context library.
-#
-RuntimeGC_TEMPLATE      = VBOXGC
-RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
-RuntimeGC_INCS          = include
-RuntimeGC_SOURCES       = \
-	common/log/log.cpp \
-	common/log/logellipsis.cpp \
-	common/log/logrel.cpp \
-	common/log/logrelellipsis.cpp \
-	common/log/logcom.cpp \
-	common/log/logformat.cpp \
-	common/misc/RTAssertMsg1Weak.cpp \
-	common/misc/RTAssertMsg2.cpp \
-	common/misc/RTAssertMsg2Add.cpp \
-	common/misc/RTAssertMsg2AddWeak.cpp \
-	common/misc/RTAssertMsg2AddWeakV.cpp \
-	common/misc/RTAssertMsg2Weak.cpp \
-	common/misc/RTAssertMsg2WeakV.cpp \
-	common/misc/assert.cpp \
-	common/misc/buildconfig.cpp \
-	common/misc/sanity-c.c \
-	common/misc/sanity-cpp.cpp \
-	common/string/strformat.cpp \
-	common/string/strformatrt.cpp \
-	common/string/strformattype.cpp \
-	common/string/strncmp.cpp \
-	common/string/strpbrk.cpp \
-	common/string/strprintf.cpp \
-	common/table/avllu32.cpp \
-	common/table/avlou32.cpp \
-	common/table/avlogcphys.cpp \
-	common/table/avlogcptr.cpp \
-	common/table/avlohcphys.cpp \
-	common/table/avloioport.cpp \
-	common/table/avlrogcphys.cpp \
-	common/table/avlrogcptr.cpp \
-	common/table/avlroioport.cpp \
-	common/table/avlroogcptr.cpp \
-	common/table/avlu32.cpp \
-	common/time/timeprog.cpp \
-	common/time/timesup.cpp \
-	gc/initterm-gc.cpp \
-	generic/RTAssertShouldPanic-generic.cpp \
-	VBox/strformat-vbox.cpp \
-	\
-	$(RuntimeNoCrt_SOURCES)
+ifdef VBOX_WITH_RAW_MODE
+ #
+ # RuntimeGC - Guest context library.
+ #
+ RuntimeGC_TEMPLATE      = VBOXGC
+ RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
+ RuntimeGC_INCS          = include
+ RuntimeGC_SOURCES       = \
+ 	common/log/log.cpp \
+ 	common/log/logellipsis.cpp \
+ 	common/log/logrel.cpp \
+ 	common/log/logrelellipsis.cpp \
+ 	common/log/logcom.cpp \
+ 	common/log/logformat.cpp \
+ 	common/misc/RTAssertMsg1Weak.cpp \
+ 	common/misc/RTAssertMsg2.cpp \
+ 	common/misc/RTAssertMsg2Add.cpp \
+ 	common/misc/RTAssertMsg2AddWeak.cpp \
+ 	common/misc/RTAssertMsg2AddWeakV.cpp \
+ 	common/misc/RTAssertMsg2Weak.cpp \
+ 	common/misc/RTAssertMsg2WeakV.cpp \
+ 	common/misc/assert.cpp \
+ 	common/misc/buildconfig.cpp \
+ 	common/misc/sanity-c.c \
+ 	common/misc/sanity-cpp.cpp \
+ 	common/string/strformat.cpp \
+ 	common/string/strformatrt.cpp \
+ 	common/string/strformattype.cpp \
+ 	common/string/strncmp.cpp \
+ 	common/string/strpbrk.cpp \
+ 	common/string/strprintf.cpp \
+ 	common/table/avllu32.cpp \
+ 	common/table/avlou32.cpp \
+ 	common/table/avlogcphys.cpp \
+ 	common/table/avlogcptr.cpp \
+ 	common/table/avlohcphys.cpp \
+ 	common/table/avloioport.cpp \
+ 	common/table/avlrogcphys.cpp \
+ 	common/table/avlrogcptr.cpp \
+ 	common/table/avlroioport.cpp \
+ 	common/table/avlroogcptr.cpp \
+ 	common/table/avlu32.cpp \
+ 	common/time/timeprog.cpp \
+ 	common/time/timesup.cpp \
+ 	gc/initterm-gc.cpp \
+ 	generic/RTAssertShouldPanic-generic.cpp \
+ 	VBox/strformat-vbox.cpp \
+ 	\
+ 	$(RuntimeNoCrt_SOURCES)
 
-#if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
-# RuntimeGC_SOURCES += common/time/timesupA.asm
-#else
- RuntimeGC_SOURCES += common/time/timesupref.cpp
-#endif
+ #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
+ # RuntimeGC_SOURCES += common/time/timesupA.asm
+ #else
+  RuntimeGC_SOURCES += common/time/timesupref.cpp
+ #endif
 
-RuntimeGC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
+ RuntimeGC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
 
-ifeq ($(VBOX_LDR_FMT32),lx)
- RuntimeGC_SOURCES += os2/sys0.asm
-endif
+ ifeq ($(VBOX_LDR_FMT32),lx)
+  RuntimeGC_SOURCES += os2/sys0.asm
+ endif
 
-if1of ($(KBUILD_TARGET), darwin solaris freebsd)
-RuntimeGC_SOURCES += \
-	common/math/gcc/adddi3.c \
-	common/math/gcc/anddi3.c \
-	common/math/gcc/ashldi3.c \
-	common/math/gcc/ashrdi3.c \
-	common/math/gcc/cmpdi2.c \
-	common/math/gcc/divdi3.c \
-	common/math/gcc/iordi3.c \
-	common/math/gcc/lshldi3.c \
-	common/math/gcc/lshrdi3.c \
-	common/math/gcc/moddi3.c \
-	common/math/gcc/muldi3.c \
-	common/math/gcc/negdi2.c \
-	common/math/gcc/notdi2.c \
-	common/math/gcc/qdivrem.c \
-	common/math/gcc/subdi3.c \
-	common/math/gcc/ucmpdi2.c \
-	common/math/gcc/udivdi3.c \
-	common/math/gcc/umoddi3.c \
-	common/math/gcc/xordi3.c
-endif
+ if1of ($(KBUILD_TARGET), darwin solaris freebsd)
+  RuntimeGC_SOURCES += \
+ 	common/math/gcc/adddi3.c \
+ 	common/math/gcc/anddi3.c \
+ 	common/math/gcc/ashldi3.c \
+ 	common/math/gcc/ashrdi3.c \
+ 	common/math/gcc/cmpdi2.c \
+ 	common/math/gcc/divdi3.c \
+ 	common/math/gcc/iordi3.c \
+ 	common/math/gcc/lshldi3.c \
+ 	common/math/gcc/lshrdi3.c \
+ 	common/math/gcc/moddi3.c \
+ 	common/math/gcc/muldi3.c \
+ 	common/math/gcc/negdi2.c \
+ 	common/math/gcc/notdi2.c \
+ 	common/math/gcc/qdivrem.c \
+ 	common/math/gcc/subdi3.c \
+ 	common/math/gcc/ucmpdi2.c \
+ 	common/math/gcc/udivdi3.c \
+ 	common/math/gcc/umoddi3.c \
+ 	common/math/gcc/xordi3.c
+ endif
+endif # VBOX_WITH_RAW_MODE
 
 
 #

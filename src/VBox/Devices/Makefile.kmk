@@ -1,10 +1,10 @@
 # $Id$
 ## @file
-# Top-level makefile for the devices, drivers and services.
+# Top-level sub-makefile for the devices, drivers and services.
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -54,7 +54,10 @@ endif
 #
 LIBRARIES += DevicesR3 Drivers ServicesR0
 DLLS      += VBoxDDU VBoxDD VBoxDD2
-SYSMODS   += VBoxDDGC VBoxDD2GC VBoxDDR0 VBoxDD2R0
+SYSMODS   += VBoxDDR0 VBoxDD2R0
+ifdef VBOX_WITH_RAW_MODE
+ SYSMODS   += VBoxDDGC VBoxDD2GC
+endif
 
 
 #
@@ -482,104 +485,106 @@ Graphics/DevVGA.cpp_INCS = $(PATH_VgaBiosBin)
 Graphics/DevVGA.cpp_DEPS = $(PATH_VgaBiosBin)/vbetables.h
 
 
-#
-# VBoxDDGC (sysmod)
-#
-VBoxDDGC_TEMPLATE       = VBOXGC
-VBoxDDGC_SYSSUFF        = .gc
-ifeq ($(KBUILD_TARGET_ARCH),x86)
- VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
-endif
-VBoxDDGC_DEFS           =
-VBoxDDGC_INCS          := \
-	$(PATH_SUB_CURRENT)
-VBoxDDGC_SOURCES        = \
-	Bus/DevPCI.cpp \
-	Graphics/DevVGA.cpp \
-	Input/DevPS2.cpp \
-	PC/DevACPI.cpp \
-	PC/DevPit-i8254.cpp \
-	PC/DevPIC.cpp \
-	PC/DevRTC.cpp \
-	Storage/DevATA.cpp \
-	Network/DevPCNet.cpp \
-	Serial/DevSerial.cpp \
-	Parallel/DevParallel.cpp
+ifdef VBOX_WITH_RAW_MODE
+ #
+ # VBoxDDGC (sysmod)
+ #
+ VBoxDDGC_TEMPLATE       = VBOXGC
+ VBoxDDGC_SYSSUFF        = .gc
+ ifeq ($(KBUILD_TARGET_ARCH),x86)
+  VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
+ endif
+ VBoxDDGC_DEFS           =
+ VBoxDDGC_INCS          := \
+ 	$(PATH_SUB_CURRENT)
+ VBoxDDGC_SOURCES        = \
+ 	Bus/DevPCI.cpp \
+ 	Graphics/DevVGA.cpp \
+ 	Input/DevPS2.cpp \
+ 	PC/DevACPI.cpp \
+ 	PC/DevPit-i8254.cpp \
+ 	PC/DevPIC.cpp \
+ 	PC/DevRTC.cpp \
+ 	Storage/DevATA.cpp \
+ 	Network/DevPCNet.cpp \
+ 	Serial/DevSerial.cpp \
+ 	Parallel/DevParallel.cpp
 
-ifdef VBOX_DYNAMIC_NET_ATTACH
- VBoxDDGC_DEFS += VBOX_DYNAMIC_NET_ATTACH
-endif
-
-ifdef VBOX_WITH_E1000
- VBoxDDGC_DEFS         += VBOX_WITH_E1000
- VBoxDDGC_SOURCES      += \
-	Network/DevE1000.cpp \
-	Network/DevE1000Phy.cpp
-endif
-
-ifdef VBOX_WITH_VIRTIO
- VBoxDDGC_DEFS         += VBOX_WITH_VIRTIO
- VBoxDDGC_SOURCES      += \
-	VirtIO/Virtio.cpp \
-	Network/DevVirtioNet.cpp
-endif
-
-ifdef VBOX_WITH_HGSMI
- VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
-endif
-
-ifdef VBOX_WITH_USB
-VBoxDDGC_DEFS          += VBOX_WITH_USB IN_USB_GC
-VBoxDDGC_SOURCES       += \
-	USB/DevOHCI.cpp
-
- ifdef VBOX_WITH_EHCI
-  VBoxDDGC_DEFS        += VBOX_WITH_EHCI
-  VBoxDDGC_SOURCES     += \
-	USB/DevEHCI.cpp
+ ifdef VBOX_DYNAMIC_NET_ATTACH
+  VBoxDDGC_DEFS += VBOX_DYNAMIC_NET_ATTACH
  endif
 
-endif
+ ifdef VBOX_WITH_E1000
+  VBoxDDGC_DEFS         += VBOX_WITH_E1000
+  VBoxDDGC_SOURCES      += \
+ 	Network/DevE1000.cpp \
+ 	Network/DevE1000Phy.cpp
+ endif
 
-ifdef VBOX_WITH_HGSMI
- VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
-endif
-ifdef VBOX_WITH_VIDEOHWACCEL
- VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
-endif
+ ifdef VBOX_WITH_VIRTIO
+  VBoxDDGC_DEFS         += VBOX_WITH_VIRTIO
+  VBoxDDGC_SOURCES      += \
+ 	VirtIO/Virtio.cpp \
+ 	Network/DevVirtioNet.cpp
+ endif
 
-ifdef VBOX_WITH_AHCI
-VBoxDDGC_DEFS          += VBOX_WITH_AHCI IN_AHCI_GC
-VBoxDDGC_SOURCES       += \
-	Storage/DevAHCI.cpp \
-	Storage/ATAController.cpp
-endif
+ ifdef VBOX_WITH_HGSMI
+  VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
+ endif
 
-ifdef VBOX_WITH_BUSLOGIC
-VBoxDDGC_DEFS          += VBOX_WITH_BUSLOGIC
-VBoxDDGC_SOURCES       += \
-	Storage/DevBusLogic.cpp
-endif
+ ifdef VBOX_WITH_USB
+ VBoxDDGC_DEFS          += VBOX_WITH_USB
+ VBoxDDGC_SOURCES       += \
+ 	USB/DevOHCI.cpp
 
-ifdef VBOX_WITH_LSILOGIC
-VBoxDDGC_DEFS          += VBOX_WITH_LSILOGIC
-VBoxDDGC_SOURCES       += \
-	Storage/DevLsiLogicSCSI.cpp
-endif
+  ifdef VBOX_WITH_EHCI
+   VBoxDDGC_DEFS        += VBOX_WITH_EHCI
+   VBoxDDGC_SOURCES     += \
+ 	USB/DevEHCI.cpp
+  endif
 
-ifdef VBOX_WITH_HPET
-VBoxDDGC_DEFS          += VBOX_WITH_HPET
-VBoxDDGC_SOURCES       += PC/DevHPET.cpp
-endif
+ endif
 
-ifeq ($(VBOX_LDR_FMT32),pe)
-VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
-endif
-if1of ($(VBOX_LDR_FMT32), pe lx)
-VBoxDDGC_LIBS           = \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
-endif
+ ifdef VBOX_WITH_HGSMI
+  VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
+ endif
+ ifdef VBOX_WITH_VIDEOHWACCEL
+  VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
+ endif
+
+ ifdef VBOX_WITH_AHCI
+ VBoxDDGC_DEFS          += VBOX_WITH_AHCI IN_AHCI_GC
+ VBoxDDGC_SOURCES       += \
+ 	Storage/DevAHCI.cpp \
+ 	Storage/ATAController.cpp
+ endif
+
+ ifdef VBOX_WITH_BUSLOGIC
+ VBoxDDGC_DEFS          += VBOX_WITH_BUSLOGIC
+ VBoxDDGC_SOURCES       += \
+ 	Storage/DevBusLogic.cpp
+ endif
+
+ ifdef VBOX_WITH_LSILOGIC
+ VBoxDDGC_DEFS          += VBOX_WITH_LSILOGIC
+ VBoxDDGC_SOURCES       += \
+ 	Storage/DevLsiLogicSCSI.cpp
+ endif
+
+ ifdef VBOX_WITH_HPET
+ VBoxDDGC_DEFS          += VBOX_WITH_HPET
+ VBoxDDGC_SOURCES       += PC/DevHPET.cpp
+ endif
+
+ ifeq ($(VBOX_LDR_FMT32),pe)
+ VBoxDDGC_LDFLAGS        = -Entry:vgaMMIOWrite
+ endif
+ if1of ($(VBOX_LDR_FMT32), pe lx)
+ VBoxDDGC_LIBS           = \
+ 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
+ endif
+endif # VBOX_WITH_RAW_MODE
 
 
 #
@@ -677,25 +682,27 @@ if1of ($(VBOX_LDR_FMT), pe lx)
 VBoxDDR0_LIBS           = $(PATH_LIB)/VMMR0Imp$(VBOX_SUFF_LIB)
 endif
 
-#
-# VBoxDD2GC (LGPL sysmod)
-#
-VBoxDD2GC_TEMPLATE       = VBOXGC
-VBoxDD2GC_DEFS           =
-VBoxDD2GC_SYSSUFF        = .gc
-VBoxDD2GC_INCS          := \
-	$(PATH_SUB_CURRENT)
-VBoxDD2GC_SOURCES        = \
-	PC/DevAPIC.cpp
-ifeq ($(VBOX_LDR_FMT32),pe)
-VBoxDD2GC_LDFLAGS        = -Entry:apicMMIOWrite
-endif
-if1of ($(VBOX_LDR_FMT32), pe lx)
-VBoxDD2GC_LIBS           = \
-	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
-	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
-endif
 
+ifdef VBOX_WITH_RAW_MODE
+ #
+ # VBoxDD2GC (LGPL sysmod)
+ #
+ VBoxDD2GC_TEMPLATE       = VBOXGC
+ VBoxDD2GC_DEFS           =
+ VBoxDD2GC_SYSSUFF        = .gc
+ VBoxDD2GC_INCS          := \
+ 	$(PATH_SUB_CURRENT)
+ VBoxDD2GC_SOURCES        = \
+ 	PC/DevAPIC.cpp
+ ifeq ($(VBOX_LDR_FMT32),pe)
+ VBoxDD2GC_LDFLAGS        = -Entry:apicMMIOWrite
+ endif
+ if1of ($(VBOX_LDR_FMT32), pe lx)
+ VBoxDD2GC_LIBS           = \
+ 	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/VMMGCImp$(VBOX_SUFF_LIB)
+ endif
+endif
 
 #
 # VBoxDD2R0 (LGPL sysmod)

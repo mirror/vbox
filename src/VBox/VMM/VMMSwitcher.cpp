@@ -51,7 +51,8 @@
 static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
 {
     NULL, /* invalid entry */
-#ifndef RT_ARCH_AMD64
+#ifdef VBOX_WITH_RAW_MODE
+# ifndef RT_ARCH_AMD64
     &vmmR3Switcher32BitTo32Bit_Def,
     &vmmR3Switcher32BitToPAE_Def,
     &vmmR3Switcher32BitToAMD64_Def,
@@ -59,13 +60,13 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherPAEToPAE_Def,
     &vmmR3SwitcherPAEToAMD64_Def,
     NULL,   //&vmmR3SwitcherPAETo32Bit_Def,
-# ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
+#  ifdef VBOX_WITH_HYBRID_32BIT_KERNEL
     &vmmR3SwitcherAMD64ToPAE_Def,
-# else
+#  else
     NULL,   //&vmmR3SwitcherAMD64ToPAE_Def,
-# endif
+#  endif
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
-#else  /* RT_ARCH_AMD64 */
+# else  /* RT_ARCH_AMD64 */
     NULL,   //&vmmR3Switcher32BitTo32Bit_Def,
     NULL,   //&vmmR3Switcher32BitToPAE_Def,
     NULL,   //&vmmR3Switcher32BitToAMD64_Def,
@@ -75,7 +76,18 @@ static PVMMSWITCHERDEF s_apSwitchers[VMMSWITCHER_MAX] =
     &vmmR3SwitcherAMD64To32Bit_Def,
     &vmmR3SwitcherAMD64ToPAE_Def,
     NULL    //&vmmR3SwitcherAMD64ToAMD64_Def,
-#endif /* RT_ARCH_AMD64 */
+# endif /* RT_ARCH_AMD64 */
+#else  /* !VBOX_WITH_RAW_MODE */
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL,
+    NULL
+#endif /* !VBOX_WITH_RAW_MODE */
 };
 
 
