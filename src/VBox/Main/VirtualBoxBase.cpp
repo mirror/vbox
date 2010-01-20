@@ -91,8 +91,8 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
     {
         AssertCompile (sizeof (RWLockHandle *) == sizeof (void *));
 
-        // locking class is LOCKCLASS_VIRTUALBOXOBJECT for the VirtualBox singleton,
-        // LOCKCLASS_HOSTOBJECT for the Host object and LOCKCLASS_OBJECT for any other object
+        // getLockingClass() is overridden by many subclasses to return
+        // one of the locking classes listed at the top of AutoLock.h
         RWLockHandle *objLock = new RWLockHandle(getLockingClass());
         if (!ASMAtomicCmpXchgPtr ((void * volatile *) &mObjectLock, objLock, NULL))
         {

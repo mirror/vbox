@@ -70,21 +70,20 @@ enum VBoxLockingClass
 {
     LOCKCLASS_NONE = 0,
     LOCKCLASS_VIRTUALBOXOBJECT = 1,         // highest order: VirtualBox object lock
-    LOCKCLASS_USBPROXYSERVICE = 2,          // USB proxy service object lock
-    LOCKCLASS_HOSTOBJECT = 3,               // Host object lock
-    LOCKCLASS_LISTOFMACHINES = 4,           // list of machines in VirtualBox object
-    LOCKCLASS_MACHINEOBJECT = 5,            // Machine object lock
-    LOCKCLASS_SNAPSHOTOBJECT = 6,           // snapshot object locks
+    LOCKCLASS_HOSTOBJECT = 2,               // Host object lock
+    LOCKCLASS_LISTOFMACHINES = 3,           // list of machines in VirtualBox object
+    LOCKCLASS_MACHINEOBJECT = 4,            // Machine object lock
+    LOCKCLASS_SNAPSHOTOBJECT = 5,           // snapshot object locks
                                             // (the snapshots tree, including the child pointers in Snapshot,
                                             // is protected by the normal Machine object lock)
-    LOCKCLASS_LISTOFMEDIA = 7,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
-    LOCKCLASS_LISTOFOTHEROBJECTS = 8,       // any other list of objects
-    LOCKCLASS_OTHEROBJECT = 9,              // any regular object member variable lock
-    LOCKCLASS_USBLIST = 10,                 // temporary hack to avoid having to clean up the USB filters
+    LOCKCLASS_LISTOFMEDIA = 6,              // list of media (hard disks, DVDs, floppies) in VirtualBox object
+    LOCKCLASS_LISTOFOTHEROBJECTS = 7,       // any other list of objects
+    LOCKCLASS_OTHEROBJECT = 8,              // any regular object member variable lock
+    LOCKCLASS_USBLIST = 9,                 // temporary hack to avoid having to clean up the USB filters
                                             // too much @todo r=dj get rid of this!
-    LOCKCLASS_PROGRESSLIST = 11,            // list of progress objects in VirtualBox; no other object lock
+    LOCKCLASS_PROGRESSLIST = 10,            // list of progress objects in VirtualBox; no other object lock
                                             // may be held after this!
-    LOCKCLASS_OBJECTSTATE = 12              // object state lock (handled by AutoCaller classes)
+    LOCKCLASS_OBJECTSTATE = 11              // object state lock (handled by AutoCaller classes)
 };
 
 void InitAutoLockSystem();
