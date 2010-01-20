@@ -447,8 +447,8 @@ STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildr
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-    AutoReadLock block(this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+    // snapshots tree is protected by machine lock
+    AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
     SafeIfaceArray<ISnapshot> collection(m->llChildren);
     collection.detachTo(ComSafeArrayOutArg(aChildren));
@@ -490,7 +490,9 @@ ULONG Snapshot::getChildrenCount()
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // snapshots tree is protected by machine lock
+    AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+
     return (ULONG)m->llChildren.size();
 }
 
@@ -525,7 +527,9 @@ ULONG Snapshot::getAllChildrenCount()
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoReadLock treeLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // snapshots tree is protected by machine lock
+    AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+
     return getAllChildrenCountImpl();
 }
 
@@ -685,13 +689,17 @@ void Snapshot::updateSavedStatePaths(const char *aOldPath, const char *aNewPath)
     AutoCaller autoCaller(this);
     AssertComRC(autoCaller.rc());
 
-    AutoWriteLock chLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // snapshots tree is protected by machine lock
+    AutoWriteLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+
     // call the implementation under the tree lock
     updateSavedStatePathsImpl(aOldPath, aNewPath);
 }
 
 /**
- * Internal implementation for Snapshot::saveSnapshot (below).
+ * Internal implementation for Snapshot::saveSnapshot (below). Caller has
+ * requested the snapshots tree (machine) lock.
+ *
  * @param aNode
  * @param aAttrsOnly
  * @return
@@ -752,7 +760,8 @@ HRESULT Snapshot::saveSnapshotImpl(settings::Snapshot &data, bool aAttrsOnly)
  */
 HRESULT Snapshot::saveSnapshot(settings::Snapshot &data, bool aAttrsOnly)
 {
-    AutoWriteLock listLock(m->pMachine->snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // snapshots tree is protected by machine lock
+    AutoReadLock alock(m->pMachine COMMA_LOCKVAL_SRC_POS);
 
     return saveSnapshotImpl(data, aAttrsOnly);
 }
@@ -965,35 +974,35 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
     /* create all other child objects that will be immutable private copies */
 
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->init (this);
+    mBIOSSettings->init(this);
 
 #ifdef VBOX_WITH_VRDP
     unconst(mVRDPServer).createObject();
-    mVRDPServer->init (this);
+    mVRDPServer->init(this);
 #endif
 
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init (this);
+    mAudioAdapter->init(this);
 
     unconst(mUSBController).createObject();
-    mUSBController->init (this);
+    mUSBController->init(this);
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
-        unconst(mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters [slot]->init (this, slot);
+        unconst(mNetworkAdapters[slot]).createObject();
+        mNetworkAdapters[slot]->init(this, slot);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
-        unconst(mSerialPorts [slot]).createObject();
-        mSerialPorts [slot]->init (this, slot);
+        unconst(mSerialPorts[slot]).createObject();
+        mSerialPorts[slot]->init(this, slot);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
-        unconst(mParallelPorts [slot]).createObject();
-        mParallelPorts [slot]->init (this, slot);
+        unconst(mParallelPorts[slot]).createObject();
+        mParallelPorts[slot]->init(this, slot);
     }
 
     /* load hardware and harddisk settings */
@@ -1938,8 +1947,6 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     // machine must not be running
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
 
-    AutoWriteLock treeLock(snapshotsTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-
     ComObjPtr<Snapshot> pSnapshot;
     HRESULT rc = findSnapshot(id, pSnapshot, true /* aSetError */);
     if (FAILED(rc)) return rc;
@@ -2112,8 +2119,8 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
     /* Locking order:  */
     AutoMultiWriteLock3 alock(this->lockHandle(),
-                              this->snapshotsTreeLockHandle(),
-                              aTask.pSnapshot->lockHandle()
+                              aTask.pSnapshot->lockHandle(),
+                              &mParent->getMediaTreeLockHandle()
                               COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<SnapshotMachine> pSnapMachine = aTask.pSnapshot->getSnapshotMachine();
