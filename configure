@@ -2119,6 +2119,9 @@ for option in $*; do
     --disable-pulse)
       [ $WITH_PULSE -eq 1 ] && WITH_PULSE=0
       ;;
+    --enable-pulse)
+      WITH_PULSE=2
+      ;;
     --disable-dbus)
       [ $WITH_DBUS -eq 1 ] && WITH_DBUS=0
       ;;
@@ -2330,7 +2333,7 @@ check_curl
 if [ "$OS" = "linux" -o "$OS" = "freebsd" ]; then
   if [ $WITH_PULSE -eq 1 ]; then
     check_pulse
-  else
+  elif [ $WITH_PULSE -eq 0 ]; then
     cnf_append "VBOX_WITH_PULSE" ""
   fi
 fi
