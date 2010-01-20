@@ -62,10 +62,6 @@ RT_C_DECLS_END
 # error "Invalid combination; AMD64 guest implies AMD64 shadow and vice versa"
 #endif
 
-#ifdef IN_RING0 /* no mappings in VT-x and AMD-V mode */
-# define PGM_WITHOUT_MAPPINGS
-#endif
-
 
 #ifndef IN_RING3
 /**

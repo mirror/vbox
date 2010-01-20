@@ -56,6 +56,14 @@
  */
 
 /**
+ * Indicates that there are no guest mappings to care about.
+ * Currently on raw-mode related code uses mappings, i.e. RC and R3 code.
+ */
+#ifdef IN_RING0
+# define PGM_WITHOUT_MAPPINGS
+#endif
+
+/**
  * Solve page is out of sync issues inside Guest Context (in PGMGC.cpp).
  * Comment it if it will break something.
  */
