@@ -136,24 +136,48 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2)
 RT_EXPORT_SYMBOL(RTUuidCompare);
 
 
-RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString)
+RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString2)
 {
     RTUUID Uuid2;
     int rc;
 
     /* check params */
     AssertPtrReturn(pUuid1, -1);
-    AssertPtrReturn(pszString, 1);
+    AssertPtrReturn(pszString2, 1);
 
     /*
      * Try convert the string to a UUID and then compare the two.
      */
-    rc = RTUuidFromStr(&Uuid2, pszString);
+    rc = RTUuidFromStr(&Uuid2, pszString2);
     AssertRCReturn(rc, 1);
 
     return RTUuidCompare(pUuid1, &Uuid2);
 }
 RT_EXPORT_SYMBOL(RTUuidCompareStr);
+
+
+RTDECL(int)  RTUuidCompare2Strs(const char *pszString1, const char *pszString2)
+{
+    RTUUID Uuid1;
+    RTUUID Uuid2;
+    int rc;
+
+    /* check params */
+    AssertPtrReturn(pszString1, -1);
+    AssertPtrReturn(pszString2, 1);
+
+    /*
+     * Try convert the strings to UUIDs and then compare them.
+     */
+    rc = RTUuidFromStr(&Uuid1, pszString1);
+    AssertRCReturn(rc, -1);
+
+    rc = RTUuidFromStr(&Uuid2, pszString2);
+    AssertRCReturn(rc, 1);
+
+    return RTUuidCompare(&Uuid1, &Uuid2);
+}
+RT_EXPORT_SYMBOL(RTUuidCompare2Strs);
 
 
 RTDECL(int)  RTUuidToStr(PCRTUUID pUuid, char *pszString, size_t cchString)
