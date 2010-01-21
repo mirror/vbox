@@ -43,7 +43,7 @@ int main()
 #ifdef IN_RING3
 # include "tstAsmStructsHC.h"
 #else
-# include "tstAsmStructsGC.h"
+# include "tstAsmStructsRC.h"
 #endif
 
     if (rc)
