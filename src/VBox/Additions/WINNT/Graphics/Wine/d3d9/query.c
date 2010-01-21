@@ -37,7 +37,8 @@ WINE_DEFAULT_DEBUG_CHANNEL(d3d9);
 /* IDirect3DQuery9 IUnknown parts follow: */
 static HRESULT WINAPI IDirect3DQuery9Impl_QueryInterface(LPDIRECT3DQUERY9 iface, REFIID riid, LPVOID* ppobj) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
-    TRACE("(%p) Relay\n", This);
+
+    TRACE("iface %p, riid %s, object %p.\n", iface, debugstr_guid(riid), ppobj);
 
     if (IsEqualGUID(riid, &IID_IUnknown)
         || IsEqualGUID(riid, &IID_IDirect3DQuery9)) {
@@ -55,7 +56,8 @@ static ULONG WINAPI IDirect3DQuery9Impl_AddRef(LPDIRECT3DQUERY9 iface) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     ULONG ref = InterlockedIncrement(&This->ref);
 
-    TRACE("(%p) : AddRef from %d\n", This, ref - 1);
+    TRACE("%p increasing refcount to %u.\n", iface, ref);
+
     return ref;
 }
 
@@ -63,7 +65,7 @@ static ULONG WINAPI IDirect3DQuery9Impl_Release(LPDIRECT3DQUERY9 iface) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     ULONG ref = InterlockedDecrement(&This->ref);
 
-    TRACE("(%p) : ReleaseRef to %d\n", This, ref);
+    TRACE("%p decreasing refcount to %u.\n", iface, ref);
 
     if (ref == 0) {
         wined3d_mutex_lock();
@@ -77,30 +79,25 @@ static ULONG WINAPI IDirect3DQuery9Impl_Release(LPDIRECT3DQUERY9 iface) {
 }
 
 /* IDirect3DQuery9 Interface follow: */
-static HRESULT WINAPI IDirect3DQuery9Impl_GetDevice(LPDIRECT3DQUERY9 iface, IDirect3DDevice9** ppDevice) {
+static HRESULT WINAPI IDirect3DQuery9Impl_GetDevice(IDirect3DQuery9 *iface, IDirect3DDevice9 **device)
+{
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
-    IWineD3DDevice* pDevice;
-    HRESULT hr;
 
-    TRACE("(%p) Relay\n", This);
+    TRACE("iface %p, device %p.\n", iface, device);
 
-    wined3d_mutex_lock();
-    hr = IWineD3DQuery_GetDevice(This->wineD3DQuery, &pDevice);
-    if(hr != D3D_OK){
-        *ppDevice = NULL;
-    }else{
-        hr = IWineD3DDevice_GetParent(pDevice, (IUnknown **)ppDevice);
-        IWineD3DDevice_Release(pDevice);
-    }
-    wined3d_mutex_unlock();
+    *device = (IDirect3DDevice9 *)This->parentDevice;
+    IDirect3DDevice9_AddRef(*device);
 
-    return hr;
+    TRACE("Returning device %p.\n", *device);
+
+    return D3D_OK;
 }
 
 static D3DQUERYTYPE WINAPI IDirect3DQuery9Impl_GetType(LPDIRECT3DQUERY9 iface) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     HRESULT hr;
-    TRACE("(%p) Relay\n", This);
+
+    TRACE("iface %p.\n", iface);
 
     wined3d_mutex_lock();
     hr = IWineD3DQuery_GetType(This->wineD3DQuery);
@@ -112,7 +109,8 @@ static D3DQUERYTYPE WINAPI IDirect3DQuery9Impl_GetType(LPDIRECT3DQUERY9 iface) {
 static DWORD WINAPI IDirect3DQuery9Impl_GetDataSize(LPDIRECT3DQUERY9 iface) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     DWORD ret;
-    TRACE("(%p) Relay\n", This);
+
+    TRACE("iface %p.\n", iface);
 
     wined3d_mutex_lock();
     ret = IWineD3DQuery_GetDataSize(This->wineD3DQuery);
@@ -124,7 +122,8 @@ static DWORD WINAPI IDirect3DQuery9Impl_GetDataSize(LPDIRECT3DQUERY9 iface) {
 static HRESULT WINAPI IDirect3DQuery9Impl_Issue(LPDIRECT3DQUERY9 iface, DWORD dwIssueFlags) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     HRESULT hr;
-    TRACE("(%p) Relay\n", This);
+
+    TRACE("iface %p, flags %#x.\n", iface, dwIssueFlags);
 
     wined3d_mutex_lock();
     hr = IWineD3DQuery_Issue(This->wineD3DQuery, dwIssueFlags);
@@ -136,7 +135,9 @@ static HRESULT WINAPI IDirect3DQuery9Impl_Issue(LPDIRECT3DQUERY9 iface, DWORD dw
 static HRESULT WINAPI IDirect3DQuery9Impl_GetData(LPDIRECT3DQUERY9 iface, void* pData, DWORD dwSize, DWORD dwGetDataFlags) {
     IDirect3DQuery9Impl *This = (IDirect3DQuery9Impl *)iface;
     HRESULT hr;
-    TRACE("(%p) Relay\n", This);
+
+    TRACE("iface %p, data %p, size %u, flags %#x.\n",
+            iface, pData, dwSize, dwGetDataFlags);
 
     wined3d_mutex_lock();
     hr = IWineD3DQuery_GetData(This->wineD3DQuery, pData, dwSize, dwGetDataFlags);
@@ -165,7 +166,7 @@ HRESULT WINAPI IDirect3DDevice9Impl_CreateQuery(LPDIRECT3DDEVICE9EX iface, D3DQU
     IDirect3DQuery9Impl *object = NULL;
     HRESULT hr = D3D_OK;
 
-    TRACE("(%p) Relay\n", This);
+    TRACE("iface %p, type %#x, query %p.\n", iface, Type, ppQuery);
 
     if (!ppQuery)
     {

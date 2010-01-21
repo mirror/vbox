@@ -124,9 +124,8 @@ typedef union
     struct
     {
         int          code;
-        int          unicode;
-        client_ptr_t string;
         data_size_t  length;
+        client_ptr_t string;
     } output_string;
     struct
     {
@@ -1217,6 +1216,21 @@ struct alloc_file_handle_reply
 
 
 
+struct get_handle_unix_name_request
+{
+    struct request_header __header;
+    obj_handle_t   handle;
+};
+struct get_handle_unix_name_reply
+{
+    struct reply_header __header;
+    data_size_t    name_len;
+    /* VARARG(name,string); */
+    char __pad_12[4];
+};
+
+
+
 struct get_handle_fd_request
 {
     struct request_header __header;
@@ -2057,8 +2071,6 @@ struct output_debug_string_request
     struct request_header __header;
     data_size_t   length;
     client_ptr_t  string;
-    int           unicode;
-    char __pad_28[4];
 };
 struct output_debug_string_reply
 {
@@ -4120,16 +4132,17 @@ struct access_check_reply
     char __pad_20[4];
 };
 
-struct get_token_user_request
+struct get_token_sid_request
 {
     struct request_header __header;
     obj_handle_t    handle;
+    unsigned int    which_sid;
 };
-struct get_token_user_reply
+struct get_token_sid_reply
 {
     struct reply_header __header;
-    data_size_t     user_len;
-    /* VARARG(user,SID); */
+    data_size_t     sid_len;
+    /* VARARG(sid,SID); */
     char __pad_12[4];
 };
 
@@ -4345,6 +4358,9 @@ struct get_object_info_reply
     struct reply_header __header;
     unsigned int   access;
     unsigned int   ref_count;
+    data_size_t    total;
+    /* VARARG(name,unicode_str); */
+    char __pad_20[4];
 };
 
 
@@ -4626,6 +4642,31 @@ struct set_window_layered_info_reply
 };
 
 
+
+struct alloc_user_handle_request
+{
+    struct request_header __header;
+};
+struct alloc_user_handle_reply
+{
+    struct reply_header __header;
+    user_handle_t  handle;
+    char __pad_12[4];
+};
+
+
+
+struct free_user_handle_request
+{
+    struct request_header __header;
+    user_handle_t  handle;
+};
+struct free_user_handle_reply
+{
+    struct reply_header __header;
+};
+
+
 enum request
 {
     REQ_new_process,
@@ -4665,6 +4706,7 @@ enum request
     REQ_create_file,
     REQ_open_file_object,
     REQ_alloc_file_handle,
+    REQ_get_handle_unix_name,
     REQ_get_handle_fd,
     REQ_flush_file,
     REQ_lock_file,
@@ -4833,7 +4875,7 @@ enum request
     REQ_check_token_privileges,
     REQ_duplicate_token,
     REQ_access_check,
-    REQ_get_token_user,
+    REQ_get_token_sid,
     REQ_get_token_groups,
     REQ_get_token_default_dacl,
     REQ_set_token_default_dacl,
@@ -4866,6 +4908,8 @@ enum request
     REQ_add_fd_completion,
     REQ_get_window_layered_info,
     REQ_set_window_layered_info,
+    REQ_alloc_user_handle,
+    REQ_free_user_handle,
     REQ_NB_REQUESTS
 };
 
@@ -4910,6 +4954,7 @@ union generic_request
     struct create_file_request create_file_request;
     struct open_file_object_request open_file_object_request;
     struct alloc_file_handle_request alloc_file_handle_request;
+    struct get_handle_unix_name_request get_handle_unix_name_request;
     struct get_handle_fd_request get_handle_fd_request;
     struct flush_file_request flush_file_request;
     struct lock_file_request lock_file_request;
@@ -5078,7 +5123,7 @@ union generic_request
     struct check_token_privileges_request check_token_privileges_request;
     struct duplicate_token_request duplicate_token_request;
     struct access_check_request access_check_request;
-    struct get_token_user_request get_token_user_request;
+    struct get_token_sid_request get_token_sid_request;
     struct get_token_groups_request get_token_groups_request;
     struct get_token_default_dacl_request get_token_default_dacl_request;
     struct set_token_default_dacl_request set_token_default_dacl_request;
@@ -5111,6 +5156,8 @@ union generic_request
     struct add_fd_completion_request add_fd_completion_request;
     struct get_window_layered_info_request get_window_layered_info_request;
     struct set_window_layered_info_request set_window_layered_info_request;
+    struct alloc_user_handle_request alloc_user_handle_request;
+    struct free_user_handle_request free_user_handle_request;
 };
 union generic_reply
 {
@@ -5153,6 +5200,7 @@ union generic_reply
     struct create_file_reply create_file_reply;
     struct open_file_object_reply open_file_object_reply;
     struct alloc_file_handle_reply alloc_file_handle_reply;
+    struct get_handle_unix_name_reply get_handle_unix_name_reply;
     struct get_handle_fd_reply get_handle_fd_reply;
     struct flush_file_reply flush_file_reply;
     struct lock_file_reply lock_file_reply;
@@ -5321,7 +5369,7 @@ union generic_reply
     struct check_token_privileges_reply check_token_privileges_reply;
     struct duplicate_token_reply duplicate_token_reply;
     struct access_check_reply access_check_reply;
-    struct get_token_user_reply get_token_user_reply;
+    struct get_token_sid_reply get_token_sid_reply;
     struct get_token_groups_reply get_token_groups_reply;
     struct get_token_default_dacl_reply get_token_default_dacl_reply;
     struct set_token_default_dacl_reply set_token_default_dacl_reply;
@@ -5354,8 +5402,10 @@ union generic_reply
     struct add_fd_completion_reply add_fd_completion_reply;
     struct get_window_layered_info_reply get_window_layered_info_reply;
     struct set_window_layered_info_reply set_window_layered_info_reply;
+    struct alloc_user_handle_reply alloc_user_handle_reply;
+    struct free_user_handle_reply free_user_handle_reply;
 };
 
-#define SERVER_PROTOCOL_VERSION 390
+#define SERVER_PROTOCOL_VERSION 395
 
 #endif /* __WINE_WINE_SERVER_PROTOCOL_H */

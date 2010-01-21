@@ -82,7 +82,7 @@ typedef struct _iobuf
 #endif  /* _FILE_DEFINED */
 
 #ifndef _FPOS_T_DEFINED
-typedef __int64 fpos_t;
+typedef __int64 DECLSPEC_ALIGN(8) fpos_t;
 #define _FPOS_T_DEFINED
 #endif
 

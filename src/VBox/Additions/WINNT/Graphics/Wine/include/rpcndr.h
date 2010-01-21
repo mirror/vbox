@@ -106,8 +106,8 @@ extern "C" {
 
 #define small char
 typedef unsigned char byte;
-#define hyper __int64
-#define MIDL_uhyper unsigned __int64
+typedef INT64 hyper;
+typedef UINT64 MIDL_uhyper;
 typedef unsigned char boolean;
 
 #define __RPC_CALLEE WINAPI
@@ -213,19 +213,19 @@ typedef struct _MIDL_STUB_MESSAGE
   struct _FULL_PTR_XLAT_TABLES *FullPtrXlatTables;
   ULONG FullPtrRefId;
   ULONG PointerLength;
-  int fInDontFree:1;
-  int fDontCallFreeInst:1;
-  int fInOnlyParam:1;
-  int fHasReturn:1;
-  int fHasExtensions:1;
-  int fHasNewCorrDesc:1;
-  int fIsIn:1;
-  int fIsOut:1;
-  int fIsOicf:1;
-  int fBufferValid:1;
-  int fHasMemoryValidateCallback:1;
-  int fInFree:1;
-  int fNeedMCCP:1;
+  unsigned int fInDontFree:1;
+  unsigned int fDontCallFreeInst:1;
+  unsigned int fInOnlyParam:1;
+  unsigned int fHasReturn:1;
+  unsigned int fHasExtensions:1;
+  unsigned int fHasNewCorrDesc:1;
+  unsigned int fIsIn:1;
+  unsigned int fIsOut:1;
+  unsigned int fIsOicf:1;
+  unsigned int fBufferValid:1;
+  unsigned int fHasMemoryValidateCallback:1;
+  unsigned int fInFree:1;
+  unsigned int fNeedMCCP:1;
   int fUnused:3;
   int fUnused2:16;
   DWORD dwDestContext;
@@ -392,7 +392,11 @@ typedef struct _MIDL_SYNTAX_INFO
 
 typedef void (__RPC_API *STUB_THUNK)( PMIDL_STUB_MESSAGE );
 
+#ifdef WINE_STRICT_PROTOTYPES
+typedef LONG (__RPC_API *SERVER_ROUTINE)(void);
+#else
 typedef LONG (__RPC_API *SERVER_ROUTINE)();
+#endif
 
 typedef struct _MIDL_SERVER_INFO_
 {

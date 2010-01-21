@@ -1,1 +1,1 @@
-const char wine_build[] = "wine-1.1.30";
+const char wine_build[] = "wine-1.1.36";

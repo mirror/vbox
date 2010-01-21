@@ -300,6 +300,13 @@ enum HotkeyPrefix
     HotkeyPrefixHide   = 2
 };
 
+enum PaletteFlags
+{
+    PaletteFlagsHasAlpha        = 1,
+    PaletteFlagsGrayScale       = 2,
+    PaletteFlagsHalftone        = 4
+};
+
 enum ImageCodecFlags
 {
     ImageCodecFlagsEncoder          = 1,
@@ -464,6 +471,7 @@ typedef enum FontStyle FontStyle;
 typedef enum StringFormatFlags StringFormatFlags;
 typedef enum HotkeyPrefix HotkeyPrefix;
 typedef enum PenAlignment GpPenAlignment;
+typedef enum PaletteFlags PaletteFlags;
 typedef enum ImageCodecFlags ImageCodecFlags;
 typedef enum CombineMode CombineMode;
 typedef enum FlushIntention FlushIntention;
