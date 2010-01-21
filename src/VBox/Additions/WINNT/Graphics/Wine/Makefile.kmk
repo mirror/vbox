@@ -149,9 +149,9 @@ wined3d_SOURCES      := \
     wined3d/glsl_shader.c \
     wined3d/nvidia_texture_shader.c \
     wined3d/palette.c \
-    wined3d/pixelshader.c \
     wined3d/query.c \
     wined3d/resource.c \
+	wined3d/shader.c \
 	wined3d/shader_sm1.c \
 	wined3d/shader_sm4.c \
     wined3d/state.c \
@@ -165,7 +165,6 @@ wined3d_SOURCES      := \
     wined3d/texture.c \
     wined3d/utils.c \
     wined3d/vertexdeclaration.c \
-    wined3d/vertexshader.c \
 	wined3d/view.c \
     wined3d/volume.c \
     wined3d/volumetexture.c \
@@ -196,8 +195,6 @@ VBoxD3D8_SOURCES      := \
     d3d8/directx.c \
     d3d8/indexbuffer.c \
     d3d8/pixelshader.c \
-    d3d8/resource.c \
-    d3d8/stateblock.c \
     d3d8/surface.c \
     d3d8/swapchain.c \
     d3d8/texture.c \

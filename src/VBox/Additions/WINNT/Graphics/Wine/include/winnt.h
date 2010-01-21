@@ -305,7 +305,7 @@ extern "C" {
 #endif
 
 /* Eliminate Microsoft C/C++ compiler warning 4715 */
-#if (_MSC_VER > 1200)
+#if defined(_MSC_VER) && (_MSC_VER > 1200)
 # define DEFAULT_UNREACHABLE default: __assume(0)
 #else
 # define DEFAULT_UNREACHABLE
@@ -317,6 +317,21 @@ extern "C" {
 #define ERROR_SEVERITY_INFORMATIONAL 0x40000000
 #define ERROR_SEVERITY_WARNING       0x80000000
 #define ERROR_SEVERITY_ERROR         0xC0000000
+
+#ifdef __cplusplus
+#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE) \
+extern "C++" { \
+    inline ENUMTYPE operator | (ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a)|((int)b)); } \
+    inline ENUMTYPE operator |= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) |= ((int)b)); } \
+    inline ENUMTYPE operator & (ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a)&((int)b)); } \
+    inline ENUMTYPE operator &= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) &= ((int)b)); } \
+    inline ENUMTYPE operator ~ (ENUMTYPE a) { return (ENUMTYPE)(~((int)a)); } \
+    inline ENUMTYPE operator ^ (ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a)^((int)b)); } \
+    inline ENUMTYPE operator ^= (ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) ^= ((int)b)); } \
+}
+#else
+#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE) /* */
+#endif
 
 /* Microsoft's macros for declaring functions */
 
@@ -611,6 +626,8 @@ typedef struct _MEMORY_BASIC_INFORMATION
 #define MAXWORD       0xffff
 #define MAXDWORD      0xffffffff
 
+#define UNICODE_STRING_MAX_CHARS 32767
+
 #define FIELD_OFFSET(type, field) \
   ((LONG)(INT_PTR)&(((type *)0)->field))
 
@@ -858,9 +875,6 @@ typedef struct _LDT_ENTRY {
             unsigned    BaseHi : 8;
         } Bits;
     } HighWord;
-#ifdef _WIN64  /* FIXME: 64-bit code should not be using the LDT */
-    DWORD BaseHigh;
-#endif
 } LDT_ENTRY, *PLDT_ENTRY;
 
 /* x86-64 context definitions */
@@ -998,7 +1012,167 @@ typedef struct _RUNTIME_FUNCTION
     DWORD UnwindData;
 } RUNTIME_FUNCTION, *PRUNTIME_FUNCTION;
 
+#define UNWIND_HISTORY_TABLE_SIZE 12
+
+typedef struct _UNWIND_HISTORY_TABLE_ENTRY
+{
+    ULONG64 ImageBase;
+    PRUNTIME_FUNCTION FunctionEntry;
+} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
+
+#define UNWIND_HISTORY_TABLE_NONE 0
+#define UNWIND_HISTORY_TABLE_GLOBAL 1
+#define UNWIND_HISTORY_TABLE_LOCAL 2
+
+typedef struct _UNWIND_HISTORY_TABLE
+{
+    ULONG Count;
+    UCHAR Search;
+    ULONG64 LowAddress;
+    ULONG64 HighAddress;
+    UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
+} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
+
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS
+{
+    union
+    {
+        PM128A FloatingContext[16];
+        struct
+        {
+            PM128A Xmm0;
+            PM128A Xmm1;
+            PM128A Xmm2;
+            PM128A Xmm3;
+            PM128A Xmm4;
+            PM128A Xmm5;
+            PM128A Xmm6;
+            PM128A Xmm7;
+            PM128A Xmm8;
+            PM128A Xmm9;
+            PM128A Xmm10;
+            PM128A Xmm11;
+            PM128A Xmm12;
+            PM128A Xmm13;
+            PM128A Xmm14;
+            PM128A Xmm15;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME1;
+
+    union
+    {
+        PULONG64 IntegerContext[16];
+        struct
+        {
+            PULONG64 Rax;
+            PULONG64 Rcx;
+            PULONG64 Rdx;
+            PULONG64 Rbx;
+            PULONG64 Rsp;
+            PULONG64 Rbp;
+            PULONG64 Rsi;
+            PULONG64 Rdi;
+            PULONG64 R8;
+            PULONG64 R9;
+            PULONG64 R10;
+            PULONG64 R11;
+            PULONG64 R12;
+            PULONG64 R13;
+            PULONG64 R14;
+            PULONG64 R15;
+        } DUMMYSTRUCTNAME;
+    } DUMMYUNIONNAME2;
+} KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
+
+BOOLEAN CDECL            RtlAddFunctionTable(RUNTIME_FUNCTION*,DWORD,DWORD64);
+BOOLEAN CDECL            RtlDeleteFunctionTable(RUNTIME_FUNCTION*);
+PRUNTIME_FUNCTION WINAPI RtlLookupFunctionEntry(DWORD64,DWORD64*,UNWIND_HISTORY_TABLE*);
+PVOID WINAPI             RtlVirtualUnwind(ULONG,ULONG64,ULONG64,RUNTIME_FUNCTION*,CONTEXT*,PVOID*,ULONG64*,KNONVOLATILE_CONTEXT_POINTERS*);
+
+#define UNW_FLAG_NHANDLER  0
+#define UNW_FLAG_EHANDLER  1
+#define UNW_FLAG_UHANDLER  2
+#define UNW_FLAG_CHAININFO 4
+
 #endif /* __x86_64__ */
+
+/* IA64 context definitions */
+#ifdef __ia64__
+
+typedef struct _FRAME_POINTERS {
+  ULONGLONG MemoryStackFp;
+  ULONGLONG BackingStoreFp;
+} FRAME_POINTERS, *PFRAME_POINTERS;
+
+#define UNWIND_HISTORY_TABLE_SIZE 12
+
+typedef struct _UNWIND_HISTORY_TABLE_ENTRY {
+  ULONG64 ImageBase;
+  ULONG64 Gp;
+  PRUNTIME_FUNCTION FunctionEntry;
+} UNWIND_HISTORY_TABLE_ENTRY, *PUNWIND_HISTORY_TABLE_ENTRY;
+
+typedef struct _UNWIND_HISTORY_TABLE {
+  ULONG Count;
+  UCHAR Search;
+  ULONG64 LowAddress;
+  ULONG64 HighAddress;
+  UNWIND_HISTORY_TABLE_ENTRY Entry[UNWIND_HISTORY_TABLE_SIZE];
+} UNWIND_HISTORY_TABLE, *PUNWIND_HISTORY_TABLE;
+
+typedef struct _KNONVOLATILE_CONTEXT_POINTERS
+{
+    PFLOAT128  FltS0;
+    PFLOAT128  FltS1;
+    PFLOAT128  FltS2;
+    PFLOAT128  FltS3;
+    PFLOAT128  HighFloatingContext[10];
+    PFLOAT128  FltS4;
+    PFLOAT128  FltS5;
+    PFLOAT128  FltS6;
+    PFLOAT128  FltS7;
+    PFLOAT128  FltS8;
+    PFLOAT128  FltS9;
+    PFLOAT128  FltS10;
+    PFLOAT128  FltS11;
+    PFLOAT128  FltS12;
+    PFLOAT128  FltS13;
+    PFLOAT128  FltS14;
+    PFLOAT128  FltS15;
+    PFLOAT128  FltS16;
+    PFLOAT128  FltS17;
+    PFLOAT128  FltS18;
+    PFLOAT128  FltS19;
+    PULONGLONG IntS0;
+    PULONGLONG IntS1;
+    PULONGLONG IntS2;
+    PULONGLONG IntS3;
+    PULONGLONG IntSp;
+    PULONGLONG IntS0Nat;
+    PULONGLONG IntS1Nat;
+    PULONGLONG IntS2Nat;
+    PULONGLONG IntS3Nat;
+    PULONGLONG IntSpNat;
+    PULONGLONG Preds;
+    PULONGLONG BrRp;
+    PULONGLONG BrS0;
+    PULONGLONG BrS1;
+    PULONGLONG BrS2;
+    PULONGLONG BrS3;
+    PULONGLONG BrS4;
+    PULONGLONG ApUNAT;
+    PULONGLONG ApLC;
+    PULONGLONG ApEC;
+    PULONGLONG RsPFS;
+    PULONGLONG StFSR;
+    PULONGLONG StFIR;
+    PULONGLONG StFDR;
+    PULONGLONG Cflag;
+} KNONVOLATILE_CONTEXT_POINTERS, *PKNONVOLATILE_CONTEXT_POINTERS;
+
+ULONGLONG WINAPI RtlVirtualUnwind(ULONGLONG,ULONGLONG,RUNTIME_FUNCTION*,CONTEXT*,BOOLEAN*,FRAME_POINTERS*,KNONVOLATILE_CONTEXT_POINTERS*);
+
+#endif /* __ia64__ */
 
 /* Alpha context definitions */
 #if defined(_ALPHA_) || defined(__ALPHA__) || defined(__alpha__)
@@ -1718,6 +1892,51 @@ typedef struct _RUNTIME_FUNCTION
 typedef CONTEXT *PCONTEXT;
 
 NTSYSAPI void WINAPI RtlCaptureContext(CONTEXT*);
+
+/*
+ * Product types
+ */
+#define PRODUCT_UNLICENSED                              0xABCDABCD
+#define PRODUCT_BUSINESS                                0x00000006
+#define PRODUCT_BUSINESS_N                              0x00000010
+#define PRODUCT_CLUSTER_SERVER                          0x00000012
+#define PRODUCT_DATACENTER_SERVER                       0x00000008
+#define PRODUCT_DATACENTER_SERVER_CORE                  0x0000000C
+#define PRODUCT_DATACENTER_SERVER_CORE_V                0x00000027
+#define PRODUCT_SERVER_V                                0x00000025
+#define PRODUCT_ENTERPRISE                              0x00000004
+#define PRODUCT_ENTERPRISE_N                            0x0000001B
+#define PRODUCT_ENTERPRISE_SERVER                       0x0000000A
+#define PRODUCT_ENTERPRISE_SERVER_CORE                  0x0000000E
+#define PRODUCT_ENTERPRISE_SERVER_CORE_V                0x00000029
+#define PRODUCT_ENTERPRISE_SERVER_IA64                  0x0000000F
+#define PRODUCT_ENTERPRISE_SERVER_V                     0x00000026
+#define PRODUCT_HOME_BASIC                              0x00000002
+#define PRODUCT_HOME_BASIC_N                            0x00000005
+#define PRODUCT_HOME_PREMIUM                            0x00000003
+#define PRODUCT_HOME_PREMIUM_N                          0x0000001A
+#define PRODUCT_HYPERV                                  0x0000002A
+#define PRODUCT_MEDIUMBUSINESS_SERVER_MANAGEMENT        0x0000001E
+#define PRODUCT_MEDIUMBUSINESS_SERVER_MESSAGING         0x00000020
+#define PRODUCT_MEDIUMBUSINESS_SERVER_SECURITY          0x0000001F
+#define PRODUCT_SERVER_FOR_SMALLBUSINESS                0x00000018
+#define PRODUCT_SERVER_FOR_SMALLBUSINESS_V              0x00000023
+#define PRODUCT_SMALLBUSINESS_SERVER                    0x00000009
+#define PRODUCT_STANDARD_SERVER                         0x00000007
+#define PRODUCT_STANDARD_SERVER_CORE                    0x0000000D
+#define PRODUCT_STANDARD_SERVER_CORE_V                  0x00000028
+#define PRODUCT_STANDARD_SERVER_V                       0x00000024
+#define PRODUCT_STARTER                                 0x0000000B
+#define PRODUCT_STORAGE_ENTERPRISE_SERVER               0x00000017
+#define PRODUCT_STORAGE_EXPRESS_SERVER                  0x00000014
+#define PRODUCT_STORAGE_STANDARD_SERVER                 0x00000015
+#define PRODUCT_STORAGE_WORKGROUP_SERVER                0x00000016
+#define PRODUCT_UNDEFINED                               0x00000000
+#define PRODUCT_ULTIMATE                                0x00000001
+#define PRODUCT_ULTIMATE_N                              0x0000001C
+#define PRODUCT_WEB_SERVER                              0x00000011
+#define PRODUCT_WEB_SERVER_CORE                         0x0000001D
+
 
 /*
  * Language IDs
@@ -4936,6 +5155,30 @@ typedef struct _TAPE_GET_MEDIA_PARAMETERS {
 #define EVENTLOG_AUDIT_SUCCESS          0x0008
 #define EVENTLOG_AUDIT_FAILURE          0x0010
 
+#define EVENTLOG_SEQUENTIAL_READ        0x0001
+#define EVENTLOG_SEEK_READ              0x0002
+#define EVENTLOG_FORWARDS_READ          0x0004
+#define EVENTLOG_BACKWARDS_READ         0x0008
+
+typedef struct _EVENTLOGRECORD {
+    DWORD  Length;
+    DWORD  Reserved;
+    DWORD  RecordNumber;
+    DWORD  TimeGenerated;
+    DWORD  TimeWritten;
+    DWORD  EventID;
+    WORD   EventType;
+    WORD   NumStrings;
+    WORD   EventCategory;
+    WORD   ReservedFlags;
+    DWORD  ClosingRecordNumber;
+    DWORD  StringOffset;
+    DWORD  UserSidLength;
+    DWORD  UserSidOffset;
+    DWORD  DataLength;
+    DWORD  DataOffset;
+} EVENTLOGRECORD, *PEVENTLOGRECORD;
+
 #define SERVICE_BOOT_START   0x00000000
 #define SERVICE_SYSTEM_START 0x00000001
 #define SERVICE_AUTO_START   0x00000002
@@ -5242,6 +5485,8 @@ typedef enum _JOBOBJECTINFOCLASS
     JobObjectJobSetInformation,
     MaxJobObjectInfoClass
 } JOBOBJECTINFOCLASS;
+
+NTSYSAPI BOOLEAN NTAPI RtlGetProductInfo(DWORD,DWORD,DWORD,DWORD,PDWORD);
 
 #ifdef __cplusplus
 }

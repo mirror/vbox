@@ -1782,6 +1782,10 @@ typedef struct tagTOOLINFOW {
 #define TTTOOLINFOA_V1_SIZE CCSIZEOF_STRUCT(TTTOOLINFOA, lpszText)
 #define TTTOOLINFOW_V1_SIZE CCSIZEOF_STRUCT(TTTOOLINFOW, lpszText)
 #define TTTOOLINFO_V1_SIZE  CCSIZEOF_STRUCT(WINELIB_NAME_AW(TTTOOLINFO), lpszText)
+#define TTTOOLINFOA_V2_SIZE CCSIZEOF_STRUCT(TTTOOLINFOA, lParam)
+#define TTTOOLINFOW_V2_SIZE CCSIZEOF_STRUCT(TTTOOLINFOW, lParam)
+#define TTTOOLINFOA_V3_SIZE CCSIZEOF_STRUCT(TTTOOLINFOA, lpReserved)
+#define TTTOOLINFOW_V3_SIZE CCSIZEOF_STRUCT(TTTOOLINFOW, lpReserved)
 
 typedef struct _TT_HITTESTINFOA
 {
@@ -3018,6 +3022,7 @@ static const WCHAR WC_LISTVIEWW[] = { 'S','y','s',
 #define LVSIL_NORMAL            0
 #define LVSIL_SMALL             1
 #define LVSIL_STATE             2
+#define LVSIL_GROUPHEADER       3
 
 /* following 2 flags only for LVS_OWNERDATA listviews */
 /* and only in report or list mode */
@@ -3025,11 +3030,12 @@ static const WCHAR WC_LISTVIEWW[] = { 'S','y','s',
 #define LVSICF_NOSCROLL         0x0002
 
 
-#define LVFI_PARAM              0X0001
-#define LVFI_STRING             0X0002
-#define LVFI_PARTIAL            0X0008
-#define LVFI_WRAP               0X0020
-#define LVFI_NEARESTXY          0X0040
+#define LVFI_PARAM              0x0001
+#define LVFI_STRING             0x0002
+#define LVFI_SUBSTRING          0x0004
+#define LVFI_PARTIAL            0x0008
+#define LVFI_WRAP               0x0020
+#define LVFI_NEARESTXY          0x0040
 
 #define LVIF_TEXT               0x0001
 #define LVIF_IMAGE              0x0002
@@ -4269,9 +4275,10 @@ typedef struct tagTCITEMW
 #define TCN_FIRST               (0U-550U)
 #define TCN_LAST                (0U-580U)
 #define TCN_KEYDOWN             (TCN_FIRST - 0)
-#define TCN_SELCHANGE		(TCN_FIRST - 1)
+#define TCN_SELCHANGE           (TCN_FIRST - 1)
 #define TCN_SELCHANGING         (TCN_FIRST - 2)
 #define TCN_GETOBJECT           (TCN_FIRST - 3)
+#define TCN_FOCUSCHANGE         (TCN_FIRST - 4)
 
 #include <pshpack1.h>
 typedef struct tagTCKEYDOWN
@@ -4674,6 +4681,7 @@ static const WCHAR MONTHCAL_CLASSW[] = { 'S','y','s',
 #define MCS_WEEKNUMBERS        0x0004
 #define MCS_NOTODAY            0x0010
 #define MCS_NOTODAYCIRCLE      0x0008
+#define MCS_NOTRAILINGDATES    0x0040
 
 #define MCHT_TITLE             0x00010000
 #define MCHT_CALENDAR          0x00020000
@@ -4709,7 +4717,14 @@ typedef struct {
         POINT pt;
         UINT uHit;
         SYSTEMTIME st;
+        /* Vista */
+        RECT rc;
+        INT iOffset;
+        INT iRow;
+        INT iCol;
 } MCHITTESTINFO, *PMCHITTESTINFO;
+
+#define MCHITTESTINFO_V1_SIZE CCSIZEOF_STRUCT(MCHITTESTINFO, st)
 
 typedef struct tagNMSELCHANGE
 {
@@ -4733,51 +4748,51 @@ typedef struct tagNMDAYSTATE
 /* macros */
 
 #define MonthCal_GetCurSel(hmc, pst) \
-		(BOOL)SNDMSGA(hmc, MCM_GETCURSEL, 0, (LPARAM)(pst))
+		(BOOL)SNDMSG(hmc, MCM_GETCURSEL, 0, (LPARAM)(pst))
 #define MonthCal_SetCurSel(hmc, pst)  \
-		(BOOL)SNDMSGA(hmc, MCM_SETCURSEL, 0, (LPARAM)(pst))
+		(BOOL)SNDMSG(hmc, MCM_SETCURSEL, 0, (LPARAM)(pst))
 #define MonthCal_GetMaxSelCount(hmc) \
-		(DWORD)SNDMSGA(hmc, MCM_GETMAXSELCOUNT, 0, 0L)
+		(DWORD)SNDMSG(hmc, MCM_GETMAXSELCOUNT, 0, 0L)
 #define MonthCal_SetMaxSelCount(hmc, n) \
-		(BOOL)SNDMSGA(hmc, MCM_SETMAXSELCOUNT, (WPARAM)(n), 0L)
+		(BOOL)SNDMSG(hmc, MCM_SETMAXSELCOUNT, (WPARAM)(n), 0L)
 #define MonthCal_GetSelRange(hmc, rgst) \
-		SNDMSGA(hmc, MCM_GETSELRANGE, 0, (LPARAM) (rgst))
+		SNDMSG(hmc, MCM_GETSELRANGE, 0, (LPARAM) (rgst))
 #define MonthCal_SetSelRange(hmc, rgst) \
-		SNDMSGA(hmc, MCM_SETSELRANGE, 0, (LPARAM) (rgst))
+		SNDMSG(hmc, MCM_SETSELRANGE, 0, (LPARAM) (rgst))
 #define MonthCal_GetMonthRange(hmc, gmr, rgst) \
-		(DWORD)SNDMSGA(hmc, MCM_GETMONTHRANGE, (WPARAM)(gmr), (LPARAM)(rgst))
+		(DWORD)SNDMSG(hmc, MCM_GETMONTHRANGE, (WPARAM)(gmr), (LPARAM)(rgst))
 #define MonthCal_SetDayState(hmc, cbds, rgds) \
-		SNDMSGA(hmc, MCM_SETDAYSTATE, (WPARAM)(cbds), (LPARAM)(rgds))
+		SNDMSG(hmc, MCM_SETDAYSTATE, (WPARAM)(cbds), (LPARAM)(rgds))
 #define MonthCal_GetMinReqRect(hmc, prc) \
-		SNDMSGA(hmc, MCM_GETMINREQRECT, 0, (LPARAM)(prc))
+		SNDMSG(hmc, MCM_GETMINREQRECT, 0, (LPARAM)(prc))
 #define MonthCal_SetColor(hmc, iColor, clr)\
-        SNDMSGA(hmc, MCM_SETCOLOR, iColor, clr)
+        SNDMSG(hmc, MCM_SETCOLOR, iColor, clr)
 #define MonthCal_GetColor(hmc, iColor) \
-		SNDMSGA(hmc, MCM_SETCOLOR, iColor, 0)
+		SNDMSG(hmc, MCM_SETCOLOR, iColor, 0)
 #define MonthCal_GetToday(hmc, pst)\
-		(BOOL)SNDMSGA(hmc, MCM_GETTODAY, 0, (LPARAM)pst)
+		(BOOL)SNDMSG(hmc, MCM_GETTODAY, 0, (LPARAM)pst)
 #define MonthCal_SetToday(hmc, pst)\
-		SNDMSGA(hmc, MCM_SETTODAY, 0, (LPARAM)pst)
+		SNDMSG(hmc, MCM_SETTODAY, 0, (LPARAM)pst)
 #define MonthCal_HitTest(hmc, pinfo) \
-        SNDMSGA(hmc, MCM_HITTEST, 0, (LPARAM)(PMCHITTESTINFO)pinfo)
+        SNDMSG(hmc, MCM_HITTEST, 0, (LPARAM)(PMCHITTESTINFO)pinfo)
 #define MonthCal_SetFirstDayOfWeek(hmc, iDay) \
-        SNDMSGA(hmc, MCM_SETFIRSTDAYOFWEEK, 0, iDay)
+        SNDMSG(hmc, MCM_SETFIRSTDAYOFWEEK, 0, iDay)
 #define MonthCal_GetFirstDayOfWeek(hmc) \
-        (DWORD)SNDMSGA(hmc, MCM_GETFIRSTDAYOFWEEK, 0, 0)
+        (DWORD)SNDMSG(hmc, MCM_GETFIRSTDAYOFWEEK, 0, 0)
 #define MonthCal_GetRange(hmc, rgst) \
-        (DWORD)SNDMSGA(hmc, MCM_GETRANGE, 0, (LPARAM)(rgst))
+        (DWORD)SNDMSG(hmc, MCM_GETRANGE, 0, (LPARAM)(rgst))
 #define MonthCal_SetRange(hmc, gd, rgst) \
-        (BOOL)SNDMSGA(hmc, MCM_SETRANGE, (WPARAM)(gd), (LPARAM)(rgst))
+        (BOOL)SNDMSG(hmc, MCM_SETRANGE, (WPARAM)(gd), (LPARAM)(rgst))
 #define MonthCal_GetMonthDelta(hmc) \
-        (int)SNDMSGA(hmc, MCM_GETMONTHDELTA, 0, 0)
+        (int)SNDMSG(hmc, MCM_GETMONTHDELTA, 0, 0)
 #define MonthCal_SetMonthDelta(hmc, n) \
-        (int)SNDMSGA(hmc, MCM_SETMONTHDELTA, n, 0)
+        (int)SNDMSG(hmc, MCM_SETMONTHDELTA, n, 0)
 #define MonthCal_GetMaxTodayWidth(hmc) \
-        (DWORD)SNDMSGA(hmc, MCM_GETMAXTODAYWIDTH, 0, 0)
+        (DWORD)SNDMSG(hmc, MCM_GETMAXTODAYWIDTH, 0, 0)
 #define MonthCal_SetUnicodeFormat(hwnd, fUnicode)  \
-        (BOOL)SNDMSGA((hwnd), MCM_SETUNICODEFORMAT, (WPARAM)(fUnicode), 0)
+        (BOOL)SNDMSG((hwnd), MCM_SETUNICODEFORMAT, (WPARAM)(fUnicode), 0)
 #define MonthCal_GetUnicodeFormat(hwnd)  \
-        (BOOL)SNDMSGA((hwnd), MCM_GETUNICODEFORMAT, 0, 0)
+        (BOOL)SNDMSG((hwnd), MCM_GETUNICODEFORMAT, 0, 0)
 
 
 /**************************************************************************
@@ -4937,28 +4952,28 @@ DECL_WINELIB_TYPE_AW(LPNMDATETIMEFORMATQUERY)
 
 
 #define DateTime_GetSystemtime(hdp, pst)   \
-  (DWORD)SNDMSGA (hdp, DTM_GETSYSTEMTIME , 0, (LPARAM)(pst))
+  (DWORD)SNDMSG (hdp, DTM_GETSYSTEMTIME , 0, (LPARAM)(pst))
 #define DateTime_SetSystemtime(hdp, gd, pst)   \
-  (BOOL)SNDMSGA (hdp, DTM_SETSYSTEMTIME, (LPARAM)(gd), (LPARAM)(pst))
+  (BOOL)SNDMSG (hdp, DTM_SETSYSTEMTIME, (LPARAM)(gd), (LPARAM)(pst))
 #define DateTime_GetRange(hdp, rgst)  \
-  (DWORD)SNDMSGA (hdp, DTM_GETRANGE, 0, (LPARAM)(rgst))
+  (DWORD)SNDMSG (hdp, DTM_GETRANGE, 0, (LPARAM)(rgst))
 #define DateTime_SetRange(hdp, gd, rgst) \
-   (BOOL)SNDMSGA (hdp, DTM_SETRANGE, (WPARAM)(gd), (LPARAM)(rgst))
+   (BOOL)SNDMSG (hdp, DTM_SETRANGE, (WPARAM)(gd), (LPARAM)(rgst))
 #define DateTime_SetFormatA(hdp, sz)  \
   (BOOL)SNDMSGA (hdp, DTM_SETFORMATA, 0, (LPARAM)(sz))
 #define DateTime_SetFormatW(hdp, sz)  \
   (BOOL)SNDMSGW (hdp, DTM_SETFORMATW, 0, (LPARAM)(sz))
 #define DateTime_SetFormat WINELIB_NAME_AW(DateTime_SetFormat)
 #define DateTime_GetMonthCalColor(hdp, iColor) \
-  SNDMSGA (hdp, DTM_GETMCCOLOR, iColor, 0)
+  SNDMSG (hdp, DTM_GETMCCOLOR, iColor, 0)
 #define DateTime_SetMonthCalColor(hdp, iColor, clr) \
-  SNDMSGA (hdp, DTM_SETMCCOLOR, iColor, clr)
+  SNDMSG (hdp, DTM_SETMCCOLOR, iColor, clr)
 #define DateTime_GetMonthCal(hdp)  \
-  (HWND) SNDMSGA (hdp, DTM_GETMONTHCAL, 0, 0)
+  (HWND) SNDMSG (hdp, DTM_GETMONTHCAL, 0, 0)
 #define DateTime_SetMonthCalFont(hdp, hfont, fRedraw) \
-  SNDMSGA (hdp, DTM_SETMCFONT, (WPARAM)hfont, (LPARAM)fRedraw)
+  SNDMSG (hdp, DTM_SETMCFONT, (WPARAM)hfont, (LPARAM)fRedraw)
 #define DateTime_GetMonthCalFont(hdp) \
-  SNDMSGA (hdp, DTM_GETMCFONT, 0, 0)
+  SNDMSG (hdp, DTM_GETMCFONT, 0, 0)
 
 #define DA_LAST         (0x7fffffff)
 #define DPA_APPEND      (0x7fffffff)
@@ -5014,6 +5029,10 @@ BOOL WINAPI Str_SetPtrW (LPWSTR *, LPCWSTR);
 #else
 static const WCHAR WC_LINK[] = { 'S','y','s','L','i','n','k',0 };
 #endif
+
+/* SysLink styles */
+#define LWS_TRANSPARENT      0x0001
+#define LWS_IGNORERETURN     0x0002
 
 /* SysLink messages */
 #define LM_HITTEST           (WM_USER + 768)
@@ -5116,7 +5135,7 @@ static const WCHAR WC_EDITW[] = { 'E','d','i','t',0 };
 #define WC_EDIT                   WINELIB_NAME_AW(WC_EDIT)
 
 /**************************************************************************
- * List box control
+ * Listbox control
  */
 
 #define WC_LISTBOXA               "ListBox"
@@ -5130,7 +5149,7 @@ static const WCHAR WC_LISTBOXW[] = { 'L','i','s','t','B','o','x',0 };
 #define WC_LISTBOX                WINELIB_NAME_AW(WC_LISTBOX)
 
 /**************************************************************************
- * Scroll bar control
+ * Scrollbar control
  */
 
 #define WC_SCROLLBARA             "ScrollBar"

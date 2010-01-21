@@ -675,6 +675,9 @@ static HRESULT HRESULT_FROM_WIN32(unsigned int x)
 #define ERROR_EVENTLOG_CANT_START                          1501
 #define ERROR_LOG_FILE_FULL                                1502
 #define ERROR_EVENTLOG_FILE_CHANGED                        1503
+#define ERROR_INVALID_TASK_NAME                            1550
+#define ERROR_INVALID_TASK_INDEX                           1551
+#define ERROR_THREAD_ALREADY_IN_TASK                       1552
 #define ERROR_INSTALL_SERVICE_FAILURE                      1601
 #define ERROR_INSTALL_USEREXIT                             1602
 #define ERROR_INSTALL_FAILURE                              1603
@@ -1567,6 +1570,16 @@ static HRESULT HRESULT_FROM_WIN32(unsigned int x)
 #define ERROR_SXS_WRONG_SECTION_TYPE                       14009
 #define ERROR_SXS_THREAD_QUERIES_DISABLED                  14010
 #define ERROR_SXS_PROCESS_DEFAULT_ALREADY_SET              14011
+#define ERROR_SXS_CORRUPTION                               14083
+#define ERROR_MUI_FILE_NOT_FOUND                           15100
+#define ERROR_MUI_INVALID_FILE                             15101
+#define ERROR_MUI_INVALID_RC_CONFIG                        15102
+#define ERROR_MUI_INVALID_LOCALE_NAME                      15103
+#define ERROR_MUI_INVALID_ULTIMATEFALLBACK_NAME            15104
+#define ERROR_MUI_FILE_NOT_LOADED                          15105
+#define ERROR_RESOURCE_ENUM_USER_STOP                      15106
+#define ERROR_MUI_INTLSETTINGS_UILANG_NOT_INSTALLED        15107
+#define ERROR_MUI_INTLSETTINGS_INVALID_LOCALE_NAME         15108
 
 /* HRESULT values for OLE, SHELL and other Interface stuff */
 /* the codes 4000-40ff are reserved for OLE */
