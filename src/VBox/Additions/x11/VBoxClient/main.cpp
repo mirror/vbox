@@ -64,7 +64,7 @@ void VBoxClient::CleanUp()
         g_pService->cleanup();
         delete g_pService;
     }
-    if (g_szPidFile && g_hPidFile)
+    if (g_szPidFile[0] && g_hPidFile)
         VbglR3ClosePidFile(g_szPidFile, g_hPidFile);
     VbglR3Term();
     exit(0);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
         Log(("Failed to connect to the VirtualBox kernel service\n"));
         return 1;
     }
-    if (g_szPidFile && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
+    if (g_szPidFile[0] && RT_FAILURE(VbglR3PidFile(g_szPidFile, &g_hPidFile)))
     {
         RTPrintf("Failed to create a pidfile.  Exiting.\n");
         Log(("Failed to create a pidfile.  Exiting.\n"));
