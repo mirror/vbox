@@ -38,7 +38,8 @@ EfiThunkBin_CLEAN     = \
 	$(EfiThunkBin_0_OUTDIR)/EfiThunkBin.c
 
 $$(EfiThunkBin_0_OUTDIR)/EfiThunkBin.c: $$(EfiThunk_1_TARGET) $(VBOX_BIN2C) | $$(dir $$@)
-	$(VBOX_BIN2C) -min 4 -max 4 -ascii -export EfiThunkBinary $< $@
+	$(call MSG_TOOL,bin2c,EfiThunkBin,$<,$@)
+	$(QUIET)$(VBOX_BIN2C) -min 4 -max 4 -ascii -export EfiThunkBinary $< $@
 
 
 #
