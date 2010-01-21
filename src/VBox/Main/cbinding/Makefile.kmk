@@ -56,7 +56,8 @@ $$(XpComCHeaders_0_OUTDIR)/VBoxCAPI_v3_1.h: \
 		$(PATH_SUB_CURRENT)/xpcidl.xsl \
 		$(VBOX_XIDL_FILE) \
 		| $$(dir $$@)
-	$(VBOX_XSLTPROC) -o $@ $^
+	$(call MSG_TOOL,xsltproc,XpComCHeaders,$<,$@)
+	$(QUIET)$(VBOX_XSLTPROC) -o $@ $^
 
 endif # VBOX_WITH_XPCOM || SDK
 if !defined(VBOX_ONLY_SDK) && defined(VBOX_WITH_XPCOM)
