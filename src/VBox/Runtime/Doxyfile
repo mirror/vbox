@@ -188,6 +188,7 @@ TAB_SIZE               = 4
 
 ALIASES                = \
     "note=@remark" \
+    interface_method_impl{2}="Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C
 # sources only. Doxygen will then generate output that is more tailored for C.

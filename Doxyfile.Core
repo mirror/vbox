@@ -29,7 +29,8 @@ ALIASES                = \
     "note=@remark" \
     "thread=@par Thread Context:\n" \
     "vmstate=@par VM State In:\n" \
-    "vmstateto=@par VM State Out:\n"
+    "vmstateto=@par VM State Out:\n" \
+    interface_method_impl{2}="Implements \1 method \link \1::\2 \2 \endlink @copydoc \1::\2 "
 
 # The following is for Global Configuration options.
 ALIASES                += \
