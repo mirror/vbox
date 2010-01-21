@@ -743,7 +743,7 @@ RTR3DECL(int) RTFileGetOwner(RTFILE File, uint32_t *pUid, uint32_t *pGid);
  * @param   cbData      Size of the IOCTL data.
  * @param   piRet       Return value of the IOCTL request.
  */
-RTR3DECL(int) RTFileIoCtl(RTFILE File, int iRequest, void *pvData, unsigned cbData, int *piRet);
+RTR3DECL(int) RTFileIoCtl(RTFILE File, unsigned long ulRequest, void *pvData, unsigned cbData, int *piRet);
 
 /**
  * Query the sizes of a filesystem.
