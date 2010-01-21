@@ -43,7 +43,7 @@
 int main(int argc, char **argv)
 {
     RTTEST hTest;
-    int rc = RTTestInitAndCreate("tstUuid", &hTest);
+    int rc = RTTestInitAndCreate("tstRTUuid", &hTest);
     if (rc)
         return rc;
     RTTestBanner(hTest);
@@ -87,6 +87,18 @@ int main(int argc, char **argv)
     rc = RTUuidFromUtf16(&Uuid2, wsz); CHECK_RC();
     RTTEST_CHECK(hTest, RTUuidCompare(&Uuid, &Uuid2) == 0);
 
+    RTTestSub(hTest, "RTUuidCompareStr");
+    RTTEST_CHECK(hTest, RTUuidCompareStr(&Uuid, sz) == 0);
+    RTTEST_CHECK(hTest, RTUuidCompareStr(&Uuid, "00000000-0000-0000-0000-000000000000") > 0);
+    RTTEST_CHECK(hTest, RTUuidCompareStr(&UuidNull, "00000000-0000-0000-0000-000000000000") == 0);
+
+    RTTestSub(hTest, "RTUuidCompare2Strs");
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs(sz, sz) == 0);
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs(sz, "00000000-0000-0000-0000-000000000000") > 0);
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs("00000000-0000-0000-0000-000000000000", sz) < 0);
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs("00000000-0000-0000-0000-000000000000", "00000000-0000-0000-0000-000000000000") == 0);
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs("d95d883b-f91d-4ce5-a5c5-d08bb6a85dec", "a56193c7-3e0b-4c03-9d66-56efb45082f7") > 0);
+    RTTEST_CHECK(hTest, RTUuidCompare2Strs("a56193c7-3e0b-4c03-9d66-56efb45082f7", "d95d883b-f91d-4ce5-a5c5-d08bb6a85dec") < 0);
 
     /*
      * Check the binary representation.

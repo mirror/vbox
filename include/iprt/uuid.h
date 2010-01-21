@@ -98,10 +98,21 @@ RTDECL(int)  RTUuidCompare(PCRTUUID pUuid1, PCRTUUID pUuid2);
  *
  * @returns 0 if eq, < 0 or > 0.
  * @param   pUuid1          First value to compare.  NULL is not allowed.
- * @param   pszString       The 2nd UUID in string form.  NULL or malformed
+ * @param   pszString2      The 2nd UUID in string form.  NULL or malformed
  *                          string is not permitted.
  */
-RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString);
+RTDECL(int)  RTUuidCompareStr(PCRTUUID pUuid1, const char *pszString2);
+
+/**
+ * Compares two UUID strings.
+ *
+ * @returns 0 if eq, < 0 or > 0.
+ * @param   pszString1      The 1st UUID in string from.  NULL or malformed
+ *                          string is not permitted.
+ * @param   pszString2      The 2nd UUID in string form.  NULL or malformed
+ *                          string is not permitted.
+ */
+RTDECL(int)  RTUuidCompare2Strs(const char *pszString1, const char *pszString2);
 
 /**
  * Converts binary UUID to its string representation.

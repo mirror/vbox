@@ -113,7 +113,7 @@ PROGRAMS += \
 	tstRTTimeSpec \
 	tstTSC \
 	tstUtf8 \
-	tstUuid
+	tstRTUuid
 # tstSems
 PROGRAMS.win += \
 	tstRTProcWait \
@@ -341,7 +341,7 @@ tstNoCrt-1_SOURCES = \
 tstOnce_SOURCES = tstOnce.cpp
 
 tstRTPath_TEMPLATE = VBOXR3TSTEXE
-tstRTPath_SOURCES  = tstRTPath.cpp
+tstRTPath_SOURCES = tstRTPath.cpp
 
 tstPrfRT_SOURCES = tstPrfRT.cpp
 
@@ -420,7 +420,8 @@ tstRTTimeSpec_SOURCES = tstRTTimeSpec.cpp
 tstTSC_SOURCES = tstTSC.cpp
 tstTSC_CXXFLAGS.linux += -O3
 
-tstUuid_SOURCES = tstUuid.cpp
+tstRTUuid_TEMPLATE = VBOXR3TSTEXE
+tstRTUuid_SOURCES = tstRTUuid.cpp
 
 tstUtf8_SOURCES = tstUtf8.cpp
 
