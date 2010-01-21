@@ -137,6 +137,26 @@ BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
 }
 
 
+int VBoxServiceWinSetDesc(SC_HANDLE hService)
+{
+    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields 
+       like a longer service description. */
+#ifndef TARGET_NT4
+    SERVICE_DESCRIPTION desc;
+    /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
+    desc. lpDescription = VBOXSERVICE_DESCRIPTION;
+    if (FALSE == ChangeServiceConfig2(hService, 
+                                      SERVICE_CONFIG_DESCRIPTION, /* Service info level */  
+                                      &desc))
+    {
+        VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
+        return 1;
+    }
+#endif
+    return VINF_SUCCESS;
+}
+
+
 int VBoxServiceWinInstall(void)
 {
     SC_HANDLE hService, hSCManager;
@@ -191,20 +211,6 @@ int VBoxServiceWinInstall(void)
                                          NULL,
                                          VBOXSERVICE_FRIENDLY_NAME))
                 {
-                    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields 
-                       like a longer service description. */
-                    #ifndef TARGET_NT4
-                        SERVICE_DESCRIPTION desc;
-                        /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
-                        desc. lpDescription = VBOXSERVICE_DESCRIPTION;
-                        if (FALSE == ChangeServiceConfig2(hService, 
-                                                             SERVICE_CONFIG_DESCRIPTION, /* Service info level */  
-                                                             &desc))
-                        {
-                            VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
-                        }
-                    #endif
-
                     VBoxServiceVerbose(1, "The service config has been successfully updated.\n");
                 }
                 else
@@ -226,6 +232,9 @@ int VBoxServiceWinInstall(void)
     {
         VBoxServiceVerbose(0, "Service successfully installed!\n");
     }
+
+    if (RT_SUCCESS(rc))
+        rc = VBoxServiceWinSetDesc(hService);
 
     CloseServiceHandle(hService);
     CloseServiceHandle(hSCManager);
