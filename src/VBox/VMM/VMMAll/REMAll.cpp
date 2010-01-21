@@ -40,11 +40,10 @@
 /**
  * Records a invlpg instruction for replaying upon REM entry.
  *
- * @returns VINF_SUCCESS on success.
  * @param   pVM         The VM handle.
  * @param   GCPtrPage   The
  */
-VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
+VMMDECL(void) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
 {
     /*
      * Try take the REM lock and push the address onto the array.
@@ -59,7 +58,7 @@ VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
             pVM->rem.s.aGCPtrInvalidatedPages[iPage] = GCPtrPage;
 
             EMRemUnlock(pVM);
-            return VINF_SUCCESS;
+            return;
         }
 
         CPUMSetChangedFlags(VMMGetCpu(pVM), CPUM_CHANGED_GLOBAL_TLB_FLUSH); /** @todo this should be flagged globally, not locally! ... this array should be per-cpu technically speaking. */
@@ -74,7 +73,7 @@ VMMDECL(int) REMNotifyInvalidatePage(PVM pVM, RTGCPTR GCPtrPage)
         ASMAtomicWriteU32(&pVM->rem.s.cInvalidatedPages, 0); /** @todo leave this alone?! Optimize this code? */
     }
 
-    return VINF_SUCCESS;
+    return;
 }
 
 
