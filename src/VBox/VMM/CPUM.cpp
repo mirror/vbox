@@ -1085,16 +1085,16 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
             if (fStrictCpuIdChecks) \
                 return SSMR3SetLoadError(pSSM, VERR_SSM_LOAD_CPUID_MISMATCH, RT_SRC_POS, \
                                          N_(#bit " mismatch: host=%d saved=%d"), \
-                                         aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) ); \
+                                         !!(aHostRaw##set [1].reg & (bit)), !!(aRaw##set [1].reg & (bit)) ); \
             LogRel(("CPUM: " #bit" differs: host=%d saved=%d\n", \
-                    aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) )); \
+                    !!(aHostRaw##set [1].reg & (bit)), !!(aRaw##set [1].reg & (bit)) )); \
         } \
     } while (0)
 #define CPUID_RAW_FEATURE_WRN(set, reg, bit) \
     do { \
         if ((aHostRaw##set [1].reg & bit) != (aRaw##set [1].reg & bit)) \
             LogRel(("CPUM: " #bit" differs: host=%d saved=%d\n", \
-                    aHostRaw##set [1].reg & (bit), aRaw##set [1].reg & (bit) )); \
+                    !!(aHostRaw##set [1].reg & (bit)), !!(aRaw##set [1].reg & (bit)) )); \
     } while (0)
 #define CPUID_RAW_FEATURE_IGN(set, reg, bit) do { } while (0)
 
@@ -1315,7 +1315,7 @@ static int cpumR3LoadCpuId(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
      * This can be skipped.
      */
     bool fStrictCpuIdChecks;
-    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks, false);
+    CFGMR3QueryBoolDef(CFGMR3GetChild(CFGMR3GetRoot(pVM), "CPUM"), "StrictCpuIdChecks", &fStrictCpuIdChecks, true);
 
 
 
