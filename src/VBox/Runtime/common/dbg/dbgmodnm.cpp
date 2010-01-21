@@ -59,7 +59,7 @@ typedef RTDBGMODNM *PRTDBGMODNM;
 
 
 
-/** @copydoc RTDBGMODVTDBG::pfnLineByAddr */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineByAddr} */
 static DECLCALLBACK(int) rtDbgModNm_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
                                                PRTINTPTR poffDisp, PRTDBGLINE pLineInfo)
 {
@@ -68,7 +68,7 @@ static DECLCALLBACK(int) rtDbgModNm_LineByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iS
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnLineByOrdinal */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineByOrdinal} */
 static DECLCALLBACK(int) rtDbgModNm_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGLINE pLineInfo)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -76,7 +76,7 @@ static DECLCALLBACK(int) rtDbgModNm_LineByOrdinal(PRTDBGMODINT pMod, uint32_t iO
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnLineCount */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineCount} */
 static DECLCALLBACK(uint32_t) rtDbgModNm_LineCount(PRTDBGMODINT pMod)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -84,7 +84,7 @@ static DECLCALLBACK(uint32_t) rtDbgModNm_LineCount(PRTDBGMODINT pMod)
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnLineAdd */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnLineAdd} */
 static DECLCALLBACK(int) rtDbgModNm_LineAdd(PRTDBGMODINT pMod, const char *pszFile, size_t cchFile, uint32_t uLineNo,
                                             uint32_t iSeg, RTUINTPTR off, uint32_t *piOrdinal)
 {
@@ -93,7 +93,7 @@ static DECLCALLBACK(int) rtDbgModNm_LineAdd(PRTDBGMODINT pMod, const char *pszFi
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSymbolByAddr */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByAddr} */
 static DECLCALLBACK(int) rtDbgModNm_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, RTUINTPTR off,
                                                  PRTINTPTR poffDisp, PRTDBGSYMBOL pSymInfo)
 {
@@ -102,7 +102,7 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolByAddr(PRTDBGMODINT pMod, RTDBGSEGIDX 
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSymbolByName */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByName} */
 static DECLCALLBACK(int) rtDbgModNm_SymbolByName(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol, PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -110,7 +110,7 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolByName(PRTDBGMODINT pMod, const char *
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSymbolByOrdinal */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolByOrdinal} */
 static DECLCALLBACK(int) rtDbgModNm_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t iOrdinal, PRTDBGSYMBOL pSymInfo)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -118,7 +118,7 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolByOrdinal(PRTDBGMODINT pMod, uint32_t 
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSymbolCount */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolCount} */
 static DECLCALLBACK(uint32_t) rtDbgModNm_SymbolCount(PRTDBGMODINT pMod)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -126,7 +126,7 @@ static DECLCALLBACK(uint32_t) rtDbgModNm_SymbolCount(PRTDBGMODINT pMod)
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSymbolAdd */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSymbolAdd} */
 static DECLCALLBACK(int) rtDbgModNm_SymbolAdd(PRTDBGMODINT pMod, const char *pszSymbol, size_t cchSymbol,
                                               RTDBGSEGIDX iSeg, RTUINTPTR off, RTUINTPTR cb, uint32_t fFlags,
                                               uint32_t *piOrdinal)
@@ -136,7 +136,7 @@ static DECLCALLBACK(int) rtDbgModNm_SymbolAdd(PRTDBGMODINT pMod, const char *psz
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSegmentByIndex */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentByIndex} */
 static DECLCALLBACK(int) rtDbgModNm_SegmentByIndex(PRTDBGMODINT pMod, RTDBGSEGIDX iSeg, PRTDBGSEGMENT pSegInfo)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -144,7 +144,7 @@ static DECLCALLBACK(int) rtDbgModNm_SegmentByIndex(PRTDBGMODINT pMod, RTDBGSEGID
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSegmentCount */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentCount} */
 static DECLCALLBACK(RTDBGSEGIDX) rtDbgModNm_SegmentCount(PRTDBGMODINT pMod)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -152,7 +152,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModNm_SegmentCount(PRTDBGMODINT pMod)
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnSegmentAdd */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnSegmentAdd} */
 static DECLCALLBACK(int) rtDbgModNm_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva, RTUINTPTR cb, const char *pszName, size_t cchName,
                                                uint32_t fFlags, PRTDBGSEGIDX piSeg)
 {
@@ -161,7 +161,7 @@ static DECLCALLBACK(int) rtDbgModNm_SegmentAdd(PRTDBGMODINT pMod, RTUINTPTR uRva
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnImageSize */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnImageSize} */
 static DECLCALLBACK(RTUINTPTR) rtDbgModNm_ImageSize(PRTDBGMODINT pMod)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -169,7 +169,7 @@ static DECLCALLBACK(RTUINTPTR) rtDbgModNm_ImageSize(PRTDBGMODINT pMod)
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnRvaToSegOff */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnRvaToSegOff} */
 static DECLCALLBACK(RTDBGSEGIDX) rtDbgModNm_RvaToSegOff(PRTDBGMODINT pMod, RTUINTPTR uRva, PRTUINTPTR poffSeg)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -177,7 +177,7 @@ static DECLCALLBACK(RTDBGSEGIDX) rtDbgModNm_RvaToSegOff(PRTDBGMODINT pMod, RTUIN
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnClose */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnClose} */
 static DECLCALLBACK(int) rtDbgModNm_Close(PRTDBGMODINT pMod)
 {
     PRTDBGMODNM pThis = (PRTDBGMODNM)pMod->pvDbgPriv;
@@ -463,7 +463,7 @@ static int rtDbgModNmScanFile(PRTDBGMODNM pThis, PRTSTREAM pStrm, bool fAddSymbo
 }
 
 
-/** @copydoc RTDBGMODVTDBG::pfnTryOpen */
+/** @interface_method_impl{RTDBGMODVTDBG,pfnTryOpen} */
 static DECLCALLBACK(int) rtDbgModNm_TryOpen(PRTDBGMODINT pMod)
 {
     /*
