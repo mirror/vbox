@@ -133,6 +133,7 @@
 #include <iprt/file.h>
 #include <iprt/time.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxVideo.h>
@@ -4732,30 +4733,20 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
 /* -=-=-=-=-=- Ring 3: IBase -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PVGASTATE pThis = (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, Base));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->Base;
-        case PDMINTERFACE_DISPLAY_PORT:
-            return &pThis->Port;
+    PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, Base);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->Base;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_DISPLAY_PORT) == 0)
+        return &pThis->Port;
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
-        case PDMINTERFACE_DISPLAY_VBVA_CALLBACKS:
-            return &pThis->VBVACallbacks;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_DISPLAY_VBVA_CALLBACKS) == 0)
+        return &pThis->VBVACallbacks;
 #endif
-        default:
-            return NULL;
-    }
+    return NULL;
 }
 
 

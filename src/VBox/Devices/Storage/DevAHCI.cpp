@@ -291,6 +291,13 @@ typedef struct DEVPORTNOTIFIERQUEUEITEM
     uint8_t             fQueued;
 } DEVPORTNOTIFIERQUEUEITEM, *PDEVPORTNOTIFIERQUEUEITEM;
 
+
+/**
+ * @implements PDMIBASE
+ * @implements PDMIBLOCKPORT
+ * @implements PDMIBLOCKASYNCPORT
+ * @implements PDMIMOUNTNOTIFY
+ */
 typedef struct AHCIPort
 {
     /** Pointer to the device instance - HC ptr */
@@ -485,10 +492,14 @@ typedef struct AHCIPort
 
     uint32_t                        Alignment7;
 
-} AHCIPort, *PAHCIPort;
+} AHCIPort;
+/** Pointer to the state of an AHCI port. */
+typedef AHCIPort *PAHCIPort;
 
-/*
+/**
  * Main AHCI device state.
+ *
+ * @implements  PDMILEDPORTS
  */
 typedef struct AHCI
 {
@@ -505,11 +516,11 @@ typedef struct AHCI
     uint32_t                        Alignment0;
 #endif
 
-    /** The base interface */
+    /** Status LUN: The base interface. */
     PDMIBASE                        IBase;
-    /** Status Port - Leds interface. */
+    /** Status LUN: Leds interface. */
     PDMILEDPORTS                    ILeds;
-    /** Partner of ILeds. */
+    /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
 
 #if HC_ARCH_BITS == 64
@@ -617,9 +628,13 @@ typedef struct AHCI
     /** How many milliseconds to sleep. */
     uint32_t                        cMillisToSleep;
 
-} AHCI, *PAHCI;
+} AHCI;
+/** Pointer to the state of an AHCI device. */
+typedef AHCI *PAHCI;
 
-/* Scatter gather list entry. */
+/**
+ * Scatter gather list entry.
+ */
 typedef struct
 {
     /** Data Base Address. */
@@ -2370,46 +2385,33 @@ static DECLCALLBACK(int) ahciR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, u
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to ATADevState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) ahciR3Status_QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) ahciR3Status_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PAHCI pAhci = PDMIBASE_2_PAHCI(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pAhci->IBase;
-        case PDMINTERFACE_LED_PORTS:
-            return &pAhci->ILeds;
-        default:
-            return NULL;
-    }
+    PAHCI pThis = PDMIBASE_2_PAHCI(pInterface);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 /**
- * Query interface method for the AHCI port.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PAHCIPort pAhciPort = PDMIBASE_2_PAHCIPORT(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pAhciPort->IBase;
-        case PDMINTERFACE_BLOCK_PORT:
-            return &pAhciPort->IPort;
-        case PDMINTERFACE_BLOCK_ASYNC_PORT:
-            return &pAhciPort->IPortAsync;
-        case PDMINTERFACE_MOUNT_NOTIFY:
-            return &pAhciPort->IMountNotify;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pAhciPort->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
+        return &pAhciPort->IPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_ASYNC_PORT) == 0)
+        return &pAhciPort->IPortAsync;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
+        return &pAhciPort->IMountNotify;
+    return NULL;
 }
 
 #ifdef DEBUG

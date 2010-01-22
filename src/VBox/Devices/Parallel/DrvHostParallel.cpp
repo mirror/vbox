@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,9 +29,10 @@
 #include <VBox/pdmthread.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/stream.h>
-#include <iprt/semaphore.h>
 #include <iprt/file.h>
+#include <iprt/semaphore.h>
+#include <iprt/stream.h>
+#include <iprt/uuid.h>
 
 #ifdef RT_OS_LINUX
 # include <sys/ioctl.h>
@@ -47,11 +48,13 @@
 
 #include "Builtins.h"
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
  * Host parallel port driver instance data.
+ * @implements PDMIHOSTPARALLELCONNECTOR
  */
 typedef struct DRVHOSTPARALLEL
 {
@@ -61,10 +64,8 @@ typedef struct DRVHOSTPARALLEL
     PPDMIHOSTPARALLELPORT         pDrvHostParallelPort;
     /** Our host device interface. */
     PDMIHOSTPARALLELCONNECTOR     IHostParallelConnector;
-    /** Our host device port interface. */
-    PDMIHOSTPARALLELPORT          IHostParallelPort;
     /** Device Path */
-    char                          *pszDevicePath;
+    char                         *pszDevicePath;
     /** Device Handle */
     RTFILE                        FileDevice;
     /** Thread waiting for interrupts. */
@@ -77,32 +78,23 @@ typedef struct DRVHOSTPARALLEL
 
 /** Converts a pointer to DRVHOSTPARALLEL::IHostDeviceConnector to a PDRHOSTPARALLEL. */
 #define PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostParallelConnector)) )
-/** Converts a pointer to DRVHOSTPARALLEL::IHostDevicePort to a PDRHOSTPARALLEL. */
-#define PDMIHOSTPARALLELPORT_2_DRVHOSTPARALLEL(pInterface) ( (PDRVHOSTPARALLEL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTPARALLEL, IHostParallelPort)) )
+
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTPARALLEL    pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_HOST_PARALLEL_CONNECTOR:
-            return &pThis->IHostParallelConnector;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS          pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTPARALLEL    pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTPARALLEL);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HOST_PARALLEL_CONNECTOR) == 0)
+        return &pThis->IHostParallelConnector;
+    return NULL;
 }
 
 /* -=-=-=-=- IHostDeviceConnector -=-=-=-=- */

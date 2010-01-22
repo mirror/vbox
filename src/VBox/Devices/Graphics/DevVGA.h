@@ -302,15 +302,15 @@ typedef struct VGAState {
     /** The critical section. */
     PDMCRITSECT                 lock;
 
-    /** The display port base interface. */
+    /** LUN\#0: The display port base interface. */
     PDMIBASE                    Base;
-    /** The display port interface. */
+    /** LUN\#0: The display port interface. */
     PDMIDISPLAYPORT             Port;
 # if HC_ARCH_BITS == 32
     uint32_t                    Padding8;
 # endif
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
-    /** VBVA callbacks interface */
+    /** LUN\#0: VBVA callbacks interface */
     PDMDDISPLAYVBVACALLBACKS    VBVACallbacks;
 #else
 # if HC_ARCH_BITS == 32

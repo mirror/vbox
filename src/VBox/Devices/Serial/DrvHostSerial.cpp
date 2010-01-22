@@ -33,9 +33,10 @@
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
-#include <iprt/semaphore.h>
 #include <iprt/file.h>
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
+#include <iprt/semaphore.h>
+#include <iprt/uuid.h>
 
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
 # include <errno.h>
@@ -92,6 +93,8 @@
 
 /**
  * Char driver instance data.
+ *
+ * @implements  PDMICHAR
  */
 typedef struct DRVHOSTSERIAL
 {
@@ -168,26 +171,18 @@ typedef struct DRVHOSTSERIAL
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTSERIAL    pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_CHAR:
-            return &pThis->IChar;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTSERIAL  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_CHAR) == 0)
+        return &pThis->IChar;
+    return NULL;
 }
 
 

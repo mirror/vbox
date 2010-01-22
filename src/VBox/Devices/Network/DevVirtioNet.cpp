@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
  * DevVirtioNet - Virtio Network Device
- *
  */
 
 /*
@@ -28,6 +27,7 @@
 #include <iprt/semaphore.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
+# include <iprt/uuid.h>
 #endif /* IN_RING3 */
 #include "../Builtins.h"
 #include "../VirtIO/Virtio.h"
@@ -106,8 +106,11 @@ AssertCompileMemberOffset(struct VNetPCIConfig, uStatus, 6);
 
 /**
  * Device state structure. Holds the current state of device.
+ *
+ * @extends     VPCISTATE
+ * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKCONFIG
  */
-
 struct VNetState_st
 {
     /* VPCISTATE must be the first member! */
@@ -577,26 +580,18 @@ static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSI
 
 
 /**
- * Provides interfaces to the driver.
- *
- * @returns Pointer to interface. NULL if the interface is not supported.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  EMT
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, VPCI.IBase);
-    Assert(&pState->VPCI.IBase == pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_NETWORK_PORT:
-            return &pState->INetworkPort;
-        case PDMINTERFACE_NETWORK_CONFIG:
-            return &pState->INetworkConfig;
-        default:
-            return vpciQueryInterface(pInterface, enmInterface);
-    }
+    VNETSTATE *pThis = IFACE_TO_STATE(pInterface, VPCI.IBase);
+    Assert(&pThis->VPCI.IBase == pInterface);
+
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
+        return &pThis->INetworkPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
+        return &pThis->INetworkConfig;
+    return vpciQueryInterface(pInterface, pszIID);
 }
 
 /**
@@ -857,7 +852,7 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
         return;
     }
 
-    Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState), 
+    Log3(("%s vnetTransmitPendingPackets: About to trasmit %d pending packets\n", INSTANCE(pState),
           vringReadAvailIndex(&pState->VPCI, &pState->pTxQueue->VRing) - pState->pTxQueue->uNextAvailIndex));
 
     vpciSetWriteLed(&pState->VPCI, true);
@@ -964,7 +959,7 @@ static DECLCALLBACK(void) vnetTxTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, void 
     Log3(("vnetTxTimer: Expired, diff %9d usec, avg %9d usec, min %9d usec, max %9d usec\n",
             u32MicroDiff, pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
 
-//    Log3(("%s vnetTxTimer: Expired\n", INSTANCE(pState))); 
+//    Log3(("%s vnetTxTimer: Expired\n", INSTANCE(pState)));
     vnetTransmitPendingPackets(pState, pState->pTxQueue);
     if (RT_FAILURE(vnetCsEnter(pState, VERR_SEM_BUSY)))
     {
@@ -1460,7 +1455,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     int        rc;
 
     /* Initialize PCI part first. */
-    pState->VPCI.IBase.pfnQueryInterface     = vnetQueryInterface;
+    pState->VPCI.IBase.pfnQueryInterface    = vnetQueryInterface;
     rc = vpciConstruct(pDevIns, &pState->VPCI, iInstance,
                        VNET_NAME_FMT, VNET_PCI_SUBSYSTEM_ID,
                        VNET_PCI_CLASS, VNET_N_QUEUES);

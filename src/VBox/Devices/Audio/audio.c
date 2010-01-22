@@ -1925,28 +1925,17 @@ void AUD_set_record_source (audrecsource_t *ars, audrecsource_t *als)
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface,
-                                                   PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVAUDIO  pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_AUDIO_CONNECTOR:
-            return &pThis->IAudioConnector;
-        default:
-            return NULL;
-    }
+    PDRVAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_AUDIO_CONNECTOR) == 0)
+        return &pThis->IAudioConnector;
+    return NULL;
 }
 
 /**

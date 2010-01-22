@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox storage drivers:
- * Host SCSI access driver.
+ * VBox storage drivers: Host SCSI access driver.
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,10 +29,11 @@
 #include <VBox/pdmthread.h>
 #include <VBox/scsi.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/alloc.h>
-#include <iprt/req.h>
 #include <iprt/file.h>
+#include <iprt/mem.h>
+#include <iprt/req.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #if defined(RT_OS_LINUX)
 # include <limits.h>
@@ -46,6 +45,8 @@
 
 /**
  * SCSI driver instance data.
+ *
+ * @implements  PDMISCSICONNECTOR
  */
 typedef struct DRVSCSIHOST
 {
@@ -54,7 +55,7 @@ typedef struct DRVSCSIHOST
 
     /** Pointer to the SCSI port interface of the device above. */
     PPDMISCSIPORT           pDevScsiPort;
-    /** The scsi connector interface .*/
+    /** The SCSI connector interface .   */
     PDMISCSICONNECTOR       ISCSIConnector;
 
     /** PAth to the device file. */
@@ -394,20 +395,19 @@ static DECLCALLBACK(int) drvscsihostRequestSend(PPDMISCSICONNECTOR pInterface, P
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
-/** @copydoc PDMIBASE::pfnQueryInterface. */
-static DECLCALLBACK(void *)  drvscsihostQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *)  drvscsihostQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS   pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_SCSI_CONNECTOR:
-            return &pThis->ISCSIConnector;
-        default:
-            return NULL;
-    }
+    PDRVSCSIHOST pThis   = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_SCSI_CONNECTOR) == 0)
+        return &pThis->ISCSIConnector;
+    return NULL;
 }
 
 /**

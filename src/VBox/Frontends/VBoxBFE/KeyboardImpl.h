@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Declaration of Keyboard class and related things
  */
@@ -55,7 +55,7 @@ public:
 
 private:
 
-    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
@@ -69,4 +69,4 @@ private:
 
 extern Keyboard *gKeyboard;
 
-#endif // ____H_KEYBOARDIMPL
+#endif // !____H_KEYBOARDIMPL

@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox input devices:
- * Keyboard queue driver
+ * VBox input devices: Keyboard queue driver
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,6 +26,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_KBD_QUEUE
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
@@ -37,6 +37,9 @@
 *******************************************************************************/
 /**
  * Keyboard queue driver instance data.
+ *
+ * @implements  PDMIKEYBOARDCONNECTOR
+ * @implements  PDMIKEYBOARDPORT
  */
 typedef struct DRVKBDQUEUE
 {
@@ -74,28 +77,20 @@ typedef struct DRVKBDQUEUEITEM
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVKBDQUEUE pDrv = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_KEYBOARD_PORT:
-            return &pDrv->Port;
-        case PDMINTERFACE_KEYBOARD_CONNECTOR:
-            return &pDrv->Connector;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVKBDQUEUE    pThis   = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_CONNECTOR) == 0)
+        return &pThis->Connector;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_PORT) == 0)
+        return &pThis->Port;
+    return NULL;
 }
 
 

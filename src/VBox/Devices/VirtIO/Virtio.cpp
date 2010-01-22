@@ -1,11 +1,10 @@
 /* $Id$ */
 /** @file
  * Virtio - Virtio Common Functions (VRing, VQueue, Virtio PCI)
- *
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,6 +23,7 @@
 #define LOG_GROUP LOG_GROUP_DEV_VIRTIO
 
 #include <iprt/param.h>
+#include <iprt/uuid.h>
 #include <VBox/pdmdev.h>
 #include "Virtio.h"
 
@@ -521,27 +521,20 @@ int vpciIOPortOut(PPDMDEVINS                pDevIns,
 }
 
 #ifdef IN_RING3
+
 /**
- * Provides interfaces to the driver.
- *
- * @returns Pointer to interface. NULL if the interface is not supported.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  EMT
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-void *vpciQueryInterface(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface)
+void *vpciQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    VPCISTATE *pState = IFACE_TO_STATE(pInterface, IBase);
-    Assert(&pState->IBase == pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pState->IBase;
-        case PDMINTERFACE_LED_PORTS:
-            return &pState->ILeds;
-        default:
-            return NULL;
-    }
+    VPCISTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
+    Assert(&pThis->IBase == pInterface);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 /**
@@ -932,7 +925,6 @@ PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
 
     return pQueue;
 }
-
 
 #endif /* IN_RING3 */
 

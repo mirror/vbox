@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Implementation of Mouse class
  */
@@ -31,6 +31,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/uuid.h>
 #include <VBox/VMMDev.h>
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
@@ -176,26 +177,17 @@ int Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG buttonState)
 /////////////////////////////////////////////////////////////////////////////
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINMOUSE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_MOUSE_CONNECTOR:
-            return &pDrv->Connector;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_CONNECTOR) == 0)
+        return &pDrv->Connector;
+    return NULL;
 }
 
 

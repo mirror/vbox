@@ -31,6 +31,10 @@ RT_C_DECLS_BEGIN
 typedef struct DRVHOSTBASE *PDRVHOSTBASE;
 /**
  * Host base drive access driver instance data.
+ *
+ * @implements PDMIMOUNT
+ * @implements PDMIBLOCKBIOS
+ * @implements PDMIBLOCK
  */
 typedef struct DRVHOSTBASE
 {

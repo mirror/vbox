@@ -1,5 +1,4 @@
 /** @file
- *
  * VirtualBox Driver interface to Audio Sniffer device
  */
 
@@ -43,12 +42,12 @@ public:
     PPDMIAUDIOSNIFFERPORT getAudioSnifferPort(void);
 
 private:
-    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
     ComObjPtr<Console, ComWeakRef> mParent;
 };
 
-#endif /* ____H_AUDIOSNIFFERINTERFACE */
+#endif /* !____H_AUDIOSNIFFERINTERFACE */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

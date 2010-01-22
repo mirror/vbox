@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox network devices:
- * Network sniffer filter driver
+ * DrvNetSniffer - Network sniffer filter driver.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,11 +28,12 @@
 
 #include <VBox/log.h>
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 #include <iprt/file.h>
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#include <iprt/critsect.h>
+#include <iprt/uuid.h>
 #include <VBox/param.h>
 
 #include "Pcap.h"
@@ -45,6 +45,10 @@
 *******************************************************************************/
 /**
  * Block driver instance data.
+ *
+ * @implements  PDMINETWORKCONNECTOR
+ * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKCONFIG
  */
 typedef struct DRVNETSNIFFER
 {
@@ -247,31 +251,21 @@ static DECLCALLBACK(int) drvNetSnifferSetLinkState(PPDMINETWORKCONFIG pInterface
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pThis->INetworkConnector;
-        case PDMINTERFACE_NETWORK_PORT:
-            return &pThis->INetworkPort;
-        case PDMINTERFACE_NETWORK_CONFIG:
-            return &pThis->INetworkConfig;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVNETSNIFFER  pThis   = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
+        return &pThis->INetworkConnector;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
+        return &pThis->INetworkPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
+        return &pThis->INetworkConfig;
+    return NULL;
 }
 
 

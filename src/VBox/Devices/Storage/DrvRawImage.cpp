@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Raw image driver
+ * VBox storage devices: Raw image driver
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,6 +28,7 @@
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
@@ -36,7 +36,6 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-
 /** Converts a pointer to RAWIMAGE::IMedia to a PRDVRAWIMAGE. */
 #define PDMIMEDIA_2_DRVRAWIMAGE(pInterface) ( (PDRVRAWIMAGE)((uintptr_t)pInterface - RT_OFFSETOF(DRVRAWIMAGE, IMedia)) )
 
@@ -53,6 +52,8 @@
 *******************************************************************************/
 /**
  * Block driver instance data.
+ *
+ * @implements  PDMIMEDIA
  */
 typedef struct DRVRAWIMAGE
 {
@@ -84,7 +85,7 @@ static DECLCALLBACK(int) drvRawImageBiosSetPCHSGeometry(PPDMIMEDIA pInterface, P
 static DECLCALLBACK(int) drvRawImageBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry);
 static DECLCALLBACK(int) drvRawImageBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry);
 
-static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, const char *pszIID);
 
 
 
@@ -335,27 +336,18 @@ static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_MEDIA:
-            return &pThis->IMedia;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PDRVRAWIMAGE    pThis   = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MEDIA) == 0)
+        return &pThis->IMedia;
+    return NULL;
 }
 
 

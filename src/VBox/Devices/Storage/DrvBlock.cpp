@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * Generic block driver
+ * VBox storage devices: Generic block driver
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,9 +26,8 @@
 #define LOG_GROUP LOG_GROUP_DRV_BLOCK
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
 #include <iprt/uuid.h>
-
-#include <string.h>
 
 #include "Builtins.h"
 
@@ -56,11 +54,18 @@
  * is to ignore flushes, i.e. true. */
 #define VBOX_IGNORE_FLUSH
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
  * Block driver instance data.
+ *
+ * @implements  PDMIBLOCK
+ * @implements  PDMIBLOCKBIOS
+ * @implements  PDMIMOUNT
+ * @implements  PDMIMEDIAASYNCPORT
+ * @implements  PDMIBLOCKASYNC
  */
 typedef struct DRVBLOCK
 {
@@ -644,28 +649,27 @@ static DECLCALLBACK(bool) drvblockIsLocked(PPDMIMOUNT pInterface)
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
-/** @copydoc PDMIBASE::pfnQueryInterface. */
-static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVBLOCK   pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_BLOCK:
-            return &pThis->IBlock;
-        case PDMINTERFACE_BLOCK_BIOS:
-            return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
-        case PDMINTERFACE_MOUNT:
-            return pThis->fMountable ? &pThis->IMount : NULL;
-        case PDMINTERFACE_BLOCK_ASYNC:
-            return pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL;
-        case PDMINTERFACE_MEDIA_ASYNC_PORT:
-            return pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL;
-        default:
-            return NULL;
-    }
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK) == 0)
+        return &pThis->IBlock;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_BIOS) == 0)
+        return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT) == 0)
+        return pThis->fMountable ? &pThis->IMount : NULL;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_ASYNC) == 0)
+        return pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MEDIA_ASYNC_PORT) == 0)
+        return pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL;
+    return NULL;
 }
 
 

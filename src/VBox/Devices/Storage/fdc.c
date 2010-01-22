@@ -1,8 +1,7 @@
 #ifdef VBOX
+/* $Id: $ */
 /** @file
- *
- * VBox storage devices:
- * Floppy disk controller
+ * VBox storage devices: Floppy disk controller
  */
 
 /*
@@ -54,8 +53,8 @@
 #define LOG_GROUP LOG_GROUP_DEV_FDC
 #include <VBox/pdmdev.h>
 #include <iprt/assert.h>
-#include <iprt/uuid.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 #include "../vl_vbox.h"
@@ -142,6 +141,15 @@ typedef enum fdisk_flags_t {
     FDISK_DBL_SIDES  = 0x01
 } fdisk_flags_t;
 
+#ifdef VBOX
+/**
+ * The status for one drive.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMIBLOCKPORT
+ * @implements  PDMIMOUNTNOTIFY
+ */
+#endif
 typedef struct fdrive_t {
 #ifndef VBOX
     BlockDriverState *bs;
@@ -355,8 +363,8 @@ static void fd_revalidate (fdrive_t *drv)
 #else /* VBOX */
             /* @todo */ /** @todo r=bird: todo what exactly?!?!? */
             {
-                uint64_t size =  drv->pDrvBlock->pfnGetSize (drv->pDrvBlock);
-                nb_sectors = size / 512;
+                uint64_t size2 = drv->pDrvBlock->pfnGetSize (drv->pDrvBlock);
+                nb_sectors = size2 / 512;
             }
 #endif /* VBOX */
             match = -1;
@@ -494,6 +502,13 @@ do { (state) = ((state) & ~FD_STATE_STATE) | (new_state); } while (0)
 #define FD_DID_SEEK(state) ((state) & FD_STATE_SEEK)
 #define FD_FORMAT_CMD(state) ((state) & FD_STATE_FORMAT)
 
+#ifdef VBOX
+/**
+ * Floppy controller state.
+ *
+ * @implements  PDMILEDPORTS
+ */
+#endif
 struct fdctrl_t {
 #ifndef VBOX
     fdctrl_t *fdctrl;
@@ -539,11 +554,11 @@ struct fdctrl_t {
     /** Pointer to device instance. */
     PPDMDEVINS pDevIns;
 
-    /** Status Port - The base interface. */
+    /** Status LUN: The base interface. */
     PDMIBASE IBaseStatus;
-    /** Status Port - The Leds interface. */
+    /** Status LUN: The Leds interface. */
     PDMILEDPORTS ILeds;
-    /** Status Port - The Partner of ILeds. */
+    /** Status LUN: The Partner of ILeds. */
     PPDMILEDCONNECTORS pLedsConnector;
 #endif
 };
@@ -1242,12 +1257,12 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 #ifdef VBOX
             {
                 uint32_t read;
-                int rc = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, nchan,
-                                                 fdctrl->fifo + rel_pos,
-                                                 fdctrl->data_pos,
-                                                 len, &read);
+                int rc2 = PDMDevHlpDMAWriteMemory(fdctrl->pDevIns, nchan,
+                                                  fdctrl->fifo + rel_pos,
+                                                  fdctrl->data_pos,
+                                                  len, &read);
                 dump (fdctrl->fifo + rel_pos, len);
-                AssertMsgRC (rc, ("DMAWriteMemory -> %Rrc\n", rc));
+                AssertMsgRC (rc2, ("DMAWriteMemory -> %Rrc\n", rc2));
             }
 #else
             DMA_write_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1261,11 +1276,11 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
 #ifdef VBOX
             {
                 uint32_t written;
-                int rc = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
-                                                fdctrl->fifo + rel_pos,
-                                                fdctrl->data_pos,
-                                                len, &written);
-                AssertMsgRC (rc, ("DMAReadMemory -> %Rrc\n", rc));
+                int rc2 = PDMDevHlpDMAReadMemory(fdctrl->pDevIns, nchan,
+                                                 fdctrl->fifo + rel_pos,
+                                                 fdctrl->data_pos,
+                                                 len, &written);
+                AssertMsgRC (rc2, ("DMAReadMemory -> %Rrc\n", rc2));
             }
 #else
             DMA_read_memory (nchan, fdctrl->fifo + rel_pos,
@@ -1307,12 +1322,10 @@ static int fdctrl_transfer_handler (void *opaque, int nchan,
                 uint8_t tmpbuf[FD_SECTOR_LEN];
                 int ret;
 #ifdef VBOX
-                int rc;
                 uint32_t read;
-
-                rc = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
-                                             fdctrl->data_pos, len, &read);
-                AssertMsg (RT_SUCCESS (rc), ("DMAReadMemory -> %Rrc\n", rc));
+                int rc2 = PDMDevHlpDMAReadMemory (fdctrl->pDevIns, nchan, tmpbuf,
+                                                  fdctrl->data_pos, len, &read);
+                AssertMsg (RT_SUCCESS (rc2), ("DMAReadMemory -> %Rrc2\n", rc2));
 #else
                 DMA_read_memory (nchan, tmpbuf, fdctrl->data_pos, len);
 #endif
@@ -2484,27 +2497,18 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to IDEState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface,
-                                              PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface, const char *pszIID)
 {
-    fdrive_t *drv = PDMIBASE_2_FDRIVE(pInterface);
-    switch (enmInterface) {
-    case PDMINTERFACE_BASE:
-        return &drv->IBase;
-    case PDMINTERFACE_BLOCK_PORT:
-        return &drv->IPort;
-    case PDMINTERFACE_MOUNT_NOTIFY:
-        return &drv->IMountNotify;
-    default:
-        return NULL;
-    }
+    fdrive_t *pDrive = PDMIBASE_2_FDRIVE(pInterface);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrive->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
+        return &pDrive->IPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
+        return &pDrive->IMountNotify;
+    return NULL;
 }
 
 /**
@@ -2531,26 +2535,17 @@ static DECLCALLBACK(int) fdcStatusQueryStatusLed (PPDMILEDPORTS pInterface,
 
 
 /**
- * Queries an interface to the status LUN.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to IDEState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) fdcStatusQueryInterface (PPDMIBASE pInterface,
-                                                     PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) fdcStatusQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    fdctrl_t *fdctrl = (fdctrl_t *)
-        ((uintptr_t)pInterface - RT_OFFSETOF (fdctrl_t, IBaseStatus));
-    switch (enmInterface) {
-    case PDMINTERFACE_BASE:
-        return &fdctrl->IBaseStatus;
-    case PDMINTERFACE_LED_PORTS:
-        return &fdctrl->ILeds;
-    default:
-        return NULL;
-    }
+    fdctrl_t *pThis = RT_FROM_MEMBER (pInterface, fdctrl_t, IBaseStatus);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBaseStatus;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 

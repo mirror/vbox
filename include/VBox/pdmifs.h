@@ -40,135 +40,124 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
-/**
- * Driver interface identficators.
- *
- * @remark  All interfaces have to be declared here. There is no such thing as
- *          private interface identifiers since they must be unique.
- *
- *          That said, interface structures and other stuff can be put elsewhere,
- *          actually, it is best if this file is not flooded with structures that
- *          could be put closer to home.
+/** @name Common Driver Interface Identficators.
+ * @todo Convert all these to _IID.
+ * @{
  */
-typedef enum PDMINTERFACE
-{
-    /** PDMIBASE                - The interface everyone supports. */
-    PDMINTERFACE_BASE = 1,
-    /** PDMIMOUSEPORT           - The mouse port interface.             (Down)  Coupled with PDMINTERFACE_MOUSE_CONNECTOR. */
-    PDMINTERFACE_MOUSE_PORT,
-    /** PDMIMOUSECONNECTOR      - The mouse connector interface.        (Up)    Coupled with PDMINTERFACE_MOUSE_PORT. */
-    PDMINTERFACE_MOUSE_CONNECTOR,
-    /** PDMIKEYBOARDPORT        - The keyboard port interface.          (Down)  Coupled with PDMINTERFACE_KEYBOARD_CONNECTOR. */
-    PDMINTERFACE_KEYBOARD_PORT,
-    /** PDMIKEYBOARDCONNECTOR   - The keyboard connector interface.     (Up)    Coupled with PDMINTERFACE_KEYBOARD_PORT. */
-    PDMINTERFACE_KEYBOARD_CONNECTOR,
-    /** PDMIDISPLAYPORT         - The display port interface.           (Down)  Coupled with PDMINTERFACE_DISPLAY_CONNECTOR. */
-    PDMINTERFACE_DISPLAY_PORT,
-    /** PDMIDISPLAYCONNECTOR    - The display connector interface.      (Up)    Coupled with PDMINTERFACE_DISPLAY_PORT. */
-    PDMINTERFACE_DISPLAY_CONNECTOR,
-    /** PDMICHARPORT            - The char notify interface.            (Down)  Coupled with PDMINTERFACE_CHAR. */
-    PDMINTERFACE_CHAR_PORT,
-    /** PDMICHAR                - The char driver interface.            (Up)    Coupled with PDMINTERFACE_CHAR_PORT. */
-    PDMINTERFACE_CHAR,
-    /** PDMISTREAM              - The stream driver interface           (Up)    No coupling.
-     * Used by a char driver to implement PDMINTERFACE_CHAR. */
-    PDMINTERFACE_STREAM,
-    /** PDMIBLOCKPORT           - The block notify interface            (Down)  Coupled with PDMINTERFACE_BLOCK. */
-    PDMINTERFACE_BLOCK_PORT,
-    /** PDMIBLOCK               - The block driver interface            (Up)    Coupled with PDMINTERFACE_BLOCK_PORT. */
-    PDMINTERFACE_BLOCK,
-    /** PDMIBLOCKBIOS           - The block bios interface.             (External) */
-    PDMINTERFACE_BLOCK_BIOS,
-    /** PDMIMOUNTNOTIFY         - The mountable notification interface. (Down)  Coupled with PDMINTERFACE_MOUNT. */
-    PDMINTERFACE_MOUNT_NOTIFY,
-    /** PDMIMOUNT               - The mountable interface.              (Up)    Coupled with PDMINTERFACE_MOUNT_NOTIFY. */
-    PDMINTERFACE_MOUNT,
-    /** PDMIMEDIA               - The media interface.                  (Up)    No coupling.
-     * Used by a block unit driver to implement PDMINTERFACE_BLOCK and PDMINTERFACE_BLOCK_BIOS. */
-    PDMINTERFACE_MEDIA,
-    /** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
-     * used by the iSCSI media driver.  */
-    PDMINTERFACE_ISCSITRANSPORT,
-    /** PDMIISCSITRANSPORTASYNC - The asynchronous iSCSI interface      (Up)    Couple with PDMINTERFACE_ISCSITRANSPORT.
-     * extension used by the iSCSI media driver.  */
-    PDMINTERFACE_ISCSITRANSPORTASYNC,
-    /** PDMIISCSITRANSPORTASYNCPORT - The asynchronous iSCSI interface  (Down)  Couple with PDMINTERFACE_ISCSITRANSPORTASYNC.
-     * notify port used by the iSCSI media driver.  */
-    PDMINTERFACE_ISCSITRANSPORTASYNCPORT,
-    /** PDMIMEDIAASYNC          - Async version of the media interface  (Down)  Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
-    PDMINTERFACE_MEDIA_ASYNC,
-    /** PDMIMEDIAASYNCPORT      - Async version of the media interface  (Up)    Coupled with PDMINTERFACE_MEDIA_ASYNC. */
-    PDMINTERFACE_MEDIA_ASYNC_PORT,
-    /** PDMIBLOCKASYNC          - Async version of the block interface  (Down)  Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
-    PDMINTERFACE_BLOCK_ASYNC,
-    /** PDMIBLOCKASYNCPORT      - Async version of the block interface  (Up)    Coupled with PDMINTERFACE_BLOCK_ASYNC. */
-    PDMINTERFACE_BLOCK_ASYNC_PORT,
+/** PDMIMOUSEPORT           - The mouse port interface.             (Down)  Coupled with PDMINTERFACE_MOUSE_CONNECTOR. */
+#define PDMINTERFACE_MOUSE_PORT                 "dcf20e6b-6cd5-4517-8759-91064605b8a8"
+/** PDMIMOUSECONNECTOR      - The mouse connector interface.        (Up)    Coupled with PDMINTERFACE_MOUSE_PORT. */
+#define PDMINTERFACE_MOUSE_CONNECTOR            "847f965f-0eb8-4363-88ac-b0ee58a05bde"
+/** PDMIKEYBOARDPORT        - The keyboard port interface.          (Down)  Coupled with PDMINTERFACE_KEYBOARD_CONNECTOR. */
+#define PDMINTERFACE_KEYBOARD_PORT              "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"
+/** PDMIKEYBOARDCONNECTOR   - The keyboard connector interface.     (Up)    Coupled with PDMINTERFACE_KEYBOARD_PORT. */
+#define PDMINTERFACE_KEYBOARD_CONNECTOR         "db3f7bd5-953e-436f-9f8e-077905a92d82"
+/** PDMIDISPLAYPORT         - The display port interface.           (Down)  Coupled with PDMINTERFACE_DISPLAY_CONNECTOR. */
+#define PDMINTERFACE_DISPLAY_PORT               "48bbcb6b-ba43-449b-9248-b8bb09929771"
+/** PDMIDISPLAYCONNECTOR    - The display connector interface.      (Up)    Coupled with PDMINTERFACE_DISPLAY_PORT. */
+#define PDMINTERFACE_DISPLAY_CONNECTOR          "c7a1b36d-8dfc-421d-b71f-3a0eeaf733e6"
+/** PDMICHARPORT            - The char notify interface.            (Down)  Coupled with PDMINTERFACE_CHAR. */
+#define PDMINTERFACE_CHAR_PORT                  "22769834-ea8b-4a6d-ade1-213dcdbd1228"
+/** PDMICHAR                - The char driver interface.            (Up)    Coupled with PDMINTERFACE_CHAR_PORT. */
+#define PDMINTERFACE_CHAR                       "4ad5c190-b408-4cef-926f-fbffce0dc5cc"
+/** PDMISTREAM              - The stream driver interface           (Up)    No coupling.
+ * Used by a char driver to implement PDMINTERFACE_CHAR. */
+#define PDMINTERFACE_STREAM                     "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"
+/** PDMIBLOCKPORT           - The block notify interface            (Down)  Coupled with PDMINTERFACE_BLOCK. */
+#define PDMINTERFACE_BLOCK_PORT                 "e87fa1ab-92d5-4100-8712-fe2a0c042faf"
+/** PDMIBLOCK               - The block driver interface            (Up)    Coupled with PDMINTERFACE_BLOCK_PORT. */
+#define PDMINTERFACE_BLOCK                      "0a5f3156-8b21-4cf5-83fd-e097281d2900"
+/** PDMIBLOCKBIOS           - The block bios interface.             (External) */
+#define PDMINTERFACE_BLOCK_BIOS                 "477c3eee-a48d-48a9-82fd-2a54de16b2e9"
+/** PDMIMOUNTNOTIFY         - The mountable notification interface. (Down)  Coupled with PDMINTERFACE_MOUNT. */
+#define PDMINTERFACE_MOUNT_NOTIFY               "fa143ac9-9fc6-498e-997f-945380a558f9"
+/** PDMIMOUNT               - The mountable interface.              (Up)    Coupled with PDMINTERFACE_MOUNT_NOTIFY. */
+#define PDMINTERFACE_MOUNT                      "8e5a009a-6032-4ca1-9d86-a388d8eaf926"
+/** PDMIMEDIA               - The media interface.                  (Up)    No coupling.
+ * Used by a block unit driver to implement PDMINTERFACE_BLOCK and PDMINTERFACE_BLOCK_BIOS. */
+#define PDMINTERFACE_MEDIA                      "f5bb07c9-2843-46f8-a56f-cc090b6e5bac"
+/** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
+ * used by the iSCSI media driver.  */
+#define PDMINTERFACE_ISCSITRANSPORT             "b69c9b49-fd24-4955-8d8b-40aaead815e5"
+/** PDMIISCSITRANSPORTASYNC - The asynchronous iSCSI interface      (Up)    Couple with PDMINTERFACE_ISCSITRANSPORT.
+ * extension used by the iSCSI media driver.  */
+#define PDMINTERFACE_ISCSITRANSPORTASYNC        "f6751563-c378-4928-b7fe-411873112ac3"
+/** PDMIISCSITRANSPORTASYNCPORT - The asynchronous iSCSI interface  (Down)  Couple with PDMINTERFACE_ISCSITRANSPORTASYNC.
+ * notify port used by the iSCSI media driver.  */
+#define PDMINTERFACE_ISCSITRANSPORTASYNCPORT    "6ab0fbf1-aa72-4b27-bc46-f58896ba0392"
+/** PDMIMEDIAASYNC          - Async version of the media interface  (Down)  Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
+#define PDMINTERFACE_MEDIA_ASYNC                "d7bc3c90-e686-4d9c-a7bc-6c6742e452ec"
+/** PDMIMEDIAASYNCPORT      - Async version of the media interface  (Up)    Coupled with PDMINTERFACE_MEDIA_ASYNC. */
+#define PDMINTERFACE_MEDIA_ASYNC_PORT           "22d38853-901f-4a71-9670-4d9da6e82317"
+/** PDMIBLOCKASYNC          - Async version of the block interface  (Down)  Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
+#define PDMINTERFACE_BLOCK_ASYNC                "142cd775-3be6-4c9f-9e3d-68969c3d4779"
+/** PDMIBLOCKASYNCPORT      - Async version of the block interface  (Up)    Coupled with PDMINTERFACE_BLOCK_ASYNC. */
+#define PDMINTERFACE_BLOCK_ASYNC_PORT           "e3bdc0cb-9d99-41dd-8eec-0dc8cf5b2a92"
 
 
-    /** PDMINETWORKPORT         - The network port interface.           (Down)  Coupled with PDMINTERFACE_NETWORK_CONNECTOR. */
-    PDMINTERFACE_NETWORK_PORT,
-    /** PDMINETWORKPORT         - The network connector interface.      (Up)    Coupled with PDMINTERFACE_NETWORK_PORT. */
-    PDMINTERFACE_NETWORK_CONNECTOR,
-    /** PDMINETWORKCONFIG       - The network configuartion interface.  (Main)  Used by the managment api. */
-    PDMINTERFACE_NETWORK_CONFIG,
+/** PDMINETWORKPORT         - The network port interface.           (Down)  Coupled with PDMINTERFACE_NETWORK_CONNECTOR. */
+#define PDMINTERFACE_NETWORK_PORT               "eb66670b-7998-4470-8e72-886e30f6a9c3"
+/** PDMINETWORKPORT         - The network connector interface.      (Up)    Coupled with PDMINTERFACE_NETWORK_PORT. */
+#define PDMINTERFACE_NETWORK_CONNECTOR          "b4b6f850-50d0-4ddf-9efa-daee80194dca"
+/** PDMINETWORKCONFIG       - The network configuartion interface.  (Main)  Used by the managment api. */
+#define PDMINTERFACE_NETWORK_CONFIG             "d6d909e8-716d-415d-b109-534e4478ff4e"
 
-    /** PDMIAUDIOCONNECTOR      - The audio driver interface.           (Up)    No coupling. */
-    PDMINTERFACE_AUDIO_CONNECTOR,
+/** PDMIAUDIOCONNECTOR      - The audio driver interface.           (Up)    No coupling. */
+#define PDMINTERFACE_AUDIO_CONNECTOR            "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
-    /** PDMIAUDIOSNIFFERPORT    - The Audio Sniffer Device port interface. */
-    PDMINTERFACE_AUDIO_SNIFFER_PORT,
-    /** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
-    PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR,
+/** PDMIAUDIOSNIFFERPORT    - The Audio Sniffer Device port interface. */
+#define PDMINTERFACE_AUDIO_SNIFFER_PORT         "83b95e02-68cb-470d-9dfc-25a0f8efe197"
+/** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
+#define PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR    "433b64ab-e603-4933-bc97-8fe79b2bd0e0"
 
-    /** PDMIVMMDEVPORT          - The VMM Device port interface. */
-    PDMINTERFACE_VMMDEV_PORT,
-    /** PDMIVMMDEVCONNECTOR     - The VMM Device connector interface. */
-    PDMINTERFACE_VMMDEV_CONNECTOR,
+/** PDMIVMMDEVPORT          - The VMM Device port interface. */
+#define PDMINTERFACE_VMMDEV_PORT                "d7e52035-3b6c-422e-9215-2a75646a945d"
+/** PDMIVMMDEVCONNECTOR     - The VMM Device connector interface. */
+#define PDMINTERFACE_VMMDEV_CONNECTOR           "38b96194-ee83-489e-b92e-73ee28a29439"
 
-    /** PDMILEDPORTS            - The generic LED port interface.       (Down)  Coupled with PDMINTERFACE_LED_CONNECTORS. */
-    PDMINTERFACE_LED_PORTS,
-    /** PDMILEDCONNECTORS       - The generic LED connector interface.  (Up)    Coupled with PDMINTERFACE_LED_PORTS.  */
-    PDMINTERFACE_LED_CONNECTORS,
+/** PDMILEDPORTS            - The generic LED port interface.       (Down)  Coupled with PDMINTERFACE_LED_CONNECTORS. */
+#define PDMINTERFACE_LED_PORTS                  "435e0cec-8549-4ca0-8c0d-98e52f1dc038"
+/** PDMILEDCONNECTORS       - The generic LED connector interface.  (Up)    Coupled with PDMINTERFACE_LED_PORTS.  */
+#define PDMINTERFACE_LED_CONNECTORS             "8ed63568-82a7-4193-b57b-db8085ac4495"
 
-    /** PDMIACPIPORT            - ACPI port interface.                  (Down)   Coupled with PDMINTERFACE_ACPI_CONNECTOR. */
-    PDMINTERFACE_ACPI_PORT,
-    /** PDMIACPICONNECTOR       - ACPI connector interface.             (Up)     Coupled with PDMINTERFACE_ACPI_PORT. */
-    PDMINTERFACE_ACPI_CONNECTOR,
+/** PDMIACPIPORT            - ACPI port interface.                  (Down)   Coupled with PDMINTERFACE_ACPI_CONNECTOR. */
+#define PDMINTERFACE_ACPI_PORT                  "30d3dc4c-6a73-40c8-80e9-34309deacbb3"
+/** PDMIACPICONNECTOR       - ACPI connector interface.             (Up)     Coupled with PDMINTERFACE_ACPI_PORT. */
+#define PDMINTERFACE_ACPI_CONNECTOR             "5f14bf8d-1edf-4e3a-a1e1-cca9fd08e359"
 
-    /** PDMIHGCMPORT            - The Host-Guest communication manager port interface. Normally implemented by VMMDev. */
-    PDMINTERFACE_HGCM_PORT,
-    /** PDMIHGCMCONNECTOR       - The Host-Guest communication manager connector interface. Normally implemented by Main::VMMDevInterface. */
-    PDMINTERFACE_HGCM_CONNECTOR,
+/** PDMIHGCMPORT            - The Host-Guest communication manager port interface. Normally implemented by VMMDev. */
+#define PDMINTERFACE_HGCM_PORT                  "e00a0cbf-b75a-45c3-87f4-41cddbc5ae0b"
+/** PDMIHGCMCONNECTOR       - The Host-Guest communication manager connector interface. Normally implemented by Main::VMMDevInterface. */
+#define PDMINTERFACE_HGCM_CONNECTOR             "a1104758-c888-4437-8f2a-7bac17865b5c"
 
-    /** VUSBIROOTHUBPORT        - VUSB RootHub port interface.          (Down)   Coupled with PDMINTERFACE_USB_RH_CONNECTOR. */
-    PDMINTERFACE_VUSB_RH_PORT,
-    /** VUSBIROOTHUBCONNECTOR   - VUSB RootHub connector interface.     (Up)     Coupled with PDMINTERFACE_USB_RH_PORT. */
-    PDMINTERFACE_VUSB_RH_CONNECTOR,
-    /** VUSBIRHCONFIG           - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
-    PDMINTERFACE_VUSB_RH_CONFIG,
+/** VUSBIROOTHUBPORT        - VUSB RootHub port interface.          (Down)   Coupled with PDMINTERFACE_USB_RH_CONNECTOR. */
+#define PDMINTERFACE_VUSB_RH_PORT               "e38e2978-7aa2-4860-94b6-9ef4a066d8a0"
+/** VUSBIROOTHUBCONNECTOR   - VUSB RootHub connector interface.     (Up)     Coupled with PDMINTERFACE_USB_RH_PORT. */
+#define PDMINTERFACE_VUSB_RH_CONNECTOR          "d9a90c59-e3ff-4dff-9754-844557c3f7a0"
+/** VUSBIRHCONFIG           - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
+#define PDMINTERFACE_VUSB_RH_CONFIG             "c354cd97-e85f-465e-bc12-b58798465f52"
 
-    /** VUSBIDEVICE             - VUSB Device interface.                (Up)     No coupling. */
-    PDMINTERFACE_VUSB_DEVICE,
+/** VUSBIDEVICE             - VUSB Device interface.                (Up)     No coupling. */
+#define PDMINTERFACE_VUSB_DEVICE                "88732dd3-0ccd-4625-b040-48804ac7a217"
 
-    /** PDMIHOSTPARALLELPORT    - The Host Parallel port interface.     (Down)   Coupled with PDMINTERFACE_HOST_PARALLEL_CONNECTOR. */
-    PDMINTERFACE_HOST_PARALLEL_PORT,
-    /** PDMIHOSTPARALLELCONNECTOR - The Host Parallel connector interface (Up)   Coupled with PDMINTERFACE_HOST_PARALLEL_PORT. */
-    PDMINTERFACE_HOST_PARALLEL_CONNECTOR,
+/** PDMIHOSTPARALLELPORT    - The Host Parallel port interface.     (Down)   Coupled with PDMINTERFACE_HOST_PARALLEL_CONNECTOR. */
+#define PDMINTERFACE_HOST_PARALLEL_PORT         "ac13e437-cd30-47ac-a271-6120571f3a22"
+/** PDMIHOSTPARALLELCONNECTOR - The Host Parallel connector interface (Up)   Coupled with PDMINTERFACE_HOST_PARALLEL_PORT. */
+#define PDMINTERFACE_HOST_PARALLEL_CONNECTOR    "a03567ca-b29e-4a1b-b2f3-a12435fa2982"
 
-    /** PDMISCSIPORT            - The SCSI command execution port interface (Down) Coupled with PDMINTERFACE_SCSI_CONNECTOR. */
-    PDMINTERFACE_SCSI_PORT,
-    /** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
-    PDMINTERFACE_SCSI_CONNECTOR,
-    /** PDMDDISPLAYVBVACALLBACKS - The Display VBVA callbacks. */
-    PDMINTERFACE_DISPLAY_VBVA_CALLBACKS,
-
-    /** Maximum interface number. */
-    PDMINTERFACE_MAX
-} PDMINTERFACE;
+/** PDMISCSIPORT            - The SCSI command execution port interface (Down) Coupled with PDMINTERFACE_SCSI_CONNECTOR. */
+#define PDMINTERFACE_SCSI_PORT                  "0f894add-714d-4a77-818e-a32fe3586ba4"
+/** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
+#define PDMINTERFACE_SCSI_CONNECTOR             "94465fbd-a2f2-447e-88c9-7366421bfbfe"
+/** PDMDDISPLAYVBVACALLBACKS - The Display VBVA callbacks. */
+#define PDMINTERFACE_DISPLAY_VBVA_CALLBACKS     "b78b81d2-c821-4e66-96ff-dbafa76343a5"
+/** @} */
 
 
 /**
  * PDM Driver Base Interface.
+ *
+ * Everyone implements this.
  */
 typedef struct PDMIBASE
 {
@@ -178,11 +167,13 @@ typedef struct PDMIBASE
      * @returns Pointer to interface.
      * @returns NULL if the interface was not supported by the driver.
      * @param   pInterface          Pointer to this interface structure.
-     * @param   enmInterface        The requested interface identification.
+     * @param   pszIID              The interface ID, a UUID string.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(void *, pfnQueryInterface,(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface));
+    DECLR3CALLBACKMEMBER(void *, pfnQueryInterface,(struct PDMIBASE *pInterface, const char *pszIID));
 } PDMIBASE;
+/** PDMIBASE interface ID. */
+#define PDMIBASE_IID                            "a2299c0d-b709-4551-aa5a-73f59ffbed74"
 
 
 /**

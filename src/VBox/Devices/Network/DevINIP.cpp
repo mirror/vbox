@@ -46,8 +46,9 @@ RT_C_DECLS_BEGIN
 RT_C_DECLS_END
 #include <VBox/pdmdev.h>
 #include <VBox/tm.h>
-#include <iprt/string.h>
 #include <iprt/assert.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "../Builtins.h"
 
@@ -66,12 +67,15 @@ RT_C_DECLS_END
 
 /**
  * Internal Network IP stack device instance data.
+ *
+ * @implements PDMIBASE
+ * @implements PDMINETWORKPORT
  */
 typedef struct DEVINTNETIP
 {
-    /** The base interface. */
+    /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
-    /** The network port this device provides. */
+    /** The network port this device provides (LUN\#0). */
     PDMINETWORKPORT         INetworkPort;
     /** The base interface of the network driver below us. */
     PPDMIBASE               pDrvBase;
@@ -386,27 +390,17 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
 
 
 /**
- * Queries an interface to the device.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
 static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
-                                                  PDMINTERFACE enmInterface)
+                                                  const char *pszIID)
 {
-    PDEVINTNETIP pThis = (PDEVINTNETIP)((uintptr_t)pInterface - RT_OFFSETOF(DEVINTNETIP, IBase));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->IBase;
-        case PDMINTERFACE_NETWORK_PORT:
-            return &pThis->INetworkPort;
-        default:
-            return NULL;
-    }
+    PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, IBase);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
+        return &pThis->INetworkPort;
+    return NULL;
 }
 
 

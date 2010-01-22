@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox audio device:
- * Audio sniffer device
+ * VBox audio device: Audio sniffer device
  */
 
 /*
@@ -107,12 +106,9 @@ DECLCALLBACK(bool) sniffer_run_out (HWVoiceOut *hw, void *pvSamples, unsigned cS
  * Audio Sniffer PDM device.
  */
 
-/* Converts a Audio Sniffer port interface pointer to a Audio Sniffer state pointer. */
-#define IAUDIOSNIFFERPORT_2_AUDIOSNIFFERSTATE(pInterface) ((AUDIOSNIFFERSTATE *)((uintptr_t)pInterface - RT_OFFSETOF(AUDIOSNIFFERSTATE, Port)))
-
 static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio)
 {
-    AUDIOSNIFFERSTATE *pThis = IAUDIOSNIFFERPORT_2_AUDIOSNIFFERSTATE(pInterface);
+    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, Port);
 
     Assert(g_pData == pThis);
 
@@ -123,26 +119,16 @@ static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEn
 }
 
 /**
- * Queries an interface to the device.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    AUDIOSNIFFERSTATE *pThis = (AUDIOSNIFFERSTATE *)((uintptr_t)pInterface - RT_OFFSETOF(AUDIOSNIFFERSTATE, Base));
-
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->Base;
-        case PDMINTERFACE_AUDIO_SNIFFER_PORT:
-            return &pThis->Port;
-        default:
-            return NULL;
-    }
+    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, Base);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->Base;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_AUDIO_SNIFFER_PORT) == 0)
+        return &pThis->Port;
+    return NULL;
 }
 
 /**

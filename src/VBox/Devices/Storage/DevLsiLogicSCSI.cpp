@@ -29,9 +29,10 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #ifdef IN_RING3
-# include <iprt/param.h>
-# include <iprt/alloc.h>
 # include <iprt/cache.h>
+# include <iprt/mem.h>
+# include <iprt/param.h>
+# include <iprt/uuid.h>
 #endif
 
 #include "DevLsiLogicSCSI.h"
@@ -62,8 +63,12 @@ typedef struct LSILOGICSCSIREPLY
     MptReplyUnion Reply;
 } LSILOGICSCSIREPLY, *PLSILOGICSCSIREPLY;
 
-/*
+/**
  * State of a device attached to the buslogic host adapter.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMISCSIPORT
+ * @implements  PDMILEDPORTS
  */
 typedef struct LSILOGICDEVICE
 {
@@ -265,11 +270,11 @@ typedef struct LSILOGICSCSI
     VBOXSCSI                       VBoxSCSI;
     /** Cache for allocated tasks. */
     R3PTRTYPE(PRTOBJCACHE)         pTaskCache;
-    /** The base interface */
+    /** Status LUN: The base interface. */
     PDMIBASE                       IBase;
-    /** Status Port - Leds interface. */
+    /** Status LUN: Leds interface. */
     PDMILEDPORTS                   ILeds;
-    /** Partner of ILeds. */
+    /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)  pLedsConnector;
 
     R3PTRTYPE(PMptConfigurationPagesSupported) pConfigurationPages;
@@ -4187,27 +4192,21 @@ static DECLCALLBACK(int) lsilogicDeviceQueryStatusLed(PPDMILEDPORTS pInterface, 
     return VERR_PDM_LUN_NOT_FOUND;
 }
 
+
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to LSILOGICDEVICE::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) lsilogicDeviceQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) lsilogicDeviceQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PLSILOGICDEVICE pDevice = PDMIBASE_2_PLSILOGICDEVICE(pInterface);
 
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_SCSI_PORT:
-            return &pDevice->ISCSIPort;
-        case PDMINTERFACE_LED_PORTS:
-            return &pDevice->ILed;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDevice->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_SCSI_PORT) == 0)
+        return &pDevice->ISCSIPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pDevice->ILed;
+    return NULL;
 }
 
 /**
@@ -4231,25 +4230,16 @@ static DECLCALLBACK(int) lsilogicStatusQueryStatusLed(PPDMILEDPORTS pInterface, 
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to ATADevState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) lsilogicStatusQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) lsilogicStatusQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PLSILOGICSCSI pLsiLogic = PDMIBASE_2_PLSILOGICSCSI(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pLsiLogic->IBase;
-        case PDMINTERFACE_LED_PORTS:
-            return &pLsiLogic->ILeds;
-        default:
-            return NULL;
-    }
+    PLSILOGICSCSI pThis = PDMIBASE_2_PLSILOGICSCSI(pInterface);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 /**

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox stream I/O devices:
- * Generic char driver
+ * VBox stream I/O devices: Generic char driver
  */
 
 /*
@@ -31,20 +30,29 @@
 #include <iprt/assert.h>
 #include <iprt/stream.h>
 #include <iprt/semaphore.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
 
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** Size of the send fifo queue (in bytes) */
 #define CHAR_MAX_SEND_QUEUE             0x80
 #define CHAR_MAX_SEND_QUEUE_MASK        0x7f
 
+/** Converts a pointer to DRVCHAR::IChar to a PDRVCHAR. */
+#define PDMICHAR_2_DRVCHAR(pInterface) ( (PDRVCHAR)((uintptr_t)pInterface - RT_OFFSETOF(DRVCHAR, IChar)) )
+
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-
 /**
  * Char driver instance data.
+ *
+ * @implements PDMICHAR
  */
 typedef struct DRVCHAR
 {
@@ -78,33 +86,23 @@ typedef struct DRVCHAR
 AssertCompileMemberAlignment(DRVCHAR, StatBytesRead, 8);
 
 
-/** Converts a pointer to DRVCHAR::IChar to a PDRVCHAR. */
-#define PDMICHAR_2_DRVCHAR(pInterface) ( (PDRVCHAR)((uintptr_t)pInterface - RT_OFFSETOF(DRVCHAR, IChar)) )
 
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVCHAR    pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_CHAR:
-            return &pThis->IChar;
-        default:
-            return NULL;
-    }
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_CHAR) == 0)
+        return &pThis->IChar;
+    return NULL;
 }
 
 

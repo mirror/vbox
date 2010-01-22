@@ -114,7 +114,15 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-typedef struct ATADevState {
+/**
+ * The state of an ATA device.
+ *
+ * @implements PDMIBASE
+ * @implements PDMIBLOCKPORT
+ * @implements PDMIMOUNTNOTIFY
+ */
+typedef struct ATADevState
+{
     /** Flag indicating whether the current command uses LBA48 mode. */
     bool fLBA48;
     /** Flag indicating whether this drive implements the ATAPI command set. */
@@ -453,17 +461,24 @@ typedef enum CHIPSET
     CHIPSET_ICH6 = 2
 } CHIPSET;
 
-typedef struct PCIATAState {
+/**
+ * The state of the ATA PCI device.
+ *
+ * @extends     PCIDEVICE
+ * @implements  PDMILEDPORTS
+ */
+typedef struct PCIATAState
+{
     PCIDEVICE           dev;
     /** The controllers. */
     ATACONTROLLER       aCts[2];
     /** Pointer to device instance. */
     PPDMDEVINSR3        pDevIns;
-    /** Status Port - Base interface. */
+    /** Status LUN: Base interface. */
     PDMIBASE            IBase;
-    /** Status Port - Leds interface. */
+    /** Status LUN: Leds interface. */
     PDMILEDPORTS        ILeds;
-    /** Partner of ILeds. */
+    /** Status LUN: Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)   pLedsConnector;
     /** Flag whether GC is enabled. */
     bool                fGCEnabled;
@@ -5213,25 +5228,16 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
 /* -=-=-=-=-=- PCIATAState::IBase  -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to ATADevState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) ataStatus_QueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) ataStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PCIATAState *pThis = PDMIBASE_2_PCIATASTATE(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->IBase;
-        case PDMINTERFACE_LED_PORTS:
-            return &pThis->ILeds;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 
@@ -5267,27 +5273,18 @@ static DECLCALLBACK(int) ataStatus_QueryStatusLed(PPDMILEDPORTS pInterface, unsi
 /* -=-=-=-=-=- ATADevState::IBase   -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to ATADevState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     ATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pIf->IBase;
-        case PDMINTERFACE_BLOCK_PORT:
-            return &pIf->IPort;
-        case PDMINTERFACE_MOUNT_NOTIFY:
-            return &pIf->IMountNotify;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pIf->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
+        return &pIf->IPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
+        return &pIf->IMountNotify;
+    return NULL;
 }
 
 #endif /* IN_RING3 */

@@ -1,7 +1,6 @@
+/* $Id$ */
 /** @file
- *
- * VBox storage devices:
- * ISO image media driver
+ * VBox storage devices: ISO image media driver
  */
 
 /*
@@ -27,15 +26,15 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
-
-#include <string.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-
 /** Converts a pointer to MEDIAISO::IMedia to a PRDVMEDIAISO. */
 #define PDMIMEDIA_2_DRVMEDIAISO(pInterface) ( (PDRVMEDIAISO)((uintptr_t)pInterface - RT_OFFSETOF(DRVMEDIAISO, IMedia)) )
 
@@ -52,6 +51,8 @@
 *******************************************************************************/
 /**
  * Block driver instance data.
+ *
+ * @implements PDMIMEDIA
  */
 typedef struct DRVMEDIAISO
 {
@@ -81,7 +82,7 @@ static DECLCALLBACK(int) drvMediaISOBiosSetPCHSGeometry(PPDMIMEDIA pInterface, P
 static DECLCALLBACK(int) drvMediaISOBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry);
 static DECLCALLBACK(int) drvMediaISOBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry);
 
-static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, const char *pszIID);
 
 
 
@@ -285,27 +286,17 @@ static DECLCALLBACK(bool) drvMediaISOIsReadOnly(PPDMIMEDIA pInterface)
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
     PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_MEDIA:
-            return &pThis->IMedia;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MEDIA) == 0)
+        return &pThis->IMedia;
+    return NULL;
 }
 
 

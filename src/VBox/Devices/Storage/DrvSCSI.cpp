@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
- *
- * VBox storage drivers:
- * Generic SCSI command parser and execution driver
+ * VBox storage drivers: Generic SCSI command parser and execution driver
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,15 +29,20 @@
 #include <VBox/pdmthread.h>
 #include <VBox/scsi.h>
 #include <iprt/assert.h>
-#include <iprt/string.h>
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/req.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
 /**
  * SCSI driver instance data.
+ *
+ * @implements  PDMISCSICONNECTOR
+ * @implements  PDMIBLOCKASYNCPORT
+ * @implements  PDMIMOUNTNOTIFY
  */
 typedef struct DRVSCSI
 {
@@ -64,15 +67,16 @@ typedef struct DRVSCSI
     PDMISCSICONNECTOR       ISCSIConnector;
     /** The block port interface. */
     PDMIBLOCKPORT           IPort;
+#if 0 /* these interfaces aren't implemented */
     /** The optional block async port interface. */
     PDMIBLOCKASYNCPORT      IPortAsync;
     /** The mount notify interface. */
     PDMIMOUNTNOTIFY         IMountNotify;
-    /** The status LED state for this drive.
-     *  used in case the device doesn't has a Led interface
-     *  so we can use this to avoid if checks later on. */
+#endif
+    /** Fallback status LED state for this drive.
+     * This is used in case the device doesn't has a LED interface. */
     PDMLED                  Led;
-    /** pointer to the Led to use. */
+    /** Pointer to the status LED for this drive. */
     PPDMLED                 pLed;
 
     /** Device type. */
@@ -792,22 +796,21 @@ static DECLCALLBACK(int) drvscsiRequestSend(PPDMISCSICONNECTOR pInterface, PPDMS
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
-/** @copydoc PDMIBASE::pfnQueryInterface. */
-static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVSCSI    pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_SCSI_CONNECTOR:
-            return &pThis->ISCSIConnector;
-        case PDMINTERFACE_BLOCK_PORT:
-            return &pThis->IPort;
-        default:
-            return NULL;
-    }
+    PDRVSCSI    pThis   = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_SCSI_CONNECTOR) == 0)
+        return &pThis->ISCSIConnector;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
+        return &pThis->IPort;
+    return NULL;
 }
 
 /**

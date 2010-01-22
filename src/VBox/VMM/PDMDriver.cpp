@@ -395,6 +395,8 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
     Assert(!pDrvAbove || !pDrvAbove->Internal.s.pDown);
     Assert(!pDrvAbove || !pDrvAbove->pDownBase);
 
+    Assert(pBaseInterface->pfnQueryInterface(pBaseInterface, PDMIBASE_IID) == pBaseInterface);
+
     /*
      * Find the driver.
      */
@@ -491,6 +493,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     if (RT_SUCCESS(rc))
                     {
                         AssertPtr(pNew->IBase.pfnQueryInterface);
+                        Assert(pNew->IBase.pfnQueryInterface(&pNew->IBase, PDMIBASE_IID) == &pNew->IBase);
 
                         /* Success! */
                         *ppBaseInterface = &pNew->IBase;

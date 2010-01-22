@@ -52,6 +52,7 @@
 #include "vl_vbox.h"
 #include <VBox/pdmdev.h>
 #include <iprt/assert.h>
+#include <iprt/uuid.h>
 
 #include "../Builtins.h"
 
@@ -220,6 +221,9 @@ typedef struct KBDState {
     PDMCRITSECT                 CritSect;
     /**
      * Keyboard port - LUN#0.
+     *
+     * @implements  PDMIBASE
+     * @implements  PDMIKEYBOARDPORT
      */
     struct
     {
@@ -236,6 +240,9 @@ typedef struct KBDState {
 
     /**
      * Mouse port - LUN#1.
+     *
+     * @implements  PDMIBASE
+     * @implements  PDMIMOUSEPORT
      */
     struct
     {
@@ -1348,32 +1355,20 @@ static DECLCALLBACK(void)  kbdReset(PPDMDEVINS pDevIns)
 /* -=-=-=-=-=- Keyboard: IBase  -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to the keyboard port base interface (KBDState::Keyboard.Base).
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    KBDState *pThis = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Keyboard.Base));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->Keyboard.Base;
-        case PDMINTERFACE_KEYBOARD_PORT:
-            return &pThis->Keyboard.Port;
-        default:
-            return NULL;
-    }
+    KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Keyboard.Base);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->Keyboard.Base;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_PORT) == 0)
+        return &pThis->Keyboard.Port;
+    return NULL;
 }
 
 
 /* -=-=-=-=-=- Keyboard: IKeyboardPort  -=-=-=-=-=- */
-
-/** Converts a keyboard port interface pointer to a keyboard state pointer. */
-#define IKEYBOARDPORT_2_KBDSTATE(pInterface) ( (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Keyboard.Port)) )
 
 /**
  * Keyboard event handler.
@@ -1384,10 +1379,12 @@ static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, PDM
  */
 static DECLCALLBACK(int) kbdKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode)
 {
-    KBDState *pThis = IKEYBOARDPORT_2_KBDSTATE(pInterface);
+    KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Keyboard.Port);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
+
     pc_kbd_put_keycode(pThis, u8KeyCode);
+
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -1396,32 +1393,20 @@ static DECLCALLBACK(int) kbdKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, uint8
 /* -=-=-=-=-=- Mouse: IBase  -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to the mouse port base interface (KBDState::Mouse.Base).
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    KBDState *pThis = (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Mouse.Base));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->Mouse.Base;
-        case PDMINTERFACE_MOUSE_PORT:
-            return &pThis->Mouse.Port;
-        default:
-            return NULL;
-    }
+    KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.Base);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->Mouse.Base;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_PORT) == 0)
+        return &pThis->Mouse.Port;
+    return NULL;
 }
 
 
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
-
-/** Converts a mouse port interface pointer to a keyboard state pointer. */
-#define IMOUSEPORT_2_KBDSTATE(pInterface) ( (KBDState *)((uintptr_t)pInterface -  RT_OFFSETOF(KBDState, Mouse.Port)) )
 
 /**
  * Mouse event handler.
@@ -1435,10 +1420,12 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, PDMINT
  */
 static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
 {
-    KBDState *pThis = IMOUSEPORT_2_KBDSTATE(pInterface);
+    KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.Port);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
+
     pc_kbd_mouse_event(pThis, i32DeltaX, i32DeltaY, i32DeltaZ, i32DeltaW, fButtonStates);
+
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
