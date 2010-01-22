@@ -74,7 +74,7 @@ VBGLR3DECL(int) VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, 
         /* did we get the right event? */
         if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_CPU_HOTPLUG)
         {
-            VMMDevGetCpuHotplugRequest Req;
+            VMMDevGetCpuHotPlugRequest Req;
 
             /* get the seamless change request */
             vmmdevInitRequest(&Req.header, VMMDevReq_GetCpuHotPlugRequest);
