@@ -60,7 +60,7 @@ typedef struct DRVMAINDISPLAY
     PDMIDISPLAYCONNECTOR        Connector;
 #if defined(VBOX_WITH_VIDEOHWACCEL)
     /** VBVA callbacks */
-    PPDMDDISPLAYVBVACALLBACKS   pVBVACallbacks;
+    PPDMIDISPLAYVBVACALLBACKS   pVBVACallbacks;
 #endif
 } DRVMAINDISPLAY, *PDRVMAINDISPLAY;
 
@@ -3370,7 +3370,7 @@ DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, const cha
     PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_DISPLAY_CONNECTOR) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIDISPLAYCONNECTOR_IID) == 0)
         return &pDrv->Connector;
     return NULL;
 }
@@ -3448,14 +3448,14 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     /*
      * Get the IDisplayPort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIDISPLAYPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_DISPLAY_PORT);
+    pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIDISPLAYPORT);
     if (!pData->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No display port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
 #if defined(VBOX_WITH_VIDEOHWACCEL)
-    pData->pVBVACallbacks = (PPDMDDISPLAYVBVACALLBACKS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_DISPLAY_VBVA_CALLBACKS);
+    pData->pVBVACallbacks = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIDISPLAYVBVACALLBACKS);
     if (!pData->pVBVACallbacks)
     {
         AssertMsgFailed(("Configuration error: No VBVA callback interface above!\n"));

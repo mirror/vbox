@@ -86,9 +86,9 @@ static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, con
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_CONNECTOR) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDCONNECTOR_IID) == 0)
         return &pThis->Connector;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_PORT) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDPORT_IID) == 0)
         return &pThis->Port;
     return NULL;
 }
@@ -261,7 +261,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Get the IKeyboardPort interface of the above driver/device.
      */
-    pDrv->pUpPort = (PPDMIKEYBOARDPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_KEYBOARD_PORT);
+    pDrv->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIKEYBOARDPORT);
     if (!pDrv->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No keyboard port interface above!\n"));
@@ -278,7 +278,7 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
         return rc;
     }
-    pDrv->pDownConnector = (PPDMIKEYBOARDCONNECTOR)pDownBase->pfnQueryInterface(pDownBase, PDMINTERFACE_KEYBOARD_CONNECTOR);
+    pDrv->pDownConnector = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIKEYBOARDCONNECTOR);
     if (!pDrv->pDownConnector)
     {
         AssertMsgFailed(("Configuration error: No keyboard connector interface below!\n"));

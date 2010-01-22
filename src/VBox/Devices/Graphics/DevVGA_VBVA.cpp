@@ -1176,14 +1176,14 @@ int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return vbvaVHWADisable(PDMINS_2_DATA(pDevIns, PVGASTATE));
 }
 
-#define PPDMDDISPLAYVBVACALLBACKS_2_PVGASTATE(_pcb) ( (PVGASTATE)((uint8_t *)(_pcb) - RT_OFFSETOF(VGASTATE, VBVACallbacks)) )
+#define PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(_pcb) ( (PVGASTATE)((uint8_t *)(_pcb) - RT_OFFSETOF(VGASTATE, VBVACallbacks)) )
 
-int vbvaVHWACommandCompleteAsynch(PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
+int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd)
 {
     int rc;
     if((pCmd->Flags & VBOXVHWACMD_FLAG_HH_CMD) == 0)
     {
-        PVGASTATE pVGAState = PPDMDDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
+        PVGASTATE pVGAState = PPDMIDISPLAYVBVACALLBACKS_2_PVGASTATE(pInterface);
         PHGSMIINSTANCE pIns = pVGAState->pHGSMI;
         VBVAHOSTCMD *pHostCmd;
     //    Assert(0);

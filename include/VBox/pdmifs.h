@@ -45,18 +45,6 @@ RT_C_DECLS_BEGIN
  * @todo Convert all these to _IID.
  * @{
  */
-/** PDMIKEYBOARDPORT        - The keyboard port interface.          (Down)  Coupled with PDMINTERFACE_KEYBOARD_CONNECTOR. */
-#define PDMINTERFACE_KEYBOARD_PORT              "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"
-/** PDMIKEYBOARDCONNECTOR   - The keyboard connector interface.     (Up)    Coupled with PDMINTERFACE_KEYBOARD_PORT. */
-#define PDMINTERFACE_KEYBOARD_CONNECTOR         "db3f7bd5-953e-436f-9f8e-077905a92d82"
-/** PDMIDISPLAYPORT         - The display port interface.           (Down)  Coupled with PDMINTERFACE_DISPLAY_CONNECTOR. */
-#define PDMINTERFACE_DISPLAY_PORT               "48bbcb6b-ba43-449b-9248-b8bb09929771"
-/** PDMIDISPLAYCONNECTOR    - The display connector interface.      (Up)    Coupled with PDMINTERFACE_DISPLAY_PORT. */
-#define PDMINTERFACE_DISPLAY_CONNECTOR          "c7a1b36d-8dfc-421d-b71f-3a0eeaf733e6"
-/** PDMICHARPORT            - The char notify interface.            (Down)  Coupled with PDMINTERFACE_CHAR. */
-#define PDMINTERFACE_CHAR_PORT                  "22769834-ea8b-4a6d-ade1-213dcdbd1228"
-/** PDMICHAR                - The char driver interface.            (Up)    Coupled with PDMINTERFACE_CHAR_PORT. */
-#define PDMINTERFACE_CHAR                       "4ad5c190-b408-4cef-926f-fbffce0dc5cc"
 /** PDMISTREAM              - The stream driver interface           (Up)    No coupling.
  * Used by a char driver to implement PDMINTERFACE_CHAR. */
 #define PDMINTERFACE_STREAM                     "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"
@@ -146,8 +134,6 @@ RT_C_DECLS_BEGIN
 #define PDMINTERFACE_SCSI_PORT                  "0f894add-714d-4a77-818e-a32fe3586ba4"
 /** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
 #define PDMINTERFACE_SCSI_CONNECTOR             "94465fbd-a2f2-447e-88c9-7366421bfbfe"
-/** PDMDDISPLAYVBVACALLBACKS - The Display VBVA callbacks. */
-#define PDMINTERFACE_DISPLAY_VBVA_CALLBACKS     "b78b81d2-c821-4e66-96ff-dbafa76343a5"
 /** @} */
 
 
@@ -249,7 +235,7 @@ typedef PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
 /** Pointer to a keyboard port interface. */
 typedef struct PDMIKEYBOARDPORT *PPDMIKEYBOARDPORT;
 /**
- * Keyboard port interface.
+ * Keyboard port interface (down).
  * Pair with PDMIKEYBOARDCONNECTOR.
  */
 typedef struct PDMIKEYBOARDPORT
@@ -266,6 +252,9 @@ typedef struct PDMIKEYBOARDPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode));
 } PDMIKEYBOARDPORT;
+/** PDMIKEYBOARDPORT interface ID. */
+#define PDMIKEYBOARDPORT_IID                    "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"
+
 
 /**
  * Keyboard LEDs.
@@ -284,10 +273,8 @@ typedef enum PDMKEYBLEDS
 
 /** Pointer to keyboard connector interface. */
 typedef struct PDMIKEYBOARDCONNECTOR *PPDMIKEYBOARDCONNECTOR;
-
-
 /**
- * Keyboard connector interface.
+ * Keyboard connector interface (up).
  * Pair with PDMIKEYBOARDPORT
  */
 typedef struct PDMIKEYBOARDCONNECTOR
@@ -301,13 +288,15 @@ typedef struct PDMIKEYBOARDCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnLedStatusChange,(PPDMIKEYBOARDCONNECTOR pInterface, PDMKEYBLEDS enmLeds));
 
 } PDMIKEYBOARDCONNECTOR;
+/** PDMIKEYBOARDCONNECTOR interface ID. */
+#define PDMIKEYBOARDCONNECTOR_IID               "db3f7bd5-953e-436f-9f8e-077905a92d82"
 
 
 
 /** Pointer to a display port interface. */
 typedef struct PDMIDISPLAYPORT *PPDMIDISPLAYPORT;
 /**
- * Display port interface.
+ * Display port interface (down).
  * Pair with PDMIDISPLAYCONNECTOR.
  */
 typedef struct PDMIDISPLAYPORT
@@ -435,6 +424,8 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 
 } PDMIDISPLAYPORT;
+/** PDMIDISPLAYPORT interface ID. */
+#define PDMIDISPLAYPORT_IID                     "48bbcb6b-ba43-449b-9248-b8bb09929771"
 
 
 typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
@@ -446,7 +437,7 @@ typedef struct VBVAHOSTFLAGS *PVBVAHOSTFLAGS;
 /** Pointer to a display connector interface. */
 typedef struct PDMIDISPLAYCONNECTOR *PPDMIDISPLAYCONNECTOR;
 /**
- * Display connector interface.
+ * Display connector interface (up).
  * Pair with PDMIDISPLAYPORT.
  */
 typedef struct PDMIDISPLAYCONNECTOR
@@ -660,7 +651,8 @@ typedef struct PDMIDISPLAYCONNECTOR
     uint32_t        cy;
     /** @} */
 } PDMIDISPLAYCONNECTOR;
-
+/** PDMIDISPLAYCONNECTOR interface ID. */
+#define PDMIDISPLAYCONNECTOR_IID                "c7a1b36d-8dfc-421d-b71f-3a0eeaf733e6"
 
 
 /**
@@ -1424,19 +1416,11 @@ typedef struct PDMIMEDIAASYNC
 } PDMIMEDIAASYNC;
 
 
-/** @name Bit mask definitions for status line type
- * @{ */
-#define PDM_ICHAR_STATUS_LINES_DCD  RT_BIT(0)
-#define PDM_ICHAR_STATUS_LINES_RI   RT_BIT(1)
-#define PDM_ICHAR_STATUS_LINES_DSR  RT_BIT(2)
-#define PDM_ICHAR_STATUS_LINES_CTS  RT_BIT(3)
-/** @} */
-
 /** Pointer to a char port interface. */
 typedef struct PDMICHARPORT *PPDMICHARPORT;
 /**
- * Char port interface.
- * Pair with PDMICHAR.
+ * Char port interface (down).
+ * Pair with PDMICHARCONNECTOR.
  */
 typedef struct PDMICHARPORT
 {
@@ -1470,15 +1454,25 @@ typedef struct PDMICHARPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyBreak,(PPDMICHARPORT pInterface));
 } PDMICHARPORT;
+/** PDMICHARPORT interface ID. */
+#define PDMICHARPORT_IID                        "22769834-ea8b-4a6d-ade1-213dcdbd1228"
+
+/** @name Bit mask definitions for status line type.
+ * @{ */
+#define PDMICHARPORT_STATUS_LINES_DCD   RT_BIT(0)
+#define PDMICHARPORT_STATUS_LINES_RI    RT_BIT(1)
+#define PDMICHARPORT_STATUS_LINES_DSR   RT_BIT(2)
+#define PDMICHARPORT_STATUS_LINES_CTS   RT_BIT(3)
+/** @} */
 
 
 /** Pointer to a char interface. */
-typedef struct PDMICHAR *PPDMICHAR;
+typedef struct PDMICHARCONNECTOR *PPDMICHARCONNECTOR;
 /**
- * Char interface.
+ * Char connector interface (up).
  * Pair with PDMICHARPORT.
  */
-typedef struct PDMICHAR
+typedef struct PDMICHARCONNECTOR
 {
     /**
      * Write bits.
@@ -1489,7 +1483,7 @@ typedef struct PDMICHAR
      * @param   cbWrite         Number of bytes to write.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite));
+    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite));
 
     /**
      * Set device parameters.
@@ -1502,7 +1496,7 @@ typedef struct PDMICHAR
      * @param   cStopBits       Number of stop bits.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits));
+    DECLR3CALLBACKMEMBER(int, pfnSetParameters,(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits));
 
     /**
      * Set the state of the modem lines.
@@ -1513,7 +1507,7 @@ typedef struct PDMICHAR
      * @param   fDataTerminalReady  Set to true to make the Data Terminal Ready line active otherwise 0.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHAR pInterface, bool fRequestToSend, bool fDataTerminalReady));
+    DECLR3CALLBACKMEMBER(int, pfnSetModemLines,(PPDMICHARCONNECTOR pInterface, bool fRequestToSend, bool fDataTerminalReady));
 
     /**
      * Sets the TD line into break condition.
@@ -1523,15 +1517,17 @@ typedef struct PDMICHAR
      * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetBreak,(PPDMICHAR pInterface, bool fBreak));
-} PDMICHAR;
+    DECLR3CALLBACKMEMBER(int, pfnSetBreak,(PPDMICHARCONNECTOR pInterface, bool fBreak));
+} PDMICHARCONNECTOR;
+/** PDMICHARCONNECTOR interface ID. */
+#define PDMICHARCONNECTOR_IID                   "4ad5c190-b408-4cef-926f-fbffce0dc5cc"
 
 
 /** Pointer to a stream interface. */
 typedef struct PDMISTREAM *PPDMISTREAM;
 /**
  * Stream interface.
- * Makes up the foundation for PDMICHAR.
+ * Makes up the foundation for PDMICHARCONNECTOR.
  */
 typedef struct PDMISTREAM
 {
@@ -2584,9 +2580,9 @@ typedef struct PDMISCSIPORT
 
 } PDMISCSIPORT;
 
+
 /** Pointer to a SCSI connector interface. */
 typedef struct PDMISCSICONNECTOR *PPDMISCSICONNECTOR;
-
 /**
  * SCSI connector interface.
  * Pair with PDMISCSIPORT.
@@ -2605,11 +2601,13 @@ typedef struct PDMISCSICONNECTOR
 
 } PDMISCSICONNECTOR;
 
-typedef struct PDMDDISPLAYVBVACALLBACKS *PPDMDDISPLAYVBVACALLBACKS;
+
+/** Pointer to a display VBVA callbacks interface. */
+typedef struct PDMIDISPLAYVBVACALLBACKS *PPDMIDISPLAYVBVACALLBACKS;
 /**
- * Display VBVA callbacks.
+ * Display VBVA callbacks interface (up).
  */
-typedef struct PDMDDISPLAYVBVACALLBACKS
+typedef struct PDMIDISPLAYVBVACALLBACKS
 {
 
     /**
@@ -2620,13 +2618,15 @@ typedef struct PDMDDISPLAYVBVACALLBACKS
      * @param   pInterface          Pointer to this interface.
      * @param   pCmd                The Video HW Acceleration Command that was
      *                              completed.
-     * @todo r=bird: if asynch mean asyncronous; then
+     * @todo r=bird: if asynch means asyncronous; then
      *                   s/pfnVHWACommandCompleteAsynch/pfnVHWACommandCompleteAsync/;
      *               fi
      */
-    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMDDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
+    DECLR3CALLBACKMEMBER(int, pfnVHWACommandCompleteAsynch, (PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHWACMD pCmd));
 
-} PDMDDISPLAYVBVACALLBACKS;
+} PDMIDISPLAYVBVACALLBACKS;
+/** PDMIDISPLAYVBVACALLBACKS  */
+#define PDMIDISPLAYVBVACALLBACKS_IID     "b78b81d2-c821-4e66-96ff-dbafa76343a5"
 
 /** @} */
 

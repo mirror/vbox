@@ -99,7 +99,7 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 
 /* -=-=-=-=- IHostDeviceConnector -=-=-=-=- */
 
-/** @copydoc PDMICHAR::pfnWrite */
+/** @copydoc PDMICHARCONNECTOR::pfnWrite */
 static DECLCALLBACK(int) drvHostParallelWrite(PPDMIHOSTPARALLELCONNECTOR pInterface, const void *pvBuf, size_t *cbWrite)
 {
     PDRVHOSTPARALLEL pThis = PDMIHOSTPARALLELCONNECTOR_2_DRVHOSTPARALLEL(pInterface);

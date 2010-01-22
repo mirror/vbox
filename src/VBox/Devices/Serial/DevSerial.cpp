@@ -145,7 +145,7 @@ struct SerialState
     /** Pointer to the attached base driver. */
     R3PTRTYPE(PPDMIBASE)            pDrvBase;
     /** Pointer to the attached character driver. */
-    R3PTRTYPE(PPDMICHAR)            pDrvChar;
+    R3PTRTYPE(PPDMICHARCONNECTOR)            pDrvChar;
 
     uint16_t                        divider;
     uint16_t                        auAlignment[3];
@@ -479,13 +479,13 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
     PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
 
     /* Set new states. */
-    if (newStatusLines & PDM_ICHAR_STATUS_LINES_DCD)
+    if (newStatusLines & PDMICHARPORT_STATUS_LINES_DCD)
         newMsr |= UART_MSR_DCD;
-    if (newStatusLines & PDM_ICHAR_STATUS_LINES_RI)
+    if (newStatusLines & PDMICHARPORT_STATUS_LINES_RI)
         newMsr |= UART_MSR_RI;
-    if (newStatusLines & PDM_ICHAR_STATUS_LINES_DSR)
+    if (newStatusLines & PDMICHARPORT_STATUS_LINES_DSR)
         newMsr |= UART_MSR_DSR;
-    if (newStatusLines & PDM_ICHAR_STATUS_LINES_CTS)
+    if (newStatusLines & PDMICHARPORT_STATUS_LINES_CTS)
         newMsr |= UART_MSR_CTS;
 
     /* Compare the old and the new states and set the delta bits accordingly. */
@@ -739,7 +739,7 @@ static DECLCALLBACK(void *) serialQueryInterface(PPDMIBASE pInterface, const cha
     SerialState *pThis = PDMIBASE_2_SERIALSTATE(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_CHAR_PORT) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMICHARPORT_IID) == 0)
         return &pThis->ICharPort;
     return NULL;
 }
@@ -952,7 +952,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Serial Char");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvChar = (PDMICHAR *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_CHAR);
+        pThis->pDrvChar = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMICHARCONNECTOR);
         if (!pThis->pDrvChar)
         {
             AssertLogRelMsgFailed(("Configuration error: instance %d has no char interface!\n", iInstance));
