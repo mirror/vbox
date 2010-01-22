@@ -94,7 +94,7 @@
 /**
  * Char driver instance data.
  *
- * @implements  PDMICHAR
+ * @implements  PDMICHARCONNECTOR
  */
 typedef struct DRVHOSTSERIAL
 {
@@ -103,7 +103,7 @@ typedef struct DRVHOSTSERIAL
     /** Pointer to the char port interface of the driver/device above us. */
     PPDMICHARPORT               pDrvCharPort;
     /** Our char interface. */
-    PDMICHAR                    IChar;
+    PDMICHARCONNECTOR           ICharConnector;
     /** Receive thread. */
     PPDMTHREAD                  pRecvThread;
     /** Send thread. */
@@ -164,8 +164,8 @@ typedef struct DRVHOSTSERIAL
 } DRVHOSTSERIAL, *PDRVHOSTSERIAL;
 
 
-/** Converts a pointer to DRVCHAR::IChar to a PDRVHOSTSERIAL. */
-#define PDMICHAR_2_DRVHOSTSERIAL(pInterface) ( (PDRVHOSTSERIAL)((uintptr_t)pInterface - RT_OFFSETOF(DRVHOSTSERIAL, IChar)) )
+/** Converts a pointer to DRVCHAR::ICharConnector to a PDRVHOSTSERIAL. */
+#define PDMICHAR_2_DRVHOSTSERIAL(pInterface) RT_FROM_MEMBER(pInterface, DRVHOSTSERIAL, ICharConnector)
 
 
 /* -=-=-=-=- IBase -=-=-=-=- */
@@ -180,16 +180,16 @@ static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, co
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_CHAR) == 0)
-        return &pThis->IChar;
+    if (RTUuidCompare2Strs(pszIID, PDMICHARCONNECTOR_IID) == 0)
+        return &pThis->ICharConnector;
     return NULL;
 }
 
 
-/* -=-=-=-=- IChar -=-=-=-=- */
+/* -=-=-=-=- ICharConnector -=-=-=-=- */
 
-/** @copydoc PDMICHAR::pfnWrite */
-static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite)
+/** @copydoc PDMICHARCONNECTOR::pfnWrite */
+static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
     const uint8_t *pbBuffer = (const uint8_t *)pvBuf;
@@ -236,7 +236,7 @@ static DECLCALLBACK(int) drvHostSerialWrite(PPDMICHAR pInterface, const void *pv
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
+static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
 #if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
@@ -858,13 +858,13 @@ static DECLCALLBACK(int) drvHostSerialRecvThread(PPDMDRVINS pDrvIns, PPDMTHREAD 
                 if (GetCommModemStatus(pThis->hDeviceFile, &dwNewStatusLinesState))
                 {
                     if (dwNewStatusLinesState & MS_RLSD_ON)
-                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_DCD;
+                        uNewStatusLinesState |= PDMICHARPORT_STATUS_LINES_DCD;
                     if (dwNewStatusLinesState & MS_RING_ON)
-                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_RI;
+                        uNewStatusLinesState |= PDMICHARPORT_STATUS_LINES_RI;
                     if (dwNewStatusLinesState & MS_DSR_ON)
-                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_DSR;
+                        uNewStatusLinesState |= PDMICHARPORT_STATUS_LINES_DSR;
                     if (dwNewStatusLinesState & MS_CTS_ON)
-                        uNewStatusLinesState |= PDM_ICHAR_STATUS_LINES_CTS;
+                        uNewStatusLinesState |= PDMICHARPORT_STATUS_LINES_CTS;
                     rc = pThis->pDrvCharPort->pfnNotifyStatusLinesChanged(pThis->pDrvCharPort, uNewStatusLinesState);
                     if (RT_FAILURE(rc))
                     {
@@ -1003,13 +1003,13 @@ ioctl_error:
 # endif /* !RT_OS_LINUX */
 
         if (statusLines & TIOCM_CAR)
-            newStatusLine |= PDM_ICHAR_STATUS_LINES_DCD;
+            newStatusLine |= PDMICHARPORT_STATUS_LINES_DCD;
         if (statusLines & TIOCM_RNG)
-            newStatusLine |= PDM_ICHAR_STATUS_LINES_RI;
+            newStatusLine |= PDMICHARPORT_STATUS_LINES_RI;
         if (statusLines & TIOCM_LE)
-            newStatusLine |= PDM_ICHAR_STATUS_LINES_DSR;
+            newStatusLine |= PDMICHARPORT_STATUS_LINES_DSR;
         if (statusLines & TIOCM_CTS)
-            newStatusLine |= PDM_ICHAR_STATUS_LINES_CTS;
+            newStatusLine |= PDMICHARPORT_STATUS_LINES_CTS;
         rc = pThis->pDrvCharPort->pfnNotifyStatusLinesChanged(pThis->pDrvCharPort, newStatusLine);
     }
 
@@ -1135,7 +1135,7 @@ ioctl_error:
  * @param RequestToSend     Set to true if this control line should be made active.
  * @param DataTerminalReady Set to true if this control line should be made active.
  */
-static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool RequestToSend, bool DataTerminalReady)
+static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHARCONNECTOR pInterface, bool RequestToSend, bool DataTerminalReady)
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
 
@@ -1181,7 +1181,7 @@ static DECLCALLBACK(int) drvHostSerialSetModemLines(PPDMICHAR pInterface, bool R
  * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
  * @thread  Any thread.
  */
-static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHAR pInterface, bool fBreak)
+static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHARCONNECTOR pInterface, bool fBreak)
 {
     PDRVHOSTSERIAL pThis = PDMICHAR_2_DRVHOSTSERIAL(pInterface);
 
@@ -1225,12 +1225,12 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pThis->WakeupPipeW = NIL_RTFILE;
 #endif
     /* IBase. */
-    pDrvIns->IBase.pfnQueryInterface = drvHostSerialQueryInterface;
-    /* IChar. */
-    pThis->IChar.pfnWrite            = drvHostSerialWrite;
-    pThis->IChar.pfnSetParameters    = drvHostSerialSetParameters;
-    pThis->IChar.pfnSetModemLines    = drvHostSerialSetModemLines;
-    pThis->IChar.pfnSetBreak         = drvHostSerialSetBreak;
+    pDrvIns->IBase.pfnQueryInterface        = drvHostSerialQueryInterface;
+    /* ICharConnector. */
+    pThis->ICharConnector.pfnWrite          = drvHostSerialWrite;
+    pThis->ICharConnector.pfnSetParameters  = drvHostSerialSetParameters;
+    pThis->ICharConnector.pfnSetModemLines  = drvHostSerialSetModemLines;
+    pThis->ICharConnector.pfnSetBreak       = drvHostSerialSetBreak;
 
 /** @todo Initialize all members with NIL values!! The destructor is ALWAYS called. */
 
@@ -1350,7 +1350,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Get the ICharPort interface of the above driver/device.
      */
-    pThis->pDrvCharPort = (PPDMICHARPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_CHAR_PORT);
+    pThis->pDrvCharPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMICHARPORT);
     if (!pThis->pDrvCharPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("HostSerial#%d has no char port interface above"), pDrvIns->iInstance);
 

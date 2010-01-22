@@ -1362,7 +1362,7 @@ static DECLCALLBACK(void *)  kbdKeyboardQueryInterface(PPDMIBASE pInterface, con
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Keyboard.Base);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->Keyboard.Base;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_PORT) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDPORT_IID) == 0)
         return &pThis->Keyboard.Port;
     return NULL;
 }
@@ -1466,7 +1466,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Keyboard.Base, &pThis->Keyboard.pDrvBase, "Keyboard Port");
             if (RT_SUCCESS(rc))
             {
-                pThis->Keyboard.pDrv = (PDMIKEYBOARDCONNECTOR*)(pThis->Keyboard.pDrvBase->pfnQueryInterface(pThis->Keyboard.pDrvBase, PDMINTERFACE_KEYBOARD_CONNECTOR));
+                pThis->Keyboard.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Keyboard.pDrvBase, PDMIKEYBOARDCONNECTOR);
                 if (!pThis->Keyboard.pDrv)
                 {
                     AssertLogRelMsgFailed(("LUN #0 doesn't have a keyboard interface! rc=%Rrc\n", rc));

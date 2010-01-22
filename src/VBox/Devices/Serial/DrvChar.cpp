@@ -42,8 +42,8 @@
 #define CHAR_MAX_SEND_QUEUE             0x80
 #define CHAR_MAX_SEND_QUEUE_MASK        0x7f
 
-/** Converts a pointer to DRVCHAR::IChar to a PDRVCHAR. */
-#define PDMICHAR_2_DRVCHAR(pInterface) ( (PDRVCHAR)((uintptr_t)pInterface - RT_OFFSETOF(DRVCHAR, IChar)) )
+/** Converts a pointer to DRVCHAR::ICharConnector to a PDRVCHAR. */
+#define PDMICHAR_2_DRVCHAR(pInterface)  RT_FROM_MEMBER(pInterface, DRVCHAR, ICharConnector)
 
 
 /*******************************************************************************
@@ -52,7 +52,7 @@
 /**
  * Char driver instance data.
  *
- * @implements PDMICHAR
+ * @implements PDMICHARCONNECTOR
  */
 typedef struct DRVCHAR
 {
@@ -63,7 +63,7 @@ typedef struct DRVCHAR
     /** Pointer to the stream interface of the driver below us. */
     PPDMISTREAM                 pDrvStream;
     /** Our char interface. */
-    PDMICHAR                    IChar;
+    PDMICHARCONNECTOR           ICharConnector;
     /** Flag to notify the receive thread it should terminate. */
     volatile bool               fShutdown;
     /** Receive thread ID. */
@@ -100,16 +100,16 @@ static DECLCALLBACK(void *) drvCharQueryInterface(PPDMIBASE pInterface, const ch
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_CHAR) == 0)
-        return &pThis->IChar;
+    if (RTUuidCompare2Strs(pszIID, PDMICHARCONNECTOR_IID) == 0)
+        return &pThis->ICharConnector;
     return NULL;
 }
 
 
-/* -=-=-=-=- IChar -=-=-=-=- */
+/* -=-=-=-=- ICharConnector -=-=-=-=- */
 
-/** @copydoc PDMICHAR::pfnWrite */
-static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, size_t cbWrite)
+/** @copydoc PDMICHARCONNECTOR::pfnWrite */
+static DECLCALLBACK(int) drvCharWrite(PPDMICHARCONNECTOR pInterface, const void *pvBuf, size_t cbWrite)
 {
     PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface);
     const char *pBuffer = (const char *)pvBuf;
@@ -130,8 +130,8 @@ static DECLCALLBACK(int) drvCharWrite(PPDMICHAR pInterface, const void *pvBuf, s
     return VINF_SUCCESS;
 }
 
-/** @copydoc PDMICHAR::pfnSetParameters */
-static DECLCALLBACK(int) drvCharSetParameters(PPDMICHAR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
+/** @copydoc PDMICHARCONNECTOR::pfnSetParameters */
+static DECLCALLBACK(int) drvCharSetParameters(PPDMICHARCONNECTOR pInterface, unsigned Bps, char chParity, unsigned cDataBits, unsigned cStopBits)
 {
     /*PDRVCHAR pThis = PDMICHAR_2_DRVCHAR(pInterface); - unused*/
 
@@ -277,7 +277,7 @@ static DECLCALLBACK(int) drvCharReceiveLoop(RTTHREAD ThreadSelf, void *pvUser)
  * @param RequestToSend     Set to true if this control line should be made active.
  * @param DataTerminalReady Set to true if this control line should be made active.
  */
-static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool RequestToSend, bool DataTerminalReady)
+static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHARCONNECTOR pInterface, bool RequestToSend, bool DataTerminalReady)
 {
     /* Nothing to do here. */
     return VINF_SUCCESS;
@@ -291,7 +291,7 @@ static DECLCALLBACK(int) drvCharSetModemLines(PPDMICHAR pInterface, bool Request
  * @param   fBreak      Set to true to let the device send a break false to put into normal operation.
  * @thread  Any thread.
  */
-static DECLCALLBACK(int) drvCharSetBreak(PPDMICHAR pInterface, bool fBreak)
+static DECLCALLBACK(int) drvCharSetBreak(PPDMICHARCONNECTOR pInterface, bool fBreak)
 {
     /* Nothing to do here. */
     return VINF_SUCCESS;
@@ -316,16 +316,16 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     pThis->fShutdown                        = false;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvCharQueryInterface;
-    /* IChar. */
-    pThis->IChar.pfnWrite                   = drvCharWrite;
-    pThis->IChar.pfnSetParameters           = drvCharSetParameters;
-    pThis->IChar.pfnSetModemLines           = drvCharSetModemLines;
-    pThis->IChar.pfnSetBreak                = drvCharSetBreak;
+    /* ICharConnector. */
+    pThis->ICharConnector.pfnWrite          = drvCharWrite;
+    pThis->ICharConnector.pfnSetParameters  = drvCharSetParameters;
+    pThis->ICharConnector.pfnSetModemLines  = drvCharSetModemLines;
+    pThis->ICharConnector.pfnSetBreak       = drvCharSetBreak;
 
     /*
      * Get the ICharPort interface of the above driver/device.
      */
-    pThis->pDrvCharPort = (PPDMICHARPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_CHAR_PORT);
+    pThis->pDrvCharPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMICHARPORT);
     if (!pThis->pDrvCharPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Char#%d has no char port interface above"), pDrvIns->iInstance);
 

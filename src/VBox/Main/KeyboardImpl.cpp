@@ -226,7 +226,7 @@ DECLCALLBACK(void *) Keyboard::drvQueryInterface(PPDMIBASE pInterface, const cha
     PDRVMAINKEYBOARD    pDrv    = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_KEYBOARD_CONNECTOR) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDCONNECTOR_IID) == 0)
         return &pDrv->Connector;
     return NULL;
 }
@@ -287,7 +287,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Get the IKeyboardPort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIKEYBOARDPORT)pDrvIns->pUpBase->pfnQueryInterface (pDrvIns->pUpBase, PDMINTERFACE_KEYBOARD_PORT);
+    pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIKEYBOARDPORT);
     if (!pData->pUpPort)
     {
         AssertMsgFailed (("Configuration error: No keyboard port interface above!\n"));
