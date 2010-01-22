@@ -32,6 +32,7 @@
 #ifdef IN_RING3
 # include <iprt/alloc.h>
 # include <iprt/string.h>
+# include <iprt/uuid.h>
 #endif /* IN_RING3 */
 
 #include "../Builtins.h"
@@ -1934,26 +1935,16 @@ static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    ACPIState *pThis = (ACPIState*)((uintptr_t)pInterface - RT_OFFSETOF(ACPIState, IBase));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->IBase;
-        case PDMINTERFACE_ACPI_PORT:
-            return &pThis->IACPIPort;
-        default:
-            return NULL;
-    }
+    ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IBase);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_ACPI_PORT) == 0)
+        return &pThis->IACPIPort;
+    return NULL;
 }
 
 /**

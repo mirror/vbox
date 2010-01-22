@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox stream devices:
- * Named pipe stream
+ * VBox stream drivers: Named pipe stream
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,34 +31,38 @@
 #include <iprt/alloc.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
 #ifdef RT_OS_WINDOWS
-#include <windows.h>
+# include <windows.h>
 #else /* !RT_OS_WINDOWS */
-#include <errno.h>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/un.h>
+# include <errno.h>
+# include <unistd.h>
+# include <sys/types.h>
+# include <sys/socket.h>
+# include <sys/un.h>
 #endif /* !RT_OS_WINDOWS */
+
 
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-
 /** Converts a pointer to DRVNAMEDPIPE::IMedia to a PDRVNAMEDPIPE. */
 #define PDMISTREAM_2_DRVNAMEDPIPE(pInterface) ( (PDRVNAMEDPIPE)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAMEDPIPE, IStream)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
  * Named pipe driver instance data.
+ *
+ * @implements PDMISTREAM
  */
 typedef struct DRVNAMEDPIPE
 {
@@ -277,27 +280,17 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvNamedPipeQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVNAMEDPIPE pDrv = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_STREAM:
-            return &pDrv->IStream;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PDRVNAMEDPIPE   pThis   = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_STREAM) == 0)
+        return &pThis->IStream;
+    return NULL;
 }
 
 

@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Implementation of VMStatus class
  */
@@ -31,6 +31,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/uuid.h>
 #include "StatusImpl.h"
 
 // defines
@@ -83,26 +84,17 @@ DECLCALLBACK(void) VMStatus::drvUnitChanged(PPDMILEDCONNECTORS pInterface, unsig
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *)  VMStatus::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *)  VMStatus::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINSTATUS pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_LED_CONNECTORS:
-            return &pDrv->ILedConnectors;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_CONNECTORS) == 0)
+        return &pDrv->ILedConnectors;
+    return NULL;
 }
 
 

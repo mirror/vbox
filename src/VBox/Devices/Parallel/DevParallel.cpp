@@ -92,6 +92,12 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+/**
+ * Parallel device state.
+ *
+ * @implements  PDMIBASE
+ * @implements  PDMIHOSTPARALLELPORT
+ */
 typedef struct ParallelState
 {
     /** Access critical section. */
@@ -104,9 +110,9 @@ typedef struct ParallelState
     /** Pointer to the device instance - RC Ptr */
     PPDMDEVINSRC                        pDevInsRC;
     RTRCPTR                             Alignment0; /**< Alignment. */
-    /** The base interface. */
+    /** LUN\#0: The base interface. */
     PDMIBASE                            IBase;
-    /** The host device port interface. */
+    /** LUN\#0: The host device port interface. */
     PDMIHOSTPARALLELPORT                IHostParallelPort;
     /** Pointer to the attached base driver. */
     R3PTRTYPE(PPDMIBASE)                pDrvBase;
@@ -643,19 +649,17 @@ static DECLCALLBACK(void) parallelRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
     pThis->pDevInsRC += offDelta;
 }
 
-/** @copydoc PIBASE::pfnqueryInterface */
-static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     ParallelState *pThis = PDMIBASE_2_PARALLELSTATE(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->IBase;
-        case PDMINTERFACE_HOST_PARALLEL_PORT:
-            return &pThis->IHostParallelPort;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HOST_PARALLEL_PORT) == 0)
+        return &pThis->IHostParallelPort;
+    return NULL;
 }
 
 /**

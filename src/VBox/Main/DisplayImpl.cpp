@@ -1,12 +1,10 @@
 /* $Id$ */
-
 /** @file
- *
  * VirtualBox COM class implementation
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -47,6 +45,8 @@
 
 /**
  * Display driver instance data.
+ *
+ * @implements PDMIDISPLAYCONNECTOR
  */
 typedef struct DRVMAINDISPLAY
 {
@@ -65,7 +65,7 @@ typedef struct DRVMAINDISPLAY
 } DRVMAINDISPLAY, *PDRVMAINDISPLAY;
 
 /** Converts PDMIDISPLAYCONNECTOR pointer to a DRVMAINDISPLAY pointer. */
-#define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface) ( (PDRVMAINDISPLAY) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINDISPLAY, Connector)) )
+#define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface)  RT_FROM_MEMBER(pInterface, DRVMAINDISPLAY, Connector)
 
 #ifdef DEBUG_sunlover
 static STAMPROFILE StatDisplayRefresh;
@@ -75,7 +75,7 @@ static int stam = 0;
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (Display)
+DEFINE_EMPTY_CTOR_DTOR(Display)
 
 HRESULT Display::FinalConstruct()
 {
@@ -3362,26 +3362,17 @@ DECLCALLBACK(int) Display::displayVBVAMousePointerShape(PPDMIDISPLAYCONNECTOR pI
 #endif /* VBOX_WITH_HGSMI */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_DISPLAY_CONNECTOR:
-            return &pDrv->Connector;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_DISPLAY_CONNECTOR) == 0)
+        return &pDrv->Connector;
+    return NULL;
 }
 
 

@@ -1,7 +1,6 @@
 /* $Id$ */
 /** @file
  * Virtio.h - Virtio Declarations
- *
  */
 
 /*
@@ -161,6 +160,12 @@ enum VirtioDeviceType
     VIRTIO_32BIT_HACK = 0x7fffffff
 };
 
+
+/**
+ * The state of the VirtIO PCI device
+ *
+ * @implements  PDMILEDPORTS
+ */
 struct VPCIState_st
 {
     PDMCRITSECT            cs;      /**< Critical section - what is it protecting? */
@@ -171,8 +176,11 @@ struct VPCIState_st
     uint32_t               padding1;
 #endif
 
+    /** Status LUN: Base interface. */
     PDMIBASE               IBase;
-    PDMILEDPORTS           ILeds;                               /**< LED interface */
+    /** Status LUN: LED port interface. */
+    PDMILEDPORTS           ILeds;
+    /** Status LUN: LED connector (peer). */
     R3PTRTYPE(PPDMILEDCONNECTORS) pLedsConnector;
 
     PPDMDEVINSR3           pDevInsR3;                   /**< Device instance - R3. */
@@ -262,8 +270,7 @@ int   vpciConstruct(PPDMDEVINS pDevIns, VPCISTATE *pState,
 int   vpciDestruct(VPCISTATE* pState);
 void  vpciRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta);
 void  vpciReset(PVPCISTATE pState);
-void *vpciQueryInterface(struct PDMIBASE *pInterface,
-                         PDMINTERFACE enmInterface);
+void *vpciQueryInterface(struct PDMIBASE *pInterface, const char *pszIID);
 PVQUEUE vpciAddQueue(VPCISTATE* pState, unsigned uSize,
                      void (*pfnCallback)(void *pvState, PVQUEUE pQueue),
                      const char *pcszName);

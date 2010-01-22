@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Implementation of VMMDev: driver interface to VMM device
  */
@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/uuid.h>
 
 #include "VBoxBFE.h"
 #include "VMMDevInterface.h"
@@ -343,33 +344,25 @@ int VMMDev::hgcmHostCall (const char *pszServiceName, uint32_t u32Function,
 #endif /* HGCM */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINVMMDEV pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_VMMDEV_CONNECTOR:
-            return &pDrv->Connector;
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_CONNECTOR) == 0)
+        return &pDrv->Connector;
 #ifdef VBOX_WITH_HGCM
-        case PDMINTERFACE_HGCM_CONNECTOR:
-            if (fActivateHGCM())
-                return &pDrv->HGCMConnector;
-            else
-                return NULL;
-#endif
-        default:
-            return NULL;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_CONNECTOR) == 0)
+    {
+        if (fActivateHGCM())
+            return &pDrv->HGCMConnector;
+        return NULL;
     }
+#endif
+    return NULL;
 }
 
 

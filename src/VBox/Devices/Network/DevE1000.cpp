@@ -50,6 +50,7 @@
 #include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 #include <VBox/pdmdev.h>
 #include <VBox/tm.h>
 #include <VBox/vm.h>
@@ -831,6 +832,10 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 
 /**
  * Device state structure. Holds the current state of device.
+ *
+ * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
  */
 struct E1kState_st
 {
@@ -4454,30 +4459,22 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
 }
 
 /**
- * Provides interfaces to the driver.
- *
- * @returns Pointer to interface. NULL if the interface is not supported.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  EMT
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, IBase);
-    Assert(&pState->IBase == pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pState->IBase;
-        case PDMINTERFACE_NETWORK_PORT:
-            return &pState->INetworkPort;
-        case PDMINTERFACE_NETWORK_CONFIG:
-            return &pState->INetworkConfig;
-        case PDMINTERFACE_LED_PORTS:
-            return &pState->ILeds;
-        default:
-            return NULL;
-    }
+    E1KSTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
+    Assert(&pThis->IBase == pInterface);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
+        return &pThis->INetworkPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
+        return &pThis->INetworkConfig;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 /**

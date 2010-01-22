@@ -67,6 +67,7 @@
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/semaphore.h>
+# include <iprt/uuid.h>
 #endif
 
 #include "../Builtins.h"
@@ -108,6 +109,15 @@
 
 typedef struct PCNetState_st PCNetState;
 
+/**
+ * PCNET state.
+ *
+ * @extends     PCIDEVICE
+ * @implements  PDMIBASE
+ * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKCONFIG
+ * @implements  PDMILEDPORTS
+ */
 struct PCNetState_st
 {
     PCIDEVICE                           PciDev;
@@ -196,11 +206,11 @@ struct PCNetState_st
     R3PTRTYPE(PPDMINETWORKCONNECTOR)    pDrv;
     /** Pointer to the attached network driver. */
     R3PTRTYPE(PPDMIBASE)                pDrvBase;
-    /** The base interface. */
+    /** LUN\#0 + status LUN: The base interface. */
     PDMIBASE                            IBase;
-    /** The network port interface. */
+    /** LUN\#0: The network port interface. */
     PDMINETWORKPORT                     INetworkPort;
-    /** The network config port interface. */
+    /** LUN\#0: The network config port interface. */
     PDMINETWORKCONFIG                   INetworkConfig;
     /** Base address of the MMIO region. */
     RTGCPHYS32                          MMIOBase;
@@ -220,7 +230,7 @@ struct PCNetState_st
 
     /** The LED. */
     PDMLED                              Led;
-    /** The LED ports. */
+    /** Status LUN: The LED ports. */
     PDMILEDPORTS                        ILeds;
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
@@ -4470,31 +4480,21 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
 {
-    PCNetState *pThis = (PCNetState *)((uintptr_t)pInterface - RT_OFFSETOF(PCNetState, IBase));
+    PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, IBase);
     Assert(&pThis->IBase == pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->IBase;
-        case PDMINTERFACE_NETWORK_PORT:
-            return &pThis->INetworkPort;
-        case PDMINTERFACE_NETWORK_CONFIG:
-            return &pThis->INetworkConfig;
-        case PDMINTERFACE_LED_PORTS:
-            return &pThis->ILeds;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
+        return &pThis->INetworkPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
+        return &pThis->INetworkConfig;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        return &pThis->ILeds;
+    return NULL;
 }
 
 /** Converts a pointer to PCNetState::INetworkPort to a PCNetState pointer. */

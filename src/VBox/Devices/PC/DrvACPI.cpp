@@ -32,6 +32,7 @@
 #include <VBox/log.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #ifdef RT_OS_LINUX
 # include <iprt/string.h>
@@ -65,6 +66,8 @@
 *******************************************************************************/
 /**
  * ACPI driver instance data.
+ *
+ * @implements  PDMIACPICONNECTOR
  */
 typedef struct DRVACPI
 {
@@ -78,27 +81,18 @@ typedef struct DRVACPI
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_ACPI_CONNECTOR:
-            return &pThis->IACPIConnector;
-        default:
-            return NULL;
-    }
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_ACPI_CONNECTOR) == 0)
+        return &pThis->IACPIConnector;
+    return NULL;
 }
 
 /**
@@ -116,9 +110,10 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
     if (GetSystemPowerStatus(&powerStatus))
     {
         /* running on battery? */
-        if (    (powerStatus.ACLineStatus == 0)
-             || (powerStatus.ACLineStatus == 255)
-             && (powerStatus.BatteryFlag & 15))
+        if (    powerStatus.ACLineStatus == 0   /* Offline */
+             || powerStatus.ACLineStatus == 255 /* Unknown */
+             && (powerStatus.BatteryFlag & 15)  /* high | low | critical | charging */
+           ) /** @todo why is 'charging' included in the flag test?  Add parenthesis around the right bits so the code is clearer. */
         {
             *pPowerSource = PDM_ACPI_POWER_SOURCE_BATTERY;
         }

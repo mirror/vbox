@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Declaration of VMMDev: driver interface to VMM device
  */
@@ -62,11 +62,11 @@ private:
                                                    uint32_t bpp, bool *fSupported);
     static DECLCALLBACK(int)    GetHeightReduction(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *heightReduction);
 
-    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 };
 
 extern VMMDev *gVMMDev;
 
-#endif // ____H_VMMDEV
+#endif // !____H_VMMDEV

@@ -562,24 +562,23 @@ static DECLCALLBACK(bool) drvHostBaseIsLocked(PPDMIMOUNT pInterface)
 
 /* -=-=-=-=- IBase -=-=-=-=- */
 
-/** @copydoc PDMIBASE::pfnQueryInterface. */
-static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVHOSTBASE   pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_BLOCK:
-            return &pThis->IBlock;
-        case PDMINTERFACE_BLOCK_BIOS:
-            return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
-        case PDMINTERFACE_MOUNT:
-            return &pThis->IMount;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS   pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVHOSTBASE pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK) == 0)
+        return &pThis->IBlock;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_BIOS) == 0)
+        return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT) == 0)
+        return &pThis->IMount;
+    return NULL;
 }
 
 
@@ -587,7 +586,7 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, PDM
 
 #ifdef RT_OS_DARWIN
 /** The runloop input source name for the disk arbitration events. */
-#define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA")
+# define MY_RUN_LOOP_MODE    CFSTR("drvHostBaseDA") /** @todo r=bird: Check if this will cause trouble in the same way that the one in the USB code did. */
 
 /**
  * Gets the BSD Name (/dev/disc[0-9]+) for the service.

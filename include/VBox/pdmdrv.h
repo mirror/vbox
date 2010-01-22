@@ -340,6 +340,8 @@ typedef PDMDRVREG const *PCPDMDRVREG;
 
 /**
  * PDM Driver Instance.
+ *
+ * @implements  PDMIBASE
  */
 typedef struct PDMDRVINS
 {

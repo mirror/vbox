@@ -1102,7 +1102,7 @@
  * Convert a pointer to a structure member into a pointer to the structure.
  * @returns pointer to the structure.
  * @param   pMem    Pointer to the member.
- * @param   Type    Strucutre type.
+ * @param   Type    Structure type.
  * @param   Member  Member name.
  */
 #define RT_FROM_MEMBER(pMem, Type, Member)      ( (Type *) ((uint8_t *)(void *)(pMem) - RT_UOFFSETOF(Type, Member)) )

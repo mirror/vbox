@@ -1,10 +1,10 @@
+/* $Id$ */
 /** @file
- *
  * VirtualBox Driver Interface to Audio Sniffer device
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -42,6 +42,8 @@
 
 /**
  * Audio Sniffer driver instance data.
+ *
+ * @extends PDMIAUDIOSNIFFERCONNECTOR
  */
 typedef struct DRVAUDIOSNIFFER
 {
@@ -59,7 +61,7 @@ typedef struct DRVAUDIOSNIFFER
 } DRVAUDIOSNIFFER, *PDRVAUDIOSNIFFER;
 
 /** Converts PDMIAUDIOSNIFFERCONNECTOR pointer to a DRVAUDIOSNIFFER pointer. */
-#define PDMIAUDIOSNIFFERCONNECTOR_2_MAINAUDIOSNIFFER(pInterface) ( (PDRVAUDIOSNIFFER) ((uintptr_t)pInterface - RT_OFFSETOF(DRVAUDIOSNIFFER, Connector)) )
+#define PDMIAUDIOSNIFFERCONNECTOR_2_MAINAUDIOSNIFFER(pInterface)    RT_FROM_MEMBER(pInterface, DRVAUDIOSNIFFER, Connector)
 
 
 //
@@ -115,26 +117,17 @@ DECLCALLBACK(void) iface_AudioVolumeOut (PPDMIAUDIOSNIFFERCONNECTOR pInterface, 
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVAUDIOSNIFFER pDrv = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR:
-            return &pDrv->Connector;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR) == 0)
+        return &pDrv->Connector;
+    return NULL;
 }
 
 
@@ -146,11 +139,11 @@ DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, PDMIN
  */
 DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
 {
-    PDRVAUDIOSNIFFER pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
+    PDRVAUDIOSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
     LogFlow(("AudioSniffer::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
-    if (pData->pAudioSniffer)
+    if (pThis->pAudioSniffer)
     {
-        pData->pAudioSniffer->mpDrv = NULL;
+        pThis->pAudioSniffer->mpDrv = NULL;
     }
 }
 
@@ -162,7 +155,7 @@ DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
  */
 DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
-    PDRVAUDIOSNIFFER pData = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
+    PDRVAUDIOSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
 
     LogFlow(("AudioSniffer::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
 
@@ -181,14 +174,14 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     pDrvIns->IBase.pfnQueryInterface            = AudioSniffer::drvQueryInterface;
 
     /* Audio Sniffer connector. */
-    pData->Connector.pfnAudioSamplesOut         = iface_AudioSamplesOut;
-    pData->Connector.pfnAudioVolumeOut          = iface_AudioVolumeOut;
+    pThis->Connector.pfnAudioSamplesOut         = iface_AudioSamplesOut;
+    pThis->Connector.pfnAudioVolumeOut          = iface_AudioVolumeOut;
 
     /*
      * Get the Audio Sniffer Port interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIAUDIOSNIFFERPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_AUDIO_SNIFFER_PORT);
-    if (!pData->pUpPort)
+    pThis->pUpPort = (PPDMIAUDIOSNIFFERPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_AUDIO_SNIFFER_PORT);
+    if (!pThis->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No Audio Sniffer port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
@@ -204,8 +197,8 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
         AssertMsgFailed(("Configuration error: No/bad \"Object\" value! rc=%Rrc\n", rc));
         return rc;
     }
-    pData->pAudioSniffer = (AudioSniffer *)pv;        /** @todo Check this cast! */
-    pData->pAudioSniffer->mpDrv = pData;
+    pThis->pAudioSniffer = (AudioSniffer *)pv;        /** @todo Check this cast! */
+    pThis->pAudioSniffer->mpDrv = pThis;
 
     return VINF_SUCCESS;
 }

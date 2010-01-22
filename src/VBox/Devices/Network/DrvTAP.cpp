@@ -1,10 +1,10 @@
-/** $Id$ */
+/* $Id$ */
 /** @file
- * Universial TAP network transport driver.
+ * DrvTAP - Universial TAP network transport driver.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,14 +26,15 @@
 #include <VBox/log.h>
 #include <VBox/pdmdrv.h>
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/file.h>
-#include <iprt/string.h>
 #include <iprt/path.h>
-#include <iprt/thread.h>
-#include <iprt/asm.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+#include <iprt/uuid.h>
 #ifdef RT_OS_SOLARIS
 # include <iprt/process.h>
 # include <iprt/env.h>
@@ -79,7 +80,9 @@
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
- * Block driver instance data.
+ * TAP driver instance data.
+ *
+ * @implements PDMINETWORKCONNECTOR
  */
 typedef struct DRVTAP
 {
@@ -773,27 +776,18 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pThis->INetworkConnector;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVTAP     pThis   = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
+        return &pThis->INetworkConnector;
+    return NULL;
 }
 
 

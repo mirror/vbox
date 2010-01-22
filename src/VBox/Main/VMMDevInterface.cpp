@@ -1,9 +1,10 @@
+/* $Id$ */
 /** @file
  * VirtualBox Driver Interface to VMM device.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -643,30 +644,22 @@ void VMMDev::hgcmShutdown (void)
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVMAINVMMDEV pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_VMMDEV_CONNECTOR:
-            return &pDrv->Connector;
+    PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVMAINVMMDEV  pDrv    = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_CONNECTOR) == 0)
+        return &pDrv->Connector;
 #ifdef VBOX_WITH_HGCM
-        case PDMINTERFACE_HGCM_CONNECTOR:
-            return &pDrv->HGCMConnector;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_CONNECTOR) == 0)
+        return &pDrv->HGCMConnector;
 #endif
-        default:
-            return NULL;
-    }
+    return NULL;
 }
 
 /**

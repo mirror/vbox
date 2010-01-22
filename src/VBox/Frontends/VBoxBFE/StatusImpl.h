@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Declaration of VMStatus class
  */
@@ -34,11 +34,11 @@ public:
 private:
 
     static DECLCALLBACK(void)   drvUnitChanged(PPDMILEDCONNECTORS pInterface, unsigned iLUN);
-    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface);
+    static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 };
 
 extern VMStatus *gStatus;
 
-#endif // ____H_STATUSIMPL
+#endif // !____H_STATUSIMPL

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,6 +36,7 @@
 #include <iprt/critsect.h>
 #include <iprt/cidr.h>
 #include <iprt/stream.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
@@ -117,6 +118,8 @@ do                                                      \
 *******************************************************************************/
 /**
  * NAT network transport driver instance data.
+ *
+ * @implements  PDMINETWORKCONNECTOR
  */
 typedef struct DRVNAT
 {
@@ -802,27 +805,18 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_NETWORK_CONNECTOR:
-            return &pThis->INetworkConnector;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
+    PDRVNAT     pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
+        return &pThis->INetworkConnector;
+    return NULL;
 }
 
 
@@ -1038,9 +1032,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "
                                 "export the network port interface"));
-    pThis->pConfig =
-                (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
-                                                                        PDMINTERFACE_NETWORK_CONFIG);
+    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
+                                                                             PDMINTERFACE_NETWORK_CONFIG);
     if (!pThis->pConfig)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -27,10 +27,11 @@
 #include <VBox/pdmdrv.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
-#include <iprt/stream.h>
-#include <iprt/alloc.h>
-#include <iprt/string.h>
+#include <iprt/mem.h>
 #include <iprt/semaphore.h>
+#include <iprt/stream.h>
+#include <iprt/string.h>
+#include <iprt/uuid.h>
 
 #include "Builtins.h"
 
@@ -38,18 +39,20 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
-
 /** Converts a pointer to DRVRAWFILE::IMedia to a PDRVRAWFILE. */
 #define PDMISTREAM_2_DRVRAWFILE(pInterface) ( (PDRVRAWFILE)((uintptr_t)pInterface - RT_OFFSETOF(DRVRAWFILE, IStream)) )
 
 /** Converts a pointer to PDMDRVINS::IBase to a PPDMDRVINS. */
 #define PDMIBASE_2_DRVINS(pInterface)   ( (PPDMDRVINS)((uintptr_t)pInterface - RT_OFFSETOF(PDMDRVINS, IBase)) )
 
+
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
  * Raw file output driver instance data.
+ *
+ * @implements  PDMISTREAM
  */
 typedef struct DRVRAWFILE
 {
@@ -64,9 +67,6 @@ typedef struct DRVRAWFILE
 } DRVRAWFILE, *PDRVRAWFILE;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
 
 
 /** @copydoc PDMISTREAM::pfnWrite */
@@ -95,27 +95,18 @@ static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvB
 
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PPDMDRVINS pDrvIns = PDMIBASE_2_DRVINS(pInterface);
-    PDRVRAWFILE pDrv = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_STREAM:
-            return &pDrv->IStream;
-        default:
-            return NULL;
-    }
+    PPDMDRVINS  pDrvIns = PDMIBASE_2_DRVINS(pInterface);
+    PDRVRAWFILE pThis   = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_STREAM) == 0)
+        return &pThis->IStream;
+    return NULL;
 }
 
 

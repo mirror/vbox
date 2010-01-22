@@ -42,6 +42,9 @@
 #ifndef IN_RC
 # include <iprt/mem.h>
 #endif
+#ifdef IN_RING3
+# include <iprt/uuid.h>
+#endif
 
 #include "VMMDevState.h"
 #ifdef VBOX_WITH_HGCM
@@ -1824,33 +1827,24 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ 
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    VMMDevState *pThis = (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, Base));
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pThis->Base;
-        case PDMINTERFACE_VMMDEV_PORT:
-            return &pThis->Port;
+    VMMDevState *pThis = RT_FROM_MEMBER(pInterface, VMMDevState, Base);
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pThis->Base;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_PORT) == 0)
+        return &pThis->Port;
 #ifdef VBOX_WITH_HGCM
-        case PDMINTERFACE_HGCM_PORT:
-            return &pThis->HGCMPort;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_PORT) == 0)
+        return &pThis->HGCMPort;
 #endif
-        case PDMINTERFACE_LED_PORTS:
-            /* Currently only for shared folders */
-            return &pThis->SharedFolders.ILeds;
-        default:
-            return NULL;
-    }
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
+        /* Currently only for shared folders */
+        return &pThis->SharedFolders.ILeds;
+    return NULL;
 }
 
 /**

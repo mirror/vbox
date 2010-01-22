@@ -1,5 +1,5 @@
+/* $Id$ */
 /** @file
- *
  * VBox frontends: Basic Frontend (BFE):
  * Implementation of VMDisplay class
  */
@@ -29,7 +29,7 @@
 # include <VBox/com/defs.h>
 #endif
 
-#include <iprt/alloc.h>
+#include <iprt/mem.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
 #include <VBox/pdm.h>
@@ -39,11 +39,12 @@
 #include <iprt/assert.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/uuid.h>
 
 #ifdef RT_OS_L4
-#include <stdio.h>
-#include <l4/util/util.h>
-#include <l4/log/l4log.h>
+# include <stdio.h>
+# include <l4/util/util.h>
+# include <l4/log/l4log.h>
 #endif
 
 #include "DisplayImpl.h"
@@ -1145,26 +1146,18 @@ void VMDisplay::VideoAccelFlush (void)
 }
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the driver.
- * @param   pInterface          Pointer to this interface structure.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-DECLCALLBACK(void *)  VMDisplay::drvQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+DECLCALLBACK(void *)  VMDisplay::drvQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pDrvIns->IBase;
-        case PDMINTERFACE_DISPLAY_CONNECTOR:
-            return &pDrv->Connector;
-        default:
-            return NULL;
-    }
+
+    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
+        return &pDrvIns->IBase;
+    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_DISPLAY_CONNECTOR) == 0)
+        return &pDrv->Connector;
+    return NULL;
 }
 
 

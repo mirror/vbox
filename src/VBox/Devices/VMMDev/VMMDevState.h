@@ -50,12 +50,12 @@ typedef struct VMMDevState
 
     /** Pointer to device instance. */
     PPDMDEVINSR3 pDevIns;
-    /** VMMDev port base interface. */
+    /** LUN\#0 + Status: VMMDev port base interface. */
     PDMIBASE Base;
-    /** VMMDev port interface. */
+    /** LUN\#0: VMMDev port interface. */
     PDMIVMMDEVPORT Port;
 #ifdef VBOX_WITH_HGCM
-    /** HGCM port interface. */
+    /** LUN\#0: HGCM port interface. */
     PDMIHGCMPORT HGCMPort;
 #endif
     /** Pointer to base interface of the driver. */
@@ -187,7 +187,7 @@ typedef struct VMMDevState
     uint32_t u32HGCMEnabled;
 #endif /* VBOX_WITH_HGCM */
 
-    /* Shared folders LED */
+    /** Status LUN: Shared folders LED */
     struct
     {
         /** The LED. */
