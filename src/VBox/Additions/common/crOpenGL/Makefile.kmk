@@ -201,7 +201,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
  	$(PATH_LIB)/libXcomposite.so \
  	$(PATH_LIB)/libXdamage.so \
  	$(PATH_LIB)/libXfixes.so \
- 	Xext
+ 	$(PATH_LIB)/libXext.so
  ifdef VBoxOGL_FAKEDRI
   VBoxOGL_LIBS += \
   	dl
