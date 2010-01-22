@@ -112,7 +112,7 @@ typedef struct VHDDynamicDiskHeader
     uint8_t  ParentUuid[16];
     uint32_t ParentTimeStamp;
     uint32_t Reserved0;
-    uint8_t  ParentUnicodeName[512];
+    uint16_t ParentUnicodeName[256];
     VHDPLE   ParentLocatorEntry[VHD_MAX_LOCATOR_ENTRIES];
     uint8_t  Reserved1[256];
 } VHDDynamicDiskHeader;
@@ -400,7 +400,7 @@ static uint32_t vhdChecksum(void *pHeader, uint32_t cbSize)
     return ~checksum;
 }
 
-static int vhdFilenameToUtf16(const char *pszFilename, void *pvBuf, uint32_t cbBufSize, uint32_t *pcbActualSize)
+static int vhdFilenameToUtf16(const char *pszFilename, uint16_t *pu16Buf, uint32_t cbBufSize, uint32_t *pcbActualSize, bool fBigEndian)
 {
     int      rc;
     PRTUTF16 tmp16 = NULL;
@@ -415,7 +415,12 @@ static int vhdFilenameToUtf16(const char *pszFilename, void *pvBuf, uint32_t cbB
         rc = VERR_FILENAME_TOO_LONG;
         goto out;
     }
-    memcpy(pvBuf, tmp16, cTmp16Len * sizeof(*tmp16));
+
+    if (fBigEndian)
+        for (unsigned i = 0; i < cTmp16Len; i++)
+            pu16Buf[i] = RT_H2BE_U16(tmp16[i]);
+    else
+        memcpy(pu16Buf, tmp16, cTmp16Len * sizeof(*tmp16));
     if (pcbActualSize)
         *pcbActualSize = (uint32_t)(cTmp16Len * sizeof(*tmp16));
 
@@ -463,7 +468,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
             break;
         case VHD_PLATFORM_CODE_W2RU:
             /* Update unicode relative name. */
-            rc = vhdFilenameToUtf16(pszFilename, pvBuf, cbMaxLen, &cb);
+            rc = vhdFilenameToUtf16(pszFilename, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
             if (RT_FAILURE(rc))
                 goto out;
             pLocator->u32DataLength = RT_H2BE_U32(cb);
@@ -482,7 +487,7 @@ static int vhdLocatorUpdate(PVHDIMAGE pImage, PVHDPLE pLocator, const char *pszF
                 RTMemTmpFree(pszTmp);
                 goto out;
             }
-            rc = vhdFilenameToUtf16(pszTmp, pvBuf, cbMaxLen, &cb);
+            rc = vhdFilenameToUtf16(pszTmp, (uint16_t *)pvBuf, cbMaxLen, &cb, false);
             RTMemTmpFree(pszTmp);
             if (RT_FAILURE(rc))
                 goto out;
@@ -529,7 +534,7 @@ static int vhdDynamicHeaderUpdate(PVHDIMAGE pImage)
     if (pImage->pszParentFilename)
     {
         rc = vhdFilenameToUtf16(RTPathFilename(pImage->pszParentFilename),
-             ddh.ParentUnicodeName, sizeof(ddh.ParentUnicodeName) - 1, NULL);
+             ddh.ParentUnicodeName, sizeof(ddh.ParentUnicodeName) - 1, NULL, true);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -1884,11 +1889,12 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     }
 
     Footer.DataOffset = RT_H2BE_U64(pImage->u64DataOffset);
-    pImage->vhdFooterCopy = Footer;
 
     /* Compute and update the footer checksum. */
     Footer.Checksum = 0;
     Footer.Checksum = RT_H2BE_U32(vhdChecksum(&Footer, sizeof(Footer)));
+
+    pImage->vhdFooterCopy = Footer;
 
     /* Store the footer */
     rc = vhdFileWriteSync(pImage, pImage->uCurrentEndOfFile, &Footer, sizeof(Footer), NULL);
