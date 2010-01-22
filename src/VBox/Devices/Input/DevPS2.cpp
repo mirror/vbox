@@ -1400,7 +1400,7 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const 
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.Base);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->Mouse.Base;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_PORT) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIMOUSEPORT_IID) == 0)
         return &pThis->Mouse.Port;
     return NULL;
 }
@@ -1487,7 +1487,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Mouse.Base, &pThis->Mouse.pDrvBase, "Aux (Mouse) Port");
             if (RT_SUCCESS(rc))
             {
-                pThis->Mouse.pDrv = (PDMIMOUSECONNECTOR*)(pThis->Mouse.pDrvBase->pfnQueryInterface(pThis->Mouse.pDrvBase, PDMINTERFACE_MOUSE_CONNECTOR));
+                pThis->Mouse.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Mouse.pDrvBase, PDMIMOUSECONNECTOR);
                 if (!pThis->Mouse.pDrv)
                 {
                     AssertLogRelMsgFailed(("LUN #1 doesn't have a mouse interface! rc=%Rrc\n", rc));

@@ -40,14 +40,11 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
 /** @name Common Driver Interface Identficators.
  * @todo Convert all these to _IID.
  * @{
  */
-/** PDMIMOUSEPORT           - The mouse port interface.             (Down)  Coupled with PDMINTERFACE_MOUSE_CONNECTOR. */
-#define PDMINTERFACE_MOUSE_PORT                 "dcf20e6b-6cd5-4517-8759-91064605b8a8"
-/** PDMIMOUSECONNECTOR      - The mouse connector interface.        (Up)    Coupled with PDMINTERFACE_MOUSE_PORT. */
-#define PDMINTERFACE_MOUSE_CONNECTOR            "847f965f-0eb8-4363-88ac-b0ee58a05bde"
 /** PDMIKEYBOARDPORT        - The keyboard port interface.          (Down)  Coupled with PDMINTERFACE_KEYBOARD_CONNECTOR. */
 #define PDMINTERFACE_KEYBOARD_PORT              "2a0844f0-410b-40ab-a6ed-6575f3aa3e29"
 /** PDMIKEYBOARDCONNECTOR   - The keyboard connector interface.     (Up)    Coupled with PDMINTERFACE_KEYBOARD_PORT. */
@@ -175,6 +172,18 @@ typedef struct PDMIBASE
 /** PDMIBASE interface ID. */
 #define PDMIBASE_IID                            "a2299c0d-b709-4551-aa5a-73f59ffbed74"
 
+/**
+ * Helper macro for quering an interface from PDMIBASE.
+ *
+ * @returns Correctly typed PDMIBASE::pfnQueryInterface return value.
+ *
+ * @param    pIBase         Pointer to the base interface.
+ * @param    InterfaceType  The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ */
+#define PDMIBASE_QUERY_INTERFACE(pIBase, InterfaceType)  \
+    ( (InterfaceType *)(pIBase)->pfnQueryInterface(pIBase, InterfaceType##_IID ) )
+
 
 /**
  * Dummy interface.
@@ -189,10 +198,12 @@ typedef struct PDMIDUMMY
 } PDMIDUMMY;
 
 
+/** PDMIMOUSEPORT interface ID. */
+#define PDMIMOUSEPORT_IID "dcf20e6b-6cd5-4517-8759-91064605b8a8"
 /** Pointer to a mouse port interface. */
 typedef struct PDMIMOUSEPORT *PPDMIMOUSEPORT;
 /**
- * Mouse port interface.
+ * Mouse port interface (down).
  * Pair with PDMIMOUSECONNECTOR.
  */
 typedef struct PDMIMOUSEPORT
@@ -225,12 +236,14 @@ typedef struct PDMIMOUSEPORT
 
 
 /**
- * Mouse connector interface.
+ * Mouse connector interface (up).
  * Pair with PDMIMOUSEPORT.
  */
 typedef PDMIDUMMY PDMIMOUSECONNECTOR;
  /** Pointer to a mouse connector interface. */
 typedef PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
+/** PDMIMOUSECONNECTOR interface ID.  */
+#define PDMIMOUSECONNECTOR_IID                  "847f965f-0eb8-4363-88ac-b0ee58a05bde"
 
 
 /** Pointer to a keyboard port interface. */

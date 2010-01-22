@@ -52,8 +52,6 @@ typedef struct DRVMAINMOUSE
     PDMIMOUSECONNECTOR          Connector;
 } DRVMAINMOUSE, *PDRVMAINMOUSE;
 
-/** Converts PDMIMOUSECONNECTOR pointer to a DRVMAINMOUSE pointer. */
-#define PDMIMOUSECONNECTOR_2_MAINMOUSE(pInterface) ( (PDRVMAINMOUSE) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINMOUSE, Connector)) )
 
 // IMouse methods
 /////////////////////////////////////////////////////////////////////////////
@@ -185,7 +183,7 @@ DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, const char 
     PDRVMAINMOUSE pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_CONNECTOR) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIMOUSECONNECTOR_IID) == 0)
         return &pDrv->Connector;
     return NULL;
 }
@@ -231,7 +229,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, 
     /*
      * Get the IMousePort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIMOUSEPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUSE_PORT);
+        pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUSEPORT);
     if (!pData->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No mouse port interface above!\n"));
