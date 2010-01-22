@@ -28,8 +28,8 @@
 VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
 {
     int rc = VINF_SUCCESS;
-    VMMDevCpuHotplugStatusRequest Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotplugStatus);
+    VMMDevCpuHotPlugStatusRequest Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
     Req.enmStatusType = VMMDevCpuStatusType_Enable;
 
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_CPU_HOTPLUG, 0);
@@ -45,8 +45,8 @@ VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
 
 VBGLR3DECL(int) VbglR3CpuHotplugTerm(void)
 {
-    VMMDevCpuHotplugStatusRequest Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotplugStatus);
+    VMMDevCpuHotPlugStatusRequest Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
     Req.enmStatusType = VMMDevCpuStatusType_Disable;
 
     /* Clear the events. */
@@ -77,7 +77,7 @@ VBGLR3DECL(int) VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, 
             VMMDevGetCpuHotplugRequest Req;
 
             /* get the seamless change request */
-            vmmdevInitRequest(&Req.header, VMMDevReq_GetCpuHotplugRequest);
+            vmmdevInitRequest(&Req.header, VMMDevReq_GetCpuHotPlugRequest);
             Req.idCpuCore    = UINT32_MAX;
             Req.idCpuPackage = UINT32_MAX;
             Req.enmEventType = VMMDevCpuEventType_None;
