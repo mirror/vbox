@@ -90,6 +90,9 @@ static struct
 #ifdef VBOXSERVICE_EXEC
     { &g_Exec,      NIL_RTTHREAD, false, false, false, true },
 #endif
+#ifdef VBOXSERVICE_CPUHOTPLUG /* Disabled by default. Use --enable-cpuhotplug to enable */
+    { &g_CpuHotplug, NIL_RTTHREAD, false, false, false, false },
+#endif
 };
 
 

@@ -137,6 +137,7 @@ extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
 extern VBOXSERVICE g_Exec;
+extern VBOXSERVICE g_CpuHotplug;
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;
