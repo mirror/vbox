@@ -1454,6 +1454,10 @@ static int vhdSetUuid(void *pBackendData, PCRTUUID pUuid)
         /* Update checksum. */
         pImage->vhdFooterCopy.Checksum = 0;
         pImage->vhdFooterCopy.Checksum = RT_H2BE_U32(vhdChecksum(&pImage->vhdFooterCopy, sizeof(VHDFooter)));
+
+        /* Need to update the dynamic disk header to update the disk footer copy at the beginning. */
+        if (!(pImage->uImageFlags & VD_IMAGE_FLAGS_FIXED))
+            pImage->fDynHdrNeedsUpdate = true;
         rc = VINF_SUCCESS;
     }
     else
