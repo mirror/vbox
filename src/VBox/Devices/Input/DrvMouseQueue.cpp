@@ -88,9 +88,9 @@ static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, c
     PDRVMOUSEQUEUE  pThis   = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_PORT) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIMOUSEPORT_IID) == 0)
         return &pThis->Port;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUSE_CONNECTOR) == 0)
+    if (RTUuidCompare2Strs(pszIID, PDMIMOUSECONNECTOR_IID) == 0)
         return &pThis->Connector;
     return NULL;
 }
@@ -248,7 +248,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Get the IMousePort interface of the above driver/device.
      */
-    pDrv->pUpPort = (PPDMIMOUSEPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUSE_PORT);
+    pDrv->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUSEPORT);
     if (!pDrv->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No mouse port interface above!\n"));
@@ -265,7 +265,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         AssertMsgFailed(("Failed to attach driver below us! rc=%Rra\n", rc));
         return rc;
     }
-    pDrv->pDownConnector = (PPDMIMOUSECONNECTOR)pDownBase->pfnQueryInterface(pDownBase, PDMINTERFACE_MOUSE_CONNECTOR);
+    pDrv->pDownConnector = PDMIBASE_QUERY_INTERFACE(pDownBase, PDMIMOUSECONNECTOR);
     if (!pDrv->pDownConnector)
     {
         AssertMsgFailed(("Configuration error: No mouse connector interface below!\n"));
