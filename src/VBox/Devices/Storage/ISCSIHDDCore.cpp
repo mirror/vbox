@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * iSCSI initiator driver, VD backend.
  */
@@ -256,6 +257,22 @@ typedef enum ISCSISTATE
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
 /**
+ * iSCSI Request PDU buffer (gather).
+ */
+typedef struct ISCSIREQ
+{
+    /** Length of PDU segment in bytes. */
+    size_t cbSeg;
+    /** Pointer to PDU segment. */
+    const void *pcvSeg;
+} ISCSIREQ;
+/** Pointer to an iSCSI Request PDU buffer. */
+typedef ISCSIREQ *PISCSIREQ;
+/** Pointer to a const iSCSI Request PDU buffer. */
+typedef ISCSIREQ const *PCISCSIREQ;
+
+
+/**
  * Block driver instance data.
  */
 typedef struct ISCSIIMAGE
@@ -410,6 +427,22 @@ typedef struct ISCSIPARAMETER
     /** Length of the binary parameter. 0=zero-terminated string. */
     size_t cbParamValue;
 } ISCSIPARAMETER;
+
+
+/**
+ * iSCSI Response PDU buffer (scatter).
+ */
+typedef struct ISCSIRES
+{
+    /** Length of PDU segment. */
+    size_t cbSeg;
+    /** Pointer to PDU segment. */
+    void *pvSeg;
+} ISCSIRES;
+/** Pointer to an iSCSI Response PDU buffer. */
+typedef ISCSIRES *PISCSIRES;
+/** Pointer to a const iSCSI Response PDU buffer. */
+typedef ISCSIRES const *PCISCSIRES;
 
 
 /*******************************************************************************

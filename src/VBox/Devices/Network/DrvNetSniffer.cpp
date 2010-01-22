@@ -259,12 +259,9 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, co
     PDRVNETSNIFFER  pThis   = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
-        return &pThis->INetworkConnector;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
-        return &pThis->INetworkPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
-        return &pThis->INetworkConfig;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     return NULL;
 }
 
@@ -307,7 +304,7 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
         pThis->pConnector = NULL;
     else if (RT_SUCCESS(rc))
     {
-        pThis->pConnector = (PPDMINETWORKCONNECTOR)pBaseDown->pfnQueryInterface(pBaseDown, PDMINTERFACE_NETWORK_CONNECTOR);
+        pThis->pConnector = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKCONNECTOR);
         if (!pThis->pConnector)
         {
             AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
@@ -408,7 +405,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Query the network port interface.
      */
-    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
     if (!pThis->pPort)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
@@ -418,7 +415,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Query the network config interface.
      */
-    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+    pThis->pConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
     if (!pThis->pConfig)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network config interface!\n"));
@@ -434,7 +431,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
         pThis->pConnector = NULL;
     else if (RT_SUCCESS(rc))
     {
-        pThis->pConnector = (PPDMINETWORKCONNECTOR)pBaseDown->pfnQueryInterface(pBaseDown, PDMINTERFACE_NETWORK_CONNECTOR);
+        pThis->pConnector = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKCONNECTOR);
         if (!pThis->pConnector)
         {
             AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
