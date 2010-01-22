@@ -499,6 +499,13 @@ VBGLR3DECL(bool)    VbglR3CredentialsAreAvailable(void);
 VBGLR3DECL(int)     VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain);
 /** @}  */
 
+/** @name CPU hotplug monitor
+ * @{ */
+VBGLR3DECL(int)     VbglR3CpuHotplugInit(void);
+VBGLR3DECL(int)     VbglR3CpuHotplugTerm(void);
+VBGLR3DECL(int)     VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, uint32_t *pidCpuCore, uint32_t *pidCpuPackage);
+/** @} */
+
 #endif /* IN_RING3 */
 /** @} */
 
