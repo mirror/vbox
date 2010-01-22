@@ -77,7 +77,7 @@ static int cpuHotplugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore, uint
                 char *pszSysDevPath = NULL;
 
                 /* Get the sysdev */
-                rc = RTStrAPrintf(&pszSysDevPath, "%s/%s", SYSFS_ACPI_CPU_PATH, pDirFolderContent->szName);
+                rc = RTStrAPrintf(&pszSysDevPath, "%s/%s", SYSFS_ACPI_CPU_PATH, DirFolderContent.szName);
                 if (RT_SUCCESS(rc))
                 {
                     uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/sysdev/topology/core_id", pszSysDevPath);
@@ -184,13 +184,13 @@ DECLCALLBACK(int) VBoxServiceCpuHotplugWorker(bool volatile *pfShutdown)
                      *  Prevents error messages later.
                      */
                     if(   !RTStrNCmp(DirFolderContent.szName, "cpu", 3)
-                        && RTStrNCmp(DirFolderConten.szName, "cpu0", 4)
-                        && RTStrNCmp(DirFolderConten.szName, "cpuidle", 7))
+                        && RTStrNCmp(DirFolderContent.szName, "cpu0", 4)
+                        && RTStrNCmp(DirFolderContent.szName, "cpuidle", 7))
                     {
                         char *pszSysDevPath = NULL;
 
                         /* Get the sysdev */
-                        rc = RTStrAPrintf(&pszSysDevPath, "%s/%s/online", SYSFS_CPU_PATH, pDirFolderContent->szName);
+                        rc = RTStrAPrintf(&pszSysDevPath, "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
                         if (RT_SUCCESS(rc))
                         {
                             RTFILE FileCpuOnline = NIL_RTFILE;
