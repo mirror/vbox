@@ -2504,10 +2504,8 @@ static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface, const char *
     fdrive_t *pDrive = PDMIBASE_2_FDRIVE(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrive->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
-        return &pDrive->IPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
-        return &pDrive->IMountNotify;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pDrive->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pDrive->IMountNotify);
     return NULL;
 }
 
@@ -2574,20 +2572,11 @@ static int fdConfig (fdrive_t *drv, PPDMDEVINS pDevIns)
      */
     rc = PDMDevHlpDriverAttach (pDevIns, drv->iLUN, &drv->IBase, &drv->pDrvBase, descs[drv->iLUN]);
     if (RT_SUCCESS (rc)) {
-        drv->pDrvBlock = drv->pDrvBase->pfnQueryInterface (
-            drv->pDrvBase,
-            PDMINTERFACE_BLOCK
-            );
+        drv->pDrvBlock = PDMIBASE_QUERY_INTERFACE(drv->pDrvBase, PDMIBLOCK);
         if (drv->pDrvBlock) {
-            drv->pDrvBlockBios = drv->pDrvBase->pfnQueryInterface (
-                drv->pDrvBase,
-                PDMINTERFACE_BLOCK_BIOS
-                );
+            drv->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(drv->pDrvBase, PDMIBLOCKBIOS);
             if (drv->pDrvBlockBios) {
-                drv->pDrvMount = drv->pDrvBase->pfnQueryInterface (
-                    drv->pDrvBase,
-                    PDMINTERFACE_MOUNT
-                    );
+                drv->pDrvMount = PDMIBASE_QUERY_INTERFACE(drv->pDrvBase, PDMIMOUNT);
                 if (drv->pDrvMount) {
                     /*
                      * Init the state.

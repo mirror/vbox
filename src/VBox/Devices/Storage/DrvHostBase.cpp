@@ -572,12 +572,9 @@ static DECLCALLBACK(void *)  drvHostBaseQueryInterface(PPDMIBASE pInterface, con
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK) == 0)
-        return &pThis->IBlock;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_BIOS) == 0)
-        return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT) == 0)
-        return &pThis->IMount;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCK, &pThis->IBlock);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKBIOS, pThis->fBiosVisible ? &pThis->IBlockBios : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, &pThis->IMount);
     return NULL;
 }
 
@@ -1910,13 +1907,13 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
      */
-    pThis->pDrvBlockPort = (PPDMIBLOCKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_PORT);
+    pThis->pDrvBlockPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIBLOCKPORT);
     if (!pThis->pDrvBlockPort)
     {
         AssertMsgFailed(("Configuration error: No block port interface above!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-    pThis->pDrvMountNotify = (PPDMIMOUNTNOTIFY)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUNT_NOTIFY);
+    pThis->pDrvMountNotify = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
 
     /*
      * Query configuration.

@@ -808,8 +808,7 @@ static DECLCALLBACK(void *)  drvscsiQueryInterface(PPDMIBASE pInterface, const c
         return &pDrvIns->IBase;
     if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_SCSI_CONNECTOR) == 0)
         return &pThis->ISCSIConnector;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
-        return &pThis->IPort;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pThis->IPort);
     return NULL;
 }
 
@@ -958,13 +957,13 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Query the block and blockbios interfaces.
      */
-    pThis->pDrvBlock = (PDMIBLOCK *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_BLOCK);
+    pThis->pDrvBlock = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBLOCK);
     if (!pThis->pDrvBlock)
     {
         AssertMsgFailed(("Configuration error: No block interface!\n"));
         return VERR_PDM_MISSING_INTERFACE;
     }
-    pThis->pDrvBlockBios = (PDMIBLOCKBIOS *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_BLOCK_BIOS);
+    pThis->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBLOCKBIOS);
     if (!pThis->pDrvBlockBios)
     {
         AssertMsgFailed(("Configuration error: No block BIOS interface!\n"));
@@ -975,7 +974,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     pThis->pDevScsiPort = (PPDMISCSIPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_SCSI_PORT);
     AssertMsgReturn(pThis->pDevScsiPort, ("Missing SCSI port interface above\n"), VERR_PDM_MISSING_INTERFACE);
 
-    pThis->pDrvMount = (PDMIMOUNT *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_MOUNT);
+    pThis->pDrvMount = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIMOUNT);
 
     /* Query the optional LED interface above. */
     pThis->pLedPort = (PPDMILEDPORTS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_LED_PORTS);
@@ -990,7 +989,7 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
         pThis->pLed = &pThis->Led;
 
     /* Try to get the optional async block interface. */
-    pThis->pDrvBlockAsync = (PDMIBLOCKASYNC *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_BLOCK_ASYNC);
+    pThis->pDrvBlockAsync = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIBLOCKASYNC);
 
     PDMBLOCKTYPE enmType = pThis->pDrvBlock->pfnGetType(pThis->pDrvBlock);
     if (enmType != PDMBLOCKTYPE_HARD_DISK)

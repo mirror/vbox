@@ -2405,12 +2405,9 @@ static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const
     PAHCIPort pAhciPort = PDMIBASE_2_PAHCIPORT(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pAhciPort->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
-        return &pAhciPort->IPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_ASYNC_PORT) == 0)
-        return &pAhciPort->IPortAsync;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
-        return &pAhciPort->IMountNotify;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pAhciPort->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNCPORT, &pAhciPort->IPortAsync);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);
     return NULL;
 }
 
@@ -6134,23 +6131,23 @@ static int ahciR3ConfigureLUN(PPDMDEVINS pDevIns, PAHCIPort pAhciPort)
     /*
      * Query the block and blockbios interfaces.
      */
-    pAhciPort->pDrvBlock = (PDMIBLOCK *)pAhciPort->pDrvBase->pfnQueryInterface(pAhciPort->pDrvBase, PDMINTERFACE_BLOCK);
+    pAhciPort->pDrvBlock = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCK);
     if (!pAhciPort->pDrvBlock)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block interface!\n", pAhciPort->iLUN));
         return VERR_PDM_MISSING_INTERFACE;
     }
-    pAhciPort->pDrvBlockBios = (PDMIBLOCKBIOS *)pAhciPort->pDrvBase->pfnQueryInterface(pAhciPort->pDrvBase, PDMINTERFACE_BLOCK_BIOS);
+    pAhciPort->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCKBIOS);
     if (!pAhciPort->pDrvBlockBios)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block BIOS interface!\n", pAhciPort->iLUN));
         return VERR_PDM_MISSING_INTERFACE;
     }
 
-    pAhciPort->pDrvMount = (PDMIMOUNT *)pAhciPort->pDrvBase->pfnQueryInterface(pAhciPort->pDrvBase, PDMINTERFACE_MOUNT);
+    pAhciPort->pDrvMount = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIMOUNT);
 
     /* Try to get the optional async block interface. */
-    pAhciPort->pDrvBlockAsync = (PDMIBLOCKASYNC *)pAhciPort->pDrvBase->pfnQueryInterface(pAhciPort->pDrvBase, PDMINTERFACE_BLOCK_ASYNC);
+    pAhciPort->pDrvBlockAsync = PDMIBASE_QUERY_INTERFACE(pAhciPort->pDrvBase, PDMIBLOCKASYNC);
 
     /*
      * Validate type.

@@ -3369,8 +3369,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
         }
         else
         {
-            PPDMIMOUNT pIMount = NULL;
-            pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
+            PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
             AssertBreakStmt(pIMount, rc = VERR_INVALID_POINTER);
 
             /*
@@ -3458,8 +3457,7 @@ DECLCALLBACK(int) Console::changeDrive(Console *pThis, const char *pszDevice, un
 
         if (!fHostDrive && pszPath && *pszPath)
         {
-            PPDMIMOUNT pIMount = NULL;
-            pIMount = (PPDMIMOUNT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_MOUNT);
+            PPDMIMOUNT pIMount = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMOUNT);
             if (!pIMount)
             {
                 AssertFailed();

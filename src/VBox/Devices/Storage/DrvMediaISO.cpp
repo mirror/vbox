@@ -294,8 +294,7 @@ static DECLCALLBACK(void *) drvMediaISOQueryInterface(PPDMIBASE pInterface, cons
     PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MEDIA) == 0)
-        return &pThis->IMedia;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     return NULL;
 }
 
