@@ -33,5 +33,25 @@ libXcomposite_INST       = $(INST_LIB)
 libXcomposite_SONAME     = libXcomposite.so.1
 libXcomposite_SOURCES    = libXcomposite-1.0.0/libXcomposite.c
 
+#
+# libXdamage import library.
+#
+IMPORT_LIBS += libXdamage
+libXdamage_TEMPLATE   = VBOXR3
+libXdamage_INST       = $(INST_LIB)
+# This may need fixing later.
+libXdamage_SONAME     = libXdamage.so.1
+libXdamage_SOURCES    = libXdamage-1.1.0/libXdamage.c
+
+#
+# libXfixes import library.
+#
+IMPORT_LIBS += libXfixes
+libXfixes_TEMPLATE   = VBOXR3
+libXfixes_INST       = $(INST_LIB)
+# This may need fixing later.
+libXfixes_SONAME     = libXfixes.so.3
+libXfixes_SOURCES    = libXfixes-3.1.0/libXfixes.c
+
 include $(KBUILD_PATH)/subfooter.kmk
 
