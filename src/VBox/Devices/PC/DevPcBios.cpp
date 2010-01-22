@@ -282,7 +282,7 @@ static int setLogicalDiskGeometry(PPDMIBASE pBase, PPDMIBLOCKBIOS pHardDisk, PPD
         || LCHSGeometry.cSectors > 63)
     {
         PPDMIBLOCK pBlock;
-        pBlock = (PPDMIBLOCK)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK);
+        pBlock = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCK);
         /* No LCHS geometry, autodetect and set. */
         rc = biosGuessDiskLCHS(pBlock, &LCHSGeometry);
         if (RT_FAILURE(rc))
@@ -469,7 +469,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         PPDMIBASE pBase;
         int rc = PDMR3QueryLun(pVM, pThis->pszFDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
-            apFDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
+            apFDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
     }
     u32 = 0;
     if (apFDs[0])
@@ -516,7 +516,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
         PPDMIBASE pBase;
         int rc = PDMR3QueryLun(pVM, pThis->pszHDDevice, 0, i, &pBase);
         if (RT_SUCCESS(rc))
-            apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
+            apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
         if (   apHDs[i]
             && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
                 || !apHDs[i]->pfnIsVisible(apHDs[i])))
@@ -577,7 +577,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
             PPDMIBASE pBase;
             int rc = PDMR3QueryLun(pVM, pThis->pszSataDevice, 0, pThis->iSataHDLUN[i], &pBase);
             if (RT_SUCCESS(rc))
-                apHDs[i] = (PPDMIBLOCKBIOS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_BLOCK_BIOS);
+                apHDs[i] = PDMIBASE_QUERY_INTERFACE(pBase, PDMIBLOCKBIOS);
             if (   apHDs[i]
                 && (   apHDs[i]->pfnGetType(apHDs[i]) != PDMBLOCKTYPE_HARD_DISK
                     || !apHDs[i]->pfnIsVisible(apHDs[i])))

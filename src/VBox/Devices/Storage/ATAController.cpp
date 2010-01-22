@@ -5012,7 +5012,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
     /*
      * Query Block, Bios and Mount interfaces.
      */
-    pIf->pDrvBlock = (PDMIBLOCK *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_BLOCK);
+    pIf->pDrvBlock = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIBLOCK);
     if (!pIf->pDrvBlock)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block interface!\n", pIf->iLUN));
@@ -5020,13 +5020,13 @@ static int ataConfigLun(PPDMDEVINS pDevIns, AHCIATADevState *pIf)
     }
 
     /** @todo implement the BIOS invisible code path. */
-    pIf->pDrvBlockBios = (PDMIBLOCKBIOS *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_BLOCK_BIOS);
+    pIf->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIBLOCKBIOS);
     if (!pIf->pDrvBlockBios)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block BIOS interface!\n", pIf->iLUN));
         return VERR_PDM_MISSING_INTERFACE;
     }
-    pIf->pDrvMount = (PDMIMOUNT *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_MOUNT);
+    pIf->pDrvMount = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIMOUNT);
 
     /*
      * Validate type.

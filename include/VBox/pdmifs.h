@@ -45,22 +45,6 @@ RT_C_DECLS_BEGIN
  * @todo Convert all these to _IID.
  * @{
  */
-/** PDMISTREAM              - The stream driver interface           (Up)    No coupling.
- * Used by a char driver to implement PDMINTERFACE_CHAR. */
-#define PDMINTERFACE_STREAM                     "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"
-/** PDMIBLOCKPORT           - The block notify interface            (Down)  Coupled with PDMINTERFACE_BLOCK. */
-#define PDMINTERFACE_BLOCK_PORT                 "e87fa1ab-92d5-4100-8712-fe2a0c042faf"
-/** PDMIBLOCK               - The block driver interface            (Up)    Coupled with PDMINTERFACE_BLOCK_PORT. */
-#define PDMINTERFACE_BLOCK                      "0a5f3156-8b21-4cf5-83fd-e097281d2900"
-/** PDMIBLOCKBIOS           - The block bios interface.             (External) */
-#define PDMINTERFACE_BLOCK_BIOS                 "477c3eee-a48d-48a9-82fd-2a54de16b2e9"
-/** PDMIMOUNTNOTIFY         - The mountable notification interface. (Down)  Coupled with PDMINTERFACE_MOUNT. */
-#define PDMINTERFACE_MOUNT_NOTIFY               "fa143ac9-9fc6-498e-997f-945380a558f9"
-/** PDMIMOUNT               - The mountable interface.              (Up)    Coupled with PDMINTERFACE_MOUNT_NOTIFY. */
-#define PDMINTERFACE_MOUNT                      "8e5a009a-6032-4ca1-9d86-a388d8eaf926"
-/** PDMIMEDIA               - The media interface.                  (Up)    No coupling.
- * Used by a block unit driver to implement PDMINTERFACE_BLOCK and PDMINTERFACE_BLOCK_BIOS. */
-#define PDMINTERFACE_MEDIA                      "f5bb07c9-2843-46f8-a56f-cc090b6e5bac"
 /** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
  * used by the iSCSI media driver.  */
 #define PDMINTERFACE_ISCSITRANSPORT             "b69c9b49-fd24-4955-8d8b-40aaead815e5"
@@ -70,15 +54,6 @@ RT_C_DECLS_BEGIN
 /** PDMIISCSITRANSPORTASYNCPORT - The asynchronous iSCSI interface  (Down)  Couple with PDMINTERFACE_ISCSITRANSPORTASYNC.
  * notify port used by the iSCSI media driver.  */
 #define PDMINTERFACE_ISCSITRANSPORTASYNCPORT    "6ab0fbf1-aa72-4b27-bc46-f58896ba0392"
-/** PDMIMEDIAASYNC          - Async version of the media interface  (Down)  Coupled with PDMINTERFACE_MEDIA_ASYNC_PORT. */
-#define PDMINTERFACE_MEDIA_ASYNC                "d7bc3c90-e686-4d9c-a7bc-6c6742e452ec"
-/** PDMIMEDIAASYNCPORT      - Async version of the media interface  (Up)    Coupled with PDMINTERFACE_MEDIA_ASYNC. */
-#define PDMINTERFACE_MEDIA_ASYNC_PORT           "22d38853-901f-4a71-9670-4d9da6e82317"
-/** PDMIBLOCKASYNC          - Async version of the block interface  (Down)  Coupled with PDMINTERFACE_BLOCK_ASYNC_PORT. */
-#define PDMINTERFACE_BLOCK_ASYNC                "142cd775-3be6-4c9f-9e3d-68969c3d4779"
-/** PDMIBLOCKASYNCPORT      - Async version of the block interface  (Up)    Coupled with PDMINTERFACE_BLOCK_ASYNC. */
-#define PDMINTERFACE_BLOCK_ASYNC_PORT           "e3bdc0cb-9d99-41dd-8eec-0dc8cf5b2a92"
-
 
 /** PDMINETWORKPORT         - The network port interface.           (Down)  Coupled with PDMINTERFACE_NETWORK_CONNECTOR. */
 #define PDMINTERFACE_NETWORK_PORT               "eb66670b-7998-4470-8e72-886e30f6a9c3"
@@ -163,12 +138,32 @@ typedef struct PDMIBASE
  *
  * @returns Correctly typed PDMIBASE::pfnQueryInterface return value.
  *
- * @param    pIBase         Pointer to the base interface.
- * @param    InterfaceType  The interface type name.  The interface ID is
+ * @param   pIBase          Pointer to the base interface.
+ * @param   InterfaceType   The interface type name.  The interface ID is
  *                          derived from this by appending _IID.
  */
 #define PDMIBASE_QUERY_INTERFACE(pIBase, InterfaceType)  \
     ( (InterfaceType *)(pIBase)->pfnQueryInterface(pIBase, InterfaceType##_IID ) )
+
+/**
+ * Helper macro for implementing PDMIBASE::pfnQueryInterface.
+ *
+ * Return @a pInterface if @a pszIID matches the @a InterfaceType.  This will
+ * perform basic type checking.
+ *
+ * @param   pszIID          The ID of the interface that is being queried.
+ * @param   InterfaceType   The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ * @param   pInterface      The interface address expression.
+ */
+#define PDMIBASE_RETURN_INTERFACE(pszIID, InterfaceType, pInterface)  \
+    do { \
+        if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
+        { \
+            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            return pReturnInterfaceTypeCheck; \
+        } \
+    } while (0)
 
 
 /**
@@ -656,6 +651,17 @@ typedef struct PDMIDISPLAYCONNECTOR
 
 
 /**
+ * Block notify interface (down).
+ * Pair with PDMIBLOCK.
+ */
+typedef PDMIDUMMY PDMIBLOCKPORT;
+/** PDMIBLOCKPORT interface ID. */
+#define PDMIBLOCKPORT_IID                 "e87fa1ab-92d5-4100-8712-fe2a0c042faf"
+/** Pointer to a block notify interface (dummy). */
+typedef PDMIBLOCKPORT *PPDMIBLOCKPORT;
+
+
+/**
  * Block drive type.
  */
 typedef enum PDMBLOCKTYPE
@@ -691,18 +697,11 @@ typedef enum PDMBLOCKTXDIR
     PDMBLOCKTXDIR_TO_DEVICE
 } PDMBLOCKTXDIR;
 
-/**
- * Block notify interface.
- * Pair with PDMIBLOCK.
- */
-typedef PDMIDUMMY PDMIBLOCKPORT;
-/** Pointer to a block notify interface (dummy). */
-typedef PDMIBLOCKPORT *PPDMIBLOCKPORT;
 
 /** Pointer to a block interface. */
 typedef struct PDMIBLOCK *PPDMIBLOCK;
 /**
- * Block interface.
+ * Block interface (up).
  * Pair with PDMIBLOCKPORT.
  */
 typedef struct PDMIBLOCK
@@ -795,12 +794,14 @@ typedef struct PDMIBLOCK
      */
     DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIBLOCK pInterface, PRTUUID pUuid));
 } PDMIBLOCK;
+/** PDMIBLOCK interface ID. */
+#define PDMIBLOCK_IID                           "0a5f3156-8b21-4cf5-83fd-e097281d2900"
 
 
 /** Pointer to a mount interface. */
 typedef struct PDMIMOUNTNOTIFY *PPDMIMOUNTNOTIFY;
 /**
- * Block interface.
+ * Block interface (up).
  * Pair with PDMIMOUNT.
  */
 typedef struct PDMIMOUNTNOTIFY
@@ -820,12 +821,14 @@ typedef struct PDMIMOUNTNOTIFY
      */
     DECLR3CALLBACKMEMBER(void, pfnUnmountNotify,(PPDMIMOUNTNOTIFY pInterface));
 } PDMIMOUNTNOTIFY;
+/** PDMIMOUNTNOTIFY interface ID. */
+#define PDMIMOUNTNOTIFY_IID                     "fa143ac9-9fc6-498e-997f-945380a558f9"
 
 
-/* Pointer to mount interface. */
+/** Pointer to mount interface. */
 typedef struct PDMIMOUNT *PPDMIMOUNT;
 /**
- * Mount interface.
+ * Mount interface (down).
  * Pair with PDMIMOUNTNOTIFY.
  */
 typedef struct PDMIMOUNT
@@ -894,7 +897,10 @@ typedef struct PDMIMOUNT
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(bool, pfnIsLocked,(PPDMIMOUNT pInterface));
-} PDMIBLOCKMOUNT;
+} PDMIMOUNT;
+/** PDMIMOUNT interface ID. */
+#define PDMIMOUNT_IID                           "8e5a009a-6032-4ca1-9d86-a388d8eaf926"
+
 
 /**
  * Media geometry structure.
@@ -917,8 +923,8 @@ typedef const PDMMEDIAGEOMETRY *PCPDMMEDIAGEOMETRY;
 /** Pointer to a media interface. */
 typedef struct PDMIMEDIA *PPDMIMEDIA;
 /**
- * Media interface.
- * Makes up the foundation for PDMIBLOCK and PDMIBLOCKBIOS.
+ * Media interface (up).
+ * Makes up the foundation for PDMIBLOCK and PDMIBLOCKBIOS.  No interface pair.
  */
 typedef struct PDMIMEDIA
 {
@@ -1039,12 +1045,14 @@ typedef struct PDMIMEDIA
     DECLR3CALLBACKMEMBER(int, pfnGetUuid,(PPDMIMEDIA pInterface, PRTUUID pUuid));
 
 } PDMIMEDIA;
+/** PDMIMEDIA interface ID. */
+#define PDMIMEDIA_IID                           "f5bb07c9-2843-46f8-a56f-cc090b6e5bac"
 
 
 /** Pointer to a block BIOS interface. */
 typedef struct PDMIBLOCKBIOS *PPDMIBLOCKBIOS;
 /**
- * Media BIOS interface.
+ * Media BIOS interface (Up / External).
  * The interface the getting and setting properties which the BIOS/CMOS care about.
  */
 typedef struct PDMIBLOCKBIOS
@@ -1123,6 +1131,8 @@ typedef struct PDMIBLOCKBIOS
     DECLR3CALLBACKMEMBER(PDMBLOCKTYPE, pfnGetType,(PPDMIBLOCKBIOS pInterface));
 
 } PDMIBLOCKBIOS;
+/** PDMIBLOCKBIOS interface ID. */
+#define PDMIBLOCKBIOS_IID                       "477c3eee-a48d-48a9-82fd-2a54de16b2e9"
 
 
 /** Pointer to a static block core driver interface. */
@@ -1301,7 +1311,7 @@ typedef struct PDMIISCSITRANSPORTASYNCPORT
 /** Pointer to a asynchronous block notify interface. */
 typedef struct PDMIBLOCKASYNCPORT *PPDMIBLOCKASYNCPORT;
 /**
- * Asynchronous block notify interface.
+ * Asynchronous block notify interface (up).
  * Pair with PDMIBLOCKASYNC.
  */
 typedef struct PDMIBLOCKASYNCPORT
@@ -1316,12 +1326,15 @@ typedef struct PDMIBLOCKASYNCPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIBLOCKASYNCPORT pInterface, void *pvUser));
 } PDMIBLOCKASYNCPORT;
+/** PDMIBLOCKASYNCPORT interface ID. */
+#define PDMIBLOCKASYNCPORT_IID                  "e3bdc0cb-9d99-41dd-8eec-0dc8cf5b2a92"
+
 
 
 /** Pointer to a asynchronous block interface. */
 typedef struct PDMIBLOCKASYNC *PPDMIBLOCKASYNC;
 /**
- * Asynchronous block interface.
+ * Asynchronous block interface (down).
  * Pair with PDMIBLOCKASYNCPORT.
  */
 typedef struct PDMIBLOCKASYNC
@@ -1355,13 +1368,15 @@ typedef struct PDMIBLOCKASYNC
     DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
 } PDMIBLOCKASYNC;
+/** PDMIBLOCKASYNC interface ID. */
+#define PDMIBLOCKASYNC_IID                      "142cd775-3be6-4c9f-9e3d-68969c3d4779"
 
 
 /** Pointer to a asynchronous notification interface. */
 typedef struct PDMIMEDIAASYNCPORT *PPDMIMEDIAASYNCPORT;
 /**
- * Asynchronous media interface.
- * Makes up the fundation for PDMIBLOCKASYNC and PDMIBLOCKBIOS.
+ * Asynchronous version of the media interface (up).
+ * Pair with PDMIMEDIAASYNC.
  */
 typedef struct PDMIMEDIAASYNCPORT
 {
@@ -1375,13 +1390,15 @@ typedef struct PDMIMEDIAASYNCPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnTransferCompleteNotify, (PPDMIMEDIAASYNCPORT pInterface, void *pvUser));
 } PDMIMEDIAASYNCPORT;
+/** PDMIMEDIAASYNCPORT interface ID. */
+#define PDMIMEDIAASYNCPORT_IID                  "22d38853-901f-4a71-9670-4d9da6e82317"
 
 
 /** Pointer to a asynchronous media interface. */
 typedef struct PDMIMEDIAASYNC *PPDMIMEDIAASYNC;
 /**
- * Asynchronous media interface.
- * Makes up the fundation for PDMIBLOCKASYNC and PDMIBLOCKBIOS.
+ * Asynchronous version of PDMIMEDIA (down).
+ * Pair with PDMIMEDIAASYNCPORT.
  */
 typedef struct PDMIMEDIAASYNC
 {
@@ -1414,6 +1431,8 @@ typedef struct PDMIMEDIAASYNC
     DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
 } PDMIMEDIAASYNC;
+/** PDMIMEDIAASYNC interface ID. */
+#define PDMIMEDIAASYNC_IID                      "d7bc3c90-e686-4d9c-a7bc-6c6742e452ec"
 
 
 /** Pointer to a char port interface. */
@@ -1526,8 +1545,8 @@ typedef struct PDMICHARCONNECTOR
 /** Pointer to a stream interface. */
 typedef struct PDMISTREAM *PPDMISTREAM;
 /**
- * Stream interface.
- * Makes up the foundation for PDMICHARCONNECTOR.
+ * Stream interface (up).
+ * Makes up the foundation for PDMICHARCONNECTOR.  No pair interface.
  */
 typedef struct PDMISTREAM
 {
@@ -1553,6 +1572,8 @@ typedef struct PDMISTREAM
      */
     DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMISTREAM pInterface, const void *pvBuf, size_t *cbWrite));
 } PDMISTREAM;
+/** PDMISTREAM interface ID. */
+#define PDMISTREAM_IID                          "d1a5bf5e-3d2c-449a-bde9-addd7920b71f"
 
 
 /** Mode of the parallel port */

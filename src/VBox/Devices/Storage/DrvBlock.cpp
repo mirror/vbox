@@ -528,7 +528,7 @@ static DECLCALLBACK(int) drvblockMount(PPDMIMOUNT pInterface, const char *pszFil
         return rc;
     }
 
-    pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
+    pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
     if (pThis->pDrvMedia)
     {
         /** @todo r=klaus missing async handling, this is just a band aid to
@@ -659,16 +659,11 @@ static DECLCALLBACK(void *)  drvblockQueryInterface(PPDMIBASE pInterface, const 
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK) == 0)
-        return &pThis->IBlock;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_BIOS) == 0)
-        return pThis->fBiosVisible ? &pThis->IBlockBios : NULL;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT) == 0)
-        return pThis->fMountable ? &pThis->IMount : NULL;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_ASYNC) == 0)
-        return pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MEDIA_ASYNC_PORT) == 0)
-        return pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCK, &pThis->IBlock);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKBIOS, pThis->fBiosVisible ? &pThis->IBlockBios : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNT, pThis->fMountable ? &pThis->IMount : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNC, pThis->pDrvMediaAsync ? &pThis->IBlockAsync : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, pThis->pDrvBlockAsyncPort ? &pThis->IMediaAsyncPort : NULL);
     return NULL;
 }
 
@@ -760,15 +755,14 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     /*
      * Get the IBlockPort & IMountNotify interfaces of the above driver/device.
      */
-    pThis->pDrvBlockPort = (PPDMIBLOCKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_PORT);
+    pThis->pDrvBlockPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIBLOCKPORT);
     if (!pThis->pDrvBlockPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("No block port interface above"));
 
     /* Try to get the optional async block port interface above. */
-    pThis->pDrvBlockAsyncPort = (PPDMIBLOCKASYNCPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_BLOCK_ASYNC_PORT);
-
-    pThis->pDrvMountNotify = (PPDMIMOUNTNOTIFY)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_MOUNT_NOTIFY);
+    pThis->pDrvBlockAsyncPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIBLOCKASYNCPORT);
+    pThis->pDrvMountNotify    = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIMOUNTNOTIFY);
 
     /*
      * Query configuration.
@@ -879,13 +873,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to attach driver below us! %Rrf"), rc);
 
-    pThis->pDrvMedia = (PPDMIMEDIA)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA);
+    pThis->pDrvMedia = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIA);
     if (!pThis->pDrvMedia)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_BELOW,
                                 N_("No media or async media interface below"));
 
     /* Try to get the optional async interface. */
-    pThis->pDrvMediaAsync = (PPDMIMEDIAASYNC)pBase->pfnQueryInterface(pBase, PDMINTERFACE_MEDIA_ASYNC);
+    pThis->pDrvMediaAsync = PDMIBASE_QUERY_INTERFACE(pBase, PDMIMEDIAASYNC);
 
     if (RTUuidIsNull(&pThis->Uuid))
     {

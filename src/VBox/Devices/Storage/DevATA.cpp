@@ -5280,10 +5280,8 @@ static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, const char 
     ATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pIf->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_BLOCK_PORT) == 0)
-        return &pIf->IPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_MOUNT_NOTIFY) == 0)
-        return &pIf->IMountNotify;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pIf->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pIf->IMountNotify);
     return NULL;
 }
 
@@ -5695,7 +5693,7 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     /*
      * Query Block, Bios and Mount interfaces.
      */
-    pIf->pDrvBlock = (PDMIBLOCK *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_BLOCK);
+    pIf->pDrvBlock = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIBLOCK);
     if (!pIf->pDrvBlock)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block interface!\n", pIf->iLUN));
@@ -5703,13 +5701,13 @@ static int ataConfigLun(PPDMDEVINS pDevIns, ATADevState *pIf)
     }
 
     /** @todo implement the BIOS invisible code path. */
-    pIf->pDrvBlockBios = (PDMIBLOCKBIOS *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_BLOCK_BIOS);
+    pIf->pDrvBlockBios = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIBLOCKBIOS);
     if (!pIf->pDrvBlockBios)
     {
         AssertMsgFailed(("Configuration error: LUN#%d hasn't a block BIOS interface!\n", pIf->iLUN));
         return VERR_PDM_MISSING_INTERFACE;
     }
-    pIf->pDrvMount = (PDMIMOUNT *)pIf->pDrvBase->pfnQueryInterface(pIf->pDrvBase, PDMINTERFACE_MOUNT);
+    pIf->pDrvMount = PDMIBASE_QUERY_INTERFACE(pIf->pDrvBase, PDMIMOUNT);
 
     /*
      * Validate type.
