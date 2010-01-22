@@ -53,5 +53,15 @@ libXfixes_INST       = $(INST_LIB)
 libXfixes_SONAME     = libXfixes.so.3
 libXfixes_SOURCES    = libXfixes-3.1.0/libXfixes.c
 
+#
+# libXfixes import library.
+#
+IMPORT_LIBS += libXext
+libXext_TEMPLATE   = VBOXR3
+libXext_INST       = $(INST_LIB)
+# This may need fixing later.
+libXext_SONAME     = libXext.so.6
+libXext_SOURCES    = libXext-6.4.0/libXext.c
+
 include $(KBUILD_PATH)/subfooter.kmk
 
