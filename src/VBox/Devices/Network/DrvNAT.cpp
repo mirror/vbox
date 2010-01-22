@@ -814,8 +814,7 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
-        return &pThis->INetworkConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
     return NULL;
 }
 
@@ -1025,15 +1024,12 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Query the network port interface.
      */
-    pThis->pPort =
-                (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
-                                                                      PDMINTERFACE_NETWORK_PORT);
+    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
     if (!pThis->pPort)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "
                                 "export the network port interface"));
-    pThis->pConfig = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
-                                                                             PDMINTERFACE_NETWORK_CONFIG);
+    pThis->pConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
     if (!pThis->pConfig)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "

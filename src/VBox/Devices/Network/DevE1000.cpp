@@ -4468,10 +4468,8 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_PORT) == 0)
-        return &pThis->INetworkPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONFIG) == 0)
-        return &pThis->INetworkConfig;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
         return &pThis->ILeds;
     return NULL;
@@ -5072,8 +5070,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
         }
-        pState->pDrv = (PPDMINETWORKCONNECTOR)
-            pState->pDrvBase->pfnQueryInterface(pState->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
         if (!pState->pDrv)
         {
             AssertMsgFailed(("%s Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
@@ -5290,7 +5287,7 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pState->pDrv = (PPDMINETWORKCONNECTOR)pState->pDrvBase->pfnQueryInterface(pState->pDrvBase, PDMINTERFACE_NETWORK_CONNECTOR);
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
         if (!pState->pDrv)
         {
             AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));

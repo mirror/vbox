@@ -3588,7 +3588,7 @@ HRESULT Console::onNetworkAdapterChange(INetworkAdapter *aNetworkAdapter, BOOL c
             {
                 Assert(pBase);
                 PPDMINETWORKCONFIG pINetCfg;
-                pINetCfg = (PPDMINETWORKCONFIG)pBase->pfnQueryInterface(pBase, PDMINTERFACE_NETWORK_CONFIG);
+                pINetCfg = PDMIBASE_QUERY_INTERFACE(pBase, PDMINETWORKCONFIG);
                 if (pINetCfg)
                 {
                     Log(("Console::onNetworkAdapterChange: setting link state to %d\n",

@@ -587,8 +587,7 @@ static DECLCALLBACK(void *) drvIntNetQueryInterface(PPDMIBASE pInterface, const 
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_NETWORK_CONNECTOR) == 0)
-        return &pThis->INetworkConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
     return NULL;
 }
 
@@ -819,13 +818,13 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Query the network port interface.
      */
-    pThis->pPort = (PPDMINETWORKPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_PORT);
+    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
     if (!pThis->pPort)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-    pThis->pConfigIf = (PPDMINETWORKCONFIG)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_NETWORK_CONFIG);
+    pThis->pConfigIf = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
 
     /*
      * Read the configuration.

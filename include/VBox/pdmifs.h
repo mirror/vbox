@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -45,23 +45,6 @@ RT_C_DECLS_BEGIN
  * @todo Convert all these to _IID.
  * @{
  */
-/** PDMIISCSITRANSPORT      - The iSCSI transport interface         (Up)    No coupling.
- * used by the iSCSI media driver.  */
-#define PDMINTERFACE_ISCSITRANSPORT             "b69c9b49-fd24-4955-8d8b-40aaead815e5"
-/** PDMIISCSITRANSPORTASYNC - The asynchronous iSCSI interface      (Up)    Couple with PDMINTERFACE_ISCSITRANSPORT.
- * extension used by the iSCSI media driver.  */
-#define PDMINTERFACE_ISCSITRANSPORTASYNC        "f6751563-c378-4928-b7fe-411873112ac3"
-/** PDMIISCSITRANSPORTASYNCPORT - The asynchronous iSCSI interface  (Down)  Couple with PDMINTERFACE_ISCSITRANSPORTASYNC.
- * notify port used by the iSCSI media driver.  */
-#define PDMINTERFACE_ISCSITRANSPORTASYNCPORT    "6ab0fbf1-aa72-4b27-bc46-f58896ba0392"
-
-/** PDMINETWORKPORT         - The network port interface.           (Down)  Coupled with PDMINTERFACE_NETWORK_CONNECTOR. */
-#define PDMINTERFACE_NETWORK_PORT               "eb66670b-7998-4470-8e72-886e30f6a9c3"
-/** PDMINETWORKPORT         - The network connector interface.      (Up)    Coupled with PDMINTERFACE_NETWORK_PORT. */
-#define PDMINTERFACE_NETWORK_CONNECTOR          "b4b6f850-50d0-4ddf-9efa-daee80194dca"
-/** PDMINETWORKCONFIG       - The network configuartion interface.  (Main)  Used by the managment api. */
-#define PDMINTERFACE_NETWORK_CONFIG             "d6d909e8-716d-415d-b109-534e4478ff4e"
-
 /** PDMIAUDIOCONNECTOR      - The audio driver interface.           (Up)    No coupling. */
 #define PDMINTERFACE_AUDIO_CONNECTOR            "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
@@ -1153,159 +1136,7 @@ typedef struct PDMIMEDIASTATIC
 } PDMIMEDIASTATIC;
 
 
-/**
- * iSCSI Request PDU buffer (gather).
- */
-typedef struct ISCSIREQ
-{
-    /** Length of PDU segment in bytes. */
-    size_t cbSeg;
-    /** Pointer to PDU segment. */
-    const void *pcvSeg;
-} ISCSIREQ;
-/** Pointer to an iSCSI Request PDU buffer. */
-typedef ISCSIREQ *PISCSIREQ;
-/** Pointer to a const iSCSI Request PDU buffer. */
-typedef ISCSIREQ const *PCISCSIREQ;
 
-
-/**
- * iSCSI Response PDU buffer (scatter).
- */
-typedef struct ISCSIRES
-{
-    /** Length of PDU segment. */
-    size_t cbSeg;
-    /** Pointer to PDU segment. */
-    void *pvSeg;
-} ISCSIRES;
-/** Pointer to an iSCSI Response PDU buffer. */
-typedef ISCSIRES *PISCSIRES;
-/** Pointer to a const iSCSI Response PDU buffer. */
-typedef ISCSIRES const *PCISCSIRES;
-
-
-/** Pointer to an iSCSI transport driver interface. */
-typedef struct PDMIISCSITRANSPORT *PPDMIISCSITRANSPORT;
-/**
- * iSCSI transport driver interface.
- */
-typedef struct PDMIISCSITRANSPORT
-{
-    /**
-     * Read bytes from an iSCSI transport stream. If the connection fails, it is automatically
-     * reopened on the next call after the error is signalled. Error recovery in this case is
-     * the duty of the caller.
-     *
-     * @returns VBox status code.
-     * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   paResponses     Array of scatter segments.
-     * @param   cResponses      The number of segments.
-     * @thread  Any thread.
-     * @todo    Correct the docs.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnRead,(PPDMIISCSITRANSPORT pTransport, PISCSIRES paResponses, unsigned cResponses));
-
-    /**
-     * Write bytes to an iSCSI transport stream. Padding is performed when necessary. If the connection
-     * fails, it is automatically reopened on the next call after the error is signalled. Error recovery
-     * in this case is the duty of the caller.
-     *
-     * @returns VBox status code.
-     * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   paRequests      Array of gather segments.
-     * @param   cRequests       The number of segments.
-     * @thread  Any thread.
-     * @todo    Correct the docs.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnWrite,(PPDMIISCSITRANSPORT pTransport, PISCSIREQ paRequests, unsigned cRequests));
-
-    /**
-     * Open the iSCSI transport stream.
-     *
-     * @returns VBox status code.
-     * @param   pTransport       Pointer to the interface structure containing the called function pointer.
-     * @param   pszTargetAddress Pointer to string of the format address:port.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnOpen,(PPDMIISCSITRANSPORT pTransport, const char *pszTargetAddress));
-
-    /**
-     * Close the iSCSI transport stream.
-     *
-     * @returns VBox status code.
-     * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnClose,(PPDMIISCSITRANSPORT pTransport));
-} PDMIISCSITRANSPORT;
-
-
-/** Pointer to an asynchronous iSCSI transport driver interface. */
-typedef struct PDMIISCSITRANSPORTASYNC *PPDMIISCSITRANSPORTASYNC;
-/**
- * Asynchronous iSCSI transport driver interface.
- */
-typedef struct PDMIISCSITRANSPORTASYNC
-{
-    /**
-     * Start an asynchronous read request from an iSCSI transport stream. Padding is performed when necessary.
-     *
-     * @returns VBox status code.
-     * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   paResponses     Pointer to a array of scatter segments.
-     * @param   cResponses      Number of segments in the array.
-     * @param   pvUser          User argument which is returned in completion callback.
-     * @thread  EMT thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIRES paResponses, unsigned cResponses, void *pvUser));
-
-    /**
-     * Start an asychronous write to an iSCSI transport stream. Padding is performed when necessary.
-     *
-     * @returns VBox status code.
-     * @param   pTransport      Pointer to the interface structure containing the called function pointer.
-     * @param   paRequests      Pointer to a array of gather segments.
-     * @param   cRequests       Number of segments in the array.
-     * @param   pvUser          User argument which is returned in completion callback.
-     * @thread  EMT thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIISCSITRANSPORTASYNC pTransport, PISCSIREQ pRequests, unsigned cRequests, void *pvUser));
-} PDMIISCSITRANSPORTASYNC;
-
-
-/** Pointer to a asynchronous iSCSI transport notify interface. */
-typedef struct PDMIISCSITRANSPORTASYNCPORT *PPDMIISCSITRANSPORTASYNCPORT;
-/**
- * Asynchronous iSCSI transport notify interface.
- * Pair with PDMIISCSITRANSPORTASYNC.
- */
-typedef struct PDMIISCSITRANSPORTASYNCPORT
-{
-    /**
-     * Notify completion of a read task.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   paResponses     Pointer to a array of scatter segments.
-     * @param   cResponses      Number of segments in the array.
-     * @param   pvUser          The user argument given in pfnStartRead.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnReadCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pInterface, PISCSIRES paResponses, unsigned cResponse, void *pvUser));
-
-    /**
-     * Notify completion of a write task.
-     *
-     * @returns VBox status code.
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   paRequests      Pointer to a array of gather segments.
-     * @param   cRequests       Number of segments in the array.
-     * @param   pvUser          The user argument given in pfnStartWrite.
-     * @thread  Any thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnWriteCompleteNotify, (PPDMIISCSITRANSPORTASYNCPORT pTransport, PISCSIREQ paRequests, unsigned cRequests, void *pvUser));
-} PDMIISCSITRANSPORTASYNCPORT;
 
 
 /** Pointer to a asynchronous block notify interface. */
@@ -2138,7 +1969,8 @@ typedef struct PDMIVMMDEVCONNECTOR
 /** Pointer to a network port interface */
 typedef struct PDMINETWORKPORT *PPDMINETWORKPORT;
 /**
- * Network port interface.
+ * Network port interface (down).
+ * Pair with PDMINETWORKCONNECTOR.
  */
 typedef struct PDMINETWORKPORT
 {
@@ -2166,6 +1998,8 @@ typedef struct PDMINETWORKPORT
     DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb));
 
 } PDMINETWORKPORT;
+/** PDMINETWORKPORT inteface ID. */
+#define PDMINETWORKPORT_IID                     "eb66670b-7998-4470-8e72-886e30f6a9c3"
 
 
 /**
@@ -2187,7 +2021,8 @@ typedef enum PDMNETWORKLINKSTATE
 /** Pointer to a network connector interface */
 typedef struct PDMINETWORKCONNECTOR *PPDMINETWORKCONNECTOR;
 /**
- * Network connector interface.
+ * Network connector interface (up).
+ * Pair with PDMINETWORKPORT.
  */
 typedef struct PDMINETWORKCONNECTOR
 {
@@ -2226,12 +2061,15 @@ typedef struct PDMINETWORKCONNECTOR
     /** @todo Add a callback that informs the driver chain about MAC address changes if we ever implement that.  */
 
 } PDMINETWORKCONNECTOR;
+/** PDMINETWORKCONNECTOR interface ID. */
+#define PDMINETWORKCONNECTOR_IID                "b4b6f850-50d0-4ddf-9efa-daee80194dca"
 
 
 /** Pointer to a network config port interface */
 typedef struct PDMINETWORKCONFIG *PPDMINETWORKCONFIG;
 /**
- * Network config port interface.
+ * Network config port interface (main).
+ * No interface pair.
  */
 typedef struct PDMINETWORKCONFIG
 {
@@ -2265,6 +2103,8 @@ typedef struct PDMINETWORKCONFIG
     DECLR3CALLBACKMEMBER(int, pfnSetLinkState,(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState));
 
 } PDMINETWORKCONFIG;
+/** PDMINETWORKCONFIG interface ID. */
+#define PDMINETWORKCONFIG_IID                   "d6d909e8-716d-415d-b109-534e4478ff4e"
 
 
 /** Pointer to a network connector interface */
