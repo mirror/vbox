@@ -54,6 +54,7 @@ ULONG gCustomBPP  = 0;
 
 int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 
+#ifndef VBOXWDDM
 ULONG DriverEntry(IN PVOID Context1, IN PVOID Context2)
 {
     VIDEO_HW_INITIALIZATION_DATA InitData;
@@ -860,6 +861,8 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #endif
 }
 
+#endif
+
 /* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 {
@@ -941,12 +944,20 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
     FrameBuffer.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS + ulOffset;
 
     PVOID VideoRamBase = NULL;
-    ULONG inIoSpace = 0;
     ULONG VideoRamLength = ulSize;
+    VP_STATUS Status;
+#ifndef VBOXWDDM
+    ULONG inIoSpace = 0;
 
-    VP_STATUS Status = VideoPortMapMemory (PrimaryExtension, FrameBuffer,
+    Status = VideoPortMapMemory (PrimaryExtension, FrameBuffer,
                                            &VideoRamLength, &inIoSpace,
                                            &VideoRamBase);
+#else
+    VideoRamBase = MmMapIoSpace(FrameBuffer,
+            VideoRamLength,
+            MmNonCached);
+    Status = VideoRamBase ? NO_ERROR : ERROR_INVALID_PARAMETER; /*<- this is what VideoPortMapMemory returns according to the docs */
+#endif
 
     if (Status == NO_ERROR)
     {
@@ -958,19 +969,29 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
     return Status;
 }
 
-void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv)
+void VBoxUnmapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG ulSize)
 {
     dprintf(("VBoxVideo::VBoxMapAdapterMemory\n"));
 
     if (*ppv)
     {
+#ifndef VBOXWDDM
         VideoPortUnmapMemory(PrimaryExtension, *ppv, NULL);
+#else
+        MmUnmapIoSpace(*ppv, ulSize);
+#endif
     }
 
     *ppv = NULL;
 }
 
 #ifndef VBOX_WITH_HGSMI
+
+# ifdef VBOXWDDM
+/* sanity check */
+#  error WDDM is supported only for HGSMI-based driver
+# endif
+
 static void vboxQueryConf (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32Index, ULONG *pulValue)
 {
     dprintf(("VBoxVideo::vboxQueryConf: u32Index = %d\n", u32Index));
@@ -1246,13 +1267,15 @@ VOID VBoxSetupDisplays(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_IN
     else
     {
         /* Unmap the memory if VBoxVideo is not supported. */
-        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap);
-        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation);
+        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvMiniportHeap, PrimaryExtension->u.primary.cbMiniportHeap);
+        VBoxUnmapAdapterMemory (PrimaryExtension, &PrimaryExtension->u.primary.pvAdapterInformation, VBOX_VIDEO_ADAPTER_INFORMATION_SIZE);
     }
 
     dprintf(("VBoxVideo::VBoxSetupDisplays: finished\n"));
 }
 #endif /* !VBOX_WITH_HGSMI */
+
+#ifndef VBOXWDDM
 
 VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
                                IN PVOID HwContext, IN PWSTR ArgumentString,
@@ -1461,7 +1484,7 @@ BOOLEAN VBoxVideoInitialize(PVOID HwDeviceExtension)
    return TRUE;
 }
 
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+# if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
 
 BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
 {
@@ -1488,8 +1511,8 @@ BOOLEAN VBoxVideoInterrupt(PVOID  HwDeviceExtension)
     }
     return FALSE;
 }
-#endif
-
+# endif /* #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL) */
+#endif  /* #ifndef VBOXWDDM */
 /**
  * Send a request to the host to make the absolute pointer visible
  */
@@ -1521,6 +1544,7 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
     return Result;
 }
 
+#ifndef VBOXWDDM
 /**
  * VBoxVideoStartIO
  *
@@ -2233,8 +2257,8 @@ BOOLEAN VBoxVideoResetHW(PVOID HwDeviceExtension, ULONG Columns, ULONG Rows)
 
     VbglTerminate ();
 
-    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvMiniportHeap);
-    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvAdapterInformation);
+    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvMiniportHeap, pDevExt->u.primary.cbMiniportHeap);
+    VBoxUnmapAdapterMemory (pDevExt, &pDevExt->u.primary.pvAdapterInformation, VBVA_ADAPTER_INFORMATION_SIZE);
 
     return TRUE;
 }
@@ -2262,6 +2286,7 @@ VP_STATUS VBoxVideoSetPowerState(PVOID HwDeviceExtension, ULONG HwId,
     dprintf(("VBoxVideo::VBoxVideoSetPowerState\n"));
     return NO_ERROR;
 }
+#endif /* #ifndef VBOXWDDM */
 
 /**
  * VBoxVideoSetGraphicsCap
@@ -2296,6 +2321,8 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
     return RT_SUCCESS(rc);
 }
 
+#ifndef VBOXWDDM
+
 /**
  * VBoxVideoSetCurrentMode
  *
@@ -2325,15 +2352,15 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
     }
 
     /* set the mode characteristics */
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenHeight);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->BitsPerPlane);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenHeight);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->BitsPerPlane);
     /* enable the mode */
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VideoPortWritePortUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
     /** @todo read from the port to see if the mode switch was successful */
 
     /* Tell the host that we now support graphics in the additions.
@@ -2507,7 +2534,7 @@ BOOLEAN FASTCALL VBoxVideoQueryCurrentMode(PDEVICE_EXTENSION DeviceExtension,
 
     return TRUE;
 }
-
+#endif /* ifndef VBOXWDDM */
 /*
  * VBoxVideoSetColorRegisters
  *
@@ -2533,10 +2560,10 @@ BOOLEAN FASTCALL VBoxVideoSetColorRegisters(
         Entry < ColorLookUpTable->NumEntries + ColorLookUpTable->FirstEntry;
         Entry++)
    {
-      VideoPortWritePortUchar((PUCHAR)0x03c8, (UCHAR)Entry);
-      VideoPortWritePortUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Red);
-      VideoPortWritePortUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Green);
-      VideoPortWritePortUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Blue);
+      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c8, (UCHAR)Entry);
+      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Red);
+      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Green);
+      VBoxVideoCmnPortWriteUchar((PUCHAR)0x03c9, ColorLookUpTable->LookupTable[Entry].RgbArray.Blue);
    }
 
    return TRUE;
@@ -2624,7 +2651,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
         }
         else
         {
-            VideoPortZeroMemory(&pVbvaResult, sizeof(VBVAENABLERESULT));
+            VBoxVideoCmnMemZero(&pVbvaResult, sizeof(VBVAENABLERESULT));
         }
 
         return rc;
@@ -2693,7 +2720,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
                     }
                     else
                     {
-                        VideoPortZeroMemory(&pVbvaResult, sizeof(VBVAENABLERESULT));
+                        VBoxVideoCmnMemZero(&pVbvaResult, sizeof(VBVAENABLERESULT));
                     }
 
                     dprintf(("VBoxVideo::vboxVbvaEnable: success.\n"));
