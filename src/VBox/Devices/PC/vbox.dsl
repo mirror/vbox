@@ -869,7 +869,52 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     })
                 }
 
-                // RTC and CMOS
+                // Programmable Interval Timer (i8254)
+                Device (TIMR)
+                {
+                    Name (_HID, EisaId ("PNP0100"))
+                    Name (_CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16,
+                            0x0040,             // Range Minimum
+                            0x0040,             // Range Maximum
+                            0x00,               // Alignment
+                            0x04,               // Length
+                            )
+                        IO (Decode16,
+                            0x0050,             // Range Minimum
+                            0x0050,             // Range Maximum
+                            0x10,               // Alignment
+                            0x04,               // Length
+                            )
+                    })
+                }
+
+                // Programmable Interrupt Controller (i8259)
+                Device (PIC)
+                {
+                    Name (_HID, EisaId ("PNP0000"))
+                    Name (_CRS, ResourceTemplate ()
+                    {
+                        IO (Decode16,
+                            0x0020,             // Range Minimum
+                            0x0020,             // Range Maximum
+                            0x00,               // Alignment
+                            0x02,               // Length
+                            )
+                        IO (Decode16,
+                            0x00A0,             // Range Minimum
+                            0x00A0,             // Range Maximum
+                            0x00,               // Alignment
+                            0x02,               // Length
+                            )
+                        IRQNoFlags ()
+                            {2}
+                    })
+                }
+
+
+                // Real Time Clock and CMOS (MC146818)
                 Device (RTC) 
                 {
                     Name (_HID, EisaId ("PNP0B00"))
@@ -924,20 +969,23 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     {
                        Return (USMC)
                     }
-                    Name (_CRS, ResourceTemplate ()
+                    Name (CRS, ResourceTemplate ()
                     {
                        IO (Decode16,
                            0x0300,             // Range Minimum
                            0x0300,             // Range Maximum
                            0x01,               // Alignment
-                           0x20,               // Length
-                    )
-                    // This line seriously confuses Windows ACPI driver, so not even try to
-                    // enable SMC for Windows guests
-                    IRQNoFlags () {8}
-                 })
-               }
-            }
+                           0x20)               // Length                   
+                    IRQNoFlags ()
+                            {6}
+
+                    })
+                    Method (_CRS, 0, NotSerialized)
+                    {
+                       Return (CRS)
+                    }
+                 }
+             }
 
             // Control method battery
             Device (BAT0)
