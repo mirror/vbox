@@ -102,6 +102,13 @@ VMMDev::VMMDev(Console *console) : mpDrv(NULL)
 
 VMMDev::~VMMDev()
 {
+#ifdef VBOX_WITH_HGCM
+    if (hgcmIsActive())
+    {
+        ASMAtomicWriteBool(&m_fHGCMActive, false);
+        HGCMHostShutdown();
+    }
+#endif /* VBOX_WITH_HGCM */
     RTSemEventDestroy (mCredentialsEvent);
     if (mpDrv)
         mpDrv->pVMMDev = NULL;
