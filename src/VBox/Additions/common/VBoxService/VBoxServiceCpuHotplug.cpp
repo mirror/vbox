@@ -72,7 +72,7 @@ static int cpuHotplugGetACPIDevicePath(char **ppszPath, uint32_t idCpuCore, uint
 
         while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
         {
-            if (!RTStrNCmp(pDirFolderContent->szName, "LNXCPU", 6))
+            if (!RTStrNCmp(DirFolderContent.szName, "LNXCPU", 6))
             {
                 char *pszSysDevPath = NULL;
 
@@ -183,9 +183,9 @@ DECLCALLBACK(int) VBoxServiceCpuHotplugWorker(bool volatile *pfShutdown)
                      *  and cpuidle is no CPU device.
                      *  Prevents error messages later.
                      */
-                    if(   !RTStrNCmp(pDirFolderContent->szName, "cpu", 3)
-                        && RTStrNCmp(pDirFolderConten->szName, "cpu0", 4)
-                        && RTStrNCmp(pDirFolderConten->szName, "cpuidle", 7))
+                    if(   !RTStrNCmp(DirFolderContent.szName, "cpu", 3)
+                        && RTStrNCmp(DirFolderConten.szName, "cpu0", 4)
+                        && RTStrNCmp(DirFolderConten.szName, "cpuidle", 7))
                     {
                         char *pszSysDevPath = NULL;
 
