@@ -2479,6 +2479,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
     dev->config[0x40] = 0x01; /* PM base address, this bit marks it as IO range, not PA */
 
+#if 0
+    int smb_io_base = 0xb100;
+    dev->config[0x90] = smb_io_base | 1; /* SMBus base address */
+    dev->config[0x90] = smb_io_base >> 8;
+#endif
+
     rc = PDMDevHlpPCIRegister(pDevIns, dev);
     if (RT_FAILURE(rc))
         return rc;
