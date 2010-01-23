@@ -90,8 +90,7 @@ static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, const ch
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_ACPI_CONNECTOR) == 0)
-        return &pThis->IACPIConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPICONNECTOR, &pThis->IACPIConnector);
     return NULL;
 }
 
@@ -750,8 +749,7 @@ static DECLCALLBACK(int) drvACPIConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     /*
      * Query the ACPI port interface.
      */
-    pThis->pPort = (PPDMIACPIPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase,
-                                                                      PDMINTERFACE_ACPI_PORT);
+    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIACPIPORT);
     if (!pThis->pPort)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the ACPI port interface!\n"));

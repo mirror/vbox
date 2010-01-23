@@ -4470,8 +4470,7 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const
         return &pThis->IBase;
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pThis->ILeds;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
@@ -5060,7 +5059,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pState->IBase, &pBase, "Status Port");
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("Failed to attach the status LUN"));
-    pState->pLedsConnector = (PPDMILEDCONNECTORS)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+    pState->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
 
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->IBase, &pState->pDrvBase, "Network Port");
     if (RT_SUCCESS(rc))

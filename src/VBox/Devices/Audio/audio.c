@@ -53,6 +53,9 @@
 
 #define SW_NAME(sw) (sw)->name ? (sw)->name : "unknown"
 
+/**
+ * @implements PDMIAUDIOCONNECTOR
+ */
 typedef struct DRVAUDIO
 {
     /** The audio interface. */
@@ -1933,8 +1936,7 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const c
     PDRVAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_AUDIO_CONNECTOR) == 0)
-        return &pThis->IAudioConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
     return NULL;
 }
 

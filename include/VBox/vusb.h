@@ -351,7 +351,8 @@ typedef VUSBPORTBITMAP *PVUSBPORTBITMAP;
 
 
 /**
- * The VUSB RootHub port interface provided by the HCI.
+ * The VUSB RootHub port interface provided by the HCI (down).
+ * Pair with VUSBIROOTCONNECTOR
  */
 typedef struct VUSBIROOTHUBPORT
 {
@@ -426,13 +427,16 @@ typedef struct VUSBIROOTHUBPORT
     RTR3PTR Alignment;
 
 } VUSBIROOTHUBPORT;
+/** VUSBIROOTHUBPORT interface ID. */
+#define VUSBIROOTHUBPORT_IID                    "e38e2978-7aa2-4860-94b6-9ef4a066d8a0"
 
 
 /** Pointer to a VUSB RootHub connector interface. */
 typedef struct VUSBIROOTHUBCONNECTOR *PVUSBIROOTHUBCONNECTOR;
-
 /**
- * The VUSB RootHub connector interface provided by the VBox USB RootHub driver.
+ * The VUSB RootHub connector interface provided by the VBox USB RootHub driver
+ * (up).
+ * Pair with VUSBIROOTHUBPORT.
  */
 typedef struct VUSBIROOTHUBCONNECTOR
 {
@@ -509,6 +513,8 @@ typedef struct VUSBIROOTHUBCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnDetachDevice,(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEVICE pDevice));
 
 } VUSBIROOTHUBCONNECTOR;
+/** VUSBIROOTHUBCONNECTOR interface ID. */
+#define VUSBIROOTHUBCONNECTOR_IID               "d9a90c59-e3ff-4dff-9754-844557c3f7a0"
 
 
 #ifdef IN_RING3
@@ -553,9 +559,9 @@ DECLINLINE(int) VUSBIRhDetachDevice(PVUSBIROOTHUBCONNECTOR pInterface, PVUSBIDEV
 
 /** Pointer to a Root Hub Configuration Interface. */
 typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
-
 /**
  * Root Hub Configuration Interface (intended for MAIN).
+ * No interface pair.
  */
 typedef struct VUSBIRHCONFIG
 {
@@ -582,6 +588,9 @@ typedef struct VUSBIRHCONFIG
     DECLR3CALLBACKMEMBER(int, pfnDestroyProxyDevice,(PVUSBIRHCONFIG pInterface, PCRTUUID pUuid));
 
 } VUSBIRHCONFIG;
+/** VUSBIRHCONFIG interface ID. */
+#define VUSBIRHCONFIG_IID                       "c354cd97-e85f-465e-bc12-b58798465f52"
+
 
 #ifdef IN_RING3
 /** @copydoc  VUSBIRHCONFIG::pfnCreateProxyDevice */
@@ -640,7 +649,8 @@ typedef enum VUSBDEVICESTATE
 
 
 /**
- * USB Device Interface.
+ * USB Device Interface (up).
+ * No interface pair.
  */
 typedef struct VUSBIDEVICE
 {
@@ -697,6 +707,8 @@ typedef struct VUSBIDEVICE
     DECLR3CALLBACKMEMBER(VUSBDEVICESTATE, pfnGetState,(PVUSBIDEVICE pInterface));
 
 } VUSBIDEVICE;
+/** VUSBIDEVICE interface ID. */
+#define VUSBIDEVICE_IID                         "88732dd3-0ccd-4625-b040-48804ac7a217"
 
 
 #ifdef IN_RING3

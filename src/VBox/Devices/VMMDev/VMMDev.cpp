@@ -1835,15 +1835,12 @@ static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, const
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->Base;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_PORT) == 0)
-        return &pThis->Port;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIVMMDEVPORT, &pThis->Port);
 #ifdef VBOX_WITH_HGCM
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_PORT) == 0)
-        return &pThis->HGCMPort;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHGCMPORT, &pThis->HGCMPort);
 #endif
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        /* Currently only for shared folders */
-        return &pThis->SharedFolders.ILeds;
+    /* Currently only for shared folders. */
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->SharedFolders.ILeds);
     return NULL;
 }
 
@@ -2589,11 +2586,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Base, &pThis->pDrvBase, "VMM Driver Port");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrv = (PPDMIVMMDEVCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_VMMDEV_CONNECTOR);
-        if (!pThis->pDrv)
-            AssertMsgFailedReturn(("LUN #0 doesn't have a VMMDev connector interface!\n"), VERR_PDM_MISSING_INTERFACE);
+        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIVMMDEVCONNECTOR);
+        AssertMsgReturn(pThis->pDrv, ("LUN #0 doesn't have a VMMDev connector interface!\n"), VERR_PDM_MISSING_INTERFACE);
 #ifdef VBOX_WITH_HGCM
-        pThis->pHGCMDrv = (PPDMIHGCMCONNECTOR)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase, PDMINTERFACE_HGCM_CONNECTOR);
+        pThis->pHGCMDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIHGCMCONNECTOR);
         if (!pThis->pHGCMDrv)
         {
             Log(("LUN #0 doesn't have a HGCM connector interface, HGCM is not supported. rc=%Rrc\n", rc));
@@ -2615,8 +2611,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->Base, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->SharedFolders.pLedsConnector = (PPDMILEDCONNECTORS)
-            pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+        pThis->SharedFolders.pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));

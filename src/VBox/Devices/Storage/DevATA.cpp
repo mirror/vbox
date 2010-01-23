@@ -5235,8 +5235,7 @@ static DECLCALLBACK(void *) ataStatus_QueryInterface(PPDMIBASE pInterface, const
     PCIATAState *pThis = PDMIBASE_2_PCIATASTATE(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pThis->ILeds;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
@@ -6774,7 +6773,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->pLedsConnector = (PDMILEDCONNECTORS *)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));

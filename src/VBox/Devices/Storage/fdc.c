@@ -2541,8 +2541,7 @@ static DECLCALLBACK(void *) fdcStatusQueryInterface(PPDMIBASE pInterface, const 
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBaseStatus;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pThis->ILeds;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
@@ -2887,8 +2886,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
      */
     rc = PDMDevHlpDriverAttach (pDevIns, PDM_STATUS_LUN, &fdctrl->IBaseStatus, &pBase, "Status Port");
     if (RT_SUCCESS (rc)) {
-        fdctrl->pLedsConnector =
-            pBase->pfnQueryInterface (pBase, PDMINTERFACE_LED_CONNECTORS);
+        fdctrl->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     } else if (rc != VERR_PDM_NO_ATTACHED_DRIVER) {
         AssertMsgFailed (("Failed to attach to status driver. rc=%Rrc\n",
                           rc));

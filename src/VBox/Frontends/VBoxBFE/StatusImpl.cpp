@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -92,8 +92,7 @@ DECLCALLBACK(void *)  VMStatus::drvQueryInterface(PPDMIBASE pInterface, const ch
     PDRVMAINSTATUS pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_CONNECTORS) == 0)
-        return &pDrv->ILedConnectors;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDCONNECTORS, &pDrv->ILedConnectors);
     return NULL;
 }
 
@@ -179,12 +178,9 @@ DECLCALLBACK(int) VMStatus::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      * Get the ILedPorts interface of the above driver/device and
      * query the LEDs we want.
      */
-    pData->pLedPorts = (PPDMILEDPORTS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_LED_PORTS);
-    if (!pData->pLedPorts)
-    {
-        AssertMsgFailed(("Configuration error: No led ports interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    pData->pLedPorts = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
+    AssertMsgReturn(pData->pLedPorts, ("Configuration error: No led ports interface above!\n"),
+                    VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     for (unsigned i = pData->iFirstLUN; i <= pData->iLastLUN; i++)
         VMStatus::drvUnitChanged(&pData->ILedConnectors, i);
