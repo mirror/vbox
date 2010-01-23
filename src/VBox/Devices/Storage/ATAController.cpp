@@ -4589,27 +4589,15 @@ void  ataControllerReset(PAHCIATACONTROLLER pCtl)
 /* -=-=-=-=-=- AHCIATADevState::IBase   -=-=-=-=-=- */
 
 /**
- * Queries an interface to the driver.
- *
- * @returns Pointer to interface.
- * @returns NULL if the interface was not supported by the device.
- * @param   pInterface          Pointer to AHCIATADevState::IBase.
- * @param   enmInterface        The requested interface identification.
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, PDMINTERFACE enmInterface)
+static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    AHCIATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
-    switch (enmInterface)
-    {
-        case PDMINTERFACE_BASE:
-            return &pIf->IBase;
-        case PDMINTERFACE_BLOCK_PORT:
-            return &pIf->IPort;
-        case PDMINTERFACE_MOUNT_NOTIFY:
-            return &pIf->IMountNotify;
-        default:
-            return NULL;
-    }
+    ATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pIf->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pIf->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pIf->IMountNotify);
+    return NULL;
 }
 #endif
 #endif /* IN_RING3 */

@@ -1562,11 +1562,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
         }
         pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        if (!pState->pDrv)
-        {
-            AssertMsgFailed(("%s Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
-            return VERR_PDM_MISSING_INTERFACE_BELOW;
-        }
+        AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                        VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
@@ -1743,11 +1740,8 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
 #endif
         }
         pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        if (!pState->pDrv)
-        {
-            AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
-            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
-        }
+        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("%s No attached driver!\n", INSTANCE(pState)));
