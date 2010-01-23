@@ -4820,11 +4820,8 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 #endif
         }
         pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
-        if (!pThis->pDrv)
-        {
-            AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
-            rc = VERR_PDM_MISSING_INTERFACE_BELOW;
-        }
+        AssertMsgStmt(pThis->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("#%d No attached driver!\n", PCNET_INST_NR));
@@ -5212,11 +5209,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #endif
         }
         pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
-        if (!pThis->pDrv)
-        {
-            AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
-            return VERR_PDM_MISSING_INTERFACE_BELOW;
-        }
+        AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                        VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
         Log(("No attached driver!\n"));

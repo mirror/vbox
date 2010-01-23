@@ -817,7 +817,7 @@ static int drvHostBaseOpen(PDRVHOSTBASE pThis, PRTFILE pFileDevice, bool fReadOn
          * sequence number for identification.
          */
         CFMutableDictionaryRef PropsRef = 0;
-        kern_return_t krc = IORegistryEntryCreateCFProperties(DVDService, &PropsRef, kCFAllocatorDefault, kNilOptions);
+        krc = IORegistryEntryCreateCFProperties(DVDService, &PropsRef, kCFAllocatorDefault, kNilOptions);
         if (krc == KERN_SUCCESS)
         {
             /* Get the Device Characteristics dictionary. */

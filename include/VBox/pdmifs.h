@@ -54,19 +54,14 @@ RT_C_DECLS_BEGIN
  * PDMIBASE_RETURN_INTERFACE when querying interface and implementing
  * PDMIBASE::pfnQueryInterface respectively.
  *
+ * In most interface descriptions the orientation of the interface is given as
+ * 'down' or 'up'.  This refers to a model with the device on the top and the
+ * drivers stacked below it.  Sometimes there is mention of 'main' or 'external'
+ * which normally means the same, i.e. the Main or VBoxBFE API.  Pickture the
+ * orientation of 'main' as horisontal.
+ *
  * @{
  */
-
-
-/** @name Common Driver Interface Identficators.
- * @todo Convert all these to _IID.
- * @{
- */
-
-/* gsrc -r PDMINTERFACE */
-
-
-/** @} */
 
 
 /**

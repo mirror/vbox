@@ -530,7 +530,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
         pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
         if (!pThis->pDrv)
         {
-            AssertMsgFailed(("Failed to obtain the PDMINTERFACE_NETWORK_CONNECTOR interface!\n"));
+            AssertMsgFailed(("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"));
             rc = VERR_PDM_MISSING_INTERFACE_BELOW;
             goto out;
         }
