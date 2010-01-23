@@ -657,8 +657,7 @@ static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, const c
     ParallelState *pThis = PDMIBASE_2_PARALLELSTATE(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HOST_PARALLEL_PORT) == 0)
-        return &pThis->IHostParallelPort;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTPARALLELPORT, &pThis->IHostParallelPort);
     return NULL;
 }
 
@@ -831,13 +830,10 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Parallel Host");
     if (RT_SUCCESS(rc))
     {
-        pThis->pDrvHostParallelConnector = (PDMIHOSTPARALLELCONNECTOR *)pThis->pDrvBase->pfnQueryInterface(pThis->pDrvBase,
-                                                                                                           PDMINTERFACE_HOST_PARALLEL_CONNECTOR);
-        if (!pThis->pDrvHostParallelConnector)
-        {
-            AssertMsgFailed(("Configuration error: instance %d has no host parallel interface!\n", iInstance));
-            return VERR_PDM_MISSING_INTERFACE;
-        }
+        pThis->pDrvHostParallelConnector = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIHOSTPARALLELCONNECTOR);
+        AssertMsgReturn(pThis->pDrvHostParallelConnector,
+                        ("Configuration error: instance %d has no host parallel interface!\n", iInstance),
+                        VERR_PDM_MISSING_INTERFACE);
         /** @todo provide read notification interface!!!! */
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)

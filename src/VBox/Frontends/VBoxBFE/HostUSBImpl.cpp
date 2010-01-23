@@ -223,8 +223,8 @@ STDMETHODIMP HostUSB::AttachUSBDevice (HostUSBDevice *hostDevice)
         eState != USBDeviceState_Held)
         return setError (E_FAIL,
                          tr ("Device is not in a capturable state"));
-    PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG)pBase->pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-    AssertReturn (pRhConfig, E_FAIL);
+    PVUSBIRHCONFIG pRhConfig = PDMIBASE_QUERY_INTERFACE(pBase, VUSBIRHCONFIG);
+    AssertReturn(pRhConfig, E_FAIL);
 
     /*
      * Get the address and the Uuid, and call the pfnCreateProxyDevice roothub method in EMT.
@@ -292,8 +292,8 @@ STDMETHODIMP HostUSB::DetachUSBDevice (HostUSBDevice *aDevice)
         vrc = PDMR3QueryLun (mpVM, "usb-ohci", 0, 0, &pBase);
         if (RT_SUCCESS (vrc))
         {
-            PVUSBIRHCONFIG pRhConfig = (PVUSBIRHCONFIG)pBase->pfnQueryInterface (pBase, PDMINTERFACE_VUSB_RH_CONFIG);
-            Assert (pRhConfig);
+            PVUSBIRHCONFIG pRhConfig = PDMIBASE_QUERY_INTERFACE(pBase, VUSBIRHCONFIG);
+            Assert(pRhConfig);
 
             RTUUID Uuid = aDevice->id();
             LogFlowMember (("Console::DetachUSBDevice: Detaching USB proxy device %RTuuid...\n", &Uuid));

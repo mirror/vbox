@@ -4490,8 +4490,7 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, con
         return &pThis->IBase;
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pThis->ILeds;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
@@ -5190,8 +5189,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->pLedsConnector = (PPDMILEDCONNECTORS)
-            pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));

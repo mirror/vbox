@@ -125,8 +125,7 @@ DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, const
     PDRVAUDIOSNIFFER pDrv = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR) == 0)
-        return &pDrv->Connector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOSNIFFERCONNECTOR, &pDrv->Connector);
     return NULL;
 }
 
@@ -180,7 +179,7 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     /*
      * Get the Audio Sniffer Port interface of the above driver/device.
      */
-    pThis->pUpPort = (PPDMIAUDIOSNIFFERPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_AUDIO_SNIFFER_PORT);
+    pThis->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIAUDIOSNIFFERPORT);
     if (!pThis->pUpPort)
     {
         AssertMsgFailed(("Configuration error: No Audio Sniffer port interface above!\n"));

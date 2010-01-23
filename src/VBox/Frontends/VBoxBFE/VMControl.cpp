@@ -102,8 +102,7 @@ VMCtrlACPIPowerButton(void)
     if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnPowerButtonPress(pPort) : VERR_INVALID_POINTER;
     }
     return VINF_SUCCESS;
@@ -120,8 +119,7 @@ VMCtrlACPISleepButton(void)
     if (RT_SUCCESS (vrc))
     {
         Assert (pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnSleepButtonPress(pPort) : VERR_INVALID_POINTER;
     }
     return VINF_SUCCESS;

@@ -92,8 +92,7 @@ static DECLCALLBACK(void *) drvHostParallelQueryInterface(PPDMIBASE pInterface, 
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HOST_PARALLEL_CONNECTOR) == 0)
-        return &pThis->IHostParallelConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTPARALLELCONNECTOR, &pThis->IHostParallelConnector);
     return NULL;
 }
 
@@ -322,7 +321,7 @@ static DECLCALLBACK(int) drvHostParallelConstruct(PPDMDRVINS pDrvIns, PCFGMNODE 
     /*
      * Get the IHostParallelPort interface of the above driver/device.
      */
-    pThis->pDrvHostParallelPort = (PPDMIHOSTPARALLELPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HOST_PARALLEL_PORT);
+    pThis->pDrvHostParallelPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHOSTPARALLELPORT);
     if (!pThis->pDrvHostParallelPort)
         return PDMDrvHlpVMSetError(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE, RT_SRC_POS, N_("Parallel#%d has no parallel port interface above"),
                                    pDrvIns->iInstance);

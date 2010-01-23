@@ -1942,8 +1942,7 @@ static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, const char 
     ACPIState *pThis = RT_FROM_MEMBER(pInterface, ACPIState, IBase);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_ACPI_PORT) == 0)
-        return &pThis->IACPIPort;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPIPORT, &pThis->IACPIPort);
     return NULL;
 }
 
@@ -2503,7 +2502,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
    rc = PDMDevHlpDriverAttach(pDevIns, 0, &s->IBase, &s->pDrvBase, "ACPI Driver Port");
    if (RT_SUCCESS(rc))
    {
-       s->pDrv = (PPDMIACPICONNECTOR)s->pDrvBase->pfnQueryInterface(s->pDrvBase, PDMINTERFACE_ACPI_CONNECTOR);
+       s->pDrv = PDMIBASE_QUERY_INTERFACE(s->pDrvBase, PDMIACPICONNECTOR);
        if (!s->pDrv)
            return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_MISSING_INTERFACE,
                                    N_("LUN #0 doesn't have an ACPI connector interface"));

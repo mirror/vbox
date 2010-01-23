@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -352,15 +352,9 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char 
     PDRVMAINVMMDEV pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINVMMDEV);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_CONNECTOR) == 0)
-        return &pDrv->Connector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIVMMDEVCONNECTOR, &pDrv->Connector);
 #ifdef VBOX_WITH_HGCM
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_CONNECTOR) == 0)
-    {
-        if (fActivateHGCM())
-            return &pDrv->HGCMConnector;
-        return NULL;
-    }
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHGCMCONNECTOR, fActivateHGCM() ? &pDrv->HGCMConnector : NULL);
 #endif
     return NULL;
 }
@@ -425,22 +419,14 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     /*
      * Get the IVMMDevPort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIVMMDEVPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_VMMDEV_PORT);
-    if (!pData->pUpPort)
-    {
-        AssertMsgFailed(("Configuration error: No VMMDev port interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIVMMDEVPORT);
+    AssertMsgReturn(pData->pUpPort, ("Configuration error: No VMMDev port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
 #ifdef VBOX_WITH_HGCM
     if (fActivateHGCM())
     {
-        pData->pHGCMPort = (PPDMIHGCMPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HGCM_PORT);
-        if (!pData->pHGCMPort)
-        {
-            AssertMsgFailed(("Configuration error: No HGCM port interface above!\n"));
-            return VERR_PDM_MISSING_INTERFACE_ABOVE;
-        }
+        pData->pHGCMPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHGCMPORT);
+        AssertMsgReturn(pData->pHGCMPort, ("Configuration error: No HGCM port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
     }
 #endif
 

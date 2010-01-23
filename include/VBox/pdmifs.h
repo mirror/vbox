@@ -37,6 +37,23 @@ RT_C_DECLS_BEGIN
 
 /** @defgroup grp_pdm_interfaces    The PDM Interface Definitions
  * @ingroup grp_pdm
+ *
+ * For historical reasons (the PDMINTERFACE enum) a lot of interface was stuffed
+ * together in this group instead, dragging stuff into global space that didn't
+ * need to be there and making this file huge (>2500 lines).  Since we're using
+ * UUIDs as interface identifiers (IIDs) now, no only generic PDM interface will
+ * be added to this file.  Component specific interface should be defined in the
+ * header file of that component.
+ *
+ * Interfaces consists of a method table (typedef'ed struct) and an interface
+ * ID.  The typename of the method table should have an 'I' in it, be all
+ * capitals and according to the rules, no underscores.  The interface ID is a
+ * \#define constructed by appending '_IID' to the typename. The IID value is a
+ * UUID string on the form "a2299c0d-b709-4551-aa5a-73f59ffbed74".  If you stick
+ * to these rules, you can make use of the PDMIBASE_QUERY_INTERFACE and
+ * PDMIBASE_RETURN_INTERFACE when querying interface and implementing
+ * PDMIBASE::pfnQueryInterface respectively.
+ *
  * @{
  */
 
@@ -45,53 +62,10 @@ RT_C_DECLS_BEGIN
  * @todo Convert all these to _IID.
  * @{
  */
-/** PDMIAUDIOCONNECTOR      - The audio driver interface.           (Up)    No coupling. */
-#define PDMINTERFACE_AUDIO_CONNECTOR            "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
-/** PDMIAUDIOSNIFFERPORT    - The Audio Sniffer Device port interface. */
-#define PDMINTERFACE_AUDIO_SNIFFER_PORT         "83b95e02-68cb-470d-9dfc-25a0f8efe197"
-/** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
-#define PDMINTERFACE_AUDIO_SNIFFER_CONNECTOR    "433b64ab-e603-4933-bc97-8fe79b2bd0e0"
+/* gsrc -r PDMINTERFACE */
 
-/** PDMIVMMDEVPORT          - The VMM Device port interface. */
-#define PDMINTERFACE_VMMDEV_PORT                "d7e52035-3b6c-422e-9215-2a75646a945d"
-/** PDMIVMMDEVCONNECTOR     - The VMM Device connector interface. */
-#define PDMINTERFACE_VMMDEV_CONNECTOR           "38b96194-ee83-489e-b92e-73ee28a29439"
 
-/** PDMILEDPORTS            - The generic LED port interface.       (Down)  Coupled with PDMINTERFACE_LED_CONNECTORS. */
-#define PDMINTERFACE_LED_PORTS                  "435e0cec-8549-4ca0-8c0d-98e52f1dc038"
-/** PDMILEDCONNECTORS       - The generic LED connector interface.  (Up)    Coupled with PDMINTERFACE_LED_PORTS.  */
-#define PDMINTERFACE_LED_CONNECTORS             "8ed63568-82a7-4193-b57b-db8085ac4495"
-
-/** PDMIACPIPORT            - ACPI port interface.                  (Down)   Coupled with PDMINTERFACE_ACPI_CONNECTOR. */
-#define PDMINTERFACE_ACPI_PORT                  "30d3dc4c-6a73-40c8-80e9-34309deacbb3"
-/** PDMIACPICONNECTOR       - ACPI connector interface.             (Up)     Coupled with PDMINTERFACE_ACPI_PORT. */
-#define PDMINTERFACE_ACPI_CONNECTOR             "5f14bf8d-1edf-4e3a-a1e1-cca9fd08e359"
-
-/** PDMIHGCMPORT            - The Host-Guest communication manager port interface. Normally implemented by VMMDev. */
-#define PDMINTERFACE_HGCM_PORT                  "e00a0cbf-b75a-45c3-87f4-41cddbc5ae0b"
-/** PDMIHGCMCONNECTOR       - The Host-Guest communication manager connector interface. Normally implemented by Main::VMMDevInterface. */
-#define PDMINTERFACE_HGCM_CONNECTOR             "a1104758-c888-4437-8f2a-7bac17865b5c"
-
-/** VUSBIROOTHUBPORT        - VUSB RootHub port interface.          (Down)   Coupled with PDMINTERFACE_USB_RH_CONNECTOR. */
-#define PDMINTERFACE_VUSB_RH_PORT               "e38e2978-7aa2-4860-94b6-9ef4a066d8a0"
-/** VUSBIROOTHUBCONNECTOR   - VUSB RootHub connector interface.     (Up)     Coupled with PDMINTERFACE_USB_RH_PORT. */
-#define PDMINTERFACE_VUSB_RH_CONNECTOR          "d9a90c59-e3ff-4dff-9754-844557c3f7a0"
-/** VUSBIRHCONFIG           - VUSB RootHub configuration interface. (Main)   Used by the managment api. */
-#define PDMINTERFACE_VUSB_RH_CONFIG             "c354cd97-e85f-465e-bc12-b58798465f52"
-
-/** VUSBIDEVICE             - VUSB Device interface.                (Up)     No coupling. */
-#define PDMINTERFACE_VUSB_DEVICE                "88732dd3-0ccd-4625-b040-48804ac7a217"
-
-/** PDMIHOSTPARALLELPORT    - The Host Parallel port interface.     (Down)   Coupled with PDMINTERFACE_HOST_PARALLEL_CONNECTOR. */
-#define PDMINTERFACE_HOST_PARALLEL_PORT         "ac13e437-cd30-47ac-a271-6120571f3a22"
-/** PDMIHOSTPARALLELCONNECTOR - The Host Parallel connector interface (Up)   Coupled with PDMINTERFACE_HOST_PARALLEL_PORT. */
-#define PDMINTERFACE_HOST_PARALLEL_CONNECTOR    "a03567ca-b29e-4a1b-b2f3-a12435fa2982"
-
-/** PDMISCSIPORT            - The SCSI command execution port interface (Down) Coupled with PDMINTERFACE_SCSI_CONNECTOR. */
-#define PDMINTERFACE_SCSI_PORT                  "0f894add-714d-4a77-818e-a32fe3586ba4"
-/** PDMISCSICONNECTOR       - The SCSI command execution connector interface (Up) Coupled with PDMINTERFACE_SCSI_PORT. */
-#define PDMINTERFACE_SCSI_CONNECTOR             "94465fbd-a2f2-447e-88c9-7366421bfbfe"
 /** @} */
 
 
@@ -1418,7 +1392,7 @@ typedef enum PDMPARALLELPORTMODE
 /** Pointer to a host parallel port interface. */
 typedef struct PDMIHOSTPARALLELPORT *PPDMIHOSTPARALLELPORT;
 /**
- * Host parallel port interface.
+ * Host parallel port interface (down).
  * Pair with PDMIHOSTPARALLELCONNECTOR.
  */
 typedef struct PDMIHOSTPARALLELPORT
@@ -1443,13 +1417,15 @@ typedef struct PDMIHOSTPARALLELPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyInterrupt,(PPDMIHOSTPARALLELPORT pInterface));
 } PDMIHOSTPARALLELPORT;
+/** PDMIHOSTPARALLELPORT interface ID. */
+#define PDMIHOSTPARALLELPORT_IID                "ac13e437-cd30-47ac-a271-6120571f3a22"
 
 
 
 /** Pointer to a Host Parallel connector interface. */
 typedef struct PDMIHOSTPARALLELCONNECTOR *PPDMIHOSTPARALLELCONNECTOR;
 /**
- * Host parallel connector interface
+ * Host parallel connector interface (up).
  * Pair with PDMIHOSTPARALLELPORT.
  */
 typedef struct PDMIHOSTPARALLELCONNECTOR
@@ -1516,6 +1492,8 @@ typedef struct PDMIHOSTPARALLELCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnSetMode,(PPDMIHOSTPARALLELCONNECTOR pInterface, PDMPARALLELPORTMODE enmMode));
 } PDMIHOSTPARALLELCONNECTOR;
+/** PDMIHOSTPARALLELCONNECTOR interface ID. */
+#define PDMIHOSTPARALLELCONNECTOR_IID           "a03567ca-b29e-4a1b-b2f3-a12435fa2982"
 
 
 /** ACPI power source identifier */
@@ -1552,7 +1530,8 @@ typedef PDMACPIBATSTATE *PPDMACPIBATSTATE;
 /** Pointer to an ACPI port interface. */
 typedef struct PDMIACPIPORT *PPDMIACPIPORT;
 /**
- * ACPI port interface.
+ * ACPI port interface (down). Used by both the ACPI driver and (grumble) main.
+ * Pair with PDMIACPICONNECTOR.
  */
 typedef struct PDMIACPIPORT
 {
@@ -1600,11 +1579,15 @@ typedef struct PDMIACPIPORT
      */
     DECLR3CALLBACKMEMBER(int, pfnGetCpuStatus,(PPDMIACPIPORT pInterface, unsigned uCpu, bool *pfLocked));
 } PDMIACPIPORT;
+/** PDMIACPIPORT interface ID. */
+#define PDMIACPIPORT_IID                        "30d3dc4c-6a73-40c8-80e9-34309deacbb3"
+
 
 /** Pointer to an ACPI connector interface. */
 typedef struct PDMIACPICONNECTOR *PPDMIACPICONNECTOR;
 /**
- * ACPI connector interface.
+ * ACPI connector interface (up).
+ * Pair with PDMIACPIPORT.
  */
 typedef struct PDMIACPICONNECTOR
 {
@@ -1630,12 +1613,15 @@ typedef struct PDMIACPICONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnQueryBatteryStatus,(PPDMIACPICONNECTOR, bool *pfPresent, PPDMACPIBATCAPACITY penmRemainingCapacity,
                                                      PPDMACPIBATSTATE penmBatteryState, uint32_t *pu32PresentRate));
 } PDMIACPICONNECTOR;
+/** PDMIACPICONNECTOR interface ID. */
+#define PDMIACPICONNECTOR_IID                   "5f14bf8d-1edf-4e3a-a1e1-cca9fd08e359"
 
 
 /** Pointer to a VMMDevice port interface. */
 typedef struct PDMIVMMDEVPORT *PPDMIVMMDEVPORT;
 /**
- * VMMDevice port interface.
+ * VMMDevice port interface (down).
+ * Pair with PDMIVMMDEVCONNECTOR.
  */
 typedef struct PDMIVMMDEVPORT
 {
@@ -1772,6 +1758,8 @@ typedef struct PDMIVMMDEVPORT
     DECLR3CALLBACKMEMBER(int, pfnCpuHotPlug, (PPDMIVMMDEVPORT pInterface, uint32_t idCpuCore, uint32_t idCpuPackage));
 
 } PDMIVMMDEVPORT;
+/** PDMIVMMDEVPORT interface ID. */
+#define PDMIVMMDEVPORT_IID                      "d7e52035-3b6c-422e-9215-2a75646a945d"
 
 /** @name Flags for PDMIVMMDEVPORT::pfnSetCredentials.
  * @{ */
@@ -1796,7 +1784,7 @@ typedef struct VBVAMEMORY *PVBVAMEMORY;
 /** Pointer to a VMMDev connector interface. */
 typedef struct PDMIVMMDEVCONNECTOR *PPDMIVMMDEVCONNECTOR;
 /**
- * VMMDev connector interface.
+ * VMMDev connector interface (up).
  * Pair with PDMIVMMDEVPORT.
  */
 typedef struct PDMIVMMDEVCONNECTOR
@@ -1964,6 +1952,8 @@ typedef struct PDMIVMMDEVCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnChangeMemoryBalloon, (PPDMIVMMDEVCONNECTOR pInterface, bool fInflate, uint32_t cPages, RTGCPHYS *aPhysPage));
 
 } PDMIVMMDEVCONNECTOR;
+/** PDMIVMMDEVCONNECTOR interface ID. */
+#define PDMIVMMDEVCONNECTOR_IID                 "38b96194-ee83-489e-b92e-73ee28a29439"
 
 
 /** Pointer to a network port interface */
@@ -2110,7 +2100,8 @@ typedef struct PDMINETWORKCONFIG
 /** Pointer to a network connector interface */
 typedef struct PDMIAUDIOCONNECTOR *PPDMIAUDIOCONNECTOR;
 /**
- * Audio connector interface.
+ * Audio connector interface (up).
+ * No interface pair yet.
  */
 typedef struct PDMIAUDIOCONNECTOR
 {
@@ -2119,6 +2110,8 @@ typedef struct PDMIAUDIOCONNECTOR
 /*    DECLR3CALLBACKMEMBER(int,  pfnSetRecordSource,(PPDMIAUDIOINCONNECTOR pInterface, AUDIORECSOURCE)); */
 
 } PDMIAUDIOCONNECTOR;
+/** PDMIAUDIOCONNECTOR interface ID. */
+#define PDMIAUDIOCONNECTOR_IID                  "85d52af5-b3aa-4b3e-b176-4b5ebfc52f47"
 
 
 /** @todo r=bird: the two following interfaces are hacks to work around the missing audio driver
@@ -2126,15 +2119,17 @@ typedef struct PDMIAUDIOCONNECTOR
 
 /** Pointer to a Audio Sniffer Device port interface. */
 typedef struct PDMIAUDIOSNIFFERPORT *PPDMIAUDIOSNIFFERPORT;
-
 /**
- * Audio Sniffer port interface.
+ * Audio Sniffer port interface (down).
+ * Pair with PDMIAUDIOSNIFFERCONNECTOR.
  */
 typedef struct PDMIAUDIOSNIFFERPORT
 {
     /**
-     * Enables or disables sniffing. If sniffing is being enabled also sets a flag
-     * whether the audio must be also left on the host.
+     * Enables or disables sniffing.
+     *
+     * If sniffing is being enabled also sets a flag whether the audio must be also
+     * left on the host.
      *
      * @returns VBox status code
      * @param pInterface      Pointer to this interface.
@@ -2146,12 +2141,15 @@ typedef struct PDMIAUDIOSNIFFERPORT
     DECLR3CALLBACKMEMBER(int, pfnSetup,(PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio));
 
 } PDMIAUDIOSNIFFERPORT;
+/** PDMIAUDIOSNIFFERPORT interface ID. */
+#define PDMIAUDIOSNIFFERPORT_IID                "83b95e02-68cb-470d-9dfc-25a0f8efe197"
+
 
 /** Pointer to a Audio Sniffer connector interface. */
 typedef struct PDMIAUDIOSNIFFERCONNECTOR *PPDMIAUDIOSNIFFERCONNECTOR;
 
 /**
- * Audio Sniffer connector interface.
+ * Audio Sniffer connector interface (up).
  * Pair with PDMIAUDIOSNIFFERPORT.
  */
 typedef struct PDMIAUDIOSNIFFERCONNECTOR
@@ -2183,6 +2181,8 @@ typedef struct PDMIAUDIOSNIFFERCONNECTOR
     DECLR3CALLBACKMEMBER(void, pfnAudioVolumeOut,(PPDMIAUDIOSNIFFERCONNECTOR pInterface, uint16_t u16LeftVolume, uint16_t u16RightVolume));
 
 } PDMIAUDIOSNIFFERCONNECTOR;
+/** PDMIAUDIOSNIFFERCONNECTOR - The Audio Sniffer Driver connector interface. */
+#define PDMIAUDIOSNIFFERCONNECTOR_IID           "433b64ab-e603-4933-bc97-8fe79b2bd0e0"
 
 
 /**
@@ -2243,12 +2243,14 @@ typedef PDMLED *PPDMLED;
 /** Pointer to a const LED. */
 typedef const PDMLED *PCPDMLED;
 
-#define PDMLED_MAGIC ( 0x11335577 )
+/** Magic value for PDMLED::u32Magic. */
+#define PDMLED_MAGIC    UINT32_C(0x11335577)
 
 /** Pointer to an LED ports interface. */
 typedef struct PDMILEDPORTS      *PPDMILEDPORTS;
 /**
- * Interface for exporting LEDs.
+ * Interface for exporting LEDs (down).
+ * Pair with PDMILEDCONNECTORS.
  */
 typedef struct PDMILEDPORTS
 {
@@ -2263,12 +2265,15 @@ typedef struct PDMILEDPORTS
     DECLR3CALLBACKMEMBER(int, pfnQueryStatusLed,(PPDMILEDPORTS pInterface, unsigned iLUN, PPDMLED *ppLed));
 
 } PDMILEDPORTS;
+/** PDMILEDPORTS interface ID. */
+#define PDMILEDPORTS_IID                        "435e0cec-8549-4ca0-8c0d-98e52f1dc038"
 
 
 /** Pointer to an LED connectors interface. */
 typedef struct PDMILEDCONNECTORS *PPDMILEDCONNECTORS;
 /**
- * Interface for reading LEDs.
+ * Interface for reading LEDs (up).
+ * Pair with PDMILEDPORTS.
  */
 typedef struct PDMILEDCONNECTORS
 {
@@ -2283,6 +2288,8 @@ typedef struct PDMILEDCONNECTORS
      */
     DECLR3CALLBACKMEMBER(void, pfnUnitChanged,(PPDMILEDCONNECTORS pInterface, unsigned iLUN));
 } PDMILEDCONNECTORS;
+/** PDMILEDCONNECTORS interface ID. */
+#define PDMILEDCONNECTORS_IID                   "8ed63568-82a7-4193-b57b-db8085ac4495"
 
 
 /** The special status unit number */
@@ -2302,9 +2309,10 @@ typedef struct VBOXHGCMCMD *PVBOXHGCMCMD;
 
 /** Pointer to a HGCM port interface. */
 typedef struct PDMIHGCMPORT *PPDMIHGCMPORT;
-
 /**
- * HGCM port interface. Normally implemented by VMMDev.
+ * Host-Guest communication manager port interface (down). Normally implemented
+ * by VMMDev.
+ * Pair with PDMIHGCMCONNECTOR.
  */
 typedef struct PDMIHGCMPORT
 {
@@ -2320,16 +2328,18 @@ typedef struct PDMIHGCMPORT
     DECLR3CALLBACKMEMBER(void, pfnCompleted,(PPDMIHGCMPORT pInterface, int32_t rc, PVBOXHGCMCMD pCmd));
 
 } PDMIHGCMPORT;
+/** PDMIHGCMPORT interface ID. */
+# define PDMIHGCMPORT_IID                       "e00a0cbf-b75a-45c3-87f4-41cddbc5ae0b"
 
-
-/** Pointer to a HGCM connector interface. */
-typedef struct PDMIHGCMCONNECTOR *PPDMIHGCMCONNECTOR;
 
 /** Pointer to a HGCM service location structure. */
 typedef struct HGCMSERVICELOCATION *PHGCMSERVICELOCATION;
 
+/** Pointer to a HGCM connector interface. */
+typedef struct PDMIHGCMCONNECTOR *PPDMIHGCMCONNECTOR;
 /**
- * HGCM connector interface.
+ * The Host-Guest communication manager connector interface (up). Normally
+ * implemented by Main::VMMDevInterface.
  * Pair with PDMIHGCMPORT.
  */
 typedef struct PDMIHGCMCONNECTOR
@@ -2373,8 +2383,10 @@ typedef struct PDMIHGCMCONNECTOR
                                        uint32_t cParms, PVBOXHGCMSVCPARM paParms));
 
 } PDMIHGCMCONNECTOR;
+/** PDMIHGCMCONNECTOR interface ID. */
+# define PDMIHGCMCONNECTOR_IID                  "a1104758-c888-4437-8f2a-7bac17865b5c"
 
-#endif
+#endif /* VBOX_WITH_HGCM */
 
 /**
  * Data direction.
@@ -2421,9 +2433,8 @@ typedef const PDMSCSIREQUEST *PCSCSIREQUEST;
 
 /** Pointer to a SCSI port interface. */
 typedef struct PDMISCSIPORT *PPDMISCSIPORT;
-
 /**
- * SCSI port interface.
+ * SCSI command execution port interface (down).
  * Pair with PDMISCSICONNECTOR.
  */
 typedef struct PDMISCSIPORT
@@ -2440,12 +2451,14 @@ typedef struct PDMISCSIPORT
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestCompleted, (PPDMISCSIPORT pInterface, PPDMSCSIREQUEST pSCSIRequest, int rcCompletion));
 
 } PDMISCSIPORT;
+/** PDMISCSIPORT interface ID. */
+#define PDMISCSIPORT_IID                        "0f894add-714d-4a77-818e-a32fe3586ba4"
 
 
 /** Pointer to a SCSI connector interface. */
 typedef struct PDMISCSICONNECTOR *PPDMISCSICONNECTOR;
 /**
- * SCSI connector interface.
+ * SCSI command execution connector interface (up).
  * Pair with PDMISCSIPORT.
  */
 typedef struct PDMISCSICONNECTOR
@@ -2461,6 +2474,8 @@ typedef struct PDMISCSICONNECTOR
      DECLR3CALLBACKMEMBER(int, pfnSCSIRequestSend, (PPDMISCSICONNECTOR pInterface, PPDMSCSIREQUEST pSCSIRequest));
 
 } PDMISCSICONNECTOR;
+/** PDMISCSICONNECTOR interface ID. */
+#define PDMISCSICONNECTOR_IID                   "94465fbd-a2f2-447e-88c9-7366421bfbfe"
 
 
 /** Pointer to a display VBVA callbacks interface. */

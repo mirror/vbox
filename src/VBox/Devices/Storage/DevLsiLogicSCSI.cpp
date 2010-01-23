@@ -4202,10 +4202,8 @@ static DECLCALLBACK(void *) lsilogicDeviceQueryInterface(PPDMIBASE pInterface, c
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDevice->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_SCSI_PORT) == 0)
-        return &pDevice->ISCSIPort;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pDevice->ILed;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSIPORT, &pDevice->ISCSIPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pDevice->ILed);
     return NULL;
 }
 
@@ -4237,8 +4235,7 @@ static DECLCALLBACK(void *) lsilogicStatusQueryInterface(PPDMIBASE pInterface, c
     PLSILOGICSCSI pThis = PDMIBASE_2_PLSILOGICSCSI(pInterface);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pThis->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_PORTS) == 0)
-        return &pThis->ILeds;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
@@ -4308,7 +4305,7 @@ static DECLCALLBACK(int)  lsilogicAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint
     if (RT_SUCCESS(rc))
     {
         /* Get SCSI connector interface. */
-        pDevice->pDrvSCSIConnector = (PPDMISCSICONNECTOR)pDevice->pDrvBase->pfnQueryInterface(pDevice->pDrvBase, PDMINTERFACE_SCSI_CONNECTOR);
+        pDevice->pDrvSCSIConnector = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMISCSICONNECTOR);
         AssertMsgReturn(pDevice->pDrvSCSIConnector, ("Missing SCSI interface below\n"), VERR_PDM_MISSING_INTERFACE);
     }
     else
@@ -4594,7 +4591,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         if (RT_SUCCESS(rc))
         {
             /* Get SCSI connector interface. */
-            pDevice->pDrvSCSIConnector = (PPDMISCSICONNECTOR)pDevice->pDrvBase->pfnQueryInterface(pDevice->pDrvBase, PDMINTERFACE_SCSI_CONNECTOR);
+            pDevice->pDrvSCSIConnector = PDMIBASE_QUERY_INTERFACE(pDevice->pDrvBase, PDMISCSICONNECTOR);
             AssertMsgReturn(pDevice->pDrvSCSIConnector, ("Missing SCSI interface below\n"), VERR_PDM_MISSING_INTERFACE);
         }
         else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -4616,7 +4613,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     PPDMIBASE pBase;
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
-        pThis->pLedsConnector = (PDMILEDCONNECTORS *)pBase->pfnQueryInterface(pBase, PDMINTERFACE_LED_CONNECTORS);
+        pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));

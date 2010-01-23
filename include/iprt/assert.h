@@ -671,6 +671,37 @@ RT_C_DECLS_END
 # define AssertMsg(expr, a)  do { } while (0)
 #endif
 
+/** @def AssertMsgStmt
+ * Assert that an expression is true.  If it's not print message and hit
+ * breakpoint and execute the statement.
+ *
+ * @param   expr    Expression which should be true.
+ * @param   a       printf argument list (in parenthesis).
+ * @param   stmt    Statement to execute in case of a failed assertion.
+ *
+ * @remarks The expression and statement will be evaluated in all build types.
+ */
+#ifdef RT_STRICT
+# define AssertMsgStmt(expr, a, stmt)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            RTAssertMsg1Weak(#expr, __LINE__, __FILE__, __PRETTY_FUNCTION__); \
+            RTAssertMsg2Weak a; \
+            RTAssertPanic(); \
+            stmt; \
+        } \
+    } while (0)
+#else
+# define AssertMsgStmt(expr, a, stmt)  \
+    do { \
+        if (RT_UNLIKELY(!(expr))) \
+        { \
+            stmt; \
+        } \
+    } while (0)
+#endif
+
 /** @def AssertMsgReturn
  * Assert that an expression is true and returns if it isn't.
  * In RT_STRICT mode it will hit a breakpoint before returning.

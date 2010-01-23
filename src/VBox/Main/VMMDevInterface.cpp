@@ -660,11 +660,9 @@ DECLCALLBACK(void *) VMMDev::drvQueryInterface(PPDMIBASE pInterface, const char 
 
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_VMMDEV_CONNECTOR) == 0)
-        return &pDrv->Connector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIVMMDEVCONNECTOR, &pDrv->Connector);
 #ifdef VBOX_WITH_HGCM
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_HGCM_CONNECTOR) == 0)
-        return &pDrv->HGCMConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHGCMCONNECTOR, &pDrv->HGCMConnector);
 #endif
     return NULL;
 }
@@ -750,20 +748,12 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     /*
      * Get the IVMMDevPort interface of the above driver/device.
      */
-    pData->pUpPort = (PPDMIVMMDEVPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_VMMDEV_PORT);
-    if (!pData->pUpPort)
-    {
-        AssertMsgFailed(("Configuration error: No VMMDev port interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    pData->pUpPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIVMMDEVPORT);
+    AssertMsgReturn(pData->pUpPort, ("Configuration error: No VMMDev port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 
 #ifdef VBOX_WITH_HGCM
-    pData->pHGCMPort = (PPDMIHGCMPORT)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_HGCM_PORT);
-    if (!pData->pHGCMPort)
-    {
-        AssertMsgFailed(("Configuration error: No HGCM port interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    pData->pHGCMPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMIHGCMPORT);
+    AssertMsgReturn(pData->pHGCMPort, ("Configuration error: No HGCM port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
 #endif
 
     /*
@@ -790,12 +780,8 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
         PPDMILEDPORTS pLedPort;
 
         LogRel(("Shared Folders service loaded.\n"));
-        pLedPort = (PPDMILEDPORTS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_LED_PORTS);
-        if (!pLedPort)
-        {
-            AssertMsgFailed(("Configuration error: No LED port interface above!\n"));
-            return VERR_PDM_MISSING_INTERFACE_ABOVE;
-        }
+        pLedPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
+        AssertMsgReturn(pLedPort, ("Configuration error: No LED port interface above!\n"), VERR_PDM_MISSING_INTERFACE_ABOVE);
         rc = pLedPort->pfnQueryStatusLed(pLedPort, 0, &pLed);
         if (RT_SUCCESS(rc) && pLed)
         {

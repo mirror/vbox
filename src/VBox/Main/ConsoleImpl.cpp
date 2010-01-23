@@ -1786,8 +1786,7 @@ HRESULT Console::doCPURemove(ULONG aCpu)
 
         Assert(pBase);
 
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
 
         vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotUnplug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
         if (RT_SUCCESS(vrc))
@@ -2082,8 +2081,7 @@ STDMETHODIMP Console::PowerButton()
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnPowerButtonPress(pPort) : VERR_INVALID_POINTER;
     }
 
@@ -2127,8 +2125,7 @@ STDMETHODIMP Console::GetPowerButtonHandled(BOOL *aHandled)
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnGetPowerButtonHandled(pPort, &handled) : VERR_INVALID_POINTER;
     }
 
@@ -2174,8 +2171,7 @@ STDMETHODIMP Console::GetGuestEnteredACPIMode(BOOL *aEntered)
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnGetGuestEnteredACPIMode(pPort, &entered) : VERR_INVALID_POINTER;
     }
 
@@ -2208,8 +2204,7 @@ STDMETHODIMP Console::SleepButton()
     if (RT_SUCCESS(vrc))
     {
         Assert(pBase);
-        PPDMIACPIPORT pPort =
-            (PPDMIACPIPORT) pBase->pfnQueryInterface(pBase, PDMINTERFACE_ACPI_PORT);
+        PPDMIACPIPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIACPIPORT);
         vrc = pPort ? pPort->pfnSleepButtonPress(pPort) : VERR_INVALID_POINTER;
     }
 
@@ -8136,8 +8131,7 @@ DECLCALLBACK(void *)  Console::drvStatus_QueryInterface(PPDMIBASE pInterface, co
     PDRVMAINSTATUS pThis = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
         return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMINTERFACE_LED_CONNECTORS) == 0)
-        return &pThis->ILedConnectors;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDCONNECTORS, &pThis->ILedConnectors);
     return NULL;
 }
 
@@ -8223,12 +8217,9 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
      * Get the ILedPorts interface of the above driver/device and
      * query the LEDs we want.
      */
-    pData->pLedPorts = (PPDMILEDPORTS)pDrvIns->pUpBase->pfnQueryInterface(pDrvIns->pUpBase, PDMINTERFACE_LED_PORTS);
-    if (!pData->pLedPorts)
-    {
-        AssertMsgFailed(("Configuration error: No led ports interface above!\n"));
-        return VERR_PDM_MISSING_INTERFACE_ABOVE;
-    }
+    pData->pLedPorts = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMILEDPORTS);
+    AssertMsgReturn(pData->pLedPorts, ("Configuration error: No led ports interface above!\n"),
+                    VERR_PDM_MISSING_INTERFACE_ABOVE);
 
     for (unsigned i = pData->iFirstLUN; i <= pData->iLastLUN; ++i)
         Console::drvStatus_UnitChanged(&pData->ILedConnectors, i);
