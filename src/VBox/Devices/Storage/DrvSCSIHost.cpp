@@ -403,8 +403,7 @@ static DECLCALLBACK(void *)  drvscsihostQueryInterface(PPDMIBASE pInterface, con
     PPDMDRVINS   pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVSCSIHOST pThis   = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSICONNECTOR, &pThis->ISCSIConnector);
     return NULL;
 }

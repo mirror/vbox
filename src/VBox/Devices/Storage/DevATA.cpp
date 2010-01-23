@@ -5233,8 +5233,7 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
 static DECLCALLBACK(void *) ataStatus_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PCIATAState *pThis = PDMIBASE_2_PCIATASTATE(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
@@ -5277,8 +5276,7 @@ static DECLCALLBACK(int) ataStatus_QueryStatusLed(PPDMILEDPORTS pInterface, unsi
 static DECLCALLBACK(void *)  ataQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     ATADevState *pIf = PDMIBASE_2_ATASTATE(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pIf->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pIf->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pIf->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pIf->IMountNotify);
     return NULL;

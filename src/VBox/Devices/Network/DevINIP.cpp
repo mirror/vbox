@@ -396,8 +396,7 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
                                                   const char *pszIID)
 {
     PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, IBase);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     return NULL;
 }

@@ -4486,8 +4486,7 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, con
 {
     PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, IBase);
     Assert(&pThis->IBase == pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);

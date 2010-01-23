@@ -57,7 +57,7 @@ typedef struct DRVMAINDISPLAY
     /** Pointer to the keyboard port interface of the driver/device above us. */
     PPDMIDISPLAYPORT            pUpPort;
     /** Our display connector interface. */
-    PDMIDISPLAYCONNECTOR        Connector;
+    PDMIDISPLAYCONNECTOR        IConnector;
 #if defined(VBOX_WITH_VIDEOHWACCEL)
     /** VBVA callbacks */
     PPDMIDISPLAYVBVACALLBACKS   pVBVACallbacks;
@@ -65,7 +65,7 @@ typedef struct DRVMAINDISPLAY
 } DRVMAINDISPLAY, *PDRVMAINDISPLAY;
 
 /** Converts PDMIDISPLAYCONNECTOR pointer to a DRVMAINDISPLAY pointer. */
-#define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface)  RT_FROM_MEMBER(pInterface, DRVMAINDISPLAY, Connector)
+#define PDMIDISPLAYCONNECTOR_2_MAINDISPLAY(pInterface)  RT_FROM_MEMBER(pInterface, DRVMAINDISPLAY, IConnector)
 
 #ifdef DEBUG_sunlover
 static STAMPROFILE StatDisplayRefresh;
@@ -1000,7 +1000,7 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
 
 #ifdef DEBUG_sunlover
     LogFlowFunc (("%d,%d %dx%d (%d,%d)\n",
-                  x, y, w, h, mpDrv->Connector.cx, mpDrv->Connector.cy));
+                  x, y, w, h, mpDrv->IConnector.cx, mpDrv->IConnector.cy));
 #endif /* DEBUG_sunlover */
 
     unsigned uScreenId = mapCoordsToScreen(maFramebuffers, mcMonitors, &x, &y, &w, &h);
@@ -1018,7 +1018,7 @@ void Display::handleDisplayUpdate (int x, int y, int w, int h)
     pFramebuffer->Lock();
 
     if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
-        checkCoordBounds (&x, &y, &w, &h, mpDrv->Connector.cx, mpDrv->Connector.cy);
+        checkCoordBounds (&x, &y, &w, &h, mpDrv->IConnector.cx, mpDrv->IConnector.cy);
     else
         checkCoordBounds (&x, &y, &w, &h, maFramebuffers[uScreenId].w,
                                           maFramebuffers[uScreenId].h);
@@ -1946,7 +1946,7 @@ STDMETHODIMP Display::COMGETTER(Width) (ULONG *width)
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    *width = mpDrv->Connector.cx;
+    *width = mpDrv->IConnector.cx;
 
     return S_OK;
 }
@@ -1968,7 +1968,7 @@ STDMETHODIMP Display::COMGETTER(Height) (ULONG *height)
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    *height = mpDrv->Connector.cy;
+    *height = mpDrv->IConnector.cy;
 
     return S_OK;
 }
@@ -2082,10 +2082,10 @@ STDMETHODIMP Display::SetVideoModeHint(ULONG aWidth, ULONG aHeight,
      */
     ULONG width  = aWidth;
     if (!width)
-        width    = mpDrv->Connector.cx;
+        width    = mpDrv->IConnector.cx;
     ULONG height = aHeight;
     if (!height)
-        height   = mpDrv->Connector.cy;
+        height   = mpDrv->IConnector.cy;
     ULONG bpp    = aBitsPerPixel;
     if (!bpp)
     {
@@ -2612,20 +2612,20 @@ void Display::updateDisplayData (bool aCheckParams /* = false */)
             return;
         }
 
-        mpDrv->Connector.pu8Data = (uint8_t *) address;
-        mpDrv->Connector.cbScanline = bytesPerLine;
-        mpDrv->Connector.cBits = bitsPerPixel;
-        mpDrv->Connector.cx = width;
-        mpDrv->Connector.cy = height;
+        mpDrv->IConnector.pu8Data = (uint8_t *) address;
+        mpDrv->IConnector.cbScanline = bytesPerLine;
+        mpDrv->IConnector.cBits = bitsPerPixel;
+        mpDrv->IConnector.cx = width;
+        mpDrv->IConnector.cy = height;
     }
     else
     {
         /* black hole */
-        mpDrv->Connector.pu8Data = NULL;
-        mpDrv->Connector.cbScanline = 0;
-        mpDrv->Connector.cBits = 0;
-        mpDrv->Connector.cx = 0;
-        mpDrv->Connector.cy = 0;
+        mpDrv->IConnector.pu8Data = NULL;
+        mpDrv->IConnector.cbScanline = 0;
+        mpDrv->IConnector.cBits = 0;
+        mpDrv->IConnector.cx = 0;
+        mpDrv->IConnector.cy = 0;
     }
 }
 
@@ -2779,7 +2779,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
                 if (!pFBInfo->pFramebuffer.isNull() && pFBInfo->u32ResizeStatus == ResizeStatus_Void)
                 {
-                    Assert(pDrv->Connector.pu8Data);
+                    Assert(pDrv->IConnector.pu8Data);
                     pDisplay->vbvaLock();
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
                     pDisplay->vbvaUnlock();
@@ -2840,7 +2840,7 @@ DECLCALLBACK(void) Display::displayRefreshCallback(PPDMIDISPLAYCONNECTOR pInterf
                 DISPLAYFBINFO *pFBInfo = &pDisplay->maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN];
                 if (!pFBInfo->pFramebuffer.isNull())
                 {
-                    Assert(pDrv->Connector.pu8Data);
+                    Assert(pDrv->IConnector.pu8Data);
                     Assert(pFBInfo->u32ResizeStatus == ResizeStatus_Void);
                     pDrv->pUpPort->pfnUpdateDisplay(pDrv->pUpPort);
                 }
@@ -3368,10 +3368,8 @@ DECLCALLBACK(void *)  Display::drvQueryInterface(PPDMIBASE pInterface, const cha
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINDISPLAY pDrv = PDMINS_2_DATA(pDrvIns, PDRVMAINDISPLAY);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMIDISPLAYCONNECTOR_IID) == 0)
-        return &pDrv->Connector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYCONNECTOR, &pDrv->IConnector);
     return NULL;
 }
 
@@ -3422,26 +3420,26 @@ DECLCALLBACK(int) Display::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle
     /*
      * Init Interfaces.
      */
-    pDrvIns->IBase.pfnQueryInterface       = Display::drvQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface        = Display::drvQueryInterface;
 
-    pData->Connector.pfnResize             = Display::displayResizeCallback;
-    pData->Connector.pfnUpdateRect         = Display::displayUpdateCallback;
-    pData->Connector.pfnRefresh            = Display::displayRefreshCallback;
-    pData->Connector.pfnReset              = Display::displayResetCallback;
-    pData->Connector.pfnLFBModeChange      = Display::displayLFBModeChangeCallback;
-    pData->Connector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
-    pData->Connector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
+    pData->IConnector.pfnResize             = Display::displayResizeCallback;
+    pData->IConnector.pfnUpdateRect         = Display::displayUpdateCallback;
+    pData->IConnector.pfnRefresh            = Display::displayRefreshCallback;
+    pData->IConnector.pfnReset              = Display::displayResetCallback;
+    pData->IConnector.pfnLFBModeChange      = Display::displayLFBModeChangeCallback;
+    pData->IConnector.pfnProcessAdapterData = Display::displayProcessAdapterDataCallback;
+    pData->IConnector.pfnProcessDisplayData = Display::displayProcessDisplayDataCallback;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    pData->Connector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
+    pData->IConnector.pfnVHWACommandProcess = Display::displayVHWACommandProcess;
 #endif
 #ifdef VBOX_WITH_HGSMI
-    pData->Connector.pfnVBVAEnable         = Display::displayVBVAEnable;
-    pData->Connector.pfnVBVADisable        = Display::displayVBVADisable;
-    pData->Connector.pfnVBVAUpdateBegin    = Display::displayVBVAUpdateBegin;
-    pData->Connector.pfnVBVAUpdateProcess  = Display::displayVBVAUpdateProcess;
-    pData->Connector.pfnVBVAUpdateEnd      = Display::displayVBVAUpdateEnd;
-    pData->Connector.pfnVBVAResize         = Display::displayVBVAResize;
-    pData->Connector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
+    pData->IConnector.pfnVBVAEnable         = Display::displayVBVAEnable;
+    pData->IConnector.pfnVBVADisable        = Display::displayVBVADisable;
+    pData->IConnector.pfnVBVAUpdateBegin    = Display::displayVBVAUpdateBegin;
+    pData->IConnector.pfnVBVAUpdateProcess  = Display::displayVBVAUpdateProcess;
+    pData->IConnector.pfnVBVAUpdateEnd      = Display::displayVBVAUpdateEnd;
+    pData->IConnector.pfnVBVAResize         = Display::displayVBVAResize;
+    pData->IConnector.pfnVBVAMousePointerShape = Display::displayVBVAMousePointerShape;
 #endif
 
 

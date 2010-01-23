@@ -2390,8 +2390,7 @@ static DECLCALLBACK(int) ahciR3Status_QueryStatusLed(PPDMILEDPORTS pInterface, u
 static DECLCALLBACK(void *) ahciR3Status_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PAHCI pThis = PDMIBASE_2_PAHCI(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
@@ -2402,8 +2401,7 @@ static DECLCALLBACK(void *) ahciR3Status_QueryInterface(PPDMIBASE pInterface, co
 static DECLCALLBACK(void *) ahciR3PortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PAHCIPort pAhciPort = PDMIBASE_2_PAHCIPORT(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pAhciPort->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pAhciPort->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pAhciPort->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKASYNCPORT, &pAhciPort->IPortAsync);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pAhciPort->IMountNotify);

@@ -343,8 +343,7 @@ static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, cons
     PPDMDRVINS      pDrvIns = PDMIBASE_2_DRVINS(pInterface);
     PDRVRAWIMAGE    pThis   = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     return NULL;
 }

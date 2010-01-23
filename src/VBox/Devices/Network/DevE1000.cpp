@@ -4466,8 +4466,7 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const
     E1KSTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
     Assert(&pThis->IBase == pInterface);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);

@@ -655,8 +655,7 @@ static DECLCALLBACK(void) parallelRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDel
 static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     ParallelState *pThis = PDMIBASE_2_PARALLELSTATE(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHOSTPARALLELPORT, &pThis->IHostParallelPort);
     return NULL;
 }

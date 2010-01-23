@@ -4737,14 +4737,11 @@ static DECLCALLBACK(void) vgaInfoDAC(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, con
  */
 static DECLCALLBACK(void *) vgaPortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, Base);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->Base;
-    if (RTUuidCompare2Strs(pszIID, PDMIDISPLAYPORT_IID) == 0)
-        return &pThis->Port;
+    PVGASTATE pThis = RT_FROM_MEMBER(pInterface, VGASTATE, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYPORT, &pThis->IPort);
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
-    if (RTUuidCompare2Strs(pszIID, PDMIDISPLAYVBVACALLBACKS_IID) == 0)
-        return &pThis->VBVACallbacks;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIDISPLAYVBVACALLBACKS, &pThis->IVBVACallbacks);
 #endif
     return NULL;
 }
@@ -4804,7 +4801,7 @@ static DECLCALLBACK(void) vgaDummyRefresh(PPDMIDISPLAYCONNECTOR pInterface)
 /* -=-=-=-=-=- Ring 3: IDisplayPort -=-=-=-=-=- */
 
 /** Converts a display port interface pointer to a vga state pointer. */
-#define IDISPLAYPORT_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, Port)) )
+#define IDISPLAYPORT_2_VGASTATE(pInterface) ( (PVGASTATE)((uintptr_t)pInterface - RT_OFFSETOF(VGASTATE, IPort)) )
 
 
 /**
@@ -5724,7 +5721,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
         /* LUN #0: Display port. */
         case 0:
         {
-            int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->Base, &pThis->pDrvBase, "Display Port");
+            int rc = PDMDevHlpDriverAttach(pDevIns, iLUN, &pThis->IBase, &pThis->pDrvBase, "Display Port");
             if (RT_SUCCESS(rc))
             {
                 pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIDISPLAYCONNECTOR);
@@ -5931,20 +5928,20 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     }
 
     /* the interfaces. */
-    pThis->Base.pfnQueryInterface       = vgaPortQueryInterface;
+    pThis->IBase.pfnQueryInterface      = vgaPortQueryInterface;
 
-    pThis->Port.pfnUpdateDisplay        = vgaPortUpdateDisplay;
-    pThis->Port.pfnUpdateDisplayAll     = vgaPortUpdateDisplayAll;
-    pThis->Port.pfnQueryColorDepth      = vgaPortQueryColorDepth;
-    pThis->Port.pfnSetRefreshRate       = vgaPortSetRefreshRate;
-    pThis->Port.pfnTakeScreenshot       = vgaPortTakeScreenshot;
-    pThis->Port.pfnFreeScreenshot       = vgaPortFreeScreenshot;
-    pThis->Port.pfnDisplayBlt           = vgaPortDisplayBlt;
-    pThis->Port.pfnUpdateDisplayRect    = vgaPortUpdateDisplayRect;
-    pThis->Port.pfnSetRenderVRAM        = vgaPortSetRenderVRAM;
+    pThis->IPort.pfnUpdateDisplay       = vgaPortUpdateDisplay;
+    pThis->IPort.pfnUpdateDisplayAll    = vgaPortUpdateDisplayAll;
+    pThis->IPort.pfnQueryColorDepth     = vgaPortQueryColorDepth;
+    pThis->IPort.pfnSetRefreshRate      = vgaPortSetRefreshRate;
+    pThis->IPort.pfnTakeScreenshot      = vgaPortTakeScreenshot;
+    pThis->IPort.pfnFreeScreenshot      = vgaPortFreeScreenshot;
+    pThis->IPort.pfnDisplayBlt          = vgaPortDisplayBlt;
+    pThis->IPort.pfnUpdateDisplayRect   = vgaPortUpdateDisplayRect;
+    pThis->IPort.pfnSetRenderVRAM       = vgaPortSetRenderVRAM;
 
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
-    pThis->VBVACallbacks.pfnVHWACommandCompleteAsynch = vbvaVHWACommandCompleteAsynch;
+    pThis->IVBVACallbacks.pfnVHWACommandCompleteAsynch = vbvaVHWACommandCompleteAsynch;
 #endif
 
     /*

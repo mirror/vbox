@@ -123,8 +123,7 @@ DECLCALLBACK(void *) AudioSniffer::drvQueryInterface(PPDMIBASE pInterface, const
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVAUDIOSNIFFER pDrv = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOSNIFFERCONNECTOR, &pDrv->Connector);
     return NULL;
 }

@@ -48,9 +48,9 @@ typedef struct _AUDIOSNIFFERSTATE
     PPDMDEVINS                   pDevIns;
 
     /** Audio Sniffer port base interface. */
-    PDMIBASE                     Base;
+    PDMIBASE                     IBase;
     /** Audio Sniffer port interface. */
-    PDMIAUDIOSNIFFERPORT         Port;
+    PDMIAUDIOSNIFFERPORT         IPort;
 
     /** Pointer to base interface of the driver. */
     PPDMIBASE                    pDrvBase;
@@ -108,7 +108,7 @@ DECLCALLBACK(bool) sniffer_run_out (HWVoiceOut *hw, void *pvSamples, unsigned cS
 
 static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEnable, bool fKeepHostAudio)
 {
-    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, Port);
+    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, IPort);
 
     Assert(g_pData == pThis);
 
@@ -123,10 +123,9 @@ static DECLCALLBACK(int) iface_Setup (PPDMIAUDIOSNIFFERPORT pInterface, bool fEn
  */
 static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, Base);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->Base;
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOSNIFFERPORT, &pThis->Port);
+    AUDIOSNIFFERSTATE *pThis = RT_FROM_MEMBER(pInterface, AUDIOSNIFFERSTATE, IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOSNIFFERPORT, &pThis->IPort);
     return NULL;
 }
 
@@ -170,15 +169,15 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
      * Interfaces
      */
     /* Base */
-    pThis->Base.pfnQueryInterface = iface_QueryInterface;
+    pThis->IBase.pfnQueryInterface = iface_QueryInterface;
 
     /* Audio Sniffer port */
-    pThis->Port.pfnSetup = iface_Setup;
+    pThis->IPort.pfnSetup = iface_Setup;
 
     /*
      * Get the corresponding connector interface
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Base, &pThis->pDrvBase, "Audio Sniffer Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "Audio Sniffer Port");
 
     if (RT_SUCCESS(rc))
     {

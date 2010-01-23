@@ -50,9 +50,9 @@ typedef struct DRVMOUSEQUEUE
     /** Pointer to the mouse port interface of the driver/device below us. */
     PPDMIMOUSECONNECTOR         pDownConnector;
     /** Our mouse connector interface. */
-    PDMIMOUSECONNECTOR          Connector;
+    PDMIMOUSECONNECTOR          IConnector;
     /** Our mouse port interface. */
-    PDMIMOUSEPORT               Port;
+    PDMIMOUSEPORT               IPort;
     /** The queue handle. */
     PPDMQUEUE                   pQueue;
     /** Discard input when this flag is set.
@@ -86,12 +86,9 @@ static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, c
 {
     PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMOUSEQUEUE  pThis   = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMIMOUSEPORT_IID) == 0)
-        return &pThis->Port;
-    if (RTUuidCompare2Strs(pszIID, PDMIMOUSECONNECTOR_IID) == 0)
-        return &pThis->Connector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSEPORT, &pThis->IPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSECONNECTOR, &pThis->IConnector);
     return NULL;
 }
 
@@ -99,7 +96,7 @@ static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, c
 /* -=-=-=-=- IMousePort -=-=-=-=- */
 
 /** Converts a pointer to DRVMOUSEQUEUE::Port to a DRVMOUSEQUEUE pointer. */
-#define IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface) ( (PDRVMOUSEQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVMOUSEQUEUE, Port)) )
+#define IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface) ( (PDRVMOUSEQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVMOUSEQUEUE, IPort)) )
 
 
 /**
@@ -243,7 +240,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvMouseQueueQueryInterface;
     /* IMousePort. */
-    pDrv->Port.pfnPutEvent                  = drvMouseQueuePutEvent;
+    pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
 
     /*
      * Get the IMousePort interface of the above driver/device.

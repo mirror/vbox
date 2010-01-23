@@ -4200,8 +4200,7 @@ static DECLCALLBACK(void *) lsilogicDeviceQueryInterface(PPDMIBASE pInterface, c
 {
     PLSILOGICDEVICE pDevice = PDMIBASE_2_PLSILOGICDEVICE(pInterface);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDevice->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDevice->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMISCSIPORT, &pDevice->ISCSIPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pDevice->ILed);
     return NULL;
@@ -4233,8 +4232,7 @@ static DECLCALLBACK(int) lsilogicStatusQueryStatusLed(PPDMILEDPORTS pInterface, 
 static DECLCALLBACK(void *) lsilogicStatusQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PLSILOGICSCSI pThis = PDMIBASE_2_PLSILOGICSCSI(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }

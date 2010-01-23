@@ -1831,13 +1831,12 @@ static DECLCALLBACK(int) vmmdevIOPortRegionMap(PPCIDEVICE pPciDev, /*unsigned*/ 
  */
 static DECLCALLBACK(void *) vmmdevPortQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
-    VMMDevState *pThis = RT_FROM_MEMBER(pInterface, VMMDevState, Base);
+    VMMDevState *pThis = RT_FROM_MEMBER(pInterface, VMMDevState, IBase);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->Base;
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIVMMDEVPORT, &pThis->Port);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIVMMDEVPORT, &pThis->IPort);
 #ifdef VBOX_WITH_HGCM
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHGCMPORT, &pThis->HGCMPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHGCMPORT, &pThis->IHGCMPort);
 #endif
     /* Currently only for shared folders. */
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->SharedFolders.ILeds);
@@ -1866,7 +1865,7 @@ static DECLCALLBACK(int) vmmdevQueryStatusLed(PPDMILEDPORTS pInterface, unsigned
 /* -=-=-=-=-=- IVMMDevPort -=-=-=-=-=- */
 
 /** Converts a VMMDev port interface pointer to a VMMDev state pointer. */
-#define IVMMDEVPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, Port)) )
+#define IVMMDEVPORT_2_VMMDEVSTATE(pInterface) ( (VMMDevState*)((uintptr_t)pInterface - RT_OFFSETOF(VMMDevState, IPort)) )
 
 
 /**
@@ -2491,31 +2490,31 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Interfaces
      */
-    /* Base */
-    pThis->Base.pfnQueryInterface         = vmmdevPortQueryInterface;
+    /* IBase */
+    pThis->IBase.pfnQueryInterface         = vmmdevPortQueryInterface;
 
     /* VMMDev port */
-    pThis->Port.pfnQueryAbsoluteMouse     = vmmdevQueryAbsoluteMouse;
-    pThis->Port.pfnSetAbsoluteMouse       = vmmdevSetAbsoluteMouse;
-    pThis->Port.pfnQueryMouseCapabilities = vmmdevQueryMouseCapabilities;
-    pThis->Port.pfnSetMouseCapabilities   = vmmdevSetMouseCapabilities;
-    pThis->Port.pfnRequestDisplayChange   = vmmdevRequestDisplayChange;
-    pThis->Port.pfnSetCredentials         = vmmdevSetCredentials;
-    pThis->Port.pfnVBVAChange             = vmmdevVBVAChange;
-    pThis->Port.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
-    pThis->Port.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
-    pThis->Port.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
-    pThis->Port.pfnVRDPChange             = vmmdevVRDPChange;
-    pThis->Port.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
-    pThis->Port.pfnCpuHotPlug             = vmmdevCpuHotPlug;
+    pThis->IPort.pfnQueryAbsoluteMouse     = vmmdevQueryAbsoluteMouse;
+    pThis->IPort.pfnSetAbsoluteMouse       = vmmdevSetAbsoluteMouse;
+    pThis->IPort.pfnQueryMouseCapabilities = vmmdevQueryMouseCapabilities;
+    pThis->IPort.pfnSetMouseCapabilities   = vmmdevSetMouseCapabilities;
+    pThis->IPort.pfnRequestDisplayChange   = vmmdevRequestDisplayChange;
+    pThis->IPort.pfnSetCredentials         = vmmdevSetCredentials;
+    pThis->IPort.pfnVBVAChange             = vmmdevVBVAChange;
+    pThis->IPort.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
+    pThis->IPort.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
+    pThis->IPort.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
+    pThis->IPort.pfnVRDPChange             = vmmdevVRDPChange;
+    pThis->IPort.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
+    pThis->IPort.pfnCpuHotPlug             = vmmdevCpuHotPlug;
 
     /* Shared folder LED */
-    pThis->SharedFolders.Led.u32Magic     = PDMLED_MAGIC;
+    pThis->SharedFolders.Led.u32Magic      = PDMLED_MAGIC;
     pThis->SharedFolders.ILeds.pfnQueryStatusLed = vmmdevQueryStatusLed;
 
 #ifdef VBOX_WITH_HGCM
     /* HGCM port */
-    pThis->HGCMPort.pfnCompleted          = hgcmCompleted;
+    pThis->IHGCMPort.pfnCompleted          = hgcmCompleted;
 #endif
 
     /** @todo convert this into a config parameter like we do everywhere else! */
@@ -2583,7 +2582,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Get the corresponding connector interface
      */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->Base, &pThis->pDrvBase, "VMM Driver Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pThis->IBase, &pThis->pDrvBase, "VMM Driver Port");
     if (RT_SUCCESS(rc))
     {
         pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMIVMMDEVCONNECTOR);
@@ -2609,7 +2608,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
      * Attach status driver for shared folders (optional).
      */
     PPDMIBASE pBase;
-    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->Base, &pBase, "Status Port");
+    rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
         pThis->SharedFolders.pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
     else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
