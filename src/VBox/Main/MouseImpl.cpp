@@ -42,7 +42,7 @@ typedef struct DRVMAINMOUSE
     /** Pointer to the mouse port interface of the driver/device above us. */
     PPDMIMOUSEPORT              pUpPort;
     /** Our mouse connector interface. */
-    PDMIMOUSECONNECTOR          Connector;
+    PDMIMOUSECONNECTOR          IConnector;
 } DRVMAINMOUSE, *PDRVMAINMOUSE;
 
 
@@ -359,10 +359,9 @@ DECLCALLBACK(void *)  Mouse::drvQueryInterface(PPDMIBASE pInterface, const char 
 {
     PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINMOUSE   pDrv    = PDMINS_2_DATA(pDrvIns, PDRVMAINMOUSE);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMIMOUSECONNECTOR_IID) == 0)
-        return &pDrv->Connector;
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUSECONNECTOR, &pDrv->IConnector);
     return NULL;
 }
 

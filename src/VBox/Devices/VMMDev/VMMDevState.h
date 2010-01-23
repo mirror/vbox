@@ -51,12 +51,12 @@ typedef struct VMMDevState
     /** Pointer to device instance. */
     PPDMDEVINSR3 pDevIns;
     /** LUN\#0 + Status: VMMDev port base interface. */
-    PDMIBASE Base;
+    PDMIBASE IBase;
     /** LUN\#0: VMMDev port interface. */
-    PDMIVMMDEVPORT Port;
+    PDMIVMMDEVPORT IPort;
 #ifdef VBOX_WITH_HGCM
     /** LUN\#0: HGCM port interface. */
-    PDMIHGCMPORT HGCMPort;
+    PDMIHGCMPORT IHGCMPort;
 #endif
     /** Pointer to base interface of the driver. */
     R3PTRTYPE(PPDMIBASE) pDrvBase;

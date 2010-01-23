@@ -178,10 +178,8 @@ static DECLCALLBACK(void *) drvHostSerialQueryInterface(PPDMIBASE pInterface, co
     PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVHOSTSERIAL  pThis   = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMICHARCONNECTOR_IID) == 0)
-        return &pThis->ICharConnector;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMICHARCONNECTOR, &pThis->ICharConnector);
     return NULL;
 }
 

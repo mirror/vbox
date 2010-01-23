@@ -812,8 +812,7 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
     PPDMDRVINS  pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVNAT     pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
     return NULL;
 }

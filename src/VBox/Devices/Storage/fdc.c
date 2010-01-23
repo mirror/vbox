@@ -2502,8 +2502,8 @@ static DECLCALLBACK(int) fdcLoadExec (PPDMDEVINS pDevIns,
 static DECLCALLBACK(void *) fdQueryInterface (PPDMIBASE pInterface, const char *pszIID)
 {
     fdrive_t *pDrive = PDMIBASE_2_FDRIVE(pInterface);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrive->IBase;
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrive->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBLOCKPORT, &pDrive->IPort);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMOUNTNOTIFY, &pDrive->IMountNotify);
     return NULL;
@@ -2539,8 +2539,7 @@ static DECLCALLBACK(void *) fdcStatusQueryInterface(PPDMIBASE pInterface, const 
 {
     fdctrl_t *pThis = RT_FROM_MEMBER (pInterface, fdctrl_t, IBaseStatus);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBaseStatus;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBaseStatus);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }

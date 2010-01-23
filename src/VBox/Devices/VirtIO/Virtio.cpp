@@ -530,8 +530,7 @@ void *vpciQueryInterface(struct PDMIBASE *pInterface, const char *pszIID)
     VPCISTATE *pThis = IFACE_TO_STATE(pInterface, IBase);
     Assert(&pThis->IBase == pInterface);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pThis->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }

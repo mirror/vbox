@@ -47,11 +47,11 @@ typedef struct DRVMAINKEYBOARD
     /** Pointer to the keyboard port interface of the driver/device above us. */
     PPDMIKEYBOARDPORT           pUpPort;
     /** Our mouse connector interface. */
-    PDMIKEYBOARDCONNECTOR       Connector;
+    PDMIKEYBOARDCONNECTOR       IConnector;
 } DRVMAINKEYBOARD, *PDRVMAINKEYBOARD;
 
 /** Converts PDMIVMMDEVCONNECTOR pointer to a DRVMAINVMMDEV pointer. */
-#define PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface) ( (PDRVMAINKEYBOARD) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINKEYBOARD, Connector)) )
+#define PPDMIKEYBOARDCONNECTOR_2_MAINKEYBOARD(pInterface) ( (PDRVMAINKEYBOARD) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINKEYBOARD, IConnector)) )
 
 
 // constructor / destructor
@@ -224,10 +224,9 @@ DECLCALLBACK(void *) Keyboard::drvQueryInterface(PPDMIBASE pInterface, const cha
 {
     PPDMDRVINS          pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVMAINKEYBOARD    pDrv    = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDCONNECTOR_IID) == 0)
-        return &pDrv->Connector;
+
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIKEYBOARDCONNECTOR, &pDrv->IConnector);
     return NULL;
 }
 
@@ -282,7 +281,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
      */
     pDrvIns->IBase.pfnQueryInterface        = Keyboard::drvQueryInterface;
 
-    pData->Connector.pfnLedStatusChange     = keyboardLedStatusChange;
+    pData->IConnector.pfnLedStatusChange    = keyboardLedStatusChange;
 
     /*
      * Get the IKeyboardPort interface of the above driver/device.

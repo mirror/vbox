@@ -86,10 +86,9 @@ typedef struct DRVACPI
 static DECLCALLBACK(void *) drvACPIQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
-    PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
+    PDRVACPI   pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIACPICONNECTOR, &pThis->IACPIConnector);
     return NULL;
 }

@@ -1934,8 +1934,7 @@ static DECLCALLBACK(void *) drvAudioQueryInterface(PPDMIBASE pInterface, const c
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVAUDIO  pThis   = PDMINS_2_DATA(pDrvIns, PDRVAUDIO);
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIAUDIOCONNECTOR, &pThis->IAudioConnector);
     return NULL;
 }

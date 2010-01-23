@@ -50,9 +50,9 @@ typedef struct DRVKBDQUEUE
     /** Pointer to the keyboard port interface of the driver/device below us. */
     PPDMIKEYBOARDCONNECTOR      pDownConnector;
     /** Our keyboard connector interface. */
-    PDMIKEYBOARDCONNECTOR       Connector;
+    PDMIKEYBOARDCONNECTOR       IConnector;
     /** Our keyboard port interface. */
-    PDMIKEYBOARDPORT            Port;
+    PDMIKEYBOARDPORT            IPort;
     /** The queue handle. */
     PPDMQUEUE                   pQueue;
     /** Discard input when this flag is set.
@@ -84,20 +84,17 @@ static DECLCALLBACK(void *)  drvKbdQueueQueryInterface(PPDMIBASE pInterface, con
     PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVKBDQUEUE    pThis   = PDMINS_2_DATA(pDrvIns, PDRVKBDQUEUE);
 
-    if (RTUuidCompare2Strs(pszIID, PDMIBASE_IID) == 0)
-        return &pDrvIns->IBase;
-    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDCONNECTOR_IID) == 0)
-        return &pThis->Connector;
-    if (RTUuidCompare2Strs(pszIID, PDMIKEYBOARDPORT_IID) == 0)
-        return &pThis->Port;
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIKEYBOARDCONNECTOR, &pThis->IConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIKEYBOARDPORT, &pThis->IPort);
     return NULL;
 }
 
 
 /* -=-=-=-=- IKeyboardPort -=-=-=-=- */
 
-/** Converts a pointer to DRVKBDQUEUE::Port to a DRVKBDQUEUE pointer. */
-#define IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface) ( (PDRVKBDQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVKBDQUEUE, Port)) )
+/** Converts a pointer to DRVKBDQUEUE::IPort to a DRVKBDQUEUE pointer. */
+#define IKEYBOARDPORT_2_DRVKBDQUEUE(pInterface) ( (PDRVKBDQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVKBDQUEUE, IPort)) )
 
 
 /**
@@ -127,9 +124,9 @@ static DECLCALLBACK(int) drvKbdQueuePutEvent(PPDMIKEYBOARDPORT pInterface, uint8
 }
 
 
-/* -=-=-=-=- Connector -=-=-=-=- */
+/* -=-=-=-=- IConnector -=-=-=-=- */
 
-#define PPDMIKEYBOARDCONNECTOR_2_DRVKBDQUEUE(pInterface) ( (PDRVKBDQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVKBDQUEUE, Connector)) )
+#define PPDMIKEYBOARDCONNECTOR_2_DRVKBDQUEUE(pInterface) ( (PDRVKBDQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVKBDQUEUE, IConnector)) )
 
 
 /**
@@ -254,9 +251,9 @@ static DECLCALLBACK(int) drvKbdQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvKbdQueueQueryInterface;
     /* IKeyboardConnector. */
-    pDrv->Connector.pfnLedStatusChange      = drvKbdPassThruLedsChange;
+    pDrv->IConnector.pfnLedStatusChange     = drvKbdPassThruLedsChange;
     /* IKeyboardPort. */
-    pDrv->Port.pfnPutEvent                  = drvKbdQueuePutEvent;
+    pDrv->IPort.pfnPutEvent                 = drvKbdQueuePutEvent;
 
     /*
      * Get the IKeyboardPort interface of the above driver/device.
