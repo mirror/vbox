@@ -294,7 +294,7 @@ typedef struct ATADevState
     /** Pointer to controller instance. */
     RCPTRTYPE(struct ATACONTROLLER *)   pControllerRC;
 
-    /** The serial numnber to use for IDENTIFY DEVICE commands. */
+    /** The serial number to use for IDENTIFY DEVICE commands. */
     char                                szSerialNumber[ATA_SERIAL_NUMBER_LENGTH+1];
     /** The firmware revision to use for IDENTIFY DEVICE commands. */
     char                                szFirmwareRevision[ATA_FIRMWARE_REVISION_LENGTH+1];
@@ -1147,6 +1147,19 @@ static void ataCmdError(ATADevState *s, uint8_t uErrorCode)
     s->iSourceSink = ATAFN_SS_NULL;
 }
 
+static uint32_t ataChecksum(void* p, size_t count)
+{
+    uint8_t sum = 0xa5, *pp = (uint8_t*)p;
+    size_t i;
+
+    for (i = 0; i < count; i++)
+    {
+      sum += pp[i];
+      count--;
+    }
+           
+    return (uint8_t)-(int32_t)sum;
+}
 
 static bool ataIdentifySS(ATADevState *s)
 {
@@ -1229,6 +1242,8 @@ static bool ataIdentifySS(ATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+    uint32_t uCsum = ataChecksum(p, 510);
+    p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
     s->iSourceSink = ATAFN_SS_NULL;
     ataCmdOK(s, ATA_STAT_SEEK);
     return false;
@@ -1256,7 +1271,6 @@ static bool ataFlushSS(ATADevState *s)
     ataCmdOK(s, 0);
     return false;
 }
-
 
 static bool atapiIdentifySS(ATADevState *s)
 {
@@ -1298,6 +1312,22 @@ static bool atapiIdentifySS(ATADevState *s)
     p[87] = RT_H2LE_U16(1 << 14);
     p[88] = RT_H2LE_U16(ATA_TRANSFER_ID(ATA_MODE_UDMA, ATA_UDMA_MODE_MAX, s->uATATransferMode)); /* UDMA modes supported / mode enabled */
     p[93] = RT_H2LE_U16((1 | 1 << 1) << ((s->iLUN & 1) == 0 ? 0 : 8) | 1 << 13 | 1 << 14);
+    /* According to ATAPI-5 spec:
+     * 
+     * The use of this word is optional. 
+     * If bits 7:0 of this word contain the signature A5h, bits 15:8 
+     * contain the data
+     * structure checksum. 
+     * The data structure checksum is the twos complement of the sum of 
+     * all bytes in words 0 through 254 and the byte consisting of 
+     * bits 7:0 in word 255. 
+     * Each byte shall be added with unsigned arithmetic, 
+     * and overflow shall be ignored. 
+     * The sum of all 512 bytes is zero when the checksum is correct.
+     */
+    uint32_t uCsum = ataChecksum(p, 510);
+    p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
+
     s->iSourceSink = ATAFN_SS_NULL;
     ataCmdOK(s, ATA_STAT_SEEK);
     return false;
