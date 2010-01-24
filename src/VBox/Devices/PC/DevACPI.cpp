@@ -2398,6 +2398,13 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Set default port base */
     s->uPmIoPortBase = PM_PORT_BASE;
 
+    /* 
+     * FDC and SMC try to use the same non-shareable interrupt (6), 
+     * enable only one device.
+     */
+    if (s->fUseSmc)
+        s->fUseFdc = false;
+
     /* */
     uint32_t rsdp_addr = find_rsdp_space();
     if (!rsdp_addr)
