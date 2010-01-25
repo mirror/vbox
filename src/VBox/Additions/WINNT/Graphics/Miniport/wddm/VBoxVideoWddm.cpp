@@ -265,6 +265,9 @@ NTSTATUS DxgkDdiQueryChildRelations(
     IN ULONG ChildRelationsSize
     )
 {
+    /* The DxgkDdiQueryChildRelations function should be made pageable. */
+    PAGED_CODE();
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
     for(ULONG i = 0; i < ChildRelationsSize; i++)
     {
@@ -286,7 +289,31 @@ NTSTATUS DxgkDdiQueryChildStatus(
     IN BOOLEAN  NonDestructiveOnly
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiQueryChildStatus should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    switch(ChildStatus->Type)
+    {
+        case StatusConnection:
+            ChildStatus->HotPlug.Connected = TRUE;
+            dfprintf(("VBoxVideoWddm: StatusConnection\n"));
+            break;
+        case StatusRotation:
+            ChildStatus->Rotation.Angle = 0;
+            dfprintf(("VBoxVideoWddm: StatusRotation\n"));
+            break;
+        default:
+            drprintf(("VBoxVideoWddm: ERROR: status type: %d\n", ChildStatus->Type));
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    return Status;
 }
 
 NTSTATUS DxgkDdiQueryDeviceDescriptor(
