@@ -710,6 +710,7 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvR3IntNetDestruct\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     /*
      * Indicate to the thread that it's time to quit.
@@ -777,6 +778,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 {
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.

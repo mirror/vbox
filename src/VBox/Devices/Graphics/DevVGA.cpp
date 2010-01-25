@@ -5809,6 +5809,38 @@ static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
     }
 }
 
+
+/**
+ * Destruct a device instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+#ifdef VBE_NEW_DYN_LIST
+    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    LogFlow(("vgaR3Destruct:\n"));
+
+    /*
+     * Free MM heap pointers.
+     */
+    if (pThis->pu8VBEExtraData)
+    {
+        MMR3HeapFree(pThis->pu8VBEExtraData);
+        pThis->pu8VBEExtraData = NULL;
+    }
+#endif
+
+    PDMR3CritSectDelete(&pThis->lock);
+    return VINF_SUCCESS;
+}
+
+
 /**
  * Construct a VGA device instance for a VM.
  *
@@ -5824,11 +5856,10 @@ static DECLCALLBACK(void)  vgaDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
  */
 static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
+
     static bool s_fExpandDone = false;
     int         rc;
-    unsigned i;
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    PVM         pVM = PDMDevHlpGetVM(pDevIns);
+    unsigned    i;
 #ifdef VBE_NEW_DYN_LIST
     uint32_t    cCustomModes;
     uint32_t    cyReduction;
@@ -5836,6 +5867,10 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     ModeInfoListItem *pCurMode;
     unsigned    cb;
 #endif
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
+    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
+    PVM         pVM   = PDMDevHlpGetVM(pDevIns);
+
     Assert(iInstance == 0);
     Assert(pVM);
 
@@ -6557,35 +6592,6 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /* Init latched access mask. */
     pThis->uMaskLatchAccess = 0x3ff;
     return rc;
-}
-
-
-/**
- * Destruct a device instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
-{
-#ifdef VBE_NEW_DYN_LIST
-    PVGASTATE   pThis = PDMINS_2_DATA(pDevIns, PVGASTATE);
-    LogFlow(("vgaR3Destruct:\n"));
-
-    /*
-     * Free MM heap pointers.
-     */
-    if (pThis->pu8VBEExtraData)
-    {
-        MMR3HeapFree(pThis->pu8VBEExtraData);
-        pThis->pu8VBEExtraData = NULL;
-    }
-#endif
-
-    PDMR3CritSectDelete(&pThis->lock);
-    return VINF_SUCCESS;
 }
 
 

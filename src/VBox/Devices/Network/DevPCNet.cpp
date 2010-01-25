@@ -4905,6 +4905,7 @@ static DECLCALLBACK(void) pcnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 {
     PCNetState *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     if (PDMCritSectIsInitialized(&pThis->CritSect))
     {
@@ -4951,6 +4952,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* up to eight instances are supported */
     Assert((iInstance >= 0) && (iInstance < 8));
 
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     Assert(RT_ELEMENTS(pThis->aBCR) == BCR_MAX_RAP);
     Assert(RT_ELEMENTS(pThis->aMII) == MII_MAX_REG);
     Assert(sizeof(pThis->abSendBuf) == RT_ALIGN_Z(sizeof(pThis->abSendBuf), 16));

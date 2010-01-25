@@ -68,6 +68,7 @@ typedef struct DRVRAWFILE
 
 
 
+/* -=-=-=-=- PDMISTREAM -=-=-=-=- */
 
 /** @copydoc PDMISTREAM::pfnWrite */
 static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvBuf, size_t *pcbWrite)
@@ -93,6 +94,7 @@ static DECLCALLBACK(int) drvRawFileWrite(PPDMISTREAM pInterface, const void *pvB
     return rc;
 }
 
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -107,6 +109,53 @@ static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, const
     return NULL;
 }
 
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
+
+
+/**
+ * Power off a raw output stream driver instance.
+ *
+ * This does most of the destruction work, to avoid ordering dependencies.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
+
+    if (pThis->OutputFile != NIL_RTFILE)
+    {
+        RTFileClose(pThis->OutputFile);
+        pThis->OutputFile = NIL_RTFILE;
+    }
+}
+
+
+/**
+ * Destruct a raw output stream driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that
+ * any non-VM resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
+{
+    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    if (pThis->pszLocation)
+        MMR3HeapFree(pThis->pszLocation);
+
+    if (pThis->OutputFile != NIL_RTFILE)
+    {
+        RTFileClose(pThis->OutputFile);
+        pThis->OutputFile = NIL_RTFILE;
+    }
+}
+
 
 /**
  * Construct a raw output stream driver instance.
@@ -116,6 +165,7 @@ static DECLCALLBACK(void *) drvRawFileQueryInterface(PPDMIBASE pInterface, const
 static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.
@@ -151,50 +201,6 @@ static DECLCALLBACK(int) drvRawFileConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     LogFlow(("drvRawFileConstruct: location %s\n", pThis->pszLocation));
     LogRel(("RawFile#%u: location %s\n", pDrvIns->iInstance, pThis->pszLocation));
     return VINF_SUCCESS;
-}
-
-
-/**
- * Destruct a raw output stream driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that
- * any non-VM resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvRawFileDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
-
-    if (pThis->pszLocation)
-        MMR3HeapFree(pThis->pszLocation);
-
-    if (pThis->OutputFile != NIL_RTFILE)
-    {
-        RTFileClose(pThis->OutputFile);
-        pThis->OutputFile = NIL_RTFILE;
-    }
-}
-
-
-/**
- * Power off a raw output stream driver instance.
- *
- * This does most of the destruction work, to avoid ordering dependencies.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvRawFilePowerOff(PPDMDRVINS pDrvIns)
-{
-    PDRVRAWFILE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWFILE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
-
-    if (pThis->OutputFile != NIL_RTFILE)
-    {
-        RTFileClose(pThis->OutputFile);
-        pThis->OutputFile = NIL_RTFILE;
-    }
 }
 
 

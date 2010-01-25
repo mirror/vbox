@@ -1157,7 +1157,7 @@ static uint32_t ataChecksum(void* p, size_t count)
       sum += pp[i];
       count--;
     }
-           
+
     return (uint8_t)-(int32_t)sum;
 }
 
@@ -1313,16 +1313,16 @@ static bool atapiIdentifySS(ATADevState *s)
     p[88] = RT_H2LE_U16(ATA_TRANSFER_ID(ATA_MODE_UDMA, ATA_UDMA_MODE_MAX, s->uATATransferMode)); /* UDMA modes supported / mode enabled */
     p[93] = RT_H2LE_U16((1 | 1 << 1) << ((s->iLUN & 1) == 0 ? 0 : 8) | 1 << 13 | 1 << 14);
     /* According to ATAPI-5 spec:
-     * 
-     * The use of this word is optional. 
-     * If bits 7:0 of this word contain the signature A5h, bits 15:8 
+     *
+     * The use of this word is optional.
+     * If bits 7:0 of this word contain the signature A5h, bits 15:8
      * contain the data
-     * structure checksum. 
-     * The data structure checksum is the twos complement of the sum of 
-     * all bytes in words 0 through 254 and the byte consisting of 
-     * bits 7:0 in word 255. 
-     * Each byte shall be added with unsigned arithmetic, 
-     * and overflow shall be ignored. 
+     * structure checksum.
+     * The data structure checksum is the twos complement of the sum of
+     * all bytes in words 0 through 254 and the byte consisting of
+     * bits 7:0 in word 255.
+     * Each byte shall be added with unsigned arithmetic,
+     * and overflow shall be ignored.
      * The sum of all 512 bytes is zero when the checksum is correct.
      */
     uint32_t uCsum = ataChecksum(p, 510);
@@ -5581,6 +5581,7 @@ static DECLCALLBACK(int) ataR3Destruct(PPDMDEVINS pDevIns)
     int             rc;
 
     Log(("ataR3Destruct\n"));
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     /*
      * Tell the async I/O threads to terminate.
@@ -6525,6 +6526,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     uint32_t        DelayIRQMillies;
 
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Initialize NIL handle values (for the destructor).

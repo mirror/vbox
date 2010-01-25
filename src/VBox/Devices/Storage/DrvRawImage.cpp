@@ -71,121 +71,7 @@ typedef struct DRVRAWIMAGE
 
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-static DECLCALLBACK(int) drvRawImageRead(PPDMIMEDIA pInterface, uint64_t off, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(int) drvRawImageWrite(PPDMIMEDIA pInterface, uint64_t off, const void *pvBuf, size_t cbWrite);
-static DECLCALLBACK(int) drvRawImageFlush(PPDMIMEDIA pInterface);
-static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface);
-static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface);
-static DECLCALLBACK(int) drvRawImageGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid);
-static DECLCALLBACK(int) drvRawImageBiosGetPCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pPCHSGeometry);
-static DECLCALLBACK(int) drvRawImageBiosSetPCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pPCHSGeometry);
-static DECLCALLBACK(int) drvRawImageBiosGetLCHSGeometry(PPDMIMEDIA pInterface, PPDMMEDIAGEOMETRY pLCHSGeometry);
-static DECLCALLBACK(int) drvRawImageBiosSetLCHSGeometry(PPDMIMEDIA pInterface, PCPDMMEDIAGEOMETRY pLCHSGeometry);
-
-static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, const char *pszIID);
-
-
-
-
-/**
- * Construct a raw image driver instance.
- *
- * @copydoc FNPDMDRVCONSTRUCT
- */
-static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
-{
-    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
-
-    /*
-     * Init the static parts.
-     */
-    pThis->pDrvIns                      = pDrvIns;
-    pThis->File                         = NIL_RTFILE;
-    /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvRawImageQueryInterface;
-    /* IMedia */
-    pThis->IMedia.pfnRead               = drvRawImageRead;
-    pThis->IMedia.pfnWrite              = drvRawImageWrite;
-    pThis->IMedia.pfnFlush              = drvRawImageFlush;
-    pThis->IMedia.pfnGetSize            = drvRawImageGetSize;
-    pThis->IMedia.pfnGetUuid            = drvRawImageGetUuid;
-    pThis->IMedia.pfnIsReadOnly         = drvRawImageIsReadOnly;
-    pThis->IMedia.pfnBiosGetPCHSGeometry = drvRawImageBiosGetPCHSGeometry;
-    pThis->IMedia.pfnBiosSetPCHSGeometry = drvRawImageBiosSetPCHSGeometry;
-    pThis->IMedia.pfnBiosGetLCHSGeometry = drvRawImageBiosGetLCHSGeometry;
-    pThis->IMedia.pfnBiosSetLCHSGeometry = drvRawImageBiosSetLCHSGeometry;
-
-    /*
-     * Read the configuration.
-     */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0"))
-        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-
-    char *pszName;
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
-    if (RT_FAILURE(rc))
-    {
-        AssertMsgFailed(("Configuration error: query for \"Path\" string return %Rrc.\n", rc));
-        return rc;
-    }
-
-    /*
-     * Open the image.
-     */
-    rc = RTFileOpen(&pThis->File, pszName,
-                    RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-    if (RT_SUCCESS(rc))
-    {
-        LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
-        pThis->pszFilename = pszName;
-        pThis->fReadOnly = false;
-    }
-    else
-    {
-        rc = RTFileOpen(&pThis->File, pszName,
-                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-        if (RT_SUCCESS(rc))
-        {
-            LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
-            pThis->pszFilename = pszName;
-            pThis->fReadOnly = true;
-        }
-        else
-        {
-            AssertMsgFailed(("Could not open Raw image file %s, rc=%Rrc\n", pszName, rc));
-            MMR3HeapFree(pszName);
-        }
-    }
-
-    return rc;
-}
-
-
-/**
- * Destruct a driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
-    LogFlow(("drvRawImageDestruct: '%s'\n", pThis->pszFilename));
-
-    if (pThis->File != NIL_RTFILE)
-    {
-        RTFileClose(pThis->File);
-        pThis->File = NIL_RTFILE;
-    }
-    if (pThis->pszFilename)
-        MMR3HeapFree(pThis->pszFilename);
-}
-
+/* -=-=-=-=- PDMIMEDIA -=-=-=-=- */
 
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvRawImageGetSize(PPDMIMEDIA pInterface)
@@ -335,6 +221,8 @@ static DECLCALLBACK(bool) drvRawImageIsReadOnly(PPDMIMEDIA pInterface)
 }
 
 
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
+
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
@@ -346,6 +234,106 @@ static DECLCALLBACK(void *) drvRawImageQueryInterface(PPDMIBASE pInterface, cons
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
     return NULL;
+}
+
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
+
+/**
+ * Destruct a driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvRawImageDestruct(PPDMDRVINS pDrvIns)
+{
+    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+    LogFlow(("drvRawImageDestruct: '%s'\n", pThis->pszFilename));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    if (pThis->File != NIL_RTFILE)
+    {
+        RTFileClose(pThis->File);
+        pThis->File = NIL_RTFILE;
+    }
+    if (pThis->pszFilename)
+        MMR3HeapFree(pThis->pszFilename);
+}
+
+
+/**
+ * Construct a raw image driver instance.
+ *
+ * @copydoc FNPDMDRVCONSTRUCT
+ */
+static DECLCALLBACK(int) drvRawImageConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+{
+    PDRVRAWIMAGE pThis = PDMINS_2_DATA(pDrvIns, PDRVRAWIMAGE);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
+
+    /*
+     * Init the static parts.
+     */
+    pThis->pDrvIns                      = pDrvIns;
+    pThis->File                         = NIL_RTFILE;
+    /* IBase */
+    pDrvIns->IBase.pfnQueryInterface    = drvRawImageQueryInterface;
+    /* IMedia */
+    pThis->IMedia.pfnRead               = drvRawImageRead;
+    pThis->IMedia.pfnWrite              = drvRawImageWrite;
+    pThis->IMedia.pfnFlush              = drvRawImageFlush;
+    pThis->IMedia.pfnGetSize            = drvRawImageGetSize;
+    pThis->IMedia.pfnGetUuid            = drvRawImageGetUuid;
+    pThis->IMedia.pfnIsReadOnly         = drvRawImageIsReadOnly;
+    pThis->IMedia.pfnBiosGetPCHSGeometry = drvRawImageBiosGetPCHSGeometry;
+    pThis->IMedia.pfnBiosSetPCHSGeometry = drvRawImageBiosSetPCHSGeometry;
+    pThis->IMedia.pfnBiosGetLCHSGeometry = drvRawImageBiosGetLCHSGeometry;
+    pThis->IMedia.pfnBiosSetLCHSGeometry = drvRawImageBiosSetLCHSGeometry;
+
+    /*
+     * Read the configuration.
+     */
+    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0"))
+        return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
+
+    char *pszName;
+    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
+    if (RT_FAILURE(rc))
+    {
+        AssertMsgFailed(("Configuration error: query for \"Path\" string return %Rrc.\n", rc));
+        return rc;
+    }
+
+    /*
+     * Open the image.
+     */
+    rc = RTFileOpen(&pThis->File, pszName,
+                    RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (RT_SUCCESS(rc))
+    {
+        LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
+        pThis->pszFilename = pszName;
+        pThis->fReadOnly = false;
+    }
+    else
+    {
+        rc = RTFileOpen(&pThis->File, pszName,
+                        RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+        if (RT_SUCCESS(rc))
+        {
+            LogFlow(("drvRawImageConstruct: Raw image '%s' opened successfully.\n", pszName));
+            pThis->pszFilename = pszName;
+            pThis->fReadOnly = true;
+        }
+        else
+        {
+            AssertMsgFailed(("Could not open Raw image file %s, rc=%Rrc\n", pszName, rc));
+            MMR3HeapFree(pszName);
+        }
+    }
+
+    return rc;
 }
 
 

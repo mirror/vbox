@@ -41,6 +41,39 @@
  * @{
  */
 
+/** Makes a PDM structure version out of an unique magic value and major &
+ * minor version numbers.
+ *
+ * @returns 32-bit structure version number.
+ *
+ * @param   uMagic      16-bit magic value.  This must be unique.
+ * @param   uMajor      12-bit major version number.  Structures with different
+ *                      major numbers are not compatible.
+ * @param   uMinor      4-bit minor version number.  When only the minor version
+ *                      differs, the structures will be 100% backwards
+ *                      compatible.
+ */
+#define PDM_VERSION_MAKE(uMagic, uMajor, uMinor) \
+    ( ((uint32_t)(uMagic) << 16) | ((uint32_t)((uMajor) & 0xff) << 4) | ((uint32_t)((uMinor) & 0xf) << 0) )
+
+/** Checks if @a uVerMagic1 is compatible with @a uVerMagic2.
+ *
+ * @returns true / false.
+ * @param   uVerMagic1  Typically the runtime version of the struct.  This must
+ *                      have the same magic and major version as @a uVerMagic2
+ *                      and the minor version must be greater or equal to that
+ *                      of @a uVerMagic2.
+ * @param   uVerMagic2  Typically the version the code was compiled against.
+ *
+ * @remarks The parameters will be referenced more than once.
+ */
+#define PDM_VERSION_ARE_COMPATIBLE(uVerMagic1, uVerMagic2) \
+    (    (uVerMagic1) == (uVerMagic2) \
+      || (   (uVerMagic1) >= (uVerMagic2) \
+          && ((uVerMagic1) & UINT32_C(0xfffffff0)) == ((uVerMagic2) & UINT32_C(0xfffffff0)) ) \
+    )
+
+
 /** PDM Attach/Detach Callback Flags.
  * Used by PDMDeviceAttach, PDMDeviceDetach, PDMDriverAttach, PDMDriverDetach,
  * FNPDMDEVATTACH, FNPDMDEVDETACH, FNPDMDRVATTACH, FNPDMDRVDETACH and

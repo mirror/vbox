@@ -2763,6 +2763,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     PPDMIBASE      pBase;
 
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate configuration.

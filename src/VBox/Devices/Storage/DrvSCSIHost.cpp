@@ -393,7 +393,7 @@ static DECLCALLBACK(int) drvscsihostRequestSend(PPDMISCSICONNECTOR pInterface, P
     return VINF_SUCCESS;
 }
 
-/* -=-=-=-=- IBase -=-=-=-=- */
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -408,6 +408,8 @@ static DECLCALLBACK(void *)  drvscsihostQueryInterface(PPDMIBASE pInterface, con
     return NULL;
 }
 
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
+
 /**
  * Destruct a driver instance.
  *
@@ -418,8 +420,8 @@ static DECLCALLBACK(void *)  drvscsihostQueryInterface(PPDMIBASE pInterface, con
  */
 static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
 {
-    int rc;
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (pThis->DeviceFile != NIL_RTFILE)
         RTFileClose(pThis->DeviceFile);
@@ -429,7 +431,7 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
 
     if (pThis->pQueueRequests)
     {
-        rc = RTReqDestroyQueue(pThis->pQueueRequests);
+        int rc = RTReqDestroyQueue(pThis->pQueueRequests);
         AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
     }
 
@@ -443,8 +445,8 @@ static DECLCALLBACK(void) drvscsihostDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvscsihostConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVSCSIHOST pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSIHOST);
-
     LogFlowFunc(("pDrvIns=%#p pCfgHandle=%#p\n", pDrvIns, pCfgHandle));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Read the configuration.

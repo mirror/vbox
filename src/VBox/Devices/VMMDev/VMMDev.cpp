@@ -2403,6 +2403,8 @@ static DECLCALLBACK(int) vmmdevLoadStateDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM
     return VINF_SUCCESS;
 }
 
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
+
 /**
  * (Re-)initializes the MMIO2 data.
  *
@@ -2414,6 +2416,101 @@ static void vmmdevInitRam(VMMDevState *pThis)
     pThis->pVMMDevRAMR3->u32Size = sizeof(VMMDevMemory);
     pThis->pVMMDevRAMR3->u32Version = VMMDEV_MEMORY_VERSION;
 }
+
+/**
+ * Reset notification.
+ *
+ * @returns VBox status.
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
+{
+    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
+
+    /*
+     * Reset the mouse integration feature bits
+     */
+    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
+    {
+        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
+        /* notify the connector */
+        Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
+        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
+    }
+    pThis->fHostCursorRequested = false;
+
+    pThis->hypervisorSize = 0;
+
+    pThis->u32HostEventFlags = 0;
+
+    /* re-initialize the VMMDev memory */
+    if (pThis->pVMMDevRAMR3)
+        vmmdevInitRam(pThis);
+
+    /* credentials have to go away (by default) */
+    if (!pThis->fKeepCredentials)
+    {
+        memset(pThis->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+        memset(pThis->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    }
+    memset(pThis->credentialsJudge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->credentialsJudge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
+    memset(pThis->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
+
+    /* Reset means that additions will report again. */
+    const bool fVersionChanged = pThis->fu32AdditionsOk
+                              || pThis->guestInfo.additionsVersion
+                              || pThis->guestInfo.osType != VBOXOSTYPE_Unknown;
+    if (fVersionChanged)
+        Log(("vmmdevReset: fu32AdditionsOk=%d additionsVersion=%x osType=%#x\n",
+             pThis->fu32AdditionsOk, pThis->guestInfo.additionsVersion, pThis->guestInfo.osType));
+    pThis->fu32AdditionsOk = false;
+    memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
+
+    /* clear pending display change request. */
+    memset (&pThis->lastReadDisplayChangeRequest, 0, sizeof (pThis->lastReadDisplayChangeRequest));
+    pThis->fGuestSentChangeEventAck = false;
+
+    /* disable seamless mode */
+    pThis->fLastSeamlessEnabled = false;
+
+    /* disabled memory ballooning */
+    pThis->u32LastMemoryBalloonSize = 0;
+
+    /* disabled statistics updating */
+    pThis->u32LastStatIntervalSize = 0;
+
+    /* Clear the "HGCM event enabled" flag so the event can be automatically reenabled.  */
+    pThis->u32HGCMEnabled = 0;
+
+    /*
+     * Clear the event variables.
+     *
+     *   Note: The pThis->u32HostEventFlags is not cleared.
+     *         It is designed that way so host events do not
+     *         depend on guest resets.
+     */
+    pThis->u32GuestFilterMask    = 0;
+    pThis->u32NewGuestFilterMask = 0;
+    pThis->fNewGuestFilterMask   = 0;
+
+    /* This is the default, as Windows and OS/2 guests take this for granted. (Actually, neither does...) */
+    /** @todo change this when we next bump the interface version */
+    const bool fCapsChanged = pThis->guestCaps != VMMDEV_GUEST_SUPPORTS_GRAPHICS;
+    if (fCapsChanged)
+        Log(("vmmdevReset: fCapsChanged=%#x -> %#x\n", pThis->guestCaps, VMMDEV_GUEST_SUPPORTS_GRAPHICS));
+    pThis->guestCaps = VMMDEV_GUEST_SUPPORTS_GRAPHICS; /** @todo r=bird: why? I cannot see this being done at construction?*/
+
+    /*
+     * Call the update functions as required.
+     */
+    if (fVersionChanged)
+        pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
+    if (fCapsChanged)
+        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
+}
+
 
 /**
  * Construct a device instance for a VM.
@@ -2434,6 +2531,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
 
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read the configuration.
@@ -2636,100 +2734,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
 
     return rc;
-}
-
-/**
- * Reset notification.
- *
- * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
-{
-    VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState*);
-
-    /*
-     * Reset the mouse integration feature bits
-     */
-    if (pThis->mouseCapabilities & VMMDEV_MOUSE_GUEST_MASK)
-    {
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_GUEST_MASK;
-        /* notify the connector */
-        Log(("vmmdevReset: capabilities changed (%x), informing connector\n", pThis->mouseCapabilities));
-        pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
-    }
-    pThis->fHostCursorRequested = false;
-
-    pThis->hypervisorSize = 0;
-
-    pThis->u32HostEventFlags = 0;
-
-    /* re-initialize the VMMDev memory */
-    if (pThis->pVMMDevRAMR3)
-        vmmdevInitRam(pThis);
-
-    /* credentials have to go away (by default) */
-    if (!pThis->fKeepCredentials)
-    {
-        memset(pThis->credentialsLogon.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->credentialsLogon.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-        memset(pThis->credentialsLogon.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    }
-    memset(pThis->credentialsJudge.szUserName, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->credentialsJudge.szPassword, '\0', VMMDEV_CREDENTIALS_STRLEN);
-    memset(pThis->credentialsJudge.szDomain, '\0', VMMDEV_CREDENTIALS_STRLEN);
-
-    /* Reset means that additions will report again. */
-    const bool fVersionChanged = pThis->fu32AdditionsOk
-                              || pThis->guestInfo.additionsVersion
-                              || pThis->guestInfo.osType != VBOXOSTYPE_Unknown;
-    if (fVersionChanged)
-        Log(("vmmdevReset: fu32AdditionsOk=%d additionsVersion=%x osType=%#x\n",
-             pThis->fu32AdditionsOk, pThis->guestInfo.additionsVersion, pThis->guestInfo.osType));
-    pThis->fu32AdditionsOk = false;
-    memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
-
-    /* clear pending display change request. */
-    memset (&pThis->lastReadDisplayChangeRequest, 0, sizeof (pThis->lastReadDisplayChangeRequest));
-    pThis->fGuestSentChangeEventAck = false;
-
-    /* disable seamless mode */
-    pThis->fLastSeamlessEnabled = false;
-
-    /* disabled memory ballooning */
-    pThis->u32LastMemoryBalloonSize = 0;
-
-    /* disabled statistics updating */
-    pThis->u32LastStatIntervalSize = 0;
-
-    /* Clear the "HGCM event enabled" flag so the event can be automatically reenabled.  */
-    pThis->u32HGCMEnabled = 0;
-
-    /*
-     * Clear the event variables.
-     *
-     *   Note: The pThis->u32HostEventFlags is not cleared.
-     *         It is designed that way so host events do not
-     *         depend on guest resets.
-     */
-    pThis->u32GuestFilterMask    = 0;
-    pThis->u32NewGuestFilterMask = 0;
-    pThis->fNewGuestFilterMask   = 0;
-
-    /* This is the default, as Windows and OS/2 guests take this for granted. (Actually, neither does...) */
-    /** @todo change this when we next bump the interface version */
-    const bool fCapsChanged = pThis->guestCaps != VMMDEV_GUEST_SUPPORTS_GRAPHICS;
-    if (fCapsChanged)
-        Log(("vmmdevReset: fCapsChanged=%#x -> %#x\n", pThis->guestCaps, VMMDEV_GUEST_SUPPORTS_GRAPHICS));
-    pThis->guestCaps = VMMDEV_GUEST_SUPPORTS_GRAPHICS; /** @todo r=bird: why? I cannot see this being done at construction?*/
-
-    /*
-     * Call the update functions as required.
-     */
-    if (fVersionChanged)
-        pThis->pDrv->pfnUpdateGuestVersion(pThis->pDrv, &pThis->guestInfo);
-    if (fCapsChanged)
-        pThis->pDrv->pfnUpdateGuestCapabilities(pThis->pDrv, pThis->guestCaps);
 }
 
 /**

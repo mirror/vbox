@@ -241,6 +241,8 @@ DECLCALLBACK(void) Keyboard::drvDestruct (PPDMDRVINS pDrvIns)
 {
     PDRVMAINKEYBOARD pData = PDMINS_2_DATA(pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
     if (pData->pKeyboard)
     {
         AutoWriteLock kbdLock(pData->pKeyboard COMMA_LOCKVAL_SRC_POS);
@@ -266,6 +268,7 @@ DECLCALLBACK(int) Keyboard::drvConstruct (PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
 {
     PDRVMAINKEYBOARD pData = PDMINS_2_DATA (pDrvIns, PDRVMAINKEYBOARD);
     LogFlow(("Keyboard::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate configuration.

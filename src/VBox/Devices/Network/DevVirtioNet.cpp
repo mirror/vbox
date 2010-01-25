@@ -1433,6 +1433,188 @@ static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
     return rc;
 }
 
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
+
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+
+/**
+ * Detach notification.
+ *
+ * One port on the network card has been disconnected from the network.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    Log(("%s vnetDetach:\n", INSTANCE(pState)));
+
+    AssertLogRelReturnVoid(iLUN == 0);
+
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("vnetDetach failed to enter critical section!\n"));
+        return;
+    }
+
+    /*
+     * Zero some important members.
+     */
+    pState->pDrvBase = NULL;
+    pState->pDrv = NULL;
+
+    vnetCsLeave(pState);
+}
+
+
+/**
+ * Attach the Network attachment.
+ *
+ * One port on the network card has been connected to a network.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being attached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ *
+ * @remarks This code path is not used during construction.
+ */
+static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    LogFlow(("%s vnetAttach:\n",  INSTANCE(pState)));
+
+    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
+
+    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("vnetAttach failed to enter critical section!\n"));
+        return rc;
+    }
+
+    /*
+     * Attach the driver.
+     */
+    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
+    if (RT_SUCCESS(rc))
+    {
+        if (rc == VINF_NAT_DNS)
+        {
+#ifdef RT_OS_LINUX
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#else
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#endif
+        }
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
+        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        Log(("%s No attached driver!\n", INSTANCE(pState)));
+
+
+    /*
+     * Temporary set the link down if it was up so that the guest
+     * will know that we have change the configuration of the
+     * network card
+     */
+    if (RT_SUCCESS(rc))
+        vnetTempLinkDown(pState);
+
+    vnetCsLeave(pState);
+    return rc;
+
+}
+
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
+
+/**
+ * @copydoc FNPDMDEVSUSPEND
+ */
+static DECLCALLBACK(void) vnetSuspend(PPDMDEVINS pDevIns)
+{
+    /* Poke thread waiting for buffer space. */
+    vnetWakeupReceive(pDevIns);
+}
+
+/**
+ * @copydoc FNPDMDEVPOWEROFF
+ */
+static DECLCALLBACK(void) vnetPowerOff(PPDMDEVINS pDevIns)
+{
+    /* Poke thread waiting for buffer space. */
+    vnetWakeupReceive(pDevIns);
+}
+
+/**
+ * Device relocation callback.
+ *
+ * When this callback is called the device instance data, and if the
+ * device have a GC component, is being relocated, or/and the selectors
+ * have been changed. The device must use the chance to perform the
+ * necessary pointer relocations and data updates.
+ *
+ * Before the GC code is executed the first time, this function will be
+ * called with a 0 delta so GC pointer calculations can be one in one place.
+ *
+ * @param   pDevIns     Pointer to the device instance.
+ * @param   offDelta    The relocation delta relative to the old location.
+ *
+ * @remark  A relocation CANNOT fail.
+ */
+static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    vpciRelocate(pDevIns, offDelta);
+    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
+#ifdef VNET_TX_DELAY
+    pState->pTxTimerRC    = TMTimerRCPtr(pState->pTxTimerR3);
+#endif /* VNET_TX_DELAY */
+    // TBD
+}
+
+/**
+ * Destruct a device instance.
+ *
+ * We need to free non-VM resources only.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
+{
+    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
+            pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
+    Log(("%s Destroying instance\n", INSTANCE(pState)));
+    if (pState->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+    {
+        RTSemEventSignal(pState->hEventMoreRxDescAvail);
+        RTSemEventDestroy(pState->hEventMoreRxDescAvail);
+        pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+    }
+
+    if (pState->pTxBuf)
+    {
+        RTMemFree(pState->pTxBuf);
+        pState->pTxBuf = NULL;
+    }
+    // if (PDMCritSectIsInitialized(&pState->csRx))
+    //     PDMR3CritSectDelete(&pState->csRx);
+
+    return vpciDestruct(&pState->VPCI);
+}
+
 /**
  * Construct a device instance for a VM.
  *
@@ -1451,6 +1633,7 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 {
     VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
     int        rc;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /* Initialize PCI part first. */
     pState->VPCI.IBase.pfnQueryInterface    = vnetQueryInterface;
@@ -1590,185 +1773,6 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 #endif /* VBOX_WITH_STATISTICS */
 
     return VINF_SUCCESS;
-}
-
-/**
- * Destruct a device instance.
- *
- * We need to free non-VM resources only.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- * @thread  EMT
- */
-static DECLCALLBACK(int) vnetDestruct(PPDMDEVINS pDevIns)
-{
-    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
-
-    LogRel(("TxTimer stats (avg/min/max): %7d usec %7d usec %7d usec\n",
-            pState->u32AvgDiff, pState->u32MinDiff, pState->u32MaxDiff));
-    Log(("%s Destroying instance\n", INSTANCE(pState)));
-    if (pState->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
-    {
-        RTSemEventSignal(pState->hEventMoreRxDescAvail);
-        RTSemEventDestroy(pState->hEventMoreRxDescAvail);
-        pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
-    }
-
-    if (pState->pTxBuf)
-    {
-        RTMemFree(pState->pTxBuf);
-        pState->pTxBuf = NULL;
-    }
-    // if (PDMCritSectIsInitialized(&pState->csRx))
-    //     PDMR3CritSectDelete(&pState->csRx);
-
-    return vpciDestruct(&pState->VPCI);
-}
-
-/**
- * Device relocation callback.
- *
- * When this callback is called the device instance data, and if the
- * device have a GC component, is being relocated, or/and the selectors
- * have been changed. The device must use the chance to perform the
- * necessary pointer relocations and data updates.
- *
- * Before the GC code is executed the first time, this function will be
- * called with a 0 delta so GC pointer calculations can be one in one place.
- *
- * @param   pDevIns     Pointer to the device instance.
- * @param   offDelta    The relocation delta relative to the old location.
- *
- * @remark  A relocation CANNOT fail.
- */
-static DECLCALLBACK(void) vnetRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    VNETSTATE* pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
-    vpciRelocate(pDevIns, offDelta);
-    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
-#ifdef VNET_TX_DELAY
-    pState->pTxTimerRC    = TMTimerRCPtr(pState->pTxTimerR3);
-#endif /* VNET_TX_DELAY */
-    // TBD
-}
-
-/**
- * @copydoc FNPDMDEVSUSPEND
- */
-static DECLCALLBACK(void) vnetSuspend(PPDMDEVINS pDevIns)
-{
-    /* Poke thread waiting for buffer space. */
-    vnetWakeupReceive(pDevIns);
-}
-
-
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-/**
- * Detach notification.
- *
- * One port on the network card has been disconnected from the network.
- *
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- */
-static DECLCALLBACK(void) vnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
-    Log(("%s vnetDetach:\n", INSTANCE(pState)));
-
-    AssertLogRelReturnVoid(iLUN == 0);
-
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vnetDetach failed to enter critical section!\n"));
-        return;
-    }
-
-    /*
-     * Zero some important members.
-     */
-    pState->pDrvBase = NULL;
-    pState->pDrv = NULL;
-
-    vnetCsLeave(pState);
-}
-
-
-/**
- * Attach the Network attachment.
- *
- * One port on the network card has been connected to a network.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being attached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- *
- * @remarks This code path is not used during construction.
- */
-static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    VNETSTATE *pState = PDMINS_2_DATA(pDevIns, VNETSTATE*);
-    LogFlow(("%s vnetAttach:\n",  INSTANCE(pState)));
-
-    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
-
-    int rc = vnetCsEnter(pState, VERR_SEM_BUSY);
-    if (RT_FAILURE(rc))
-    {
-        LogRel(("vnetAttach failed to enter critical section!\n"));
-        return rc;
-    }
-
-    /*
-     * Attach the driver.
-     */
-    rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->VPCI.IBase, &pState->pDrvBase, "Network Port");
-    if (RT_SUCCESS(rc))
-    {
-        if (rc == VINF_NAT_DNS)
-        {
-#ifdef RT_OS_LINUX
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
-                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#else
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
-                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#endif
-        }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
-                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
-    }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log(("%s No attached driver!\n", INSTANCE(pState)));
-
-
-    /*
-     * Temporary set the link down if it was up so that the guest
-     * will know that we have change the configuration of the
-     * network card
-     */
-    if (RT_SUCCESS(rc))
-        vnetTempLinkDown(pState);
-
-    vnetCsLeave(pState);
-    return rc;
-
-}
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
-
-
-/**
- * @copydoc FNPDMDEVPOWEROFF
- */
-static DECLCALLBACK(void) vnetPowerOff(PPDMDEVINS pDevIns)
-{
-    /* Poke thread waiting for buffer space. */
-    vnetWakeupReceive(pDevIns);
 }
 
 /**

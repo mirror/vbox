@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -280,7 +280,7 @@ typedef struct PDMTHREAD
 } PDMTHREAD;
 
 /** PDMTHREAD::u32Version value. */
-#define PDMTHREAD_VERSION   0xef010000
+#define PDMTHREAD_VERSION                       PDM_VERSION_MAKE(0xefff, 1, 0)
 
 #ifdef IN_RING3
 VMMR3DECL(int) PDMR3ThreadCreate(PVM pVM, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADINT pfnThread,

@@ -672,6 +672,7 @@ static DECLCALLBACK(void *) parallelQueryInterface(PPDMIBASE pInterface, const c
 static DECLCALLBACK(int) parallelDestruct(PPDMDEVINS pDevIns)
 {
     ParallelState *pThis = PDMINS_2_DATA(pDevIns, ParallelState *);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     PDMR3CritSectDelete(&pThis->CritSect);
     RTSemEventDestroy(pThis->ReceiveSem);
@@ -701,6 +702,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     ParallelState *pThis = PDMINS_2_DATA(pDevIns, ParallelState*);
 
     Assert(iInstance < 4);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Init the data so parallelDestruct doesn't choke.

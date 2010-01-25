@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,168 +57,15 @@ RT_C_DECLS_END
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-/** @name GC Device Helpers
- * @{
- */
-static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR0DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(int)  pdmR0DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead);
-static DECLCALLBACK(int)  pdmR0DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite);
-static DECLCALLBACK(bool) pdmR0DevHlp_A20IsEnabled(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR0DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...);
-static DECLCALLBACK(int)  pdmR0DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va);
-static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...);
-static DECLCALLBACK(int)  pdmR0DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va);
-static DECLCALLBACK(int)  pdmR0DevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData);
-static DECLCALLBACK(PVM)  pdmR0DevHlp_GetVM(PPDMDEVINS pDevIns);
-static DECLCALLBACK(bool) pdmR0DevHlp_CanEmulateIoBlock(PPDMDEVINS pDevIns);
-static DECLCALLBACK(PVMCPU) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns);
-/** @} */
-
-
-/** @name PIC GC Helpers
- * @{
- */
-static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(void) pdmR0PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns);
-static DECLCALLBACK(int)  pdmR0PicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns);
-/** @} */
-
-
-/** @name APIC GC Helpers
- * @{
- */
-static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu);
-static DECLCALLBACK(void) pdmR0ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu);
-static DECLCALLBACK(void) pdmR0ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion);
-static DECLCALLBACK(int)  pdmR0ApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR0ApicHlp_Unlock(PPDMDEVINS pDevIns);
-static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns);
-/** @} */
-
-
-/** @name I/O APIC GC Helpers
- * @{
- */
-static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                        uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode);
-static DECLCALLBACK(int) pdmR0IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns);
-/** @} */
-
-
-/** @name PCI Bus GC Helpers
- * @{
- */
-static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel);
-static DECLCALLBACK(int) pdmR0PciHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR0PciHlp_Unlock(PPDMDEVINS pDevIns);
-/** @} */
-
-/** @name HPET GC Helpers
- * @{
- */
-static DECLCALLBACK(int) pdmR0HpetHlp_Lock(PPDMDEVINS pDevIns, int rc);
-static DECLCALLBACK(void) pdmR0HpetHlp_Unlock(PPDMDEVINS pDevIns);
-/** @} */
-
-
 static void pdmR0IsaSetIrq(PVM pVM, int iIrq, int iLevel);
 static void pdmR0IoApicSetIrq(PVM pVM, int iIrq, int iLevel);
 
 
 
-/**
- * The Guest Context Device Helper Callbacks.
+
+/** @name Ring-0 Device Helpers
+ * @{
  */
-extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
-{
-    PDM_DEVHLPR0_VERSION,
-    pdmR0DevHlp_PCISetIrq,
-    pdmR0DevHlp_ISASetIrq,
-    pdmR0DevHlp_PhysRead,
-    pdmR0DevHlp_PhysWrite,
-    pdmR0DevHlp_A20IsEnabled,
-    pdmR0DevHlp_VMSetError,
-    pdmR0DevHlp_VMSetErrorV,
-    pdmR0DevHlp_VMSetRuntimeError,
-    pdmR0DevHlp_VMSetRuntimeErrorV,
-    pdmR0DevHlp_PATMSetMMIOPatchInfo,
-    pdmR0DevHlp_GetVM,
-    pdmR0DevHlp_CanEmulateIoBlock,
-    pdmR0DevHlp_GetVMCPU,
-    PDM_DEVHLPR0_VERSION
-};
-
-/**
- * The Guest Context PIC Helper Callbacks.
- */
-extern DECLEXPORT(const PDMPICHLPR0) g_pdmR0PicHlp =
-{
-    PDM_PICHLPR0_VERSION,
-    pdmR0PicHlp_SetInterruptFF,
-    pdmR0PicHlp_ClearInterruptFF,
-    pdmR0PicHlp_Lock,
-    pdmR0PicHlp_Unlock,
-    PDM_PICHLPR0_VERSION
-};
-
-
-/**
- * The Guest Context APIC Helper Callbacks.
- */
-extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
-{
-    PDM_APICHLPR0_VERSION,
-    pdmR0ApicHlp_SetInterruptFF,
-    pdmR0ApicHlp_ClearInterruptFF,
-    pdmR0ApicHlp_ChangeFeature,
-    pdmR0ApicHlp_Lock,
-    pdmR0ApicHlp_Unlock,
-    pdmR0ApicHlp_GetCpuId,
-    PDM_APICHLPR0_VERSION
-};
-
-
-/**
- * The Guest Context I/O APIC Helper Callbacks.
- */
-extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp =
-{
-    PDM_IOAPICHLPR0_VERSION,
-    pdmR0IoApicHlp_ApicBusDeliver,
-    pdmR0IoApicHlp_Lock,
-    pdmR0IoApicHlp_Unlock,
-    PDM_IOAPICHLPR0_VERSION
-};
-
-
-/**
- * The Guest Context PCI Bus Helper Callbacks.
- */
-extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
-{
-    PDM_PCIHLPR0_VERSION,
-    pdmR0PciHlp_IsaSetIrq,
-    pdmR0PciHlp_IoApicSetIrq,
-    pdmR0PciHlp_Lock,
-    pdmR0PciHlp_Unlock,
-    PDM_PCIHLPR0_VERSION, /* the end */
-};
-
-/**
- * The Guest Context HPET Helper Callbacks.
- */
-extern DECLEXPORT(const PDMHPETHLPR0) g_pdmR0HpetHlp =
-{
-    PDM_HPETHLPR0_VERSION,
-    pdmR0HpetHlp_Lock,
-    pdmR0HpetHlp_Unlock,
-    PDM_HPETHLPR0_VERSION, /* the end */
-};
-
 
 /** @copydoc PDMDEVHLPR0::pfnPCISetIrq */
 static DECLCALLBACK(void) pdmR0DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
@@ -395,7 +242,36 @@ static DECLCALLBACK(PVMCPU) pdmR0DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * The Ring-0 Device Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMDEVHLPR0) g_pdmR0DevHlp =
+{
+    PDM_DEVHLPR0_VERSION,
+    pdmR0DevHlp_PCISetIrq,
+    pdmR0DevHlp_ISASetIrq,
+    pdmR0DevHlp_PhysRead,
+    pdmR0DevHlp_PhysWrite,
+    pdmR0DevHlp_A20IsEnabled,
+    pdmR0DevHlp_VMSetError,
+    pdmR0DevHlp_VMSetErrorV,
+    pdmR0DevHlp_VMSetRuntimeError,
+    pdmR0DevHlp_VMSetRuntimeErrorV,
+    pdmR0DevHlp_PATMSetMMIOPatchInfo,
+    pdmR0DevHlp_GetVM,
+    pdmR0DevHlp_CanEmulateIoBlock,
+    pdmR0DevHlp_GetVMCPU,
+    PDM_DEVHLPR0_VERSION
+};
 
+/** @} */
+
+
+
+
+/** @name PIC Ring-0 Helpers
+ * @{
+ */
 
 /** @copydoc PDMPICHLPR0::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR0PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
@@ -462,6 +338,27 @@ static DECLCALLBACK(void) pdmR0PicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * The Ring-0 PIC Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMPICHLPR0) g_pdmR0PicHlp =
+{
+    PDM_PICHLPR0_VERSION,
+    pdmR0PicHlp_SetInterruptFF,
+    pdmR0PicHlp_ClearInterruptFF,
+    pdmR0PicHlp_Lock,
+    pdmR0PicHlp_Unlock,
+    PDM_PICHLPR0_VERSION
+};
+
+/** @} */
+
+
+
+
+/** @name APIC Ring-0 Helpers
+ * @{
+ */
 
 /** @copydoc PDMAPICHLPR0::pfnSetInterruptFF */
 static DECLCALLBACK(void) pdmR0ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
@@ -591,12 +488,33 @@ static DECLCALLBACK(VMCPUID) pdmR0ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * The Ring-0 APIC Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMAPICHLPR0) g_pdmR0ApicHlp =
+{
+    PDM_APICHLPR0_VERSION,
+    pdmR0ApicHlp_SetInterruptFF,
+    pdmR0ApicHlp_ClearInterruptFF,
+    pdmR0ApicHlp_ChangeFeature,
+    pdmR0ApicHlp_Lock,
+    pdmR0ApicHlp_Unlock,
+    pdmR0ApicHlp_GetCpuId,
+    PDM_APICHLPR0_VERSION
+};
+
+/** @} */
 
 
+
+
+/** @name I/O APIC Ring-0 Helpers
+ * @{
+ */
 
 /** @copydoc PDMIOAPICHLPR0::pfnApicBusDeliver */
 static DECLCALLBACK(int) pdmR0IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
-                                                        uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
+                                                       uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     PVM pVM = pDevIns->Internal.s.pVMR0;
@@ -625,8 +543,26 @@ static DECLCALLBACK(void) pdmR0IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
+/**
+ * The Ring-0 I/O APIC Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMIOAPICHLPR0) g_pdmR0IoApicHlp =
+{
+    PDM_IOAPICHLPR0_VERSION,
+    pdmR0IoApicHlp_ApicBusDeliver,
+    pdmR0IoApicHlp_Lock,
+    pdmR0IoApicHlp_Unlock,
+    PDM_IOAPICHLPR0_VERSION
+};
+
+/** @} */
 
 
+
+
+/** @name PCI Bus Ring-0 Helpers
+ * @{
+ */
 
 /** @copydoc PDMPCIHLPR0::pfnIsaSetIrq */
 static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
@@ -641,7 +577,7 @@ static DECLCALLBACK(void) pdmR0PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 static DECLCALLBACK(void) pdmR0PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    Log4(("pdmR0PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
+    Log4(("pdmR0PciHlp_IoApicSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
     pdmR0IoApicSetIrq(pDevIns->Internal.s.pVMR0, iIrq, iLevel);
 }
 
@@ -661,6 +597,57 @@ static DECLCALLBACK(void) pdmR0PciHlp_Unlock(PPDMDEVINS pDevIns)
     pdmUnlock(pDevIns->Internal.s.pVMR0);
 }
 
+
+/**
+ * The Ring-0 PCI Bus Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
+{
+    PDM_PCIHLPR0_VERSION,
+    pdmR0PciHlp_IsaSetIrq,
+    pdmR0PciHlp_IoApicSetIrq,
+    pdmR0PciHlp_Lock,
+    pdmR0PciHlp_Unlock,
+    PDM_PCIHLPR0_VERSION, /* the end */
+};
+
+/** @} */
+
+
+
+
+/** @name HPET Ring-0 Helpers
+ * @{
+ */
+
+/** @copydoc PDMHPETHLPR0::pfnLock */
+static DECLCALLBACK(int) pdmR0HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    return pdmLockEx(pDevIns->Internal.s.pVMR0, rc);
+}
+
+
+/** @copydoc PDMHPETHLPR0::pfnUnlock */
+static DECLCALLBACK(void) pdmR0HpetHlp_Unlock(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    pdmUnlock(pDevIns->Internal.s.pVMR0);
+}
+
+
+/**
+ * The Ring-0 HPET Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMHPETHLPR0) g_pdmR0HpetHlp =
+{
+    PDM_HPETHLPR0_VERSION,
+    pdmR0HpetHlp_Lock,
+    pdmR0HpetHlp_Unlock,
+    PDM_HPETHLPR0_VERSION, /* the end */
+};
+
+/** @} */
 
 
 
@@ -737,17 +724,3 @@ static void pdmR0IoApicSetIrq(PVM pVM, int iIrq, int iLevel)
     }
 }
 
-/** @copydoc PDMHPETHLPR0::pfnLock */
-static DECLCALLBACK(int) pdmR0HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return pdmLockEx(pDevIns->Internal.s.pVMR0, rc);
-}
-
-
-/** @copydoc PDMHPETHLPR0::pfnUnlock */
-static DECLCALLBACK(void) pdmR0HpetHlp_Unlock(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    pdmUnlock(pDevIns->Internal.s.pVMR0);
-}

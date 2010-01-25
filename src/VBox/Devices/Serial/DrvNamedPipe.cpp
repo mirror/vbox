@@ -382,6 +382,83 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
     return VINF_SUCCESS;
 }
 
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
+
+/**
+ * Power off a named pipe stream driver instance.
+ *
+ * This does most of the destruction work, to avoid ordering dependencies.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
+{
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
+
+    pThis->fShutdown = true;
+
+#ifdef RT_OS_WINDOWS
+    if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
+    {
+        if (pThis->fIsServer)
+        {
+            FlushFileBuffers(pThis->NamedPipe);
+            DisconnectNamedPipe(pThis->NamedPipe);
+        }
+
+        CloseHandle(pThis->NamedPipe);
+        pThis->NamedPipe = INVALID_HANDLE_VALUE;
+        CloseHandle(pThis->OverlappedRead.hEvent);
+        CloseHandle(pThis->OverlappedWrite.hEvent);
+    }
+    if (pThis->fIsServer)
+    {
+        /* Wake up listen thread */
+        RTSemEventSignal(pThis->ListenSem);
+        RTSemEventDestroy(pThis->ListenSem);
+    }
+#else /* !RT_OS_WINDOWS */
+    if (pThis->fIsServer)
+    {
+        if (pThis->LocalSocketServer != NIL_RTSOCKET)
+            close(pThis->LocalSocketServer);
+        if (pThis->pszLocation)
+            RTFileDelete(pThis->pszLocation);
+    }
+    else
+    {
+        if (pThis->LocalSocket != NIL_RTSOCKET)
+            close(pThis->LocalSocket);
+    }
+#endif /* !RT_OS_WINDOWS */
+}
+
+
+/**
+ * Destruct a named pipe stream driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that
+ * any non-VM resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
+{
+    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    if (pThis->ListenThread)
+    {   RTThreadWait(pThis->ListenThread, 250, NULL);
+        if (pThis->ListenThread != NIL_RTTHREAD)
+            LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
+    }
+
+    if (pThis->pszLocation)
+        MMR3HeapFree(pThis->pszLocation);
+}
+
 
 /**
  * Construct a named pipe stream driver instance.
@@ -393,6 +470,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     int rc;
     char *pszLocation = NULL;
     PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.
@@ -420,14 +498,14 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     if (!CFGMR3AreValuesValid(pCfgHandle, "Location\0IsServer\0"))
     {
         rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
-        goto out;
+        goto l_out;
     }
 
     rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc));
-        goto out;
+        goto l_out;
     }
     pThis->pszLocation = pszLocation;
 
@@ -436,7 +514,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Rrc.\n", rc));
-        goto out;
+        goto l_out;
     }
     pThis->fIsServer = fIsServer;
 
@@ -508,7 +586,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     }
 #endif /* !RT_OS_WINDOWS */
 
-out:
+l_out:
     if (RT_FAILURE(rc))
     {
         if (pszLocation)
@@ -519,82 +597,6 @@ out:
     LogFlow(("drvNamedPipeConstruct: location %s isServer %d\n", pszLocation, fIsServer));
     LogRel(("NamedPipe: location %s, %s\n", pszLocation, fIsServer ? "server" : "client"));
     return VINF_SUCCESS;
-}
-
-
-/**
- * Destruct a named pipe stream driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that
- * any non-VM resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
-
-    if (pThis->ListenThread)
-    {
-        RTThreadWait(pThis->ListenThread, 250, NULL);
-        if (pThis->ListenThread != NIL_RTTHREAD)
-            LogRel(("NamedPipe%d: listen thread did not terminate\n", pDrvIns->iInstance));
-    }
-
-    if (pThis->pszLocation)
-        MMR3HeapFree(pThis->pszLocation);
-}
-
-
-/**
- * Power off a named pipe stream driver instance.
- *
- * This does most of the destruction work, to avoid ordering dependencies.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
-{
-    PDRVNAMEDPIPE pThis = PDMINS_2_DATA(pDrvIns, PDRVNAMEDPIPE);
-    LogFlow(("%s: %s\n", __FUNCTION__, pThis->pszLocation));
-
-    pThis->fShutdown = true;
-
-#ifdef RT_OS_WINDOWS
-    if (pThis->NamedPipe != INVALID_HANDLE_VALUE)
-    {
-        if (pThis->fIsServer)
-        {
-            FlushFileBuffers(pThis->NamedPipe);
-            DisconnectNamedPipe(pThis->NamedPipe);
-        }
-
-        CloseHandle(pThis->NamedPipe);
-        pThis->NamedPipe = INVALID_HANDLE_VALUE;
-        CloseHandle(pThis->OverlappedRead.hEvent);
-        CloseHandle(pThis->OverlappedWrite.hEvent);
-    }
-    if (pThis->fIsServer)
-    {
-        /* Wake up listen thread */
-        RTSemEventSignal(pThis->ListenSem);
-        RTSemEventDestroy(pThis->ListenSem);
-    }
-#else /* !RT_OS_WINDOWS */
-    if (pThis->fIsServer)
-    {
-        if (pThis->LocalSocketServer != NIL_RTSOCKET)
-            close(pThis->LocalSocketServer);
-        if (pThis->pszLocation)
-            RTFileDelete(pThis->pszLocation);
-    }
-    else
-    {
-        if (pThis->LocalSocket != NIL_RTSOCKET)
-            close(pThis->LocalSocket);
-    }
-#endif /* !RT_OS_WINDOWS */
 }
 
 
