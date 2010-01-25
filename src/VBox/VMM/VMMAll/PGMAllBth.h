@@ -1029,6 +1029,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         return VINF_SUCCESS;
     }
 
+    /* Fetch the pgm pool shadow descriptor. */ 
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK); 
+    Assert(pShwPde); 
+
 # endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
     const SHWPDE PdeDst = *pPdeDst;
