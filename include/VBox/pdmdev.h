@@ -1610,6 +1610,166 @@ typedef R3PTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;
 #define PDM_IOAPICHLPR3_VERSION   0xff010000
 
 
+/**
+ * HPET registration structure.
+ */
+typedef struct PDMHPETREG
+{
+    /** Struct version+magic number (PDM_HPETREG_VERSION). */
+    uint32_t            u32Version;
+
+} PDMHPETREG;
+/** Pointer to an HPET registration structure. */
+typedef PDMHPETREG *PPDMHPETREG;
+
+/** Current PDMHPETREG version number. */
+#define PDM_HPETREG_VERSION     0x1f010000
+
+/**
+ * HPET RC helpers.
+ */
+typedef struct PDMHPETHLPRC
+{
+    /** Structure version. PDM_HPETHLPRC_VERSION defines the current version. */
+    uint32_t                u32Version;
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns         The HPET device instance.
+     * @param   rc              What to return if we fail to acquire the lock.
+     */
+    DECLRCCALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The HPET device instance.
+     */
+    DECLRCCALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMHPETHLPRC;
+
+/** Pointer to HPET RC helpers. */
+typedef RCPTRTYPE(PDMHPETHLPRC *) PPDMHPETHLPRC;
+/** Pointer to const HPET RC helpers. */
+typedef RCPTRTYPE(const PDMHPETHLPRC *) PCPDMHPETHLPRC;
+
+/** Current PDMHPETHLPRC version number. */
+#define PDM_HPETHLPRC_VERSION  0xe1010000
+
+
+/**
+ * HPET R0 helpers.
+ */
+typedef struct PDMHPETHLPR0
+{
+    /** Structure version. PDM_HPETHLPR0_VERSION defines the current version. */
+    uint32_t                u32Version;
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns         The HPET device instance.
+     * @param   rc              What to return if we fail to acquire the lock.
+     */
+    DECLR0CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The HPET device instance.
+     */
+    DECLR0CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMHPETHLPR0;
+
+/** Pointer to HPET R0 helpers. */
+typedef R0PTRTYPE(PDMHPETHLPR0 *) PPDMHPETHLPR0;
+/** Pointer to const HPET R0 helpers. */
+typedef R0PTRTYPE(const PDMHPETHLPR0 *) PCPDMHPETHLPR0;
+
+/** Current PDMHPETHLPR0 version number. */
+#define PDM_HPETHLPR0_VERSION  0xe1010000
+
+/**
+ * HPET R3 helpers.
+ */
+typedef struct PDMHPETHLPR3
+{
+    /** Structure version. PDM_HPETHLP_VERSION defines the current version. */
+    uint32_t                u32Version;
+
+
+    /**
+     * Set the interrupt force action flag.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to set legacy mode.
+     * @param   pDevIns         Device instance of the HPET.
+     * @param   fActivate       Activate or deactivate legacy mode.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetLegacyMode,(PPDMDEVINS pDevIns, bool fActivate));
+
+    /**
+     * Acquires the PDM lock.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to acquire the lock.
+     * @param   pDevIns         The HPET device instance.
+     * @param   rc              What to return if we fail to acquire the lock.
+     */
+    DECLR3CALLBACKMEMBER(int,   pfnLock,(PPDMDEVINS pDevIns, int rc));
+
+    /**
+     * Releases the PDM lock.
+     *
+     * @param   pDevIns         The HPET device instance.
+     */
+    DECLR3CALLBACKMEMBER(void,  pfnUnlock,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the address of the RC HPET helpers.
+     *
+     * This should be called at both construction and relocation time
+     * to obtain the correct address of the RC helpers.
+     *
+     * @returns RC pointer to the HPET helpers.
+     * @param   pDevIns         Device instance of the HPET.
+     */
+    DECLR3CALLBACKMEMBER(PCPDMHPETHLPRC, pfnGetRCHelpers,(PPDMDEVINS pDevIns));
+
+    /**
+     * Gets the address of the R0 HPET helpers.
+     *
+     * This should be called at both construction and relocation time
+     * to obtain the correct address of the R0 helpers.
+     *
+     * @returns R0 pointer to the HPET helpers.
+     * @param   pDevIns         Device instance of the HPET.
+     */
+    DECLR3CALLBACKMEMBER(PCPDMHPETHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
+
+    /** Just a safety precaution. */
+    uint32_t                u32TheEnd;
+} PDMHPETHLPR3;
+
+/** Pointer to HPET R3 helpers. */
+typedef R3PTRTYPE(PDMHPETHLPR3 *) PPDMHPETHLPR3;
+/** Pointer to const HPET R3 helpers. */
+typedef R3PTRTYPE(const PDMHPETHLPR3 *) PCPDMHPETHLPR3;
+
+/** Current PDMHPETHLPR3 version number. */
+#define PDM_HPETHLPR3_VERSION  0x1e010000
+
 
 #ifdef IN_RING3
 
@@ -2507,6 +2667,17 @@ typedef struct PDMDEVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnIOAPICRegister,(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3));
 
     /**
+     * Register the HPET device.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             Device instance.
+     * @param   pHpetReg            Pointer to a HPET registration structure.
+     * @param   ppHpetHlpR3         Where to store the pointer to the HPET
+     *                              helpers.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnHPETRegister,(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3));
+
+    /**
      * Register the DMA device.
      *
      * @returns VBox status code.
@@ -2946,7 +3117,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf20c0000
+#define PDM_DEVHLP_VERSION  0xf20c0001
 
 
 /**

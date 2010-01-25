@@ -56,7 +56,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
         pVM->pdm.s.Apic.pfnLocalInterruptR3(pVM->pdm.s.Apic.pDevInsR3, 0, 1);
         return;
     }
- 
+
     PVMCPU pVCpu = &pVM->aCpus[0];  /* for PIC we always deliver to CPU 0, MP use APIC */
 
     LogFlow(("pdmR3PicHlp_SetInterruptFF: caller='%s'/%d: VM_FF_INTERRUPT_PIC %d -> 1\n",
@@ -530,6 +530,59 @@ static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 }
 
 
+/** @copydoc PDMHPETHLPR3::pfnSetLegacyMode */
+static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fActivate)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3HpetHlp_SetLegacyMode: caller='%s'/%d: fActivate=%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, fActivate));
+    return 0;
+}
+
+/** @copydoc PDMHPETHLPR3::pfnLock */
+static DECLCALLBACK(int) pdmR3HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3HpetHlp_Lock: caller='%s'/%d: rc=%Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+    return pdmLockEx(pDevIns->Internal.s.pVMR3, rc);
+}
+
+
+/** @copydoc PDMHPETHLPR3::pfnUnlock */
+static DECLCALLBACK(void) pdmR3HpetHlp_Unlock(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3HpetHlp_Unlock: caller='%s'/%d:\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    pdmUnlock(pDevIns->Internal.s.pVMR3);
+}
+
+/** @copydoc PDMHPETHLPR3::pfnGetRCHelpers */
+static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    RTRCPTR pRCHelpers = 0;
+    int rc = PDMR3LdrGetSymbolRC(pDevIns->Internal.s.pVMR3, NULL, "g_pdmRCHpetHlp", &pRCHelpers);
+    AssertReleaseRC(rc);
+    AssertRelease(pRCHelpers);
+    LogFlow(("pdmR3HpetHlp_GetGCHelpers: caller='%s'/%d: returns %RRv\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pRCHelpers));
+    return pRCHelpers;
+}
+
+/** @copydoc PDMHPETHLPR3::pfnGetR0Helpers */
+static DECLCALLBACK(PCPDMHPETHLPR0) pdmR3HpetHlp_GetR0Helpers(PPDMDEVINS pDevIns)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    PCPDMHPETHLPR0 pR0Helpers = 0;
+    int rc = PDMR3LdrGetSymbolR0(pDevIns->Internal.s.pVMR3, NULL, "g_pdmR0HpetHlp", &pR0Helpers);
+    AssertReleaseRC(rc);
+    AssertRelease(pR0Helpers);
+    LogFlow(("pdmR3HpetHlp_GetR0Helpers: caller='%s'/%d: returns %RHv\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pR0Helpers));
+    return pR0Helpers;
+}
+
 /**
  * PCI Bus Device Helpers.
  */
@@ -544,6 +597,22 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
     pdmR3PciHlp_Lock,
     pdmR3PciHlp_Unlock,
     PDM_PCIHLPR3_VERSION, /* the end */
+};
+
+/** @} */
+
+/**
+ * HPET Device Helpers.
+ */
+const PDMHPETHLPR3 g_pdmR3DevHpetHlp =
+{
+    PDM_HPETHLPR3_VERSION,
+    pdmR3HpetHlp_SetLegacyMode,    
+    pdmR3HpetHlp_Lock,
+    pdmR3HpetHlp_Unlock,
+    pdmR3HpetHlp_GetRCHelpers,
+    pdmR3HpetHlp_GetR0Helpers,
+    PDM_HPETHLPR3_VERSION, /* the end */
 };
 
 /** @} */
@@ -572,5 +641,3 @@ const PDMRTCHLP g_pdmR3DevRtcHlp =
 {
     PDM_RTCHLP_VERSION
 };
-
-
