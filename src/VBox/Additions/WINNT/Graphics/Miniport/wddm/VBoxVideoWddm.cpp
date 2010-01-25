@@ -322,7 +322,19 @@ NTSTATUS DxgkDdiQueryDeviceDescriptor(
     IN OUT PDXGK_DEVICE_DESCRIPTOR DeviceDescriptor
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiQueryDeviceDescriptor should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    /* we do not support EDID */
+    DeviceDescriptor->DescriptorOffset = 0;
+    DeviceDescriptor->DescriptorLength = 0;
+    DeviceDescriptor->DescriptorBuffer = NULL;
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS DxgkDdiSetPowerState(
@@ -332,7 +344,16 @@ NTSTATUS DxgkDdiSetPowerState(
     IN POWER_ACTION ActionType
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiSetPowerState function should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    /* @todo: */
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS DxgkDdiNotifyAcpiEvent(
@@ -563,7 +584,135 @@ DxgkDdiRecommendFunctionalVidPn(
     CONST DXGKARG_RECOMMENDFUNCTIONALVIDPN* CONST  pRecommendFunctionalVidPnArg
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiRecommendFunctionalVidPn should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+    NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    if(Status == STATUS_SUCCESS)
+    {
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+        const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+        Status = pVidPnInterface->pfnGetTopology(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+        if(Status == STATUS_SUCCESS)
+        {
+            D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo;
+            Status = pVidPnTopologyInterface->pfnCreateNewPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
+            if(Status == STATUS_SUCCESS)
+            {
+                pNewVidPnPresentPathInfo->VidPnSourceId = 0;
+                pNewVidPnPresentPathInfo->VidPnTargetId = 0;
+                pNewVidPnPresentPathInfo->ImportanceOrdinal = D3DKMDT_VPPI_PRIMARY;
+                pNewVidPnPresentPathInfo->ContentTransformation.Scaling = D3DKMDT_VPPS_IDENTITY;
+                memset(&pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport,
+                        0, sizeof(pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport));
+                pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Identity = 1;
+                pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Centered = 1;
+                pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Stretched = 0;
+                pNewVidPnPresentPathInfo->ContentTransformation.Rotation = D3DKMDT_VPPR_IDENTITY;
+                pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Identity = 1;
+                pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate180 = 0;
+                pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate270 = 0;
+                pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate90 = 0;
+                pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx = 0;
+                pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy = 0;
+                pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx = 0;
+                pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy = 0;
+                pNewVidPnPresentPathInfo->VidPnTargetColorBasis = D3DKMDT_CB_SRGB; /* @todo: how does it matters? */
+                pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FirstChannel =  8;
+                pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.SecondChannel =  8;
+                pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.ThirdChannel =  8;
+                pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel =  0;
+                pNewVidPnPresentPathInfo->Content = D3DKMDT_VPPC_GRAPHICS;
+                pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType = D3DKMDT_VPPMT_NOPROTECTION;
+                pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits = 0;
+                memset(&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, 0, sizeof(pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport));
+                pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport.NoProtection  = 1;
+                pNewVidPnPresentPathInfo->GammaRamp.Type = D3DDDI_GAMMARAMP_DEFAULT;
+                pNewVidPnPresentPathInfo->GammaRamp.DataSize = 0;
+                Status = pVidPnTopologyInterface->pfnAddPath(hVidPnTopology, pNewVidPnPresentPathInfo);
+                if(Status == STATUS_SUCCESS)
+                {
+                    D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
+                    const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
+                    Status = pVidPnInterface->pfnCreateNewSourceModeSet(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn,
+                                    0, /*__in CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId */
+                                    &hNewVidPnSourceModeSet,
+                                    &pVidPnSourceModeSetInterface);
+                    if(Status == STATUS_SUCCESS)
+                    {
+                        D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo;
+                        Status = pVidPnSourceModeSetInterface->pfnCreateNewModeInfo(hNewVidPnSourceModeSet, &pNewVidPnSourceModeInfo);
+                        if(Status == STATUS_SUCCESS)
+                        {
+                            D3DKMDT_VIDEO_PRESENT_SOURCE_MODE_ID modeId = pNewVidPnSourceModeInfo->Id;
+                            pNewVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
+                            /* @todo: should we obtain the default mode from the host? */
+                            pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = 1024;
+                            pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = 768;
+                            pNewVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
+                            pNewVidPnSourceModeInfo->Format.Graphics.Stride = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx * 4;
+                            pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat = D3DDDIFMT_X8R8G8B8;
+                            pNewVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
+                            pNewVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
+                            Status = pVidPnSourceModeSetInterface->pfnAddMode(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
+                            if(Status == STATUS_SUCCESS)
+                            {
+                                Status = pVidPnSourceModeSetInterface->pfnPinMode(hNewVidPnSourceModeSet, modeId);
+                                if(Status == STATUS_SUCCESS)
+                                {
+
+                                }
+                                else
+                                {
+                                    drprintf(("VBoxVideoWddm: pfnPinMode failed Status(0x%x)\n"));
+                                }
+                            }
+                            else
+                            {
+                                drprintf(("VBoxVideoWddm: pfnAddMode failed Status(0x%x)\n"));
+                                pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
+                                pNewVidPnSourceModeInfo = NULL;
+                            }
+                        }
+                        else
+                        {
+                            drprintf(("VBoxVideoWddm: pfnCreateNewModeInfo failed Status(0x%x)\n"));
+                        }
+                    }
+                    else
+                    {
+                        drprintf(("VBoxVideoWddm: pfnCreateNewSourceModeSet failed Status(0x%x)\n"));
+                    }
+                }
+                else
+                {
+                    drprintf(("VBoxVideoWddm: pfnAddPath failed Status(0x%x)\n"));
+                    pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
+                    pNewVidPnPresentPathInfo = NULL;
+                }
+            }
+            else
+            {
+                drprintf(("VBoxVideoWddm: pfnCreateNewPathInfo failed Status(0x%x)\n"));
+            }
+        }
+        else
+        {
+            drprintf(("VBoxVideoWddm: pfnGetTopology failed Status(0x%x)\n"));
+        }
+    }
+    else
+    {
+        drprintf(("VBoxVideoWddm: DxgkCbQueryVidPnInterface failed Status(0x%x)\n"));
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
