@@ -274,7 +274,7 @@ ifeq ($(VBOX_LDR_FMT32),elf)
  tstLdrObjR0_DEFS += VBOX_SOME_IMPORT_FUNCTION
 endif
 ifn1of ($(KBUILD_TARGET), win)
- tstLdrObjR0_CXXFLAGS = -Wno-array-bounds
+ tstLdrObjR0_CXXFLAGS = $(VBOX_GCC_Wno-array_bounds)
 endif
 tstLdrObjR0_LIBS = \
 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
