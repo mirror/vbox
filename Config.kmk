@@ -3769,11 +3769,7 @@ TEMPLATE_VBOXCROGLR3HOSTDLL_BLDDIRS          = $(VBOX_PATH_CROGL_GENFILES)/
 # Template for building OpenGL host libraries.
 #
 TEMPLATE_VBOXCROGLR3HOSTLIB         = VBox OpenGL Host Libraries
-TEMPLATE_VBOXCROGLR3HOSTLIB_EXTENDS = VBOXCROGLR3GUESTDLL
-# fixme? Without next line VBoxOGLhostcrstate and other host libs from src/VBox/GuestHost/OpenGL/makefile.kmk
-# would be compiled with defines from VBOXGUESTR3NPDLL, like IN_GUEST etc.
-# Also need to specify IN_RING3 because EXTENDS_BY=prepending can't be used due to the reason above.
-TEMPLATE_VBOXCROGLR3HOSTLIB_DEFS    = IN_RING3 $(TEMPLATE_VBOXCROGLR3HOSTDLL_DEFS)
+TEMPLATE_VBOXCROGLR3HOSTLIB_EXTENDS = VBOXCROGLR3HOSTDLL
 TEMPLATE_VBOXCROGLR3HOSTLIB_INST    = $(INST_LIB)
 
 #
