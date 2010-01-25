@@ -216,6 +216,7 @@ static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_
         if (pCtx->cbAllocated - pCtx->cbPNG < cb)
         {
             uint32_t cbNew = pCtx->cbPNG + (uint32_t)cb;
+            AssertReturnVoidStmt(cbNew > pCtx->cbPNG && cbNew <= _1G, pCtx->rc = VERR_TOO_MUCH_DATA);
             cbNew = RT_ALIGN_32(cbNew, 4096) + 4096;
 
             void *pNew = RTMemRealloc(pCtx->pu8PNG, cbNew);
@@ -230,7 +231,7 @@ static void PNGAPI png_write_data_fn(png_structp png_ptr, png_bytep p, png_size_
         }
 
         memcpy(pCtx->pu8PNG + pCtx->cbPNG, p, cb);
-        pCtx->cbPNG += cb;
+        pCtx->cbPNG += (uint32_t)cb;
     }
 }
 
