@@ -2897,14 +2897,26 @@ ResumeExecution:
                 /* Forward it to our trap handler first, in case our shadow pages are out of sync. */
                 rc = PGMTrap0eHandler(pVCpu, errCode, CPUMCTX2CORE(pCtx), (RTGCPTR)exitQualification);
                 Log2(("PGMTrap0eHandler %RGv returned %Rrc\n", (RTGCPTR)pCtx->rip, rc));
+
                 if (rc == VINF_SUCCESS)
                 {   /* We've successfully synced our shadow pages, so let's just continue execution. */
                     Log2(("Shadow page fault at %RGv cr2=%RGv error code %x\n", (RTGCPTR)pCtx->rip, exitQualification ,errCode));
                     STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
                     TRPMResetTrap(pVCpu);
-
                     STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit2Sub3, y3);
+
+                    /* Check if a sync operation is pending. */
+                    if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+                    {
+                        rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+                        AssertRC(rc);
+                        if (rc != VINF_SUCCESS)
+                        {
+                            Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
+                            break;
+                        }
+                    }                   
                     goto ResumeExecution;
                 }
                 else
@@ -3394,6 +3406,7 @@ ResumeExecution:
 
             TRPMResetTrap(pVCpu);
 
+            Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
             goto ResumeExecution;
         }
 
