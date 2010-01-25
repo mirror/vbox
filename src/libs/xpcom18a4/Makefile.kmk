@@ -212,20 +212,20 @@ TEMPLATE_XPCOMTSTEXE_CFLAGS        = $(TEMPLATE_XPCOMEXE_CFLAGS)   -Wno-format
 TEMPLATE_XPCOMBLDPROG                     = XPCOM Build programs executables
 TEMPLATE_XPCOMBLDPROG_EXTENDS             = VBOXBLDPROG
 ## @todo Verify that this doesn't blow up because of template inheriance ordering. (we're assuming XPCOMEXE is expanded when this is being used.)
-TEMPLATE_XPCOMBLDPROG_DEFS                = $(TEMPLATE_BLDPROG_DEFS)                $(TEMPLATE_XPCOMEXE_DEFS)
-TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_HOST) = $(TEMPLATE_BLDPROG_DEFS.$(KBUILD_HOST)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_HOST))
-TEMPLATE_XPCOMBLDPROG_DEFS.x86            = $(TEMPLATE_BLDPROG_DEFS.x86)            $(TEMPLATE_XPCOMEXE_DEFS.x86)
-TEMPLATE_XPCOMBLDPROG_DEFS.amd64          = $(TEMPLATE_BLDPROG_DEFS.amd64)          $(TEMPLATE_XPCOMEXE_DEFS.amd64)
+TEMPLATE_XPCOMBLDPROG_DEFS                = $(TEMPLATE_VBOXBLDPROG_DEFS)                $(TEMPLATE_XPCOMEXE_DEFS)
+TEMPLATE_XPCOMBLDPROG_DEFS.$(KBUILD_HOST) = $(TEMPLATE_VBOXBLDPROG_DEFS.$(KBUILD_HOST)) $(TEMPLATE_XPCOMEXE_DEFS.$(KBUILD_HOST))
+TEMPLATE_XPCOMBLDPROG_DEFS.x86            = $(TEMPLATE_VBOXBLDPROG_DEFS.x86)            $(TEMPLATE_XPCOMEXE_DEFS.x86)
+TEMPLATE_XPCOMBLDPROG_DEFS.amd64          = $(TEMPLATE_VBOXBLDPROG_DEFS.amd64)          $(TEMPLATE_XPCOMEXE_DEFS.amd64)
 TEMPLATE_XPCOMBLDPROG_INCS                = \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/nsprpub \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/string \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/xpcom \
 	$(VBOX_PATH_SDK)/bindings/xpcom/include/ipcd
-TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_BLDPROG_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast)
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_BLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
-TEMPLATE_XPCOMBLDPROG_CXXFLAGS.solaris   = $(TEMPLATE_BLDPROG_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
-TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_BLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
+TEMPLATE_XPCOMBLDPROG_CFLAGS             = $(filter-out -pedantic -Wshadow, $(TEMPLATE_VBOX_BLDPROG_CFLAGS)) $(VBOX_GCC_Wno-int-to-pointer-cast) $(VBOX_GCC_Wno-pointer-to-int-cast) -Wno-format
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.darwin    = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.darwin)     -fpascal-strings -fshort-wchar -fno-common -fno-rtti
+TEMPLATE_XPCOMBLDPROG_CXXFLAGS.solaris   = $(TEMPLATE_VBOXBLDPROG_CXXFLAGS.solaris)    -fno-omit-frame-pointer # for now anyway.
+TEMPLATE_XPCOMBLDPROG_LDFLAGS.darwin     = $(TEMPLATE_VBOXBLDPROG_LDFLAGS.darwin)      -fpascal-strings -fshort-wchar -fno-rtti -fno-exceptions
 TEMPLATE_XPCOMBLDPROG_ORDERDEPS          = $(foreach hdrinst, $(filter %-HEADERS, $(INSTALLS)), $(TARGET_$(hdrinst)))
 
 
