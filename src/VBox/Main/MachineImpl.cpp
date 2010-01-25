@@ -3440,6 +3440,17 @@ STDMETHODIMP Machine::GetSnapshot (IN_BSTR aId, ISnapshot **aSnapshot)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(aId);
+    if (    aId
+        &&  uuid.isEmpty())
+    {
+        RTUUID uuidTemp;
+        /* Either it's a null UUID or the conversion failed. (null uuid has a special meaning in findSnapshot) */
+        if (RT_FAILURE(RTUuidFromUtf16(&uuidTemp, aId)))
+            return setError(E_FAIL,
+                            tr("Could not find a snapshot with UUID {%ls}"),
+                            aId);
+    }
+
     ComObjPtr<Snapshot> snapshot;
 
     HRESULT rc = findSnapshot(uuid, snapshot, true /* aSetError */);
