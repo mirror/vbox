@@ -1793,6 +1793,7 @@ static DECLCALLBACK(int) sb16Construct (PPDMDEVINS pDevIns, int iInstance, PCFGM
      * Validations.
      */
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     if (!CFGMR3AreValuesValid(pCfgHandle,
                               "IRQ\0"
                               "DMA\0"

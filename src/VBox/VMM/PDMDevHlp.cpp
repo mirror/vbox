@@ -1954,6 +1954,8 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
+
+
 /** @copydoc PDMDEVHLPR3::pfnHPETRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
@@ -1983,6 +1985,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETRE
     LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
+
 
 /** @copydoc PDMDEVHLPR3::pfnDMACRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
@@ -2927,6 +2930,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns
     return VERR_ACCESS_DENIED;
 }
 
+
 /** @copydoc PDMDEVHLPR3::pfnHPETRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
@@ -2936,6 +2940,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_HPETRegister(PPDMDEVINS pDevIns, 
     NOREF(ppHpetHlpR3);
     return VERR_ACCESS_DENIED;
 }
+
 
 /** @copydoc PDMDEVHLPR3::pfnDMACRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
@@ -3385,3 +3390,4 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 }
 
 /** @} */
+

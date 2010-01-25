@@ -298,6 +298,44 @@ static DECLCALLBACK(int) drvCharSetBreak(PPDMICHARCONNECTOR pInterface, bool fBr
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
+ * Destruct a char driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that
+ * any non-VM resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
+{
+    PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
+    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    pThis->fShutdown = true;
+    if (pThis->ReceiveThread)
+    {
+        RTThreadWait(pThis->ReceiveThread, 1000, NULL);
+        if (pThis->ReceiveThread != NIL_RTTHREAD)
+            LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
+    }
+
+    /* Empty the send queue */
+    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
+
+    RTSemEventSignal(pThis->SendSem);
+    RTSemEventDestroy(pThis->SendSem);
+    pThis->SendSem = NIL_RTSEMEVENT;
+
+    if (pThis->SendThread)
+    {
+        RTThreadWait(pThis->SendThread, 1000, NULL);
+        if (pThis->SendThread != NIL_RTTHREAD)
+            LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
+    }
+}
+
+
+/**
  * Construct a char driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -306,6 +344,7 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
 {
     PDRVCHAR pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init basic data members and interfaces.
@@ -362,43 +401,6 @@ static DECLCALLBACK(int) drvCharConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHand
     return VINF_SUCCESS;
 }
 
-
-/**
- * Destruct a char driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that
- * any non-VM resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVCHAR     pThis = PDMINS_2_DATA(pDrvIns, PDRVCHAR);
-
-    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-
-    pThis->fShutdown = true;
-    if (pThis->ReceiveThread)
-    {
-        RTThreadWait(pThis->ReceiveThread, 1000, NULL);
-        if (pThis->ReceiveThread != NIL_RTTHREAD)
-            LogRel(("Char%d: receive thread did not terminate\n", pDrvIns->iInstance));
-    }
-
-    /* Empty the send queue */
-    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
-
-    RTSemEventSignal(pThis->SendSem);
-    RTSemEventDestroy(pThis->SendSem);
-    pThis->SendSem = NIL_RTSEMEVENT;
-
-    if (pThis->SendThread)
-    {
-        RTThreadWait(pThis->SendThread, 1000, NULL);
-        if (pThis->SendThread != NIL_RTTHREAD)
-            LogRel(("Char%d: send thread did not terminate\n", pDrvIns->iInstance));
-    }
-}
 
 /**
  * Char driver registration record.

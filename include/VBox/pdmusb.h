@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -367,7 +367,7 @@ typedef PDMUSBREG *PPDMUSBREG;
 typedef PDMUSBREG const *PCPDMUSBREG;
 
 /** Current USBREG version number. */
-#define PDM_USBREG_VERSION  0xed010000
+#define PDM_USBREG_VERSION                      PDM_VERSION_MAKE(0xeeff, 1, 0)
 
 /** PDM USB Device Flags.
  * @{ */
@@ -606,7 +606,7 @@ typedef PDMUSBHLP *PPDMUSBHLP;
 typedef const PDMUSBHLP *PCPDMUSBHLP;
 
 /** Current USBHLP version number. */
-#define PDM_USBHLP_VERSION  0xec020001
+#define PDM_USBHLP_VERSION                      PDM_VERSION_MAKE(0xeefe, 1, 0)
 
 #endif /* IN_RING3 */
 
@@ -661,7 +661,7 @@ typedef struct PDMUSBINS
 } PDMUSBINS;
 
 /** Current USBINS version number. */
-#define PDM_USBINS_VERSION  0xf3010000
+#define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 1, 0)
 
 /** Converts a pointer to the PDMUSBINS::IBase to a pointer to PDMUSBINS. */
 #define PDMIBASE_2_PDMUSB(pInterface) ( (PPDMUSBINS)((char *)(pInterface) - RT_OFFSETOF(PDMUSBINS, IBase)) )
@@ -792,7 +792,7 @@ typedef struct PDMUSBREGCB
 } PDMUSBREGCB;
 
 /** Current version of the PDMUSBREGCB structure.  */
-#define PDM_USBREG_CB_VERSION 0xee010000
+#define PDM_USBREG_CB_VERSION                   PDM_VERSION_MAKE(0xeefc, 1, 0)
 
 
 /**

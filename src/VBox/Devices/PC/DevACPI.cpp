@@ -2265,6 +2265,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 {
     ACPIState *s   = PDMINS_2_DATA(pDevIns, ACPIState *);
     PCIDevice *dev = &s->dev;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /* Validate and read the configuration. */
     if (!CFGMR3AreValuesValid(pCfgHandle,
@@ -2398,8 +2399,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /* Set default port base */
     s->uPmIoPortBase = PM_PORT_BASE;
 
-    /* 
-     * FDC and SMC try to use the same non-shareable interrupt (6), 
+    /*
+     * FDC and SMC try to use the same non-shareable interrupt (6),
      * enable only one device.
      */
     if (s->fUseSmc)

@@ -139,6 +139,8 @@ DECLCALLBACK(void) AudioSniffer::drvDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVAUDIOSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
     LogFlow(("AudioSniffer::drvDestruct: iInstance=%d\n", pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
     if (pThis->pAudioSniffer)
     {
         pThis->pAudioSniffer->mpDrv = NULL;
@@ -156,6 +158,7 @@ DECLCALLBACK(int) AudioSniffer::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     PDRVAUDIOSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVAUDIOSNIFFER);
 
     LogFlow(("AudioSniffer::drvConstruct: iInstance=%d\n", pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate configuration.

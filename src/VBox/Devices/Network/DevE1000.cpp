@@ -4723,6 +4723,199 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     return VINF_SUCCESS;
 }
 
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
+
+#ifdef VBOX_DYNAMIC_NET_ATTACH
+
+/**
+ * Detach notification.
+ *
+ * One port on the network card has been disconnected from the network.
+ *
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being detached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ */
+static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    Log(("%s e1kDetach:\n", INSTANCE(pState)));
+
+    AssertLogRelReturnVoid(iLUN == 0);
+
+    PDMCritSectEnter(&pState->cs, VERR_SEM_BUSY);
+
+    /** @todo: r=pritesh still need to check if i missed
+     * to clean something in this function
+     */
+
+    /*
+     * Zero some important members.
+     */
+    pState->pDrvBase = NULL;
+    pState->pDrv = NULL;
+
+    PDMCritSectLeave(&pState->cs);
+}
+
+
+/**
+ * Attach the Network attachment.
+ *
+ * One port on the network card has been connected to a network.
+ *
+ * @returns VBox status code.
+ * @param   pDevIns     The device instance.
+ * @param   iLUN        The logical unit which is being attached.
+ * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
+ *
+ * @remarks This code path is not used during construction.
+ */
+static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
+{
+    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    LogFlow(("%s e1kAttach:\n",  INSTANCE(pState)));
+
+    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
+
+    PDMCritSectEnter(&pState->cs, VERR_SEM_BUSY);
+
+    /*
+     * Attach the driver.
+     */
+    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->IBase, &pState->pDrvBase, "Network Port");
+    if (RT_SUCCESS(rc))
+    {
+        if (rc == VINF_NAT_DNS)
+        {
+#ifdef RT_OS_LINUX
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#else
+            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
+                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
+#endif
+        }
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
+        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
+    }
+    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+        Log(("%s No attached driver!\n", INSTANCE(pState)));
+
+
+    /*
+     * Temporary set the link down if it was up so that the guest
+     * will know that we have change the configuration of the
+     * network card
+     */
+    if ((STATUS & STATUS_LU) && RT_SUCCESS(rc))
+    {
+        STATUS &= ~STATUS_LU;
+        Phy::setLinkStatus(&pState->phy, false);
+        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
+        /* Restore the link back in 5 second. */
+        e1kArmTimer(pState, pState->pLUTimer, 5000000);
+    }
+
+    PDMCritSectLeave(&pState->cs);
+    return rc;
+
+}
+
+#endif /* VBOX_DYNAMIC_NET_ATTACH */
+
+/**
+ * @copydoc FNPDMDEVPOWEROFF
+ */
+static DECLCALLBACK(void) e1kPowerOff(PPDMDEVINS pDevIns)
+{
+    /* Poke thread waiting for buffer space. */
+    e1kWakeupReceive(pDevIns);
+}
+
+/**
+ * @copydoc FNPDMDEVSUSPEND
+ */
+static DECLCALLBACK(void) e1kSuspend(PPDMDEVINS pDevIns)
+{
+    /* Poke thread waiting for buffer space. */
+    e1kWakeupReceive(pDevIns);
+}
+
+/**
+ * Device relocation callback.
+ *
+ * When this callback is called the device instance data, and if the
+ * device have a GC component, is being relocated, or/and the selectors
+ * have been changed. The device must use the chance to perform the
+ * necessary pointer relocations and data updates.
+ *
+ * Before the GC code is executed the first time, this function will be
+ * called with a 0 delta so GC pointer calculations can be one in one place.
+ *
+ * @param   pDevIns     Pointer to the device instance.
+ * @param   offDelta    The relocation delta relative to the old location.
+ *
+ * @remark  A relocation CANNOT fail.
+ */
+static DECLCALLBACK(void) e1kRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
+{
+    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    pState->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
+    pState->pTxQueueRC    = PDMQueueRCPtr(pState->pTxQueueR3);
+    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
+#ifdef E1K_USE_RX_TIMERS
+    pState->pRIDTimerRC   = TMTimerRCPtr(pState->pRIDTimerR3);
+    pState->pRADTimerRC   = TMTimerRCPtr(pState->pRADTimerR3);
+#endif /* E1K_USE_RX_TIMERS */
+#ifdef E1K_USE_TX_TIMERS
+    pState->pTIDTimerRC   = TMTimerRCPtr(pState->pTIDTimerR3);
+# ifndef E1K_NO_TAD
+    pState->pTADTimerRC   = TMTimerRCPtr(pState->pTADTimerR3);
+# endif /* E1K_NO_TAD */
+#endif /* E1K_USE_TX_TIMERS */
+    pState->pIntTimerRC   = TMTimerRCPtr(pState->pIntTimerR3);
+}
+
+/**
+ * Destruct a device instance.
+ *
+ * We need to free non-VM resources only.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ * @thread  EMT
+ */
+static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
+{
+    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    e1kDumpState(pState);
+    E1kLog(("%s Destroying instance\n", INSTANCE(pState)));
+    if (PDMCritSectIsInitialized(&pState->cs))
+    {
+        if (pState->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
+        {
+            RTSemEventSignal(pState->hEventMoreRxDescAvail);
+            RTSemEventDestroy(pState->hEventMoreRxDescAvail);
+            pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
+        }
+        if (pState->hTxSem != NIL_RTSEMEVENT)
+        {
+            RTSemEventDestroy(pState->hTxSem);
+            pState->hTxSem = NIL_RTSEMEVENT;
+        }
+#ifndef E1K_GLOBAL_MUTEX
+        PDMR3CritSectDelete(&pState->csRx);
+        //PDMR3CritSectDelete(&pState->csTx);
+#endif
+        PDMR3CritSectDelete(&pState->cs);
+    }
+    return VINF_SUCCESS;
+}
+
 /**
  * Sets 8-bit register in PCI configuration space.
  * @param   refPciDev   The PCI device.
@@ -4846,6 +5039,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     int       rc;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /* Init handles and log related stuff. */
     RTStrPrintf(pState->szInstance, sizeof(pState->szInstance), "E1000#%d", iInstance);
@@ -5128,196 +5322,6 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 #endif /* VBOX_WITH_STATISTICS || E1K_REL_STATS */
 
     return VINF_SUCCESS;
-}
-
-/**
- * Destruct a device instance.
- *
- * We need to free non-VM resources only.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- * @thread  EMT
- */
-static DECLCALLBACK(int) e1kDestruct(PPDMDEVINS pDevIns)
-{
-    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-
-    e1kDumpState(pState);
-    E1kLog(("%s Destroying instance\n", INSTANCE(pState)));
-    if (PDMCritSectIsInitialized(&pState->cs))
-    {
-        if (pState->hEventMoreRxDescAvail != NIL_RTSEMEVENT)
-        {
-            RTSemEventSignal(pState->hEventMoreRxDescAvail);
-            RTSemEventDestroy(pState->hEventMoreRxDescAvail);
-            pState->hEventMoreRxDescAvail = NIL_RTSEMEVENT;
-        }
-        if (pState->hTxSem != NIL_RTSEMEVENT)
-        {
-            RTSemEventDestroy(pState->hTxSem);
-            pState->hTxSem = NIL_RTSEMEVENT;
-        }
-#ifndef E1K_GLOBAL_MUTEX
-        PDMR3CritSectDelete(&pState->csRx);
-        //PDMR3CritSectDelete(&pState->csTx);
-#endif
-        PDMR3CritSectDelete(&pState->cs);
-    }
-    return VINF_SUCCESS;
-}
-
-/**
- * Device relocation callback.
- *
- * When this callback is called the device instance data, and if the
- * device have a GC component, is being relocated, or/and the selectors
- * have been changed. The device must use the chance to perform the
- * necessary pointer relocations and data updates.
- *
- * Before the GC code is executed the first time, this function will be
- * called with a 0 delta so GC pointer calculations can be one in one place.
- *
- * @param   pDevIns     Pointer to the device instance.
- * @param   offDelta    The relocation delta relative to the old location.
- *
- * @remark  A relocation CANNOT fail.
- */
-static DECLCALLBACK(void) e1kRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
-{
-    E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    pState->pDevInsRC     = PDMDEVINS_2_RCPTR(pDevIns);
-    pState->pTxQueueRC    = PDMQueueRCPtr(pState->pTxQueueR3);
-    pState->pCanRxQueueRC = PDMQueueRCPtr(pState->pCanRxQueueR3);
-#ifdef E1K_USE_RX_TIMERS
-    pState->pRIDTimerRC   = TMTimerRCPtr(pState->pRIDTimerR3);
-    pState->pRADTimerRC   = TMTimerRCPtr(pState->pRADTimerR3);
-#endif /* E1K_USE_RX_TIMERS */
-#ifdef E1K_USE_TX_TIMERS
-    pState->pTIDTimerRC   = TMTimerRCPtr(pState->pTIDTimerR3);
-# ifndef E1K_NO_TAD
-    pState->pTADTimerRC   = TMTimerRCPtr(pState->pTADTimerR3);
-# endif /* E1K_NO_TAD */
-#endif /* E1K_USE_TX_TIMERS */
-    pState->pIntTimerRC   = TMTimerRCPtr(pState->pIntTimerR3);
-}
-
-/**
- * @copydoc FNPDMDEVSUSPEND
- */
-static DECLCALLBACK(void) e1kSuspend(PPDMDEVINS pDevIns)
-{
-    /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns);
-}
-
-
-#ifdef VBOX_DYNAMIC_NET_ATTACH
-/**
- * Detach notification.
- *
- * One port on the network card has been disconnected from the network.
- *
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being detached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- */
-static DECLCALLBACK(void) e1kDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    Log(("%s e1kDetach:\n", INSTANCE(pState)));
-
-    AssertLogRelReturnVoid(iLUN == 0);
-
-    PDMCritSectEnter(&pState->cs, VERR_SEM_BUSY);
-
-    /** @todo: r=pritesh still need to check if i missed
-     * to clean something in this function
-     */
-
-    /*
-     * Zero some important members.
-     */
-    pState->pDrvBase = NULL;
-    pState->pDrv = NULL;
-
-    PDMCritSectLeave(&pState->cs);
-}
-
-
-/**
- * Attach the Network attachment.
- *
- * One port on the network card has been connected to a network.
- *
- * @returns VBox status code.
- * @param   pDevIns     The device instance.
- * @param   iLUN        The logical unit which is being attached.
- * @param   fFlags      Flags, combination of the PDMDEVATT_FLAGS_* \#defines.
- *
- * @remarks This code path is not used during construction.
- */
-static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t fFlags)
-{
-    E1KSTATE *pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
-    LogFlow(("%s e1kAttach:\n",  INSTANCE(pState)));
-
-    AssertLogRelReturn(iLUN == 0, VERR_PDM_NO_SUCH_LUN);
-
-    PDMCritSectEnter(&pState->cs, VERR_SEM_BUSY);
-
-    /*
-     * Attach the driver.
-     */
-    int rc = PDMDevHlpDriverAttach(pDevIns, 0, &pState->IBase, &pState->pDrvBase, "Network Port");
-    if (RT_SUCCESS(rc))
-    {
-        if (rc == VINF_NAT_DNS)
-        {
-#ifdef RT_OS_LINUX
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
-                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Please check your /etc/resolv.conf for <tt>nameserver</tt> entries. Either add one manually (<i>man resolv.conf</i>) or ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#else
-            PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
-                                       N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
-#endif
-        }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
-                      rc = VERR_PDM_MISSING_INTERFACE_BELOW);
-    }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        Log(("%s No attached driver!\n", INSTANCE(pState)));
-
-
-    /*
-     * Temporary set the link down if it was up so that the guest
-     * will know that we have change the configuration of the
-     * network card
-     */
-    if ((STATUS & STATUS_LU) && RT_SUCCESS(rc))
-    {
-        STATUS &= ~STATUS_LU;
-        Phy::setLinkStatus(&pState->phy, false);
-        e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-        /* Restore the link back in 5 second. */
-        e1kArmTimer(pState, pState->pLUTimer, 5000000);
-    }
-
-    PDMCritSectLeave(&pState->cs);
-    return rc;
-
-}
-#endif /* VBOX_DYNAMIC_NET_ATTACH */
-
-
-/**
- * @copydoc FNPDMDEVPOWEROFF
- */
-static DECLCALLBACK(void) e1kPowerOff(PPDMDEVINS pDevIns)
-{
-    /* Poke thread waiting for buffer space. */
-    e1kWakeupReceive(pDevIns);
 }
 
 /**

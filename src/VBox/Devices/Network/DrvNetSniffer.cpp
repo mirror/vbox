@@ -331,6 +331,7 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
 static DECLCALLBACK(void) drvNetSnifferDestruct(PPDMDRVINS pDrvIns)
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (RTCritSectIsInitialized(&pThis->Lock))
         RTCritSectDelete(&pThis->Lock);
@@ -352,6 +353,7 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 {
     PDRVNETSNIFFER pThis = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     LogFlow(("drvNetSnifferConstruct:\n"));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate the config.

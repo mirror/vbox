@@ -6058,9 +6058,10 @@ static DECLCALLBACK(void) ahciR3Relocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
  */
 static DECLCALLBACK(int) ahciR3Destruct(PPDMDEVINS pDevIns)
 {
-    PAHCI pAhci = PDMINS_2_DATA(pDevIns, PAHCI);
-    int rc = VINF_SUCCESS;
-    unsigned iActPort = 0;
+    PAHCI       pAhci    = PDMINS_2_DATA(pDevIns, PAHCI);
+    int         rc       = VINF_SUCCESS;
+    unsigned    iActPort = 0;
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
     /*
      * At this point the async I/O thread is suspended and will not enter
@@ -6478,6 +6479,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     bool       fGCEnabled = false;
     bool       fR0Enabled = false;
     uint32_t   cbTotalBufferSize = 0;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read configuration.

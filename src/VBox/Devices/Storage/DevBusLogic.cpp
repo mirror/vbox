@@ -2507,10 +2507,10 @@ static DECLCALLBACK(void)  buslogicReset(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) buslogicDestruct(PPDMDEVINS pDevIns)
 {
-    int rc = VINF_SUCCESS;
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    rc = RTCacheDestroy(pThis->pTaskCache);
+    int rc = RTCacheDestroy(pThis->pTaskCache);
     AssertMsgRC(rc, ("Destroying task cache failed rc=%Rrc\n", rc));
 
     return rc;
@@ -2533,6 +2533,7 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
 {
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     int        rc = VINF_SUCCESS;
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate and read configuration.

@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -304,7 +304,7 @@ typedef PDMDEVREG *PPDMDEVREG;
 typedef PDMDEVREG const *PCPDMDEVREG;
 
 /** Current DEVREG version number. */
-#define PDM_DEVREG_VERSION                      0xc0020000
+#define PDM_DEVREG_VERSION                      PDM_VERSION_MAKE(0xffff, 1, 0)
 
 /** PDM Device Flags.
  * @{ */
@@ -518,7 +518,7 @@ typedef struct PDMPCIBUSREG
 typedef PDMPCIBUSREG *PPDMPCIBUSREG;
 
 /** Current PDMPCIBUSREG version number. */
-#define PDM_PCIBUSREG_VERSION   0xd0020000
+#define PDM_PCIBUSREG_VERSION                   PDM_VERSION_MAKE(0xfffe, 1, 0)
 
 /**
  * PCI Bus RC helpers.
@@ -574,7 +574,7 @@ typedef RCPTRTYPE(PDMPCIHLPRC *) PPDMPCIHLPRC;
 typedef RCPTRTYPE(const PDMPCIHLPRC *) PCPDMPCIHLPRC;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPRC_VERSION  0xe1010000
+#define PDM_PCIHLPRC_VERSION                    PDM_VERSION_MAKE(0xfffd, 1, 0)
 
 
 /**
@@ -631,7 +631,7 @@ typedef R0PTRTYPE(PDMPCIHLPR0 *) PPDMPCIHLPR0;
 typedef R0PTRTYPE(const PDMPCIHLPR0 *) PCPDMPCIHLPR0;
 
 /** Current PDMPCIHLPR0 version number. */
-#define PDM_PCIHLPR0_VERSION  0xe1010000
+#define PDM_PCIHLPR0_VERSION                    PDM_VERSION_MAKE(0xfffc, 1, 0)
 
 /**
  * PCI device helpers.
@@ -721,7 +721,7 @@ typedef R3PTRTYPE(PDMPCIHLPR3 *) PPDMPCIHLPR3;
 typedef R3PTRTYPE(const PDMPCIHLPR3 *) PCPDMPCIHLPR3;
 
 /** Current PDMPCIHLPR3 version number. */
-#define PDM_PCIHLPR3_VERSION  0xf1020000
+#define PDM_PCIHLPR3_VERSION                    PDM_VERSION_MAKE(0xfffb, 1, 0)
 
 
 /**
@@ -763,7 +763,7 @@ typedef struct PDMPICREG
 typedef PDMPICREG *PPDMPICREG;
 
 /** Current PDMPICREG version number. */
-#define PDM_PICREG_VERSION      0xe0020000
+#define PDM_PICREG_VERSION                      PDM_VERSION_MAKE(0xfffa, 1, 0)
 
 /**
  * PIC RC helpers.
@@ -814,7 +814,7 @@ typedef RCPTRTYPE(PDMPICHLPRC *) PPDMPICHLPRC;
 typedef RCPTRTYPE(const PDMPICHLPRC *) PCPDMPICHLPRC;
 
 /** Current PDMPICHLPRC version number. */
-#define PDM_PICHLPRC_VERSION  0xfc010000
+#define PDM_PICHLPRC_VERSION                    PDM_VERSION_MAKE(0xfff9, 1, 0)
 
 
 /**
@@ -866,7 +866,7 @@ typedef R0PTRTYPE(PDMPICHLPR0 *) PPDMPICHLPR0;
 typedef R0PTRTYPE(const PDMPICHLPR0 *) PCPDMPICHLPR0;
 
 /** Current PDMPICHLPR0 version number. */
-#define PDM_PICHLPR0_VERSION  0xfc010000
+#define PDM_PICHLPR0_VERSION                    PDM_VERSION_MAKE(0xfff8, 1, 0)
 
 /**
  * PIC R3 helpers.
@@ -939,7 +939,7 @@ typedef R3PTRTYPE(PDMPICHLPR3 *) PPDMPICHLPR3;
 typedef R3PTRTYPE(const PDMPICHLPR3 *) PCPDMPICHLPR3;
 
 /** Current PDMPICHLPR3 version number. */
-#define PDM_PICHLPR3_VERSION  0xf0010000
+#define PDM_PICHLPR3_VERSION                    PDM_VERSION_MAKE(0xfff7, 1, 0)
 
 
 
@@ -1101,7 +1101,7 @@ typedef struct PDMAPICREG
 typedef PDMAPICREG *PPDMAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_APICREG_VERSION     0x70010000
+#define PDM_APICREG_VERSION                     PDM_VERSION_MAKE(0xfff6, 1, 0)
 
 
 /**
@@ -1208,7 +1208,7 @@ typedef RCPTRTYPE(PDMAPICHLPRC *) PPDMAPICHLPRC;
 typedef RCPTRTYPE(const PDMAPICHLPRC *) PCPDMAPICHLPRC;
 
 /** Current PDMAPICHLPRC version number. */
-#define PDM_APICHLPRC_VERSION   0x60020000
+#define PDM_APICHLPRC_VERSION                   PDM_VERSION_MAKE(0xfff5, 1, 0)
 
 
 /**
@@ -1278,7 +1278,7 @@ typedef RCPTRTYPE(PDMAPICHLPR0 *) PPDMAPICHLPR0;
 typedef R0PTRTYPE(const PDMAPICHLPR0 *) PCPDMAPICHLPR0;
 
 /** Current PDMAPICHLPR0 version number. */
-#define PDM_APICHLPR0_VERSION   0x60020000
+#define PDM_APICHLPR0_VERSION                   PDM_VERSION_MAKE(0xfff4, 1, 0)
 
 /**
  * APIC R3 helpers.
@@ -1394,7 +1394,7 @@ typedef R3PTRTYPE(PDMAPICHLPR3 *) PPDMAPICHLPR3;
 typedef R3PTRTYPE(const PDMAPICHLPR3 *) PCPDMAPICHLPR3;
 
 /** Current PDMAPICHLP version number. */
-#define PDM_APICHLPR3_VERSION  0xfd030000
+#define PDM_APICHLPR3_VERSION                   PDM_VERSION_MAKE(0xfff3, 1, 0)
 
 
 /**
@@ -1424,7 +1424,7 @@ typedef struct PDMIOAPICREG
 typedef PDMIOAPICREG *PPDMIOAPICREG;
 
 /** Current PDMAPICREG version number. */
-#define PDM_IOAPICREG_VERSION     0x50010000
+#define PDM_IOAPICREG_VERSION                   PDM_VERSION_MAKE(0xfff2, 1, 0)
 
 
 /**
@@ -1478,7 +1478,7 @@ typedef RCPTRTYPE(PDMIOAPICHLPRC *) PPDMIOAPICHLPRC;
 typedef RCPTRTYPE(const PDMIOAPICHLPRC *) PCPDMIOAPICHLPRC;
 
 /** Current PDMIOAPICHLPRC version number. */
-#define PDM_IOAPICHLPRC_VERSION   0xfe010000
+#define PDM_IOAPICHLPRC_VERSION                 PDM_VERSION_MAKE(0xfff1, 1, 0)
 
 
 /**
@@ -1532,7 +1532,7 @@ typedef R0PTRTYPE(PDMIOAPICHLPR0 *) PPDMIOAPICHLPR0;
 typedef R0PTRTYPE(const PDMIOAPICHLPR0 *) PCPDMIOAPICHLPR0;
 
 /** Current PDMIOAPICHLPR0 version number. */
-#define PDM_IOAPICHLPR0_VERSION   0xfe010000
+#define PDM_IOAPICHLPR0_VERSION                 PDM_VERSION_MAKE(0xfff0, 1, 0)
 
 /**
  * IOAPIC R3 helpers.
@@ -1607,7 +1607,7 @@ typedef R3PTRTYPE(PDMIOAPICHLPR3 *) PPDMIOAPICHLPR3;
 typedef R3PTRTYPE(const PDMIOAPICHLPR3 *) PCPDMIOAPICHLPR3;
 
 /** Current PDMIOAPICHLPR3 version number. */
-#define PDM_IOAPICHLPR3_VERSION   0xff010000
+#define PDM_IOAPICHLPR3_VERSION                 PDM_VERSION_MAKE(0xffef, 1, 0)
 
 
 /**
@@ -1660,7 +1660,7 @@ typedef RCPTRTYPE(PDMHPETHLPRC *) PPDMHPETHLPRC;
 typedef RCPTRTYPE(const PDMHPETHLPRC *) PCPDMHPETHLPRC;
 
 /** Current PDMHPETHLPRC version number. */
-#define PDM_HPETHLPRC_VERSION  0xe1010000
+#define PDM_HPETHLPRC_VERSION                   PDM_VERSION_MAKE(0xffee, 1, 0)
 
 
 /**
@@ -1698,7 +1698,7 @@ typedef R0PTRTYPE(PDMHPETHLPR0 *) PPDMHPETHLPR0;
 typedef R0PTRTYPE(const PDMHPETHLPR0 *) PCPDMHPETHLPR0;
 
 /** Current PDMHPETHLPR0 version number. */
-#define PDM_HPETHLPR0_VERSION  0xe1010000
+#define PDM_HPETHLPR0_VERSION                   PDM_VERSION_MAKE(0xffed, 1, 0)
 
 /**
  * HPET R3 helpers.
@@ -1707,7 +1707,6 @@ typedef struct PDMHPETHLPR3
 {
     /** Structure version. PDM_HPETHLP_VERSION defines the current version. */
     uint32_t                u32Version;
-
 
     /**
      * Set the interrupt force action flag.
@@ -1768,7 +1767,8 @@ typedef R3PTRTYPE(PDMHPETHLPR3 *) PPDMHPETHLPR3;
 typedef R3PTRTYPE(const PDMHPETHLPR3 *) PCPDMHPETHLPR3;
 
 /** Current PDMHPETHLPR3 version number. */
-#define PDM_HPETHLPR3_VERSION  0x1e010000
+#define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 1, 0)
+
 
 
 #ifdef IN_RING3
@@ -1858,7 +1858,7 @@ typedef struct PDMDMAREG
 typedef PDMDMACREG *PPDMDMACREG;
 
 /** Current PDMDMACREG version number. */
-#define PDM_DMACREG_VERSION     0xf5010000
+#define PDM_DMACREG_VERSION                     PDM_VERSION_MAKE(0xffeb, 1, 0)
 
 
 /**
@@ -1878,7 +1878,7 @@ typedef PDMDMACHLP *PPDMDMACHLP;
 typedef const PDMDMACHLP *PCPDMDMACHLP;
 
 /** Current PDMDMACHLP version number. */
-#define PDM_DMACHLP_VERSION  0xf6010000
+#define PDM_DMACHLP_VERSION                     PDM_VERSION_MAKE(0xffea, 1, 0)
 
 #endif /* IN_RING3 */
 
@@ -1920,7 +1920,7 @@ typedef PDMRTCREG *PPDMRTCREG;
 typedef const PDMRTCREG *PCPDMRTCREG;
 
 /** Current PDMRTCREG version number. */
-#define PDM_RTCREG_VERSION     0xfa010000
+#define PDM_RTCREG_VERSION                      PDM_VERSION_MAKE(0xffe9, 1, 0)
 
 
 /**
@@ -1940,7 +1940,7 @@ typedef PDMRTCHLP *PPDMRTCHLP;
 typedef const PDMRTCHLP *PCPDMRTCHLP;
 
 /** Current PDMRTCHLP version number. */
-#define PDM_RTCHLP_VERSION  0xf6010000
+#define PDM_RTCHLP_VERSION                      PDM_VERSION_MAKE(0xffe8, 1, 0)
 
 
 
@@ -3117,7 +3117,7 @@ typedef R3PTRTYPE(struct PDMDEVHLPR3 *) PPDMDEVHLPR3;
 typedef R3PTRTYPE(const struct PDMDEVHLPR3 *) PCPDMDEVHLPR3;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLP_VERSION  0xf20c0001
+#define PDM_DEVHLP_VERSION                      PDM_VERSION_MAKE(0xffe7, 1, 0)
 
 
 /**
@@ -3263,7 +3263,7 @@ typedef RCPTRTYPE(struct PDMDEVHLPRC *) PPDMDEVHLPRC;
 typedef RCPTRTYPE(const struct PDMDEVHLPRC *) PCPDMDEVHLPRC;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPRC_VERSION  0xfb020000
+#define PDM_DEVHLPRC_VERSION                    PDM_VERSION_MAKE(0xffe6, 1, 0)
 
 
 /**
@@ -3417,7 +3417,7 @@ typedef R0PTRTYPE(struct PDMDEVHLPR0 *) PPDMDEVHLPR0;
 typedef R0PTRTYPE(const struct PDMDEVHLPR0 *) PCPDMDEVHLPR0;
 
 /** Current PDMDEVHLP version number. */
-#define PDM_DEVHLPR0_VERSION  0xfb030000
+#define PDM_DEVHLPR0_VERSION                    PDM_VERSION_MAKE(0xffe5, 1, 0)
 
 
 
@@ -3474,11 +3474,47 @@ typedef struct PDMDEVINS
 } PDMDEVINS;
 
 /** Current PDMDEVINS version number. */
-#define PDM_DEVINS_VERSION  0xf3020000
+#define PDM_DEVINS_VERSION                      PDM_VERSION_MAKE(0xffe4, 1, 0)
 
 /** Converts a pointer to the PDMDEVINS::IBase to a pointer to PDMDEVINS. */
 #define PDMIBASE_2_PDMDEV(pInterface) ( (PPDMDEVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDEVINS, IBase)) )
 
+/**
+ * Checks the structure versions of the device instance and device helpers,
+ * returning if they are incompatible.
+ *
+ * This is for use in the constructor.
+ *
+ * @param   pDevIns     The device instance pointer.
+ */
+#define PDMDEV_CHECK_VERSIONS_RETURN(pDevIns) \
+    do \
+    { \
+        PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION), \
+                              ("DevIns=%#x  mine=%#x\n", (pDevIns)->u32Version, PDM_DEVINS_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLP_VERSION), \
+                              ("DevHlp=%#x  mine=%#x\n", (pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLP_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+    } while (0)
+
+/**
+ * Quietly checks the structure versions of the device instance and device
+ * helpers, returning if they are incompatible.
+ *
+ * This is for use in the destructor.
+ *
+ * @param   pDevIns     The device instance pointer.
+ */
+#define PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns) \
+    do \
+    { \
+        PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
+        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) \
+                        || !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLP_VERSION) )) \
+            return VERR_VERSION_MISMATCH; \
+    } while (0)
 
 /** @def PDMDEV_ASSERT_EMT
  * Assert that the current thread is the emulation thread.
@@ -4248,7 +4284,7 @@ typedef struct PDMDEVREGCB
 } PDMDEVREGCB;
 
 /** Current version of the PDMDEVREGCB structure.  */
-#define PDM_DEVREG_CB_VERSION 0xf4010000
+#define PDM_DEVREG_CB_VERSION                   PDM_VERSION_MAKE(0xffe3, 1, 0)
 
 
 /**

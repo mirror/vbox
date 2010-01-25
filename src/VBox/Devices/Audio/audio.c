@@ -1961,6 +1961,7 @@ static DECLCALLBACK(void) drvAudioPowerOff(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(void) drvAudioDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvAUDIODestruct:\n"));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     audio_atexit ();
 }
@@ -1977,6 +1978,7 @@ static DECLCALLBACK(int) drvAudioConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     int         rc;
 
     LogFlow(("drvAUDIOConstruct:\n"));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate the config.

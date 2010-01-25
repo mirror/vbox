@@ -950,6 +950,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
 {
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (VALID_PTR(pThis->pDisk))
     {
@@ -975,6 +976,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     char *pszFormat = NULL; /**< The format backed to use for this image. */
     bool fReadOnly;         /**< True if the media is read-only. */
     bool fHonorZeroWrites;  /**< True if zero blocks should be written. */
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.

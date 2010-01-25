@@ -388,6 +388,7 @@ static DECLCALLBACK(void) devINIPTcpipInitDone(void *arg)
     lwip_sys_sem_signal(*sem);
 }
 
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -399,6 +400,44 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
     return NULL;
+}
+
+/* -=-=-=-=- PDMDEVREG -=-=-=-=- */
+
+/**
+ * Destruct a device instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
+{
+    PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
+
+    LogFlow(("%s: pDevIns=%p\n", __FUNCTION__, pDevIns));
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    if (g_pDevINIPData != NULL)
+    {
+        netif_set_down(&pThis->IntNetIF);
+        netif_remove(&pThis->IntNetIF);
+        tcpip_terminate();
+        lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
+        lwip_sys_sem_free(pThis->LWIPTcpInitSem);
+    }
+
+    if (pThis->pszIP)
+        MMR3HeapFree(pThis->pszIP);
+    if (pThis->pszNetmask)
+        MMR3HeapFree(pThis->pszNetmask);
+    if (pThis->pszGateway)
+        MMR3HeapFree(pThis->pszGateway);
+
+    LogFlow(("%s: success\n", __FUNCTION__));
+    return VINF_SUCCESS;
 }
 
 
@@ -425,6 +464,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
              pDevIns, iInstance, pCfgHandle));
 
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate the config.
@@ -626,42 +666,6 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
 out:
     LogFlow(("%s: return %Rrc\n", __FUNCTION__, rc));
     return rc;
-}
-
-
-/**
- * Destruct a device instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
-{
-    PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
-
-    LogFlow(("%s: pDevIns=%p\n", __FUNCTION__, pDevIns));
-
-    if (g_pDevINIPData != NULL)
-    {
-        netif_set_down(&pThis->IntNetIF);
-        netif_remove(&pThis->IntNetIF);
-        tcpip_terminate();
-        lwip_sys_sem_wait(pThis->LWIPTcpInitSem);
-        lwip_sys_sem_free(pThis->LWIPTcpInitSem);
-    }
-
-    if (pThis->pszIP)
-        MMR3HeapFree(pThis->pszIP);
-    if (pThis->pszNetmask)
-        MMR3HeapFree(pThis->pszNetmask);
-    if (pThis->pszGateway)
-        MMR3HeapFree(pThis->pszGateway);
-
-    LogFlow(("%s: success\n", __FUNCTION__));
-    return VINF_SUCCESS;
 }
 
 

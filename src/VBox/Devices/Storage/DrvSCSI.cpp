@@ -913,18 +913,17 @@ static DECLCALLBACK(void) drvscsiReset(PPDMDRVINS pDrvIns)
  */
 static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
 {
-    int rc;
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     if (pThis->pQueueRequests)
     {
         if (!drvscsiAsyncIOLoopNoPendingDummy(pThis, 100 /*ms*/))
             LogRel(("drvscsiDestruct#%u: previous dummy request is still pending\n", pDrvIns->iInstance));
 
-        rc = RTReqDestroyQueue(pThis->pQueueRequests);
+        int rc = RTReqDestroyQueue(pThis->pQueueRequests);
         AssertMsgRC(rc, ("Failed to destroy queue rc=%Rrc\n", rc));
     }
-
 }
 
 /**
@@ -935,8 +934,8 @@ static DECLCALLBACK(void) drvscsiDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVSCSI pThis = PDMINS_2_DATA(pDrvIns, PDRVSCSI);
-
     LogFlowFunc(("pDrvIns=%#p pCfgHandle=%#p\n", pDrvIns, pCfgHandle));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Initialize the instance data.

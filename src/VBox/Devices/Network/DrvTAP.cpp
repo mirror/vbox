@@ -774,6 +774,7 @@ static DECLCALLBACK(int) SolarisTAPAttach(PDRVTAP pThis)
 # endif /* VBOX_WITH_CROSSBOW */
 #endif  /* RT_OS_SOLARIS */
 
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -788,6 +789,7 @@ static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, const cha
     return NULL;
 }
 
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
 
 /**
  * Destruct a driver instance.
@@ -801,6 +803,7 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 {
     LogFlow(("drvTAPDestruct\n"));
     PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
     /*
      * Terminate the control pipe.
@@ -878,6 +881,7 @@ static DECLCALLBACK(void) drvTAPDestruct(PPDMDRVINS pDrvIns)
 static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVTAP pThis = PDMINS_2_DATA(pDrvIns, PDRVTAP);
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init the static parts.

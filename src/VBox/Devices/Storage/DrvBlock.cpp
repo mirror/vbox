@@ -700,6 +700,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
 {
     PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     LogFlow(("drvblockConstruct: iInstance=%d\n", pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Validate configuration.

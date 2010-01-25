@@ -1202,6 +1202,68 @@ static DECLCALLBACK(int) drvHostSerialSetBreak(PPDMICHARCONNECTOR pInterface, bo
 /* -=-=-=-=- driver interface -=-=-=-=- */
 
 /**
+ * Destruct a char driver instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that
+ * any non-VM resources can be freed correctly.
+ *
+ * @param   pDrvIns     The driver instance data.
+ */
+static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
+{
+    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
+    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    /* Empty the send queue */
+    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
+
+    RTSemEventDestroy(pThis->SendSem);
+    pThis->SendSem = NIL_RTSEMEVENT;
+
+#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+
+    if (pThis->WakeupPipeW != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->WakeupPipeW);
+        AssertRC(rc);
+        pThis->WakeupPipeW = NIL_RTFILE;
+    }
+    if (pThis->WakeupPipeR != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->WakeupPipeR);
+        AssertRC(rc);
+        pThis->WakeupPipeR = NIL_RTFILE;
+    }
+# if defined(RT_OS_DARWIN)
+    if (pThis->DeviceFileR != NIL_RTFILE)
+    {
+        if (pThis->DeviceFileR != pThis->DeviceFile)
+        {
+            int rc = RTFileClose(pThis->DeviceFileR);
+            AssertRC(rc);
+        }
+        pThis->DeviceFileR = NIL_RTFILE;
+    }
+# endif
+    if (pThis->DeviceFile != NIL_RTFILE)
+    {
+        int rc = RTFileClose(pThis->DeviceFile);
+        AssertRC(rc);
+        pThis->DeviceFile = NIL_RTFILE;
+    }
+
+#elif defined(RT_OS_WINDOWS)
+
+    CloseHandle(pThis->hEventRecv);
+    CloseHandle(pThis->hEventSend);
+    CancelIo(pThis->hDeviceFile);
+    CloseHandle(pThis->hDeviceFile);
+
+#endif
+}
+
+/**
  * Construct a char driver instance.
  *
  * @copydoc FNPDMDRVCONSTRUCT
@@ -1210,6 +1272,7 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 {
     PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
     LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
+    PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
 
     /*
      * Init basic data members and interfaces.
@@ -1386,69 +1449,6 @@ static DECLCALLBACK(int) drvHostSerialConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
 #endif
 
     return VINF_SUCCESS;
-}
-
-
-/**
- * Destruct a char driver instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that
- * any non-VM resources can be freed correctly.
- *
- * @param   pDrvIns     The driver instance data.
- */
-static DECLCALLBACK(void) drvHostSerialDestruct(PPDMDRVINS pDrvIns)
-{
-    PDRVHOSTSERIAL pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTSERIAL);
-
-    LogFlow(("%s: iInstance=%d\n", __FUNCTION__, pDrvIns->iInstance));
-
-    /* Empty the send queue */
-    pThis->iSendQueueTail = pThis->iSendQueueHead = 0;
-
-    RTSemEventDestroy(pThis->SendSem);
-    pThis->SendSem = NIL_RTSEMEVENT;
-
-#if defined(RT_OS_LINUX) || defined(RT_OS_DARWIN) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
-
-    if (pThis->WakeupPipeW != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeW);
-        AssertRC(rc);
-        pThis->WakeupPipeW = NIL_RTFILE;
-    }
-    if (pThis->WakeupPipeR != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->WakeupPipeR);
-        AssertRC(rc);
-        pThis->WakeupPipeR = NIL_RTFILE;
-    }
-# if defined(RT_OS_DARWIN)
-    if (pThis->DeviceFileR != NIL_RTFILE)
-    {
-        if (pThis->DeviceFileR != pThis->DeviceFile)
-        {
-            int rc = RTFileClose(pThis->DeviceFileR);
-            AssertRC(rc);
-        }
-        pThis->DeviceFileR = NIL_RTFILE;
-    }
-# endif
-    if (pThis->DeviceFile != NIL_RTFILE)
-    {
-        int rc = RTFileClose(pThis->DeviceFile);
-        AssertRC(rc);
-        pThis->DeviceFile = NIL_RTFILE;
-    }
-
-#elif defined(RT_OS_WINDOWS)
-
-    CloseHandle(pThis->hEventRecv);
-    CloseHandle(pThis->hEventSend);
-    CancelIo(pThis->hDeviceFile);
-    CloseHandle(pThis->hDeviceFile);
-
-#endif
 }
 
 /**

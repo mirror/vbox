@@ -130,6 +130,25 @@ static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, const cha
 }
 
 /**
+ * Destruct a device instance.
+ *
+ * Most VM resources are freed by the VM. This callback is provided so that any non-VM
+ * resources can be freed correctly.
+ *
+ * @returns VBox status.
+ * @param   pDevIns     The device instance data.
+ */
+static DECLCALLBACK(int) audioSnifferR3Destruct(PPDMDEVINS pDevIns)
+{
+    PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
+
+    /* Zero the global pointer. */
+    g_pData = NULL;
+
+    return VINF_SUCCESS;
+}
+
+/**
  * Construct a device instance for a VM.
  *
  * @returns VBox status.
@@ -144,11 +163,11 @@ static DECLCALLBACK(void *) iface_QueryInterface(PPDMIBASE pInterface, const cha
  */
 static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
-    int rc = VINF_SUCCESS;
-
+    int                rc    = VINF_SUCCESS;
     AUDIOSNIFFERSTATE *pThis = PDMINS_2_DATA(pDevIns, AUDIOSNIFFERSTATE *);
 
     Assert(iInstance == 0);
+    PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /*
      * Validate configuration.
@@ -207,23 +226,6 @@ static DECLCALLBACK(int) audioSnifferR3Construct(PPDMDEVINS pDevIns, int iInstan
     }
 
     return rc;
-}
-
-/**
- * Destruct a device instance.
- *
- * Most VM resources are freed by the VM. This callback is provided so that any non-VM
- * resources can be freed correctly.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- */
-static DECLCALLBACK(int) audioSnifferR3Destruct(PPDMDEVINS pDevIns)
-{
-    /* Zero the global pointer. */
-    g_pData = NULL;
-
-    return VINF_SUCCESS;
 }
 
 /**

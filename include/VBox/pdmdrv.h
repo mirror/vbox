@@ -278,7 +278,7 @@ typedef PDMDRVREG *PPDMDRVREG;
 typedef PDMDRVREG const *PCPDMDRVREG;
 
 /** Current DRVREG version number. */
-#define PDM_DRVREG_VERSION                      UINT32_C(0x80030000)
+#define PDM_DRVREG_VERSION                      PDM_VERSION_MAKE(0xf0ff, 1, 0)
 
 /** PDM Driver Flags.
  * @{ */
@@ -396,10 +396,47 @@ typedef struct PDMDRVINS
 } PDMDRVINS;
 
 /** Current DRVREG version number. */
-#define PDM_DRVINS_VERSION      UINT32_C(0xa0020000)
+#define PDM_DRVINS_VERSION                      PDM_VERSION_MAKE(0xf0fe, 1, 0)
 
 /** Converts a pointer to the PDMDRVINS::IBase to a pointer to PDMDRVINS. */
 #define PDMIBASE_2_PDMDRV(pInterface) ( (PPDMDRVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDRVINS, IBase)) )
+
+/**
+ * Checks the structure versions of the drive instance and driver helpers,
+ * returning if they are incompatible.
+ *
+ * Intended for the constructor.
+ *
+ * @param   pDrvIns     The drvice instance pointer.
+ */
+#define PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns) \
+    do \
+    { \
+        PPDMDRVINS pDrvInsTypeCheck = (pDrvIns); NOREF(pDrvInsTypeCheck); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION), \
+                              ("DrvIns=%#x  mine=%#x\n", (pDrvIns)->u32Version, PDM_DRVINS_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
+                              ("DrvHlp=%#x  mine=%#x\n", (pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+    } while (0)
+
+/**
+ * Quietly checks the structure versions of the drive instance and driver
+ * helpers, returning if they are incompatible.
+ *
+ * Intended for the destructor.
+ *
+ * @param   pDrvIns     The drvice instance pointer.
+ */
+#define PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns) \
+    do \
+    { \
+        PPDMDRVINS pDrvInsTypeCheck = (pDrvIns); NOREF(pDrvInsTypeCheck); \
+        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION) \
+                        || !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION)) ) \
+            return; \
+    } while (0)
 
 
 
@@ -445,7 +482,7 @@ typedef struct PDMUSBHUBREG
 typedef const PDMUSBHUBREG *PCPDMUSBHUBREG;
 
 /** Current PDMUSBHUBREG version number. */
-#define PDM_USBHUBREG_VERSION       UINT32_C(0xeb010000)
+#define PDM_USBHUBREG_VERSION                   PDM_VERSION_MAKE(0xf0fd, 1, 0)
 
 
 /**
@@ -468,7 +505,7 @@ typedef const PDMUSBHUBHLP *PCPDMUSBHUBHLP;
 typedef PCPDMUSBHUBHLP *PPCPDMUSBHUBHLP;
 
 /** Current PDMUSBHUBHLP version number. */
-#define PDM_USBHUBHLP_VERSION       UINT32_C(0xea010000)
+#define PDM_USBHUBHLP_VERSION                   PDM_VERSION_MAKE(0xf0fc, 1, 0)
 
 
 #ifdef IN_RING3
@@ -477,7 +514,7 @@ typedef PCPDMUSBHUBHLP *PPCPDMUSBHUBHLP;
  */
 typedef struct PDMDRVHLPR3
 {
-    /** Structure version. PDM_DRVHLP_VERSION defines the current version. */
+    /** Structure version. PDM_DRVHLPR3_VERSION defines the current version. */
     uint32_t                    u32Version;
 
     /**
@@ -859,7 +896,7 @@ typedef struct PDMDRVHLPR3
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;
 /** Current DRVHLP version number. */
-#define PDM_DRVHLPR3_VERSION    UINT32_C(0x90050000)
+#define PDM_DRVHLPR3_VERSION                    PDM_VERSION_MAKE(0xf0fb, 1, 0)
 
 
 /**
@@ -1188,7 +1225,7 @@ typedef struct PDMDRVREGCB
 } PDMDRVREGCB;
 
 /** Current version of the PDMDRVREGCB structure.  */
-#define PDM_DRVREG_CB_VERSION   UINT32_C(0xb0010000)
+#define PDM_DRVREG_CB_VERSION                   PDM_VERSION_MAKE(0xf0fa, 1, 0)
 
 
 /**
