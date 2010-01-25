@@ -29,6 +29,9 @@ VBox-libxml2_DEFS           = _REENTRANT # the latter triggers thread support, s
 VBox-libxml2_DEFS.win       = WIN32 _WINDOWS _MBCS _CRT_SECURE_NO_DEPRECATE _CRT_NONSTDC_NO_DEPRECATE \
                               LIBXML_STATIC_FOR_DLL HAVE_WIN32_THREADS HAVE_ZLIB_H
 VBox-libxml2_CFLAGS.win.amd64 = -wd4267
+ifn1of ($(KBUILD_TARGET), win)
+ VBox-libxml2_CFLAGS        = -Wno-format-security
+endif
 VBox-libxml2_INCS           = include
 VBox-libxml2_SOURCES        = \
 	c14n.c \
