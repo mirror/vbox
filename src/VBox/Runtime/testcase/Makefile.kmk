@@ -273,6 +273,9 @@ tstLdrObjR0_DEFS = IN_DIS IN_RT_R0 DIS_CORE_ONLY
 ifeq ($(VBOX_LDR_FMT32),elf)
  tstLdrObjR0_DEFS += VBOX_SOME_IMPORT_FUNCTION
 endif
+ifn1of ($(KBUILD_TARGET), win)
+ tstLdrObjR0_CXXFLAGS = -Wno-array-bounds
+endif
 tstLdrObjR0_LIBS = \
 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
