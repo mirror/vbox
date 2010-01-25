@@ -1225,7 +1225,7 @@
  */
 #define RT_MAKE_U32(Lo, Hi) \
     ((uint32_t)(  (uint32_t)((uint16_t)(Hi)) << 16 \
-                | (uint16_t)(Lo) )
+                | (uint16_t)(Lo) ))
 
 /** @def RT_MAKE_U32_FROM_U8
  * Constructs a uint32_t value from four uint8_t values.
