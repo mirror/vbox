@@ -339,6 +339,12 @@ typedef PPDMUSBINS *PPPDMUSBINS;
 typedef struct PDMDRVINS *PPDMDRVINS;
 /** Pointer to a pointer to a PDM Driver Instance. */
 typedef PPDMDRVINS *PPPDMDRVINS;
+/** R3 pointer to a PDM Driver Instance. */
+typedef R3PTRTYPE(PPDMDRVINS) PPDMDRVINSR3;
+/** R0 pointer to a PDM Driver Instance. */
+typedef R0PTRTYPE(PPDMDRVINS) PPDMDRVINSR0;
+/** RC pointer to a PDM Driver Instance. */
+typedef RCPTRTYPE(PPDMDRVINS) PPDMDRVINSRC;
 
 /** Pointer to a PDM Service Instance. */
 typedef struct PDMSRVINS *PPDMSRVINS;
