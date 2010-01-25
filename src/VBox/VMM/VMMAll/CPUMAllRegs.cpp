@@ -1117,6 +1117,8 @@ VMMDECL(void) CPUMGetGuestCpuId(PVMCPU pVCpu, uint32_t iLeaf, uint32_t *pEax, ui
                 associativity = 8;
                 sets = 64;
                 break;
+            default:            /* shut up gcc.*/
+                AssertFailed();
             case 2:
                 level = 2;
                 type = 3;
