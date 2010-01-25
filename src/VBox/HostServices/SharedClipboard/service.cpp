@@ -337,11 +337,11 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
     /* If there is already a client connected then we want to release it first. */
     if (g_pClient != NULL)
     {
-        uint32_t u32ClientID = g_pClient->u32ClientID;
+        uint32_t u32OldClientID = g_pClient->u32ClientID;
 
-        svcDisconnect(NULL, u32ClientID, g_pClient);
+        svcDisconnect(NULL, u32OldClientID, g_pClient);
         /* And free the resources in the hgcm subsystem. */
-        g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, u32ClientID);
+        g_pHelpers->pfnDisconnectClient(g_pHelpers->pvInstance, u32OldClientID);
     }
 
     /* Register the client. */
@@ -765,6 +765,48 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
     return VINF_SUCCESS;
 }
 
+/**
+ * This structure corresponds to the original layout of the
+ * VBOXCLIPBOARDCLIENTDATA structure.  As the structure was saved as a whole
+ * when saving state, we need to remember it forever in order to preserve
+ * compatibility.
+ *
+ * (Starting with 3.1 this is no longer used.)
+ *
+ * @remarks Putting this outside svcLoadState to avoid visibility warning caused
+ *          by -Wattributes.
+ */
+typedef struct CLIPSAVEDSTATEDATA
+{
+    struct CLIPSAVEDSTATEDATA *pNext;
+    struct CLIPSAVEDSTATEDATA *pPrev;
+
+    VBOXCLIPBOARDCONTEXT *pCtx;
+
+    uint32_t u32ClientID;
+
+    bool fAsync: 1; /* Guest is waiting for a message. */
+
+    bool fMsgQuit: 1;
+    bool fMsgReadData: 1;
+    bool fMsgFormats: 1;
+
+    struct {
+        VBOXHGCMCALLHANDLE callHandle;
+        VBOXHGCMSVCPARM *paParms;
+    } async;
+
+    struct {
+         void *pv;
+         uint32_t cb;
+         uint32_t u32Format;
+    } data;
+
+    uint32_t u32AvailableFormats;
+    uint32_t u32RequestedFormat;
+
+} CLIPSAVEDSTATEDATA;
+
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
     LogRel2 (("svcLoadState: u32ClientID = %d\n", u32ClientID));
@@ -789,45 +831,6 @@ static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClie
     }
     else if (lenOrVer == (SSMR3HandleHostBits (pSSM) == 64 ? 72 : 48))
     {
-        /**
-         * This structure corresponds to the original layout of the
-         * VBOXCLIPBOARDCLIENTDATA structure.  As the structure was saved as a whole
-         * when saving state, we need to remember it forever in order to preserve
-         * compatibility.
-         *
-         * (Starting with 3.1 this is no longer used.)
-         */
-        typedef struct _CLIPSAVEDSTATEDATA
-        {
-            struct _CLIPSAVEDSTATEDATA *pNext;
-            struct _CLIPSAVEDSTATEDATA *pPrev;
-
-            VBOXCLIPBOARDCONTEXT *pCtx;
-
-            uint32_t u32ClientID;
-
-            bool fAsync: 1; /* Guest is waiting for a message. */
-
-            bool fMsgQuit: 1;
-            bool fMsgReadData: 1;
-            bool fMsgFormats: 1;
-
-            struct {
-                VBOXHGCMCALLHANDLE callHandle;
-                VBOXHGCMSVCPARM *paParms;
-            } async;
-
-            struct {
-                 void *pv;
-                 uint32_t cb;
-                 uint32_t u32Format;
-            } data;
-
-            uint32_t u32AvailableFormats;
-            uint32_t u32RequestedFormat;
-
-        } CLIPSAVEDSTATEDATA;
-
         /**
          * SSM descriptor table for the CLIPSAVEDSTATEDATA structure.
          */
