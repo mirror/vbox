@@ -571,7 +571,6 @@ static int SVMR0CheckPendingInterrupt(PVM pVM, PVMCPU pVCpu, SVM_VMCB *pVMCB, CP
        )
     {
         uint8_t     u8Vector;
-        int         rc;
         TRPMEVENT   enmType;
         SVM_EVENT   Event;
         RTGCUINT    u32ErrorCode;
@@ -1090,8 +1089,8 @@ ResumeExecution:
         bool fPending;
 
         /* TPR caching in CR8 */
-        int rc = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
-        AssertRC(rc);
+        int rc2 = PDMApicGetTPR(pVCpu, &u8LastTPR, &fPending);
+        AssertRC(rc2);
 
         if (pVM->hwaccm.s.fTPRPatchingActive)
         {
