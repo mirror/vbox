@@ -1208,7 +1208,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</source>
-        <translation>Zeigt die Taste, die als Host-Taste in für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine neue Host-Taste. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
+        <translation>Zeigt die Taste, die als Host-Taste für VM-Fenster verwendet wird. Aktivieren Sie dieses Feld und betätigen Sie eine Taste, um diese als Host-Taste festzulegen. Als Host-Taste eignen sich üblicherweise nur Strg, Umsch, Alt usw.</translation>
     </message>
     <message>
         <source>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</source>
