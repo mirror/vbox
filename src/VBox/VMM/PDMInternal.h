@@ -1054,6 +1054,7 @@ extern const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp;
 extern const PDMPCIHLPR3    g_pdmR3DevPciHlp;
 extern const PDMDMACHLP     g_pdmR3DevDmacHlp;
 extern const PDMRTCHLP      g_pdmR3DevRtcHlp;
+extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;
 #endif
 
 

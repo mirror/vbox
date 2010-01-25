@@ -1954,7 +1954,35 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
     LogFlow(("pdmR3DevHlp_IOAPICRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
     return VINF_SUCCESS;
 }
+/** @copydoc PDMDEVHLPR3::pfnHPETRegister */
+static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d:\n"));
 
+    /*
+     * Validate input.
+     */
+    if (pHpetReg->u32Version != PDM_HPETREG_VERSION)
+    {
+        AssertMsgFailed(("u32Version=%#x expected %#x\n", pHpetReg->u32Version, PDM_HPETREG_VERSION));
+        LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc (version)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    if (!ppHpetHlpR3)
+    {
+        Assert(ppHpetHlpR3);
+        LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc (ppApicHlpR3)\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VERR_INVALID_PARAMETER));
+        return VERR_INVALID_PARAMETER;
+    }
+
+    /* set the helper pointer and return. */
+    *ppHpetHlpR3 = &g_pdmR3DevHpetHlp;
+    LogFlow(("pdmR3DevHlp_HPETRegister: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, VINF_SUCCESS));
+    return VINF_SUCCESS;
+}
 
 /** @copydoc PDMDEVHLPR3::pfnDMACRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
@@ -2808,6 +2836,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_PICRegister,
     pdmR3DevHlp_APICRegister,
     pdmR3DevHlp_IOAPICRegister,
+    pdmR3DevHlp_HPETRegister,
     pdmR3DevHlp_DMACRegister,
     pdmR3DevHlp_PhysRead,
     pdmR3DevHlp_PhysWrite,
@@ -2898,6 +2927,15 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns
     return VERR_ACCESS_DENIED;
 }
 
+/** @copydoc PDMDEVHLPR3::pfnHPETRegister */
+static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    AssertReleaseMsgFailed(("Untrusted device called trusted helper! '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+    NOREF(pHpetReg);
+    NOREF(ppHpetHlpR3);
+    return VERR_ACCESS_DENIED;
+}
 
 /** @copydoc PDMDEVHLPR3::pfnDMACRegister */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
@@ -3275,6 +3313,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_Untrusted_PICRegister,
     pdmR3DevHlp_Untrusted_APICRegister,
     pdmR3DevHlp_Untrusted_IOAPICRegister,
+    pdmR3DevHlp_Untrusted_HPETRegister,
     pdmR3DevHlp_Untrusted_DMACRegister,
     pdmR3DevHlp_Untrusted_PhysRead,
     pdmR3DevHlp_Untrusted_PhysWrite,
@@ -3346,4 +3385,3 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 }
 
 /** @} */
-
