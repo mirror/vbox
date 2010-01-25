@@ -32,6 +32,7 @@
 #include <iprt/err.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <VBox/version.h>
 
 extern const char *gVBoxLangSubDir;
 extern const char *gVBoxLangFileBase;
@@ -69,7 +70,7 @@ public:
             "(empty if native country name is empty)");
 
         QString translatorsName = tratra (aTranslator,
-            "@@@", "Sun Microsystems, Inc.", "Comma-separated list of translators");
+            "@@@", VBOX_VENDOR, "Comma-separated list of translators");
 
         QString itemName = nativeLanguage;
         QString langName = englishLanguage;

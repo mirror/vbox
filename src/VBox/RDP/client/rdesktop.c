@@ -39,6 +39,10 @@
 #include <errno.h>
 #include "rdesktop.h"
 
+#ifdef VBOX
+# include <VBox/version.h>
+#endif
+
 #ifdef HAVE_LOCALE_H
 #include <locale.h>
 #endif
@@ -146,7 +150,7 @@ usage(char *program)
 {
 	fprintf(stderr, "rdesktop: A Remote Desktop Protocol client.\n");
 	fprintf(stderr, "Version " VERSION ". Copyright (C) 1999-2008 Matthew Chapman.\n");
-        fprintf(stderr, "Modified for VirtualBox by Sun Microsystems, Inc.\n");
+        fprintf(stderr, "Modified for VirtualBox by " VBOX_VENDOR "\n");
 	fprintf(stderr, "See http://www.rdesktop.org/ for more information.\n\n");
 
 	fprintf(stderr, "Usage: %s [options] server[:port]\n", program);

@@ -622,10 +622,9 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
     RTEnvUnset("DISPLAY");
 
     LogFlow (("VBoxHeadless STARTED.\n"));
-    RTPrintf ("VirtualBox Headless Interface %s\n"
-              "(C) 2008-2009 Sun Microsystems, Inc.\n"
-              "All rights reserved.\n\n",
-              VBOX_VERSION_STRING);
+    RTPrintf (VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
+              "(C) 2008-2010 " VBOX_VENDOR "\n"
+              "All rights reserved.\n\n");
 
     Bstr id;
     /* the below cannot be Bstr because on Linux Bstr doesn't work until XPCOM (nsMemory) is initialized */
