@@ -265,7 +265,19 @@ NTSTATUS DxgkDdiQueryChildRelations(
     IN ULONG ChildRelationsSize
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+    for(ULONG i = 0; i < ChildRelationsSize; i++)
+    {
+        ChildRelations[i].ChildDeviceType = TypeVideoOutput;
+        ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_OTHER;
+        ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_NONE;
+        ChildRelations[i].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
+        ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected;
+        ChildRelations[i].AcpiUid =  i+1; /* @todo: do we need it? could it be zero ? */
+        ChildRelations[i].ChildUid = i+1; /* could it be zero ? */
+    }
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS DxgkDdiQueryChildStatus(
