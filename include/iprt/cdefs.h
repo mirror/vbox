@@ -1280,11 +1280,11 @@
 
 /** @def RT_BSWAP_U32_C
  * Reverses the byte order of an uint32_t constant. */
-#define RT_BSWAP_U32_C(u32) (RT_BYTE4(u32) | (RT_BYTE3(u32) << 8) | (RT_BYTE2(u32) << 16) | (RT_BYTE1(u32) << 24))
+#define RT_BSWAP_U32_C(u32) RT_MAKE_U32_FROM_U8(RT_BYTE4(u32), RT_BYTE3(u32), RT_BYTE2(u32), RT_BYTE1(u32))
 
 /** @def RT_BSWAP_U16_C
  * Reverses the byte order of an uint16_t constant. */
-#define RT_BSWAP_U16_C(u16) (RT_HIBYTE(u16) | (RT_LOBYTE(u16) << 8))
+#define RT_BSWAP_U16_C(u16) RT_MAKE_U16(RT_HIBYTE(u16), RT_LOBYTE(u16))
 
 
 /** @def RT_H2LE_U64
