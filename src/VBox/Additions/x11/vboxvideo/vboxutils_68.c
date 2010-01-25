@@ -332,32 +332,32 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
 static Bool
 vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
 {
-    PCITAG pciTag;
-    ADDRESS pciAddress;
+    PCITAG pciTagDev;
+    ADDRESS pciAddrDev;
     int rc;
 
     /* Locate the device.  It should already have been enabled by
        the kernel driver. */
-    pciTag = pciFindFirst((unsigned) VMMDEV_DEVICEID << 16 | VMMDEV_VENDORID,
-                          (CARD32) ~0);
-    if (pciTag == PCI_NOT_FOUND)
+    pciTagDev = pciFindFirst((unsigned) VMMDEV_DEVICEID << 16 | VMMDEV_VENDORID,
+                             (CARD32) ~0);
+    if (pciTagDev == PCI_NOT_FOUND)
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Could not find the VirtualBox base device on the PCI bus.\n");
         return FALSE;
     }
     /* Read the address and size of the second I/O region. */
-    pciAddress = pciReadLong(pciTag, PCI_MAP_REG_START + 4);
-    if (pciAddress == 0 || pciAddress == (CARD32) ~0)
+    pciAddrDev = pciReadLong(pciTagDev, PCI_MAP_REG_START + 4);
+    if (pciAddrDev == 0 || pciAddrDev == (CARD32) ~0)
         RETERROR(scrnIndex, FALSE,
                  "The VirtualBox base device contains an invalid memory address.\n");
-    if (PCI_MAP_IS64BITMEM(pciAddress))
+    if (PCI_MAP_IS64BITMEM(pciAddrDev))
         RETERROR(scrnIndex, FALSE,
                  "The VirtualBox base device has a 64bit mapping address.  "
                  "This is currently not supported.\n");
     /* Map it.  We hardcode the size as X does not export the
        function needed to determine it. */
-    pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTag, pciAddress,
+    pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTagDev, pciAddrDev,
                                          sizeof(VMMDevMemory));
     if (pVBox->pVMMDevMemory == NULL)
     {
@@ -959,8 +959,8 @@ vboxDisableVbva(ScrnInfoPtr pScrn)
  *                 0 for the primary display, 1 for the first secondary, etc.
  */
 Bool
-vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
-                            uint32_t *pbpp, uint32_t *display)
+vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *pX, uint32_t *pY,
+                            uint32_t *pBpp, uint32_t *pDisplay)
 {
     int rc, scrnIndex = pScrn->scrnIndex;
     VBOXPtr pVBox = pScrn->driverPrivate;
@@ -970,10 +970,10 @@ vboxGetDisplayChangeRequest(ScrnInfoPtr pScrn, uint32_t *px, uint32_t *py,
     rc = vbox_vmmcall(pScrn, pVBox, &Req.header);
     if (RT_SUCCESS(rc))
     {
-        *px = Req.xres;
-        *py = Req.yres;
-        *pbpp = Req.bpp;
-        *display = Req.display;
+        *pX = Req.xres;
+        *pY = Req.yres;
+        *pBpp = Req.bpp;
+        *pDisplay = Req.display;
         return TRUE;
     }
     xf86DrvMsg(scrnIndex, X_ERROR,
