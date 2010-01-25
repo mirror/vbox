@@ -1017,12 +1017,12 @@ int main(int argc, char **argv)
             int  iSize;
 
             iSize = RTStrPrintf(szBuf, sizeof(szBuf),
-                                "Sun VirtualBox XPCOM Server Version "
+                                VBOX_PRODUCT" XPCOM Server Version "
                                 VBOX_VERSION_STRING);
             for (int i = iSize; i > 0; i--)
                 putchar('*');
             RTPrintf("\n%s\n", szBuf);
-            RTPrintf("(C) 2008-2009 Sun Microsystems, Inc.\n"
+            RTPrintf("(C) 2008-2010 " VBOX_VENDOR "\n"
                      "All rights reserved.\n");
 #ifdef DEBUG
             RTPrintf("Debug version.\n");

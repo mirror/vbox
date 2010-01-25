@@ -22,6 +22,7 @@
 
 #include "VBoxGlobal.h"
 #include <VBox/VBoxHDD.h>
+#include <VBox/version.h>
 
 #include "VBoxDefs.h"
 #include "VBoxSelectorWnd.h"
@@ -2659,7 +2660,7 @@ QString VBoxGlobal::languageCountryEnglish() const
  */
 QString VBoxGlobal::languageTranslators() const
 {
-    return qApp->translate ("@@@", "Sun Microsystems, Inc.",
+    return qApp->translate ("@@@", VBOX_VENDOR,
                             "Comma-separated list of translators");
 }
 

@@ -40,9 +40,9 @@ void showLogo(void)
 
     if (!s_fShown)
     {
-        RTPrintf("VirtualBox Command Line Management Interface Version "
+        RTPrintf(VBOX_PRODUCT" Command Line Management Interface Version "
                  VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2009 Sun Microsystems, Inc.\n"
+                 "(C) 2005-2010 " VBOX_VENDOR "\n"
                  "All rights reserved.\n"
                  "\n");
         s_fShown = true;

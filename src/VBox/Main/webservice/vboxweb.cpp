@@ -5,7 +5,7 @@
  *      (plus static gSOAP server code) to implement the actual webservice
  *      server, to which clients can connect.
  *
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -264,9 +264,9 @@ int main(int argc, char* argv[])
     // intialize runtime
     RTR3Init();
 
-    RTStrmPrintf(g_pStdErr, "Sun VirtualBox Webservice Version %s\n"
-                            "(C) 2005-2009 Sun Microsystems, Inc.\n"
-                            "All rights reserved.\n", VBOX_VERSION_STRING);
+    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Webservice Version " VBOX_VERSION_STRING "\n"
+                            "(C) 2005-2010 " VBOX_VENDOR "\n"
+                            "All rights reserved.\n");
 
     int c;
     RTGETOPTUNION ValueUnion;
