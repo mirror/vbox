@@ -953,10 +953,15 @@ int VBoxMapAdapterMemory (PDEVICE_EXTENSION PrimaryExtension, void **ppv, ULONG 
                                            &VideoRamLength, &inIoSpace,
                                            &VideoRamBase);
 #else
-    VideoRamBase = MmMapIoSpace(FrameBuffer,
+    NTSTATUS ntStatus = PrimaryExtension->u.primary.DxgkInterface.DxgkCbMapMemory(PrimaryExtension->u.primary.DxgkInterface.DeviceHandle,
+            FrameBuffer,
             VideoRamLength,
-            MmNonCached);
-    Status = VideoRamBase ? NO_ERROR : ERROR_INVALID_PARAMETER; /*<- this is what VideoPortMapMemory returns according to the docs */
+            FALSE, /* IN BOOLEAN InIoSpace */
+            FALSE, /* IN BOOLEAN MapToUserMode */
+            MmNonCached, /* IN MEMORY_CACHING_TYPE CacheType */
+            &VideoRamBase /*OUT PVOID *VirtualAddress*/
+            );
+    Status = ntStatus == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER; /*<- this is what VideoPortMapMemory returns according to the docs */
 #endif
 
     if (Status == NO_ERROR)

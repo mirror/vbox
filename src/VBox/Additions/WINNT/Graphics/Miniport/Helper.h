@@ -61,8 +61,16 @@ int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 # else
 #  define dprintf(a) OSDBGPRINT(a)
 # endif
+/* flow log */
+# define dfprintf dprintf
+/* release log */
+# define drprintf dprintf
 #else
 # define dprintf(a) do {} while (0)
+/* flow log */
+# define dfprintf dprintf
+/* release log */
+# define drprintf dprintf
 #endif
 
 /* dprintf2 - extended logging. */
