@@ -731,38 +731,38 @@ DISDECL(size_t) DISFormatYasmEx(PCDISCPUSTATE pCpu, char *pszBuf, size_t cchBuf,
 
                         if (pParam->flags & (USE_DISPLACEMENT8 | USE_DISPLACEMENT16 | USE_DISPLACEMENT32 | USE_DISPLACEMENT64 | USE_RIPDISPLACEMENT32))
                         {
-                            int64_t off;
+                            int64_t off2;
                             if (pParam->flags & USE_DISPLACEMENT8)
-                                off = pParam->disp8;
+                                off2 = pParam->disp8;
                             else if (pParam->flags & USE_DISPLACEMENT16)
-                                off = pParam->disp16;
+                                off2 = pParam->disp16;
                             else if (pParam->flags & (USE_DISPLACEMENT32 | USE_RIPDISPLACEMENT32))
-                                off = pParam->disp32;
+                                off2 = pParam->disp32;
                             else if (pParam->flags & USE_DISPLACEMENT64)
-                                off = pParam->disp64;
+                                off2 = pParam->disp64;
                             else
                             {
                                 AssertFailed();
-                                off = 0;
+                                off2 = 0;
                             }
 
                             if (fBase || (pParam->flags & USE_INDEX))
                             {
-                                PUT_C(off >= 0 ? '+' : '-');
-                                if (off < 0)
-                                    off = -off;
+                                PUT_C(off2 >= 0 ? '+' : '-');
+                                if (off2 < 0)
+                                    off2 = -off2;
                             }
                             if (pParam->flags & USE_DISPLACEMENT8)
-                                PUT_NUM_8( off);
+                                PUT_NUM_8( off2);
                             else if (pParam->flags & USE_DISPLACEMENT16)
-                                PUT_NUM_16(off);
+                                PUT_NUM_16(off2);
                             else if (pParam->flags & USE_DISPLACEMENT32)
-                                PUT_NUM_32(off);
+                                PUT_NUM_32(off2);
                             else if (pParam->flags & USE_DISPLACEMENT64)
-                                PUT_NUM_64(off);
+                                PUT_NUM_64(off2);
                             else
                             {
-                                PUT_NUM_32(off);
+                                PUT_NUM_32(off2);
                                 PUT_SZ(" wrt rip"); //??
                             }
                         }
