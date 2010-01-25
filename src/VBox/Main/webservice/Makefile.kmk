@@ -230,6 +230,9 @@ ifdef VBOX_GSOAP_INSTALLED
  vboxsoap_ORDERDEPS = \
  	$(VBOXWEB_IDL_SRC) \
  	$(VBOXWEB_OUT_DIR)/gsoap_copy_all_ts
+ ifn1of ($(KBUILD_TARGET), win)
+  $(VBOX_GSOAP_CXX_SOURCES)_CXXFLAGS = -Wno-format
+ endif
 
 ifdef VBOX_SOAP_PRECOMPILED_HEADER
  # This'll save a few seconds, but the compiler invocation currently makes it impracticable. This will

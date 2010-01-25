@@ -127,7 +127,9 @@ int main(int argc, char* argv[])
                                                             NULL,
                                                             &req,
                                                             &resp)))
+            {
                 ;
+            }
         }
     }
     else if (!strcmp(pcszMode, "version"))
