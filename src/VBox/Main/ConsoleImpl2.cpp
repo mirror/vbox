@@ -1151,7 +1151,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                             {
                                 Utf8Str name = names[ii];
                                 Utf8Str value = values[ii];
-                                rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); AssertRC(rc); /** @todo r=bird: why not RC_CHECK() here? (I added the AssertRC.)*/
+                                rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());     RC_CHECK();
                                 if (    name.compare("HostIPStack") == 0
                                     &&  value.compare("0") == 0)
                                     fHostIP = false;
@@ -1190,11 +1190,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                             rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);                     RC_CHECK();
                             for (size_t ii = 0; ii < aNames.size(); ++ii)
                             {
-                                if (aValues[ii])
+                                if (aValues[ii] && *aValues[ii])
                                 {
                                     Utf8Str name = aNames[ii];
                                     Utf8Str value = aValues[ii];
-                                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); AssertRC(rc); /** @todo r=bird: why not RC_HCECK here? (I added the AssertRC.)*/
+                                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); RC_CHECK();
                                     if (    name.compare("HostIPStack") == 0
                                         &&  value.compare("0") == 0)
                                         fHostIP = false;

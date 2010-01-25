@@ -7576,7 +7576,7 @@ static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
         rc = CFGMR3InsertNode(pCfg, "VDConfig", &pVDC);                 RC_CHECK();
         for (size_t i = 0; i < names.size(); ++ i)
         {
-            if (values[i])
+            if (values[i] && *values[i])
             {
                 Utf8Str name = names[i];
                 Utf8Str value = values[i];
@@ -7617,11 +7617,11 @@ static DECLCALLBACK(int) reconfigureMedium(PVM pVM, ULONG lInstance,
             rc = CFGMR3InsertNode(pCur, "VDConfig", &pVDC);             RC_CHECK();
             for (size_t i = 0; i < aNames.size(); ++ i)
             {
-                if (aValues[i])
+                if (aValues[i] && *aValues[i])
                 {
                     Utf8Str name = aNames[i];
                     Utf8Str value = aValues[i];
-                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str());
+                    rc = CFGMR3InsertString(pVDC, name.c_str(), value.c_str()); RC_CHECK();
                     if (    !(name.compare("HostIPStack"))
                         &&  !(value.compare("0")))
                         fHostIP = false;
