@@ -984,7 +984,7 @@ static void crStateGLSLSyncShadersCB(unsigned long key, void *data1, void *data2
 
     if (pShader->source)
     {
-        diff_api.ShaderSource(pShader->hwid, 1, &pShader->source, NULL);
+        diff_api.ShaderSource(pShader->hwid, 1, (const char**)&pShader->source, NULL);
         if (pShader->compiled)
             diff_api.CompileShader(pShader->hwid);
         crFree(pShader->source);
@@ -1003,7 +1003,7 @@ static void crStateAttachShaderCB(unsigned long key, void *data1, void *data2)
     
     if (pShader->source)
     {
-        diff_api.ShaderSource(pShader->hwid, 1, &pShader->source, NULL);
+        diff_api.ShaderSource(pShader->hwid, 1, (const char**)&pShader->source, NULL);
         if (pShader->compiled)
             diff_api.CompileShader(pShader->hwid);
     }
