@@ -70,44 +70,45 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_nbt.c,v 1.20.8.1 2009/04/15 0
 # include <slirp.h>
 # include "alias_local.h"
 # include "alias_mod.h"
+# define isprint RT_C_IS_PRINT
 #endif /*VBOX*/
 
 #define NETBIOS_NS_PORT_NUMBER 137
 #define NETBIOS_DGM_PORT_NUMBER 138
 
 static int
-AliasHandleUdpNbt(struct libalias *, struct ip *, struct alias_link *, 
+AliasHandleUdpNbt(struct libalias *, struct ip *, struct alias_link *,
           struct in_addr *, u_short);
 
 static int
 AliasHandleUdpNbtNS(struct libalias *, struct ip *, struct alias_link *,
             struct in_addr *, u_short *, struct in_addr *, u_short *);
-static int 
+static int
 fingerprint1(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
-    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL || 
+    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
         ah->aaddr == NULL || ah->aport == NULL)
         return (-1);
     if (ntohs(*ah->dport) == NETBIOS_DGM_PORT_NUMBER
-        || ntohs(*ah->sport) == NETBIOS_DGM_PORT_NUMBER)        
+        || ntohs(*ah->sport) == NETBIOS_DGM_PORT_NUMBER)
         return (0);
     return (-1);
 }
 
-static int 
+static int
 protohandler1(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
-    
+
     AliasHandleUdpNbt(la, pip, ah->lnk, ah->aaddr, *ah->aport);
     return (0);
 }
 
-static int 
+static int
 fingerprint2(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
-    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL || 
+    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
         ah->aaddr == NULL || ah->aport == NULL)
         return (-1);
     if (ntohs(*ah->dport) == NETBIOS_NS_PORT_NUMBER
@@ -116,19 +117,19 @@ fingerprint2(struct libalias *la, struct ip *pip, struct alias_data *ah)
     return (-1);
 }
 
-static int 
+static int
 protohandler2in(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
-    
+
     AliasHandleUdpNbtNS(la, pip, ah->lnk, ah->aaddr, ah->aport,
                 ah->oaddr, ah->dport);
     return (0);
 }
 
-static int 
+static int
 protohandler2out(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
-    
+
     AliasHandleUdpNbtNS(la, pip, ah->lnk, &pip->ip_src, ah->sport,
                 ah->aaddr, ah->aport);
     return (0);
@@ -137,31 +138,31 @@ protohandler2out(struct libalias *la, struct ip *pip, struct alias_data *ah)
 /* Kernel module definition. */
 #ifndef VBOX
 struct proto_handler handlers[] = {
-    { 
-      .pri = 130, 
-      .dir = IN|OUT, 
-      .proto = UDP, 
-      .fingerprint = &fingerprint1, 
+    {
+      .pri = 130,
+      .dir = IN|OUT,
+      .proto = UDP,
+      .fingerprint = &fingerprint1,
       .protohandler = &protohandler1
-    }, 
-    { 
-      .pri = 140, 
-      .dir = IN, 
-      .proto = UDP, 
-      .fingerprint = &fingerprint2, 
+    },
+    {
+      .pri = 140,
+      .dir = IN,
+      .proto = UDP,
+      .fingerprint = &fingerprint2,
       .protohandler = &protohandler2in
-    }, 
-    { 
-      .pri = 140, 
-      .dir = OUT, 
-      .proto = UDP, 
-      .fingerprint = &fingerprint2, 
+    },
+    {
+      .pri = 140,
+      .dir = OUT,
+      .proto = UDP,
+      .fingerprint = &fingerprint2,
       .protohandler = &protohandler2out
-    }, 
+    },
     { EOH }
 };
 #else /* !VBOX */
-#define handlers pData->nbt_module 
+#define handlers pData->nbt_module
 #endif /*VBOX*/
 
 #ifndef VBOX
@@ -194,21 +195,21 @@ nbt_alias_handler(PNATState pData, int type)
     handlers[0].proto = UDP;
     handlers[0].fingerprint = &fingerprint1;
     handlers[0].protohandler = &protohandler1;
-     
-    
+
+
     handlers[1].pri = 140;
     handlers[1].dir = IN;
     handlers[1].proto = UDP;
     handlers[1].fingerprint = &fingerprint2;
     handlers[1].protohandler = &protohandler2in;
-     
-    
+
+
     handlers[2].pri = 140;
     handlers[2].dir = OUT;
     handlers[2].proto = UDP;
     handlers[2].fingerprint = &fingerprint2;
     handlers[2].protohandler = &protohandler2out;
-     
+
     handlers[3].pri = EOH;
 #endif /*VBOX*/
 
@@ -239,7 +240,7 @@ nbt_alias_handler(PNATState pData, int type)
 
 #ifndef VBOX
 #ifdef  _KERNEL
-static 
+static
 #endif
 moduledata_t alias_mod = {
        "alias_nbt", mod_handler, NULL
