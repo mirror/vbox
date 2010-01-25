@@ -1202,42 +1202,46 @@
  * Constructs a uint64_t value from four uint16_t values.
  */
 #define RT_MAKE_U64_FROM_U16(w0, w1, w2, w3) \
-                (   (uint64_t)((uint16_t)(w3)) << 48 \
-                  | (uint64_t)((uint16_t)(w2)) << 32 \
-                  | (uint32_t)((uint16_t)(w1)) << 16 \
-                  |            (uint16_t)(w0) )
+    ((uint64_t)(  (uint64_t)((uint16_t)(w3)) << 48 \
+                | (uint64_t)((uint16_t)(w2)) << 32 \
+                | (uint32_t)((uint16_t)(w1)) << 16 \
+                |            (uint16_t)(w0) ))
 
 /** @def RT_MAKE_U64_FROM_U8
  * Constructs a uint64_t value from eight uint8_t values.
  */
 #define RT_MAKE_U64_FROM_U8(b0, b1, b2, b3, b4, b5, b6, b7) \
-                (   (uint64_t)((uint8_t)(b7)) << 56 \
-                  | (uint64_t)((uint8_t)(b6)) << 48 \
-                  | (uint64_t)((uint8_t)(b5)) << 40 \
-                  | (uint64_t)((uint8_t)(b4)) << 32 \
-                  | (uint32_t)((uint8_t)(b3)) << 24 \
-                  | (uint32_t)((uint8_t)(b2)) << 16 \
-                  | (uint16_t)((uint8_t)(b1)) << 8 \
-                  |            (uint8_t)(b0) )
+    ((uint64_t)(  (uint64_t)((uint8_t)(b7)) << 56 \
+                | (uint64_t)((uint8_t)(b6)) << 48 \
+                | (uint64_t)((uint8_t)(b5)) << 40 \
+                | (uint64_t)((uint8_t)(b4)) << 32 \
+                | (uint32_t)((uint8_t)(b3)) << 24 \
+                | (uint32_t)((uint8_t)(b2)) << 16 \
+                | (uint16_t)((uint8_t)(b1)) << 8 \
+                |            (uint8_t)(b0) ))
 
 /** @def RT_MAKE_U32
  * Constructs a uint32_t value from two uint16_t values.
  */
-#define RT_MAKE_U32(Lo, Hi) ( (uint32_t)((uint16_t)(Hi)) << 16 | (uint16_t)(Lo) )
+#define RT_MAKE_U32(Lo, Hi) \
+    ((uint32_t)(  (uint32_t)((uint16_t)(Hi)) << 16 \
+                | (uint16_t)(Lo) )
 
 /** @def RT_MAKE_U32_FROM_U8
  * Constructs a uint32_t value from four uint8_t values.
  */
 #define RT_MAKE_U32_FROM_U8(b0, b1, b2, b3) \
-                (   (uint32_t)((uint8_t)(b3)) << 24 \
-                  | (uint32_t)((uint8_t)(b2)) << 16 \
-                  | (uint16_t)((uint8_t)(b1)) << 8 \
-                  |            (uint8_t)(b0) )
+    ((uint32_t)(  (uint32_t)((uint8_t)(b3)) << 24 \
+                | (uint32_t)((uint8_t)(b2)) << 16 \
+                | (uint16_t)((uint8_t)(b1)) << 8 \
+                |            (uint8_t)(b0) ))
 
 /** @def RT_MAKE_U16
  * Constructs a uint32_t value from two uint16_t values.
  */
-#define RT_MAKE_U16(Lo, Hi) ( (uint16_t)((uint8_t)(Hi)) << 8 | (uint8_t)(Lo) )
+#define RT_MAKE_U16(Lo, Hi) \
+    ((uint16_t)(  (uint16_t)((uint8_t)(Hi)) << 8 \
+                | (uint8_t)(Lo) ))
 
 
 /** @def RT_BSWAP_U64
