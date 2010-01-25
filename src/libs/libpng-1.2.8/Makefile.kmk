@@ -23,7 +23,7 @@ SUB_DEPTH = ../../..
 include $(KBUILD_PATH)/subheader.kmk
 
 LIBRARIES += VBox-libpng
-VBox-libpng_TEMPLATE = VBOXR3
+VBox-libpng_TEMPLATE = VBOXR3NP
 VBox-libpng_INCS = ../zlib-1.2.1
 VBox-libpng_SOURCES = \
 	png.c \
