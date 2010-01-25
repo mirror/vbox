@@ -89,7 +89,7 @@ $$(PATH_VgaBiosBin)/_vgabios_.c: $(addprefix $(PATH_SUB_CURRENT)/,vgabios.c vgab
 # BCC tempfile clashes, order the BCC jobs to make sure they don't interfere with one another.
 $$(PATH_VgaBiosBin)/vgabios0.s: $$(PATH_VgaBiosBin)/_vgabios_.c | $(VBOX_BCC_JOBS)
 	$(call MSG_COMPILE,VgaBiosBin,$<,$@,C)
-	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -O186 -O86 -S $^
+	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $^
 VBOX_BCC_JOBS += $(PATH_VgaBiosBin)/vgabios0.s
 
 # 4. preprocess intermediate assembly.
