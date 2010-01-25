@@ -3440,6 +3440,7 @@ STDMETHODIMP Machine::GetSnapshot (IN_BSTR aId, ISnapshot **aSnapshot)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     Guid uuid(aId);
+    /* Todo: fix this properly by perhaps introducing an isValid method for the Guid class */
     if (    aId
         &&  uuid.isEmpty())
     {
