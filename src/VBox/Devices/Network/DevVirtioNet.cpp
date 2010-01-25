@@ -345,7 +345,10 @@ PDMBOTHCBDECL(int) vnetSetConfig(void *pvState, uint32_t port, uint32_t cb, void
     if (port + cb > sizeof(struct VNetPCIConfig))
     {
         Log(("%s vnetGetConfig: Write beyond the config structure is attempted (port=%RTiop cb=%x).\n", INSTANCE(pState), port, cb));
-        return VERR_INTERNAL_ERROR;
+        if (port < sizeof(struct VNetPCIConfig))
+            memcpy(((uint8_t*)&pState->config) + port, data,
+                   sizeof(struct VNetPCIConfig) - port);
+        return VINF_SUCCESS;
     }
     memcpy(((uint8_t*)&pState->config) + port, data, cb);
     return VINF_SUCCESS;
