@@ -31,7 +31,7 @@ VBoxPythonBase_DEFS     = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API \
                           EXPORT_XPT_API VBOX_PYXPCOM VBOX_WITH_XPCOM
 VBoxPythonBase_INCS     = \
 	src
-VBoxPythonBase_CXXFLAGS = -Wno-format
+VBoxPythonBase_CXXFLAGS = -Wno-format -Wno-deprecated
 
 VBoxPythonBase_SOURCES  = \
 	src/module/_xpcom.cpp \
