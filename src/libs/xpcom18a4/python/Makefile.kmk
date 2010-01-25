@@ -27,11 +27,16 @@ $(eval $(patsubst %|,%$(NL),$(shell $(VBOX_BLD_PYTHON) $(PATH_SUB_CURRENT)/gen_p
 
 # Python Client Module - the C++/XPCOM bits.
 VBoxPythonBase_TEMPLATE = XPCOM
-VBoxPythonBase_DEFS     = _IMPL_NS_COM _IMPL_NS_BASE EXPORT_XPTI_API \
-                          EXPORT_XPT_API VBOX_PYXPCOM VBOX_WITH_XPCOM
+VBoxPythonBase_DEFS     = \
+	_IMPL_NS_COM \
+	_IMPL_NS_BASE \
+	EXPORT_XPTI_API \
+        EXPORT_XPT_API \
+	VBOX_PYXPCOM \
+	VBOX_WITH_XPCOM
 VBoxPythonBase_INCS     = \
 	src
-VBoxPythonBase_CXXFLAGS = -Wno-format -Wno-deprecated
+VBoxPythonBase_CXXFLAGS = -Wno-write-strings
 
 VBoxPythonBase_SOURCES  = \
 	src/module/_xpcom.cpp \
