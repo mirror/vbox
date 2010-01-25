@@ -95,11 +95,13 @@ _no_vbebios_info_string:
 .byte	0x0a,0x0d
 .byte 0x00
 
+#ifdef DEBUG
 msg_vbe_init:
 .ascii       "VirtualBox Version "
 .ascii       VBOX_VERSION_STRING
 .ascii       " VBE Display Adapter"
 .byte	0x0a,0x0d, 0x00
+#endif
 
 
   .align 2
