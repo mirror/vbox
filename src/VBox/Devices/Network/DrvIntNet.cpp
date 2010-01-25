@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -62,60 +62,67 @@ typedef enum ASYNCSTATE
 } ASYNCSTATE;
 
 /**
- * Block driver instance data.
+ * Internal networking driver instance data.
  *
  * @implements  PDMINETWORKCONNECTOR
  */
 typedef struct DRVINTNET
 {
     /** The network interface. */
-    PDMINETWORKCONNECTOR    INetworkConnector;
+    PDMINETWORKCONNECTOR            INetworkConnectorR3;
     /** The network interface. */
-    PPDMINETWORKPORT        pPort;
+    R3PTRTYPE(PPDMINETWORKPORT)     pIPortR3;
     /** The network config interface.
      * Can (in theory at least) be NULL. */
-    PPDMINETWORKCONFIG      pConfigIf;
+    R3PTRTYPE(PPDMINETWORKCONFIG)   pIConfigIfR3;
     /** Pointer to the driver instance. */
-    PPDMDRVINS              pDrvIns;
-    /** Interface handle. */
-    INTNETIFHANDLE          hIf;
+    PPDMDRVINSR3                    pDrvInsR3;
     /** Pointer to the communication buffer. */
-    PINTNETBUF              pBuf;
+    R3PTRTYPE(PINTNETBUF)           pBufR3;
+    /** Interface handle. */
+    INTNETIFHANDLE                  hIf;
+
     /** The thread state. */
-    ASYNCSTATE volatile     enmState;
+    ASYNCSTATE volatile             enmState;
     /** Reader thread. */
-    RTTHREAD                Thread;
+    RTTHREAD                        Thread;
     /** Event semaphore the Thread waits on while the VM is suspended. */
-    RTSEMEVENT              EventSuspended;
+    RTSEMEVENT                      EventSuspended;
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
-    bool volatile           fLinkDown;
+    bool volatile                   fLinkDown;
     /** Set if data transmission should start immediately and deactivate
      * as late as possible. */
-    bool                    fActivateEarlyDeactivateLate;
+    bool                            fActivateEarlyDeactivateLate;
+    /** Padding. */
+    bool                            afReserved[2];
+    /** The network name. */
+    char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
 #ifdef LOG_ENABLED
     /** The nano ts of the last transfer. */
-    uint64_t                u64LastTransferTS;
+    uint64_t                        u64LastTransferTS;
     /** The nano ts of the last receive. */
-    uint64_t                u64LastReceiveTS;
+    uint64_t                        u64LastReceiveTS;
 #endif
-
 #ifdef VBOX_WITH_STATISTICS
     /** Profiling packet transmit runs. */
-    STAMPROFILE             StatTransmit;
+    STAMPROFILE                     StatTransmit;
     /** Profiling packet receive runs. */
-    STAMPROFILEADV          StatReceive;
+    STAMPROFILEADV                  StatReceive;
 #endif /* VBOX_WITH_STATISTICS */
+} DRVINTNET;
+/** Pointer to instance data of the internal networking driver. */
+typedef DRVINTNET *PDRVINTNET;
 
-    /** The network name. */
-    char                    szNetwork[INTNET_MAX_NETWORK_NAME];
-} DRVINTNET, *PDRVINTNET;
 
+#ifdef IN_RING3
 
-/** Converts a pointer to DRVINTNET::INetworkConnector to a PDRVINTNET. */
-#define PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface) ( (PDRVINTNET)((uintptr_t)pInterface - RT_OFFSETOF(DRVINTNET, INetworkConnector)) )
+/* -=-=-=-=- PDMINETWORKCONNECTOR -=-=-=-=- */
 
+/** Converts a pointer to DRVINTNET::INetworkConnectorR3 to a PDRVINTNET. */
+#define PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface) \
+    RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkConnectorR3)
 
 /**
  * Updates the MAC address on the kernel side.
@@ -123,9 +130,9 @@ typedef struct DRVINTNET
  * @returns VBox status code.
  * @param   pThis       The driver instance.
  */
-static int drvIntNetUpdateMacAddress(PDRVINTNET pThis)
+static int drvR3IntNetUpdateMacAddress(PDRVINTNET pThis)
 {
-    if (!pThis->pConfigIf)
+    if (!pThis->pIConfigIfR3)
         return VINF_SUCCESS;
 
     INTNETIFSETMACADDRESSREQ SetMacAddressReq;
@@ -133,12 +140,12 @@ static int drvIntNetUpdateMacAddress(PDRVINTNET pThis)
     SetMacAddressReq.Hdr.cbReq = sizeof(SetMacAddressReq);
     SetMacAddressReq.pSession = NIL_RTR0PTR;
     SetMacAddressReq.hIf = pThis->hIf;
-    int rc = pThis->pConfigIf->pfnGetMac(pThis->pConfigIf, &SetMacAddressReq.Mac);
+    int rc = pThis->pIConfigIfR3->pfnGetMac(pThis->pIConfigIfR3, &SetMacAddressReq.Mac);
     if (RT_SUCCESS(rc))
-        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
+        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
                                      &SetMacAddressReq, sizeof(SetMacAddressReq));
 
-    Log(("drvIntNetUpdateMacAddress: %.*Rhxs rc=%Rrc\n", sizeof(SetMacAddressReq.Mac), &SetMacAddressReq.Mac, rc));
+    Log(("drvR3IntNetUpdateMacAddress: %.*Rhxs rc=%Rrc\n", sizeof(SetMacAddressReq.Mac), &SetMacAddressReq.Mac, rc));
     return rc;
 }
 
@@ -152,9 +159,9 @@ static int drvIntNetUpdateMacAddress(PDRVINTNET pThis)
  * @param   pThis       The driver instance.
  * @param   fActive     The new state.
  */
-static int drvIntNetSetActive(PDRVINTNET pThis, bool fActive)
+static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 {
-    if (!pThis->pConfigIf)
+    if (!pThis->pIConfigIfR3)
         return VINF_SUCCESS;
 
     INTNETIFSETACTIVEREQ SetActiveReq;
@@ -163,10 +170,10 @@ static int drvIntNetSetActive(PDRVINTNET pThis, bool fActive)
     SetActiveReq.pSession = NIL_RTR0PTR;
     SetActiveReq.hIf = pThis->hIf;
     SetActiveReq.fActive = fActive;
-    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_ACTIVE,
+    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_ACTIVE,
                                      &SetActiveReq, sizeof(SetActiveReq));
 
-    Log(("drvIntNetUpdateMacAddress: fActive=%d rc=%Rrc\n", fActive, rc));
+    Log(("drvR3IntNetSetActive: fActive=%d rc=%Rrc\n", fActive, rc));
     AssertRC(rc);
     return rc;
 }
@@ -182,7 +189,7 @@ static int drvIntNetSetActive(PDRVINTNET pThis, bool fActive)
  * @param   cbFrame     The size of the frame.
  * @remark  This is the same as INTNETRingWriteFrame
  */
-static int drvIntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
+static int drvR3IntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
 {
     /*
      * Validate input.
@@ -274,17 +281,17 @@ static int drvIntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, con
  * @param   cb              Number of bytes to send.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvR3IntNetSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
 {
     PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
 #ifdef LOG_ENABLED
     uint64_t u64Now = RTTimeProgramNanoTS();
-    LogFlow(("drvIntNetSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
+    LogFlow(("drvR3IntNetSend: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
              cb, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
     pThis->u64LastTransferTS = u64Now;
-    Log2(("drvIntNetSend: pvBuf=%p cb=%#x\n"
+    Log2(("drvR3IntNetSend: pvBuf=%p cb=%#x\n"
           "%.*Rhxd\n",
           pvBuf, cb, cb, pvBuf));
 #endif
@@ -292,18 +299,18 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
     /*
      * Add the frame to the send buffer and push it onto the network.
      */
-    int rc = drvIntNetRingWriteFrame(pThis->pBuf, &pThis->pBuf->Send, pvBuf, (uint32_t)cb);
+    int rc = drvR3IntNetRingWriteFrame(pThis->pBufR3, &pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     if (    rc == VERR_BUFFER_OVERFLOW
-        &&  pThis->pBuf->cbSend < cb)
+        &&  pThis->pBufR3->cbSend < cb)
     {
         INTNETIFSENDREQ SendReq;
         SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
         SendReq.Hdr.cbReq = sizeof(SendReq);
         SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
-        PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+        PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
-        rc = drvIntNetRingWriteFrame(pThis->pBuf, &pThis->pBuf->Send, pvBuf, (uint32_t)cb);
+        rc = drvR3IntNetRingWriteFrame(pThis->pBufR3, &pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     }
 
     if (RT_SUCCESS(rc))
@@ -313,7 +320,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
         SendReq.Hdr.cbReq = sizeof(SendReq);
         SendReq.pSession = NIL_RTR0PTR;
         SendReq.hIf = pThis->hIf;
-        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+        rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
     }
 
     STAM_PROFILE_STOP(&pThis->StatTransmit, a);
@@ -332,7 +339,7 @@ static DECLCALLBACK(int) drvIntNetSend(PPDMINETWORKCONNECTOR pInterface, const v
  * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
 {
     PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
     INTNETIFSETPROMISCUOUSMODEREQ Req;
@@ -341,8 +348,8 @@ static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
     Req.pSession        = NIL_RTR0PTR;
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
-    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvIns, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
-    LogFlow(("drvIntNetSetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
+    int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
+    LogFlow(("drvR3IntNetSetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
     AssertRC(rc);
 }
 
@@ -354,7 +361,7 @@ static DECLCALLBACK(void) drvIntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInt
  * @param   enmLinkState    The new link state.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvR3IntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
     PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
     bool fLinkDown;
@@ -370,7 +377,7 @@ static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
             fLinkDown = false;
             break;
     }
-    LogFlow(("drvIntNetNotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
+    LogFlow(("drvR3IntNetNotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
     ASMAtomicXchgSize(&pThis->fLinkDown, fLinkDown);
 }
 
@@ -383,13 +390,13 @@ static DECLCALLBACK(void) drvIntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInte
  * @returns VBox status code on other errors.
  * @param   pThis       Pointer to the instance data.
  */
-static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
+static int drvR3IntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
 {
-    LogFlow(("drvIntNetAsyncIoWaitForSpace:\n"));
+    LogFlow(("drvR3IntNetAsyncIoWaitForSpace:\n"));
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-    int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+    int rc = pThis->pIPortR3->pfnWaitReceiveAvail(pThis->pIPortR3, RT_INDEFINITE_WAIT);
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    LogFlow(("drvIntNetAsyncIoWaitForSpace: returns %Rrc\n", rc));
+    LogFlow(("drvR3IntNetAsyncIoWaitForSpace: returns %Rrc\n", rc));
     return rc;
 }
 
@@ -401,17 +408,17 @@ static int drvIntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
  * @returns Appropriate VBox status code (error) on fatal error.
  * @param   pThis       The driver instance data.
  */
-static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
+static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
 {
-    PPDMDRVINS pDrvIns = pThis->pDrvIns;
-    LogFlow(("drvIntNetAsyncIoRun: pThis=%p\n", pThis));
+    PPDMDRVINS pDrvIns = pThis->pDrvInsR3;
+    LogFlow(("drvR3IntNetAsyncIoRun: pThis=%p\n", pThis));
 
     /*
      * The running loop - processing received data and waiting for more to arrive.
      */
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
-    PINTNETBUF      pBuf     = pThis->pBuf;
-    PINTNETRINGBUF  pRingBuf = &pThis->pBuf->Recv;
+    PINTNETBUF      pBuf     = pThis->pBufR3;
+    PINTNETRINGBUF  pRingBuf = &pBuf->Recv;
     for (;;)
     {
         /*
@@ -425,7 +432,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
             if (pThis->enmState != ASYNCSTATE_RUNNING)
             {
                 STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                LogFlow(("drvIntNetAsyncIoRun: returns VERR_STATE_CHANGED (state changed - #0)\n"));
+                LogFlow(("drvR3IntNetAsyncIoRun: returns VERR_STATE_CHANGED (state changed - #0)\n"));
                 return VERR_STATE_CHANGED;
             }
 
@@ -438,19 +445,19 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                  * Check if there is room for the frame and pass it up.
                  */
                 size_t cbFrame = pHdr->cbFrame;
-                int rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, 0);
+                int rc = pThis->pIPortR3->pfnWaitReceiveAvail(pThis->pIPortR3, 0);
                 if (rc == VINF_SUCCESS)
                 {
 #ifdef LOG_ENABLED
                     uint64_t u64Now = RTTimeProgramNanoTS();
-                    LogFlow(("drvIntNetAsyncIoRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
+                    LogFlow(("drvR3IntNetAsyncIoRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
                              cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
                     pThis->u64LastReceiveTS = u64Now;
-                    Log2(("drvIntNetAsyncIoRun: cbFrame=%#x\n"
+                    Log2(("drvR3IntNetAsyncIoRun: cbFrame=%#x\n"
                           "%.*Rhxd\n",
                           cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
 #endif
-                    rc = pThis->pPort->pfnReceive(pThis->pPort, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
+                    rc = pThis->pIPortR3->pfnReceive(pThis->pIPortR3, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
                     AssertRC(rc);
 
                     /* skip to the next frame. */
@@ -461,7 +468,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                     /*
                      * Wait for sufficient space to become available and then retry.
                      */
-                    rc = drvIntNetAsyncIoWaitForSpace(pThis);
+                    rc = drvR3IntNetAsyncIoWaitForSpace(pThis);
                     if (RT_FAILURE(rc))
                     {
                         if (rc == VERR_INTERRUPTED)
@@ -476,7 +483,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
                         else
                         {
                             STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                            LogFlow(("drvIntNetAsyncIoRun: returns %Rrc (wait-for-space)\n", rc));
+                            LogFlow(("drvR3IntNetAsyncIoRun: returns %Rrc (wait-for-space)\n", rc));
                             return rc;
                         }
                     }
@@ -499,7 +506,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
         if (pThis->enmState != ASYNCSTATE_RUNNING)
         {
             STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-            LogFlow(("drvIntNetAsyncIoRun: returns VINF_SUCCESS (state changed - #1)\n"));
+            LogFlow(("drvR3IntNetAsyncIoRun: returns VINF_SUCCESS (state changed - #1)\n"));
             return VERR_STATE_CHANGED;
         }
         INTNETIFWAITREQ WaitReq;
@@ -514,7 +521,7 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
             &&  rc != VERR_TIMEOUT
             &&  rc != VERR_INTERRUPTED)
         {
-            LogFlow(("drvIntNetAsyncIoRun: returns %Rrc\n", rc));
+            LogFlow(("drvR3IntNetAsyncIoRun: returns %Rrc\n", rc));
             return rc;
         }
         STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
@@ -529,10 +536,10 @@ static int drvIntNetAsyncIoRun(PDRVINTNET pThis)
  * @param   ThreadSelf      Thread handle.
  * @param   pvUser          Pointer to a DRVINTNET structure.
  */
-static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) drvR3IntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     PDRVINTNET pThis = (PDRVINTNET)pvUser;
-    LogFlow(("drvIntNetAsyncIoThread: pThis=%p\n", pThis));
+    LogFlow(("drvR3IntNetAsyncIoThread: pThis=%p\n", pThis));
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
     /*
@@ -549,7 +556,7 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
                 if (    RT_FAILURE(rc)
                     &&  rc != VERR_TIMEOUT)
                 {
-                    LogFlow(("drvIntNetAsyncIoThread: returns %Rrc\n", rc));
+                    LogFlow(("drvR3IntNetAsyncIoThread: returns %Rrc\n", rc));
                     return rc;
                 }
                 break;
@@ -557,11 +564,11 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
 
             case ASYNCSTATE_RUNNING:
             {
-                int rc = drvIntNetAsyncIoRun(pThis);
+                int rc = drvR3IntNetAsyncIoRun(pThis);
                 if (    rc != VERR_STATE_CHANGED
                     &&  RT_FAILURE(rc))
                 {
-                    LogFlow(("drvIntNetAsyncIoThread: returns %Rrc\n", rc));
+                    LogFlow(("drvR3IntNetAsyncIoThread: returns %Rrc\n", rc));
                     return rc;
                 }
                 break;
@@ -570,40 +577,42 @@ static DECLCALLBACK(int) drvIntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvUse
             default:
                 AssertMsgFailed(("Invalid state %d\n", enmState));
             case ASYNCSTATE_TERMINATE:
-                LogFlow(("drvIntNetAsyncIoThread: returns VINF_SUCCESS\n"));
+                LogFlow(("drvR3IntNetAsyncIoThread: returns VINF_SUCCESS\n"));
                 return VINF_SUCCESS;
         }
     }
 }
 
+/* -=-=-=-=- PDMINETWORKCONNECTOR -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvIntNetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) drvR3IntNetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVINTNET pThis   = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnectorR3);
     return NULL;
 }
 
+/* -=-=-=-=- PDMDRVREG -=-=-=-=- */
 
 /**
  * Power Off notification.
  *
  * @param   pDrvIns     The driver instance.
  */
-static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvR3IntNetPowerOff(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvIntNetPowerOff\n"));
+    LogFlow(("drvR3IntNetPowerOff\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
-        drvIntNetSetActive(pThis, false /* fActive */);
+        drvR3IntNetSetActive(pThis, false /* fActive */);
     }
 }
 
@@ -613,19 +622,19 @@ static DECLCALLBACK(void) drvIntNetPowerOff(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance.
  */
-static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvIntNetPowerResume\n"));
+    LogFlow(("drvR3IntNetPowerResume\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
-        drvIntNetUpdateMacAddress(pThis); /* (could be a state restore) */
-        drvIntNetSetActive(pThis, true /* fActive */);
+        drvR3IntNetUpdateMacAddress(pThis); /* (could be a state restore) */
+        drvR3IntNetSetActive(pThis, true /* fActive */);
     }
     if (   PDMDrvHlpVMTeleportedAndNotFullyResumedYet(pDrvIns)
-        && pThis->pConfigIf)
+        && pThis->pIConfigIfR3)
     {
         /*
          * We've just been teleported and need to drop a hint to the switch
@@ -644,9 +653,9 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
         Frame.Hdr.DstMac.au16[1] = 0xffff;
         Frame.Hdr.DstMac.au16[2] = 0xffff;
         Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
-        int rc = pThis->pConfigIf->pfnGetMac(pThis->pConfigIf, &Frame.Hdr.SrcMac);
+        int rc = pThis->pIConfigIfR3->pfnGetMac(pThis->pIConfigIfR3, &Frame.Hdr.SrcMac);
         if (RT_SUCCESS(rc))
-            rc = drvIntNetSend(&pThis->INetworkConnector, &Frame, sizeof(Frame));
+            rc = drvR3IntNetSend(&pThis->INetworkConnectorR3, &Frame, sizeof(Frame));
         if (RT_FAILURE(rc))
             LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
     }
@@ -658,14 +667,14 @@ static DECLCALLBACK(void) drvIntNetResume(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance.
  */
-static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvR3IntNetSuspend(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvIntNetPowerSuspend\n"));
+    LogFlow(("drvR3IntNetPowerSuspend\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_SUSPENDED);
-        drvIntNetSetActive(pThis, false /* fActive */);
+        drvR3IntNetSetActive(pThis, false /* fActive */);
     }
 }
 
@@ -675,16 +684,16 @@ static DECLCALLBACK(void) drvIntNetSuspend(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance.
  */
-static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvR3IntNetPowerOn(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvIntNetPowerOn\n"));
+    LogFlow(("drvR3IntNetPowerOn\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
-        drvIntNetUpdateMacAddress(pThis);
-        drvIntNetSetActive(pThis, true /* fActive */);
+        drvR3IntNetUpdateMacAddress(pThis);
+        drvR3IntNetSetActive(pThis, true /* fActive */);
     }
 }
 
@@ -697,9 +706,9 @@ static DECLCALLBACK(void) drvIntNetPowerOn(PPDMDRVINS pDrvIns)
  *
  * @param   pDrvIns     The driver instance data.
  */
-static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
+static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
 {
-    LogFlow(("drvIntNetDestruct\n"));
+    LogFlow(("drvR3IntNetDestruct\n"));
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     /*
@@ -746,12 +755,12 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
     /*
      * Deregister statistics in case we're being detached.
      */
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cbStatRecv);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cbStatSend);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatRecvs);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatSends);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatLost);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBuf->cStatYieldsNok);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cbStatRecv);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cbStatSend);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatRecvs);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatSends);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
@@ -764,7 +773,7 @@ static DECLCALLBACK(void) drvIntNetDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
 {
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
@@ -772,18 +781,18 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                      = pDrvIns;
-    pThis->hIf                          = INTNET_HANDLE_INVALID;
-    pThis->Thread                       = NIL_RTTHREAD;
-    pThis->EventSuspended               = NIL_RTSEMEVENT;
-    pThis->enmState                     = ASYNCSTATE_SUSPENDED;
-    pThis->fActivateEarlyDeactivateLate = false;
+    pThis->pDrvInsR3                                = pDrvIns;
+    pThis->hIf                                      = INTNET_HANDLE_INVALID;
+    pThis->Thread                                   = NIL_RTTHREAD;
+    pThis->EventSuspended                           = NIL_RTSEMEVENT;
+    pThis->enmState                                 = ASYNCSTATE_SUSPENDED;
+    pThis->fActivateEarlyDeactivateLate             = false;
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvIntNetQueryInterface;
+    pDrvIns->IBase.pfnQueryInterface                = drvR3IntNetQueryInterface;
     /* INetwork */
-    pThis->INetworkConnector.pfnSend                = drvIntNetSend;
-    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvIntNetSetPromiscuousMode;
-    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvIntNetNotifyLinkChanged;
+    pThis->INetworkConnectorR3.pfnSend              = drvR3IntNetSend;
+    pThis->INetworkConnectorR3.pfnSetPromiscuousMode= drvR3IntNetSetPromiscuousMode;
+    pThis->INetworkConnectorR3.pfnNotifyLinkChanged = drvR3IntNetNotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -817,13 +826,13 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     /*
      * Query the network port interface.
      */
-    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
-    if (!pThis->pPort)
+    pThis->pIPortR3 = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
+    if (!pThis->pIPortR3)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-    pThis->pConfigIf = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
+    pThis->pIConfigIfR3 = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
 
     /*
      * Read the configuration.
@@ -1080,25 +1089,25 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
         return PDMDrvHlpVMSetError(pDrvIns, rc, RT_SRC_POS,
                                    N_("Failed to get ring-3 buffer for the newly created interface to '%s'"), pThis->szNetwork);
     AssertRelease(VALID_PTR(GetRing3BufferReq.pRing3Buf));
-    pThis->pBuf = GetRing3BufferReq.pRing3Buf;
+    pThis->pBufR3 = GetRing3BufferReq.pRing3Buf;
 
     /*
      * Create the async I/O thread.
      * Note! Using a PDM thread here doesn't fit with the IsService=true operation.
      */
-    rc = RTThreadCreate(&pThis->Thread, drvIntNetAsyncIoThread, pThis, _128K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET");
+    rc = RTThreadCreate(&pThis->Thread, drvR3IntNetAsyncIoThread, pThis, _128K, RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "INTNET");
     if (RT_FAILURE(rc))
     {
         AssertRC(rc);
         return rc;
     }
 
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cbStatRecv,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cbStatSend,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatRecvs,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatSends,       STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatLost,        STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBuf->cStatYieldsNok,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.",  "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cbStatRecv,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cbStatSend,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatRecvs,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatSends,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsNok, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.",  "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,            STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,           STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Net/IntNet%d/Transmit", pDrvIns->iInstance);
@@ -1111,8 +1120,8 @@ static DECLCALLBACK(int) drvIntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHa
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
         RTSemEventSignal(pThis->EventSuspended);
-        drvIntNetUpdateMacAddress(pThis);
-        drvIntNetSetActive(pThis, true /* fActive */);
+        drvR3IntNetUpdateMacAddress(pThis);
+        drvR3IntNetSetActive(pThis, true /* fActive */);
     }
 
    return rc;
@@ -1129,13 +1138,17 @@ const PDMDRVREG g_DrvIntNet =
     /* szDriverName */
     "IntNet",
     /* szRCMod */
-    "",
+    "VBoxDD",
     /* szR0Mod */
-    "",
+    "VBoxDD",
     /* pszDescription */
     "Internal Networking Transport Driver",
     /* fFlags */
+#ifdef VBOX_WITH_R0_AND_RC_DRIVERS
+    PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DRVREG_FLAGS_R0 | PDM_DRVREG_FLAGS_RC,
+#else
     PDM_DRVREG_FLAGS_HOST_BITS_DEFAULT,
+#endif
     /* fClass. */
     PDM_DRVREG_CLASS_NETWORK,
     /* cMaxInstances */
@@ -1143,30 +1156,32 @@ const PDMDRVREG g_DrvIntNet =
     /* cbInstance */
     sizeof(DRVINTNET),
     /* pfnConstruct */
-    drvIntNetConstruct,
+    drvR3IntNetConstruct,
     /* pfnDestruct */
-    drvIntNetDestruct,
+    drvR3IntNetDestruct,
     /* pfnRelocate */
     NULL,
     /* pfnIOCtl */
     NULL,
     /* pfnPowerOn */
-    drvIntNetPowerOn,
+    drvR3IntNetPowerOn,
     /* pfnReset */
     NULL,
     /* pfnSuspend */
-    drvIntNetSuspend,
+    drvR3IntNetSuspend,
     /* pfnResume */
-    drvIntNetResume,
+    drvR3IntNetResume,
     /* pfnAttach */
     NULL,
     /* pfnDetach */
     NULL,
     /* pfnPowerOff */
-    drvIntNetPowerOff,
+    drvR3IntNetPowerOff,
     /* pfnSoftReset */
     NULL,
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+
+#endif /* IN_RING3 */
 
