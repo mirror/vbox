@@ -576,7 +576,9 @@ static int oss_init_out (HWVoiceOut *hw, audsettings_t *as)
             oss_logerr (errno, "Failed to map %d bytes of DAC\n",
                         hw->samples << hw->info.shift);
         } else {
+# ifndef VBOX /* -Wshadow */
             int err;
+# endif
             int trig = 0;
             if (ioctl (fd, SNDCTL_DSP_SETTRIGGER, &trig) < 0) {
                 oss_logerr (errno, "SNDCTL_DSP_SETTRIGGER 0 failed\n");
