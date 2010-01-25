@@ -3067,19 +3067,8 @@ static void atapiParseCmdVirtualATAPI(ATADevState *s)
             break;
         case SCSI_READ_DVD_STRUCTURE:
         {
-            /* Only available for ICH6 for now. */
-            PCIATAState *pDevice = PDMINS_2_DATA(s->CTX_SUFF(pDevIns), PCIATAState *);
-
-            if (   (PCIDevGetVendorId(&pDevice->dev) == 0x8086)
-                && (PCIDevGetDeviceId(&pDevice->dev) == 0x269e))
-            {
-                cbMax = ataBE2H_U16(pbPacket + 8);
-                ataStartTransfer(s, RT_MIN(cbMax, 4), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DVD_STRUCTURE, true);
-            }
-            else
-            {
-                atapiCmdErrorSimple(s, SCSI_SENSE_ILLEGAL_REQUEST, SCSI_ASC_ILLEGAL_OPCODE);
-            }
+            cbMax = ataBE2H_U16(pbPacket + 8);
+            ataStartTransfer(s, RT_MIN(cbMax, 4), PDMBLOCKTXDIR_FROM_DEVICE, ATAFN_BT_ATAPI_CMD, ATAFN_SS_ATAPI_READ_DVD_STRUCTURE, true);
             break;
         }
         default:
