@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
         {        50,          0,    NULL,  7 },  // 20
         {        16,          0,    NULL,  7 },
     };
-    unsigned i;
+    uint32_t i;
     RTHeapOffsetDump(Heap, (PFNRTHEAPOFFSETPRINTF)RTPrintf); /** @todo Add some detail info output with a signature identical to RTPrintf. */
     size_t cbBefore = RTHeapOffsetGetFreeSize(Heap);
     static char const s_szFill[] = "01234567890abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
 
     for (unsigned iTest = 0; iTest < 131072; iTest++)
     {
-        uint32_t i = RTRandAdvU32Ex(hRand, 0, RT_ELEMENTS(s_aHistory) - 1);
+        i = RTRandAdvU32Ex(hRand, 0, RT_ELEMENTS(s_aHistory) - 1);
         if (!s_aHistory[i].pv)
         {
             uint32_t uAlignment = 1 << RTRandAdvU32Ex(hRand, 0, 7);
@@ -262,13 +262,13 @@ int main(int argc, char *argv[])
         if ((iTest % 7777) == 7776)
         {
             /* exhaust the heap */
-            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap) >= 256; i++)
+            for (i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap) >= 256; i++)
                 if (!s_aHistory[i].pv)
                 {
                     s_aHistory[i].cb = RTRandAdvU32Ex(hRand, 256, 16384);
                     s_aHistory[i].pv = RTHeapOffsetAlloc(Heap, s_aHistory[i].cb, 0);
                 }
-            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap); i++)
+            for (i = 0; i < RT_ELEMENTS(s_aHistory) && RTHeapOffsetGetFreeSize(Heap); i++)
             {
                 if (!s_aHistory[i].pv)
                 {
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
         else if ((iTest % 7777) == 1111)
         {
             /* free all */
-            for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory); i++)
+            for (i = 0; i < RT_ELEMENTS(s_aHistory); i++)
             {
                 RTHeapOffsetFree(Heap, s_aHistory[i].pv);
                 s_aHistory[i].pv = NULL;
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
     }
 
     /* free the rest. */
-    for (unsigned i = 0; i < RT_ELEMENTS(s_aHistory); i++)
+    for (i = 0; i < RT_ELEMENTS(s_aHistory); i++)
     {
         RTHeapOffsetFree(Heap, s_aHistory[i].pv);
         s_aHistory[i].pv = NULL;
