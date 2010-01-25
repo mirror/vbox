@@ -261,7 +261,6 @@ static int vbsfBuildFullPath (SHFLCLIENTDATA *pClient, SHFLROOT root, PSHFLSTRIN
 
     if (BIT_FLAG(pClient->fu32Flags, SHFL_CF_UTF8))
     {
-        int rc;
         char *utf8Root;
 
         /* Verify that the path is under the root directory. */
