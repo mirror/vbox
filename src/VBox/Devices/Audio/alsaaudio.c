@@ -823,11 +823,11 @@ static int alsa_init_out (HWVoiceOut *hw, audsettings_t *as)
     return 0;
 }
 
-static int alsa_voice_ctl (snd_pcm_t *handle, const char *typ, int pause)
+static int alsa_voice_ctl (snd_pcm_t *handle, const char *typ, int pauseit) /* VBOX: s/pause/pauseit/; -Wshadow */
 {
     int err;
 
-    if (pause) {
+    if (pauseit) {
         err = snd_pcm_drop (handle);
         if (err < 0) {
             alsa_logerr (err, "Could not stop %s\n", typ);
