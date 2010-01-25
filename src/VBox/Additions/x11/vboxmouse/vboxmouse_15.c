@@ -76,8 +76,8 @@ VBoxReadInput(InputInfoPtr pInfo)
 #if ABI_XINPUT_VERSION == SET_ABI_VERSION(2, 0)
         /* Bug in the 1.4 X server series - conversion_proc was no longer
          * called, but the server didn't yet do the conversion itself. */
-        cx = xf86ScaleAxis(cx, 0, screenInfo.screens[0]->width, 0, 65536);
-        cy = xf86ScaleAxis(cy, 0, screenInfo.screens[0]->height, 0, 65536);
+        cx = (cx * screenInfo.screens[0]->width) / 65535;
+        cy = (cy * screenInfo.screens[0]->height) / 65535;
 #endif
         /* send absolute movement */
         xf86PostMotionEvent(pInfo->dev, 1, 0, 2, cx, cy);
@@ -95,35 +95,27 @@ VBoxInit(DeviceIntPtr device)
     CARD8 map[2] = { 0, 1 };
     Atom axis_labels[2] = { 0, 0 };
     Atom button_labels[2] = { 0, 0 };
-    InputInfoPtr pInfo;
-
-    pInfo = device->public.devicePrivate;
-    if (!InitValuatorClassDeviceStruct(device, 2,
+    if (!InitPointerDeviceStruct((DevicePtr)device, map, 2,
+#if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
+                                 button_labels,
+#endif
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 2
-                                       miPointerGetMotionEvents,
-                                       miPointerGetMotionBufferSize(),
+                                 miPointerGetMotionEvents, VBoxPtrCtrlProc,
+                                 miPointerGetMotionBufferSize()
 #elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
-                                       GetMotionHistory,
-                                       GetMotionHistorySize(),
-#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 7
-                                       GetMotionHistorySize(),
-#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
-                                       axis_labels,
-                                       GetMotionHistorySize(),
+                                 GetMotionHistory, VBoxPtrCtrlProc, 
+                                 GetMotionHistorySize(), 2 /* Number of axes */
+
+#elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3
+                                 VBoxPtrCtrlProc, GetMotionHistorySize(),
+								 2 /* Number of axes */
 #else
 # error Unsupported version of X.Org
 #endif
-                                       Absolute))
-        return !Success;
-
-    /* Pretend we have buttons so the server accepts us as a pointing device. */
-    if (!InitButtonClassDeviceStruct(device, 2, /* number of buttons */
 #if GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 7
-                                     button_labels,
+                                 , axis_labels
 #endif
-                                     map))
-        return !Success;
-    if (!InitPtrFeedbackClassDeviceStruct(device, VBoxPtrCtrlProc))
+                                 ))
         return !Success;
 
     /* Tell the server about the range of axis values we report */
@@ -147,7 +139,7 @@ VBoxInit(DeviceIntPtr device)
 #endif
     xf86InitValuatorDefaults(device, 0);
     xf86InitValuatorDefaults(device, 1);
-    xf86MotionHistoryAllocate(pInfo);
+    xf86MotionHistoryAllocate(device->public.devicePrivate);
 
     return Success;
 }

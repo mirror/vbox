@@ -91,3 +91,4 @@ miPointerGetMotionEvents
 miPointerGetMotionBufferSize
 miPointerCurrentScreen
 screenInfo
+InitPointerDeviceStruct
