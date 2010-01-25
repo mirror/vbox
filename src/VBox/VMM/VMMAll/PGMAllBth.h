@@ -1016,8 +1016,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     {
         AssertMsg(rc == VERR_PAGE_DIRECTORY_PTR_NOT_PRESENT || rc == VERR_PAGE_MAP_LEVEL4_NOT_PRESENT, ("Unexpected rc=%Rrc\n", rc));
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
-        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
     Assert(pPDDst);
@@ -1028,8 +1026,6 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     if (!pPdpeDst->n.u1Present)
     {
         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePageSkipped));
-        if (!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-            PGM_INVL_VCPU_TLBS(pVCpu);
         return VINF_SUCCESS;
     }
 
@@ -1100,102 +1096,14 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
     }
 # endif /* IN_RING3 */
 
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPdpt = pgmPoolGetPage(pPool, pPml4eDst->u & X86_PML4E_PG_MASK);
-    Assert(pShwPdpt);
-
-    /* Fetch the pgm pool shadow descriptor. */
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
-    Assert(pShwPde);
-
-    Assert(pPml4eDst->n.u1Present && (pPml4eDst->u & SHW_PDPT_MASK));
-    RTGCPHYS GCPhysPdpt = pPml4eSrc->u & X86_PML4E_PG_MASK;
-
-    if (    !pPml4eSrc->n.u1Present
-        ||  pShwPdpt->GCPhys != GCPhysPdpt)
-    {
-        LogFlow(("InvalidatePage: Out-of-sync PML4E (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
-                 GCPtrPage, pShwPdpt->GCPhys, GCPhysPdpt, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        ASMAtomicWriteSize(pPml4eDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-        return VINF_SUCCESS;
-    }
-    if (   pPml4eSrc->n.u1User != pPml4eDst->n.u1User
-        || (!pPml4eSrc->n.u1Write && pPml4eDst->n.u1Write))
-    {
-        /*
-         * Mark not present so we can resync the PML4E when it's used.
-         */
-        LogFlow(("InvalidatePage: Out-of-sync PML4E at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
-                 GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        ASMAtomicWriteSize(pPml4eDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-    }
-    else if (!pPml4eSrc->n.u1Accessed)
-    {
-        /*
-         * Mark not present so we can set the accessed bit.
-         */
-        LogFlow(("InvalidatePage: Out-of-sync PML4E (A) at %RGv Pml4eSrc=%RX64 Pml4eDst=%RX64\n",
-                 GCPtrPage, (uint64_t)pPml4eSrc->u, (uint64_t)pPml4eDst->u));
-        pgmPoolFreeByPage(pPool, pShwPdpt, pVCpu->pgm.s.CTX_SUFF(pShwPageCR3)->idx, iPml4);
-        ASMAtomicWriteSize(pPml4eDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-    }
-
-    /* Check if the PDPT entry has changed. */
-    Assert(pPdpeDst->n.u1Present && pPdpeDst->u & SHW_PDPT_MASK);
-    RTGCPHYS GCPhysPd = PdpeSrc.u & GST_PDPE_PG_MASK;
-    if (    !PdpeSrc.n.u1Present
-        ||  pShwPde->GCPhys != GCPhysPd)
-    {
-        LogFlow(("InvalidatePage: Out-of-sync PDPE (P/GCPhys) at %RGv GCPhys=%RGp vs %RGp PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                    GCPtrPage, pShwPde->GCPhys, GCPhysPd, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-        pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        ASMAtomicWriteSize(pPdpeDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNPs));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-        return VINF_SUCCESS;
-    }
-    if (   PdpeSrc.lm.u1User != pPdpeDst->lm.u1User
-        || (!PdpeSrc.lm.u1Write && pPdpeDst->lm.u1Write))
-    {
-        /*
-         * Mark not present so we can resync the PDPTE when it's used.
-         */
-        LogFlow(("InvalidatePage: Out-of-sync PDPE at %RGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                 GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-        pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        ASMAtomicWriteSize(pPdpeDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-    }
-    else if (!PdpeSrc.lm.u1Accessed)
-    {
-        /*
-         * Mark not present so we can set the accessed bit.
-         */
-        LogFlow(("InvalidatePage: Out-of-sync PDPE (A) at %RGv PdpeSrc=%RX64 PdpeDst=%RX64\n",
-                 GCPtrPage, (uint64_t)PdpeSrc.u, (uint64_t)pPdpeDst->u));
-        pgmPoolFreeByPage(pPool, pShwPde, pShwPdpt->idx, iPdpt);
-        ASMAtomicWriteSize(pPdpeDst, 0);
-        STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-        PGM_INVL_VCPU_TLBS(pVCpu);
-    }
-# endif /* PGM_GST_TYPE == PGM_TYPE_AMD64 */
-
     /*
      * Deal with the Guest PDE.
      */
     rc = VINF_SUCCESS;
     if (PdeSrc.n.u1Present)
     {
+        Assert(     PdeSrc.n.u1User == PdeDst.n.u1User
+               &&   (PdeSrc.n.u1Write || !PdeDst.n.u1Write));
 # ifndef PGM_WITHOUT_MAPPING
         if (PdeDst.u & PGM_PDFLAGS_MAPPING)
         {
@@ -1210,32 +1118,7 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         }
         else
 # endif /* !PGM_WITHOUT_MAPPING */
-        if (   PdeSrc.n.u1User != PdeDst.n.u1User
-            || (!PdeSrc.n.u1Write && PdeDst.n.u1Write))
-        {
-            /*
-             * Mark not present so we can resync the PDE when it's used.
-             */
-            LogFlow(("InvalidatePage: Out-of-sync at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
-                     GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            ASMAtomicWriteSize(pPdeDst, 0);
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDOutOfSync));
-            PGM_INVL_VCPU_TLBS(pVCpu);
-        }
-        else if (!PdeSrc.n.u1Accessed)
-        {
-            /*
-             * Mark not present so we can set the accessed bit.
-             */
-            LogFlow(("InvalidatePage: Out-of-sync (A) at %RGp PdeSrc=%RX64 PdeDst=%RX64\n",
-                     GCPtrPage, (uint64_t)PdeSrc.u, (uint64_t)PdeDst.u));
-            pgmPoolFree(pVM, PdeDst.u & SHW_PDE_PG_MASK, pShwPde->idx, iPDDst);
-            ASMAtomicWriteSize(pPdeDst, 0);
-            STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,InvalidatePagePDNAs));
-            PGM_INVL_VCPU_TLBS(pVCpu);
-        }
-        else if (!fIsBigPage)
+        if (!fIsBigPage)
         {
             /*
              * 4KB - page.

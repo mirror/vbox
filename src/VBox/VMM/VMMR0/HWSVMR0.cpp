@@ -1711,8 +1711,20 @@ ResumeExecution:
                 STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
                 TRPMResetTrap(pVCpu);
-
                 STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
+
+                /* Check if a sync operation is pending. */
+                if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
+                {
+                    rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+                    AssertRC(rc);
+                    if (rc != VINF_SUCCESS)
+                    {
+                        Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
+                        break;
+                    }
+                }                   
+
                 goto ResumeExecution;
             }
             else
@@ -1883,6 +1895,8 @@ ResumeExecution:
             STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitShadowPF);
 
             TRPMResetTrap(pVCpu);
+
+            Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
 
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
