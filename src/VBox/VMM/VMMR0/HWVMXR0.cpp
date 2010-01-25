@@ -2916,7 +2916,7 @@ ResumeExecution:
                             Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
                             break;
                         }
-                    }                   
+                    }
                     goto ResumeExecution;
                 }
                 else
@@ -4071,14 +4071,14 @@ ResumeExecution:
         VMXReadVMCS(VMX_VMCS_GUEST_RFLAGS, &val2);
         Log(("VMX_VMCS_GUEST_RFLAGS     %08x\n", val2));
 
-        VMX_LOG_SELREG(CS, "CS");
-        VMX_LOG_SELREG(DS, "DS");
-        VMX_LOG_SELREG(ES, "ES");
-        VMX_LOG_SELREG(FS, "FS");
-        VMX_LOG_SELREG(GS, "GS");
-        VMX_LOG_SELREG(SS, "SS");
-        VMX_LOG_SELREG(TR, "TR");
-        VMX_LOG_SELREG(LDTR, "LDTR");
+        VMX_LOG_SELREG(CS, "CS", val2);
+        VMX_LOG_SELREG(DS, "DS", val2);
+        VMX_LOG_SELREG(ES, "ES", val2);
+        VMX_LOG_SELREG(FS, "FS", val2);
+        VMX_LOG_SELREG(GS, "GS", val2);
+        VMX_LOG_SELREG(SS, "SS", val2);
+        VMX_LOG_SELREG(TR, "TR", val2);
+        VMX_LOG_SELREG(LDTR, "LDTR", val2);
 
         VMXReadVMCS(VMX_VMCS64_GUEST_GDTR_BASE, &val2);
         Log(("VMX_VMCS_GUEST_GDTR_BASE    %RX64\n", (uint64_t)val2));
