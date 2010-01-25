@@ -344,32 +344,32 @@ vboxInitVbva(int scrnIndex, ScreenPtr pScreen, VBOXPtr pVBox)
         }
     }
 #else
-    PCITAG pciTag;
-    ADDRESS pciAddress;
+    PCITAG pciTagDev;
+    ADDRESS pciAddrDev;
 
     TRACE_ENTRY();
     /* Locate the device.  It should already have been enabled by
        the kernel driver. */
-    pciTag = pciFindFirst((unsigned) VMMDEV_DEVICEID << 16 | VMMDEV_VENDORID,
-                          (CARD32) ~0);
-    if (pciTag == PCI_NOT_FOUND)
+    pciTagDev = pciFindFirst((unsigned) VMMDEV_DEVICEID << 16 | VMMDEV_VENDORID,
+                             (CARD32) ~0);
+    if (pciTagDev == PCI_NOT_FOUND)
     {
         xf86DrvMsg(scrnIndex, X_ERROR,
                    "Could not find the VirtualBox base device on the PCI bus.\n");
         return FALSE;
     }
     /* Read the address and size of the second I/O region. */
-    pciAddress = pciReadLong(pciTag, PCI_MAP_REG_START + 4);
-    if (pciAddress == 0 || pciAddress == (CARD32) ~0)
+    pciAddrDev = pciReadLong(pciTagDev, PCI_MAP_REG_START + 4);
+    if (pciAddrDev == 0 || pciAddrDev == (CARD32) ~0)
         RETERROR(scrnIndex, FALSE,
                  "The VirtualBox base device contains an invalid memory address.\n");
-    if (PCI_MAP_IS64BITMEM(pciAddress))
+    if (PCI_MAP_IS64BITMEM(pciAddrDev))
         RETERROR(scrnIndex, FALSE,
                  "The VirtualBox base device has a 64bit mapping address.  "
                  "This is currently not supported.\n");
     /* Map it.  We hardcode the size as X does not export the
        function needed to determine it. */
-    pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTag, pciAddress,
+    pVBox->pVMMDevMemory = xf86MapPciMem(scrnIndex, 0, pciTagDev, pciAddrDev,
                                          sizeof(VMMDevMemory));
 #endif
     if (pVBox->pVMMDevMemory == NULL)
