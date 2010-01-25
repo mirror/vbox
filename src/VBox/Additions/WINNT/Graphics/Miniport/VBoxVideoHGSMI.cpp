@@ -644,7 +644,11 @@ void VBoxSetupVideoPortFunctions(PDEVICE_EXTENSION PrimaryExtension, VBOXVIDEOPO
  * HGSMI variant is a bit different because it uses only HGSMI interface (VBVA channel)
  * to talk to the host.
  */
-VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension, PVIDEO_PORT_CONFIG_INFO pConfigInfo, ULONG AdapterMemorySize)
+VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
+#ifndef VBOXWDDM
+        PVIDEO_PORT_CONFIG_INFO pConfigInfo,
+#endif
+        ULONG AdapterMemorySize)
 {
     VP_STATUS rc = NO_ERROR;
 

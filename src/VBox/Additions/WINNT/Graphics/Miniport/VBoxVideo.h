@@ -200,6 +200,9 @@ typedef struct _DEVICE_EXTENSION
 # ifndef VBOXWDDM
            /* Video Port API dynamically picked up at runtime for binary backwards compatibility with older NT versions */
            VBOXVIDEOPORTPROCS VideoPortProcs;
+# else
+           /* Display Port handle and callbacks */
+           DXGKRNL_INTERFACE DxgkInterface;
 # endif
 #endif /* VBOX_WITH_HGSMI */
        } primary;
@@ -561,7 +564,9 @@ DECLINLINE(ULONG) VBoxHGSMIGuestRead(PDEVICE_EXTENSION PrimaryExtension)
 BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
 
 VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
+#ifndef VBOXWDDM
                              PVIDEO_PORT_CONFIG_INFO pConfigInfo,
+#endif
                              ULONG AdapterMemorySize);
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,

@@ -15,6 +15,9 @@
  */
 
 #include "../VBoxVideo.h"
+#include "../Helper.h"
+
+#include <VBox/VBoxGuestLib.h>
 
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
@@ -35,6 +38,78 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDeviceInfo, PULONG pAdapterMemorySize)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    USHORT DispiId;
+    *pAdapterMemorySize = VBE_DISPI_TOTAL_VIDEO_MEMORY_BYTES;
+
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ID);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ID2);
+    DispiId = VBoxVideoCmnPortReadUshort((PUSHORT)VBE_DISPI_IOPORT_DATA);
+    if (DispiId == VBE_DISPI_ID2)
+    {
+       dprintf(("VBoxVideoWddm: found the VBE card\n"));
+       /*
+        * Write some hardware information to registry, so that
+        * it's visible in Windows property dialog.
+        */
+
+       /*
+        * Query the adapter's memory size. It's a bit of a hack, we just read
+        * an ULONG from the data port without setting an index before.
+        */
+       *pAdapterMemorySize = VBoxVideoCmnPortReadUlong((PULONG)VBE_DISPI_IOPORT_DATA);
+       if (VBoxHGSMIIsSupported (pContext))
+       {
+           pContext->u.primary.IOPortHost = (RTIOPORT)VGA_PORT_HGSMI_HOST;
+           pContext->u.primary.IOPortGuest = (RTIOPORT)VGA_PORT_HGSMI_GUEST;
+
+           PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
+           /* @todo: verify resources */
+           for(ULONG i = 0; i < pRcList->Count; ++i)
+           {
+               PCM_FULL_RESOURCE_DESCRIPTOR pFRc = &pRcList->List[i];
+               for(ULONG j = 0; j < pFRc->PartialResourceList.Count; ++j)
+               {
+                   PCM_PARTIAL_RESOURCE_DESCRIPTOR pPRc = &pFRc->PartialResourceList.PartialDescriptors[j];
+                   switch(pPRc->Type)
+                   {
+                       case CmResourceTypePort:
+                           break;
+                       case CmResourceTypeInterrupt:
+                           break;
+                       case CmResourceTypeMemory:
+                           break;
+                       case CmResourceTypeDma:
+                           break;
+                       case CmResourceTypeDeviceSpecific:
+                           break;
+                       case CmResourceTypeBusNumber:
+                           break;
+                       default:
+                           break;
+                   }
+               }
+           }
+       }
+       else
+       {
+           drprintf(("VBoxVideoWddm: HGSMI unsupported, returning err\n"));
+           /* @todo: report a better status */
+           Status = STATUS_UNSUCCESSFUL;
+       }
+    }
+    else
+    {
+        drprintf(("VBoxVideoWddm:: VBE card not found, returning err\n"));
+        Status = STATUS_UNSUCCESSFUL;
+    }
+
+
+    return Status;
+}
+
 /* driver callbacks */
 
 NTSTATUS DxgkDdiAddDevice(
@@ -42,86 +117,24 @@ NTSTATUS DxgkDdiAddDevice(
     OUT PVOID *MiniportDeviceContext
     )
 {
+    /* The DxgkDdiAddDevice function should be made pageable. */
     PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", pdo(0x%x)\n", PhysicalDeviceObject));
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof(DEVICE_EXTENSION));
     if(pContext)
     {
-        char guessBuffer[128];
-        PVOID pvBuf = guessBuffer;
-        ULONG cbBuf = sizeof(guessBuffer);
-        ULONG cbBufUsed = 0;
-        bool bFreeBuf = false;
-
-        do
-        {
-            Status = IoGetDeviceProperty(PhysicalDeviceObject,
-                    DevicePropertyBootConfigurationTranslated,
-                    cbBuf,
-                    pvBuf,
-                    &cbBufUsed);
-            if(Status == STATUS_BUFFER_TOO_SMALL)
-            {
-                if(bFreeBuf)
-                    vboxWddmMemFree(pvBuf);
-
-                pvBuf = vboxWddmMemAlloc(cbBufUsed);
-                cbBuf = cbBufUsed;
-                bFreeBuf = true;
-            }
-            else
-            {
-                break;
-            }
-        } while(true);
-
-        if(Status == STATUS_SUCCESS)
-        {
-            PCM_RESOURCE_LIST pRcList = (PCM_RESOURCE_LIST)pvBuf;
-            for(ULONG i = 0; i < pRcList->Count; ++i)
-            {
-                PCM_FULL_RESOURCE_DESCRIPTOR pFRc = &pRcList->List[i];
-                for(ULONG j = 0; j < pFRc->PartialResourceList.Count; ++j)
-                {
-                    PCM_PARTIAL_RESOURCE_DESCRIPTOR pPRc = &pFRc->PartialResourceList.PartialDescriptors[j];
-                    switch(pPRc->Type)
-                    {
-                        case CmResourceTypePort:
-
-                            break;
-                        case CmResourceTypeInterrupt:
-                            break;
-                        case CmResourceTypeMemory:
-                            break;
-                        case CmResourceTypeDma:
-                            break;
-                        case CmResourceTypeDeviceSpecific:
-                            break;
-                        case CmResourceTypeBusNumber:
-                            break;
-                        default:
-                            break;
-                    }
-                }
-            }
-
-            if(bFreeBuf)
-                vboxWddmMemFree(pvBuf);
-
-            *MiniportDeviceContext = pContext;
-            return STATUS_SUCCESS;
-        }
-
-        if(bFreeBuf)
-            vboxWddmMemFree(pvBuf);
-
-        vboxWddmMemFree(pContext);
+        *MiniportDeviceContext = pContext;
     }
     else
     {
         Status  = STATUS_INSUFFICIENT_RESOURCES;
+        drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
     }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), pContext(0x%x)\n", Status, pContext));
 
     return Status;
 }
@@ -134,7 +147,78 @@ NTSTATUS DxgkDdiStartDevice(
     OUT PULONG  NumberOfChildren
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiStartDevice function should be made pageable. */
+    PAGED_CODE();
+
+    NTSTATUS Status;
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+
+    if ( ARGUMENT_PRESENT(MiniportDeviceContext) &&
+        ARGUMENT_PRESENT(DxgkInterface) &&
+        ARGUMENT_PRESENT(DxgkStartInfo) &&
+        ARGUMENT_PRESENT(NumberOfVideoPresentSources),
+        ARGUMENT_PRESENT(NumberOfChildren)
+        )
+    {
+        PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)MiniportDeviceContext;
+
+        /* Save DeviceHandle and function pointers supplied by the DXGKRNL_INTERFACE structure passed to DxgkInterface. */
+        memcpy(&pContext->u.primary.DxgkInterface, DxgkInterface, sizeof(DXGKRNL_INTERFACE));
+
+        /* Allocate a DXGK_DEVICE_INFO structure, and call DxgkCbGetDeviceInformation to fill in the members of that structure, which include the registry path, the PDO, and a list of translated resources for the display adapter represented by MiniportDeviceContext. Save selected members (ones that the display miniport driver will need later)
+         * of the DXGK_DEVICE_INFO structure in the context block represented by MiniportDeviceContext. */
+        DXGK_DEVICE_INFO DeviceInfo;
+        Status = pContext->u.primary.DxgkInterface.DxgkCbGetDeviceInformation (pContext->u.primary.DxgkInterface.DeviceHandle, &DeviceInfo);
+        if(Status == STATUS_SUCCESS)
+        {
+            ULONG AdapterMemorySize;
+            Status = vboxWddmPickResources(pContext, &DeviceInfo, &AdapterMemorySize);
+            if(Status == STATUS_SUCCESS)
+            {
+                /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
+                VbglInit ();
+
+                /* Guest supports only HGSMI, the old VBVA via VMMDev is not supported. Old
+                 * code will be ifdef'ed and later removed.
+                 * The host will however support both old and new interface to keep compatibility
+                 * with old guest additions.
+                 */
+                VBoxSetupDisplaysHGSMI(pContext, AdapterMemorySize);
+                if ((pContext)->u.primary.bHGSMI)
+                {
+                    drprintf(("VBoxVideoWddm: using HGSMI\n"));
+                    *NumberOfVideoPresentSources = pContext->u.primary.cDisplays;
+                    *NumberOfChildren = pContext->u.primary.cDisplays;
+                    dprintf(("VBoxVideoWddm: sources(%d), children(%d)\n", *NumberOfVideoPresentSources, *NumberOfChildren));
+                }
+                else
+                {
+                    drprintf(("VBoxVideoWddm: HGSMI failed to initialize, returning err\n"));
+                    /* @todo: report a better status */
+                    Status = STATUS_UNSUCCESSFUL;
+                }
+            }
+            else
+            {
+                drprintf(("VBoxVideoWddm:: vboxWddmPickResources failed Status(0x%x), returning err\n", Status));
+                Status = STATUS_UNSUCCESSFUL;
+            }
+        }
+        else
+        {
+            drprintf(("VBoxVideoWddm: DxgkCbGetDeviceInformation failed Status(0x%x), returning err\n", Status));
+        }
+    }
+    else
+    {
+        drprintf(("VBoxVideoWddm: invalid parameter, returning err\n"));
+        Status = STATUS_INVALID_PARAMETER;
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x)\n", Status));
+
+    return Status;
 }
 
 NTSTATUS DxgkDdiStopDevice(
@@ -229,7 +313,6 @@ VOID DxgkDdiResetDevice(
 {
 
 }
-
 
 VOID DxgkDdiUnload(
     VOID
@@ -666,6 +749,8 @@ DriverEntry(
     IN PUNICODE_STRING RegistryPath
     )
 {
+    dprintf(("VBoxVideoWddm::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
+
     DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
     PAGED_CODE();
