@@ -890,18 +890,27 @@ DxgkDdiEnumVidPnCofuncModality(
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn,
+            VBOXVIDPNCMCONTEXT CbContext = {0};
+            CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
+            Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
                     hVidPnTopology, pVidPnTopologyInterface,
-                    vboxVidPnAdjustSourcesTargetsCallback, (PVOID)pEnumCofuncModalityArg);
+                    vboxVidPnCofuncModalityPathEnum, &CbContext);
             Assert(Status == STATUS_SUCCESS);
-            if (Status != STATUS_SUCCESS)
-                drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n"));
+            if (Status == STATUS_SUCCESS)
+            {
+                Status = CbContext.Status;
+                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    drprintf((__FUNCTION__ ": vboxVidPnAdjustSourcesTargetsCallback failed Status(0x%x)\n", Status));
+            }
+            else
+                drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n", Status));
         }
         else
-            drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n"));
+            drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n", Status));
     }
     else
-        drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n"));
+        drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
