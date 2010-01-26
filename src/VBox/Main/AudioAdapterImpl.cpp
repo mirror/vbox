@@ -21,12 +21,14 @@
 
 #include "AudioAdapterImpl.h"
 #include "MachineImpl.h"
-#include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/cpp/utils.h>
 
 #include <VBox/settings.h>
+
+#include "AutoStateDep.h"
+#include "AutoCaller.h"
+#include "Logging.h"
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -193,7 +195,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(mParent);
+    AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -227,7 +229,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(mParent);
+    AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -311,7 +313,7 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(mParent);
+    AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

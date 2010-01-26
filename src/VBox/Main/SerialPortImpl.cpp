@@ -23,13 +23,15 @@
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
-#include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
 
 #include <VBox/settings.h>
+
+#include "AutoStateDep.h"
+#include "AutoCaller.h"
+#include "Logging.h"
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -215,7 +217,7 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -254,7 +256,7 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -350,7 +352,7 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -404,7 +406,7 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -450,7 +452,7 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -497,7 +499,7 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pMachine);
+    AutoMutableStateDependency adep(m->pMachine);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

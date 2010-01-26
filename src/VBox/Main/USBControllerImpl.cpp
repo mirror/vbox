@@ -30,8 +30,6 @@
 # include "HostUSBDeviceImpl.h"
 # include "USBProxyService.h"
 #endif
-#include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -40,6 +38,10 @@
 #include <VBox/settings.h>
 
 #include <algorithm>
+
+#include "AutoStateDep.h"
+#include "AutoCaller.h"
+#include "Logging.h"
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -286,7 +288,7 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -327,7 +329,7 @@ STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -447,7 +449,7 @@ STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -478,7 +480,7 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -543,7 +545,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -809,7 +811,7 @@ bool USBController::rollback()
     AssertComRCReturn (autoCaller.rc(), false);
 
     /* we need the machine state */
-    Machine::AutoAnyStateDependency adep(m->pParent);
+    AutoAnyStateDependency adep(m->pParent);
     AssertComRCReturn (adep.rc(), false);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -1024,7 +1026,7 @@ void USBController::copyFrom (USBController *aThat)
     AssertComRCReturnVoid (thatCaller.rc());
 
     /* even more sanity */
-    Machine::AutoAnyStateDependency adep(m->pParent);
+    AutoAnyStateDependency adep(m->pParent);
     AssertComRCReturnVoid (adep.rc());
     /* Machine::copyFrom() may not be called when the VM is running */
     AssertReturnVoid (!Global::IsOnline (adep.machineState()));
@@ -1072,7 +1074,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
     AssertComRCReturnRC(autoCaller.rc());
 
     /* we need the machine state */
-    Machine::AutoAnyStateDependency adep(m->pParent);
+    AutoAnyStateDependency adep(m->pParent);
     AssertComRCReturnRC(adep.rc());
 
     /* nothing to do if the machine isn't running */
