@@ -81,6 +81,7 @@ VBoxVideoWddm_SOURCES     = \
 	VBoxVideoHGSMI.cpp \
 	VBoxVideo.cpp \
 	wddm/VBoxVideoWddm.cpp \
+	wddm/VBoxVideoVidPn.cpp \
 	wddm/VBoxVideoWddm.def \
 	wddm/VBoxVideoWddm.rc
 #VBoxVideoWddm_LIBS.x86    += \
