@@ -356,3 +356,56 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     *pbSupported = bSupported;
     return Status;
 }
+
+DECLCALLBACK(BOOLEAN) vboxVidPnAdjustSourcesTargetsCallback(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn,
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo, PVOID pContext)
+{
+
+    pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
+    return TRUE;
+}
+
+NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn,
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        PFNVBOXVIDPNENUMPATHS pfnCallback, PVOID pContext)
+{
+    const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo = NULL;
+    NTSTATUS Status = pVidPnTopologyInterface->pfnAcquireFirstPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
+    if (Status == STATUS_SUCCESS)
+    {
+        while (pNewVidPnPresentPathInfo)
+        {
+            const D3DKMDT_VIDPN_PRESENT_PATH *pNextVidPnPresentPathInfo;
+            Status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, pNewVidPnPresentPathInfo, &pNextVidPnPresentPathInfo);
+
+            if (!pfnCallback(pDevExt, hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, pNewVidPnPresentPathInfo, pContext))
+            {
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                {
+                    pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNextVidPnPresentPathInfo);
+                }
+                else
+                {
+                    drprintf((__FUNCTION__": pfnAcquireNextPathInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
+                }
+
+                break;
+            }
+            else if (Status == STATUS_SUCCESS)
+            {
+                pNewVidPnPresentPathInfo = pNextVidPnPresentPathInfo;
+            }
+            else
+            {
+                AssertBreakpoint();
+                drprintf((__FUNCTION__": pfnAcquireNextPathInfo Failed Status(0x%x)\n", Status));
+                pNewVidPnPresentPathInfo = NULL;
+                break;
+            }
+        }
+    }
+
+    return Status;
+}
