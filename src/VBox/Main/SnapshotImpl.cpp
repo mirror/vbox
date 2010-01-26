@@ -1261,13 +1261,13 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     {
         /* save all current settings to ensure current changes are committed and
          * hard disks are fixed up */
-        alock.release();
 
+        // VirtualBox lock before machine lock
+        alock.release();
         AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+        alock.acquire();
         HRESULT rc = saveSettings();
         if (FAILED(rc)) return rc;
-
-        alock.acquire();
     }
 
     /* create an ID for the snapshot */
