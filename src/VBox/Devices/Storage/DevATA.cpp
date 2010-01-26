@@ -1147,18 +1147,17 @@ static void ataCmdError(ATADevState *s, uint8_t uErrorCode)
     s->iSourceSink = ATAFN_SS_NULL;
 }
 
-static uint32_t ataChecksum(void* p, size_t count)
+static uint32_t ataChecksum(void* ptr, size_t count)
 {
-    uint8_t sum = 0xa5, *pp = (uint8_t*)p;
+    uint8_t u8Sum = 0xa5, *p = (uint8_t*)ptr;
     size_t i;
 
     for (i = 0; i < count; i++)
     {
-      sum += pp[i];
-      count--;
+      u8Sum += *p++;
     }
 
-    return (uint8_t)-(int32_t)sum;
+    return (uint8_t)-(int32_t)u8Sum;
 }
 
 static bool ataIdentifySS(ATADevState *s)
