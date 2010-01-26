@@ -162,7 +162,7 @@ Machine::HWData::HWData()
     mAccelerate2DVideoEnabled = false;
     mMonitorCount = 1;
     mHWVirtExEnabled = true;
-    mHWVirtExNestedPagingEnabled = false;
+    mHWVirtExNestedPagingEnabled = true;
     mHWVirtExVPIDEnabled = true;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     mHWVirtExExclusive = false;
