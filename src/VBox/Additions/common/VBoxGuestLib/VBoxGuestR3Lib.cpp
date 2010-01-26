@@ -203,6 +203,7 @@ static int vbglR3Init(const char *pszDeviceName)
 
 #endif
 
+#ifndef VBOX_VBGLR3_XFREE86
     /*
      * Create release logger
      */
@@ -214,6 +215,7 @@ static int vbglR3Init(const char *pszDeviceName)
     /* This may legitimately fail if we are using the mini-runtime. */
     if (RT_SUCCESS(rc2))
         RTLogRelSetDefaultInstance(pReleaseLogger);
+#endif
 
     return VINF_SUCCESS;
 }

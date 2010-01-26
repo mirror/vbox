@@ -103,8 +103,8 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/Xext
  endif
  vboxvideo_drv_SOURCES = \
-	vboxvideo_68.c \
-	vboxutils_68.c
+	vboxvideo_70.c \
+	vboxutils.c
 endif   # target linux
 
 
@@ -282,7 +282,7 @@ ifdef VBOX_WITH_TESTCASES
      OTHERS += $(PATH_vboxvideo_drv)/tstvboxvideo68.run
 $$(PATH_vboxvideo_drv)/tstvboxvideo68.run: $$(INSTARGET_vboxvideo_drv)
 	$(QUIET)/bin/sh $(PATH_ROOT)/src/bldprogs/checkUndefined.sh $(KBUILD_TARGET)  \
-	    $(INSTARGET_vboxvideo_drv) $(OUR_PATH_VBOXVIDEO)/undefined_68 --static
+	    $(INSTARGET_vboxvideo_drv) $(OUR_PATH_VBOXVIDEO)/undefined_70 --static
 	$(QUIET)$(APPEND) -t "$@" "done"
      endif
 

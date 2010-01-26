@@ -201,7 +201,7 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
  */
 VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
 {
-#ifdef VBOX_WITH_GUEST_PROPS
+#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_VBGLR3_XFREE86)
     using namespace guestProp;
 
     char szModeName[MAX_NAME_LEN];
@@ -215,9 +215,9 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     return rc;
-#else /* VBOX_WITH_GUEST_PROPS not defined */
+#else /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
     return VERR_NOT_IMPLEMENTED;
-#endif /* VBOX_WITH_GUEST_PROPS not defined */
+#endif /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
 }
 
 
@@ -232,7 +232,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
  */
 VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
 {
-#ifdef VBOX_WITH_GUEST_PROPS
+#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_VBGLR3_XFREE86)
     using namespace guestProp;
 
 /*
@@ -293,7 +293,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         *pcBits = cBits;
     }
     return rc;
-#else /* VBOX_WITH_GUEST_PROPS not defined */
+#else /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
     return VERR_NOT_IMPLEMENTED;
-#endif /* VBOX_WITH_GUEST_PROPS not defined */
+#endif /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
 }
