@@ -332,8 +332,7 @@ PDMBOTHCBDECL(int) vnetGetConfig(void *pvState, uint32_t port, uint32_t cb, void
     if (port + cb > sizeof(struct VNetPCIConfig))
     {
         Log(("%s vnetGetConfig: Read beyond the config structure is attempted (port=%RTiop cb=%x).\n", INSTANCE(pState), port, cb));
-        memset(data, 0xFF, cb);
-        return VINF_SUCCESS;
+        return VERR_IOM_IOPORT_UNUSED;
     }
     memcpy(data, ((uint8_t*)&pState->config) + port, cb);
     return VINF_SUCCESS;
