@@ -67,13 +67,13 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
 
            PCM_RESOURCE_LIST pRcList = pDeviceInfo->TranslatedResourceList;
            /* @todo: verify resources */
-           for(ULONG i = 0; i < pRcList->Count; ++i)
+           for (ULONG i = 0; i < pRcList->Count; ++i)
            {
                PCM_FULL_RESOURCE_DESCRIPTOR pFRc = &pRcList->List[i];
-               for(ULONG j = 0; j < pFRc->PartialResourceList.Count; ++j)
+               for (ULONG j = 0; j < pFRc->PartialResourceList.Count; ++j)
                {
                    PCM_PARTIAL_RESOURCE_DESCRIPTOR pPRc = &pFRc->PartialResourceList.PartialDescriptors[j];
-                   switch(pPRc->Type)
+                   switch (pPRc->Type)
                    {
                        case CmResourceTypePort:
                            break;
@@ -124,7 +124,7 @@ NTSTATUS DxgkDdiAddDevice(
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof(DEVICE_EXTENSION));
-    if(pContext)
+    if (pContext)
     {
         *MiniportDeviceContext = pContext;
     }
@@ -170,11 +170,11 @@ NTSTATUS DxgkDdiStartDevice(
          * of the DXGK_DEVICE_INFO structure in the context block represented by MiniportDeviceContext. */
         DXGK_DEVICE_INFO DeviceInfo;
         Status = pContext->u.primary.DxgkInterface.DxgkCbGetDeviceInformation (pContext->u.primary.DxgkInterface.DeviceHandle, &DeviceInfo);
-        if(Status == STATUS_SUCCESS)
+        if (Status == STATUS_SUCCESS)
         {
             ULONG AdapterMemorySize;
             Status = vboxWddmPickResources(pContext, &DeviceInfo, &AdapterMemorySize);
-            if(Status == STATUS_SUCCESS)
+            if (Status == STATUS_SUCCESS)
             {
                 /* Initialize VBoxGuest library, which is used for requests which go through VMMDev. */
                 VbglInit ();
@@ -269,7 +269,7 @@ NTSTATUS DxgkDdiQueryChildRelations(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
-    for(ULONG i = 0; i < ChildRelationsSize; i++)
+    for (ULONG i = 0; i < ChildRelationsSize; i++)
     {
         ChildRelations[i].ChildDeviceType = TypeVideoOutput;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_OTHER;
@@ -295,7 +295,7 @@ NTSTATUS DxgkDdiQueryChildStatus(
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
     NTSTATUS Status = STATUS_SUCCESS;
-    switch(ChildStatus->Type)
+    switch (ChildStatus->Type)
     {
         case StatusConnection:
             ChildStatus->HotPlug.Connected = TRUE;
@@ -371,14 +371,19 @@ VOID DxgkDdiResetDevice(
     IN CONST PVOID MiniportDeviceContext
     )
 {
-
+    /* DxgkDdiResetDevice can be called at any IRQL, so it must be in nonpageable memory.  */
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 }
 
 VOID DxgkDdiUnload(
     VOID
     )
 {
-
+    /* DxgkDdiUnload should be made pageable. */
+    PAGED_CODE();
+    dfprintf(("==> "__FUNCTION__ "\n"));
+    dfprintf(("<== "__FUNCTION__ "\n"));
 }
 
 NTSTATUS DxgkDdiQueryInterface(
@@ -577,8 +582,97 @@ DxgkDdiIsSupportedVidPn(
     /* The DxgkDdiIsSupportedVidPn should be made pageable. */
     PAGED_CODE();
 
-    /* @todo: implement a check */
-    pIsSupportedVidPnArg->IsVidPnSupported = TRUE;
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
+    BOOLEAN bSupported = TRUE;
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+    NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pIsSupportedVidPnArg->hDesiredVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    if (Status == STATUS_SUCCESS)
+    {
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+        const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+        Status = pVidPnInterface->pfnGetTopology(pIsSupportedVidPnArg->hDesiredVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxVidPnCheckTopology(pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
+            if (Status == STATUS_SUCCESS && bSupported)
+            {
+                for (int id = 0; id < pContext->u.primary.cDisplays; id++)
+                {
+                    D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
+                    const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
+                    Status = pVidPnInterface->pfnAcquireSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn,
+                                    id,
+                                    &hNewVidPnSourceModeSet,
+                                    &pVidPnSourceModeSetInterface);
+                    if (Status == STATUS_SUCCESS)
+                    {
+                        Status = vboxVidPnCheckSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface, &bSupported);
+
+                        pVidPnInterface->pfnReleaseSourceModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnSourceModeSet);
+
+                        if (Status != STATUS_SUCCESS || !bSupported)
+                            break;
+                    }
+                    else if (Status == STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE)
+                    {
+                        drprintf(("VBoxVideoWddm: Warning: pfnAcquireSourceModeSet returned STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE, continuing\n"));
+                        Status = STATUS_SUCCESS;
+                    }
+                    else
+                    {
+                        drprintf(("VBoxVideoWddm: pfnAcquireSourceModeSet failed Status(0x%x)\n"));
+                        break;
+                    }
+                }
+
+                if (Status == STATUS_SUCCESS && bSupported)
+                {
+                    for (int id = 0; id < pContext->u.primary.cDisplays; id++)
+                    {
+                        D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
+                        CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
+                        Status = pVidPnInterface->pfnAcquireTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn,
+                                        id, /*__in CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId */
+                                        &hNewVidPnTargetModeSet,
+                                        &pVidPnTargetModeSetInterface);
+                        if (Status == STATUS_SUCCESS)
+                        {
+                            Status = vboxVidPnCheckTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet, pVidPnTargetModeSetInterface, &bSupported);
+
+                            pVidPnInterface->pfnReleaseTargetModeSet(pIsSupportedVidPnArg->hDesiredVidPn, hNewVidPnTargetModeSet);
+
+                            if (Status != STATUS_SUCCESS || !bSupported)
+                                break;
+                        }
+                        else if (Status == STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE)
+                        {
+                            drprintf(("VBoxVideoWddm: Warning: pfnAcquireSourceModeSet returned STATUS_GRAPHICS_INVALID_VIDEO_PRESENT_SOURCE, continuing\n"));
+                            Status = STATUS_SUCCESS;
+                        }
+                        else
+                        {
+                            drprintf(("VBoxVideoWddm: pfnAcquireSourceModeSet failed Status(0x%x)\n"));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            drprintf(("VBoxVideoWddm: pfnGetTopology failed Status(0x%x)\n"));
+        }
+    }
+    else
+    {
+        drprintf(("VBoxVideoWddm: DxgkCbQueryVidPnInterface failed Status(0x%x)\n"));
+    }
+    pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
     return STATUS_SUCCESS;
 }
 
@@ -597,16 +691,16 @@ DxgkDdiRecommendFunctionalVidPn(
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
-    if(Status == STATUS_SUCCESS)
+    if (Status == STATUS_SUCCESS)
     {
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
         const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
         Status = pVidPnInterface->pfnGetTopology(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
-        if(Status == STATUS_SUCCESS)
+        if (Status == STATUS_SUCCESS)
         {
             D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo;
             Status = pVidPnTopologyInterface->pfnCreateNewPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
-            if(Status == STATUS_SUCCESS)
+            if (Status == STATUS_SUCCESS)
             {
                 pNewVidPnPresentPathInfo->VidPnSourceId = 0;
                 pNewVidPnPresentPathInfo->VidPnTargetId = 0;
@@ -639,7 +733,7 @@ DxgkDdiRecommendFunctionalVidPn(
                 pNewVidPnPresentPathInfo->GammaRamp.Type = D3DDDI_GAMMARAMP_DEFAULT;
                 pNewVidPnPresentPathInfo->GammaRamp.DataSize = 0;
                 Status = pVidPnTopologyInterface->pfnAddPath(hVidPnTopology, pNewVidPnPresentPathInfo);
-                if(Status == STATUS_SUCCESS)
+                if (Status == STATUS_SUCCESS)
                 {
                     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
                     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
@@ -647,11 +741,11 @@ DxgkDdiRecommendFunctionalVidPn(
                                     0, /*__in CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID  VidPnSourceId */
                                     &hNewVidPnSourceModeSet,
                                     &pVidPnSourceModeSetInterface);
-                    if(Status == STATUS_SUCCESS)
+                    if (Status == STATUS_SUCCESS)
                     {
                         D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo;
                         Status = pVidPnSourceModeSetInterface->pfnCreateNewModeInfo(hNewVidPnSourceModeSet, &pNewVidPnSourceModeInfo);
-                        if(Status == STATUS_SUCCESS)
+                        if (Status == STATUS_SUCCESS)
                         {
                             D3DKMDT_VIDEO_PRESENT_SOURCE_MODE_ID modeId = pNewVidPnSourceModeInfo->Id;
                             pNewVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
@@ -664,10 +758,10 @@ DxgkDdiRecommendFunctionalVidPn(
                             pNewVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
                             pNewVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
                             Status = pVidPnSourceModeSetInterface->pfnAddMode(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
-                            if(Status == STATUS_SUCCESS)
+                            if (Status == STATUS_SUCCESS)
                             {
                                 Status = pVidPnSourceModeSetInterface->pfnPinMode(hNewVidPnSourceModeSet, modeId);
-                                if(Status == STATUS_SUCCESS)
+                                if (Status == STATUS_SUCCESS)
                                 {
                                     D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
                                     CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
@@ -675,11 +769,11 @@ DxgkDdiRecommendFunctionalVidPn(
                                                 0, /* __in CONST D3DDDI_VIDEO_PRESENT_TARGET_ID  VidPnTargetId */
                                                 &hNewVidPnTargetModeSet,
                                                 &pVidPnTargetModeSetInterface);
-                                    if(Status == STATUS_SUCCESS)
+                                    if (Status == STATUS_SUCCESS)
                                     {
                                         D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo;
                                         Status = pVidPnTargetModeSetInterface->pfnCreateNewModeInfo(hNewVidPnTargetModeSet, &pNewVidPnTargetModeInfo);
-                                        if(Status == STATUS_SUCCESS)
+                                        if (Status == STATUS_SUCCESS)
                                         {
                                             D3DKMDT_VIDEO_PRESENT_TARGET_MODE_ID targetId = pNewVidPnTargetModeInfo->Id;
                                             pNewVidPnTargetModeInfo->VideoSignalInfo.VideoStandard = D3DKMDT_VSS_OTHER;
@@ -694,10 +788,10 @@ DxgkDdiRecommendFunctionalVidPn(
                                             pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
                                             pNewVidPnTargetModeInfo->Preference = D3DKMDT_MP_PREFERRED;
                                             Status = pVidPnTargetModeSetInterface->pfnAddMode(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo);
-                                            if(Status == STATUS_SUCCESS)
+                                            if (Status == STATUS_SUCCESS)
                                             {
                                                 Status = pVidPnTargetModeSetInterface->pfnPinMode(hNewVidPnTargetModeSet, targetId);
-                                                if(Status == STATUS_SUCCESS)
+                                                if (Status == STATUS_SUCCESS)
                                                 {
 
                                                 }

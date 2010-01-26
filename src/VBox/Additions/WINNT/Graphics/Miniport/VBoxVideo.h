@@ -484,6 +484,26 @@ DriverEntry(
     IN PUNICODE_STRING RegistryPath
     );
 RT_C_DECLS_END
+
+NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        BOOLEAN *pbSupported);
+
+NTSTATUS vboxVidPnCheckSourceModeInfo(const D3DKMDT_HVIDPN hDesiredVidPn,
+        const D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo,
+        BOOLEAN *pbSupported);
+
+NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
+        D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
+        BOOLEAN *pbSupported);
+
+NTSTATUS vboxVidPnCheckTargetModeInfo(const D3DKMDT_HVIDPN hDesiredVidPn,
+        const D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo,
+        BOOLEAN *pbSupported);
+
+NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
+        D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
+        BOOLEAN *pbSupported);
 #endif
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentMode(
