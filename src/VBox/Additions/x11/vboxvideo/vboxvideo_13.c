@@ -345,8 +345,10 @@ vbox_output_mode_valid (xf86OutputPtr output, DisplayModePtr mode)
     int rc = MODE_OK;
     TRACE_LOG("HDisplay=%d, VDisplay=%d\n", mode->HDisplay, mode->VDisplay);
     /* We always like modes specified by the user in the configuration
-     * file, as doing otherwise is likely to annoy people. */
+     * file and modes requested by the host, as doing otherwise is likely to
+	 * annoy people. */
     if (   !(mode->type & M_T_USERDEF)
+        && !(mode->type & M_T_PREFERRED)
         && vbox_device_available(VBOXGetRec(pScrn))
         && !vboxHostLikesVideoMode(pScrn, mode->HDisplay, mode->VDisplay,
                                    pScrn->bitsPerPixel)
