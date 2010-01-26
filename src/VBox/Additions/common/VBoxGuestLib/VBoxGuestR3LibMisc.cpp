@@ -48,10 +48,12 @@
  */
 VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfEvents)
 {
+#ifndef VBOX_VBGLR3_XFREE86
     LogFlow(("VbglR3WaitEvent: fMask=0x%x, cMillies=%u, pfEvents=%p\n",
              fMask, cMillies, pfEvents));
     AssertReturn((fMask & ~VMMDEV_EVENT_VALID_EVENT_MASK) == 0, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pfEvents, VERR_INVALID_POINTER);
+#endif
 
     VBoxGuestWaitEventInfo waitEvent;
     waitEvent.u32TimeoutIn = cMillies;
@@ -61,13 +63,17 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
+#ifndef VBOX_VBGLR3_XFREE86
         AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d\n", waitEvent.u32Result));
+#endif
         if (pfEvents)
             *pfEvents = waitEvent.u32EventFlagsOut;
     }
 
+#ifndef VBOX_VBGLR3_XFREE86
     LogFlow(("VbglR3WaitEvent: rc=%Rrc, u32EventFlagsOut=0x%x. u32Result=%d\n",
              rc, waitEvent.u32EventFlagsOut, waitEvent.u32Result));
+#endif
     return rc;
 }
 
@@ -182,7 +188,7 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     Req.u32OrMask = fOr;
     Req.u32NotMask = fNot;
     int rc = vbglR3GRPerform(&Req.header);
-#ifdef DEBUG
+#if defined(DEBUG) && !defined(VBOX_VBGLR3_XFREE86)
     if (RT_SUCCESS(rc))
         LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
     else
@@ -192,6 +198,7 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
 }
 
 
+#ifndef VBOX_VBGLR3_XFREE86
 /**
  * Fallback for vbglR3GetAdditionsVersion.
  */
@@ -222,6 +229,7 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
 
     return VINF_SUCCESS;
 }
+#endif
 
 
 #ifdef RT_OS_WINDOWS
@@ -280,6 +288,7 @@ static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
 #endif /* RT_OS_WINDOWS */ 
 
 
+#ifndef VBOX_VBGLR3_XFREE86
 /**
  * Retrieves the installed Guest Additions version and/or revision.
  *
@@ -374,7 +383,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
 #endif /* !RT_OS_WINDOWS */
 }
-
+#endif /* !VBOX_VBGLR3_XFREE86 */
 
 /**
  * Retrieves the installation path of Guest Additions.

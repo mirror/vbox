@@ -80,12 +80,8 @@ do { \
 
 #endif  /* DEBUG_VIDEO not defined */
 
-#ifdef XFree86LOADER
+#ifdef XORG_7X
 # include "xorg-server.h"
-#else
-# ifdef HAVE_CONFIG_H
-#  include "config.h"
-# endif
 #endif
 #include "vboxvideo.h"
 #include "version-generated.h"
@@ -148,7 +144,10 @@ static Bool VBOXDGAInit(ScrnInfoPtr pScrn, ScreenPtr pScreen);
  * this DriverRec be an upper-case version of the driver name.
  */
 
-_X_EXPORT DriverRec VBOXDRV = {
+#ifdef XORG_7X
+_X_EXPORT
+#endif
+DriverRec VBOXDRV = {
     VBOX_VERSION,
     VBOX_DRIVER_NAME,
     VBOXIdentify,
@@ -156,7 +155,9 @@ _X_EXPORT DriverRec VBOXDRV = {
     VBOXAvailableOptions,
     NULL,
     0,
+#ifdef XORG_7X
     NULL
+#endif
 };
 
 /* Supported chipsets */
@@ -238,7 +239,11 @@ static XF86ModuleVersionInfo vboxVersionRec =
     "Sun Microsystems, Inc.",
     MODINFOSTRING1,
     MODINFOSTRING2,
+#ifdef XORG_7X
     XORG_VERSION_CURRENT,
+#else
+    XF86_VERSION_CURRENT,
+#endif
     1,                          /* Module major version. Xorg-specific */
     0,                          /* Module minor version. Xorg-specific */
     1,                          /* Module patchlevel. Xorg-specific */
@@ -252,7 +257,10 @@ static XF86ModuleVersionInfo vboxVersionRec =
  * This data is accessed by the loader.  The name must be the module name
  * followed by "ModuleData".
  */
-_X_EXPORT XF86ModuleData vboxvideoModuleData = { &vboxVersionRec, vboxSetup, NULL };
+#ifdef XORG_7X
+_X_EXPORT
+#endif
+XF86ModuleData vboxvideoModuleData = { &vboxVersionRec, vboxSetup, NULL };
 
 static pointer
 vboxSetup(pointer Module, pointer Options, int *ErrorMajor, int *ErrorMinor)
@@ -411,7 +419,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     ClockRange *clockRanges;
     int i;
     DisplayModePtr m_prev;
-    char *pcHostModeName = NULL;
+    char szHostModeName[256] = "";
 
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
@@ -503,7 +511,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
                 cBits = 24;
             if ((0 != cx) && (0 != cy)) {
                 cx -= cx % 8;
-                pcHostModeName = XNFprintf("%dx%d", cx, cy);
+                xf86sprintf(szHostModeName, "%dx%d", cx, cy);
             }
         }
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
@@ -535,9 +543,9 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     }
     /* Add additional modes to the end of the mode list in case the others are
        all invalid. */
-    if (pcHostModeName != NULL)
+    if (szHostModeName[0])
     {
-        pScrn->display->modes[i] = pcHostModeName;
+        pScrn->display->modes[i] = szHostModeName;
         ++i;
     }
     if (vboxHostLikesVideoMode(pScrn, 1600, 1200, pScrn->bitsPerPixel))
@@ -602,7 +610,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
             m_prev  = m;
         }
     }
-
+	
     /* Colour weight - we always call this, since we are always in
        truecolour. */
     if (!xf86SetWeight(pScrn, rzeros, rzeros))

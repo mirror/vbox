@@ -141,3 +141,5 @@ __umoddi3
 __udivdi3
 __moddi3
 __divdi3
+xf86sprintf
+_GLOBAL_OFFSET_TABLE_
