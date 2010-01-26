@@ -24,8 +24,6 @@
 #include "StorageControllerImpl.h"
 #include "MachineImpl.h"
 #include "VirtualBoxImpl.h"
-#include "AutoCaller.h"
-#include "Logging.h"
 
 #include <iprt/string.h>
 #include <iprt/cpp/utils.h>
@@ -34,6 +32,10 @@
 #include <VBox/settings.h>
 
 #include <algorithm>
+
+#include "AutoStateDep.h"
+#include "AutoCaller.h"
+#include "Logging.h"
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -564,7 +566,7 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -654,7 +656,7 @@ STDMETHODIMP StorageController::SetIDEEmulationPort(LONG DevicePosition, LONG aP
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* the machine needs to be mutable */
-    Machine::AutoMutableStateDependency adep(m->pParent);
+    AutoMutableStateDependency adep(m->pParent);
     if (FAILED(adep.rc())) return adep.rc();
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
