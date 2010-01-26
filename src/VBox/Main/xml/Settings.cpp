@@ -1257,7 +1257,7 @@ Hardware::Hardware()
         : strVersion("1"),
           fHardwareVirt(true),
           fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
-          fNestedPaging(false),
+          fNestedPaging(true),
           fVPID(true),
           fSyntheticCpu(false),
           fPAE(false),
