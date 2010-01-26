@@ -343,7 +343,7 @@ static int patmReinit(PVM pVM)
     AssertReleaseMsg(pVM->patm.s.pStatsGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pStatsGC));
 
     Assert(pVM->patm.s.pPatchMemHC);
-    Assert(pVM->patm.s.pPatchMemGC = MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC));
+    Assert(pVM->patm.s.pPatchMemGC == MMHyperR3ToRC(pVM, pVM->patm.s.pPatchMemHC));
     memset(pVM->patm.s.pPatchMemHC, 0, PATCH_MEMORY_SIZE);
     AssertReleaseMsg(pVM->patm.s.pPatchMemGC, ("Impossible! MMHyperHC2GC(%p) failed!\n", pVM->patm.s.pPatchMemHC));
 
