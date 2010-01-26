@@ -574,7 +574,12 @@ DxgkDdiIsSupportedVidPn(
     OUT DXGKARG_ISSUPPORTEDVIDPN*  pIsSupportedVidPnArg
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiIsSupportedVidPn should be made pageable. */
+    PAGED_CODE();
+
+    /* @todo: implement a check */
+    pIsSupportedVidPnArg->IsVidPnSupported = TRUE;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -652,7 +657,7 @@ DxgkDdiRecommendFunctionalVidPn(
                             pNewVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
                             /* @todo: should we obtain the default mode from the host? */
                             pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = 1024;
-                            pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = 768;
+                            pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy = 768;
                             pNewVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
                             pNewVidPnSourceModeInfo->Format.Graphics.Stride = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx * 4;
                             pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat = D3DDDIFMT_X8R8G8B8;
@@ -664,7 +669,59 @@ DxgkDdiRecommendFunctionalVidPn(
                                 Status = pVidPnSourceModeSetInterface->pfnPinMode(hNewVidPnSourceModeSet, modeId);
                                 if(Status == STATUS_SUCCESS)
                                 {
+                                    D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
+                                    CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
+                                    Status = pVidPnInterface->pfnCreateNewTargetModeSet(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn,
+                                                0, /* __in CONST D3DDDI_VIDEO_PRESENT_TARGET_ID  VidPnTargetId */
+                                                &hNewVidPnTargetModeSet,
+                                                &pVidPnTargetModeSetInterface);
+                                    if(Status == STATUS_SUCCESS)
+                                    {
+                                        D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo;
+                                        Status = pVidPnTargetModeSetInterface->pfnCreateNewModeInfo(hNewVidPnTargetModeSet, &pNewVidPnTargetModeInfo);
+                                        if(Status == STATUS_SUCCESS)
+                                        {
+                                            D3DKMDT_VIDEO_PRESENT_TARGET_MODE_ID targetId = pNewVidPnTargetModeInfo->Id;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.VideoStandard = D3DKMDT_VSS_OTHER;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx = 1024;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy = 768;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = 63 * 768; /* @todo: do we need that? */
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 165000; /* ?? */
+                                            pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
+                                            pNewVidPnTargetModeInfo->Preference = D3DKMDT_MP_PREFERRED;
+                                            Status = pVidPnTargetModeSetInterface->pfnAddMode(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo);
+                                            if(Status == STATUS_SUCCESS)
+                                            {
+                                                Status = pVidPnTargetModeSetInterface->pfnPinMode(hNewVidPnTargetModeSet, targetId);
+                                                if(Status == STATUS_SUCCESS)
+                                                {
 
+                                                }
+                                                else
+                                                {
+                                                    drprintf(("VBoxVideoWddm: pfnPinMode (target) failed Status(0x%x)\n"));
+                                                }
+                                            }
+                                            else
+                                            {
+                                                drprintf(("VBoxVideoWddm: pfnAddMode (target) failed Status(0x%x)\n"));
+                                                pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo);
+                                                pNewVidPnTargetModeInfo = NULL;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            drprintf(("VBoxVideoWddm: pfnCreateNewModeInfo (target) failed Status(0x%x)\n"));
+                                        }
+                                    }
+                                    else
+                                    {
+                                        drprintf(("VBoxVideoWddm: pfnCreateNewTargetModeSet failed Status(0x%x)\n"));
+                                    }
                                 }
                                 else
                                 {
