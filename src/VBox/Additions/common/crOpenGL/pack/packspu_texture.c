@@ -30,3 +30,9 @@ void PACKSPU_APIENTRY packspu_ActiveTextureARB(GLenum texture)
     crStateActiveTextureARB(texture);
     crPackActiveTextureARB(texture);
 }
+
+void PACKSPU_APIENTRY packspu_BindTexture(GLenum target, GLuint texture)
+{
+    crStateBindTexture(target, texture);
+    crPackBindTexture(target, texture);
+}

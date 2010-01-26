@@ -15,6 +15,7 @@ print """
 #include "packspu.h"
 #include "cr_packfunctions.h"
 #include "cr_net.h"
+#include "cr_mem.h"
 #include "packspu_proto.h"
 """
 
@@ -94,12 +95,40 @@ for func_name in keys:
 #ifdef CR_ARB_multitexture
         || pname == GL_ACTIVE_TEXTURE_ARB
 #endif
+        || pname == GL_TEXTURE_BINDING_1D
+        || pname == GL_TEXTURE_BINDING_2D
+#ifdef CR_NV_texture_rectangle
+        || pname == GL_TEXTURE_BINDING_RECTANGLE_NV
+#endif
+#ifdef CR_ARB_texture_cube_map
+        || pname == GL_TEXTURE_BINDING_CUBE_MAP_ARB
+#endif
         )
         {
+#ifndef DEBUG
             crState%s( pname, params );
             return;
+#else
+            %s localparams;
+            localparams = (%s) crAlloc(__numValues(pname) * sizeof(*localparams));
+            crState%s(pname, localparams);
+            crPack%s(%s, &writeback);
+            packspuFlush( (void *) thread );
+            while (writeback)
+                crNetRecv();
+            for (i=0; i<__numValues(pname); ++i)
+            {
+                if (localparams[i] != params[i])
+                {
+                    crWarning("Incorrect local state in %s for %%x param %%i", pname, i);
+                }
+            }
+            crFree(localparams);
+            return;
+#endif
+            
         }
-            """ % func_name
+            """ % (func_name, params[-1][1], params[-1][1], func_name, func_name, apiutil.MakeCallString(params), func_name)
         params.append( ("&writeback", "foo", 0) )
         print '\tif (pack_spu.swap)'
         print '\t{'
@@ -112,6 +141,9 @@ for func_name in keys:
         print '\tpackspuFlush( (void *) thread );'
         print '\twhile (writeback)'
         print '\t\tcrNetRecv();'
+
+
+
         lastParamName = params[-2][0]
         if return_type != 'void':
             print '\tif (pack_spu.swap)'
