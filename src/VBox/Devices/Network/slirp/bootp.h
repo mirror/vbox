@@ -94,29 +94,30 @@
 #define BOOTP_VENDOR_LEN        64
 #define DHCP_OPT_LEN            312
 
+/* RFC 2131 */
 struct bootp_t
 {
-    struct ip      ip;
-    struct udphdr  udp;
-    uint8_t        bp_op;
-    uint8_t        bp_htype;
-    uint8_t        bp_hlen;
-    uint8_t        bp_hops;
-    uint32_t       bp_xid;
-    uint16_t       bp_secs;
-    uint16_t       bp_flags;
-    struct in_addr bp_ciaddr;
-    struct in_addr bp_yiaddr;
-    struct in_addr bp_siaddr;
-    struct in_addr bp_giaddr;
-    uint8_t        bp_hwaddr[16];
-    uint8_t        bp_sname[64];
-    uint8_t        bp_file[128];
-    uint8_t        bp_vend[DHCP_OPT_LEN];
+    struct ip      ip;                          /**< header: IP header */
+    struct udphdr  udp;                         /**< header: UDP header */
+    uint8_t        bp_op;                       /**< opcode (BOOTP_REQUEST, BOOTP_REPLY) */
+    uint8_t        bp_htype;                    /**< hardware type */
+    uint8_t        bp_hlen;                     /**< hardware address length */
+    uint8_t        bp_hops;                     /**< hop count */
+    uint32_t       bp_xid;                      /**< transaction ID */
+    uint16_t       bp_secs;                     /**< numnber of seconds */
+    uint16_t       bp_flags;                    /**< flags (DHCP_FLAGS_B) */
+    struct in_addr bp_ciaddr;                   /**< client IP address */
+    struct in_addr bp_yiaddr;                   /**< your IP address */
+    struct in_addr bp_siaddr;                   /**< server IP address */
+    struct in_addr bp_giaddr;                   /**< gateway IP address */
+    uint8_t        bp_hwaddr[16];               /** client hardware address */
+    uint8_t        bp_sname[64];                /** server host name */
+    uint8_t        bp_file[128];                /** boot filename */
+    uint8_t        bp_vend[DHCP_OPT_LEN];       /**< vendor specific info */
 };
 
 
-#define DHCP_FLAGS_B (1<<15)
+#define DHCP_FLAGS_B (1<<15)                    /**< B, broadcast */
 struct bootp_ext
 {
     uint8_t bpe_tag;

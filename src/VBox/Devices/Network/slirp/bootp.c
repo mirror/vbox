@@ -188,7 +188,7 @@ static struct mbuf *dhcp_create_msg(PNATState pData, struct bootp_t *bp, struct 
     memset(rbp, 0, sizeof(struct bootp_t));
     rbp->bp_op = BOOTP_REPLY;
     rbp->bp_xid = bp->bp_xid; /* see table 3 of rfc2131*/
-    rbp->bp_flags = bp->bp_flags;
+    rbp->bp_flags = bp->bp_flags; /* figure 2 of rfc2131 */
     rbp->bp_giaddr.s_addr = bp->bp_giaddr.s_addr;
 #if 0 /*check flags*/
     saddr.sin_port = RT_H2N_U16_C(BOOTP_SERVER);
@@ -420,8 +420,8 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
         }
         else
         {
-            /*see table 4 rfc2131*/
-            if (bp->bp_flags & DHCP_FLAGS_B)
+            /* table 4 of rfc2131 */
+            if (bp->bp_flags & RT_H2N_U16_C(DHCP_FLAGS_B))
                 dhcp_stat = REBINDING;
             else
                 dhcp_stat = RENEWING;
@@ -728,7 +728,8 @@ static void bootp_reply(PNATState pData, struct mbuf *m, int offReply, uint16_t 
              - sizeof(struct udphdr);
     m->m_data += sizeof(struct udphdr)
                + sizeof(struct ip);
-    if ((flags & DHCP_FLAGS_B) || nack != 0)
+    if (   (flags & RT_H2N_U16_C(DHCP_FLAGS_B))
+        || nack != 0)
         daddr.sin_addr.s_addr = INADDR_BROADCAST;
     else
         daddr.sin_addr.s_addr = rbp->bp_yiaddr.s_addr; /*unicast requested by client*/
