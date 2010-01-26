@@ -398,113 +398,13 @@ STDMETHODIMP Host::COMGETTER(DVDDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MediaList list;
-    HRESULT rc = S_OK;
-    try
+    HRESULT rc = getDVDDrives(list);
+    if (SUCCEEDED(rc))
     {
-#if defined(RT_OS_WINDOWS)
-        int sz = GetLogicalDriveStrings(0, NULL);
-        TCHAR *hostDrives = new TCHAR[sz+1];
-        GetLogicalDriveStrings(sz, hostDrives);
-        wchar_t driveName[3] = { '?', ':', '\0' };
-        TCHAR *p = hostDrives;
-        do
-        {
-            if (GetDriveType(p) == DRIVE_CDROM)
-            {
-                driveName[0] = *p;
-                ComObjPtr<Medium> hostDVDDriveObj;
-                hostDVDDriveObj.createObject();
-                hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(driveName));
-                list.push_back(hostDVDDriveObj);
-            }
-            p += _tcslen(p) + 1;
-        }
-        while (*p);
-        delete[] hostDrives;
-
-#elif defined(RT_OS_SOLARIS)
-# ifdef VBOX_USE_LIBHAL
-        if (!getDVDInfoFromHal(list))
-# endif
-        // Not all Solaris versions ship with libhal.
-        // So use a fallback approach similar to Linux.
-        {
-            if (RTEnvExistEx(RTENV_DEFAULT, "VBOX_CDROM"))
-            {
-                char *cdromEnv = RTEnvDupEx(RTENV_DEFAULT, "VBOX_CDROM");
-                char *saveStr = NULL;
-                char *cdromDrive = NULL;
-                if (cdromEnv)
-                    cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
-                while (cdromDrive)
-                {
-                    if (validateDevice(cdromDrive, true))
-                    {
-                        ComObjPtr<Medium> hostDVDDriveObj;
-                        hostDVDDriveObj.createObject();
-                        hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cdromDrive));
-                        list.push_back(hostDVDDriveObj);
-                    }
-                    cdromDrive = strtok_r(NULL, ":", &saveStr);
-                }
-                RTStrFree(cdromEnv);
-            }
-            else
-            {
-                // this might work on Solaris version older than Nevada.
-                if (validateDevice("/cdrom/cdrom0", true))
-                {
-                    ComObjPtr<Medium> hostDVDDriveObj;
-                    hostDVDDriveObj.createObject();
-                    hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr("cdrom/cdrom0"));
-                    list.push_back(hostDVDDriveObj);
-                }
-
-                // check the mounted drives
-                parseMountTable(MNTTAB, list);
-            }
-        }
-
-#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
-        if (RT_SUCCESS(m->hostDrives.updateDVDs()))
-            for (DriveInfoList::const_iterator it = m->hostDrives.DVDBegin();
-                SUCCEEDED(rc) && it != m->hostDrives.DVDEnd(); ++it)
-            {
-                ComObjPtr<Medium> hostDVDDriveObj;
-                Bstr location(it->mDevice);
-                Bstr description(it->mDescription);
-                if (SUCCEEDED(rc))
-                    rc = hostDVDDriveObj.createObject();
-                if (SUCCEEDED(rc))
-                    rc = hostDVDDriveObj->init(m->pParent, DeviceType_DVD, location, description);
-                if (SUCCEEDED(rc))
-                    list.push_back(hostDVDDriveObj);
-            }
-#elif defined(RT_OS_DARWIN)
-        PDARWINDVD cur = DarwinGetDVDDrives();
-        while (cur)
-        {
-            ComObjPtr<Medium> hostDVDDriveObj;
-            hostDVDDriveObj.createObject();
-            hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cur->szName));
-            list.push_back(hostDVDDriveObj);
-
-            /* next */
-            void *freeMe = cur;
-            cur = cur->pNext;
-            RTMemFree(freeMe);
-        }
-#else
-    /* PORTME */
-#endif
-
         SafeIfaceArray<IMedium> array(list);
         array.detachTo(ComSafeArrayOutArg(aDrives));
     }
-    catch(std::bad_alloc &)
-    {
-        rc = E_OUTOFMEMORY;
-    }
+
     return rc;
 }
 
@@ -524,56 +424,13 @@ STDMETHODIMP Host::COMGETTER(FloppyDrives)(ComSafeArrayOut(IMedium *, aDrives))
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     MediaList list;
-    HRESULT rc = S_OK;
-
-    try
+    HRESULT rc = getFloppyDrives(list);
+    if (SUCCEEDED(rc))
     {
-#ifdef RT_OS_WINDOWS
-        int sz = GetLogicalDriveStrings(0, NULL);
-        TCHAR *hostDrives = new TCHAR[sz+1];
-        GetLogicalDriveStrings(sz, hostDrives);
-        wchar_t driveName[3] = { '?', ':', '\0' };
-        TCHAR *p = hostDrives;
-        do
-        {
-            if (GetDriveType(p) == DRIVE_REMOVABLE)
-            {
-                driveName[0] = *p;
-                ComObjPtr<Medium> hostFloppyDriveObj;
-                hostFloppyDriveObj.createObject();
-                hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, Bstr(driveName));
-                list.push_back(hostFloppyDriveObj);
-            }
-            p += _tcslen(p) + 1;
-        }
-        while (*p);
-        delete[] hostDrives;
-#elif defined(RT_OS_LINUX)
-        if (RT_SUCCESS(m->hostDrives.updateFloppies()))
-            for (DriveInfoList::const_iterator it = m->hostDrives.FloppyBegin();
-                SUCCEEDED(rc) && it != m->hostDrives.FloppyEnd(); ++it)
-            {
-                ComObjPtr<Medium> hostFloppyDriveObj;
-                Bstr location(it->mDevice);
-                Bstr description(it->mDescription);
-                if (SUCCEEDED(rc))
-                    rc = hostFloppyDriveObj.createObject();
-                if (SUCCEEDED(rc))
-                    rc = hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, location, description);
-                if (SUCCEEDED(rc))
-                    list.push_back(hostFloppyDriveObj);
-            }
-#else
-    /* PORTME */
-#endif
-
         SafeIfaceArray<IMedium> collection(list);
         collection.detachTo(ComSafeArrayOutArg(aDrives));
     }
-    catch(std::bad_alloc &)
-    {
-        rc = E_OUTOFMEMORY;
-    }
+
     return rc;
 }
 
@@ -1722,6 +1579,179 @@ HRESULT Host::saveSettings(settings::Host &data)
 #endif /* VBOX_WITH_USB */
 
     return S_OK;
+}
+
+HRESULT Host::getDVDDrives(MediaList &list)
+{
+    HRESULT rc = S_OK;
+
+    Assert(isWriteLockOnCurrentThread());
+
+    try
+    {
+#if defined(RT_OS_WINDOWS)
+        int sz = GetLogicalDriveStrings(0, NULL);
+        TCHAR *hostDrives = new TCHAR[sz+1];
+        GetLogicalDriveStrings(sz, hostDrives);
+        wchar_t driveName[3] = { '?', ':', '\0' };
+        TCHAR *p = hostDrives;
+        do
+        {
+            if (GetDriveType(p) == DRIVE_CDROM)
+            {
+                driveName[0] = *p;
+                ComObjPtr<Medium> hostDVDDriveObj;
+                hostDVDDriveObj.createObject();
+                hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(driveName));
+                list.push_back(hostDVDDriveObj);
+            }
+            p += _tcslen(p) + 1;
+        }
+        while (*p);
+        delete[] hostDrives;
+
+#elif defined(RT_OS_SOLARIS)
+# ifdef VBOX_USE_LIBHAL
+        if (!getDVDInfoFromHal(list))
+# endif
+        // Not all Solaris versions ship with libhal.
+        // So use a fallback approach similar to Linux.
+        {
+            if (RTEnvExistEx(RTENV_DEFAULT, "VBOX_CDROM"))
+            {
+                char *cdromEnv = RTEnvDupEx(RTENV_DEFAULT, "VBOX_CDROM");
+                char *saveStr = NULL;
+                char *cdromDrive = NULL;
+                if (cdromEnv)
+                    cdromDrive = strtok_r(cdromEnv, ":", &saveStr);
+                while (cdromDrive)
+                {
+                    if (validateDevice(cdromDrive, true))
+                    {
+                        ComObjPtr<Medium> hostDVDDriveObj;
+                        hostDVDDriveObj.createObject();
+                        hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cdromDrive));
+                        list.push_back(hostDVDDriveObj);
+                    }
+                    cdromDrive = strtok_r(NULL, ":", &saveStr);
+                }
+                RTStrFree(cdromEnv);
+            }
+            else
+            {
+                // this might work on Solaris version older than Nevada.
+                if (validateDevice("/cdrom/cdrom0", true))
+                {
+                    ComObjPtr<Medium> hostDVDDriveObj;
+                    hostDVDDriveObj.createObject();
+                    hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr("cdrom/cdrom0"));
+                    list.push_back(hostDVDDriveObj);
+                }
+
+                // check the mounted drives
+                parseMountTable(MNTTAB, list);
+            }
+        }
+
+#elif defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
+        if (RT_SUCCESS(m->hostDrives.updateDVDs()))
+            for (DriveInfoList::const_iterator it = m->hostDrives.DVDBegin();
+                SUCCEEDED(rc) && it != m->hostDrives.DVDEnd(); ++it)
+            {
+                ComObjPtr<Medium> hostDVDDriveObj;
+                Bstr location(it->mDevice);
+                Bstr description(it->mDescription);
+                if (SUCCEEDED(rc))
+                    rc = hostDVDDriveObj.createObject();
+                if (SUCCEEDED(rc))
+                    rc = hostDVDDriveObj->init(m->pParent, DeviceType_DVD, location, description);
+                if (SUCCEEDED(rc))
+                    list.push_back(hostDVDDriveObj);
+            }
+#elif defined(RT_OS_DARWIN)
+        PDARWINDVD cur = DarwinGetDVDDrives();
+        while (cur)
+        {
+            ComObjPtr<Medium> hostDVDDriveObj;
+            hostDVDDriveObj.createObject();
+            hostDVDDriveObj->init(m->pParent, DeviceType_DVD, Bstr(cur->szName));
+            list.push_back(hostDVDDriveObj);
+
+            /* next */
+            void *freeMe = cur;
+            cur = cur->pNext;
+            RTMemFree(freeMe);
+        }
+#else
+    /* PORTME */
+#endif
+    }
+    catch(std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+    return rc;
+}
+
+/**
+ * Internal implementation for COMGETTER(FloppyDrives) which can be called
+ * from elsewhere. Caller must hold the Host object write lock!
+ * @param list
+ * @return
+ */
+HRESULT Host::getFloppyDrives(MediaList &list)
+{
+    HRESULT rc = S_OK;
+
+    Assert(isWriteLockOnCurrentThread());
+
+    try
+    {
+#ifdef RT_OS_WINDOWS
+        int sz = GetLogicalDriveStrings(0, NULL);
+        TCHAR *hostDrives = new TCHAR[sz+1];
+        GetLogicalDriveStrings(sz, hostDrives);
+        wchar_t driveName[3] = { '?', ':', '\0' };
+        TCHAR *p = hostDrives;
+        do
+        {
+            if (GetDriveType(p) == DRIVE_REMOVABLE)
+            {
+                driveName[0] = *p;
+                ComObjPtr<Medium> hostFloppyDriveObj;
+                hostFloppyDriveObj.createObject();
+                hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, Bstr(driveName));
+                list.push_back(hostFloppyDriveObj);
+            }
+            p += _tcslen(p) + 1;
+        }
+        while (*p);
+        delete[] hostDrives;
+#elif defined(RT_OS_LINUX)
+        if (RT_SUCCESS(m->hostDrives.updateFloppies()))
+            for (DriveInfoList::const_iterator it = m->hostDrives.FloppyBegin();
+                SUCCEEDED(rc) && it != m->hostDrives.FloppyEnd(); ++it)
+            {
+                ComObjPtr<Medium> hostFloppyDriveObj;
+                Bstr location(it->mDevice);
+                Bstr description(it->mDescription);
+                if (SUCCEEDED(rc))
+                    rc = hostFloppyDriveObj.createObject();
+                if (SUCCEEDED(rc))
+                    rc = hostFloppyDriveObj->init(m->pParent, DeviceType_Floppy, location, description);
+                if (SUCCEEDED(rc))
+                    list.push_back(hostFloppyDriveObj);
+            }
+#else
+    /* PORTME */
+#endif
+    }
+    catch(std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+
+    return rc;
 }
 
 #ifdef VBOX_WITH_USB

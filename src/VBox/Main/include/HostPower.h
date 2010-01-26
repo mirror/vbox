@@ -32,8 +32,6 @@
 # include <Carbon/Carbon.h>
 #endif /* RT_OS_DARWIN */
 
-class VirtualBox;
-
 typedef enum
 {
     HostPowerEvent_Suspend,

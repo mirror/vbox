@@ -31,7 +31,6 @@
 
 #include <list>
 
-class VirtualBox;
 namespace settings
 {
     struct SystemProperties;

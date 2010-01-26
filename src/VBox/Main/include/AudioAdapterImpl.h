@@ -26,8 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-class Machine;
-
 namespace settings
 {
     struct AudioAdapter;

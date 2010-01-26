@@ -25,9 +25,7 @@
 #include "VirtualBoxBase.h"
 #include <VBox/shflsvc.h>
 
-class Machine;
 class Console;
-class VirtualBox;
 
 class ATL_NO_VTABLE SharedFolder :
     public VirtualBoxBaseWithChildrenNEXT,
@@ -65,10 +63,10 @@ public:
     void FinalRelease();
 
     // public initializer/uninitializer for internal purposes only
-    HRESULT init (Machine *aMachine, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
-    HRESULT initCopy (Machine *aMachine, SharedFolder *aThat);
-    HRESULT init (Console *aConsole, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
-    HRESULT init (VirtualBox *aVirtualBox, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
+    HRESULT init(Machine *aMachine, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
+    HRESULT initCopy(Machine *aMachine, SharedFolder *aThat);
+    HRESULT init(Console *aConsole, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
+    HRESULT init(VirtualBox *aVirtualBox, CBSTR aName, CBSTR aHostPath, BOOL aWritable);
     void uninit();
 
     // ISharedFolder properties

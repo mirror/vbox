@@ -47,6 +47,12 @@ using namespace util;
 class AutoInitSpan;
 class AutoUninitSpan;
 
+class VirtualBox;
+class Machine;
+class Medium;
+class Host;
+typedef std::list< ComObjPtr<Medium> > MediaList;
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // COM helpers

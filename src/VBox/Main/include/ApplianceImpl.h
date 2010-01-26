@@ -30,7 +30,6 @@
 #include "ovfreader.h"
 
 /* VBox forward declarations */
-class VirtualBox;
 class Progress;
 
 class ATL_NO_VTABLE Appliance :

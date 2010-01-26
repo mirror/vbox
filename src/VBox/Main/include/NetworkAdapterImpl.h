@@ -26,7 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-class Machine;
 class GuestOSType;
 
 namespace settings
