@@ -27,6 +27,7 @@
 #include "VBoxGlobal.h"
 
 #include <iprt/path.h>
+#include <VBox/version.h> /* VBOX_VENDOR */
 
 /* Qt includes */
 #include <QDir>
