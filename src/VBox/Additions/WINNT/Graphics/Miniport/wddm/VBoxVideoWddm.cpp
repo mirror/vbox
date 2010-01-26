@@ -873,6 +873,38 @@ DxgkDdiEnumVidPnCofuncModality(
     CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* CONST  pEnumCofuncModalityArg
     )
 {
+    /* The DxgkDdiEnumVidPnCofuncModality function should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
+
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+    NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    if (Status == STATUS_SUCCESS)
+    {
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+        const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+        NTSTATUS Status = pVidPnInterface->pfnGetTopology(pEnumCofuncModalityArg->hConstrainingVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn,
+                    hVidPnTopology, pVidPnTopologyInterface,
+                    vboxVidPnAdjustSourcesTargetsCallback, (PVOID)pEnumCofuncModalityArg);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status != STATUS_SUCCESS)
+                drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n"));
+        }
+        else
+            drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n"));
+    }
+    else
+        drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n"));
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
     return STATUS_NOT_IMPLEMENTED;
 }
 
