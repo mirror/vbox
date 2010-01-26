@@ -1437,8 +1437,8 @@ STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
-                                       IMedium **aDVDImage)
+STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation, IN_BSTR aId,
+                                      IMedium **aDVDImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
@@ -1455,11 +1455,13 @@ STDMETHODIMP VirtualBox::OpenDVDImage (IN_BSTR aLocation, IN_BSTR aId,
 
     ComObjPtr<Medium> image;
     image.createObject();
-    rc = image->init (this, aLocation, Medium::OpenReadOnly, DeviceType_DVD, true, id, false, Guid());
+    rc = image->init(this, aLocation, Medium::OpenReadOnly, DeviceType_DVD, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
+        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         bool fNeedsSaveSettings = false;
         rc = registerImage(image, DeviceType_DVD, &fNeedsSaveSettings);
+        treeLock.release();
 
         if (SUCCEEDED(rc))
             image.queryInterfaceTo(aDVDImage);
@@ -1532,8 +1534,10 @@ STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
     rc = image->init (this, aLocation, Medium::OpenReadWrite, DeviceType_Floppy, true, id, false, Guid());
     if (SUCCEEDED(rc))
     {
+        AutoWriteLock treeLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         bool fNeedsSaveSettings = false;
         rc = registerImage(image, DeviceType_Floppy, &fNeedsSaveSettings);
+        treeLock.release();
 
         if (SUCCEEDED(rc))
             image.queryInterfaceTo(aFloppyImage);

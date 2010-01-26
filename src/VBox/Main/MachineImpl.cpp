@@ -2983,7 +2983,8 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    // we're calling host methods for getting DVD and floppy drives so lock host first
+    AutoMultiWriteLock2 alock(mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
     ComObjPtr<MediumAttachment> pAttach = findAttachment(mMediaData->mAttachments,
                                                          aControllerName,
