@@ -27,7 +27,6 @@
 #include <iprt/time.h>
 
 class SnapshotMachine;
-class VirtualBox;
 
 namespace settings
 {

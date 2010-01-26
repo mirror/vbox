@@ -25,7 +25,6 @@
 
 #include "VirtualBoxBase.h"
 
-class VirtualBox;
 class Progress;
 struct VM;
 
@@ -35,9 +34,6 @@ namespace settings
 }
 
 ////////////////////////////////////////////////////////////////////////////////
-
-class Medium;
-typedef std::list< ComObjPtr<Medium> > MediaList;
 
 /**
  * Medium component class for all media types.

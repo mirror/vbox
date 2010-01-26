@@ -47,7 +47,6 @@ namespace pm
 /* Each second we obtain new CPU load stats. */
 #define VBOX_USAGE_SAMPLER_MIN_INTERVAL 1000
 
-class Machine;
 class HostUSBDevice;
 
 class ATL_NO_VTABLE PerformanceMetric :

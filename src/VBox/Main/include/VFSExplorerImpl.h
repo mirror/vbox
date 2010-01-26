@@ -26,8 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-class VirtualBox;
-
 class ATL_NO_VTABLE VFSExplorer :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<VFSExplorer, IVFSExplorer>,

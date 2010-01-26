@@ -24,9 +24,6 @@
 
 #include "VirtualBoxBase.h"
 
-class Machine;
-class Medium;
-
 class ATL_NO_VTABLE MediumAttachment :
     public VirtualBoxBase,
     public com::SupportErrorInfoImpl<MediumAttachment, IMediumAttachment>,

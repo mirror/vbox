@@ -26,8 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-class Machine;
-
 class ATL_NO_VTABLE StorageController :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<StorageController, IStorageController>,

@@ -28,8 +28,6 @@
 
 #include <VBox/VRDPAuth.h>
 
-class Machine;
-
 namespace settings
 {
     struct VRDPSettings;

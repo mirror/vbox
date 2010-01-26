@@ -26,7 +26,6 @@
 
 #include "VirtualBoxBase.h"
 
-class Machine;
 class HostUSBDevice;
 class USBDeviceFilter;
 

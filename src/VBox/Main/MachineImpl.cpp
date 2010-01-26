@@ -3009,17 +3009,18 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             if (!uuid.isEmpty())
             {
                 /* find a DVD by host device UUID */
-                SafeIfaceArray<IMedium> drivevec;
-                rc = mParent->host()->COMGETTER(DVDDrives)(ComSafeArrayAsOutParam(drivevec));
+                MediaList llHostDVDDrives;
+                rc = mParent->host()->getDVDDrives(llHostDVDDrives);
                 if (SUCCEEDED(rc))
                 {
-                    for (size_t i = 0; i < drivevec.size(); ++i)
+                    for (MediaList::iterator it = llHostDVDDrives.begin();
+                         it != llHostDVDDrives.end();
+                         ++it)
                     {
-                        /// @todo eliminate this conversion
-                        ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                        if (uuid == med->getId())
+                        ComObjPtr<Medium> &p = *it;
+                        if (uuid == p->getId())
                         {
-                            medium = med;
+                            medium = p;
                             break;
                         }
                     }
@@ -3034,17 +3035,18 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
             if (!uuid.isEmpty())
             {
                 /* find a Floppy by host device UUID */
-                SafeIfaceArray<IMedium> drivevec;
-                rc = mParent->host()->COMGETTER(FloppyDrives)(ComSafeArrayAsOutParam(drivevec));
+                MediaList llHostFloppyDrives;
+                rc = mParent->host()->getFloppyDrives(llHostFloppyDrives);
                 if (SUCCEEDED(rc))
                 {
-                    for (size_t i = 0; i < drivevec.size(); ++i)
+                    for (MediaList::iterator it = llHostFloppyDrives.begin();
+                         it != llHostFloppyDrives.end();
+                         ++it)
                     {
-                        /// @todo eliminate this conversion
-                        ComObjPtr<Medium> med = (Medium *)drivevec[i];
-                        if (uuid == med->getId())
+                        ComObjPtr<Medium> &p = *it;
+                        if (uuid == p->getId())
                         {
-                            medium = med;
+                            medium = p;
                             break;
                         }
                     }
@@ -10229,8 +10231,6 @@ HRESULT SessionMachine::lockMedia()
     AssertReturn(   mData->mMachineState == MachineState_Starting
                  || mData->mMachineState == MachineState_Restoring
                  || mData->mMachineState == MachineState_TeleportingIn, E_FAIL);
-
-    typedef std::list <ComPtr<IMedium> > MediaList;
 
     try
     {

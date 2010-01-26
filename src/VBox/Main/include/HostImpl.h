@@ -26,11 +26,9 @@
 
 class HostUSBDeviceFilter;
 class USBProxyService;
-class VirtualBox;
 class SessionMachine;
 class Progress;
 class PerformanceCollector;
-class Medium;
 
 namespace settings
 {
@@ -122,6 +120,9 @@ public:
 
     HRESULT loadSettings(const settings::Host &data);
     HRESULT saveSettings(settings::Host &data);
+
+    HRESULT getDVDDrives(MediaList &ll);
+    HRESULT getFloppyDrives(MediaList &ll);
 
 #ifdef VBOX_WITH_USB
     typedef std::list< ComObjPtr<HostUSBDeviceFilter> > USBDeviceFilterList;

@@ -36,9 +36,7 @@ namespace com
     class EventQueue;
 }
 
-class Machine;
 class SessionMachine;
-class Medium;
 class GuestOSType;
 class SharedFolder;
 class Progress;
