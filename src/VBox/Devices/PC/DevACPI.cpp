@@ -151,8 +151,6 @@ enum
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11,
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12,
-    SYSTEM_INFO_INDEX_MADT_ADDR         = 13,
-    SYSTEM_INFO_INDEX_MADT_SIZE         = 14,
     SYSTEM_INFO_INDEX_END               = 15,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
@@ -234,10 +232,6 @@ typedef struct ACPIState
     bool                fGCEnabled;
     /** Flag whether the R0 part of the device is enabled. */
     bool                fR0Enabled;
-    /** Physical base address of the MADT table. */
-    RTGCPHYS32          GCPhysMADTBase;
-    /** Size of the MADT table */
-    uint32_t            cbMADT;
     /** Array of flags of attached CPUs */
     VMCPUSET            CpuSetAttached;
     /** Which CPU to check for the locked status. */
@@ -887,10 +881,6 @@ static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 
     madt.header_addr()->u8Checksum = acpiChecksum(madt.data(), madt.size());
     acpiPhyscpy(s, addr, madt.data(), madt.size());
-
-    /* Save for attach/detach notifications. */
-    s->GCPhysMADTBase = addr;
-    s->cbMADT         = madt.size();
 }
 
 
@@ -1486,18 +1476,6 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                         /* Always return locked status just to be safe */
                         *pu32 = 1;
                     }
-                    break;
-                }
-
-                case SYSTEM_INFO_INDEX_MADT_ADDR:
-                {
-                    *pu32 = s->GCPhysMADTBase;
-                    break;
-                }
-
-                case SYSTEM_INFO_INDEX_MADT_SIZE:
-                {
-                    *pu32 = s->cbMADT;
                     break;
                 }
 
@@ -2182,10 +2160,6 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
          * Prevents ejection while the CPU is still used
          */
         VMCPUSET_ADD(&s->CpuSetLocked, iLUN);
-
-        /* Enable the lapic */
-        acpiSetupMADT(s, s->GCPhysMADTBase);
-
         /* Notify the guest */
         update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
     }
@@ -2215,10 +2189,6 @@ static DECLCALLBACK(void) acpiDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
 
         /* Disable the CPU */
         VMCPUSET_DEL(&s->CpuSetAttached, iLUN);
-
-        /* Update the lapic state */
-        acpiSetupMADT(s, s->GCPhysMADTBase);
-
         /* Notify the guest */
         update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
     }
