@@ -213,7 +213,6 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
             iLength = sizeof(a_pUserInfo->szUser) - sizeof(TCHAR);
         }
         wcsncpy (a_pUserInfo->szUser, usBuffer, iLength);
-        wcscat (a_pUserInfo->szUser, L"");      /* Add terminating null char. */
 
         /* Get authentication package. */
         usBuffer = (sessionData->AuthenticationPackage).Buffer;
@@ -226,7 +225,6 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         if (iLength)
         {
             wcsncpy (a_pUserInfo->szAuthenticationPackage, usBuffer, iLength);
-            wcscat (a_pUserInfo->szAuthenticationPackage, L"");     /* Add terminating null char. */
         }
 
         /* Get logon domain. */
@@ -240,7 +238,6 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         if (iLength)
         {
             wcsncpy (a_pUserInfo->szLogonDomain, usBuffer, iLength);
-            wcscat (a_pUserInfo->szLogonDomain, L"");       /* Add terminating null char. */
         }
 
         /* Only handle users which can login interactively or logged in remotely over native RDP. */
