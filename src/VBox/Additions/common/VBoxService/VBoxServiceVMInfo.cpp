@@ -223,11 +223,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         PLUID pLuid = NULL;
         DWORD dwNumOfProcLUIDs = VBoxServiceVMInfoWinGetLUIDsFromProcesses(&pLuid);
 
-        VBOXSERVICEVMINFOUSER userInfo;
-        ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
-
         for (int i = 0; i<(int)ulCount; i++)
         {
+            VBOXSERVICEVMINFOUSER userInfo;
+            ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
+
             if (VBoxServiceVMInfoWinIsLoggedIn(&userInfo, &pSessions[i], pLuid, dwNumOfProcLUIDs))
             {
                 if (uiUserCount > 0)
