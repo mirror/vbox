@@ -148,6 +148,16 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         /*
+         * PGM pool flush pending (guest SMP only)
+         *
+         * Todo: jumping back and forth between ring 0 and 3 can burn a lot of cycles if the EMT thread that's supposed to handle
+         *       the flush is currently not active (e.g. waiting to be scheduled) -> fix this properly!
+         */
+        case VINF_PGM_POOL_FLUSH_PENDING:
+            rc = VINF_SUCCESS;
+            break;
+
+        /*
          * Paging mode change.
          */
         case VINF_PGM_CHANGE_MODE:

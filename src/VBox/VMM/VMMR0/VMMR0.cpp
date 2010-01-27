@@ -464,6 +464,9 @@ static void vmmR0RecordRC(PVM pVM, PVMCPU pVCpu, int rc)
         case VINF_PGM_CHANGE_MODE:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPGMChangeMode);
             break;
+        case VINF_PGM_POOL_FLUSH_PENDING:
+            STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPGMFlushPending);
+            break;
         case VINF_EM_PENDING_REQUEST:
             STAM_COUNTER_INC(&pVM->vmm.s.StatRZRetPendingRequest);
             break;

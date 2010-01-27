@@ -726,6 +726,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pV
     for (VMCPUID idCpu = 0; idCpu < pVM->cCpus; idCpu++)
         pVM->aCpus[idCpu].pgm.s.fSyncFlags &= ~PGM_SYNC_CLEAR_PGM_POOL;
 
+    /* Flush job finished. */
+    VM_FF_CLEAR(pVM, VM_FF_PGM_POOL_FLUSH_PENDING);
+
     pPool->cPresent = 0;
     pgmUnlock(pVM);
     PGM_INVL_ALL_VCPU_TLBS(pVM);

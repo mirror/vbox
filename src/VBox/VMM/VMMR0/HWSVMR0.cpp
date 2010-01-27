@@ -1025,7 +1025,7 @@ ResumeExecution:
 #endif
 
     /* Check for pending actions that force us to go back to ring 3. */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK | VM_FF_REQUEST)
+    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK | VM_FF_REQUEST | VM_FF_PGM_POOL_FLUSH_PENDING)
         ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST))
     {
         /* Check if a sync operation is pending. */
@@ -1062,6 +1062,14 @@ ResumeExecution:
         {
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
             rc = VINF_EM_PENDING_REQUEST;
+            goto end;
+        }
+
+        /* Check if a pgm pool flush is in progress. */
+        if (VM_FF_ISPENDING(pVM, VM_FF_PGM_POOL_FLUSH_PENDING))
+        {
+            STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
+            rc = VINF_PGM_POOL_FLUSH_PENDING;
             goto end;
         }
     }
