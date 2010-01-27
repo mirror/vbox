@@ -269,15 +269,15 @@ NTSTATUS DxgkDdiQueryChildRelations(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
-    for (ULONG i = 0; i < ChildRelationsSize; i++)
+    for (ULONG i = 0; i < ChildRelationsSize; ++i)
     {
         ChildRelations[i].ChildDeviceType = TypeVideoOutput;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_OTHER;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_NONE;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
         ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected;
-        ChildRelations[i].AcpiUid =  i+1; /* @todo: do we need it? could it be zero ? */
-        ChildRelations[i].ChildUid = i+1; /* could it be zero ? */
+        ChildRelations[i].AcpiUid =  i; /* @todo: do we need it? could it be zero ? */
+        ChildRelations[i].ChildUid = i; /* could it be zero ? */
     }
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
     return STATUS_SUCCESS;
@@ -407,7 +407,69 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_QUERYADAPTERINFO*  pQueryAdapterInfo)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiQueryAdapterInfo should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    switch (pQueryAdapterInfo->Type)
+    {
+        case DXGKQAITYPE_DRIVERCAPS:
+        {
+            DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
+
+            pCaps->HighestAcceptableAddress.HighPart = 0xffffffffUL;
+            pCaps->HighestAcceptableAddress.LowPart = 0xffffffffUL;
+            pCaps->MaxAllocationListSlotId = 0xffffffffUL;
+            pCaps->ApertureSegmentCommitLimit = 0;
+            pCaps->MaxPointerWidth = 0xffffffffUL;
+            pCaps->MaxPointerHeight = 0xffffffffUL;
+            pCaps->PointerCaps.Value = 0x7; /* Monochrome , Color , MaskedColor */
+            pCaps->InterruptMessageNumber = 0;
+            pCaps->NumberOfSwizzlingRanges = 0;
+            /* @todo: need to adjust this for proper 2D Accel support */
+            pCaps->MaxOverlays = 0;
+            pCaps->GammaRampCaps.Value = 0;
+            pCaps->PresentationCaps.Value = 0;
+            pCaps->PresentationCaps.NoScreenToScreenBlt = 1;
+            pCaps->PresentationCaps.NoOverlapScreenBlt = 1;
+            pCaps->MaxQueuedFlipOnVSync = 1; /* @todo: need more ?? */
+            pCaps->FlipCaps.Value = 0;
+            pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1;
+            pCaps->FlipCaps.FlipOnVSyncMmIo = 1; /* @todo: ?? */
+            pCaps->SchedulingCaps.Value = 0;
+            /* @todo: we might need it for Aero.
+             * Setting this glag would mean we support DeviceContext, i.e.
+             *  DxgkDdiCreateContext and DxgkDdiDestroyContext
+             *
+             *  pCaps->SchedulingCaps.MultiEngineAware = 1;
+             */
+            pCaps->MemoryManagementCaps.Value = 0;
+            /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
+            pCaps->MemoryManagementCaps.PagingNode = 0;
+            /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
+            pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = 0;
+
+            break;
+        }
+        case DXGKQAITYPE_QUERYSEGMENT:
+        {
+            DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData;
+            DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
+            break;
+        }
+        case DXGKQAITYPE_UMDRIVERPRIVATE:
+            drprintf((""__FUNCTION__ ": we do not support DXGKQAITYPE_UMDRIVERPRIVATE\n"));
+            Status = STATUS_NOT_SUPPORTED;
+            break;
+        default:
+            drprintf((""__FUNCTION__ ": unsupported Type (%d)\n", pQueryAdapterInfo->Type));
+            Status = STATUS_NOT_SUPPORTED;
+            break;
+    }
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x), Status(0x%x)\n", hAdapter, Status));
+    return Status;
 }
 
 NTSTATUS APIENTRY DxgkDdiCreateDevice(
