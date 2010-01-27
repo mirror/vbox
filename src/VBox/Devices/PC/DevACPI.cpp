@@ -1537,6 +1537,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                     s->idCpuLockCheck = u32;
                 else
                     LogRel(("ACPI: CPU %u does not exist\n", u32));
+                break;
             case SYSTEM_INFO_INDEX_CPU_LOCKED:
                 if (u32 < s->cCpus)
                     VMCPUSET_DEL(&s->CpuSetLocked, u32); /* Unlock the CPU */
