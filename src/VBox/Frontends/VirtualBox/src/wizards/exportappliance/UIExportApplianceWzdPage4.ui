@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+     Copyright (C) 2009-2010 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+ </comment>
+ <class>UIExportApplianceWzdPage4</class>
+ <widget class="QWidget" name="UIExportApplianceWzdPage4">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <layout class="QVBoxLayout" name="m_pLayout1">
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QILabel" name="m_pPage4Text1">
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QGridLayout" name="m_pLayout2">
+     <item row="0" column="0">
+      <widget class="QLabel" name="m_pTxUsername">
+       <property name="text">
+        <string>&amp;Username:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="buddy">
+        <cstring>m_pLeUsername</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="0" column="1">
+      <widget class="QLineEdit" name="m_pLeUsername"/>
+     </item>
+     <item row="1" column="0">
+      <widget class="QLabel" name="m_pTxPassword">
+       <property name="text">
+        <string>&amp;Password:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="buddy">
+        <cstring>m_pLePassword</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="1" column="1">
+      <widget class="QLineEdit" name="m_pLePassword">
+       <property name="echoMode">
+        <enum>QLineEdit::Password</enum>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="0">
+      <widget class="QLabel" name="m_pTxHostname">
+       <property name="text">
+        <string>&amp;Hostname:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="buddy">
+        <cstring>m_pLeHostname</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="2" column="1">
+      <widget class="QLineEdit" name="m_pLeHostname"/>
+     </item>
+     <item row="3" column="0">
+      <widget class="QLabel" name="m_pTxBucket">
+       <property name="text">
+        <string>&amp;Bucket:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="buddy">
+        <cstring>m_pLeBucket</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="3" column="1">
+      <widget class="QLineEdit" name="m_pLeBucket"/>
+     </item>
+     <item row="5" column="0">
+      <widget class="QLabel" name="m_pTxFile">
+       <property name="text">
+        <string>&amp;File:</string>
+       </property>
+       <property name="alignment">
+        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       </property>
+       <property name="buddy">
+        <cstring>m_pFileSelector</cstring>
+       </property>
+      </widget>
+     </item>
+     <item row="5" column="1">
+      <widget class="VBoxEmptyFileSelector" name="m_pFileSelector" native="true"/>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <widget class="QCheckBox" name="m_pSelectOVF09">
+     <property name="toolTip">
+      <string>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</string>
+     </property>
+     <property name="text">
+      <string>&amp;Write legacy OVF 0.9</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="m_pSpacer1">
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>174</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>VBoxEmptyFileSelector</class>
+   <extends>QWidget</extends>
+   <header>VBoxFilePathSelectorWidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

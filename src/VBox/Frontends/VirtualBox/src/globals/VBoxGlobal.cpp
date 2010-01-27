@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,7 +33,7 @@
 #include "QIDialogButtonBox.h"
 
 #ifdef VBOX_WITH_REGISTRATION
-#include "VBoxRegistrationDlg.h"
+#include "UIRegistrationWzd.h"
 #endif
 #include "VBoxUpdateDlg.h"
 
@@ -2865,41 +2865,6 @@ bool VBoxGlobal::isDOSType (const QString &aOSTypeId)
     return false;
 }
 
-/**
- *  Sets the QLabel background and frame colors according tho the pixmap
- *  contents. The bottom right pixel of the label pixmap defines the
- *  background color of the label, the top right pixel defines the color of
- *  the one-pixel frame around it. This function also sets the alignment of
- *  the pixmap to AlignVTop (to correspond to the color choosing logic).
- *
- *  This method is useful to provide nice scaling of pixmal labels without
- *  scaling pixmaps themselves. To see th eeffect, the size policy of the
- *  label in the corresponding direction (vertical, for now) should be set to
- *  something like MinimumExpanding.
- *
- *  @todo Parametrize corners to select pixels from and set the alignment
- *  accordingly.
- */
-/* static */
-void VBoxGlobal::adoptLabelPixmap (QLabel *aLabel)
-{
-    AssertReturnVoid (aLabel);
-
-    aLabel->setAlignment (Qt::AlignTop);
-    aLabel->setFrameShape (QFrame::Box);
-    aLabel->setFrameShadow (QFrame::Plain);
-
-    const QPixmap *pix = aLabel->pixmap();
-    QImage img = pix->toImage();
-    QRgb rgbBack = img.pixel (img.width() - 1, img.height() - 1);
-    QRgb rgbFrame = img.pixel (img.width() - 1, 0);
-
-    QPalette pal = aLabel->palette();
-    pal.setColor (QPalette::Window, rgbBack);
-    pal.setColor (QPalette::WindowText, rgbFrame);
-    aLabel->setPalette (pal);
-}
-
 const char *gVBoxLangSubDir = "/nls";
 const char *gVBoxLangFileBase = "VirtualBox_";
 const char *gVBoxLangFileExt = ".qm";
@@ -4329,7 +4294,7 @@ bool VBoxGlobal::openURL (const QString &aURL)
 void VBoxGlobal::showRegistrationDialog (bool aForce)
 {
 #ifdef VBOX_WITH_REGISTRATION
-    if (!aForce && !VBoxRegistrationDlg::hasToBeShown())
+    if (!aForce && !UIRegistrationWzd::hasToBeShown())
         return;
 
     if (mRegDlg)
@@ -4353,8 +4318,7 @@ void VBoxGlobal::showRegistrationDialog (bool aForce)
         if (mVBox.isOk())
         {
             /* We've got the "mutex", create a new registration dialog */
-            VBoxRegistrationDlg *dlg =
-                new VBoxRegistrationDlg (&mRegDlg, mMainWindow);
+            UIRegistrationWzd *dlg = new UIRegistrationWzd (&mRegDlg);
             dlg->setAttribute (Qt::WA_DeleteOnClose);
             Assert (dlg == mRegDlg);
             mRegDlg->show();

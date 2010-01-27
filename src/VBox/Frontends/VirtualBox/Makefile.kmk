@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -219,6 +219,7 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/firstrun \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
+	./src/wizards/registration \
 	./src/widgets \
 	./src/X11 \
 	./src/darwin
@@ -283,7 +284,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/VBoxConsoleWnd.h \
 	src/VBoxGlobalSettings.h \
 	src/VBoxMediaManagerDlg.h \
-	src/VBoxRegistrationDlg.h \
 	src/VBoxSelectorWnd.h \
 	src/VBoxSnapshotDetailsDlg.h \
 	src/VBoxSnapshotsWgt.h \
@@ -295,7 +295,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/globals/VBoxGlobal.h \
 	src/globals/VBoxProblemReporter.h \
 	src/globals/VBoxUtils.h \
-	src/extensions/QIAbstractWizard.h \
 	src/extensions/QIAdvancedSlider.h \
 	src/extensions/QIArrowButtonPress.h \
 	src/extensions/QIArrowButtonSwitch.h \
@@ -317,6 +316,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/extensions/QITreeView.h \
 	src/extensions/QITreeWidget.h \
 	src/extensions/QIWidgetValidator.h \
+	src/extensions/QIWizard.h \
 	src/settings/VBoxSettingsDialog.h \
 	src/settings/VBoxSettingsDialogSpecific.h \
 	src/settings/VBoxSettingsPage.h \
@@ -339,11 +339,12 @@ VirtualBox_QT_MOCHDRS = \
 	src/settings/vm/VBoxVMSettingsUSBFilterDetails.h \
 	src/settings/vm/VBoxVMSettingsSF.h \
 	src/settings/vm/VBoxVMSettingsSFDetails.h \
-	src/wizards/newvm/VBoxNewVMWzd.h \
-	src/wizards/newhd/VBoxNewHDWzd.h \
-	src/wizards/firstrun/VBoxVMFirstRunWzd.h \
-	src/wizards/exportappliance/VBoxExportApplianceWzd.h \
-	src/wizards/importappliance/VBoxImportApplianceWzd.h \
+	src/wizards/newvm/UINewVMWzd.h \
+	src/wizards/newhd/UINewHDWzd.h \
+	src/wizards/firstrun/UIFirstRunWzd.h \
+	src/wizards/exportappliance/UIExportApplianceWzd.h \
+	src/wizards/importappliance/UIImportApplianceWzd.h \
+	src/wizards/registration/UIRegistrationWzd.h \
 	src/widgets/VBoxApplianceEditorWgt.h \
 	src/widgets/VBoxBootTable.h \
 	src/widgets/VBoxDownloaderWgt.h \
@@ -363,7 +364,8 @@ VirtualBox_QT_MOCHDRS = \
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleWnd.cpp \
-	src/VBoxMediaManagerDlg.cpp
+	src/VBoxMediaManagerDlg.cpp \
+	src/wizards/registration/UIRegistrationWzd.cpp
 ifdef VBOX_WITH_XPCOM
  VirtualBox_QT_MOCSRCS += \
 	src/globals/COMDefs.cpp
@@ -384,7 +386,6 @@ VirtualBox_SOURCES = \
 	src/VBoxHelpActions.cpp \
 	src/VBoxMediaManagerDlg.cpp \
 	src/VBoxMedium.cpp \
-	src/VBoxRegistrationDlg.cpp \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxSnapshotDetailsDlg.cpp \
 	src/VBoxSnapshotsWgt.cpp \
@@ -397,7 +398,6 @@ VirtualBox_SOURCES = \
 	src/globals/VBoxDefs.cpp \
 	src/globals/VBoxGlobal.cpp \
 	src/globals/VBoxProblemReporter.cpp \
-	src/extensions/QIAbstractWizard.cpp \
 	src/extensions/QIAdvancedSlider.cpp \
 	src/extensions/QIArrowButtonPress.cpp \
 	src/extensions/QIArrowButtonSwitch.cpp \
@@ -419,6 +419,7 @@ VirtualBox_SOURCES = \
 	src/extensions/QITreeView.cpp \
 	src/extensions/QITreeWidget.cpp \
 	src/extensions/QIWidgetValidator.cpp \
+	src/extensions/QIWizard.cpp \
 	src/settings/VBoxSettingsDialog.cpp \
 	src/settings/VBoxSettingsDialogSpecific.cpp \
 	src/settings/VBoxSettingsSelector.cpp \
@@ -440,11 +441,12 @@ VirtualBox_SOURCES = \
 	src/settings/vm/VBoxVMSettingsUSBFilterDetails.cpp \
 	src/settings/vm/VBoxVMSettingsSF.cpp \
 	src/settings/vm/VBoxVMSettingsSFDetails.cpp \
-	src/wizards/newvm/VBoxNewVMWzd.cpp \
-	src/wizards/newhd/VBoxNewHDWzd.cpp \
-	src/wizards/firstrun/VBoxVMFirstRunWzd.cpp \
-	src/wizards/exportappliance/VBoxExportApplianceWzd.cpp \
-	src/wizards/importappliance/VBoxImportApplianceWzd.cpp \
+	src/wizards/newvm/UINewVMWzd.cpp \
+	src/wizards/newhd/UINewHDWzd.cpp \
+	src/wizards/firstrun/UIFirstRunWzd.cpp \
+	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
+	src/wizards/importappliance/UIImportApplianceWzd.cpp \
+	src/wizards/registration/UIRegistrationWzd.cpp \
 	src/widgets/VBoxApplianceEditorWgt.cpp \
 	src/widgets/VBoxBootTable.cpp \
 	src/widgets/VBoxDownloaderWgt.cpp \

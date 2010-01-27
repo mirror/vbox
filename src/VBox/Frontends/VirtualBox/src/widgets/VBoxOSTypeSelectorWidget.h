@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -29,12 +29,14 @@
 #include <QWidget>
 
 class QComboBox;
-class CGuestOSType;
 class QLabel;
+
+Q_DECLARE_METATYPE (CGuestOSType);
 
 class VBoxOSTypeSelectorWidget : public QIWithRetranslateUI <QWidget>
 {
     Q_OBJECT;
+    Q_PROPERTY(CGuestOSType type READ type WRITE setType);
 
 public:
 
@@ -44,6 +46,7 @@ public:
     CGuestOSType type() const;
 
     void setLayoutPosition (int aPos);
+    void activateLayout();
 
 signals:
 
@@ -70,8 +73,8 @@ private:
     CGuestOSType mType;
     QMap <QString, QString> mCurrentIds;
 
-    bool mPolished;
     int mLayoutPosition;
+    bool mLayoutActivated;
 };
 
 #endif /* __VBoxOSTypeSelectorWidget_h__ */

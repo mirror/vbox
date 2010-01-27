@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,7 +56,7 @@
 #include "VBoxMiniToolBar.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxTakeSnapshotDlg.h"
-#include "VBoxVMFirstRunWzd.h"
+#include "UIFirstRunWzd.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
 #include "VBoxVMInformationDlg.h"
@@ -1796,7 +1796,7 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     if (mIsFirstTimeStarted)
     {
-        VBoxVMFirstRunWzd wzd (machine, this);
+        UIFirstRunWzd wzd (this, machine);
         wzd.exec();
 
         /* Remove GUI_FirstRun extra data key from the machine settings

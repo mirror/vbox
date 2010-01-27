@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -273,7 +273,7 @@ Q_DECLARE_METATYPE (StorageSlot);
 
 class VBoxSelectorWnd;
 class VBoxConsoleWnd;
-class VBoxRegistrationDlg;
+class UIRegistrationWzd;
 class VBoxUpdateDlg;
 
 class VBoxGlobal : public QObject
@@ -728,8 +728,6 @@ public:
 
     static bool isDOSType (const QString &aOSTypeId);
 
-    static void adoptLabelPixmap (QLabel *);
-
     static QString languageId();
     static void loadLanguage (const QString &aLangId = QString::null);
     QString helpFile() const;
@@ -901,7 +899,7 @@ private:
     QWidget* mMainWindow;
 
 #ifdef VBOX_WITH_REGISTRATION
-    VBoxRegistrationDlg *mRegDlg;
+    UIRegistrationWzd *mRegDlg;
 #endif
     VBoxUpdateDlg *mUpdDlg;
 
