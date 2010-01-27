@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2007 Sun Microsystems, Inc.
+# Copyright (C) 2007-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -41,6 +41,10 @@ ifdef VBOX_WITH_GUEST_PROPS
   VBoxService_DEFS       += VBOX_WITH_HGCM VBOXSERVICE_EXEC
  endif
 endif
+if1of ($(KBUILD_TARGET), linux)
+ VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
+endif
+
 VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
@@ -55,6 +59,10 @@ ifdef VBOX_WITH_GUEST_PROPS
 	VBoxServiceExec.cpp
  endif
 endif
+if1of ($(KBUILD_TARGET), linux)
+ VBoxService_SOURCES     += \
+	VBoxServiceCpuHotPlug.cpp
+endif
 VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
 	VBoxService-win.cpp
@@ -62,32 +70,26 @@ VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
 	VBoxServiceClipboard-os2.cpp
 
-# CPU hotplug support only for Linux guests at the moment
-VBoxService_DEFS.linux += VBOXSERVICE_CPUHOTPLUG
-VBoxService_SOURCES.linux += \
-	VBoxServiceCpuHotplug.cpp
-
 VBoxService_LIBS          = \
 	$(VBOX_LIB_IPRT_GUEST_R3) \
 	$(VBOX_LIB_VBGL_R3) \
 	$(VBOX_LIB_IPRT_GUEST_R3)
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_LIBS.win    += \
-	Secur32.lib \
-	WtsApi32.lib \
-	Psapi.lib
+ 	Secur32.lib \
+ 	WtsApi32.lib \
+ 	Psapi.lib
  VBoxService_LIBS.solaris += \
-	nsl
+ 	nsl
 endif
 
 #
 # VBoxServiceNT - NT4 version of VBoxService.
 #
-VBoxServiceNT_TEMPLATE    = VBOXGUESTR3EXE
-VBoxServiceNT_EXTENDS     = VBoxService
-VBoxServiceNT_DEFS.win    = _WIN32_WINNT=0x0400 TARGET_NT4
+VBoxServiceNT_TEMPLATE = VBOXGUESTR3EXE
+VBoxServiceNT_EXTENDS  = VBoxService
+VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4
 
-#VBoxServiceVMInfo.cpp uses VBOX_SVN_REV.
 VBoxServiceVMInfo.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxServiceVMInfo.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 

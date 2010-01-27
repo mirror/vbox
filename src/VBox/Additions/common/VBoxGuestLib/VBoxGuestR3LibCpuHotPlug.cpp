@@ -33,7 +33,7 @@
  *
  * @returns VBox status code.
  */
-VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
+VBGLR3DECL(int) VbglR3CpuHotPlugInit(void)
 {
     int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_CPU_HOTPLUG, 0);
     if (RT_FAILURE(rc))
@@ -57,7 +57,7 @@ VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
  *
  * @returns VBox status.
  */
-VBGLR3DECL(int) VbglR3CpuHotplugTerm(void)
+VBGLR3DECL(int) VbglR3CpuHotPlugTerm(void)
 {
     /* Clear the events. */
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_CPU_HOTPLUG);
@@ -77,7 +77,7 @@ VBGLR3DECL(int) VbglR3CpuHotplugTerm(void)
  * @param   pidCpuCore      Where to store the CPU core ID on success.
  * @param   pidCpuPackage   Where to store the CPU package ID on success.
  */
-VBGLR3DECL(int) VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
+VBGLR3DECL(int) VbglR3CpuHotPlugWaitForEvent(VMMDevCpuEventType *penmEventType, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
 {
     AssertPtrReturn(penmEventType, VERR_INVALID_POINTER);
     AssertPtrReturn(pidCpuCore, VERR_INVALID_POINTER);
