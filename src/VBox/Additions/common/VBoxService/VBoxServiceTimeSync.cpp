@@ -596,6 +596,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
         }
     }
 
+    VBoxServiceTimeSyncCancelAdjust();
     RTSemEventMultiDestroy(g_TimeSyncEvent);
     g_TimeSyncEvent = NIL_RTSEMEVENTMULTI;
     return rc;
