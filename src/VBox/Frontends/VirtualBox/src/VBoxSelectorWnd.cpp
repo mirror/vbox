@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -30,10 +30,10 @@
 #include "VBoxToolBar.h"
 
 #include "VBoxSnapshotsWgt.h"
-#include "VBoxNewVMWzd.h"
+#include "UINewVMWzd.h"
 #include "VBoxMediaManagerDlg.h"
-#include "VBoxImportApplianceWzd.h"
-#include "VBoxExportApplianceWzd.h"
+#include "UIImportApplianceWzd.h"
+#include "UIExportApplianceWzd.h"
 #include "VBoxSettingsDialogSpecific.h"
 #include "VBoxVMLogViewer.h"
 #include "VBoxGlobal.h"
@@ -769,7 +769,7 @@ void VBoxSelectorWnd::fileMediaMgr()
 
 void VBoxSelectorWnd::fileImportAppliance()
 {
-    VBoxImportApplianceWzd wzd (this);
+    UIImportApplianceWzd wzd (this);
 
     wzd.exec();
 }
@@ -782,7 +782,7 @@ void VBoxSelectorWnd::fileExportAppliance()
     if (item)
         name = item->name();
 
-    VBoxExportApplianceWzd wzd (this, name);
+    UIExportApplianceWzd wzd (this, name);
 
     wzd.exec();
 }
@@ -819,7 +819,7 @@ void VBoxSelectorWnd::fileExit()
 
 void VBoxSelectorWnd::vmNew()
 {
-    VBoxNewVMWzd wzd (this);
+    UINewVMWzd wzd (this);
     if (wzd.exec() == QDialog::Accepted)
     {
         CMachine m = wzd.machine();

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+     Copyright (C) 2009 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+ </comment>
+ <class>UINewVMWzdPage5</class>
+ <widget class="QWidget" name="UINewVMWzdPage5">
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <layout class="QVBoxLayout" name="m_pLayout1">
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QILabel" name="m_pPage5Text1">
+     <property name="text">
+      <string>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QTextEdit" name="m_pSummaryText">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <property name="frameShape">
+      <enum>QFrame::NoFrame</enum>
+     </property>
+     <property name="readOnly">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QILabel" name="m_pPage5Text2">
+     <property name="text">
+      <string>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <spacer name="m_pSpacer1">
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

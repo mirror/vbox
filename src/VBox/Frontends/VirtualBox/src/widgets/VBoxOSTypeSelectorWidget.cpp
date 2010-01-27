@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,9 +38,12 @@ VBoxOSTypeSelectorWidget::VBoxOSTypeSelectorWidget (QWidget *aParent)
     , mPxTypeIcon (new QLabel (this))
     , mCbFamily (new QComboBox (this))
     , mCbType (new QComboBox (this))
-    , mPolished (false)
     , mLayoutPosition (-1)
+    , mLayoutActivated (false)
 {
+    /* Register CGuestOSType type */
+    qRegisterMetaType<CGuestOSType>();
+
     /* Setup widgets */
     mTxFamilyName->setAlignment (Qt::AlignRight);
     mTxTypeName->setAlignment (Qt::AlignRight);
@@ -120,6 +123,30 @@ void VBoxOSTypeSelectorWidget::setLayoutPosition (int aPos)
     mLayoutPosition = aPos;
 }
 
+void VBoxOSTypeSelectorWidget::activateLayout()
+{
+    if (mLayoutActivated)
+        return;
+
+    mLayoutActivated = true;
+
+    /* Layouting widgets */
+    QVBoxLayout *layout1 = new QVBoxLayout();
+    layout1->setSpacing (0);
+    layout1->addWidget (mPxTypeIcon);
+    layout1->addStretch();
+
+    QGridLayout *layout2 = layout() ? static_cast <QGridLayout*> (layout()) :
+                                      new QGridLayout (this);
+    layout2->setMargin (0);
+    int row = mLayoutPosition == -1 ? layout2->rowCount() : mLayoutPosition;
+    layout2->addWidget (mTxFamilyName, row, 0);
+    layout2->addWidget (mCbFamily, row, 1);
+    layout2->addWidget (mTxTypeName, row + 1, 0);
+    layout2->addWidget (mCbType, row + 1, 1);
+    layout2->addLayout (layout1, row, 2, 2, 1);
+}
+
 void VBoxOSTypeSelectorWidget::retranslateUi()
 {
     mTxFamilyName->setText (tr ("Operating &System:"));
@@ -133,27 +160,7 @@ void VBoxOSTypeSelectorWidget::retranslateUi()
 
 void VBoxOSTypeSelectorWidget::showEvent (QShowEvent *aEvent)
 {
-    if (!mPolished)
-    {
-        /* Finally polishing just before first show event */
-        mPolished = true;
-
-        /* Layouting widgets */
-        QVBoxLayout *layout1 = new QVBoxLayout();
-        layout1->setSpacing (0);
-        layout1->addWidget (mPxTypeIcon);
-        layout1->addStretch();
-
-        QGridLayout *layout2 = layout() ? static_cast <QGridLayout*> (layout()) :
-                                          new QGridLayout (this);
-        layout2->setMargin (0);
-        int row = mLayoutPosition == -1 ? layout2->rowCount() : mLayoutPosition;
-        layout2->addWidget (mTxFamilyName, row, 0);
-        layout2->addWidget (mCbFamily, row, 1);
-        layout2->addWidget (mTxTypeName, row + 1, 0);
-        layout2->addWidget (mCbType, row + 1, 1);
-        layout2->addLayout (layout1, row, 2, 2, 1);
-    }
+    activateLayout(); /* if not yet */
     QIWithRetranslateUI <QWidget>::showEvent (aEvent);
 }
 

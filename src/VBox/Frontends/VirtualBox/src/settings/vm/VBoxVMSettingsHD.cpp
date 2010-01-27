@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,7 +36,7 @@
 #include "QIWidgetValidator.h"
 #include "VBoxToolBar.h"
 #include "VBoxMediaManagerDlg.h"
-#include "VBoxNewHDWzd.h"
+#include "UINewHDWzd.h"
 
 /* String Tags */
 const char *firstAvailableId = "first available";
@@ -2533,7 +2533,7 @@ void VBoxVMSettingsHD::addAttachmentWrapper (KDeviceType aDevice)
 QString VBoxVMSettingsHD::getWithNewHDWizard()
 {
     /* Run New HD Wizard */
-    VBoxNewHDWzd dlg (this);
+    UINewHDWzd dlg (this);
 
     return dlg.exec() == QDialog::Accepted ? dlg.hardDisk().GetId() : QString();
 }

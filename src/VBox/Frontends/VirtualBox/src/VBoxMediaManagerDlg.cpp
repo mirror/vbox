@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -39,7 +39,7 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
-#include "VBoxNewHDWzd.h"
+#include "UINewHDWzd.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxToolBar.h"
 #include "QIFileDialog.h"
@@ -929,7 +929,7 @@ void VBoxMediaManagerDlg::doNewMedium()
 {
     AssertReturnVoid (currentTreeWidgetType() == VBoxDefs::MediumType_HardDisk);
 
-    VBoxNewHDWzd dlg (this);
+    UINewHDWzd dlg (this);
 
     if (dlg.exec() == QDialog::Accepted)
     {

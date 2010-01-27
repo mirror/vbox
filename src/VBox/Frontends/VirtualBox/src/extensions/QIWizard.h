@@ -1,11 +1,11 @@
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
- * VBoxVMFirstRunWzd class declaration
+ * QIWizard class declaration
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -20,45 +20,54 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxVMFirstRunWzd_h__
-#define __VBoxVMFirstRunWzd_h__
+#ifndef __QIWizard_h__
+#define __QIWizard_h__
+
+/* Global includes */
+#include <QWizard>
 
 /* Local includes */
-#include "QIAbstractWizard.h"
-#include "VBoxVMFirstRunWzd.gen.h"
-#include "COMDefs.h"
 #include "QIWithRetranslateUI.h"
 
-/* Local forwardes */
-class QIWidgetValidator;
+/* Global forwards */
+class QTextEdit;
 
-class VBoxVMFirstRunWzd : public QIWithRetranslateUI <QIAbstractWizard>,
-                          public Ui::VBoxVMFirstRunWzd
+class QIWizard : public QIWithRetranslateUI<QWizard>
 {
     Q_OBJECT;
 
 public:
 
-    VBoxVMFirstRunWzd (const CMachine &aMachine, QWidget *aParent = 0);
+    QIWizard(QWidget *pParent);
 
 protected:
 
-    void retranslateUi();
-
-private slots:
-
-    void accept();
-    void revalidate (QIWidgetValidator *aValidator);
-    void mediaTypeChanged();
-    void openMediaManager();
-    void enableNext (const QIWidgetValidator *aValidator);
-    void onPageShow();
+    void resizeToGoldenRatio();
+    void assignWatermark(const QString &strWaterMark);
 
 private:
 
-    QIWidgetValidator *mValidator;
-    CMachine           mMachine;
+    void resizeAccordingLabelWidth(int iLabelWidth);
 };
 
-#endif // __VBoxVMFirstRunWzd_h__
+class QIWizardPage : public QIWithRetranslateUI<QWizardPage>
+{
+    Q_OBJECT;
 
+public:
+
+    QIWizardPage();
+
+    QSize minimumSizeHint() const;
+    void setMinimumSizeHint(const QSize &minimumSizeHint);
+
+protected:
+
+    static void setSummaryFieldLinesNumber(QTextEdit *pSummaryField, int iNumber);
+
+private:
+
+    QSize m_MinimumSizeHint;
+};
+
+#endif // __QIWizard_h__

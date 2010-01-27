@@ -1,0 +1,174 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <comment>
+ VBox frontends: Qt4 GUI ("VirtualBox"):
+
+     Copyright (C) 2009 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+ </comment>
+ <class>UINewVMWzdPage3</class>
+ <widget class="QWidget" name="UINewVMWzdPage3">
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>600</width>
+    <height>400</height>
+   </rect>
+  </property>
+  <property name="sizePolicy">
+   <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+    <horstretch>0</horstretch>
+    <verstretch>0</verstretch>
+   </sizepolicy>
+  </property>
+  <layout class="QVBoxLayout" name="m_pLayout1">
+   <property name="bottomMargin" >
+    <number>0</number>
+   </property>
+   <item>
+    <widget class="QILabel" name="m_pPage3Text1">
+     <property name="text">
+      <string>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</string>
+     </property>
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QILabel" name="m_pPage3Text2">
+     <property name="wordWrap">
+      <bool>true</bool>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="m_pMemoryCnt">
+     <property name="title">
+      <string>Base &amp;Memory Size</string>
+     </property>
+     <layout class="QGridLayout" name="m_pLayout2">
+      <item row="0" column="0" colspan="3">
+       <widget class="VBoxGuestRAMSlider" name="m_pRamSlider">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="tickPosition">
+         <enum>QSlider::TicksBelow</enum>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="3">
+       <widget class="QILineEdit" name="m_pRamEditor">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="4">
+       <widget class="QLabel" name="m_pRamUnits">
+        <property name="text">
+         <string>MB</string>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="0">
+       <widget class="QLabel" name="m_pRamMin">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <spacer name="m_pSpacer1">
+        <property name="orientation">
+         <enum>Qt::Horizontal</enum>
+        </property>
+        <property name="sizeHint" stdset="0">
+         <size>
+          <width>0</width>
+          <height>0</height>
+         </size>
+        </property>
+       </spacer>
+      </item>
+      <item row="1" column="2">
+       <widget class="QLabel" name="m_pRamMax">
+        <property name="sizePolicy">
+         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+          <horstretch>0</horstretch>
+          <verstretch>0</verstretch>
+         </sizepolicy>
+        </property>
+       </widget>
+      </item>
+     </layout>
+    </widget>
+   </item>
+   <item>
+    <spacer name="m_pSpacer2">
+     <property name="sizeHint" stdset="0">
+      <size>
+       <width>0</width>
+       <height>0</height>
+      </size>
+     </property>
+    </spacer>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>QILabel</class>
+   <extends>QLabel</extends>
+   <header>QILabel.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QILineEdit</class>
+   <extends>QLineEdit</extends>
+   <header>QILineEdit.h</header>
+  </customwidget>
+  <customwidget>
+   <class>QIAdvancedSlider</class>
+   <extends>QSlider</extends>
+   <header>QIAdvancedSlider.h</header>
+  </customwidget>
+  <customwidget>
+   <class>VBoxGuestRAMSlider</class>
+   <extends>QIAdvancedSlider</extends>
+   <header>VBoxGuestRAMSlider.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>
