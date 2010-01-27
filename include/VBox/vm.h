@@ -289,6 +289,10 @@ typedef struct VMCPU
  * Abandon all loops and code paths which can be resumed and get up to the EM
  * loops. */
 #define VM_FF_PGM_NO_MEMORY                 RT_BIT_32(19)
+ /** PGM is about to perform a lightweight pool flush
+  *  Guest SMP: all EMT threads should return to ring 3
+  */
+#define VM_FF_PGM_POOL_FLUSH_PENDING        RT_BIT_32(20)
 /** REM needs to be informed about handler changes. */
 #define VM_FF_REM_HANDLER_NOTIFY            RT_BIT_32(VM_FF_REM_HANDLER_NOTIFY_BIT)
 /** The bit number for VM_FF_REM_HANDLER_NOTIFY. */
