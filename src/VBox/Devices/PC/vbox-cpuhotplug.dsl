@@ -124,7 +124,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
     Method(CPCK, 1)
     {
         Store (Arg0, \_SB.CPUC)
-        Return(\_SB.CPUL)
+        Return(LEqual(\_SB.CPUL, 0x01))
     }
 
     // Processor object
@@ -145,8 +145,16 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
         {
         }
 
-        Device(HPL) // Needed or Linux can't find the CPU after insertion if it was ejected before.
+         // A ACPI node which contains all hot-plugable CPUs
+         // Needed on Linux or the new CPU device can't be registered
+         // after it was inserted.
+         // Windows guests will perform better if this device is present.
+         // The guest the guest seems to be kind of stuck for about 30sec
+         // (the mouse jumps if it is moved for example) without it.
+        Device(HPL)
         {
+            Name (_HID, "ACPI0004") // Generic container, prevents that Windows guests ask for a driver
+
             Processor (CPU1, /* Name */
                        0x01, /* Id */
                        0x0,  /* Processor IO ports range start */
@@ -154,7 +162,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL1)
+                    IF (CPCK(0x01))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x01, 0x01, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -164,7 +180,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -180,7 +196,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL2)
+                    IF (CPCK(0x02))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x02, 0x02, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -190,7 +214,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -206,7 +230,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL3)
+                    IF (CPCK(0x03))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x03, 0x03, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -216,7 +248,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -232,7 +264,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL4)
+                    IF (CPCK(0x04))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x04, 0x04, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -242,7 +282,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -258,7 +298,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL5)
+                    IF (CPCK(0x05))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x05, 0x05, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -268,7 +316,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -284,7 +332,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL6)
+                    IF (CPCK(0x06))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x06, 0x06, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -294,7 +350,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -310,7 +366,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL7)
+                    IF (CPCK(0x07))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x07, 0x07, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -320,7 +384,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -336,7 +400,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL8)
+                    IF (CPCK(0x08))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x08, 0x08, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -346,7 +418,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -362,7 +434,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MAL9)
+                    IF (CPCK(0x09))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x09, 0x09, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -372,7 +452,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -388,7 +468,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALA)
+                    IF (CPCK(0x0a))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0a, 0x0a, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -398,7 +486,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -414,7 +502,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALB)
+                    IF (CPCK(0x0b))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0b, 0x0b, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -424,7 +520,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -440,7 +536,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALC)
+                    IF (CPCK(0x0c))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0c, 0x0c, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -450,7 +554,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -466,7 +570,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALD)
+                    IF (CPCK(0x0d))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0d, 0x0d, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -476,7 +588,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -492,7 +604,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALE)
+                    IF (CPCK(0x0e))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0e, 0x0e, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -502,7 +622,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -518,7 +638,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALF)
+                    IF (CPCK(0x0f))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x0f, 0x0f, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -528,7 +656,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -544,7 +672,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALG)
+                    IF (CPCK(0x10))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x10, 0x10, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -554,7 +690,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -570,7 +706,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALH)
+                    IF (CPCK(0x11))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x11, 0x11, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -580,7 +724,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -596,7 +740,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALI)
+                    IF (CPCK(0x12))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x12, 0x12, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -606,7 +758,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -622,7 +774,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALJ)
+                    IF (CPCK(0x13))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x13, 0x13, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -632,7 +792,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -648,7 +808,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALK)
+                    IF (CPCK(0x14))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x14, 0x14, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -658,7 +826,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -674,7 +842,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALL)
+                    IF (CPCK(0x15))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x15, 0x15, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -684,7 +860,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -700,7 +876,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALM)
+                    IF (CPCK(0x16))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x16, 0x16, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -710,7 +894,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -726,7 +910,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALN)
+                    IF (CPCK(0x17))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x17, 0x17, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -736,7 +928,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -752,7 +944,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALO)
+                    IF (CPCK(0x18))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x18, 0x18, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -762,7 +962,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -778,7 +978,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALP)
+                    IF (CPCK(0x19))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x19, 0x19, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -788,7 +996,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -804,7 +1012,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALQ)
+                    IF (CPCK(0x1a))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1a, 0x1a, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -814,7 +1030,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -830,7 +1046,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALR)
+                    IF (CPCK(0x1b))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1b, 0x1b, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -840,7 +1064,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -856,7 +1080,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALS)
+                    IF (CPCK(0x1c))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1c, 0x1c, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -866,7 +1098,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -882,7 +1114,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALT)
+                    IF (CPCK(0x1d))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1d, 0x1d, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -892,7 +1132,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -908,7 +1148,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALU)
+                    IF (CPCK(0x1e))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1e, 0x1e, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -918,7 +1166,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -934,7 +1182,15 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                        )
             {
                 Method(_MAT, 0) {
-                    Return(\_SB.MALV)
+                    IF (CPCK(0x1f))
+                    {
+                        Name (APIC, Buffer (8) {0x00, 0x08, 0x1f, 0x1f, 0x01})
+                        Return(APIC)
+                    }
+                    Else
+                    {
+                        Return (0x00)
+                    }
                 }
                 Method(_STA) // Used for device presence detection
                 {
@@ -944,7 +1200,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     }
                     Else
                     {
-                        Return (0x1) // Present but not enabled
+                        Return (0x0)
                     }
                 }
                 Method(_EJ0, 1)
@@ -1128,46 +1384,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             ININ, 32,
             Offset (0x200),
             VAIN, 32,
-        }
-
-        OperationRegion(MABL, SystemMemory, MAAD, MASZ)
-        Field (MABL, ByteAcc, NoLock, Preserve)
-        {
-            MUDA, 288,
-            MUDD, 32,
-            MUDF, 32,
-            MAL0, 64,
-            MAL1, 64,
-            MAL2, 64,
-            MAL3, 64,
-            MAL4, 64,
-            MAL5, 64,
-            MAL6, 64,
-            MAL7, 64,
-            MAL8, 64,
-            MAL9, 64,
-            MALA, 64,
-            MALB, 64,
-            MALC, 64,
-            MALD, 64,
-            MALE, 64,
-            MALF, 64,
-            MALG, 64,
-            MALH, 64,
-            MALI, 64,
-            MALJ, 64,
-            MALK, 64,
-            MALL, 64,
-            MALM, 64,
-            MALN, 64,
-            MALO, 64,
-            MALP, 64,
-            MALQ, 64,
-            MALR, 64,
-            MALS, 64,
-            MALT, 64,
-            MALU, 64,
-            MALV, 64,
         }
 
         Method (_INI, 0, NotSerialized)
