@@ -207,38 +207,34 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
         /* Get the user name. */
         usBuffer = (sessionData->UserName).Buffer;
         iLength = (sessionData->UserName).Length;
-        if (iLength > sizeof(a_pUserInfo->szUser) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
+        if (iLength > sizeof(a_pUserInfo->szUser) - sizeof(WCHAR))   /* -sizeof(WCHAR) because we have to add the terminating null char at the end later. */
         {
             VBoxServiceVerbose(0, "User name too long (%d bytes) for buffer! Name will be truncated.\n", iLength);
-            iLength = sizeof(a_pUserInfo->szUser) - sizeof(TCHAR);
+            iLength = sizeof(a_pUserInfo->szUser) - sizeof(WCHAR);
         }
         wcsncpy (a_pUserInfo->szUser, usBuffer, iLength);
 
         /* Get authentication package. */
         usBuffer = (sessionData->AuthenticationPackage).Buffer;
         iLength = (sessionData->AuthenticationPackage).Length;
-        if (iLength > sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
+        if (iLength > sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(WCHAR))   /* -sizeof(WCHAR) because we have to add the terminating null char at the end later. */
         {
             VBoxServiceVerbose(0, "Authentication pkg name too long (%d bytes) for buffer! Name will be truncated.\n", iLength);
-            iLength = sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(TCHAR);
+            iLength = sizeof(a_pUserInfo->szAuthenticationPackage) - sizeof(WCHAR);
         }
         if (iLength)
-        {
             wcsncpy (a_pUserInfo->szAuthenticationPackage, usBuffer, iLength);
-        }
 
         /* Get logon domain. */
         usBuffer = (sessionData->LogonDomain).Buffer;
         iLength = (sessionData->LogonDomain).Length;
-        if (iLength > sizeof(a_pUserInfo->szLogonDomain) - sizeof(TCHAR))   /* -sizeof(TCHAR) because we have to add the terminating null char at the end later. */
+        if (iLength > sizeof(a_pUserInfo->szLogonDomain) - sizeof(WCHAR))   /* -sizeof(WCHAR) because we have to add the terminating null char at the end later. */
         {
             VBoxServiceVerbose(0, "Logon domain name too long (%d bytes) for buffer! Name will be truncated.\n", iLength);
-            iLength = sizeof(a_pUserInfo->szLogonDomain) - sizeof(TCHAR);
+            iLength = sizeof(a_pUserInfo->szLogonDomain) - sizeof(WCHAR);
         }
         if (iLength)
-        {
             wcsncpy (a_pUserInfo->szLogonDomain, usBuffer, iLength);
-        }
 
         /* Only handle users which can login interactively or logged in remotely over native RDP. */
         if (   (((SECURITY_LOGON_TYPE)sessionData->LogonType == Interactive)
