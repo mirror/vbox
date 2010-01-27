@@ -385,8 +385,8 @@ struct ACPITBLFADT
                                                      (COM too?) */
 #define IAPC_BOOT_ARCH_8042             RT_BIT(1)  /**< legacy keyboard device present */
 #define IAPC_BOOT_ARCH_NO_VGA           RT_BIT(2)  /**< VGA not present */
-    uint8_t             u8Must0_0;              /**< must be 0 */
-    uint32_t            u32Flags;               /**< fixed feature flags */
+    uint8_t             u8Must0_0;                 /**< must be 0 */
+    uint32_t            u32Flags;                  /**< fixed feature flags */
 #define FADT_FL_WBINVD                  RT_BIT(0)  /**< emulation of WBINVD available */
 #define FADT_FL_WBINVD_FLUSH            RT_BIT(1)
 #define FADT_FL_PROC_C1                 RT_BIT(2)  /**< 1=C1 supported on all processors */
@@ -467,17 +467,25 @@ struct ACPITBLIOAPIC
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
 
-
-/* HPET Descriptor Structure */
+/** HPET Descriptor Structure */
 struct ACPITBLHPET
 {
     ACPITBLHEADER aHeader;
-    uint32_t      u32Id;
-    ACPIGENADDR   HpetAddr;
-    uint8_t       u32Number;
-    uint16_t      u32MinTick;
-    uint8_t       u8Attributes;
+    uint32_t      u32Id;                        /**< hardware ID of event timer block
+                                                     [31:16] PCI vendor ID of first timer block
+                                                     [15]    legacy replacement IRQ routing capable
+                                                     [14]    reserved
+                                                     [13]    COUNT_SIZE_CAP counter size
+                                                     [12:8]  number of comparators in first timer block 
+                                                     [7:0]   hardware rev ID */
+    ACPIGENADDR   HpetAddr;                     /**< lower 32-bit base address */
+    uint8_t       u32Number;                    /**< sequence number starting at 0 */
+    uint16_t      u32MinTick;                   /**< minimum clock ticks which can be set without
+                                                     lost interrupts while the counter is programmed
+                                                     to operate in periodic mode. Unit: clock tick. */
+    uint8_t       u8Attributes;                 /**< page protextion and OEM attribute. */
 };
+AssertCompileSize(ACPITBLHPET, 56);
 
 # ifdef IN_RING3 /** @todo r=bird: Move this down to where it's used. */
 
@@ -698,15 +706,15 @@ static void acpiSetupFACS(ACPIState *s, RTGCPHYS32 addr)
 }
 
 /** Fixed ACPI Description Table (FADT aka FACP) */
-static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_acpi2, uint32_t facs_addr, uint32_t dsdt_addr)
+static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 GCPhysAcpi1, RTGCPHYS32 GCPhysAcpi2, RTGCPHYS32 GCPhysFacs, RTGCPHYS GCPhysDsdt)
 {
     ACPITBLFADT fadt;
 
     /* First the ACPI version 2+ version of the structure. */
     memset(&fadt, 0, sizeof(fadt));
     acpiPrepareHeader(&fadt.header, "FACP", sizeof(fadt), 4);
-    fadt.u32FACS              = RT_H2LE_U32(facs_addr);
-    fadt.u32DSDT              = RT_H2LE_U32(dsdt_addr);
+    fadt.u32FACS              = RT_H2LE_U32(GCPhysFacs);
+    fadt.u32DSDT              = RT_H2LE_U32(GCPhysDsdt);
     fadt.u8IntModel           = 0;  /* dropped from the ACPI 2.0 spec. */
     fadt.u8PreferredPMProfile = 0;  /* unspecified */
     fadt.u16SCIInt            = RT_H2LE_U16(SCI_INT);
@@ -752,8 +760,8 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
 
     acpiWriteGenericAddr(&fadt.ResetReg,     1,  8, 0, 1, ACPI_RESET_BLK);
     fadt.u8ResetVal           = ACPI_RESET_REG_VAL;
-    fadt.u64XFACS             = RT_H2LE_U64((uint64_t)facs_addr);
-    fadt.u64XDSDT             = RT_H2LE_U64((uint64_t)dsdt_addr);
+    fadt.u64XFACS             = RT_H2LE_U64((uint64_t)GCPhysFacs);
+    fadt.u64XDSDT             = RT_H2LE_U64((uint64_t)GCPhysDsdt);
     acpiWriteGenericAddr(&fadt.X_PM1aEVTBLK, 1, 32, 0, 2, acpiPmPort(s, PM1a_EVT_OFFSET));
     acpiWriteGenericAddr(&fadt.X_PM1bEVTBLK, 0,  0, 0, 0, acpiPmPort(s, PM1b_EVT_OFFSET));
     acpiWriteGenericAddr(&fadt.X_PM1aCTLBLK, 1, 16, 0, 2, acpiPmPort(s, PM1a_CTL_OFFSET));
@@ -763,14 +771,14 @@ static void acpiSetupFADT(ACPIState *s, RTGCPHYS32 addr_acpi1, RTGCPHYS32 addr_a
     acpiWriteGenericAddr(&fadt.X_GPE0BLK,    1, 16, 0, 1, acpiPmPort(s, GPE0_OFFSET));
     acpiWriteGenericAddr(&fadt.X_GPE1BLK,    0,  0, 0, 0, acpiPmPort(s, GPE1_OFFSET));
     fadt.header.u8Checksum    = acpiChecksum((uint8_t *)&fadt, sizeof(fadt));
-    acpiPhyscpy(s, addr_acpi2, &fadt, sizeof(fadt));
+    acpiPhyscpy(s, GCPhysAcpi2, &fadt, sizeof(fadt));
 
     /* Now the ACPI 1.0 version. */
     fadt.header.u32Length     = ACPITBLFADT_VERSION1_SIZE;
     fadt.u8IntModel           = INT_MODEL_DUAL_PIC;
     fadt.header.u8Checksum    = 0;  /* Must be zeroed before recalculating checksum! */
     fadt.header.u8Checksum    = acpiChecksum((uint8_t *)&fadt, ACPITBLFADT_VERSION1_SIZE);
-    acpiPhyscpy(s, addr_acpi1, &fadt, ACPITBLFADT_VERSION1_SIZE);
+    acpiPhyscpy(s, GCPhysAcpi1, &fadt, ACPITBLFADT_VERSION1_SIZE);
 }
 
 /**
@@ -822,7 +830,7 @@ static int acpiSetupXSDT(ACPIState *s, RTGCPHYS32 addr, unsigned int nb_entries,
 }
 
 /** Root System Description Pointer (RSDP) */
-static void acpiSetupRSDP(ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_addr)
+static void acpiSetupRSDP(ACPITBLRSDP *rsdp, RTGCPHYS32 GCPhysRsdt, RTGCPHYS GCPhysXsdt)
 {
     memset(rsdp, 0, sizeof(*rsdp));
 
@@ -830,12 +838,12 @@ static void acpiSetupRSDP(ACPITBLRSDP *rsdp, uint32_t rsdt_addr, uint64_t xsdt_a
     memcpy(rsdp->au8Signature, "RSD PTR ", 8);
     memcpy(rsdp->au8OemId, "VBOX  ", 6);
     rsdp->u8Revision    = ACPI_REVISION;
-    rsdp->u32RSDT       = RT_H2LE_U32(rsdt_addr);
+    rsdp->u32RSDT       = RT_H2LE_U32(GCPhysRsdt);
     rsdp->u8Checksum    = acpiChecksum((uint8_t*)rsdp, RT_OFFSETOF(ACPITBLRSDP, u32Length));
 
     /* ACPI 2.0 part (XSDT) */
     rsdp->u32Length     = RT_H2LE_U32(sizeof(ACPITBLRSDP));
-    rsdp->u64XSDT       = RT_H2LE_U64(xsdt_addr);
+    rsdp->u64XSDT       = RT_H2LE_U64(GCPhysXsdt);
     rsdp->u8ExtChecksum = acpiChecksum((uint8_t*)rsdp, sizeof(ACPITBLRSDP));
 }
 
@@ -1538,6 +1546,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 else
                     LogRel(("ACPI: CPU %u does not exist\n", u32));
                 break;
+
             case SYSTEM_INFO_INDEX_CPU_LOCKED:
                 if (u32 < s->cCpus)
                     VMCPUSET_DEL(&s->CpuSetLocked, u32); /* Unlock the CPU */
@@ -1895,7 +1904,6 @@ static DECLCALLBACK(int) acpi_load_state(PPDMDEVINS pDevIns, PSSMHANDLE pSSMHand
 {
     ACPIState *s = PDMINS_2_DATA(pDevIns, ACPIState *);
 
-
     Assert(uPass == SSM_PASS_FINAL); NOREF(uPass);
     /*
      * Unregister PM handlers, will register with actual base
@@ -1952,30 +1960,29 @@ static DECLCALLBACK(void *) acpiQueryInterface(PPDMIBASE pInterface, const char 
 static int acpiPlantTables(ACPIState *s)
 {
     int        rc;
-    RTGCPHYS32 cur_addr, rsdt_addr, xsdt_addr, fadt_acpi1_addr, fadt_acpi2_addr, facs_addr, dsdt_addr, hpet_addr, apic_addr = 0;
+    RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
+    RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0;
     uint32_t   addend = 0;
-    RTGCPHYS32 rsdt_addrs[4];
-    RTGCPHYS32 xsdt_addrs[4];
-    uint32_t   cAddr, madt_index, hpet_index;
-    size_t     rsdt_tbl_len = sizeof(ACPITBLHEADER);
-    size_t     xsdt_tbl_len = sizeof(ACPITBLHEADER);
+    RTGCPHYS32 aGCPhysRsdt[4];
+    RTGCPHYS32 aGCPhysXsdt[4];
+    uint32_t   cAddr, iMadt = 0, iHpet = 0;
+    size_t     cbRsdt = sizeof(ACPITBLHEADER);
+    size_t     cbXsdt = sizeof(ACPITBLHEADER);
 
-    cAddr = 1;           /* FADT */
+    cAddr = 1;                  /* FADT */
     if (s->u8UseIOApic)
-        madt_index = cAddr++;         /* MADT */
-
+        iMadt = cAddr++;        /* MADT */
 
     if (s->fUseHpet)
-        hpet_index = cAddr++;         /* HPET */
+        iHpet = cAddr++;        /* HPET */
 
-    rsdt_tbl_len += cAddr*4;  /* each entry: 32 bits phys. address. */
-    xsdt_tbl_len += cAddr*8;  /* each entry: 64 bits phys. address. */
+    cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
+    cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
 
     rc = CFGMR3QueryU64(s->pDevIns->pCfgHandle, "RamSize", &s->u64RamSize);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(s->pDevIns, rc,
-                                N_("Configuration error: Querying "
-                                   "\"RamSize\" as integer failed"));
+                                N_("Configuration error: Querying \"RamSize\" as integer failed"));
 
     uint32_t cbRamHole;
     rc = CFGMR3QueryU32Def(s->pDevIns->pCfgHandle, "RamHoleSize", &cbRamHole, MM_RAM_HOLE_SIZE_DEFAULT);
@@ -1984,7 +1991,7 @@ static int acpiPlantTables(ACPIState *s)
                                 N_("Configuration error: Querying \"RamHoleSize\" as integer failed"));
 
     /*
-     * Calc the sizes for the high and low regions.
+     * Calculate the sizes for the high and low regions.
      */
     const uint64_t offRamHole = _4G - cbRamHole;
     s->cbRamHigh = offRamHole < s->u64RamSize ? s->u64RamSize - offRamHole : 0;
@@ -1997,83 +2004,81 @@ static int acpiPlantTables(ACPIState *s)
     }
     s->cbRamLow = (uint32_t)cbRamLow;
 
-    cur_addr = 0;
+    GCPhysCur = 0;
+    GCPhysRsdt = GCPhysCur;
 
-    rsdt_addr = cur_addr;
-    cur_addr = RT_ALIGN_32(cur_addr + rsdt_tbl_len, 16);
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + cbRsdt, 16);
+    GCPhysXsdt = GCPhysCur;
 
-    xsdt_addr = cur_addr;
-    cur_addr = RT_ALIGN_32(cur_addr       + xsdt_tbl_len, 16);
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + cbXsdt, 16);
+    GCPhysFadtAcpi1 = GCPhysCur;
 
-    fadt_acpi1_addr = cur_addr;
-    cur_addr = RT_ALIGN_32(cur_addr + ACPITBLFADT_VERSION1_SIZE, 16);
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + ACPITBLFADT_VERSION1_SIZE, 16);
+    GCPhysFadtAcpi2 = GCPhysCur;
 
-    fadt_acpi2_addr = cur_addr;
-    /** @todo ACPI 3.0 doc says it needs to be aligned on a 64 byte boundary. */
-    cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLFADT), 16);
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLFADT), 64);
+    GCPhysFacs = GCPhysCur;
 
-
-    facs_addr = cur_addr;
-    cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLFACS), 16);
-
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLFACS), 16);
     if (s->u8UseIOApic)
     {
-        apic_addr = cur_addr;
-        cur_addr = RT_ALIGN_32(cur_addr + AcpiTableMADT::sizeFor(s), 16);
+        GCPhysApic = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + AcpiTableMADT::sizeFor(s), 16);
     }
     if (s->fUseHpet)
     {
-        hpet_addr = cur_addr;
-        cur_addr = RT_ALIGN_32(cur_addr + sizeof(ACPITBLHPET), 16);
+        GCPhysHpet = GCPhysCur;
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLHPET), 16);
     }
+    GCPhysDsdt = GCPhysCur;
 
     void*  pDsdtCode = NULL;
-    size_t uDsdtSize = 0;
-    rc = acpiPrepareDsdt(s->pDevIns, &pDsdtCode, &uDsdtSize);
+    size_t cbDsdtSize = 0;
+    rc = acpiPrepareDsdt(s->pDevIns, &pDsdtCode, &cbDsdtSize);
     if (RT_FAILURE(rc))
         return rc;
 
-    dsdt_addr = cur_addr;
-    cur_addr = RT_ALIGN_32(cur_addr + uDsdtSize, 16);
-
-    if (cur_addr > 0x10000)
+    GCPhysCur = RT_ALIGN_32(GCPhysCur + cbDsdtSize, 16);
+    if (GCPhysCur > 0x10000)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_TOO_MUCH_DATA,
-                                N_("Error: ACPI tables > 64KB"));
+                                N_("Error: ACPI tables bigger than 64KB"));
 
     Log(("RSDP 0x%08X\n", find_rsdp_space()));
     addend = s->cbRamLow - 0x10000;
-    Log(("RSDT 0x%08X XSDT 0x%08X\n", rsdt_addr + addend, xsdt_addr + addend));
-    Log(("FACS 0x%08X FADT (1.0) 0x%08X, FADT (2+) 0x%08X\n", facs_addr + addend, fadt_acpi1_addr + addend, fadt_acpi2_addr + addend));
-    Log(("DSDT 0x%08X\n", dsdt_addr + addend));
+    Log(("RSDT 0x%08X XSDT 0x%08X\n", GCPhysRsdt + addend, GCPhysXsdt + addend));
+    Log(("FACS 0x%08X FADT (1.0) 0x%08X, FADT (2+) 0x%08X\n", GCPhysFacs + addend, GCPhysFadtAcpi1 + addend, GCPhysFadtAcpi2 + addend));
+    Log(("DSDT 0x%08X", GCPhysDsdt + addend));
+    if (s->u8UseIOApic)
+        Log((" MADT 0x%08X", GCPhysApic + addend));
     if (s->fUseHpet)
-    {
-        Log(("HPET 0x%08X\n", hpet_addr + addend));
-    }
-    acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, rsdt_addr + addend, xsdt_addr + addend);
-    acpiSetupDSDT(s, dsdt_addr + addend, pDsdtCode, uDsdtSize);
-    acpiCleanupDsdt(s->pDevIns, pDsdtCode);
-    acpiSetupFACS(s, facs_addr + addend);
-    acpiSetupFADT(s, fadt_acpi1_addr + addend, fadt_acpi2_addr + addend, facs_addr + addend, dsdt_addr + addend);
+        Log((" HPET 0x%08X", GCPhysHpet + addend));
+    Log(("\n"));
 
-    rsdt_addrs[0] = fadt_acpi1_addr + addend;
-    xsdt_addrs[0] = fadt_acpi2_addr + addend;
+    acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, GCPhysRsdt + addend, GCPhysXsdt + addend);
+    acpiSetupDSDT(s, GCPhysDsdt + addend, pDsdtCode, cbDsdtSize);
+    acpiCleanupDsdt(s->pDevIns, pDsdtCode);
+    acpiSetupFACS(s, GCPhysFacs + addend);
+    acpiSetupFADT(s, GCPhysFadtAcpi1 + addend, GCPhysFadtAcpi2 + addend, GCPhysFacs + addend, GCPhysDsdt + addend);
+
+    aGCPhysRsdt[0] = GCPhysFadtAcpi1 + addend;
+    aGCPhysXsdt[0] = GCPhysFadtAcpi2 + addend;
     if (s->u8UseIOApic)
     {
-        acpiSetupMADT(s, apic_addr + addend);
-        rsdt_addrs[madt_index] = apic_addr + addend;
-        xsdt_addrs[madt_index] = apic_addr + addend;
+        acpiSetupMADT(s, GCPhysApic + addend);
+        aGCPhysRsdt[iMadt] = GCPhysApic + addend;
+        aGCPhysXsdt[iMadt] = GCPhysApic + addend;
     }
     if (s->fUseHpet)
     {
-        acpiSetupHPET(s, hpet_addr + addend);
-        rsdt_addrs[hpet_index] = hpet_addr + addend;
-        xsdt_addrs[hpet_index] = hpet_addr + addend;
+        acpiSetupHPET(s, GCPhysHpet + addend);
+        aGCPhysRsdt[iHpet] = GCPhysHpet + addend;
+        aGCPhysXsdt[iHpet] = GCPhysHpet + addend;
     }
 
-    rc = acpiSetupRSDT(s, rsdt_addr + addend, cAddr, rsdt_addrs);
+    rc = acpiSetupRSDT(s, GCPhysRsdt + addend, cAddr, aGCPhysRsdt);
     if (RT_FAILURE(rc))
         return rc;
-    return acpiSetupXSDT(s, xsdt_addr + addend, cAddr, xsdt_addrs);
+    return acpiSetupXSDT(s, GCPhysXsdt + addend, cAddr, aGCPhysXsdt);
 }
 
 static int acpiUpdatePmHandlers(ACPIState *pThis, RTIOPORT uNewBase)
@@ -2408,8 +2413,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         s->fUseFdc = false;
 
     /* */
-    uint32_t rsdp_addr = find_rsdp_space();
-    if (!rsdp_addr)
+    RTGCPHYS32 GCPhysRsdp = find_rsdp_space();
+    if (!GCPhysRsdp)
         return PDMDEV_SET_ERROR(pDevIns, VERR_NO_MEMORY,
                                 N_("Can not find space for RSDP. ACPI is disabled"));
 
@@ -2417,7 +2422,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpROMRegister(pDevIns, rsdp_addr, 0x1000, s->au8RSDPPage,
+    rc = PDMDevHlpROMRegister(pDevIns, GCPhysRsdp, 0x1000, s->au8RSDPPage,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "ACPI RSDP");
     if (RT_FAILURE(rc))
         return rc;
