@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -88,7 +88,6 @@ HRESULT Session::init()
 
     mState = SessionState_Closed;
     mType = SessionType_Null;
-    mFullConsole = false;
 
 #if defined(RT_OS_WINDOWS)
     mIPCSem = NULL;
@@ -173,32 +172,6 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
     CHECK_OPEN();
 
     *aType = mType;
-    return S_OK;
-}
-
-STDMETHODIMP Session::COMSETTER(FullConsole) (BOOL aFullConsole)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturn(mState == SessionState_Closed, VBOX_E_INVALID_VM_STATE);
-
-    mFullConsole = aFullConsole;
-    return S_OK;
-}
-
-STDMETHODIMP Session::COMGETTER(FullConsole) (BOOL *aFullConsole)
-{
-    CheckComArgOutPointerValid(aFullConsole);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aFullConsole = mFullConsole;
     return S_OK;
 }
 
@@ -345,10 +318,10 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
     AssertReturn(!!mControl, E_FAIL);
 
     rc = mConsole.createObject();
-    AssertComRCReturn(rc, rc);
+    AssertComRCReturn (rc, rc);
 
-    rc = mConsole->init(aMachine, mControl, mFullConsole);
-    AssertComRCReturn(rc, rc);
+    rc = mConsole->init (aMachine, mControl);
+    AssertComRCReturn (rc, rc);
 
     rc = grabIPCSemaphore();
 
