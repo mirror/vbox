@@ -82,31 +82,24 @@ VBoxGuestR3Lib_DEFS        = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
-	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibCredentials.cpp \
-	VBoxGuestR3LibDaemonize.cpp \
 	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS), \
-		VBoxGuestR3LibGuestProp.cpp \
-		VBoxGuestR3LibHostVersion.cpp,) \
-	VBoxGuestR3LibMouse.cpp \
-	VBoxGuestR3LibMisc.cpp \
-	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibTime.cpp \
-	VBoxGuestR3LibVideo.cpp \
-	VBoxGuestR3LibCpuHotPlug.cpp
-ifeq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
- VBoxGuestR3Lib_SOURCES   = \
-	VBoxGuestR3Lib.cpp \
-	VBoxGuestR3LibCredentials.cpp \
-	VBoxGuestR3LibGR.cpp \
-	$(if $(VBOX_WITH_GUEST_PROPS), \
-		VBoxGuestR3LibGuestProp.cpp \
-		VBoxGuestR3LibHostVersion.cpp,) \
 	VBoxGuestR3LibMisc.cpp \
-	VBoxGuestR3LibTime.cpp
+	VBoxGuestR3LibCpuHotPlug.cpp
+ifneq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
+ VBoxGuestR3Lib_SOURCES   += \
+	VBoxGuestR3LibDaemonize.cpp \
+	VBoxGuestR3LibClipboard.cpp \
+	VBoxGuestR3LibMouse.cpp \
+	VBoxGuestR3LibSeamless.cpp \
+	VBoxGuestR3LibVideo.cpp
 endif
-#VBoxGuestR3LibMisc.cpp uses VBOX_SVN_REV.
+ifdef VBOX_WITH_GUEST_PROPS
+ VBoxGuestR3Lib_SOURCES   += \
+	VBoxGuestR3LibGuestProp.cpp \
+	VBoxGuestR3LibHostVersion.cpp
+endif
 VBoxGuestR3LibMisc.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxGuestR3LibMisc.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 
