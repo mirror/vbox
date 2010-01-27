@@ -1025,29 +1025,45 @@ ResumeExecution:
 #endif
 
     /* Check for pending actions that force us to go back to ring 3. */
-#ifdef DEBUG
-    /* Intercept X86_XCPT_DB if stepping is enabled */
-    if (!DBGFIsStepping(pVCpu))
-#endif
+    if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK | VM_FF_REQUEST)
+        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK | VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL | VMCPU_FF_REQUEST))
     {
-        if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
-            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK))
+        /* Check if a sync operation is pending. */
+        if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
         {
-            VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
+            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
+            AssertRC(rc);
+            if (rc != VINF_SUCCESS)
+            {
+                Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
+                goto end;
+            }
+        }
+
+#ifdef DEBUG
+        /* Intercept X86_XCPT_DB if stepping is enabled */
+        if (!DBGFIsStepping(pVCpu))
+#endif
+        {
+            if (    VM_FF_ISPENDING(pVM, VM_FF_HWACCM_TO_R3_MASK)
+                ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HWACCM_TO_R3_MASK))
+            {
+                VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_TO_R3);
+                STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatSwitchToR3);
+                STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
+                rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+                goto end;
+            }
+        }
+
+        /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
+        if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
+            ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
+        {
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
-            rc = RT_UNLIKELY(VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY)) ? VINF_EM_NO_MEMORY : VINF_EM_RAW_TO_R3;
+            rc = VINF_EM_PENDING_REQUEST;
             goto end;
         }
-    }
-
-    /* Pending request packets might contain actions that need immediate attention, such as pending hardware interrupts. */
-    if (    VM_FF_ISPENDING(pVM, VM_FF_REQUEST)
-        ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_REQUEST))
-    {
-        STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatEntry, x);
-        rc = VINF_EM_PENDING_REQUEST;
-        goto end;
     }
 
 #ifdef VBOX_WITH_VMMR0_DISABLE_PREEMPTION
@@ -1712,19 +1728,6 @@ ResumeExecution:
 
                 TRPMResetTrap(pVCpu);
                 STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
-
-                /* Check if a sync operation is pending. */
-                if (VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
-                {
-                    rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-                    AssertRC(rc);
-                    if (rc != VINF_SUCCESS)
-                    {
-                        Log(("Pending pool sync is forcing us back to ring 3; rc=%d\n", rc));
-                        break;
-                    }
-                }                   
-
                 goto ResumeExecution;
             }
             else
@@ -1896,8 +1899,6 @@ ResumeExecution:
 
             TRPMResetTrap(pVCpu);
 
-            Assert(!VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL));
-
             STAM_PROFILE_ADV_STOP(&pVCpu->hwaccm.s.StatExit1, x);
             goto ResumeExecution;
         }
@@ -2047,19 +2048,6 @@ ResumeExecution:
             break;
         default:
             AssertFailed();
-        }
-        /* Check if a sync operation is pending. */
-        if (    rc == VINF_SUCCESS /* don't bother if we are going to ring 3 anyway */
-            &&  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_PGM_SYNC_CR3 | VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL))
-        {
-            rc = PGMSyncCR3(pVCpu, pCtx->cr0, pCtx->cr3, pCtx->cr4, VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3));
-            AssertRC(rc);
-
-            STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatFlushTLBCRxChange);
-
-            /* Must be set by PGMSyncCR3 */
-            AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || PGMGetGuestMode(pVCpu) <= PGMMODE_PROTECTED || pVCpu->hwaccm.s.fForceTLBFlush,
-                      ("rc=%Rrc mode=%d fForceTLBFlush=%RTbool\n", rc, PGMGetGuestMode(pVCpu), pVCpu->hwaccm.s.fForceTLBFlush));
         }
         if (rc == VINF_SUCCESS)
         {
