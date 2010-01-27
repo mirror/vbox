@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,8 +102,7 @@ public:
     void FinalRelease();
 
     // public initializers/uninitializers for internal purposes only
-    HRESULT init (IMachine *aMachine, IInternalMachineControl *aControl,
-                  bool aFullConsole);
+    HRESULT init (IMachine *aMachine, IInternalMachineControl *aControl);
     void uninit();
 
     // IConsole properties

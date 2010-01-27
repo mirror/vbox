@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -26,7 +26,6 @@
 #include "VBoxFB.h"
 #include "Framebuffer.h"
 #include <getopt.h>
-#include <VBox/version.h>
 #include <VBox/param.h>
 #include <iprt/path.h>
 
@@ -210,13 +209,6 @@ int main(int argc, char *argv[])
         if (NS_FAILED(rc))
         {
             printf("Error: could not instantiate Session object! rc = %08X\n", rc);
-            exit(-1);
-        }
-
-        rc = session->SetFullConsole(true);
-        if (NS_FAILED(rc))
-        {
-            printf("Error: could not select full VM console! rc = %08X\n", rc);
             exit(-1);
         }
 
@@ -552,7 +544,7 @@ int main(int argc, char *argv[])
                         if (event.buttons & DIBM_MIDDLE)
                             buttonState |= MouseButtonState::MiddleButton;
                         mouse->PutMouseEvent(mouseXDelta, mouseYDelta, mouseZDelta,
-                                             0, buttonState);
+                                             buttonState);
                         break;
                     }
                     default:

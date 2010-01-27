@@ -12959,7 +12959,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="ISession" extends="$dispatched"
-     uuid="37661fa3-385b-4b2b-8b22-93304c45f36e"
+     uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
      wsmap="managed"
      >
     <desc>
@@ -13014,10 +13014,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       calling <link to="IVirtualBox::openSession"/>. While a direct session
       is open within one process, no any other process may open another direct
       session for the same machine. This prevents the machine from being changed
-      by other processes while it is running or while the machine is being
-      configured. If the current process is should have a full Console
-      object with all associated sub-objects, remember to set
-      <link to="ISession::fullConsole"/> appropriately.
+      by other processes while it is running or while the machine is being configured.
       </li>
       </ul>
 
@@ -13049,12 +13046,6 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         if the session is currently open (i.e. its #state is
         SessionType_SessionOpen), otherwise an error will be returned.
       </desc>
-    </attribute>
-
-    <attribute name="fullConsole" type="boolean">
-      <desc>Defines whether the console object is meant for full VMs,
-      which have the associated sub-objects, or if it is unnecessary to
-      create them. Default is @c false.</desc>
     </attribute>
 
     <attribute name="machine" type="IMachine" readonly="yes">

@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1487,15 +1487,6 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     vrc = RTSemEventCreate(&g_EventSemSDLEvents);
     AssertReleaseRC(vrc);
 
-    rc = session->COMSETTER(FullConsole)(true);
-    if (FAILED(rc))
-    {
-        com::ErrorInfo info;
-        if (info.isFullAvailable())
-            PrintError("Could not select a full VM console",
-                    info.getText().raw(), info.getComponent().raw());
-        goto leave;
-    }
     rc = virtualBox->OpenSession(session, uuidVM.toUtf16());
     if (FAILED(rc))
     {
@@ -1503,6 +1494,11 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (info.isFullAvailable())
             PrintError("Could not open VirtualBox session",
                     info.getText().raw(), info.getComponent().raw());
+        goto leave;
+    }
+    if (!session)
+    {
+        RTPrintf("Could not open VirtualBox session!\n");
         goto leave;
     }
     sessionOpened = true;
@@ -2919,7 +2915,7 @@ leave:
     /* Must be before com::Shutdown() */
     callback.setNull();
     consoleCallback.setNull();
-
+    
     LogFlow(("Uninitializing COM...\n"));
     com::Shutdown();
 

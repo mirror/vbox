@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2009 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -307,8 +307,7 @@ void Console::FinalRelease()
 // public initializer/uninitializer for internal purposes only
 /////////////////////////////////////////////////////////////////////////////
 
-HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl,
-                      bool aFullConsole)
+HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl)
 {
     AssertReturn(aMachine && aControl, E_INVALIDARG);
 
@@ -331,57 +330,54 @@ HRESULT Console::init(IMachine *aMachine, IInternalMachineControl *aControl,
     rc = mMachine->COMGETTER(State)(&mMachineState);
     AssertComRCReturnRC(rc);
 
-    if (aFullConsole)
-    {
 #ifdef VBOX_WITH_VRDP
-        rc = mMachine->COMGETTER(VRDPServer)(unconst(mVRDPServer).asOutParam());
-        AssertComRCReturnRC(rc);
+    rc = mMachine->COMGETTER(VRDPServer)(unconst(mVRDPServer).asOutParam());
+    AssertComRCReturnRC(rc);
 #endif
 
-        /* Create associated child COM objects */
+    /* Create associated child COM objects */
 
-        unconst(mGuest).createObject();
-        rc = mGuest->init(this);
-        AssertComRCReturnRC(rc);
+    unconst(mGuest).createObject();
+    rc = mGuest->init(this);
+    AssertComRCReturnRC(rc);
 
-        unconst(mKeyboard).createObject();
-        rc = mKeyboard->init(this);
-        AssertComRCReturnRC(rc);
+    unconst(mKeyboard).createObject();
+    rc = mKeyboard->init(this);
+    AssertComRCReturnRC(rc);
 
-        unconst(mMouse).createObject();
-        rc = mMouse->init(this);
-        AssertComRCReturnRC(rc);
+    unconst(mMouse).createObject();
+    rc = mMouse->init(this);
+    AssertComRCReturnRC(rc);
 
-        unconst(mDisplay).createObject();
-        rc = mDisplay->init(this);
-        AssertComRCReturnRC(rc);
+    unconst(mDisplay).createObject();
+    rc = mDisplay->init(this);
+    AssertComRCReturnRC(rc);
 
-        unconst(mRemoteDisplayInfo).createObject();
-        rc = mRemoteDisplayInfo->init(this);
-        AssertComRCReturnRC(rc);
+    unconst(mRemoteDisplayInfo).createObject();
+    rc = mRemoteDisplayInfo->init(this);
+    AssertComRCReturnRC(rc);
 
-        /* Grab global and machine shared folder lists */
+    /* Grab global and machine shared folder lists */
 
-        rc = fetchSharedFolders(true /* aGlobal */);
-        AssertComRCReturnRC(rc);
-        rc = fetchSharedFolders(false /* aGlobal */);
-        AssertComRCReturnRC(rc);
+    rc = fetchSharedFolders(true /* aGlobal */);
+    AssertComRCReturnRC(rc);
+    rc = fetchSharedFolders(false /* aGlobal */);
+    AssertComRCReturnRC(rc);
 
-        /* Create other child objects */
+    /* Create other child objects */
 
-        unconst(mConsoleVRDPServer) = new ConsoleVRDPServer(this);
-        AssertReturn(mConsoleVRDPServer, E_FAIL);
-
-        unconst(mVMMDev) = new VMMDev(this);
-        AssertReturn(mVMMDev, E_FAIL);
-
-        unconst(mAudioSniffer) = new AudioSniffer(this);
-        AssertReturn(mAudioSniffer, E_FAIL);
-    }
+    unconst(mConsoleVRDPServer) = new ConsoleVRDPServer(this);
+    AssertReturn(mConsoleVRDPServer, E_FAIL);
 
     mcAudioRefs = 0;
     mcVRDPClients = 0;
     mu32SingleRDPClientId = 0;
+
+    unconst(mVMMDev) = new VMMDev(this);
+    AssertReturn(mVMMDev, E_FAIL);
+
+    unconst(mAudioSniffer) = new AudioSniffer(this);
+    AssertReturn(mAudioSniffer, E_FAIL);
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();

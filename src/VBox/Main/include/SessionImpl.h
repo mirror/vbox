@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -77,8 +77,6 @@ public:
     // ISession properties
     STDMETHOD(COMGETTER(State)) (SessionState_T *aState);
     STDMETHOD(COMGETTER(Type)) (SessionType_T *aType);
-    STDMETHOD(COMSETTER(FullConsole)) (BOOL aType);
-    STDMETHOD(COMGETTER(FullConsole)) (BOOL *aType);
     STDMETHOD(COMGETTER(Machine)) (IMachine **aMachine);
     STDMETHOD(COMGETTER(Console)) (IConsole **aConsole);
 
@@ -123,7 +121,6 @@ private:
 
     SessionState_T mState;
     SessionType_T mType;
-    bool mFullConsole;
 
     ComPtr<IInternalMachineControl> mControl;
 
