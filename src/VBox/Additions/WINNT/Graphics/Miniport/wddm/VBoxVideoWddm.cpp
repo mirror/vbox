@@ -18,6 +18,7 @@
 #include "../Helper.h"
 
 #include <VBox/VBoxGuestLib.h>
+#include <VBox/VBoxVideo.h>
 
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
@@ -412,6 +413,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
     NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
     switch (pQueryAdapterInfo->Type)
     {
@@ -455,16 +457,44 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         }
         case DXGKQAITYPE_QUERYSEGMENT:
         {
-            DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData;
+            /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
+             * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
             DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
+            if (!pQsOut->pSegmentDescriptor)
+            {
+                /* we are requested to provide the number of segments we support */
+                pQsOut->NbSegment = 1;
+            }
+            else if (pQsOut->NbSegment != 1)
+            {
+                AssertBreakpoint();
+                drprintf((__FUNCTION__ " NbSegment (%d) != 1\n", pQsOut->NbSegment));
+                Status = STATUS_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* we are requested to provide segment information */
+                pQsOut->pSegmentDescriptor->BaseAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+                pQsOut->pSegmentDescriptor->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+                /* make sure the size is page aligned */
+                pQsOut->pSegmentDescriptor->Size = (pContext->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE - pContext->u.primary.cbMiniportHeap) & (~0xfffUL);
+                pQsOut->pSegmentDescriptor->NbOfBanks = 0;
+                pQsOut->pSegmentDescriptor->pBankRangeTable = 0;
+                pQsOut->pSegmentDescriptor->CommitLimit = pQsOut->pSegmentDescriptor->Size;
+                pQsOut->pSegmentDescriptor->Flags.Value = 0;
+                pQsOut->pSegmentDescriptor->Flags.CpuVisible = 1;
+            }
+            pQsOut->PagingBufferSegmentId = 0;
+            pQsOut->PagingBufferSize = 1024; /* @todo: ??*/
+            pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: ??*/
             break;
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
-            drprintf((""__FUNCTION__ ": we do not support DXGKQAITYPE_UMDRIVERPRIVATE\n"));
+            drprintf((__FUNCTION__ ": we do not support DXGKQAITYPE_UMDRIVERPRIVATE\n"));
             Status = STATUS_NOT_SUPPORTED;
             break;
         default:
-            drprintf((""__FUNCTION__ ": unsupported Type (%d)\n", pQueryAdapterInfo->Type));
+            drprintf((__FUNCTION__ ": unsupported Type (%d)\n", pQueryAdapterInfo->Type));
             Status = STATUS_NOT_SUPPORTED;
             break;
     }
