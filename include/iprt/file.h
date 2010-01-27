@@ -32,6 +32,7 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+#include <iprt/stdarg.h>
 #ifdef IN_RING3
 # include <iprt/fs.h>
 #endif
@@ -237,6 +238,32 @@ RTR3DECL(int)  RTFileSetForceFlags(unsigned fOpenForAccess, unsigned fSet, unsig
  *                          The ACCESS, ACTION and DENY flags are mandatory!
  */
 RTR3DECL(int)  RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen);
+
+/**
+ * Open a file given as a format string.
+ *
+ * @returns iprt status code.
+ * @param   pFile           Where to store the handle to the opened file.
+ * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                          The ACCESS, ACTION and DENY flags are mandatory!
+ * @param   pszFilenameFmt  Format string givin the path to the file which is to
+ *                          be opened. (UTF-8)
+ * @param   ...             Arguments to the format string.
+ */
+RTR3DECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, ...);
+
+/**
+ * Open a file given as a format string.
+ *
+ * @returns iprt status code.
+ * @param   pFile           Where to store the handle to the opened file.
+ * @param   fOpen           Open flags, i.e a combination of the RTFILE_O_* defines.
+ *                          The ACCESS, ACTION and DENY flags are mandatory!
+ * @param   pszFilenameFmt  Format string givin the path to the file which is to
+ *                          be opened. (UTF-8)
+ * @param   va              Arguments to the format string.
+ */
+RTR3DECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, va_list va);
 
 /**
  * Close a file opened by RTFileOpen().

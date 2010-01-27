@@ -243,6 +243,8 @@ RuntimeR3_SOURCES       = \
 	common/misc/RTAssertMsg2AddWeakV.cpp \
 	common/misc/RTAssertMsg2Weak.cpp \
 	common/misc/RTAssertMsg2WeakV.cpp \
+	common/misc/RTFileOpenF.cpp \
+	common/misc/RTFileOpenV.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
 	common/misc/cache.cpp \
