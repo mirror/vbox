@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -94,29 +94,29 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 
 #ifdef RT_OS_WINDOWS
 /** The service name (needed for mutex creation on Windows). */
-#define VBOXSERVICE_NAME          "VBoxService"
+# define VBOXSERVICE_NAME           "VBoxService"
 /** The friendly service name. */
-#define VBOXSERVICE_FRIENDLY_NAME "VirtualBox Guest Additions Service"
+# define VBOXSERVICE_FRIENDLY_NAME  "VirtualBox Guest Additions Service"
 /** The service description (only W2K+ atm) */
-#define VBOXSERVICE_DESCRIPTION   "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
+# define VBOXSERVICE_DESCRIPTION    "Manages VM runtime information, time synchronization, remote sysprep execution and miscellaneous utilities for guest operating systems."
 /** The following constant may be defined by including NtStatus.h. */
-#define STATUS_SUCCESS ((NTSTATUS)0x00000000L)
+# define STATUS_SUCCESS             ((NTSTATUS)0x00000000L)
 /** Structure for storing the looked up user information. */
 typedef struct
 {
-    WCHAR szUser [_MAX_PATH];
-    WCHAR szAuthenticationPackage [_MAX_PATH];
-    WCHAR szLogonDomain [_MAX_PATH];
+    WCHAR szUser[_MAX_PATH];
+    WCHAR szAuthenticationPackage[_MAX_PATH];
+    WCHAR szLogonDomain[_MAX_PATH];
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 /** Structure for the file information lookup. */
 typedef struct
 {
-    char* pszFilePath;
-    char* pszFileName;
+    char *pszFilePath;
+    char *pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
 /** Function prototypes for dynamic loading. */
 typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
-#endif
+#endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_BEGIN
 
@@ -137,7 +137,7 @@ extern VBOXSERVICE g_Clipboard;
 extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
 extern VBOXSERVICE g_Exec;
-extern VBOXSERVICE g_CpuHotplug;
+extern VBOXSERVICE g_CpuHotPlug;
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;
@@ -150,15 +150,15 @@ extern int VBoxServiceWinInstall(void);
 extern int VBoxServiceWinUninstall(void);
 /** Reports our current status to the SCM. */
 extern BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint);
-#ifdef VBOX_WITH_GUEST_PROPS
+# ifdef VBOX_WITH_GUEST_PROPS
 /** Detects wheter a user is logged on based on the enumerated processes. */
-extern BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
+extern BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER *a_pUserInfo,
                                            PLUID a_pSession,
                                            PLUID a_pLuid,
                                            DWORD a_dwNumOfProcLUIDs);
 /** Gets logon user IDs from enumerated processes. */
 extern DWORD VBoxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
-#endif /* VBOX_WITH_GUEST_PROPS */
+# endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_END
