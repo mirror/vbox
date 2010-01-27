@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -25,17 +25,23 @@
 *******************************************************************************/
 #include "VBGLR3Internal.h"
 
+
+/**
+ * Initialize CPU hot plugging.
+ *
+ * This will enable the CPU hot plugging events.
+ *
+ * @returns VBox status code.
+ */
 VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
 {
-    int rc = VINF_SUCCESS;
-    VMMDevCpuHotPlugStatusRequest Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
-    Req.enmStatusType = VMMDevCpuStatusType_Enable;
-
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_CPU_HOTPLUG, 0);
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_CPU_HOTPLUG, 0);
     if (RT_FAILURE(rc))
         return rc;
 
+    VMMDevCpuHotPlugStatusRequest Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
+    Req.enmStatusType = VMMDevCpuStatusType_Enable;
     rc = vbglR3GRPerform(&Req.header);
     if (RT_FAILURE(rc))
         VbglR3CtlFilterMask(0, VMMDEV_EVENT_CPU_HOTPLUG);
@@ -43,32 +49,46 @@ VBGLR3DECL(int) VbglR3CpuHotplugInit(void)
     return rc;
 }
 
+
+/**
+ * Terminate CPU hot plugging.
+ *
+ * This will disable the CPU hot plugging events.
+ *
+ * @returns VBox status.
+ */
 VBGLR3DECL(int) VbglR3CpuHotplugTerm(void)
 {
-    VMMDevCpuHotPlugStatusRequest Req;
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
-    Req.enmStatusType = VMMDevCpuStatusType_Disable;
-
     /* Clear the events. */
     VbglR3CtlFilterMask(0, VMMDEV_EVENT_CPU_HOTPLUG);
 
-    int rc = vbglR3GRPerform(&Req.header);
-    return rc;
+    VMMDevCpuHotPlugStatusRequest Req;
+    vmmdevInitRequest(&Req.header, VMMDevReq_SetCpuHotPlugStatus);
+    Req.enmStatusType = VMMDevCpuStatusType_Disable;
+    return vbglR3GRPerform(&Req.header);
 }
 
+
+/**
+ * Waits for a CPU hot plugging event and retrive the data associated with it.
+ *
+ * @returns VBox status code.
+ * @param   penmEventType   Where to store the event type on success.
+ * @param   pidCpuCore      Where to store the CPU core ID on success.
+ * @param   pidCpuPackage   Where to store the CPU package ID on success.
+ */
 VBGLR3DECL(int) VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, uint32_t *pidCpuCore, uint32_t *pidCpuPackage)
 {
-    VBoxGuestWaitEventInfo waitEvent;
-    int rc;
+    AssertPtrReturn(penmEventType, VERR_INVALID_POINTER);
+    AssertPtrReturn(pidCpuCore, VERR_INVALID_POINTER);
+    AssertPtrReturn(pidCpuPackage, VERR_INVALID_POINTER);
 
-    AssertPtrReturn(penmEventType, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pidCpuCore, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pidCpuPackage, VERR_INVALID_PARAMETER);
+    VBoxGuestWaitEventInfo waitEvent;
     waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_CPU_HOTPLUG;
     waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
     waitEvent.u32EventFlagsOut = 0;
-    rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
         /* did we get the right event? */
@@ -76,7 +96,7 @@ VBGLR3DECL(int) VbglR3CpuHotplugWaitForEvent(VMMDevCpuEventType *penmEventType, 
         {
             VMMDevGetCpuHotPlugRequest Req;
 
-            /* get the seamless change request */
+            /* get the CPU hot plugging request */
             vmmdevInitRequest(&Req.header, VMMDevReq_GetCpuHotPlugRequest);
             Req.idCpuCore    = UINT32_MAX;
             Req.idCpuPackage = UINT32_MAX;
