@@ -633,6 +633,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pV
                 case PGMPOOLKIND_PAE_PT_FOR_PAE_2MB:
                 case PGMPOOLKIND_32BIT_PT_FOR_PHYS:
                 case PGMPOOLKIND_PAE_PT_FOR_PHYS:
+                case PGMPOOLKIND_EPT_PT_FOR_PHYS:
                 {
                     if (pPage->cPresent)
                     {
@@ -640,6 +641,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pV
                         STAM_PROFILE_START(&pPool->StatZeroPage, z);
                         ASMMemZeroPage(pvShw);
                         STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
+                        pPage->fZeroed = true;
                         pPage->cPresent = 0;
                         pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                     }
