@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -669,7 +669,7 @@ public:
     bool showVirtualBoxLicense();
 #endif
 
-    CSession openSession (const QString &aId, bool aExisting = false);
+    CSession openSession (const QString &aId, bool aExisting = false, bool aFullConsole = false);
 
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession (const QString &aId) { return openSession (aId, true); }
