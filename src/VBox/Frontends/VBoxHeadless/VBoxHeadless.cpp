@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -875,6 +875,9 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
         Log (("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).raw()));
+
+        // make sure we ge a full featured VM console
+        CHECK_ERROR_BREAK(session, COMSETTER(FullConsole)(true));
 
         // open a session
         CHECK_ERROR_BREAK(virtualBox, OpenSession (session, id));

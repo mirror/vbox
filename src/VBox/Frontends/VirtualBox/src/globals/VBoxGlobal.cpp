@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2189,8 +2189,12 @@ bool VBoxGlobal::showVirtualBoxLicense()
  *  @param aExisting    @c true to open an existing session with the machine
  *                      which is already running, @c false to open a new direct
  *                      session.
+ *  @param aFullConsole @c true to create a full console, suitable of running
+ *                      a VM, @c false to create a minimal console suitable
+ *                      for API clients. Only significant if @a aExisting is
+ *                      @false.
  */
-CSession VBoxGlobal::openSession (const QString &aId, bool aExisting /* = false */)
+CSession VBoxGlobal::openSession (const QString &aId, bool aExisting /* = false */, bool aFullConsole /* = false */)
 {
     CSession session;
     session.createInstance (CLSID_Session);
@@ -2204,6 +2208,7 @@ CSession VBoxGlobal::openSession (const QString &aId, bool aExisting /* = false 
         mVBox.OpenExistingSession (session, aId);
     else
     {
+        session.SetFullConsole(aFullConsole);
         mVBox.OpenSession (session, aId);
         CMachine machine = session.GetMachine ();
         /* Make sure that the language is in two letter code.
@@ -2230,7 +2235,7 @@ bool VBoxGlobal::startMachine (const QString &id)
 {
     AssertReturn (mValid, false);
 
-    CSession session = vboxGlobal().openSession (id);
+    CSession session = vboxGlobal().openSession (id, false, true);
     if (session.isNull())
         return false;
 
