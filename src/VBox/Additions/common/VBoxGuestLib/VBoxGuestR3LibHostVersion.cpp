@@ -173,7 +173,7 @@ VBGLR3DECL(int) VbglR3HostVersionCheckForUpdate(uint32_t u32ClientId, bool *pfUp
 VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **ppszVer)
 {
     Assert(u32ClientId > 0);
-    Assert(ppszVer);
+    AssertPtr(ppszVer);
     return VbglR3GuestPropReadValueAlloc(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", ppszVer);
 }
 
@@ -189,6 +189,6 @@ VBGLR3DECL(int) VbglR3HostVersionLastCheckedLoad(uint32_t u32ClientId, char **pp
 VBGLR3DECL(int) VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, const char *pszVer)
 {
     Assert(u32ClientId > 0);
-    Assert(pszVer);
+    AssertPtr(pszVer);
     return VbglR3GuestPropWriteValue(u32ClientId, "/VirtualBox/GuestAdd/HostVerLastChecked", pszVer);
 }
