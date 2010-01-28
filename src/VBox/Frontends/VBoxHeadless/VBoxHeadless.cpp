@@ -623,7 +623,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
     LogFlow (("VBoxHeadless STARTED.\n"));
     RTPrintf (VBOX_PRODUCT " Headless Interface " VBOX_VERSION_STRING "\n"
-              "(C) 2008-2010 " VBOX_VENDOR "\n"
+              "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
               "All rights reserved.\n\n");
 
     Bstr id;

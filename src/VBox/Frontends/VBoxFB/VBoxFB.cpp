@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     };
 
     printf("VirtualBox DirectFB GUI built %s %s\n"
-           "(C) 2004-2010 " VBOX_VENDOR "\n"
+           "(C) 2004-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
            "(C) 2004-2005 secunet Security Networks AG\n", __DATE__, __TIME__);
 
     for (;;)

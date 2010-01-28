@@ -265,7 +265,7 @@ int main(int argc, char* argv[])
     RTR3Init();
 
     RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Webservice Version " VBOX_VERSION_STRING "\n"
-                            "(C) 2005-2010 " VBOX_VENDOR "\n"
+                            "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                             "All rights reserved.\n");
 
     int c;

@@ -1022,7 +1022,7 @@ int main(int argc, char **argv)
             for (int i = iSize; i > 0; i--)
                 putchar('*');
             RTPrintf("\n%s\n", szBuf);
-            RTPrintf("(C) 2008-2010 " VBOX_VENDOR "\n"
+            RTPrintf("(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                      "All rights reserved.\n");
 #ifdef DEBUG
             RTPrintf("Debug version.\n");
