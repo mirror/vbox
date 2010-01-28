@@ -56,9 +56,9 @@
     public:
 
         AutoStateDependency(Machine *aThat)
-            : mThat(aThat), mRC(S_OK)
-            , mMachineState(MachineState_Null)
-            , mRegistered(FALSE)
+            : mThat(aThat), mRC(S_OK),
+              mMachineState(MachineState_Null),
+              mRegistered(FALSE)
         {
             Assert(aThat);
             mRC = aThat->addStateDependency(taDepType, &mMachineState,

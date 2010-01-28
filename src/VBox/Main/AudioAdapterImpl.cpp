@@ -413,6 +413,18 @@ HRESULT AudioAdapter::saveSettings(settings::AudioAdapter &data)
     return S_OK;
 }
 
+bool AudioAdapter::isModified()
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return mData.isBackedUp();
+}
+
+bool AudioAdapter::isReallyModified()
+{
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return mData.hasActualChanges();
+}
+
 /**
  *  @note Locks this object for writing.
  */
@@ -470,7 +482,7 @@ void AudioAdapter::commit()
  *  @note Locks this object for writing, together with the peer object
  *  represented by @a aThat (locked for reading).
  */
-void AudioAdapter::copyFrom (AudioAdapter *aThat)
+void AudioAdapter::copyFrom(AudioAdapter *aThat)
 {
     AssertReturnVoid (aThat != NULL);
 
@@ -488,6 +500,6 @@ void AudioAdapter::copyFrom (AudioAdapter *aThat)
     AutoWriteLock wl(this COMMA_LOCKVAL_SRC_POS);
 
     /* this will back up current data */
-    mData.assignCopy (aThat->mData);
+    mData.assignCopy(aThat->mData);
 }
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

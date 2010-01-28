@@ -1023,7 +1023,7 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
 
     if (SUCCEEDED(rc))
         /* commit all changes made during the initialization */
-        commit();
+        commit();   // @todo r=dj why do we need a commit in init?!? this is very expensive
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
