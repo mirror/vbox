@@ -24,7 +24,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <windows.h>
-#include <Ntsecapi.h>
 #include <wtsapi32.h>       /* For WTS* calls. */
 #include <psapi.h>          /* EnumProcesses. */
 
@@ -52,125 +51,200 @@
 
 
 #ifndef TARGET_NT4
-/* Function GetLUIDsFromProcesses() written by Stefan Kuhr. */
-DWORD VBoxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid)
+int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc, 
+                                              TOKEN_INFORMATION_CLASS tkClass)
 {
-    DWORD dwSize, dwSize2, dwIndex ;
-    LPDWORD lpdwPIDs ;
-    DWORD dwLastError = ERROR_SUCCESS;
+    AssertPtr(pProc);
+    HANDLE h = OpenProcess(PROCESS_QUERY_INFORMATION, FALSE, pProc->id);
+    if (h == NULL)
+        return RTErrConvertFromWin32(GetLastError());
 
-    if (!ppLuid)
-    {
-        SetLastError(ERROR_INVALID_PARAMETER);
-        return 0L;
-    }
+     HANDLE hToken;
+     int rc;
+     if (FALSE == OpenProcessToken(h, TOKEN_QUERY, &hToken))
+     {
+         rc = RTErrConvertFromWin32(GetLastError());
+     }
+     else
+     {
+         void *pvTokenInfo = NULL;
+         DWORD dwTokenInfoSize;
+         switch (tkClass)
+         {
+         case TokenStatistics:
+             dwTokenInfoSize = sizeof(TOKEN_STATISTICS);
+             pvTokenInfo = (TOKEN_STATISTICS*)RTMemAlloc(dwTokenInfoSize);
+             AssertPtr(pvTokenInfo);
+             break;
 
-    /* Call the PSAPI function EnumProcesses to get all of the
-       ProcID's currently in the system.
-       NOTE: In the documentation, the third parameter of
-       EnumProcesses is named cbNeeded, which implies that you
-       can call the function once to find out how much space to
-       allocate for a buffer and again to fill the buffer.
-       This is not the case. The cbNeeded parameter returns
-       the number of PIDs returned, so if your buffer size is
-       zero cbNeeded returns zero.
-       NOTE: The "HeapAlloc" loop here ensures that we
-       actually allocate a buffer large enough for all the
-       PIDs in the system. */
-    dwSize2 = 256 * sizeof(DWORD);
+         /** @todo Implement more token classes here. */
 
-    lpdwPIDs = NULL;
-    do
-    {
-        if (lpdwPIDs)
-        {
-            HeapFree(GetProcessHeap(), 0, lpdwPIDs) ;
-            dwSize2 *= 2;
-        }
-        lpdwPIDs = (unsigned long *)HeapAlloc(GetProcessHeap(), 0, dwSize2);
-        if (lpdwPIDs == NULL)
-            return 0L; // Last error will be that of HeapAlloc
+         default:
+             VBoxServiceError("Token class not implemented: %ld", tkClass);
+             break;
+         }
 
-        if (!EnumProcesses( lpdwPIDs, dwSize2, &dwSize))
-        {
-            DWORD dw = GetLastError();
-            HeapFree(GetProcessHeap(), 0, lpdwPIDs);
-            SetLastError(dw);
-            return 0L;
-        }
-    }
-    while (dwSize == dwSize2);
+         if (pvTokenInfo)
+         {     
+             DWORD dwRetLength;
+             if (FALSE == GetTokenInformation(hToken, tkClass, pvTokenInfo, dwTokenInfoSize, &dwRetLength))
+             {
+                 rc = RTErrConvertFromWin32(GetLastError());
+             }
+             else
+             {
+                 switch (tkClass)
+                 {
+                 case TokenStatistics:
+                     {
+                         TOKEN_STATISTICS *pStats = (TOKEN_STATISTICS*)pvTokenInfo;
+                         AssertPtr(pStats);
+                         pProc->luid = pStats->AuthenticationId;
+                         /* @todo Add more information of TOKEN_STATISTICS as needed. */
+                         break;
+                     }
 
-    /* At this point we have an array of the PIDs at the
-       time of the last EnumProcesses invocation. We will
-       allocate an array of LUIDs passed back via the out
-       param ppLuid of exactly the number of PIDs. We will
-       only fill the first n values of this array, with n
-       being the number of unique LUIDs found in these PIDs. */
-
-    /* How many ProcIDs did we get? */
-    dwSize /= sizeof(DWORD);
-    dwSize2 = 0L; /* Our return value of found luids. */
-
-    *ppLuid = (LUID *)LocalAlloc(LPTR, dwSize*sizeof(LUID));
-    if (!(*ppLuid))
-    {
-        dwLastError = GetLastError();
-        goto CLEANUP;
-    }
-    for (dwIndex = 0; dwIndex < dwSize; dwIndex++)
-    {
-        (*ppLuid)[dwIndex].LowPart =0L;
-        (*ppLuid)[dwIndex].HighPart=0;
-
-        /* Open the process (if we can... security does not
-           permit every process in the system). */
-        HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION,FALSE, lpdwPIDs[dwIndex]);
-        if ( hProcess != NULL )
-        {
-            HANDLE hAccessToken;
-            if (OpenProcessToken(hProcess, TOKEN_QUERY, &hAccessToken))
-            {
-                TOKEN_STATISTICS ts;
-                DWORD dwSize;
-                if (GetTokenInformation(hAccessToken, TokenStatistics, &ts, sizeof ts, &dwSize))
-                {
-                    DWORD dwTmp = 0L;
-                    BOOL bFound = FALSE;
-                    for (;dwTmp<dwSize2 && !bFound;dwTmp++)
-                        bFound = (*ppLuid)[dwTmp].HighPart == ts.AuthenticationId.HighPart &&
-                                 (*ppLuid)[dwTmp].LowPart == ts.AuthenticationId.LowPart;
-
-                    if (!bFound)
-                        (*ppLuid)[dwSize2++] = ts.AuthenticationId;
-                }
-                CloseHandle(hAccessToken);
-            }
-
-            CloseHandle(hProcess);
-        }
-
-        /* We don't really care if OpenProcess or OpenProcessToken fail or succeed, because
-           there are quite a number of system processes we cannot open anyway, not even as SYSTEM. */
-    }
-
-    CLEANUP:
-
-    if (lpdwPIDs)
-        HeapFree(GetProcessHeap(), 0, lpdwPIDs);
-
-    if (ERROR_SUCCESS !=dwLastError)
-        SetLastError(dwLastError);
-
-    return dwSize2;
+                 default:
+                     /* Should never get here! */
+                     break;                
+                 }
+                 rc = VINF_SUCCESS;
+             }
+             RTMemFree(pvTokenInfo);
+         }
+         CloseHandle(hToken);
+    }   
+    CloseHandle(h);
+    return rc;
 }
 
-BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
-                                    PLUID a_pSession,
-                                    PLUID a_pLuid,
-                                    DWORD a_dwNumOfProcLUIDs)
+int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount)
 {
-    BOOL bLoggedIn = FALSE;
+    AssertPtr(ppProc);
+    AssertPtr(pdwCount);
+
+    DWORD dwSize = 256; /* Number of processes our array can hold */
+    DWORD *pdwProcIDs = (DWORD*)RTMemAlloc(dwSize * sizeof(DWORD));
+    if (pdwProcIDs == NULL)
+        return VERR_NO_MEMORY;
+
+    int rc;
+    DWORD dwNeeded;
+    do
+    {
+        if (FALSE == EnumProcesses(pdwProcIDs, dwSize * sizeof(DWORD), &dwNeeded))
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            break;
+        }
+
+        /* Was our array big enough? Or do we need more space? */
+        if (dwNeeded >= dwSize)
+        {
+            /* Apparently not, so try next bigger size */
+            dwSize += 256;
+            pdwProcIDs = (DWORD*)RTMemRealloc(pdwProcIDs, dwSize * sizeof(DWORD));
+            if (pdwProcIDs == NULL)
+            {
+                rc = VERR_NO_MEMORY;
+                break;
+            }
+        }
+        else
+        {
+            rc = VINF_SUCCESS;
+            break;
+        }
+    } while(dwNeeded >= dwSize);
+
+    if (RT_SUCCESS(rc))
+    {
+        /* Allocate our process structure */
+        *ppProc = (PVBOXSERVICEVMINFOPROC)RTMemAlloc(dwNeeded * sizeof(VBOXSERVICEVMINFOPROC));
+        if (ppProc == NULL)
+            rc = VERR_NO_MEMORY;
+
+        if (RT_SUCCESS(rc))
+        {
+            /* We now have the PIDs, fill them into the struct and lookup their LUID's */
+            PVBOXSERVICEVMINFOPROC pCur = *ppProc;
+            DWORD *pCurProcID = pdwProcIDs;
+            for (DWORD i=0; i<dwNeeded; i++)
+            {
+                RT_BZERO(pCur, sizeof(VBOXSERVICEVMINFOPROC));
+                pCur->id = *pCurProcID;
+                rc = VBoxServiceVMInfoWinProcessesGetTokenInfo(pCur, TokenStatistics);
+                if (RT_FAILURE(rc))
+                {
+                    /* Because some processes cannot be opened/parsed on Windows, we should not consider to
+                       be this an error here. */
+                    rc = VINF_SUCCESS;
+                }
+                pCur++;
+                pCurProcID++;
+            }
+            /* Save number of processes */
+            *pdwCount = dwNeeded;
+        }
+    }
+
+    RTMemFree(pdwProcIDs);
+    if (RT_FAILURE(rc))
+        VBoxServiceVMInfoWinProcessesFree(*ppProc);
+    return rc;
+}
+
+void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC pProc)
+{
+    if (pProc != NULL)
+    {
+        RTMemFree(pProc);
+        pProc = NULL;
+    }
+}
+
+DWORD VBoxServiceVMInfoWinSessionGetProcessCount(PLUID pSession,
+                                                 PVBOXSERVICEVMINFOPROC pProc, DWORD dwProcCount)
+{
+    AssertPtr(pSession);
+
+    if (dwProcCount <= 0) /* To be on the safe side. */
+        return 0;
+    AssertPtr(pProc);
+
+    PSECURITY_LOGON_SESSION_DATA pSessionData = NULL;
+    if (STATUS_SUCCESS != LsaGetLogonSessionData (pSession, &pSessionData))
+    {
+        VBoxServiceError("Could not get logon session data! rc=%Rrc", RTErrConvertFromWin32(GetLastError()));
+        return 0;
+    }
+    AssertPtr(pSessionData);
+
+    /* Even if a user seems to be logged in, it could be a stale/orphaned logon session.
+     * So check if we have some processes bound to it by comparing the session <-> process LUIDs. */
+    PVBOXSERVICEVMINFOPROC pCur = pProc;
+    for (DWORD i=0; i<dwProcCount; i++)
+    {
+        /*VBoxServiceVerbose(3, "%ld:%ld <-> %ld:%ld\n",
+                           pCur->luid.HighPart, pCur->luid.LowPart,
+                           pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);*/
+        if (   pCur->luid.HighPart == pSessionData->LogonId.HighPart
+            && pCur->luid.LowPart  == pSessionData->LogonId.LowPart)
+        {
+            VBoxServiceVerbose(3, "Users: Session %ld:%ld has active processes\n",
+                               pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);
+            LsaFreeReturnBuffer(pSessionData);
+            return 1;
+        }          
+        pCur++;
+    }
+    LsaFreeReturnBuffer(pSessionData);
+    return 0;
+}
+
+BOOL VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo,
+                                    PLUID a_pSession)
+{
     BOOL bFoundUser = FALSE;
     PSECURITY_LOGON_SESSION_DATA sessionData = NULL;
     NTSTATUS r = 0;
@@ -180,7 +254,7 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
     if (!a_pSession)
         return FALSE;
 
-    r = LsaGetLogonSessionData (a_pSession, &sessionData);
+    r = LsaGetLogonSessionData(a_pSession, &sessionData);
     if (r != STATUS_SUCCESS)
     {
         VBoxServiceError("LsaGetLogonSessionData failed, LSA error %lu\n", LsaNtStatusToWinError(r));
@@ -198,7 +272,9 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
     }
 
     VBoxServiceVerbose(3, "Users: Session data: Name = %ls, Len = %d, SID = %s, LogonID = %d,%d\n",
-        (sessionData->UserName).Buffer, (sessionData->UserName).Length, (sessionData->Sid != NULL) ? "1" : "0", sessionData->LogonId.HighPart, sessionData->LogonId.LowPart);
+        (sessionData->UserName).Buffer, 
+        (sessionData->UserName).Length, 
+        (sessionData->Sid != NULL) ? "1" : "0", sessionData->LogonId.HighPart, sessionData->LogonId.LowPart);
 
     if ((sessionData->UserName.Buffer != NULL) &&
         (sessionData->Sid != NULL) &&
@@ -304,28 +380,14 @@ BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER* a_pUserInfo,
 
                     if (pBuffer)
                         WTSFreeMemory(pBuffer);
-
-                    /* A user logged in, but it could be a stale/orphaned logon session. */
-                    BOOL bFoundInLUIDs = FALSE;
-                    for (DWORD dwIndex = 0; dwIndex < a_dwNumOfProcLUIDs; dwIndex++)
-                    {
-                        if (   (a_pLuid[dwIndex].HighPart == sessionData->LogonId.HighPart)
-                            && (a_pLuid[dwIndex].LowPart == sessionData->LogonId.LowPart))
-                        {
-                            bLoggedIn = TRUE;
-                            VBoxServiceVerbose(3, "User \"%ls\" is logged in!\n", a_pUserInfo->szUser);
-                            break;
-                        }
-                    }
                 }
             }
         }
     }
 
     LsaFreeReturnBuffer(sessionData);
-    return bLoggedIn;
+    return bFoundUser;
 }
-
 #endif /* TARGET_NT4 */
 
 int VBoxServiceWinGetComponentVersions(uint32_t uiClientID)

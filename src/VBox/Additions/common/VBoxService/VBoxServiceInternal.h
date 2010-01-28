@@ -26,6 +26,7 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 # include <process.h> /* Needed for file version information. */
+# include <Ntsecapi.h> /* Needed for process security information. */
 #endif
 
 /**
@@ -114,6 +115,12 @@ typedef struct
     char *pszFilePath;
     char *pszFileName;
 } VBOXSERVICEVMINFOFILE, *PVBOXSERVICEVMINFOFILE;
+/** Structure for process information lookup. */
+typedef struct
+{
+    DWORD id; 
+    LUID luid;
+} VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 /** Function prototypes for dynamic loading. */
 typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
 #endif /* RT_OS_WINDOWS */
@@ -151,13 +158,16 @@ extern int VBoxServiceWinUninstall(void);
 /** Reports our current status to the SCM. */
 extern BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint);
 # ifdef VBOX_WITH_GUEST_PROPS
+/** Determines the total count of processes attach to a logon session. */
+extern DWORD VBoxServiceVMInfoWinSessionGetProcessCount(PLUID pSession,
+                                                        PVBOXSERVICEVMINFOPROC pProc, DWORD dwProcCount);
 /** Detects wheter a user is logged on based on the enumerated processes. */
-extern BOOL VBoxServiceVMInfoWinIsLoggedIn(VBOXSERVICEVMINFOUSER *a_pUserInfo,
-                                           PLUID a_pSession,
-                                           PLUID a_pLuid,
-                                           DWORD a_dwNumOfProcLUIDs);
-/** Gets logon user IDs from enumerated processes. */
-extern DWORD VBoxServiceVMInfoWinGetLUIDsFromProcesses(PLUID *ppLuid);
+extern BOOL VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo,
+                                           PLUID a_pSession);
+/** Gets logon user IDs from enumerated processes. ppProc needs to be freed with VBoxServiceVMInfoWinProcessesFree() afterwards. */
+extern int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
+/** Frees the process structure allocated by VBoxServiceVMInfoWinProcessesEnumerate() before. */
+extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC pProc);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
