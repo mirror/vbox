@@ -69,6 +69,16 @@
 
 #endif /* !RC_INVOKED */
 
+/** Vendor name */
+#ifndef VBOX_VENDOR
+# define VBOX_VENDOR                     "Sun Microsystems, Inc."
+#endif
+
+/** Product name */
+#ifndef VBOX_PRODUCT
+# define VBOX_PRODUCT                    "Sun VirtualBox"
+#endif
+
 /** @name Prefined strings for Windows resource files
  *
  * @remarks The VBOX_VERSION_*_NR define are integer numbers while
