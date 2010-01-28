@@ -156,7 +156,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
             rc = VINF_SUCCESS;
             break;
         }
-    } while(cbRet >= dwNumProcs * sizeof(DWORD));
+    } while(dwNumProcs < 32768); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
 
     if (RT_SUCCESS(rc))
     {
