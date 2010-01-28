@@ -227,6 +227,9 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         for (ULONG i=0; i<ulCount; i++)
         {
             VBOXSERVICEVMINFOUSER userInfo;
+            /* Leave the memory clearing *inside* the loop as VBoxServiceVMInfoWinIsLoggedIn
+             * assumes the memory reserved for strings is zeroed.
+             */
             ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
 
             if (   VBoxServiceVMInfoWinIsLoggedIn(&userInfo, &pSessions[i])
