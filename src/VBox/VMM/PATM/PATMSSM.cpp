@@ -1148,17 +1148,21 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
             *pFixup = (*pFixup - patmInfo.pPatchMemGC) + pVM->patm.s.pPatchMemGC;
         }
         else
+        /* Boldly ASSUMES:
+         * 1. That pCPUMCtxGC is in the VM structure and that its location is
+         *    at the first page of the same 4 MB chunk.
+         * 2. That the forced actions were in the first 32 bytes of the VM
+         *    structure.
+         * 3. That the CPUM leafs are less than 8KB into the structure. */
         if (    ulSSMVersion <= PATM_SSM_VERSION_FIXUP_HACK
-            &&  *pFixup >= pVM->pVMRC
-            &&  *pFixup < pVM->pVMRC + 32)
+            &&  *pFixup - (patmInfo.pCPUMCtxGC & UINT32_C(0xffc00000)) < UINT32_C(32))
         {
-            LogFlow(("Changing fLocalForcedActions fixup from %x to %x\n", *pFixup, pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions)));
+            LogFlow(("Changing fLocalForcedActions fixup from %RRv to %RRv\n", *pFixup, pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions)));
             *pFixup = pVM->pVMRC + RT_OFFSETOF(VM, aCpus[0].fLocalForcedActions);
         }
         else
         if (    ulSSMVersion <= PATM_SSM_VERSION_FIXUP_HACK
-            &&  *pFixup >= pVM->pVMRC
-            &&  *pFixup < pVM->pVMRC + 8192)
+            &&  *pFixup - (patmInfo.pCPUMCtxGC & UINT32_C(0xffc00000)) < UINT32_C(8192))
         {
             static int cCpuidFixup = 0;
 #ifdef LOG_ENABLED
@@ -1180,7 +1184,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
                 *pFixup = CPUMR3GetGuestCpuIdCentaurRCPtr(pVM);
                 break;
             }
-            LogFlow(("Changing cpuid fixup %d from %x to %x\n", cCpuidFixup, oldFixup, *pFixup));
+            LogFlow(("Changing cpuid fixup %d from %RRv to %RRv\n", cCpuidFixup, oldFixup, *pFixup));
             cCpuidFixup++;
         }
         else
