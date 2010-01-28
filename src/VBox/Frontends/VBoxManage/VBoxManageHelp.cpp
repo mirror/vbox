@@ -42,7 +42,7 @@ void showLogo(void)
     {
         RTPrintf(VBOX_PRODUCT" Command Line Management Interface Version "
                  VBOX_VERSION_STRING  "\n"
-                 "(C) 2005-2010 " VBOX_VENDOR "\n"
+                 "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                  "All rights reserved.\n"
                  "\n");
         s_fShown = true;
