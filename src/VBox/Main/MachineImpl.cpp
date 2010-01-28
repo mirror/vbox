@@ -587,7 +587,7 @@ HRESULT Machine::registeredInit()
         mData->mAccessible = TRUE;
 
         /* commit all changes made during loading the settings file */
-        commit();
+        commit(); // @todo r=dj why do we need a commit during init?!? this is very expensive
     }
     else
     {
@@ -9609,6 +9609,10 @@ STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames)
      *
      * This is copied from registeredInit(), and may or may not be the right
      * way to handle this.
+     *
+     * @todo r=dj review this, this gets called during machine power-down when
+     * we have already saved the machine settings, there's no need to do this
+     * twice.
      */
     Assert(mData->mRegistered);
     mData->mRegistered = FALSE;
