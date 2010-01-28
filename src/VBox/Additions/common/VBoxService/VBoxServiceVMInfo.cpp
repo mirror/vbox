@@ -224,11 +224,11 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
         DWORD dwNumProcs;
         rc = VBoxServiceVMInfoWinProcessesEnumerate(&pProcs, &dwNumProcs);
 
-        VBOXSERVICEVMINFOUSER userInfo;
-        ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
-
         for (ULONG i=0; i<ulCount; i++)
         {
+            VBOXSERVICEVMINFOUSER userInfo;
+            ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
+
             if (   VBoxServiceVMInfoWinIsLoggedIn(&userInfo, &pSessions[i])
                 && VBoxServiceVMInfoWinSessionGetProcessCount(&pSessions[i], pProcs, dwNumProcs) > 0)
             {
