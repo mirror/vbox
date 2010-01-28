@@ -81,6 +81,7 @@ int VBoxServiceVMInfoWinProcessesGetTokenInfo(PVBOXSERVICEVMINFOPROC pProc,
 
          default:
              VBoxServiceError("Token class not implemented: %ld", tkClass);
+             rc = VERR_NOT_IMPLEMENTED;
              break;
          }
 
@@ -123,27 +124,27 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
     AssertPtr(ppProc);
     AssertPtr(pdwCount);
 
-    DWORD dwSize = 256; /* Number of processes our array can hold */
-    DWORD *pdwProcIDs = (DWORD*)RTMemAlloc(dwSize * sizeof(DWORD));
+    DWORD dwNumProcs = 128; /* Number of processes our array can hold */
+    DWORD *pdwProcIDs = (DWORD*)RTMemAlloc(dwNumProcs * sizeof(DWORD));
     if (pdwProcIDs == NULL)
         return VERR_NO_MEMORY;
 
     int rc;
-    DWORD dwNeeded;
+    DWORD cbRet; /* Returned size in bytes */
     do
     {
-        if (FALSE == EnumProcesses(pdwProcIDs, dwSize * sizeof(DWORD), &dwNeeded))
+        if (FALSE == EnumProcesses(pdwProcIDs, dwNumProcs * sizeof(DWORD), &cbRet))
         {
             rc = RTErrConvertFromWin32(GetLastError());
             break;
         }
 
         /* Was our array big enough? Or do we need more space? */
-        if (dwNeeded >= dwSize)
+        if (cbRet >= dwNumProcs * sizeof(DWORD))
         {
             /* Apparently not, so try next bigger size */
-            dwSize += 256;
-            pdwProcIDs = (DWORD*)RTMemRealloc(pdwProcIDs, dwSize * sizeof(DWORD));
+            dwNumProcs += 128;
+            pdwProcIDs = (DWORD*)RTMemRealloc(pdwProcIDs, dwNumProcs * sizeof(DWORD));
             if (pdwProcIDs == NULL)
             {
                 rc = VERR_NO_MEMORY;
@@ -155,12 +156,12 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
             rc = VINF_SUCCESS;
             break;
         }
-    } while(dwNeeded >= dwSize);
+    } while(cbRet >= dwNumProcs * sizeof(DWORD));
 
     if (RT_SUCCESS(rc))
     {
         /* Allocate our process structure */
-        *ppProc = (PVBOXSERVICEVMINFOPROC)RTMemAlloc(dwNeeded * sizeof(VBOXSERVICEVMINFOPROC));
+        *ppProc = (PVBOXSERVICEVMINFOPROC)RTMemAlloc(dwNumProcs * sizeof(VBOXSERVICEVMINFOPROC));
         if (ppProc == NULL)
             rc = VERR_NO_MEMORY;
 
@@ -169,7 +170,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
             /* We now have the PIDs, fill them into the struct and lookup their LUID's */
             PVBOXSERVICEVMINFOPROC pCur = *ppProc;
             DWORD *pCurProcID = pdwProcIDs;
-            for (DWORD i=0; i<dwNeeded; i++)
+            for (DWORD i=0; i<dwNumProcs; i++)
             {
                 RT_BZERO(pCur, sizeof(VBOXSERVICEVMINFOPROC));
                 pCur->id = *pCurProcID;
@@ -184,7 +185,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
                 pCurProcID++;
             }
             /* Save number of processes */
-            *pdwCount = dwNeeded;
+            *pdwCount = dwNumProcs;
         }
     }
 
@@ -226,8 +227,8 @@ DWORD VBoxServiceVMInfoWinSessionGetProcessCount(PLUID pSession,
     for (DWORD i=0; i<dwProcCount; i++)
     {
         /*VBoxServiceVerbose(3, "%ld:%ld <-> %ld:%ld\n",
-                           pCur->luid.HighPart, pCur->luid.LowPart,
-                           pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);*/
+                             pCur->luid.HighPart, pCur->luid.LowPart,
+                             pSessionData->LogonId.HighPart, pSessionData->LogonId.LowPart);*/
         if (   pCur->luid.HighPart == pSessionData->LogonId.HighPart
             && pCur->luid.LowPart  == pSessionData->LogonId.LowPart)
         {
