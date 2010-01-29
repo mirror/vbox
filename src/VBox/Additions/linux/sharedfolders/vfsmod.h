@@ -25,6 +25,10 @@
 #include "the-linux-kernel.h"
 #include "version-generated.h"
 
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+# include <linux/backing-dev.h>
+#endif
+
 #include "VBoxCalls.h"
 #include "vbsfmount.h"
 
@@ -39,6 +43,9 @@ struct sf_glob_info {
         int fmode;
         int dmask;
         int fmask;
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+        struct backing_dev_info bdi;
+#endif
 };
 
 /* per-inode information */
@@ -107,8 +114,10 @@ sf_dir_info_alloc (void);
 extern int
 sf_dir_read_all (struct sf_glob_info *sf_g, struct sf_inode_info *sf_i,
                  struct sf_dir_info *sf_d, SHFLHANDLE handle);
+extern int
+sf_init_backing_dev (struct sf_glob_info *sf_g, const char *name);
 extern void
-sf_init_backing_dev(void);
+sf_done_backing_dev (struct sf_glob_info *sf_g);
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
 #define STRUCT_STATFS  struct statfs
