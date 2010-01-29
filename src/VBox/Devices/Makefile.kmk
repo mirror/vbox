@@ -491,7 +491,7 @@ else  # !VBOX_WITH_DYNAMIC_DSDT
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 	$(QUIET)$(MV) -f $@ $@.tmp
 	$(QUIET)$(SED) "s/AmlCode/AmlCodeSsdtStandard/g" \
-		--output $@ $@.tmp$
+		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
 
 
@@ -503,7 +503,7 @@ else  # !VBOX_WITH_DYNAMIC_DSDT
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 	$(QUIET)$(MV) -f $@ $@.tmp
 	$(QUIET)$(SED) "s/AmlCode/AmlCodeSsdtCpuHotPlug/g" \
-		--output $@ $@.tmp$
+		--output $@ $@.tmp
 	$(QUIET)$(RM) -f $@.tmp
 
 
