@@ -184,7 +184,7 @@ static int vboxInitLogging(const char *pszFilename, bool bGenNameSuffix)
 
         /* register this logger as the release logger */
         RTLogRelSetDefaultInstance(loggerRelease);
-        
+
         return VINF_SUCCESS;
     }
 
@@ -286,7 +286,7 @@ int main(int argc, char **argv)
 #endif
                 case 'h':
                     RTPrintf(VBOX_PRODUCT " Helper for testing 2D/3D OpenGL capabilities %u.%u.%u\n"
-                             "(C) 2009-2010 " VBOX_VENDOR "\n"
+                             "(C) 2009-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                              "All rights reserved.\n"
                              "\n"
                              "Parameters:\n"
