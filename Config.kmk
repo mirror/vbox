@@ -166,6 +166,7 @@ endif
 
 # Some info on the vendor
 VBOX_VENDOR = Sun Microsystems, Inc.
+VBOX_VENDOR_SHORT = Sun
 VBOX_PRODUCT = Sun VirtualBox
 # maybe we want set this manually
 VBOX_C_YEAR = $(date-utc %Y)
@@ -3906,6 +3907,7 @@ $(VBOX_PRODUCT_HEADER): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp '#define ___product_generated_h___'
 	$(QUIET)$(APPEND) $@.tmp ''
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR "$(VBOX_VENDOR)"'
+	$(QUIET)$(APPEND) $@.tmp '#define VBOX_VENDOR_SHORT "$(VBOX_VENDOR_SHORT)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_PRODUCT "$(VBOX_PRODUCT)"'
 	$(QUIET)$(APPEND) $@.tmp '#define VBOX_C_YEAR "$(VBOX_C_YEAR)"'
 	$(QUIET)$(APPEND) $@.tmp ''
@@ -3924,6 +3926,7 @@ $(VBOX_VERSION_MK): $(VBOX_VERSION_STAMP)
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_BUILD = $(VBOX_VERSION_BUILD)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VERSION_STRING = $(VBOX_VERSION_STRING)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_VENDOR = $(VBOX_VENDOR)'
+	$(QUIET)$(APPEND) $@.tmp 'VBOX_VENDOR_SHORT = $(VBOX_VENDOR_SHORT)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_PRODUCT = $(VBOX_PRODUCT)'
 	$(QUIET)$(APPEND) $@.tmp 'VBOX_C_YEAR = $(VBOX_C_YEAR)'
 	$(QUIET)$(MV) -f $@.tmp $@
