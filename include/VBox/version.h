@@ -30,6 +30,9 @@
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
 
+/** Product info */
+#include <product-generated.h>
+
 #ifndef RC_INVOKED
 # include <version-generated.h>
 
@@ -68,16 +71,6 @@
 # define VBOX_FULL_VERSION_GET_BUILD(uFullVer)  ( ((uFullVer)      ) & 0xffffU )
 
 #endif /* !RC_INVOKED */
-
-/** Vendor name */
-#ifndef VBOX_VENDOR
-# define VBOX_VENDOR                     "Sun Microsystems, Inc."
-#endif
-
-/** Product name */
-#ifndef VBOX_PRODUCT
-# define VBOX_PRODUCT                    "Sun VirtualBox"
-#endif
 
 /** @name Prefined strings for Windows resource files
  *
