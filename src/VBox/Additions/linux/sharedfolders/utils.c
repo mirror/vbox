@@ -27,7 +27,6 @@
 
 /* #define USE_VMALLOC */
 
-#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
 /*
  * sf_reg_aops and sf_backing_dev_info are just quick implementations to make
  * sendfile work. For more information have a look at
@@ -38,18 +37,6 @@
  *
  *   http://pserver.samba.org/samba/ftp/cifs-cvs/samplefs.tar.gz
  */
-
-static struct backing_dev_info sf_backing_dev_info = {
-        .ra_pages      = 0, /* No readahead */
-# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 12)
-        .capabilities  = BDI_CAP_MAP_DIRECT    /* MAP_SHARED */
-                       | BDI_CAP_MAP_COPY      /* MAP_PRIVATE */
-                       | BDI_CAP_READ_MAP      /* can be mapped for reading */
-                       | BDI_CAP_WRITE_MAP     /* can be mapped for writing */
-                       | BDI_CAP_EXEC_MAP,     /* can be mapped for execution */
-# endif
-};
-#endif /* LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0) */
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION (2, 6, 0)
 static void
@@ -120,7 +107,7 @@ sf_init_inode (struct sf_glob_info *sf_g, struct inode *inode,
 
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
         inode->i_mapping->a_ops = &sf_reg_aops;
-        inode->i_mapping->backing_dev_info = &sf_backing_dev_info;
+        inode->i_mapping->backing_dev_info = &sf_g->bdi;
 #endif
 
         if (is_dir) {
@@ -812,9 +799,31 @@ struct dentry_operations sf_dentry_ops = {
         .d_revalidate = sf_dentry_revalidate
 };
 
-void sf_init_backing_dev(void)
+int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
+{
+    int rc = 0;
+
+#if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 0)
+    sf_g->bdi.ra_pages = 0; /* No readahead */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 12)
+    sf_g->bdi.capabilities  = BDI_CAP_MAP_DIRECT    /* MAP_SHARED */
+                            | BDI_CAP_MAP_COPY      /* MAP_PRIVATE */
+                            | BDI_CAP_READ_MAP      /* can be mapped for reading */
+                            | BDI_CAP_WRITE_MAP     /* can be mapped for writing */
+                            | BDI_CAP_EXEC_MAP;     /* can be mapped for execution */
+# endif /* >= 2.6.12 */
+# if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
+    rc = bdi_init(&sf_g->bdi);
+    if (!rc)
+        rc = bdi_register(&sf_g->bdi, NULL, "vboxvfs-%s", name);
+# endif /* >= 2.6.24 */
+#endif /* >= 2.6.0 */
+    return rc;
+}
+
+void sf_done_backing_dev(struct sf_glob_info *sf_g)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
-    bdi_init(&sf_backing_dev_info);
+    bdi_destroy(&sf_g->bdi);
 #endif
 }

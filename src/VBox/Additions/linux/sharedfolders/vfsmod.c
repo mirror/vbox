@@ -286,6 +286,12 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
                 goto fail3;
         }
 
+        if (sf_init_backing_dev(sf_g, info->name)) {
+                err = -EINVAL;
+                LogFunc(("could not init bdi\n"));
+                goto fail4;
+        }
+
         sf_init_inode (sf_g, iroot, &fsinfo);
         SET_INODE_INFO (iroot, sf_i);
 
@@ -297,13 +303,15 @@ sf_read_super_aux (struct super_block *sb, void *data, int flags)
         if (!droot) {
                 err = -ENOMEM;  /* XXX */
                 LogFunc(("d_alloc_root failed\n"));
-                goto fail4;
+                goto fail5;
         }
 
         sb->s_root = droot;
         SET_GLOB_INFO (sb, sf_g);
         return 0;
 
+ fail5:
+        sf_done_backing_dev(sf_g);
  fail4:
         iput (iroot);
  fail3:
@@ -371,6 +379,7 @@ sf_put_super (struct super_block *sb)
 
         sf_g = GET_GLOB_INFO (sb);
         BUG_ON (!sf_g);
+        sf_done_backing_dev(sf_g);
         sf_glob_free (sf_g);
 }
 
@@ -466,8 +475,6 @@ init (void)
                         (unsigned long)PAGE_SIZE);
                 return -EINVAL;
         }
-
-        sf_init_backing_dev();
 
         err = register_filesystem (&vboxsf_fs_type);
         if (err) {
