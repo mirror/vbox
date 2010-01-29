@@ -694,9 +694,9 @@ static int caInitOutput(HWVoiceOut *hw)
             CFRelease(name);
             if (pszName && pszUID)
                 LogRel(("CoreAudio: Using output device: %s (UID: %s)\n", pszName, pszUID));
-            RTStrFree(pszName);
+            RTStrFree(pszUID);
         }
-        RTStrFree(pszUID);
+        RTStrFree(pszName);
     }
     else
         LogRel(("CoreAudio: [Output] Unable to get output device name (%RI32)\n", err));
@@ -1518,9 +1518,9 @@ static int caInitInput(HWVoiceIn *hw)
             CFRelease(name);
             if (pszName && pszUID)
                 LogRel(("CoreAudio: Using input device: %s (UID: %s)\n", pszName, pszUID));
-            RTStrFree(pszName);
+            RTStrFree(pszUID);
         }
-        RTStrFree(pszUID);
+        RTStrFree(pszName);
     }
     else
         LogRel(("CoreAudio: [Input] Unable to get input device name (%RI32)\n", err));
