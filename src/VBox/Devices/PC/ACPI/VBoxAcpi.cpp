@@ -41,6 +41,8 @@
 #else
 /* Statically compiled AML */
 # include <vboxaml.hex>
+# include <vboxssdt-standard.hex>
+# include <vboxssdt-cpuhotplug.hex>
 #endif
 
 #ifdef VBOX_WITH_DYNAMIC_DSDT
@@ -136,16 +138,23 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
 }
 #endif
 
-/* Two only public functions */
-int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
+/**
+ * Loads an AML file if present in CFGM
+ *
+ * @returns VBox status code
+ * @param   pDevIns        The device instance
+ * @param   pcszCfgName    The configuration key holding the file path
+ * @param   pcszSignature  The signature to check for
+ * @param   ppbAmlCode     Where to store the pointer to the AML code on success.
+ * @param   pcbAmlCode     Where to store the number of bytes of the AML code on success.
+ */
+static int acpiAmlLoadExternal(PPDMDEVINS pDevIns, const char *pcszCfgName, const char *pcszSignature, uint8_t **ppbAmlCode, size_t *pcbAmlCode)
 {
-#ifdef VBOX_WITH_DYNAMIC_DSDT
-    return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
-#else
     uint8_t *pbAmlCode = NULL;
     size_t cbAmlCode = 0;
     char *pszAmlFilePath = NULL;
-    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfgHandle, "AmlFilePath", &pszAmlFilePath);
+    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfgHandle, pcszCfgName, &pszAmlFilePath);
+
     if (RT_SUCCESS(rc))
     {
         /* Load from file. */
@@ -177,7 +186,7 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
                      * beginning is wrong.
                      */
                     if (   RT_FAILURE(rc)
-                        || strncmp((const char *)pbAmlCode, "DSDT", 4))
+                        || strncmp((const char *)pbAmlCode, pcszSignature, 4))
                     {
                         RTMemFree(pbAmlCode);
                         pbAmlCode = NULL;
@@ -185,6 +194,12 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
                         /* Return error if file header check failed */
                         if (RT_SUCCESS(rc))
                             rc = VERR_PARSE_ERROR;
+                    }
+                    else
+                    {
+                        *ppbAmlCode = pbAmlCode;
+                        *pcbAmlCode = cbAmlCode;
+                        rc = VINF_SUCCESS;
                     }
                 }
                 else
@@ -195,27 +210,41 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
         }
         MMR3HeapFree(pszAmlFilePath);
     }
-    else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+
+    return rc;
+}
+
+/* Two only public functions */
+int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
+{
+#ifdef VBOX_WITH_DYNAMIC_DSDT
+    return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
+#else
+    uint8_t *pbAmlCodeDsdt = NULL;
+    size_t cbAmlCodeDsdt = 0;
+    int rc = acpiAmlLoadExternal(pDevIns, "DsdtFilePath", "DSDT", &pbAmlCodeDsdt, &cbAmlCodeDsdt);
+
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         rc = VINF_SUCCESS;
 
         /* Use the compiled in AML code */
-        cbAmlCode = sizeof(AmlCode);
-        pbAmlCode = (uint8_t *)RTMemAllocZ(cbAmlCode);
-        if (pbAmlCode)
-            memcpy(pbAmlCode, AmlCode, cbAmlCode);
+        cbAmlCodeDsdt = sizeof(AmlCode);
+        pbAmlCodeDsdt = (uint8_t *)RTMemAllocZ(cbAmlCodeDsdt);
+        if (pbAmlCodeDsdt)
+            memcpy(pbAmlCodeDsdt, AmlCode, cbAmlCodeDsdt);
         else
             rc = VERR_NO_MEMORY;
     }
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
-                                N_("Configuration error: Failed to read \"AmlFilePath\""));
+                                N_("Configuration error: Failed to read \"DsdtFilePath\""));
 
     if (RT_SUCCESS(rc))
     {
-        patchAml(pDevIns, pbAmlCode, cbAmlCode);
-        *ppPtr = pbAmlCode;
-        *puDsdtLen = cbAmlCode;
+        patchAml(pDevIns, pbAmlCodeDsdt, cbAmlCodeDsdt);
+        *ppPtr = pbAmlCodeDsdt;
+        *puDsdtLen = cbAmlCodeDsdt;
     }
     return rc;
 #endif
@@ -230,5 +259,58 @@ int acpiCleanupDsdt(PPDMDEVINS pDevIns,  void * pPtr)
         RTMemFree(pPtr);
     return VINF_SUCCESS;
 #endif
+}
+
+int acpiPrepareSsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puSsdtLen)
+{
+    uint8_t *pbAmlCodeSsdt = NULL;
+    size_t   cbAmlCodeSsdt = 0;
+    int rc = acpiAmlLoadExternal(pDevIns, "SsdtFilePath", "SSDT", &pbAmlCodeSsdt, &cbAmlCodeSsdt);
+
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        bool fCpuHotPlug = false;
+        uint8_t *pbAmlCode = NULL;
+        rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "CpuHotPlug", &fCpuHotPlug, false);
+
+        if (RT_FAILURE(rc))
+            return rc;
+
+        if (fCpuHotPlug)
+        {
+            pbAmlCode     = AmlCodeSsdtCpuHotPlug;
+            cbAmlCodeSsdt = sizeof(AmlCodeSsdtCpuHotPlug);
+        }
+        else
+        {
+            pbAmlCode     = AmlCodeSsdtStandard;
+            cbAmlCodeSsdt = sizeof(AmlCodeSsdtStandard);
+        }
+
+        pbAmlCodeSsdt = (uint8_t *)RTMemAllocZ(cbAmlCodeSsdt);
+        if (pbAmlCodeSsdt)
+            memcpy(pbAmlCodeSsdt, pbAmlCode, cbAmlCodeSsdt);
+        else
+            rc = VERR_NO_MEMORY;
+    }
+    else if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"SsdtFilePath\""));
+
+    if (RT_SUCCESS(rc))
+    {
+        patchAml(pDevIns, pbAmlCodeSsdt, cbAmlCodeSsdt);
+        *ppPtr = pbAmlCodeSsdt;
+        *puSsdtLen = cbAmlCodeSsdt;
+    }
+
+    return VINF_SUCCESS;
+}
+
+int acpiCleanupSsdt(PPDMDEVINS pDevIns, void* pPtr)
+{
+    if (pPtr)
+        RTMemFree(pPtr);
+    return VINF_SUCCESS;
 }
 
