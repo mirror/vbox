@@ -1135,8 +1135,10 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
                 }
                 else
-                /* Turn on NXE if PAE has been enabled. */
-                if (CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE))
+                /* Turn on NXE if PAE has been enabled *and* the host has turned on NXE (we reuse the host EFER in the switcher) */
+                /* Todo: this needs to be fixed properly!! */
+                if (    CPUMGetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_PAE)
+                    &&  (pVM->hwaccm.s.vmx.hostEFER & MSR_K6_EFER_NXE))
                     CPUMSetGuestCpuIdFeature(pVM, CPUMCPUIDFEATURE_NXE);
 
                 LogRel((pVM->hwaccm.s.fAllow64BitGuests

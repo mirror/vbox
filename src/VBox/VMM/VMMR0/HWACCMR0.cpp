@@ -89,6 +89,9 @@ static struct
         /** Host CR4 value (set by ring-0 VMX init) */
         uint64_t                    hostCR4;
 
+        /** Host EFER value (set by ring-0 VMX init) */
+        uint64_t                    hostEFER;
+
         /** VMX MSR values */
         struct
         {
@@ -269,6 +272,7 @@ VMMR0DECL(int) HWACCMR0Init(void)
                         if (!HWACCMR0Globals.vmx.fUsingSUPR0EnableVTx)
                         {
                             HWACCMR0Globals.vmx.hostCR4             = ASMGetCR4();
+                            HWACCMR0Globals.vmx.hostEFER            = ASMRdMsr(MSR_K6_EFER);
 
                             rc = RTR0MemObjAllocCont(&pScatchMemObj, 1 << PAGE_SHIFT, true /* executable R0 mapping */);
                             if (RT_FAILURE(rc))
@@ -902,6 +906,7 @@ VMMR0DECL(int) HWACCMR0InitVM(PVM pVM)
 
     pVM->hwaccm.s.vmx.msr.feature_ctrl      = HWACCMR0Globals.vmx.msr.feature_ctrl;
     pVM->hwaccm.s.vmx.hostCR4               = HWACCMR0Globals.vmx.hostCR4;
+    pVM->hwaccm.s.vmx.hostEFER              = HWACCMR0Globals.vmx.hostEFER;
     pVM->hwaccm.s.vmx.msr.vmx_basic_info    = HWACCMR0Globals.vmx.msr.vmx_basic_info;
     pVM->hwaccm.s.vmx.msr.vmx_pin_ctls      = HWACCMR0Globals.vmx.msr.vmx_pin_ctls;
     pVM->hwaccm.s.vmx.msr.vmx_proc_ctls     = HWACCMR0Globals.vmx.msr.vmx_proc_ctls;
