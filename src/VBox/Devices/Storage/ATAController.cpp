@@ -646,6 +646,18 @@ DECLINLINE(uint32_t) ataMSF2LBA(const uint8_t *pbBuf)
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
 
+static uint32_t ataChecksum(void* ptr, size_t count)
+{
+    uint8_t u8Sum = 0xa5, *p = (uint8_t*)ptr;
+    size_t i;
+
+    for (i = 0; i < count; i++)
+    {
+      u8Sum += *p++;
+    }
+
+    return (uint8_t)-(int32_t)u8Sum;
+}
 
 static void ataCmdOK(AHCIATADevState *s, uint8_t status)
 {
@@ -764,6 +776,9 @@ static bool ataIdentifySS(AHCIATADevState *s)
         p[102] = RT_H2LE_U16(s->cTotalSectors >> 32);
         p[103] = RT_H2LE_U16(s->cTotalSectors >> 48);
     }
+    uint32_t uCsum = ataChecksum(p, 510);
+    p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
+
     s->iSourceSink = ATAFN_SS_NULL;
     ataCmdOK(s, ATA_STAT_SEEK);
     return false;
@@ -847,6 +862,8 @@ static bool atapiIdentifySS(AHCIATADevState *s)
     p[87] = RT_H2LE_U16(1 << 14);
     p[88] = RT_H2LE_U16(ATA_TRANSFER_ID(ATA_MODE_UDMA, ATA_UDMA_MODE_MAX, s->uATATransferMode)); /* UDMA modes supported / mode enabled */
     p[93] = RT_H2LE_U16((1 | 1 << 1) << ((s->iLUN & 1) == 0 ? 0 : 8) | 1 << 13 | 1 << 14);
+    uint32_t uCsum = ataChecksum(p, 510);
+    p[255] = RT_H2LE_U16(0xa5 | (uCsum << 8)); /* Integrity word */
     s->iSourceSink = ATAFN_SS_NULL;
     ataCmdOK(s, ATA_STAT_SEEK);
     return false;
@@ -5538,4 +5555,3 @@ DECLCALLBACK(int) ataControllerInit(PPDMDEVINS pDevIns, PAHCIATACONTROLLER pCtl,
 }
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-
