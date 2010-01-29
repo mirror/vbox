@@ -154,6 +154,7 @@ int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD
         else
         {
             rc = VINF_SUCCESS;
+            dwNumProcs = cbRet / sizeof(DWORD); /* Set the current, real size of the number of processes we retrieved */
             break;
         }
     } while(dwNumProcs < 32768); /* Should be enough; see: http://blogs.technet.com/markrussinovich/archive/2009/07/08/3261309.aspx */
