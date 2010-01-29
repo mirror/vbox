@@ -75,7 +75,7 @@ void VBoxAboutDlg::retranslateUi()
 #endif
 #if VBOX_OSE
     mAboutText = aboutText + " " + versionText.arg (mVersion) + "\n" +
-                 QString ("%1 2004-2010 " VBOX_VENDOR).arg (QChar (0xa9));
+                 QString ("%1 2004-" VBOX_C_YEAR " " VBOX_VENDOR).arg (QChar (0xa9));
 #else /* VBOX_OSE */
     mAboutText = aboutText + "\n" +
                  versionText.arg (mVersion);
