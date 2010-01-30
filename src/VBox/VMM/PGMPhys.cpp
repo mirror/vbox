@@ -1379,8 +1379,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
         Assert(PGM_PAGE_GET_TYPE(&pNew->aPages[0]) == PGMPAGETYPE_MMIO);
 
         /* update the page count stats. */
-        pVM->pgm.s.cZeroPages += cPages;
-        pVM->pgm.s.cAllPages  += cPages;
+        pVM->pgm.s.cPureMmioPages += cPages;
+        pVM->pgm.s.cAllPages      += cPages;
 
         /* link it */
         pgmR3PhysLinkRamRange(pVM, pNew, pRamPrev);
@@ -1398,8 +1398,8 @@ VMMR3DECL(int) PGMR3PhysMMIORegister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb,
     if (    RT_FAILURE(rc)
         &&  !fRamExists)
     {
-        pVM->pgm.s.cZeroPages -= cb >> PAGE_SHIFT;
-        pVM->pgm.s.cAllPages  -= cb >> PAGE_SHIFT;
+        pVM->pgm.s.cPureMmioPages -= cb >> PAGE_SHIFT;
+        pVM->pgm.s.cAllPages      -= cb >> PAGE_SHIFT;
 
         /* remove the ad hoc range. */
         pgmR3PhysUnlinkRamRange2(pVM, pNew, pRamPrev);
@@ -1473,8 +1473,8 @@ VMMR3DECL(int) PGMR3PhysMMIODeregister(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb)
                     Log(("PGMR3PhysMMIODeregister: Freeing ad hoc MMIO range for %RGp-%RGp %s\n",
                          GCPhys, GCPhysLast, pRam->pszDesc));
 
-                    pVM->pgm.s.cAllPages  -= cPages;
-                    pVM->pgm.s.cZeroPages -= cPages;
+                    pVM->pgm.s.cAllPages      -= cPages;
+                    pVM->pgm.s.cPureMmioPages -= cPages;
 
                     pgmR3PhysUnlinkRamRange2(pVM, pRam, pRamPrev);
                     pRam->cb = pRam->GCPhys = pRam->GCPhysLast = NIL_RTGCPHYS;
@@ -2416,9 +2416,12 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
                         PGM_PAGE_INIT_ZERO(&pPage->Shadow, pVM, PGMPAGETYPE_ROM_SHADOW);
                     }
 
-                    /* update the page count stats */
-                    pVM->pgm.s.cZeroPages += cPages;
-                    pVM->pgm.s.cAllPages  += cPages;
+                    /* update the page count stats for the shadow pages. */
+                    if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
+                    {
+                        pVM->pgm.s.cZeroPages += cPages;
+                        pVM->pgm.s.cAllPages  += cPages;
+                    }
 
                     /*
                      * Insert the ROM range, tell REM and return successfully.
