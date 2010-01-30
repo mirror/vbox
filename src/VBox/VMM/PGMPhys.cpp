@@ -2239,7 +2239,7 @@ VMMR3DECL(int) PGMR3PhysRomRegister(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
     /*
      * Update the base memory reservation if necessary.
      */
-    uint32_t cExtraBaseCost = fRamExists ? cPages : 0;
+    uint32_t cExtraBaseCost = fRamExists ? 0 : cPages;
     if (fFlags & PGMPHYS_ROM_FLAGS_SHADOWED)
         cExtraBaseCost += cPages;
     if (cExtraBaseCost)
