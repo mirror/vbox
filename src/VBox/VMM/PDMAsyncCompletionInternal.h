@@ -26,6 +26,7 @@
 #include <iprt/critsect.h>
 #include <VBox/types.h>
 #include <VBox/cfgm.h>
+#include <VBox/stam.h>
 #include <VBox/pdmasynccompletion.h>
 
 RT_C_DECLS_BEGIN
@@ -225,6 +226,18 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
     unsigned                                    cUsers;
     /** URI describing the endpoint */
     char                                       *pszUri;
+#ifdef VBOX_WITH_STATISTICS
+    STAMCOUNTER                                 StatTaskRunTimesNs[10];
+    STAMCOUNTER                                 StatTaskRunTimesMicroSec[10];
+    STAMCOUNTER                                 StatTaskRunTimesMs[10];
+    STAMCOUNTER                                 StatTaskRunTimesSec[10];
+    STAMCOUNTER                                 StatTaskRunOver100Sec;
+    STAMCOUNTER                                 StatIoOpsPerSec;
+    STAMCOUNTER                                 StatIoOpsStarted;
+    STAMCOUNTER                                 StatIoOpsCompleted;
+    uint64_t                                    tsIntervalStartMs;
+    uint64_t                                    cIoOpsCompleted;
+#endif
 } PDMASYNCCOMPLETIONENDPOINT;
 
 /**
@@ -245,6 +258,10 @@ typedef struct PDMASYNCCOMPLETIONTASK
     void                                   *pvUser;
     /** Task id. */
     uint32_t                                uTaskId;
+#ifdef VBOX_WITH_STATISTICS
+    /** Start timestamp. */
+    uint64_t                                tsNsStart;
+#endif
 } PDMASYNCCOMPLETIONTASK;
 
 /**
