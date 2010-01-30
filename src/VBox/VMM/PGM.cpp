@@ -1564,6 +1564,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REL_REG(pVM, &pPGM->cPrivatePages,                      STAMTYPE_U32,     "/PGM/Page/cPrivatePages",            STAMUNIT_COUNT,     "The number of private pages.");
     STAM_REL_REG(pVM, &pPGM->cSharedPages,                       STAMTYPE_U32,     "/PGM/Page/cSharedPages",             STAMUNIT_COUNT,     "The number of shared pages.");
     STAM_REL_REG(pVM, &pPGM->cZeroPages,                         STAMTYPE_U32,     "/PGM/Page/cZeroPages",               STAMUNIT_COUNT,     "The number of zero backed pages.");
+    STAM_REL_REG(pVM, &pPGM->cPureMmioPages,                     STAMTYPE_U32,     "/PGM/Page/cPureMmioPages",           STAMUNIT_COUNT,     "The number of pure MMIO pages.");
     STAM_REL_REG(pVM, &pPGM->cMonitoredPages,                    STAMTYPE_U32,     "/PGM/Page/cMonitoredPages",          STAMUNIT_COUNT,     "The number of write monitored pages.");
     STAM_REL_REG(pVM, &pPGM->cWrittenToPages,                    STAMTYPE_U32,     "/PGM/Page/cWrittenToPages",          STAMUNIT_COUNT,     "The number of previously write monitored pages that have been written to.");
     STAM_REL_REG(pVM, &pPGM->cWriteLockedPages,                  STAMTYPE_U32,     "/PGM/Page/cWriteLockedPages",        STAMUNIT_COUNT,     "The number of write(/read) locked pages.");

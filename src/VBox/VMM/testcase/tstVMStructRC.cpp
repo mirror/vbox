@@ -613,6 +613,12 @@ int main()
     GEN_CHECK_OFF(PGM, cPrivatePages);
     GEN_CHECK_OFF(PGM, cSharedPages);
     GEN_CHECK_OFF(PGM, cZeroPages);
+    GEN_CHECK_OFF(PGM, cPureMmioPages);
+    GEN_CHECK_OFF(PGM, cMonitoredPages);
+    GEN_CHECK_OFF(PGM, cWrittenToPages);
+    GEN_CHECK_OFF(PGM, cWriteLockedPages);
+    GEN_CHECK_OFF(PGM, cReadLockedPages);
+    GEN_CHECK_OFF(PGM, cRelocations);
 
     GEN_CHECK_SIZE(PGMMAPPING);
     GEN_CHECK_OFF(PGMMAPPING, pNextR3);

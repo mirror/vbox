@@ -2719,15 +2719,16 @@ typedef struct PGM
      * memory. */
     bool volatile                   fErrInjHandyPages;
     /** Padding. */
-    bool                            afReserved[7];
+    bool                            afReserved[3];
     /** @} */
 
     /** @name Release Statistics
      * @{ */
-    uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero.) */
+    uint32_t                        cAllPages;          /**< The total number of pages. (Should be Private + Shared + Zero + Pure MMIO.) */
     uint32_t                        cPrivatePages;      /**< The number of private pages. */
     uint32_t                        cSharedPages;       /**< The number of shared pages. */
     uint32_t                        cZeroPages;         /**< The number of zero backed pages. */
+    uint32_t                        cPureMmioPages;     /**< The number of pure MMIO pages. */
     uint32_t                        cMonitoredPages;    /**< The number of write monitored pages. */
     uint32_t                        cWrittenToPages;    /**< The number of previously write monitored pages. */
     uint32_t                        cWriteLockedPages;  /**< The number of write locked pages. */
