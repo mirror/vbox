@@ -106,6 +106,9 @@ typedef struct DEVEFI
 
     /** I/O-APIC enabled? */
     uint8_t         u8IOAPIC;
+
+    /* Boot parameters passed to the firmware */
+    char           pszBootArgs[256];
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -125,7 +128,6 @@ static void cmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 
 static uint32_t efiInfoSize(PDEVEFI pThis)
 {
-    /* So far, everything is 4 bytes, as we only support 32-bit EFI */
     switch (pThis->iInfoSelector)
     {
         case EFI_INFO_INDEX_VOLUME_BASE:
@@ -135,6 +137,8 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_STACK_BASE:
         case EFI_INFO_INDEX_STACK_SIZE:
             return 4;
+         case EFI_INFO_INDEX_BOOT_ARGS:
+             return RTStrNLen(pThis->pszBootArgs, sizeof pThis->pszBootArgs) + 1;
     }
     Assert(false);
     return 0;
@@ -164,6 +168,8 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
         case EFI_INFO_INDEX_STACK_SIZE:
             iValue = 128*1024; /* 128 K */
             break;
+        case EFI_INFO_INDEX_BOOT_ARGS:
+            return pThis->pszBootArgs[pThis->iInfoPosition];
         default:
             Assert(false);
             iValue = 0;
@@ -892,6 +898,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "DmiOEMVBoxRev\0"
 #endif
                               "64BitEntry\0"
+                              "BootArgs\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
@@ -963,6 +970,22 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         MMR3HeapFree(pThis->pszEfiRomFile);
         pThis->pszEfiRomFile = NULL;
     }
+
+     /*
+     * Get boot args.
+     */
+    rc = CFGMR3QueryString(pCfgHandle, "BootArgs",
+                           pThis->pszBootArgs, sizeof pThis->pszBootArgs);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        strcpy(pThis->pszBootArgs, "");
+        rc = VINF_SUCCESS;
+    }
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"BootArgs\" as a string failed"));
+
+    LogRel(("EFI boot args: %s\n", pThis->pszBootArgs));
 
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*
