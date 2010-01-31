@@ -53,6 +53,7 @@ typedef enum
     EFI_INFO_INDEX_TEMPMEM_SIZE,
     EFI_INFO_INDEX_STACK_BASE,
     EFI_INFO_INDEX_STACK_SIZE,
+    EFI_INFO_INDEX_BOOT_ARGS,
     EFI_INFO_INDEX_END
 } EfiInfoIndex;
 
@@ -142,4 +143,3 @@ typedef DEVEFIINFO const *PCDEVEFIINFO;
 #define MB(x) ((KB(x)) * 1024)
 
 #endif
-
