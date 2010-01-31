@@ -108,7 +108,10 @@ typedef struct DEVEFI
     uint8_t         u8IOAPIC;
 
     /* Boot parameters passed to the firmware */
-    char           pszBootArgs[256];
+    char            pszBootArgs[256];
+
+    /* Host UUID (for DMI) */
+    RTUUID          aUuid;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -405,6 +408,7 @@ static DECLCALLBACK(int) efiInitComplete(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 {
     PDEVEFI  pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
+    int rc;
 
     LogFlow(("efiReset\n"));
 
@@ -416,6 +420,19 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     pThis->iPanicMsg = 0;
     pThis->szPanicMsg[0] = '\0';
 
+    /* Plant DMI and MPS tables */
+    rc = FwCommonPlantDMITable(pDevIns,
+                               pThis->au8DMIPage,
+                               VBOX_DMI_TABLE_SIZE,
+                               &pThis->aUuid,
+                               pDevIns->pCfgHandle,
+                               true /* fPutSmbiosHeaders */);
+    Assert(RT_SUCCESS(rc));
+
+    FwCommonPlantMpsTable(pDevIns,
+                          pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
+                          pThis->cCpus);    
+
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
      */
@@ -424,7 +441,6 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
     while (cPages > 0)
     {
         uint8_t abPage[PAGE_SIZE];
-        int     rc;
 
         /* Read the (original) ROM page and write it back to the RAM page. */
         rc = PDMDevHlpROMProtectShadow(pDevIns, GCPhys, PAGE_SIZE, PGMROMPROT_READ_ROM_WRITE_RAM);
@@ -925,16 +941,8 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
-    rc = FwCommonPlantDMITable(pDevIns, pThis->au8DMIPage, VBOX_DMI_TABLE_SIZE, &uuid, pCfgHandle, true /* fPutSmbiosHeaders */);
-    if (RT_FAILURE(rc))
-        return rc;
+    memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
 
-    FwCommonPlantMpsTable(pDevIns, pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE, pThis->cCpus);
-
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
-    if (RT_FAILURE(rc))
-        return rc;
 
     /* RAM sizes */
     rc = CFGMR3QueryU64(pCfgHandle, "RamSize", &pThis->cbRam);
@@ -1011,6 +1019,13 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = PDMDevHlpIOPortRegister(pDevIns, EFI_PORT_BASE, EFI_PORT_COUNT, NULL,
                                  efiIOPortWrite, efiIOPortRead,
                                  NULL, NULL, "EFI communication ports");
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K,
+                              pThis->au8DMIPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
+                              "DMI tables");
     if (RT_FAILURE(rc))
         return rc;
 
