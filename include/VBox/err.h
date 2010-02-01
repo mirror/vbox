@@ -736,6 +736,10 @@
 #define VERR_CFGM_NODE_EXISTS               (-2161)
 /** A new leaf couldn't be inserted because one with the same name exists. */
 #define VERR_CFGM_LEAF_EXISTS               (-2162)
+/** An unknown config value was encountered. */
+#define VERR_CFGM_CONFIG_UNKNOWN_VALUE      (-2163)
+/** An unknown config node (key) was encountered. */
+#define VERR_CFGM_CONFIG_UNKNOWN_NODE       (-2164)
 /** @} */
 
 
