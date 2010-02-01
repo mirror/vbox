@@ -21,6 +21,7 @@
  */
 
 /* Global includes */
+#include <QAbstractButton>
 #include <QLayout>
 #include <QTextEdit>
 
@@ -59,8 +60,14 @@ void QIWizard::assignWatermark(const QString &strWatermark)
      * allows to manage pixel data directly. */
     QImage imgWatermark = pixWaterMark.toImage();
 
+    /* Use the right-top watermark pixel as frame color */
+    QRgb rgbFrame = imgWatermark.pixel(imgWatermark.width() - 1, 0);
+
+    /* Take into account button's height */
+    int iPageHeight = height() - button(QWizard::CancelButton)->height();
+
     /* Create final image on the basis of incoming, applying the rules. */
-    QImage imgWatermarkNew(imgWatermark.width(), qMax(imgWatermark.height(), height()), imgWatermark.format());
+    QImage imgWatermarkNew(imgWatermark.width(), qMax(imgWatermark.height(), iPageHeight), imgWatermark.format());
     for (int y = 0; y < imgWatermarkNew.height(); ++ y)
     {
         for (int x = 0; x < imgWatermarkNew.width(); ++ x)
@@ -68,10 +75,10 @@ void QIWizard::assignWatermark(const QString &strWatermark)
             /* Border rule 1 - draw border for ClassicStyle */
             if (wizardStyle() == QWizard::ClassicStyle &&
                 (x == 0 || y == 0 || x == imgWatermarkNew.width() - 1 || y == imgWatermarkNew.height() - 1))
-                imgWatermarkNew.setPixel(x, y, qRgb(0, 0, 0));
+                imgWatermarkNew.setPixel(x, y, rgbFrame);
             /* Border rule 2 - draw border for ModernStyle */
             else if (wizardStyle() == QWizard::ModernStyle && x == imgWatermarkNew.width() - 1)
-                imgWatermarkNew.setPixel(x, y, qRgb(0, 0, 0));
+                imgWatermarkNew.setPixel(x, y, rgbFrame);
             /* Horizontal extension rule - use last used color */
             else if (x >= imgWatermark.width() && y < imgWatermark.height())
                 imgWatermarkNew.setPixel(x, y, imgWatermark.pixel(imgWatermark.width() - 1, y));
