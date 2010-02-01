@@ -402,6 +402,28 @@ RTDECL(bool) RTPathStartsWith(const char *pszPath, const char *pszParentPath);
 RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend);
 
 /**
+ * Like RTPathAppend, but with the base path as a separate argument instead of
+ * in the path buffer.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the result is too big to fit within
+ *          cbPathDst bytes.
+ * @retval  VERR_INVALID_PARAMETER if the string pointed to by pszPath is longer
+ *          than cbPathDst-1 bytes (failed to find terminator). Asserted.
+ *
+ * @param   pszPathDst      Where to store the resulting path.
+ * @param   cbPathDst       The size of the buffer pszPathDst points to,
+ *                          terminator included.
+ * @param   pszPathSrc      The base path to copy into @a pszPathDst before
+ *                          appending @a pszAppend.
+ * @param   pszAppend       The partial path to append to pszPathSrc. This can
+ *                          be NULL, in which case nothing is done.
+ *
+ */
+RTDECL(int) RTPathJoin(char *pszPathDst, size_t cbPathDst, const char *pszPathSrc,
+                       const char *pszAppend);
+
+/**
  * Callback for RTPathTraverseList that's called for each element.
  *
  * @returns IPRT style status code. Return VINF_TRY_AGAIN to continue, any other

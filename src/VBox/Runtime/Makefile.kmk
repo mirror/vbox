@@ -273,6 +273,7 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHaveExt.cpp \
 	common/path/RTPathHavePath.cpp \
+	common/path/RTPathJoin.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathStripExt.cpp \
@@ -830,6 +831,7 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHaveExt.cpp \
 	common/path/RTPathHavePath.cpp \
+	common/path/RTPathJoin.cpp \
 	common/path/RTPathParse.cpp \
 	common/path/RTPathRealDup.cpp \
 	common/path/RTPathStripExt.cpp \
