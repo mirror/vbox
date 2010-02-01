@@ -1164,7 +1164,7 @@ static int usbProxyLinuxUrbQueueSplit(PUSBPROXYDEV pProxyDev, PUSBPROXYURBLNX pU
     }
     if (!fFailed)
     {
-        pUrb->Dev.pvProxyUrb = pUrbLnx;
+        pUrb->Dev.pvPrivate = pUrbLnx;
         LogFlow(("usbProxyLinuxUrbQueueSplit: ok\n"));
         return true;
     }
@@ -1324,7 +1324,7 @@ l_err:
     pUrbLnx->u64SubmitTS = RTTimeMilliTS();
 
     LogFlow(("usbProxyLinuxUrbQueue: ok\n"));
-    pUrb->Dev.pvProxyUrb = pUrbLnx;
+    pUrb->Dev.pvPrivate = pUrbLnx;
     return true;
 }
 
@@ -1590,7 +1590,7 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, unsigned cMillies)
             pUrb->cbData = pUrbLnx->KUrb.actual_length;
             usbProxyLinuxUrbFree(pProxyDev, pUrbLnx);
         }
-        pUrb->Dev.pvProxyUrb = NULL;
+        pUrb->Dev.pvPrivate = NULL;
 
         /* some adjustments for message transfers. */
         if (pUrb->enmType == VUSBXFERTYPE_MSG)
@@ -1617,7 +1617,7 @@ static PVUSBURB usbProxyLinuxUrbReap(PUSBPROXYDEV pProxyDev, unsigned cMillies)
 static void usbProxyLinuxUrbCancel(PVUSBURB pUrb)
 {
     PUSBPROXYDEV pProxyDev = (PUSBPROXYDEV)pUrb->pDev;
-    PUSBPROXYURBLNX pUrbLnx = (PUSBPROXYURBLNX)pUrb->Dev.pvProxyUrb;
+    PUSBPROXYURBLNX pUrbLnx = (PUSBPROXYURBLNX)pUrb->Dev.pvPrivate;
     if (pUrbLnx->pSplitHead)
     {
         /* split */

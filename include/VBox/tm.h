@@ -151,6 +151,18 @@ typedef DECLCALLBACK(void) FNTMTIMERDEV(PPDMDEVINS pDevIns, PTMTIMER pTimer, voi
 typedef FNTMTIMERDEV *PFNTMTIMERDEV;
 
 /**
+ * Device timer callback function.
+ *
+ * @param   pUsbIns         The USB device instance the timer is associated
+ *                          with.
+ * @param   pTimer          The timer handle.
+ * @param   pvUser          User argument specified upon timer creation.
+ */
+typedef DECLCALLBACK(void) FNTMTIMERUSB(PPDMUSBINS pUsbIns, PTMTIMER pTimer, void *pvUser);
+/** Pointer to a timer callback for a USB device. */
+typedef FNTMTIMERUSB *PFNTMTIMERUSB;
+
+/**
  * Driver timer callback function.
  *
  * @param   pDrvIns         Device instance of the device which registered the timer.

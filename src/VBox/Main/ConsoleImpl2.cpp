@@ -1695,6 +1695,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
 
+            PCFGMNODE pUsbDevices = NULL;
 #ifdef VBOX_WITH_EHCI
             hrc = USBCtlPtr->COMGETTER(EnabledEhci)(&fEnabled);                         H();
             if (fEnabled)
@@ -1729,8 +1730,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                  * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
                  * on a per device level now.
                  */
-                rc = CFGMR3InsertNode(pRoot, "USB", &pCfg);                             RC_CHECK();
-                rc = CFGMR3InsertNode(pCfg, "USBProxy", &pCfg);                         RC_CHECK();
+                rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                      RC_CHECK();
+                rc = CFGMR3InsertNode(pUsbDevices, "USBProxy", &pCfg);                  RC_CHECK();
                 rc = CFGMR3InsertNode(pCfg, "GlobalConfig", &pCfg);                     RC_CHECK();
                 // This globally enables the 2.0 -> 1.1 device morphing of proxied devies to keep windows quiet.
                 //rc = CFGMR3InsertInteger(pCfg, "Force11Device", true);                RC_CHECK();
@@ -1739,6 +1740,36 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
                 //rc = CFGMR3InsertInteger(pCfg, "Force11PacketSize", true);            RC_CHECK();
             }
+
+#if 0 /* Enable+edit this to play with the virtual USB devices). */
+            if (!pUsbDevices)
+            {
+                rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                  RC_CHECK();
+            }
+
+# if 1  /* Virtual MSD*/
+
+            rc = CFGMR3InsertNode(pUsbDevices, "Msd", &pDev);                       RC_CHECK();
+            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
+
+            rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");                      RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
+
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver", "Block");                     RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Type", "HardDisk");                    RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Mountable", 0);                        RC_CHECK();
+
+            rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);             RC_CHECK();
+            rc = CFGMR3InsertString(pLunL2, "Driver", "VD");                        RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL2,   "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi"); RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Format", "VDI");                       RC_CHECK();
+# endif
+#endif
         }
     }
 

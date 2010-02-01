@@ -376,7 +376,7 @@ typedef struct PDMDEV
     /** Registration structure. */
     R3PTRTYPE(const struct PDMDEVREG *) pDevReg;
     /** Number of instances. */
-    RTUINT                          cInstances;
+    uint32_t                        cInstances;
     /** Pointer to chain of instances (R3 Ptr). */
     PPDMDEVINSR3                    pInstances;
 } PDMDEV;
@@ -394,7 +394,7 @@ typedef struct PDMUSB
     /** Registration structure. */
     R3PTRTYPE(const struct PDMUSBREG *) pUsbReg;
     /** Next instance number. */
-    RTUINT                          iNextInstance;
+    uint32_t                        iNextInstance;
     /** Pointer to chain of instances (R3 Ptr). */
     R3PTRTYPE(PPDMUSBINS)           pInstances;
 } PDMUSB;

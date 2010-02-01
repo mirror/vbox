@@ -1035,6 +1035,7 @@ ifdef VBOX_WITH_USB
 	USB/VUSBDevice.cpp \
 	USB/VUSBReadAhead.cpp \
 	USB/VUSBUrb.cpp
+
  ifdef VBOX_WITH_VRDP
   Drivers_DEFS        += VBOX_WITH_VRDP
   Drivers_SOURCES     += \
@@ -1082,6 +1083,12 @@ ifdef VBOX_WITH_USB
  Drivers_SOURCES.freebsd   += \
 	USB/USBProxyDevice.cpp \
 	USB/freebsd/USBProxyDevice-freebsd.cpp
+
+ ifdef VBOX_WITH_SCSI
+  Drivers_SOURCES += \
+  	Storage/UsbMsd.cpp
+ endif
+
 endif # VBOX_WITH_USB
 
 ifdef VBOX_WITH_PDM_ASYNC_COMPLETION

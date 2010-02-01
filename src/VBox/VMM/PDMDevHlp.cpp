@@ -824,6 +824,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
         pLun->pTop      = NULL;
         pLun->pBottom   = NULL;
         pLun->pDevIns   = pDevIns;
+        pLun->pUsbIns   = NULL;
         pLun->pszDesc   = pszDesc;
         pLun->pBase     = pBaseInterface;
         if (!pLunPrev)
