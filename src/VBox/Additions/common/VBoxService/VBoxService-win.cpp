@@ -116,6 +116,7 @@ Cleanup:
 }
 
 
+/** Reports our current status to the SCM. */
 BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
 {
     if (NULL == g_hWinServiceStatus) /* Program could be in testing mode, so no service environment available. */
@@ -139,14 +140,14 @@ BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
 
 int VBoxServiceWinSetDesc(SC_HANDLE hService)
 {
-    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields 
+    /* On W2K+ there's ChangeServiceConfig2() which lets us set some fields
        like a longer service description. */
 #ifndef TARGET_NT4
     SERVICE_DESCRIPTION desc;
     /** @todo On Vista+ SERVICE_DESCRIPTION also supports localized strings! */
     desc. lpDescription = VBOXSERVICE_DESCRIPTION;
-    if (FALSE == ChangeServiceConfig2(hService, 
-                                      SERVICE_CONFIG_DESCRIPTION, /* Service info level */  
+    if (FALSE == ChangeServiceConfig2(hService,
+                                      SERVICE_CONFIG_DESCRIPTION, /* Service info level */
                                       &desc))
     {
         VBoxServiceError("Cannot set the service description! Error: %ld\n", GetLastError());
@@ -157,6 +158,7 @@ int VBoxServiceWinSetDesc(SC_HANDLE hService)
 }
 
 
+/** Installs the service into the registry. */
 int VBoxServiceWinInstall(void)
 {
     SC_HANDLE hService, hSCManager;
@@ -180,7 +182,7 @@ int VBoxServiceWinInstall(void)
                                 SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL,
                                 imagePath, NULL, NULL, NULL, NULL, NULL);
     int rc = VINF_SUCCESS;
-    if (NULL == hService) 
+    if (NULL == hService)
     {
         DWORD dwErr = GetLastError();
         switch (dwErr)
@@ -241,6 +243,7 @@ int VBoxServiceWinInstall(void)
     return rc;
 }
 
+/** Uninstalls the service from the registry. */
 int VBoxServiceWinUninstall(void)
 {
     SC_HANDLE hService, hSCManager;

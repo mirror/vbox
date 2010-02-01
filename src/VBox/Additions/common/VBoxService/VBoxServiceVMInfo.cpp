@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxVMInfo - Virtual machine (guest) information for the host.
+ * VBoxService - Virtual Machine Information for the Host.
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -63,19 +63,13 @@
 *   Global Variables                                                           *
 *******************************************************************************/
 /** The vminfo interval (millseconds). */
-uint32_t g_VMInfoInterval = 0;
+uint32_t                g_VMInfoInterval = 0;
 /** The semaphore we're blocking on. */
-static RTSEMEVENTMULTI g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
+static RTSEMEVENTMULTI  g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
 /** The guest property service client ID. */
-static uint32_t g_VMInfoGuestPropSvcClientID = 0;
+static uint32_t         g_VMInfoGuestPropSvcClientID = 0;
 /** Number of logged in users in OS. */
-static uint32_t g_VMInfoLoggedInUsers = UINT32_MAX;
-#ifdef RT_OS_WINDOWS
-/** Function prototypes for dynamic loading. */
-fnWTSGetActiveConsoleSessionId g_pfnWTSGetActiveConsoleSessionId = NULL;
-/** External functions. */
-extern int VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
-#endif
+static uint32_t         g_cVMInfoLoggedInUsers = UINT32_MAX;
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -116,9 +110,9 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 #ifdef RT_OS_WINDOWS
     /* Get function pointers. */
     HMODULE hKernel32 = LoadLibrary("kernel32");
-    if (NULL != hKernel32)
+    if (hKernel32 != NULL)
     {
-        g_pfnWTSGetActiveConsoleSessionId = (fnWTSGetActiveConsoleSessionId)GetProcAddress(hKernel32, "WTSGetActiveConsoleSessionId");
+        g_pfnWTSGetActiveConsoleSessionId = (PFNWTSGETACTIVECONSOLESESSIONID)GetProcAddress(hKernel32, "WTSGetActiveConsoleSessionId");
         FreeLibrary(hKernel32);
     }
 #endif
@@ -137,6 +131,72 @@ static DECLCALLBACK(int) VBoxServiceVMInfoInit(void)
 }
 
 
+/**
+ * Writes the properties that won't change while the service is running.
+ *
+ * Errors are ignored.
+ */
+static void VBoxServiceVMInfoWriteFixedProperties(void)
+{
+    /*
+     * First get OS information that won't change.
+     */
+    char szInfo[256];
+    int rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc))
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "%s", szInfo);
+    else
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "");
+
+    rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc))
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "%s", szInfo);
+    else
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "");
+
+    rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc))
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "%s", szInfo);
+    else
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "");
+
+    rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
+    if (RT_SUCCESS(rc))
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "%s", szInfo);
+    else
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "");
+
+    /*
+     * Retrieve version information about Guest Additions and installed files (components).
+     */
+    char *pszAddVer;
+    char *pszAddRev;
+    rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddRev);
+    if (RT_SUCCESS(rc))
+    {
+        /* Write information to host. */
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version",  "%s", pszAddVer);
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddRev);
+        RTStrFree(pszAddVer);
+        RTStrFree(pszAddRev);
+    }
+
+#ifdef RT_OS_WINDOWS
+    /*
+     * Do windows specific properties.
+     */
+    char *pszInstDir;
+    rc = VbglR3GetAdditionsInstallationPath(&pszInstDir);
+    if (RT_SUCCESS(rc))
+    {
+        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
+        RTStrFree(pszInstDir);
+    }
+    VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
+#endif
+}
+
+
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 {
@@ -151,103 +211,73 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 #ifdef RT_OS_WINDOWS
     /* Required for network information (must be called per thread). */
     WSADATA wsaData;
-    if (WSAStartup(MAKEWORD(2, 2), &wsaData)) {
+    if (WSAStartup(MAKEWORD(2, 2), &wsaData))
          VBoxServiceError("WSAStartup failed! Error: %Rrc\n", RTErrConvertFromWin32(WSAGetLastError()));
-    }
-#endif /* !RT_OS_WINDOWS */
+#endif /* RT_OS_WINDOWS */
 
-    /* First get information that won't change while the OS is running. */
-    char szInfo[256] = {0};
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Product", "%s", szInfo);
+    /*
+     * Write the fixed properties first.
+     */
+    VBoxServiceVMInfoWriteFixedProperties();
 
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Release", "%s", szInfo);
-
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/Version", "%s", szInfo);
-
-    rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
-    VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/ServicePack", "%s", szInfo);
-
-    /* Retrieve version information about Guest Additions and installed files (components). */
-    char *pszAddVer, *pszAddRev;
-    rc = VbglR3GetAdditionsVersion(&pszAddVer, &pszAddRev);
-    if (RT_SUCCESS(rc))
-    {
-        /* Write information to host. */
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Revision", "%s", pszAddVer);
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/Version", "%s", pszAddRev);
-        RTStrFree(pszAddVer);
-        RTStrFree(pszAddRev);
-    }
-
-#ifdef RT_OS_WINDOWS
-    char *pszInstDir;
-    rc = VbglR3GetAdditionsInstallationPath(&pszInstDir);
-    if (RT_SUCCESS(rc))
-    {
-        rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestAdd/InstallDir", "%s", pszInstDir);
-        RTStrFree(pszInstDir);
-    }
-    rc = VBoxServiceWinGetComponentVersions(g_VMInfoGuestPropSvcClientID);
-#endif
-
-    /* Now enter the loop retrieving runtime data continuously. */
+    /*
+     * Now enter the loop retrieving runtime data continuously.
+     */
     unsigned cErrors = 0;
     for (;;)
     {
+/** @todo r=bird: split this code up into functions!! */
         /* Enumerate logged in users. */
-        uint32_t uiUserCount = 0;
+        uint32_t cUsersInList = 0;
         char szUserList[4096] = {0};
 
 #ifdef RT_OS_WINDOWS
 # ifndef TARGET_NT4
-        PLUID pSessions = NULL;
-        ULONG ulCount = 0;
-        NTSTATUS r = 0;
+        PLUID       paSessions = NULL;
+        ULONG       cSession = 0;
+        NTSTATUS    r = 0;
 
-        char* pszTemp = NULL;
-
-        /* This function can report stale or orphaned interactive logon sessions of already logged
-           off users (especially in Windows 2000). */
-        r = ::LsaEnumerateLogonSessions(&ulCount, &pSessions);
-        VBoxServiceVerbose(3, "Users: Found %ld users.\n", ulCount);
-
+        /* This function can report stale or orphaned interactive logon sessions
+           of already logged off users (especially in Windows 2000). */
+        r = ::LsaEnumerateLogonSessions(&cSession, &paSessions);
+        VBoxServiceVerbose(3, "Users: Found %ld users.\n", cSession);
         if (r != STATUS_SUCCESS)
         {
             VBoxServiceError("LsaEnumerate failed %lu\n", LsaNtStatusToWinError(r));
             return 1;
         }
 
-        PVBOXSERVICEVMINFOPROC pProcs;
-        DWORD dwNumProcs;
-        rc = VBoxServiceVMInfoWinProcessesEnumerate(&pProcs, &dwNumProcs);
-
-        for (ULONG i=0; i<ulCount; i++)
+        PVBOXSERVICEVMINFOPROC  paProcs;
+        DWORD                   cProcs;
+        rc = VBoxServiceVMInfoWinProcessesEnumerate(&paProcs, &cProcs);
+        if (RT_SUCCESS(rc))
         {
-            VBOXSERVICEVMINFOUSER userInfo;
-            /* Leave the memory clearing *inside* the loop as VBoxServiceVMInfoWinIsLoggedIn
-             * assumes the memory reserved for strings is zeroed.
-             */
-            ZeroMemory (&userInfo, sizeof(VBOXSERVICEVMINFOUSER));
-
-            if (   VBoxServiceVMInfoWinIsLoggedIn(&userInfo, &pSessions[i])
-                && VBoxServiceVMInfoWinSessionGetProcessCount(&pSessions[i], pProcs, dwNumProcs) > 0)
+            for (ULONG i = 0; i < cSession; i++)
             {
-                if (uiUserCount > 0)
-                    strcat (szUserList, ",");
+                VBOXSERVICEVMINFOUSER UserInfo;
+                if (   VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i])
+                    && VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs) > 0)
+                {
+                    if (cUsersInList > 0)
+                        strcat(szUserList, ",");
 
-                uiUserCount++;
+                    cUsersInList++;
 
-                RTUtf16ToUtf8(userInfo.szUser, &pszTemp);
-                strcat(szUserList, pszTemp);
-                RTMemFree(pszTemp);
+                    char *pszTemp;
+                    int rc2 = RTUtf16ToUtf8(UserInfo.wszUser, &pszTemp);
+                    if (RT_SUCCESS(rc2))
+                    {
+                        strcat(szUserList, pszTemp);
+                        RTMemFree(pszTemp);
+                    }
+                    else
+                        strcat(szUserList, "<string-convertion-error>");
+                }
             }
+            VBoxServiceVMInfoWinProcessesFree(paProcs);
         }
 
-        VBoxServiceVMInfoWinProcessesFree(pProcs);
-        ::LsaFreeReturnBuffer(pSessions);
+        ::LsaFreeReturnBuffer(paSessions);
 # endif /* TARGET_NT4 */
 #elif defined(RT_OS_FREEBSD)
         /** @todo FreeBSD: Port logged on user info retrival. */
@@ -276,34 +306,37 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
                  *  bird: If we do, then we must add checks for buffer overflows here!  */
                 /** @todo r=bird: strstr will filtering out users with similar names. For
                  *        example: smith, smithson, joesmith and bobsmith */
-                if (uiUserCount > 0)
+                if (cUsersInList > 0)
                     strcat(szUserList, ",");
                 strcat(szUserList, ut_user->ut_user);
-                uiUserCount++;
+                cUsersInList++;
             }
         }
         endutent();
 #endif /* !RT_OS_WINDOWS */
 
-        if (uiUserCount > 0)
+        if (cUsersInList > 0)
             VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", "%s", szUserList);
         else
             VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
-        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", uiUserCount);
-        if (g_VMInfoLoggedInUsers != uiUserCount || g_VMInfoLoggedInUsers == UINT32_MAX)
+        VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%u", cUsersInList);
+        if (   g_cVMInfoLoggedInUsers != cUsersInList
+            || g_cVMInfoLoggedInUsers == UINT32_MAX)
         {
             /* Update this property ONLY if there is a real change from no users to
              * users or vice versa. The only exception is that the initialization
              * forces an update, but only once. This ensures consistent property
              * settings even if the VM aborted previously. */
-            if (uiUserCount == 0)
+            if (cUsersInList == 0)
                 VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
-            else if (g_VMInfoLoggedInUsers == 0)
+            else if (g_cVMInfoLoggedInUsers == 0)
                 VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "false");
         }
-        g_VMInfoLoggedInUsers = uiUserCount;
+        g_cVMInfoLoggedInUsers = cUsersInList;
 
-        /* Get network configuration. */
+        /*
+         * Get network configuration.
+         */
         /** @todo Throw this code into a separate function/module? */
        int nNumInterfaces = 0;
 #ifdef RT_OS_WINDOWS
@@ -420,11 +453,12 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
             iCurIface++;
         }
+        if (sd >= 0)
 #ifdef RT_OS_WINDOWS
-        if (sd) closesocket(sd);
+            closesocket(sd);
 #else
-        if (sd) close(sd);
-#endif /* !RT_OS_WINDOWS */
+            close(sd);
+#endif
 
         /*
          * Block for a while.
@@ -478,7 +512,7 @@ static DECLCALLBACK(void) VBoxServiceVMInfoTerm(void)
          */
         rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsersList", NULL);
         rc = VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/LoggedInUsers", "%d", 0);
-        if (g_VMInfoLoggedInUsers > 0)
+        if (g_cVMInfoLoggedInUsers > 0)
             VBoxServiceWritePropF(g_VMInfoGuestPropSvcClientID, "/VirtualBox/GuestInfo/OS/NoLoggedInUsers", "true");
 
         const char *apszPat[1] = { "/VirtualBox/GuestInfo/Net/*" };
