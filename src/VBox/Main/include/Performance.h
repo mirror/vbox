@@ -30,6 +30,7 @@
 #include <iprt/err.h>
 
 #include <algorithm>
+#include <functional> /* For std::fun_ptr in testcase */
 #include <list>
 #include <vector>
 
