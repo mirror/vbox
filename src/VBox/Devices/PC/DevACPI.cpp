@@ -44,9 +44,6 @@
 #if defined(IN_RING3) && !defined(VBOX_DEVICE_STRUCT_TESTCASE)
 int acpiPrepareDsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puDsdtLen);
 int acpiCleanupDsdt(PPDMDEVINS pDevIns, void* pPtr);
-
-int acpiPrepareSsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puSsdtLen);
-int acpiCleanupSsdt(PPDMDEVINS pDevIns, void* pPtr);
 #endif /* !IN_RING3 */
 
 
@@ -682,14 +679,6 @@ static void acpiSetupDSDT(ACPIState *s, RTGCPHYS32 addr,
                             void* pPtr, size_t uDsdtLen)
 {
     acpiPhyscpy(s, addr, pPtr, uDsdtLen);
-}
-
-/** Secondary System Description Table (SSDT) */
-
-static void acpiSetupSSDT(ACPIState *s, RTGCPHYS32 addr,
-                            void* pPtr, size_t uSsdtLen)
-{
-    acpiPhyscpy(s, addr, pPtr, uSsdtLen);
 }
 
 /** Firmware ACPI Control Structure (FACS) */
@@ -1950,11 +1939,11 @@ static int acpiPlantTables(ACPIState *s)
 {
     int        rc;
     RTGCPHYS32 GCPhysCur, GCPhysRsdt, GCPhysXsdt, GCPhysFadtAcpi1, GCPhysFadtAcpi2, GCPhysFacs, GCPhysDsdt;
-    RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0, GCPhysSsdt = 0;
+    RTGCPHYS32 GCPhysHpet = 0, GCPhysApic = 0;
     uint32_t   addend = 0;
     RTGCPHYS32 aGCPhysRsdt[4];
     RTGCPHYS32 aGCPhysXsdt[4];
-    uint32_t   cAddr, iMadt = 0, iHpet = 0, iSsdt = 0;
+    uint32_t   cAddr, iMadt = 0, iHpet = 0;
     size_t     cbRsdt = sizeof(ACPITBLHEADER);
     size_t     cbXsdt = sizeof(ACPITBLHEADER);
 
@@ -1964,8 +1953,6 @@ static int acpiPlantTables(ACPIState *s)
 
     if (s->fUseHpet)
         iHpet = cAddr++;        /* HPET */
-
-    iSsdt = cAddr++;            /* SSDT */
 
     cbRsdt += cAddr*sizeof(uint32_t);  /* each entry: 32 bits phys. address. */
     cbXsdt += cAddr*sizeof(uint64_t);  /* each entry: 64 bits phys. address. */
@@ -2021,16 +2008,6 @@ static int acpiPlantTables(ACPIState *s)
         GCPhysHpet = GCPhysCur;
         GCPhysCur = RT_ALIGN_32(GCPhysCur + sizeof(ACPITBLHPET), 16);
     }
-
-    void*  pSsdtCode = NULL;
-    size_t cbSsdtSize = 0;
-    rc = acpiPrepareSsdt(s->pDevIns, &pSsdtCode, &cbSsdtSize);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    GCPhysSsdt = GCPhysCur;
-    GCPhysCur = RT_ALIGN_32(GCPhysCur + cbSsdtSize, 16);
-
     GCPhysDsdt = GCPhysCur;
 
     void*  pDsdtCode = NULL;
@@ -2040,7 +2017,6 @@ static int acpiPlantTables(ACPIState *s)
         return rc;
 
     GCPhysCur = RT_ALIGN_32(GCPhysCur + cbDsdtSize, 16);
-
     if (GCPhysCur > 0x10000)
         return PDMDEV_SET_ERROR(s->pDevIns, VERR_TOO_MUCH_DATA,
                                 N_("Error: ACPI tables bigger than 64KB"));
@@ -2054,7 +2030,6 @@ static int acpiPlantTables(ACPIState *s)
         Log((" MADT 0x%08X", GCPhysApic + addend));
     if (s->fUseHpet)
         Log((" HPET 0x%08X", GCPhysHpet + addend));
-    Log((" SSDT 0x%08X", GCPhysSsdt + addend));
     Log(("\n"));
 
     acpiSetupRSDP((ACPITBLRSDP*)s->au8RSDPPage, GCPhysRsdt + addend, GCPhysXsdt + addend);
@@ -2077,10 +2052,6 @@ static int acpiPlantTables(ACPIState *s)
         aGCPhysRsdt[iHpet] = GCPhysHpet + addend;
         aGCPhysXsdt[iHpet] = GCPhysHpet + addend;
     }
-    acpiSetupSSDT(s, GCPhysSsdt + addend, pSsdtCode, cbSsdtSize);
-    acpiCleanupSsdt(s->pDevIns, pSsdtCode);
-    aGCPhysRsdt[iSsdt] = GCPhysSsdt + addend;
-    aGCPhysXsdt[iSsdt] = GCPhysSsdt + addend;
 
     rc = acpiSetupRSDT(s, GCPhysRsdt + addend, cAddr, aGCPhysRsdt);
     if (RT_FAILURE(rc))
