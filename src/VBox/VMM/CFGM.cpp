@@ -346,6 +346,8 @@ VMMR3DECL(size_t) CFGMR3GetNameLen(PCFGMNODE pCur)
  * @param   pNode           The node which children should be examined.
  * @param   pszzValid       List of valid names separated by '\\0' and ending with
  *                          a double '\\0'.
+ *
+ * @deprecated Use CFGMR3ValidateConfig.
  */
 VMMR3DECL(bool) CFGMR3AreChildrenValid(PCFGMNODE pNode, const char *pszzValid)
 {
@@ -470,6 +472,7 @@ VMMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur)
  * @param   pNode           The node which values should be examined.
  * @param   pszzValid       List of valid names separated by '\\0' and ending with
  *                          a double '\\0'.
+ * @deprecated Use CFGMR3ValidateConfig.
  */
 VMMR3DECL(bool) CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid)
 {
@@ -732,6 +735,85 @@ VMMR3DECL(int) CFGMR3QueryBytes(PCFGMNODE pNode, const char *pszName, void *pvDa
     }
     return rc;
 }
+
+
+/**
+ * Validate one level of a configuration node.
+ *
+ * This replaces the CFGMR3AreChildrenValid and CFGMR3AreValuesValid APIs.
+ *
+ * @returns VBox status code.
+ *
+ *          When an error is returned, both VMSetError and AssertLogRelMsgFailed
+ *          have been called.  So, all the caller needs to do is to propagate
+ *          the error status up to PDM.
+ *
+ * @param   pNode               The node to validate.
+ * @param   pszNode             The node path, always ends with a slash.  Use
+ *                              "/" for the root config node.
+ * @param   pszValidValues      Patterns describing the valid value names.  See
+ *                              RTStrSimplePatternMultiMatch for details on the
+ *                              pattern syntax.
+ * @param   pszValidNodes       Patterns describing the valid node (key) names.
+ *                              See RTStrSimplePatternMultiMatch for details on
+ *                              the pattern syntax.
+ * @param   pszWho              Who is calling.
+ * @param   uInstance           The instance number of the caller.
+ */
+VMMR3DECL(int) CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
+                                    const char *pszValidValues, const char *pszValidNodes,
+                                    const char *pszWho, uint32_t uInstance)
+{
+    /* Input validation. */
+    AssertPtrNullReturn(pNode, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszNode, VERR_INVALID_POINTER);
+    Assert(*pszNode && pszNode[strlen(pszNode) - 1] == '/');
+    AssertPtrReturn(pszValidValues, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszValidNodes, VERR_INVALID_POINTER);
+    AssertPtrReturn(pszWho, VERR_INVALID_POINTER);
+
+    if (pNode)
+    {
+        /*
+         * Enumerate the leafs and check them against pszValidValues.
+         */
+        for (PCFGMLEAF pLeaf = pNode->pFirstLeaf; pLeaf; pLeaf = pLeaf->pNext)
+        {
+            if (!RTStrSimplePatternMultiMatch(pszValidValues, RTSTR_MAX,
+                                              pLeaf->szName, pLeaf->cchName,
+                                              NULL))
+            {
+                AssertLogRelMsgFailed(("%s/%u: Value '%s/%s' didn't match '%s'\n",
+                                       pszWho, uInstance, pszNode, pLeaf->szName, pszValidValues));
+                return VMSetError(pNode->pVM, VERR_CFGM_CONFIG_UNKNOWN_VALUE, RT_SRC_POS,
+                                  N_("Unknown configuration value '%s/%s' found in the configuration of %s instance #%u"),
+                                  pszNode, pLeaf->szName, pszWho, uInstance);
+            }
+
+        }
+
+        /*
+         * Enumerate the child nodes and check them against pszValidNodes.
+         */
+        for (PCFGMNODE pChild = pNode->pFirstChild; pChild; pChild = pChild->pNext)
+        {
+            if (!RTStrSimplePatternMultiMatch(pszValidNodes, RTSTR_MAX,
+                                              pChild->szName, pChild->cchName,
+                                              NULL))
+            {
+                AssertLogRelMsgFailed(("%s/%u: Node '%s/%s' didn't match '%s'\n",
+                                       pszWho, uInstance, pszNode, pChild->szName, pszValidNodes));
+                return VMSetError(pNode->pVM, VERR_CFGM_CONFIG_UNKNOWN_NODE, RT_SRC_POS,
+                                  N_("Unknown configuration node '%s/%s' found in the configuration of %s instance #%u"),
+                                  pszNode, pChild->szName, pszWho, uInstance);
+            }
+        }
+    }
+
+    /* All is well. */
+    return VINF_SUCCESS;
+}
+
 
 
 /**

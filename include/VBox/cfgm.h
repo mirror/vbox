@@ -176,6 +176,10 @@ VMMR3DECL(int)          CFGMR3GetValueName(PCFGMLEAF pCur, char *pszName, size_t
 VMMR3DECL(size_t)       CFGMR3GetValueNameLen(PCFGMLEAF pCur);
 VMMR3DECL(CFGMVALUETYPE) CFGMR3GetValueType(PCFGMLEAF pCur);
 VMMR3DECL(bool)         CFGMR3AreValuesValid(PCFGMNODE pNode, const char *pszzValid);
+VMMR3DECL(int)          CFGMR3ValidateConfig(PCFGMNODE pNode, const char *pszNode,
+                                             const char *pszValidValues, const char *pszValidNodes,
+                                             const char *pszWho, uint32_t uInstance);
+
 /** @} */
 
 
