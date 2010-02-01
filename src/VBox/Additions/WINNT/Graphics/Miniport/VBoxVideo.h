@@ -113,10 +113,100 @@ typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
 typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 #else
+#include <VBox/VBoxVideo.h>
+
 typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
 typedef KEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+
+typedef enum
+{
+    VBOXWDDM_CMD_UNEFINED = 0,
+    VBOXWDDM_CMD_DMA_TRANSFER
+} VBOXWDDM_CMD_TYPE;
+
+typedef struct VBOXWDDM_SOURCE
+{
+    HGSMIHEAP hgsmiDisplayHeap;
+//    VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
+} VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
+
+typedef enum
+{
+    VBOXWDDM_ALLOC_UNEFINED = 0,
+    VBOXWDDM_ALLOC_STD_SHAREDPRIMARYSURFACE,
+    VBOXWDDM_ALLOC_STD_SHADOWSURFACE,
+    VBOXWDDM_ALLOC_STD_STAGINGSURFACE,
+    /* this one is win 7-specific and hence unused for now */
+    VBOXWDDM_ALLOC_STD_GDISURFACE
+    /* custom allocation types requested from user-mode d3d module will go here */
+} VBOXWDDM_ALLOC_TYPE;
+
+typedef struct VBOXWDDM_ALLOCINFO
+{
+    VBOXWDDM_ALLOC_TYPE enmType;
+    char Body[1];
+} VBOXWDDM_ALLOCINFO, *PVBOXWDDM_ALLOCINFO;
+
+#define VBOXWDDM_ALLOCINFO_HEADSIZE() (RT_OFFSETOF(VBOXWDDM_ALLOCINFO, Body))
+#define VBOXWDDM_ALLOCINFO_SIZE_FROMBODYSIZE(_s) (VBOXWDDM_ALLOCINFO_HEADSIZE() + (_s))
+#define VBOXWDDM_ALLOCINFO_SIZE(_tCmd) (VBOXWDDM_ALLOCINFO_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
+#define VBOXWDDM_ALLOCINFO_BODY(_p, _t) ((_t*)(_p)->Body)
+#define VBOXWDDM_ALLOCINFO_HEAD(_pb) ((VBOXWDDM_ALLOCINFO*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXWDDM_ALLOCINFO, Body)))
+
+typedef struct VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE
+{
+    D3DKMDT_SHAREDPRIMARYSURFACEDATA SurfData;
+} VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE, *PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE;
+
+typedef struct VBOXWDDM_ALLOCINFO_SHADOWSURFACE
+{
+    D3DKMDT_SHADOWSURFACEDATA  SurfData;
+} VBOXWDDM_ALLOCINFO_SHADOWSURFACE, *PVBOXWDDM_ALLOCINFO_SHADOWSURFACE;
+
+typedef struct VBOXWDDM_ALLOCINFO_STAGINGSURFACE
+{
+    D3DKMDT_STAGINGSURFACEDATA SurfData;
+} VBOXWDDM_ALLOCINFO_STAGINGSURFACE, *PVBOXWDDM_ALLOCINFO_STAGINGSURFACE;
+
+/* allocation */
+typedef struct VBOXWDDM_ALLOCATION
+{
+    VBOXWDDM_ALLOC_TYPE enmType;
+    char Body[1];
+} VBOXWDDM_ALLOCATION, *PVBOXWDDM_ALLOCATION;
+
+#define VBOXWDDM_ALLOCATION_HEADSIZE() (RT_OFFSETOF(VBOXWDDM_ALLOCATION, Body))
+#define VBOXWDDM_ALLOCATION_SIZE_FROMBODYSIZE(_s) (VBOXWDDM_ALLOCATION_HEADSIZE() + (_s))
+#define VBOXWDDM_ALLOCATION_SIZE(_tCmd) (VBOXWDDM_ALLOCATION_SIZE_FROMBODYSIZE(sizeof(_tCmd)))
+#define VBOXWDDM_ALLOCATION_BODY(_p, _t) ((_t*)(_p)->Body)
+#define VBOXWDDM_ALLOCATION_HEAD(_pb) ((VBOXWDDM_ALLOCATION*)((uint8_t *)(_pb) - RT_OFFSETOF(VBOXWDDM_ALLOCATION, Body)))
+
+typedef struct VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE
+{
+    VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE AllocInfo;
+} VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE, *PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE;
+
+typedef struct VBOXWDDM_ALLOCATION_SHADOWSURFACE
+{
+    VBOXWDDM_ALLOCINFO_SHADOWSURFACE  AllocInfo;
+} VBOXWDDM_ALLOCATION_SHADOWSURFACE, *PVBOXWDDM_ALLOCATION_SHADOWSURFACE;
+
+typedef struct VBOXWDDM_ALLOCATION_STAGINGSURFACE
+{
+    VBOXWDDM_ALLOCINFO_STAGINGSURFACE AllocInfo;
+} VBOXWDDM_ALLOCATION_STAGINGSURFACE, *PVBOXWDDM_ALLOCATION_STAGINGSURFACE;
+
+
+typedef struct VBOXWDDM_DEVICE
+{
+    HANDLE hDevice; /* the handle that the driver should use when it calls back into the Microsoft DirectX graphics kernel subsystem */
+    struct _DEVICE_EXTENSION * pAdapter; /* Adapder info */
+    DXGK_CREATEDEVICEFLAGS fCreationFlags; /* device creation flags passed to DxgkDdiCreateDevice, not sure we need it */
+    DXGK_DEVICEINFO DeviceInfo;
+} VBOXWDDM_DEVICE, *PVBOXWDDM_DEVICE;
+
 #endif
 
 typedef struct _DEVICE_EXTENSION
@@ -216,6 +306,17 @@ typedef struct _DEVICE_EXTENSION
 #ifdef VBOX_WITH_HGSMI
    HGSMIAREA areaDisplay;                      /* Entire VRAM chunk for this display device. */
 #endif /* VBOX_WITH_HGSMI */
+
+#ifdef VBOXWDDM
+   ULONG cSources;
+   /* currently we define the array for the max possible size since we do not know
+    * the monitor count at the DxgkDdiAddDevice,
+    * i.e. we obtain the monitor count in DxgkDdiStartDevice due to implementation of the currently re-used XPDM functionality
+    *
+    * @todo: use the dynamic array size calculated at DxgkDdiAddDevice
+    * */
+   VBOXWDDM_SOURCE aSources[VBOX_VIDEO_MAX_SCREENS];
+#endif
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
 #define DEV_MOUSE_HIDDEN(dev) ((dev)->pPrimary->u.primary.fMouseHidden)
