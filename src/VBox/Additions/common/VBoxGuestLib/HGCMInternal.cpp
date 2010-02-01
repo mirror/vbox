@@ -1008,7 +1008,6 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
             pParm64 = VBOXGUEST_HGCM_CALL_PARMS(pCallInfo64);
             for (iParm = 0; iParm < cParms; iParm++, pParm32++, pParm64++)
             {
-                LogRel(("VbglR0HGCMInternalCall32: iParm=%d cParms=%d\n",iParm, cParms)); 
                 switch (pParm64->type)
                 {
                     case VMMDevHGCMParmType_32bit:
