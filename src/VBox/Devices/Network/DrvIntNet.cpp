@@ -99,6 +99,11 @@ typedef struct DRVINTNET
     /** The network name. */
     char                            szNetwork[INTNET_MAX_NETWORK_NAME];
 
+    /** Base interface for ring-0. */
+    PDMIBASER0                      IBaseR0;
+    /** Base interface for ring-0. */
+    PDMIBASERC                      IBaseRC;
+
 #ifdef LOG_ENABLED
     /** The nano ts of the last transfer. */
     uint64_t                        u64LastTransferTS;
@@ -583,17 +588,45 @@ static DECLCALLBACK(int) drvR3IntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvU
     }
 }
 
-/* -=-=-=-=- PDMINETWORKCONNECTOR -=-=-=-=- */
+/* -=-=-=-=- PDMIBASERC -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASERC,pfnQueryInterface}
+ */
+static DECLCALLBACK(RTRCPTR) drvR3IntNetIBaseRC_QueryInterface(PPDMIBASERC pInterface, const char *pszIID)
+{
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseRC);
+
+    PDMIBASERC_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMIBASERC, &pThis->IBaseRC);
+    return NIL_RTRCPTR;
+}
+
+/* -=-=-=-=- PDMIBASER0 -=-=-=-=- */
+
+/**
+ * @interface_method_impl{PDMIBASER0,pfnQueryInterface}
+ */
+static DECLCALLBACK(RTR0PTR) drvR3IntNetIBaseR0_QueryInterface(PPDMIBASER0 pInterface, const char *pszIID)
+{
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, IBaseR0);
+
+    PDMIBASER0_RETURN_INTERFACE(pThis->pDrvInsR3, pszIID, PDMIBASER0, &pThis->IBaseR0);
+    return NIL_RTR0PTR;
+}
+
+/* -=-=-=-=- PDMIBASE -=-=-=-=- */
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
  */
-static DECLCALLBACK(void *) drvR3IntNetQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+static DECLCALLBACK(void *) drvR3IntNetIBase_QueryInterface(PPDMIBASE pInterface, const char *pszIID)
 {
     PPDMDRVINS pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVINTNET pThis   = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASER0, &pThis->IBaseR0);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASERC, &pThis->IBaseRC);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnectorR3);
     return NULL;
 }
@@ -789,8 +822,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->EventSuspended                           = NIL_RTSEMEVENT;
     pThis->enmState                                 = ASYNCSTATE_SUSPENDED;
     pThis->fActivateEarlyDeactivateLate             = false;
-    /* IBase */
-    pDrvIns->IBase.pfnQueryInterface                = drvR3IntNetQueryInterface;
+    /* IBase* */
+    pDrvIns->IBase.pfnQueryInterface                = drvR3IntNetIBase_QueryInterface;
+    pThis->IBaseR0.pfnQueryInterface                = drvR3IntNetIBaseR0_QueryInterface;
+    pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
     /* INetwork */
     pThis->INetworkConnectorR3.pfnSend              = drvR3IntNetSend;
     pThis->INetworkConnectorR3.pfnSetPromiscuousMode= drvR3IntNetSetPromiscuousMode;

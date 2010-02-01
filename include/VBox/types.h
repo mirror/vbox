@@ -314,9 +314,9 @@ typedef int32_t VBOXSTRICTRC;
 #define VBOXSTRICTRC_TODO(rcStrict) VBOXSTRICTRC_VAL(rcStrict)
 
 
-/** Pointer to a PDM Driver Base Interface. */
+/** Pointer to a PDM Base Interface. */
 typedef struct PDMIBASE *PPDMIBASE;
-/** Pointer to a pointer to a PDM Driver Base Interface. */
+/** Pointer to a pointer to a PDM Base Interface. */
 typedef PPDMIBASE *PPPDMIBASE;
 
 /** Pointer to a PDM Device Instance. */
