@@ -75,6 +75,18 @@ typedef DECLCALLBACK(bool) FNPDMQUEUEDEV(PPDMDEVINS pDevIns, PPDMQUEUEITEMCORE p
 typedef FNPDMQUEUEDEV *PFNPDMQUEUEDEV;
 
 /**
+ * Queue consumer callback for USB devices.
+ *
+ * @returns Success indicator.
+ *          If false the item will not be removed and the flushing will stop.
+ * @param   pDevIns     The USB device instance.
+ * @param   pItem       The item to consume. Upon return this item will be freed.
+ */
+typedef DECLCALLBACK(bool) FNPDMQUEUEUSB(PPDMUSBINS pUsbIns, PPDMQUEUEITEMCORE pItem);
+/** Pointer to a FNPDMQUEUEUSB(). */
+typedef FNPDMQUEUEUSB *PFNPDMQUEUEUSB;
+
+/**
  * Queue consumer callback for drivers.
  *
  * @returns Success indicator.

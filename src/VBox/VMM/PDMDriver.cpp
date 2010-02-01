@@ -500,7 +500,9 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                         if (pLun)
                             Log(("PDM: Attached driver %p:'%s'/%d to LUN#%d on device '%s'/%d, pDrvAbove=%p:'%s'/%d\n",
                                  pNew, pDrv->pDrvReg->szDriverName, pNew->iInstance,
-                                 pLun->iLun, pLun->pDevIns->pDevReg->szDeviceName, pLun->pDevIns->iInstance,
+                                 pLun->iLun,
+                                 pLun->pDevIns ? pLun->pDevIns->pDevReg->szDeviceName : pLun->pUsbIns->pUsbReg->szDeviceName,
+                                 pLun->pDevIns ? pLun->pDevIns->iInstance             : pLun->pUsbIns->iInstance,
                                  pDrvAbove, pDrvAbove ? pDrvAbove->pDrvReg->szDriverName : "", pDrvAbove ? pDrvAbove->iInstance : -1));
                         else
                             Log(("PDM: Attached driver %p:'%s'/%d, pDrvAbove=%p:'%s'/%d\n",

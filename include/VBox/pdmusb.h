@@ -450,7 +450,7 @@ typedef struct PDMUSBHLP
      * @param   pszDesc             The description of the info and any arguments the handler may take.
      * @param   pfnHandler          The handler function to be called to display the info.
      */
-/** @todo    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERUSB pfnHandler)); */
+    DECLR3CALLBACKMEMBER(int, pfnDBGFInfoRegister,(PPDMUSBINS pUsbIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERUSB pfnHandler));
 
     /**
      * Allocate memory which is associated with current VM instance
@@ -482,32 +482,39 @@ typedef struct PDMUSBHLP
      * @param   cMilliesInterval    Number of milliseconds between polling the queue.
      *                              If 0 then the emulation thread will be notified whenever an item arrives.
      * @param   pfnCallback         The consumer function.
+     * @param   pszName             The queue base name. The instance number will be
+     *                              appended automatically.
      * @param   ppQueue             Where to store the queue handle on success.
      * @thread  The emulation thread.
      */
-/** @todo    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMUSBINS pUsbIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval, PFNPDMQUEUEUSB pfnCallback, PPDMQUEUE *ppQueue)); */
+    DECLR3CALLBACKMEMBER(int, pfnPDMQueueCreate,(PPDMUSBINS pUsbIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
+                                                 PFNPDMQUEUEUSB pfnCallback, const char *pszName, PPDMQUEUE *ppQueue));
 
     /**
      * Register a save state data unit.
      *
      * @returns VBox status.
      * @param   pUsbIns             The USB device instance.
-     * @param   pszName         Data unit name.
-     * @param   u32Instance     The instance identifier of the data unit.
-     *                          This must together with the name be unique.
-     * @param   u32Version      Data layout version number.
-     * @param   cbGuess         The approximate amount of data in the unit.
-     *                          Only for progress indicators.
-     * @param   pfnSavePrep     Prepare save callback, optional.
-     * @param   pfnSaveExec     Execute save callback, optional.
-     * @param   pfnSaveDone     Done save callback, optional.
-     * @param   pfnLoadPrep     Prepare load callback, optional.
-     * @param   pfnLoadExec     Execute load callback, optional.
-     * @param   pfnLoadDone     Done load callback, optional.
+     * @param   uVersion            Data layout version number.
+     * @param   cbGuess             The approximate amount of data in the unit.
+     *                              Only for progress indicators.
+     *
+     * @param   pfnLivePrep         Prepare live save callback, optional.
+     * @param   pfnLiveExec         Execute live save callback, optional.
+     * @param   pfnLiveVote         Vote live save callback, optional.
+     *
+     * @param   pfnSavePrep         Prepare save callback, optional.
+     * @param   pfnSaveExec         Execute save callback, optional.
+     * @param   pfnSaveDone         Done save callback, optional.
+     *
+     * @param   pfnLoadPrep         Prepare load callback, optional.
+     * @param   pfnLoadExec         Execute load callback, optional.
+     * @param   pfnLoadDone         Done load callback, optional.
      */
-/** @todo    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMUSBINS pUsbIns, const char *pszName, uint32_t u32Instance, uint32_t u32Version, size_t cbGuess,
+    DECLR3CALLBACKMEMBER(int, pfnSSMRegister,(PPDMUSBINS pUsbIns, uint32_t uVersion, size_t cbGuess,
+                                              PFNSSMUSBLIVEPREP pfnLivePrep, PFNSSMUSBLIVEEXEC pfnLiveExec, PFNSSMUSBLIVEVOTE pfnLiveVote,
                                               PFNSSMUSBSAVEPREP pfnSavePrep, PFNSSMUSBSAVEEXEC pfnSaveExec, PFNSSMUSBSAVEDONE pfnSaveDone,
-                                              PFNSSMUSBLOADPREP pfnLoadPrep, PFNSSMUSBLOADEXEC pfnLoadExec, PFNSSMUSBLOADDONE pfnLoadDone)); */
+                                              PFNSSMUSBLOADPREP pfnLoadPrep, PFNSSMUSBLOADEXEC pfnLoadExec, PFNSSMUSBLOADDONE pfnLoadDone));
 
     /**
      * Register a STAM sample.
@@ -534,11 +541,14 @@ typedef struct PDMUSBHLP
      * @param   pUsbIns             The USB device instance.
      * @param   enmClock            The clock to use on this timer.
      * @param   pfnCallback         Callback function.
+     * @param   pvUser              User argument for the callback.
+     * @param   fFlags              Flags, see TMTIMER_FLAGS_*.
      * @param   pszDesc             Pointer to description string which must stay around
      *                              until the timer is fully destroyed (i.e. a bit after TMTimerDestroy()).
      * @param   ppTimer             Where to store the timer on success.
      */
-/** @todo    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, const char *pszDesc, PPTMTIMERHC ppTimer)); */
+    DECLR3CALLBACKMEMBER(int, pfnTMTimerCreate,(PPDMUSBINS pUsbIns, TMCLOCK enmClock, PFNTMTIMERUSB pfnCallback, void *pvUser,
+                                                uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer));
 
     /**
      * Set the VM error message
@@ -703,6 +713,14 @@ typedef struct PDMUSBINS
 #ifdef IN_RING3
 
 /**
+ * @copydoc PDMUSBHLP::pfnDriverAttach
+ */
+DECLINLINE(int) PDMUsbHlpDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
+{
+    return pUsbIns->pUsbHlp->pfnDriverAttach(pUsbIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
+}
+
+/**
  * VBOX_STRICT wrapper for pUsbHlp->pfnDBGFStopV.
  *
  * @returns VBox status code which must be passed up to the VMM.
@@ -753,6 +771,26 @@ DECLINLINE(void) PDMUsbHlpAsyncNotificationCompleted(PPDMUSBINS pUsbIns)
 {
     pUsbIns->pUsbHlp->pfnAsyncNotificationCompleted(pUsbIns);
 }
+
+/**
+ * Set the VM error message
+ *
+ * @returns rc.
+ * @param   pUsbIns             The USB device instance.
+ * @param   rc                  VBox status code.
+ * @param   RT_SRC_POS_DECL     Use RT_SRC_POS.
+ * @param   pszFormat           Error message format string.
+ * @param   ...                 Error message arguments.
+ */
+DECLINLINE(int) PDMUsbHlpVMSetError(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    va_list     va;
+    va_start(va, pszFormat);
+    rc = pUsbIns->pUsbHlp->pfnVMSetErrorV(pUsbIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
 
 #endif /* IN_RING3 */
 

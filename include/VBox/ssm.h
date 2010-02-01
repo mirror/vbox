@@ -509,6 +509,141 @@ typedef FNSSMDEVLOADDONE *PFNSSMDEVLOADDONE;
 /** @} */
 
 
+/** The PDM USB device callback variants.
+ * @{
+ */
+
+/**
+ * Prepare state live save operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLIVEPREP(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBLIVEPREP() function. */
+typedef FNSSMUSBLIVEPREP *PFNSSMUSBLIVEPREP;
+
+/**
+ * Execute state live save operation.
+ *
+ * This will be called repeatedly until all units vote that the live phase has
+ * been concluded.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   uPass           The pass.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLIVEEXEC(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uPass);
+/** Pointer to a FNSSMUSBLIVEEXEC() function. */
+typedef FNSSMUSBLIVEEXEC *PFNSSMUSBLIVEEXEC;
+
+/**
+ * Vote on whether the live part of the saving has been concluded.
+ *
+ * The vote stops once a unit has vetoed the decision, so don't rely upon this
+ * being called every time.
+ *
+ * @returns VBox status code.
+ * @retval  VINF_SUCCESS if done.
+ * @retval  VINF_SSM_VOTE_FOR_ANOTHER_PASS if another pass is needed.
+ * @retval  VINF_SSM_VOTE_DONE_DONT_CALL_AGAIN if the live saving of the unit is
+ *          done and there is not need calling it again before the final pass.
+ * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
+ *
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   uPass           The data pass.
+ * @thread  Any.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLIVEVOTE(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uPass);
+/** Pointer to a FNSSMUSBLIVEVOTE() function. */
+typedef FNSSMUSBLIVEVOTE *PFNSSMUSBLIVEVOTE;
+
+/**
+ * Prepare state save operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBSAVEPREP(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBSAVEPREP() function. */
+typedef FNSSMUSBSAVEPREP *PFNSSMUSBSAVEPREP;
+
+/**
+ * Execute state save operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBSAVEEXEC(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBSAVEEXEC() function. */
+typedef FNSSMUSBSAVEEXEC *PFNSSMUSBSAVEEXEC;
+
+/**
+ * Done state save operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBSAVEDONE(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBSAVEDONE() function. */
+typedef FNSSMUSBSAVEDONE *PFNSSMUSBSAVEDONE;
+
+/**
+ * Prepare state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLOADPREP(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBLOADPREP() function. */
+typedef FNSSMUSBLOADPREP *PFNSSMUSBLOADPREP;
+
+/**
+ * Execute state load operation.
+ *
+ * @returns VBox status code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ * @param   uVersion        Data layout version.
+ * @param   uPass           The pass. This is always SSM_PASS_FINAL for units
+ *                          that doesn't specify a pfnSaveLive callback.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLOADEXEC(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM, uint32_t uVersion, uint32_t uPass);
+/** Pointer to a FNSSMUSBLOADEXEC() function. */
+typedef FNSSMUSBLOADEXEC *PFNSSMUSBLOADEXEC;
+
+/**
+ * Done state load operation.
+ *
+ * @returns VBox load code.
+ * @param   pUsbIns         The USB device instance of the USB device which
+ *                          registered the data unit.
+ * @param   pSSM            SSM operation handle.
+ */
+typedef DECLCALLBACK(int) FNSSMUSBLOADDONE(PPDMUSBINS pUsbIns, PSSMHANDLE pSSM);
+/** Pointer to a FNSSMUSBLOADDONE() function. */
+typedef FNSSMUSBLOADDONE *PFNSSMUSBLOADDONE;
+
+/** @} */
+
+
 /** The PDM Driver callback variants.
  * @{
  */
@@ -517,7 +652,7 @@ typedef FNSSMDEVLOADDONE *PFNSSMDEVLOADDONE;
  * Prepare state live save operation.
  *
  * @returns VBox status code.
- * @param   pDrvIns         Driver instance of the device which registered the
+ * @param   pDrvIns         Driver instance of the driver which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
  * @thread  Any.
@@ -533,7 +668,7 @@ typedef FNSSMDRVLIVEPREP *PFNSSMDRVLIVEPREP;
  * been concluded.
  *
  * @returns VBox status code.
- * @param   pDrvIns         Driver instance of the device which registered the
+ * @param   pDrvIns         Driver instance of the driver which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uPass           The data pass.
@@ -556,7 +691,7 @@ typedef FNSSMDRVLIVEEXEC *PFNSSMDRVLIVEEXEC;
  *          done and there is not need calling it again before the final pass.
  * @retval  VERR_SSM_VOTE_FOR_GIVING_UP if its time to give up.
  *
- * @param   pDrvIns         Driver instance of the device which registered the
+ * @param   pDrvIns         Driver instance of the driver which registered the
  *                          data unit.
  * @param   pSSM            SSM operation handle.
  * @param   uPass           The data pass.

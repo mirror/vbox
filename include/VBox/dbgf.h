@@ -450,7 +450,7 @@ typedef struct DBGFINFOHLP
 /**
  * Info handler, device version.
  *
- * @param   pDevIns     Device instance which registered the info.
+ * @param   pDevIns     The device instance which registered the info.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */
@@ -459,9 +459,20 @@ typedef DECLCALLBACK(void) FNDBGFHANDLERDEV(PPDMDEVINS pDevIns, PCDBGFINFOHLP pH
 typedef FNDBGFHANDLERDEV  *PFNDBGFHANDLERDEV;
 
 /**
+ * Info handler, USB device version.
+ *
+ * @param   pUsbIns     The USB device instance which registered the info.
+ * @param   pHlp        Callback functions for doing output.
+ * @param   pszArgs     Argument string. Optional and specific to the handler.
+ */
+typedef DECLCALLBACK(void) FNDBGFHANDLERUSB(PPDMUSBINS pUsbIns, PCDBGFINFOHLP pHlp, const char *pszArgs);
+/** Pointer to a FNDBGFHANDLERUSB function. */
+typedef FNDBGFHANDLERUSB  *PFNDBGFHANDLERUSB;
+
+/**
  * Info handler, driver version.
  *
- * @param   pDrvIns     Driver instance which registered the info.
+ * @param   pDrvIns     The driver instance which registered the info.
  * @param   pHlp        Callback functions for doing output.
  * @param   pszArgs     Argument string. Optional and specific to the handler.
  */

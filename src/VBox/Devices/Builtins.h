@@ -121,13 +121,14 @@ extern const PDMDRVREG g_DrvHostSerial;
 
 #ifdef VBOX_WITH_USB
 extern const PDMUSBREG g_UsbDevProxy;
+extern const PDMUSBREG g_UsbMsd;
 #endif
 
 #ifdef VBOX_WITH_SCSI
 extern const PDMDRVREG g_DrvSCSI;
-#if defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX)
 extern const PDMDRVREG g_DrvSCSIHost;
-#endif
+# endif
 #endif
 
 RT_C_DECLS_END

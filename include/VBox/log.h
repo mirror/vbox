@@ -311,6 +311,8 @@ typedef enum LOGGROUP
     LOG_GROUP_USB_DRV,
     /** USBFilter group. */
     LOG_GROUP_USB_FILTER,
+    /** MSD USB device group. */
+    LOG_GROUP_USB_MSD,
     /** Generic virtual disk layer. */
     LOG_GROUP_VD,
     /** iSCSI virtual disk backend. */
@@ -476,6 +478,7 @@ typedef enum LOGGROUP
     "TRPM",         \
     "USB_DRV",      \
     "USB_FILTER",   \
+    "USB_MSD",      \
     "VD",           \
     "VD_ISCSI",     \
     "VD_RAW",       \

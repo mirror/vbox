@@ -288,11 +288,11 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
     if (RT_FAILURE(rc))
         return rc;
 
-#if defined(RT_OS_LINUX)
+# if defined(RT_OS_LINUX)
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvSCSIHost);
     if (RT_FAILURE(rc))
         return rc;
-#endif
+# endif
 #endif
 
     return VINF_SUCCESS;
@@ -313,6 +313,13 @@ extern "C" DECLEXPORT(int) VBoxUsbRegister(PCPDMUSBREGCB pCallbacks, uint32_t u3
     if (RT_FAILURE(rc))
         return rc;
 
+# ifdef VBOX_WITH_SCSI
+    rc = pCallbacks->pfnRegister(pCallbacks, &g_UsbMsd);
+    if (RT_FAILURE(rc))
+        return rc;
+# endif
+
     return VINF_SUCCESS;
 }
 #endif
+

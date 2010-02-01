@@ -187,8 +187,10 @@ typedef struct VUSBURB
     /** The device data. */
     struct VUSBURBDEV
     {
-        /** Pointer to the proxy URB.  */
-        void           *pvProxyUrb;
+        /** Pointer to private device specific data.  */
+        void           *pvPrivate;
+        /** Used by the device when linking the URB in some list of its own.   */
+        PVUSBURB        pNext;
     } Dev;
 
     /** The device - can be NULL untill submit is attempted.
