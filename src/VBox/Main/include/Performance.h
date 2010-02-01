@@ -24,19 +24,13 @@
 
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>
+#include <VBox/com/string.h>
 
 #include <iprt/types.h>
 #include <iprt/err.h>
 
-#include <algorithm>
 #include <list>
-#include <string>
 #include <vector>
-
-namespace com
-{
-    class Utf8Str;
-}
 
 namespace pm
 {
@@ -84,11 +78,6 @@ namespace pm
     typedef int HintFlags;
     typedef std::pair<RTPROCESS, HintFlags> ProcessFlagsPair;
 
-    inline bool processEqual(ProcessFlagsPair pair, RTPROCESS process)
-    {
-        return pair.first == process;
-    }
-
     class CollectorHints
     {
     public:
@@ -129,13 +118,9 @@ namespace pm
         ProcessFlagsPair& findProcess(RTPROCESS process)
         {
             ProcessList::iterator it;
-
-            it = std::find_if(mProcesses.begin(),
-                              mProcesses.end(),
-                              std::bind2nd(std::ptr_fun(processEqual), process));
-
-            if (it != mProcesses.end())
-                return *it;
+            for (it = mProcesses.begin(); it != mProcesses.end(); it++)
+		if (it->first == process)
+		    return *it;
 
             /* Not found -- add new */
             mProcesses.push_back(ProcessFlagsPair(process, COLLECT_NONE));
@@ -368,8 +353,8 @@ namespace pm
         {
             if (mAggregate)
             {
-                mName += ":";
-                mName += mAggregate->getName();
+                mName.append(":");
+                mName.append(mAggregate->getName());
             }
         }
 
@@ -393,7 +378,7 @@ namespace pm
         void query(ULONG **data, ULONG *count, ULONG *sequenceNumber);
 
     private:
-        std::string mName;
+        iprt::MiniString mName;
         BaseMetric *mBaseMetric;
         SubMetric  *mSubMetric;
         Aggregate  *mAggregate;
@@ -408,12 +393,12 @@ namespace pm
                ComSafeArrayIn(IUnknown * , objects));
         static bool patternMatch(const char *pszPat, const char *pszName,
                                  bool fSeenColon = false);
-        bool match(const ComPtr<IUnknown> object, const std::string &name) const;
+        bool match(const ComPtr<IUnknown> object, const iprt::MiniString &name) const;
     private:
         void init(ComSafeArrayIn(IN_BSTR, metricNames),
                   ComSafeArrayIn(IUnknown * , objects));
 
-        typedef std::pair<const ComPtr<IUnknown>, const std::string> FilterElement;
+        typedef std::pair<const ComPtr<IUnknown>, const iprt::MiniString> FilterElement;
         typedef std::list<FilterElement> ElementList;
 
         ElementList mElements;
