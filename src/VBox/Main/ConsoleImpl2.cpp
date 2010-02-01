@@ -105,6 +105,7 @@
 #include "DHCPServerRunner.h"
 
 #include <VBox/param.h>
+#include <VBox/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
 
 #undef PVM
 
