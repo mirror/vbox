@@ -195,7 +195,15 @@ int _init(void)
     else
         LogRel((DEVICE_NAME ":failed to disable autounloading!\n"));
 
-    int rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
+    PRTLOGGER pRelLogger;
+    static const char * const s_apszGroups[] = VBOX_LOGGROUP_NAMES;
+    int rc = RTLogCreate(&pRelLogger, 0 /* fFlags */, "all",
+                     "VBOX_RELEASE_LOG", RT_ELEMENTS(s_apszGroups), s_apszGroups,
+                     RTLOGDEST_STDOUT | RTLOGDEST_DEBUGGER, NULL);
+    if (RT_SUCCESS(rc))
+        RTLogRelSetDefaultInstance(pRelLogger);
+
+    rc = ddi_soft_state_init(&g_pVBoxGuestSolarisState, sizeof(vboxguest_state_t), 1);
     if (!rc)
     {
         rc = mod_install(&g_VBoxGuestSolarisModLinkage);
@@ -212,6 +220,10 @@ int _fini(void)
     int rc = mod_remove(&g_VBoxGuestSolarisModLinkage);
     if (!rc)
         ddi_soft_state_fini(&g_pVBoxGuestSolarisState);
+
+    RTLogDestroy(RTLogRelSetDefaultInstance(NULL));
+    RTLogDestroy(RTLogSetDefaultInstance(NULL));
+
     return rc;
 }
 
@@ -566,14 +578,14 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     vboxguest_state_t *pState = ddi_get_soft_state(g_pVBoxGuestSolarisState, getminor(Dev));
     if (!pState)
     {
-        Log((DEVICE_NAME "::IOCtl: no state data for %d\n", getminor(Dev)));
+        LogRel((DEVICE_NAME "::IOCtl: no state data for %d\n", getminor(Dev)));
         return EINVAL;
     }
 
     PVBOXGUESTSESSION pSession = pState->pSession;
     if (!pSession)
     {
-        Log((DEVICE_NAME "::IOCtl: no session data for %d\n", getminor(Dev)));
+        LogRel((DEVICE_NAME "::IOCtl: no session data for %d\n", getminor(Dev)));
         return EINVAL;
     }
 
@@ -602,7 +614,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     if (RT_UNLIKELY(   ReqWrap.cbData == 0
                     || ReqWrap.cbData > _1M*16))
     {
-        Log((DEVICE_NAME "::IOCtl: bad size %#x; pArg=%p Cmd=%d.\n", ReqWrap.cbData, pArg, Cmd));
+        LogRel((DEVICE_NAME "::IOCtl: bad size %#x; pArg=%p Cmd=%d.\n", ReqWrap.cbData, pArg, Cmd));
         return EINVAL;
     }
 
