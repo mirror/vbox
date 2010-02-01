@@ -29,6 +29,7 @@
 #include <iprt/types.h>
 #include <iprt/err.h>
 
+#include <algorithm>
 #include <list>
 #include <vector>
 
