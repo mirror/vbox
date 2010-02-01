@@ -1108,7 +1108,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cbStatSend,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatRecvs,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatSends,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of lost packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsNok, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.",  "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,            STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
