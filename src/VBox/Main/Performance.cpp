@@ -504,13 +504,13 @@ void Filter::processMetricList(const com::Utf8Str &name, const ComPtr<IUnknown> 
     size_t startPos = 0;
 
     for (size_t pos = name.find(",");
-         pos != std::string::npos;
+         pos != com::Utf8Str::npos;
          pos = name.find(",", startPos))
     {
-        mElements.push_back(std::make_pair(object, std::string(name.substr(startPos, pos - startPos).c_str())));
+        mElements.push_back(std::make_pair(object, iprt::MiniString(name.substr(startPos, pos - startPos).c_str())));
         startPos = pos + 1;
     }
-    mElements.push_back(std::make_pair(object, std::string(name.substr(startPos).c_str())));
+    mElements.push_back(std::make_pair(object, iprt::MiniString(name.substr(startPos).c_str())));
 }
 
 /**
@@ -586,7 +586,7 @@ bool Filter::patternMatch(const char *pszPat, const char *pszName,
     return true;
 }
 
-bool Filter::match(const ComPtr<IUnknown> object, const std::string &name) const
+bool Filter::match(const ComPtr<IUnknown> object, const iprt::MiniString &name) const
 {
     ElementList::const_iterator it;
 
