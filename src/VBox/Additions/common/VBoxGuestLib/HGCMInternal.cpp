@@ -939,10 +939,10 @@ DECLR0VBGL(int) VbglR0HGCMInternalCall32(VBoxGuestHGCMCallInfo *pCallInfo, uint3
                     ||  pCallInfo->cParms > VBOX_HGCM_MAX_PARMS
                     || !(fFlags & ~VBGLR0_HGCMCALL_F_MODE_MASK),
                     ("pCallInfo=%p pfnAsyncCallback=%p fFlags=%#x\n", pCallInfo, pfnAsyncCallback, fFlags),
-                    VERR_INVALID_HANDLE);
+                    VERR_INVALID_PARAMETER);
     AssertReturn(   cbCallInfo >= sizeof(VBoxGuestHGCMCallInfo)
                  || cbCallInfo >= pCallInfo->cParms * sizeof(HGCMFunctionParameter32),
-                 VERR_INVALID_MAGIC);
+                 VERR_INVALID_PARAMETER);
 
     /* This Assert does not work on Solaris 64/32 mixed mode, not sure why, skipping for now */
 #ifndef RT_OS_SOLARIS
