@@ -406,23 +406,51 @@ void PACKSPU_APIENTRY packspu_DisableVertexAttribArrayARB(GLuint index)
 
 void PACKSPU_APIENTRY packspu_Enable( GLenum cap )
 {
-    crStateEnable(cap);
+    if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
+    {
+        crStateEnable(cap);
 
-    if (pack_spu.swap)
-        crPackEnableSWAP(cap);
+        if (pack_spu.swap)
+            crPackEnableSWAP(cap);
+        else
+            crPackEnable(cap);
+    }
     else
-        crPackEnable(cap);
+    {
+        static int g_glmts1_warn=0;
+        if (!g_glmts1_warn)
+        {
+            crWarning("glEnable(GL_LIGHT_MODEL_TWO_SIDE) converted to valid glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,1)");
+            g_glmts1_warn=1;
+        }
+        crStateLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+        crPackLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 1);
+    }
 }
 
 
 void PACKSPU_APIENTRY packspu_Disable( GLenum cap )
 {
-    crStateDisable(cap);
+    if (cap!=GL_LIGHT_MODEL_TWO_SIDE)
+    {
+        crStateDisable(cap);
 
-    if (pack_spu.swap)
-        crPackDisableSWAP(cap);
+        if (pack_spu.swap)
+            crPackDisableSWAP(cap);
+        else
+            crPackDisable(cap);
+    }
     else
-        crPackDisable(cap);
+    {
+        static int g_glmts0_warn=0;
+        if (!g_glmts0_warn)
+        {
+            crWarning("glDisable(GL_LIGHT_MODEL_TWO_SIDE) converted to valid glLightModeli(GL_LIGHT_MODEL_TWO_SIDE,0)");
+            g_glmts0_warn=1;
+        }
+        crStateLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+        crPackLightModeli(GL_LIGHT_MODEL_TWO_SIDE, 0);
+    }
 }
 
 GLboolean PACKSPU_APIENTRY packspu_IsEnabled(GLenum cap)
