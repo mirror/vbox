@@ -330,6 +330,46 @@ int main()
     }
 
     /*
+     * RTPathJoin - reuse the append tests.
+     */
+    RTTestSub(hTest, "RTPathJoin");
+    for (unsigned i = 0; i < RT_ELEMENTS(s_apszAppendTests); i += 3)
+    {
+        const char *pszInput  = s_apszAppendTests[i];
+        const char *pszAppend = s_apszAppendTests[i + 1];
+        const char *pszExpect = s_apszAppendTests[i + 2];
+
+        memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
+
+        RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, sizeof(szPath), pszInput, pszAppend), VINF_SUCCESS);
+        if (RT_FAILURE(rc))
+            continue;
+        if (strcmp(szPath, pszExpect))
+        {
+            RTTestIFailed("Unexpected result\n"
+                          "   input: '%s'\n"
+                          "  append: '%s'\n"
+                          "  output: '%s'\n"
+                          "expected: '%s'",
+                          pszInput, pszAppend, szPath, pszExpect);
+        }
+        else
+        {
+            size_t const cchResult = strlen(szPath);
+
+            memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
+            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult + 2, pszInput, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
+
+            memset(szPath, 'a', sizeof(szPath)); szPath[sizeof(szPath) - 1] = '\0';
+            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult + 1, pszInput, pszAppend), VINF_SUCCESS);
+            RTTESTI_CHECK(RT_FAILURE(rc) || !strcmp(szPath, pszExpect));
+
+            RTTESTI_CHECK_RC(rc = RTPathJoin(szPath, cchResult, pszInput, pszAppend), VERR_BUFFER_OVERFLOW);
+        }
+    }
+
+    /*
      * RTPathStripTrailingSlash
      */
     static const char *s_apszStripTrailingSlash[] =
