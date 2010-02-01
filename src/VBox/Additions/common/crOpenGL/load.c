@@ -328,7 +328,7 @@ static void stubInitVars(void)
     stub.matchChromiumWindowCount = 0;
     stub.matchChromiumWindowID = NULL;
     stub.matchWindowTitle = NULL;
-    stub.ignoreFreeglutMenus = 1;
+    stub.ignoreFreeglutMenus = 0;
     stub.threadSafe = GL_FALSE;
     stub.trackWindowSize = 0;
     stub.trackWindowPos = 0;
@@ -508,7 +508,7 @@ void stubSetDefaultConfigurationOptions(void)
     stub.matchChromiumWindowID = NULL;
     stub.numIgnoreWindowID = 0;
     stub.matchWindowTitle = NULL;
-    stub.ignoreFreeglutMenus = 1;
+    stub.ignoreFreeglutMenus = 0;
     stub.trackWindowSize = 1;
     stub.trackWindowPos = 1;
     stub.trackWindowVisibility = 1;
