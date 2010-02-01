@@ -105,9 +105,9 @@ typedef VBOXSERVICE const *PCVBOXSERVICE;
 /** Structure for storing the looked up user information. */
 typedef struct
 {
-    WCHAR szUser[_MAX_PATH];
-    WCHAR szAuthenticationPackage[_MAX_PATH];
-    WCHAR szLogonDomain[_MAX_PATH];
+    WCHAR wszUser[_MAX_PATH];
+    WCHAR wszAuthenticationPackage[_MAX_PATH];
+    WCHAR wszLogonDomain[_MAX_PATH];
 } VBOXSERVICEVMINFOUSER, *PVBOXSERVICEVMINFOUSER;
 /** Structure for the file information lookup. */
 typedef struct
@@ -118,11 +118,11 @@ typedef struct
 /** Structure for process information lookup. */
 typedef struct
 {
-    DWORD id; 
+    DWORD id;
     LUID luid;
 } VBOXSERVICEVMINFOPROC, *PVBOXSERVICEVMINFOPROC;
 /** Function prototypes for dynamic loading. */
-typedef DWORD (WINAPI* fnWTSGetActiveConsoleSessionId)();
+typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 #endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_BEGIN
@@ -150,24 +150,17 @@ extern VBOXSERVICE g_CpuHotPlug;
 extern DWORD g_rcWinService;
 extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
 extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
+extern PFNWTSGETACTIVECONSOLESESSIONID g_pfnWTSGetActiveConsoleSessionId; /* VBoxServiceVMInfo-win.cpp */
 
-/** Installs the service into the registry. */
-extern int VBoxServiceWinInstall(void);
-/** Uninstalls the service from the registry. */
-extern int VBoxServiceWinUninstall(void);
-/** Reports our current status to the SCM. */
+extern int  VBoxServiceWinInstall(void);
+extern int  VBoxServiceWinUninstall(void);
 extern BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint);
 # ifdef VBOX_WITH_GUEST_PROPS
-/** Determines the total count of processes attach to a logon session. */
-extern DWORD VBoxServiceVMInfoWinSessionGetProcessCount(PLUID pSession,
-                                                        PVBOXSERVICEVMINFOPROC pProc, DWORD dwProcCount);
-/** Detects wheter a user is logged on based on the enumerated processes. */
-extern BOOL VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo,
-                                           PLUID a_pSession);
-/** Gets logon user IDs from enumerated processes. ppProc needs to be freed with VBoxServiceVMInfoWinProcessesFree() afterwards. */
-extern int VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
-/** Frees the process structure allocated by VBoxServiceVMInfoWinProcessesEnumerate() before. */
-extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC pProc);
+extern bool VBoxServiceVMInfoWinSessionHasProcesses(PLUID pSession, VBOXSERVICEVMINFOPROC const *paProcs, DWORD cProcs);
+extern bool VBoxServiceVMInfoWinIsLoggedIn(PVBOXSERVICEVMINFOUSER a_pUserInfo, PLUID a_pSession);
+extern int  VBoxServiceVMInfoWinProcessesEnumerate(PVBOXSERVICEVMINFOPROC *ppProc, DWORD *pdwCount);
+extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
+extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
 
