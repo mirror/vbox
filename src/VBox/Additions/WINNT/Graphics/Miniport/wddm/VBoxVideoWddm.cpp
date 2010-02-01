@@ -39,6 +39,52 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
+{
+    switch (format)
+    {
+        case D3DDDIFMT_R8G8B8:
+            return 24;
+        case D3DDDIFMT_A8R8G8B8:
+        case D3DDDIFMT_X8R8G8B8:
+            return 32;
+        case D3DDDIFMT_R5G6B5:
+        case D3DDDIFMT_X1R5G5B5:
+        case D3DDDIFMT_A1R5G5B5:
+        case D3DDDIFMT_A4R4G4B4:
+            return 16;
+        case D3DDDIFMT_R3G3B2:
+        case D3DDDIFMT_A8:
+            return 8;
+        case D3DDDIFMT_A8R3G3B2:
+        case D3DDDIFMT_X4R4G4B4:
+            return 16;
+        case D3DDDIFMT_A2B10G10R10:
+        case D3DDDIFMT_A8B8G8R8:
+        case D3DDDIFMT_X8B8G8R8:
+        case D3DDDIFMT_G16R16:
+        case D3DDDIFMT_A2R10G10B10:
+            return 32;
+        case D3DDDIFMT_A16B16G16R16:
+            return 64;
+        default:
+            AssertBreakpoint();
+            return 0;
+    }
+}
+
+UINT vboxWddmCalcPitch(UINT w, UINT bitsPerPixel)
+{
+    UINT Pitch = bitsPerPixel * w;
+    /* pitch is now in bits, translate in bytes */
+    if(Pitch & 7)
+        Pitch = (Pitch >> 3) + 1;
+    else
+        Pitch = (Pitch >> 3);
+
+    return Pitch;
+}
+
 NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDeviceInfo, PULONG pAdapterMemorySize)
 {
     NTSTATUS Status = STATUS_SUCCESS;
@@ -124,7 +170,7 @@ NTSTATUS DxgkDdiAddDevice(
     dfprintf(("==> "__FUNCTION__ ", pdo(0x%x)\n", PhysicalDeviceObject));
     NTSTATUS Status = STATUS_UNSUCCESSFUL;
 
-    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof(DEVICE_EXTENSION));
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof (DEVICE_EXTENSION));
     if (pContext)
     {
         *MiniportDeviceContext = pContext;
@@ -165,7 +211,7 @@ NTSTATUS DxgkDdiStartDevice(
         PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
         /* Save DeviceHandle and function pointers supplied by the DXGKRNL_INTERFACE structure passed to DxgkInterface. */
-        memcpy(&pContext->u.primary.DxgkInterface, DxgkInterface, sizeof(DXGKRNL_INTERFACE));
+        memcpy(&pContext->u.primary.DxgkInterface, DxgkInterface, sizeof (DXGKRNL_INTERFACE));
 
         /* Allocate a DXGK_DEVICE_INFO structure, and call DxgkCbGetDeviceInformation to fill in the members of that structure, which include the registry path, the PDO, and a list of translated resources for the display adapter represented by MiniportDeviceContext. Save selected members (ones that the display miniport driver will need later)
          * of the DXGK_DEVICE_INFO structure in the context block represented by MiniportDeviceContext. */
@@ -477,6 +523,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pQsOut->pSegmentDescriptor->BaseAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 pQsOut->pSegmentDescriptor->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 /* make sure the size is page aligned */
+                /* @todo: need to setup VBVA buffers and adjust the mem size here */
                 pQsOut->pSegmentDescriptor->Size = (pContext->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE - pContext->u.primary.cbMiniportHeap) & (~0xfffUL);
                 pQsOut->pSegmentDescriptor->NbOfBanks = 0;
                 pQsOut->pSegmentDescriptor->pBankRangeTable = 0;
@@ -491,10 +538,12 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
             drprintf((__FUNCTION__ ": we do not support DXGKQAITYPE_UMDRIVERPRIVATE\n"));
+            AssertBreakpoint();
             Status = STATUS_NOT_SUPPORTED;
             break;
         default:
             drprintf((__FUNCTION__ ": unsupported Type (%d)\n", pQueryAdapterInfo->Type));
+            AssertBreakpoint();
             Status = STATUS_NOT_SUPPORTED;
             break;
     }
@@ -506,14 +555,202 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     CONST HANDLE  hAdapter,
     DXGKARG_CREATEDEVICE*  pCreateDevice)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiCreateDevice should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+    NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
+
+    PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)vboxWddmMemAllocZero(sizeof (VBOXWDDM_DEVICE));
+    pDevice->hDevice = pCreateDevice->hDevice;
+    pDevice->pAdapter = pContext;
+    pDevice->fCreationFlags = pCreateDevice->Flags;
+
+    pDevice->DeviceInfo.AllocationListSize = 1024;
+    pDevice->DeviceInfo.DmaBufferSegmentSet = 0;
+    pDevice->DeviceInfo.DmaBufferPrivateDataSize = 0;
+    pDevice->DeviceInfo.AllocationListSize = 4;
+    pDevice->DeviceInfo.PatchLocationListSize = 4;
+    pDevice->DeviceInfo.Flags.Value = 0;
+    pDevice->DeviceInfo.Flags.GuaranteedDmaBufferContract = 1;
+
+    pCreateDevice->pInfo = &pDevice->DeviceInfo;
+    pCreateDevice->hDevice = pDevice;
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x), Status(0x%x)\n", hAdapter, Status));
+
+    return Status;
+}
+NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    PAGED_CODE();
+
+    vboxWddmMemFree(pAllocation);
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO* pAllocationInfo)
+{
+    PAGED_CODE();
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    Assert(pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_HEADSIZE());
+    if (pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_HEADSIZE())
+    {
+        PVBOXWDDM_ALLOCINFO pAllocInfo = (PVBOXWDDM_ALLOCINFO)pAllocationInfo->pPrivateDriverData;
+        switch (pAllocInfo->enmType)
+        {
+            case VBOXWDDM_ALLOC_STD_SHAREDPRIMARYSURFACE:
+            {
+                Assert(pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE));
+                if (pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE))
+                {
+                    PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE pInfo = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
+                    UINT bpp = vboxWddmCalcBitsPerPixel(pInfo->SurfData.Format);
+                    Assert(bpp);
+                    if (bpp != 0)
+                    {
+                        PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(VBOXWDDM_ALLOCATION_SIZE(VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE));
+                        Assert(pAllocation);
+                        if (pAllocation)
+                        {
+                            UINT Pitch = vboxWddmCalcPitch(pInfo->SurfData.Width, bpp);
+                            pAllocation->enmType = VBOXWDDM_ALLOC_STD_SHAREDPRIMARYSURFACE;
+                            PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocInfo, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+                            memcpy(&pAlloc->AllocInfo, pInfo, sizeof (pAlloc->AllocInfo));
+
+                            pAllocationInfo->pPrivateDriverData = NULL;
+                            pAllocationInfo->PrivateDriverDataSize = 0;
+                            pAllocationInfo->Alignment = 0;
+                            pAllocationInfo->Size = Pitch * pInfo->SurfData.Height;
+                            pAllocationInfo->PitchAlignedSize = 0;
+                            pAllocationInfo->HintedBank.Value = 0;
+                            pAllocationInfo->PreferredSegment.Value = 0;
+                            pAllocationInfo->SupportedReadSegmentSet = 1;
+                            pAllocationInfo->SupportedWriteSegmentSet = 1;
+                            pAllocationInfo->EvictionSegmentSet = 0;
+                            pAllocationInfo->MaximumRenamingListLength = 0;
+                            pAllocationInfo->hAllocation = pAlloc;
+                            pAllocationInfo->Flags.Value = 0;
+                            pAllocationInfo->Flags.CpuVisible = 1;
+                            pAllocationInfo->pAllocationUsageHint = NULL;
+                            pAllocationInfo->AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
+                        }
+                        else
+                        {
+                            drprintf((__FUNCTION__ ": ERROR: failed to create allocation description\n"));
+                            Status = STATUS_NO_MEMORY;
+                        }
+                    }
+                    else
+                    {
+                        drprintf((__FUNCTION__ ": Invalid format (%d)\n", pInfo->SurfData.Format));
+                        Status = STATUS_INVALID_PARAMETER;
+                    }
+                }
+                else
+                {
+                    drprintf((__FUNCTION__ ": ERROR: PrivateDriverDataSize(%d) less than VBOXWDDM_ALLOC_STD_SHAREDPRIMARYSURFACE cmd size(%d)\n", pAllocationInfo->PrivateDriverDataSize, VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHADOWSURFACE)));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+                break;
+            }
+            case VBOXWDDM_ALLOC_STD_SHADOWSURFACE:
+            {
+                Assert(pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHADOWSURFACE));
+                if (pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHADOWSURFACE))
+                {
+                    PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(VBOXWDDM_ALLOCATION_SIZE(VBOXWDDM_ALLOCATION_SHADOWSURFACE));
+                    Assert(pAllocation);
+                    if (pAllocation)
+                    {
+                        pAllocation->enmType = VBOXWDDM_ALLOC_STD_SHADOWSURFACE;
+                        PVBOXWDDM_ALLOCATION_SHADOWSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocInfo, VBOXWDDM_ALLOCATION_SHADOWSURFACE);
+                        PVBOXWDDM_ALLOCINFO_SHADOWSURFACE pInfo = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHADOWSURFACE);
+                        memcpy(&pAlloc->AllocInfo, pInfo, sizeof (pAlloc->AllocInfo));
+
+                        pAllocationInfo->pPrivateDriverData = NULL;
+                        pAllocationInfo->PrivateDriverDataSize = 0;
+                        pAllocationInfo->Alignment = 0;
+                        pAllocationInfo->Size = pInfo->SurfData.Pitch * pInfo->SurfData.Height;
+                        pAllocationInfo->PitchAlignedSize = 0;
+                        pAllocationInfo->HintedBank.Value = 0;
+                        pAllocationInfo->PreferredSegment.Value = 0;
+                        pAllocationInfo->SupportedReadSegmentSet = 1;
+                        pAllocationInfo->SupportedWriteSegmentSet = 1;
+                        pAllocationInfo->EvictionSegmentSet = 0;
+                        pAllocationInfo->MaximumRenamingListLength = 0;
+                        pAllocationInfo->hAllocation = pAlloc;
+                        pAllocationInfo->Flags.Value = 0;
+                        pAllocationInfo->Flags.CpuVisible = 1;
+                        pAllocationInfo->pAllocationUsageHint = NULL;
+                        pAllocationInfo->AllocationPriority = D3DDDI_ALLOCATIONPRIORITY_NORMAL;
+                    }
+                    else
+                    {
+                        drprintf((__FUNCTION__ ": ERROR: failed to create allocation description\n"));
+                        Status = STATUS_NO_MEMORY;
+                    }
+                }
+                else
+                {
+                    drprintf((__FUNCTION__ ": ERROR: PrivateDriverDataSize(%d) less than VBOXWDDM_ALLOC_STD_SHADOWSURFACE cmd size(%d)\n", pAllocationInfo->PrivateDriverDataSize, VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHADOWSURFACE)));
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+                break;
+            }
+            case VBOXWDDM_ALLOC_STD_STAGINGSURFACE:
+            {
+                /* @todo: impl */
+                AssertBreakpoint();
+                break;
+            }
+            default:
+                drprintf((__FUNCTION__ ": ERROR: invalid alloc info type(%d)\n", pAllocInfo->enmType));
+                Status = STATUS_INVALID_PARAMETER;
+                break;
+        }
+    }
+    else
+    {
+        drprintf((__FUNCTION__ ": ERROR: PrivateDriverDataSize(%d) less than header size(%d)\n", pAllocationInfo->PrivateDriverDataSize, VBOXWDDM_ALLOCINFO_HEADSIZE()));
+        Status = STATUS_INVALID_PARAMETER;
+    }
+
+    return Status;
 }
 
 NTSTATUS APIENTRY DxgkDdiCreateAllocation(
     CONST HANDLE  hAdapter,
     DXGKARG_CREATEALLOCATION*  pCreateAllocation)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiCreateAllocation should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
+    {
+        Status = vboxWddmCreateAllocation((PDEVICE_EXTENSION)hAdapter, &pCreateAllocation->pAllocationInfo[i]);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status != STATUS_SUCCESS)
+        {
+            drprintf((__FUNCTION__ ": ERROR: vboxWddmCreateAllocation error (0x%x)\n", Status));
+            /* note: i-th allocation is expected to be cleared in a fail handling code above */
+            for (UINT j = 0; j < i; ++j)
+            {
+                vboxWddmDestroyAllocation((PDEVICE_EXTENSION)hAdapter, (PVBOXWDDM_ALLOCATION)pCreateAllocation->pAllocationInfo[j].hAllocation);
+            }
+        }
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
@@ -522,7 +759,20 @@ DxgkDdiDestroyAllocation(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_DESTROYALLOCATION*  pDestroyAllocation)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiDestroyAllocation should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (UINT i = 0; i < pDestroyAllocation->NumAllocations; ++i)
+    {
+        vboxWddmDestroyAllocation((PDEVICE_EXTENSION)hAdapter, (PVBOXWDDM_ALLOCATION)pDestroyAllocation->pAllocationList[i]);
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 
@@ -541,7 +791,89 @@ DxgkDdiGetStandardAllocationDriverData(
     CONST HANDLE  hAdapter,
     DXGKARG_GETSTANDARDALLOCATIONDRIVERDATA*  pGetStandardAllocationDriverData)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiGetStandardAllocationDriverData should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXWDDM_ALLOCINFO pAllocInfo = NULL;
+
+    switch (pGetStandardAllocationDriverData->StandardAllocationType)
+    {
+        case D3DKMDT_STANDARDALLOCATION_SHAREDPRIMARYSURFACE:
+        {
+            dfprintf((__FUNCTION__ ": D3DKMDT_STANDARDALLOCATION_SHAREDPRIMARYSURFACE\n"));
+            if(pGetStandardAllocationDriverData->pAllocationPrivateDriverData)
+            {
+                pAllocInfo = (PVBOXWDDM_ALLOCINFO)pGetStandardAllocationDriverData->pAllocationPrivateDriverData;
+                pAllocInfo->enmType = VBOXWDDM_ALLOC_STD_SHAREDPRIMARYSURFACE;
+                PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE pInfo = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
+                memcpy(&pInfo->SurfData, pGetStandardAllocationDriverData->pCreateSharedPrimarySurfaceData, sizeof (pInfo->SurfData));
+            }
+            pGetStandardAllocationDriverData->AllocationPrivateDriverDataSize = VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
+
+            pGetStandardAllocationDriverData->ResourcePrivateDriverDataSize = 0;
+            break;
+        }
+        case D3DKMDT_STANDARDALLOCATION_SHADOWSURFACE:
+        {
+            dfprintf((__FUNCTION__ ": D3DKMDT_STANDARDALLOCATION_SHADOWSURFACE\n"));
+            UINT bpp = vboxWddmCalcBitsPerPixel(pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Format);
+            Assert(bpp);
+            if (bpp != 0)
+            {
+                UINT Pitch = vboxWddmCalcPitch(pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Width, bpp);
+                pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Pitch = Pitch;
+
+                /* @todo: need [d/q]word align?? */
+
+                if (pGetStandardAllocationDriverData->pAllocationPrivateDriverData)
+                {
+                    pAllocInfo = (PVBOXWDDM_ALLOCINFO)pGetStandardAllocationDriverData->pAllocationPrivateDriverData;
+                    pAllocInfo->enmType = VBOXWDDM_ALLOC_STD_SHADOWSURFACE;
+                    PVBOXWDDM_ALLOCINFO_SHADOWSURFACE pInfo = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHADOWSURFACE);
+                    memcpy(&pInfo->SurfData, pGetStandardAllocationDriverData->pCreateShadowSurfaceData, sizeof (pInfo->SurfData));
+                }
+                pGetStandardAllocationDriverData->AllocationPrivateDriverDataSize = VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_SHADOWSURFACE);
+
+                pGetStandardAllocationDriverData->ResourcePrivateDriverDataSize = 0;
+            }
+            else
+            {
+                drprintf((__FUNCTION__ ": Invalid format (%d)\n", pGetStandardAllocationDriverData->pCreateShadowSurfaceData->Format));
+                Status = STATUS_INVALID_PARAMETER;
+            }
+            break;
+        }
+        case D3DKMDT_STANDARDALLOCATION_STAGINGSURFACE:
+        {
+            dfprintf((__FUNCTION__ ": D3DKMDT_STANDARDALLOCATION_STAGINGSURFACE\n"));
+            if(pGetStandardAllocationDriverData->pAllocationPrivateDriverData)
+            {
+                pAllocInfo = (PVBOXWDDM_ALLOCINFO)pGetStandardAllocationDriverData->pAllocationPrivateDriverData;
+                pAllocInfo->enmType = VBOXWDDM_ALLOC_STD_STAGINGSURFACE;
+                PVBOXWDDM_ALLOCINFO_STAGINGSURFACE pInfo = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_STAGINGSURFACE);
+                memcpy(&pInfo->SurfData, pGetStandardAllocationDriverData->pCreateStagingSurfaceData, sizeof (pInfo->SurfData));
+            }
+            pGetStandardAllocationDriverData->AllocationPrivateDriverDataSize = VBOXWDDM_ALLOCINFO_SIZE(VBOXWDDM_ALLOCINFO_STAGINGSURFACE);
+
+            pGetStandardAllocationDriverData->ResourcePrivateDriverDataSize = 0;
+            break;
+        }
+//#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
+//        case D3DKMDT_STANDARDALLOCATION_GDISURFACE:
+//              break;
+//#endif
+        default:
+            drprintf((__FUNCTION__ ": Invalid allocation type (%d)\n", pGetStandardAllocationDriverData->StandardAllocationType));
+            Status = STATUS_INVALID_PARAMETER;
+            break;
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
@@ -799,7 +1131,7 @@ DxgkDdiRecommendFunctionalVidPn(
                 pNewVidPnPresentPathInfo->ImportanceOrdinal = D3DKMDT_VPPI_PRIMARY;
                 pNewVidPnPresentPathInfo->ContentTransformation.Scaling = D3DKMDT_VPPS_IDENTITY;
                 memset(&pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport,
-                        0, sizeof(pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport));
+                        0, sizeof (pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport));
                 pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Identity = 1;
                 pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Centered = 1;
                 pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Stretched = 0;
@@ -820,7 +1152,7 @@ DxgkDdiRecommendFunctionalVidPn(
                 pNewVidPnPresentPathInfo->Content = D3DKMDT_VPPC_GRAPHICS;
                 pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType = D3DKMDT_VPPMT_NOPROTECTION;
                 pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits = 0;
-                memset(&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, 0, sizeof(pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport));
+                memset(&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, 0, sizeof (pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport));
                 pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport.NoProtection  = 1;
                 pNewVidPnPresentPathInfo->GammaRamp.Type = D3DDDI_GAMMARAMP_DEFAULT;
                 pNewVidPnPresentPathInfo->GammaRamp.DataSize = 0;
@@ -1112,7 +1444,16 @@ APIENTRY
 DxgkDdiDestroyDevice(
     CONST HANDLE  hDevice)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiDestroyDevice should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
+    vboxWddmMemFree(hDevice);
+
+    dfprintf(("<== "__FUNCTION__ ", \n"));
+
+    return STATUS_UNSUCCESSFUL;
 }
 
 NTSTATUS
