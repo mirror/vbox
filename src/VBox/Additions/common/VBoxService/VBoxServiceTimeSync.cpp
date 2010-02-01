@@ -434,14 +434,15 @@ static void VBoxServiceTimeSyncCancelAdjust(void)
  *
  * @param   pDrift              The time adjustment.
  */
-static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
+static bool VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
 {
     /*
      * Query the current time, add the adjustment, then try it.
      */
+    int rc;
 #ifdef RT_OS_WINDOWS
     RTTIMESPEC hostNow;
-    int rc = VbglR3GetHostTime(&hostNow);
+    rc = VbglR3GetHostTime(&hostNow);
     if (RT_FAILURE(rc))
     {
         if (g_cTimeSyncErrors++ < 10)
@@ -455,10 +456,17 @@ static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
         if (FileTimeToSystemTime(&ft, &st))
         {
             if (!SetSystemTime(&st))
-                VBoxServiceError("SetSystemTime failed, error=%u\n", GetLastError());
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+                VBoxServiceError("SetSystemTime failed, error=%Rrc\n", rc);
+            }
+            else rc = VINF_SUCCESS;
         }
         else
-            VBoxServiceError("Cannot convert system times, error=%u\n", GetLastError());
+        {
+            rc = RTErrConvertFromWin32(GetLastError());
+            VBoxServiceError("Cannot convert system times, error=%Rrc\n", rc);
+        }
     }
 #else  /* !RT_OS_WINDOWS */
     struct timeval tv;
@@ -480,13 +488,23 @@ static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
                                    RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
 # endif
             g_cTimeSyncErrors = 0;
+            rc = VINF_SUCCESS;
         }
-        else if (g_cTimeSyncErrors++ < 10)
-            VBoxServiceError("settimeofday failed; errno=%d: %s\n", errno, strerror(errno));
+        else 
+        {
+            rc = RTErrConvertFromErrno(errno);
+            if (g_cTimeSyncErrors++ < 10)
+                VBoxServiceError("settimeofday failed; errno=%d: %s\n", errno, strerror(errno));
+        }
     }
-    else if (g_cTimeSyncErrors++ < 10)
-        VBoxServiceError("gettimeofday failed; errno=%d: %s\n", errno, strerror(errno));
+    else 
+    {
+        rc = RTErrConvertFromErrno(errno);
+        if (g_cTimeSyncErrors++ < 10)
+            VBoxServiceError("gettimeofday failed; errno=%d: %s\n", errno, strerror(errno));
+    }
 #endif /* !RT_OS_WINDOWS */
+    return RT_SUCCESS(rc) ? true : false;
 }
 
 
