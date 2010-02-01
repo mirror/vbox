@@ -433,28 +433,33 @@ static void VBoxServiceTimeSyncCancelAdjust(void)
  * @returns true on success, false on failure.
  *
  * @param   pDrift              The time adjustment.
- * @param   pHostNow            The host time at the time of the host query.
- *                              REMOVE THIS ARGUMENT!
  */
-static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift, PCRTTIMESPEC pHostNow)
+static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
 {
     /*
      * Query the current time, add the adjustment, then try it.
      */
 #ifdef RT_OS_WINDOWS
-/** @todo r=bird: Get current time and add the adjustment, the host time is
- *                stale by now. */
-    FILETIME ft;
-    RTTimeSpecGetNtFileTime(pHostNow, &ft);
-    SYSTEMTIME st;
-    if (FileTimeToSystemTime(&ft, &st))
+    RTTIMESPEC hostNow;
+    int rc = VbglR3GetHostTime(&hostNow);
+    if (RT_FAILURE(rc))
     {
-        if (!SetSystemTime(&st))
-            VBoxServiceError("SetSystemTime failed, error=%u\n", GetLastError());
+        if (g_cTimeSyncErrors++ < 10)
+            VBoxServiceError("VbglR3GetHostTime failed; rc=%Rrc\n", rc);
     }
     else
-        VBoxServiceError("Cannot convert system times, error=%u\n", GetLastError());
-
+    {
+        FILETIME ft;
+        RTTimeSpecGetNtFileTime(&hostNow, &ft);
+        SYSTEMTIME st;
+        if (FileTimeToSystemTime(&ft, &st))
+        {
+            if (!SetSystemTime(&st))
+                VBoxServiceError("SetSystemTime failed, error=%u\n", GetLastError());
+        }
+        else
+            VBoxServiceError("Cannot convert system times, error=%u\n", GetLastError());
+    }
 #else  /* !RT_OS_WINDOWS */
     struct timeval tv;
     errno = 0;
@@ -563,7 +568,7 @@ DECLCALLBACK(int) VBoxServiceTimeSyncWorker(bool volatile *pfShutdown)
                         ||  !VBoxServiceTimeSyncAdjust(&Drift))
                     {
                         VBoxServiceTimeSyncCancelAdjust();
-                        VBoxServiceTimeSyncSet(&Drift, &HostNow);
+                        VBoxServiceTimeSyncSet(&Drift);
                     }
                 }
                 else
