@@ -64,8 +64,12 @@ RT_C_DECLS_BEGIN
  */
 
 
+/** @name PDMIBASE
+ * @{
+ */
+
 /**
- * PDM Driver Base Interface.
+ * PDM Base Interface.
  *
  * Everyone implements this.
  */
@@ -116,6 +120,149 @@ typedef struct PDMIBASE
             return pReturnInterfaceTypeCheck; \
         } \
     } while (0)
+
+/** @} */
+
+
+/** @name PDMIBASERC
+ * @{
+ */
+
+/**
+ * PDM Base Interface for querying ring-mode context interfaces in
+ * ring-3.
+ *
+ * This is mandatory for drivers present in raw-mode context.
+ */
+typedef struct PDMIBASERC
+{
+    /**
+     * Queries an ring-mode context interface to the driver.
+     *
+     * @returns Pointer to interface.
+     * @returns NULL if the interface was not supported by the driver.
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   pszIID              The interface ID, a UUID string.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(RTRCPTR, pfnQueryInterface,(struct PDMIBASERC *pInterface, const char *pszIID));
+} PDMIBASERC;
+/** Pointer to a PDM Base Interface for query ring-mode context interfaces. */
+typedef PDMIBASERC *PPDMIBASERC;
+/** PDMIBASERC interface ID. */
+#define PDMIBASERC_IID                          "f6a6c649-6cb3-493f-9737-4653f221aeca"
+
+/**
+ * Helper macro for quering an interface from PDMIBASERC.
+ *
+ * @returns PDMIBASERC::pfnQueryInterface return value.
+ *
+ * @param   pIBaseRC        Pointer to the base ring-0 interface.
+ * @param   InterfaceType   The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ *
+ * @remarks Unlike PDMIBASE_QUERY_INTERFACE, this macro is not able to do any
+ *          implicit type checking for you.
+ */
+#define PDMIBASERC_QUERY_INTERFACE(pIBaseRC, InterfaceType)  \
+    ( (InterfaceType *)(pIBaseRC)->pfnQueryInterface(pIBaseRC, InterfaceType##_IID ) )
+
+/**
+ * Helper macro for implementing PDMIBASERC::pfnQueryInterface.
+ *
+ * Return @a pInterface if @a pszIID matches the @a InterfaceType.  This will
+ * perform basic type checking.
+ *
+ * @param   pIns            Pointer to the instance data.
+ * @param   pszIID          The ID of the interface that is being queried.
+ * @param   InterfaceType   The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ * @param   pInterface      The interface address expression.  This must resolve
+ *                          to some address within the instance data.
+ */
+#define PDMIBASERC_RETURN_INTERFACE(pIns, pszIID, InterfaceType, pInterface)  \
+    do { \
+        Assert((uintptr_t)pInterface - PDMINS_2_DATA(pIns, uintptr_t) < _4M); \
+        if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
+        { \
+            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            return (uintptr_t)pReturnInterfaceTypeCheck \
+                 - PDMINS_2_DATA(pIns, uintptr_t) \
+                 + PDMINS_2_DATA_RCPTR(pIns); \
+        } \
+    } while (0)
+
+/** @} */
+
+
+/** @name PDMIBASER0
+ * @{
+ */
+
+/**
+ * PDM Base Interface for querying ring-0 interfaces in ring-3.
+ *
+ * This is mandatory for drivers present in ring-0 context.
+ */
+typedef struct PDMIBASER0
+{
+    /**
+     * Queries an ring-0 interface to the driver.
+     *
+     * @returns Pointer to interface.
+     * @returns NULL if the interface was not supported by the driver.
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   pszIID              The interface ID, a UUID string.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(RTR0PTR, pfnQueryInterface,(struct PDMIBASER0 *pInterface, const char *pszIID));
+} PDMIBASER0;
+/** Pointer to a PDM Base Interface for query ring-0 context interfaces. */
+typedef PDMIBASER0 *PPDMIBASER0;
+/** PDMIBASER0 interface ID. */
+#define PDMIBASER0_IID                          "9c9b99b8-7f53-4f59-a3c2-5bc9659c7944"
+
+/**
+ * Helper macro for quering an interface from PDMIBASER0.
+ *
+ * @returns PDMIBASER0::pfnQueryInterface return value.
+ *
+ * @param   pIBaseR0        Pointer to the base ring-0 interface.
+ * @param   InterfaceType   The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ *
+ * @remarks Unlike PDMIBASE_QUERY_INTERFACE, this macro is not able to do any
+ *          implicit type checking for you.
+ */
+#define PDMIBASER0_QUERY_INTERFACE(pIBaseR0, InterfaceType)  \
+    ( (InterfaceType *)(pIBaseR0)->pfnQueryInterface(pIBaseR0, InterfaceType##_IID ) )
+
+/**
+ * Helper macro for implementing PDMIBASER0::pfnQueryInterface.
+ *
+ * Return @a pInterface if @a pszIID matches the @a InterfaceType.  This will
+ * perform basic type checking.
+ *
+ * @param   pIns            Pointer to the instance data.
+ * @param   pszIID          The ID of the interface that is being queried.
+ * @param   InterfaceType   The interface type name.  The interface ID is
+ *                          derived from this by appending _IID.
+ * @param   pInterface      The interface address expression.  This must resolve
+ *                          to some address within the instance data.
+ */
+#define PDMIBASER0_RETURN_INTERFACE(pIns, pszIID, InterfaceType, pInterface)  \
+    do { \
+        Assert((uintptr_t)pInterface - PDMINS_2_DATA(pIns, uintptr_t) < _4M); \
+        if (RTUuidCompare2Strs((pszIID), InterfaceType##_IID) == 0) \
+        { \
+            InterfaceType *pReturnInterfaceTypeCheck = (pInterface); \
+            return (uintptr_t)pReturnInterfaceTypeCheck \
+                 - PDMINS_2_DATA(pIns, uintptr_t) \
+                 + PDMINS_2_DATA_R0PTR(pIns); \
+        } \
+    } while (0)
+
+/** @} */
 
 
 /**
