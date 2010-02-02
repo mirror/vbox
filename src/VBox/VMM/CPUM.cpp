@@ -42,7 +42,6 @@
 #include <VBox/cpum.h>
 #include <VBox/cpumdis.h>
 #include <VBox/pgm.h>
-#include <VBox/pdm.h>
 #include <VBox/mm.h>
 #include <VBox/selm.h>
 #include <VBox/dbgf.h>

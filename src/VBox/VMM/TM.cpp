@@ -130,7 +130,8 @@
 #include <VBox/ssm.h>
 #include <VBox/dbgf.h>
 #include <VBox/rem.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
+#include <VBox/iom.h>
 #include "TMInternal.h"
 #include <VBox/vm.h>
 

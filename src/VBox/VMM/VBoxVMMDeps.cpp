@@ -24,7 +24,9 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/pgm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
+#include <VBox/pdmcritsect.h>
+#include <VBox/pdmqueue.h>
 #include <VBox/vm.h>
 #include <VBox/em.h>
 #include <VBox/iom.h>

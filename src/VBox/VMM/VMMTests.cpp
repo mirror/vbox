@@ -26,8 +26,9 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_VMM
 #include <VBox/vmm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
 #include <VBox/cpum.h>
+#include <VBox/dbg.h>
 #include <VBox/mm.h>
 #include <VBox/trpm.h>
 #include <VBox/selm.h>

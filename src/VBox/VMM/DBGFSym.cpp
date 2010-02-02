@@ -32,14 +32,14 @@
 #endif
 /** @todo Only use DBGHELP for reading modules since it doesn't do all we want (relocations), or is way to slow in some cases (add symbol)! */
 #include <VBox/dbgf.h>
+#include <VBox/mm.h>
+#include <VBox/pdmapi.h>
 #include "DBGFInternal.h"
 #include <VBox/vm.h>
-#include <VBox/mm.h>
-#include <VBox/pdm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <iprt/assert.h>
 
+#include <iprt/assert.h>
 #include <iprt/path.h>
 #include <iprt/ctype.h>
 #include <iprt/env.h>

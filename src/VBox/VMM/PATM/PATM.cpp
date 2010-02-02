@@ -31,10 +31,8 @@
 #include <VBox/cpum.h>
 #include <VBox/cpumdis.h>
 #include <VBox/iom.h>
-#include <VBox/sup.h>
 #include <VBox/mm.h>
 #include <VBox/ssm.h>
-#include <VBox/pdm.h>
 #include <VBox/trpm.h>
 #include <VBox/cfgm.h>
 #include <VBox/param.h>

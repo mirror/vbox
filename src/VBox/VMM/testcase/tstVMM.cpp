@@ -26,7 +26,8 @@
 #include <VBox/vm.h>
 #include <VBox/vmm.h>
 #include <VBox/cpum.h>
-#include <VBox/pdm.h>
+#include <VBox/tm.h>
+#include <VBox/pdmapi.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
 #include <iprt/assert.h>

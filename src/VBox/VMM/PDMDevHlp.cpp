@@ -62,7 +62,7 @@
  */
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOPortRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTHCPTR pvUser, PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                                     PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
 {
@@ -87,7 +87,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegister(PPDMDEVINS pDevIns, RTIOPORT
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOPortRegisterGC */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegisterGC} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTRCPTR pvUser,
                                                       const char *pszOut, const char *pszIn,
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
@@ -154,7 +154,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterGC(PPDMDEVINS pDevIns, RTIOPO
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOPortRegisterR0 */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortRegisterR0} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts, RTR0PTR pvUser,
                                                       const char *pszOut, const char *pszIn,
                                                       const char *pszOutStr, const char *pszInStr, const char *pszDesc)
@@ -221,7 +221,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPO
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOPortDeregister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOPortDeregister} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -236,7 +236,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOPortDeregister(PPDMDEVINS pDevIns, RTIOPO
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIORegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTHCPTR pvUser,
                                                   PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                                   const char *pszDesc)
@@ -254,7 +254,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegister(PPDMDEVINS pDevIns, RTGCPHYS G
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIORegisterGC */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegisterGC} */
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                                     const char *pszWrite, const char *pszRead, const char *pszFill,
                                                     const char *pszDesc)
@@ -311,7 +311,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterGC(PPDMDEVINS pDevIns, RTGCPHYS
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnMMIORegisterR0 */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIORegisterR0} */
 static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                                     const char *pszWrite, const char *pszRead, const char *pszFill,
                                                     const char *pszDesc)
@@ -366,7 +366,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIODeregister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIODeregister} */
 static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -381,7 +381,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_MMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnROMRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnROMRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, uint32_t fFlags, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -397,7 +397,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_ROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GC
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnSSMRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnSSMRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess, const char *pszBefore,
                                                  PFNSSMDEVLIVEPREP pfnLivePrep, PFNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVLIVEVOTE pfnLiveVote,
                                                  PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
@@ -423,7 +423,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SSMRegister(PPDMDEVINS pDevIns, uint32_t uV
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnTMTimerCreate */
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMTimerCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -446,7 +446,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCIRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -587,7 +587,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCIIORegionRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIIORegionRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -683,7 +683,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIIORegionRegister(PPDMDEVINS pDevIns, int
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCISetConfigCallbacks */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCISetConfigCallbacks} */
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                             PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
@@ -720,7 +720,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetConfigCallbacks(PPDMDEVINS pDevIns, 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCISetIrq */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrq} */
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -751,14 +751,14 @@ static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCISetIrqNoWait */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCISetIrqNoWait} */
 static DECLCALLBACK(void) pdmR3DevHlp_PCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     pdmR3DevHlp_PCISetIrq(pDevIns, iIrq, iLevel);
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnISASetIrq */
+/** @interface_method_impl{PDMDEVHLPR3,pfnISASetIrq} */
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -776,14 +776,14 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnISASetIrqNoWait */
+/** @interface_method_impl{PDMDEVHLPR3,pfnISASetIrqNoWait} */
 static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     pdmR3DevHlp_ISASetIrq(pDevIns, iIrq, iLevel);
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDriverAttach */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDriverAttach} */
 static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -859,7 +859,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DriverAttach(PPDMDEVINS pDevIns, RTUINT iLu
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMHeapAlloc */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapAlloc} */
 static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAlloc(PPDMDEVINS pDevIns, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -872,7 +872,7 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAlloc(PPDMDEVINS pDevIns, size_t c
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMHeapAllocZ */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapAllocZ} */
 static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -885,7 +885,7 @@ static DECLCALLBACK(void *) pdmR3DevHlp_MMHeapAllocZ(PPDMDEVINS pDevIns, size_t 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMHeapFree */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMHeapFree} */
 static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -897,7 +897,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_MMHeapFree(PPDMDEVINS pDevIns, void *pv)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSetError */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetError} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -909,7 +909,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_S
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSetErrorV */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetErrorV} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -918,7 +918,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSetRuntimeError */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetRuntimeError} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -930,7 +930,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint3
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSetRuntimeErrorV */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSetRuntimeErrorV} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -939,7 +939,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMState */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMState} */
 static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -952,7 +952,7 @@ static DECLCALLBACK(VMSTATE) pdmR3DevHlp_VMState(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMTeleportedAndNotFullyResumedYet */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMTeleportedAndNotFullyResumedYet} */
 static DECLCALLBACK(bool) pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -965,7 +965,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_VMTeleportedAndNotFullyResumedYet(PPDMDEVI
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnAssertEMT */
+/** @interface_method_impl{PDMDEVHLPR3,pfnAssertEMT} */
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -980,7 +980,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertEMT(PPDMDEVINS pDevIns, const char *
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnAssertOther */
+/** @interface_method_impl{PDMDEVHLPR3,pfnAssertOther} */
 static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -995,7 +995,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDBGFStopV */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFStopV} */
 static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction, const char *pszFormat, va_list args)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1018,7 +1018,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFStopV(PPDMDEVINS pDevIns, const char *p
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDBGFInfoRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDBGFInfoRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1034,7 +1034,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DBGFInfoRegister(PPDMDEVINS pDevIns, const 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnSTAMRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegister} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1047,7 +1047,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegister(PPDMDEVINS pDevIns, void *pvS
 
 
 
-/** @copydoc PDMDEVHLPR3::pfnSTAMRegisterF */
+/** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegisterF} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                                     STAMUNIT enmUnit, const char *pszDesc, const char *pszName, ...)
 {
@@ -1065,7 +1065,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterF(PPDMDEVINS pDevIns, void *pv
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnSTAMRegisterV */
+/** @interface_method_impl{PDMDEVHLPR3,pfnSTAMRegisterV} */
 static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, STAMVISIBILITY enmVisibility,
                                                     STAMUNIT enmUnit, const char *pszDesc, const char *pszName, va_list args)
 {
@@ -1080,7 +1080,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_STAMRegisterV(PPDMDEVINS pDevIns, void *pv
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnRTCRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnRTCRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PCPDMRTCHLP *ppRtcHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1155,7 +1155,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_RTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPDMQueueCreate */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPDMQueueCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
                                                     PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
@@ -1179,7 +1179,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMQueueCreate(PPDMDEVINS pDevIns, RTUINT c
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnCritSectInit */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCritSectInit} */
 static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect, RT_SRC_POS_DECL,
                                                   const char *pszNameFmt, va_list va)
 {
@@ -1196,7 +1196,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CritSectInit(PPDMDEVINS pDevIns, PPDMCRITSE
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnUTCNow */
+/** @interface_method_impl{PDMDEVHLPR3,pfnUTCNow} */
 static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1210,7 +1210,7 @@ static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMES
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPDMThreadCreate */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPDMThreadCreate} */
 static DECLCALLBACK(int) pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                                      PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
@@ -1227,7 +1227,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PDMThreadCreate(PPDMDEVINS pDevIns, PPPDMTH
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetVM */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1236,7 +1236,7 @@ static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetVMCPU} */
 static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1246,7 +1246,7 @@ static DECLCALLBACK(PVMCPU) pdmR3DevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCIBusRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIBusRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1381,7 +1381,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIB
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1520,7 +1520,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnAPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1828,7 +1828,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_APICRegister(PPDMDEVINS pDevIns, PPDMAPICRE
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOAPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1957,7 +1957,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAP
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnHPETRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnHPETRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -1988,7 +1988,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETRE
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMACRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMACRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2071,7 +2071,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACRE
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysRead */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2099,7 +2099,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysWrite */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysWrite} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2127,7 +2127,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPh
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtr */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysGCPhys2CCPtr} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2152,7 +2152,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPH
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtrReadOnly */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysGCPhys2CCPtrReadOnly} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, const void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2177,7 +2177,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysReleasePageMappingLock */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysReleasePageMappingLock} */
 static DECLCALLBACK(void) pdmR3DevHlp_PhysReleasePageMappingLock(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2191,7 +2191,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_PhysReleasePageMappingLock(PPDMDEVINS pDev
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysReadGCVirt */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysReadGCVirt} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2215,7 +2215,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pv
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysWriteGCVirt */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysWriteGCVirt} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2239,7 +2239,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysGCPtr2GCPhys */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysGCPtr2GCPhys} */
 static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2263,7 +2263,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_PhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPT
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnSetAsyncNotification */
+/** @interface_method_impl{PDMDEVHLPR3,pfnSetAsyncNotification} */
 static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2292,7 +2292,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_SetAsyncNotification(PPDMDEVINS pDevIns, PF
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnAsyncNotificationCompleted */
+/** @interface_method_impl{PDMDEVHLPR3,pfnAsyncNotificationCompleted} */
 static DECLCALLBACK(void) pdmR3DevHlp_AsyncNotificationCompleted(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2315,7 +2315,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_AsyncNotificationCompleted(PPDMDEVINS pDev
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnA20IsEnabled */
+/** @interface_method_impl{PDMDEVHLPR3,pfnA20IsEnabled} */
 static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2328,7 +2328,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnA20Set */
+/** @interface_method_impl{PDMDEVHLPR3,pfnA20Set} */
 static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2338,7 +2338,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_A20Set(PPDMDEVINS pDevIns, bool fEnable)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMReset */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMReset} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2370,7 +2370,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMReset(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSuspend */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspend} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
 {
     int rc;
@@ -2395,7 +2395,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMSuspend(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMPowerOff */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMPowerOff} */
 static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
 {
     int rc;
@@ -2423,7 +2423,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_VMPowerOff(PPDMDEVINS pDevIns)
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMARegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMARegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2444,7 +2444,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMARegister(PPDMDEVINS pDevIns, unsigned uC
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMAReadMemory */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAReadMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2469,7 +2469,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAReadMemory(PPDMDEVINS pDevIns, unsigned 
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMAWriteMemory */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAWriteMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2494,7 +2494,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMASetDREQ */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMASetDREQ} */
 static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2515,7 +2515,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uCh
     return rc;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMAGetChannelMode */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAGetChannelMode} */
 static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2536,7 +2536,7 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_DMAGetChannelMode(PPDMDEVINS pDevIns, u
     return u8Mode;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMASchedule */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMASchedule} */
 static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2552,7 +2552,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_DMASchedule(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnCMOSWrite */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCMOSWrite} */
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2573,7 +2573,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnCMOSRead */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCMOSRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2594,7 +2594,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg,
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetCpuId */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetCpuId} */
 static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
                                                uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
@@ -2612,7 +2612,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLea
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnROMProtectShadow */
+/** @interface_method_impl{PDMDEVHLPR3,pfnROMProtectShadow} */
 static DECLCALLBACK(int) pdmR3DevHlp_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2879,7 +2879,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
 
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetVM */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
 static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2888,7 +2888,7 @@ static DECLCALLBACK(PVM) pdmR3DevHlp_Untrusted_GetVM(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPCIBusRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPCIBusRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2899,7 +2899,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PCIBusRegister(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2910,7 +2910,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PICRegister(PPDMDEVINS pDevIns, P
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnAPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_APICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2921,7 +2921,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_APICRegister(PPDMDEVINS pDevIns, 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnIOAPICRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnIOAPICRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2932,7 +2932,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_IOAPICRegister(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnHPETRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnHPETRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_HPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2943,7 +2943,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_HPETRegister(PPDMDEVINS pDevIns, 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMACRegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMACRegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2954,7 +2954,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMACRegister(PPDMDEVINS pDevIns, 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysRead */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2966,7 +2966,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysRead(PPDMDEVINS pDevIns, RTGC
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysWrite */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysWrite} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2978,7 +2978,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWrite(PPDMDEVINS pDevIns, RTG
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtr */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysGCPhys2CCPtr} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -2991,7 +2991,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPhys2CCPtr(PPDMDEVINS pDevI
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysGCPhys2CCPtrReadOnly */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysGCPhys2CCPtrReadOnly} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, const void **ppv, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3004,7 +3004,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysGCPhys2CCPtrReadOnly(PPDMDEVI
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysReleasePageMappingLock */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysReleasePageMappingLock} */
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_PhysReleasePageMappingLock(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3013,7 +3013,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_PhysReleasePageMappingLock(PPDMD
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysReadGCVirt */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysReadGCVirt} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3025,7 +3025,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysReadGCVirt(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnPhysWriteGCVirt */
+/** @interface_method_impl{PDMDEVHLPR3,pfnPhysWriteGCVirt} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3037,7 +3037,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_PhysWriteGCVirt(PPDMDEVINS pDevIn
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnA20IsEnabled */
+/** @interface_method_impl{PDMDEVHLPR3,pfnA20IsEnabled} */
 static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3046,7 +3046,7 @@ static DECLCALLBACK(bool) pdmR3DevHlp_Untrusted_A20IsEnabled(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnA20Set */
+/** @interface_method_impl{PDMDEVHLPR3,pfnA20Set} */
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_A20Set(PPDMDEVINS pDevIns, bool fEnable)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3055,7 +3055,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_A20Set(PPDMDEVINS pDevIns, bool 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMReset */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMReset} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3064,7 +3064,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMReset(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMSuspend */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMSuspend} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMSuspend(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3073,7 +3073,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMSuspend(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnVMPowerOff */
+/** @interface_method_impl{PDMDEVHLPR3,pfnVMPowerOff} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMPowerOff(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3081,7 +3081,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_VMPowerOff(PPDMDEVINS pDevIns)
     return VERR_ACCESS_DENIED;
 }
 
-/** @copydoc PDMDEVHLPR3::pfnDMARegister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMARegister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3090,7 +3090,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMARegister(PPDMDEVINS pDevIns, u
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMAReadMemory */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAReadMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3101,7 +3101,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAReadMemory(PPDMDEVINS pDevIns,
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMAWriteMemory */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAWriteMemory} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3112,7 +3112,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMAWriteMemory(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMASetDREQ */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMASetDREQ} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3121,7 +3121,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_DMASetDREQ(PPDMDEVINS pDevIns, un
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMAGetChannelMode */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMAGetChannelMode} */
 static DECLCALLBACK(uint8_t) pdmR3DevHlp_Untrusted_DMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3130,7 +3130,7 @@ static DECLCALLBACK(uint8_t) pdmR3DevHlp_Untrusted_DMAGetChannelMode(PPDMDEVINS 
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnDMASchedule */
+/** @interface_method_impl{PDMDEVHLPR3,pfnDMASchedule} */
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3138,7 +3138,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_DMASchedule(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnCMOSWrite */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCMOSWrite} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3147,7 +3147,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSWrite(PPDMDEVINS pDevIns, uns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnCMOSRead */
+/** @interface_method_impl{PDMDEVHLPR3,pfnCMOSRead} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3156,7 +3156,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_CMOSRead(PPDMDEVINS pDevIns, unsi
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetCpuId */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetCpuId} */
 static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf,
                                                          uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
@@ -3165,7 +3165,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_Untrusted_GetCpuId(PPDMDEVINS pDevIns, uin
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnROMProtectShadow */
+/** @interface_method_impl{PDMDEVHLPR3,pfnROMProtectShadow} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3174,7 +3174,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_ROMProtectShadow(PPDMDEVINS pDevI
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIO2Register */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIO2Register} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3183,7 +3183,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Register(PPDMDEVINS pDevIns,
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIO2Deregister */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIO2Deregister} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3192,7 +3192,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Deregister(PPDMDEVINS pDevIn
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIO2Map */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIO2Map} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3201,7 +3201,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Map(PPDMDEVINS pDevIns, uint
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIO2Unmap */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIO2Unmap} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3210,7 +3210,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2Unmap(PPDMDEVINS pDevIns, ui
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMHyperMapMMIO2 */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMHyperMapMMIO2} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTRCPTR pRCPtr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3219,7 +3219,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMHyperMapMMIO2(PPDMDEVINS pDevIn
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnMMIO2MapKernel */
+/** @interface_method_impl{PDMDEVHLPR3,pfnMMIO2MapKernel} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb, const char *pszDesc, PRTR0PTR pR0Ptr)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3228,7 +3228,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_MMIO2MapKernel(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnRegisterVMMDevHeap */
+/** @interface_method_impl{PDMDEVHLPR3,pfnRegisterVMMDevHeap} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3237,7 +3237,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_RegisterVMMDevHeap(PPDMDEVINS pDe
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnUnregisterVMMDevHeap */
+/** @interface_method_impl{PDMDEVHLPR3,pfnUnregisterVMMDevHeap} */
 static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -3246,7 +3246,7 @@ static DECLCALLBACK(int) pdmR3DevHlp_Untrusted_UnregisterVMMDevHeap(PPDMDEVINS p
 }
 
 
-/** @copydoc PDMDEVHLPR3::pfnGetVMCPU */
+/** @interface_method_impl{PDMDEVHLPR3,pfnGetVMCPU} */
 static DECLCALLBACK(PVMCPU) pdmR3DevHlp_Untrusted_GetVMCPU(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

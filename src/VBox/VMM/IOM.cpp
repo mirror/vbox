@@ -104,7 +104,8 @@
 #include <VBox/mm.h>
 #include <VBox/stam.h>
 #include <VBox/dbgf.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
+#include <VBox/pdmdev.h>
 #include "IOMInternal.h"
 #include <VBox/vm.h>
 

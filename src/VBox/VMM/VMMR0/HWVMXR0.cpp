@@ -25,16 +25,18 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_HWACCM
 #include <VBox/hwaccm.h>
-#include "HWACCMInternal.h"
-#include <VBox/vm.h>
-#include <VBox/x86.h>
 #include <VBox/pgm.h>
-#include <VBox/pdm.h>
-#include <VBox/err.h>
-#include <VBox/log.h>
+#include <VBox/dbgf.h>
 #include <VBox/selm.h>
 #include <VBox/iom.h>
 #include <VBox/rem.h>
+#include <VBox/tm.h>
+#include "HWACCMInternal.h"
+#include <VBox/vm.h>
+#include <VBox/x86.h>
+#include <VBox/pdmapi.h>
+#include <VBox/err.h>
+#include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/param.h>
