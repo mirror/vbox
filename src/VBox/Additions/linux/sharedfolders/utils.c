@@ -814,8 +814,10 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
 # endif /* >= 2.6.12 */
 # if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
     rc = bdi_init(&sf_g->bdi);
+#  if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 26)
     if (!rc)
         rc = bdi_register(&sf_g->bdi, NULL, "vboxvfs-%s", name);
+#  endif /* >= 2.6.26 */
 # endif /* >= 2.6.24 */
 #endif /* >= 2.6.0 */
     return rc;
@@ -824,6 +826,6 @@ int sf_init_backing_dev(struct sf_glob_info *sf_g, const char *name)
 void sf_done_backing_dev(struct sf_glob_info *sf_g)
 {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION (2, 6, 24)
-    bdi_destroy(&sf_g->bdi);
+    bdi_destroy(&sf_g->bdi); /* includes bdi_unregister() */
 #endif
 }
