@@ -1702,7 +1702,7 @@ VMMR0DECL(int) VMXR0LoadGuestState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 
                 /* We convert it here every time as pci regions could be reconfigured. */
                 rc = PDMVMMDevHeapR3ToGCPhys(pVM, pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable, &GCPhys);
-                AssertRC(rc);
+                AssertMsgRC(rc, ("pNonPagingModeEPTPageTable = %RGv\n", pVM->hwaccm.s.vmx.pNonPagingModeEPTPageTable));
 
                 /* We use our identity mapping page table here as we need to map guest virtual to guest physical addresses; EPT will
                  * take care of the translation to host physical addresses.
