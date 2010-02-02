@@ -520,7 +520,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             else
             {
                 /* we are requested to provide segment information */
-                pQsOut->pSegmentDescriptor->BaseAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+                pQsOut->pSegmentDescriptor->BaseAddress.QuadPart = 0; /* VBE_DISPI_LFB_PHYSICAL_ADDRESS; */
                 pQsOut->pSegmentDescriptor->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
@@ -532,8 +532,8 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pQsOut->pSegmentDescriptor->Flags.CpuVisible = 1;
             }
             pQsOut->PagingBufferSegmentId = 0;
-            pQsOut->PagingBufferSize = 1024; /* @todo: ??*/
-            pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: ??*/
+            pQsOut->PagingBufferSize = 1024;
+            pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: do we need a private buffer ? */
             break;
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
