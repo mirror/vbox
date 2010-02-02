@@ -584,16 +584,16 @@ static DECLCALLBACK(int) pdmR3DevHlp_TMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK e
 }
 
 
-/** @interface_method_impl{PDMDEVHLPR3,pfnUTCNow} */
-static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_UTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
+/** @interface_method_impl{PDMDEVHLPR3,pfnTMUtcNow} */
+static DECLCALLBACK(PRTTIMESPEC) pdmR3DevHlp_TMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: pTime=%p\n",
+    LogFlow(("pdmR3DevHlp_TMUtcNow: caller='%s'/%d: pTime=%p\n",
              pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pTime));
 
-    pTime = TMR3UTCNow(pDevIns->Internal.s.pVMR3, pTime);
+    pTime = TMR3UtcNow(pDevIns->Internal.s.pVMR3, pTime);
 
-    LogFlow(("pdmR3DevHlp_UTCNow: caller='%s'/%d: returns %RU64\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, RTTimeSpecGetNano(pTime)));
+    LogFlow(("pdmR3DevHlp_TMUtcNow: caller='%s'/%d: returns %RU64\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, RTTimeSpecGetNano(pTime)));
     return pTime;
 }
 
@@ -2804,7 +2804,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
     pdmR3DevHlp_TMTimerCreate,
-    pdmR3DevHlp_UTCNow,
+    pdmR3DevHlp_TMUtcNow,
     pdmR3DevHlp_PhysRead,
     pdmR3DevHlp_PhysWrite,
     pdmR3DevHlp_PhysGCPhys2CCPtr,
@@ -2997,7 +2997,7 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_ROMProtectShadow,
     pdmR3DevHlp_SSMRegister,
     pdmR3DevHlp_TMTimerCreate,
-    pdmR3DevHlp_UTCNow,
+    pdmR3DevHlp_TMUtcNow,
     pdmR3DevHlp_PhysRead,
     pdmR3DevHlp_PhysWrite,
     pdmR3DevHlp_PhysGCPhys2CCPtr,
