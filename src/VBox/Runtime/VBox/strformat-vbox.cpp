@@ -68,45 +68,6 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
         switch (ch)
         {
             /*
-             * iprt status code: %Vrc, %Vrs, %Vrf, %Vra.
-             */
-            case 'r':
-            {
-                int rc = va_arg(*pArgs, int);
-                ch = *(*ppszFormat)++;
-#ifdef IN_RING3                         /* we don't want this anywhere else yet. */
-                PCRTSTATUSMSG pMsg = RTErrGet(rc);
-                switch (ch)
-                {
-                    case 'c':
-                        return pfnOutput(pvArgOutput, pMsg->pszDefine,    strlen(pMsg->pszDefine));
-                    case 's':
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgShort,  strlen(pMsg->pszMsgShort));
-                    case 'f':
-                        return pfnOutput(pvArgOutput, pMsg->pszMsgFull,   strlen(pMsg->pszMsgFull));
-                    case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%s (%d) - %s", pMsg->pszDefine, rc, pMsg->pszMsgFull);
-                    default:
-                        AssertMsgFailed(("Invalid status code format type '%%Vr%c%.10s'!\n", ch, *ppszFormat));
-                        return 0;
-                }
-#else /* !IN_RING3 */
-                switch (ch)
-                {
-                    case 'c':
-                    case 's':
-                    case 'f':
-                    case 'a':
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0, "%d", rc);
-                    default:
-                        AssertMsgFailed(("Invalid status code format type '%%Vr%c%.10s'!\n", ch, *ppszFormat));
-                        return 0;
-                }
-#endif /* !IN_RING3 */
-                break;
-            }
-
-            /*
              * Current thread.
              */
             case 't':
@@ -115,6 +76,7 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
 #else /* !IN_RING3 || RT_MINI */
                 return pfnOutput(pvArgOutput, "0xffffffff", sizeof("0xffffffff") - 1);
 #endif /* !IN_RING3 || RT_MINI */
+
 
             case 'h':
             {
@@ -409,40 +371,6 @@ size_t rtstrFormatVBox(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char *
                 Assert(cch < (int)sizeof(szNum));
                 return pfnOutput(pvArgOutput, szNum, cch);
             }
-
-            /*
-             * UUID.
-             */
-            case 'u':
-                if (    (*ppszFormat)[0] == 'u'
-                    &&  (*ppszFormat)[1] == 'i'
-                    &&  (*ppszFormat)[2] == 'd')
-                {
-                    PRTUUID pUuid = va_arg(*pArgs, PRTUUID);
-                    static const char szNull[] = "<NULL>";
-
-                    (*ppszFormat) += 3;
-                    if (VALID_PTR(pUuid))
-                    {
-                        /* cannot call RTUuidToStr because of GC/R0. */
-                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
-                                           "%08x-%04x-%04x-%02x%02x-%02x%02x%02x%02x%02x%02x",
-                                           pUuid->Gen.u32TimeLow,
-                                           pUuid->Gen.u16TimeMid,
-                                           pUuid->Gen.u16TimeHiAndVersion,
-                                           pUuid->Gen.u8ClockSeqHiAndReserved,
-                                           pUuid->Gen.u8ClockSeqLow,
-                                           pUuid->Gen.au8Node[0],
-                                           pUuid->Gen.au8Node[1],
-                                           pUuid->Gen.au8Node[2],
-                                           pUuid->Gen.au8Node[3],
-                                           pUuid->Gen.au8Node[4],
-                                           pUuid->Gen.au8Node[5]);
-                    }
-
-                    return pfnOutput(pvArgOutput, szNull, sizeof(szNull) - 1);
-                }
-                /* fall thru */
 
             /*
              * Invalid/Unknown. Bitch about it.
