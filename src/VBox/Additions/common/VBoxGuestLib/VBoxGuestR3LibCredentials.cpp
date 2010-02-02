@@ -52,11 +52,11 @@ VBGLR3DECL(bool) VbglR3CredentialsAreAvailable(void)
  *
  * @returns IPRT status value
  * @param   ppszUser        Receives pointer of allocated user name string.
- *                          The returned pointer must be freed using RTStrFree().
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroy().
  * @param   ppszPassword    Receives pointer of allocated user password string.
- *                          The returned pointer must be freed using RTStrFree().
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroy().
  * @param   ppszDomain      Receives pointer of allocated domain name string.
- *                          The returned pointer must be freed using RTStrFree().
+ *                          The returned pointer must be freed using VbglR3CredentialsDestroy().
  */
 VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, char **ppszDomain)
 {
@@ -86,3 +86,44 @@ VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, 
     return rc;
 }
 
+
+/**
+ * Clears and frees the strings
+ *
+ * @returns IPRT status value
+ * @param   pszUser        Receives pointer of the user name string to destroy.  
+ *                         Optional.
+ * @param   pszPassword    Receives pointer of the password string to destroy.  
+ *                         Optional.
+ * @param   pszDomain      Receives pointer of allocated domain name string.
+ *                         Optional.
+ * @param   u8NumPasses    Number of wipe passes. The higher the better (and slower!).
+ */
+VBGLR3DECL(void) VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char *pszDomain, uint8_t u8NumPasses)
+{
+	size_t l;
+	
+	if (u8NumPasses == 0) /* We at least want to have one wipe pass. */
+		u8NumPasses = 1;
+	
+	/** @todo add some for-loop with randomized content instead of 
+	 *        zero'ing out the string only one time. Use u8NumPasses for that. */
+	if (pszUser)
+	{
+		l = strlen(pszUser);
+		RT_BZERO(pszUser, l);
+		RTStrFree(pszUser);
+	}
+	if (pszPassword)
+	{
+		l = strlen(pszPassword);
+		RT_BZERO(pszPassword, l);
+		RTStrFree(pszPassword);
+	}
+	if (pszUser)
+	{
+		l = strlen(pszDomain);
+		RT_BZERO(pszDomain, l);
+		RTStrFree(pszDomain);
+	}
+}
