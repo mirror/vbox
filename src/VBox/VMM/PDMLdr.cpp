@@ -1269,7 +1269,9 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
         const char     *pszCur       = pszSymList;
         while (pszCur)
         {
-            /* Find the end of the current symbol name. */
+            /*
+             * Find the end of the current symbol name.
+             */
             size_t      cchSym;
             const char *pszNext = strchr(pszCur, ';');
             if (pszNext)
@@ -1279,12 +1281,16 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
             }
             else
                 cchSym = strlen(pszCur);
-            AssertReturn(cchSym > 0, VERR_INVALID_PARAMETER);
+            AssertBreakStmt(cchSym > 0, rc = VERR_INVALID_PARAMETER);
 
-            /* check for skip instructions */
+            /* Is it a skip instruction? */
             const char *pszColon = (const char *)memchr(pszCur, ':', cchSym);
             if (pszColon)
             {
+                /*
+                 * String switch on the instruction and execute it, checking
+                 * that we didn't overshoot the interface structure.
+                 */
 #define IS_SKIP_INSTR(szInstr) \
                 (   cchSkip == sizeof(szInstr) - 1 \
                  && !memcmp(pszCur, szInstr, sizeof(szInstr) - 1) )
@@ -1309,20 +1315,47 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
                 else if (IS_SKIP_INSTR("GCPHYS"))
                     offInterface += sizeof(RTGCPHYS);
                 else
-                    AssertMsgFailedReturn(("Invalid skip instruction %.*s (prefix=%s)\n", cchSym, pszCur, pszSymPrefix),
-                                          VERR_INVALID_PARAMETER);
-                AssertMsgReturn(offInterface <= cbInterface,
-                                ("off=%#x cb=%#x (sym=%.*s prefix=%s)\n", offInterface, cbInterface, cchSym, pszCur, pszSymPrefix),
-                                VERR_BUFFER_OVERFLOW);
+                    AssertMsgFailedBreakStmt(("Invalid skip instruction %.*s (prefix=%s)\n", cchSym, pszCur, pszSymPrefix),
+                                             rc = VERR_INVALID_PARAMETER);
+                AssertMsgBreakStmt(offInterface <= cbInterface,
+                                   ("off=%#x cb=%#x (sym=%.*s prefix=%s)\n", offInterface, cbInterface, cchSym, pszCur, pszSymPrefix),
+                                   rc = VERR_BUFFER_OVERFLOW);
 #undef IS_SKIP_INSTR
             }
             else
             {
+                /*
+                 * Construct the symbol name, get its value, store it and
+                 * advance the interface cursor.
+                 */
                 AssertReturn(cchSymPrefix + cchSym >= sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
                 memcmp(&szSymbol[cchSymPrefix], pszCur, cchSym);
                 szSymbol[cchSymPrefix + cchSym] = '\0';
 
-//                rc = resume coding here...
+                RTUINTPTR Value;
+                rc = RTLdrGetSymbolEx(pModule->hLdrMod, pModule->pvBits, pModule->ImageBase, szSymbol, &Value);
+                AssertMsgRCBreak(rc, ("Couldn't find symbol '%s' in module '%s'\n", szSymbol, pModule->szName));
+
+                if (fRing0OrRC)
+                {
+                    PRTR0PTR pValue = (PRTR0PTR)((uintptr_t)pvInterface + offInterface);
+                    AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
+                                       ("off=%#x cb=%#x sym=%s\n", offInterface, cbInterface, szSymbol),
+                                       rc = VERR_BUFFER_OVERFLOW);
+                    *pValue = (RTR0PTR)Value;
+                    Assert(*pValue == Value);
+                    offInterface += sizeof(*pValue);
+                }
+                else
+                {
+                    PRTRCPTR pValue = (PRTRCPTR)((uintptr_t)pvInterface + offInterface);
+                    AssertMsgBreakStmt(offInterface + sizeof(*pValue) <= cbInterface,
+                                       ("off=%#x cb=%#x sym=%s\n", offInterface, cbInterface, szSymbol),
+                                       rc = VERR_BUFFER_OVERFLOW);
+                    *pValue = (RTRCPTR)Value;
+                    Assert(*pValue == Value);
+                    offInterface += sizeof(*pValue);
+                }
             }
 
             /* advance */
