@@ -256,7 +256,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
             {
                 VBOXSERVICEVMINFOUSER UserInfo;
                 if (   VBoxServiceVMInfoWinIsLoggedIn(&UserInfo, &paSessions[i])
-                    && VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs) > 0)
+                    && VBoxServiceVMInfoWinSessionHasProcesses(&paSessions[i], paProcs, cProcs))
                 {
                     if (cUsersInList > 0)
                         strcat(szUserList, ",");
