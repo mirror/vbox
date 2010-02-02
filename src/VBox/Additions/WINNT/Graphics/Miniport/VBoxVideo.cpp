@@ -148,6 +148,18 @@ VP_STATUS VBoxRegistryCallback(PVOID HwDeviceExtension, PVOID Context,
         return ERROR_INVALID_PARAMETER;
 }
 
+VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
+{
+    return VideoPortGetRegistryParameters(Reg, pName, FALSE, VBoxRegistryCallback, pVal);
+}
+
+VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
+{
+    return VideoPortSetRegistryParameters(Reg, pName, &Val, sizeof(Val));
+}
+
+#endif /* #ifndef VBOXWDDM */
+
 /*
  * Global list of supported standard video modes. It will be
  * filled dynamically.
@@ -170,6 +182,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     /* we need this static counter to always have a new mode index for our */
     /* custom video mode, otherwise Windows thinks there is no mode switch */
     static int gInvocationCounter = 0;
+
+    VBOXCMNREG Reg;
+    VBoxVideoCmnRegInit(DeviceExtension, &Reg);
 
     /* the resolution matrix */
     struct
@@ -557,29 +572,17 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         wchar_t keyname[24];
         uint32_t xres, yres, bpp = 0;
         swprintf(keyname, L"CustomMode%dWidth", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
-                                                keyname,
-                                                FALSE,
-                                                VBoxRegistryCallback,
-                                                &xres);
+        status = VBoxVideoCmnRegQueryDword(Reg, keyname, &xres);
         /* upon the first error, we give up */
         if (status != NO_ERROR)
             break;
         swprintf(keyname, L"CustomMode%dHeight", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
-                                                keyname,
-                                                FALSE,
-                                                VBoxRegistryCallback,
-                                                &yres);
+        status = VBoxVideoCmnRegQueryDword(Reg, keyname, &yres);
         /* upon the first error, we give up */
         if (status != NO_ERROR)
             break;
         swprintf(keyname, L"CustomMode%dBPP", curKeyNo);
-        status = VideoPortGetRegistryParameters(DeviceExtension->pPrimary,
-                                                keyname,
-                                                FALSE,
-                                                VBoxRegistryCallback,
-                                                &bpp);
+        status = VBoxVideoCmnRegQueryDword(Reg, keyname, &bpp);
         /* upon the first error, we give up */
         if (status != NO_ERROR)
             break;
@@ -661,7 +664,6 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             break;
 
     } while(1);
-
 
     /*
      * Now we ask the host for a display change request. If there's one,
@@ -810,16 +812,13 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 }
 
                 /* store this video mode as the last custom video mode */
-                status = VideoPortSetRegistryParameters(DeviceExtension, L"CustomXRes",
-                                                        &xres, sizeof(ULONG));
+                status = VBoxVideoCmnRegSetDword(Reg, L"CustomXRes", xres);
                 if (status != NO_ERROR)
                     dprintf(("VBoxVideo: error %d writing CustomXRes\n", status));
-                status = VideoPortSetRegistryParameters(DeviceExtension, L"CustomYRes",
-                                                        &yres, sizeof(ULONG));
+                status = VBoxVideoCmnRegSetDword(Reg, L"CustomYRes", yres);
                 if (status != NO_ERROR)
                     dprintf(("VBoxVideo: error %d writing CustomYRes\n", status));
-                status = VideoPortSetRegistryParameters(DeviceExtension, L"CustomBPP",
-                                                        &bpp, sizeof(ULONG));
+                status = VBoxVideoCmnRegSetDword(Reg, L"CustomBPP", bpp);
                 if (status != NO_ERROR)
                     dprintf(("VBoxVideo: error %d writing CustomBPP\n", status));
             }
@@ -859,9 +858,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         }
     }
 #endif
-}
 
-#endif
+    VBoxVideoCmnRegFini(Reg);
+}
 
 /* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
