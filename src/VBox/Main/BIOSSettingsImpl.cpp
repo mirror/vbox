@@ -526,12 +526,6 @@ bool BIOSSettings::isModified()
     return m->bd.isBackedUp();
 }
 
-bool BIOSSettings::isReallyModified()
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.hasActualChanges();
-}
-
 void BIOSSettings::rollback()
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);

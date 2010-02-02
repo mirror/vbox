@@ -89,7 +89,6 @@ public:
     ULONG getInstance() const;
 
     bool isModified();
-    bool isReallyModified();
     bool rollback();
     void commit();
 

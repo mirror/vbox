@@ -720,12 +720,6 @@ bool StorageController::isModified()
     return m->bd.isBackedUp();
 }
 
-bool StorageController::isReallyModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.hasActualChanges();
-}
-
 /** @note Locks objects for writing! */
 bool StorageController::rollback()
 {

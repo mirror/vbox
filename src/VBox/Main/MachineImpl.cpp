@@ -7034,39 +7034,33 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
      * saving them */
     ensureNoStateDependencies();
 
-    AssertReturn(getClassID() == clsidMachine || getClassID() == clsidSessionMachine, E_FAIL);
-
-    BOOL currentStateModified = mData->mCurrentStateModified;
-    bool settingsModified;
-
-    if (!(aFlags & SaveS_ResetCurStateModified) && !currentStateModified)
-    {
-        /* We ignore changes to user data when setting mCurrentStateModified
-         * because the current state will not differ from the current snapshot
-         * if only user data has been changed (user data is shared by all
-         * snapshots). */
-        currentStateModified = isReallyModified (true /* aIgnoreUserData */);
-        settingsModified = mUserData.hasActualChanges() || currentStateModified;
-    }
-    else
-    {
-        if (aFlags & SaveS_ResetCurStateModified)
-            currentStateModified = FALSE;
-        settingsModified = isReallyModified();
-    }
+    AssertReturn(    getClassID() == clsidMachine
+                  || getClassID() == clsidSessionMachine,
+                 E_FAIL);
 
     HRESULT rc = S_OK;
+    bool fNeedsWrite = false;
 
     /* First, prepare to save settings. It will care about renaming the
      * settings directory and file if the machine name was changed and about
      * creating a new settings file if this is a new machine. */
-    bool isRenamed = false;
-    bool isNew = false;
-    rc = prepareSaveSettings(isRenamed, isNew);
+    bool fIsRenamed = false;
+    bool fIsNew = false;
+    rc = prepareSaveSettings(fIsRenamed, fIsNew);
     if (FAILED(rc)) return rc;
+
+    // keep a pointer to the current settings structures
+    settings::MachineConfigFile *pOldConfig = mData->m_pMachineConfigFile;
 
     try
     {
+        // make a fresh one to have everyone write stuff into
+        mData->m_pMachineConfigFile = new settings::MachineConfigFile(NULL);
+        mData->m_pMachineConfigFile->copyBaseFrom(*pOldConfig);
+
+        // deep copy extradata
+        mData->m_pMachineConfigFile->mapExtraDataItems = pOldConfig->mapExtraDataItems;
+
         mData->m_pMachineConfigFile->uuid = mData->mUuid;
         mData->m_pMachineConfigFile->strName = mUserData->mName;
         mData->m_pMachineConfigFile->fNameSync = !!mUserData->mNameSync;
@@ -7098,7 +7092,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
             mData->m_pMachineConfigFile->uuidCurrentSnapshot.clear();
 
         mData->m_pMachineConfigFile->strSnapshotFolder = mUserData->mSnapshotFolder;
-        mData->m_pMachineConfigFile->fCurrentStateModified = !!currentStateModified;
+        // mData->m_pMachineConfigFile->fCurrentStateModified is special, see below
         mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
         mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
 /// @todo Live Migration:        mData->m_pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
@@ -7120,13 +7114,45 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         rc = saveAllSnapshots();
         if (FAILED(rc)) throw rc;
 
-        // now spit it all out
-        mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
+        if (aFlags & SaveS_ResetCurStateModified)
+        {
+            // this gets set by restoreSnapshot()
+            mData->mCurrentStateModified = FALSE;
+            fNeedsWrite = true;     // always, no need to compare
+        }
+        else
+        {
+            if (!mData->mCurrentStateModified)
+            {
+                // do a deep compare of the settings that we just saved with the settings
+                // previously stored in the config file; this invokes MachineConfigFile::operator==
+                // which does a deep compare of all the settings, which is expensive but less expensive
+                // than writing out XML in vain
+                bool fAnySettingsChanged = (*mData->m_pMachineConfigFile == *pOldConfig);
+
+                // could still be modified if any settings changed
+                mData->mCurrentStateModified = fAnySettingsChanged;
+
+                fNeedsWrite = fAnySettingsChanged;
+            }
+            else
+                fNeedsWrite = true;
+        }
+
+        mData->m_pMachineConfigFile->fCurrentStateModified = !!mData->mCurrentStateModified;
+
+        if (fNeedsWrite)
+            // now spit it all out!
+            mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
     }
     catch (HRESULT err)
     {
-        /* we assume that error info is set by the thrower */
+        // we assume that error info is set by the thrower
         rc = err;
+
+        // restore old config
+        delete mData->m_pMachineConfigFile;
+        mData->m_pMachineConfigFile = pOldConfig;
     }
     catch (...)
     {
@@ -7136,12 +7162,10 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
     if (SUCCEEDED(rc))
     {
         commit();
-
-        /* memorize the new modified state */
-        mData->mCurrentStateModified = currentStateModified;
+        delete pOldConfig;
     }
 
-    if (settingsModified || (aFlags & SaveS_InformCallbacksAnyway))
+    if (fNeedsWrite || (aFlags & SaveS_InformCallbacksAnyway))
     {
         /* Fire the data change event, even on failure (since we've already
          * committed all data). This is done only for SessionMachines because
@@ -8235,64 +8259,6 @@ bool Machine::isModified()
         (mAudioAdapter && mAudioAdapter->isModified()) ||
         (mUSBController && mUSBController->isModified()) ||
         (mBIOSSettings && mBIOSSettings->isModified());
-}
-
-/**
- * Returns the logical OR of data.hasActualChanges() of this and all child
- * objects.
- *
- * @param aIgnoreUserData       @c true to ignore changes to mUserData
- *
- * @note Locks objects for reading!
- */
-bool Machine::isReallyModified (bool aIgnoreUserData /* = false */)
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isReallyModified())
-            return true;
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        if (mSerialPorts [slot] && mSerialPorts [slot]->isReallyModified())
-            return true;
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        if (mParallelPorts [slot] && mParallelPorts [slot]->isReallyModified())
-            return true;
-
-    if (!mStorageControllers.isBackedUp())
-    {
-        /* see whether any of the devices has changed its data */
-        for (StorageControllerList::const_iterator
-             it = mStorageControllers->begin();
-             it != mStorageControllers->end();
-             ++it)
-        {
-            if ((*it)->isReallyModified())
-                return true;
-        }
-    }
-    else
-    {
-        if (mStorageControllers->size() != mStorageControllers.backedUpData()->size())
-            return true;
-    }
-
-    return
-        (!aIgnoreUserData && mUserData.hasActualChanges()) ||
-        mHWData.hasActualChanges() ||
-        mMediaData.hasActualChanges() ||
-        mStorageControllers.hasActualChanges() ||
-#ifdef VBOX_WITH_VRDP
-        (mVRDPServer && mVRDPServer->isReallyModified()) ||
-#endif
-        (mAudioAdapter && mAudioAdapter->isReallyModified()) ||
-        (mUSBController && mUSBController->isReallyModified()) ||
-        (mBIOSSettings && mBIOSSettings->isReallyModified());
 }
 
 /**

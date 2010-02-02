@@ -457,12 +457,6 @@ bool ParallelPort::isModified()
     return m->bd.isBackedUp();
 }
 
-bool ParallelPort::isReallyModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.hasActualChanges();
-}
-
 /**
  *  @note Locks this object for writing.
  */

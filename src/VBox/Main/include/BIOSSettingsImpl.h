@@ -84,7 +84,6 @@ public:
     HRESULT saveSettings(settings::BIOSSettings &data);
 
     bool isModified();
-    bool isReallyModified();
     void rollback();
     void commit();
     void copyFrom (BIOSSettings *aThat);
