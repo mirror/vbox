@@ -75,7 +75,6 @@ typedef const PDMDEVREGCBINT *PCPDMDEVREGCBINT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static DECLCALLBACK(int)    pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pReg);
-static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb);
 static int                  pdmR3DevLoadModules(PVM pVM);
 static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
 
@@ -457,7 +456,6 @@ static int pdmR3DevLoadModules(PVM pVM)
     PDMDEVREGCBINT RegCB;
     RegCB.Core.u32Version = PDM_DEVREG_CB_VERSION;
     RegCB.Core.pfnRegister = pdmR3DevReg_Register;
-    RegCB.Core.pfnMMHeapAlloc = pdmR3DevReg_MMHeapAlloc;
     RegCB.pVM = pVM;
 
     /*
@@ -609,67 +607,45 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
      * Validate the registration structure.
      */
     Assert(pReg);
-    if (pReg->u32Version != PDM_DEVREG_VERSION)
-    {
-        AssertMsgFailed(("Unknown struct version %#x!\n", pReg->u32Version));
-        return VERR_PDM_UNKNOWN_DEVREG_VERSION;
-    }
-    if (    !pReg->szDeviceName[0]
-        ||  strlen(pReg->szDeviceName) >= sizeof(pReg->szDeviceName))
-    {
-        AssertMsgFailed(("Invalid name '%s'\n", pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (    (pReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        &&  (   !pReg->szRCMod[0]
-             || strlen(pReg->szRCMod) >= sizeof(pReg->szRCMod)))
-    {
-        AssertMsgFailed(("Invalid GC module name '%s' - (Device %s)\n", pReg->szRCMod, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (    (pReg->fFlags & PDM_DEVREG_FLAGS_R0)
-        &&  (   !pReg->szR0Mod[0]
-             || strlen(pReg->szR0Mod) >= sizeof(pReg->szR0Mod)))
-    {
-        AssertMsgFailed(("Invalid R0 module name '%s' - (Device %s)\n", pReg->szR0Mod, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if ((pReg->fFlags & PDM_DEVREG_FLAGS_HOST_BITS_MASK) != PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT)
-    {
-        AssertMsgFailed(("Invalid host bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_HOST_BITS;
-    }
-    if (!(pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_MASK))
-    {
-        AssertMsgFailed(("Invalid guest bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (!pReg->fClass)
-    {
-        AssertMsgFailed(("No class! (Device %s)\n", pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (pReg->cMaxInstances <= 0)
-    {
-        AssertMsgFailed(("Max instances %u! (Device %s)\n", pReg->cMaxInstances, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (pReg->cbInstance > (RTUINT)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M))
-    {
-        AssertMsgFailed(("Instance size %d bytes! (Device %s)\n", pReg->cbInstance, pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    if (!pReg->pfnConstruct)
-    {
-        AssertMsgFailed(("No constructore! (Device %s)\n", pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_REGISTRATION;
-    }
-    /* Check matching guest bits last without any asserting. Enables trial and error registration. */
-    if (!(pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT))
-    {
-        Log(("PDM: Rejected device '%s' because it didn't match the guest bits.\n", pReg->szDeviceName));
-        return VERR_PDM_INVALID_DEVICE_GUEST_BITS;
-    }
+    AssertMsgReturn(pReg->u32Version == PDM_DEVREG_VERSION,
+                    ("Unknown struct version %#x!\n", pReg->u32Version),
+                    VERR_PDM_UNKNOWN_DEVREG_VERSION);
+
+    AssertMsgReturn(    pReg->szDeviceName[0]
+                    &&  strlen(pReg->szDeviceName) < sizeof(pReg->szDeviceName),
+                    ("Invalid name '%s'\n", pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(   !(pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+                    || (   pReg->szRCMod[0]
+                        && strlen(pReg->szRCMod) < sizeof(pReg->szRCMod)),
+                    ("Invalid GC module name '%s' - (Device %s)\n", pReg->szRCMod, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(   !(pReg->fFlags & PDM_DEVREG_FLAGS_R0)
+                    || (   pReg->szR0Mod[0]
+                        && strlen(pReg->szR0Mod) < sizeof(pReg->szR0Mod)),
+                    ("Invalid R0 module name '%s' - (Device %s)\n", pReg->szR0Mod, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn((pReg->fFlags & PDM_DEVREG_FLAGS_HOST_BITS_MASK) == PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT,
+                    ("Invalid host bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_HOST_BITS);
+    AssertMsgReturn((pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_MASK),
+                    ("Invalid guest bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(pReg->fClass,
+                    ("No class! (Device %s)\n", pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(pReg->cMaxInstances > 0,
+                    ("Max instances %u! (Device %s)\n", pReg->cMaxInstances, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(pReg->cbInstance <= (uint32_t)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M),
+                    ("Instance size %d bytes! (Device %s)\n", pReg->cbInstance, pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertMsgReturn(pReg->pfnConstruct,
+                    ("No constructore! (Device %s)\n", pReg->szDeviceName),
+                    VERR_PDM_INVALID_DEVICE_REGISTRATION);
+    AssertLogRelMsgReturn((pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_MASK) == PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
+                          ("PDM: Rejected device '%s' because it didn't match the guest bits.\n", pReg->szDeviceName),
+                          VERR_PDM_INVALID_DEVICE_GUEST_BITS);
     AssertLogRelMsg(pReg->u32VersionEnd == PDM_DEVREG_VERSION,
                     ("u32VersionEnd=%#x, expected %#x. (szDeviceName=%s)\n",
                      pReg->u32VersionEnd, PDM_DEVREG_VERSION, pReg->szDeviceName));
@@ -681,13 +657,9 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     PPDMDEV pDevPrev = NULL;
     PPDMDEV pDev = pRegCB->pVM->pdm.s.pDevs;
     for (; pDev; pDevPrev = pDev, pDev = pDev->pNext)
-    {
-        if (!strcmp(pDev->pReg->szDeviceName, pReg->szDeviceName))
-        {
-            AssertMsgFailed(("Device '%s' already exists\n", pReg->szDeviceName));
-            return VERR_PDM_DEVICE_NAME_CLASH;
-        }
-    }
+        AssertMsgReturn(strcmp(pDev->pReg->szDeviceName, pReg->szDeviceName),
+                        ("Device '%s' already exists\n", pReg->szDeviceName),
+                        VERR_PDM_DEVICE_NAME_CLASH);
 
     /*
      * Allocate new device structure and insert it into the list.
@@ -709,20 +681,6 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
-}
-
-
-/**
- * @interface_method_impl{PDMDEVREGCB,pfnMMHeapAlloc}
- */
-static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb)
-{
-    Assert(pCallbacks);
-    Assert(pCallbacks->u32Version == PDM_DEVREG_CB_VERSION);
-
-    void *pv = MMR3HeapAlloc(((PPDMDEVREGCBINT)pCallbacks)->pVM, MM_TAG_PDM_DEVICE_USER, cb);
-    LogFlow(("pdmR3DevReg_MMHeapAlloc(,%#zx): returns %p\n", cb, pv));
-    return pv;
 }
 
 

@@ -263,7 +263,7 @@ const PDMDEVREG g_DevicePcArch =
     /* pszDescription */
     "PC Architecture Device",
     /* fFlags */
-    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_32,
+    PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT | PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT,
     /* fClass */
     PDM_DEVREG_CLASS_ARCH,
     /* cMaxInstances */
