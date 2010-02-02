@@ -29,8 +29,9 @@
 #include <VBox/iom.h>
 #include <VBox/em.h>
 #include <VBox/rem.h>
-#include "PGMInternal.h"
+#include "../PGMInternal.h"
 #include <VBox/vm.h>
+#include "../PGMInline.h"
 #include <VBox/param.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>

@@ -27,6 +27,7 @@
 #include <VBox/stam.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
+#include "PGMInline.h"
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
@@ -34,6 +35,10 @@
 #include <VBox/param.h>
 #include <VBox/err.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 /** The max needle size that we will bother searching for
  * This must not be more than half a page! */
 #define MAX_NEEDLE_SIZE     256

@@ -24,11 +24,12 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PGM
 #include <VBox/pgm.h>
-#include "PGMInternal.h"
+#include "../PGMInternal.h"
 #include <VBox/vm.h>
-#include <iprt/assert.h>
-#include <iprt/asm.h>
+#include "../PGMInline.h"
 #include <VBox/err.h>
+#include <iprt/asm.h>
+#include <iprt/assert.h>
 
 
 /**

@@ -589,6 +589,7 @@
 #include <VBox/hwaccm.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
+#include "PGMInline.h"
 
 #include <VBox/dbg.h>
 #include <VBox/param.h>
