@@ -1318,6 +1318,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
 
         // backup the media data so we can recover if things goes wrong along the day;
         // the matching commit() is in fixupMedia() during endSnapshot()
+        setModified(IsModified_Storage);
         mMediaData.backup();
 
         /* Console::fntTakeSnapshotWorker and friends expects this. */
@@ -1668,7 +1669,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
     /* discard all current changes to mUserData (name, OSType etc.) (note that
      * the machine is powered off, so there is no need to inform the direct
      * session) */
-    if (isModified())
+    if (m_flModifications)
         rollback(false /* aNotify */);
 
     HRESULT rc = S_OK;
@@ -1706,7 +1707,8 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
 
             LogFlowThisFunc(("Restoring hard disks from the snapshot...\n"));
 
-            /* restore the attachments from the snapshot */
+            // restore the attachments from the snapshot
+            setModified(IsModified_Storage);
             mMediaData.backup();
             mMediaData->mAttachments = pSnapshotMachine->mMediaData->mAttachments;
 
@@ -1976,7 +1978,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
      */
     if (pSnapshot == mData->mCurrentSnapshot)
     {
-        if (isModified())
+        if (m_flModifications)
         {
             rc = saveSettings();
             if (FAILED(rc)) return rc;

@@ -45,7 +45,7 @@ HRESULT NetworkAdapter::FinalConstruct()
 
 void NetworkAdapter::FinalRelease()
 {
-    uninit ();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -56,7 +56,7 @@ void NetworkAdapter::FinalRelease()
  *
  *  @param aParent  Handle of the parent object.
  */
-HRESULT NetworkAdapter::init (Machine *aParent, ULONG aSlot)
+HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
 {
     LogFlowThisFunc(("aParent=%p, aSlot=%d\n", aParent, aSlot));
 
@@ -69,6 +69,8 @@ HRESULT NetworkAdapter::init (Machine *aParent, ULONG aSlot)
 
     unconst(mParent) = aParent;
     /* mPeer is left null */
+
+    m_fModified = false;
 
     mData.allocate();
 
@@ -99,7 +101,7 @@ HRESULT NetworkAdapter::init (Machine *aParent, ULONG aSlot)
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT NetworkAdapter::init (Machine *aParent, NetworkAdapter *aThat)
+HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
@@ -131,7 +133,7 @@ HRESULT NetworkAdapter::init (Machine *aParent, NetworkAdapter *aThat)
  *
  *  @note Locks @a aThat object for reading.
  */
-HRESULT NetworkAdapter::initCopy (Machine *aParent, NetworkAdapter *aThat)
+HRESULT NetworkAdapter::initCopy(Machine *aParent, NetworkAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
@@ -228,8 +230,13 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         mData.backup();
         mData->mAdapterType = aAdapterType;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -281,8 +288,13 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
         mData.backup();
         mData->mEnabled = aEnabled;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         mParent->onNetworkAdapterChange (this, FALSE);
     }
@@ -315,8 +327,6 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     AutoMutableStateDependency adep(mParent);
     if (FAILED(adep.rc())) return adep.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
     bool emitChangeEvent = false;
 
@@ -325,13 +335,23 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
      */
     if (!aMACAddress || !*aMACAddress)
     {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         mData.backup();
 
         generateMACAddress();
         emitChangeEvent = true;
+
+        m_fModified = true;
+        // leave the lock before informing callbacks
+        alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
     }
     else
     {
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         if (mData->mMACAddress != aMACAddress)
         {
             /*
@@ -370,18 +390,24 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
                 mData.backup();
 
                 mData->mMACAddress = macAddressUtf;
+
                 emitChangeEvent = true;
+
+                m_fModified = true;
+                // leave the lock before informing callbacks
+                alock.release();
+
+                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+                mParent->setModified(Machine::IsModified_NetworkAdapters);
+                mlock.release();
             }
         }
     }
 
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
-        alock.release();
+    // we have left the lock in any case at this point
 
+    if (emitChangeEvent)
         mParent->onNetworkAdapterChange (this, FALSE);
-    }
 
     return rc;
 }
@@ -435,10 +461,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         mData.backup();
         mData->mHostInterface = aHostInterface;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -483,10 +514,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         mData.backup();
         mData->mInternalNetwork = aInternalNetwork;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -526,10 +562,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
         mData.backup();
         mData->mNATNetwork = aNATNetwork;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -565,10 +606,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
         mData.backup();
         mData->mCableConnected = aConnected;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -604,10 +650,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
         mData.backup();
         mData->mLineSpeed = aSpeed;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -642,10 +693,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
         mData.backup();
         mData->mTraceEnabled = aEnabled;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, TRUE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -681,10 +737,15 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
         mData.backup();
         mData->mTraceFile = aTraceFile;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
+
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -714,8 +775,13 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
 
         mData->mAttachmentType = NetworkAttachmentType_NAT;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -756,8 +822,13 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
 
         mData->mAttachmentType = NetworkAttachmentType_Bridged;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -806,8 +877,13 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
 
         mData->mAttachmentType = NetworkAttachmentType_Internal;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -848,8 +924,13 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
 
         mData->mAttachmentType = NetworkAttachmentType_HostOnly;
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
         if (FAILED (rc))
@@ -884,8 +965,13 @@ STDMETHODIMP NetworkAdapter::Detach()
 
         detach();
 
-        /* leave the lock before informing callbacks */
+        m_fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);       // mParent is const, no need to lock
+        mParent->setModified(Machine::IsModified_NetworkAdapters);
+        mlock.release();
 
         mParent->onNetworkAdapterChange (this, TRUE);
     }
@@ -975,6 +1061,9 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
         break;
     }
 
+    // after loading settings, we are no longer different from the XML on disk
+    m_fModified = false;
+
     return S_OK;
 }
 
@@ -1028,6 +1117,9 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
             data.strName = mData->mHostInterface;
         break;
     }
+
+    // after saving settings, we are no longer different from the XML on disk
+    m_fModified = false;
 
     return S_OK;
 }

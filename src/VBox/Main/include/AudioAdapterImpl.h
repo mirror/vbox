@@ -91,7 +91,6 @@ public:
     HRESULT loadSettings(const settings::AudioAdapter &data);
     HRESULT saveSettings(settings::AudioAdapter &data);
 
-    bool isModified();
     bool rollback();
     void commit();
     void copyFrom(AudioAdapter *aThat);

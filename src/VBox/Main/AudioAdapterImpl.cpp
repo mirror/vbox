@@ -204,6 +204,10 @@ STDMETHODIMP AudioAdapter::COMSETTER(Enabled)(BOOL aEnabled)
     {
         mData.backup();
         mData->mEnabled = aEnabled;
+
+        alock.release();
+        AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+        mParent->setModified(Machine::IsModified_AudioAdapter);
     }
 
     return S_OK;
@@ -278,6 +282,10 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioDriver)(AudioDriverType_T aAudioDriver
             {
                 mData.backup();
                 mData->mAudioDriver = aAudioDriver;
+
+                alock.release();
+                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+                mParent->setModified(Machine::IsModified_AudioAdapter);
                 break;
             }
 
@@ -329,16 +337,20 @@ STDMETHODIMP AudioAdapter::COMSETTER(AudioController)(AudioControllerType_T aAud
         {
             case AudioControllerType_AC97:
             case AudioControllerType_SB16:
+            {
                 mData.backup();
                 mData->mAudioController = aAudioController;
+
+                alock.release();
+                AutoWriteLock mlock(mParent COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+                mParent->setModified(Machine::IsModified_AudioAdapter);
                 break;
+            }
 
             default:
-            {
                 AssertMsgFailed (("Wrong audio controller type %d\n",
                                   aAudioController));
                 rc = E_FAIL;
-            }
         }
     }
 
@@ -411,12 +423,6 @@ HRESULT AudioAdapter::saveSettings(settings::AudioAdapter &data)
     data.controllerType = mData->mAudioController;
     data.driverType = mData->mAudioDriver;
     return S_OK;
-}
-
-bool AudioAdapter::isModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return mData.isBackedUp();
 }
 
 /**

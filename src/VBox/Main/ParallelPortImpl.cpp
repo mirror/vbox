@@ -41,7 +41,10 @@
 struct ParallelPort::Data
 {
     Data()
+        : fModified(false)
     { }
+
+    bool                                    fModified;
 
     const ComObjPtr<Machine, ComWeakRef>    pMachine;
     const ComObjPtr<ParallelPort>           pPeer;
@@ -231,10 +234,15 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
         m->bd.backup();
         m->bd->fEnabled = aEnabled;
 
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onParallelPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_ParallelPorts);
+        mlock.release();
+
+        m->pMachine->onParallelPortChange(this);
     }
 
     return S_OK;
@@ -287,25 +295,23 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
-
     if (m->bd->ulIRQ != aIRQ)
     {
         m->bd.backup();
         m->bd->ulIRQ = aIRQ;
-        emitChangeEvent = true;
-    }
 
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onParallelPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_ParallelPorts);
+        mlock.release();
+
+        m->pMachine->onParallelPortChange(this);
     }
 
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP ParallelPort::COMGETTER(IOBase) (ULONG *aIOBase)
@@ -341,25 +347,23 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
-
     if (m->bd->ulIOBase != aIOBase)
     {
         m->bd.backup();
         m->bd->ulIOBase = aIOBase;
-        emitChangeEvent = true;
-    }
 
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onParallelPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_ParallelPorts);
+        mlock.release();
+
+        m->pMachine->onParallelPortChange(this);
     }
 
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP ParallelPort::COMGETTER(Path) (BSTR *aPath)
@@ -396,8 +400,13 @@ STDMETHODIMP ParallelPort::COMSETTER(Path) (IN_BSTR aPath)
         m->bd.backup();
         m->bd->strPath = str;
 
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
+
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_ParallelPorts);
+        mlock.release();
 
         return m->pMachine->onParallelPortChange(this);
     }
@@ -449,12 +458,6 @@ HRESULT ParallelPort::saveSettings(settings::ParallelPort &data)
     data = *m->bd.data();
 
     return S_OK;
-}
-
-bool ParallelPort::isModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.isBackedUp();
 }
 
 /**

@@ -42,7 +42,10 @@
 struct SerialPort::Data
 {
     Data()
+        : fModified(false)
     { }
+
+    bool                                    fModified;
 
     const ComObjPtr<Machine, ComWeakRef>    pMachine;
     const ComObjPtr<SerialPort>             pPeer;
@@ -227,10 +230,15 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
         m->bd.backup();
         m->bd->fEnabled = aEnabled;
 
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onSerialPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
     return S_OK;
@@ -261,33 +269,30 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
-
     if (m->bd->portMode != aHostMode)
     {
         switch (aHostMode)
         {
             case PortMode_RawFile:
                 if (m->bd->strPath.isEmpty())
-                    return setError (E_INVALIDARG,
-                        tr ("Cannot set the raw file mode of the serial port %d "
-                            "because the file path is empty or null"),
-                        m->bd->ulSlot);
+                    return setError(E_INVALIDARG,
+                                    tr("Cannot set the raw file mode of the serial port %d "
+                                       "because the file path is empty or null"),
+                                    m->bd->ulSlot);
                 break;
             case PortMode_HostPipe:
                 if (m->bd->strPath.isEmpty())
-                    return setError (E_INVALIDARG,
-                        tr ("Cannot set the host pipe mode of the serial port %d "
-                            "because the pipe path is empty or null"),
-                        m->bd->ulSlot);
+                    return setError(E_INVALIDARG,
+                                    tr("Cannot set the host pipe mode of the serial port %d "
+                                       "because the pipe path is empty or null"),
+                                    m->bd->ulSlot);
                 break;
             case PortMode_HostDevice:
                 if (m->bd->strPath.isEmpty())
-                    return setError (E_INVALIDARG,
-                        tr ("Cannot set the host device mode of the serial port %d "
-                            "because the device path is empty or null"),
-                        m->bd->ulSlot);
+                    return setError(E_INVALIDARG,
+                                    tr("Cannot set the host device mode of the serial port %d "
+                                       "because the device path is empty or null"),
+                                    m->bd->ulSlot);
                 break;
             case PortMode_Disconnected:
                 break;
@@ -296,18 +301,18 @@ STDMETHODIMP SerialPort::COMSETTER(HostMode) (PortMode_T aHostMode)
         m->bd.backup();
         m->bd->portMode = aHostMode;
 
-        emitChangeEvent = true;
-    }
-
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onSerialPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP SerialPort::COMGETTER(Slot) (ULONG *aSlot)
@@ -357,25 +362,23 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
-
     if (m->bd->ulIRQ != aIRQ)
     {
         m->bd.backup();
         m->bd->ulIRQ = aIRQ;
-        emitChangeEvent = true;
-    }
 
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onSerialPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
-    return rc;
+    return S_OK;
 }
 
 STDMETHODIMP SerialPort::COMGETTER(IOBase) (ULONG *aIOBase)
@@ -412,21 +415,21 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = S_OK;
-    bool emitChangeEvent = false;
 
     if (m->bd->ulIOBase != aIOBase)
     {
         m->bd.backup();
         m->bd->ulIOBase = aIOBase;
-        emitChangeEvent = true;
-    }
 
-    if (emitChangeEvent)
-    {
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onSerialPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
     return rc;
@@ -470,10 +473,15 @@ STDMETHODIMP SerialPort::COMSETTER(Path) (IN_BSTR aPath)
         m->bd.backup();
         m->bd->strPath = str;
 
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        return m->pMachine->onSerialPortChange(this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
     return S_OK;
@@ -509,10 +517,15 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
         m->bd.backup();
         m->bd->fServer = aServer;
 
-        /* leave the lock before informing callbacks */
+        m->fModified = true;
+        // leave the lock before informing callbacks
         alock.release();
 
-        m->pMachine->onSerialPortChange (this);
+        AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);
+        m->pMachine->setModified(Machine::IsModified_SerialPorts);
+        mlock.release();
+
+        m->pMachine->onSerialPortChange(this);
     }
 
     return S_OK;
@@ -562,12 +575,6 @@ HRESULT SerialPort::saveSettings(settings::SerialPort &data)
     data = *m->bd.data();
 
     return S_OK;
-}
-
-bool SerialPort::isModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.isBackedUp();
 }
 
 /**

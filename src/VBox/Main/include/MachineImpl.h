@@ -574,6 +574,22 @@ public:
      */
     const Bstr& getName() const { return mUserData->mName; }
 
+    enum
+    {
+        IsModified_MachineData          = 0x0001,
+        IsModified_Storage              = 0x0002,
+        IsModified_NetworkAdapters      = 0x0008,
+        IsModified_SerialPorts          = 0x0010,
+        IsModified_ParallelPorts        = 0x0020,
+        IsModified_VRDPServer           = 0x0040,
+        IsModified_AudioAdapter         = 0x0080,
+        IsModified_USB                  = 0x0100,
+        IsModified_BIOS                 = 0x0200,
+        IsModified_SharedFolders        = 0x0400
+    };
+
+    void setModified(uint32_t fl);
+
     // callback handlers
     virtual HRESULT onNetworkAdapterChange(INetworkAdapter * /* networkAdapter */, BOOL /* changeAdapter */) { return S_OK; }
     virtual HRESULT onSerialPortChange(ISerialPort * /* serialPort */) { return S_OK; }
@@ -744,7 +760,6 @@ protected:
 
     bool isInOwnDir(Utf8Str *aSettingsDir = NULL);
 
-    bool isModified();
     void rollback(bool aNotify);
     void commit();
     void copyFrom(Machine *aThat);
@@ -758,12 +773,14 @@ protected:
 
     const ComObjPtr<VirtualBox, ComWeakRef> mParent;
 
-    Shareable<Data> mData;
-    Shareable<SSData> mSSData;
+    uint32_t                m_flModifications;
 
-    Backupable<UserData> mUserData;
-    Backupable<HWData> mHWData;
-    Backupable<MediaData> mMediaData;
+    Shareable<Data>         mData;
+    Shareable<SSData>       mSSData;
+
+    Backupable<UserData>    mUserData;
+    Backupable<HWData>      mHWData;
+    Backupable<MediaData>   mMediaData;
 
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of HWData

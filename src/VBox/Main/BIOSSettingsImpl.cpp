@@ -212,6 +212,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
     m->bd.backup();
     m->bd->fLogoFadeIn = enable;
 
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
+
     return S_OK;
 }
 
@@ -244,6 +248,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
     m->bd.backup();
     m->bd->fLogoFadeOut = enable;
 
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
+
     return S_OK;
 }
 
@@ -275,6 +283,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoDisplayTime)(ULONG displayTime)
 
     m->bd.backup();
     m->bd->ulLogoDisplayTime = displayTime;
+
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -311,6 +323,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoImagePath)(IN_BSTR imagePath)
     m->bd.backup();
     m->bd->strLogoImagePath = imagePath;
 
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
+
     return S_OK;
 }
 
@@ -341,6 +357,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(BootMenuMode)(BIOSBootMenuMode_T bootMenuMo
 
     m->bd.backup();
     m->bd->biosBootMenuMode = bootMenuMode;
+
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -374,6 +394,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
     m->bd.backup();
     m->bd->fACPIEnabled = enable;
 
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
+
     return S_OK;
 }
 
@@ -405,6 +429,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
 
     m->bd.backup();
     m->bd->fIOAPICEnabled = enable;
+
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -438,6 +466,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     m->bd.backup();
     m->bd->fPXEDebugEnabled = enable;
 
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
+
     return S_OK;
 }
 
@@ -469,6 +501,10 @@ STDMETHODIMP BIOSSettings::COMSETTER(TimeOffset)(LONG64 offset)
 
     m->bd.backup();
     m->bd->llTimeOffset = offset;
+
+    alock.release();
+    AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
+    m->pMachine->setModified(Machine::IsModified_BIOS);
 
     return S_OK;
 }
@@ -518,12 +554,6 @@ HRESULT BIOSSettings::saveSettings(settings::BIOSSettings &data)
     data = *m->bd.data();
 
     return S_OK;
-}
-
-bool BIOSSettings::isModified()
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.isBackedUp();
 }
 
 void BIOSSettings::rollback()

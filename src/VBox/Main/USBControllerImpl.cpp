@@ -298,8 +298,12 @@ STDMETHODIMP USBController::COMSETTER(Enabled) (BOOL aEnabled)
         m->bd.backup();
         m->bd->fEnabled = aEnabled;
 
-        /* leave the lock for safety */
-        alock.leave();
+        // leave the lock for safety
+        alock.release();
+
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+        m->pParent->setModified(Machine::IsModified_USB);
+        mlock.release();
 
         m->pParent->onUSBControllerChange();
     }
@@ -339,8 +343,12 @@ STDMETHODIMP USBController::COMSETTER(EnabledEhci) (BOOL aEnabled)
         m->bd.backup();
         m->bd->fEnabledEHCI = aEnabled;
 
-        /* leave the lock for safety */
-        alock.leave();
+        // leave the lock for safety
+        alock.release();
+
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+        m->pParent->setModified(Machine::IsModified_USB);
+        mlock.release();
 
         m->pParent->onUSBControllerChange();
     }
@@ -469,8 +477,8 @@ STDMETHODIMP USBController::CreateDeviceFilter (IN_BSTR aName,
 #endif
 }
 
-STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
-                                                IUSBDeviceFilter *aFilter)
+STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
+                                               IUSBDeviceFilter *aFilter)
 {
 #ifdef VBOX_WITH_USB
 
@@ -494,8 +502,8 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
 //                 "this VirtualBox instance"));
 
     if (filter->mInList)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("The given USB device filter is already in the list"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given USB device filter is already in the list"));
 
     /* backup the list before modification */
     m->llDeviceFilters.backup();
@@ -522,6 +530,11 @@ STDMETHODIMP USBController::InsertDeviceFilter (ULONG aPosition,
         ComAssertRet(filter->getId() == NULL, E_FAIL);
         filter->getId() = service->insertFilter (&filter->getData().mUSBFilter);
     }
+
+    alock.release();
+    AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+    m->pParent->setModified(Machine::IsModified_USB);
+    mlock.release();
 
     return S_OK;
 
@@ -589,6 +602,11 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
         service->removeFilter(filter->getId());
         filter->getId() = NULL;
     }
+
+    alock.release();
+    AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);
+    m->pParent->setModified(Machine::IsModified_USB);
+    mlock.release();
 
     return S_OK;
 
@@ -705,36 +723,6 @@ HRESULT USBController::saveSettings(settings::USBController &data)
 #endif /* VBOX_WITH_USB */
 
     return S_OK;
-}
-
-/** @note Locks objects for reading! */
-bool USBController::isModified()
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (m->bd.isBackedUp()
-#ifdef VBOX_WITH_USB
-        || m->llDeviceFilters.isBackedUp()
-#endif
-        )
-        return true;
-
-#ifdef VBOX_WITH_USB
-    /* see whether any of filters has changed its data */
-    for (DeviceFilterList::const_iterator
-         it = m->llDeviceFilters->begin();
-         it != m->llDeviceFilters->end();
-         ++ it)
-    {
-        if ((*it)->isModified())
-            return true;
-    }
-#endif /* VBOX_WITH_USB */
-
-    return false;
 }
 
 /** @note Locks objects for writing! */

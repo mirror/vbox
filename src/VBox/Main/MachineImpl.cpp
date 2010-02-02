@@ -407,11 +407,14 @@ HRESULT Machine::init(VirtualBox *aParent,
     /* share the parent weakly */
     unconst(mParent) = aParent;
 
+    m_flModifications = 0;
+
     /* allocate the essential machine data structure (the rest will be
      * allocated later by initDataAndChildObjects() */
     mData.allocate();
 
     mData->m_pMachineConfigFile = NULL;
+    m_flModifications = 0;
 
     /* memorize the config file name (as provided) */
     mData->m_strConfigFile = strConfigFile;
@@ -680,10 +683,11 @@ void Machine::uninit()
     /* the lock is no more necessary (SessionMachine is uninitialized) */
     alock.leave();
 
-    if (isModified())
+    // has machine been modified?
+    if (m_flModifications)
     {
         LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
-        rollback (false /* aNotify */);
+        rollback(false /* aNotify */);
     }
 
     if (mData->mAccessible)
@@ -827,6 +831,7 @@ STDMETHODIMP Machine::COMSETTER(Name) (IN_BSTR aName)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mName = aName;
 
@@ -857,6 +862,7 @@ STDMETHODIMP Machine::COMSETTER(Description) (IN_BSTR aDescription)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mDescription = aDescription;
 
@@ -915,6 +921,7 @@ STDMETHODIMP Machine::COMSETTER(OSTypeId) (IN_BSTR aOSTypeId)
     rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mOSTypeId = osTypeId;
 
@@ -945,6 +952,7 @@ STDMETHODIMP Machine::COMSETTER(FirmwareType) (FirmwareType_T aFirmwareType)
     int rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mFirmwareType = aFirmwareType;
 
@@ -983,6 +991,7 @@ STDMETHODIMP Machine::COMSETTER(HardwareVersion) (IN_BSTR aHWVersion)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mHWVersion = hwVersion;
 
@@ -1020,6 +1029,7 @@ STDMETHODIMP Machine::COMSETTER(HardwareUUID) (IN_BSTR aUUID)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     if (hardwareUUID == mData->mUuid)
         mHWData->mHardwareUUID.clear();
@@ -1062,6 +1072,7 @@ STDMETHODIMP Machine::COMSETTER(MemorySize) (ULONG memorySize)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMemorySize = memorySize;
 
@@ -1113,6 +1124,7 @@ STDMETHODIMP Machine::COMSETTER(CPUCount) (ULONG CPUCount)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mCPUCount = CPUCount;
 
@@ -1150,6 +1162,7 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled) (BOOL enabled)
     {
         if (enabled)
         {
+            setModified(IsModified_MachineData);
             mHWData.backup();
 
             /* Add the amount of CPUs currently attached */
@@ -1181,6 +1194,7 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled) (BOOL enabled)
                 return setError(E_INVALIDARG,
                                 tr("CPU hotplugging can't be disabled because the maximum number of CPUs is not equal to the amount of CPUs attached\n"));
 
+            setModified(IsModified_MachineData);
             mHWData.backup();
         }
     }
@@ -1222,6 +1236,7 @@ STDMETHODIMP Machine::COMSETTER(VRAMSize) (ULONG memorySize)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mVRAMSize = memorySize;
 
@@ -1261,6 +1276,7 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize) (ULONG memoryBalloonSize)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
 
@@ -1294,6 +1310,7 @@ STDMETHODIMP Machine::COMSETTER(StatisticsUpdateInterval) (ULONG statisticsUpdat
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mStatisticsUpdateInterval = statisticsUpdateInterval;
 
@@ -1328,6 +1345,7 @@ STDMETHODIMP Machine::COMSETTER(Accelerate3DEnabled)(BOOL enable)
 
     /** @todo check validity! */
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mAccelerate3DEnabled = enable;
 
@@ -1362,6 +1380,7 @@ STDMETHODIMP Machine::COMSETTER(Accelerate2DVideoEnabled)(BOOL enable)
 
     /** @todo check validity! */
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mAccelerate2DVideoEnabled = enable;
 
@@ -1399,6 +1418,7 @@ STDMETHODIMP Machine::COMSETTER(MonitorCount) (ULONG monitorCount)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMonitorCount = monitorCount;
 
@@ -1706,30 +1726,35 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    BOOL *pb;
+
     switch(property)
     {
-    case HWVirtExPropertyType_Enabled:
-        mHWData.backup();
-        mHWData->mHWVirtExEnabled = !!aVal;
+        case HWVirtExPropertyType_Enabled:
+            pb = &mHWData->mHWVirtExEnabled;
         break;
 
-    case HWVirtExPropertyType_Exclusive:
-        mHWData.backup();
-        mHWData->mHWVirtExExclusive = !!aVal;
+        case HWVirtExPropertyType_Exclusive:
+            pb = &mHWData->mHWVirtExExclusive;
         break;
 
-    case HWVirtExPropertyType_VPID:
-        mHWData.backup();
-        mHWData->mHWVirtExVPIDEnabled = !!aVal;
+        case HWVirtExPropertyType_VPID:
+            pb = &mHWData->mHWVirtExVPIDEnabled;
         break;
 
-    case HWVirtExPropertyType_NestedPaging:
-        mHWData.backup();
-        mHWData->mHWVirtExNestedPagingEnabled = !!aVal;
+        case HWVirtExPropertyType_NestedPaging:
+            pb = &mHWData->mHWVirtExNestedPagingEnabled;
         break;
 
-    default:
-        return E_INVALIDARG;
+        default:
+            return E_INVALIDARG;
+    }
+
+    if (*pb != !!aVal)
+    {
+        setModified(IsModified_MachineData);
+        mHWData.backup();
+        *pb = !!aVal;
     }
     return S_OK;
 }
@@ -1777,13 +1802,13 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
         if (isInOwnDir())
         {
             /* the default snapshots folder is 'Snapshots' in the machine dir */
-            snapshotFolder = Utf8Str ("Snapshots");
+            snapshotFolder = "Snapshots";
         }
         else
         {
             /* the default snapshots folder is {UUID}, for backwards
              * compatibility and to resolve conflicts */
-            snapshotFolder = Utf8StrFmt ("{%RTuuid}", mData->mUuid.raw());
+            snapshotFolder = Utf8StrFmt("{%RTuuid}", mData->mUuid.raw());
         }
     }
 
@@ -1793,6 +1818,7 @@ STDMETHODIMP Machine::COMSETTER(SnapshotFolder) (IN_BSTR aSnapshotFolder)
                         tr("Invalid snapshot folder '%ls' (%Rrc)"),
                         aSnapshotFolder, vrc);
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mSnapshotFolder = aSnapshotFolder;
     mUserData->mSnapshotFolderFull = snapshotFolder;
@@ -1894,7 +1920,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
@@ -1905,7 +1931,7 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified) (BOOL *aModified)
            */
         *aModified = TRUE;
     else
-        *aModified = isModified();
+        *aModified = (m_flModifications != 0);
 
     return S_OK;
 }
@@ -2108,6 +2134,7 @@ Machine::COMSETTER(ClipboardMode) (ClipboardMode_T aClipboardMode)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mClipboardMode = aClipboardMode;
 
@@ -2148,15 +2175,9 @@ Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    try
-    {
-        mHWData.backup();
-        mHWData->mGuestPropertyNotificationPatterns = aPatterns;
-    }
-    catch (...)
-    {
-        rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
-    }
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mGuestPropertyNotificationPatterns = aPatterns;
     return rc;
 }
 
@@ -2191,8 +2212,7 @@ Machine::COMGETTER(TeleporterEnabled)(BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
+STDMETHODIMP Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2214,14 +2234,14 @@ Machine::COMSETTER(TeleporterEnabled)(BOOL aEnabled)
                         tr("The machine is not powered off (state is %s)"),
                         Global::stringifyMachineState(mData->mMachineState));
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mTeleporterEnabled = aEnabled;
 
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
+STDMETHODIMP Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
 {
     CheckComArgOutPointerValid(aPort);
 
@@ -2235,8 +2255,7 @@ Machine::COMGETTER(TeleporterPort)(ULONG *aPort)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(TeleporterPort)(ULONG aPort)
+STDMETHODIMP Machine::COMSETTER(TeleporterPort)(ULONG aPort)
 {
     if (aPort >= _64K)
         return setError(E_INVALIDARG, tr("Invalid port number %d"), aPort);
@@ -2249,14 +2268,14 @@ Machine::COMSETTER(TeleporterPort)(ULONG aPort)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mTeleporterPort = aPort;
 
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
+STDMETHODIMP Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
 {
     CheckComArgOutPointerValid(aAddress);
 
@@ -2270,8 +2289,7 @@ Machine::COMGETTER(TeleporterAddress)(BSTR *aAddress)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
+STDMETHODIMP Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2281,14 +2299,14 @@ Machine::COMSETTER(TeleporterAddress)(IN_BSTR aAddress)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mTeleporterAddress = aAddress;
 
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
+STDMETHODIMP Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
 {
     CheckComArgOutPointerValid(aPassword);
 
@@ -2302,8 +2320,7 @@ Machine::COMGETTER(TeleporterPassword)(BSTR *aPassword)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
+STDMETHODIMP Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2313,14 +2330,14 @@ Machine::COMSETTER(TeleporterPassword)(IN_BSTR aPassword)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mTeleporterPassword = aPassword;
 
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
+STDMETHODIMP Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
 {
     CheckComArgOutPointerValid(aEnabled);
 
@@ -2334,8 +2351,7 @@ Machine::COMGETTER(RTCUseUTC)(BOOL *aEnabled)
     return S_OK;
 }
 
-STDMETHODIMP
-Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
+STDMETHODIMP Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2357,17 +2373,14 @@ Machine::COMSETTER(RTCUseUTC)(BOOL aEnabled)
                         tr("The machine is not powered off (state is %s)"),
                         Global::stringifyMachineState(mData->mMachineState));
 
+    setModified(IsModified_MachineData);
     mUserData.backup();
     mUserData->mRTCUseUTC = aEnabled;
 
     return S_OK;
 }
 
-
-// IMachine methods
-/////////////////////////////////////////////////////////////////////////////
-
-STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
+STDMETHODIMP Machine::SetBootOrder(ULONG aPosition, DeviceType_T aDevice)
 {
     if (aPosition < 1 || aPosition > SchemaDefs::MaxBootPosition)
         return setError(E_INVALIDARG,
@@ -2386,6 +2399,7 @@ STDMETHODIMP Machine::SetBootOrder (ULONG aPosition, DeviceType_T aDevice)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mBootOrder [aPosition - 1] = aDevice;
 
@@ -2822,6 +2836,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     }
 
     /* success: finally remember the attachment */
+    setModified(IsModified_Storage);
     mMediaData.backup();
     mMediaData->mAttachments.push_back(attachment);
 
@@ -2900,6 +2915,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
         if (FAILED(rc)) return rc;
     }
 
+    setModified(IsModified_Storage);
     mMediaData.backup();
 
     /* we cannot use erase (it) below because backup() above will create
@@ -2954,6 +2970,7 @@ STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControlle
                         aDevice, aControllerPort, aControllerName);
 
 
+    setModified(IsModified_Storage);
     mMediaData.backup();
 
     AutoWriteLock attLock(pAttach COMMA_LOCKVAL_SRC_POS);
@@ -3065,8 +3082,9 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
 
     if (SUCCEEDED(rc))
     {
-
+        setModified(IsModified_Storage);
         mMediaData.backup();
+
         /* The backup operation makes the pAttach reference point to the
          * old settings. Re-get the correct reference. */
         pAttach = findAttachment(mMediaData->mAttachments,
@@ -3513,6 +3531,7 @@ STDMETHODIMP Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL
     rc = sharedFolder->init(getMachine(), aName, aHostPath, aWritable);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_SharedFolders);
     mHWData.backup();
     mHWData->mSharedFolders.push_back (sharedFolder);
 
@@ -3539,6 +3558,7 @@ STDMETHODIMP Machine::RemoveSharedFolder (IN_BSTR aName)
     rc = findSharedFolder (aName, sharedFolder, true /* aSetError */);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_SharedFolders);
     mHWData.backup();
     mHWData->mSharedFolders.remove (sharedFolder);
 
@@ -3742,14 +3762,16 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
                                       aName);
                     else
                     {
-                        mHWData.backup();
+                        setModified(IsModified_MachineData);
+                        mHWData.backup();           // @todo r=dj backup in a loop?!?
+
                         /* The backup() operation invalidates our iterator, so
                         * get a new one. */
                         for (it = mHWData->mGuestProperties.begin();
                              it->strName != utf8Name;
                              ++it)
                             ;
-                        mHWData->mGuestProperties.erase (it);
+                        mHWData->mGuestProperties.erase(it);
                     }
                     found = true;
                     break;
@@ -3769,6 +3791,7 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
             else if (SUCCEEDED(rc) && *aValue)
             {
                 RTTIMESPEC time;
+                setModified(IsModified_MachineData);
                 mHWData.backup();
                 property.strName = aName;
                 property.strValue = aValue;
@@ -4007,6 +4030,7 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
     rc = ctrl->init(this, aName, aConnectionType, ulInstance);
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_Storage);
     mStorageControllers.backup();
     mStorageControllers->push_back (ctrl);
 
@@ -4091,6 +4115,7 @@ STDMETHODIMP Machine::RemoveStorageController(IN_BSTR aName)
     }
 
     /* We can remove it now. */
+    setModified(IsModified_Storage);
     mStorageControllers.backup();
 
     ctrl->unshare();
@@ -4408,6 +4433,7 @@ STDMETHODIMP Machine::HotPlugCPU(ULONG aCpu)
     alock.enter();
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mCPUAttached[aCpu] = true;
 
@@ -4448,6 +4474,7 @@ STDMETHODIMP Machine::HotUnplugCPU(ULONG aCpu)
     alock.enter();
     if (FAILED(rc)) return rc;
 
+    setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mCPUAttached[aCpu] = false;
 
@@ -4488,6 +4515,16 @@ STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
 
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Adds the given IsModified_* flag to the dirty flags of the machine.
+ * This must be called either during loadSettings or under the machine write lock.
+ * @param fl
+ */
+void Machine::setModified(uint32_t fl)
+{
+    m_flModifications |= fl;
+}
 
 /**
  *  Saves the registry entry of this machine to the given configuration node.
@@ -5438,10 +5475,9 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
 
     HRESULT rc = S_OK;
 
-    /* Ensure the settings are saved. If we are going to be registered and
-     * isConfigLocked() is FALSE then it means that no config file exists yet,
-     * so create it by calling saveSettings() too. */
-    if (    isModified()
+    // Ensure the settings are saved. If we are going to be registered and
+    // no config file exists yet, create it by calling saveSettings() too.
+    if (    (m_flModifications)
          || (argNewRegistered && !mData->m_pMachineConfigFile->fileExists())
        )
     {
@@ -6088,6 +6124,9 @@ HRESULT Machine::loadSettings(bool aRegistered)
             /* no need to use setMachineState() during init() */
             mData->mMachineState = MachineState_Saved;
         }
+
+        // after loading settings, we are no longer different from the XML on disk
+        m_flModifications = 0;
     }
     catch (HRESULT err)
     {
@@ -6658,6 +6697,7 @@ HRESULT Machine::loadStorageDevices(StorageController *aStorageController,
 
         /* back up mMediaData to let registeredInit() properly rollback on failure
          * (= limited accessibility) */
+        setModified(IsModified_Storage);
         mMediaData.backup();
         mMediaData->mAttachments.push_back(pAttachment);
     }
@@ -7144,6 +7184,9 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
         if (fNeedsWrite)
             // now spit it all out!
             mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
+
+        // after saving settings, we are no longer different from the XML on disk
+        m_flModifications = 0;
     }
     catch (HRESULT err)
     {
@@ -8215,53 +8258,6 @@ bool Machine::isInOwnDir(Utf8Str *aSettingsDir /* = NULL */)
 }
 
 /**
- *  @note Locks objects for reading!
- */
-bool Machine::isModified()
-{
-    AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        if (mNetworkAdapters [slot] && mNetworkAdapters [slot]->isModified())
-            return true;
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        if (mSerialPorts [slot] && mSerialPorts [slot]->isModified())
-            return true;
-
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        if (mParallelPorts [slot] && mParallelPorts [slot]->isModified())
-            return true;
-
-    if (!mStorageControllers.isNull())
-    {
-        for (StorageControllerList::const_iterator it =
-                    mStorageControllers->begin();
-                it != mStorageControllers->end();
-                ++it)
-        {
-            if ((*it)->isModified())
-                return true;
-        }
-    }
-
-    return
-        mUserData.isBackedUp() ||
-        mHWData.isBackedUp() ||
-        mMediaData.isBackedUp() ||
-        mStorageControllers.isBackedUp() ||
-#ifdef VBOX_WITH_VRDP
-        (mVRDPServer && mVRDPServer->isModified()) ||
-#endif
-        (mAudioAdapter && mAudioAdapter->isModified()) ||
-        (mUSBController && mUSBController->isModified()) ||
-        (mBIOSSettings && mBIOSSettings->isModified());
-}
-
-/**
  * Discards all changes to machine settings.
  *
  * @param aNotify   Whether to notify the direct session about changes or not.
@@ -8274,36 +8270,6 @@ void Machine::rollback(bool aNotify)
     AssertComRCReturn (autoCaller.rc(), (void) 0);
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /* check for changes in own data */
-
-    bool sharedFoldersChanged = false, storageChanged = false;
-
-    if (aNotify && mHWData.isBackedUp())
-    {
-        if (mHWData->mSharedFolders.size() != mHWData.backedUpData()->mSharedFolders.size())
-            sharedFoldersChanged = true;
-        else
-        {
-            for (HWData::SharedFolderList::iterator rit = mHWData->mSharedFolders.begin();
-                 rit != mHWData->mSharedFolders.end() && !sharedFoldersChanged;
-                 ++rit)
-            {
-                for (HWData::SharedFolderList::iterator cit = mHWData.backedUpData()->mSharedFolders.begin();
-                     cit != mHWData.backedUpData()->mSharedFolders.end();
-                     ++cit)
-                {
-                    if (    (*cit)->getName() != (*rit)->getName()
-                         || (*cit)->getHostPath() != (*rit)->getHostPath()
-                       )
-                    {
-                        sharedFoldersChanged = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
 
     if (!mStorageControllers.isNull())
     {
@@ -8328,13 +8294,14 @@ void Machine::rollback(bool aNotify)
         }
 
         /* rollback any changes to devices after restoring the list */
-        StorageControllerList::const_iterator it = mStorageControllers->begin();
-        while (it != mStorageControllers->end())
+        if (m_flModifications & IsModified_Storage)
         {
-            if ((*it)->isModified())
+            StorageControllerList::const_iterator it = mStorageControllers->begin();
+            while (it != mStorageControllers->end())
+            {
                 (*it)->rollback();
-
-            ++it;
+                ++it;
+            }
         }
     }
 
@@ -8342,58 +8309,59 @@ void Machine::rollback(bool aNotify)
 
     mHWData.rollback();
 
-    if (mMediaData.isBackedUp())
+    if (m_flModifications & IsModified_Storage)
         rollbackMedia();
-
-    /* check for changes in child objects */
-    bool vrdpChanged = false, usbChanged = false;
-
-    ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
-    ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
-    ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
 
 #ifdef VBOX_WITH_VRDP
-    if (mVRDPServer)
-        vrdpChanged = mVRDPServer->rollback();
+    if (mVRDPServer && (m_flModifications & IsModified_VRDPServer))
+        mVRDPServer->rollback();
 #endif
 
     if (mAudioAdapter)
         mAudioAdapter->rollback();
 
-    if (mUSBController)
-        usbChanged = mUSBController->rollback();
+    if (mUSBController && (m_flModifications & IsModified_USB))
+        mUSBController->rollback();
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
-        if (mNetworkAdapters[slot])
-            if (mNetworkAdapters[slot]->rollback())
-                networkAdapters[slot] = mNetworkAdapters[slot];
+    ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
+    ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
+    ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
-        if (mSerialPorts[slot])
-            if (mSerialPorts[slot]->rollback())
-                serialPorts[slot] = mSerialPorts[slot];
+    if (m_flModifications & IsModified_NetworkAdapters)
+        for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+            if (mNetworkAdapters[slot])
+                if (mNetworkAdapters[slot]->rollback())
+                    networkAdapters[slot] = mNetworkAdapters[slot];
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
-        if (mParallelPorts[slot])
-            if (mParallelPorts[slot]->rollback())
-                parallelPorts[slot] = mParallelPorts[slot];
+    if (m_flModifications & IsModified_SerialPorts)
+        for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
+            if (mSerialPorts[slot])
+                if (mSerialPorts[slot]->rollback())
+                    serialPorts[slot] = mSerialPorts[slot];
+
+    if (m_flModifications & IsModified_ParallelPorts)
+        for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
+            if (mParallelPorts[slot])
+                if (mParallelPorts[slot]->rollback())
+                    parallelPorts[slot] = mParallelPorts[slot];
 
     if (aNotify)
     {
         /* inform the direct session about changes */
 
         ComObjPtr<Machine> that = this;
+        uint32_t flModifications = m_flModifications;
         alock.leave();
 
-        if (sharedFoldersChanged)
+        if (flModifications & IsModified_SharedFolders)
             that->onSharedFolderChange();
 
-        if (vrdpChanged)
+        if (flModifications & IsModified_VRDPServer)
             that->onVRDPServerChange();
-        if (usbChanged)
+        if (flModifications & IsModified_USB)
             that->onUSBControllerChange();
 
         for (ULONG slot = 0; slot < RT_ELEMENTS(networkAdapters); slot ++)
@@ -8406,7 +8374,7 @@ void Machine::rollback(bool aNotify)
             if (parallelPorts[slot])
                 that->onParallelPortChange(parallelPorts[slot]);
 
-        if (storageChanged)
+        if (flModifications & IsModified_Storage)
             that->onStorageControllerChange();
     }
 }
@@ -8592,11 +8560,11 @@ void Machine::copyFrom(Machine *aThat)
     }
 
     for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        mNetworkAdapters [slot]->copyFrom (aThat->mNetworkAdapters [slot]);
+        mNetworkAdapters[slot]->copyFrom (aThat->mNetworkAdapters [slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        mSerialPorts [slot]->copyFrom (aThat->mSerialPorts [slot]);
+        mSerialPorts[slot]->copyFrom (aThat->mSerialPorts [slot]);
     for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        mParallelPorts [slot]->copyFrom (aThat->mParallelPorts [slot]);
+        mParallelPorts[slot]->copyFrom (aThat->mParallelPorts [slot]);
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
@@ -8918,11 +8886,11 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
     /* We need to lock this object in uninit() because the lock is shared
      * with mPeer (as well as data we modify below). mParent->addProcessToReap()
-     * and others need mParent lock. */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+     * and others need mParent lock, and USB needs host lock. */
+    AutoMultiWriteLock3 alock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-    unregisterMetrics (mParent->performanceCollector(), mPeer);
+    unregisterMetrics(mParent->performanceCollector(), mPeer);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     MachineState_T lastState = mData->mMachineState;
@@ -8935,10 +8903,11 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
         /* reset the state to Aborted */
         if (mData->mMachineState != MachineState_Aborted)
-            setMachineState (MachineState_Aborted);
+            setMachineState(MachineState_Aborted);
     }
 
-    if (isModified())
+    // any machine settings modified?
+    if (m_flModifications)
     {
         LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
         rollback (false /* aNotify */);
@@ -9592,6 +9561,7 @@ STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames)
     com::SafeArray<IN_BSTR> flags(     ComSafeArrayInArg(aFlags));
 
     DiscardSettings();
+    setModified(IsModified_MachineData);
     mHWData.backup();
 
     mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
@@ -9671,6 +9641,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
                                       VBOX_E_INVALID_VM_STATE);
         }
 
+        setModified(IsModified_MachineData);
         mHWData.backup();
 
         /** @todo r=bird: The careful memory handling doesn't work out here because
@@ -9868,7 +9839,7 @@ HRESULT SessionMachine::onParallelPortChange (IParallelPort *parallelPort)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     ComPtr<IInternalSessionControl> directControl;
     {
@@ -9880,7 +9851,7 @@ HRESULT SessionMachine::onParallelPortChange (IParallelPort *parallelPort)
     if (!directControl)
         return S_OK;
 
-    return directControl->OnParallelPortChange (parallelPort);
+    return directControl->OnParallelPortChange(parallelPort);
 }
 
 /**
