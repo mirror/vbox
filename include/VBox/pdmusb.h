@@ -105,8 +105,8 @@ typedef struct PDMUSBREG
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
-     *                      If the registration structure is needed, it can be
-     *                      accessed thru pUsbDev->pReg.
+     *                      If the registration structure is needed, it will be
+     *                      accessible thru pUsbDev->pReg.
      * @param   iInstance   Instance number. Use this to figure out which registers
      *                      and such to use. The instance number is also found in
      *                      pUsbDev->iInstance, but since it's likely to be
@@ -653,7 +653,7 @@ typedef struct PDMUSBINS
     /** Pointer the PDM USB Device API. */
     R3PTRTYPE(PCPDMUSBHLP)      pUsbHlp;
     /** Pointer to the USB device registration structure.  */
-    R3PTRTYPE(PCPDMUSBREG)      pUsb;
+    R3PTRTYPE(PCPDMUSBREG)      pReg;
     /** Configuration handle. */
     R3PTRTYPE(PCFGMNODE)        pCfg;
     /** The (device) global configuration handle. */
