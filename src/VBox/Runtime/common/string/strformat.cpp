@@ -846,18 +846,6 @@ RTDECL(size_t) RTStrFormatV(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, PFNSTRF
                         break;
                     }
 
-#ifdef RT_WITH_VBOX
-                    /*
-                     * VBox extensions.
-                     */
-                    case 'V':
-                    {
-                        pszFormat--;
-                        cch += rtstrFormatVBox(pfnOutput, pvArgOutput, &pszFormat, &args, cchPrecision, cchWidth, fFlags, chArgSize);
-                        break;
-                    }
-#endif
-
                     /*
                      * Custom format.
                      */

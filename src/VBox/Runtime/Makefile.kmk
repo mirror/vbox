@@ -393,7 +393,6 @@ endif
 
 # VBox specific stuff.
 RuntimeR3_SOURCES += \
-	VBox/strformat-vbox.cpp \
 	VBox/RTAssertShouldPanic-vbox.cpp \
 	VBox/log-vbox.cpp
 ifneq ($(KBUILD_TARGET),win)
@@ -883,8 +882,7 @@ RuntimeGuestR3Mini_SOURCES.win = \
 # VBox specific stuff.
 RuntimeGuestR3Mini_SOURCES += \
 	VBox/logbackdoor.cpp \
-	VBox/logbackdoor-redirect.cpp \
-	VBox/strformat-vbox.cpp
+	VBox/logbackdoor-redirect.cpp
 
 
 #
@@ -1147,7 +1145,6 @@ RuntimeR0_SOURCES       = \
 	common/table/avlou32.cpp \
 	common/time/timesup.cpp \
 	generic/RTAssertShouldPanic-generic.cpp \
-	VBox/strformat-vbox.cpp \
 	\
 	$(RuntimeNoCrt_SOURCES)
 
@@ -1272,7 +1269,6 @@ RuntimeR0Drv_SOURCES    = \
 	r0drv/initterm-r0drv.cpp \
 	r0drv/generic/semspinmutex-r0drv-generic.c \
 	VBox/log-vbox.cpp \
-	VBox/strformat-vbox.cpp
 
 ## @todo: Linking against RuntimeR0Drv on Linux will result in unresolved external
 ## references to several string functions (e.g. strlen). We could include the
@@ -1588,7 +1584,6 @@ ifdef VBOX_WITH_RAW_MODE
  	common/time/timesup.cpp \
  	gc/initterm-gc.cpp \
  	generic/RTAssertShouldPanic-generic.cpp \
- 	VBox/strformat-vbox.cpp \
  	\
  	$(RuntimeNoCrt_SOURCES)
 

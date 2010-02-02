@@ -1139,7 +1139,7 @@ DECLINLINE(int) pgmShwGetLongModePDPtr(PVMCPU pVCpu, RTGCPTR64 GCPtr, PX86PML4E 
     if (ppPml4e)
         *ppPml4e = (PX86PML4E)pPml4e;
 
-    Log4(("pgmShwGetLongModePDPtr %VGv (%VHv) %RX64\n", GCPtr, pPml4e, pPml4e->u));
+    Log4(("pgmShwGetLongModePDPtr %RGv (%RHv) %RX64\n", GCPtr, pPml4e, pPml4e->u));
 
     if (!pPml4e->n.u1Present)
         return VERR_PAGE_MAP_LEVEL4_NOT_PRESENT;

@@ -174,7 +174,6 @@ FILES_VBOXGUEST_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/logbackdoor.cpp=>VBox/logbackdoor.c \
-    ${PATH_ROOT}/src/VBox/Runtime/VBox/strformat-vbox.cpp=>VBox/strformat-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
 "
 

@@ -171,7 +171,6 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.cpp=>r0drv/generic/RTMpIsCpuWorkPending-r0drv-generic.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
-    ${PATH_ROOT}/src/VBox/Runtime/VBox/strformat-vbox.cpp=>VBox/strformat-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
 "
 

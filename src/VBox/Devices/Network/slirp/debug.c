@@ -23,7 +23,7 @@ void dump_packet(void *, int);
 void
 dump_packet(void *dat, int n)
 {
-    Log(("nat: PACKET DUMPED:\n%.*Vhxd\n", n, dat));
+    Log(("nat: PACKET DUMPED:\n%.*Rhxd\n", n, dat));
 }
 #endif
 
@@ -160,7 +160,7 @@ mbufstats(PNATState pData)
 {
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     /*
-     * (vvl) this static code can't work with mbuf zone anymore 
+     * (vvl) this static code can't work with mbuf zone anymore
      * @todo: make statistic correct
      */
 #if 0
