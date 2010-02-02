@@ -191,7 +191,7 @@ int vboxscsiWriteRegister(PVBOXSCSI pVBoxSCSI, uint8_t iRegister, uint8_t uVal)
                     {
                         /* This is a read from the device. */
                         ASMAtomicXchgBool(&pVBoxSCSI->fBusy, true);
-                        rc = VERR_MORE_DATA; /* @todo: Better return value to indicate ready command? */
+                        rc = VERR_MORE_DATA; /** @todo Better return value to indicate ready command? */
                     }
                 }
             }
@@ -307,7 +307,6 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
 {
     RTGCPTR  GCDst      = *pGCPtrDst;
     uint32_t cbTransfer = *pcTransfer * cb;
-    int rc              = VINF_SUCCESS;
 
     LogFlowFunc(("pDevIns=%#p pVBoxSCSI=%#p iRegister=%d cTransfer=%u cb=%u\n",
                  pDevIns, pVBoxSCSI, iRegister, *pcTransfer, cb));
@@ -316,7 +315,7 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
     AssertMsg(iRegister == 1, ("Hey only register 1 can be read from with string\n"));
     Assert(pVBoxSCSI->pBuf);
 
-    rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVMCPU(pDevIns), GCDst, pVBoxSCSI->pBuf, cbTransfer);
+    int rc = PGMPhysSimpleDirtyWriteGCPtr(PDMDevHlpGetVMCPU(pDevIns), GCDst, pVBoxSCSI->pBuf, cbTransfer);
     AssertRC(rc);
 
     *pGCPtrDst = (RTGCPTR)((RTGCUINTPTR)GCDst + cbTransfer);
@@ -336,17 +335,17 @@ int vboxscsiReadString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegiste
 }
 
 int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegister,
-                       RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
+                        RTGCPTR *pGCPtrSrc, PRTGCUINTREG pcTransfer, unsigned cb)
 {
     RTGCPTR  GCSrc      = *pGCPtrSrc;
     uint32_t cbTransfer = *pcTransfer * cb;
-    int rc              = VINF_SUCCESS;
 
     /* Read string only valid for data in register. */
     AssertMsg(iRegister == 1, ("Hey only register 1 can be read from with string\n"));
     AssertMsg(cbTransfer == 512, ("Only 512 byte transfers are allowed\n"));
 
-    rc = PGMPhysSimpleReadGCPtr(PDMDevHlpGetVMCPU(pDevIns), pVBoxSCSI->pBuf, GCSrc, cbTransfer);
+
+    int rc = PDMDevHlpPhysReadGCVirt(pDevIns, pVBoxSCSI->pBuf, GCSrc, cbTransfer);
     AssertRC(rc);
 
     *pGCPtrSrc = (RTGCPTR)((RTGCUINTPTR)GCSrc + cbTransfer);

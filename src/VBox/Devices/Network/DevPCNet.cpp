@@ -3663,7 +3663,7 @@ PDMBOTHCBDECL(int) pcnetIOPortRead(PPDMDEVINS pDevIns, void *pvUser,
             case 2: *pu32 = pcnetIoportReadU16(pThis, Port, &rc); break;
             case 4: *pu32 = pcnetIoportReadU32(pThis, Port, &rc); break;
             default:
-                rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
                                        "pcnetIOPortRead: unsupported op size: offset=%#10x cb=%u\n",
                                        Port, cb);
         }
@@ -3706,7 +3706,7 @@ PDMBOTHCBDECL(int) pcnetIOPortWrite(PPDMDEVINS pDevIns, void *pvUser,
             case 2: rc = pcnetIoportWriteU16(pThis, Port, u32); break;
             case 4: rc = pcnetIoportWriteU32(pThis, Port, u32); break;
             default:
-                rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
                                        "pcnetIOPortWrite: unsupported op size: offset=%#10x cb=%u\n",
                                        Port, cb);
         }
@@ -3754,7 +3754,7 @@ PDMBOTHCBDECL(int) pcnetMMIORead(PPDMDEVINS pDevIns, void *pvUser,
                 case 2:  *(uint16_t *)pv = pcnetMMIOReadU16(pThis, GCPhysAddr); break;
                 case 4:  *(uint32_t *)pv = pcnetMMIOReadU32(pThis, GCPhysAddr); break;
                 default:
-                    rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                    rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
                                            "pcnetMMIORead: unsupported op size: address=%RGp cb=%u\n",
                                            GCPhysAddr, cb);
             }
@@ -3807,7 +3807,7 @@ PDMBOTHCBDECL(int) pcnetMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
                 case 2:  pcnetMMIOWriteU16(pThis, GCPhysAddr, *(uint16_t *)pv); break;
                 case 4:  pcnetMMIOWriteU32(pThis, GCPhysAddr, *(uint32_t *)pv); break;
                 default:
-                    rc = PDMDeviceDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
+                    rc = PDMDevHlpDBGFStop(pThis->CTX_SUFF(pDevIns), RT_SRC_POS,
                                            "pcnetMMIOWrite: unsupported op size: address=%RGp cb=%u\n",
                                            GCPhysAddr, cb);
             }
@@ -3935,11 +3935,11 @@ static DECLCALLBACK(int) pcnetIOPortMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRe
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port, 0x10, 0, "pcnetIOPortAPromWrite",
                                        "pcnetIOPortAPromRead", NULL, NULL, "PCNet aprom");
         if (RT_FAILURE(rc))
             return rc;
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, Port + 0x10, 0x10, 0, "pcnetIOPortWrite",
                                        "pcnetIOPortRead", NULL, NULL, "PCNet");
         if (RT_FAILURE(rc))
             return rc;
@@ -5159,8 +5159,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Create the transmit queue.
      */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetXmitQueueConsumer, true, "PCNet-Xmit", &pThis->pXmitQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                              pcnetXmitQueueConsumer, true, "PCNet-Xmit", &pThis->pXmitQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pXmitQueueR0 = PDMQueueR0Ptr(pThis->pXmitQueueR3);
@@ -5169,8 +5169,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Create the RX notifer signaller.
      */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 pcnetCanRxQueueConsumer, true, "PCNet-Rcv", &pThis->pCanRxQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                              pcnetCanRxQueueConsumer, true, "PCNet-Rcv", &pThis->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pCanRxQueueR0 = PDMQueueR0Ptr(pThis->pCanRxQueueR3);
@@ -5229,7 +5229,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     AssertRC(rc);
 
     /* Create asynchronous thread */
-    rc = PDMDevHlpPDMThreadCreate(pDevIns, &pThis->pSendThread, pThis, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
+    rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pSendThread, pThis, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
     AssertRCReturn(rc, rc);
 
 #ifdef PCNET_QUEUE_SEND_PACKETS

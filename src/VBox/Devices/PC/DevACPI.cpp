@@ -470,7 +470,7 @@ struct ACPITBLHPET
                                                      [15]    legacy replacement IRQ routing capable
                                                      [14]    reserved
                                                      [13]    COUNT_SIZE_CAP counter size
-                                                     [12:8]  number of comparators in first timer block 
+                                                     [12:8]  number of comparators in first timer block
                                                      [7:0]   hardware rev ID */
     ACPIGENADDR   HpetAddr;                     /**< lower 32-bit base address */
     uint8_t       u32Number;                    /**< sequence number starting at 0 */
@@ -1789,10 +1789,10 @@ static int acpiRegisterPmHandlers(ACPIState*  pThis)
 #undef L
 #undef R
 
-    /* register GC stuff */
+    /* register RC stuff */
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET),
+        rc = PDMDevHlpIOPortRegisterRC(pThis->pDevIns, acpiPmPort(pThis, PM_TMR_OFFSET),
                                        1, 0, NULL, "acpiPMTmrRead",
                                        NULL, NULL, "ACPI PM Timer");
         AssertRCReturn(rc, rc);

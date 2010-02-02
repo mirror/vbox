@@ -1427,7 +1427,7 @@ static DECLCALLBACK(int) vnetMap(PPCIDEVICE pPciDev, int iRegion,
                                    cb, 0, "vnetIOPortOut", "vnetIOPortIn",
                                    NULL, NULL, "VirtioNet");
     AssertRCReturn(rc, rc);
-    rc = PDMDevHlpIOPortRegisterGC(pPciDev->pDevIns, pState->VPCI.addrIOPort,
+    rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pState->VPCI.addrIOPort,
                                    cb, 0, "vnetIOPortOut", "vnetIOPortIn",
                                    NULL, NULL, "VirtioNet");
 #endif
@@ -1710,8 +1710,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     /* Create the RX notifier signaller. */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 vnetCanRxQueueConsumer, true, "VNet-Rcv", &pState->pCanRxQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                              vnetCanRxQueueConsumer, true, "VNet-Rcv", &pState->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);

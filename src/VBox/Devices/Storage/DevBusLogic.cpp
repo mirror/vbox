@@ -1919,7 +1919,7 @@ static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iR
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpMMIORegisterGC(pDevIns, GCPhysAddress, cb, 0,
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, 0,
                                          "buslogicMMIOWrite", "buslogicMMIORead", NULL);
             if (RT_FAILURE(rc))
                 return rc;
@@ -1944,7 +1944,7 @@ static DECLCALLBACK(int) buslogicMMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iR
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, (RTIOPORT)GCPhysAddress, 32,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, 32,
                                            0, "buslogicIOPortWrite", "buslogicIOPortRead", NULL, NULL, "BusLogic");
             if (RT_FAILURE(rc))
                 return rc;
@@ -2607,8 +2607,8 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
                                 N_("BusLogic: Failed to initialize task cache\n"));
 
     /* Intialize task queue. */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
-                                 buslogicNotifyQueueConsumer, true, "BugLogicTask", &pThis->pNotifierQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 5, 0,
+                              buslogicNotifyQueueConsumer, true, "BugLogicTask", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);

@@ -63,7 +63,7 @@ static DECLCALLBACK(int) pcarchIOPortFPURead(PPDMDEVINS pDevIns, void *pvUser, R
 {
     int rc;
     NOREF(pvUser); NOREF(pDevIns); NOREF(pu32);
-    rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
+    rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
     if (rc == VINF_SUCCESS)
         rc = VERR_IOM_IOPORT_UNUSED;
     return rc;
@@ -114,14 +114,14 @@ static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, 
             case 0xfa:
             case 0xfc:
             default:
-                rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
                 break;
         }
         /* this works better, but probably not entirely correct. */
         PDMDevHlpISASetIrq(pDevIns, 13, 0);
     }
     else
-        rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
     return rc;
 }
 
@@ -176,7 +176,7 @@ static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortARead(PPDMDEVINS pDevIns, 
         *pu32 = PDMDevHlpA20IsEnabled(pDevIns) << 1;
         return VINF_SUCCESS;
     }
-    return PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
+    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d\n", Port, cb);
 }
 
 
@@ -209,7 +209,7 @@ static DECLCALLBACK(int) pcarchIOPortPS2SysControlPortAWrite(PPDMDEVINS pDevIns,
         PDMDevHlpA20Set(pDevIns, !!(u32 & 2));
         return VINF_SUCCESS;
     }
-    return PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
+    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "Port=%#x cb=%d u32=%#x\n", Port, cb, u32);
 }
 
 

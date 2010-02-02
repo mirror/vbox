@@ -790,7 +790,7 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base, 8, 0, "parallelIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, io_base, 8, 0, "parallelIOPortWrite",
                                       "parallelIOPortRead", NULL, NULL, "Parallel");
         if (RT_FAILURE(rc))
             return rc;
