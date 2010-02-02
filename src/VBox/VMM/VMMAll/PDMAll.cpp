@@ -379,3 +379,14 @@ VMMDECL(int) PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys)
     *pGCPhys = (pVM->pdm.s.GCPhysVMMDevHeap + ((RTR3UINTPTR)pv - (RTR3UINTPTR)pVM->pdm.s.pvVMMDevHeap));
     return VINF_SUCCESS;
 }
+
+/**
+ * Checks if the vmm device heap is enabled (== vmm device's pci region mapped)
+ *
+ * @returns dev heap enabled status (true/false)
+ * @param   pVM             VM handle.
+ */
+VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM)
+{
+    return (pVM->pdm.s.pvVMMDevHeap != NULL);
+}
