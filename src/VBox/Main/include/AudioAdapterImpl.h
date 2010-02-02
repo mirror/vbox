@@ -43,14 +43,6 @@ public:
     {
         Data();
 
-        bool operator== (const Data &that) const
-        {
-            return this == &that ||
-                   (mEnabled == that.mEnabled &&
-                    mAudioDriver == that.mAudioDriver &&
-                    mAudioController == that.mAudioController);
-        }
-
         BOOL mEnabled;
         AudioDriverType_T mAudioDriver;
         AudioControllerType_T mAudioController;
@@ -91,7 +83,7 @@ public:
     HRESULT loadSettings(const settings::AudioAdapter &data);
     HRESULT saveSettings(settings::AudioAdapter &data);
 
-    bool rollback();
+    void rollback();
     void commit();
     void copyFrom(AudioAdapter *aThat);
 

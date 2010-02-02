@@ -224,21 +224,6 @@ public:
         UserData();
         ~UserData();
 
-        bool operator==(const UserData &that) const
-        {
-            return this == &that
-                || (   mName                 == that.mName
-                    && mNameSync             == that.mNameSync
-                    && mDescription          == that.mDescription
-                    && mOSTypeId             == that.mOSTypeId
-                    && mSnapshotFolderFull   == that.mSnapshotFolderFull
-                    && mTeleporterEnabled    == that.mTeleporterEnabled
-                    && mTeleporterPort       == that.mTeleporterPort
-                    && mTeleporterAddress    == that.mTeleporterAddress
-                    && mTeleporterPassword   == that.mTeleporterPassword
-                    && mRTCUseUTC            == that.mRTCUseUTC);
-        }
-
         Bstr    mName;
         BOOL    mNameSync;
         Bstr    mDescription;
@@ -278,8 +263,6 @@ public:
 
         HWData();
         ~HWData();
-
-        bool operator==(const HWData &that) const;
 
         Bstr           mHWVersion;
         Guid           mHardwareUUID;   /**< If Null, use mData.mUuid. */
@@ -332,8 +315,6 @@ public:
     {
         MediaData();
         ~MediaData();
-
-        bool operator==(const MediaData &that) const;
 
         typedef std::list< ComObjPtr<MediumAttachment> > AttachmentList;
         AttachmentList mAttachments;

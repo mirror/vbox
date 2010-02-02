@@ -461,27 +461,27 @@ HRESULT ParallelPort::saveSettings(settings::ParallelPort &data)
 }
 
 /**
+ * Returns true if any setter method has modified settings of this instance.
+ * @return
+ */
+bool ParallelPort::isModified()
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return m->fModified;
+}
+
+/**
  *  @note Locks this object for writing.
  */
-bool ParallelPort::rollback()
+void ParallelPort::rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    bool changed = false;
-
-    if (m->bd.isBackedUp())
-    {
-        /* we need to check all data to see whether anything will be changed
-         * after rollback */
-        changed = m->bd.hasActualChanges();
-        m->bd.rollback();
-    }
-
-    return changed;
+    m->bd.rollback();
 }
 
 /**

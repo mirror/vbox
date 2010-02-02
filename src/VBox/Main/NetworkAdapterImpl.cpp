@@ -1125,27 +1125,27 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
 }
 
 /**
+ * Returns true if any setter method has modified settings of this instance.
+ * @return
+ */
+bool NetworkAdapter::isModified()
+{
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    return m_fModified;
+}
+
+/**
  *  @note Locks this object for writing.
  */
-bool NetworkAdapter::rollback()
+void NetworkAdapter::rollback()
 {
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    bool changed = false;
-
-    if (mData.isBackedUp())
-    {
-        /* we need to check all data to see whether anything will be changed
-         * after rollback */
-        changed = mData.hasActualChanges();
-        mData.rollback();
-    }
-
-    return changed;
+    mData.rollback();
 }
 
 /**

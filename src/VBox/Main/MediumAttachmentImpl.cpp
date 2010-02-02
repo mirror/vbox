@@ -43,12 +43,6 @@ struct BackupableMediumAttachmentData
           fImplicit(false)
     { }
 
-    bool operator==(const BackupableMediumAttachmentData &that) const
-    {
-        return    this == &that
-               || (fPassthrough == that.fPassthrough);
-    }
-
     ComObjPtr<Medium>   pMedium;
     /* Since MediumAttachment is not a first class citizen when it
      * comes to managing settings, having a reference to the storage
@@ -281,28 +275,19 @@ STDMETHODIMP MediumAttachment::COMGETTER(Passthrough)(BOOL *aPassthrough)
 /**
  *  @note Locks this object for writing.
  */
-bool MediumAttachment::rollback()
+void MediumAttachment::rollback()
 {
     LogFlowThisFunc(("ENTER - %s\n", getLogName()));
 
     /* sanity */
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    bool changed = false;
+    m->bd.rollback();
 
-    if (m->bd.isBackedUp())
-    {
-        /* we need to check all data to see whether anything will be changed
-         * after rollback */
-        changed = m->bd.hasActualChanges();
-        m->bd.rollback();
-    }
-
-    LogFlowThisFunc(("LEAVE - %s - returning %RTbool\n", getLogName(), changed));
-    return changed;
+    LogFlowThisFunc(("LEAVE - %s\n", getLogName()));
 }
 
 /**

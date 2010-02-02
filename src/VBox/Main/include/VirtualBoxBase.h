@@ -1679,13 +1679,6 @@ public:
         return mBackupData != NULL;
     }
 
-    bool hasActualChanges() const
-    {
-        AssertMsg(this->mData, ("data must not be NULL"));
-        return this->mData != NULL && mBackupData != NULL &&
-               !(*this->mData == *mBackupData);
-    }
-
     D *backedUpData() const
     {
         return mBackupData;

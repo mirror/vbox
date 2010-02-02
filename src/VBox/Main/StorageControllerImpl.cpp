@@ -54,18 +54,6 @@ struct BackupableStorageControllerData
           mPortIde1Slave(3)
     { }
 
-    bool operator==(const BackupableStorageControllerData &that) const
-    {
-        return    this == &that
-                || (    (mStorageControllerType == that.mStorageControllerType)
-                    && (strName           == that.strName)
-                    && (mPortCount   == that.mPortCount)
-                    && (mPortIde0Master == that.mPortIde0Master)
-                    && (mPortIde0Slave  == that.mPortIde0Slave)
-                    && (mPortIde1Master == that.mPortIde1Master)
-                    && (mPortIde1Slave  == that.mPortIde1Slave));
-    }
-
     /** Unique name of the storage controller. */
     Utf8Str strName;
     /** The connection type of thestorage controller. */
@@ -717,24 +705,14 @@ ULONG StorageController::getInstance() const
 }
 
 /** @note Locks objects for writing! */
-bool StorageController::rollback()
+void StorageController::rollback()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturnVoid(autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    bool dataChanged = false;
-
-    if (m->bd.isBackedUp())
-    {
-        /* we need to check all data to see whether anything will be changed
-         * after rollback */
-        dataChanged = m->bd.hasActualChanges();
-        m->bd.rollback();
-    }
-
-    return dataChanged;
+    m->bd.rollback();
 }
 
 /**

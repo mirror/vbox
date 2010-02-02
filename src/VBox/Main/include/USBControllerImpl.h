@@ -82,7 +82,7 @@ public:
     HRESULT loadSettings(const settings::USBController &data);
     HRESULT saveSettings(settings::USBController &data);
 
-    bool rollback();
+    void rollback();
     void commit();
     void copyFrom (USBController *aThat);
 

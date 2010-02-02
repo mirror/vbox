@@ -67,7 +67,7 @@ public:
     STDMETHOD(COMGETTER(Passthrough))(BOOL *aPassthrough);
 
     // public internal methods
-    bool rollback();
+    void rollback();
     void commit();
 
     // unsafe public methods for internal purposes only (ensure there is
