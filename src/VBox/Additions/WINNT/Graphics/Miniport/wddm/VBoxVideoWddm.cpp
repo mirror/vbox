@@ -39,6 +39,133 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+#define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
+
+NTSTATUS vboxWddmRegQueryDrvKeyName(PDEVICE_EXTENSION pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
+{
+    WCHAR fallBackBuf[2];
+    PWCHAR pSuffix;
+    bool bFallback = false;
+
+    if (cbBuf > sizeof(VBOXWDDM_REG_DRVKEY_PREFIX))
+    {
+        wcscpy(pBuf, VBOXWDDM_REG_DRVKEY_PREFIX);
+        pSuffix = pBuf + (sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2);
+        cbBuf -= sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
+    }
+    else
+    {
+        pSuffix = fallBackBuf;
+        cbBuf = sizeof (fallBackBuf);
+        bFallback = true;
+    }
+
+    NTSTATUS Status = IoGetDeviceProperty (pDevExt->pPDO,
+                                  DevicePropertyDriverKeyName,
+                                  cbBuf,
+                                  pSuffix,
+                                  &cbBuf);
+    if (Status == STATUS_SUCCESS && bFallback)
+        Status = STATUS_BUFFER_TOO_SMALL;
+    if (Status == STATUS_BUFFER_TOO_SMALL)
+        *pcbResult = cbBuf + sizeof (VBOXWDDM_REG_DRVKEY_PREFIX)-2;
+
+    return Status;
+}
+
+NTSTATUS vboxWddmRegOpenKey(OUT PHANDLE phKey, IN PWCHAR pName, IN ACCESS_MASK fAccess)
+{
+    OBJECT_ATTRIBUTES ObjAttr;
+    UNICODE_STRING RtlStr;
+    RtlStr.Buffer = pName;
+    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
+    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
+
+    InitializeObjectAttributes(&ObjAttr, &RtlStr, OBJ_CASE_INSENSITIVE, NULL, NULL);
+
+    return ZwOpenKey(phKey, fAccess, &ObjAttr);
+}
+
+NTSTATUS vboxWddmRegQueryValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT PDWORD pDword)
+{
+    UCHAR Buf[32]; /* should be enough */
+    ULONG cbBuf;
+    PKEY_VALUE_PARTIAL_INFORMATION pInfo = (PKEY_VALUE_PARTIAL_INFORMATION)Buf;
+    UNICODE_STRING RtlStr;
+    RtlStr.Buffer = pName;
+    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
+    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
+    NTSTATUS Status = ZwQueryValueKey(hKey,
+                &RtlStr,
+                KeyValuePartialInformation,
+                pInfo,
+                sizeof(Buf),
+                &cbBuf);
+    if (Status == STATUS_SUCCESS)
+    {
+        if (pInfo->Type == REG_DWORD)
+        {
+            Assert(pInfo->DataLength == 4);
+            *pDword = *((PULONG)pInfo->Data);
+            return STATUS_SUCCESS;
+        }
+    }
+
+    return STATUS_INVALID_PARAMETER;
+}
+
+NTSTATUS vboxWddmRegSetValueDword(IN HANDLE hKey, IN PWCHAR pName, OUT DWORD val)
+{
+    UCHAR Buf[32]; /* should be enough */
+    PKEY_VALUE_PARTIAL_INFORMATION pInfo = (PKEY_VALUE_PARTIAL_INFORMATION)Buf;
+    UNICODE_STRING RtlStr;
+    RtlStr.Buffer = pName;
+    RtlStr.Length = USHORT(wcslen(pName) * sizeof(WCHAR));
+    RtlStr.MaximumLength = RtlStr.Length + sizeof(WCHAR);
+    return ZwSetValueKey(hKey, &RtlStr,
+            NULL, /* IN ULONG  TitleIndex  OPTIONAL, reserved */
+            REG_DWORD,
+            &val,
+            sizeof(val));
+}
+
+VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal)
+{
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+    NTSTATUS Status = vboxWddmRegQueryValueDword(Reg, pName, (PDWORD)pVal);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+}
+
+VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
+{
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+    NTSTATUS Status = vboxWddmRegSetValueDword(Reg, pName, Val);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+}
+
+VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
+{
+    WCHAR Buf[512];
+    ULONG cbBuf = sizeof(Buf);
+    NTSTATUS Status = vboxWddmRegQueryDrvKeyName(pDeviceExtension, cbBuf, Buf, &cbBuf);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxWddmRegOpenKey(pReg, Buf, GENERIC_READ | GENERIC_WRITE);
+        Assert(Status == STATUS_SUCCESS);
+        if(Status == STATUS_SUCCESS)
+            return NO_ERROR;
+    }
+
+    /* fall-back to make the subsequent VBoxVideoCmnRegXxx calls treat the fail accordingly
+     * basically needed to make as less modifications to the current XPDM code as possible */
+    *pReg = NULL;
+
+    return ERROR_INVALID_PARAMETER;
+}
+
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
 {
     switch (format)
@@ -173,6 +300,7 @@ NTSTATUS DxgkDdiAddDevice(
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof (DEVICE_EXTENSION));
     if (pContext)
     {
+        pContext->pPDO = PhysicalDeviceObject;
         *MiniportDeviceContext = pContext;
     }
     else

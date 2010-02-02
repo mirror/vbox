@@ -92,6 +92,7 @@ ifdef VBOXWDDM
  VBoxVideoWddm_SOURCES     = \
  	VBoxVideoHGSMI.cpp \
  	VBoxVideo.cpp \
+    Helper.cpp \
  	wddm/VBoxVideoWddm.cpp \
 	wddm/VBoxVideoVidPn.cpp \
  	wddm/VBoxVideoWddm.def \

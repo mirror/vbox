@@ -357,6 +357,21 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     return Status;
 }
 
+DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalitySourceModeCheck(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
+        const D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, PVOID pContext)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+    PVBOXVIDPN_NEW_SRCMODESET_CHECK pCbContext = (PVBOXVIDPN_NEW_SRCMODESET_CHECK)pContext;
+    pCbContext->CommonInfo.Status = STATUS_SUCCESS;
+
+    pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo);
+
+    pCbContext->CommonInfo.Status = Status;
+    return Status == STATUS_SUCCESS;
+
+}
+
 DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalitySourceModeEnum(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
         const D3DKMDT_VIDPN_SOURCE_MODE *pNewVidPnSourceModeInfo, PVOID pContext)
@@ -393,49 +408,80 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
     PVBOXVIDPNCMCONTEXT pCbContext = (PVBOXVIDPNCMCONTEXT)pContext;
+    NTSTATUS Status = STATUS_SUCCESS;
     pCbContext->Status = STATUS_SUCCESS;
-    NTSTATUS Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
+
+    /* adjust scaling */
+    if (pCbContext->pEnumCofuncModalityArg->EnumPivotType != D3DKMDT_EPT_SCALING)
+    {
+        if (pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY
+                && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED
+                && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_STRETCHED)
+        {
+            const_cast<D3DKMDT_VIDPN_PRESENT_PATH*>(pNewVidPnPresentPathInfo)->ContentTransformation.Scaling = D3DKMDT_VPPS_IDENTITY;
+        }
+    }
+
+    /* adjust rotation */
+    if (pCbContext->pEnumCofuncModalityArg->EnumPivotType != D3DKMDT_EPT_ROTATION)
+    {
+        if (pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY
+                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE90
+                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE180
+                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE270)
+        {
+            const_cast<D3DKMDT_VIDPN_PRESENT_PATH*>(pNewVidPnPresentPathInfo)->ContentTransformation.Rotation = D3DKMDT_VPPR_IDENTITY;
+        }
+    }
+
+    if (pCbContext->pEnumCofuncModalityArg->EnumPivotType != D3DKMDT_EPT_VIDPNSOURCE
+            || pNewVidPnPresentPathInfo->VidPnSourceId != pCbContext->pEnumCofuncModalityArg->EnumPivot.VidPnSourceId)
+    {
+
+        Status = pVidPnInterface->pfnAcquireSourceModeSet(hDesiredVidPn,
                     pNewVidPnPresentPathInfo->VidPnSourceId,
                     &hNewVidPnSourceModeSet,
                     &pVidPnSourceModeSetInterface);
-    Assert(Status == STATUS_SUCCESS);
-    if (Status == STATUS_SUCCESS)
-    {
-        CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
-        Status = pVidPnSourceModeSetInterface->pfnAcquirePinnedModeInfo(hNewVidPnSourceModeSet, &pPinnedVidPnSourceModeInfo);
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            if (pPinnedVidPnSourceModeInfo)
+            CONST D3DKMDT_VIDPN_SOURCE_MODE* pPinnedVidPnSourceModeInfo;
+            Status = pVidPnSourceModeSetInterface->pfnAcquirePinnedModeInfo(hNewVidPnSourceModeSet, &pPinnedVidPnSourceModeInfo);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
             {
+                if (!pPinnedVidPnSourceModeInfo)
+                {
+                    /* no pinned mode set, do adjustment */
+                    /* first iterate to see if there is anything that should be removed/added
+                     * if yes, create a new mode set and populate it with the necessary info */
+
+                    Status = vboxVidPnEnumSourceModes(pDevExt, hDesiredVidPn, pVidPnInterface,
+                        hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface,
+                        vboxVidPnCofuncModalitySourceModeEnum, pCbContext);
+                    Assert(Status == STATUS_SUCCESS);
+                    if (Status == STATUS_SUCCESS)
+                    {
+                        Status = pCbContext->Status;
+                        Assert(Status == STATUS_SUCCESS);
+                        if (Status != STATUS_SUCCESS)
+                            drprintf((__FUNCTION__": vboxVidPnCofuncModalitySourceModeEnum failed Status(0x%x)\n", Status));
+                    }
+                    else
+                        drprintf((__FUNCTION__": vboxVidPnEnumSourceModes failed Status(0x%x)\n", Status));
+                }
+
                 /* nothing to be done here, just release */
                 pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pPinnedVidPnSourceModeInfo);
             }
             else
-            {
-                /* no pinned mode set, do adjustment */
-                Status = vboxVidPnEnumSourceModes(pDevExt, hDesiredVidPn, pVidPnInterface,
-                        hNewVidPnSourceModeSet, pVidPnSourceModeSetInterface,
-                        vboxVidPnCofuncModalitySourceModeEnum, pCbContext);
-                Assert(Status == STATUS_SUCCESS);
-                if (Status == STATUS_SUCCESS)
-                {
-                    Status = pCbContext->Status;
-                    Assert(Status == STATUS_SUCCESS);
-                    if (Status != STATUS_SUCCESS)
-                        drprintf((__FUNCTION__": vboxVidPnCofuncModalitySourceModeEnum failed Status(0x%x)\n", Status));
-                }
-                else
-                    drprintf((__FUNCTION__": vboxVidPnEnumSourceModes failed Status(0x%x)\n", Status));
-            }
+                drprintf((__FUNCTION__": pfnAcquirePinnedModeInfo failed Status(0x%x)\n", Status));
+
+            pVidPnInterface->pfnReleaseSourceModeSet(hDesiredVidPn, hNewVidPnSourceModeSet);
         }
         else
-            drprintf((__FUNCTION__": pfnAcquirePinnedModeInfo failed Status(0x%x)\n", Status));
-
-        pVidPnInterface->pfnReleaseSourceModeSet(hDesiredVidPn, hNewVidPnSourceModeSet);
+            drprintf((__FUNCTION__": pfnAcquireSourceModeSet failed Status(0x%x)\n", Status));
     }
-    else
-        drprintf((__FUNCTION__": pfnAcquireSourceModeSet failed Status(0x%x)\n", Status));
 
     if (Status == STATUS_SUCCESS)
     {

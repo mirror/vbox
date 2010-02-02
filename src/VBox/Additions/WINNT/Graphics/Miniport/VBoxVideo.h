@@ -112,6 +112,8 @@ typedef PSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef UCHAR VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
 typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+
+typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
 #include <VBox/VBoxVideo.h>
 
@@ -119,6 +121,8 @@ typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
 
 typedef KEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
+
+typedef HANDLE VBOXCMNREG;
 
 typedef enum
 {
@@ -308,6 +312,8 @@ typedef struct _DEVICE_EXTENSION
 #endif /* VBOX_WITH_HGSMI */
 
 #ifdef VBOXWDDM
+   PDEVICE_OBJECT pPDO;
+
    ULONG cSources;
    /* currently we define the array for the max possible size since we do not know
     * the monitor count at the DxgkDdiAddDevice,
@@ -429,6 +435,22 @@ DECLINLINE(VOID) VBoxVideoCmnMemFree(IN PDEVICE_EXTENSION pDeviceExtension, IN P
 {
     pDeviceExtension->u.primary.VideoPortProcs.pfnFreePool(pDeviceExtension, Ptr);
 }
+
+DECLINLINE(VP_STATUS) VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg)
+{
+    *pReg = pDeviceExtension->pPrimary;
+    return NO_ERROR;
+}
+
+DECLINLINE(VP_STATUS) VBoxVideoCmnRegFini(IN VBOXCMNREG Reg)
+{
+    return NO_ERROR;
+}
+
+VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal);
+
+VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val);
+
 /* */
 
 RT_C_DECLS_BEGIN
@@ -576,6 +598,21 @@ DECLINLINE(VOID) VBoxVideoCmnMemFree(IN PDEVICE_EXTENSION pDeviceExtension, IN P
     ExFreePool(Ptr);
 }
 
+VP_STATUS VBoxVideoCmnRegInit(IN PDEVICE_EXTENSION pDeviceExtension, OUT VBOXCMNREG *pReg);
+
+DECLINLINE(VP_STATUS) VBoxVideoCmnRegFini(IN VBOXCMNREG Reg)
+{
+    if(!Reg)
+        return ERROR_INVALID_PARAMETER;
+
+    NTSTATUS Status = ZwClose(Reg);
+    return Status == STATUS_SUCCESS ? NO_ERROR : ERROR_INVALID_PARAMETER;
+}
+
+VP_STATUS VBoxVideoCmnRegQueryDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t *pVal);
+
+VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val);
+
 /* */
 
 RT_C_DECLS_BEGIN
@@ -611,6 +648,22 @@ typedef struct VBOXVIDPNCMCONTEXT
     NTSTATUS Status;
     CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* pEnumCofuncModalityArg;
 }VBOXVIDPNCMCONTEXT, *PVBOXVIDPNCMCONTEXT;
+
+typedef struct VBOXVIDPN_NEW_SRCMODESET_CHECK
+{
+    VBOXVIDPNCMCONTEXT CommonInfo;
+    CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+    BOOLEAN bNeedAdjustment;
+}VBOXVIDPN_NEW_SRCMODESET_CHECK, *PVBOXVIDPN_NEW_SRCMODESET_CHECK;
+
+typedef struct VBOXVIDPN_NEW_SRCMODESET_POPULATION
+{
+    VBOXVIDPNCMCONTEXT CommonInfo;
+    CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
+    /* new source mode (the one being populated) */
+    D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
+    CONST DXGK_VIDPNSOURCEMODESET_INTERFACE*  pNewVidPnSourceModeSetInterface;
+}VBOXVIDPN_NEW_SRCMODESET_POPULATION, *PVBOXVIDPN_NEW_SRCMODESET_POPULATION;
 
 /* !!!NOTE: The callback is responsible for releasing the path */
 typedef DECLCALLBACK(BOOLEAN) FNVBOXVIDPNENUMPATHS(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
