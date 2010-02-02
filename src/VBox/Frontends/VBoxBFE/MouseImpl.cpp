@@ -261,7 +261,7 @@ const PDMDRVREG Mouse::DrvReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MainMouse",
     /* szRCMod */
     "",

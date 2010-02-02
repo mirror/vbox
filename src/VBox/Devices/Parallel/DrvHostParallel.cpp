@@ -393,7 +393,7 @@ const PDMDRVREG g_DrvHostParallel =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "HostParallel",
     /* szRCMod */
     "",

@@ -1333,7 +1333,7 @@ const PDMDRVREG g_DrvVD =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "VD",
     /* szRCMod */
     "",

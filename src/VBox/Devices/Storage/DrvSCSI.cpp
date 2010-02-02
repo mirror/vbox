@@ -1024,7 +1024,7 @@ const PDMDRVREG g_DrvSCSI =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "SCSI",
     /* szRCMod */
     "",

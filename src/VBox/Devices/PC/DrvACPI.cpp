@@ -768,7 +768,7 @@ const PDMDRVREG g_DrvACPI =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "ACPIHost",
     /* szRCMod */
     "",

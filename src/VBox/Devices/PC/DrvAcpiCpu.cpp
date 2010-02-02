@@ -95,7 +95,7 @@ const PDMDRVREG g_DrvAcpiCpu =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "ACPICpu",
     /* szRCMod */
     "",

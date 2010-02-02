@@ -937,7 +937,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
             {
                 while (pDrvIns)
                 {
-                    if (!strcmp(pDrvIns->pReg->szDriverName, pszDriver))
+                    if (!strcmp(pDrvIns->pReg->szName, pszDriver))
                     {
                         if (iOccurance == 0)
                             break;

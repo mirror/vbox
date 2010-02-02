@@ -292,7 +292,7 @@ const PDMDRVREG g_DrvMediaISO =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MediaISO",
     /* szRCMod */
     "",

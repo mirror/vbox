@@ -324,7 +324,7 @@ const PDMDRVREG g_DrvKeyboardQueue =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "KeyboardQueue",
     /* szRCMod */
     "",

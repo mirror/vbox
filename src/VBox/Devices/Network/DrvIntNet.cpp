@@ -1172,7 +1172,7 @@ const PDMDRVREG g_DrvIntNet =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "IntNet",
     /* szRCMod */
     "VBoxDD",

@@ -2045,7 +2045,7 @@ const PDMDRVREG g_DrvAUDIO =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "AUDIO",
     /* szRCMod */
     "",

@@ -211,7 +211,7 @@ const PDMDRVREG g_DrvRawFile =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "RawFile",
     /* szRCMod */
     "",

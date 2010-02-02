@@ -1196,7 +1196,7 @@ const PDMDRVREG g_DrvNAT =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "NAT",
     /* szRCMod */
     "",

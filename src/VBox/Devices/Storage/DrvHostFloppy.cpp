@@ -201,7 +201,7 @@ const PDMDRVREG g_DrvHostFloppy =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "HostFloppy",
     /* szRCMod */
     "",

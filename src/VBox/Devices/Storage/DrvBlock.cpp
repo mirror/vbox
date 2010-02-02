@@ -898,7 +898,7 @@ const PDMDRVREG g_DrvBlock =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "Block",
     /* szRCMod */
     "",

@@ -409,7 +409,7 @@ const PDMDRVREG g_DrvChar =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "Char",
     /* szRCMod */
     "",
