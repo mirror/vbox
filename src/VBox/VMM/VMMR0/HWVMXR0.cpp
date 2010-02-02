@@ -3442,7 +3442,7 @@ ResumeExecution:
         rc = VMXReadVMCS64(VMX_VMCS_EXIT_PHYS_ADDR_FULL, &GCPhys);
         AssertRC(rc);
 
-        Log(("VMX_EXIT_EPT_MISCONFIG for %VGp\n", GCPhys));
+        Log(("VMX_EXIT_EPT_MISCONFIG for %RGp\n", GCPhys));
         break;
     }
 

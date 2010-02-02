@@ -119,8 +119,7 @@ OBJS   = \
         generic/RTLogWriteStdErr-stub-generic.o \
         generic/RTLogWriteStdOut-stub-generic.o \
 	VBox/log-vbox.o \
-	VBox/logbackdoor.o \
-	VBox/strformat-vbox.o
+	VBox/logbackdoor.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += \
 	common/math/gcc/divdi3.o \

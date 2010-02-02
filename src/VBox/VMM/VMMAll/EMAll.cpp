@@ -2357,7 +2357,7 @@ static int emInterpretSmsw(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
 
         pParam1 = (RTGCPTR)param1.val.val64;
         pParam1 = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, pParam1);
-        LogFlow(("emInterpretSmsw %VGv <- cr0 (%x)\n", pParam1, cr0));
+        LogFlow(("emInterpretSmsw %RGv <- cr0 (%x)\n", pParam1, cr0));
 
         rc = emRamWrite(pVM, pVCpu, pRegFrame, pParam1, &cr0, sizeof(uint16_t));
         if (RT_FAILURE(rc))

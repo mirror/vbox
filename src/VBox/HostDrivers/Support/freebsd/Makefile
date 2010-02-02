@@ -160,8 +160,7 @@ SRCS += \
 
 .PATH:	${.CURDIR}/VBox
 SRCS += \
-	log-vbox.c \
-	strformat-vbox.c
+	log-vbox.c
 
 .include <bsd.kmod.mk>
 

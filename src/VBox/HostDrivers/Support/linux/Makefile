@@ -128,8 +128,7 @@ OBJS   = \
 	generic/RTLogWriteStdOut-stub-generic.o \
 	generic/RTLogWriteUser-generic.o \
 	generic/uuid-generic.o \
-	VBox/log-vbox.o \
-	VBox/strformat-vbox.o
+	VBox/log-vbox.o
 ifeq ($(BUILD_TARGET_ARCH),x86)
 OBJS += math/gcc/divdi3.o \
 	math/gcc/moddi3.o \
