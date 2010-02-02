@@ -544,36 +544,39 @@ VMMR3DECL(int) PDMR3AsyncCompletionTemplateDestroyUsb(PVM pVM, PPDMUSBINS pUsbIn
     return VINF_SUCCESS;
 }
 
-void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask)
+void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, bool fCallCompletionHandler)
 {
-    LogFlow(("%s: pTask=%p\n", __FUNCTION__, pTask));
+    LogFlow(("%s: pTask=%#p fCallCompletionHandler=%RTbool\n", __FUNCTION__, pTask, fCallCompletionHandler));
 
-    PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pTask->pEndpoint->pTemplate;
-
-    switch (pTemplate->enmType)
+    if (fCallCompletionHandler)
     {
-        case PDMASYNCCOMPLETIONTEMPLATETYPE_DEV:
+        PPDMASYNCCOMPLETIONTEMPLATE pTemplate = pTask->pEndpoint->pTemplate;
+
+        switch (pTemplate->enmType)
         {
-            pTemplate->u.Dev.pfnCompleted(pTemplate->u.Dev.pDevIns, pTask->pvUser);
-            break;
+            case PDMASYNCCOMPLETIONTEMPLATETYPE_DEV:
+            {
+                pTemplate->u.Dev.pfnCompleted(pTemplate->u.Dev.pDevIns, pTask->pvUser);
+                break;
+            }
+            case PDMASYNCCOMPLETIONTEMPLATETYPE_DRV:
+            {
+                pTemplate->u.Drv.pfnCompleted(pTemplate->u.Drv.pDrvIns, pTemplate->u.Drv.pvTemplateUser, pTask->pvUser);
+                break;
+            }
+            case PDMASYNCCOMPLETIONTEMPLATETYPE_USB:
+            {
+                pTemplate->u.Usb.pfnCompleted(pTemplate->u.Usb.pUsbIns, pTask->pvUser);
+                break;
+            }
+            case PDMASYNCCOMPLETIONTEMPLATETYPE_INTERNAL:
+            {
+                pTemplate->u.Int.pfnCompleted(pTemplate->pVM, pTask->pvUser, pTemplate->u.Int.pvUser);
+                break;
+            }
+            default:
+                AssertMsgFailed(("Unknown template type!\n"));
         }
-        case PDMASYNCCOMPLETIONTEMPLATETYPE_DRV:
-        {
-            pTemplate->u.Drv.pfnCompleted(pTemplate->u.Drv.pDrvIns, pTemplate->u.Drv.pvTemplateUser, pTask->pvUser);
-            break;
-        }
-        case PDMASYNCCOMPLETIONTEMPLATETYPE_USB:
-        {
-            pTemplate->u.Usb.pfnCompleted(pTemplate->u.Usb.pUsbIns, pTask->pvUser);
-            break;
-        }
-        case PDMASYNCCOMPLETIONTEMPLATETYPE_INTERNAL:
-        {
-            pTemplate->u.Int.pfnCompleted(pTemplate->pVM, pTask->pvUser, pTemplate->u.Int.pvUser);
-            break;
-        }
-        default:
-            AssertMsgFailed(("Unknown template type!\n"));
     }
 
     pdmR3AsyncCompletionPutTask(pTask->pEndpoint, pTask, true);
