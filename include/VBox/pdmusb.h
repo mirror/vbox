@@ -105,14 +105,18 @@ typedef struct PDMUSBREG
      *
      * @returns VBox status.
      * @param   pUsbIns     The USB device instance data.
-     *                      If the registration structure is needed, pUsbDev->pDevReg points to it.
-     * @param   iInstance   Instance number. Use this to figure out which registers and such to use.
-     *                      The instance number is also found in pUsbDev->iInstance, but since it's
-     *                      likely to be freqently used PDM passes it as parameter.
-     * @param   pCfg        Configuration node handle for the device. Use this to obtain the configuration
-     *                      of the device instance. It's also found in pUsbDev->pCfg, but since it's
-     *                      primary usage will in this function it's passed as a parameter.
-     * @param   pCfgGlobal  Handle to the global device configuration. Also found in pUsbDev->pCfgGlobal.
+     *                      If the registration structure is needed,
+     *                      pUsbDev->pUsbReg points to it.
+     * @param   iInstance   Instance number. Use this to figure out which registers
+     *                      and such to use. The instance number is also found in
+     *                      pUsbDev->iInstance, but since it's likely to be
+     *                      freqently used PDM passes it as parameter.
+     * @param   pCfg        Configuration node handle for the device. Use this to
+     *                      obtain the configuration of the device instance. It's
+     *                      also found in pUsbDev->pCfg, but since it's primary
+     *                      usage will in this function it's passed as a parameter.
+     * @param   pCfgGlobal  Handle to the global device configuration. Also foundin
+     *                      pUsbDev->pCfgGlobal.
      * @remarks This callback is required.
      */
     DECLR3CALLBACKMEMBER(int, pfnConstruct,(PPDMUSBINS pUsbIns, int iInstance, PCFGMNODE pCfg, PCFGMNODE pCfgGlobal));
@@ -813,10 +817,10 @@ typedef struct PDMUSBREGCB
      *
      * @returns VBox status code.
      * @param   pCallbacks      Pointer to the callback table.
-     * @param   pDevReg         Pointer to the device registration record.
+     * @param   pReg            Pointer to the USB device registration record.
      *                          This data must be permanent and readonly.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegister,(PCPDMUSBREGCB pCallbacks, PCPDMUSBREG pDevReg));
+    DECLR3CALLBACKMEMBER(int, pfnRegister,(PCPDMUSBREGCB pCallbacks, PCPDMUSBREG pReg));
 
     /**
      * Allocate memory which is associated with current VM instance

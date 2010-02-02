@@ -374,7 +374,7 @@ typedef struct PDMDEV
     /** Device name length. (search optimization) */
     RTUINT                          cchName;
     /** Registration structure. */
-    R3PTRTYPE(const struct PDMDEVREG *) pDevReg;
+    R3PTRTYPE(const struct PDMDEVREG *) pReg;
     /** Number of instances. */
     uint32_t                        cInstances;
     /** Pointer to chain of instances (R3 Ptr). */

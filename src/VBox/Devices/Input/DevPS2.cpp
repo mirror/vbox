@@ -1471,7 +1471,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
@@ -1492,7 +1492,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #1!\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                Log(("%s/%d: warning: no driver attached to LUN #1!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
@@ -1580,17 +1580,7 @@ static DECLCALLBACK(int) kbdDestruct(PPDMDEVINS pDevIns)
 
 
 /**
- * Construct a device instance for a VM.
- *
- * @returns VBox status.
- * @param   pDevIns     The device instance data.
- *                      If the registration structure is needed, pDevIns->pDevReg points to it.
- * @param   iInstance   Instance number. Use this to figure out which registers and such to use.
- *                      The device number is also found in pDevIns->iInstance, but since it's
- *                      likely to be freqently used PDM passes it as parameter.
- * @param   pCfgHandle  Configuration node handle for the device. Use this to obtain the configuration
- *                      of the device instance. It's also found in pDevIns->pCfgHandle, but like
- *                      iInstance it's expected to be used a bit in this function.
+ * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) kbdConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
 {
