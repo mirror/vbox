@@ -1158,3 +1158,180 @@ VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvA
     return VINF_SUCCESS;
 }
 
+
+/**
+ * Locates a module.
+ *
+ * @returns Pointer to the module if found.
+ * @param   pUVM            Pointer to the user mode VM structure.
+ * @param   pszModule       The module name.
+ * @param   enmType         The module type.
+ * @param   fLazy           Lazy loading the module if set.
+ */
+static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE enmType, bool fLazy)
+{
+    for (PPDMMOD pModule = pUVM->pdm.s.pModules; pModule; pModule = pModule->pNext)
+        if (    pModule->eType == enmType
+            &&  !strcmp(pModule->szName, pszModule))
+            return pModule;
+    if (fLazy)
+    {
+        switch (enmType)
+        {
+            case PDMMOD_TYPE_RC:
+            {
+                char *pszFilename = pdmR3FileRC(pszModule);
+                if (pszFilename)
+                {
+                    int rc = PDMR3LdrLoadRC(pUVM->pVM, pszFilename, pszModule);
+                    RTMemTmpFree(pszFilename);
+                    if (RT_SUCCESS(rc))
+                        return pdmR3LdrFindModule(pUVM, pszModule, enmType, false);
+                }
+                break;
+            }
+
+            case PDMMOD_TYPE_R0:
+            {
+                int rc = pdmR3LoadR0U(pUVM, NULL, pszModule);
+                if (RT_SUCCESS(rc))
+                    return pdmR3LdrFindModule(pUVM, pszModule, enmType, false);
+                break;
+            }
+
+            default:
+                AssertFailed();
+        }
+    }
+    return NULL;
+}
+
+
+/**
+ * Resolves a ring-0 or raw-mode context interface.
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   pvInterface     Pointer to the interface structure.  The symbol list
+ *                          describes the layout.
+ * @param   cbInterface     The size of the structure pvInterface is pointing
+ *                          to.  For bounds checking.
+ * @param   pszModule       The module name.  If NULL we assume it's the default
+ *                          R0 or RC module (@a fRing0OrRC).  We'll attempt to
+ *                          load the module if it isn't found in the module
+ *                          list.
+ * @param   pszSymPrefix    What to prefix the symbols in the list with.  The
+ *                          idea is that you define a list that goes with an
+ *                          interface (INTERFACE_SYM_LIST) and reuse it with
+ *                          each implementation.
+ * @param   pszSymList      The symbol list for the interface.  This is a
+ *                          semi-colon separated list of symbol base names.  As
+ *                          mentioned above, each is prefixed with @a
+ *                          pszSymPrefix before resolving.  There are a couple
+ *                          of special symbol names that will cause us to skip
+ *                          ahead a little bit:
+ *                              - U8:whatever,
+ *                              - U16:whatever,
+ *                              - U32:whatever,
+ *                              - U64:whatever,
+ *                              - RCPTR:whatever,
+ *                              - R3PTR:whatever,
+ *                              - R0PTR:whatever,
+ *                              - GCPHYS:whatever,
+ *                              - HCPHYS:whatever.
+ * @param   fRing0OrRC      Set if it's a ring-0 context interface, clear if
+ *                          it's raw-mode context interface.
+ */
+VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
+                                           const char *pszModule, const char *pszSymPrefix,
+                                           const char *pszSymList, bool fRing0OrRC)
+{
+    /*
+     * Find the module.
+     */
+    int rc;
+    PPDMMOD pModule = pdmR3LdrFindModule(pVM->pUVM,
+                                         pszModule ? pszModule : fRing0OrRC ? "VMMR0.r0" : "VMMGC.gc",
+                                         fRing0OrRC ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
+                                         true /*fLazy*/);
+    if (pModule)
+    {
+        /* Prep the symbol name. */
+        char            szSymbol[256];
+        size_t const    cchSymPrefix = strlen(pszSymPrefix);
+        AssertReturn(cchSymPrefix + 5 >= sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
+        memcpy(szSymbol, pszSymPrefix, cchSymPrefix);
+
+        /*
+         * Iterate the symbol list.
+         */
+        uint32_t        offInterface = 0;
+        const char     *pszCur       = pszSymList;
+        while (pszCur)
+        {
+            /* Find the end of the current symbol name. */
+            size_t      cchSym;
+            const char *pszNext = strchr(pszCur, ';');
+            if (pszNext)
+            {
+                cchSym = pszNext - pszCur;
+                pszNext++;
+            }
+            else
+                cchSym = strlen(pszCur);
+            AssertReturn(cchSym > 0, VERR_INVALID_PARAMETER);
+
+            /* check for skip instructions */
+            const char *pszColon = (const char *)memchr(pszCur, ':', cchSym);
+            if (pszColon)
+            {
+#define IS_SKIP_INSTR(szInstr) \
+                (   cchSkip == sizeof(szInstr) - 1 \
+                 && !memcmp(pszCur, szInstr, sizeof(szInstr) - 1) )
+
+                size_t const cchSkip = pszColon - pszCur;
+                if (IS_SKIP_INSTR("U8"))
+                    offInterface += sizeof(uint8_t);
+                else if (IS_SKIP_INSTR("U16"))
+                    offInterface += sizeof(uint16_t);
+                else if (IS_SKIP_INSTR("U32"))
+                    offInterface += sizeof(uint32_t);
+                else if (IS_SKIP_INSTR("U64"))
+                    offInterface += sizeof(uint64_t);
+                else if (IS_SKIP_INSTR("RCPTR"))
+                    offInterface += sizeof(RTRCPTR);
+                else if (IS_SKIP_INSTR("R3PTR"))
+                    offInterface += sizeof(RTR3PTR);
+                else if (IS_SKIP_INSTR("R0PTR"))
+                    offInterface += sizeof(RTR0PTR);
+                else if (IS_SKIP_INSTR("HCPHYS"))
+                    offInterface += sizeof(RTHCPHYS);
+                else if (IS_SKIP_INSTR("GCPHYS"))
+                    offInterface += sizeof(RTGCPHYS);
+                else
+                    AssertMsgFailedReturn(("Invalid skip instruction %.*s (prefix=%s)\n", cchSym, pszCur, pszSymPrefix),
+                                          VERR_INVALID_PARAMETER);
+                AssertMsgReturn(offInterface <= cbInterface,
+                                ("off=%#x cb=%#x (sym=%.*s prefix=%s)\n", offInterface, cbInterface, cchSym, pszCur, pszSymPrefix),
+                                VERR_BUFFER_OVERFLOW);
+#undef IS_SKIP_INSTR
+            }
+            else
+            {
+                AssertReturn(cchSymPrefix + cchSym >= sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
+                memcmp(&szSymbol[cchSymPrefix], pszCur, cchSym);
+                szSymbol[cchSymPrefix + cchSym] = '\0';
+
+//                rc = resume coding here...
+            }
+
+            /* advance */
+            pszCur = pszNext;
+        }
+
+    }
+    else
+        rc = VERR_MODULE_NOT_FOUND;
+    return rc;
+}
+

@@ -36,6 +36,7 @@
 #include <VBox/pdmifs.h>
 #include <VBox/pdmins.h>
 #include <VBox/pdmcommon.h>
+#include <VBox/pdmasynccompletion.h>
 #include <VBox/tm.h>
 #include <VBox/ssm.h>
 #include <VBox/cfgm.h>
@@ -43,10 +44,6 @@
 #include <VBox/mm.h>
 #include <VBox/err.h>
 #include <iprt/stdarg.h>
-
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
-# include <VBox/pdmasynccompletion.h>
-#endif
 
 RT_C_DECLS_BEGIN
 
@@ -874,7 +871,6 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPDMThreadCreate,(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                                   PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName));
 
-#ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
     /**
      * Creates a async completion template for a driver instance.
      *
@@ -890,8 +886,47 @@ typedef struct PDMDRVHLPR3
     DECLR3CALLBACKMEMBER(int, pfnPDMAsyncCompletionTemplateCreate,(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                                    PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser,
                                                                    const char *pszDesc));
-#endif
 
+
+    /**
+     * Resolves the symbol for a raw-mode context interface.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   pvInterface     The interface structure.
+     * @param   cbInterface     The size of the interface structure.
+     * @param   pszSymPrefix    What to prefix the symbols in the list with before
+     *                          resolving them.  This must start with 'drv' and
+     *                          contain the driver name.
+     * @param   pszSymList      List of symbols corresponding to the interface.
+     *                          There is generally a there is generally a define
+     *                          holding this list associated with the interface
+     *                          definition (INTERFACE_SYM_LIST).  For more details
+     *                          see PDMR3LdrGetInterfaceSymbols.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPDMLdrGetRCInterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList));
+
+    /**
+     * Resolves the symbol for a ring-0 context interface.
+     *
+     * @returns VBox status code.
+     * @param   pDrvIns         The driver instance.
+     * @param   pvInterface     The interface structure.
+     * @param   cbInterface     The size of the interface structure.
+     * @param   pszSymPrefix    What to prefix the symbols in the list with before
+     *                          resolving them.  This must start with 'drv' and
+     *                          contain the driver name.
+     * @param   pszSymList      List of symbols corresponding to the interface.
+     *                          There is generally a there is generally a define
+     *                          holding this list associated with the interface
+     *                          definition (INTERFACE_SYM_LIST).  For more details
+     *                          see PDMR3LdrGetInterfaceSymbols.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPDMLdrGetR0InterfaceSymbols,(PPDMDRVINS pDrvIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList));
     /** Just a safety precaution. */
     uint32_t                        u32TheEnd;
 } PDMDRVHLPR3;

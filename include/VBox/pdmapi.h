@@ -89,7 +89,8 @@ VMMR3DECL(void) PDMR3TermUVM(PUVM pUVM);
  * @param   fRC             Set if raw-mode context, clear if host context.
  * @param   pvArg           User argument.
  */
-typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName, RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
+typedef DECLCALLBACK(int) FNPDMR3ENUM(PVM pVM, const char *pszFilename, const char *pszName,
+                                      RTUINTPTR ImageBase, size_t cbImage, bool fRC, void *pvArg);
 /** Pointer to a FNPDMR3ENUM() function. */
 typedef FNPDMR3ENUM *PFNPDMR3ENUM;
 VMMR3DECL(int)  PDMR3LdrEnumModules(PVM pVM, PFNPDMR3ENUM pfnCallback, void *pvArg);
@@ -104,6 +105,9 @@ VMMR3DECL(int)  PDMR3LdrQueryRCModFromPC(PVM pVM, RTRCPTR uPC,
                                          char *pszModName,  size_t cchModName,  PRTRCPTR pMod,
                                          char *pszNearSym1, size_t cchNearSym1, PRTRCPTR pNearSym1,
                                          char *pszNearSym2, size_t cchNearSym2, PRTRCPTR pNearSym2);
+VMMR3DECL(int)  PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cbInterface,
+                                            const char *pszModule, const char *pszSymPrefix,
+                                            const char *pszSymList, bool fRing0OrRC);
 
 VMMR3DECL(int)  PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstance, PPPDMIBASE ppBase);
 VMMR3DECL(int)  PDMR3QueryDeviceLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned iLun, PPPDMIBASE ppBase);
