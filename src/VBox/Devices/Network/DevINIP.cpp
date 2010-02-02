@@ -445,12 +445,12 @@ static DECLCALLBACK(int) devINIPDestruct(PPDMDEVINS pDevIns)
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
 static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
-                                          PCFGMNODE pCfgHandle)
+                                          PCFGMNODE pCfg)
 {
     PDEVINTNETIP pThis = PDMINS_2_DATA(pDevIns, PDEVINTNETIP);
     int rc = VINF_SUCCESS;
-    LogFlow(("%s: pDevIns=%p iInstance=%d pCfgHandle=%p\n", __FUNCTION__,
-             pDevIns, iInstance, pCfgHandle));
+    LogFlow(("%s: pDevIns=%p iInstance=%d pCfg=%p\n", __FUNCTION__,
+             pDevIns, iInstance, pCfg));
 
     Assert(iInstance == 0);
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
@@ -458,7 +458,7 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0IP\0Netmask\0Gateway\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0IP\0Netmask\0Gateway\0"))
     {
         rc = PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                               N_("Unknown Internal Networking IP configuration option"));
@@ -482,11 +482,11 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     /*
      * Get the configuration settings.
      */
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pThis->MAC, sizeof(pThis->MAC));
+    rc = CFGMR3QueryBytes(pCfg, "MAC", &pThis->MAC, sizeof(pThis->MAC));
     if (rc == VERR_CFGM_NOT_BYTES)
     {
         char szMAC[64];
-        rc = CFGMR3QueryString(pCfgHandle, "MAC", &szMAC[0], sizeof(szMAC));
+        rc = CFGMR3QueryString(pCfg, "MAC", &szMAC[0], sizeof(szMAC));
         if (RT_SUCCESS(rc))
         {
             char *macStr = &szMAC[0];
@@ -519,21 +519,21 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
                          N_("Configuration error: Failed to get the \"MAC\" value"));
         goto out;
     }
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "IP", &pThis->pszIP);
+    rc = CFGMR3QueryStringAlloc(pCfg, "IP", &pThis->pszIP);
     if (RT_FAILURE(rc))
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"IP\" value"));
         goto out;
     }
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Netmask", &pThis->pszNetmask);
+    rc = CFGMR3QueryStringAlloc(pCfg, "Netmask", &pThis->pszNetmask);
     if (RT_FAILURE(rc))
     {
         PDMDEV_SET_ERROR(pDevIns, rc,
                          N_("Configuration error: Failed to get the \"Netmask\" value"));
         goto out;
     }
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Gateway", &pThis->pszGateway);
+    rc = CFGMR3QueryStringAlloc(pCfg, "Gateway", &pThis->pszGateway);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         rc = VINF_SUCCESS;
     if (RT_FAILURE(rc))

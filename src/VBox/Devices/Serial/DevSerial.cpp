@@ -769,7 +769,7 @@ static DECLCALLBACK(int) serialDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
                                          int iInstance,
-                                         PCFGMNODE pCfgHandle)
+                                         PCFGMNODE pCfg)
 {
     int            rc;
     SerialState   *pThis = PDMINS_2_DATA(pDevIns, SerialState*);
@@ -817,28 +817,28 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0" "YieldOnLSRRead\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0" "YieldOnLSRRead\0"))
     {
         AssertMsgFailed(("serialConstruct Invalid configuration values\n"));
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
     }
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "YieldOnLSRRead", &pThis->fYieldOnLSRRead, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "YieldOnLSRRead", &pThis->fYieldOnLSRRead, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"YieldOnLSRRead\" value"));
 
-    rc = CFGMR3QueryU8(pCfgHandle, "IRQ", &irq_lvl);
+    rc = CFGMR3QueryU8(pCfg, "IRQ", &irq_lvl);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         /* Provide sensible defaults. */
@@ -853,7 +853,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
 
-    rc = CFGMR3QueryU16(pCfgHandle, "IOBase", &io_base);
+    rc = CFGMR3QueryU16(pCfg, "IOBase", &io_base);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         if (iInstance == 0)

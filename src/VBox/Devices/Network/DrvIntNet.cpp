@@ -807,7 +807,7 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVINTNET pThis = PDMINS_2_DATA(pDrvIns, PDRVINTNET);
     bool f;
@@ -834,7 +834,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "Network\0"
                               "Trunk\0"
                               "TrunkType\0"
@@ -883,7 +883,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{Network, string}
      * The name of the internal network to connect to.
      */
-    int rc = CFGMR3QueryString(pCfgHandle, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
+    int rc = CFGMR3QueryString(pCfg, "Network", OpenReq.szNetwork, sizeof(OpenReq.szNetwork));
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"Network\" value"));
@@ -893,7 +893,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * The trunk connection type see INTNETTRUNKTYPE.
      */
     uint32_t u32TrunkType;
-    rc = CFGMR3QueryU32(pCfgHandle, "TrunkType", &u32TrunkType);
+    rc = CFGMR3QueryU32(pCfg, "TrunkType", &u32TrunkType);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         u32TrunkType = kIntNetTrunkType_None;
     else if (RT_FAILURE(rc))
@@ -904,7 +904,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{Trunk, string, ""}
      * The name of the trunk connection.
      */
-    rc = CFGMR3QueryString(pCfgHandle, "Trunk", OpenReq.szTrunk, sizeof(OpenReq.szTrunk));
+    rc = CFGMR3QueryString(pCfg, "Trunk", OpenReq.szTrunk, sizeof(OpenReq.szTrunk));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.szTrunk[0] = '\0';
     else if (RT_FAILURE(rc))
@@ -916,7 +916,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * the computer can connect to a public network. Don't change this.
      */
     bool fRestrictAccess;
-    rc = CFGMR3QueryBool(pCfgHandle, "RestrictAccess", &fRestrictAccess);
+    rc = CFGMR3QueryBool(pCfg, "RestrictAccess", &fRestrictAccess);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fRestrictAccess = true;
     else if (RT_FAILURE(rc))
@@ -927,7 +927,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{IgnoreAllPromisc, boolean, false}
      * When set all request for operating any interface or trunk in promiscuous
      * mode will be ignored. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreAllPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreAllPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreAllPromisc\" value"));
@@ -938,7 +938,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * When set all request for operating any interface or trunk in promiscuous
      * mode will be ignored.  This differs from IgnoreAllPromisc in that clients
      * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreAllPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "QuietlyIgnoreAllPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"QuietlyIgnoreAllPromisc\" value"));
@@ -948,7 +948,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{IgnoreClientPromisc, boolean, false}
      * When set all request for operating any non-trunk interface in promiscuous
      * mode will be ignored. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreClientPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreClientPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreClientPromisc\" value"));
@@ -959,7 +959,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * When set all request for operating any non-trunk interface promiscuous mode
      * will be ignored.  This differs from IgnoreClientPromisc in that clients won't
      * get VERR_INTNET_INCOMPATIBLE_FLAGS. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreClientPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "QuietlyIgnoreClientPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"QuietlyIgnoreClientPromisc\" value"));
@@ -969,7 +969,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{IgnoreTrunkWirePromisc, boolean, false}
      * When set all request for operating the trunk-wire connection in promiscuous
      * mode will be ignored. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreTrunkWirePromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreTrunkWirePromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreTrunkWirePromisc\" value"));
@@ -980,7 +980,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * When set all request for operating any trunk-wire connection promiscuous mode
      * will be ignored.  This differs from IgnoreTrunkWirePromisc in that clients
      * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreTrunkWirePromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "QuietlyIgnoreTrunkWirePromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"QuietlyIgnoreTrunkWirePromisc\" value"));
@@ -990,7 +990,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{IgnoreTrunkHostPromisc, boolean, false}
      * When set all request for operating the trunk-host connection in promiscuous
      * mode will be ignored. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreTrunkHostPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreTrunkHostPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"IgnoreTrunkHostPromisc\" value"));
@@ -1001,7 +1001,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * When set all request for operating any trunk-host connection promiscuous mode
      * will be ignored.  This differs from IgnoreTrunkHostPromisc in that clients
      * won't get VERR_INTNET_INCOMPATIBLE_FLAGS. */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "QuietlyIgnoreTrunkHostPromisc", &f, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "QuietlyIgnoreTrunkHostPromisc", &f, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"QuietlyIgnoreTrunkHostPromisc\" value"));
@@ -1017,7 +1017,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * attaching to a wireless NIC this option is usally a requirement.
      */
     bool fSharedMacOnWire;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "SharedMacOnWire", &fSharedMacOnWire, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "SharedMacOnWire", &fSharedMacOnWire, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SharedMacOnWire\" value"));
@@ -1027,7 +1027,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /** @cfgm{ReceiveBufferSize, uint32_t, 218 KB}
      * The size of the receive buffer.
      */
-    rc = CFGMR3QueryU32(pCfgHandle, "ReceiveBufferSize", &OpenReq.cbRecv);
+    rc = CFGMR3QueryU32(pCfg, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbRecv = 218 * _1K ;
     else if (RT_FAILURE(rc))
@@ -1042,7 +1042,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * header will fragment the buffer such that the frame won't fit on either
      * side of it and the code will get very upset about it all.
      */
-    rc = CFGMR3QueryU32(pCfgHandle, "SendBufferSize", &OpenReq.cbSend);
+    rc = CFGMR3QueryU32(pCfg, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         OpenReq.cbSend = 36*_1K;
     else if (RT_FAILURE(rc))
@@ -1058,7 +1058,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      * This alterns the way the thread is suspended and resumed. When it's being used by
      * a service such as LWIP/iSCSI it shouldn't suspend immediately like for a NIC.
      */
-    rc = CFGMR3QueryBool(pCfgHandle, "IsService", &pThis->fActivateEarlyDeactivateLate);
+    rc = CFGMR3QueryBool(pCfg, "IsService", &pThis->fActivateEarlyDeactivateLate);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fActivateEarlyDeactivateLate = false;
     else if (RT_FAILURE(rc))

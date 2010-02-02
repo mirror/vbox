@@ -465,7 +465,7 @@ static DECLCALLBACK(void) drvNamedPipeDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     int rc;
     char *pszLocation = NULL;
@@ -495,13 +495,13 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     /*
      * Read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Location\0IsServer\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Location\0IsServer\0"))
     {
         rc = VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
         goto l_out;
     }
 
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Location", &pszLocation);
+    rc = CFGMR3QueryStringAlloc(pCfg, "Location", &pszLocation);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"Location\" resulted in %Rrc.\n", rc));
@@ -510,7 +510,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     pThis->pszLocation = pszLocation;
 
     bool fIsServer;
-    rc = CFGMR3QueryBool(pCfgHandle, "IsServer", &fIsServer);
+    rc = CFGMR3QueryBool(pCfg, "IsServer", &fIsServer);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query \"IsServer\" resulted in %Rrc.\n", rc));

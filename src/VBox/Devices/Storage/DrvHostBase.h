@@ -184,7 +184,7 @@ typedef struct DRVHOSTBASE
 } DRVHOSTBASE;
 
 
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE enmType);
+int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType);
 int DRVHostBaseInitFinish(PDRVHOSTBASE pThis);
 int DRVHostBaseMediaPresent(PDRVHOSTBASE pThis);
 void DRVHostBaseMediaNotPresent(PDRVHOSTBASE pThis);

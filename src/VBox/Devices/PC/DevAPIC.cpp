@@ -2737,7 +2737,7 @@ DECLINLINE(void) initApicData(APICState* apic, uint8_t id)
 /**
  * @copydoc FNPDMDEVCONSTRUCT
  */
-static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDMAPICREG      ApicReg;
     int             rc;
@@ -2756,29 +2756,29 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "IOAPIC\0"
                               "GCEnabled\0"
                               "R0Enabled\0"
                               "NumCPUs\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IOAPIC", &fIoApic, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "IOAPIC", &fIoApic, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "NumCPUs", &cCpus, 1);
+    rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query integer value \"NumCPUs\""));
@@ -3206,7 +3206,7 @@ static DECLCALLBACK(void) ioapicRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta
 /**
  * @copydoc FNPDMDEVCONSTRUCT
  */
-static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     IOAPICState *s = PDMINS_2_DATA(pDevIns, IOAPICState *);
     PDMIOAPICREG IoApicReg;
@@ -3219,15 +3219,15 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0" "R0Enabled\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"GCEnabled\""));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to query boolean value \"R0Enabled\""));

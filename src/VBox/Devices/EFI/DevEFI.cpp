@@ -709,9 +709,9 @@ static int efiParseFirmware(PDEVEFI pThis)
  *
  * @returns VBox status.
  * @param   pThis       The device instance data.
- * @param   pCfgHandle  Configuration node handle for the device.
+ * @param   pCfg        Configuration node handle for the device.
  */
-static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfgHandle)
+static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfg)
 {
     /*
      * Read the entire firmware volume into memory.
@@ -790,14 +790,14 @@ static int efiLoadRom(PDEVEFI pThis, PCFGMNODE pCfgHandle)
  *
  * @returns VBox status code.
  * @param   pThis       The device instance data.
- * @param   pCfgHandle  Configuration node handle for the device.
+ * @param   pCfg        Configuration node handle for the device.
  */
-static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfgHandle)
+static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
 {
     uint8_t f64BitEntry = 0;
     int rc;
 
-    rc = CFGMR3QueryU8Def(pCfgHandle, "64BitEntry", &f64BitEntry, 0);
+    rc = CFGMR3QueryU8Def(pCfg, "64BitEntry", &f64BitEntry, 0);
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pThis->pDevIns, rc,
                                 N_("Configuration error: Failed to read \"64BitEntry\""));
@@ -863,7 +863,7 @@ static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfgHandle)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PDEVEFI     pThis = PDMINS_2_DATA(pDevIns, PDEVEFI);
     int         rc;
@@ -875,7 +875,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "EfiRom\0"
                               "RamSize\0"
                               "RamHoleSize\0"
@@ -910,10 +910,10 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
 
     /* CPU count (optional). */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "NumCPUs", &pThis->cCpus, 1);
+    rc = CFGMR3QueryU32Def(pCfg, "NumCPUs", &pThis->cCpus, 1);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &pThis->u8IOAPIC, 1);
+    rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &pThis->u8IOAPIC, 1);
     if (RT_FAILURE (rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
@@ -922,7 +922,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Query the machine's UUID for SMBIOS/DMI use.
      */
     RTUUID  uuid;
-    rc = CFGMR3QueryBytes(pCfgHandle, "UUID", &uuid, sizeof(uuid));
+    rc = CFGMR3QueryBytes(pCfg, "UUID", &uuid, sizeof(uuid));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
@@ -935,9 +935,9 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 
 
     /* RAM sizes */
-    rc = CFGMR3QueryU64(pCfgHandle, "RamSize", &pThis->cbRam);
+    rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbRam);
     AssertLogRelRCReturn(rc, rc);
-    rc = CFGMR3QueryU64(pCfgHandle, "RamHoleSize", &pThis->cbRamHole);
+    rc = CFGMR3QueryU64(pCfg, "RamHoleSize", &pThis->cbRamHole);
     AssertLogRelRCReturn(rc, rc);
     pThis->cbBelow4GB = RT_MIN(pThis->cbRam, _4G - pThis->cbRamHole);
     pThis->cbAbove4GB = pThis->cbRam - pThis->cbBelow4GB;
@@ -946,7 +946,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Get the system EFI ROM file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "EfiRom", &pThis->pszEfiRomFile);
+    rc = CFGMR3QueryStringAlloc(pCfg, "EfiRom", &pThis->pszEfiRomFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
         pThis->pszEfiRomFile = (char*)PDMDevHlpMMHeapAlloc(pDevIns, RTPATH_MAX);
@@ -972,7 +972,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      /*
      * Get boot args.
      */
-    rc = CFGMR3QueryString(pCfgHandle, "BootArgs",
+    rc = CFGMR3QueryString(pCfg, "BootArgs",
                            pThis->pszBootArgs, sizeof pThis->pszBootArgs);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
@@ -995,11 +995,11 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Load firmware volume and thunk ROM.
      */
-    rc = efiLoadRom(pThis, pCfgHandle);
+    rc = efiLoadRom(pThis, pCfg);
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = efiLoadThunk(pThis, pCfgHandle);
+    rc = efiLoadThunk(pThis, pCfg);
     if (RT_FAILURE(rc))
         return rc;
 

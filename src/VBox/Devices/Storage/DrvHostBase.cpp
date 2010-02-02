@@ -1843,10 +1843,10 @@ DECLCALLBACK(void) DRVHostBaseDestruct(PPDMDRVINS pDrvIns)
  *
  * @returns VBox status code.
  * @param   pDrvIns         Driver instance.
- * @param   pCfgHandle      Configuration handle.
+ * @param   pCfg            Configuration handle.
  * @param   enmType         Device type.
  */
-int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE enmType)
+int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, PDMBLOCKTYPE enmType)
 {
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("%s-%d: DRVHostBaseInitData: iInstance=%d\n", pDrvIns->pReg->szName, pDrvIns->iInstance, pDrvIns->iInstance));
@@ -1918,7 +1918,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
      * Query configuration.
      */
     /* Device */
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pThis->pszDevice);
+    int rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pThis->pszDevice);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: query for \"Path\" string returned %Rra.\n", rc));
@@ -1927,7 +1927,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
 
     /* Mountable */
     uint32_t u32;
-    rc = CFGMR3QueryU32(pCfgHandle, "Interval", &u32);
+    rc = CFGMR3QueryU32(pCfg, "Interval", &u32);
     if (RT_SUCCESS(rc))
         pThis->cMilliesPoller = u32;
     else if (rc == VERR_CFGM_VALUE_NOT_FOUND)
@@ -1939,7 +1939,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     }
 
     /* ReadOnly */
-    rc = CFGMR3QueryBool(pCfgHandle, "ReadOnly", &pThis->fReadOnlyConfig);
+    rc = CFGMR3QueryBool(pCfg, "ReadOnly", &pThis->fReadOnlyConfig);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fReadOnlyConfig = enmType == PDMBLOCKTYPE_DVD || enmType == PDMBLOCKTYPE_CDROM ? true : false;
     else if (RT_FAILURE(rc))
@@ -1949,7 +1949,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     }
 
     /* Locked */
-    rc = CFGMR3QueryBool(pCfgHandle, "Locked", &pThis->fLocked);
+    rc = CFGMR3QueryBool(pCfg, "Locked", &pThis->fLocked);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fLocked = false;
     else if (RT_FAILURE(rc))
@@ -1959,7 +1959,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
     }
 
     /* BIOS visible */
-    rc = CFGMR3QueryBool(pCfgHandle, "BIOSVisible", &pThis->fBiosVisible);
+    rc = CFGMR3QueryBool(pCfg, "BIOSVisible", &pThis->fBiosVisible);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->fBiosVisible = true;
     else if (RT_FAILURE(rc))
@@ -1970,7 +1970,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
 
     /* Uuid */
     char *psz;
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Uuid", &psz);
+    rc = CFGMR3QueryStringAlloc(pCfg, "Uuid", &psz);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTUuidClear(&pThis->Uuid);
     else if (RT_SUCCESS(rc))
@@ -1992,7 +1992,7 @@ int DRVHostBaseInitData(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, PDMBLOCKTYPE e
 
     /* Define whether attach failure is an error (default) or not. */
     bool fAttachFailError;
-    rc = CFGMR3QueryBool(pCfgHandle, "AttachFailError", &fAttachFailError);
+    rc = CFGMR3QueryBool(pCfg, "AttachFailError", &fAttachFailError);
     if (RT_FAILURE(rc))
         fAttachFailError = true;
     pThis->fAttachFailError = fAttachFailError;

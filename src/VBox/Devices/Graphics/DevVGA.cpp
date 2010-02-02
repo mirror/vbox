@@ -5844,7 +5844,7 @@ static DECLCALLBACK(int) vgaR3Destruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
 
     static bool s_fExpandDone = false;
@@ -5876,7 +5876,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "VRamSize\0"
+    if (!CFGMR3AreValuesValid(pCfg, "VRamSize\0"
                                           "MonitorCount\0"
                                           "GCEnabled\0"
                                           "R0Enabled\0"
@@ -5909,7 +5909,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Init state data.
      */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "VRamSize", &pThis->vram_size, VGA_VRAM_DEFAULT);
+    rc = CFGMR3QueryU32Def(pCfg, "VRamSize", &pThis->vram_size, VGA_VRAM_DEFAULT);
     AssertLogRelRCReturn(rc, rc);
     if (pThis->vram_size > VGA_VRAM_MAX)
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
@@ -5918,13 +5918,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDevHlpVMSetError(pDevIns, VERR_INVALID_PARAMETER, RT_SRC_POS,
                                    "VRamSize is too small, %#x, max %#x", pThis->vram_size, VGA_VRAM_MIN);
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "MonitorCount", &pThis->cMonitors, 1);
+    rc = CFGMR3QueryU32Def(pCfg, "MonitorCount", &pThis->cMonitors, 1);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
     AssertLogRelRCReturn(rc, rc);
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     AssertLogRelRCReturn(rc, rc);
     Log(("VGA: VRamSize=%#x fGCenabled=%RTbool fR0Enabled=%RTbool\n", pThis->vram_size, pThis->fGCEnabled, pThis->fR0Enabled));
 
@@ -6209,13 +6209,13 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     cb = sizeof(mode_info_list) + sizeof(ModeInfoListItem);
 
-    rc = CFGMR3QueryU32(pCfgHandle, "HeightReduction", &cyReduction);
+    rc = CFGMR3QueryU32(pCfg, "HeightReduction", &cyReduction);
     if (RT_SUCCESS(rc) && cyReduction)
         cb *= 2;                            /* Default mode list will be twice long */
     else
         cyReduction = 0;
 
-    rc = CFGMR3QueryU32(pCfgHandle, "CustomVideoModes", &cCustomModes);
+    rc = CFGMR3QueryU32(pCfg, "CustomVideoModes", &cCustomModes);
     if (RT_SUCCESS(rc) && cCustomModes)
         cb += sizeof(ModeInfoListItem) * cCustomModes;
     else
@@ -6303,7 +6303,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
             /* query and decode the custom mode string. */
             RTStrPrintf(szExtraDataKey, sizeof(szExtraDataKey), "CustomVideoMode%d", i);
-            rc = CFGMR3QueryStringAlloc(pCfgHandle, szExtraDataKey, &pszExtraData);
+            rc = CFGMR3QueryStringAlloc(pCfg, szExtraDataKey, &pszExtraData);
             if (RT_SUCCESS(rc))
             {
                 ModeInfoListItem *pDefMode = mode_info_list;
@@ -6425,21 +6425,21 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
      */
     LOGOHDR LogoHdr = { LOGO_HDR_MAGIC, 0, 0, 0, 0, 0, 0 };
 
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeIn", &LogoHdr.fu8FadeIn);
+    rc = CFGMR3QueryU8(pCfg, "FadeIn", &LogoHdr.fu8FadeIn);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8FadeIn = 1;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeIn\" as integer failed"));
 
-    rc = CFGMR3QueryU8(pCfgHandle, "FadeOut", &LogoHdr.fu8FadeOut);
+    rc = CFGMR3QueryU8(pCfg, "FadeOut", &LogoHdr.fu8FadeOut);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8FadeOut = 1;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"FadeOut\" as integer failed"));
 
-    rc = CFGMR3QueryU16(pCfgHandle, "LogoTime", &LogoHdr.u16LogoMillies);
+    rc = CFGMR3QueryU16(pCfg, "LogoTime", &LogoHdr.u16LogoMillies);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.u16LogoMillies = 0;
     else if (RT_FAILURE(rc))
@@ -6450,7 +6450,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (LogoHdr.fu8FadeIn && LogoHdr.fu8FadeOut && !LogoHdr.u16LogoMillies)
         LogoHdr.u16LogoMillies = RT_MAX(LogoHdr.u16LogoMillies, LOGO_DELAY_TIME);
 
-    rc = CFGMR3QueryU8(pCfgHandle, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
+    rc = CFGMR3QueryU8(pCfg, "ShowBootMenu", &LogoHdr.fu8ShowBootMenu);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         LogoHdr.fu8ShowBootMenu = 0;
     else if (RT_FAILURE(rc))
@@ -6460,7 +6460,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Get the Logo file name.
      */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "LogoFile", &pThis->pszLogoFile);
+    rc = CFGMR3QueryStringAlloc(pCfg, "LogoFile", &pThis->pszLogoFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pThis->pszLogoFile = NULL;
     else if (RT_FAILURE(rc))

@@ -862,16 +862,16 @@ static DECLCALLBACK(void) drvNATPowerOn(PPDMDRVINS pDrvIns)
  * Sets up the redirectors.
  *
  * @returns VBox status code.
- * @param   pCfgHandle      The drivers configuration handle.
+ * @param   pCfg            The configuration handle.
  */
-static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfgHandle, RTIPV4ADDR Network)
+static int drvNATConstructRedir(unsigned iInstance, PDRVNAT pThis, PCFGMNODE pCfg, RTIPV4ADDR Network)
 {
      RTMAC Mac;
      memset(&Mac, 0, sizeof(RTMAC)); /*can't get MAC here */
     /*
      * Enumerate redirections.
      */
-    for (PCFGMNODE pNode = CFGMR3GetFirstChild(pCfgHandle); pNode; pNode = CFGMR3GetNextChild(pNode))
+    for (PCFGMNODE pNode = CFGMR3GetFirstChild(pCfg); pNode; pNode = CFGMR3GetNextChild(pNode))
     {
         /*
          * Validate the port forwarding config.
@@ -965,7 +965,7 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     LogFlow(("drvNATConstruct:\n"));
@@ -974,7 +974,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
     /*
      * Validate the config.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
@@ -1005,19 +1005,19 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
      */
     int rc;
     bool fPassDomain = true;
-    GET_BOOL(rc, pThis, pCfgHandle, "PassDomain", fPassDomain);
+    GET_BOOL(rc, pThis, pCfg, "PassDomain", fPassDomain);
 
-    GET_STRING_ALLOC(rc, pThis, pCfgHandle, "TFTPPrefix", pThis->pszTFTPPrefix);
-    GET_STRING_ALLOC(rc, pThis, pCfgHandle, "BootFile", pThis->pszBootFile);
-    GET_STRING_ALLOC(rc, pThis, pCfgHandle, "NextServer", pThis->pszNextServer);
+    GET_STRING_ALLOC(rc, pThis, pCfg, "TFTPPrefix", pThis->pszTFTPPrefix);
+    GET_STRING_ALLOC(rc, pThis, pCfg, "BootFile", pThis->pszBootFile);
+    GET_STRING_ALLOC(rc, pThis, pCfg, "NextServer", pThis->pszNextServer);
 
     int fDNSProxy = 0;
-    GET_S32(rc, pThis, pCfgHandle, "DNSProxy", fDNSProxy);
+    GET_S32(rc, pThis, pCfg, "DNSProxy", fDNSProxy);
     int fUseHostResolver = 0;
-    GET_S32(rc, pThis, pCfgHandle, "UseHostResolver", fUseHostResolver);
+    GET_S32(rc, pThis, pCfg, "UseHostResolver", fUseHostResolver);
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     int MTU = 1500;
-    GET_S32(rc, pThis, pCfgHandle, "SlirpMTU", MTU);
+    GET_S32(rc, pThis, pCfg, "SlirpMTU", MTU);
 #endif
 
     /*
@@ -1036,7 +1036,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 
     /* Generate a network address for this network card. */
     char szNetwork[32]; /* xxx.xxx.xxx.xxx/yy */
-    GET_STRING(rc, pThis, pCfgHandle, "Network", szNetwork[0], sizeof(szNetwork));
+    GET_STRING(rc, pThis, pCfg, "Network", szNetwork[0], sizeof(szNetwork));
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTStrPrintf(szNetwork, sizeof(szNetwork), "10.0.%d.0/24", pDrvIns->iInstance + 2);
 
@@ -1067,7 +1067,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
         slirp_set_mtu(pThis->pNATState, MTU);
 #endif
         char *pszBindIP = NULL;
-        GET_STRING_ALLOC(rc, pThis, pCfgHandle, "BindIP", pszBindIP);
+        GET_STRING_ALLOC(rc, pThis, pCfg, "BindIP", pszBindIP);
         rc = slirp_set_binding_address(pThis->pNATState, pszBindIP);
         if (rc != 0)
             LogRel(("NAT: value of BindIP has been ignored\n"));
@@ -1078,7 +1078,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
             do                                                  \
             {                                                   \
                 int len = 0;                                    \
-                rc = CFGMR3QueryS32(pCfgHandle, name, &len);    \
+                rc = CFGMR3QueryS32(pCfg, name, &len);    \
                 if (RT_SUCCESS(rc))                             \
                     setter(pThis->pNATState, len);              \
             } while(0)
@@ -1095,7 +1095,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandl
 # include "counters.h"
 #endif
 
-        int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfgHandle, Network);
+        int rc2 = drvNATConstructRedir(pDrvIns->iInstance, pThis, pCfg, Network);
         if (RT_SUCCESS(rc2))
         {
             /*

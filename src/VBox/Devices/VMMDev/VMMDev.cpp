@@ -2515,7 +2515,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     int rc;
     VMMDevState *pThis = PDMINS_2_DATA(pDevIns, VMMDevState *);
@@ -2526,7 +2526,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "GetHostTimeDisabled\0"
                               "BackdoorLogDisabled\0"
                               "KeepCredentials\0"
@@ -2534,22 +2534,22 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
                               ))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "GetHostTimeDisabled", &pThis->fGetHostTimeDisabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"GetHostTimeDisabled\" as a boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "BackdoorLogDisabled", &pThis->fBackdoorLogDisabled, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"BackdoorLogDisabled\" as a boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "KeepCredentials", &pThis->fKeepCredentials, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "KeepCredentials", &pThis->fKeepCredentials, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"KeepCredentials\" as a boolean"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "HeapEnabled", &pThis->fHeapEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "HeapEnabled", &pThis->fHeapEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed querying \"HeapEnabled\" as a boolean"));
