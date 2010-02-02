@@ -1936,7 +1936,7 @@ VMMR3DECL(int) VMMR3CallR0(PVM pVM, uint32_t uOperation, uint64_t u64Arg, PSUPVM
         /* Resume R0 */
     }
 
-    AssertLogRelMsgReturn(rc == VINF_SUCCESS || VBOX_FAILURE(rc),
+    AssertLogRelMsgReturn(rc == VINF_SUCCESS || RT_FAILURE(rc),
                           ("uOperation=%u rc=%Rrc\n", uOperation, rc),
                           VERR_INTERNAL_ERROR);
     return rc;

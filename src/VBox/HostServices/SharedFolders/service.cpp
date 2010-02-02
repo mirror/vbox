@@ -678,7 +678,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                     else
                         rc = vbsfLock(pClient, root, Handle, offset, length, flags);
 
-                    if (VBOX_SUCCESS(rc))
+                    if (RT_SUCCESS(rc))
                     {
                         /* Update parameters.*/
                         /* none */

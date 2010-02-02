@@ -1597,7 +1597,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
         char            szOutput[256];
 
         rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             Log(("Patched instr: %s\n", szOutput));
 #endif
 
@@ -1620,7 +1620,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3RemovePatches(PVM pVM, PVMCPU pVCpu, void *pv
 
 #ifdef LOG_ENABLED
         rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, CPUMGetGuestCS(pVCpu), pInstrGC, 0, szOutput, sizeof(szOutput), 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             Log(("Original instr: %s\n", szOutput));
 #endif
     }
@@ -1843,7 +1843,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3ReplaceTprInstr(PVM pVM, PVMCPU pVCpu, void *
 #ifdef LOG_ENABLED
     char      szOutput[256];
     rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif
 
@@ -1908,7 +1908,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
 
 #ifdef LOG_ENABLED
         rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
-        if (VBOX_SUCCESS(rc))
+        if (RT_SUCCESS(rc))
             Log(("Original instr: %s\n", szOutput));
 #endif
 
@@ -2038,7 +2038,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
                 uint32_t cb;
 
                 rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pInstr, 0, szOutput, sizeof(szOutput), &cb);
-                if (VBOX_SUCCESS(rc))
+                if (RT_SUCCESS(rc))
                     Log(("Patch instr %s\n", szOutput));
 
                 pInstr += cb;
@@ -2057,7 +2057,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
 
 #ifdef LOG_ENABLED
             rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
-            if (VBOX_SUCCESS(rc))
+            if (RT_SUCCESS(rc))
                 Log(("Jump: %s\n", szOutput));
 #endif
             pVM->hwaccm.s.pFreeGuestPatchMem += off;
@@ -2081,7 +2081,7 @@ DECLCALLBACK(VBOXSTRICTRC) hwaccmR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, void *pv
 
 #ifdef LOG_ENABLED
     rc = DBGFR3DisasInstrEx(pVM, pVCpu->idCpu, pCtx->cs, pCtx->rip, 0, szOutput, sizeof(szOutput), 0);
-    if (VBOX_SUCCESS(rc))
+    if (RT_SUCCESS(rc))
         Log(("Failed to patch instr: %s\n", szOutput));
 #endif
 

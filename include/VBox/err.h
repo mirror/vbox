@@ -1515,27 +1515,6 @@
 
 /* SED-END */
 
-
-/** @def VBOX_SUCCESS
- * Check for success.
- *
- * @returns true if rc indicates success.
- * @returns false if rc indicates failure.
- *
- * @param   rc  The iprt status code to test.
- */
-#define VBOX_SUCCESS(rc)    RT_SUCCESS(rc)
-
-/** @def VBOX_FAILURE
- * Check for failure.
- *
- * @returns true if rc indicates failure.
- * @returns false if rc indicates success.
- *
- * @param   rc  The iprt status code to test.
- */
-#define VBOX_FAILURE(rc)    RT_FAILURE(rc)
-
 /** @} */
 
 
