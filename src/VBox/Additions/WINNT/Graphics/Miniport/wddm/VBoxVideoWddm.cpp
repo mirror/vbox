@@ -315,16 +315,18 @@ NTSTATUS DxgkDdiQueryChildRelations(
     /* The DxgkDdiQueryChildRelations function should be made pageable. */
     PAGED_CODE();
 
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
-    for (ULONG i = 0; i < ChildRelationsSize; ++i)
+    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
     {
         ChildRelations[i].ChildDeviceType = TypeVideoOutput;
-        ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_OTHER;
-        ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_NONE;
+        ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_HD15; /* VGA */
+        ChildRelations[i].ChildCapabilities.Type.VideoOutput.MonitorOrientationAwareness = D3DKMDT_MOA_INTERRUPTIBLE; /* ?? D3DKMDT_MOA_NONE*/
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.SupportsSdtvModes = FALSE;
-        ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessAlwaysConnected;
-        ChildRelations[i].AcpiUid =  i; /* @todo: do we need it? could it be zero ? */
-        ChildRelations[i].ChildUid = i; /* could it be zero ? */
+        ChildRelations[i].ChildCapabilities.HpdAwareness = HpdAwarenessInterruptible; /* ?? HpdAwarenessAlwaysConnected; */
+        ChildRelations[i].AcpiUid =  i; /* */
+        ChildRelations[i].ChildUid = i; /* should be == target id */
     }
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
     return STATUS_SUCCESS;
@@ -467,37 +469,35 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
         {
             DXGK_DRIVERCAPS *pCaps = (DXGK_DRIVERCAPS*)pQueryAdapterInfo->pOutputData;
 
-            pCaps->HighestAcceptableAddress.HighPart = 0xffffffffUL;
+            pCaps->HighestAcceptableAddress.HighPart = 0x0;
             pCaps->HighestAcceptableAddress.LowPart = 0xffffffffUL;
-            pCaps->MaxAllocationListSlotId = 0xffffffffUL;
+            pCaps->MaxAllocationListSlotId = 16;
             pCaps->ApertureSegmentCommitLimit = 0;
-            pCaps->MaxPointerWidth = 0xffffffffUL;
-            pCaps->MaxPointerHeight = 0xffffffffUL;
-            pCaps->PointerCaps.Value = 0x7; /* Monochrome , Color , MaskedColor */
+            pCaps->MaxPointerWidth = 64;
+            pCaps->MaxPointerHeight = 64;
+            pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, dosable for now */
             pCaps->InterruptMessageNumber = 0;
             pCaps->NumberOfSwizzlingRanges = 0;
             /* @todo: need to adjust this for proper 2D Accel support */
-            pCaps->MaxOverlays = 0;
+            pCaps->MaxOverlays = 0; /* ?? how much should we support? 32 */
             pCaps->GammaRampCaps.Value = 0;
             pCaps->PresentationCaps.Value = 0;
             pCaps->PresentationCaps.NoScreenToScreenBlt = 1;
             pCaps->PresentationCaps.NoOverlapScreenBlt = 1;
-            pCaps->MaxQueuedFlipOnVSync = 1; /* @todo: need more ?? */
+            pCaps->MaxQueuedFlipOnVSync = 0; /* do we need it? */
             pCaps->FlipCaps.Value = 0;
-            pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1;
-            pCaps->FlipCaps.FlipOnVSyncMmIo = 1; /* @todo: ?? */
+            /* ? pCaps->FlipCaps.FlipOnVSyncWithNoWait = 1; */
             pCaps->SchedulingCaps.Value = 0;
-            /* @todo: we might need it for Aero.
-             * Setting this glag would mean we support DeviceContext, i.e.
+            /* we might need it for Aero.
+             * Setting this glag means we support DeviceContext, i.e.
              *  DxgkDdiCreateContext and DxgkDdiDestroyContext
-             *
-             *  pCaps->SchedulingCaps.MultiEngineAware = 1;
              */
+            pCaps->SchedulingCaps.MultiEngineAware = 1;
             pCaps->MemoryManagementCaps.Value = 0;
             /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
             pCaps->MemoryManagementCaps.PagingNode = 0;
             /* @todo: this corelates with pCaps->SchedulingCaps.MultiEngineAware */
-            pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = 0;
+            pCaps->GpuEngineTopology.NbAsymetricProcessingNodes = 1;
 
             break;
         }
