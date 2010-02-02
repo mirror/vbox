@@ -1308,7 +1308,7 @@ const PDMDEVREG g_DevicePcBios =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "pcbios",
     /* szRCMod */
     "",

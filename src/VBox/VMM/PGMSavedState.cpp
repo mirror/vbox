@@ -289,7 +289,7 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
         }
         AssertLogRelReturn(id != 0, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        char szDevName[RT_SIZEOFMEMB(PDMDEVREG, szDeviceName)];
+        char szDevName[RT_SIZEOFMEMB(PDMDEVREG, szName)];
         rc = SSMR3GetStrZ(pSSM, szDevName, sizeof(szDevName));
         AssertLogRelRCReturn(rc, rc);
 
@@ -626,7 +626,7 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
     {
         pMmio2->idSavedState = id;
         SSMR3PutU8(pSSM, id);
-        SSMR3PutStrZ(pSSM, pMmio2->pDevInsR3->pReg->szDeviceName);
+        SSMR3PutStrZ(pSSM, pMmio2->pDevInsR3->pReg->szName);
         SSMR3PutU32(pSSM, pMmio2->pDevInsR3->iInstance);
         SSMR3PutU8(pSSM, pMmio2->iRegion);
         SSMR3PutStrZ(pSSM, pMmio2->RamRange.pszDesc);
@@ -671,7 +671,7 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
         }
         AssertLogRelReturn(id != 0, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
 
-        char szDevName[RT_SIZEOFMEMB(PDMDEVREG, szDeviceName)];
+        char szDevName[RT_SIZEOFMEMB(PDMDEVREG, szName)];
         rc = SSMR3GetStrZ(pSSM, szDevName, sizeof(szDevName));
         AssertLogRelRCReturn(rc, rc);
 
@@ -697,7 +697,7 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             if (    pMmio2->idSavedState == UINT8_MAX
                 &&  pMmio2->iRegion == iRegion
                 &&  pMmio2->pDevInsR3->iInstance == uInstance
-                &&  !strcmp(pMmio2->pDevInsR3->pReg->szDeviceName, szDevName))
+                &&  !strcmp(pMmio2->pDevInsR3->pReg->szName, szDevName))
             {
                 pMmio2->idSavedState = id;
                 break;

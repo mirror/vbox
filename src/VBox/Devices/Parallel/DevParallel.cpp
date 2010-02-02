@@ -855,7 +855,7 @@ const PDMDEVREG g_DeviceParallelPort =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "parallel",
     /* szRCMod */
     "VBoxDDGC.gc",

@@ -1078,7 +1078,7 @@ const PDMDEVREG g_DeviceI8259 =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "i8259",
     /* szRCMod */
     "VBoxDDGC.gc",

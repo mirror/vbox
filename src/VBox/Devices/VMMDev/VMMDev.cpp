@@ -2686,7 +2686,7 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
-        Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+        Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
         rc = VINF_SUCCESS;
     }
     else
@@ -2733,7 +2733,7 @@ extern "C" const PDMDEVREG g_DeviceVMMDev =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "VMMDev",
     /* szRCMod */
     "",

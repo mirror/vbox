@@ -1471,7 +1471,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
@@ -1492,7 +1492,7 @@ static DECLCALLBACK(int)  kbdAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #1!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                Log(("%s/%d: warning: no driver attached to LUN #1!\n", pDevIns->pReg->szName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
@@ -1682,7 +1682,7 @@ const PDMDEVREG g_DevicePS2KeyboardMouse =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "pckbd",
     /* szRCMod */
     "VBoxDDGC.gc",

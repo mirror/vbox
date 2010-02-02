@@ -97,7 +97,7 @@ static const PDMDEVREG g_DeviceSample =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "sample",
     /* szRCMod */
     "",

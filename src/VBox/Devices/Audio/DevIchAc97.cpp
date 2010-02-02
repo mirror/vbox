@@ -1685,7 +1685,7 @@ const PDMDEVREG g_DeviceICHAC97 =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "ichac97",
     /* szRCMod */
     "",

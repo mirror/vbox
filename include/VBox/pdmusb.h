@@ -87,7 +87,7 @@ typedef struct PDMUSBREG
     /** Structure version. PDM_DEVREG_VERSION defines the current version. */
     uint32_t            u32Version;
     /** Device name. */
-    char                szDeviceName[32];
+    char                szName[32];
     /** The description of the device. The UTF-8 string pointed to shall, like this structure,
      * remain unchanged from registration till VM destruction. */
     const char         *pszDescription;

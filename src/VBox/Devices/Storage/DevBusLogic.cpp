@@ -2677,7 +2677,7 @@ const PDMDEVREG g_DeviceBusLogic =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "buslogic",
     /* szRCMod */
     "VBoxDDGC.gc",

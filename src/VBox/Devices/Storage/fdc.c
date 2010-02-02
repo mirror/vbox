@@ -2912,7 +2912,7 @@ const PDMDEVREG g_DeviceFloppyController =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "i82078",
     /* szRCMod */
     "",

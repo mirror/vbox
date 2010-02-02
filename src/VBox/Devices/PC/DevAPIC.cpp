@@ -2993,7 +2993,7 @@ const PDMDEVREG g_DeviceAPIC =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "apic",
     /* szRCMod */
     "VBoxDD2GC.gc",
@@ -3314,7 +3314,7 @@ const PDMDEVREG g_DeviceIOAPIC =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "ioapic",
     /* szRCMod */
     "VBoxDD2GC.gc",

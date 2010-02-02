@@ -1911,7 +1911,7 @@ const PDMDEVREG g_DeviceSB16 =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "sb16",
     /* szRCMod */
     "",

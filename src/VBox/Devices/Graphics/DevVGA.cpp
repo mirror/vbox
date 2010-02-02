@@ -5758,7 +5758,7 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
             }
             else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
             {
-                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                Log(("%s/%d: warning: no driver attached to LUN #0!\n", pDevIns->pReg->szName, pDevIns->iInstance));
                 rc = VINF_SUCCESS;
             }
             else
@@ -6592,7 +6592,7 @@ const PDMDEVREG g_DeviceVga =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "vga",
     /* szRCMod */
     "VBoxDDGC.gc",

@@ -247,7 +247,7 @@ typedef struct PDMDEVREG
     /** Structure version. PDM_DEVREG_VERSION defines the current version. */
     uint32_t            u32Version;
     /** Device name. */
-    char                szDeviceName[32];
+    char                szName[32];
     /** Name of the raw-mode context module (no path).
      * Only evalutated if PDM_DEVREG_FLAGS_RC is set. */
     char                szRCMod[32];
