@@ -408,7 +408,7 @@ typedef struct PDMDRV
     /** Pointer to the next device. */
     PPDMDRV                         pNext;
     /** Registration structure. */
-    const struct PDMDRVREG *        pDrvReg;
+    const struct PDMDRVREG *        pReg;
     /** Current number of instances. */
     uint32_t                        cInstances;
     /** The next instance number. */

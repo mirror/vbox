@@ -907,9 +907,9 @@ VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInsta
             /* Yes, find the bottom most driver and ask it to attach to the new stuff. */
             while (pDrvIns->Internal.s.pDown)
                 pDrvIns = pDrvIns->Internal.s.pDown;
-            if (pDrvIns->pDrvReg->pfnAttach)
+            if (pDrvIns->pReg->pfnAttach)
             {
-                rc = pDrvIns->pDrvReg->pfnAttach(pDrvIns, fFlags);
+                rc = pDrvIns->pReg->pfnAttach(pDrvIns, fFlags);
                 if (RT_SUCCESS(rc) && ppBase)
                     *ppBase = pDrvIns->Internal.s.pDown
                             ? &pDrvIns->Internal.s.pDown->IBase
@@ -979,7 +979,7 @@ VMMR3DECL(int) PDMR3DriverDetach(PVM pVM, const char *pszDevice, unsigned iDevIn
             {
                 while (pDrvIns)
                 {
-                    if (!strcmp(pDrvIns->pDrvReg->szDriverName, pszDriver))
+                    if (!strcmp(pDrvIns->pReg->szDriverName, pszDriver))
                     {
                         if (iOccurance == 0)
                             break;

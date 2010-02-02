@@ -500,11 +500,11 @@ static void pdmR3TermLuns(PVM pVM, PPDMLUN pLun, const char *pszDevice, unsigned
         {
             PPDMDRVINS pDrvNext = pDrvIns->Internal.s.pUp;
 
-            if (pDrvIns->pDrvReg->pfnDestruct)
+            if (pDrvIns->pReg->pfnDestruct)
             {
                 LogFlow(("pdmR3DevTerm: Destroying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pszDevice, iInstance));
-                pDrvIns->pDrvReg->pfnDestruct(pDrvIns);
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, pLun->iLun, pszDevice, iInstance));
+                pDrvIns->pReg->pfnDestruct(pDrvIns);
             }
             pDrvIns->Internal.s.pDrv->cInstances--;
 
@@ -922,15 +922,15 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
 DECLINLINE(int) pdmR3PowerOnDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
 {
     Assert(pDrvIns->Internal.s.fVMSuspended);
-    if (pDrvIns->pDrvReg->pfnPowerOn)
+    if (pDrvIns->pReg->pfnPowerOn)
     {
         LogFlow(("PDMR3PowerOn: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                 pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
-        int rc = VINF_SUCCESS; pDrvIns->pDrvReg->pfnPowerOn(pDrvIns);
+                 pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+        int rc = VINF_SUCCESS; pDrvIns->pReg->pfnPowerOn(pDrvIns);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3PowerOn: driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
-                    pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance, rc));
+                    pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance, rc));
             return rc;
         }
     }
@@ -1054,22 +1054,22 @@ DECLINLINE(bool) pdmR3ResetDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
     if (!pDrvIns->Internal.s.fVMReset)
     {
         pDrvIns->Internal.s.fVMReset = true;
-        if (pDrvIns->pDrvReg->pfnReset)
+        if (pDrvIns->pReg->pfnReset)
         {
             if (!pDrvIns->Internal.s.pfnAsyncNotify)
             {
                 LogFlow(("PDMR3Reset: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
-                pDrvIns->pDrvReg->pfnReset(pDrvIns);
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                pDrvIns->pReg->pfnReset(pDrvIns);
                 if (pDrvIns->Internal.s.pfnAsyncNotify)
                     LogFlow(("PDMR3Reset: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                             pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
                 pDrvIns->Internal.s.pfnAsyncNotify = false;
                 LogFlow(("PDMR3Reset: Async notification completed - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             if (pDrvIns->Internal.s.pfnAsyncNotify)
             {
@@ -1280,22 +1280,22 @@ DECLINLINE(bool) pdmR3SuspendDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
     if (!pDrvIns->Internal.s.fVMSuspended)
     {
         pDrvIns->Internal.s.fVMSuspended = true;
-        if (pDrvIns->pDrvReg->pfnSuspend)
+        if (pDrvIns->pReg->pfnSuspend)
         {
             if (!pDrvIns->Internal.s.pfnAsyncNotify)
             {
                 LogFlow(("PDMR3Suspend: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
-                pDrvIns->pDrvReg->pfnSuspend(pDrvIns);
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                pDrvIns->pReg->pfnSuspend(pDrvIns);
                 if (pDrvIns->Internal.s.pfnAsyncNotify)
                     LogFlow(("PDMR3Suspend: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                             pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
                 pDrvIns->Internal.s.pfnAsyncNotify = false;
                 LogFlow(("PDMR3Suspend: Async notification completed - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             if (pDrvIns->Internal.s.pfnAsyncNotify)
             {
@@ -1480,15 +1480,15 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
 DECLINLINE(int) pdmR3ResumeDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, uint32_t iDevInstance, uint32_t iLun)
 {
     Assert(pDrvIns->Internal.s.fVMSuspended);
-    if (pDrvIns->pDrvReg->pfnResume)
+    if (pDrvIns->pReg->pfnResume)
     {
         LogFlow(("PDMR3Resume: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                 pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
-        int rc = VINF_SUCCESS; pDrvIns->pDrvReg->pfnResume(pDrvIns);
+                 pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+        int rc = VINF_SUCCESS; pDrvIns->pReg->pfnResume(pDrvIns);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDMR3Resume: driver '%s'/%d on LUN#%d of device '%s'/%d -> %Rrc\n",
-                    pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance, rc));
+                    pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance, rc));
             return rc;
         }
     }
@@ -1612,22 +1612,22 @@ DECLINLINE(bool) pdmR3PowerOffDrv(PPDMDRVINS pDrvIns, unsigned *pcAsync,
     if (!pDrvIns->Internal.s.fVMSuspended)
     {
         pDrvIns->Internal.s.fVMSuspended = true;
-        if (pDrvIns->pDrvReg->pfnSuspend)
+        if (pDrvIns->pReg->pfnSuspend)
         {
             if (!pDrvIns->Internal.s.pfnAsyncNotify)
             {
                 LogFlow(("PDMR3PowerOff: Notifying - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
-                pDrvIns->pDrvReg->pfnPowerOff(pDrvIns);
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                pDrvIns->pReg->pfnPowerOff(pDrvIns);
                 if (pDrvIns->Internal.s.pfnAsyncNotify)
                     LogFlow(("PDMR3PowerOff: Async notification started - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                             pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                             pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             else if (pDrvIns->Internal.s.pfnAsyncNotify(pDrvIns))
             {
                 pDrvIns->Internal.s.pfnAsyncNotify = false;
                 LogFlow(("PDMR3PowerOff: Async notification completed - driver '%s'/%d on LUN#%d of device '%s'/%d\n",
-                         pDrvIns->pDrvReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
+                         pDrvIns->pReg->szDriverName, pDrvIns->iInstance, iLun, pszDeviceName, iDevInstance));
             }
             if (pDrvIns->Internal.s.pfnAsyncNotify)
             {
