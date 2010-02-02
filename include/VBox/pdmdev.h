@@ -2737,7 +2737,7 @@ typedef struct PDMDEVHLPR3
      * Initializes a PDM critical section.
      *
      * The PDM critical sections are derived from the IPRT critical sections, but
-     * works in GC as well.
+     * works in RC and R0 as well.
      *
      * @returns VBox status code.
      * @param   pDevIns             The device instance.
@@ -3474,17 +3474,17 @@ typedef struct PDMDEVINS
     uint32_t                    iInstance;
 
     /** Pointer the GC PDM Device API. */
-    PCPDMDEVHLPRC               pDevHlpRC;
+    PCPDMDEVHLPRC               pHlpRC;
     /** Pointer to device instance data. */
     RTRCPTR                     pvInstanceDataRC;
 
     /** Pointer the R0 PDM Device API. */
-    PCPDMDEVHLPR0               pDevHlpR0;
+    PCPDMDEVHLPR0               pHlpR0;
     /** Pointer to device instance data (R0). */
     RTR0PTR                     pvInstanceDataR0;
 
     /** Pointer the HC PDM Device API. */
-    PCPDMDEVHLPR3               pDevHlpR3;
+    PCPDMDEVHLPR3               pHlpR3;
     /** Pointer to device instance data. */
     RTR3PTR                     pvInstanceDataR3;
 
@@ -3536,8 +3536,8 @@ typedef struct PDMDEVINS
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION), \
                               ("DevIns=%#x  mine=%#x\n", (pDevIns)->u32Version, PDM_DEVINS_VERSION), \
                               VERR_VERSION_MISMATCH); \
-        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
-                              ("DevHlp=%#x  mine=%#x\n", (pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
+                              ("DevHlp=%#x  mine=%#x\n", (pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION), \
                               VERR_VERSION_MISMATCH); \
     } while (0)
 
@@ -3554,7 +3554,7 @@ typedef struct PDMDEVINS
     { \
         PPDMDEVINS pDevInsTypeCheck = (pDevIns); NOREF(pDevInsTypeCheck); \
         if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->u32Version, PDM_DEVINS_VERSION) \
-                        || !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pDevHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
+                        || !PDM_VERSION_ARE_COMPATIBLE((pDevIns)->pHlpR3->u32Version, PDM_DEVHLPR3_VERSION) )) \
             return VERR_VERSION_MISMATCH; \
     } while (0)
 
@@ -3562,7 +3562,7 @@ typedef struct PDMDEVINS
  * Assert that the current thread is the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_EMT(pDevIns)  pDevIns->pDevHlpR3->pfnAssertEMT(pDevIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMDEV_ASSERT_EMT(pDevIns)  pDevIns->pHlpR3->pfnAssertEMT(pDevIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMDEV_ASSERT_EMT(pDevIns)  do { } while (0)
 #endif
@@ -3571,7 +3571,7 @@ typedef struct PDMDEVINS
  * Assert that the current thread is NOT the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_OTHER(pDevIns)  pDevIns->pDevHlpR3->pfnAssertOther(pDevIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMDEV_ASSERT_OTHER(pDevIns)  pDevIns->pHlpR3->pfnAssertOther(pDevIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMDEV_ASSERT_OTHER(pDevIns)  do { } while (0)
 #endif
@@ -3580,7 +3580,7 @@ typedef struct PDMDEVINS
  * Assert that the current thread is owner of the VM lock.
  */
 #ifdef VBOX_STRICT
-# define PDMDEV_ASSERT_VMLOCK_OWNER(pDevIns)  pDevIns->pDevHlpR3->pfnAssertVMLock(pDevIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMDEV_ASSERT_VMLOCK_OWNER(pDevIns)  pDevIns->pHlpR3->pfnAssertVMLock(pDevIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMDEV_ASSERT_VMLOCK_OWNER(pDevIns)  do { } while (0)
 #endif
@@ -3622,7 +3622,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUIN
                                         PFNIOMIOPORTOUT pfnOut, PFNIOMIOPORTIN pfnIn,
                                         PFNIOMIOPORTOUTSTRING pfnOutStr, PFNIOMIOPORTINSTRING pfnInStr, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnIOPortRegister(pDevIns, Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
+    return pDevIns->pHlpR3->pfnIOPortRegister(pDevIns, Port, cPorts, pvUser, pfnOut, pfnIn, pfnOutStr, pfnInStr, pszDesc);
 }
 
 /**
@@ -3632,7 +3632,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterRC(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnIOPortRegisterRC(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
+    return pDevIns->pHlpR3->pfnIOPortRegisterRC(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
 }
 
 /**
@@ -3642,7 +3642,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
                                           const char *pszOut, const char *pszIn, const char *pszOutStr,
                                           const char *pszInStr, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnIOPortRegisterR0(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
+    return pDevIns->pHlpR3->pfnIOPortRegisterR0(pDevIns, Port, cPorts, pvUser, pszOut, pszIn, pszOutStr, pszInStr, pszDesc);
 }
 
 /**
@@ -3650,7 +3650,7 @@ DECLINLINE(int) PDMDevHlpIOPortRegisterR0(PPDMDEVINS pDevIns, RTIOPORT Port, RTU
  */
 DECLINLINE(int) PDMDevHlpIOPortDeregister(PPDMDEVINS pDevIns, RTIOPORT Port, RTUINT cPorts)
 {
-    return pDevIns->pDevHlpR3->pfnIOPortDeregister(pDevIns, Port, cPorts);
+    return pDevIns->pHlpR3->pfnIOPortDeregister(pDevIns, Port, cPorts);
 }
 
 /**
@@ -3660,7 +3660,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
                                       PFNIOMMMIOWRITE pfnWrite, PFNIOMMMIOREAD pfnRead, PFNIOMMMIOFILL pfnFill,
                                       const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
+    return pDevIns->pHlpR3->pfnMMIORegister(pDevIns, GCPhysStart, cbRange, pvUser, pfnWrite, pfnRead, pfnFill, pszDesc);
 }
 
 /**
@@ -3669,7 +3669,7 @@ DECLINLINE(int) PDMDevHlpMMIORegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, 
 DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTGCPTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pHlpR3->pfnMMIORegisterRC(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
 }
 
 /**
@@ -3678,7 +3678,15 @@ DECLINLINE(int) PDMDevHlpMMIORegisterRC(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
 DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, RTR0PTR pvUser,
                                         const char *pszWrite, const char *pszRead, const char *pszFill)
 {
-    return pDevIns->pDevHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+    return pDevIns->pHlpR3->pfnMMIORegisterR0(pDevIns, GCPhysStart, cbRange, pvUser, pszWrite, pszRead, pszFill, NULL);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnMMIODeregister
+ */
+DECLINLINE(int) PDMDevHlpMMIODeregister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange)
+{
+    return pDevIns->pHlpR3->pfnMMIODeregister(pDevIns, GCPhysStart, cbRange);
 }
 
 /**
@@ -3686,7 +3694,7 @@ DECLINLINE(int) PDMDevHlpMMIORegisterR0(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart
  */
 DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS cb, uint32_t fFlags, void **ppv, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnMMIO2Register(pDevIns, iRegion, cb, fFlags, ppv, pszDesc);
+    return pDevIns->pHlpR3->pfnMMIO2Register(pDevIns, iRegion, cb, fFlags, ppv, pszDesc);
 }
 
 /**
@@ -3694,7 +3702,7 @@ DECLINLINE(int) PDMDevHlpMMIO2Register(PPDMDEVINS pDevIns, uint32_t iRegion, RTG
  */
 DECLINLINE(int) PDMDevHlpMMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
 {
-    return pDevIns->pDevHlpR3->pfnMMIO2Deregister(pDevIns, iRegion);
+    return pDevIns->pHlpR3->pfnMMIO2Deregister(pDevIns, iRegion);
 }
 
 /**
@@ -3702,7 +3710,7 @@ DECLINLINE(int) PDMDevHlpMMIO2Deregister(PPDMDEVINS pDevIns, uint32_t iRegion)
  */
 DECLINLINE(int) PDMDevHlpMMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
-    return pDevIns->pDevHlpR3->pfnMMIO2Map(pDevIns, iRegion, GCPhys);
+    return pDevIns->pHlpR3->pfnMMIO2Map(pDevIns, iRegion, GCPhys);
 }
 
 /**
@@ -3710,7 +3718,7 @@ DECLINLINE(int) PDMDevHlpMMIO2Map(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS
  */
 DECLINLINE(int) PDMDevHlpMMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS GCPhys)
 {
-    return pDevIns->pDevHlpR3->pfnMMIO2Unmap(pDevIns, iRegion, GCPhys);
+    return pDevIns->pHlpR3->pfnMMIO2Unmap(pDevIns, iRegion, GCPhys);
 }
 
 /**
@@ -3719,7 +3727,7 @@ DECLINLINE(int) PDMDevHlpMMIO2Unmap(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPH
 DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                          const char *pszDesc, PRTRCPTR pRCPtr)
 {
-    return pDevIns->pDevHlpR3->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
+    return pDevIns->pHlpR3->pfnMMHyperMapMMIO2(pDevIns, iRegion, off, cb, pszDesc, pRCPtr);
 }
 
 /**
@@ -3728,7 +3736,7 @@ DECLINLINE(int) PDMDevHlpMMHyperMapMMIO2(PPDMDEVINS pDevIns, uint32_t iRegion, R
 DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RTGCPHYS off, RTGCPHYS cb,
                                          const char *pszDesc, PRTR0PTR pR0Ptr)
 {
-    return pDevIns->pDevHlpR3->pfnMMIO2MapKernel(pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
+    return pDevIns->pHlpR3->pfnMMIO2MapKernel(pDevIns, iRegion, off, cb, pszDesc, pR0Ptr);
 }
 
 /**
@@ -3736,7 +3744,7 @@ DECLINLINE(int) PDMDevHlpMMIO2MapKernel(PPDMDEVINS pDevIns, uint32_t iRegion, RT
  */
 DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, const void *pvBinary, uint32_t fFlags, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
+    return pDevIns->pHlpR3->pfnROMRegister(pDevIns, GCPhysStart, cbRange, pvBinary, fFlags, pszDesc);
 }
 
 /**
@@ -3744,7 +3752,7 @@ DECLINLINE(int) PDMDevHlpROMRegister(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, R
  */
 DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysStart, RTUINT cbRange, PGMROMPROT enmProt)
 {
-    return pDevIns->pDevHlpR3->pfnROMProtectShadow(pDevIns, GCPhysStart, cbRange, enmProt);
+    return pDevIns->pHlpR3->pfnROMProtectShadow(pDevIns, GCPhysStart, cbRange, enmProt);
 }
 
 /**
@@ -3761,7 +3769,7 @@ DECLINLINE(int) PDMDevHlpROMProtectShadow(PPDMDEVINS pDevIns, RTGCPHYS GCPhysSta
 DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess,
                                      PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
 {
-    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
+    return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
                                               NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/,  NULL /*pfnLiveDone*/,
                                               NULL /*pfnSavePrep*/, pfnSaveExec,           NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, pfnLoadExec,           NULL /*pfnLoadDone*/);
@@ -3782,7 +3790,7 @@ DECLINLINE(int) PDMDevHlpSSMRegister(PPDMDEVINS pDevIns, uint32_t uVersion, size
 DECLINLINE(int) PDMDevHlpSSMRegister3(PPDMDEVINS pDevIns, uint32_t uVersion, size_t cbGuess,
                                       FNSSMDEVLIVEEXEC pfnLiveExec, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVLOADEXEC pfnLoadExec)
 {
-    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
+    return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, NULL /*pszBefore*/,
                                               NULL /*pfnLivePrep*/, pfnLiveExec,  NULL /*pfnLiveDone*/,
                                               NULL /*pfnSavePrep*/, pfnSaveExec,  NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, pfnLoadExec,  NULL /*pfnLoadDone*/);
@@ -3796,7 +3804,7 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
                                        PFNSSMDEVSAVEPREP pfnSavePrep, PFNSSMDEVSAVEEXEC pfnSaveExec, PFNSSMDEVSAVEDONE pfnSaveDone,
                                        PFNSSMDEVLOADPREP pfnLoadPrep, PFNSSMDEVLOADEXEC pfnLoadExec, PFNSSMDEVLOADDONE pfnLoadDone)
 {
-    return pDevIns->pDevHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, pszBefore,
+    return pDevIns->pHlpR3->pfnSSMRegister(pDevIns, uVersion, cbGuess, pszBefore,
                                               pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                               pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                               pfnLoadPrep, pfnLoadExec, pfnLoadDone);
@@ -3808,7 +3816,7 @@ DECLINLINE(int) PDMDevHlpSSMRegisterEx(PPDMDEVINS pDevIns, uint32_t uVersion, si
 DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFNTMTIMERDEV pfnCallback, void *pvUser, uint32_t fFlags,
                                        const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
-    return pDevIns->pDevHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    return pDevIns->pHlpR3->pfnTMTimerCreate(pDevIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 }
 
 /**
@@ -3816,7 +3824,7 @@ DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFN
  */
 DECLINLINE(PRTTIMESPEC) PDMDevHlpTMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
-    return pDevIns->pDevHlpR3->pfnTMUtcNow(pDevIns, pTime);
+    return pDevIns->pHlpR3->pfnTMUtcNow(pDevIns, pTime);
 }
 
 #endif /* IN_RING3 */
@@ -3826,7 +3834,7 @@ DECLINLINE(PRTTIMESPEC) PDMDevHlpTMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
  */
 DECLINLINE(int) PDMDevHlpPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysRead(pDevIns, GCPhys, pvBuf, cbRead);
 }
 
 /**
@@ -3834,7 +3842,7 @@ DECLINLINE(int) PDMDevHlpPhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvB
  */
 DECLINLINE(int) PDMDevHlpPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysWrite(pDevIns, GCPhys, pvBuf, cbWrite);
 }
 
 #ifdef IN_RING3
@@ -3844,7 +3852,7 @@ DECLINLINE(int) PDMDevHlpPhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const vo
  */
 DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysGCPhys2CCPtr(pDevIns, GCPhys, fFlags, ppv, pLock);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysGCPhys2CCPtr(pDevIns, GCPhys, fFlags, ppv, pLock);
 }
 
 /**
@@ -3852,7 +3860,7 @@ DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtr(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, u
  */
 DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, uint32_t fFlags, void const **ppv, PPGMPAGEMAPLOCK pLock)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
+    return pDevIns->CTX_SUFF(pHlp)->pfnPhysGCPhys2CCPtrReadOnly(pDevIns, GCPhys, fFlags, ppv, pLock);
 }
 
 /**
@@ -3860,7 +3868,7 @@ DECLINLINE(int) PDMDevHlpPhysGCPhys2CCPtrReadOnly(PPDMDEVINS pDevIns, RTGCPHYS G
  */
 DECLINLINE(void) PDMDevHlpPhysReleasePageMappingLock(PPDMDEVINS pDevIns, PPGMPAGEMAPLOCK pLock)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnPhysReleasePageMappingLock(pDevIns, pLock);
+    pDevIns->CTX_SUFF(pHlp)->pfnPhysReleasePageMappingLock(pDevIns, pLock);
 }
 
 /**
@@ -3868,7 +3876,7 @@ DECLINLINE(void) PDMDevHlpPhysReleasePageMappingLock(PPDMDEVINS pDevIns, PPGMPAG
  */
 DECLINLINE(int) PDMDevHlpPhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR GCVirtSrc, size_t cb)
 {
-    return pDevIns->pDevHlpR3->pfnPhysReadGCVirt(pDevIns, pvDst, GCVirtSrc, cb);
+    return pDevIns->pHlpR3->pfnPhysReadGCVirt(pDevIns, pvDst, GCVirtSrc, cb);
 }
 
 /**
@@ -3876,7 +3884,7 @@ DECLINLINE(int) PDMDevHlpPhysReadGCVirt(PPDMDEVINS pDevIns, void *pvDst, RTGCPTR
  */
 DECLINLINE(int) PDMDevHlpPhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, const void *pvSrc, size_t cb)
 {
-    return pDevIns->pDevHlpR3->pfnPhysWriteGCVirt(pDevIns, GCVirtDst, pvSrc, cb);
+    return pDevIns->pHlpR3->pfnPhysWriteGCVirt(pDevIns, GCVirtDst, pvSrc, cb);
 }
 
 /**
@@ -3884,7 +3892,7 @@ DECLINLINE(int) PDMDevHlpPhysWriteGCVirt(PPDMDEVINS pDevIns, RTGCPTR GCVirtDst, 
  */
 DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRTGCPHYS pGCPhys)
 {
-    return pDevIns->pDevHlpR3->pfnPhysGCPtr2GCPhys(pDevIns, GCPtr, pGCPhys);
+    return pDevIns->pHlpR3->pfnPhysGCPtr2GCPhys(pDevIns, GCPtr, pGCPhys);
 }
 
 /**
@@ -3892,7 +3900,7 @@ DECLINLINE(int) PDMDevHlpPhysGCPtr2GCPhys(PPDMDEVINS pDevIns, RTGCPTR GCPtr, PRT
  */
 DECLINLINE(void *) PDMDevHlpMMHeapAlloc(PPDMDEVINS pDevIns, size_t cb)
 {
-    return pDevIns->pDevHlpR3->pfnMMHeapAlloc(pDevIns, cb);
+    return pDevIns->pHlpR3->pfnMMHeapAlloc(pDevIns, cb);
 }
 
 /**
@@ -3900,7 +3908,7 @@ DECLINLINE(void *) PDMDevHlpMMHeapAlloc(PPDMDEVINS pDevIns, size_t cb)
  */
 DECLINLINE(void *) PDMDevHlpMMHeapAllocZ(PPDMDEVINS pDevIns, size_t cb)
 {
-    return pDevIns->pDevHlpR3->pfnMMHeapAllocZ(pDevIns, cb);
+    return pDevIns->pHlpR3->pfnMMHeapAllocZ(pDevIns, cb);
 }
 
 /**
@@ -3908,7 +3916,7 @@ DECLINLINE(void *) PDMDevHlpMMHeapAllocZ(PPDMDEVINS pDevIns, size_t cb)
  */
 DECLINLINE(void) PDMDevHlpMMHeapFree(PPDMDEVINS pDevIns, void *pv)
 {
-    pDevIns->pDevHlpR3->pfnMMHeapFree(pDevIns, pv);
+    pDevIns->pHlpR3->pfnMMHeapFree(pDevIns, pv);
 }
 
 /**
@@ -3916,7 +3924,7 @@ DECLINLINE(void) PDMDevHlpMMHeapFree(PPDMDEVINS pDevIns, void *pv)
  */
 DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pDevHlpR3->pfnVMState(pDevIns);
+    return pDevIns->pHlpR3->pfnVMState(pDevIns);
 }
 
 /**
@@ -3924,7 +3932,7 @@ DECLINLINE(VMSTATE) PDMDevHlpVMState(PPDMDEVINS pDevIns)
  */
 DECLINLINE(bool) PDMDevHlpVMTeleportedAndNotFullyResumedYet(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pDevHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDevIns);
+    return pDevIns->pHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDevIns);
 }
 
 #endif /* IN_RING3 */
@@ -3936,7 +3944,7 @@ DECLINLINE(int) PDMDevHlpVMSetError(PPDMDEVINS pDevIns, const int rc, RT_SRC_POS
 {
     va_list va;
     va_start(va, pszFormat);
-    pDevIns->CTX_SUFF(pDevHlp)->pfnVMSetErrorV(pDevIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    pDevIns->CTX_SUFF(pHlp)->pfnVMSetErrorV(pDevIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -3949,13 +3957,13 @@ DECLINLINE(int) PDMDevHlpVMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, 
     va_list va;
     int rc;
     va_start(va, pszFormat);
-    rc = pDevIns->CTX_SUFF(pDevHlp)->pfnVMSetRuntimeErrorV(pDevIns, fFlags, pszErrorId, pszFormat, va);
+    rc = pDevIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDevIns, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
     return rc;
 }
 
 /**
- * VBOX_STRICT wrapper for pDevHlp->pfnDBGFStopV.
+ * VBOX_STRICT wrapper for pHlp->pfnDBGFStopV.
  *
  * @returns VBox status code which must be passed up to the VMM.  This will be
  *          VINF_SUCCESS in non-strict builds.
@@ -3971,7 +3979,7 @@ DECLINLINE(int) PDMDevHlpDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
     int rc;
     va_list args;
     va_start(args, pszFormat);
-    rc = pDevIns->pDevHlpR3->pfnDBGFStopV(pDevIns, RT_SRC_POS_ARGS, pszFormat, args);
+    rc = pDevIns->pHlpR3->pfnDBGFStopV(pDevIns, RT_SRC_POS_ARGS, pszFormat, args);
     va_end(args);
     return rc;
 # else
@@ -3994,7 +4002,7 @@ DECLINLINE(int) PDMDevHlpDBGFStop(PPDMDEVINS pDevIns, RT_SRC_POS_DECL, const cha
  */
 DECLINLINE(int) PDMDevHlpDBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszName, const char *pszDesc, PFNDBGFHANDLERDEV pfnHandler)
 {
-    return pDevIns->pDevHlpR3->pfnDBGFInfoRegister(pDevIns, pszName, pszDesc, pfnHandler);
+    return pDevIns->pHlpR3->pfnDBGFInfoRegister(pDevIns, pszName, pszDesc, pfnHandler);
 }
 
 /**
@@ -4002,7 +4010,7 @@ DECLINLINE(int) PDMDevHlpDBGFInfoRegister(PPDMDEVINS pDevIns, const char *pszNam
  */
 DECLINLINE(void) PDMDevHlpSTAMRegister(PPDMDEVINS pDevIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
-    pDevIns->pDevHlpR3->pfnSTAMRegister(pDevIns, pvSample, enmType, pszName, enmUnit, pszDesc);
+    pDevIns->pHlpR3->pfnSTAMRegister(pDevIns, pvSample, enmType, pszName, enmUnit, pszDesc);
 }
 
 /**
@@ -4013,7 +4021,7 @@ DECLINLINE(void) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAM
 {
     va_list va;
     va_start(va, pszName);
-    pDevIns->pDevHlpR3->pfnSTAMRegisterV(pDevIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    pDevIns->pHlpR3->pfnSTAMRegisterV(pDevIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
     va_end(va);
 }
 
@@ -4022,7 +4030,7 @@ DECLINLINE(void) PDMDevHlpSTAMRegisterF(PPDMDEVINS pDevIns, void *pvSample, STAM
  */
 DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
 {
-    return pDevIns->pDevHlpR3->pfnPCIRegister(pDevIns, pPciDev);
+    return pDevIns->pHlpR3->pfnPCIRegister(pDevIns, pPciDev);
 }
 
 /**
@@ -4030,7 +4038,7 @@ DECLINLINE(int) PDMDevHlpPCIRegister(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev)
  */
 DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, uint32_t cbRegion, PCIADDRESSSPACE enmType, PFNPCIIOREGIONMAP pfnCallback)
 {
-    return pDevIns->pDevHlpR3->pfnPCIIORegionRegister(pDevIns, iRegion, cbRegion, enmType, pfnCallback);
+    return pDevIns->pHlpR3->pfnPCIIORegionRegister(pDevIns, iRegion, cbRegion, enmType, pfnCallback);
 }
 
 /**
@@ -4039,7 +4047,7 @@ DECLINLINE(int) PDMDevHlpPCIIORegionRegister(PPDMDEVINS pDevIns, int iRegion, ui
 DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE pPciDev, PFNPCICONFIGREAD pfnRead, PPFNPCICONFIGREAD ppfnReadOld,
                                                 PFNPCICONFIGWRITE pfnWrite, PPFNPCICONFIGWRITE ppfnWriteOld)
 {
-    pDevIns->pDevHlpR3->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
+    pDevIns->pHlpR3->pfnPCISetConfigCallbacks(pDevIns, pPciDev, pfnRead, ppfnReadOld, pfnWrite, ppfnWriteOld);
 }
 
 #endif /* IN_RING3 */
@@ -4049,7 +4057,7 @@ DECLINLINE(void) PDMDevHlpPCISetConfigCallbacks(PPDMDEVINS pDevIns, PPCIDEVICE p
  */
 DECLINLINE(void) PDMDevHlpPCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnPCISetIrq(pDevIns, iIrq, iLevel);
+    pDevIns->CTX_SUFF(pHlp)->pfnPCISetIrq(pDevIns, iIrq, iLevel);
 }
 
 /**
@@ -4057,7 +4065,7 @@ DECLINLINE(void) PDMDevHlpPCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
  */
 DECLINLINE(void) PDMDevHlpPCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnPCISetIrq(pDevIns, iIrq, iLevel);
+    pDevIns->CTX_SUFF(pHlp)->pfnPCISetIrq(pDevIns, iIrq, iLevel);
 }
 
 /**
@@ -4065,7 +4073,7 @@ DECLINLINE(void) PDMDevHlpPCISetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLev
  */
 DECLINLINE(void) PDMDevHlpISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
+    pDevIns->CTX_SUFF(pHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
 }
 
 /**
@@ -4073,7 +4081,7 @@ DECLINLINE(void) PDMDevHlpISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
  */
 DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
-    pDevIns->CTX_SUFF(pDevHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
+    pDevIns->CTX_SUFF(pHlp)->pfnISASetIrq(pDevIns, iIrq, iLevel);
 }
 
 #ifdef IN_RING3
@@ -4083,7 +4091,7 @@ DECLINLINE(void) PDMDevHlpISASetIrqNoWait(PPDMDEVINS pDevIns, int iIrq, int iLev
  */
 DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
-    return pDevIns->pDevHlpR3->pfnDriverAttach(pDevIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
+    return pDevIns->pHlpR3->pfnDriverAttach(pDevIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
 }
 
 /**
@@ -4092,14 +4100,14 @@ DECLINLINE(int) PDMDevHlpDriverAttach(PPDMDEVINS pDevIns, RTUINT iLun, PPDMIBASE
 DECLINLINE(int) PDMDevHlpQueueCreate(PPDMDEVINS pDevIns, RTUINT cbItem, RTUINT cItems, uint32_t cMilliesInterval,
                                      PFNPDMQUEUEDEV pfnCallback, bool fGCEnabled, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDevIns->pDevHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, pszName, ppQueue);
+    return pDevIns->pHlpR3->pfnQueueCreate(pDevIns, cbItem, cItems, cMilliesInterval, pfnCallback, fGCEnabled, pszName, ppQueue);
 }
 
 /**
  * Initializes a PDM critical section.
  *
  * The PDM critical sections are derived from the IPRT critical sections, but
- * works in GC as well.
+ * works in RC and R0 as well.
  *
  * @returns VBox status code.
  * @param   pDevIns             The device instance.
@@ -4114,7 +4122,7 @@ DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect
     int     rc;
     va_list va;
     va_start(va, pszNameFmt);
-    rc = pDevIns->pDevHlpR3->pfnCritSectInit(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
+    rc = pDevIns->pHlpR3->pfnCritSectInit(pDevIns, pCritSect, RT_SRC_POS_ARGS, pszNameFmt, va);
     va_end(va);
     return rc;
 }
@@ -4125,7 +4133,7 @@ DECLINLINE(int) PDMDevHlpCritSectInit(PPDMDEVINS pDevIns, PPDMCRITSECT pCritSect
 DECLINLINE(int) PDMDevHlpThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDEV pfnThread,
                                          PFNPDMTHREADWAKEUPDEV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
-    return pDevIns->pDevHlpR3->pfnThreadCreate(pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+    return pDevIns->pHlpR3->pfnThreadCreate(pDevIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 
 /**
@@ -4133,7 +4141,7 @@ DECLINLINE(int) PDMDevHlpThreadCreate(PPDMDEVINS pDevIns, PPPDMTHREAD ppThread, 
  */
 DECLINLINE(int) PDMDevHlpSetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNCNOTIFY pfnAsyncNotify)
 {
-    return pDevIns->pDevHlpR3->pfnSetAsyncNotification(pDevIns, pfnAsyncNotify);
+    return pDevIns->pHlpR3->pfnSetAsyncNotification(pDevIns, pfnAsyncNotify);
 }
 
 /**
@@ -4141,7 +4149,7 @@ DECLINLINE(int) PDMDevHlpSetAsyncNotification(PPDMDEVINS pDevIns, PFNPDMDEVASYNC
  */
 DECLINLINE(void) PDMDevHlpAsyncNotificationCompleted(PPDMDEVINS pDevIns)
 {
-    pDevIns->pDevHlpR3->pfnAsyncNotificationCompleted(pDevIns);
+    pDevIns->pHlpR3->pfnAsyncNotificationCompleted(pDevIns);
 }
 
 /**
@@ -4149,7 +4157,63 @@ DECLINLINE(void) PDMDevHlpAsyncNotificationCompleted(PPDMDEVINS pDevIns)
  */
 DECLINLINE(void) PDMDevHlpA20Set(PPDMDEVINS pDevIns, bool fEnable)
 {
-    pDevIns->pDevHlpR3->pfnA20Set(pDevIns, fEnable);
+    pDevIns->pHlpR3->pfnA20Set(pDevIns, fEnable);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnRTCRegister
+ */
+DECLINLINE(int) PDMDevHlpRTCRegister(PPDMDEVINS pDevIns, PCPDMRTCREG pRtcReg, PCPDMRTCHLP *ppRtcHlp)
+{
+    return pDevIns->pHlpR3->pfnRTCRegister(pDevIns, pRtcReg, ppRtcHlp);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPCIBusRegister
+ */
+DECLINLINE(int) PDMDevHlpPCIBusRegister(PPDMDEVINS pDevIns, PPDMPCIBUSREG pPciBusReg, PCPDMPCIHLPR3 *ppPciHlpR3)
+{
+    return pDevIns->pHlpR3->pfnPCIBusRegister(pDevIns, pPciBusReg, ppPciHlpR3);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnPICRegister
+ */
+DECLINLINE(int) PDMDevHlpPICRegister(PPDMDEVINS pDevIns, PPDMPICREG pPicReg, PCPDMPICHLPR3 *ppPicHlpR3)
+{
+    return pDevIns->pHlpR3->pfnPICRegister(pDevIns, pPicReg, ppPicHlpR3);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnAPICRegister
+ */
+DECLINLINE(int) PDMDevHlpAPICRegister(PPDMDEVINS pDevIns, PPDMAPICREG pApicReg, PCPDMAPICHLPR3 *ppApicHlpR3)
+{
+    return pDevIns->pHlpR3->pfnAPICRegister(pDevIns, pApicReg, ppApicHlpR3);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfn
+ */
+DECLINLINE(int) PDMDevHlpIOAPICRegister(PPDMDEVINS pDevIns, PPDMIOAPICREG pIoApicReg, PCPDMIOAPICHLPR3 *ppIoApicHlpR3)
+{
+    return pDevIns->pHlpR3->pfnIOAPICRegister(pDevIns, pIoApicReg, ppIoApicHlpR3);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnHPETRegister
+ */
+DECLINLINE(int) PDMDevHlpHPETRegister(PPDMDEVINS pDevIns, PPDMHPETREG pHpetReg, PCPDMHPETHLPR3 *ppHpetHlpR3)
+{
+    return pDevIns->pHlpR3->pfnHPETRegister(pDevIns, pHpetReg, ppHpetHlpR3);
+}
+
+/**
+ * @copydoc PDMDEVHLPR3::pfnDMACRegister
+ */
+DECLINLINE(int) PDMDevHlpDMACRegister(PPDMDEVINS pDevIns, PPDMDMACREG pDmacReg, PCPDMDMACHLP *ppDmacHlp)
+{
+    return pDevIns->pHlpR3->pfnDMACRegister(pDevIns, pDmacReg, ppDmacHlp);
 }
 
 /**
@@ -4157,7 +4221,7 @@ DECLINLINE(void) PDMDevHlpA20Set(PPDMDEVINS pDevIns, bool fEnable)
  */
 DECLINLINE(int) PDMDevHlpDMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFNDMATRANSFERHANDLER pfnTransferHandler, void *pvUser)
 {
-    return pDevIns->pDevHlpR3->pfnDMARegister(pDevIns, uChannel, pfnTransferHandler, pvUser);
+    return pDevIns->pHlpR3->pfnDMARegister(pDevIns, uChannel, pfnTransferHandler, pvUser);
 }
 
 /**
@@ -4165,7 +4229,7 @@ DECLINLINE(int) PDMDevHlpDMARegister(PPDMDEVINS pDevIns, unsigned uChannel, PFND
  */
 DECLINLINE(int) PDMDevHlpDMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbRead)
 {
-    return pDevIns->pDevHlpR3->pfnDMAReadMemory(pDevIns, uChannel, pvBuffer, off, cbBlock, pcbRead);
+    return pDevIns->pHlpR3->pfnDMAReadMemory(pDevIns, uChannel, pvBuffer, off, cbBlock, pcbRead);
 }
 
 /**
@@ -4173,7 +4237,7 @@ DECLINLINE(int) PDMDevHlpDMAReadMemory(PPDMDEVINS pDevIns, unsigned uChannel, vo
  */
 DECLINLINE(int) PDMDevHlpDMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, const void *pvBuffer, uint32_t off, uint32_t cbBlock, uint32_t *pcbWritten)
 {
-    return pDevIns->pDevHlpR3->pfnDMAWriteMemory(pDevIns, uChannel, pvBuffer, off, cbBlock, pcbWritten);
+    return pDevIns->pHlpR3->pfnDMAWriteMemory(pDevIns, uChannel, pvBuffer, off, cbBlock, pcbWritten);
 }
 
 /**
@@ -4181,7 +4245,7 @@ DECLINLINE(int) PDMDevHlpDMAWriteMemory(PPDMDEVINS pDevIns, unsigned uChannel, c
  */
 DECLINLINE(int) PDMDevHlpDMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsigned uLevel)
 {
-    return pDevIns->pDevHlpR3->pfnDMASetDREQ(pDevIns, uChannel, uLevel);
+    return pDevIns->pHlpR3->pfnDMASetDREQ(pDevIns, uChannel, uLevel);
 }
 
 /**
@@ -4189,7 +4253,7 @@ DECLINLINE(int) PDMDevHlpDMASetDREQ(PPDMDEVINS pDevIns, unsigned uChannel, unsig
  */
 DECLINLINE(uint8_t) PDMDevHlpDMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uChannel)
 {
-    return pDevIns->pDevHlpR3->pfnDMAGetChannelMode(pDevIns, uChannel);
+    return pDevIns->pHlpR3->pfnDMAGetChannelMode(pDevIns, uChannel);
 }
 
 /**
@@ -4197,7 +4261,7 @@ DECLINLINE(uint8_t) PDMDevHlpDMAGetChannelMode(PPDMDEVINS pDevIns, unsigned uCha
  */
 DECLINLINE(void) PDMDevHlpDMASchedule(PPDMDEVINS pDevIns)
 {
-    pDevIns->pDevHlpR3->pfnDMASchedule(pDevIns);
+    pDevIns->pHlpR3->pfnDMASchedule(pDevIns);
 }
 
 /**
@@ -4205,7 +4269,7 @@ DECLINLINE(void) PDMDevHlpDMASchedule(PPDMDEVINS pDevIns)
  */
 DECLINLINE(int) PDMDevHlpCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
 {
-    return pDevIns->pDevHlpR3->pfnCMOSWrite(pDevIns, iReg, u8Value);
+    return pDevIns->pHlpR3->pfnCMOSWrite(pDevIns, iReg, u8Value);
 }
 
 /**
@@ -4213,7 +4277,7 @@ DECLINLINE(int) PDMDevHlpCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8
  */
 DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
 {
-    return pDevIns->pDevHlpR3->pfnCMOSRead(pDevIns, iReg, pu8Value);
+    return pDevIns->pHlpR3->pfnCMOSRead(pDevIns, iReg, pu8Value);
 }
 
 #endif /* IN_RING3 */
@@ -4223,7 +4287,7 @@ DECLINLINE(int) PDMDevHlpCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu
  */
 DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVM(pDevIns);
+    return pDevIns->CTX_SUFF(pHlp)->pfnGetVM(pDevIns);
 }
 
 /**
@@ -4231,7 +4295,7 @@ DECLINLINE(PVM) PDMDevHlpGetVM(PPDMDEVINS pDevIns)
  */
 DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnGetVMCPU(pDevIns);
+    return pDevIns->CTX_SUFF(pHlp)->pfnGetVMCPU(pDevIns);
 }
 
 #ifdef IN_RING3
@@ -4241,7 +4305,7 @@ DECLINLINE(PVMCPU) PDMDevHlpGetVMCPU(PPDMDEVINS pDevIns)
  */
 DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTR3PTR pvHeap, unsigned cbSize)
 {
-    return pDevIns->pDevHlpR3->pfnRegisterVMMDevHeap(pDevIns, GCPhys, pvHeap, cbSize);
+    return pDevIns->pHlpR3->pfnRegisterVMMDevHeap(pDevIns, GCPhys, pvHeap, cbSize);
 }
 
 /**
@@ -4249,7 +4313,7 @@ DECLINLINE(int) PDMDevHlpRegisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys,
  */
 DECLINLINE(int) PDMDevHlpUnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhys)
 {
-    return pDevIns->pDevHlpR3->pfnUnregisterVMMDevHeap(pDevIns, GCPhys);
+    return pDevIns->pHlpR3->pfnUnregisterVMMDevHeap(pDevIns, GCPhys);
 }
 
 /**
@@ -4257,7 +4321,7 @@ DECLINLINE(int) PDMDevHlpUnregisterVMMDevHeap(PPDMDEVINS pDevIns, RTGCPHYS GCPhy
  */
 DECLINLINE(int) PDMDevHlpVMReset(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pDevHlpR3->pfnVMReset(pDevIns);
+    return pDevIns->pHlpR3->pfnVMReset(pDevIns);
 }
 
 /**
@@ -4265,7 +4329,7 @@ DECLINLINE(int) PDMDevHlpVMReset(PPDMDEVINS pDevIns)
  */
 DECLINLINE(int) PDMDevHlpVMSuspend(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pDevHlpR3->pfnVMSuspend(pDevIns);
+    return pDevIns->pHlpR3->pfnVMSuspend(pDevIns);
 }
 
 /**
@@ -4273,7 +4337,7 @@ DECLINLINE(int) PDMDevHlpVMSuspend(PPDMDEVINS pDevIns)
  */
 DECLINLINE(int) PDMDevHlpVMPowerOff(PPDMDEVINS pDevIns)
 {
-    return pDevIns->pDevHlpR3->pfnVMPowerOff(pDevIns);
+    return pDevIns->pHlpR3->pfnVMPowerOff(pDevIns);
 }
 
 #endif /* IN_RING3 */
@@ -4283,7 +4347,7 @@ DECLINLINE(int) PDMDevHlpVMPowerOff(PPDMDEVINS pDevIns)
  */
 DECLINLINE(bool) PDMDevHlpA20IsEnabled(PPDMDEVINS pDevIns)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnA20IsEnabled(pDevIns);
+    return pDevIns->CTX_SUFF(pHlp)->pfnA20IsEnabled(pDevIns);
 }
 
 #ifdef IN_RING3
@@ -4293,7 +4357,7 @@ DECLINLINE(bool) PDMDevHlpA20IsEnabled(PPDMDEVINS pDevIns)
  */
 DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t *pEax, uint32_t *pEbx, uint32_t *pEcx, uint32_t *pEdx)
 {
-    pDevIns->pDevHlpR3->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
+    pDevIns->pHlpR3->pfnGetCpuId(pDevIns, iLeaf, pEax, pEbx, pEcx, pEdx);
 }
 
 #endif /* IN_RING3 */
@@ -4304,7 +4368,7 @@ DECLINLINE(void) PDMDevHlpGetCpuId(PPDMDEVINS pDevIns, uint32_t iLeaf, uint32_t 
  */
 DECLINLINE(bool) PDMDevHlpCanEmulateIoBlock(PPDMDEVINS pDevIns)
 {
-    return pDevIns->CTX_SUFF(pDevHlp)->pfnCanEmulateIoBlock(pDevIns);
+    return pDevIns->CTX_SUFF(pHlp)->pfnCanEmulateIoBlock(pDevIns);
 }
 
 #endif /* IN_RING0 */

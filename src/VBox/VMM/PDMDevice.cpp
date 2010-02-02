@@ -127,12 +127,12 @@ int pdmR3DevInit(PVM pVM)
     /*
      * Get the RC & R0 devhlps and create the devhlp R3 task queue.
      */
-    PCPDMDEVHLPRC pDevHlpRC;
-    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
+    PCPDMDEVHLPRC pHlpRC;
+    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
     AssertReleaseRCReturn(rc, rc);
 
-    PCPDMDEVHLPR0 pDevHlpR0;
-    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", &pDevHlpR0);
+    PCPDMDEVHLPR0 pHlpR0;
+    rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DevHlp", &pHlpR0);
     AssertReleaseRCReturn(rc, rc);
 
     rc = PDMR3QueueCreateInternal(pVM, sizeof(PDMDEVHLPTASK), 8, 0, pdmR3DevHlpQueueConsumer, true, "DevHlp",
@@ -324,9 +324,9 @@ int pdmR3DevInit(PVM pVM)
         //pDevIns->Internal.s.pPciDeviceRC        = 0;
         //pDevIns->Internal.s.pPciBusRC           = 0;
         pDevIns->Internal.s.fIntFlags           = PDMDEVINSINT_FLAGS_SUSPENDED;
-        pDevIns->pDevHlpR3                      = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;
-        pDevIns->pDevHlpRC                      = pDevHlpRC;
-        pDevIns->pDevHlpR0                      = pDevHlpR0;
+        pDevIns->pHlpR3                         = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;
+        pDevIns->pHlpRC                         = pHlpRC;
+        pDevIns->pHlpR0                         = pHlpR0;
         pDevIns->pReg                           = paDevs[i].pDev->pReg;
         pDevIns->pCfgHandle                     = pConfigNode;
         pDevIns->iInstance                      = paDevs[i].iInstance;

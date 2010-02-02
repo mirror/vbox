@@ -2407,7 +2407,7 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
                 pDevIns->pDevHlpGC->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, &s->tpr);
 #else
                 RTGCPTR pDevInsGC = PDMINS2DATA_GCPTR(pDevIns);
-                pDevIns->pDevHlpR0->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, pDevIns + RT_OFFSETOF(APICState, tpr));
+                pDevIns->pHlpR0->pfnPATMSetMMIOPatchInfo(pDevIns, GCPhysAddr, pDevIns + RT_OFFSETOF(APICState, tpr));
 #endif
                 return VINF_PATM_HC_MMIO_PATCH_READ;
             }
@@ -2876,8 +2876,7 @@ static DECLCALLBACK(int) apicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         ApicReg.pszLocalInterruptR0 = NULL;
     }
 
-    Assert(pDevIns->pDevHlpR3->pfnAPICRegister);
-    rc = pDevIns->pDevHlpR3->pfnAPICRegister(pDevIns, &ApicReg, &pThis->pApicHlpR3);
+    rc = PDMDevHlpAPICRegister(pDevIns, &ApicReg, &pThis->pApicHlpR3);
     AssertLogRelRCReturn(rc, rc);
     pThis->pCritSectR3 = pThis->pApicHlpR3->pfnGetR3CritSect(pDevIns);
 
@@ -3250,7 +3249,7 @@ static DECLCALLBACK(int) ioapicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     IoApicReg.pfnSetIrqR3 = ioapicSetIrq;
     IoApicReg.pszSetIrqRC = fGCEnabled ? "ioapicSetIrq" : NULL;
     IoApicReg.pszSetIrqR0 = fR0Enabled ? "ioapicSetIrq" : NULL;
-    rc = pDevIns->pDevHlpR3->pfnIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
+    rc = PDMDevHlpIOAPICRegister(pDevIns, &IoApicReg, &s->pIoApicHlpR3);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("IOAPICRegister -> %Rrc\n", rc));

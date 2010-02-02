@@ -306,10 +306,10 @@ static void pci_update_mappings(PCIDevice *d)
                            only one byte must be mapped. */
                         devclass = d->config[0x0a] | (d->config[0x0b] << 8);
                         if (devclass == 0x0101 && r->size == 4) {
-                            int rc = d->pDevIns->pDevHlpR3->pfnIOPortDeregister(d->pDevIns, r->addr + 2, 1);
+                            int rc = PDMDevHlpIOPortDeregister(d->pDevIns, r->addr + 2, 1);
                             AssertRC(rc);
                         } else {
-                            int rc = d->pDevIns->pDevHlpR3->pfnIOPortDeregister(d->pDevIns, r->addr, r->size);
+                            int rc = PDMDevHlpIOPortDeregister(d->pDevIns, r->addr, r->size);
                             AssertRC(rc);
                         }
                     } else {
@@ -323,7 +323,7 @@ static void pci_update_mappings(PCIDevice *d)
                             rc = PDMDevHlpMMIO2Unmap(d->pDevIns, i, GCPhysBase);
                         }
                         else
-                            rc = d->pDevIns->pDevHlpR3->pfnMMIODeregister(d->pDevIns, GCPhysBase, r->size);
+                            rc = PDMDevHlpMMIODeregister(d->pDevIns, GCPhysBase, r->size);
                         AssertMsgRC(rc, ("rc=%Rrc d=%s i=%d GCPhysBase=%RGp size=%#x\n", rc, d->name, i, GCPhysBase, r->size));
                     }
                 }
@@ -2042,7 +2042,7 @@ static DECLCALLBACK(int)   pciConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PciBusReg.pfnFakePCIBIOSR3        = pciFakePCIBIOS;
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pciSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pciSetIrq" : NULL;
-    rc = pDevIns->pDevHlpR3->pfnPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
@@ -2413,7 +2413,7 @@ static DECLCALLBACK(int)   pcibridgeConstruct(PPDMDEVINS pDevIns, int iInstance,
     PciBusReg.pfnFakePCIBIOSR3        = NULL; /* Only needed for the first bus. */
     PciBusReg.pszSetIrqRC             = fGCEnabled ? "pcibridgeSetIrq" : NULL;
     PciBusReg.pszSetIrqR0             = fR0Enabled ? "pcibridgeSetIrq" : NULL;
-    rc = pDevIns->pDevHlpR3->pfnPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
+    rc = PDMDevHlpPCIBusRegister(pDevIns, &PciBusReg, &pBus->pPciHlpR3);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Failed to register ourselves as a PCI Bus"));
