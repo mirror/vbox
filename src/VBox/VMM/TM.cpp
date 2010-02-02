@@ -2439,7 +2439,7 @@ VMMR3DECL(int) TMR3TimerSetCritSect(PTMTIMERR3 pTimer, PPDMCRITSECT pCritSect)
  * @param   pVM             The VM instance.
  * @param   pTime           Where to store the time.
  */
-VMM_INT_DECL(PRTTIMESPEC) TMR3UTCNow(PVM pVM, PRTTIMESPEC pTime)
+VMM_INT_DECL(PRTTIMESPEC) TMR3UtcNow(PVM pVM, PRTTIMESPEC pTime)
 {
     RTTimeNow(pTime);
     RTTimeSpecSubNano(pTime, ASMAtomicReadU64(&pVM->tm.s.offVirtualSync) - ASMAtomicReadU64((uint64_t volatile *)&pVM->tm.s.offVirtualSyncGivenUp));

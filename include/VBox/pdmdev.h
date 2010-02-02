@@ -2303,7 +2303,7 @@ typedef struct PDMDEVHLPR3
      * @param   pDevIns             The device instance.
      * @param   pTime               Where to store the time.
      */
-    DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnUTCNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
+    DECLR3CALLBACKMEMBER(PRTTIMESPEC, pfnTMUtcNow,(PPDMDEVINS pDevIns, PRTTIMESPEC pTime));
 
     /**
      * Read physical memory.
@@ -3773,11 +3773,11 @@ DECLINLINE(int) PDMDevHlpTMTimerCreate(PPDMDEVINS pDevIns, TMCLOCK enmClock, PFN
 }
 
 /**
- * @copydoc PDMDEVHLPR3::pfnUTCNow
+ * @copydoc PDMDEVHLPR3::pfnTMUtcNow
  */
-DECLINLINE(PRTTIMESPEC) PDMDevHlpUTCNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
+DECLINLINE(PRTTIMESPEC) PDMDevHlpTMUtcNow(PPDMDEVINS pDevIns, PRTTIMESPEC pTime)
 {
-    return pDevIns->pDevHlpR3->pfnUTCNow(pDevIns, pTime);
+    return pDevIns->pDevHlpR3->pfnTMUtcNow(pDevIns, pTime);
 }
 
 #endif /* IN_RING3 */

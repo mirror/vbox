@@ -796,7 +796,7 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
      * Set the CMOS date/time.
      */
     RTTIMESPEC  Now;
-    PDMDevHlpUTCNow(pDevIns, &Now);
+    PDMDevHlpTMUtcNow(pDevIns, &Now);
     RTTIME Time;
     if (pThis->fUTC)
         RTTimeExplode(&Time, &Now);
