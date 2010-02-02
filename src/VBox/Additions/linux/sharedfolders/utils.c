@@ -291,7 +291,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
             params.CreateFlags |= SHFL_CF_ACCESS_WRITE;
 
         rc = vboxCallCreate (&client_handle, &sf_g->map, sf_i->path, &params);
-        if (VBOX_FAILURE (rc)) {
+        if (RT_FAILURE (rc)) {
                 LogFunc(("vboxCallCreate(%s) failed rc=%Rrc\n",
                         sf_i->path->String.utf8, rc));
                 err = -RTErrConvertToErrno(rc);
@@ -341,7 +341,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
             rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
                                 SHFL_INFO_SET | SHFL_INFO_FILE, &cbBuffer,
                                 (PSHFLDIRINFO)&info);
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 LogFunc(("vboxCallFSInfo(%s, FILE) failed rc=%Rrc\n",
                         sf_i->path->String.utf8, rc));
                 err = -RTErrConvertToErrno(rc);
@@ -357,7 +357,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
             rc = vboxCallFSInfo(&client_handle, &sf_g->map, params.Handle,
                                 SHFL_INFO_SET | SHFL_INFO_SIZE, &cbBuffer,
                                 (PSHFLDIRINFO)&info);
-            if (VBOX_FAILURE (rc)) {
+            if (RT_FAILURE (rc)) {
                 LogFunc(("vboxCallFSInfo(%s, SIZE) failed rc=%Rrc\n",
                         sf_i->path->String.utf8, rc));
                 err = -RTErrConvertToErrno(rc);
@@ -366,7 +366,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
         }
 
         rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
                 LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
                       sf_i->path->String.utf8, rc));
@@ -376,7 +376,7 @@ sf_setattr (struct dentry *dentry, struct iattr *iattr)
 
 fail1:
         rc = vboxCallClose (&client_handle, &sf_g->map, params.Handle);
-        if (VBOX_FAILURE (rc))
+        if (RT_FAILURE (rc))
         {
                 LogFunc(("vboxCallClose(%s) failed rc=%Rrc\n",
                       sf_i->path->String.utf8, rc));

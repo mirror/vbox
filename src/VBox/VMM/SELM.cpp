@@ -1517,7 +1517,7 @@ VMMR3DECL(int) SELMR3SyncTSS(PVM pVM, PVMCPU pVCpu)
         uint32_t cr4 = CPUMGetGuestCR4(pVCpu);
         rc = PGMPhysSimpleReadGCPtr(pVCpu, &Tss, GCPtrTss, RT_OFFSETOF(VBOXTSS, IntRedirBitmap));
         if (    !(cr4 & X86_CR4_VME)
-            ||   (  VBOX_SUCCESS(rc)
+            ||   (  RT_SUCCESS(rc)
                  && Tss.offIoBitmap < sizeof(VBOXTSS) /* too small */
                  && Tss.offIoBitmap > cbTss)          /* beyond the end */ /** @todo not sure how the partial case is handled; probably not allowed. */
            )
@@ -1859,7 +1859,7 @@ VMMR3DECL(bool) SELMR3CheckTSS(PVM pVM)
                          && !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF)),
                      false);
         if (    !(cr4 & X86_CR4_VME)
-            ||   (  VBOX_SUCCESS(rc)
+            ||   (  RT_SUCCESS(rc)
                  && Tss.offIoBitmap < sizeof(VBOXTSS) /* too small */
                  && Tss.offIoBitmap > cbTss)
            )
