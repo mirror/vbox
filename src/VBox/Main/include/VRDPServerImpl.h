@@ -43,18 +43,6 @@ public:
 
     struct Data
     {
-        bool operator== (const Data &that) const
-        {
-            return this == &that ||
-                   (mEnabled == that.mEnabled &&
-                    mVRDPPorts == that.mVRDPPorts &&
-                    mVRDPAddress == that.mVRDPAddress &&
-                    mAuthType == that.mAuthType &&
-                    mAuthTimeout == that.mAuthTimeout &&
-                    mAllowMultiConnection == that.mAllowMultiConnection &&
-                    mReuseSingleConnection == that.mReuseSingleConnection);
-        }
-
         BOOL mEnabled;
         Bstr mVRDPPorts;
         Bstr mVRDPAddress;
@@ -110,7 +98,7 @@ public:
     HRESULT loadSettings(const settings::VRDPSettings &data);
     HRESULT saveSettings(settings::VRDPSettings &data);
 
-    bool rollback();
+    void rollback();
     void commit();
     void copyFrom (VRDPServer *aThat);
 

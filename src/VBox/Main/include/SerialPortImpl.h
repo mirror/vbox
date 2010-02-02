@@ -83,7 +83,8 @@ public:
     HRESULT loadSettings(const settings::SerialPort &data);
     HRESULT saveSettings(settings::SerialPort &data);
 
-    bool rollback();
+    bool isModified();
+    void rollback();
     void commit();
     void copyFrom(SerialPort *aThat);
 

@@ -55,11 +55,6 @@ struct BackupableUSBData
           fEnabledEHCI(false)
     { }
 
-    bool operator==(const BackupableUSBData &that) const
-    {
-        return this == &that || (fEnabled == that.fEnabled && fEnabledEHCI == that.fEnabledEHCI);
-    }
-
     BOOL fEnabled;
     BOOL fEnabledEHCI;
 };
@@ -726,33 +721,25 @@ HRESULT USBController::saveSettings(settings::USBController &data)
 }
 
 /** @note Locks objects for writing! */
-bool USBController::rollback()
+void USBController::rollback()
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), false);
+    AssertComRCReturnVoid(autoCaller.rc());
 
     /* we need the machine state */
     AutoAnyStateDependency adep(m->pParent);
-    AssertComRCReturn (adep.rc(), false);
+    AssertComRCReturnVoid(adep.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    bool dataChanged = false;
-
-    if (m->bd.isBackedUp())
-    {
-        /* we need to check all data to see whether anything will be changed
-         * after rollback */
-        dataChanged = m->bd.hasActualChanges();
-        m->bd.rollback();
-    }
+    m->bd.rollback();
 
 #ifdef VBOX_WITH_USB
 
     if (m->llDeviceFilters.isBackedUp())
     {
         USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
-        ComAssertRet (service, false);
+        Assert(service);
 
         /* uninitialize all new filters (absent in the backed up list) */
         DeviceFilterList::const_iterator it = m->llDeviceFilters->begin();
@@ -767,7 +754,7 @@ bool USBController::rollback()
                     Global::IsOnline (adep.machineState()))
                 {
                     USBDeviceFilter *filter = *it;
-                    ComAssertRet(filter->getId() != NULL, false);
+                    Assert(filter->getId() != NULL);
                     service->removeFilter(filter->getId());
                     filter->getId() = NULL;
                 }
@@ -791,7 +778,7 @@ bool USBController::rollback()
                     if ((*it)->getData().mActive)
                     {
                         USBDeviceFilter *flt = *it; /* resolve ambiguity */
-                        ComAssertRet(flt->getId() == NULL, false);
+                        Assert(flt->getId() == NULL);
                         flt->getId() = service->insertFilter(&flt->getData().mUSBFilter);
                     }
                 }
@@ -814,14 +801,12 @@ bool USBController::rollback()
         {
             (*it)->rollback();
             /* call this to notify the USB proxy about changes */
-            onDeviceFilterChange (*it);
+            onDeviceFilterChange(*it);
         }
-        ++ it;
+        ++it;
     }
 
 #endif /* VBOX_WITH_USB */
-
-    return dataChanged;
 }
 
 /**

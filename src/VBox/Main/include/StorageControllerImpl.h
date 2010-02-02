@@ -88,7 +88,7 @@ public:
     StorageBus_T getStorageBus() const;
     ULONG getInstance() const;
 
-    bool rollback();
+    void rollback();
     void commit();
 
     // public methods for internal purposes only

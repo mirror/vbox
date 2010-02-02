@@ -77,7 +77,8 @@ public:
     HRESULT loadSettings(const settings::ParallelPort &data);
     HRESULT saveSettings(settings::ParallelPort &data);
 
-    bool rollback();
+    bool isModified();
+    void rollback();
     void commit();
     void copyFrom(ParallelPort *aThat);
 

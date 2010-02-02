@@ -50,21 +50,6 @@ public:
                  mNATNetwork("") /* cannot be null */
         {}
 
-        bool operator== (const Data &that) const
-        {
-            return this == &that ||
-                   (mSlot == that.mSlot &&
-                    mEnabled == that.mEnabled &&
-                    mMACAddress == that.mMACAddress &&
-                    mAttachmentType == that.mAttachmentType &&
-                    mCableConnected == that.mCableConnected &&
-                    mLineSpeed == that.mLineSpeed &&
-                    mTraceEnabled == that.mTraceEnabled &&
-                    mHostInterface == that.mHostInterface &&
-                    mInternalNetwork == that.mInternalNetwork &&
-                    mNATNetwork == that.mNATNetwork);
-        }
-
         NetworkAdapterType_T mAdapterType;
         ULONG mSlot;
         BOOL mEnabled;
@@ -138,7 +123,8 @@ public:
     HRESULT loadSettings(const settings::NetworkAdapter &data);
     HRESULT saveSettings(settings::NetworkAdapter &data);
 
-    bool rollback();
+    bool isModified();
+    void rollback();
     void commit();
     void copyFrom (NetworkAdapter *aThat);
     void applyDefaults (GuestOSType *aOsType);

@@ -197,83 +197,6 @@ Machine::HWData::~HWData()
 {
 }
 
-bool Machine::HWData::operator==(const HWData &that) const
-{
-    if (this == &that)
-        return true;
-
-    if (mHWVersion != that.mHWVersion ||
-        mHardwareUUID != that.mHardwareUUID ||
-        mMemorySize != that.mMemorySize ||
-        mMemoryBalloonSize != that.mMemoryBalloonSize ||
-        mStatisticsUpdateInterval != that.mStatisticsUpdateInterval ||
-        mVRAMSize != that.mVRAMSize ||
-        mFirmwareType != that.mFirmwareType ||
-        mAccelerate3DEnabled != that.mAccelerate3DEnabled ||
-        mAccelerate2DVideoEnabled != that.mAccelerate2DVideoEnabled ||
-        mMonitorCount != that.mMonitorCount ||
-        mHWVirtExEnabled != that.mHWVirtExEnabled ||
-        mHWVirtExNestedPagingEnabled != that.mHWVirtExNestedPagingEnabled ||
-        mHWVirtExVPIDEnabled != that.mHWVirtExVPIDEnabled ||
-        mHWVirtExExclusive != that.mHWVirtExExclusive ||
-        mPAEEnabled != that.mPAEEnabled ||
-        mSyntheticCpu != that.mSyntheticCpu ||
-        mCPUCount != that.mCPUCount ||
-        mCPUHotPlugEnabled != that.mCPUHotPlugEnabled ||
-        mClipboardMode != that.mClipboardMode)
-        return false;
-
-    for (size_t i = 0; i < RT_ELEMENTS (mBootOrder); ++i)
-        if (mBootOrder [i] != that.mBootOrder [i])
-            return false;
-
-
-    for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
-    {
-        if (mCPUAttached[i] != that.mCPUAttached[i])
-            return false;
-    }
-
-    if (mSharedFolders.size() != that.mSharedFolders.size())
-        return false;
-
-    if (mSharedFolders.size() == 0)
-        return true;
-
-    /* Make copies to speed up comparison */
-    SharedFolderList folders = mSharedFolders;
-    SharedFolderList thatFolders = that.mSharedFolders;
-
-    SharedFolderList::iterator it = folders.begin();
-    while (it != folders.end())
-    {
-        bool found = false;
-        SharedFolderList::iterator thatIt = thatFolders.begin();
-        while (thatIt != thatFolders.end())
-        {
-            if (    (*it)->getName() == (*thatIt)->getName()
-                 && RTPathCompare(Utf8Str((*it)->getHostPath()).c_str(),
-                                  Utf8Str((*thatIt)->getHostPath()).c_str()
-                                 ) == 0)
-            {
-                thatFolders.erase (thatIt);
-                found = true;
-                break;
-            }
-            else
-                ++thatIt;
-        }
-        if (found)
-            it = folders.erase (it);
-        else
-            return false;
-    }
-
-    Assert (folders.size() == 0 && thatFolders.size() == 0);
-
-    return true;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // Machine::HDData structure
 /////////////////////////////////////////////////////////////////////////////
@@ -284,53 +207,6 @@ Machine::MediaData::MediaData()
 
 Machine::MediaData::~MediaData()
 {
-}
-
-bool Machine::MediaData::operator==(const MediaData &that) const
-{
-    if (this == &that)
-        return true;
-
-    if (mAttachments.size() != that.mAttachments.size())
-        return false;
-
-    if (mAttachments.size() == 0)
-        return true;
-
-    /* Make copies to speed up comparison */
-    AttachmentList atts = mAttachments;
-    AttachmentList thatAtts = that.mAttachments;
-
-    AttachmentList::iterator it = atts.begin();
-    while (it != atts.end())
-    {
-        bool found = false;
-        AttachmentList::iterator thatIt = thatAtts.begin();
-        while (thatIt != thatAtts.end())
-        {
-            if (    (*it)->matches((*thatIt)->getControllerName(),
-                                   (*thatIt)->getPort(),
-                                   (*thatIt)->getDevice())
-                 && (*it)->getPassthrough() == (*thatIt)->getPassthrough()
-                 && (*it)->getMedium().equalsTo((*thatIt)->getMedium())
-               )
-            {
-                thatAtts.erase(thatIt);
-                found = true;
-                break;
-            }
-            else
-                ++thatIt;
-        }
-        if (found)
-            it = atts.erase (it);
-        else
-            return false;
-    }
-
-    Assert (atts.size() == 0 && thatAtts.size() == 0);
-
-    return true;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -8332,21 +8208,30 @@ void Machine::rollback(bool aNotify)
 
     if (m_flModifications & IsModified_NetworkAdapters)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
-            if (mNetworkAdapters[slot])
-                if (mNetworkAdapters[slot]->rollback())
-                    networkAdapters[slot] = mNetworkAdapters[slot];
+            if (    mNetworkAdapters[slot]
+                 && mNetworkAdapters[slot]->isModified())
+            {
+                mNetworkAdapters[slot]->rollback();
+                networkAdapters[slot] = mNetworkAdapters[slot];
+            }
 
     if (m_flModifications & IsModified_SerialPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
-            if (mSerialPorts[slot])
-                if (mSerialPorts[slot]->rollback())
-                    serialPorts[slot] = mSerialPorts[slot];
+            if (    mSerialPorts[slot]
+                 && mSerialPorts[slot]->isModified())
+            {
+                mSerialPorts[slot]->rollback();
+                serialPorts[slot] = mSerialPorts[slot];
+            }
 
     if (m_flModifications & IsModified_ParallelPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
-            if (mParallelPorts[slot])
-                if (mParallelPorts[slot]->rollback())
-                    parallelPorts[slot] = mParallelPorts[slot];
+            if (    mParallelPorts[slot]
+                 && mParallelPorts[slot]->isModified())
+            {
+                mParallelPorts[slot]->rollback();
+                parallelPorts[slot] = mParallelPorts[slot];
+            }
 
     if (aNotify)
     {
