@@ -1458,7 +1458,7 @@ const PDMDRVREG g_DrvHostSerial =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "Host Serial",
         /* szRCMod */
     "",

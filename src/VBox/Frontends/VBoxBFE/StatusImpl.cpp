@@ -196,7 +196,7 @@ const PDMDRVREG VMStatus::DrvReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MainStatus",
     /* szRCMod */
     "",

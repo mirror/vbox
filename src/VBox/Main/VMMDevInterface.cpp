@@ -818,7 +818,7 @@ const PDMDRVREG VMMDev::DrvReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "HGCM",
     /* szRCMod */
     "",

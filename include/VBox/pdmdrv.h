@@ -223,7 +223,7 @@ typedef struct PDMDRVREG
     /** Structure version. PDM_DRVREG_VERSION defines the current version. */
     uint32_t            u32Version;
     /** Driver name. */
-    char                szDriverName[32];
+    char                szName[32];
     /** Name of the raw-mode context module (no path).
      * Only evalutated if PDM_DRVREG_FLAGS_RC is set. */
     char                szRCMod[32];

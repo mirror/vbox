@@ -607,7 +607,7 @@ const PDMDRVREG g_DrvNamedPipe =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "NamedPipe",
     /* szRCMod */
     "",

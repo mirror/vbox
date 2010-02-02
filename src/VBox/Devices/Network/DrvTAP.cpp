@@ -1060,7 +1060,7 @@ const PDMDRVREG g_DrvHostInterface =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "HostInterface",
     /* szRCMod */
     "",

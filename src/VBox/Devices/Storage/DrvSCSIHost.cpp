@@ -497,7 +497,7 @@ const PDMDRVREG g_DrvSCSIHost =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "SCSIHost",
     /* szRCMod */
     "",

@@ -479,7 +479,7 @@ const PDMDRVREG g_DrvNetSniffer =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "NetSniffer",
     /* szRCMod */
     "",

@@ -320,7 +320,7 @@ const PDMDRVREG Keyboard::DrvReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MainKeyboard",
     /* szRCMod */
     "",

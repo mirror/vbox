@@ -8237,7 +8237,7 @@ const PDMDRVREG Console::DrvStatusReg =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MainStatus",
     /* szRCMod */
     "",

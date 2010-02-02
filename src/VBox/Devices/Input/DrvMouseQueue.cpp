@@ -311,7 +311,7 @@ const PDMDRVREG g_DrvMouseQueue =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "MouseQueue",
     /* szRCMod */
     "",

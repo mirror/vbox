@@ -827,7 +827,7 @@ const PDMDRVREG g_DrvHostDVD =
 {
     /* u32Version */
     PDM_DRVREG_VERSION,
-    /* szDriverName */
+    /* szName */
     "HostDVD",
     /* szRCMod */
     "",
