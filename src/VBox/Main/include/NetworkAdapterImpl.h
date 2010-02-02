@@ -138,7 +138,6 @@ public:
     HRESULT loadSettings(const settings::NetworkAdapter &data);
     HRESULT saveSettings(settings::NetworkAdapter &data);
 
-    bool isModified() { AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); return mData.isBackedUp(); }
     bool rollback();
     void commit();
     void copyFrom (NetworkAdapter *aThat);
@@ -155,6 +154,7 @@ private:
     const ComObjPtr<Machine, ComWeakRef> mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
 
+    bool m_fModified;
     Backupable<Data> mData;
 };
 

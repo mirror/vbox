@@ -88,7 +88,6 @@ public:
     StorageBus_T getStorageBus() const;
     ULONG getInstance() const;
 
-    bool isModified();
     bool rollback();
     void commit();
 

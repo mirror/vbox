@@ -83,7 +83,6 @@ public:
     HRESULT loadSettings(const settings::BIOSSettings &data);
     HRESULT saveSettings(settings::BIOSSettings &data);
 
-    bool isModified();
     void rollback();
     void commit();
     void copyFrom (BIOSSettings *aThat);

@@ -576,10 +576,12 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
         m->bd.backup();
         m->bd->mPortCount = aPortCount;
 
-        /* leave the lock for safety */
-        alock.leave();
+        alock.release();
+        AutoWriteLock mlock(m->pParent COMMA_LOCKVAL_SRC_POS);        // m->pParent is const, needs no locking
+        m->pParent->setModified(Machine::IsModified_Storage);
+        mlock.release();
 
-        m->pParent->onStorageControllerChange ();
+        m->pParent->onStorageControllerChange();
     }
 
     return S_OK;
@@ -712,12 +714,6 @@ StorageBus_T StorageController::getStorageBus() const
 ULONG StorageController::getInstance() const
 {
     return m->bd->mInstance;
-}
-
-bool StorageController::isModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m->bd.isBackedUp();
 }
 
 /** @note Locks objects for writing! */

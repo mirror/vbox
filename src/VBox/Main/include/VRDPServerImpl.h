@@ -110,7 +110,6 @@ public:
     HRESULT loadSettings(const settings::VRDPSettings &data);
     HRESULT saveSettings(settings::VRDPSettings &data);
 
-    bool isModified() { AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); return mData.isBackedUp(); }
     bool rollback();
     void commit();
     void copyFrom (VRDPServer *aThat);
