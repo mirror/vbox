@@ -4654,7 +4654,7 @@ const PDMDEVREG g_DeviceLsiLogicSCSI =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "lsilogicscsi",
     /* szRCMod */
     "VBoxDDGC.gc",

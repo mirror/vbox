@@ -6982,7 +6982,7 @@ const PDMDEVREG g_DevicePIIX3IDE =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "piix3ide",
     /* szRCMod */
     "VBoxDDGC.gc",

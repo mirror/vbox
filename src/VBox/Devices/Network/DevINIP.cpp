@@ -677,7 +677,7 @@ const PDMDEVREG g_DeviceINIP =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "IntNetIP",
     /* szRCMod/szR0Mod */
     "",

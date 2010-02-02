@@ -933,7 +933,7 @@ const PDMDEVREG g_DeviceDMA =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "8237A",
     /* szRCMod */
     "",

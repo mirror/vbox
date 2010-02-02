@@ -5299,7 +5299,7 @@ const PDMDEVREG g_DevicePCNet =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "pcnet",
     /* szRCMod */
 #ifdef PCNET_GC_ENABLED

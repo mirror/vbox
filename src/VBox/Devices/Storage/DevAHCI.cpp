@@ -6965,7 +6965,7 @@ const PDMDEVREG g_DeviceAHCI =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "ahci",
     /* szRCMod */
     "VBoxDDGC.gc",

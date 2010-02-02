@@ -1034,7 +1034,7 @@ const PDMDEVREG g_DeviceEFI =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "efi",
     /* szRCMod */
     "",

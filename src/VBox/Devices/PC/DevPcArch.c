@@ -254,7 +254,7 @@ const PDMDEVREG g_DevicePcArch =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "pcarch",
     /* szRCMod */
     "",

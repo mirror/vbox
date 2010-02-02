@@ -974,7 +974,7 @@ const PDMDEVREG g_DeviceSerialPort =
 {
     /* u32Version */
     PDM_DEVREG_VERSION,
-    /* szDeviceName */
+    /* szName */
     "serial",
     /* szRCMod */
     "VBoxDDGC.gc",
