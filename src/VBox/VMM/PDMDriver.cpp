@@ -67,21 +67,6 @@ typedef const PDMDRVREGCBINT *PCPDMDRVREGCBINT;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-/** @def PDMDRV_ASSERT_DRVINS
- * Asserts the validity of the driver instance.
- */
-#ifdef VBOX_STRICT
-# define PDMDRV_ASSERT_DRVINS(pDrvIns) \
-    do { \
-        AssertPtr(pDrvIns); \
-        Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION); \
-        Assert(pDrvIns->pvInstanceDataR3 == (void *)&pDrvIns->achInstanceData[0]); \
-    } while (0)
-#else
-# define PDMDRV_ASSERT_DRVINS(pDrvIns)   do { } while (0)
-#endif
-/** @} */
-
 static DECLCALLBACK(int) pdmR3DrvRegister(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG pReg);
 static int pdmR3DrvLoad(PVM pVM, PPDMDRVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
 

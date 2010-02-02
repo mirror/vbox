@@ -49,6 +49,7 @@ extern DECLEXPORT(const PDMAPICHLPRC)   g_pdmRCApicHlp;
 extern DECLEXPORT(const PDMIOAPICHLPRC) g_pdmRCIoApicHlp;
 extern DECLEXPORT(const PDMPCIHLPRC)    g_pdmRCPciHlp;
 extern DECLEXPORT(const PDMHPETHLPRC)   g_pdmRCHpetHlp;
+extern DECLEXPORT(const PDMDRVHLPRC)    g_pdmRCDrvHlp;
 RT_C_DECLS_END
 
 
@@ -66,10 +67,10 @@ static void pdmRCIoApicSetIrq(PVM pVM, int iIrq, int iLevel);
  */
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPCISetIrq} */
-static DECLCALLBACK(void) pdmGCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+static DECLCALLBACK(void) pdmRCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PCISetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
+    LogFlow(("pdmRCDevHlp_PCISetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
 
     PVM         pVM     = pDevIns->Internal.s.pVMRC;
     PPCIDEVICE  pPciDev = pDevIns->Internal.s.pPciDeviceRC;
@@ -99,67 +100,67 @@ static DECLCALLBACK(void) pdmGCDevHlp_PCISetIrq(PPDMDEVINS pDevIns, int iIrq, in
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
 
-    LogFlow(("pdmGCDevHlp_PCISetIrq: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_PCISetIrq: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
 }
 
 
-/** @interface_method_impl{PDMDEVHLPRC,pfnPCISetIrq} */
-static DECLCALLBACK(void) pdmGCDevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+/** @interface_method_impl{PDMDRVHLPRC,pfnPCISetIrq} */
+static DECLCALLBACK(void) pdmRCDevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_ISASetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
+    LogFlow(("pdmRCDevHlp_ISASetIrq: caller=%p/%d: iIrq=%d iLevel=%d\n", pDevIns, pDevIns->iInstance, iIrq, iLevel));
 
     pdmRCIsaSetIrq(pDevIns->Internal.s.pVMRC, iIrq, iLevel);
 
-    LogFlow(("pdmGCDevHlp_ISASetIrq: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_ISASetIrq: caller=%p/%d: returns void\n", pDevIns, pDevIns->iInstance));
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPhysRead} */
-static DECLCALLBACK(int) pdmGCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
+static DECLCALLBACK(int) pdmRCDevHlp_PhysRead(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, void *pvBuf, size_t cbRead)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
+    LogFlow(("pdmRCDevHlp_PhysRead: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbRead=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbRead));
 
     int rc = PGMPhysRead(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbRead);
     AssertRC(rc); /** @todo track down the users for this bugger. */
 
-    Log(("pdmGCDevHlp_PhysRead: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
+    Log(("pdmRCDevHlp_PhysRead: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
     return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPhysWrite} */
-static DECLCALLBACK(int) pdmGCDevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
+static DECLCALLBACK(int) pdmRCDevHlp_PhysWrite(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, const void *pvBuf, size_t cbWrite)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
+    LogFlow(("pdmRCDevHlp_PhysWrite: caller=%p/%d: GCPhys=%RGp pvBuf=%p cbWrite=%#x\n",
              pDevIns, pDevIns->iInstance, GCPhys, pvBuf, cbWrite));
 
     int rc = PGMPhysWrite(pDevIns->Internal.s.pVMRC, GCPhys, pvBuf, cbWrite);
     AssertRC(rc); /** @todo track down the users for this bugger. */
 
-    Log(("pdmGCDevHlp_PhysWrite: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
+    Log(("pdmRCDevHlp_PhysWrite: caller=%p/%d: returns %Rrc\n", pDevIns, pDevIns->iInstance, rc));
     return rc;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnA20IsEnabled} */
-static DECLCALLBACK(bool) pdmGCDevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
+static DECLCALLBACK(bool) pdmRCDevHlp_A20IsEnabled(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_A20IsEnabled: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_A20IsEnabled: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
 
     bool fEnabled = PGMPhysIsA20Enabled(VMMGetCpu0(pDevIns->Internal.s.pVMRC));
 
-    Log(("pdmGCDevHlp_A20IsEnabled: caller=%p/%d: returns %RTbool\n", pDevIns, pDevIns->iInstance, fEnabled));
+    Log(("pdmRCDevHlp_A20IsEnabled: caller=%p/%d: returns %RTbool\n", pDevIns, pDevIns->iInstance, fEnabled));
     return fEnabled;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnVMSetError} */
-static DECLCALLBACK(int) pdmGCDevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+static DECLCALLBACK(int) pdmRCDevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     va_list args;
@@ -171,7 +172,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_VMSetError(PPDMDEVINS pDevIns, int rc, RT_S
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnVMSetErrorV} */
-static DECLCALLBACK(int) pdmGCDevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) pdmRCDevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     int rc2 = VMSetErrorV(pDevIns->Internal.s.pVMRC, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
@@ -180,7 +181,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_VMSetErrorV(PPDMDEVINS pDevIns, int rc, RT_
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnVMSetRuntimeError} */
-static DECLCALLBACK(int) pdmGCDevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+static DECLCALLBACK(int) pdmRCDevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     va_list va;
@@ -192,7 +193,7 @@ static DECLCALLBACK(int) pdmGCDevHlp_VMSetRuntimeError(PPDMDEVINS pDevIns, uint3
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnVMSetErrorV} */
-static DECLCALLBACK(int) pdmGCDevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
+static DECLCALLBACK(int) pdmRCDevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     int rc = VMSetRuntimeErrorV(pDevIns->Internal.s.pVMRC, fFlags, pszErrorId, pszFormat, va);
@@ -201,29 +202,29 @@ static DECLCALLBACK(int) pdmGCDevHlp_VMSetRuntimeErrorV(PPDMDEVINS pDevIns, uint
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnPATMSetMMIOPatchInfo} */
-static DECLCALLBACK(int) pdmGCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData)
+static DECLCALLBACK(int) pdmRCDevHlp_PATMSetMMIOPatchInfo(PPDMDEVINS pDevIns, RTGCPHYS GCPhys, RTGCPTR pCachedData)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_PATMSetMMIOPatchInfo: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_PATMSetMMIOPatchInfo: caller=%p/%d:\n", pDevIns, pDevIns->iInstance));
 
     return PATMSetMMIOPatchInfo(pDevIns->Internal.s.pVMRC, GCPhys, (RTRCPTR)pCachedData);
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnGetVM} */
-static DECLCALLBACK(PVM)  pdmGCDevHlp_GetVM(PPDMDEVINS pDevIns)
+static DECLCALLBACK(PVM)  pdmRCDevHlp_GetVM(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_GetVM: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
     return pDevIns->Internal.s.pVMRC;
 }
 
 
 /** @interface_method_impl{PDMDEVHLPRC,pfnGetVMCPU} */
-static DECLCALLBACK(PVMCPU) pdmGCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
+static DECLCALLBACK(PVMCPU) pdmRCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmGCDevHlp_GetVMCPU: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
+    LogFlow(("pdmRCDevHlp_GetVMCPU: caller='%p'/%d\n", pDevIns, pDevIns->iInstance));
     return VMMGetCpu(pDevIns->Internal.s.pVMRC);
 }
 
@@ -234,18 +235,18 @@ static DECLCALLBACK(PVMCPU) pdmGCDevHlp_GetVMCPU(PPDMDEVINS pDevIns)
 extern DECLEXPORT(const PDMDEVHLPRC) g_pdmRCDevHlp =
 {
     PDM_DEVHLPRC_VERSION,
-    pdmGCDevHlp_PCISetIrq,
-    pdmGCDevHlp_ISASetIrq,
-    pdmGCDevHlp_PhysRead,
-    pdmGCDevHlp_PhysWrite,
-    pdmGCDevHlp_A20IsEnabled,
-    pdmGCDevHlp_VMSetError,
-    pdmGCDevHlp_VMSetErrorV,
-    pdmGCDevHlp_VMSetRuntimeError,
-    pdmGCDevHlp_VMSetRuntimeErrorV,
-    pdmGCDevHlp_PATMSetMMIOPatchInfo,
-    pdmGCDevHlp_GetVM,
-    pdmGCDevHlp_GetVMCPU,
+    pdmRCDevHlp_PCISetIrq,
+    pdmRCDevHlp_ISASetIrq,
+    pdmRCDevHlp_PhysRead,
+    pdmRCDevHlp_PhysWrite,
+    pdmRCDevHlp_A20IsEnabled,
+    pdmRCDevHlp_VMSetError,
+    pdmRCDevHlp_VMSetErrorV,
+    pdmRCDevHlp_VMSetRuntimeError,
+    pdmRCDevHlp_VMSetRuntimeErrorV,
+    pdmRCDevHlp_PATMSetMMIOPatchInfo,
+    pdmRCDevHlp_GetVM,
+    pdmRCDevHlp_GetVMCPU,
     PDM_DEVHLPRC_VERSION
 };
 
@@ -610,6 +611,100 @@ extern DECLEXPORT(const PDMHPETHLPRC) g_pdmRCHpetHlp =
     pdmRCHpetHlp_Lock,
     pdmRCHpetHlp_Unlock,
     PDM_HPETHLPRC_VERSION, /* the end */
+};
+
+/** @} */
+
+
+
+
+/** @name Raw-Mode Context Driver Helpers
+ * @{
+ */
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetError} */
+static DECLCALLBACK(int) pdmRCDrvHlp_VMSetError(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, ...)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    va_list args;
+    va_start(args, pszFormat);
+    int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMRC, rc, RT_SRC_POS_ARGS, pszFormat, args); Assert(rc2 == rc); NOREF(rc2);
+    va_end(args);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetErrorV} */
+static DECLCALLBACK(int) pdmRCDrvHlp_VMSetErrorV(PPDMDRVINS pDrvIns, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    int rc2 = VMSetErrorV(pDrvIns->Internal.s.pVMRC, rc, RT_SRC_POS_ARGS, pszFormat, va); Assert(rc2 == rc); NOREF(rc2);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetRuntimeError} */
+static DECLCALLBACK(int) pdmRCDrvHlp_VMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, ...)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVMRC, fFlags, pszErrorId, pszFormat, va);
+    va_end(va);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnVMSetErrorV} */
+static DECLCALLBACK(int) pdmRCDrvHlp_VMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    int rc = VMSetRuntimeErrorV(pDrvIns->Internal.s.pVMRC, fFlags, pszErrorId, pszFormat, va);
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnAssertEMT} */
+static DECLCALLBACK(bool) pdmRCDrvHlp_AssertEMT(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    if (VM_IS_EMT(pDrvIns->Internal.s.pVMRC))
+        return true;
+
+    RTAssertMsg1Weak("AssertEMT", iLine, pszFile, pszFunction);
+    RTAssertPanic();
+    return false;
+}
+
+
+/** @interface_method_impl{PDMDRVHLPRC,pfnAssertOther} */
+static DECLCALLBACK(bool) pdmRCDrvHlp_AssertOther(PPDMDRVINS pDrvIns, const char *pszFile, unsigned iLine, const char *pszFunction)
+{
+    PDMDRV_ASSERT_DRVINS(pDrvIns);
+    if (!VM_IS_EMT(pDrvIns->Internal.s.pVMRC))
+        return true;
+
+    /* Note: While we don't have any other threads but EMT(0) in RC, might
+       still have drive code compiled in which it shouldn't execute. */
+    RTAssertMsg1Weak("AssertOther", iLine, pszFile, pszFunction);
+    RTAssertPanic();
+    return false;
+}
+
+
+/**
+ * The Raw-Mode Context Driver Helper Callbacks.
+ */
+extern DECLEXPORT(const PDMDRVHLPRC) g_pdmRCDrvHlp =
+{
+    PDM_DRVHLPRC_VERSION,
+    pdmRCDrvHlp_VMSetError,
+    pdmRCDrvHlp_VMSetErrorV,
+    pdmRCDrvHlp_VMSetRuntimeError,
+    pdmRCDrvHlp_VMSetRuntimeErrorV,
+    pdmRCDrvHlp_AssertEMT,
+    pdmRCDrvHlp_AssertOther,
+    PDM_DRVHLPRC_VERSION
 };
 
 /** @} */

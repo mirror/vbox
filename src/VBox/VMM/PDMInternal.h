@@ -1075,6 +1075,20 @@ extern const PDMHPETHLPR3   g_pdmR3DevHpetHlp;
 # define PDMDEV_ASSERT_DEVINS(pDevIns)   do { } while (0)
 #endif
 
+/** @def PDMDRV_ASSERT_DRVINS
+ * Asserts the validity of the driver instance.
+ */
+#ifdef VBOX_STRICT
+# define PDMDRV_ASSERT_DRVINS(pDrvIns) \
+    do { \
+        AssertPtr(pDrvIns); \
+        Assert(pDrvIns->u32Version == PDM_DRVINS_VERSION); \
+        Assert(pDrvIns->CTX_SUFF(pvInstanceData) == (void *)&pDrvIns->achInstanceData[0]); \
+    } while (0)
+#else
+# define PDMDRV_ASSERT_DRVINS(pDrvIns)   do { } while (0)
+#endif
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
