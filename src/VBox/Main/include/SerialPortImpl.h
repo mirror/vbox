@@ -84,7 +84,6 @@ public:
     HRESULT saveSettings(settings::SerialPort &data);
 
     bool isModified();
-    bool isReallyModified();
     bool rollback();
     void commit();
     void copyFrom(SerialPort *aThat);

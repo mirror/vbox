@@ -146,6 +146,15 @@ struct ConfigFileBase::Data
     SettingsVersion_T       svRead;                     // settings version that the original file had when it was read,
                                                         // or SettingsVersion_Null if none
 
+    void copyFrom(const Data &d)
+    {
+        strFilename = d.strFilename;
+        fFileExists = d.fFileExists;
+        strSettingsVersionFull = d.strSettingsVersionFull;
+        sv = d.sv;
+        svRead = d.svRead;
+    }
+
     void cleanup()
     {
         if (pDoc)
@@ -703,6 +712,46 @@ bool ConfigFileBase::fileExists()
     return m->fFileExists;
 }
 
+/**
+ * Copies the base variables from another instance. Used by Machine::saveSettings
+ * so that the settings version does not get lost when a copy of the Machine settings
+ * file is made to see if settings have actually changed.
+ * @param b
+ */
+void ConfigFileBase::copyBaseFrom(const ConfigFileBase &b)
+{
+    m->copyFrom(*b.m);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// Structures shared between Machine XML and VirtualBox.xml
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool USBDeviceFilter::operator==(const USBDeviceFilter &u) const
+{
+    return (    (this == &u)
+             || (    (strName           == u.strName)
+                  && (fActive           == u.fActive)
+                  && (strVendorId       == u.strVendorId)
+                  && (strProductId      == u.strProductId)
+                  && (strRevision       == u.strRevision)
+                  && (strManufacturer   == u.strManufacturer)
+                  && (strProduct        == u.strProduct)
+                  && (strSerialNumber   == u.strSerialNumber)
+                  && (strPort           == u.strPort)
+                  && (action            == u.action)
+                  && (strRemote         == u.strRemote)
+                  && (ulMaskedInterfaces == u.ulMaskedInterfaces)
+                )
+           );
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1241,6 +1290,155 @@ void MainConfigFile::write(const com::Utf8Str strFilename)
     clearDocument();
 }
 
+////////////////////////////////////////////////////////////////////////////////
+//
+// Machine XML structures
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool VRDPSettings::operator==(const VRDPSettings& v) const
+{
+    return (    (this == &v)
+             || (    (fEnabled                  == v.fEnabled)
+                  && (strPort                   == v.strPort)
+                  && (strNetAddress             == v.strNetAddress)
+                  && (authType                  == v.authType)
+                  && (ulAuthTimeout             == v.ulAuthTimeout)
+                  && (fAllowMultiConnection     == v.fAllowMultiConnection)
+                  && (fReuseSingleConnection    == v.fReuseSingleConnection)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool BIOSSettings::operator==(const BIOSSettings &d) const
+{
+    return (    (this == &d)
+             || (    fACPIEnabled        == d.fACPIEnabled
+                  && fIOAPICEnabled      == d.fIOAPICEnabled
+                  && fLogoFadeIn         == d.fLogoFadeIn
+                  && fLogoFadeOut        == d.fLogoFadeOut
+                  && ulLogoDisplayTime   == d.ulLogoDisplayTime
+                  && strLogoImagePath    == d.strLogoImagePath
+                  && biosBootMenuMode    == d.biosBootMenuMode
+                  && fPXEDebugEnabled    == d.fPXEDebugEnabled
+                  && llTimeOffset        == d.llTimeOffset)
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool USBController::operator==(const USBController &u) const
+{
+    return (    (this == &u)
+                 || (    (fEnabled          == u.fEnabled)
+                      && (fEnabledEHCI      == u.fEnabledEHCI)
+                      && (llDeviceFilters   == u.llDeviceFilters)
+                    )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool NetworkAdapter::operator==(const NetworkAdapter &n) const
+{
+    return (    (this == &n)
+             || (    (ulSlot            == n.ulSlot)
+                  && (type              == n.type)
+                  && (fEnabled          == n.fEnabled)
+                  && (strMACAddress     == n.strMACAddress)
+                  && (fCableConnected   == n.fCableConnected)
+                  && (ulLineSpeed       == n.ulLineSpeed)
+                  && (fTraceEnabled     == n.fTraceEnabled)
+                  && (strTraceFile      == n.strTraceFile)
+                  && (mode              == n.mode)
+                  && (strName           == n.strName)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool SerialPort::operator==(const SerialPort &s) const
+{
+    return (    (this == &s)
+             || (    (ulSlot            == s.ulSlot)
+                  && (fEnabled          == s.fEnabled)
+                  && (ulIOBase          == s.ulIOBase)
+                  && (ulIRQ             == s.ulIRQ)
+                  && (portMode          == s.portMode)
+                  && (strPath           == s.strPath)
+                  && (fServer           == s.fServer)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool ParallelPort::operator==(const ParallelPort &s) const
+{
+    return (    (this == &s)
+             || (    (ulSlot            == s.ulSlot)
+                  && (fEnabled          == s.fEnabled)
+                  && (ulIOBase          == s.ulIOBase)
+                  && (ulIRQ             == s.ulIRQ)
+                  && (strPath           == s.strPath)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool SharedFolder::operator==(const SharedFolder &g) const
+{
+    return (    (this == &g)
+             || (    (strName       == g.strName)
+                  && (strHostPath   == g.strHostPath)
+                  && (fWritable     == g.fWritable)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool GuestProperty::operator==(const GuestProperty &g) const
+{
+    return (    (this == &g)
+             || (    (strName           == g.strName)
+                  && (strValue          == g.strValue)
+                  && (timestamp         == g.timestamp)
+                  && (strFlags          == g.strFlags)
+                )
+           );
+}
+
 // use a define for the platform-dependent default value of
 // hwvirt exclusivity, since we'll need to check that value
 // in bumpSettingsVersionIfNeeded()
@@ -1284,6 +1482,212 @@ Hardware::Hardware()
 #if HC_ARCH_BITS == 64 || defined(RT_OS_WINDOWS) || defined(RT_OS_DARWIN)
     fPAE = true;
 #endif
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool Hardware::operator==(const Hardware& h) const
+{
+    return (    (this == &h)
+             || (    (strVersion                == h.strVersion)
+                  && (uuid                      == h.uuid)
+                  && (fHardwareVirt             == h.fHardwareVirt)
+                  && (fHardwareVirtExclusive    == h.fHardwareVirtExclusive)
+                  && (fNestedPaging             == h.fNestedPaging)
+                  && (fVPID                     == h.fVPID)
+                  && (fSyntheticCpu             == h.fSyntheticCpu)
+                  && (fPAE                      == h.fPAE)
+                  && (cCPUs                     == h.cCPUs)
+                  && (fCpuHotPlug               == h.fCpuHotPlug)
+                  && (llCpus                    == h.llCpus)
+                  && (llCpuIdLeafs              == h.llCpuIdLeafs)
+                  && (ulMemorySizeMB            == h.ulMemorySizeMB)
+                  && (mapBootOrder              == h.mapBootOrder)
+                  && (ulVRAMSizeMB              == h.ulVRAMSizeMB)
+                  && (cMonitors                 == h.cMonitors)
+                  && (fAccelerate3D             == h.fAccelerate3D)
+                  && (fAccelerate2DVideo        == h.fAccelerate2DVideo)
+                  && (firmwareType              == h.firmwareType)
+                  && (vrdpSettings              == h.vrdpSettings)
+                  && (biosSettings              == h.biosSettings)
+                  && (usbController             == h.usbController)
+                  && (llNetworkAdapters         == h.llNetworkAdapters)
+                  && (llSerialPorts             == h.llSerialPorts)
+                  && (llParallelPorts           == h.llParallelPorts)
+                  && (audioAdapter              == h.audioAdapter)
+                  && (llSharedFolders           == h.llSharedFolders)
+                  && (clipboardMode             == h.clipboardMode)
+                  && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
+                  && (ulStatisticsUpdateInterval == h.ulStatisticsUpdateInterval)
+                  && (llGuestProperties         == h.llGuestProperties)
+                  && (strNotificationPatterns   == h.strNotificationPatterns)
+                )
+            );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool AttachedDevice::operator==(const AttachedDevice &a) const
+{
+    return (    (this == &a)
+             || (    (deviceType                == a.deviceType)
+                  && (fPassThrough              == a.fPassThrough)
+                  && (lPort                     == a.lPort)
+                  && (lDevice                   == a.lDevice)
+                  && (uuid                      == a.uuid)
+                  && (strHostDriveSrc           == a.strHostDriveSrc)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool StorageController::operator==(const StorageController &s) const
+{
+    return (    (this == &s)
+             || (    (strName                   == s.strName)
+                  && (storageBus                == s.storageBus)
+                  && (controllerType            == s.controllerType)
+                  && (ulPortCount               == s.ulPortCount)
+                  && (ulInstance                == s.ulInstance)
+                  && (lIDE0MasterEmulationPort  == s.lIDE0MasterEmulationPort)
+                  && (lIDE0SlaveEmulationPort   == s.lIDE0SlaveEmulationPort)
+                  && (lIDE1MasterEmulationPort  == s.lIDE1MasterEmulationPort)
+                  && (lIDE1SlaveEmulationPort   == s.lIDE1SlaveEmulationPort)
+                  && (llAttachedDevices         == s.llAttachedDevices)
+                )
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool Storage::operator==(const Storage &s) const
+{
+    return (    (this == &s)
+             || (llStorageControllers == s.llStorageControllers)            // deep compare
+           );
+}
+
+/**
+ * Comparison operator. This gets called from MachineConfigFile::operator==,
+ * which in turn gets called from Machine::saveSettings to figure out whether
+ * machine settings have really changed and thus need to be written out to disk.
+ */
+bool Snapshot::operator==(const Snapshot &s) const
+{
+    return (    (this == &s)
+             || (    (uuid                  == s.uuid)
+                  && (strName               == s.strName)
+                  && (strDescription        == s.strDescription)
+                  && (RTTimeSpecIsEqual(&timestamp, &s.timestamp))
+                  && (strStateFile          == s.strStateFile)
+                  && (hardware              == s.hardware)                  // deep compare
+                  && (storage               == s.storage)                   // deep compare
+                  && (llChildSnapshots      == s.llChildSnapshots)          // deep compare
+                )
+           );
+}
+
+////////////////////////////////////////////////////////////////////////////////
+//
+// MachineConfigFile
+//
+////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Constructor.
+ *
+ * If pstrFilename is != NULL, this reads the given settings file into the member
+ * variables and various substructures and lists. Otherwise, the member variables
+ * are initialized with default values.
+ *
+ * Throws variants of xml::Error for I/O, XML and logical content errors, which
+ * the caller should catch; if this constructor does not throw, then the member
+ * variables contain meaningful values (either from the file or defaults).
+ *
+ * @param strFilename
+ */
+MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
+    : ConfigFileBase(pstrFilename),
+      fNameSync(true),
+      fTeleporterEnabled(false),
+      uTeleporterPort(0),
+      fRTCUseUTC(false),
+      fCurrentStateModified(true),
+      fAborted(false)
+{
+    RTTimeNow(&timeLastStateChange);
+
+    if (pstrFilename)
+    {
+        // the ConfigFileBase constructor has loaded the XML file, so now
+        // we need only analyze what is in there
+
+        xml::NodesLoop nlRootChildren(*m->pelmRoot);
+        const xml::ElementNode *pelmRootChild;
+        while ((pelmRootChild = nlRootChildren.forAllNodes()))
+        {
+            if (pelmRootChild->nameEquals("Machine"))
+                readMachine(*pelmRootChild);
+        }
+
+        // clean up memory allocated by XML engine
+        clearDocument();
+    }
+}
+
+/**
+ * Comparison operator. This gets called from Machine::saveSettings to figure out
+ * whether machine settings have really changed and thus need to be written out to disk.
+ *
+ * Even though this is called operator==, this does NOT compare all fields; the "equals"
+ * should be understood as "has the same machine config as". The following fields are
+ * NOT compared:
+ *      -- settings versions and file names inherited from ConfigFileBase;
+ *      -- fCurrentStateModified because that is considered separately in Machine::saveSettings!!
+ *
+ * The "deep" comparisons marked below will invoke the operator== functions of the
+ * structs defined in this file, which may in turn go into comparing lists of
+ * other structures. As a result, invoking this can be expensive, but it's
+ * less expensive than writing out XML to disk.
+ */
+bool MachineConfigFile::operator==(const MachineConfigFile &c) const
+{
+    return (    (this == &c)
+            || (    (uuid                       == c.uuid)
+                 && (strName                    == c.strName)
+                 && (fNameSync                  == c.fNameSync)
+                 && (strDescription             == c.strDescription)
+                 && (strOsType                  == c.strOsType)
+                 && (strStateFile               == c.strStateFile)
+                 && (uuidCurrentSnapshot        == c.uuidCurrentSnapshot)
+                 && (strSnapshotFolder          == c.strSnapshotFolder)
+                 && (fTeleporterEnabled         == c.fTeleporterEnabled)
+                 && (uTeleporterPort            == c.uTeleporterPort)
+                 && (strTeleporterAddress       == c.strTeleporterAddress)
+                 && (strTeleporterPassword      == c.strTeleporterPassword)
+                 && (fRTCUseUTC                 == c.fRTCUseUTC)
+                 // skip fCurrentStateModified!
+                 && (RTTimeSpecIsEqual(&timeLastStateChange, &c.timeLastStateChange))
+                 && (fAborted                   == c.fAborted)
+                 && (hardwareMachine            == c.hardwareMachine)       // this one's deep
+                 && (storageMachine             == c.storageMachine)        // this one's deep
+                 && (mapExtraDataItems          == c.mapExtraDataItems)     // this one's deep
+                 && (llFirstSnapshot            == c.llFirstSnapshot)       // this one's deep
+               )
+           );
 }
 
 /**
@@ -2414,54 +2818,6 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
     }
     else
         throw ConfigFileError(this, &elmMachine, N_("Required Machine/@uuid or @name attributes is missing"));
-}
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// MachineConfigFile
-//
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Constructor.
- *
- * If pstrFilename is != NULL, this reads the given settings file into the member
- * variables and various substructures and lists. Otherwise, the member variables
- * are initialized with default values.
- *
- * Throws variants of xml::Error for I/O, XML and logical content errors, which
- * the caller should catch; if this constructor does not throw, then the member
- * variables contain meaningful values (either from the file or defaults).
- *
- * @param strFilename
- */
-MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
-    : ConfigFileBase(pstrFilename),
-      fNameSync(true),
-      fTeleporterEnabled(false),
-      uTeleporterPort(0),
-      fRTCUseUTC(false),
-      fCurrentStateModified(true),
-      fAborted(false)
-{
-    RTTimeNow(&timeLastStateChange);
-
-    if (pstrFilename)
-    {
-        // the ConfigFileBase constructor has loaded the XML file, so now
-        // we need only analyze what is in there
-
-        xml::NodesLoop nlRootChildren(*m->pelmRoot);
-        const xml::ElementNode *pelmRootChild;
-        while ((pelmRootChild = nlRootChildren.forAllNodes()))
-        {
-            if (pelmRootChild->nameEquals("Machine"))
-                readMachine(*pelmRootChild);
-        }
-
-        // clean up memory allocated by XML engine
-        clearDocument();
-    }
 }
 
 /**

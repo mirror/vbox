@@ -419,12 +419,6 @@ bool AudioAdapter::isModified()
     return mData.isBackedUp();
 }
 
-bool AudioAdapter::isReallyModified()
-{
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return mData.hasActualChanges();
-}
-
 /**
  *  @note Locks this object for writing.
  */

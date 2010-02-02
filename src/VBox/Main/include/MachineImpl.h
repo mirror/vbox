@@ -745,7 +745,6 @@ protected:
     bool isInOwnDir(Utf8Str *aSettingsDir = NULL);
 
     bool isModified();
-    bool isReallyModified(bool aIgnoreUserData = false);
     void rollback(bool aNotify);
     void commit();
     void copyFrom(Machine *aThat);
