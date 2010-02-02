@@ -543,13 +543,13 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
     /* usb ones first. */
     for (PPDMUSBINS pUsbIns = pVM->pdm.s.pUsbInstances; pUsbIns; pUsbIns = pUsbIns->Internal.s.pNext)
     {
-        pdmR3TermLuns(pVM, pUsbIns->Internal.s.pLuns, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance);
+        pdmR3TermLuns(pVM, pUsbIns->Internal.s.pLuns, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance);
 
-        if (pUsbIns->pUsbReg->pfnDestruct)
+        if (pUsbIns->pUsb->pfnDestruct)
         {
             LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n",
-                     pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-            pUsbIns->pUsbReg->pfnDestruct(pUsbIns);
+                     pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+            pUsbIns->pUsb->pfnDestruct(pUsbIns);
         }
 
         //TMR3TimerDestroyUsb(pVM, pUsbIns);
@@ -948,13 +948,13 @@ DECLINLINE(int) pdmR3PowerOnDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, u
 DECLINLINE(int) pdmR3PowerOnUsb(PPDMUSBINS pUsbIns)
 {
     Assert(pUsbIns->Internal.s.fVMSuspended);
-    if (pUsbIns->pUsbReg->pfnVMPowerOn)
+    if (pUsbIns->pUsb->pfnVMPowerOn)
     {
-        LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-        int rc = VINF_SUCCESS; pUsbIns->pUsbReg->pfnVMPowerOn(pUsbIns);
+        LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+        int rc = VINF_SUCCESS; pUsbIns->pUsb->pfnVMPowerOn(pUsbIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, rc));
+            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, rc));
             return rc;
         }
     }
@@ -1016,7 +1016,7 @@ VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
     {
         for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns;  pLun && RT_SUCCESS(rc);  pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
-                rc = pdmR3PowerOnDrv(pDrvIns, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun);
+                rc = pdmR3PowerOnDrv(pDrvIns, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
             rc = pdmR3PowerOnUsb(pUsbIns);
     }
@@ -1094,18 +1094,18 @@ DECLINLINE(void) pdmR3ResetUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
     if (!pUsbIns->Internal.s.fVMReset)
     {
         pUsbIns->Internal.s.fVMReset = true;
-        if (pUsbIns->pUsbReg->pfnVMReset)
+        if (pUsbIns->pUsb->pfnVMReset)
         {
             if (!pUsbIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-                pUsbIns->pUsbReg->pfnVMReset(pUsbIns);
+                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+                pUsbIns->pUsb->pfnVMReset(pUsbIns);
                 if (pUsbIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
             }
             else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
             {
-                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
                 pUsbIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pUsbIns->Internal.s.pfnAsyncNotify)
@@ -1231,7 +1231,7 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
 
             for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                    if (!pdmR3ResetDrv(pDrvIns, &cAsync, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun))
+                    if (!pdmR3ResetDrv(pDrvIns, &cAsync, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, pLun->iLun))
                         break;
 
             if (cAsync == cAsyncStart)
@@ -1320,18 +1320,18 @@ DECLINLINE(void) pdmR3SuspendUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
     if (!pUsbIns->Internal.s.fVMSuspended)
     {
         pUsbIns->Internal.s.fVMSuspended = true;
-        if (pUsbIns->pUsbReg->pfnVMSuspend)
+        if (pUsbIns->pUsb->pfnVMSuspend)
         {
             if (!pUsbIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-                pUsbIns->pUsbReg->pfnVMSuspend(pUsbIns);
+                LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+                pUsbIns->pUsb->pfnVMSuspend(pUsbIns);
                 if (pUsbIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
             }
             else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
             {
-                LogFlow(("PDMR3Suspend: Async notification completed - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                LogFlow(("PDMR3Suspend: Async notification completed - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
                 pUsbIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pUsbIns->Internal.s.pfnAsyncNotify)
@@ -1437,7 +1437,7 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
 
             for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                    if (!pdmR3SuspendDrv(pDrvIns, &cAsync, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun))
+                    if (!pdmR3SuspendDrv(pDrvIns, &cAsync, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, pLun->iLun))
                         break;
 
             if (cAsync == cAsyncStart)
@@ -1506,13 +1506,13 @@ DECLINLINE(int) pdmR3ResumeDrv(PPDMDRVINS pDrvIns, const char *pszDeviceName, ui
 DECLINLINE(int) pdmR3ResumeUsb(PPDMUSBINS pUsbIns)
 {
     Assert(pUsbIns->Internal.s.fVMSuspended);
-    if (pUsbIns->pUsbReg->pfnVMResume)
+    if (pUsbIns->pUsb->pfnVMResume)
     {
-        LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-        int rc = VINF_SUCCESS; pUsbIns->pUsbReg->pfnVMResume(pUsbIns);
+        LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+        int rc = VINF_SUCCESS; pUsbIns->pUsb->pfnVMResume(pUsbIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, rc));
+            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, rc));
             return rc;
         }
     }
@@ -1574,7 +1574,7 @@ VMMR3DECL(void) PDMR3Resume(PVM pVM)
     {
         for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns;  pLun && RT_SUCCESS(rc);  pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
-                rc = pdmR3ResumeDrv(pDrvIns, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun);
+                rc = pdmR3ResumeDrv(pDrvIns, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
             rc = pdmR3ResumeUsb(pUsbIns);
     }
@@ -1652,18 +1652,18 @@ DECLINLINE(void) pdmR3PowerOffUsb(PPDMUSBINS pUsbIns, unsigned *pcAsync)
     if (!pUsbIns->Internal.s.fVMSuspended)
     {
         pUsbIns->Internal.s.fVMSuspended = true;
-        if (pUsbIns->pUsbReg->pfnVMPowerOff)
+        if (pUsbIns->pUsb->pfnVMPowerOff)
         {
             if (!pUsbIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
-                pUsbIns->pUsbReg->pfnVMPowerOff(pUsbIns);
+                LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
+                pUsbIns->pUsb->pfnVMPowerOff(pUsbIns);
                 if (pUsbIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
             }
             else if (pUsbIns->Internal.s.pfnAsyncNotify(pUsbIns))
             {
-                LogFlow(("PDMR3PowerOff: Async notification completed - device '%s'/%d\n", pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance));
+                LogFlow(("PDMR3PowerOff: Async notification completed - device '%s'/%d\n", pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance));
                 pUsbIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pUsbIns->Internal.s.pfnAsyncNotify)
@@ -1762,7 +1762,7 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
 
             for (PPDMLUN pLun = pUsbIns->Internal.s.pLuns; pLun; pLun = pLun->pNext)
                 for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                    if (!pdmR3PowerOffDrv(pDrvIns, &cAsync, pUsbIns->pUsbReg->szDeviceName, pUsbIns->iInstance, pLun->iLun))
+                    if (!pdmR3PowerOffDrv(pDrvIns, &cAsync, pUsbIns->pUsb->szDeviceName, pUsbIns->iInstance, pLun->iLun))
                         break;
 
             if (cAsync == cAsyncStart)

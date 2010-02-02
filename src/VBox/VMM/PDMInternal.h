@@ -392,7 +392,7 @@ typedef struct PDMUSB
     /** Device name length. (search optimization) */
     RTUINT                          cchName;
     /** Registration structure. */
-    R3PTRTYPE(const struct PDMUSBREG *) pUsbReg;
+    R3PTRTYPE(const struct PDMUSBREG *) pReg;
     /** Next instance number. */
     uint32_t                        iNextInstance;
     /** Pointer to chain of instances (R3 Ptr). */
