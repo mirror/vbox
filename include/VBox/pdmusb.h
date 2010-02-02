@@ -651,7 +651,7 @@ typedef struct PDMUSBINS
     } Internal;
 
     /** Pointer the PDM USB Device API. */
-    R3PTRTYPE(PCPDMUSBHLP)      pUsbHlp;
+    R3PTRTYPE(PCPDMUSBHLP)      pHlpR3;
     /** Pointer to the USB device registration structure.  */
     R3PTRTYPE(PCPDMUSBREG)      pReg;
     /** Configuration handle. */
@@ -685,7 +685,7 @@ typedef struct PDMUSBINS
  * Assert that the current thread is the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMUSB_ASSERT_EMT(pUsbIns)  pUsbIns->pUsbHlp->pfnAssertEMT(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMUSB_ASSERT_EMT(pUsbIns)  pUsbIns->pHlpR3->pfnAssertEMT(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMUSB_ASSERT_EMT(pUsbIns)  do { } while (0)
 #endif
@@ -694,7 +694,7 @@ typedef struct PDMUSBINS
  * Assert that the current thread is NOT the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMUSB_ASSERT_OTHER(pUsbIns)  pUsbIns->pUsbHlp->pfnAssertOther(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMUSB_ASSERT_OTHER(pUsbIns)  pUsbIns->pHlpR3->pfnAssertOther(pUsbIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMUSB_ASSERT_OTHER(pUsbIns)  do { } while (0)
 #endif
@@ -721,11 +721,11 @@ typedef struct PDMUSBINS
  */
 DECLINLINE(int) PDMUsbHlpDriverAttach(PPDMUSBINS pUsbIns, RTUINT iLun, PPDMIBASE pBaseInterface, PPDMIBASE *ppBaseInterface, const char *pszDesc)
 {
-    return pUsbIns->pUsbHlp->pfnDriverAttach(pUsbIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
+    return pUsbIns->pHlpR3->pfnDriverAttach(pUsbIns, iLun, pBaseInterface, ppBaseInterface, pszDesc);
 }
 
 /**
- * VBOX_STRICT wrapper for pUsbHlp->pfnDBGFStopV.
+ * VBOX_STRICT wrapper for pHlpR3->pfnDBGFStopV.
  *
  * @returns VBox status code which must be passed up to the VMM.
  * @param   pUsbIns             Device instance.
@@ -739,7 +739,7 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
     int rc;
     va_list va;
     va_start(va, pszFormat);
-    rc = pUsbIns->pUsbHlp->pfnDBGFStopV(pUsbIns, RT_SRC_POS_ARGS, pszFormat, va);
+    rc = pUsbIns->pHlpR3->pfnDBGFStopV(pUsbIns, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 #else
@@ -757,7 +757,7 @@ DECLINLINE(int) PDMUsbDBGFStop(PPDMUSBINS pUsbIns, RT_SRC_POS_DECL, const char *
  */
 DECLINLINE(VMSTATE) PDMUsbHlpVMState(PPDMUSBINS pUsbIns)
 {
-    return pUsbIns->pUsbHlp->pfnVMState(pUsbIns);
+    return pUsbIns->pHlpR3->pfnVMState(pUsbIns);
 }
 
 /**
@@ -765,7 +765,7 @@ DECLINLINE(VMSTATE) PDMUsbHlpVMState(PPDMUSBINS pUsbIns)
  */
 DECLINLINE(int) PDMUsbHlpSetAsyncNotification(PPDMUSBINS pUsbIns, PFNPDMUSBASYNCNOTIFY pfnAsyncNotify)
 {
-    return pUsbIns->pUsbHlp->pfnSetAsyncNotification(pUsbIns, pfnAsyncNotify);
+    return pUsbIns->pHlpR3->pfnSetAsyncNotification(pUsbIns, pfnAsyncNotify);
 }
 
 /**
@@ -773,7 +773,7 @@ DECLINLINE(int) PDMUsbHlpSetAsyncNotification(PPDMUSBINS pUsbIns, PFNPDMUSBASYNC
  */
 DECLINLINE(void) PDMUsbHlpAsyncNotificationCompleted(PPDMUSBINS pUsbIns)
 {
-    pUsbIns->pUsbHlp->pfnAsyncNotificationCompleted(pUsbIns);
+    pUsbIns->pHlpR3->pfnAsyncNotificationCompleted(pUsbIns);
 }
 
 /**
@@ -790,7 +790,7 @@ DECLINLINE(int) PDMUsbHlpVMSetError(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL,
 {
     va_list     va;
     va_start(va, pszFormat);
-    rc = pUsbIns->pUsbHlp->pfnVMSetErrorV(pUsbIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    rc = pUsbIns->pHlpR3->pfnVMSetErrorV(pUsbIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 }
