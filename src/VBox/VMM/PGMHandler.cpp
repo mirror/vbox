@@ -40,6 +40,7 @@
 #include <VBox/ssm.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
+#include "PGMInline.h"
 #include <VBox/dbg.h>
 
 #include <VBox/log.h>

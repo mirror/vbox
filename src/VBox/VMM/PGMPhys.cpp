@@ -32,6 +32,7 @@
 #include <VBox/pdmdev.h>
 #include "PGMInternal.h"
 #include <VBox/vm.h>
+#include "PGMInline.h"
 #include <VBox/sup.h>
 #include <VBox/param.h>
 #include <VBox/err.h>

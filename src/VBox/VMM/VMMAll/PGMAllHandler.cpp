@@ -33,8 +33,9 @@
 #include <VBox/rem.h>
 #include <VBox/dbgf.h>
 #include <VBox/rem.h>
-#include "PGMInternal.h"
+#include "../PGMInternal.h"
 #include <VBox/vm.h>
+#include "../PGMInline.h"
 
 #include <VBox/log.h>
 #include <iprt/assert.h>

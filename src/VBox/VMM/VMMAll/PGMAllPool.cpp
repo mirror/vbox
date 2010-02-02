@@ -31,8 +31,9 @@
 #ifdef IN_RC
 # include <VBox/patm.h>
 #endif
-#include "PGMInternal.h"
+#include "../PGMInternal.h"
 #include <VBox/vm.h>
+#include "../PGMInline.h"
 #include <VBox/disopcode.h>
 #include <VBox/hwacc_vmx.h>
 

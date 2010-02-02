@@ -26,6 +26,7 @@
 #include <VBox/pgm.h>
 #include "../PGMInternal.h"
 #include <VBox/vm.h>
+#include "../PGMInline.h"
 #include <VBox/sup.h>
 #include <VBox/err.h>
 #include <iprt/asm.h>
