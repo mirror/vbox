@@ -64,11 +64,12 @@ typedef RCPTRTYPE(struct PDMDRVHLPRC const *) PCPDMDRVHLPRC;
  * Construct a driver instance for a VM.
  *
  * @returns VBox status.
- * @param   pDrvIns     The driver instance data.
- *                      If the registration structure is needed, pDrvIns->pDrvReg points to it.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to obtain the configuration
- *                      of the driver instance. It's also found in pDrvIns->pCfgHandle as it's expected
- *                      to be used frequently in this function.
+ * @param   pDrvIns     The driver instance data. If the registration structure
+ *                      is needed, it can be accessed thru pDrvIns->pReg.
+ * @param   pCfgHandle  Configuration node handle for the driver. Use this to
+ *                      obtain the configuration of the driver instance. It's
+ *                      also found in pDrvIns->pCfgHandle as it's expected to be
+ *                      used frequently in this function.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
 typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
@@ -363,7 +364,7 @@ typedef struct PDMDRVINS
     R3PTRTYPE(void *)           pvInstanceDataR3;
 
     /** Pointer to driver registration structure.  */
-    R3PTRTYPE(PCPDMDRVREG)      pDrvReg;
+    R3PTRTYPE(PCPDMDRVREG)      pReg;
     /** Configuration handle. */
     R3PTRTYPE(PCFGMNODE)        pCfgHandle;
 
@@ -1253,10 +1254,10 @@ typedef struct PDMDRVREGCB
      *
      * @returns VBox status code.
      * @param   pCallbacks      Pointer to the callback table.
-     * @param   pDrvReg         Pointer to the driver registration record.
+     * @param   pReg            Pointer to the driver registration record.
      *                          This data must be permanent and readonly.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegister,(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG pDrvReg));
+    DECLR3CALLBACKMEMBER(int, pfnRegister,(PCPDMDRVREGCB pCallbacks, PCPDMDRVREG pReg));
 } PDMDRVREGCB;
 
 /** Current version of the PDMDRVREGCB structure.  */
