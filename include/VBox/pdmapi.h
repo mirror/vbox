@@ -54,6 +54,7 @@ VMMDECL(int)    PDMApicGetTPR(PVMCPU pVCpu, uint8_t *pu8TPR, bool *pfPending);
 VMMDECL(int)    PDMApicWriteMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t u64Value);
 VMMDECL(int)    PDMApicReadMSR(PVM pVM, VMCPUID iCpu, uint32_t u32Reg, uint64_t *pu64Value);
 VMMDECL(int)    PDMVMMDevHeapR3ToGCPhys(PVM pVM, RTR3PTR pv, RTGCPHYS *pGCPhys);
+VMMDECL(bool)   PDMVMMDevHeapIsEnabled(PVM pVM);
 
 #ifdef IN_RING3
 /** @defgroup grp_pdm_r3    The PDM Host Context Ring-3 API
