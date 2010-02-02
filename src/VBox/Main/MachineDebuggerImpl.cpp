@@ -657,7 +657,7 @@ STDMETHODIMP MachineDebugger::ResetStats (IN_BSTR aPattern)
     Console::SafeVMPtrQuiet pVM (mParent);
 
     if (!pVM.isOk())
-        return E_FAIL;
+        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
     STAMR3Reset (pVM, Utf8Str (aPattern).raw());
 
@@ -675,7 +675,7 @@ STDMETHODIMP MachineDebugger::DumpStats (IN_BSTR aPattern)
     Console::SafeVMPtrQuiet pVM (mParent);
 
     if (!pVM.isOk())
-        return E_FAIL;
+        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
     STAMR3Dump (pVM, Utf8Str (aPattern).raw());
 
@@ -695,7 +695,7 @@ STDMETHODIMP MachineDebugger::GetStats (IN_BSTR aPattern, BOOL aWithDescriptions
     Console::SafeVMPtrQuiet pVM (mParent);
 
     if (!pVM.isOk())
-        return E_FAIL;
+        return setError(VBOX_E_INVALID_VM_STATE, "Machine is not running");
 
     char *pszSnapshot;
     int vrc = STAMR3Snapshot (pVM, Utf8Str (aPattern).raw(), &pszSnapshot, NULL,
