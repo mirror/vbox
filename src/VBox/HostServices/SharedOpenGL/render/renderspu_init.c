@@ -25,7 +25,7 @@ SPUFunctions render_functions = {
 };
 
 RenderSPU render_spu;
-uint64_t render_spu_parent_window_id;
+uint64_t render_spu_parent_window_id = 0;
 
 #ifdef CHROMIUM_THREADSAFE
 CRtsd _RenderTSD;
