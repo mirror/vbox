@@ -2742,7 +2742,7 @@ static DECLCALLBACK(void) fdcReset (PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
                                        int iInstance,
-                                       PCFGMNODE pCfgHandle)
+                                       PCFGMNODE pCfg)
 {
     int            rc;
     fdctrl_t       *fdctrl = PDMINS_2_DATA(pDevIns, fdctrl_t*);
@@ -2758,13 +2758,13 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0DMA\0MemMapped\0IOBase\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0DMA\0MemMapped\0IOBase\0"))
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /*
      * Read the configuration.
      */
-    rc = CFGMR3QueryU8 (pCfgHandle, "IRQ", &irq_lvl);
+    rc = CFGMR3QueryU8 (pCfg, "IRQ", &irq_lvl);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         irq_lvl = 6;
     else if (RT_FAILURE (rc)) {
@@ -2772,7 +2772,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         return rc;
     }
 
-    rc = CFGMR3QueryU8 (pCfgHandle, "DMA", &dma_chann);
+    rc = CFGMR3QueryU8 (pCfg, "DMA", &dma_chann);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         dma_chann = 2;
     else if (RT_FAILURE (rc)) {
@@ -2780,7 +2780,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         return rc;
     }
 
-    rc = CFGMR3QueryU16 (pCfgHandle, "IOBase", &io_base);
+    rc = CFGMR3QueryU16 (pCfg, "IOBase", &io_base);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         io_base = 0x3f0;
     else if (RT_FAILURE (rc)) {
@@ -2788,7 +2788,7 @@ static DECLCALLBACK(int) fdcConstruct (PPDMDEVINS pDevIns,
         return rc;
     }
 
-    rc = CFGMR3QueryBool (pCfgHandle, "MemMapped", &mem_mapped);
+    rc = CFGMR3QueryBool (pCfg, "MemMapped", &mem_mapped);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         mem_mapped = false;
     else if (RT_FAILURE (rc)) {

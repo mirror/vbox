@@ -739,7 +739,7 @@ DECLCALLBACK(void) drvHostDvdDestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVHOSTBASE pThis = PDMINS_2_DATA(pDrvIns, PDRVHOSTBASE);
     LogFlow(("drvHostDvdConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -747,14 +747,14 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0Interval\0Locked\0BIOSVisible\0AttachFailError\0Passthrough\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Path\0Interval\0Locked\0BIOSVisible\0AttachFailError\0Passthrough\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
 
     /*
      * Init instance data.
      */
-    int rc = DRVHostBaseInitData(pDrvIns, pCfgHandle, PDMBLOCKTYPE_DVD);
+    int rc = DRVHostBaseInitData(pDrvIns, pCfg, PDMBLOCKTYPE_DVD);
     if (RT_SUCCESS(rc))
     {
         /*
@@ -768,7 +768,7 @@ static DECLCALLBACK(int) drvHostDvdConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgH
 
 #ifndef RT_OS_L4 /* Passthrough is not supported on L4 yet */
         bool fPassthrough;
-        rc = CFGMR3QueryBool(pCfgHandle, "Passthrough", &fPassthrough);
+        rc = CFGMR3QueryBool(pCfg, "Passthrough", &fPassthrough);
         if (RT_SUCCESS(rc) && fPassthrough)
         {
             pThis->IBlock.pfnSendCmd = drvHostDvdSendCmd;

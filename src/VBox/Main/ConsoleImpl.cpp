@@ -8161,7 +8161,7 @@ DECLCALLBACK(void) Console::drvStatus_Destruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVMAINSTATUS pData = PDMINS_2_DATA(pDrvIns, PDRVMAINSTATUS);
     LogFlowFunc(("iInstance=%d\n", pDrvIns->iInstance));
@@ -8170,7 +8170,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "papLeds\0First\0Last\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "papLeds\0First\0Last\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
     AssertMsgReturn(PDMDrvHlpNoAttach(pDrvIns) == VERR_PDM_NO_ATTACHED_DRIVER,
                     ("Configuration error: Not possible to attach anything to this driver!\n"),
@@ -8185,14 +8185,14 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
     /*
      * Read config.
      */
-    int rc = CFGMR3QueryPtr(pCfgHandle, "papLeds", (void **)&pData->papLeds);
+    int rc = CFGMR3QueryPtr(pCfg, "papLeds", (void **)&pData->papLeds);
     if (RT_FAILURE(rc))
     {
         AssertMsgFailed(("Configuration error: Failed to query the \"papLeds\" value! rc=%Rrc\n", rc));
         return rc;
     }
 
-    rc = CFGMR3QueryU32(pCfgHandle, "First", &pData->iFirstLUN);
+    rc = CFGMR3QueryU32(pCfg, "First", &pData->iFirstLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->iFirstLUN = 0;
     else if (RT_FAILURE(rc))
@@ -8201,7 +8201,7 @@ DECLCALLBACK(int) Console::drvStatus_Construct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         return rc;
     }
 
-    rc = CFGMR3QueryU32(pCfgHandle, "Last", &pData->iLastLUN);
+    rc = CFGMR3QueryU32(pCfg, "Last", &pData->iLastLUN);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         pData->iLastLUN = 0;
     else if (RT_FAILURE(rc))

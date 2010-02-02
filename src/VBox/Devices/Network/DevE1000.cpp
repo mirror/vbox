@@ -5024,7 +5024,7 @@ static DECLCALLBACK(void) e1kConfigurePCI(PCIDEVICE& pci, E1KCHIP eChip)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     E1KSTATE* pState = PDMINS_2_DATA(pDevIns, E1KSTATE*);
     int       rc;
@@ -5039,23 +5039,23 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "AdapterType\0" "LineSpeed\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for E1000 device"));
 
     /** @todo: LineSpeed unused! */
 
     /* Get config params */
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", pState->macConfigured.au8,
+    rc = CFGMR3QueryBytes(pCfg, "MAC", pState->macConfigured.au8,
                           sizeof(pState->macConfigured.au8));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get MAC address"));
-    rc = CFGMR3QueryBool(pCfgHandle, "CableConnected", &pState->fCableConnected);
+    rc = CFGMR3QueryBool(pCfg, "CableConnected", &pState->fCableConnected);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'CableConnected'"));
-    rc = CFGMR3QueryU32(pCfgHandle, "AdapterType", (uint32_t*)&pState->eChip);
+    rc = CFGMR3QueryU32(pCfg, "AdapterType", (uint32_t*)&pState->eChip);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the value of 'AdapterType'"));

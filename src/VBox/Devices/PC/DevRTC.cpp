@@ -849,7 +849,7 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     RTCState   *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
     int         rc;
@@ -858,7 +858,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "Irq\0"
                               "Base\0"
                               "UseUTC\0"
@@ -870,30 +870,30 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * Init the data.
      */
     uint8_t u8Irq;
-    rc = CFGMR3QueryU8Def(pCfgHandle, "Irq", &u8Irq, 8);
+    rc = CFGMR3QueryU8Def(pCfg, "Irq", &u8Irq, 8);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Irq\" as a uint8_t failed"));
     pThis->irq = u8Irq;
 
-    rc = CFGMR3QueryPortDef(pCfgHandle, "Base", &pThis->IOPortBase, 0x70);
+    rc = CFGMR3QueryPortDef(pCfg, "Base", &pThis->IOPortBase, 0x70);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"Base\" as a RTIOPORT failed"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "UseUTC", &pThis->fUTC, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "UseUTC", &pThis->fUTC, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UseUTC\" as a bool failed"));
 
     bool fGCEnabled;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read GCEnabled as boolean"));
 
     bool fR0Enabled;
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: failed to read R0Enabled as boolean"));

@@ -696,7 +696,7 @@ static DECLCALLBACK(void)  drvblockReset(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVBLOCK pThis = PDMINS_2_DATA(pDrvIns, PDRVBLOCK);
     LogFlow(("drvblockConstruct: iInstance=%d\n", pDrvIns->iInstance));
@@ -706,9 +706,9 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      * Validate configuration.
      */
 #if defined(VBOX_PERIODIC_FLUSH) || defined(VBOX_IGNORE_FLUSH)
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0FlushInterval\0IgnoreFlush\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0FlushInterval\0IgnoreFlush\0"))
 #else /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Type\0Locked\0BIOSVisible\0AttachFailError\0Cylinders\0Heads\0Sectors\0Mountable\0"))
 #endif /* !(VBOX_PERIODIC_FLUSH || VBOX_IGNORE_FLUSH) */
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
@@ -769,7 +769,7 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
      */
     /* type */
     char *psz;
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Type", &psz);
+    int rc = CFGMR3QueryStringAlloc(pCfg, "Type", &psz);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_BLOCK_NO_TYPE, N_("Failed to obtain the type"));
     if (!strcmp(psz, "HardDisk"))
@@ -799,39 +799,39 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
     MMR3HeapFree(psz); psz = NULL;
 
     /* Mountable */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "Mountable", &pThis->fMountable, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "Mountable", &pThis->fMountable, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Mountable\" from the config"));
 
     /* Locked */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "Locked", &pThis->fLocked, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "Locked", &pThis->fLocked, false);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Locked\" from the config"));
 
     /* BIOS visible */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "BIOSVisible", &pThis->fBiosVisible, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "BIOSVisible", &pThis->fBiosVisible, true);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"BIOSVisible\" from the config"));
 
     /** @todo AttachFailError is currently completely ignored. */
 
     /* Cylinders */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Cylinders", &pThis->LCHSGeometry.cCylinders, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "Cylinders", &pThis->LCHSGeometry.cCylinders, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Cylinders\" from the config"));
 
     /* Heads */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Heads", &pThis->LCHSGeometry.cHeads, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "Heads", &pThis->LCHSGeometry.cHeads, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Heads\" from the config"));
 
     /* Sectors */
-    rc = CFGMR3QueryU32Def(pCfgHandle, "Sectors", &pThis->LCHSGeometry.cSectors, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "Sectors", &pThis->LCHSGeometry.cSectors, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Sectors\" from the config"));
 
     /* Uuid */
-    rc = CFGMR3QueryStringAlloc(pCfgHandle, "Uuid", &psz);
+    rc = CFGMR3QueryStringAlloc(pCfg, "Uuid", &psz);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         RTUuidClear(&pThis->Uuid);
     else if (RT_SUCCESS(rc))
@@ -850,13 +850,13 @@ static DECLCALLBACK(int) drvblockConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHan
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Uuid\" from the config"));
 
 #ifdef VBOX_PERIODIC_FLUSH
-    rc = CFGMR3QueryU32Def(pCfgHandle, "FlushInterval", &pThis->cbFlushInterval, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "FlushInterval", &pThis->cbFlushInterval, 0);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"FlushInterval\" from the config"));
 #endif /* VBOX_PERIODIC_FLUSH */
 
 #ifdef VBOX_IGNORE_FLUSH
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "IgnoreFlush", &pThis->fIgnoreFlush, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "IgnoreFlush", &pThis->fIgnoreFlush, true);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"IgnoreFlush\" from the config"));
 #endif /* VBOX_IGNORE_FLUSH */

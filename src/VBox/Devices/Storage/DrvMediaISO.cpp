@@ -230,7 +230,7 @@ static DECLCALLBACK(void) drvMediaISODestruct(PPDMDRVINS pDrvIns)
  *
  * @copydoc FNPDMDRVCONSTRUCT
  */
-static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags)
+static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags)
 {
     PDRVMEDIAISO pThis = PDMINS_2_DATA(pDrvIns, PDRVMEDIAISO);
     PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns);
@@ -257,11 +257,11 @@ static DECLCALLBACK(int) drvMediaISOConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "Path\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "Path\0"))
         return VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES;
 
     char *pszName;
-    int rc = CFGMR3QueryStringAlloc(pCfgHandle, "Path", &pszName);
+    int rc = CFGMR3QueryStringAlloc(pCfg, "Path", &pszName);
     if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc, N_("Failed to query \"Path\" from the config"));
 

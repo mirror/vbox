@@ -2227,14 +2227,14 @@ static DECLCALLBACK(void) acpiRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     ACPIState *s   = PDMINS_2_DATA(pDevIns, ACPIState *);
     PCIDevice *dev = &s->dev;
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
 
     /* Validate and read the configuration. */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "RamSize\0"
                               "RamHoleSize\0"
                               "IOAPIC\0"
@@ -2255,59 +2255,59 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     s->pDevIns = pDevIns;
 
     /* query whether we are supposed to present an IOAPIC */
-    int rc = CFGMR3QueryU8Def(pCfgHandle, "IOAPIC", &s->u8UseIOApic, 1);
+    int rc = CFGMR3QueryU8Def(pCfg, "IOAPIC", &s->u8UseIOApic, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"IOAPIC\""));
 
-    rc = CFGMR3QueryU16Def(pCfgHandle, "NumCPUs", &s->cCpus, 1);
+    rc = CFGMR3QueryU16Def(pCfg, "NumCPUs", &s->cCpus, 1);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"NumCPUs\" as integer failed"));
 
     /* query whether we are supposed to present an FDC controller */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "FdcEnabled", &s->fUseFdc, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "FdcEnabled", &s->fUseFdc, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"FdcEnabled\""));
 
     /* query whether we are supposed to present HPET */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "HpetEnabled", &s->fUseHpet, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "HpetEnabled", &s->fUseHpet, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"HpetEnabled\""));
     /* query whether we are supposed to present SMC */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "SmcEnabled", &s->fUseSmc, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "SmcEnabled", &s->fUseSmc, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"SmcEnabled\""));
 
     /* query whether we are supposed to present RTC object */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "ShowRtc", &s->fShowRtc, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "ShowRtc", &s->fShowRtc, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowRtc\""));
 
     /* query whether we are supposed to present CPU objects */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "ShowCpu", &s->fShowCpu, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "ShowCpu", &s->fShowCpu, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
 
     /* query whether we are allow CPU hot plugging */
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "CpuHotPlug", &s->fCpuHotPlug, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "CpuHotPlug", &s->fCpuHotPlug, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"CpuHotPlug\""));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "GCEnabled", &s->fGCEnabled);
+    rc = CFGMR3QueryBool(pCfg, "GCEnabled", &s->fGCEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         s->fGCEnabled = true;
     else if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"GCEnabled\""));
 
-    rc = CFGMR3QueryBool(pCfgHandle, "R0Enabled", &s->fR0Enabled);
+    rc = CFGMR3QueryBool(pCfg, "R0Enabled", &s->fR0Enabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         s->fR0Enabled = true;
     else if (RT_FAILURE(rc))

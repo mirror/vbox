@@ -981,7 +981,7 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
  * @copydoc FNPDMDRVCONSTRUCT
  */
 static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
-                                        PCFGMNODE pCfgHandle,
+                                        PCFGMNODE pCfg,
                                         uint32_t fFlags)
 {
     LogFlow(("%s:\n", __FUNCTION__));
@@ -1051,13 +1051,13 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     bool        fHostIP = false;
     bool        fUseNewIo = false;
     unsigned    iLevel = 0;
-    PCFGMNODE   pCurNode = pCfgHandle;
+    PCFGMNODE   pCurNode = pCfg;
 
     for (;;)
     {
         bool fValid;
 
-        if (pCurNode == pCfgHandle)
+        if (pCurNode == pCfg)
         {
             /* Toplevel configuration additionally contains the global image
              * open flags. Some might be converted to per-image flags later. */
@@ -1079,7 +1079,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             break;
         }
 
-        if (pCurNode == pCfgHandle)
+        if (pCurNode == pCfg)
         {
             rc = CFGMR3QueryBoolDef(pCurNode, "HostIPStack", &fHostIP, true);
             if (RT_FAILURE(rc))

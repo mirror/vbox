@@ -6460,7 +6460,7 @@ static DECLCALLBACK(void) ahciR3PowerOff(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PAHCI      pThis = PDMINS_2_DATA(pDevIns, PAHCI);
     PPDMIBASE  pBase;
@@ -6474,7 +6474,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0"
+    if (!CFGMR3AreValuesValid(pCfg, "GCEnabled\0"
                                           "R0Enabled\0"
                                           "PrimaryMaster\0"
                                           "PrimarySlave\0"
@@ -6487,19 +6487,19 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("AHCI configuration error: unknown option specified"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "PortCount", &pThis->cPortsImpl, AHCI_MAX_NR_PORTS_IMPL);
+    rc = CFGMR3QueryU32Def(pCfg, "PortCount", &pThis->cPortsImpl, AHCI_MAX_NR_PORTS_IMPL);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read PortCount as integer"));
@@ -6513,15 +6513,15 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                                    N_("AHCI configuration error: PortCount=%u should be at least 1"),
                                    pThis->cPortsImpl);
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "UseAsyncInterfaceIfAvailable", &pThis->fUseAsyncInterfaceIfAvailable, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "UseAsyncInterfaceIfAvailable", &pThis->fUseAsyncInterfaceIfAvailable, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read UseAsyncInterfaceIfAvailable as boolean"));
-    rc = CFGMR3QueryU32Def(pCfgHandle, "HighIOThreshold", &pThis->cHighIOThreshold, ~0);
+    rc = CFGMR3QueryU32Def(pCfg, "HighIOThreshold", &pThis->cHighIOThreshold, ~0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read HighIOThreshold as integer"));
-    rc = CFGMR3QueryU32Def(pCfgHandle, "MillisToSleep", &pThis->cMillisToSleep, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "MillisToSleep", &pThis->cMillisToSleep, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("AHCI configuration error: failed to read MillisToSleep as integer"));
@@ -6731,7 +6731,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
             /* Get user config if present using defaults otherwise. */
-            PCFGMNODE pCfgNode = CFGMR3GetChild(pCfgHandle, szName);
+            PCFGMNODE pCfgNode = CFGMR3GetChild(pCfg, szName);
             rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pAhciPort->szSerialNumber, sizeof(pAhciPort->szSerialNumber),
                                       szSerial);
             if (RT_FAILURE(rc))
@@ -6885,12 +6885,12 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
             { "SecondaryMaster", "SecondarySlave" }
         };
 
-        rc = CFGMR3QueryU32Def(pCfgHandle, s_apszDescs[i][0], &iPortMaster, 2 * i);
+        rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][0], &iPortMaster, 2 * i);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][0]);
 
-        rc = CFGMR3QueryU32Def(pCfgHandle, s_apszDescs[i][1], &iPortSlave, 2 * i + 1);
+        rc = CFGMR3QueryU32Def(pCfg, s_apszDescs[i][1], &iPortSlave, 2 * i + 1);
         if (RT_FAILURE(rc))
             return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                        N_("AHCI configuration error: failed to read %s as U32"), s_apszDescs[i][1]);

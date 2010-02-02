@@ -4374,7 +4374,7 @@ static DECLCALLBACK(int) lsilogicDestruct(PPDMDEVINS pDevIns)
 /**
  * @copydoc FNPDMDEVCONSTRUCT
  */
-static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PLSILOGICSCSI pThis = PDMINS_2_DATA(pDevIns, PLSILOGICSCSI);
     int rc = VINF_SUCCESS;
@@ -4385,7 +4385,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Validate and read configuration.
      */
-    rc = CFGMR3AreValuesValid(pCfgHandle, "GCEnabled\0"
+    rc = CFGMR3AreValuesValid(pCfg, "GCEnabled\0"
                                           "R0Enabled\0"
                                           "ReplyQueueDepth\0"
                                           "RequestQueueDepth\0"
@@ -4394,19 +4394,19 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("LsiLogic configuration error: unknown option specified"));
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, pThis->fGCEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, pThis->fR0Enabled));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "ReplyQueueDepth",
+    rc = CFGMR3QueryU32Def(pCfg, "ReplyQueueDepth",
                            &pThis->cReplyQueueEntries,
                            LSILOGICSCSI_REPLY_QUEUE_DEPTH_DEFAULT);
     if (RT_FAILURE(rc))
@@ -4414,7 +4414,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
                                 N_("LsiLogic configuration error: failed to read ReplyQueue as integer"));
     Log(("%s: ReplyQueueDepth=%u\n", __FUNCTION__, pThis->cReplyQueueEntries));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "RequestQueueDepth",
+    rc = CFGMR3QueryU32Def(pCfg, "RequestQueueDepth",
                            &pThis->cRequestQueueEntries,
                            LSILOGICSCSI_REQUEST_QUEUE_DEPTH_DEFAULT);
     if (RT_FAILURE(rc))
@@ -4422,7 +4422,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
                                 N_("LsiLogic configuration error: failed to read RequestQueue as integer"));
     Log(("%s: RequestQueueDepth=%u\n", __FUNCTION__, pThis->cRequestQueueEntries));
 
-    rc = CFGMR3QueryStringAllocDef(pCfgHandle, "ControllerType",
+    rc = CFGMR3QueryStringAllocDef(pCfg, "ControllerType",
                                    &pszCtrlType, LSILOGICSCSI_PCI_SPI_CTRLNAME);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
@@ -4436,7 +4436,7 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("LsiLogic configuration error: failed to determine controller type from string"));
 
-    rc = CFGMR3QueryU8(pCfgHandle, "NumPorts",
+    rc = CFGMR3QueryU8(pCfg, "NumPorts",
                        &pThis->cPorts);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {

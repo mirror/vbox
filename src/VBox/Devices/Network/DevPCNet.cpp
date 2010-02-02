@@ -4932,7 +4932,7 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PCNetState     *pThis = PDMINS_2_DATA(pDevIns, PCNetState *);
     PPDMIBASE       pBase;
@@ -4956,39 +4956,39 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /*
      * Validate configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "MAC\0" "CableConnected\0" "Am79C973\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "MAC\0" "CableConnected\0" "Am79C973\0" "LineSpeed\0" "GCEnabled\0" "R0Enabled\0" "PrivIfEnabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for pcnet device"));
 
     /*
      * Read the configuration.
      */
-    rc = CFGMR3QueryBytes(pCfgHandle, "MAC", &pThis->MacConfigured, sizeof(pThis->MacConfigured));
+    rc = CFGMR3QueryBytes(pCfg, "MAC", &pThis->MacConfigured, sizeof(pThis->MacConfigured));
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"MAC\" value"));
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "CableConnected", &pThis->fLinkUp, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "CableConnected", &pThis->fLinkUp, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"CableConnected\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "Am79C973", &pThis->fAm79C973, false);
+    rc = CFGMR3QueryBoolDef(pCfg, "Am79C973", &pThis->fAm79C973, false);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"Am79C973\" value"));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "LineSpeed", &pThis->u32LinkSpeed, 1000000); /* 1GBit/s (in kbps units)*/
+    rc = CFGMR3QueryU32Def(pCfg, "LineSpeed", &pThis->u32LinkSpeed, 1000000); /* 1GBit/s (in kbps units)*/
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"LineSpeed\" value"));
 
 #ifdef PCNET_GC_ENABLED
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
@@ -5065,7 +5065,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         return rc;
 
     bool fPrivIfEnabled;
-    rc = CFGMR3QueryBool(pCfgHandle, "PrivIfEnabled", &fPrivIfEnabled);
+    rc = CFGMR3QueryBool(pCfg, "PrivIfEnabled", &fPrivIfEnabled);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         fPrivIfEnabled = true;
     else if (RT_FAILURE(rc))

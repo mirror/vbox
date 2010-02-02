@@ -6474,14 +6474,14 @@ static DECLCALLBACK(int) ataLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
  *
  * @returns VBox status code.
  * @param   pDevIns     The device instance data.
- * @param   pCfgHandle  Configuration handle.
+ * @param   pCfg        Configuration handle.
  * @param   penmChipset Where to store the chipset type.
  */
-static int ataControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, CHIPSET *penmChipset)
+static int ataControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfg, CHIPSET *penmChipset)
 {
     char szType[20];
 
-    int rc = CFGMR3QueryStringDef(pCfgHandle, "Type", &szType[0], sizeof(szType), "PIIX4");
+    int rc = CFGMR3QueryStringDef(pCfg, "Type", &szType[0], sizeof(szType), "PIIX4");
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"Type\" as a string failed"));
@@ -6505,7 +6505,7 @@ static int ataControllerFromCfg(PPDMDEVINS pDevIns, PCFGMNODE pCfgHandle, CHIPSE
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
-static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle)
+static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg)
 {
     PCIATAState    *pThis = PDMINS_2_DATA(pDevIns, PCIATAState *);
     PPDMIBASE       pBase;
@@ -6531,7 +6531,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     /*
      * Validate and read configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle,
+    if (!CFGMR3AreValuesValid(pCfg,
                               "GCEnabled\0"
                               "R0Enabled\0"
                               "IRQDelay\0"
@@ -6540,19 +6540,19 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("PIIX3 configuration error: unknown option specified"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read GCEnabled as boolean"));
     Log(("%s: fGCEnabled=%d\n", __FUNCTION__, fGCEnabled));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read R0Enabled as boolean"));
     Log(("%s: fR0Enabled=%d\n", __FUNCTION__, fR0Enabled));
 
-    rc = CFGMR3QueryU32Def(pCfgHandle, "IRQDelay", &DelayIRQMillies, 0);
+    rc = CFGMR3QueryU32Def(pCfg, "IRQDelay", &DelayIRQMillies, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("PIIX3 configuration error: failed to read IRQDelay as integer"));
@@ -6560,7 +6560,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     Assert(DelayIRQMillies < 50);
 
     CHIPSET enmChipset = CHIPSET_PIIX3;
-    rc = ataControllerFromCfg(pDevIns, pCfgHandle, &enmChipset);
+    rc = ataControllerFromCfg(pDevIns, pCfg, &enmChipset);
     if (RT_FAILURE(rc))
         return rc;
     pThis->u8Type = (uint8_t)enmChipset;
@@ -6861,7 +6861,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
                         RTStrPrintf(szSerial, sizeof(szSerial), "VB%08x-%08x", Uuid.au32[0], Uuid.au32[3]);
 
                     /* Get user config if present using defaults otherwise. */
-                    PCFGMNODE pCfgNode = CFGMR3GetChild(pCfgHandle, s_apszCFGMKeys[i][j]);
+                    PCFGMNODE pCfgNode = CFGMR3GetChild(pCfg, s_apszCFGMKeys[i][j]);
                     rc = CFGMR3QueryStringDef(pCfgNode, "SerialNumber", pIf->szSerialNumber, sizeof(pIf->szSerialNumber),
                                               szSerial);
                     if (RT_FAILURE(rc))

@@ -313,10 +313,10 @@ static bool sharedfwChecksumOk(const uint8_t * const au8Data, uint32_t u32Length
  * @param   cbMax               The max size of the DMI table.
  * @param   pUuid               Pointer to the UUID to use if the DmiUuid
  *                              configuration string isn't present.
- * @param   pCfgHandle          The handle to our config node.
+ * @param   pCfg                The handle to our config node.
  * @param   fPutSmbiosHeaders   Plant SMBIOS headers if true.
  */
-int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfgHandle, bool fPutSmbiosHeaders)
+int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, PCRTUUID pUuid, PCFGMNODE pCfg, bool fPutSmbiosHeaders)
 {
 #define CHECKSIZE(cbWant) \
     { \
@@ -339,7 +339,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             pszTmp = default_value; \
         else \
         { \
-            rc = CFGMR3QueryStringDef(pCfgHandle, name, szBuf, sizeof(szBuf), default_value); \
+            rc = CFGMR3QueryStringDef(pCfg, name, szBuf, sizeof(szBuf), default_value); \
             if (RT_FAILURE(rc)) \
             { \
                 if (fHideErrors) \
@@ -376,7 +376,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             variable = s_iDef ## name; \
         else \
         { \
-            rc = CFGMR3QueryS32Def(pCfgHandle, # name, & variable, s_iDef ## name); \
+            rc = CFGMR3QueryS32Def(pCfg, # name, & variable, s_iDef ## name); \
             if (RT_FAILURE(rc)) \
             { \
                 if (fHideErrors) \
@@ -420,7 +420,7 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
             pszDmiSystemUuid = NULL;
         else
         {
-            rc = CFGMR3QueryString(pCfgHandle, "DmiSystemUuid", szDmiSystemUuid, sizeof(szDmiSystemUuid));
+            rc = CFGMR3QueryString(pCfg, "DmiSystemUuid", szDmiSystemUuid, sizeof(szDmiSystemUuid));
             if (rc == VERR_CFGM_VALUE_NOT_FOUND)
                 pszDmiSystemUuid = NULL;
             else if (RT_FAILURE(rc))

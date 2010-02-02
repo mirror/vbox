@@ -686,7 +686,7 @@ static DECLCALLBACK(int) parallelDestruct(PPDMDEVINS pDevIns)
  */
 static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
                                            int iInstance,
-                                           PCFGMNODE pCfgHandle)
+                                           PCFGMNODE pCfg)
 {
     int            rc;
     ParallelState *pThis = PDMINS_2_DATA(pDevIns, ParallelState*);
@@ -717,28 +717,28 @@ static DECLCALLBACK(int) parallelConstruct(PPDMDEVINS pDevIns,
     /*
      * Validate and read the configuration.
      */
-    if (!CFGMR3AreValuesValid(pCfgHandle, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0"))
+    if (!CFGMR3AreValuesValid(pCfg, "IRQ\0" "IOBase\0" "GCEnabled\0" "R0Enabled\0"))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Unknown config key"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "GCEnabled", &pThis->fGCEnabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &pThis->fGCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"GCEnabled\" value"));
 
-    rc = CFGMR3QueryBoolDef(pCfgHandle, "R0Enabled", &pThis->fR0Enabled, true);
+    rc = CFGMR3QueryBoolDef(pCfg, "R0Enabled", &pThis->fR0Enabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"R0Enabled\" value"));
 
     uint8_t irq_lvl;
-    rc = CFGMR3QueryU8Def(pCfgHandle, "IRQ", &irq_lvl, 7);
+    rc = CFGMR3QueryU8Def(pCfg, "IRQ", &irq_lvl, 7);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IRQ\" value"));
 
     uint16_t io_base;
-    rc = CFGMR3QueryU16Def(pCfgHandle, "IOBase", &io_base, 0x378);
+    rc = CFGMR3QueryU16Def(pCfg, "IOBase", &io_base, 0x378);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to get the \"IOBase\" value"));
