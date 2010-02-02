@@ -144,6 +144,7 @@ VMMR3DECL(VBOXSTRICTRC) HWACCMR3RestartPendingIOInstr(PVM pVM, PVMCPU pVCpu, PCP
 VMMR3DECL(int)          HWACMMR3EnablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACMMR3DisablePatching(PVM pVM, RTGCPTR pPatchMem, unsigned cbPatchMem);
 VMMR3DECL(int)          HWACCMR3PatchTprInstr(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
+VMMR3DECL(bool)         HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx);
 
 /** @} */
 #endif /* IN_RING3 */

@@ -2167,9 +2167,12 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     /* Note! The context supplied by REM is partial. If we add more checks here, be sure to verify that REM provides this info! */
 #ifdef HWACCM_VMX_EMULATE_REALMODE
+    bool fVMMDeviceHeapEnabled = PDMVMMDevHeapIsEnabled(pVM);
+
     Assert((pVM->hwaccm.s.vmx.fUnrestrictedGuest && !pVM->hwaccm.s.vmx.pRealModeTSS) || (!pVM->hwaccm.s.vmx.fUnrestrictedGuest && pVM->hwaccm.s.vmx.pRealModeTSS));
 
-    if (pVM->hwaccm.s.vmx.pRealModeTSS)
+    /** The VMM device heap is a requirement for emulating real mode or protected mode without paging when the unrestricted guest execution feature is missing. */
+    if (fVMMDeviceHeapEnabled)
     {
         if (CPUMIsGuestInRealModeEx(pCtx))
         {
@@ -2221,6 +2224,10 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
              *  Update: Implemented in EM.cpp, see #ifdef EM_NOTIFY_HWACCM.  */
             pVM->aCpus[0].hwaccm.s.fContextUseFlags |= HWACCM_CHANGED_ALL_GUEST;
 
+            if (    !pVM->hwaccm.s.fNestedPaging        /* requires a fake PD for real *and* protected mode without paging - stored in the VMM device heap*/
+                ||  CPUMIsGuestInRealModeEx(pCtx))      /* requires a fake TSS for real mode - stored in the VMM device heap */
+                return false;
+
             /* Too early for VT-x; Solaris guests will fail with a guru meditation otherwise; same for XP. */
             if (pCtx->idtr.pIdt == 0 || pCtx->idtr.cbIdt == 0 || pCtx->tr == 0)
                 return false;
@@ -2263,7 +2270,7 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
             mask &= ~X86_CR0_NE;
 
 #ifdef HWACCM_VMX_EMULATE_REALMODE
-            if (pVM->hwaccm.s.vmx.pRealModeTSS)
+            if (fVMMDeviceHeapEnabled)
             {
                 /* Note: We ignore the PE & PG bits here on purpose; we emulate real and protected mode without paging. */
                 mask &= ~(X86_CR0_PG|X86_CR0_PE);
@@ -2300,6 +2307,26 @@ VMMR3DECL(bool) HWACCMR3CanExecuteGuest(PVM pVM, PCPUMCTX pCtx)
 
     return false;
 }
+
+/**
+ * Checks if we need to reschedule due to VMM device heap changes
+ *
+ * @returns boolean
+ * @param   pVM         The VM to operate on.
+ * @param   pCtx        VM execution context
+ */
+VMMR3DECL(bool) HWACCMR3IsRescheduleRequired(PVM pVM, PCPUMCTX pCtx)
+{
+    /** The VMM device heap is a requirement for emulating real mode or protected mode without paging when the unrestricted guest execution feature is missing. (VT-x only) */
+    if (    pVM->hwaccm.s.vmx.fEnabled
+        &&  !CPUMIsGuestInPagedProtectedModeEx(pCtx)
+        &&  !PDMVMMDevHeapIsEnabled(pVM)
+        &&  (pVM->hwaccm.s.fNestedPaging || CPUMIsGuestInRealModeEx(pCtx)))
+        return true;
+
+    return false;
+}
+
 
 /**
  * Notifcation from EM about a rescheduling into hardware assisted execution

@@ -496,6 +496,13 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     {
         STAM_PROFILE_ADV_START(&pVCpu->em.s.StatHwAccEntry, a);
 
+        /* Check if a forced reschedule is pending. */
+        if (HWACCMR3IsRescheduleRequired(pVM, pCtx))
+        {
+            rc = VINF_EM_RESCHEDULE;
+            break;
+        }
+
         /*
          * Process high priority pre-execution raw-mode FFs.
          */
