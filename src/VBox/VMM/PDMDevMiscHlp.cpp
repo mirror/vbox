@@ -42,7 +42,7 @@
  * @{
  */
 
-/** @copydoc PDMPICHLPR3::pfnSetInterruptFF */
+/** @interface_method_impl{PDMPICHLPR3,pfnSetInterruptFF} */
 static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -68,7 +68,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_SetInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPICHLPR3::pfnClearInterruptFF */
+/** @interface_method_impl{PDMPICHLPR3,pfnClearInterruptFF} */
 static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -93,7 +93,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_ClearInterruptFF(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPICHLPR3::pfnLock */
+/** @interface_method_impl{PDMPICHLPR3,pfnLock} */
 static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -101,7 +101,7 @@ static DECLCALLBACK(int) pdmR3PicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMPICHLPR3::pfnUnlock */
+/** @interface_method_impl{PDMPICHLPR3,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -109,7 +109,7 @@ static DECLCALLBACK(void) pdmR3PicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPICHLPR3::pfnGetRCHelpers */
+/** @interface_method_impl{PDMPICHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMPICHLPRC) pdmR3PicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -124,7 +124,7 @@ static DECLCALLBACK(PCPDMPICHLPRC) pdmR3PicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPICHLPR3::pfnGetR0Helpers */
+/** @interface_method_impl{PDMPICHLPR3,pfnGetR0Helpers} */
 static DECLCALLBACK(PCPDMPICHLPR0) pdmR3PicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -163,7 +163,7 @@ const PDMPICHLPR3 g_pdmR3DevPicHlp =
  * @{
  */
 
-/** @copydoc PDMAPICHLPR3::pfnSetInterruptFF */
+/** @interface_method_impl{PDMAPICHLPR3,pfnSetInterruptFF} */
 static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -198,7 +198,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SetInterruptFF(PPDMDEVINS pDevIns, PDMAPI
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnClearInterruptFF */
+/** @interface_method_impl{PDMAPICHLPR3,pfnClearInterruptFF} */
 static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMAPICIRQ enmType, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -227,7 +227,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ClearInterruptFF(PPDMDEVINS pDevIns, PDMA
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnChangeFeature */
+/** @interface_method_impl{PDMAPICHLPR3,pfnChangeFeature} */
 static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPICVERSION enmVersion)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -252,7 +252,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_ChangeFeature(PPDMDEVINS pDevIns, PDMAPIC
     }
 }
 
-/** @copydoc PDMAPICHLPR3::pfnGetCpuId */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetCpuId} */
 static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -261,7 +261,7 @@ static DECLCALLBACK(VMCPUID) pdmR3ApicHlp_GetCpuId(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnSendSipi */
+/** @interface_method_impl{PDMAPICHLPR3,pfnSendSipi} */
 static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t uVector)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -269,7 +269,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SendSipi(PPDMDEVINS pDevIns, VMCPUID idCp
     VMMR3SendSipi(pDevIns->Internal.s.pVMR3, idCpu, uVector);
 }
 
-/** @copydoc PDMAPICHLPR3::pfnSendInitIpi */
+/** @interface_method_impl{PDMAPICHLPR3,pfnSendInitIpi} */
 static DECLCALLBACK(void) pdmR3ApicHlp_SendInitIpi(PPDMDEVINS pDevIns, VMCPUID idCpu)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -277,7 +277,7 @@ static DECLCALLBACK(void) pdmR3ApicHlp_SendInitIpi(PPDMDEVINS pDevIns, VMCPUID i
     VMMR3SendInitIpi(pDevIns->Internal.s.pVMR3, idCpu);
 }
 
-/** @copydoc PDMAPICHLPR3::pfnGetRCHelpers */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -292,7 +292,7 @@ static DECLCALLBACK(PCPDMAPICHLPRC) pdmR3ApicHlp_GetRCHelpers(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnGetR0Helpers */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetR0Helpers} */
 static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -307,7 +307,7 @@ static DECLCALLBACK(PCPDMAPICHLPR0) pdmR3ApicHlp_GetR0Helpers(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnGetR3CritSect */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetR3CritSect} */
 static DECLCALLBACK(R3PTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetR3CritSect(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -316,7 +316,7 @@ static DECLCALLBACK(R3PTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetR3CritSect(PPDMDEVI
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnGetRCCritSect */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetRCCritSect} */
 static DECLCALLBACK(RCPTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetRCCritSect(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -327,7 +327,7 @@ static DECLCALLBACK(RCPTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetRCCritSect(PPDMDEVI
 }
 
 
-/** @copydoc PDMAPICHLPR3::pfnGetR3CritSect */
+/** @interface_method_impl{PDMAPICHLPR3,pfnGetR3CritSect} */
 static DECLCALLBACK(R0PTRTYPE(PPDMCRITSECT)) pdmR3ApicHlp_GetR0CritSect(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -368,7 +368,7 @@ const PDMAPICHLPR3 g_pdmR3DevApicHlp =
  * @{
  */
 
-/** @copydoc PDMIOAPICHLPR3::pfnApicBusDeliver */
+/** @interface_method_impl{PDMIOAPICHLPR3,pfnApicBusDeliver} */
 static DECLCALLBACK(int) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8_t u8Dest, uint8_t u8DestMode, uint8_t u8DeliveryMode,
                                                         uint8_t iVector, uint8_t u8Polarity, uint8_t u8TriggerMode)
 {
@@ -382,7 +382,7 @@ static DECLCALLBACK(int) pdmR3IoApicHlp_ApicBusDeliver(PPDMDEVINS pDevIns, uint8
 }
 
 
-/** @copydoc PDMIOAPICHLPR3::pfnLock */
+/** @interface_method_impl{PDMIOAPICHLPR3,pfnLock} */
 static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -391,7 +391,7 @@ static DECLCALLBACK(int) pdmR3IoApicHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMIOAPICHLPR3::pfnUnlock */
+/** @interface_method_impl{PDMIOAPICHLPR3,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -400,7 +400,7 @@ static DECLCALLBACK(void) pdmR3IoApicHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMIOAPICHLPR3::pfnGetRCHelpers */
+/** @interface_method_impl{PDMIOAPICHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMIOAPICHLPRC) pdmR3IoApicHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -415,7 +415,7 @@ static DECLCALLBACK(PCPDMIOAPICHLPRC) pdmR3IoApicHlp_GetRCHelpers(PPDMDEVINS pDe
 }
 
 
-/** @copydoc PDMIOAPICHLPR3::pfnGetR0Helpers */
+/** @interface_method_impl{PDMIOAPICHLPR3,pfnGetR0Helpers} */
 static DECLCALLBACK(PCPDMIOAPICHLPR0) pdmR3IoApicHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -453,7 +453,7 @@ const PDMIOAPICHLPR3 g_pdmR3DevIoApicHlp =
  * @{
  */
 
-/** @copydoc PDMPCIHLPR3::pfnIsaSetIrq */
+/** @interface_method_impl{PDMPCIHLPR3,pfnIsaSetIrq} */
 static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -462,7 +462,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnIoApicSetIrq */
+/** @interface_method_impl{PDMPCIHLPR3,pfnIoApicSetIrq} */
 static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -471,7 +471,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IoApicSetIrq(PPDMDEVINS pDevIns, int iIrq,
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnIsMMIO2Base */
+/** @interface_method_impl{PDMPCIHLPR3,pfnIsMMIO2Base} */
 static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS pOwner, RTGCPHYS GCPhys)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -482,7 +482,7 @@ static DECLCALLBACK(bool) pdmR3PciHlp_IsMMIO2Base(PPDMDEVINS pDevIns, PPDMDEVINS
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnLock */
+/** @interface_method_impl{PDMPCIHLPR3,pfnLock} */
 static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -491,7 +491,7 @@ static DECLCALLBACK(int) pdmR3PciHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnUnlock */
+/** @interface_method_impl{PDMPCIHLPR3,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -500,7 +500,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnGetRCHelpers */
+/** @interface_method_impl{PDMPCIHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -515,7 +515,7 @@ static DECLCALLBACK(PCPDMPCIHLPRC) pdmR3PciHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMPCIHLPR3::pfnGetR0Helpers */
+/** @interface_method_impl{PDMPCIHLPR3,pfnGetR0Helpers} */
 static DECLCALLBACK(PCPDMPCIHLPR0) pdmR3PciHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -555,7 +555,7 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
  * {@
  */
 
-/** @copydoc PDMHPETHLPR3::pfnSetLegacyMode */
+/** @interface_method_impl{PDMHPETHLPR3,pfnSetLegacyMode} */
 static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fActivate)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -564,7 +564,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
 }
 
 
-/** @copydoc PDMHPETHLPR3::pfnLock */
+/** @interface_method_impl{PDMHPETHLPR3,pfnLock} */
 static DECLCALLBACK(int) pdmR3HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -573,7 +573,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
 }
 
 
-/** @copydoc PDMHPETHLPR3::pfnUnlock */
+/** @interface_method_impl{PDMHPETHLPR3,pfnUnlock} */
 static DECLCALLBACK(void) pdmR3HpetHlp_Unlock(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -582,7 +582,7 @@ static DECLCALLBACK(void) pdmR3HpetHlp_Unlock(PPDMDEVINS pDevIns)
 }
 
 
-/** @copydoc PDMHPETHLPR3::pfnGetRCHelpers */
+/** @interface_method_impl{PDMHPETHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
@@ -597,7 +597,7 @@ static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns
 }
 
 
-/** @copydoc PDMHPETHLPR3::pfnGetR0Helpers */
+/** @interface_method_impl{PDMHPETHLPR3,pfnGetR0Helpers} */
 static DECLCALLBACK(PCPDMHPETHLPR0) pdmR3HpetHlp_GetR0Helpers(PPDMDEVINS pDevIns)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);

@@ -25,23 +25,18 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_HWACCM
 #include <VBox/hwaccm.h>
+#include <VBox/pgm.h>
 #include "HWACCMInternal.h"
 #include <VBox/vm.h>
 #include <VBox/x86.h>
 #include <VBox/hwacc_vmx.h>
 #include <VBox/hwacc_svm.h>
-#include <VBox/pgm.h>
-#include <VBox/pdm.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
-#include <VBox/selm.h>
-#include <VBox/iom.h>
 #include <iprt/param.h>
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 #include <iprt/string.h>
-#include <iprt/memobj.h>
-#include <iprt/cpuset.h>
 
 /**
  * Queues a page for invalidation
@@ -106,7 +101,7 @@ VMMDECL(int) HWACCMFlushTLB(PVMCPU pVCpu)
 
 #ifdef IN_RING0
 /**
- * Dummy RTMpOnSpecific handler since RTMpPokeCpu couldn't be used. 
+ * Dummy RTMpOnSpecific handler since RTMpPokeCpu couldn't be used.
  *
  */
 static DECLCALLBACK(void) hwaccmFlushHandler(RTCPUID idCpu, void *pvUser1, void *pvUser2)
@@ -139,7 +134,7 @@ void hwaccmMpPokeCpu(PVMCPU pVCpu, RTCPUID idHostCpu)
             STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPoke, z);
         else
             STAM_PROFILE_ADV_START(&pVCpu->hwaccm.s.StatSpinPokeFailed, z);
-            
+
         /* Spin until the VCPU has switched back. */
         while (     pVCpu->hwaccm.s.fCheckedTLBFlush
                &&   cWorldSwitchExit == pVCpu->hwaccm.s.cWorldSwitchExit)

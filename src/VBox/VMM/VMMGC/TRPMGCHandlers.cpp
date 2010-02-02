@@ -27,7 +27,7 @@
 #include <VBox/selm.h>
 #include <VBox/iom.h>
 #include <VBox/pgm.h>
-#include <VBox/pdm.h>
+#include <VBox/pdmapi.h>
 #include <VBox/dbgf.h>
 #include <VBox/em.h>
 #include <VBox/csam.h>
