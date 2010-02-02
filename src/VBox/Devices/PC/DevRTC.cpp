@@ -971,7 +971,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Register ourselves as the RTC/CMOS with PDM.
      */
-    rc = pDevIns->pDevHlpR3->pfnRTCRegister(pDevIns, &pThis->RtcReg, &pThis->pRtcHlpR3);
+    rc = PDMDevHlpRTCRegister(pDevIns, &pThis->RtcReg, &pThis->pRtcHlpR3);
     if (RT_FAILURE(rc))
         return rc;
 

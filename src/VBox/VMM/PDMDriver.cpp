@@ -447,14 +447,14 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     pNew->Internal.s.fHyperHeap     = fHyperHeap;
                     //pNew->Internal.s.pfnAsyncNotify = NULL;
                     pNew->Internal.s.pCfgHandle     = pNode;
-                    pNew->pReg                   = pDrv->pReg;
+                    pNew->pReg                      = pDrv->pReg;
                     pNew->pCfgHandle                = pConfigNode;
                     pNew->iInstance                 = pDrv->iNextInstance;
                     pNew->pUpBase                   = pBaseInterface;
                     Assert(!pDrvAbove || pBaseInterface == &pDrvAbove->IBase);
                     //pNew->pDownBase                 = NULL;
                     //pNew->IBase.pfnQueryInterface   = NULL;
-                    pNew->pHlpR3                 = &g_pdmR3DrvHlp;
+                    pNew->pHlpR3                    = &g_pdmR3DrvHlp;
                     pNew->pvInstanceDataR3          = &pNew->achInstanceData[0];
                     if (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
                     {

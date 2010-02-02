@@ -453,14 +453,14 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Devices.
      */
-    PCPDMDEVHLPRC pDevHlpRC;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
+    PCPDMDEVHLPRC pHlpRC;
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
     AssertReleaseMsgRC(rc, ("rc=%Rrc when resolving g_pdmRCDevHlp\n", rc));
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         {
-            pDevIns->pDevHlpRC = pDevHlpRC;
+            pDevIns->pHlpRC = pHlpRC;
             pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
             pDevIns->Internal.s.pVMRC = pVM->pVMRC;
             if (pDevIns->Internal.s.pPciBusR3)
