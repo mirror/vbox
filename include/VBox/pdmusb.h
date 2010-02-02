@@ -821,16 +821,6 @@ typedef struct PDMUSBREGCB
      *                          This data must be permanent and readonly.
      */
     DECLR3CALLBACKMEMBER(int, pfnRegister,(PCPDMUSBREGCB pCallbacks, PCPDMUSBREG pReg));
-
-    /**
-     * Allocate memory which is associated with current VM instance
-     * and automatically freed on it's destruction.
-     *
-     * @returns Pointer to allocated memory. The memory is *NOT* zero-ed.
-     * @param   pCallbacks      Pointer to the callback table.
-     * @param   cb              Number of bytes to allocate.
-     */
-    DECLR3CALLBACKMEMBER(void *, pfnMMHeapAlloc,(PCPDMUSBREGCB pCallbacks, size_t cb));
 } PDMUSBREGCB;
 
 /** Current version of the PDMUSBREGCB structure.  */
