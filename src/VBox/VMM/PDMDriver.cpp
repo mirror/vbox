@@ -454,19 +454,19 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                     Assert(!pDrvAbove || pBaseInterface == &pDrvAbove->IBase);
                     //pNew->pDownBase                 = NULL;
                     //pNew->IBase.pfnQueryInterface   = NULL;
-                    pNew->pDrvHlpR3                 = &g_pdmR3DrvHlp;
+                    pNew->pHlpR3                 = &g_pdmR3DrvHlp;
                     pNew->pvInstanceDataR3          = &pNew->achInstanceData[0];
                     if (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_R0)
                     {
                         pNew->pvInstanceDataR0      = MMHyperR3ToR0(pVM, &pNew->achInstanceData[0]);
-                        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DrvHlp", &pNew->pDrvHlpR0);
+                        rc = PDMR3LdrGetSymbolR0(pVM, NULL, "g_pdmR0DrvHlp", &pNew->pHlpR0);
                         AssertReleaseRCReturn(rc, rc);
 
                     }
                     if (pDrv->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
                     {
                         pNew->pvInstanceDataR0      = MMHyperR3ToRC(pVM, &pNew->achInstanceData[0]);
-                        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDrvHlp", &pNew->pDrvHlpRC);
+                        rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDrvHlp", &pNew->pHlpRC);
                         AssertReleaseRCReturn(rc, rc);
                     }
 

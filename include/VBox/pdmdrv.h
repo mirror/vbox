@@ -349,17 +349,17 @@ typedef struct PDMDRVINS
     uint32_t                    iInstance;
 
     /** Pointer the PDM Driver API. */
-    RCPTRTYPE(PCPDMDRVHLPRC)    pDrvHlpRC;
+    RCPTRTYPE(PCPDMDRVHLPRC)    pHlpRC;
     /** Pointer to driver instance data. */
     RCPTRTYPE(void *)           pvInstanceDataRC;
 
     /** Pointer the PDM Driver API. */
-    R0PTRTYPE(PCPDMDRVHLPR0)    pDrvHlpR0;
+    R0PTRTYPE(PCPDMDRVHLPR0)    pHlpR0;
     /** Pointer to driver instance data. */
     R0PTRTYPE(void *)           pvInstanceDataR0;
 
     /** Pointer the PDM Driver API. */
-    R3PTRTYPE(PCPDMDRVHLPR3)    pDrvHlpR3;
+    R3PTRTYPE(PCPDMDRVHLPR3)    pHlpR3;
     /** Pointer to driver instance data. */
     R3PTRTYPE(void *)           pvInstanceDataR3;
 
@@ -414,8 +414,8 @@ typedef struct PDMDRVINS
         AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION), \
                               ("DrvIns=%#x  mine=%#x\n", (pDrvIns)->u32Version, PDM_DRVINS_VERSION), \
                               VERR_VERSION_MISMATCH); \
-        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
-                              ("DrvHlp=%#x  mine=%#x\n", (pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
+                              ("DrvHlp=%#x  mine=%#x\n", (pDrvIns)->pHlpR3->u32Version, PDM_DRVHLPR3_VERSION), \
                               VERR_VERSION_MISMATCH); \
     } while (0)
 
@@ -432,7 +432,7 @@ typedef struct PDMDRVINS
     { \
         PPDMDRVINS pDrvInsTypeCheck = (pDrvIns); NOREF(pDrvInsTypeCheck); \
         if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->u32Version, PDM_DRVINS_VERSION) \
-                        || !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pDrvHlpR3->u32Version, PDM_DRVHLPR3_VERSION)) ) \
+                        || !PDM_VERSION_ARE_COMPATIBLE((pDrvIns)->pHlpR3->u32Version, PDM_DRVHLPR3_VERSION)) ) \
             return; \
     } while (0)
 
@@ -942,7 +942,7 @@ DECLINLINE(int) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS
 {
     va_list va;
     va_start(va, pszFormat);
-    pDrvIns->CTX_SUFF(pDrvHlp)->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    pDrvIns->CTX_SUFF(pHlp)->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -958,7 +958,7 @@ DECLINLINE(int) PDMDrvHlpVMSetError(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS
  */
 DECLINLINE(int) PDMDrvHlpVMSetErrorV(PPDMDRVINS pDrvIns, const int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
 {
-    return pDrvIns->CTX_SUFF(pDrvHlp)->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
+    return pDrvIns->CTX_SUFF(pHlp)->pfnVMSetErrorV(pDrvIns, rc, RT_SRC_POS_ARGS, pszFormat, va);
 }
 
 
@@ -970,7 +970,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, 
     va_list va;
     int rc;
     va_start(va, pszFormat);
-    rc = pDrvIns->CTX_SUFF(pDrvHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
+    rc = pDrvIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
     va_end(va);
     return rc;
 }
@@ -986,7 +986,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeError(PPDMDRVINS pDrvIns, uint32_t fFlags, 
  */
 DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags, const char *pszErrorId, const char *pszFormat, va_list va)
 {
-    return pDrvIns->CTX_SUFF(pDrvHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
+    return pDrvIns->CTX_SUFF(pHlp)->pfnVMSetRuntimeErrorV(pDrvIns, fFlags, pszErrorId, pszFormat, va);
 }
 
 #endif /* IN_RING3 */
@@ -996,7 +996,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags,
  * Assert that the current thread is the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMDRV_ASSERT_EMT(pDrvIns)  pDrvIns->CTX_SUFF(pDrvHlp)->pfnAssertEMT(pDrvIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMDRV_ASSERT_EMT(pDrvIns)  pDrvIns->CTX_SUFF(pHlp)->pfnAssertEMT(pDrvIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMDRV_ASSERT_EMT(pDrvIns)  do { } while (0)
 #endif
@@ -1005,7 +1005,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags,
  * Assert that the current thread is NOT the emulation thread.
  */
 #ifdef VBOX_STRICT
-# define PDMDRV_ASSERT_OTHER(pDrvIns)  pDrvIns->CTX_SUFF(pDrvHlp)->pfnAssertOther(pDrvIns, __FILE__, __LINE__, __FUNCTION__)
+# define PDMDRV_ASSERT_OTHER(pDrvIns)  pDrvIns->CTX_SUFF(pHlp)->pfnAssertOther(pDrvIns, __FILE__, __LINE__, __FUNCTION__)
 #else
 # define PDMDRV_ASSERT_OTHER(pDrvIns)  do { } while (0)
 #endif
@@ -1018,7 +1018,7 @@ DECLINLINE(int) PDMDrvHlpVMSetRuntimeErrorV(PPDMDRVINS pDrvIns, uint32_t fFlags,
  */
 DECLINLINE(int) PDMDrvHlpAttach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *ppBaseInterface)
 {
-    return pDrvIns->pDrvHlpR3->pfnAttach(pDrvIns, fFlags, ppBaseInterface);
+    return pDrvIns->pHlpR3->pfnAttach(pDrvIns, fFlags, ppBaseInterface);
 }
 
 /**
@@ -1029,7 +1029,7 @@ DECLINLINE(int) PDMDrvHlpAttach(PPDMDRVINS pDrvIns, uint32_t fFlags, PPDMIBASE *
  */
 DECLINLINE(int) PDMDrvHlpNoAttach(PPDMDRVINS pDrvIns)
 {
-    return pDrvIns->pDrvHlpR3->pfnAttach(pDrvIns, 0, NULL);
+    return pDrvIns->pHlpR3->pfnAttach(pDrvIns, 0, NULL);
 }
 
 /**
@@ -1037,7 +1037,7 @@ DECLINLINE(int) PDMDrvHlpNoAttach(PPDMDRVINS pDrvIns)
  */
 DECLINLINE(int) PDMDrvHlpDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    return pDrvIns->pDrvHlpR3->pfnDetach(pDrvIns, fFlags);
+    return pDrvIns->pHlpR3->pfnDetach(pDrvIns, fFlags);
 }
 
 /**
@@ -1045,7 +1045,7 @@ DECLINLINE(int) PDMDrvHlpDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
  */
 DECLINLINE(int) PDMDrvHlpDetachSelf(PPDMDRVINS pDrvIns, uint32_t fFlags)
 {
-    return pDrvIns->pDrvHlpR3->pfnDetachSelf(pDrvIns, fFlags);
+    return pDrvIns->pHlpR3->pfnDetachSelf(pDrvIns, fFlags);
 }
 
 /**
@@ -1053,7 +1053,7 @@ DECLINLINE(int) PDMDrvHlpDetachSelf(PPDMDRVINS pDrvIns, uint32_t fFlags)
  */
 DECLINLINE(int) PDMDrvHlpMountPrepare(PPDMDRVINS pDrvIns, const char *pszFilename, const char *pszCoreDriver)
 {
-    return pDrvIns->pDrvHlpR3->pfnMountPrepare(pDrvIns, pszFilename, pszCoreDriver);
+    return pDrvIns->pHlpR3->pfnMountPrepare(pDrvIns, pszFilename, pszCoreDriver);
 }
 
 /**
@@ -1061,7 +1061,7 @@ DECLINLINE(int) PDMDrvHlpMountPrepare(PPDMDRVINS pDrvIns, const char *pszFilenam
  */
 DECLINLINE(VMSTATE) PDMDrvHlpVMState(PPDMDRVINS pDrvIns)
 {
-    return pDrvIns->CTX_SUFF(pDrvHlp)->pfnVMState(pDrvIns);
+    return pDrvIns->CTX_SUFF(pHlp)->pfnVMState(pDrvIns);
 }
 
 /**
@@ -1069,7 +1069,7 @@ DECLINLINE(VMSTATE) PDMDrvHlpVMState(PPDMDRVINS pDrvIns)
  */
 DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 {
-    return pDrvIns->pDrvHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDrvIns);
+    return pDrvIns->pHlpR3->pfnVMTeleportedAndNotFullyResumedYet(pDrvIns);
 }
 
 /**
@@ -1078,7 +1078,7 @@ DECLINLINE(bool) PDMDrvHlpVMTeleportedAndNotFullyResumedYet(PPDMDRVINS pDrvIns)
 DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uint32_t cItems, uint32_t cMilliesInterval,
                                         PFNPDMQUEUEDRV pfnCallback, const char *pszName, PPDMQUEUE *ppQueue)
 {
-    return pDrvIns->pDrvHlpR3->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
+    return pDrvIns->pHlpR3->pfnPDMQueueCreate(pDrvIns, cbItem, cItems, cMilliesInterval, pfnCallback, pszName, ppQueue);
 }
 
 /**
@@ -1086,7 +1086,7 @@ DECLINLINE(int) PDMDrvHlpPDMQueueCreate(PPDMDRVINS pDrvIns, uint32_t cbItem, uin
  */
 DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualFreq(PPDMDRVINS pDrvIns)
 {
-    return pDrvIns->pDrvHlpR3->pfnTMGetVirtualFreq(pDrvIns);
+    return pDrvIns->pHlpR3->pfnTMGetVirtualFreq(pDrvIns);
 }
 
 /**
@@ -1094,7 +1094,7 @@ DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualFreq(PPDMDRVINS pDrvIns)
  */
 DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualTime(PPDMDRVINS pDrvIns)
 {
-    return pDrvIns->pDrvHlpR3->pfnTMGetVirtualTime(pDrvIns);
+    return pDrvIns->pHlpR3->pfnTMGetVirtualTime(pDrvIns);
 }
 
 /**
@@ -1102,7 +1102,7 @@ DECLINLINE(uint64_t) PDMDrvHlpTMGetVirtualTime(PPDMDRVINS pDrvIns)
  */
 DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFNTMTIMERDRV pfnCallback, void *pvUser, uint32_t fFlags, const char *pszDesc, PPTMTIMERR3 ppTimer)
 {
-    return pDrvIns->pDrvHlpR3->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
+    return pDrvIns->pHlpR3->pfnTMTimerCreate(pDrvIns, enmClock, pfnCallback, pvUser, fFlags, pszDesc, ppTimer);
 }
 
 /**
@@ -1119,7 +1119,7 @@ DECLINLINE(int) PDMDrvHlpTMTimerCreate(PPDMDRVINS pDrvIns, TMCLOCK enmClock, PFN
 DECLINLINE(int) PDMDrvHlpSSMRegister(PPDMDRVINS pDrvIns, uint32_t uVersion, size_t cbGuess,
                                      PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVLOADEXEC pfnLoadExec)
 {
-    return pDrvIns->pDrvHlpR3->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
+    return pDrvIns->pHlpR3->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
                                               NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
                                               NULL /*pfnSavePrep*/, pfnSaveExec,          NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, pfnLoadExec,          NULL /*pfnLoadDone*/);
@@ -1133,7 +1133,7 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterEx(PPDMDRVINS pDrvIns, uint32_t uVersion, si
                                        PFNSSMDRVSAVEPREP pfnSavePrep, PFNSSMDRVSAVEEXEC pfnSaveExec, PFNSSMDRVSAVEDONE pfnSaveDone,
                                        PFNSSMDRVLOADPREP pfnLoadPrep, PFNSSMDRVLOADEXEC pfnLoadExec, PFNSSMDRVLOADDONE pfnLoadDone)
 {
-    return pDrvIns->pDrvHlpR3->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
+    return pDrvIns->pHlpR3->pfnSSMRegister(pDrvIns, uVersion, cbGuess,
                                               pfnLivePrep, pfnLiveExec, pfnLiveVote,
                                               pfnSavePrep, pfnSaveExec, pfnSaveDone,
                                               pfnLoadPrep, pfnLoadExec, pfnLoadDone);
@@ -1148,7 +1148,7 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterEx(PPDMDRVINS pDrvIns, uint32_t uVersion, si
  */
 DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDONE pfnLoadDone)
 {
-    return pDrvIns->pDrvHlpR3->pfnSSMRegister(pDrvIns, 0 /*uVersion*/, 0 /*cbGuess*/,
+    return pDrvIns->pHlpR3->pfnSSMRegister(pDrvIns, 0 /*uVersion*/, 0 /*cbGuess*/,
                                               NULL /*pfnLivePrep*/, NULL /*pfnLiveExec*/, NULL /*pfnLiveVote*/,
                                               NULL /*pfnSavePrep*/, NULL /*pfnSaveExec*/, NULL /*pfnSaveDone*/,
                                               NULL /*pfnLoadPrep*/, NULL /*pfnLoadExec*/, pfnLoadDone);
@@ -1159,7 +1159,7 @@ DECLINLINE(int) PDMDrvHlpSSMRegisterLoadDone(PPDMDRVINS pDrvIns, PFNSSMDRVLOADDO
  */
 DECLINLINE(void) PDMDrvHlpSTAMRegister(PPDMDRVINS pDrvIns, void *pvSample, STAMTYPE enmType, const char *pszName, STAMUNIT enmUnit, const char *pszDesc)
 {
-    pDrvIns->pDrvHlpR3->pfnSTAMRegister(pDrvIns, pvSample, enmType, pszName, enmUnit, pszDesc);
+    pDrvIns->pHlpR3->pfnSTAMRegister(pDrvIns, pvSample, enmType, pszName, enmUnit, pszDesc);
 }
 
 /**
@@ -1170,7 +1170,7 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
 {
     va_list va;
     va_start(va, pszName);
-    pDrvIns->pDrvHlpR3->pfnSTAMRegisterV(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
+    pDrvIns->pHlpR3->pfnSTAMRegisterV(pDrvIns, pvSample, enmType, enmVisibility, enmUnit, pszDesc, pszName, va);
     va_end(va);
 }
 
@@ -1179,7 +1179,7 @@ DECLINLINE(void) PDMDrvHlpSTAMRegisterF(PPDMDRVINS pDrvIns, void *pvSample, STAM
  */
 DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
 {
-    return pDrvIns->pDrvHlpR3->pfnSTAMDeregister(pDrvIns, pvSample);
+    return pDrvIns->pHlpR3->pfnSTAMDeregister(pDrvIns, pvSample);
 }
 
 /**
@@ -1187,7 +1187,7 @@ DECLINLINE(int) PDMDrvHlpSTAMDeregister(PPDMDRVINS pDrvIns, void *pvSample)
  */
 DECLINLINE(int) PDMDrvHlpSUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned uOperation, void *pvArg, unsigned cbArg)
 {
-    return pDrvIns->pDrvHlpR3->pfnSUPCallVMMR0Ex(pDrvIns, uOperation, pvArg, cbArg);
+    return pDrvIns->pHlpR3->pfnSUPCallVMMR0Ex(pDrvIns, uOperation, pvArg, cbArg);
 }
 
 /**
@@ -1195,7 +1195,7 @@ DECLINLINE(int) PDMDrvHlpSUPCallVMMR0Ex(PPDMDRVINS pDrvIns, unsigned uOperation,
  */
 DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, uint32_t cPorts, PCPDMUSBHUBREG pUsbHubReg, PPCPDMUSBHUBHLP ppUsbHubHlp)
 {
-    return pDrvIns->pDrvHlpR3->pfnUSBRegisterHub(pDrvIns, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp);
+    return pDrvIns->pHlpR3->pfnUSBRegisterHub(pDrvIns, fVersions, cPorts, pUsbHubReg, ppUsbHubHlp);
 }
 
 /**
@@ -1203,7 +1203,7 @@ DECLINLINE(int) PDMDrvHlpUSBRegisterHub(PPDMDRVINS pDrvIns, uint32_t fVersions, 
  */
 DECLINLINE(int) PDMDrvHlpSetAsyncNotification(PPDMDRVINS pDrvIns, PFNPDMDRVASYNCNOTIFY pfnAsyncNotify)
 {
-    return pDrvIns->pDrvHlpR3->pfnSetAsyncNotification(pDrvIns, pfnAsyncNotify);
+    return pDrvIns->pHlpR3->pfnSetAsyncNotification(pDrvIns, pfnAsyncNotify);
 }
 
 /**
@@ -1211,7 +1211,7 @@ DECLINLINE(int) PDMDrvHlpSetAsyncNotification(PPDMDRVINS pDrvIns, PFNPDMDRVASYNC
  */
 DECLINLINE(void) PDMDrvHlpAsyncNotificationCompleted(PPDMDRVINS pDrvIns)
 {
-    pDrvIns->pDrvHlpR3->pfnAsyncNotificationCompleted(pDrvIns);
+    pDrvIns->pHlpR3->pfnAsyncNotificationCompleted(pDrvIns);
 }
 
 /**
@@ -1220,7 +1220,7 @@ DECLINLINE(void) PDMDrvHlpAsyncNotificationCompleted(PPDMDRVINS pDrvIns)
 DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThread, void *pvUser, PFNPDMTHREADDRV pfnThread,
                                          PFNPDMTHREADWAKEUPDRV pfnWakeup, size_t cbStack, RTTHREADTYPE enmType, const char *pszName)
 {
-    return pDrvIns->pDrvHlpR3->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
+    return pDrvIns->pHlpR3->pfnPDMThreadCreate(pDrvIns, ppThread, pvUser, pfnThread, pfnWakeup, cbStack, enmType, pszName);
 }
 
 # ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
@@ -1230,7 +1230,7 @@ DECLINLINE(int) PDMDrvHlpPDMThreadCreate(PPDMDRVINS pDrvIns, PPPDMTHREAD ppThrea
 DECLINLINE(int) PDMDrvHlpPDMAsyncCompletionTemplateCreate(PPDMDRVINS pDrvIns, PPPDMASYNCCOMPLETIONTEMPLATE ppTemplate,
                                                           PFNPDMASYNCCOMPLETEDRV pfnCompleted, void *pvTemplateUser, const char *pszDesc)
 {
-    return pDrvIns->pDrvHlpR3->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
+    return pDrvIns->pHlpR3->pfnPDMAsyncCompletionTemplateCreate(pDrvIns, ppTemplate, pfnCompleted, pvTemplateUser, pszDesc);
 }
 # endif
 
