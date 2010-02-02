@@ -1494,7 +1494,7 @@ public:
             rc = SafeArrayGetIID (arg, &guid);
             AssertComRCReturnVoid (rc);
             AssertMsgReturnVoid (InlineIsEqualGUID (_ATL_IIDOF (I), guid),
-                                 ("Expected IID {%Vuuid}, got {%Vuuid}.\n",
+                                 ("Expected IID {%RTuuid}, got {%RTuuid}.\n",
                                   &_ATL_IIDOF (I), &guid));
 
             rc = SafeArrayAccessData (arg, (void HUGEP **) &m.raw);
