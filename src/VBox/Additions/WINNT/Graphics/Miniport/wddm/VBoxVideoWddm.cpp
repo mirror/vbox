@@ -376,14 +376,10 @@ NTSTATUS DxgkDdiQueryDeviceDescriptor(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
-    /* we do not support EDID */
-    DeviceDescriptor->DescriptorOffset = 0;
-    DeviceDescriptor->DescriptorLength = 0;
-    DeviceDescriptor->DescriptorBuffer = NULL;
-
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
-    return STATUS_SUCCESS;
+    /* we do not support EDID */
+    return STATUS_MONITOR_NO_DESCRIPTOR;
 }
 
 NTSTATUS DxgkDdiSetPowerState(
