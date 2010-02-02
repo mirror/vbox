@@ -352,7 +352,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
     PPDMASYNCCOMPLETIONTASK pTask;
 
     Assert(!pStorageBackend->fSyncIoPending);
-    pStorageBackend->fSyncIoPending = true;
+    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
     DataSeg.cbSeg = cbRead;
     DataSeg.pvSeg = pvBuf;
 
@@ -360,9 +360,14 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Wait */
-    rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
-    AssertRC(rc);
+    if (rc == VINF_AIO_TASK_PENDING)
+    {
+        /* Wait */
+        rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    else
+        ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, false);
 
     if (pcbRead)
         *pcbRead = cbRead;
@@ -379,7 +384,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
     PPDMASYNCCOMPLETIONTASK pTask;
 
     Assert(!pStorageBackend->fSyncIoPending);
-    pStorageBackend->fSyncIoPending = true;
+    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
     DataSeg.cbSeg = cbWrite;
     DataSeg.pvSeg = (void *)pvBuf;
 
@@ -387,9 +392,14 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Wait */
-    rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
-    AssertRC(rc);
+    if (rc == VINF_AIO_TASK_PENDING)
+    {
+        /* Wait */
+        rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    else
+        ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, false);
 
     if (pcbWritten)
         *pcbWritten = cbWrite;
@@ -404,15 +414,20 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
     PPDMASYNCCOMPLETIONTASK pTask;
 
     Assert(!pStorageBackend->fSyncIoPending);
-    pStorageBackend->fSyncIoPending = true;
+    ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, true);
 
     int rc = PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, NULL, &pTask);
     if (RT_FAILURE(rc))
         return rc;
 
-    /* Wait */
-    rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
-    AssertRC(rc);
+    if (rc == VINF_AIO_TASK_PENDING)
+    {
+        /* Wait */
+        rc = RTSemEventWait(pStorageBackend->EventSem, RT_INDEFINITE_WAIT);
+        AssertRC(rc);
+    }
+    else
+        ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, false);
 
     return VINF_SUCCESS;
 }
@@ -1103,7 +1118,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
-            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, false);
+            rc = CFGMR3QueryBoolDef(pCurNode, "UseNewIo", &fUseNewIo, true);
             if (RT_FAILURE(rc))
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
@@ -1247,7 +1262,6 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);
         if (rc == VERR_NOT_SUPPORTED)
         {
-            /* Seems async I/O is not supported by the backend, open in normal mode. */
             pThis->fAsyncIOSupported = false;
             uOpenFlags &= ~VD_OPEN_FLAGS_ASYNC_IO;
             rc = VDOpen(pThis->pDisk, pszFormat, pszName, uOpenFlags, pImage->pVDIfsImage);

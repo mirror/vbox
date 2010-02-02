@@ -25,6 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
 #define RT_STRICT
+//#define DEBUG
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
 #include <VBox/mm.h>
@@ -320,7 +321,7 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
 
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
     {
-        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core);
+        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, true);
     }
     else
     {
@@ -328,7 +329,7 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
 
         if (!(uOld - pTask->DataSeg.cbSeg)
             && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
-            pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core);
+            pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, true);
     }
 }
 
@@ -371,9 +372,11 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 
     if (ASMAtomicReadS32(&pTaskFile->cbTransferLeft) == 0
         && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
-        pdmR3AsyncCompletionCompleteTask(pTask);
+        pdmR3AsyncCompletionCompleteTask(pTask, false);
+    else
+        rc = VINF_AIO_TASK_PENDING;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -682,6 +685,12 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
         pEpFile->fFlags = fFileFlags;
 
         rc = RTFileGetSize(pEpFile->File, (uint64_t *)&pEpFile->cbFile);
+        if (RT_SUCCESS(rc) && (pEpFile->cbFile == 0))
+        {
+            /* Could be a block device */
+            rc = RTFileSeek(pEpFile->File, 0, RTFILE_SEEK_END, (uint64_t *)&pEpFile->cbFile);
+        }
+
         if (RT_SUCCESS(rc))
         {
             /* Initialize the segment cache */
@@ -870,6 +879,7 @@ static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
         pIoTask->pvUser          = pTaskFile;
         pIoTask->pfnCompleted    = pdmacFileEpTaskCompleted;
         pdmacFileEpAddTask(pEpFile, pIoTask);
+        rc = VINF_AIO_TASK_PENDING;
     }
 
     return rc;

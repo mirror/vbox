@@ -1216,6 +1216,8 @@
 #define VERR_VD_RAW_INVALID_HEADER                  (-3270)
 /** Raw: Invalid image file type. */
 #define VERR_VD_RAW_INVALID_TYPE                    (-3271)
+/** The backend needs more metadata before it can continue. */
+#define VERR_VD_NOT_ENOUGH_METADATA                 (-3272)
 /** @} */
 
 
@@ -1502,6 +1504,13 @@
  */
 /** CPU hotplug events from VMMDev are not monitored by the guest */
 #define VERR_CPU_HOTPLUG_NOT_MONITORED_BY_GUEST    (-4700)
+/** @} */
+
+/** @name VBox async I/O manager Status Codes
+ * @{
+ */
+/** Async I/O task is pending, a completion handler will be called. */
+#define VINF_AIO_TASK_PENDING                       4800
 /** @} */
 
 /* SED-END */
