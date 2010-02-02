@@ -458,7 +458,7 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     AssertReleaseMsgRC(rc, ("rc=%Rrc when resolving g_pdmRCDevHlp\n", rc));
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         {
             pDevIns->pDevHlpRC = pDevHlpRC;
             pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
@@ -467,11 +467,11 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
                 pDevIns->Internal.s.pPciBusRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
             if (pDevIns->Internal.s.pPciDeviceR3)
                 pDevIns->Internal.s.pPciDeviceRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciDeviceR3);
-            if (pDevIns->pDevReg->pfnRelocate)
+            if (pDevIns->pReg->pfnRelocate)
             {
                 LogFlow(("PDMR3Relocate: Relocating device '%s'/%d\n",
-                         pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                pDevIns->pDevReg->pfnRelocate(pDevIns, offDelta);
+                         pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->pReg->pfnRelocate(pDevIns, offDelta);
             }
         }
     }
@@ -560,13 +560,13 @@ VMMR3DECL(int) PDMR3Term(PVM pVM)
     /* then the 'normal' ones. */
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        pdmR3TermLuns(pVM, pDevIns->Internal.s.pLunsR3, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
+        pdmR3TermLuns(pVM, pDevIns->Internal.s.pLunsR3, pDevIns->pReg->szDeviceName, pDevIns->iInstance);
 
-        if (pDevIns->pDevReg->pfnDestruct)
+        if (pDevIns->pReg->pfnDestruct)
         {
             LogFlow(("pdmR3DevTerm: Destroying - device '%s'/%d\n",
-                     pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-            pDevIns->pDevReg->pfnDestruct(pDevIns);
+                     pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+            pDevIns->pReg->pfnDestruct(pDevIns);
         }
 
         TMR3TimerDestroyDevice(pVM, pDevIns);
@@ -639,7 +639,7 @@ static void pdmR3SaveBoth(PVM pVM, PSSMHANDLE pSSM)
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3, i++)
     {
         SSMR3PutU32(pSSM, i);
-        SSMR3PutStrZ(pSSM, pDevIns->pDevReg->szDeviceName);
+        SSMR3PutStrZ(pSSM, pDevIns->pReg->szDeviceName);
         SSMR3PutU32(pSSM, pDevIns->iInstance);
     }
     SSMR3PutU32(pSSM, UINT32_MAX); /* terminator */
@@ -878,11 +878,11 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
         /* Try locate it. */
         PPDMDEVINS pDevIns;
         for (pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
-            if (   !strcmp(szDeviceName, pDevIns->pDevReg->szDeviceName)
+            if (   !strcmp(szDeviceName, pDevIns->pReg->szDeviceName)
                 && pDevIns->iInstance == iInstance)
             {
                 AssertLogRelMsgReturn(!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND),
-                                      ("%s/#%u\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance),
+                                      ("%s/#%u\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance),
                                       VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
                 pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_FOUND;
                 break;
@@ -901,10 +901,10 @@ static DECLCALLBACK(int) pdmR3LoadExec(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersi
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
         if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_FOUND))
         {
-            LogRel(("Device '%s'/%d not found in the saved state\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+            LogRel(("Device '%s'/%d not found in the saved state\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
             if (SSMR3HandleGetAfter(pSSM) != SSMAFTER_DEBUG_IT)
                 return SSMR3SetCfgError(pSSM, RT_SRC_POS, N_("Device '%s'/%d not found in the saved state"),
-                                        pDevIns->pDevReg->szDeviceName, pDevIns->iInstance);
+                                        pDevIns->pReg->szDeviceName, pDevIns->iInstance);
         }
 
     return VINF_SUCCESS;
@@ -972,13 +972,13 @@ DECLINLINE(int) pdmR3PowerOnUsb(PPDMUSBINS pUsbIns)
 DECLINLINE(int) pdmR3PowerOnDev(PPDMDEVINS pDevIns)
 {
     Assert(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED);
-    if (pDevIns->pDevReg->pfnPowerOn)
+    if (pDevIns->pReg->pfnPowerOn)
     {
-        LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        int rc = VINF_SUCCESS; pDevIns->pDevReg->pfnPowerOn(pDevIns);
+        LogFlow(("PDMR3PowerOn: Notifying - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+        int rc = VINF_SUCCESS; pDevIns->pReg->pfnPowerOn(pDevIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogRel(("PDMR3PowerOn: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
     }
@@ -1006,7 +1006,7 @@ VMMR3DECL(void) PDMR3PowerOn(PVM pVM)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3;  pLun && RT_SUCCESS(rc);  pLun = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
-                rc = pdmR3PowerOnDrv(pDrvIns, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun);
+                rc = pdmR3PowerOnDrv(pDrvIns, pDevIns->pReg->szDeviceName, pDevIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
             rc = pdmR3PowerOnDev(pDevIns);
     }
@@ -1129,18 +1129,18 @@ DECLINLINE(void) pdmR3ResetDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_RESET))
     {
         pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_RESET;
-        if (pDevIns->pDevReg->pfnReset)
+        if (pDevIns->pReg->pfnReset)
         {
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                pDevIns->pDevReg->pfnReset(pDevIns);
+                LogFlow(("PDMR3Reset: Notifying - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->pReg->pfnReset(pDevIns);
                 if (pDevIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                    LogFlow(("PDMR3Reset: Async notification started - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
             }
             else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
             {
-                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                LogFlow(("PDMR3Reset: Async notification completed - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
                 pDevIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pDevIns->Internal.s.pfnAsyncNotify)
@@ -1217,7 +1217,7 @@ VMMR3DECL(void) PDMR3Reset(PVM pVM)
             if (cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
                     for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                        if (!pdmR3ResetDrv(pDrvIns, &cAsync, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
+                        if (!pdmR3ResetDrv(pDrvIns, &cAsync, pDevIns->pReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
                             break;
 
                         if (cAsync == cAsyncStart)
@@ -1355,18 +1355,18 @@ DECLINLINE(void) pdmR3SuspendDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED))
     {
         pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_SUSPENDED;
-        if (pDevIns->pDevReg->pfnSuspend)
+        if (pDevIns->pReg->pfnSuspend)
         {
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                pDevIns->pDevReg->pfnSuspend(pDevIns);
+                LogFlow(("PDMR3Suspend: Notifying - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->pReg->pfnSuspend(pDevIns);
                 if (pDevIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                    LogFlow(("PDMR3Suspend: Async notification started - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
             }
             else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
             {
-                LogFlow(("PDMR3Suspend: Async notification completed - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                LogFlow(("PDMR3Suspend: Async notification completed - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
                 pDevIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pDevIns->Internal.s.pfnAsyncNotify)
@@ -1416,17 +1416,17 @@ VMMR3DECL(void) PDMR3Suspend(PVM pVM)
         {
             unsigned const cAsyncStart = cAsync;
 
-            if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION)
+            if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION)
                 pdmR3SuspendDev(pDevIns, &cAsync);
 
             if (cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
                     for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                        if (!pdmR3SuspendDrv(pDrvIns, &cAsync, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
+                        if (!pdmR3SuspendDrv(pDrvIns, &cAsync, pDevIns->pReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
                             break;
 
             if (    cAsync == cAsyncStart
-                && !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION))
+                && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_SUSPEND_NOTIFICATION))
                 pdmR3SuspendDev(pDevIns, &cAsync);
         }
 
@@ -1530,13 +1530,13 @@ DECLINLINE(int) pdmR3ResumeUsb(PPDMUSBINS pUsbIns)
 DECLINLINE(int) pdmR3ResumeDev(PPDMDEVINS pDevIns)
 {
     Assert(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED);
-    if (pDevIns->pDevReg->pfnResume)
+    if (pDevIns->pReg->pfnResume)
     {
-        LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        int rc = VINF_SUCCESS; pDevIns->pDevReg->pfnResume(pDevIns);
+        LogFlow(("PDMR3Resume: Notifying - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+        int rc = VINF_SUCCESS; pDevIns->pReg->pfnResume(pDevIns);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogRel(("PDMR3Resume: device '%s'/%d -> %Rrc\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance, rc));
             return rc;
         }
     }
@@ -1564,7 +1564,7 @@ VMMR3DECL(void) PDMR3Resume(PVM pVM)
     {
         for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3;  pLun && RT_SUCCESS(rc);  pLun    = pLun->pNext)
             for (PPDMDRVINS pDrvIns = pLun->pTop;  pDrvIns && RT_SUCCESS(rc);  pDrvIns = pDrvIns->Internal.s.pDown)
-                rc = pdmR3ResumeDrv(pDrvIns, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun);
+                rc = pdmR3ResumeDrv(pDrvIns, pDevIns->pReg->szDeviceName, pDevIns->iInstance, pLun->iLun);
         if (RT_SUCCESS(rc))
             rc = pdmR3ResumeDev(pDevIns);
     }
@@ -1687,18 +1687,18 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED))
     {
         pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_SUSPENDED;
-        if (pDevIns->pDevReg->pfnSuspend)
+        if (pDevIns->pReg->pfnSuspend)
         {
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
-                LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-                pDevIns->pDevReg->pfnPowerOff(pDevIns);
+                LogFlow(("PDMR3PowerOff: Notifying - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+                pDevIns->pReg->pfnPowerOff(pDevIns);
                 if (pDevIns->Internal.s.pfnAsyncNotify)
-                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                    LogFlow(("PDMR3PowerOff: Async notification started - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
             }
             else if (pDevIns->Internal.s.pfnAsyncNotify(pDevIns))
             {
-                LogFlow(("PDMR3PowerOff: Async notification completed - device '%s'/%d\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
+                LogFlow(("PDMR3PowerOff: Async notification completed - device '%s'/%d\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
                 pDevIns->Internal.s.pfnAsyncNotify = NULL;
             }
             if (pDevIns->Internal.s.pfnAsyncNotify)
@@ -1741,17 +1741,17 @@ VMMR3DECL(void) PDMR3PowerOff(PVM pVM)
         {
             unsigned const cAsyncStart = cAsync;
 
-            if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION)
+            if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION)
                 pdmR3PowerOffDev(pDevIns, &cAsync);
 
             if (cAsync == cAsyncStart)
                 for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
                     for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
-                        if (!pdmR3PowerOffDrv(pDrvIns, &cAsync, pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
+                        if (!pdmR3PowerOffDrv(pDrvIns, &cAsync, pDevIns->pReg->szDeviceName, pDevIns->iInstance, pLun->iLun))
                             break;
 
             if (    cAsync == cAsyncStart
-                && !(pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION))
+                && !(pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_FIRST_POWEROFF_NOTIFICATION))
                 pdmR3PowerOffDev(pDevIns, &cAsync);
         }
 
@@ -1819,7 +1819,7 @@ VMMR3DECL(int) PDMR3QueryDevice(PVM pVM, const char *pszDevice, unsigned iInstan
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice
-            &&  !memcmp(pDev->pDevReg->szDeviceName, pszDevice, cchDevice))
+            &&  !memcmp(pDev->pReg->szDeviceName, pszDevice, cchDevice))
         {
             /*
              * Iterate device instances.

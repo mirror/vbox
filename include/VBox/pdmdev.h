@@ -56,8 +56,8 @@ RT_C_DECLS_BEGIN
  * Construct a device instance for a VM.
  *
  * @returns VBox status.
- * @param   pDevIns     The device instance data.
- *                      If the registration structure is needed, pDevIns->pDevReg points to it.
+ * @param   pDevIns     The device instance data. If the registration structure
+ *                      is needed, it can be accessed thru  pDevIns->pReg.
  * @param   iInstance   Instance number. Use this to figure out which registers and such to use.
  *                      The instance number is also found in pDevIns->iInstance, but since it's
  *                      likely to be freqently used PDM passes it as parameter.
@@ -3489,7 +3489,7 @@ typedef struct PDMDEVINS
     RTR3PTR                     pvInstanceDataR3;
 
     /** Pointer to device registration structure.  */
-    R3PTRTYPE(PCPDMDEVREG)      pDevReg;
+    R3PTRTYPE(PCPDMDEVREG)      pReg;
     /** Configuration handle. */
     R3PTRTYPE(PCFGMNODE)        pCfgHandle;
 
@@ -4329,10 +4329,10 @@ typedef struct PDMDEVREGCB
      *
      * @returns VBox status code.
      * @param   pCallbacks      Pointer to the callback table.
-     * @param   pDevReg         Pointer to the device registration record.
+     * @param   pReg            Pointer to the device registration record.
      *                          This data must be permanent and readonly.
      */
-    DECLR3CALLBACKMEMBER(int, pfnRegister,(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg));
+    DECLR3CALLBACKMEMBER(int, pfnRegister,(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pReg));
 
     /**
      * Allocate memory which is associated with current VM instance

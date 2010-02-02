@@ -626,7 +626,7 @@ static int pgmR3SaveMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
     {
         pMmio2->idSavedState = id;
         SSMR3PutU8(pSSM, id);
-        SSMR3PutStrZ(pSSM, pMmio2->pDevInsR3->pDevReg->szDeviceName);
+        SSMR3PutStrZ(pSSM, pMmio2->pDevInsR3->pReg->szDeviceName);
         SSMR3PutU32(pSSM, pMmio2->pDevInsR3->iInstance);
         SSMR3PutU8(pSSM, pMmio2->iRegion);
         SSMR3PutStrZ(pSSM, pMmio2->RamRange.pszDesc);
@@ -697,7 +697,7 @@ static int pgmR3LoadMmio2Ranges(PVM pVM, PSSMHANDLE pSSM)
             if (    pMmio2->idSavedState == UINT8_MAX
                 &&  pMmio2->iRegion == iRegion
                 &&  pMmio2->pDevInsR3->iInstance == uInstance
-                &&  !strcmp(pMmio2->pDevInsR3->pDevReg->szDeviceName, szDevName))
+                &&  !strcmp(pMmio2->pDevInsR3->pReg->szDeviceName, szDevName))
             {
                 pMmio2->idSavedState = id;
                 break;

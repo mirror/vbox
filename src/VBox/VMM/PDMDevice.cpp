@@ -74,7 +74,7 @@ typedef const PDMDEVREGCBINT *PCPDMDEVREGCBINT;
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static DECLCALLBACK(int)    pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg);
+static DECLCALLBACK(int)    pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pReg);
 static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb);
 static int                  pdmR3DevLoadModules(PVM pVM);
 static int                  pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename, const char *pszName);
@@ -187,7 +187,7 @@ int pdmR3DevInit(PVM pVM)
     for (pCur = CFGMR3GetFirstChild(pDevicesNode); pCur; pCur = CFGMR3GetNextChild(pCur))
     {
         /* Get the device name. */
-        char szName[sizeof(paDevs[0].pDev->pDevReg->szDeviceName)];
+        char szName[sizeof(paDevs[0].pDev->pReg->szDeviceName)];
         rc = CFGMR3GetName(pCur, szName, sizeof(szName));
         AssertMsgRCReturn(rc, ("Configuration error: device name is too long (or something)! rc=%Rrc\n", rc), rc);
 
@@ -200,7 +200,7 @@ int pdmR3DevInit(PVM pVM)
         rc = CFGMR3QueryU32(pCur, "Priority", &u32Order);
         if (rc == VERR_CFGM_VALUE_NOT_FOUND)
         {
-            uint32_t u32 = pDev->pDevReg->fClass;
+            uint32_t u32 = pDev->pReg->fClass;
             for (u32Order = 1; !(u32 & u32Order); u32Order <<= 1)
                 /* nop */;
         }
@@ -229,9 +229,9 @@ int pdmR3DevInit(PVM pVM)
         }
 
         /* check the number of instances */
-        if (i - iStart > pDev->pDevReg->cMaxInstances)
+        if (i - iStart > pDev->pReg->cMaxInstances)
             AssertLogRelMsgFailedReturn(("Configuration error: Too many instances of %s was configured: %u, max %u\n",
-                                         szName, i - iStart, pDev->pDevReg->cMaxInstances),
+                                         szName, i - iStart, pDev->pReg->cMaxInstances),
                                         VERR_PDM_TOO_MANY_DEVICE_INSTANCES);
     } /* devices */
     Assert(i == cDevs);
@@ -291,18 +291,18 @@ int pdmR3DevInit(PVM pVM)
         /*
          * Allocate the device instance.
          */
-        AssertReturn(paDevs[i].pDev->cInstances < paDevs[i].pDev->pDevReg->cMaxInstances, VERR_PDM_TOO_MANY_DEVICE_INSTANCES);
-        size_t cb = RT_OFFSETOF(PDMDEVINS, achInstanceData[paDevs[i].pDev->pDevReg->cbInstance]);
+        AssertReturn(paDevs[i].pDev->cInstances < paDevs[i].pDev->pReg->cMaxInstances, VERR_PDM_TOO_MANY_DEVICE_INSTANCES);
+        size_t cb = RT_OFFSETOF(PDMDEVINS, achInstanceData[paDevs[i].pDev->pReg->cbInstance]);
         cb = RT_ALIGN_Z(cb, 16);
         PPDMDEVINS pDevIns;
-        if (paDevs[i].pDev->pDevReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0))
+        if (paDevs[i].pDev->pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0))
             rc = MMR3HyperAllocOnceNoRel(pVM, cb, 0, MM_TAG_PDM_DEVICE, (void **)&pDevIns);
         else
             rc = MMR3HeapAllocZEx(pVM, MM_TAG_PDM_DEVICE, cb, (void **)&pDevIns);
         if (RT_FAILURE(rc))
         {
             AssertMsgFailed(("Failed to allocate %d bytes of instance data for device '%s'. rc=%Rrc\n",
-                             cb, paDevs[i].pDev->pDevReg->szDeviceName, rc));
+                             cb, paDevs[i].pDev->pReg->szDeviceName, rc));
             return rc;
         }
 
@@ -328,13 +328,13 @@ int pdmR3DevInit(PVM pVM)
         pDevIns->pDevHlpR3                      = fTrusted ? &g_pdmR3DevHlpTrusted : &g_pdmR3DevHlpUnTrusted;
         pDevIns->pDevHlpRC                      = pDevHlpRC;
         pDevIns->pDevHlpR0                      = pDevHlpR0;
-        pDevIns->pDevReg                        = paDevs[i].pDev->pDevReg;
+        pDevIns->pReg                           = paDevs[i].pDev->pReg;
         pDevIns->pCfgHandle                     = pConfigNode;
         pDevIns->iInstance                      = paDevs[i].iInstance;
         pDevIns->pvInstanceDataR3               = &pDevIns->achInstanceData[0];
-        pDevIns->pvInstanceDataRC               = pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC
+        pDevIns->pvInstanceDataRC               = pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC
                                                 ? MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3) : NIL_RTRCPTR;
-        pDevIns->pvInstanceDataR0               = pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0
+        pDevIns->pvInstanceDataR0               = pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0
                                                 ? MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3) : NIL_RTR0PTR;
 
         /*
@@ -366,11 +366,11 @@ int pdmR3DevInit(PVM pVM)
          * Call the constructor.
          */
         paDevs[i].pDev->cInstances++;
-        Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance));
-        rc = pDevIns->pDevReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
+        Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance));
+        rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
         if (RT_FAILURE(rc))
         {
-            LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+            LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szDeviceName, pDevIns->iInstance, rc));
             paDevs[i].pDev->cInstances--;
             /* because we're damn lazy right now, we'll say that the destructor will be called even if the constructor fails. */
             return rc;
@@ -404,13 +404,13 @@ int pdmR3DevInit(PVM pVM)
 
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
-        if (pDevIns->pDevReg->pfnInitComplete)
+        if (pDevIns->pReg->pfnInitComplete)
         {
-            rc = pDevIns->pDevReg->pfnInitComplete(pDevIns);
+            rc = pDevIns->pReg->pfnInitComplete(pDevIns);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("InitComplete on device '%s'/%d failed with rc=%Rrc\n",
-                                 pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, rc));
+                                 pDevIns->pReg->szDeviceName, pDevIns->iInstance, rc));
                 return rc;
             }
         }
@@ -437,7 +437,7 @@ PPDMDEV pdmR3DevLookup(PVM pVM, const char *pszName)
     size_t cchName = strlen(pszName);
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
         if (    pDev->cchName == cchName
-            &&  !strcmp(pDev->pDevReg->szDeviceName, pszName))
+            &&  !strcmp(pDev->pReg->szDeviceName, pszName))
             return pDev;
     return NULL;
 }
@@ -601,83 +601,78 @@ static int pdmR3DevLoad(PVM pVM, PPDMDEVREGCBINT pRegCB, const char *pszFilename
 
 
 /**
- * Registers a device with the current VM instance.
- *
- * @returns VBox status code.
- * @param   pCallbacks      Pointer to the callback table.
- * @param   pDevReg         Pointer to the device registration record.
- *                          This data must be permanent and readonly.
+ * @interface_method_impl{PDMDEVREGCB,pfnRegister}
  */
-static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pDevReg)
+static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVREG pReg)
 {
     /*
      * Validate the registration structure.
      */
-    Assert(pDevReg);
-    if (pDevReg->u32Version != PDM_DEVREG_VERSION)
+    Assert(pReg);
+    if (pReg->u32Version != PDM_DEVREG_VERSION)
     {
-        AssertMsgFailed(("Unknown struct version %#x!\n", pDevReg->u32Version));
+        AssertMsgFailed(("Unknown struct version %#x!\n", pReg->u32Version));
         return VERR_PDM_UNKNOWN_DEVREG_VERSION;
     }
-    if (    !pDevReg->szDeviceName[0]
-        ||  strlen(pDevReg->szDeviceName) >= sizeof(pDevReg->szDeviceName))
+    if (    !pReg->szDeviceName[0]
+        ||  strlen(pReg->szDeviceName) >= sizeof(pReg->szDeviceName))
     {
-        AssertMsgFailed(("Invalid name '%s'\n", pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid name '%s'\n", pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (    (pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
-        &&  (   !pDevReg->szRCMod[0]
-             || strlen(pDevReg->szRCMod) >= sizeof(pDevReg->szRCMod)))
+    if (    (pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+        &&  (   !pReg->szRCMod[0]
+             || strlen(pReg->szRCMod) >= sizeof(pReg->szRCMod)))
     {
-        AssertMsgFailed(("Invalid GC module name '%s' - (Device %s)\n", pDevReg->szRCMod, pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid GC module name '%s' - (Device %s)\n", pReg->szRCMod, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (    (pDevReg->fFlags & PDM_DEVREG_FLAGS_R0)
-        &&  (   !pDevReg->szR0Mod[0]
-             || strlen(pDevReg->szR0Mod) >= sizeof(pDevReg->szR0Mod)))
+    if (    (pReg->fFlags & PDM_DEVREG_FLAGS_R0)
+        &&  (   !pReg->szR0Mod[0]
+             || strlen(pReg->szR0Mod) >= sizeof(pReg->szR0Mod)))
     {
-        AssertMsgFailed(("Invalid R0 module name '%s' - (Device %s)\n", pDevReg->szR0Mod, pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid R0 module name '%s' - (Device %s)\n", pReg->szR0Mod, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if ((pDevReg->fFlags & PDM_DEVREG_FLAGS_HOST_BITS_MASK) != PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT)
+    if ((pReg->fFlags & PDM_DEVREG_FLAGS_HOST_BITS_MASK) != PDM_DEVREG_FLAGS_HOST_BITS_DEFAULT)
     {
-        AssertMsgFailed(("Invalid host bits flags! fFlags=%#x (Device %s)\n", pDevReg->fFlags, pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid host bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_HOST_BITS;
     }
-    if (!(pDevReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_MASK))
+    if (!(pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_MASK))
     {
-        AssertMsgFailed(("Invalid guest bits flags! fFlags=%#x (Device %s)\n", pDevReg->fFlags, pDevReg->szDeviceName));
+        AssertMsgFailed(("Invalid guest bits flags! fFlags=%#x (Device %s)\n", pReg->fFlags, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (!pDevReg->fClass)
+    if (!pReg->fClass)
     {
-        AssertMsgFailed(("No class! (Device %s)\n", pDevReg->szDeviceName));
+        AssertMsgFailed(("No class! (Device %s)\n", pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (pDevReg->cMaxInstances <= 0)
+    if (pReg->cMaxInstances <= 0)
     {
-        AssertMsgFailed(("Max instances %u! (Device %s)\n", pDevReg->cMaxInstances, pDevReg->szDeviceName));
+        AssertMsgFailed(("Max instances %u! (Device %s)\n", pReg->cMaxInstances, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (pDevReg->cbInstance > (RTUINT)(pDevReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M))
+    if (pReg->cbInstance > (RTUINT)(pReg->fFlags & (PDM_DEVREG_FLAGS_RC | PDM_DEVREG_FLAGS_R0)  ? 96 * _1K : _1M))
     {
-        AssertMsgFailed(("Instance size %d bytes! (Device %s)\n", pDevReg->cbInstance, pDevReg->szDeviceName));
+        AssertMsgFailed(("Instance size %d bytes! (Device %s)\n", pReg->cbInstance, pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
-    if (!pDevReg->pfnConstruct)
+    if (!pReg->pfnConstruct)
     {
-        AssertMsgFailed(("No constructore! (Device %s)\n", pDevReg->szDeviceName));
+        AssertMsgFailed(("No constructore! (Device %s)\n", pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_REGISTRATION;
     }
     /* Check matching guest bits last without any asserting. Enables trial and error registration. */
-    if (!(pDevReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT))
+    if (!(pReg->fFlags & PDM_DEVREG_FLAGS_GUEST_BITS_DEFAULT))
     {
-        Log(("PDM: Rejected device '%s' because it didn't match the guest bits.\n", pDevReg->szDeviceName));
+        Log(("PDM: Rejected device '%s' because it didn't match the guest bits.\n", pReg->szDeviceName));
         return VERR_PDM_INVALID_DEVICE_GUEST_BITS;
     }
-    AssertLogRelMsg(pDevReg->u32VersionEnd == PDM_DEVREG_VERSION,
+    AssertLogRelMsg(pReg->u32VersionEnd == PDM_DEVREG_VERSION,
                     ("u32VersionEnd=%#x, expected %#x. (szDeviceName=%s)\n",
-                     pDevReg->u32VersionEnd, PDM_DEVREG_VERSION, pDevReg->szDeviceName));
+                     pReg->u32VersionEnd, PDM_DEVREG_VERSION, pReg->szDeviceName));
 
     /*
      * Check for duplicate and find FIFO entry at the same time.
@@ -687,9 +682,9 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
     PPDMDEV pDev = pRegCB->pVM->pdm.s.pDevs;
     for (; pDev; pDevPrev = pDev, pDev = pDev->pNext)
     {
-        if (!strcmp(pDev->pDevReg->szDeviceName, pDevReg->szDeviceName))
+        if (!strcmp(pDev->pReg->szDeviceName, pReg->szDeviceName))
         {
-            AssertMsgFailed(("Device '%s' already exists\n", pDevReg->szDeviceName));
+            AssertMsgFailed(("Device '%s' already exists\n", pReg->szDeviceName));
             return VERR_PDM_DEVICE_NAME_CLASH;
         }
     }
@@ -703,14 +698,14 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
         pDev->pNext = NULL;
         pDev->cInstances = 0;
         pDev->pInstances = NULL;
-        pDev->pDevReg = pDevReg;
-        pDev->cchName = (uint32_t)strlen(pDevReg->szDeviceName);
+        pDev->pReg = pReg;
+        pDev->cchName = (uint32_t)strlen(pReg->szDeviceName);
 
         if (pDevPrev)
             pDevPrev->pNext = pDev;
         else
             pRegCB->pVM->pdm.s.pDevs = pDev;
-        Log(("PDM: Registered device '%s'\n", pDevReg->szDeviceName));
+        Log(("PDM: Registered device '%s'\n", pReg->szDeviceName));
         return VINF_SUCCESS;
     }
     return VERR_NO_MEMORY;
@@ -718,12 +713,7 @@ static DECLCALLBACK(int) pdmR3DevReg_Register(PPDMDEVREGCB pCallbacks, PCPDMDEVR
 
 
 /**
- * Allocate memory which is associated with current VM instance
- * and automatically freed on it's destruction.
- *
- * @returns Pointer to allocated memory. The memory is *NOT* zero-ed.
- * @param   pCallbacks      Pointer to the callback table.
- * @param   cb              Number of bytes to allocate.
+ * @interface_method_impl{PDMDEVREGCB,pfnMMHeapAlloc}
  */
 static DECLCALLBACK(void *) pdmR3DevReg_MMHeapAlloc(PPDMDEVREGCB pCallbacks, size_t cb)
 {
@@ -756,7 +746,7 @@ int pdmR3DevFindLun(PVM pVM, const char *pszDevice, unsigned iInstance, unsigned
     for (PPDMDEV pDev = pVM->pdm.s.pDevs; pDev; pDev = pDev->pNext)
     {
         if (    pDev->cchName == cchDevice
-            &&  !memcmp(pDev->pDevReg->szDeviceName, pszDevice, cchDevice))
+            &&  !memcmp(pDev->pReg->szDeviceName, pszDevice, cchDevice))
         {
             /*
              * Iterate device instances.
@@ -817,11 +807,11 @@ VMMR3DECL(int) PDMR3DeviceAttach(PVM pVM, const char *pszDevice, unsigned iInsta
          * Can we attach anything at runtime?
          */
         PPDMDEVINS pDevIns = pLun->pDevIns;
-        if (pDevIns->pDevReg->pfnAttach)
+        if (pDevIns->pReg->pfnAttach)
         {
             if (!pLun->pTop)
             {
-                rc = pDevIns->pDevReg->pfnAttach(pDevIns, iLun, fFlags);
+                rc = pDevIns->pReg->pfnAttach(pDevIns, iLun, fFlags);
             }
             else
                 rc = VERR_PDM_DRIVER_ALREADY_ATTACHED;
@@ -903,9 +893,9 @@ VMMR3DECL(int) PDMR3DriverAttach(PVM pVM, const char *pszDevice, unsigned iInsta
         {
             /* No, ask the device to attach to the new stuff. */
             PPDMDEVINS pDevIns = pLun->pDevIns;
-            if (pDevIns->pDevReg->pfnAttach)
+            if (pDevIns->pReg->pfnAttach)
             {
-                rc = pDevIns->pDevReg->pfnAttach(pDevIns, iLun, fFlags);
+                rc = pDevIns->pReg->pfnAttach(pDevIns, iLun, fFlags);
                 if (RT_SUCCESS(rc) && ppBase)
                     *ppBase = pLun->pTop ? &pLun->pTop->IBase : NULL;
             }

@@ -106,7 +106,7 @@ int main()
     /* misc */
     GEN_CHECK_SIZE(PDMDEVINS);
     GEN_CHECK_OFF(PDMDEVINS, Internal);
-    GEN_CHECK_OFF(PDMDEVINS, pDevReg);
+    GEN_CHECK_OFF(PDMDEVINS, pReg);
     GEN_CHECK_OFF(PDMDEVINS, pCfgHandle);
     GEN_CHECK_OFF(PDMDEVINS, iInstance);
     GEN_CHECK_OFF(PDMDEVINS, IBase);

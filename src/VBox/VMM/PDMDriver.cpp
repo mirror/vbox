@@ -501,7 +501,7 @@ int pdmR3DrvInstantiate(PVM pVM, PCFGMNODE pNode, PPDMIBASE pBaseInterface, PPDM
                             Log(("PDM: Attached driver %p:'%s'/%d to LUN#%d on device '%s'/%d, pDrvAbove=%p:'%s'/%d\n",
                                  pNew, pDrv->pDrvReg->szDriverName, pNew->iInstance,
                                  pLun->iLun,
-                                 pLun->pDevIns ? pLun->pDevIns->pDevReg->szDeviceName : pLun->pUsbIns->pUsbReg->szDeviceName,
+                                 pLun->pDevIns ? pLun->pDevIns->pReg->szDeviceName : pLun->pUsbIns->pUsbReg->szDeviceName,
                                  pLun->pDevIns ? pLun->pDevIns->iInstance             : pLun->pUsbIns->iInstance,
                                  pDrvAbove, pDrvAbove ? pDrvAbove->pDrvReg->szDriverName : "", pDrvAbove ? pDrvAbove->iInstance : -1));
                         else
@@ -570,7 +570,7 @@ int pdmR3DrvDetach(PPDMDRVINS pDrvIns, uint32_t fFlags)
      */
     if (pDrvIns->Internal.s.pUp
         ? !pDrvIns->Internal.s.pUp->pDrvReg->pfnDetach
-        : !pDrvIns->Internal.s.pLun->pDevIns->pDevReg->pfnDetach)
+        : !pDrvIns->Internal.s.pLun->pDevIns->pReg->pfnDetach)
     {
         AssertMsgFailed(("Cannot detach driver instance because the driver/device above doesn't support it!\n"));
         return VERR_PDM_DRIVER_DETACH_NOT_POSSIBLE;
@@ -637,8 +637,8 @@ void pdmR3DrvDestroyChain(PPDMDRVINS pDrvIns, uint32_t fFlags)
             /* device parent */
             Assert(pLun->pTop == pCur);
             pLun->pTop = NULL;
-            if (!(fFlags & PDM_TACH_FLAGS_NO_CALLBACKS) && pLun->pDevIns->pDevReg->pfnDetach)
-                pLun->pDevIns->pDevReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
+            if (!(fFlags & PDM_TACH_FLAGS_NO_CALLBACKS) && pLun->pDevIns->pReg->pfnDetach)
+                pLun->pDevIns->pReg->pfnDetach(pLun->pDevIns, pLun->iLun, fFlags);
         }
 
         /*
