@@ -65,14 +65,14 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
     uint16_t cNumCpus;
     int rc;
 
-    rc = CFGMR3QueryU16Def(pDevIns->pCfgHandle, "NumCPUs", &cNumCpus, 1);
+    rc = CFGMR3QueryU16Def(pDevIns->pCfg, "NumCPUs", &cNumCpus, 1);
 
     if (RT_FAILURE(rc))
         return rc;
 
     /* Clear CPU objects at all, if needed */
     bool fShowCpu;
-    rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "ShowCpu", &fShowCpu, false);
+    rc = CFGMR3QueryBoolDef(pDevIns->pCfg, "ShowCpu", &fShowCpu, false);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -145,7 +145,7 @@ int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
     uint8_t *pbAmlCode = NULL;
     size_t cbAmlCode = 0;
     char *pszAmlFilePath = NULL;
-    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfgHandle, "AmlFilePath", &pszAmlFilePath);
+    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfg, "AmlFilePath", &pszAmlFilePath);
     if (RT_SUCCESS(rc))
     {
         /* Load from file. */

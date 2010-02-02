@@ -58,14 +58,16 @@ RT_C_DECLS_BEGIN
  * @returns VBox status.
  * @param   pDevIns     The device instance data. If the registration structure
  *                      is needed, it can be accessed thru  pDevIns->pReg.
- * @param   iInstance   Instance number. Use this to figure out which registers and such to use.
- *                      The instance number is also found in pDevIns->iInstance, but since it's
- *                      likely to be freqently used PDM passes it as parameter.
- * @param   pCfgHandle  Configuration node handle for the device. Use this to obtain the configuration
- *                      of the device instance. It's also found in pDevIns->pCfgHandle, but since it's
- *                      primary usage will in this function it's passed as a parameter.
+ * @param   iInstance   Instance number. Use this to figure out which registers
+ *                      and such to use. The instance number is also found in
+ *                      pDevIns->iInstance, but since it's likely to be
+ *                      freqently used PDM passes it as parameter.
+ * @param   pCfg        Configuration node handle for the driver.  This is
+ *                      expected to be in high demand in the constructor and is
+ *                      therefore passed as an argument.  When using it at other
+ *                      times, it can be found in pDrvIns->pCfg.
  */
-typedef DECLCALLBACK(int)   FNPDMDEVCONSTRUCT(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfgHandle);
+typedef DECLCALLBACK(int)   FNPDMDEVCONSTRUCT(PPDMDEVINS pDevIns, int iInstance, PCFGMNODE pCfg);
 /** Pointer to a FNPDMDEVCONSTRUCT() function. */
 typedef FNPDMDEVCONSTRUCT *PFNPDMDEVCONSTRUCT;
 
@@ -3491,7 +3493,7 @@ typedef struct PDMDEVINS
     /** Pointer to device registration structure.  */
     R3PTRTYPE(PCPDMDEVREG)      pReg;
     /** Configuration handle. */
-    R3PTRTYPE(PCFGMNODE)        pCfgHandle;
+    R3PTRTYPE(PCFGMNODE)        pCfg;
 
     /** The base interface of the device.
      * The device constructor initializes this if it has any

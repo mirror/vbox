@@ -328,7 +328,7 @@ int pdmR3DevInit(PVM pVM)
         pDevIns->pHlpRC                         = pHlpRC;
         pDevIns->pHlpR0                         = pHlpR0;
         pDevIns->pReg                           = paDevs[i].pDev->pReg;
-        pDevIns->pCfgHandle                     = pConfigNode;
+        pDevIns->pCfg                           = pConfigNode;
         pDevIns->iInstance                      = paDevs[i].iInstance;
         pDevIns->pvInstanceDataR3               = &pDevIns->achInstanceData[0];
         pDevIns->pvInstanceDataRC               = pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC
@@ -366,7 +366,7 @@ int pdmR3DevInit(PVM pVM)
          */
         paDevs[i].pDev->cInstances++;
         Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szName, pDevIns->iInstance));
-        rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfgHandle);
+        rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfg);
         if (RT_FAILURE(rc))
         {
             LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
