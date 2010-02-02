@@ -326,7 +326,7 @@ int VBoxServiceGetFileVersionString(const char *pszPath, const char *pszFilename
         DWORD dwMajor, dwMinor, dwBuild, dwRev;
         rc = VBoxServiceGetFileVersion(szFullPath, &dwMajor, &dwMinor, &dwBuild, &dwRev);
         if (RT_SUCCESS(rc))
-            RTStrPrintf(pszVersion, cbVersion, "%ld.%ld.%ldr%ld", dwMajor, dwMinor, dwBuild, dwRev);
+            RTStrPrintf(pszVersion, cbVersion, "%u.%u.%ur%u", dwMajor, dwMinor, dwBuild, dwRev);
     }
     return rc;
 }
