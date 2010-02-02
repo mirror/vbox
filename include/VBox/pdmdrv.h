@@ -66,13 +66,13 @@ typedef RCPTRTYPE(struct PDMDRVHLPRC const *) PCPDMDRVHLPRC;
  * @returns VBox status.
  * @param   pDrvIns     The driver instance data. If the registration structure
  *                      is needed, it can be accessed thru pDrvIns->pReg.
- * @param   pCfgHandle  Configuration node handle for the driver. Use this to
- *                      obtain the configuration of the driver instance. It's
- *                      also found in pDrvIns->pCfgHandle as it's expected to be
- *                      used frequently in this function.
+ * @param   pCfg        Configuration node handle for the driver.  This is
+ *                      expected to be in high demand in the constructor and is
+ *                      therefore passed as an argument.  When using it at other
+ *                      times, it can be accessed via pDrvIns->pCfg.
  * @param   fFlags      Flags, combination of the PDM_TACH_FLAGS_* \#defines.
  */
-typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle, uint32_t fFlags);
+typedef DECLCALLBACK(int)   FNPDMDRVCONSTRUCT(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
 /** Pointer to a FNPDMDRVCONSTRUCT() function. */
 typedef FNPDMDRVCONSTRUCT *PFNPDMDRVCONSTRUCT;
 
@@ -366,7 +366,7 @@ typedef struct PDMDRVINS
     /** Pointer to driver registration structure.  */
     R3PTRTYPE(PCPDMDRVREG)      pReg;
     /** Configuration handle. */
-    R3PTRTYPE(PCFGMNODE)        pCfgHandle;
+    R3PTRTYPE(PCFGMNODE)        pCfg;
 
     /** Pointer to the base interface of the device/driver instance above. */
     R3PTRTYPE(PPDMIBASE)        pUpBase;

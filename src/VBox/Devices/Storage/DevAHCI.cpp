@@ -5775,7 +5775,7 @@ static DECLCALLBACK(int) ahciR3LiveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     for (size_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
     {
         uint32_t iPort;
-        int rc = CFGMR3QueryU32Def(pDevIns->pCfgHandle, s_apszIdeEmuPortNames[i], &iPort, i);
+        int rc = CFGMR3QueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
         AssertRCReturn(rc, rc);
         SSMR3PutU32(pSSM, iPort);
     }
@@ -5933,7 +5933,7 @@ static DECLCALLBACK(int) ahciR3LoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         for (size_t i = 0; i < RT_ELEMENTS(s_apszIdeEmuPortNames); i++)
         {
             uint32_t iPort;
-            rc = CFGMR3QueryU32Def(pDevIns->pCfgHandle, s_apszIdeEmuPortNames[i], &iPort, i);
+            rc = CFGMR3QueryU32Def(pDevIns->pCfg, s_apszIdeEmuPortNames[i], &iPort, i);
             AssertRCReturn(rc, rc);
 
             uint32_t iPortSaved;

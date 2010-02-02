@@ -425,7 +425,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
                                pThis->au8DMIPage,
                                VBOX_DMI_TABLE_SIZE,
                                &pThis->aUuid,
-                               pDevIns->pCfgHandle,
+                               pDevIns->pCfg,
                                true /* fPutSmbiosHeaders */);
     Assert(RT_SUCCESS(rc));
 
