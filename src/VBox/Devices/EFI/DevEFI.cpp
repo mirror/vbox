@@ -317,7 +317,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 case EFI_PANIC_CMD_THUNK_TRAP:
                     LogRel(("EFI Panic: Unexpected trap!!\n"));
 #ifdef VBOX_STRICT
-                    return PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: Unexpected trap during early bootstrap!\n");
+                    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: Unexpected trap during early bootstrap!\n");
 #else
                     AssertReleaseMsgFailed(("Unexpected trap during early EFI bootstrap!!\n"));
 #endif
@@ -331,7 +331,7 @@ static DECLCALLBACK(int) efiIOPortWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 case EFI_PANIC_CMD_END_MSG:
                     LogRel(("EFI Panic: %s\n", pThis->szPanicMsg));
 #ifdef VBOX_STRICT
-                    return PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: %s\n", pThis->szPanicMsg);
+                    return PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "EFI Panic: %s\n", pThis->szPanicMsg);
 #else
                     return VERR_INTERNAL_ERROR;
 #endif
@@ -431,7 +431,7 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
 
     FwCommonPlantMpsTable(pDevIns,
                           pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                          pThis->cCpus);    
+                          pThis->cCpus);
 
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.

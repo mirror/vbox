@@ -2314,7 +2314,7 @@ static DECLCALLBACK(int) ahciR3MMIOMap(PPCIDEVICE pPciDev, /*unsigned*/ int iReg
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpMMIORegisterGC(pDevIns, GCPhysAddress, cb, 0,
+        rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, 0,
                                      "ahciMMIOWrite", "ahciMMIORead", NULL);
         if (RT_FAILURE(rc))
             return rc;
@@ -2353,7 +2353,7 @@ static DECLCALLBACK(int) ahciR3LegacyFakeIORangeMap(PPCIDEVICE pPciDev, /*unsign
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, cb, 0,
                                        "ahciLegacyFakeWrite", "ahciLegacyFakeRead", NULL, NULL, "AHCI Fake");
         if (RT_FAILURE(rc))
             return rc;
@@ -6376,8 +6376,8 @@ static DECLCALLBACK(int)  ahciR3Attach(PPDMDEVINS pDevIns, unsigned iLUN, uint32
             }
 
             /* Create the async IO thread. */
-            rc = PDMDevHlpPDMThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                          RTTHREADTYPE_IO, szName);
+            rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
+                                       RTTHREADTYPE_IO, szName);
             if (RT_FAILURE(rc))
             {
                 AssertMsgFailed(("%s: Async IO Thread creation for %s failed rc=%d\n", __FUNCTION__, szName, rc));
@@ -6640,8 +6640,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     /*
      * Create the transmit queue.
      */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), 30*32 /*Maximum of 30 ports multiplied with 32 tasks each port*/, 0,
-                                 ahciNotifyQueueConsumer, true, "AHCI-Xmit", &pThis->pNotifierQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(DEVPORTNOTIFIERQUEUEITEM), 30*32 /*Maximum of 30 ports multiplied with 32 tasks each port*/, 0,
+                              ahciNotifyQueueConsumer, true, "AHCI-Xmit", &pThis->pNotifierQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotifierQueueR0 = PDMQueueR0Ptr(pThis->pNotifierQueueR3);
@@ -6831,8 +6831,8 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
                 AssertMsgRC(rc, ("Failed to create event semaphore for %s rc=%Rrc.\n", szName, rc));
 
 
-                rc = PDMDevHlpPDMThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
-                                              RTTHREADTYPE_IO, szName);
+                rc = PDMDevHlpThreadCreate(pDevIns, &pAhciPort->pAsyncIOThread, pAhciPort, ahciAsyncIOLoop, ahciAsyncIOLoopWakeUp, 0,
+                                           RTTHREADTYPE_IO, szName);
                 AssertMsgRC(rc, ("%s: Async IO Thread creation for %s failed rc=%Rrc\n", szName, rc));
             }
         }
@@ -6930,7 +6930,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, pCtl->IOPortBase1, 8, (RTGCPTR)i,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase1, 8, (RTGCPTR)i,
                                             "ahciIOPortWrite1", "ahciIOPortRead1", NULL, NULL, "AHCI GC");
             if (RT_FAILURE(rc))
                 return rc;
@@ -6951,7 +6951,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, pCtl->IOPortBase2, 1, (RTGCPTR)i,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pCtl->IOPortBase2, 1, (RTGCPTR)i,
                                             "ahciIOPortWrite2", "ahciIOPortRead2", NULL, NULL, "AHCI GC");
             if (RT_FAILURE(rc))
                 return rc;

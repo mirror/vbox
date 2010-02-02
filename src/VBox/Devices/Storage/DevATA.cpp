@@ -5224,7 +5224,7 @@ static DECLCALLBACK(int) ataBMDMAIORangeMap(PPCIDEVICE pPciDev, /*unsigned*/ int
 
         if (pThis->fGCEnabled)
         {
-            rc2 = PDMDevHlpIOPortRegisterGC(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
+            rc2 = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, (RTIOPORT)GCPhysAddress + i * 8, 8,
                                             (RTGCPTR)i, "ataBMDMAIOPortWrite", "ataBMDMAIOPortRead", NULL, NULL, "ATA Bus Master DMA");
             AssertRC(rc2);
             if (rc2 < rc)
@@ -6693,7 +6693,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         if (fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase1, 8, (RTGCPTR)i,
                                            "ataIOPortWrite1", "ataIOPortRead1", "ataIOPortWriteStr1", "ataIOPortReadStr1", "ATA I/O Base 1");
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register I/O handlers (GC)"));
@@ -6719,7 +6719,7 @@ static DECLCALLBACK(int)   ataR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
 
         if (fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->aCts[i].IOPortBase2, 1, (RTGCPTR)i,
                                            "ataIOPortWrite2", "ataIOPortRead2", NULL, NULL, "ATA I/O Base 2");
             if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc, N_("PIIX3 cannot register base2 I/O handlers (GC)"));

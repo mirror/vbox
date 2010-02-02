@@ -3665,7 +3665,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpMMIORegisterGC(pDevIns, GCPhysAddress, cb, 0,
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, 0,
                                          "lsilogicMMIOWrite", "lsilogicMMIORead", NULL);
             if (RT_FAILURE(rc))
                 return rc;
@@ -3691,7 +3691,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpMMIORegisterGC(pDevIns, GCPhysAddress, cb, 0,
+            rc = PDMDevHlpMMIORegisterRC(pDevIns, GCPhysAddress, cb, 0,
                                          "lsilogicDiagnosticWrite", "lsilogicDiagnosticRead", NULL);
             if (RT_FAILURE(rc))
                 return rc;
@@ -3714,7 +3714,7 @@ static DECLCALLBACK(int) lsilogicMap(PPCIDEVICE pPciDev, /*unsigned*/ int iRegio
 
         if (pThis->fGCEnabled)
         {
-            rc = PDMDevHlpIOPortRegisterGC(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
+            rc = PDMDevHlpIOPortRegisterRC(pDevIns, (RTIOPORT)GCPhysAddress, LSILOGIC_PCI_SPACE_IO_SIZE,
                                            0, "lsilogicIOPortWrite", "lsilogicIOPortRead", NULL, NULL, "LsiLogic");
             if (RT_FAILURE(rc))
                 return rc;
@@ -4500,8 +4500,8 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return rc;
 
     /* Intialize task queue. */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
-                                 lsilogicNotifyQueueConsumer, true, "LsiLogic-Task", &pThis->pNotificationQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 2, 0,
+                              lsilogicNotifyQueueConsumer, true, "LsiLogic-Task", &pThis->pNotificationQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pThis->pNotificationQueueR0 = PDMQueueR0Ptr(pThis->pNotificationQueueR3);

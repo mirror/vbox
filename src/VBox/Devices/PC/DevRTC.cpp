@@ -961,7 +961,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
     if (fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, pThis->IOPortBase, 2, 0,
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 2, 0,
                                        "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;

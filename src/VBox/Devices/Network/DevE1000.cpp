@@ -1341,7 +1341,7 @@ DECLINLINE(int) e1kMutexAcquire(E1KSTATE *pState, int iBusyRc, RT_SRC_POS_DECL)
     {
         E1kLog2(("%s ==> FAILED to enter critical section at %s:%d:%s with rc=\n",
                 INSTANCE(pState), RT_SRC_POS_ARGS, rc));
-        PDMDeviceDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS_ARGS,
+        PDMDevHlpDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS_ARGS,
                           "%s Failed to enter critical section, rc=%Rrc\n",
                           INSTANCE(pState), rc);
     }
@@ -3664,7 +3664,7 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
         case 2: mask = 0x0000FFFF; break;
         case 4: mask = 0xFFFFFFFF; break;
         default:
-            return PDMDeviceDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS,
+            return PDMDevHlpDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS,
                                      "%s e1kRegRead: unsupported op size: offset=%#10x cb=%#10x\n",
                                      szInst, uOffset, cb);
     }
@@ -3676,7 +3676,7 @@ static int e1kRegRead(E1KSTATE *pState, uint32_t uOffset, void *pv, uint32_t cb)
             shift = (uOffset - s_e1kRegMap[index].offset) % sizeof(uint32_t) * 8;
             mask <<= shift;
             if (!mask)
-                return PDMDeviceDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS,
+                return PDMDevHlpDBGFStop(pState->CTX_SUFF(pDevIns), RT_SRC_POS,
                                          "%s e1kRegRead: Zero mask: offset=%#10x cb=%#10x\n",
                                          szInst, uOffset, cb);
             /*
@@ -3845,7 +3845,7 @@ PDMBOTHCBDECL(int) e1kMMIOWrite(PPDMDEVINS pDevIns, void *pvUser,
     if (cb != 4)
     {
         E1kLog(("%s e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x", pDevIns, uOffset, cb));
-        rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x\n", uOffset, cb);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "e1kMMIOWrite: invalid op size: offset=%#10x cb=%#10x\n", uOffset, cb);
     }
     else
         rc = e1kRegWrite(pState, uOffset, pv, cb);
@@ -3878,7 +3878,7 @@ PDMBOTHCBDECL(int) e1kIOPortIn(PPDMDEVINS pDevIns, void *pvUser,
     if (cb != 4)
     {
         E1kLog(("%s e1kIOPortIn: invalid op size: port=%RTiop cb=%08x", szInst, port, cb));
-        rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: port=%RTiop cb=%08x\n", szInst, port, cb);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortIn: invalid op size: port=%RTiop cb=%08x\n", szInst, port, cb);
     }
     else
         switch (port)
@@ -3929,7 +3929,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
     if (cb != 4)
     {
         E1kLog(("%s e1kIOPortOut: invalid op size: port=%RTiop cb=%08x\n", szInst, port, cb));
-        rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortOut: invalid op size: port=%RTiop cb=%08x\n", szInst, port, cb);
+        rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "%s e1kIOPortOut: invalid op size: port=%RTiop cb=%08x\n", szInst, port, cb);
     }
     else
     {
@@ -3952,7 +3952,7 @@ PDMBOTHCBDECL(int) e1kIOPortOut(PPDMDEVINS pDevIns, void *pvUser,
                 /** @todo Do we need to return an error here?
                  * bird: VINF_SUCCESS is fine for unhandled cases of an OUT handler. (If you're curious
                  *       about the guest code and a bit adventuresome, try rc = PDMDeviceDBGFStop(...);) */
-                rc = PDMDeviceDBGFStop(pDevIns, RT_SRC_POS, "e1kIOPortOut: invalid port %#010x\n", port);
+                rc = PDMDevHlpDBGFStop(pDevIns, RT_SRC_POS, "e1kIOPortOut: invalid port %#010x\n", port);
         }
     }
 
@@ -4040,7 +4040,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion,
             }
             if (pState->fGCEnabled)
             {
-                rc = PDMDevHlpIOPortRegisterGC(pPciDev->pDevIns, pState->addrIOPort, cb, 0,
+                rc = PDMDevHlpIOPortRegisterRC(pPciDev->pDevIns, pState->addrIOPort, cb, 0,
                                                "e1kIOPortOut", "e1kIOPortIn", NULL, NULL, "E1000");
             }
             break;
@@ -4057,7 +4057,7 @@ static DECLCALLBACK(int) e1kMap(PPCIDEVICE pPciDev, int iRegion,
             }
             if (pState->fGCEnabled)
             {
-                rc = PDMDevHlpMMIORegisterGC(pPciDev->pDevIns, GCPhysAddress, cb, 0,
+                rc = PDMDevHlpMMIORegisterRC(pPciDev->pDevIns, GCPhysAddress, cb, 0,
                                              "e1kMMIOWrite", "e1kMMIORead", NULL);
             }
             break;
@@ -5174,16 +5174,16 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
         return rc;
 
     /* Create transmit queue */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 e1kTxQueueConsumer, true, "E1000-Xmit", &pState->pTxQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                              e1kTxQueueConsumer, true, "E1000-Xmit", &pState->pTxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pState->pTxQueueR0 = PDMQueueR0Ptr(pState->pTxQueueR3);
     pState->pTxQueueRC = PDMQueueRCPtr(pState->pTxQueueR3);
 
     /* Create the RX notifier signaller. */
-    rc = PDMDevHlpPDMQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
-                                 e1kCanRxQueueConsumer, true, "E1000-Rcv", &pState->pCanRxQueueR3);
+    rc = PDMDevHlpQueueCreate(pDevIns, sizeof(PDMQUEUEITEMCORE), 1, 0,
+                              e1kCanRxQueueConsumer, true, "E1000-Rcv", &pState->pCanRxQueueR3);
     if (RT_FAILURE(rc))
         return rc;
     pState->pCanRxQueueR0 = PDMQueueR0Ptr(pState->pCanRxQueueR3);
@@ -5282,7 +5282,7 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     e1kHardReset(pState);
 
-    rc = PDMDevHlpPDMThreadCreate(pDevIns, &pState->pTxThread, pState, e1kTxThread, e1kTxThreadWakeUp, 0, RTTHREADTYPE_IO, "E1000_TX");
+    rc = PDMDevHlpThreadCreate(pDevIns, &pState->pTxThread, pState, e1kTxThread, e1kTxThreadWakeUp, 0, RTTHREADTYPE_IO, "E1000_TX");
     if (RT_FAILURE(rc))
         return rc;
 

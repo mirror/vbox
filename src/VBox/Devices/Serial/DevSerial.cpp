@@ -921,7 +921,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
 
     if (pThis->fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterGC(pDevIns, io_base, 8, 0, "serialIOPortWrite",
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, io_base, 8, 0, "serialIOPortWrite",
                                       "serialIOPortRead", NULL, NULL, "Serial");
         if (RT_FAILURE(rc))
             return rc;
