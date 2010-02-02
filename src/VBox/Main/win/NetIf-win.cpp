@@ -922,7 +922,7 @@ static int vboxNetWinAddComponent(std::list <ComObjPtr<HostNetworkInterface> > *
             rc = collectNetIfInfo(name, Guid(IfGuid), &Info);
             if (RT_FAILURE(rc))
             {
-                Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Vrc\n", rc));
+                Log(("vboxNetWinAddComponent: collectNetIfInfo() -> %Rrc\n", rc));
             }
             /* create a new object and add it to the list */
             ComObjPtr<HostNetworkInterface> iface;

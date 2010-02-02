@@ -419,7 +419,7 @@ int main(int argc, char *argv[])
                                COMGETTER(Uuids) (ComSafeArrayAsOutParam (uuids)));
 
             for (size_t i = 0; i < uuids.size(); ++ i)
-                RTPrintf ("uuids[%u]=%Vuuid\n", i, &uuids [i]);
+                RTPrintf ("uuids[%u]=%RTuuid\n", i, &uuids [i]);
         }
 
         {
@@ -430,7 +430,7 @@ int main(int argc, char *argv[])
                 Guid id;
                 id.create();
                 uuids [i] = id;
-                RTPrintf ("uuids[%u]=%Vuuid\n", i, &uuids [i]);
+                RTPrintf ("uuids[%u]=%RTuuid\n", i, &uuids [i]);
             }
 
             CHECK_ERROR_BREAK (virtualBox,
@@ -662,7 +662,7 @@ int main(int argc, char *argv[])
                 Bstr location;
                 CHECK_ERROR_BREAK (hd, COMGETTER(Id) (id.asOutParam()));
                 CHECK_ERROR_BREAK (hd, COMGETTER(Location) (location.asOutParam()));
-                RTPrintf ("Found, UUID={%Vuuid}, location='%ls'.\n",
+                RTPrintf ("Found, UUID={%RTuuid}, location='%ls'.\n",
                         id.raw(), location.raw());
 
                 com::SafeArray<BSTR> names;
@@ -924,7 +924,7 @@ int main(int argc, char *argv[])
                 CHECK_ERROR_BREAK (disks [i], COMGETTER(Format) (format.asOutParam()));
 
                 RTPrintf (" disks[%u]: '%ls'\n"
-                        "  UUID:         {%Vuuid}\n"
+                        "  UUID:         {%RTuuid}\n"
                         "  State:        %s\n"
                         "  Format:       %ls\n",
                         i, loc.raw(), id.raw(),
@@ -959,7 +959,7 @@ int main(int argc, char *argv[])
                 {
                     for (size_t j = 0; j < ids.size(); ++ j)
                     {
-                        RTPrintf ("   {%Vuuid}\n", &ids [j]);
+                        RTPrintf ("   {%RTuuid}\n", &ids [j]);
                     }
                 }
             }
@@ -982,7 +982,7 @@ int main(int argc, char *argv[])
                 CHECK_ERROR_BREAK (images [i], COMGETTER(State) (&state));
 
                 RTPrintf (" images[%u]: '%ls'\n"
-                        "  UUID:         {%Vuuid}\n"
+                        "  UUID:         {%RTuuid}\n"
                         "  State:        %s\n",
                         i, loc.raw(), id.raw(),
                         state == MediaState_NotCreated ? "Not Created" :
@@ -1015,7 +1015,7 @@ int main(int argc, char *argv[])
                 {
                     for (size_t j = 0; j < ids.size(); ++ j)
                     {
-                        RTPrintf ("   {%Vuuid}\n", &ids [j]);
+                        RTPrintf ("   {%RTuuid}\n", &ids [j]);
                     }
                 }
             }

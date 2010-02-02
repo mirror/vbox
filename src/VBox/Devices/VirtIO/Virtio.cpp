@@ -219,7 +219,7 @@ void vqueueNotify(PVPCISTATE pState, PVQUEUE pQueue)
     {
         int rc = vpciRaiseInterrupt(pState, VERR_INTERNAL_ERROR, VPCI_ISR_QUEUE);
         if (RT_FAILURE(rc))
-            Log(("%s vqueueNotify: Failed to raise an interrupt (%Vrc).\n", INSTANCE(pState), rc));
+            Log(("%s vqueueNotify: Failed to raise an interrupt (%Rrc).\n", INSTANCE(pState), rc));
     }
     else
     {

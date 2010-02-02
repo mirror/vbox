@@ -45,7 +45,7 @@ static int NetIfAdpCtl(const char * pcszIfName, const char *pszAddr, const char 
     int rc = RTPathExecDir(szAdpCtl, sizeof(szAdpCtl) - sizeof("/" VBOXNETADPCTL_NAME));
     if (RT_FAILURE(rc))
     {
-        LogRel(("NetIfAdpCtl: failed to get program path, rc=%Vrc.\n", rc));
+        LogRel(("NetIfAdpCtl: failed to get program path, rc=%Rrc.\n", rc));
         return rc;
     }
     strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME);
@@ -153,7 +153,7 @@ int NetIfCreateHostOnlyNetworkInterface (VirtualBox *pVBox, IHostNetworkInterfac
             if (RT_FAILURE(rc))
             {
                 progress->notifyComplete(E_FAIL, COM_IIDOF(IHostNetworkInterface), HostNetworkInterface::getComponentName(),
-                                         "Failed to get program path, rc=%Vrc\n", rc);
+                                         "Failed to get program path, rc=%Rrc\n", rc);
                 return rc;
             }
             strcat(szAdpCtl, "/" VBOXNETADPCTL_NAME " add");

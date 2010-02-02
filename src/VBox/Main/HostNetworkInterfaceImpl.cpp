@@ -458,7 +458,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             }
             else
             {
-                LogRel(("Failed to EnableStaticIpConfig with rc=%Vrc\n", rc));
+                LogRel(("Failed to EnableStaticIpConfig with rc=%Rrc\n", rc));
                 return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
             }
 
@@ -489,7 +489,7 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfigV6 (IN_BSTR aIPV6Address,
         rc = NetIfEnableStaticIpConfigV6(mVBox, this, m.IPV6Address, aIPV6Address, aIPV6MaskPrefixLength);
         if (RT_FAILURE(rc))
         {
-            LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Vrc\n", rc));
+            LogRel(("Failed to EnableStaticIpConfigV6 with rc=%Rrc\n", rc));
             return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
         }
         else
@@ -519,7 +519,7 @@ STDMETHODIMP HostNetworkInterface::EnableDynamicIpConfig ()
     int rc = NetIfEnableDynamicIpConfig(mVBox, this);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Failed to EnableDynamicIpConfig with rc=%Vrc\n", rc));
+        LogRel(("Failed to EnableDynamicIpConfig with rc=%Rrc\n", rc));
         return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
     }
     return S_OK;
@@ -537,7 +537,7 @@ STDMETHODIMP HostNetworkInterface::DhcpRediscover ()
     int rc = NetIfDhcpRediscover(mVBox, this);
     if (RT_FAILURE(rc))
     {
-        LogRel(("Failed to DhcpRediscover with rc=%Vrc\n", rc));
+        LogRel(("Failed to DhcpRediscover with rc=%Rrc\n", rc));
         return rc == VERR_NOT_IMPLEMENTED ? E_NOTIMPL : E_FAIL;
     }
     return S_OK;

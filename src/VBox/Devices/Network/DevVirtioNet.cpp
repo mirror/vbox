@@ -539,7 +539,7 @@ static int vnetCanReceive(VNETSTATE *pState)
         rc = VINF_SUCCESS;
     }
 
-    LogFlow(("%s vnetCanReceive -> %Vrc\n", INSTANCE(pState), rc));
+    LogFlow(("%s vnetCanReceive -> %Rrc\n", INSTANCE(pState), rc));
     vnetCsRxLeave(pState);
     return rc;
 }

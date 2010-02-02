@@ -177,7 +177,7 @@ public:
         return *(GUID *) &uuid;
     }
 
-    /* to directly pass instances to RTPrintf("%Vuuid") */
+    /* to directly pass instances to RTPrintf("%RTuuid") */
     PRTUUID ptr()
     {
         return &uuid;
