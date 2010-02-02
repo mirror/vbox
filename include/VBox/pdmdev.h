@@ -2986,6 +2986,45 @@ typedef struct PDMDEVHLPR3
      */
     DECLR3CALLBACKMEMBER(bool, pfnAssertOther,(PPDMDEVINS pDevIns, const char *pszFile, unsigned iLine, const char *pszFunction));
 
+    /**
+     * Resolves the symbol for a raw-mode context interface.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pvInterface         The interface structure.
+     * @param   cbInterface         The size of the interface structure.
+     * @param   pszSymPrefix        What to prefix the symbols in the list with
+     *                              before resolving them.  This must start with
+     *                              'dev' and contain the driver name.
+     * @param   pszSymList          List of symbols corresponding to the interface.
+     *                              There is generally a there is generally a define
+     *                              holding this list associated with the interface
+     *                              definition (INTERFACE_SYM_LIST).  For more
+     *                              details see PDMR3LdrGetInterfaceSymbols.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnLdrGetRCInterfaceSymbols,(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
+                                                           const char *pszSymPrefix, const char *pszSymList));
+
+    /**
+     * Resolves the symbol for a ring-0 context interface.
+     *
+     * @returns VBox status code.
+     * @param   pDevIns             The device instance.
+     * @param   pvInterface         The interface structure.
+     * @param   cbInterface         The size of the interface structure.
+     * @param   pszSymPrefix        What to prefix the symbols in the list with
+     *                              before resolving them.  This must start with
+     *                              'dev' and contain the driver name.
+     * @param   pszSymList          List of symbols corresponding to the interface.
+     *                              There is generally a there is generally a define
+     *                              holding this list associated with the interface
+     *                              definition (INTERFACE_SYM_LIST).  For more
+     *                              details see PDMR3LdrGetInterfaceSymbols.
+     * @thread  EMT
+     */
+    DECLR3CALLBACKMEMBER(int, pfnLdrGetR0InterfaceSymbols,(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
+                                                           const char *pszSymPrefix, const char *pszSymList));
 
     /** Space reserved for future members.
      * @{ */

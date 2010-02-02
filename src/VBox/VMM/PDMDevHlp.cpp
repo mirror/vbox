@@ -1783,6 +1783,78 @@ static DECLCALLBACK(bool) pdmR3DevHlp_AssertOther(PPDMDEVINS pDevIns, const char
 }
 
 
+/** @interface_method_impl{PDMDEVHLP,pfnLdrGetRCInterfaceSymbols} */
+static DECLCALLBACK(int) pdmR3DevHlp_LdrGetRCInterfaceSymbols(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_PDMLdrGetRCInterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pvInterface, cbInterface, pszSymPrefix, pszSymPrefix, pszSymList, pszSymList));
+
+    int rc;
+    if (   strncmp(pszSymPrefix, "dev", 3) == 0
+        && RTStrIStr(pszSymPrefix + 3, pDevIns->pDevReg->szDeviceName) != NULL)
+    {
+        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_RC)
+            rc = PDMR3LdrGetInterfaceSymbols(pDevIns->Internal.s.pVMR3, pvInterface, cbInterface,
+                                             pDevIns->pDevReg->szDeviceName, pszSymPrefix, pszSymList,
+                                             false /*fRing0OrRC*/);
+        else
+        {
+            AssertMsgFailed(("Not a raw-mode enabled driver\n"));
+            rc = VERR_PERMISSION_DENIED;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Invalid prefix '%s' for '%s'; must start with 'dev' and contain the driver name!\n",
+                         pszSymPrefix, pDevIns->pDevReg->szDeviceName));
+        rc = VERR_INVALID_NAME;
+    }
+
+    LogFlow(("pdmR3DevHlp_PDMLdrGetRCInterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName,
+             pDevIns->iInstance, rc));
+    return rc;
+}
+
+
+/** @interface_method_impl{PDMDEVHLP,pfnLdrGetR0InterfaceSymbols} */
+static DECLCALLBACK(int) pdmR3DevHlp_LdrGetR0InterfaceSymbols(PPDMDEVINS pDevIns, void *pvInterface, size_t cbInterface,
+                                                              const char *pszSymPrefix, const char *pszSymList)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    VM_ASSERT_EMT(pDevIns->Internal.s.pVMR3);
+    LogFlow(("pdmR3DevHlp_PDMLdrGetR0InterfaceSymbols: caller='%s'/%d: pvInterface=%p cbInterface=%zu pszSymPrefix=%p:{%s} pszSymList=%p:{%s}\n",
+             pDevIns->pDevReg->szDeviceName, pDevIns->iInstance, pvInterface, cbInterface, pszSymPrefix, pszSymPrefix, pszSymList, pszSymList));
+
+    int rc;
+    if (   strncmp(pszSymPrefix, "dev", 3) == 0
+        && RTStrIStr(pszSymPrefix + 3, pDevIns->pDevReg->szDeviceName) != NULL)
+    {
+        if (pDevIns->pDevReg->fFlags & PDM_DEVREG_FLAGS_R0)
+            rc = PDMR3LdrGetInterfaceSymbols(pDevIns->Internal.s.pVMR3, pvInterface, cbInterface,
+                                             pDevIns->pDevReg->szDeviceName, pszSymPrefix, pszSymList,
+                                             true /*fRing0OrRC*/);
+        else
+        {
+            AssertMsgFailed(("Not a ring-0 enabled driver\n"));
+            rc = VERR_PERMISSION_DENIED;
+        }
+    }
+    else
+    {
+        AssertMsgFailed(("Invalid prefix '%s' for '%s'; must start with 'dev' and contain the driver name!\n",
+                         pszSymPrefix, pDevIns->pDevReg->szDeviceName));
+        rc = VERR_INVALID_NAME;
+    }
+
+    LogFlow(("pdmR3DevHlp_PDMLdrGetR0InterfaceSymbols: caller='%s'/%d: returns %Rrc\n", pDevIns->pDevReg->szDeviceName,
+             pDevIns->iInstance, rc));
+    return rc;
+}
+
+
 /** @interface_method_impl{PDMDEVHLPR3,pfnGetVM} */
 static DECLCALLBACK(PVM) pdmR3DevHlp_GetVM(PPDMDEVINS pDevIns)
 {
@@ -2857,6 +2929,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpTrusted =
     pdmR3DevHlp_CMOSRead,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
+    pdmR3DevHlp_LdrGetRCInterfaceSymbols,
+    pdmR3DevHlp_LdrGetR0InterfaceSymbols,
     0,
     0,
     0,
@@ -3050,6 +3124,8 @@ const PDMDEVHLPR3 g_pdmR3DevHlpUnTrusted =
     pdmR3DevHlp_CMOSRead,
     pdmR3DevHlp_AssertEMT,
     pdmR3DevHlp_AssertOther,
+    pdmR3DevHlp_LdrGetRCInterfaceSymbols,
+    pdmR3DevHlp_LdrGetR0InterfaceSymbols,
     0,
     0,
     0,
