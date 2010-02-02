@@ -451,16 +451,21 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     }
 
     /*
-     * Devices.
+     * Devices & Drivers.
      */
-    PCPDMDEVHLPRC pHlpRC;
-    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pHlpRC);
+    PCPDMDEVHLPRC pDevHlpRC;
+    int rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDevHlpRC);
     AssertReleaseMsgRC(rc, ("rc=%Rrc when resolving g_pdmRCDevHlp\n", rc));
+
+    PCPDMDRVHLPRC pDrvHlpRC;
+    rc = PDMR3LdrGetSymbolRC(pVM, NULL, "g_pdmRCDevHlp", &pDrvHlpRC);
+    AssertReleaseMsgRC(rc, ("rc=%Rrc when resolving g_pdmRCDevHlp\n", rc));
+
     for (PPDMDEVINS pDevIns = pVM->pdm.s.pDevInstances; pDevIns; pDevIns = pDevIns->Internal.s.pNextR3)
     {
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         {
-            pDevIns->pHlpRC = pHlpRC;
+            pDevIns->pHlpRC = pDevHlpRC;
             pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
             pDevIns->Internal.s.pVMRC = pVM->pVMRC;
             if (pDevIns->Internal.s.pPciBusR3)
@@ -474,6 +479,27 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
                 pDevIns->pReg->pfnRelocate(pDevIns, offDelta);
             }
         }
+
+        for (PPDMLUN pLun = pDevIns->Internal.s.pLunsR3; pLun; pLun = pLun->pNext)
+        {
+            for (PPDMDRVINS pDrvIns = pLun->pTop; pDrvIns; pDrvIns = pDrvIns->Internal.s.pDown)
+            {
+                if (pDrvIns->pReg->fFlags & PDM_DRVREG_FLAGS_RC)
+                {
+                    pDrvIns->pHlpRC = pDrvHlpRC;
+                    pDrvIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDrvIns->pvInstanceDataR3);
+                    pDrvIns->Internal.s.pVMRC = pVM->pVMRC;
+                    if (pDrvIns->pReg->pfnRelocate)
+                    {
+                        LogFlow(("PDMR3Relocate: Relocating driver '%s'/%u attached to '%s'/%d/%u\n",
+                                 pDrvIns->pReg->szName, pDrvIns->iInstance,
+                                 pDevIns->pReg->szName, pDevIns->iInstance, pLun->iLun));
+                        pDrvIns->pReg->pfnRelocate(pDrvIns, offDelta);
+                    }
+                }
+            }
+        }
+
     }
 }
 
