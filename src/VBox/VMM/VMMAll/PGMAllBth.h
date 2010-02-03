@@ -245,9 +245,9 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      * (Again, we do NOT support access handlers for non-present guest pages.)
      *
      */
+    Assert(PdeSrc.n.u1Present);
     if (    !(uErr & X86_TRAP_PF_P) /* not set means page not present instead of page protection violation */
         &&  !pPDDst->a[iPDDst].n.u1Present
-        &&  PdeSrc.n.u1Present
     )
     {
         STAM_STATS({ pVCpu->pgm.s.CTX_SUFF(pStatTrap0eAttribution) = &pVCpu->pgm.s.StatRZTrap0eTime2SyncPT; });
