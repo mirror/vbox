@@ -1345,9 +1345,9 @@ int main(int argc, char **argv)
 
     g_pszProgName = RTPathFilename(argv[0]);
     if (showlogo)
-        RTPrintf("VirtualBox Guest Additions Command Line Management Interface Version "
+        RTPrintf(VBOX_PRODUCT " Guest Additions Command Line Management Interface Version "
                  VBOX_VERSION_STRING "\n"
-                 "(C) 2008-2010 Sun Microsystems, Inc.\n"
+                 "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDER "\n"
                  "All rights reserved.\n\n");
     if (dohelp)
         usage();
