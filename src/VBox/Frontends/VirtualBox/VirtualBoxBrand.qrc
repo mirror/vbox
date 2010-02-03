@@ -8,6 +8,5 @@
     <file alias="VirtualBox_40px.png">@VBOX_VBOX_40PX_PNG@</file>
     <file alias="VirtualBox_48px.png">@VBOX_VBOX_48PX_PNG@</file>
     <file alias="VirtualBox_64px.png">@VBOX_VBOX_64PX_PNG@</file>
-    <file alias="VirtualBox_cube_42px.png">@VBOX_CUBE_42PX_PNG@</file>
  </qresource>
  </RCC>
