@@ -437,74 +437,35 @@ static void VBoxServiceTimeSyncCancelAdjust(void)
 static bool VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
 {
     /*
-     * Query the current time, add the adjustment, then try it.
+     * Query the current time, adjust it by adding the drift and set it.
      */
-    int rc;
-#ifdef RT_OS_WINDOWS
-    RTTIMESPEC hostNow;
-    rc = VbglR3GetHostTime(&hostNow);
-    if (RT_FAILURE(rc))
+    RTTIMESPEC NewGuestTime;
+    int rc = RTTimeSet(RTTimeSpecAdd(RTTimeNow(&NewGuestTime), pDrift));
+    if (RT_SUCCESS(rc))
     {
-        if (g_cTimeSyncErrors++ < 10)
-            VBoxServiceError("VbglR3GetHostTime failed; rc=%Rrc\n", rc);
-    }
-    else
-    {
-        FILETIME ft;
-        RTTimeSpecGetNtFileTime(&hostNow, &ft);
-        SYSTEMTIME st;
-        if (FileTimeToSystemTime(&ft, &st))
+        /* Succeeded - reset the error count and log the change. */
+        g_cTimeSyncErrors = 0;
+
+        if (g_cVerbosity >= 1)
         {
-            if (!SetSystemTime(&st))
-            {
-                rc = RTErrConvertFromWin32(GetLastError());
-                VBoxServiceError("SetSystemTime failed, error=%Rrc\n", rc);
-            }
-            else rc = VINF_SUCCESS;
-        }
-        else
-        {
-            rc = RTErrConvertFromWin32(GetLastError());
-            VBoxServiceError("Cannot convert system times, error=%Rrc\n", rc);
-        }
-    }
-#else  /* !RT_OS_WINDOWS */
-    struct timeval tv;
-    errno = 0;
-    if (!gettimeofday(&tv, NULL))
-    {
-        RTTIMESPEC Tmp;
-        RTTimeSpecAdd(RTTimeSpecSetTimeval(&Tmp, &tv), pDrift);
-        if (!settimeofday(RTTimeSpecGetTimeval(&Tmp, &tv), NULL))
-        {
-            char    sz[64];
-            RTTIME  Time;
-            if (g_cVerbosity >= 1)
-                VBoxServiceVerbose(1, "settimeofday to %s\n",
-                                   RTTimeToString(RTTimeExplode(&Time, &Tmp), sz, sizeof(sz)));
-# ifdef DEBUG
+            char        sz[64];
+            RTTIME      Time;
+            VBoxServiceVerbose(1, "time set to %s\n",
+                               RTTimeToString(RTTimeExplode(&Time, &NewGuestTime), sz, sizeof(sz)));
+#ifdef DEBUG
+            RTTIMESPEC  Tmp;
             if (g_cVerbosity >= 3)
-                VBoxServiceVerbose(2, "       new time %s\n",
+                VBoxServiceVerbose(3, "        now %s\n",
                                    RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
-# endif
-            g_cTimeSyncErrors = 0;
-            rc = VINF_SUCCESS;
+#endif
         }
-        else 
-        {
-            rc = RTErrConvertFromErrno(errno);
-            if (g_cTimeSyncErrors++ < 10)
-                VBoxServiceError("settimeofday failed; errno=%d: %s\n", errno, strerror(errno));
-        }
+
+        return true;
     }
-    else 
-    {
-        rc = RTErrConvertFromErrno(errno);
-        if (g_cTimeSyncErrors++ < 10)
-            VBoxServiceError("gettimeofday failed; errno=%d: %s\n", errno, strerror(errno));
-    }
-#endif /* !RT_OS_WINDOWS */
-    return RT_SUCCESS(rc) ? true : false;
+
+    if (g_cTimeSyncErrors++ < 10)
+        VBoxServiceError("RTTimeSet(%RDtimespec) failed: %Rrc\n", &NewGuestTime, rc);
+    return false;
 }
 
 
