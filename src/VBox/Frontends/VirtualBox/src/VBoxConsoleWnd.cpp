@@ -1464,7 +1464,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
                         if (console.isOk())
                         {
                             /* Show the power down progress dialog */
-                            vboxProblem().showModalProgressDialog (progress, machine.GetName(), this, 0);
+                            vboxProblem().showModalProgressDialog (progress, machine.GetName(), this);
                             if (progress.GetResultCode() != 0)
                                 vboxProblem().cannotStopMachine (progress);
                             else
