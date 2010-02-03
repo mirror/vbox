@@ -52,8 +52,13 @@ UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWiza
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
 
+#ifdef Q_WS_MAC
+    /* Assign background image */
+    assignBackground(":/vmw_first_run_bg.png");
+#else /* Q_WS_MAC */
     /* Assign watermark */
     assignWatermark(":/vmw_new_welcome.png");
+#endif /* Q_WS_MAC */
 }
 
 void UIFirstRunWzd::retranslateUi()

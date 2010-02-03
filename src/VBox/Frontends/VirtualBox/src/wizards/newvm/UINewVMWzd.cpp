@@ -43,8 +43,13 @@ UINewVMWzd::UINewVMWzd(QWidget *pParent) : QIWizard(pParent)
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
 
+#ifdef Q_WS_MAC
+    /* Assign background image */
+    assignBackground(":/vmw_new_welcome_bg.png");
+#else /* Q_WS_MAC */
     /* Assign watermark */
     assignWatermark(":/vmw_new_welcome.png");
+#endif /* Q_WS_MAC */
 }
 
 const CMachine UINewVMWzd::machine() const

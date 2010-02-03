@@ -44,8 +44,13 @@ UINewHDWzd::UINewHDWzd(QWidget *pParent) : QIWizard(pParent)
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
 
+#ifdef Q_WS_MAC
+    /* Assign background image */
+    assignBackground(":/vmw_new_harddisk_bg.png");
+#else /* Q_WS_MAC */
     /* Assign watermark */
     assignWatermark(":/vmw_new_harddisk.png");
+#endif /* Q_WS_MAC */
 }
 
 CMedium UINewHDWzd::hardDisk() const

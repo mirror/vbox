@@ -44,6 +44,7 @@ protected:
 
     void resizeToGoldenRatio();
     void assignWatermark(const QString &strWaterMark);
+    void assignBackground(const QString &strBg);
 
 private:
 

@@ -412,8 +412,13 @@ UIRegistrationWzd::UIRegistrationWzd(UIRegistrationWzd **ppSelf)
     /* Resize to 'golden ratio' */
     resizeToGoldenRatio();
 
+#ifdef Q_WS_MAC
+    /* Assign background image */
+    assignBackground(":/vmw_new_user_bg.png");
+#else /* Q_WS_MAC */
     /* Assign watermark */
     assignWatermark(":/vmw_new_user.png");
+#endif /* Q_WS_MAC */
 
     /* Setup connections */
     connect(vboxGlobal().mainWindow(), SIGNAL(closing()), this, SLOT(reject()));

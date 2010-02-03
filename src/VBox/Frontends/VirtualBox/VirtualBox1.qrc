@@ -30,6 +30,7 @@
     <file alias="vmw_new_welcome.png">images/vmw_new_welcome.png</file>
     <file alias="vmw_new_harddisk.png">images/vmw_new_harddisk.png</file>
     <file alias="vmw_new_user.png">images/vmw_new_user.png</file>
+    <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
     <file alias="machine_16px.png">images/machine_16px.png</file>
     <file alias="machine_32px.png">images/machine_32px.png</file>
     <file alias="machine_disabled_32px.png">images/machine_disabled_32px.png</file>
@@ -226,7 +227,6 @@
     <file alias="floppy_add_disabled_16px.png">images/floppy_add_disabled_16px.png</file>
     <file alias="import_16px.png">images/import_16px.png</file>
     <file alias="export_16px.png">images/export_16px.png</file>
-    <file alias="vmw_ovf_import.png">images/vmw_ovf_import.png</file>
     <file alias="connect_16px.png">images/connect_16px.png</file>
     <file alias="disconnect_16px.png">images/disconnect_16px.png</file>
     <file alias="chipset_16px.png">images/chipset_16px.png</file>
