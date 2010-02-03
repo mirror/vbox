@@ -2,7 +2,7 @@
 /** @file
  * tstDeviceStructSizeGC - Generate structure member and size checks from the GC perspective.
  *
- * This is built using the VBOXGC template but linked into a host
+ * This is built using the VBoxRc template but linked into a host
  * ring-3 executable, rather hacky.
  */
 

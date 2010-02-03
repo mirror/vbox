@@ -50,7 +50,7 @@ ifdef VBOX_WITH_RAW_MODE
  # The testcase generator.
  #
  PROGRAMS += tstDeviceStructSizeRC
- tstDeviceStructSizeRC_TEMPLATE  = VBOXGCEXE
+ tstDeviceStructSizeRC_TEMPLATE  = VBoxRcExe
  tstDeviceStructSizeRC_DEFS      = VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_USB
   tstDeviceStructSizeRC_DEFS    += VBOX_WITH_USB

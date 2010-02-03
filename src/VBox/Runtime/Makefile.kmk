@@ -1548,7 +1548,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  # RuntimeGC - Guest context library.
  #
- RuntimeGC_TEMPLATE      = VBOXGC
+ RuntimeGC_TEMPLATE      = VBoxRc
  RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
  RuntimeGC_INCS          = include
  RuntimeGC_SOURCES       = \
