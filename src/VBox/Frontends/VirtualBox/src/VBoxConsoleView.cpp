@@ -4166,7 +4166,7 @@ void VBoxConsoleView::calculateDesktopGeometry()
          * screen, this will exclude space taken up by desktop taskbars
          * and things, but this is unfortunately not true for the more
          * complex case of a desktop spanning multiple screens. */
-        QRect desktop = QApplication::desktop()->availableGeometry (this);
+        QRect desktop = availableGeometry();
         /* The area taken up by the console window on the desktop,
          * including window frame, title and menu bar and whatnot. */
         QRect frame = mMainWnd->frameGeometry();
@@ -4205,6 +4205,13 @@ void VBoxConsoleView::maybeRestrictMinimumSize()
         else
             setMinimumSize (0, 0);
     }
+}
+
+QRect VBoxConsoleView::availableGeometry() const
+{
+    return mMainWnd->isWindowFullScreen() ?
+           QApplication::desktop()->screenGeometry(this) :
+           QApplication::desktop()->availableGeometry(this);
 }
 
 int VBoxConsoleView::contentsWidth() const
