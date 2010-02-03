@@ -977,7 +977,7 @@ int main(int argc, char **argv)
         }
 
         nsCOMPtr<ipcIService> ipcServ (do_GetService(IPC_SERVICE_CONTRACTID, &rc));
-        if (NS_FAILED (rc))
+        if (NS_FAILED(rc))
         {
             RTMsgError("Failed to get IPC service! (rc=%Rhrc)", rc);
             break;

@@ -54,10 +54,10 @@ void ParsedIntervalFilter_base::parse (const char *aFilter,
 
     do
     {
-        end = strcspn (aFilter + start, ",-");
+        end = strcspn(aFilter + start, ",-");
         end += start;
 
-        char delim = aFilter [end];
+        char delim = aFilter[end];
 
         if (delim == '-')
         {
@@ -72,12 +72,12 @@ void ParsedIntervalFilter_base::parse (const char *aFilter,
 
         // skip spaces around numbers
         size_t s = start;
-        while (s < end && aFilter [s] == ' ') ++ s;
+        while (s < end && aFilter[s] == ' ') ++s;
         size_t e = end - 1;
-        while (e > s && aFilter [e] == ' ') -- e;
-        ++ e;
+        while (e > s && aFilter[e] == ' ') --e;
+        ++e;
 
-        that->parseValue (aFilter, s, e, mode);
+        that->parseValue(aFilter, s, e, mode);
         if (!that->mValid)
             return;
 

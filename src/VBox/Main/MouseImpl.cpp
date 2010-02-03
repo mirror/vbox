@@ -239,9 +239,9 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 
     int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, dx, dy, dz, dw, fButtons);
     if (RT_FAILURE(vrc))
-        rc = setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                vrc);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                      vrc);
 
     return rc;
 }
@@ -341,9 +341,9 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         mLastAbsX = mouseXAbs;
         mLastAbsY = mouseYAbs;
         if (RT_FAILURE(vrc))
-            rc = setError (VBOX_E_IPRT_ERROR,
-                tr ("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                    vrc);
+            rc = setError(VBOX_E_IPRT_ERROR,
+                          tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                          vrc);
     }
 
     return rc;

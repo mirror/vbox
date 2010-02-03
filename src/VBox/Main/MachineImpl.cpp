@@ -178,11 +178,11 @@ Machine::HWData::HWData()
     mPropertyServiceActive = false;
 
     /* default boot order: floppy - DVD - HDD */
-    mBootOrder [0] = DeviceType_Floppy;
-    mBootOrder [1] = DeviceType_DVD;
-    mBootOrder [2] = DeviceType_HardDisk;
-    for (size_t i = 3; i < RT_ELEMENTS (mBootOrder); ++i)
-        mBootOrder [i] = DeviceType_Null;
+    mBootOrder[0] = DeviceType_Floppy;
+    mBootOrder[1] = DeviceType_DVD;
+    mBootOrder[2] = DeviceType_HardDisk;
+    for (size_t i = 3; i < RT_ELEMENTS(mBootOrder); ++i)
+        mBootOrder[i] = DeviceType_Null;
 
     mClipboardMode = ClipboardMode_Bidirectional;
     mGuestPropertyNotificationPatterns = "";
@@ -508,7 +508,7 @@ void Machine::uninit()
 {
     LogFlowThisFuncEnter();
 
-    Assert (!isWriteLockOnCurrentThread());
+    Assert(!isWriteLockOnCurrentThread());
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -1729,7 +1729,7 @@ STDMETHODIMP Machine::COMGETTER(VRDPServer)(IVRDPServer **vrdpServer)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    Assert (!!mVRDPServer);
+    Assert(!!mVRDPServer);
     mVRDPServer.queryInterfaceTo(vrdpServer);
 
     return S_OK;
@@ -2277,7 +2277,7 @@ STDMETHODIMP Machine::SetBootOrder(ULONG aPosition, DeviceType_T aDevice)
 
     setModified(IsModified_MachineData);
     mHWData.backup();
-    mHWData->mBootOrder [aPosition - 1] = aDevice;
+    mHWData->mBootOrder[aPosition - 1] = aDevice;
 
     return S_OK;
 }
@@ -2294,7 +2294,7 @@ STDMETHODIMP Machine::GetBootOrder (ULONG aPosition, DeviceType_T *aDevice)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aDevice = mHWData->mBootOrder [aPosition - 1];
+    *aDevice = mHWData->mBootOrder[aPosition - 1];
 
     return S_OK;
 }
@@ -3034,40 +3034,40 @@ STDMETHODIMP Machine::GetMedium(IN_BSTR aControllerName,
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetSerialPort (ULONG slot, ISerialPort **port)
+STDMETHODIMP Machine::GetSerialPort(ULONG slot, ISerialPort **port)
 {
     CheckComArgOutPointerValid(port);
-    CheckComArgExpr (slot, slot < RT_ELEMENTS (mSerialPorts));
+    CheckComArgExpr(slot, slot < RT_ELEMENTS(mSerialPorts));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mSerialPorts [slot].queryInterfaceTo(port);
+    mSerialPorts[slot].queryInterfaceTo(port);
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetParallelPort (ULONG slot, IParallelPort **port)
+STDMETHODIMP Machine::GetParallelPort(ULONG slot, IParallelPort **port)
 {
     CheckComArgOutPointerValid(port);
-    CheckComArgExpr (slot, slot < RT_ELEMENTS (mParallelPorts));
+    CheckComArgExpr(slot, slot < RT_ELEMENTS(mParallelPorts));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    mParallelPorts [slot].queryInterfaceTo(port);
+    mParallelPorts[slot].queryInterfaceTo(port);
 
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetNetworkAdapter (ULONG slot, INetworkAdapter **adapter)
+STDMETHODIMP Machine::GetNetworkAdapter(ULONG slot, INetworkAdapter **adapter)
 {
     CheckComArgOutPointerValid(adapter);
-    CheckComArgExpr (slot, slot < RT_ELEMENTS (mNetworkAdapters));
+    CheckComArgExpr(slot, slot < RT_ELEMENTS(mNetworkAdapters));
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3250,7 +3250,7 @@ STDMETHODIMP Machine::DiscardSettings()
      *  during this rollback, the session will be notified if data has
      *  been actually changed
      */
-    rollback (true /* aNotify */);
+    rollback(true /* aNotify */);
 
     return S_OK;
 }
@@ -3380,7 +3380,7 @@ STDMETHODIMP Machine::SetCurrentSnapshot (IN_BSTR /* aId */)
     /// @todo (dmik) don't forget to set
     //  mData->mCurrentStateModified to FALSE
 
-    return setError (E_NOTIMPL, "Not implemented");
+    return setError(E_NOTIMPL, "Not implemented");
 }
 
 STDMETHODIMP Machine::CreateSharedFolder (IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
@@ -3866,9 +3866,9 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
 
     if (   (aConnectionType <= StorageBus_Null)
         || (aConnectionType >  StorageBus_SAS))
-        return setError (E_INVALIDARG,
-            tr ("Invalid connection type: %d"),
-                aConnectionType);
+        return setError(E_INVALIDARG,
+                        tr("Invalid connection type: %d"),
+                        aConnectionType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3883,8 +3883,9 @@ STDMETHODIMP Machine::AddStorageController(IN_BSTR aName,
 
     rc = getStorageControllerByName (aName, ctrl, false /* aSetError */);
     if (SUCCEEDED(rc))
-        return setError (VBOX_E_OBJECT_IN_USE,
-            tr ("Storage controller named '%ls' already exists"), aName);
+        return setError(VBOX_E_OBJECT_IN_USE,
+                        tr("Storage controller named '%ls' already exists"),
+                        aName);
 
     ctrl.createObject();
 
@@ -4145,8 +4146,9 @@ STDMETHODIMP Machine::QuerySavedThumbnailSize(ULONG *aSize, ULONG *aWidth, ULONG
     int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved screenshot data is not available (%Rrc)"),
+                        vrc);
 
     *aSize = cbData;
     *aWidth = u32Width;
@@ -4178,8 +4180,9 @@ STDMETHODIMP Machine::ReadSavedThumbnailToArray(BOOL aBGR, ULONG *aWidth, ULONG 
     int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 0 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved screenshot data is not available (%Rrc)"),
+                        vrc);
 
     *aWidth = u32Width;
     *aHeight = u32Height;
@@ -4236,8 +4239,9 @@ STDMETHODIMP Machine::QuerySavedScreenshotPNGSize(ULONG *aSize, ULONG *aWidth, U
     int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved screenshot data is not available (%Rrc)"),
+                        vrc);
 
     *aSize = cbData;
     *aWidth = u32Width;
@@ -4269,8 +4273,9 @@ STDMETHODIMP Machine::ReadSavedScreenshotPNGToArray(ULONG *aWidth, ULONG *aHeigh
     int vrc = readSavedDisplayScreenshot(&mSSData->mStateFilePath, 1 /* u32Type */, &pu8Data, &cbData, &u32Width, &u32Height);
 
     if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-                         tr("Saved screenshot data is not available (%Rrc)"), vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Saved screenshot data is not available (%Rrc)"),
+                        vrc);
 
     *aWidth = u32Width;
     *aHeight = u32Height;
@@ -4507,7 +4512,7 @@ void Machine::getLogFolder (Utf8Str &aLogFolder)
     else
     {
         /* Log folder is <Machines>/<VM_SnapshotFolder>/Logs */
-        Assert (!mUserData->mSnapshotFolderFull.isEmpty());
+        Assert(!mUserData->mSnapshotFolderFull.isEmpty());
         aLogFolder = Utf8StrFmt ("%ls%cLogs", mUserData->mSnapshotFolderFull.raw(),
                                  RTPATH_DELIMITER);
     }
@@ -4686,7 +4691,7 @@ HRESULT Machine::openSession(IInternalSessionControl *aControl)
              * and reset session state to Closed (@note keep the code in sync
              * with the relevant part in openSession()). */
 
-            Assert (mData->mSession.mRemoteControls.size() == 1);
+            Assert(mData->mSession.mRemoteControls.size() == 1);
             if (mData->mSession.mRemoteControls.size() == 1)
             {
                 ErrorInfoKeeper eik;
@@ -4849,7 +4854,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
 # else
         const char VirtualBox_exe[] = "VirtualBox" HOSTSUFF_EXE;
 # endif
-        Assert (sz >= sizeof (VirtualBox_exe));
+        Assert(sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
@@ -4872,7 +4877,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     if (strType == "sdl" || strType == "GUI/SDL")
     {
         const char VBoxSDL_exe[] = "VBoxSDL" HOSTSUFF_EXE;
-        Assert (sz >= sizeof (VBoxSDL_exe));
+        Assert(sz >= sizeof (VBoxSDL_exe));
         strcpy (cmd, VBoxSDL_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
@@ -4900,7 +4905,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
        )
     {
         const char VBoxHeadless_exe[] = "VBoxHeadless" HOSTSUFF_EXE;
-        Assert (sz >= sizeof (VBoxHeadless_exe));
+        Assert(sz >= sizeof (VBoxHeadless_exe));
         strcpy (cmd, VBoxHeadless_exe);
 
         Utf8Str idStr = mData->mUuid.toString();
@@ -4971,7 +4976,7 @@ HRESULT Machine::openRemoteSession(IInternalSessionControl *aControl,
     }
 
     /* attach launch data to the machine */
-    Assert (mData->mSession.mPid == NIL_RTPROCESS);
+    Assert(mData->mSession.mPid == NIL_RTPROCESS);
     mData->mSession.mRemoteControls.push_back (aControl);
     mData->mSession.mProgress = aProgress;
     mData->mSession.mPid = pid;
@@ -4998,15 +5003,16 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mData->mRegistered)
-        return setError (E_UNEXPECTED,
-            tr ("The machine '%ls' is not registered"), mUserData->mName.raw());
+        return setError(E_UNEXPECTED,
+                        tr("The machine '%ls' is not registered"),
+                        mUserData->mName.raw());
 
     LogFlowThisFunc(("mSession.state=%s\n", Global::stringifySessionState(mData->mSession.mState)));
 
     if (mData->mSession.mState != SessionState_Open)
-        return setError (VBOX_E_INVALID_SESSION_STATE,
-            tr ("The machine '%ls' does not have an open session"),
-            mUserData->mName.raw());
+        return setError(VBOX_E_INVALID_SESSION_STATE,
+                        tr("The machine '%ls' does not have an open session"),
+                        mUserData->mName.raw());
 
     ComAssertRet (!mData->mSession.mDirectControl.isNull(), E_FAIL);
 
@@ -5017,11 +5023,12 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     ComPtr<IConsole> console;
     HRESULT rc = mData->mSession.mDirectControl->
                      GetRemoteConsole (console.asOutParam());
-    if (FAILED (rc))
+    if (FAILED(rc))
     {
         /* The failure may occur w/o any error info (from RPC), so provide one */
-        return setError (VBOX_E_VM_ERROR,
-            tr ("Failed to get a console object from the direct session (%Rrc)"), rc);
+        return setError(VBOX_E_VM_ERROR,
+                        tr("Failed to get a console object from the direct session (%Rrc)"),
+                        rc);
     }
 
     ComAssertRet (!console.isNull(), E_FAIL);
@@ -5426,7 +5433,7 @@ HRESULT Machine::addStateDependency (StateDependency aDepType /* = AnyStateDep *
         }
 
         ++mData->mMachineStateDeps;
-        Assert (mData->mMachineStateDeps != 0 /* overflow */);
+        Assert(mData->mMachineStateDeps != 0 /* overflow */);
     }
 
     if (aState)
@@ -5458,7 +5465,7 @@ void Machine::releaseStateDependency()
         /* inform ensureNoStateDependencies() that there are no more deps */
         if (mData->mMachineStateChangePending != 0)
         {
-            Assert (mData->mMachineStateDepsSem != NIL_RTSEMEVENTMULTI);
+            Assert(mData->mMachineStateDepsSem != NIL_RTSEMEVENTMULTI);
             RTSemEventMultiSignal (mData->mMachineStateDepsSem);
         }
     }
@@ -5573,41 +5580,41 @@ HRESULT Machine::initDataAndChildObjects()
 
     /* create associated BIOS settings object */
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->init (this);
+    mBIOSSettings->init(this);
 
 #ifdef VBOX_WITH_VRDP
     /* create an associated VRDPServer object (default is disabled) */
     unconst(mVRDPServer).createObject();
-    mVRDPServer->init (this);
+    mVRDPServer->init(this);
 #endif
 
     /* create associated serial port objects */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
-        unconst(mSerialPorts [slot]).createObject();
-        mSerialPorts [slot]->init (this, slot);
+        unconst(mSerialPorts[slot]).createObject();
+        mSerialPorts[slot]->init(this, slot);
     }
 
     /* create associated parallel port objects */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
-        unconst(mParallelPorts [slot]).createObject();
-        mParallelPorts [slot]->init (this, slot);
+        unconst(mParallelPorts[slot]).createObject();
+        mParallelPorts[slot]->init(this, slot);
     }
 
     /* create the audio adapter object (always present, default is disabled) */
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init (this);
+    mAudioAdapter->init(this);
 
     /* create the USB controller object (always present, default is disabled) */
     unconst(mUSBController).createObject();
-    mUSBController->init (this);
+    mUSBController->init(this);
 
     /* create associated network adapter objects */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot ++)
     {
-        unconst(mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters [slot]->init (this, slot);
+        unconst(mNetworkAdapters[slot]).createObject();
+        mNetworkAdapters[slot]->init(this, slot);
     }
 
     return S_OK;
@@ -6769,7 +6776,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
                     newConfigDir.raw(), RTPATH_DELIMITER, newName.raw());
                 /* new dir and old dir cannot be equal here because of 'if'
                  * above and because name != newName */
-                Assert (configDir != newConfigDir);
+                Assert(configDir != newConfigDir);
                 if (!aNew)
                 {
                     /* perform real rename only if the machine is not new */
@@ -8020,7 +8027,7 @@ void Machine::commitMedia(bool aOnline /*= false*/)
                 MediumState_T state;
                 rc = pMedium->UnlockWrite(&state);
                 /* the disk may be alredy relocked for reading above */
-                Assert (SUCCEEDED(rc) || state == MediumState_LockedRead);
+                Assert(SUCCEEDED(rc) || state == MediumState_LockedRead);
             }
         }
     }
@@ -8299,12 +8306,12 @@ void Machine::commit()
     mAudioAdapter->commit();
     mUSBController->commit();
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        mNetworkAdapters [slot]->commit();
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        mSerialPorts [slot]->commit();
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        mParallelPorts [slot]->commit();
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+        mNetworkAdapters[slot]->commit();
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
+        mSerialPorts[slot]->commit();
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
+        mParallelPorts[slot]->commit();
 
     bool commitStorageControllers = false;
 
@@ -8331,12 +8338,12 @@ void Machine::commit()
                     /* no peer means the device is a newly created one;
                      * create a peer owning data this device share it with */
                     peer.createObject();
-                    peer->init (mPeer, *it, true /* aReshare */);
+                    peer->init(mPeer, *it, true /* aReshare */);
                 }
                 else
                 {
                     /* remove peer from the old list */
-                    mPeer->mStorageControllers->remove (peer);
+                    mPeer->mStorageControllers->remove(peer);
                 }
                 /* and add it to the new list */
                 newList->push_back(peer);
@@ -8353,7 +8360,7 @@ void Machine::commit()
             }
 
             /* attach new list of controllers to our peer */
-            mPeer->mStorageControllers.attach (newList);
+            mPeer->mStorageControllers.attach(newList);
         }
         else
         {
@@ -8382,8 +8389,8 @@ void Machine::commit()
     if (getClassID() == clsidSessionMachine)
     {
         /* attach new data to the primary machine and reshare it */
-        mPeer->mUserData.attach (mUserData);
-        mPeer->mHWData.attach (mHWData);
+        mPeer->mUserData.attach(mUserData);
+        mPeer->mHWData.attach(mHWData);
         /* mMediaData is reshared by fixupMedia */
         // mPeer->mMediaData.attach(mMediaData);
         Assert(mPeer->mMediaData.data() == mMediaData.data());
@@ -8407,7 +8414,7 @@ void Machine::copyFrom(Machine *aThat)
     AssertReturnVoid(getClassID() == clsidMachine || getClassID() == clsidSessionMachine);
     AssertReturnVoid(aThat->getClassID() == clsidSnapshotMachine);
 
-    AssertReturnVoid(!Global::IsOnline (mData->mMachineState));
+    AssertReturnVoid(!Global::IsOnline(mData->mMachineState));
 
     mHWData.assignCopy(aThat->mHWData);
 
@@ -8420,7 +8427,7 @@ void Machine::copyFrom(Machine *aThat)
         ComObjPtr<SharedFolder> folder;
         folder.createObject();
         HRESULT rc = folder->initCopy(getMachine(), *it);
-        AssertComRC (rc);
+        AssertComRC(rc);
         *it = folder;
     }
 
@@ -8440,65 +8447,65 @@ void Machine::copyFrom(Machine *aThat)
     {
         ComObjPtr<StorageController> ctrl;
         ctrl.createObject();
-        ctrl->initCopy (this, *it);
+        ctrl->initCopy(this, *it);
         mStorageControllers->push_back(ctrl);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot ++)
-        mNetworkAdapters[slot]->copyFrom (aThat->mNetworkAdapters [slot]);
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
-        mSerialPorts[slot]->copyFrom (aThat->mSerialPorts [slot]);
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
-        mParallelPorts[slot]->copyFrom (aThat->mParallelPorts [slot]);
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
+        mNetworkAdapters[slot]->copyFrom(aThat->mNetworkAdapters[slot]);
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
+        mSerialPorts[slot]->copyFrom(aThat->mSerialPorts[slot]);
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
+        mParallelPorts[slot]->copyFrom(aThat->mParallelPorts[slot]);
 }
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Machine::registerMetrics (PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
+void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid)
 {
     pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
-    pm::SubMetric *cpuLoadUser = new pm::SubMetric ("CPU/Load/User",
+    pm::SubMetric *cpuLoadUser = new pm::SubMetric("CPU/Load/User",
         "Percentage of processor time spent in user mode by VM process.");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel",
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric("CPU/Load/Kernel",
         "Percentage of processor time spent in kernel mode by VM process.");
-    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used",
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric("RAM/Usage/Used",
         "Size of resident portion of VM process in memory.");
     /* Create and register base metrics */
-    pm::BaseMetric *cpuLoad = new pm::MachineCpuLoadRaw (hal, aMachine, pid,
-                                                         cpuLoadUser, cpuLoadKernel);
-    aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *ramUsage = new pm::MachineRamUsage (hal, aMachine, pid,
-                                                        ramUsageUsed);
-    aCollector->registerBaseMetric (ramUsage);
+    pm::BaseMetric *cpuLoad = new pm::MachineCpuLoadRaw(hal, aMachine, pid,
+                                                        cpuLoadUser, cpuLoadKernel);
+    aCollector->registerBaseMetric(cpuLoad);
+    pm::BaseMetric *ramUsage = new pm::MachineRamUsage(hal, aMachine, pid,
+                                                       ramUsageUsed);
+    aCollector->registerBaseMetric(ramUsage);
 
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser, 0));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
                                                 new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
-                                                new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadUser,
-                                                new pm::AggregateMax()));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel, 0));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
-                                                new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
-                                                new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric (cpuLoad, cpuLoadKernel,
-                                                new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
+                                              new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, 0));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed, 0));
-    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
-                                                new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
-                                                new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric (ramUsage, ramUsageUsed,
-                                                new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateMax()));
 };
 
-void Machine::unregisterMetrics (PerformanceCollector *aCollector, Machine *aMachine)
+void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine)
 {
-    aCollector->unregisterMetricsFor (aMachine);
-    aCollector->unregisterBaseMetricsFor (aMachine);
+    aCollector->unregisterMetricsFor(aMachine);
+    aCollector->unregisterBaseMetricsFor(aMachine);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -8528,13 +8535,13 @@ void SessionMachine::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
 
-    uninit (Uninit::Unexpected);
+    uninit(Uninit::Unexpected);
 }
 
 /**
  *  @note Must be called only by Machine::openSession() from its own write lock.
  */
-HRESULT SessionMachine::init (Machine *aMachine)
+HRESULT SessionMachine::init(Machine *aMachine)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%ls}\n", aMachine->mUserData->mName.raw()));
@@ -8553,20 +8560,20 @@ HRESULT SessionMachine::init (Machine *aMachine)
     for (size_t i = 0; i < mIPCSemName.length(); i++)
         if (mIPCSemName[i] == '\\')
             mIPCSemName[i] = '/';
-    mIPCSem = ::CreateMutex (NULL, FALSE, mIPCSemName);
-    ComAssertMsgRet (mIPCSem,
-                     ("Cannot create IPC mutex '%ls', err=%d",
-                      mIPCSemName.raw(), ::GetLastError()),
-                     E_FAIL);
+    mIPCSem = ::CreateMutex(NULL, FALSE, mIPCSemName);
+    ComAssertMsgRet(mIPCSem,
+                    ("Cannot create IPC mutex '%ls', err=%d",
+                     mIPCSemName.raw(), ::GetLastError()),
+                    E_FAIL);
 #elif defined(RT_OS_OS2)
-    Utf8Str ipcSem = Utf8StrFmt ("\\SEM32\\VBOX\\VM\\{%RTuuid}",
-                                 aMachine->mData->mUuid.raw());
+    Utf8Str ipcSem = Utf8StrFmt("\\SEM32\\VBOX\\VM\\{%RTuuid}",
+                                aMachine->mData->mUuid.raw());
     mIPCSemName = ipcSem;
-    APIRET arc = ::DosCreateMutexSem ((PSZ) ipcSem.raw(), &mIPCSem, 0, FALSE);
-    ComAssertMsgRet (arc == NO_ERROR,
-                     ("Cannot create IPC mutex '%s', arc=%ld",
-                      ipcSem.raw(), arc),
-                     E_FAIL);
+    APIRET arc = ::DosCreateMutexSem((PSZ)ipcSem.raw(), &mIPCSem, 0, FALSE);
+    ComAssertMsgRet(arc == NO_ERROR,
+                    ("Cannot create IPC mutex '%s', arc=%ld",
+                     ipcSem.raw(), arc),
+                    E_FAIL);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
 #  if defined(RT_OS_FREEBSD) && (HC_ARCH_BITS == 64)
@@ -8581,23 +8588,23 @@ HRESULT SessionMachine::init (Machine *aMachine)
     for (uint32_t i = 0; i < 1 << 24; i++)
     {
         key = ((uint32_t)'V' << 24) | i;
-        int sem = ::semget (key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
+        int sem = ::semget(key, 1, S_IRUSR | S_IWUSR | IPC_CREAT | IPC_EXCL);
         if (sem >= 0 || (errno != EEXIST && errno != EACCES))
         {
             mIPCSem = sem;
             if (sem >= 0)
-                mIPCKey = BstrFmt ("%u", key);
+                mIPCKey = BstrFmt("%u", key);
             break;
         }
     }
 # else /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
     Utf8Str semName = aMachine->mData->m_strConfigFileFull;
     char *pszSemName = NULL;
-    RTStrUtf8ToCurrentCP (&pszSemName, semName);
-    key_t key = ::ftok (pszSemName, 'V');
-    RTStrFree (pszSemName);
+    RTStrUtf8ToCurrentCP(&pszSemName, semName);
+    key_t key = ::ftok(pszSemName, 'V');
+    RTStrFree(pszSemName);
 
-    mIPCSem = ::semget (key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
+    mIPCSem = ::semget(key, 1, S_IRWXU | S_IRWXG | S_IRWXO | IPC_CREAT);
 # endif /* !VBOX_WITH_NEW_SYS_V_KEYGEN */
 
     int errnoSave = errno;
@@ -8628,12 +8635,12 @@ HRESULT SessionMachine::init (Machine *aMachine)
 #endif
         return E_FAIL;
     }
-    ComAssertMsgRet (mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errnoSave),
-                     E_FAIL);
+    ComAssertMsgRet(mIPCSem >= 0, ("Cannot create IPC semaphore, errno=%d", errnoSave),
+                    E_FAIL);
     /* set the initial value to 1 */
-    int rv = ::semctl (mIPCSem, 0, SETVAL, 1);
-    ComAssertMsgRet (rv == 0, ("Cannot init IPC semaphore, errno=%d", errno),
-                     E_FAIL);
+    int rv = ::semctl(mIPCSem, 0, SETVAL, 1);
+    ComAssertMsgRet(rv == 0, ("Cannot init IPC semaphore, errno=%d", errno),
+                    E_FAIL);
 #else
 # error "Port me!"
 #endif
@@ -8644,11 +8651,11 @@ HRESULT SessionMachine::init (Machine *aMachine)
     unconst(mParent) = aMachine->mParent;
 
     /* take the pointers to data to share */
-    mData.share (aMachine->mData);
-    mSSData.share (aMachine->mSSData);
+    mData.share(aMachine->mData);
+    mSSData.share(aMachine->mSSData);
 
-    mUserData.share (aMachine->mUserData);
-    mHWData.share (aMachine->mHWData);
+    mUserData.share(aMachine->mUserData);
+    mHWData.share(aMachine->mHWData);
     mMediaData.share(aMachine->mMediaData);
 
     mStorageControllers.allocate();
@@ -8659,30 +8666,30 @@ HRESULT SessionMachine::init (Machine *aMachine)
         ComObjPtr<StorageController> ctl;
         ctl.createObject();
         ctl->init(this, *it);
-        mStorageControllers->push_back (ctl);
+        mStorageControllers->push_back(ctl);
     }
 
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->init (this, aMachine->mBIOSSettings);
+    mBIOSSettings->init(this, aMachine->mBIOSSettings);
 #ifdef VBOX_WITH_VRDP
     /* create another VRDPServer object that will be mutable */
     unconst(mVRDPServer).createObject();
-    mVRDPServer->init (this, aMachine->mVRDPServer);
+    mVRDPServer->init(this, aMachine->mVRDPServer);
 #endif
     /* create another audio adapter object that will be mutable */
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->init (this, aMachine->mAudioAdapter);
+    mAudioAdapter->init(this, aMachine->mAudioAdapter);
     /* create a list of serial ports that will be mutable */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
-        unconst(mSerialPorts [slot]).createObject();
-        mSerialPorts [slot]->init (this, aMachine->mSerialPorts [slot]);
+        unconst(mSerialPorts[slot]).createObject();
+        mSerialPorts[slot]->init(this, aMachine->mSerialPorts[slot]);
     }
     /* create a list of parallel ports that will be mutable */
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot ++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
-        unconst(mParallelPorts [slot]).createObject();
-        mParallelPorts [slot]->init (this, aMachine->mParallelPorts [slot]);
+        unconst(mParallelPorts[slot]).createObject();
+        mParallelPorts[slot]->init(this, aMachine->mParallelPorts[slot]);
     }
     /* create another USB controller object that will be mutable */
     unconst(mUSBController).createObject();
@@ -8691,8 +8698,8 @@ HRESULT SessionMachine::init (Machine *aMachine)
     /* create a list of network adapters that will be mutable */
     for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
-        unconst(mNetworkAdapters [slot]).createObject();
-        mNetworkAdapters[slot]->init (this, aMachine->mNetworkAdapters [slot]);
+        unconst(mNetworkAdapters[slot]).createObject();
+        mNetworkAdapters[slot]->init(this, aMachine->mNetworkAdapters[slot]);
     }
 
     /* default is to delete saved state on Saved -> PoweredOff transition */
@@ -8713,7 +8720,7 @@ HRESULT SessionMachine::init (Machine *aMachine)
  *
  *  @note Locks mParent + this object for writing.
  */
-void SessionMachine::uninit (Uninit::Reason aReason)
+void SessionMachine::uninit(Uninit::Reason aReason)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("reason=%d\n", aReason));
@@ -8745,15 +8752,15 @@ void SessionMachine::uninit (Uninit::Reason aReason)
         LogFlowThisFunc(("Initialization failed.\n"));
 #if defined(RT_OS_WINDOWS)
         if (mIPCSem)
-            ::CloseHandle (mIPCSem);
+            ::CloseHandle(mIPCSem);
         mIPCSem = NULL;
 #elif defined(RT_OS_OS2)
         if (mIPCSem != NULLHANDLE)
-            ::DosCloseMutexSem (mIPCSem);
+            ::DosCloseMutexSem(mIPCSem);
         mIPCSem = NULLHANDLE;
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
         if (mIPCSem >= 0)
-            ::semctl (mIPCSem, 0, IPC_RMID);
+            ::semctl(mIPCSem, 0, IPC_RMID);
         mIPCSem = -1;
 # ifdef VBOX_WITH_NEW_SYS_V_KEYGEN
         mIPCKey = "0";
@@ -8784,7 +8791,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (aReason == Uninit::Abnormal)
     {
         LogWarningThisFunc(("ABNORMAL client termination! (wasBusy=%d)\n",
-                             Global::IsOnlineOrTransient (lastState)));
+                             Global::IsOnlineOrTransient(lastState)));
 
         /* reset the state to Aborted */
         if (mData->mMachineState != MachineState_Aborted)
@@ -8795,7 +8802,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     if (m_flModifications)
     {
         LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
-        rollback (false /* aNotify */);
+        rollback(false /* aNotify */);
     }
 
     Assert(mSnapshotData.mStateFilePath.isEmpty() || !mSnapshotData.mSnapshot);
@@ -8820,7 +8827,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
 
 #ifdef VBOX_WITH_USB
     /* release all captured USB devices */
-    if (aReason == Uninit::Abnormal && Global::IsOnline (lastState))
+    if (aReason == Uninit::Abnormal && Global::IsOnline(lastState))
     {
         /* Console::captureUSBDevices() is called in the VM process only after
          * setting the machine state to Starting or Restoring.
@@ -8830,13 +8837,13 @@ void SessionMachine::uninit (Uninit::Reason aReason)
          *
          * This is identical to SessionMachine::DetachAllUSBDevices except
          * for the aAbnormal argument. */
-        HRESULT rc = mUSBController->notifyProxy (false /* aInsertFilters */);
+        HRESULT rc = mUSBController->notifyProxy(false /* aInsertFilters */);
         AssertComRC(rc);
-        NOREF (rc);
+        NOREF(rc);
 
         USBProxyService *service = mParent->host()->usbProxyService();
         if (service)
-            service->detachAllDevicesFromVM (this, true /* aDone */, true /* aAbnormal */);
+            service->detachAllDevicesFromVM(this, true /* aDone */, true /* aAbnormal */);
     }
 #endif /* VBOX_WITH_USB */
 
@@ -8846,8 +8853,8 @@ void SessionMachine::uninit (Uninit::Reason aReason)
          * VirtualBox::OpenRemoteSession(), therefore it is our child.  We
          * need to queue the PID to reap the process (and avoid zombies on
          * Linux). */
-        Assert (mData->mSession.mPid != NIL_RTPROCESS);
-        mParent->addProcessToReap (mData->mSession.mPid);
+        Assert(mData->mSession.mPid != NIL_RTPROCESS);
+        mParent->addProcessToReap(mData->mSession.mPid);
     }
 
     mData->mSession.mPid = NIL_RTPROCESS;
@@ -8873,7 +8880,7 @@ void SessionMachine::uninit (Uninit::Reason aReason)
             LogFlowThisFunc(("  Calling remoteControl->Uninitialize()...\n"));
             HRESULT rc = (*it)->Uninitialize();
             LogFlowThisFunc(("  remoteControl->Uninitialize() returned %08X\n", rc));
-            if (FAILED (rc))
+            if (FAILED(rc))
                 LogWarningThisFunc(("Forgot to close the remote session?\n"));
             ++it;
         }
@@ -8902,17 +8909,17 @@ void SessionMachine::uninit (Uninit::Reason aReason)
     else
     {
         /* this must be null here (see #OnSessionEnd()) */
-        Assert (mData->mSession.mDirectControl.isNull());
-        Assert (mData->mSession.mState == SessionState_Closing);
-        Assert (!mData->mSession.mProgress.isNull());
+        Assert(mData->mSession.mDirectControl.isNull());
+        Assert(mData->mSession.mState == SessionState_Closing);
+        Assert(!mData->mSession.mProgress.isNull());
 
         mData->mSession.mProgress->notifyComplete (S_OK);
         mData->mSession.mProgress.setNull();
     }
 
     /* remove the association between the peer machine and this session machine */
-    Assert (mData->mSession.mMachine == this ||
-            aReason == Uninit::Unexpected);
+    Assert(mData->mSession.mMachine == this ||
+           aReason == Uninit::Unexpected);
 
     /* reset the rest of session data */
     mData->mSession.mMachine.setNull();
@@ -9191,7 +9198,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
         /* go to the closing state (essential for all open*Session() calls and
          * for #checkForDeath()) */
-        Assert (mData->mSession.mState == SessionState_Open);
+        Assert(mData->mSession.mState == SessionState_Open);
         mData->mSession.mState = SessionState_Closing;
 
         /* set direct control to NULL to release the remote instance */
@@ -10196,7 +10203,7 @@ void SessionMachine::unlockMedia()
         /* The second can happen if an object was re-locked in
          * Machine::fixupMedia(). The last can happen when e.g a DVD/Floppy
          * image was unmounted at runtime. */
-        Assert (SUCCEEDED(rc) || state == MediumState_LockedRead || state == MediumState_Created);
+        Assert(SUCCEEDED(rc) || state == MediumState_LockedRead || state == MediumState_Created);
     }
 
     mData->mSession.mLockedMedia.clear();

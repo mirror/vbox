@@ -122,8 +122,8 @@ HRESULT StorageController::init(Machine *aParent,
     ComAssertRet(aParent && !aName.isEmpty(), E_INVALIDARG);
     if (   (aStorageBus <= StorageBus_Null)
         || (aStorageBus >  StorageBus_SAS))
-        return setError (E_INVALIDARG,
-            tr ("Invalid storage connection type"));
+        return setError(E_INVALIDARG,
+                        tr("Invalid storage connection type"));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -136,7 +136,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     /* register with parent early, since uninit() will unconditionally
      * unregister on failure */
-    m->pParent->addDependentChild (this);
+    m->pParent->addDependentChild(this);
 
     m->bd.allocate();
 
@@ -210,7 +210,7 @@ HRESULT StorageController::init(Machine *aParent,
 
     /* register with parent early, since uninit() will unconditionally
      * unregister on failure */
-    m->pParent->addDependentChild (this);
+    m->pParent->addDependentChild(this);
 
     /* sanity */
     AutoCaller thatCaller (aThat);
@@ -257,13 +257,13 @@ HRESULT StorageController::initCopy(Machine *aParent, StorageController *aThat)
     unconst(m->pParent) = aParent;
     /* m->pPeer is left null */
 
-    m->pParent->addDependentChild (this);
+    m->pParent->addDependentChild(this);
 
-    AutoCaller thatCaller (aThat);
+    AutoCaller thatCaller(aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
     AutoReadLock thatlock(aThat COMMA_LOCKVAL_SRC_POS);
-    m->bd.attachCopy (aThat->m->bd);
+    m->bd.attachCopy(aThat->m->bd);
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -287,7 +287,7 @@ void StorageController::uninit()
 
     m->bd.free();
 
-    m->pParent->removeDependentChild (this);
+    m->pParent->removeDependentChild(this);
 
     unconst(m->pPeer).setNull();
     unconst(m->pParent).setNull();
@@ -493,9 +493,9 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
         {
             /* AHCI SATA supports a maximum of 30 ports. */
             if ((aPortCount < 1) || (aPortCount > 30))
-                return setError (E_INVALIDARG,
-                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
-                        aPortCount, 1, 30);
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 1, 30);
             break;
         }
         case StorageBus_SCSI:
@@ -507,9 +507,9 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
              * tries to set a different value we return an error.
              */
             if (aPortCount != 16)
-                return setError (E_INVALIDARG,
-                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
-                        aPortCount, 16, 16);
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 16, 16);
             break;
         }
         case StorageBus_IDE:
@@ -518,9 +518,9 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
              * The port count is fixed to 2.
              */
             if (aPortCount != 2)
-                return setError (E_INVALIDARG,
-                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
-                        aPortCount, 2, 2);
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 2, 2);
             break;
         }
         case StorageBus_Floppy:
@@ -530,9 +530,9 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
              * The port count is fixed to 1.
              */
             if (aPortCount != 1)
-                return setError (E_INVALIDARG,
-                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
-                        aPortCount, 1, 1);
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 1, 1);
             break;
         }
         case StorageBus_SAS:
@@ -541,9 +541,9 @@ STDMETHODIMP StorageController::COMSETTER(PortCount) (ULONG aPortCount)
              * The port count is fixed to 8.
              */
             if (aPortCount != 8)
-                return setError (E_INVALIDARG,
-                    tr ("Invalid port count: %lu (must be in range [%lu, %lu])"),
-                        aPortCount, 8, 8);
+                return setError(E_INVALIDARG,
+                                tr("Invalid port count: %lu (must be in range [%lu, %lu])"),
+                                aPortCount, 8, 8);
             break;
         }
         default:
@@ -616,8 +616,8 @@ STDMETHODIMP StorageController::GetIDEEmulationPort(LONG DevicePosition, LONG *a
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
-        return setError (E_NOTIMPL,
-            tr ("Invalid controller type"));
+        return setError(E_NOTIMPL,
+                        tr("Invalid controller type"));
 
     switch (DevicePosition)
     {
@@ -651,13 +651,13 @@ STDMETHODIMP StorageController::SetIDEEmulationPort(LONG DevicePosition, LONG aP
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (m->bd->mStorageControllerType != StorageControllerType_IntelAhci)
-        return setError (E_NOTIMPL,
-            tr ("Invalid controller type"));
+        return setError(E_NOTIMPL,
+                        tr("Invalid controller type"));
 
     if ((aPortNumber < 0) || (aPortNumber >= 30))
-        return setError (E_INVALIDARG,
-            tr ("Invalid port number: %l (must be in range [%lu, %lu])"),
-                aPortNumber, 0, 29);
+        return setError(E_INVALIDARG,
+                        tr("Invalid port number: %l (must be in range [%lu, %lu])"),
+                        aPortNumber, 0, 29);
 
     switch (DevicePosition)
     {

@@ -148,7 +148,7 @@ public:
  *  subclasses that also inherit the VirtualBoxSupportErrorInfoImpl template.
  *
  *  In the debug build, this macro is equivalent to Assert.
- *  In the release build, this macro uses |setError (E_FAIL, ...)| to set the
+ *  In the release build, this macro uses |setError(E_FAIL, ...)| to set the
  *  error info from the asserted expression.
  *
  *  @see VirtualBoxSupportErrorInfoImpl::setError
@@ -959,7 +959,7 @@ protected:
  *
  *  On all platforms, the template argument must also define the following
  *  method: |public static const wchar_t *C::getComponentName()|. See
- *  #setError (HRESULT, const char *, ...) for a description on how it is
+ *  #setError(HRESULT, const char *, ...) for a description on how it is
  *  used.
  *
  *  @param C
@@ -1040,7 +1040,7 @@ protected:
      *  This method is rarely needs to be used though. There are more convenient
      *  overloaded versions, that automatically substitute some arguments
      *  taking their values from the template parameters. See
-     *  #setError (HRESULT, const char *, ...) for an example.
+     *  #setError(HRESULT, const char *, ...) for an example.
      *
      *  @param  aResultCode result (error) code, must not be S_OK
      *  @param  aIID        IID of the interface that defines the error
@@ -1093,7 +1093,7 @@ protected:
      *  ID (taken from the I template argument) and the component name
      *  (a value of C::getComponentName()).
      *
-     *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
+     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  for details.
      *
      *  This method is the most common (and convenient) way  to set error
@@ -1101,11 +1101,11 @@ protected:
      *  is looks like this:
      *
      *  <code>
-     *      return setError (E_FAIL, "Terrible Error");
+     *      return setError(E_FAIL, "Terrible Error");
      *  </code>
      *  or
      *  <code>
-     *      HRESULT rc = setError (E_FAIL, "Terrible Error");
+     *      HRESULT rc = setError(E_FAIL, "Terrible Error");
      *      ...
      *      return rc;
      *  </code>
@@ -1145,8 +1145,8 @@ protected:
      *  ID (taken from the I template argument) and the component name
      *  (a value of C::getComponentName()).
      *
-     *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  and #setError (HRESULT, const char *, ...)  for details.
+     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
+     *  and #setError(HRESULT, const char *, ...)  for details.
      */
     static HRESULT setErrorV(HRESULT aResultCode, const char *aText,
                              va_list aArgs)
@@ -1182,8 +1182,8 @@ protected:
      *  This method is preferred if you have a ready (translated and formatted)
      *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
      *
-     *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  and #setError (HRESULT, const char *, ...)  for details.
+     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
+     *  and #setError(HRESULT, const char *, ...)  for details.
      */
     static HRESULT setErrorBstr(HRESULT aResultCode, const Bstr &aText)
     {
@@ -1214,7 +1214,7 @@ protected:
      *  (a value of C::getComponentName()), but allows to specify the interface
      *  id manually.
      *
-     *  See #setError (HRESULT, const GUID &, const wchar_t *, const char *text, ...)
+     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
      *  for details.
      */
     static HRESULT setError(HRESULT aResultCode, const GUID &aIID,
@@ -1253,7 +1253,7 @@ protected:
      *  anything in the release log. This is very useful for avoiding
      *  harmless error from causing confusion.
      *
-     *  It is otherwise identical to #setError (HRESULT, const char *text, ...).
+     *  It is otherwise identical to #setError(HRESULT, const char *text, ...).
      */
     static HRESULT setErrorNoLog(HRESULT aResultCode, const char *aText, ...)
     {

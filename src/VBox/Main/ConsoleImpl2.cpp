@@ -1034,7 +1034,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         for (size_t j = 0; j < atts.size(); ++j)
         {
             ComPtr<IMedium> medium;
-            hrc = atts [j]->COMGETTER(Medium)(medium.asOutParam());                             H();
+            hrc = atts[j]->COMGETTER(Medium)(medium.asOutParam());                              H();
             LONG lDev;
             hrc = atts[j]->COMGETTER(Device)(&lDev);                                            H();
             LONG lPort;
@@ -2095,13 +2095,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* Register VM state change handler */
     int rc2 = VMR3AtStateRegister (pVM, Console::vmstateChangeCallback, pConsole);
-    AssertRC (rc2);
+    AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
     /* Register VM runtime error handler */
     rc2 = VMR3AtRuntimeErrorRegister (pVM, Console::setVMRuntimeErrorCallback, pConsole);
-    AssertRC (rc2);
+    AssertRC(rc2);
     if (RT_SUCCESS(rc))
         rc = rc2;
 
@@ -2305,7 +2305,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 }
             }
 
-            Assert ((int)pThis->maTapFD[uInstance] >= 0);
+            Assert((int)pThis->maTapFD[uInstance] >= 0);
             if ((int)pThis->maTapFD[uInstance] >= 0)
             {
                 if (fSniffer)
@@ -2513,7 +2513,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                     }
                 }
 
-                Assert ((int)pThis->maTapFD[uInstance] >= 0);
+                Assert((int)pThis->maTapFD[uInstance] >= 0);
                 if ((int)pThis->maTapFD[uInstance] >= 0)
                 {
                     rc = CFGMR3InsertString(pLunL0, "Driver", "HostInterface");                 RC_CHECK();

@@ -137,14 +137,14 @@ STDMETHODIMP Keyboard::PutScancode (LONG scancode)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    CHECK_CONSOLE_DRV (mpDrv);
+    CHECK_CONSOLE_DRV(mpDrv);
 
-    int vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)scancode);
+    int vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)scancode);
 
     if (RT_FAILURE(vrc))
-        rc = setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
-                scancode, vrc);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not send scan code 0x%08X to the virtual keyboard (%Rrc)"),
+                      scancode, vrc);
 
     return rc;
 }
@@ -178,12 +178,12 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
     int vrc = VINF_SUCCESS;
 
     for (uint32_t i = 0; (i < keys.size()) && RT_SUCCESS(vrc); i++)
-        vrc = mpDrv->pUpPort->pfnPutEvent (mpDrv->pUpPort, (uint8_t)keys [i]);
+        vrc = mpDrv->pUpPort->pfnPutEvent(mpDrv->pUpPort, (uint8_t)keys[i]);
 
     if (RT_FAILURE(vrc))
-        return setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not send all scan codes to the virtual keyboard (%Rrc)"),
-                vrc);
+        return setError(VBOX_E_IPRT_ERROR,
+                        tr("Could not send all scan codes to the virtual keyboard (%Rrc)"),
+                        vrc);
 
     /// @todo is it actually possible that not all scancodes can be transmitted?
     if (codesStored)
@@ -201,16 +201,16 @@ STDMETHODIMP Keyboard::PutScancodes (ComSafeArrayIn (LONG, scancodes),
  */
 STDMETHODIMP Keyboard::PutCAD()
 {
-    static com::SafeArray<LONG> cadSequence (6);
+    static com::SafeArray<LONG> cadSequence(6);
 
-    cadSequence [0] = 0x1d; // Ctrl down
-    cadSequence [1] = 0x38; // Alt down
-    cadSequence [2] = 0x53; // Del down
-    cadSequence [3] = 0xd3; // Del up
-    cadSequence [4] = 0xb8; // Alt up
-    cadSequence [5] = 0x9d; // Ctrl up
+    cadSequence[0] = 0x1d; // Ctrl down
+    cadSequence[1] = 0x38; // Alt down
+    cadSequence[2] = 0x53; // Del down
+    cadSequence[3] = 0xd3; // Del up
+    cadSequence[4] = 0xb8; // Alt up
+    cadSequence[5] = 0x9d; // Ctrl up
 
-    return PutScancodes (ComSafeArrayAsInParam (cadSequence), NULL);
+    return PutScancodes(ComSafeArrayAsInParam(cadSequence), NULL);
 }
 
 //

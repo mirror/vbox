@@ -226,10 +226,9 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
     {
         if (aEnabled &&
             m->bd->strPath.isEmpty())
-            return setError (E_INVALIDARG,
-                        tr ("Cannot enable the parallel port %d "
-                            "because the port path is empty or null"),
-                        m->bd->ulSlot);
+            return setError(E_INVALIDARG,
+                            tr("Cannot enable the parallel port %d because the port path is empty or null"),
+                            m->bd->ulSlot);
 
         m->bd.backup();
         m->bd->fEnabled = aEnabled;
@@ -281,10 +280,9 @@ STDMETHODIMP ParallelPort::COMSETTER(IRQ)(ULONG aIRQ)
     /* check IRQ limits
      * (when changing this, make sure it corresponds to XML schema */
     if (aIRQ > 255)
-        return setError (E_INVALIDARG,
-            tr ("Invalid IRQ number of the parallel port %d: "
-                "%lu (must be in range [0, %lu])"),
-            m->bd->ulSlot, aIRQ, 255);
+        return setError(E_INVALIDARG,
+                        tr("Invalid IRQ number of the parallel port %d: %lu (must be in range [0, %lu])"),
+                        m->bd->ulSlot, aIRQ, 255);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -333,10 +331,9 @@ STDMETHODIMP ParallelPort::COMSETTER(IOBase)(ULONG aIOBase)
     /* check IOBase limits
      * (when changing this, make sure it corresponds to XML schema */
     if (aIOBase > 0xFFFF)
-        return setError (E_INVALIDARG,
-            tr ("Invalid I/O port base address of the parallel port %d: "
-                "%lu (must be in range [0, 0x%X])"),
-            m->bd->ulSlot, aIOBase, 0, 0xFFFF);
+        return setError(E_INVALIDARG,
+                        tr("Invalid I/O port base address of the parallel port %d: %lu (must be in range [0, 0x%X])"),
+                        m->bd->ulSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

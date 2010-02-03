@@ -39,7 +39,7 @@
 
 #if defined(RT_OS_WINDOWS) || defined (RT_OS_OS2)
 /** VM IPC mutex holder thread */
-static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
+static DECLCALLBACK(int) IPCMutexHolderThread(RTTHREAD Thread, void *pvUser);
 #endif
 
 /**
@@ -50,9 +50,7 @@ static DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser);
 #define CHECK_OPEN() \
     do { \
         if (mState != SessionState_Open) \
-            return setError (E_UNEXPECTED, \
-                tr ("The session is not open (session state: %s)"), \
-                Global::stringifySessionState(mState)); \
+            return setError(E_UNEXPECTED, tr ("The session is not open (session state: %s)"), Global::stringifySessionState(mState)); \
     } while (0)
 
 // constructor / destructor
@@ -69,7 +67,7 @@ void Session::FinalRelease()
 {
     LogFlowThisFunc(("\n"));
 
-    uninit (true /* aFinalRelease */);
+    uninit(true /* aFinalRelease */);
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -114,7 +112,7 @@ HRESULT Session::init()
  *
  *  @note Locks this object for writing.
  */
-void Session::uninit (bool aFinalRelease)
+void Session::uninit(bool aFinalRelease)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aFinalRelease=%d\n", aFinalRelease));
@@ -133,11 +131,11 @@ void Session::uninit (bool aFinalRelease)
 
     if (mState != SessionState_Closed)
     {
-        Assert (mState == SessionState_Open ||
-                mState == SessionState_Spawning);
+        Assert(mState == SessionState_Open ||
+               mState == SessionState_Spawning);
 
-        HRESULT rc = close (aFinalRelease, false /* aFromServer */);
-        AssertComRC (rc);
+        HRESULT rc = close(aFinalRelease, false /* aFromServer */);
+        AssertComRC(rc);
     }
 
     LogFlowThisFuncLeave();
@@ -146,7 +144,7 @@ void Session::uninit (bool aFinalRelease)
 // ISession properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
+STDMETHODIMP Session::COMGETTER(State)(SessionState_T *aState)
 {
     CheckComArgOutPointerValid(aState);
 
@@ -160,7 +158,7 @@ STDMETHODIMP Session::COMGETTER(State) (SessionState_T *aState)
     return S_OK;
 }
 
-STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
+STDMETHODIMP Session::COMGETTER(Type)(SessionType_T *aType)
 {
     CheckComArgOutPointerValid(aType);
 
@@ -175,7 +173,7 @@ STDMETHODIMP Session::COMGETTER(Type) (SessionType_T *aType)
     return S_OK;
 }
 
-STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
+STDMETHODIMP Session::COMGETTER(Machine)(IMachine **aMachine)
 {
     CheckComArgOutPointerValid(aMachine);
 
@@ -192,12 +190,12 @@ STDMETHODIMP Session::COMGETTER(Machine) (IMachine **aMachine)
         rc = mConsole->machine().queryInterfaceTo(aMachine);
     else
         rc = mRemoteMachine.queryInterfaceTo(aMachine);
-    ComAssertComRC (rc);
+    ComAssertComRC(rc);
 
     return rc;
 }
 
-STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
+STDMETHODIMP Session::COMGETTER(Console)(IConsole **aConsole)
 {
     CheckComArgOutPointerValid(aConsole);
 
@@ -214,7 +212,7 @@ STDMETHODIMP Session::COMGETTER(Console) (IConsole **aConsole)
         rc = mConsole.queryInterfaceTo(aConsole);
     else
         rc = mRemoteConsole.queryInterfaceTo(aConsole);
-    ComAssertComRC (rc);
+    ComAssertComRC(rc);
 
     return rc;
 }
@@ -234,41 +232,42 @@ STDMETHODIMP Session::Close()
 
     CHECK_OPEN();
 
-    return close (false /* aFinalRelease */, false /* aFromServer */);
+    return close(false /* aFinalRelease */, false /* aFromServer */);
 }
 
 // IInternalSessionControl methods
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Session::GetPID (ULONG *aPid)
+STDMETHODIMP Session::GetPID(ULONG *aPid)
 {
     AssertReturn(aPid, E_POINTER);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aPid = (ULONG) RTProcSelf();
-    AssertCompile (sizeof (*aPid) == sizeof (RTPROCESS));
+    *aPid = (ULONG)RTProcSelf();
+    AssertCompile(sizeof(*aPid) == sizeof(RTPROCESS));
 
     return S_OK;
 }
 
-STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
+STDMETHODIMP Session::GetRemoteConsole(IConsole **aConsole)
 {
     LogFlowThisFuncEnter();
     AssertReturn(aConsole, E_POINTER);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(mState != SessionState_Closed, VBOX_E_INVALID_VM_STATE);
 
-    AssertMsgReturn (mType == SessionType_Direct && !!mConsole,
-      ("This is not a direct session!\n"), VBOX_E_INVALID_OBJECT_STATE);
+    AssertMsgReturn(mType == SessionType_Direct && !!mConsole,
+                    ("This is not a direct session!\n"),
+                    VBOX_E_INVALID_OBJECT_STATE);
 
     /* return a failure if the session already transitioned to Closing
      * but the server hasn't processed Machine::OnSessionEnd() yet. */
@@ -282,13 +281,13 @@ STDMETHODIMP Session::GetRemoteConsole (IConsole **aConsole)
     return S_OK;
 }
 
-STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
+STDMETHODIMP Session::AssignMachine(IMachine *aMachine)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aMachine=%p\n", aMachine));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -318,10 +317,10 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
     AssertReturn(!!mControl, E_FAIL);
 
     rc = mConsole.createObject();
-    AssertComRCReturn (rc, rc);
+    AssertComRCReturn(rc, rc);
 
-    rc = mConsole->init (aMachine, mControl);
-    AssertComRCReturn (rc, rc);
+    rc = mConsole->init(aMachine, mControl);
+    AssertComRCReturn(rc, rc);
 
     rc = grabIPCSemaphore();
 
@@ -330,7 +329,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
      *  until the session is closed
      */
     if (SUCCEEDED(rc))
-       rc = aMachine->COMGETTER(Parent) (mVirtualBox.asOutParam());
+       rc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
 
     if (SUCCEEDED(rc))
     {
@@ -351,7 +350,7 @@ STDMETHODIMP Session::AssignMachine (IMachine *aMachine)
     return rc;
 }
 
-STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsole)
+STDMETHODIMP Session::AssignRemoteMachine(IMachine *aMachine, IConsole *aConsole)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aMachine=%p, aConsole=%p\n", aMachine, aConsole));
@@ -359,7 +358,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
     AssertReturn(aMachine && aConsole, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -395,7 +394,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
      *  Reference the VirtualBox object to ensure the server is up
      *  until the session is closed
      */
-    rc = aMachine->COMGETTER(Parent) (mVirtualBox.asOutParam());
+    rc = aMachine->COMGETTER(Parent)(mVirtualBox.asOutParam());
 
     if (SUCCEEDED(rc))
     {
@@ -406,7 +405,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
         if (mType != SessionType_Remote)
             mType = SessionType_Existing;
         else
-            Assert (mState == SessionState_Spawning);
+            Assert(mState == SessionState_Spawning);
 
         mState = SessionState_Open;
     }
@@ -424,7 +423,7 @@ STDMETHODIMP Session::AssignRemoteMachine (IMachine *aMachine, IConsole *aConsol
     return rc;
 }
 
-STDMETHODIMP Session::UpdateMachineState (MachineState_T aMachineState)
+STDMETHODIMP Session::UpdateMachineState(MachineState_T aMachineState)
 {
     AutoCaller autoCaller(this);
 
@@ -452,7 +451,7 @@ STDMETHODIMP Session::UpdateMachineState (MachineState_T aMachineState)
     AssertReturn(!mControl.isNull(), E_FAIL);
     AssertReturn(!mConsole.isNull(), E_FAIL);
 
-    return mConsole->updateMachineState (aMachineState);
+    return mConsole->updateMachineState(aMachineState);
 }
 
 STDMETHODIMP Session::Uninitialize()
@@ -480,7 +479,7 @@ STDMETHODIMP Session::Uninitialize()
                       mState == SessionState_Spawning, VBOX_E_INVALID_VM_STATE);
 
         /* close ourselves */
-        rc = close (false /* aFinalRelease */, true /* aFromServer */);
+        rc = close(false /* aFinalRelease */, true /* aFromServer */);
     }
     else if (autoCaller.state() == InUninit)
     {
@@ -507,7 +506,7 @@ STDMETHODIMP Session::OnNetworkAdapterChange(INetworkAdapter *networkAdapter, BO
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -521,7 +520,7 @@ STDMETHODIMP Session::OnSerialPortChange(ISerialPort *serialPort)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -535,7 +534,7 @@ STDMETHODIMP Session::OnParallelPortChange(IParallelPort *parallelPort)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -549,7 +548,7 @@ STDMETHODIMP Session::OnStorageControllerChange()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -563,7 +562,7 @@ STDMETHODIMP Session::OnMediumChange(IMediumAttachment *aMediumAttachment, BOOL 
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -577,7 +576,7 @@ STDMETHODIMP Session::OnCPUChange(ULONG aCPU, BOOL aRemove)
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -591,7 +590,7 @@ STDMETHODIMP Session::OnVRDPServerChange()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -605,7 +604,7 @@ STDMETHODIMP Session::OnUSBControllerChange()
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
@@ -614,55 +613,55 @@ STDMETHODIMP Session::OnUSBControllerChange()
     return mConsole->onUSBControllerChange();
 }
 
-STDMETHODIMP Session::OnSharedFolderChange (BOOL aGlobal)
+STDMETHODIMP Session::OnSharedFolderChange(BOOL aGlobal)
 {
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onSharedFolderChange (aGlobal);
+    return mConsole->onSharedFolderChange(aGlobal);
 }
 
-STDMETHODIMP Session::OnUSBDeviceAttach (IUSBDevice *aDevice,
-                                         IVirtualBoxErrorInfo *aError,
-                                         ULONG aMaskedIfs)
+STDMETHODIMP Session::OnUSBDeviceAttach(IUSBDevice *aDevice,
+                                        IVirtualBoxErrorInfo *aError,
+                                        ULONG aMaskedIfs)
 {
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onUSBDeviceAttach (aDevice, aError, aMaskedIfs);
+    return mConsole->onUSBDeviceAttach(aDevice, aError, aMaskedIfs);
 }
 
-STDMETHODIMP Session::OnUSBDeviceDetach (IN_BSTR aId,
-                                         IVirtualBoxErrorInfo *aError)
+STDMETHODIMP Session::OnUSBDeviceDetach(IN_BSTR aId,
+                                        IVirtualBoxErrorInfo *aError)
 {
     LogFlowThisFunc(("\n"));
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
     AssertReturn(mState == SessionState_Open, VBOX_E_INVALID_VM_STATE);
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
 
-    return mConsole->onUSBDeviceDetach (aId, aError);
+    return mConsole->onUSBDeviceDetach(aId, aError);
 }
 
-STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
+STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
 {
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -679,59 +678,59 @@ STDMETHODIMP Session::OnShowWindow (BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId
         return aCheck ? S_OK : E_FAIL;
     }
 
-    return mConsole->onShowWindow (aCheck, aCanShow, aWinId);
+    return mConsole->onShowWindow(aCheck, aCanShow, aWinId);
 }
 
-STDMETHODIMP Session::AccessGuestProperty (IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
-                                           BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
+STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
+                                          BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     if (mState != SessionState_Open)
-        return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Machine session is not open (session state: %s)."),
-            Global::stringifySessionState(mState));
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Machine session is not open (session state: %s)."),
+                        Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
     CheckComArgNotNull(aName);
-    if (!aIsSetter && !VALID_PTR (aRetValue))
+    if (!aIsSetter && !VALID_PTR(aRetValue))
         return E_POINTER;
-    if (!aIsSetter && !VALID_PTR (aRetTimestamp))
+    if (!aIsSetter && !VALID_PTR(aRetTimestamp))
         return E_POINTER;
-    if (!aIsSetter && !VALID_PTR (aRetFlags))
+    if (!aIsSetter && !VALID_PTR(aRetFlags))
         return E_POINTER;
     /* aValue can be NULL for a setter call if the property is to be deleted. */
-    if (aIsSetter && (aValue != NULL) && !VALID_PTR (aValue))
+    if (aIsSetter && (aValue != NULL) && !VALID_PTR(aValue))
         return E_INVALIDARG;
     /* aFlags can be null if it is to be left as is */
-    if (aIsSetter && (aFlags != NULL) && !VALID_PTR (aFlags))
+    if (aIsSetter && (aFlags != NULL) && !VALID_PTR(aFlags))
         return E_INVALIDARG;
     if (!aIsSetter)
-        return mConsole->getGuestProperty (aName, aRetValue, aRetTimestamp, aRetFlags);
+        return mConsole->getGuestProperty(aName, aRetValue, aRetTimestamp, aRetFlags);
     else
-        return mConsole->setGuestProperty (aName, aValue, aFlags);
+        return mConsole->setGuestProperty(aName, aValue, aFlags);
 #else /* VBOX_WITH_GUEST_PROPS not defined */
     ReturnComNotImplemented();
 #endif /* VBOX_WITH_GUEST_PROPS not defined */
 }
 
-STDMETHODIMP Session::EnumerateGuestProperties (IN_BSTR aPatterns,
-                                                ComSafeArrayOut(BSTR, aNames),
-                                                ComSafeArrayOut(BSTR, aValues),
-                                                ComSafeArrayOut(ULONG64, aTimestamps),
-                                                ComSafeArrayOut(BSTR, aFlags))
+STDMETHODIMP Session::EnumerateGuestProperties(IN_BSTR aPatterns,
+                                               ComSafeArrayOut(BSTR, aNames),
+                                               ComSafeArrayOut(BSTR, aValues),
+                                               ComSafeArrayOut(ULONG64, aTimestamps),
+                                               ComSafeArrayOut(BSTR, aFlags))
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     if (mState != SessionState_Open)
-        return setError (VBOX_E_INVALID_VM_STATE,
-            tr ("Machine session is not open (session state: %s)."),
-            Global::stringifySessionState(mState));
+        return setError(VBOX_E_INVALID_VM_STATE,
+                        tr("Machine session is not open (session state: %s)."),
+                        Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
-    if (!VALID_PTR (aPatterns) && (aPatterns != NULL))
+    if (!VALID_PTR(aPatterns) && (aPatterns != NULL))
         return E_POINTER;
     if (ComSafeArrayOutIsNull(aNames))
         return E_POINTER;
@@ -763,7 +762,7 @@ STDMETHODIMP Session::EnumerateGuestProperties (IN_BSTR aPatterns,
  *  @note To be called only from #uninit(), #Close() or #Uninitialize().
  *  @note Locks this object for writing.
  */
-HRESULT Session::close (bool aFinalRelease, bool aFromServer)
+HRESULT Session::close(bool aFinalRelease, bool aFromServer)
 {
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aFinalRelease=%d, isFromServer=%d\n",
@@ -778,7 +777,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
 
     if (mState != SessionState_Open)
     {
-        Assert (mState == SessionState_Spawning);
+        Assert(mState == SessionState_Spawning);
 
         /* The session object is going to be uninitialized before it has been
          * assigned a direct console of the machine the client requested to open
@@ -788,17 +787,17 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
          * direct session). Otherwise, it means that the client is too fast and
          * trying to close the session before waiting for the progress object it
          * got from IVirtualBox:: openRemoteSession() to complete, so assert. */
-        Assert (aFromServer);
+        Assert(aFromServer);
 
         mState = SessionState_Closed;
         mType = SessionType_Null;
 #if defined(RT_OS_WINDOWS)
-        Assert (!mIPCSem && !mIPCThreadSem);
+        Assert(!mIPCSem && !mIPCThreadSem);
 #elif defined(RT_OS_OS2)
-        Assert (mIPCThread == NIL_RTTHREAD &&
-                mIPCThreadSem == NIL_RTSEMEVENT);
+        Assert(mIPCThread == NIL_RTTHREAD &&
+               mIPCThreadSem == NIL_RTSEMEVENT);
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
-        Assert (mIPCSem == -1);
+        Assert(mIPCSem == -1);
 #else
 # error "Port me!"
 #endif
@@ -844,7 +843,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
         alock.leave();
 
         LogFlowThisFunc(("Calling mControl->OnSessionEnd()...\n"));
-        HRESULT rc = mControl->OnSessionEnd (this, progress.asOutParam());
+        HRESULT rc = mControl->OnSessionEnd(this, progress.asOutParam());
         LogFlowThisFunc(("mControl->OnSessionEnd()=%08X\n", rc));
 
         alock.enter();
@@ -856,7 +855,7 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
         if (mType != SessionType_Direct && rc == E_UNEXPECTED)
             rc = S_OK;
 
-        AssertComRC (rc);
+        AssertComRC(rc);
     }
 
     mControl.setNull();
@@ -871,9 +870,9 @@ HRESULT Session::close (bool aFinalRelease, bool aFromServer)
              *  machine (allowing us to open a new session with the same machine
              *  once this method returns)
              */
-            Assert (!!progress);
+            Assert(!!progress);
             if (progress)
-                progress->WaitForCompletion (-1);
+                progress->WaitForCompletion(-1);
         }
     }
 
@@ -894,7 +893,7 @@ HRESULT Session::grabIPCSemaphore()
 
     /* open the IPC semaphore based on the sessionId and try to grab it */
     Bstr ipcId;
-    rc = mControl->GetIPCId (ipcId.asOutParam());
+    rc = mControl->GetIPCId(ipcId.asOutParam());
     AssertComRCReturnRC(rc);
 
     LogFlowThisFunc(("ipcId='%ls'\n", ipcId.raw()));
@@ -908,36 +907,35 @@ HRESULT Session::grabIPCSemaphore()
      *  thread to hold the IPC mutex and then release it in close().
      */
 
-    mIPCThreadSem = ::CreateEvent (NULL, FALSE, FALSE, NULL);
-    AssertMsgReturn (mIPCThreadSem,
-                     ("Cannot create an event sem, err=%d", ::GetLastError()),
-                     E_FAIL);
+    mIPCThreadSem = ::CreateEvent(NULL, FALSE, FALSE, NULL);
+    AssertMsgReturn(mIPCThreadSem,
+                    ("Cannot create an event sem, err=%d", ::GetLastError()),
+                    E_FAIL);
 
-    void *data [3];
-    data [0] = (void *) (BSTR) ipcId;
-    data [1] = (void *) mIPCThreadSem;
-    data [2] = 0; /* will get an output from the thread */
+    void *data[3];
+    data[0] = (void*)(BSTR)ipcId;
+    data[1] = (void*)mIPCThreadSem;
+    data[2] = 0; /* will get an output from the thread */
 
     /* create a thread to hold the IPC mutex until signalled to release it */
     RTTHREAD tid;
-    int vrc = RTThreadCreate (&tid, IPCMutexHolderThread, (void *) data,
-                              0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
-    AssertRCReturn (vrc, E_FAIL);
+    int vrc = RTThreadCreate(&tid, IPCMutexHolderThread, (void*)data, 0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
+    AssertRCReturn(vrc, E_FAIL);
 
     /* wait until thread init is completed */
-    DWORD wrc = ::WaitForSingleObject (mIPCThreadSem, INFINITE);
-    AssertMsg (wrc == WAIT_OBJECT_0, ("Wait failed, err=%d\n", ::GetLastError()));
-    Assert (data [2]);
+    DWORD wrc = ::WaitForSingleObject(mIPCThreadSem, INFINITE);
+    AssertMsg(wrc == WAIT_OBJECT_0, ("Wait failed, err=%d\n", ::GetLastError()));
+    Assert(data[2]);
 
-    if (wrc == WAIT_OBJECT_0 && data [2])
+    if (wrc == WAIT_OBJECT_0 && data[2])
     {
         /* memorize the event sem we should signal in close() */
-        mIPCSem = (HANDLE) data [2];
+        mIPCSem = (HANDLE)data[2];
         rc = S_OK;
     }
     else
     {
-        ::CloseHandle (mIPCThreadSem);
+        ::CloseHandle(mIPCThreadSem);
         mIPCThreadSem = NULL;
         rc = E_FAIL;
     }
@@ -949,25 +947,25 @@ HRESULT Session::grabIPCSemaphore()
      * the mutex). Therefore, we need a separate thread to hold the IPC mutex
      * and then release it in close(). */
 
-    int vrc = RTSemEventCreate (&mIPCThreadSem);
-    AssertRCReturn (vrc, E_FAIL);
+    int vrc = RTSemEventCreate(&mIPCThreadSem);
+    AssertRCReturn(vrc, E_FAIL);
 
-    void *data [3];
-    data [0] = (void *) ipcId.raw();
-    data [1] = (void *) mIPCThreadSem;
-    data [2] = (void *) false; /* will get the thread result here */
+    void *data[3];
+    data[0] = (void*)ipcId.raw();
+    data[1] = (void*)mIPCThreadSem;
+    data[2] = (void*)false; /* will get the thread result here */
 
     /* create a thread to hold the IPC mutex until signalled to release it */
-    vrc = RTThreadCreate (&mIPCThread, IPCMutexHolderThread, (void *) data,
-                          0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
-    AssertRCReturn (vrc, E_FAIL);
+    vrc = RTThreadCreate(&mIPCThread, IPCMutexHolderThread, (void *) data,
+                         0, RTTHREADTYPE_MAIN_WORKER, 0, "IPCHolder");
+    AssertRCReturn(vrc, E_FAIL);
 
     /* wait until thread init is completed */
     vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
     AssertReturn(RT_SUCCESS(vrc) || vrc == VERR_INTERRUPTED, E_FAIL);
 
     /* the thread must succeed */
-    AssertReturn((bool) data [2], E_FAIL);
+    AssertReturn((bool)data[2], E_FAIL);
 
 #elif defined(VBOX_WITH_SYS_V_IPC_SESSION_WATCHER)
 
@@ -1033,7 +1031,7 @@ void Session::releaseIPCSemaphore()
 
         /* tell the thread holding the IPC mutex to release it */
         int vrc = RTSemEventSignal (mIPCThreadSem);
-        AssertRC (vrc == NO_ERROR);
+        AssertRC(vrc == NO_ERROR);
 
         /* wait for the thread to finish */
         vrc = RTThreadUserWait (mIPCThread, RT_INDEFINITE_WAIT);
@@ -1072,8 +1070,8 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
     Assert (pvUser);
     void **data = (void **) pvUser;
 
-    BSTR sessionId = (BSTR) data [0];
-    HANDLE initDoneSem = (HANDLE) data [1];
+    BSTR sessionId = (BSTR)data[0];
+    HANDLE initDoneSem = (HANDLE)data[1];
 
     HANDLE ipcMutex = ::OpenMutex (MUTEX_ALL_ACCESS, FALSE, sessionId);
     AssertMsg (ipcMutex, ("cannot open IPC mutex, err=%d\n", ::GetLastError()));
@@ -1089,7 +1087,7 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
             AssertMsg (finishSem, ("cannot create event sem, err=%d\n", ::GetLastError()));
             if (finishSem)
             {
-                data [2] = (void *) finishSem;
+                data[2] = (void*)finishSem;
                 /* signal we're done with init */
                 ::SetEvent (initDoneSem);
                 /* wait until we're signaled to release the IPC mutex */
@@ -1122,8 +1120,8 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
     Assert (pvUser);
     void **data = (void **) pvUser;
 
-    Utf8Str ipcId = (BSTR) data [0];
-    RTSEMEVENT finishSem = (RTSEMEVENT) data [1];
+    Utf8Str ipcId = (BSTR)data[0];
+    RTSEMEVENT finishSem = (RTSEMEVENT)data[1];
 
     LogFlowFunc (("ipcId='%s', finishSem=%p\n", ipcId.raw(), finishSem));
 
@@ -1140,10 +1138,10 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
         if (arc == NO_ERROR)
         {
             /* store the answer */
-            data [2] = (void *) true;
+            data[2] = (void*)true;
             /* signal we're done */
             int vrc = RTThreadUserSignal (Thread);
-            AssertRC (vrc);
+            AssertRC(vrc);
 
             /* wait until we're signaled to release the IPC mutex */
             LogFlowFunc (("waiting for termination signal..\n"));
@@ -1160,10 +1158,10 @@ DECLCALLBACK(int) IPCMutexHolderThread (RTTHREAD Thread, void *pvUser)
     }
 
     /* store the answer */
-    data [1] = (void *) false;
+    data[1] = (void*)false;
     /* signal we're done */
     int vrc = RTThreadUserSignal (Thread);
-    AssertRC (vrc);
+    AssertRC(vrc);
 
     LogFlowFuncLeave();
 

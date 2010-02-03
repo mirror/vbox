@@ -83,7 +83,7 @@ enum
 /**
  *  Full path to the VBoxSVC executable.
  */
-static char VBoxSVCPath [RTPATH_MAX];
+static char VBoxSVCPath[RTPATH_MAX];
 static bool IsVBoxSVCPathSet = false;
 
 /*
@@ -159,12 +159,12 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 #endif
                 }
             }
-            if (NS_FAILED (rc))
+            if (NS_FAILED(rc))
                 break;
         }
 
         nsCOMPtr <ipcIService> ipcServ = do_GetService (IPC_SERVICE_CONTRACTID, &rc);
-        if (NS_FAILED (rc))
+        if (NS_FAILED(rc))
             break;
 
         /* connect to the VBoxSVC server process */
@@ -178,7 +178,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
             PRUint32 serverID = 0;
             rc = ipcServ->ResolveClientName (VBOXSVC_IPC_NAME, &serverID);
-            if (NS_FAILED (rc))
+            if (NS_FAILED(rc))
             {
                 LogFlowFunc (("Starting server \"%s\"...\n", VBoxSVCPath));
 
@@ -240,7 +240,7 @@ VirtualBoxConstructor (nsISupports *aOuter, REFNSIID aIID,
 
             nsCOMPtr <ipcIDConnectService> dconServ =
                 do_GetService (IPC_DCONNECTSERVICE_CONTRACTID, &rc);
-            if (NS_FAILED (rc))
+            if (NS_FAILED(rc))
                 break;
 
             rc = dconServ->CreateInstance (serverID,

@@ -62,8 +62,8 @@ VirtualBoxBase::~VirtualBoxBase()
 {
     if (mObjectLock)
         delete mObjectLock;
-    Assert (mInitUninitWaiters == 0);
-    Assert (mInitUninitSem == NIL_RTSEMEVENTMULTI);
+    Assert(mInitUninitWaiters == 0);
+    Assert(mInitUninitSem == NIL_RTSEMEVENTMULTI);
     if (mZeroCallersSem != NIL_RTSEMEVENT)
         RTSemEventDestroy (mZeroCallersSem);
     mCallers = 0;
@@ -216,7 +216,7 @@ HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
             if (mInitUninitSem == NIL_RTSEMEVENTMULTI)
             {
                 RTSemEventMultiCreate (&mInitUninitSem);
-                Assert (mInitUninitWaiters == 0);
+                Assert(mInitUninitWaiters == 0);
             }
 
             ++ mInitUninitWaiters;
@@ -241,7 +241,7 @@ HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
                 rc = S_OK;
             else
             {
-                Assert (mCallers != 0);
+                Assert(mCallers != 0);
                 -- mCallers;
                 if (mCallers == 0 && mState == InUninit)
                 {
@@ -271,8 +271,8 @@ void VirtualBoxBase::releaseCaller()
     if (mState == Ready || mState == Limited)
     {
         /* if Ready or Limited, decrease the number of callers */
-        AssertMsgReturn (mCallers != 0, ("mCallers is ZERO!"), (void) 0);
-        -- mCallers;
+        AssertMsgReturn(mCallers != 0, ("mCallers is ZERO!"), (void) 0);
+        --mCallers;
 
         return;
     }
@@ -290,14 +290,12 @@ void VirtualBoxBase::releaseCaller()
         {
             /* the caller is being released after AutoUninitSpan or
              * AutoMayUninitSpan has begun */
-            AssertMsgReturn (mCallers != 0, ("mCallers is ZERO!"), (void) 0);
-            -- mCallers;
+            AssertMsgReturn(mCallers != 0, ("mCallers is ZERO!"), (void) 0);
+            --mCallers;
 
             if (mCallers == 0)
-            {
                 /* inform the Auto*UninitSpan ctor there are no more callers */
-                RTSemEventSignal (mZeroCallersSem);
-            }
+                RTSemEventSignal(mZeroCallersSem);
 
             return;
         }
@@ -599,7 +597,7 @@ AutoMayUninitSpan::AutoMayUninitSpan(VirtualBoxBase *aObj)
              * should've filtered out all states where addCaller() would do
              * something else but set error info. */
             mRC = mObj->addCaller();
-            Assert(FAILED (mRC));
+            Assert(FAILED(mRC));
             return;
     }
 
@@ -633,7 +631,7 @@ AutoMayUninitSpan::AutoMayUninitSpan(VirtualBoxBase *aObj)
 AutoMayUninitSpan::~AutoMayUninitSpan()
 {
     /* if we did nothing in the constructor, do nothing here */
-    if (mAlreadyInProgress || FAILED (mRC))
+    if (mAlreadyInProgress || FAILED(mRC))
         return;
 
     AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
@@ -729,7 +727,7 @@ const char *VirtualBoxBase::translate (const char * /* context */, const char *s
  */
 bool VirtualBoxSupportTranslationBase::cutClassNameFrom__PRETTY_FUNCTION__ (char *fn)
 {
-    Assert (fn);
+    Assert(fn);
     if (!fn)
         return false;
 
@@ -751,18 +749,18 @@ bool VirtualBoxSupportTranslationBase::cutClassNameFrom__PRETTY_FUNCTION__ (char
 
 #endif
 
-    char *start = strstr (fn, START);
-    Assert (start);
+    char *start = strstr(fn, START);
+    Assert(start);
     if (start)
     {
-        start += sizeof (START) - 1;
-        char *end = strstr (start, END);
-        Assert (end && (end > start));
+        start += sizeof(START) - 1;
+        char *end = strstr(start, END);
+        Assert(end && (end > start));
         if (end && (end > start))
         {
             size_t len = end - start;
-            memmove (fn, start, len);
-            fn [len] = 0;
+            memmove(fn, start, len);
+            fn[len] = 0;
             return true;
         }
     }
@@ -826,7 +824,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
                  preserve));
 
     /* these are mandatory, others -- not */
-    AssertReturn((!aWarning && FAILED (aResultCode)) ||
+    AssertReturn((!aWarning && FAILED(aResultCode)) ||
                   (aWarning && aResultCode != S_OK),
                   E_FAIL);
     AssertReturn(!aText.isEmpty(), E_FAIL);
@@ -853,7 +851,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             rc = ::GetErrorInfo (0, err.asOutParam());
             if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
-            if (FAILED (rc))
+            if (FAILED(rc))
             {
                 /* create a IVirtualBoxErrorInfo wrapper for the native
                  * IErrorInfo object */
@@ -868,7 +866,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             }
         }
         /* On failure, curInfo will stay null */
-        Assert (SUCCEEDED(rc) || curInfo.isNull());
+        Assert(SUCCEEDED(rc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
         rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
@@ -912,7 +910,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
                 }
             }
             /* On failure, curInfo will stay null */
-            Assert (SUCCEEDED(rc) || curInfo.isNull());
+            Assert(SUCCEEDED(rc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
             rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
@@ -990,7 +988,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
          * be deleted while we've released the lock */
         DependentChildren::iterator it = mDependentChildren.begin();
         ComPtr<IUnknown> unk = it->first;
-        Assert (!unk.isNull());
+        Assert(!unk.isNull());
 
         VirtualBoxBase *child = it->second;
 
@@ -1002,7 +1000,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
          * thread right before us and is not yet finished, the second
          * uninit() call will wait until the first one has done so
          * (thanks to AutoUninitSpan). */
-        Assert (child);
+        Assert(child);
         if (child)
             child->uninit();
 
@@ -1016,7 +1014,7 @@ void VirtualBoxBaseWithChildrenNEXT::uninitDependentChildren()
         if (count != mDependentChildren.size())
             mDependentChildren.erase (it);
 
-        Assert (count == mDependentChildren.size());
+        Assert(count == mDependentChildren.size());
     }
 }
 

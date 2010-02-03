@@ -85,8 +85,8 @@ int DHCPServerRunner::start()
     const char * args[DHCPCFG_NOTOPT_MAXVAL * 2];
 
     /* get the path to the executable */
-    char exePathBuf [RTPATH_MAX];
-    const char *exePath = RTProcGetExecutableName (exePathBuf, RTPATH_MAX);
+    char exePathBuf[RTPATH_MAX];
+    const char *exePath = RTProcGetExecutableName(exePathBuf, RTPATH_MAX);
     char *substrSl = strrchr(exePathBuf, '/');
     char *substrBs = strrchr(exePathBuf, '\\');
     char *suffix = substrSl ? substrSl : substrBs;
@@ -120,7 +120,7 @@ int DHCPServerRunner::start()
 
     args[index++] = NULL;
 
-    int rc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &mProcess);
+    int rc = RTProcCreate(exePath, args, RTENV_DEFAULT, 0, &mProcess);
     if (RT_FAILURE(rc))
         mProcess = NIL_RTPROCESS;
 

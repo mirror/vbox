@@ -876,7 +876,7 @@ static BOOL IsUACEnabled()
                         "Software\\Microsoft\\Windows\\CurrentVersion\\Policies\\System",
                         0, KEY_QUERY_VALUE, &hKey);
 
-    Assert (rc == ERROR_SUCCESS || rc == ERROR_PATH_NOT_FOUND);
+    Assert(rc == ERROR_SUCCESS || rc == ERROR_PATH_NOT_FOUND);
     if (rc == ERROR_SUCCESS)
     {
 
@@ -886,7 +886,7 @@ static BOOL IsUACEnabled()
 
         RegCloseKey (hKey);
 
-        Assert (rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
+        Assert(rc == ERROR_SUCCESS || rc == ERROR_FILE_NOT_FOUND);
     }
 
     LogFlowFunc (("rc=%d, dwEnableLUA=%d\n", rc, dwEnableLUA));

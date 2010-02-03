@@ -348,10 +348,9 @@ STDMETHODIMP SerialPort::COMSETTER(IRQ)(ULONG aIRQ)
     /* check IRQ limits
      * (when changing this, make sure it corresponds to XML schema */
     if (aIRQ > 255)
-        return setError (E_INVALIDARG,
-            tr ("Invalid IRQ number of the serial port %d: "
-                "%lu (must be in range [0, %lu])"),
-            m->bd->ulSlot, aIRQ, 255);
+        return setError(E_INVALIDARG,
+                        tr("Invalid IRQ number of the serial port %d: %lu (must be in range [0, %lu])"),
+                        m->bd->ulSlot, aIRQ, 255);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -400,10 +399,9 @@ STDMETHODIMP SerialPort::COMSETTER(IOBase)(ULONG aIOBase)
     /* check IOBase limits
      * (when changing this, make sure it corresponds to XML schema */
     if (aIOBase > 0xFFFF)
-        return setError (E_INVALIDARG,
-            tr ("Invalid I/O port base address of the serial port %d: "
-                "%lu (must be in range [0, 0x%X])"),
-            m->bd->ulSlot, aIOBase, 0, 0xFFFF);
+        return setError(E_INVALIDARG,
+                        tr("Invalid I/O port base address of the serial port %d: %lu (must be in range [0, 0x%X])"),
+                        m->bd->ulSlot, aIOBase, 0, 0xFFFF);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

@@ -220,9 +220,9 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
 #endif /* VBOX_WITH_VIRTIO */
             break;
         default:
-            return setError (E_FAIL,
-                tr("Invalid network adapter type '%d'"),
-                aAdapterType);
+            return setError(E_FAIL,
+                            tr("Invalid network adapter type '%d'"),
+                            aAdapterType);
     }
 
     if (mData->mAdapterType != aAdapterType)
@@ -238,7 +238,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -296,7 +296,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        mParent->onNetworkAdapterChange (this, FALSE);
+        mParent->onNetworkAdapterChange(this, FALSE);
     }
 
     return S_OK;
@@ -407,7 +407,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     // we have left the lock in any case at this point
 
     if (emitChangeEvent)
-        mParent->onNetworkAdapterChange (this, FALSE);
+        mParent->onNetworkAdapterChange(this, FALSE);
 
     return rc;
 }
@@ -507,8 +507,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         if (   (aInternalNetwork == NULL || *aInternalNetwork == '\0')
             && mData->mAttachmentType == NetworkAttachmentType_Internal)
         {
-            return setError (E_FAIL,
-                tr ("Empty or null internal network name is not valid"));
+            return setError(E_FAIL,
+                            tr("Empty or null internal network name is not valid"));
         }
 
         mData.backup();
@@ -783,8 +783,8 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
-        if (FAILED (rc))
+        HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
+        if (FAILED(rc))
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
@@ -830,8 +830,8 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
-        if (FAILED (rc))
+        HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
+        if (FAILED(rc))
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
@@ -885,8 +885,8 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
-        if (FAILED (rc))
+        HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
+        if (FAILED(rc))
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
@@ -932,8 +932,8 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        HRESULT rc = mParent->onNetworkAdapterChange (this, TRUE);
-        if (FAILED (rc))
+        HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
+        if (FAILED(rc))
         {
             /* If changing the attachment failed then we can't assume
              * that the previous attachment will attach correctly
@@ -973,7 +973,7 @@ STDMETHODIMP NetworkAdapter::Detach()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        mParent->onNetworkAdapterChange (this, TRUE);
+        mParent->onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;

@@ -96,10 +96,10 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     /// @todo We currently leak memory because it's not actually clear what to
     /// free in structures returned by VDBackendInfo. Must be fixed ASAP!
 
-    VDBACKENDINFO aVDInfo [100];
+    VDBACKENDINFO aVDInfo[100];
     unsigned cEntries;
-    int vrc = VDBackendInfo (RT_ELEMENTS (aVDInfo), aVDInfo, &cEntries);
-    AssertRC (vrc);
+    int vrc = VDBackendInfo(RT_ELEMENTS (aVDInfo), aVDInfo, &cEntries);
+    AssertRC(vrc);
     if (RT_SUCCESS(vrc))
     {
         for (unsigned i = 0; i < cEntries; ++ i)
@@ -108,10 +108,10 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
             rc = hdf.createObject();
             if (FAILED(rc)) break;
 
-            rc = hdf->init (&aVDInfo [i]);
+            rc = hdf->init(&aVDInfo[i]);
             if (FAILED(rc)) break;
 
-            mMediumFormats.push_back (hdf);
+            mMediumFormats.push_back(hdf);
         }
     }
 

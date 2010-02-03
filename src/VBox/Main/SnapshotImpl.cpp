@@ -105,13 +105,13 @@ struct Snapshot::Data
 
 HRESULT Snapshot::FinalConstruct()
 {
-    LogFlowMember (("Snapshot::FinalConstruct()\n"));
+    LogFlowMember(("Snapshot::FinalConstruct()\n"));
     return S_OK;
 }
 
 void Snapshot::FinalRelease()
 {
-    LogFlowMember (("Snapshot::FinalRelease()\n"));
+    LogFlowMember(("Snapshot::FinalRelease()\n"));
     uninit();
 }
 
@@ -135,7 +135,7 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
 {
     LogFlowMember(("Snapshot::init(uuid: %s, aParent->uuid=%s)\n", aId.toString().c_str(), (aParent) ? aParent->m->uuid.toString().c_str() : ""));
 
-    ComAssertRet (!aId.isEmpty() && !aName.isEmpty() && aMachine, E_INVALIDARG);
+    ComAssertRet(!aId.isEmpty() && !aName.isEmpty() && aMachine, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -173,7 +173,7 @@ HRESULT Snapshot::init(VirtualBox *aVirtualBox,
  */
 void Snapshot::uninit()
 {
-    LogFlowMember (("Snapshot::uninit()\n"));
+    LogFlowMember(("Snapshot::uninit()\n"));
 
     /* Enclose the state transition Ready->InUninit->NotReady */
     AutoUninitSpan autoUninitSpan(this);
@@ -309,7 +309,7 @@ void Snapshot::deparent()
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
+STDMETHODIMP Snapshot::COMGETTER(Id)(BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -322,7 +322,7 @@ STDMETHODIMP Snapshot::COMGETTER(Id) (BSTR *aId)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Name) (BSTR *aName)
+STDMETHODIMP Snapshot::COMGETTER(Name)(BSTR *aName)
 {
     CheckComArgOutPointerValid(aName);
 
@@ -362,7 +362,7 @@ STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
+STDMETHODIMP Snapshot::COMGETTER(Description)(BSTR *aDescription)
 {
     CheckComArgOutPointerValid(aDescription);
 
@@ -375,7 +375,7 @@ STDMETHODIMP Snapshot::COMGETTER(Description) (BSTR *aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
+STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
 {
     CheckComArgNotNull(aDescription);
 
@@ -398,7 +398,7 @@ STDMETHODIMP Snapshot::COMSETTER(Description) (IN_BSTR aDescription)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(TimeStamp) (LONG64 *aTimeStamp)
+STDMETHODIMP Snapshot::COMGETTER(TimeStamp)(LONG64 *aTimeStamp)
 {
     CheckComArgOutPointerValid(aTimeStamp);
 
@@ -424,7 +424,7 @@ STDMETHODIMP Snapshot::COMGETTER(Online)(BOOL *aOnline)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
+STDMETHODIMP Snapshot::COMGETTER(Machine)(IMachine **aMachine)
 {
     CheckComArgOutPointerValid(aMachine);
 
@@ -437,7 +437,7 @@ STDMETHODIMP Snapshot::COMGETTER(Machine) (IMachine **aMachine)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
+STDMETHODIMP Snapshot::COMGETTER(Parent)(ISnapshot **aParent)
 {
     CheckComArgOutPointerValid(aParent);
 
@@ -450,7 +450,7 @@ STDMETHODIMP Snapshot::COMGETTER(Parent) (ISnapshot **aParent)
     return S_OK;
 }
 
-STDMETHODIMP Snapshot::COMGETTER(Children) (ComSafeArrayOut(ISnapshot *, aChildren))
+STDMETHODIMP Snapshot::COMGETTER(Children)(ComSafeArrayOut(ISnapshot *, aChildren))
 {
     CheckComArgOutSafeArrayPointerValid(aChildren);
 
@@ -815,7 +815,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("mName={%ls}\n", aSessionMachine->mUserData->mName.raw()));
 
-    AssertReturn(aSessionMachine && !Guid (aSnapshotId).isEmpty(), E_INVALIDARG);
+    AssertReturn(aSessionMachine && !Guid(aSnapshotId).isEmpty(), E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -831,13 +831,13 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     unconst(mParent) = mPeer->mParent;
 
     /* take the pointer to Data to share */
-    mData.share (mPeer->mData);
+    mData.share(mPeer->mData);
 
     /* take the pointer to UserData to share (our UserData must always be the
      * same as Machine's data) */
-    mUserData.share (mPeer->mUserData);
+    mUserData.share(mPeer->mUserData);
     /* make a private copy of all other data (recent changes from SessionMachine) */
-    mHWData.attachCopy (aSessionMachine->mHWData);
+    mHWData.attachCopy(aSessionMachine->mHWData);
     mMediaData.attachCopy(aSessionMachine->mMediaData);
 
     /* SSData is always unique for SnapshotMachine */
@@ -854,7 +854,7 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     {
         ComObjPtr<SharedFolder> folder;
         folder.createObject();
-        rc = folder->initCopy (this, *it);
+        rc = folder->initCopy(this, *it);
         if (FAILED(rc)) return rc;
         *it = folder;
     }
@@ -884,42 +884,42 @@ HRESULT SnapshotMachine::init(SessionMachine *aSessionMachine,
     {
         ComObjPtr<StorageController> ctrl;
         ctrl.createObject();
-        ctrl->initCopy (this, *it);
+        ctrl->initCopy(this, *it);
         mStorageControllers->push_back(ctrl);
     }
 
     /* create all other child objects that will be immutable private copies */
 
     unconst(mBIOSSettings).createObject();
-    mBIOSSettings->initCopy (this, mPeer->mBIOSSettings);
+    mBIOSSettings->initCopy(this, mPeer->mBIOSSettings);
 
 #ifdef VBOX_WITH_VRDP
     unconst(mVRDPServer).createObject();
-    mVRDPServer->initCopy (this, mPeer->mVRDPServer);
+    mVRDPServer->initCopy(this, mPeer->mVRDPServer);
 #endif
 
     unconst(mAudioAdapter).createObject();
-    mAudioAdapter->initCopy (this, mPeer->mAudioAdapter);
+    mAudioAdapter->initCopy(this, mPeer->mAudioAdapter);
 
     unconst(mUSBController).createObject();
     mUSBController->initCopy(this, mPeer->mUSBController);
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mNetworkAdapters); slot++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
     {
         unconst(mNetworkAdapters[slot]).createObject();
-        mNetworkAdapters[slot]->initCopy (this, mPeer->mNetworkAdapters [slot]);
+        mNetworkAdapters[slot]->initCopy(this, mPeer->mNetworkAdapters[slot]);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mSerialPorts); slot++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
     {
-        unconst(mSerialPorts [slot]).createObject();
-        mSerialPorts[slot]->initCopy (this, mPeer->mSerialPorts[slot]);
+        unconst(mSerialPorts[slot]).createObject();
+        mSerialPorts[slot]->initCopy(this, mPeer->mSerialPorts[slot]);
     }
 
-    for (ULONG slot = 0; slot < RT_ELEMENTS (mParallelPorts); slot++)
+    for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
     {
         unconst(mParallelPorts[slot]).createObject();
-        mParallelPorts[slot]->initCopy (this, mPeer->mParallelPorts[slot]);
+        mParallelPorts[slot]->initCopy(this, mPeer->mParallelPorts[slot]);
     }
 
     /* Confirm a successful initialization when it's the case */
@@ -966,12 +966,12 @@ HRESULT SnapshotMachine::init(Machine *aMachine,
     unconst(mParent) = mPeer->mParent;
 
     /* take the pointer to Data to share */
-    mData.share (mPeer->mData);
+    mData.share(mPeer->mData);
     /*
      *  take the pointer to UserData to share
      *  (our UserData must always be the same as Machine's data)
      */
-    mUserData.share (mPeer->mUserData);
+    mUserData.share(mPeer->mUserData);
     /* allocate private copies of all other data (will be loaded from settings) */
     mHWData.allocate();
     mMediaData.allocate();
@@ -1078,7 +1078,7 @@ RWLockHandle *SnapshotMachine::lockHandle() const
  *
  *  @note Locks this object for writing.
  */
-HRESULT SnapshotMachine::onSnapshotChange (Snapshot *aSnapshot)
+HRESULT SnapshotMachine::onSnapshotChange(Snapshot *aSnapshot)
 {
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1537,7 +1537,7 @@ STDMETHODIMP SessionMachine::RestoreSnapshot(IConsole *aInitiator,
     AssertReturn(aSnapshot && aMachineState && aProgress, E_POINTER);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1951,7 +1951,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     AssertReturn(aMachineState && aProgress, E_POINTER);
 
     AutoCaller autoCaller(this);
-    AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
+    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
     /* saveSettings() needs mParent lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
@@ -2207,7 +2207,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
                     /* The below assert would be nice but I don't want to move
                      * Medium::MergeChain to the header just for that
-                     * Assert (!chain->isForward()); */
+                     * Assert(!chain->isForward()); */
 
                     // prepareDiscard() should have raised an error already
                     // if there was more than one child
