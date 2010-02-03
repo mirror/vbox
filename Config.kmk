@@ -597,7 +597,7 @@ endif
 #
 # Branding
 #
-VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/sun_logo.bmp
+VBOX_BRAND_BIOS_LOGO                 := $(PATH_ROOT)/src/VBox/Devices/Graphics/BIOS/puel_logo.bmp
 VBOX_BRAND_LICENSE_HTML              := $(PATH_ROOT)/doc/License.html
 VBOX_BRAND_LICENSE_RTF               := $(PATH_ROOT)/doc/License.rtf
 VBOX_BRAND_LICENSE_TXT               := $(PATH_ROOT)/doc/License.txt
