@@ -61,7 +61,7 @@ ifdef VBOX_WITH_RAW_MODE
 endif # VBOX_WITH_RAW_MODE
 
 LIBRARIES              += DisasmR0
-DisasmR0_TEMPLATE       = VBOXR0
+DisasmR0_TEMPLATE       = VBoxR0
 DisasmR0_DEFS           = IN_DIS IN_RT_R0 DIS_CORE_ONLY
 DisasmR0_SOURCES        = \
 	DisasmCore.cpp \

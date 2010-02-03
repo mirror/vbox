@@ -1051,9 +1051,9 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         return VINF_SUCCESS;
     }
 
-    /* Fetch the pgm pool shadow descriptor. */ 
-    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK); 
-    Assert(pShwPde); 
+    /* Fetch the pgm pool shadow descriptor. */
+    PPGMPOOLPAGE pShwPde = pgmPoolGetPage(pPool, pPdptDst->a[iPdpt].u & SHW_PDPE_PG_MASK);
+    Assert(pShwPde);
 
 # endif /* PGM_SHW_TYPE == PGM_TYPE_AMD64 */
 
@@ -2194,14 +2194,14 @@ l_UpperLevelPageFault:
     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyTrackRealPF));
     Log(("CheckPageFault: real page fault at %RGv (%d)\n", GCPtrPage, uPageFaultLevel));
 
-    if (
+    if (    1
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64
-            pPml4eSrc->n.u1Present &&
+         && pPml4eSrc->n.u1Present
 #  endif
 #  if PGM_GST_TYPE == PGM_TYPE_AMD64 || PGM_GST_TYPE == PGM_TYPE_PAE
-            pPdpeSrc->n.u1Present  &&
+         && pPdpeSrc->n.u1Present
 #  endif
-            pPdeSrc->n.u1Present)
+         && pPdeSrc->n.u1Present)
     {
         /* Check the present bit as the shadow tables can cause different error codes by being out of sync. */
         if (   pPdeSrc->b.u1Size
@@ -2217,12 +2217,11 @@ l_UpperLevelPageFault:
             /*
              * Map the guest page table.
              */
-            PGSTPT pPTSrc;
-            rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc);
+            PGSTPT pPTSrc2;
+            rc = PGM_GCPHYS_2_PTR(pVM, pPdeSrc->u & GST_PDE_PG_MASK, &pPTSrc2);
             if (RT_SUCCESS(rc))
             {
-                PGSTPTE         pPteSrc = &pPTSrc->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
-                const GSTPTE    PteSrc = *pPteSrc;
+                PGSTPTE pPteSrc = &pPTSrc2->a[(GCPtrPage >> GST_PT_SHIFT) & GST_PT_MASK];
                 if (pPteSrc->n.u1Present)
                     TRPMSetErrorCode(pVCpu, uErr | X86_TRAP_PF_P); /* page-level protection violation */
             }

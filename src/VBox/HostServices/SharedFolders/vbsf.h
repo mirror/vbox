@@ -1,6 +1,4 @@
 /** @file
- *
- * Shared Folders:
  * VBox Shared Folders header.
  */
 

@@ -627,7 +627,7 @@ endif # VBOX_WITH_RAW_MODE
 #
 # VBoxDDR0 (sysmod)
 #
-VBoxDDR0_TEMPLATE       = VBOXR0
+VBoxDDR0_TEMPLATE       = VBoxR0
 VBoxDDR0_SYSSUFF        = .r0
 VBoxDDR0_DEFS.darwin.x86= VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0 VBOX_WITH_2X_4GB_ADDR_SPACE
 VBoxDDR0_DEFS           = IN_RT_R0
@@ -746,7 +746,7 @@ endif
 #
 # VBoxDD2R0 (LGPL sysmod)
 #
-VBoxDD2R0_TEMPLATE       = VBOXR0
+VBoxDD2R0_TEMPLATE       = VBoxR0
 VBoxDD2R0_DEFS           = IN_RT_R0
 VBoxDD2R0_SYSSUFF        = .r0
 VBoxDD2R0_INCS          := \
@@ -1106,7 +1106,7 @@ endif # VBOX_WITH_SCSI
 #
 # Ring-0 Services (library, linked into VMMR0.r0)
 #
-ServicesR0_TEMPLATE  = VBOXR0
+ServicesR0_TEMPLATE  = VBoxR0
 ServicesR0_DEFS      = IN_INTNET_R0 IN_RT_R0
 ServicesR0_SOURCES   = \
 	Network/SrvIntNetR0.cpp
