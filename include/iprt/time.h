@@ -601,9 +601,20 @@ typedef const RTTIME *PCRTTIME;
  * Gets the current system time (UTC).
  *
  * @returns pTime.
- * @param   pTime   Where to store the time.
+ * @param   pTime       Where to store the time.
  */
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime);
+
+/**
+ * Sets the system time.
+ *
+ * @returns IPRT status code
+ * @param   pTime       The new system time (UTC).
+ *
+ * @remarks This will usually fail because changing the wall time is usually
+ *          requires extra privileges.
+ */
+RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime);
 
 /**
  * Explodes a time spec (UTC).

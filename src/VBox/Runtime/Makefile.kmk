@@ -486,6 +486,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/semrw-posix.cpp \
 	r3/posix/thread-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
@@ -557,6 +558,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/posix/path-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/timelocal-posix.cpp \
 	r3/posix/utf8-posix.cpp
 
@@ -588,6 +590,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/dir-posix.cpp \
 	r3/posix/env-posix.cpp \
 	r3/posix/fileio-posix.cpp \
@@ -644,6 +647,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTMpGetCount-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
@@ -681,6 +685,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/semevent-posix.cpp \
 	r3/posix/semeventmulti-posix.cpp \
 	r3/posix/semmutex-posix.cpp \
@@ -748,6 +753,7 @@ RuntimeR3L4_SOURCES = \
 	r3/posix/path-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
+	r3/posix/RTTimeSet-posix.cpp \
 	r3/posix/time-posix.cpp \
 	r3/posix/timelocal-posix.cpp
 

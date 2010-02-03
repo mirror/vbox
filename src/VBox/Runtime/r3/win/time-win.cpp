@@ -135,40 +135,18 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 }
 
 
-/**
- * Gets the current nanosecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns nanosecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemNanoTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
 
 
-/**
- * Gets the current millisecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns millisecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
 
 
-/**
- * Gets the current system time.
- *
- * @returns pTime.
- * @param   pTime   Where to store the time.
- */
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     uint64_t u64;
@@ -178,12 +156,19 @@ RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 }
 
 
-/**
- * Gets the current local system time.
- *
- * @returns pTime.
- * @param   pTime   Where to store the local time.
- */
+RTDECL(int) RTTimeSet(PCRTTIMESPEC pTime)
+{
+    FILETIME    FileTime;
+    SYSTEMTIME  SysTime;
+    if (FileTimeToSystemTime(RTTimeSpecGetNtFileTime(pTime, &FileTime), &SysTime))
+    {
+        if (SetSystemTime(&SysTime))
+            return VINF_SUCCESS;
+    }
+    return RTErrConvertFromWin32(GetLastError());
+}
+
+
 RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 {
     uint64_t u64;
@@ -196,16 +181,6 @@ RTDECL(PRTTIMESPEC) RTTimeLocalNow(PRTTIMESPEC pTime)
 }
 
 
-/**
- * Gets the delta between UTC and local time.
- *
- * @code
- *      RTTIMESPEC LocalTime;
- *      RTTimeSpecAddNano(RTTimeNow(&LocalTime), RTTimeLocalDeltaNano());
- * @endcode
- *
- * @returns Returns the nanosecond delta between UTC and local time.
- */
 RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 {
     /*
@@ -220,13 +195,6 @@ RTDECL(int64_t) RTTimeLocalDeltaNano(void)
 }
 
 
-/**
- * Explodes a time spec to the localized timezone.
- *
- * @returns pTime.
- * @param   pTime       Where to store the exploded time.
- * @param   pTimeSpec   The time spec to exploded. (UTC)
- */
 RTDECL(PRTTIME) RTTimeLocalExplode(PRTTIME pTime, PCRTTIMESPEC pTimeSpec)
 {
     /*

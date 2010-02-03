@@ -97,40 +97,18 @@ DECLINLINE(uint64_t) rtTimeGetSystemNanoTS(void)
 }
 
 
-/**
- * Gets the current nanosecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns nanosecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemNanoTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
 
 
-/**
- * Gets the current millisecond timestamp.
- *
- * This differs from RTTimeNanoTS in that it will use system APIs and not do any
- * resolution or performance optimizations.
- *
- * @returns millisecond timestamp.
- */
 RTDECL(uint64_t) RTTimeSystemMilliTS(void)
 {
     return rtTimeGetSystemNanoTS();
 }
 
 
-/**
- * Gets the current system time.
- *
- * @returns pTime.
- * @param   pTime   Where to store the time.
- */
 RTDECL(PRTTIMESPEC) RTTimeNow(PRTTIMESPEC pTime)
 {
     /** @todo find nanosecond API for getting time of day. */
