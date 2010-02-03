@@ -216,7 +216,7 @@ typedef enum SUPGIPMODE
  *          thinking that values doesn't change even if members are marked
  *          as volatile. Thus, there is no PCSUPGLOBALINFOPAGE type.
  */
-#if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_GC)
+#if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_RC)
 extern DECLEXPORT(PSUPGLOBALINFOPAGE)   g_pSUPGlobalInfoPage;
 
 #elif !defined(IN_RING0) || defined(RT_OS_WINDOWS)
@@ -462,7 +462,7 @@ SUPDECL(int) SUPSemEventMultiWaitNoResume(PSUPDRVSESSION pSession, SUPSEMEVENTMU
 
 #ifdef IN_RING3
 
-/** @defgroup   grp_sup_r3     SUP Host Context Ring 3 API
+/** @defgroup   grp_sup_r3     SUP Host Context Ring-3 API
  * @ingroup grp_sup
  * @{
  */
@@ -965,7 +965,7 @@ SUPR3DECL(int) SUPR3QueryVTCaps(uint32_t *pfCaps);
 
 
 #ifdef IN_RING0
-/** @defgroup   grp_sup_r0     SUP Host Context Ring 0 API
+/** @defgroup   grp_sup_r0     SUP Host Context Ring-0 API
  * @ingroup grp_sup
  * @{
  */

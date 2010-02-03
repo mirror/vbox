@@ -66,7 +66,7 @@
 #define IN_REM_R3
 #define IN_SUP_R0
 #define IN_SUP_R3
-#define IN_SUP_GC
+#define IN_SUP_RC
 #define IN_SUP_STATIC
 #define IN_USBLIB
 #define IN_VBOXDDU
@@ -121,7 +121,7 @@
 
 
 /** @def IN_INTNET_R3
- * Used to indicate whether we're inside the same link module as the Ring 3
+ * Used to indicate whether we're inside the same link module as the Ring-3
  * Internal Networking Service.
  */
 /** @def INTNETR3DECL(type)
@@ -167,7 +167,8 @@
 
 
 /** @def IN_SUP_R3
- * Used to indicate whether we're inside the same link module as the Ring 3 Support Library or not.
+ * Used to indicate whether we're inside the same link module as the Ring-3
+ * Support Library or not.
  */
 /** @def SUPR3DECL(type)
  * Support library export or import declaration.
@@ -180,7 +181,7 @@
 #endif
 
 /** @def IN_SUP_R0
- * Used to indicate whether we're inside the same link module as the Ring 0
+ * Used to indicate whether we're inside the same link module as the Ring-0
  * Support Library or not.
  */
 /** @def IN_SUP_STATIC
@@ -205,27 +206,29 @@
 # endif
 #endif
 
-/** @def IN_SUP_GC
- * Used to indicate whether we're inside the same link module as the GC Support Library or not.
+/** @def IN_SUP_RC
+ * Used to indicate whether we're inside the same link module as the RC Support
+ * Library or not.
  */
-/** @def SUPGCDECL(type)
+/** @def SUPRCDECL(type)
  * Support library export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#ifdef IN_SUP_GC
-# define SUPGCDECL(type)    DECLEXPORT(type) VBOXCALL
+#ifdef IN_SUP_RC
+# define SUPRCDECL(type)    DECLEXPORT(type) VBOXCALL
 #else
-# define SUPGCDECL(type)    DECLIMPORT(type) VBOXCALL
+# define SUPRCDECL(type)    DECLIMPORT(type) VBOXCALL
 #endif
 
 /** @def IN_SUP_R0
- * Used to indicate whether we're inside the same link module as the Ring 0 Support Library or not.
+ * Used to indicate whether we're inside the same link module as the Ring-0
+ * Support Library or not.
  */
 /** @def SUPR0DECL(type)
  * Support library export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_GC)
+#if defined(IN_SUP_R0) || defined(IN_SUP_R3) || defined(IN_SUP_RC)
 # define SUPDECL(type)      DECLEXPORT(type) VBOXCALL
 #else
 # define SUPDECL(type)      DECLIMPORT(type) VBOXCALL
@@ -259,7 +262,7 @@
  * virtual machine monitor or not.
  */
 /** @def VMMR3DECL
- * Ring 3 VMM export or import declaration.
+ * Ring-3 VMM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R3
@@ -279,11 +282,11 @@
 #endif
 
 /** @def IN_VMM_R0
- * Used to indicate whether we're inside the same link module as the ring 0 part of the
- * virtual machine monitor or not.
+ * Used to indicate whether we're inside the same link module as the ring-0 part
+ * of the virtual machine monitor or not.
  */
 /** @def VMMR0DECL
- * Ring 0 VMM export or import declaration.
+ * Ring-0 VMM export or import declaration.
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_VMM_R0
