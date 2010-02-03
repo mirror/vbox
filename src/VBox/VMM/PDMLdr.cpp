@@ -1249,7 +1249,7 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
     /*
      * Find the module.
      */
-    int rc;
+    int     rc      = VINF_SUCCESS;
     PPDMMOD pModule = pdmR3LdrFindModule(pVM->pUVM,
                                          pszModule ? pszModule : fRing0OrRC ? "VMMR0.r0" : "VMMGC.gc",
                                          fRing0OrRC ? PDMMOD_TYPE_R0 : PDMMOD_TYPE_RC,
