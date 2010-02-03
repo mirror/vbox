@@ -56,7 +56,7 @@ BEGINDATA
 %ifdef IN_SUP_R3
  %define IN_SUPLIB
 %endif
-%ifdef IN_SUP_GC
+%ifdef IN_SUP_RC
  %define IN_SUPLIB
 %endif
 %ifdef IN_SUPLIB
