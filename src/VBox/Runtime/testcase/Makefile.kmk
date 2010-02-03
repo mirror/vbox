@@ -258,14 +258,14 @@ tstLdr-3_DEFS = IN_DIS
 tstLdr-3_LIBS = \
 	$(PATH_LIB)/DisasmR3$(VBOX_SUFF_LIB)
 
-tstLdr-4Imp_TEMPLATE = VBOXR0
+tstLdr-4Imp_TEMPLATE = VBoxR0
 ifeq ($(VBOX_LDR_FMT),lx)
  tstLdr-4Imp_SOURCES = tstLdr-4Imp-os2.def
 else ifeq ($(VBOX_LDR_FMT),pe)
  tstLdr-4Imp_SOURCES.win = tstLdr-4Imp-win.def
 endif
 
-tstLdrObjR0_TEMPLATE = VBOXR0
+tstLdrObjR0_TEMPLATE = VBoxR0
 tstLdrObjR0_INST = $(INST_TESTCASE)
 tstLdrObjR0_SYSSUFF = .r0
 tstLdrObjR0_SOURCES = tstLdrObjR0.cpp tstLdrDisasmTest.cpp
@@ -311,7 +311,7 @@ tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
 tstRTMemPool_SOURCES = tstRTMemPool.cpp
 
-tstRTR0MemUserKernel_TEMPLATE = VBOXR0
+tstRTR0MemUserKernel_TEMPLATE = VBoxR0
 tstRTR0MemUserKernel_INST = $(INST_TESTCASE)
 tstRTR0MemUserKernel_DEFS = IN_RT_R0
 tstRTR0MemUserKernel_SYSSUFF = .r0
@@ -350,7 +350,7 @@ tstPrfRT_SOURCES = tstPrfRT.cpp
 
 tstRand_SOURCES = tstRand.cpp
 
-tstR0ThreadPreemption_TEMPLATE = VBOXR0
+tstR0ThreadPreemption_TEMPLATE = VBoxR0
 tstR0ThreadPreemption_INST = $(INST_TESTCASE)
 tstR0ThreadPreemption_DEFS = IN_RT_R0
 tstR0ThreadPreemption_SYSSUFF = .r0

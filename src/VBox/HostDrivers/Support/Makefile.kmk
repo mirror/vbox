@@ -132,7 +132,7 @@ VBoxSupSvc_LIBS = \
 #
 # SUPR0 - The Ring-0 Import / Thunk library.
 #
-SUPR0_TEMPLATE      = VBOXR0
+SUPR0_TEMPLATE      = VBoxR0
 ifeq ($(VBOX_LDR_FMT),pe)
  SUPR0_SOURCES     += SUPR0.def
 endif

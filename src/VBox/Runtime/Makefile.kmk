@@ -172,7 +172,7 @@ RuntimeNoCrt_SOURCES = \
 #
 # RuntimeR3 - Static Runtime for Ring-3 executables.
 #
-RuntimeR3_TEMPLATE      = VBOXR3STATIC
+RuntimeR3_TEMPLATE      = VBoxR3Static
 RuntimeR3_SDKS          = VBOX_LIBXML2 VBOX_BOOST
 RuntimeR3_SDKS.win      = WINPSDK W2K3DDK
 RuntimeR3_DEFS          = IN_RT_R3 IN_SUP_R3 LDR_WITH_NATIVE LDR_WITH_ELF32 LDR_WITH_PE RT_WITH_VBOX RT_NO_GIP
@@ -910,7 +910,7 @@ RuntimeLnxHostR3_INCS          = \
 #
 # VBoxRT - Shared Object / DLL version.
 #
-VBoxRT_TEMPLATE                = VBOXR3
+VBoxRT_TEMPLATE                = VBoxR3Dll
 VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_LIBCURL VBOX_BOOST
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
@@ -1103,7 +1103,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 #
 # RuntimeR0 - Ring0 library for VMMR0.
 #
-RuntimeR0_TEMPLATE      = VBOXR0
+RuntimeR0_TEMPLATE      = VBoxR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
 RuntimeR0_INCS          = include
 RuntimeR0_SOURCES       = \
