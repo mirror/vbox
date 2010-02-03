@@ -202,31 +202,31 @@ static DECLCALLBACK(int) doit(PVM pVM)
     /*
      * Loading the module and resolve the entry point.
      */
-    int rc = PDMR3LdrLoadRC(pVM, NULL, "tstMicroGC.gc");
+    int rc = PDMR3LdrLoadRC(pVM, NULL, "tstMicroRC.gc");
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to load tstMicroGC.gc, rc=%Rra\n", rc);
+        RTPrintf(TESTCASE ": Failed to load tstMicroRC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEntry;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGC", &RCPtrEntry);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroRC.gc", "tstMicroRC", &RCPtrEntry);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGC' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroRC' entry point in tstMicroRC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrStart;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmStart", &RCPtrStart);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroRC.gc", "tstMicroRCAsmStart", &RCPtrStart);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmStart' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroRCAsmStart' entry point in tstMicroRC.gc, rc=%Rra\n", rc);
         return rc;
     }
     RTRCPTR RCPtrEnd;
-    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroGC.gc", "tstMicroGCAsmEnd", &RCPtrEnd);
+    rc = PDMR3LdrGetSymbolRC(pVM, "tstMicroRC.gc", "tstMicroRCAsmEnd", &RCPtrEnd);
     if (RT_FAILURE(rc))
     {
-        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroGCAsmEnd' entry point in tstMicroGC.gc, rc=%Rra\n", rc);
+        RTPrintf(TESTCASE ": Failed to resolve the 'tstMicroRCAsmEnd' entry point in tstMicroRC.gc, rc=%Rra\n", rc);
         return rc;
     }
 

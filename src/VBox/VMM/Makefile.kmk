@@ -350,8 +350,8 @@ ifdef VBOX_WITH_RAW_MODE
  	PATM
 
  VMMGC_LIBS      = \
- 	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ 	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifneq ($(filter pe lx,$(VBOX_LDR_FMT32)),)
   VMMGC_LIBS    += \
  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)

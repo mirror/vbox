@@ -47,7 +47,7 @@ ifdef VBOX_WITH_TESTCASES
  endif
  ifdef VBOX_WITH_RAW_MODE
   PROGRAMS += tstMicro
-  SYSMODS  += tstMicroGC
+  SYSMODS  += tstMicroRC
  endif
  ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
   PROGRAMS  += tstPDMAsyncCompletion
@@ -227,23 +227,23 @@ ifdef VBOX_WITH_RAW_MODE
  tstMicro_SOURCES        = tstMicro.cpp
  tstMicro_LIBS           = $(LIB_VMM) $(LIB_REM) $(LIB_RUNTIME)
 
- tstMicroGC_TEMPLATE     = VBoxRc
- tstMicroGC_SOURCES      = tstMicroGC.cpp tstMicroGCA.asm
- tstMicroGC_DEFS         =
- tstMicroGC_INCS         = $(VBOX_PATH_VMM_SRC)/testcase
+ tstMicroRC_TEMPLATE     = VBoxRc
+ tstMicroRC_SOURCES      = tstMicroRC.cpp tstMicroRCA.asm
+ tstMicroRC_DEFS         =
+ tstMicroRC_INCS         = $(VBOX_PATH_VMM_SRC)/testcase
  ifeq ($(VBOX_LDR_FMT32),pe)
-  tstMicroGC_LDFLAGS     = -Entry:tstMicroGC
+  tstMicroRC_LDFLAGS     = -Entry:tstMicroRC
  endif
- tstMicroGC_SYSSUFF      = .gc
- tstMicroGC_LIBS         = \
- 	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ tstMicroRC_SYSSUFF      = .gc
+ tstMicroRC_LIBS         = \
+ 	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT32)),)
-  tstMicroGC_LIBS        += \
+  tstMicroRC_LIBS        += \
   	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB) \
   	$(LIB_VMMGC)
  endif
- tstMicroGC_SOURCES.win = tstMicroGC.def
+ tstMicroRC_SOURCES.win = tstMicroRC.def
 
 endif # VBOX_WITH_RAW_MODE
 

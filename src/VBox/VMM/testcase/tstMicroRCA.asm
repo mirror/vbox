@@ -1,6 +1,6 @@
 ; $Id$
 ;; @file
-; tstMicroGCA
+; tstMicroRCA
 ;
 
 ;
@@ -132,7 +132,7 @@ extern NAME(idtOnly42)
 extern IMPNAME(g_VM)
 
 BEGINCODE
-EXPORTEDNAME tstMicroGCAsmStart
+EXPORTEDNAME tstMicroRCAsmStart
 
 
 ;;
@@ -557,4 +557,4 @@ BEGINPROC tstInterrupt42
 
 ENDPROC tstTrapHandler
 
-EXPORTEDNAME tstMicroGCAsmEnd
+EXPORTEDNAME tstMicroRCAsmEnd
