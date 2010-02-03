@@ -117,7 +117,12 @@ UIImportApplianceWzd::UIImportApplianceWzd(QWidget *pParent) : QIWizard(pParent)
     resizeToGoldenRatio();
 
     /* Assign watermark */
+#ifdef Q_WS_MAC
+    /* Assign background image */
+    assignBackground(":/vmw_ovf_import_bg.png");
+#else /* Q_WS_MAC */
     assignWatermark(":/vmw_ovf_import.png");
+#endif /* Q_WS_MAC */
 
     /* Configure 'Restore Defaults' button */
     AssertMsg(!field("applianceWidget").value<ImportAppliancePointer>().isNull(), ("Appliance Widget is not set!\n"));

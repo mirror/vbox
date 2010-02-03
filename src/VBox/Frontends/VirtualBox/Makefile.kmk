@@ -538,6 +538,10 @@ VirtualBox_SOURCES += VirtualBox1.qrc
 VirtualBox1.qrc_RCCFLAGS = -name BASIC1
 VirtualBox_SOURCES += VirtualBox2.qrc
 VirtualBox2.qrc_RCCFLAGS = -name BASIC2
+ifeq ($(KBUILD_TARGET),darwin)
+ VirtualBox_SOURCES += VirtualBoxMac.qrc
+ VirtualBoxMac.qrc_RCCFLAGS = -name MAC
+endif
 VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
@@ -643,7 +647,7 @@ $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc: \
 ifdef VBOX_WITH_PRECOMPILED_HEADERS
 VirtualBox_INCS          <= $(VirtualBox_0_OUTDIR)/include
 VirtualBox_DEFS          += VBOX_WITH_PRECOMPILED_HEADERS
-VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess 
+VirtualBox_CXXFLAGS      += -Winvalid-pch -fpch-preprocess
 VirtualBox_INTERMEDIATES += $(VirtualBox_0_OUTDIR)/include/precomp.h.gch
 
 tstx: $$(VirtualBox_0_OUTDIR)/include/precomp.h.gch
@@ -775,6 +779,9 @@ $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_CURRENT_YEAR@/$(VBOX_CURRENT_YEAR)/g' \
 		$< > $@
 
 INSTALLS += VirtualBoxVM.app
@@ -795,6 +802,9 @@ $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.
 		-e 's/@VBOX_VERSION_MAJOR@/$(VBOX_VERSION_MAJOR)/g' \
 		-e 's/@VBOX_VERSION_MINOR@/$(VBOX_VERSION_MINOR)/g' \
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
+		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
+		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
+		-e 's/@VBOX_CURRENT_YEAR@/$(VBOX_CURRENT_YEAR)/g' \
 		--output $@ $<
 endif # darwin
 

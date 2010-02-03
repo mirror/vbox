@@ -99,6 +99,11 @@ void QIWizard::assignWatermark(const QString &strWatermark)
     setPixmap(QWizard::WatermarkPixmap, pixWatermarkNew);
 }
 
+void QIWizard::assignBackground(const QString &strBg)
+{
+    setPixmap(QWizard::BackgroundPixmap, strBg);
+}
+
 void QIWizard::resizeAccordingLabelWidth(int iLabelsWidth)
 {
     /* Update QILabels size-hints */
