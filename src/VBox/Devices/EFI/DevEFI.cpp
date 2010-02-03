@@ -113,8 +113,10 @@ typedef struct DEVEFI
     /* Host UUID (for DMI) */
     RTUUID          aUuid;
 
-    /* Device properties string */
-    char*           pszDeviceProps;
+    /* Device properties buffer */
+    uint8_t*           pu8DeviceProps;
+    /* Device properties buffer size */
+    uint32_t           u32DevicePropsLen;
 
     /* Virtual machine front side bus frequency */
     uint64_t        u64FsbFrequency;
@@ -151,9 +153,10 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_STACK_SIZE:
             return 4;
         case EFI_INFO_INDEX_BOOT_ARGS:
-            return RTStrNLen(pThis->szBootArgs, sizeof pThis->szBootArgs) + 1;
+            return (uint32_t)RTStrNLen(pThis->szBootArgs,
+                                       sizeof pThis->szBootArgs) + 1;
         case EFI_INFO_INDEX_DEVICE_PROPS:
-            return RTStrNLen(pThis->pszDeviceProps, RTSTR_MAX) + 1;
+            return pThis->u32DevicePropsLen;
         case EFI_INFO_INDEX_FSB_FREQUENCY:
         case EFI_INFO_INDEX_CPU_FREQUENCY:
         case EFI_INFO_INDEX_TSC_FREQUENCY:
@@ -204,7 +207,7 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
         case EFI_INFO_INDEX_BOOT_ARGS:
             return pThis->szBootArgs[pThis->iInfoPosition];
         case EFI_INFO_INDEX_DEVICE_PROPS:
-            return pThis->pszDeviceProps[pThis->iInfoPosition];
+            return pThis->pu8DeviceProps[pThis->iInfoPosition];
         default:
             Assert(false);
             value.u64 = 0;
@@ -529,10 +532,11 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
         pThis->pu8EfiThunk = NULL;
     }
 
-    if (pThis->pszDeviceProps)
+    if (pThis->pu8DeviceProps)
     {
-        MMR3HeapFree(pThis->pszDeviceProps);
-        pThis->pszDeviceProps = NULL;
+        MMR3HeapFree(pThis->pu8DeviceProps);
+        pThis->pu8DeviceProps = NULL;
+        pThis->u32DevicePropsLen = 0;
     }
 
     return VINF_SUCCESS;
@@ -898,6 +902,59 @@ static int efiLoadThunk(PDEVEFI pThis, PCFGMNODE pCfg)
 }
 
 
+static uint8_t efiGetHalfByte(char ch)
+{
+    uint8_t val;
+
+    if (ch >= '0' && ch <= '9')
+        val = ch - '0';
+    else if (ch >= 'A' && ch <= 'F')
+        val = ch - 'A' + 10;
+    else if(ch >= 'a' && ch <= 'f')
+        val = ch - 'a' + 10;
+    else
+        val = 0xff;
+
+    return val;
+
+}
+
+
+static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
+{
+    int         rc = 0;
+    uint32_t    iStr, iHex, u32OutLen;
+    uint8_t     u8Value;
+    bool        fUpper = true;
+
+    u32OutLen = (uint32_t)RTStrNLen(pszDeviceProps, RTSTR_MAX) / 2 + 1;
+
+    pThis->pu8DeviceProps =
+            (uint8_t*)PDMDevHlpMMHeapAlloc(pThis->pDevIns, u32OutLen);
+    if (!pThis->pu8DeviceProps)
+        return VERR_NO_MEMORY;
+
+    for (iStr=0, iHex = 0; pszDeviceProps[iStr]; iStr++)
+    {
+        uint8_t u8Hb = efiGetHalfByte(pszDeviceProps[iStr]);
+        if (u8Hb > 0xf)
+            continue;
+
+        if (fUpper)
+            u8Value = u8Hb << 4;
+        else
+            pThis->pu8DeviceProps[iHex++] = u8Hb | u8Value;
+
+        Assert(iHex < u32OutLen);
+        fUpper = !fUpper;
+    }
+
+    Assert(iHex == 0 || fUpper);
+    pThis->u32DevicePropsLen = iHex;
+
+    return rc;
+}
+
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
  */
@@ -1031,16 +1088,30 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * Get device props.
      */
-    rc = CFGMR3QueryStringAlloc(pCfg, "DeviceProps", &pThis->pszDeviceProps);
+    char* pszDeviceProps;
+    rc = CFGMR3QueryStringAlloc(pCfg, "DeviceProps", &pszDeviceProps);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pThis->pszDeviceProps = RTStrDup("");
+        pszDeviceProps = NULL;
         rc = VINF_SUCCESS;
     }
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"DeviceProps\" as a string failed"));
-    LogRel(("EFI device props: %s\n", pThis->pszDeviceProps));
+    if (pszDeviceProps)
+    {
+        LogRel(("EFI device props: %s\n", pszDeviceProps));
+        rc = efiParseDeviceString(pThis, pszDeviceProps);
+        MMR3HeapFree(pszDeviceProps);
+        if (RT_FAILURE(rc))
+            return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                       N_("Configuration error: Cannot parse device properties"));
+    }
+    else
+    {
+        pThis->pu8DeviceProps    = NULL;
+        pThis->u32DevicePropsLen = 0;
+    }
 
     pThis->u64FsbFrequency = 1333000000;
     pThis->u64TscFrequency = pThis->u64FsbFrequency * 3;
