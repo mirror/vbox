@@ -30,7 +30,7 @@
 #ifndef ___VBox_version_h
 #define ___VBox_version_h
 
-/** Product info */
+/* Product info */
 #include <product-generated.h>
 
 #ifndef RC_INVOKED
@@ -84,6 +84,9 @@
 #define VBOX_RC_PRODUCT_VERSION         VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 #define VBOX_RC_FILE_VERSION            VBOX_VERSION_MAJOR_NR , VBOX_VERSION_MINOR_NR , 0 , 0
 /** @} */
+
+/** @todo Clean up the resource compiler mess where we cannot include
+ *        version-generated.h and requires two files. */
 
 #endif
 
