@@ -185,6 +185,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
                     break;
             }
             AssertMsgFailed(("enmType=%d\n", pLookup->enmType));
+            *poff = 0; /* shut up gcc */
             return NULL;
         }
 
