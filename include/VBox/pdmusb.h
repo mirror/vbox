@@ -677,6 +677,44 @@ typedef struct PDMUSBINS
 /** Current USBINS version number. */
 #define PDM_USBINS_VERSION                      PDM_VERSION_MAKE(0xeefd, 1, 0)
 
+/**
+ * Checks the structure versions of the USB device instance and USB device
+ * helpers, returning if they are incompatible.
+ *
+ * This is for use in the constructor.
+ *
+ * @param   pUsbIns     The USB device instance pointer.
+ */
+#define PDMUSB_CHECK_VERSIONS_RETURN(pUsbIns) \
+    do \
+    { \
+        PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION), \
+                              ("DevIns=%#x  mine=%#x\n", (pUsbIns)->u32Version, PDM_USBINS_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+        AssertLogRelMsgReturn(PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLP_VERSION), \
+                              ("DevHlp=%#x  mine=%#x\n", (pUsbIns)->pHlpR3->u32Version, PDM_USBHLP_VERSION), \
+                              VERR_VERSION_MISMATCH); \
+    } while (0)
+
+/**
+ * Quietly checks the structure versions of the USB device instance and
+ * USB device helpers, returning if they are incompatible.
+ *
+ * This is for use in the destructor.
+ *
+ * @param   pUsbIns     The USB device instance pointer.
+ */
+#define PDMUSB_CHECK_VERSIONS_RETURN_QUIET(pUsbIns) \
+    do \
+    { \
+        PPDMUSBINS pUsbInsTypeCheck = (pUsbIns); NOREF(pUsbInsTypeCheck); \
+        if (RT_UNLIKELY(   !PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->u32Version, PDM_USBINS_VERSION) \
+                        || !PDM_VERSION_ARE_COMPATIBLE((pUsbIns)->pHlpR3->u32Version, PDM_USBHLPR3_VERSION) )) \
+            return VERR_VERSION_MISMATCH; \
+    } while (0)
+
+
 /** Converts a pointer to the PDMUSBINS::IBase to a pointer to PDMUSBINS. */
 #define PDMIBASE_2_PDMUSB(pInterface) ( (PPDMUSBINS)((char *)(pInterface) - RT_OFFSETOF(PDMUSBINS, IBase)) )
 
@@ -795,6 +833,33 @@ DECLINLINE(int) PDMUsbHlpVMSetError(PPDMUSBINS pUsbIns, int rc, RT_SRC_POS_DECL,
     return rc;
 }
 
+/**
+ * @copydoc PDMUSBHLP::pfnMMHeapAlloc
+ */
+DECLINLINE(void *) PDMUsbHlpMMHeapAlloc(PPDMUSBINS pUsbIns, size_t cb)
+{
+    return pUsbIns->pHlpR3->pfnMMHeapAlloc(pUsbIns, cb);
+}
+
+/**
+ * @copydoc PDMUSBHLP::pfnMMHeapAllocZ
+ */
+DECLINLINE(void *) PDMUsbHlpMMHeapAllocZ(PPDMUSBINS pUsbIns, size_t cb)
+{
+    return pUsbIns->pHlpR3->pfnMMHeapAllocZ(pUsbIns, cb);
+}
+
+/**
+ * Frees memory allocated by PDMUsbHlpMMHeapAlloc or PDMUsbHlpMMHeapAllocZ.
+ *
+ * @param   pUsbIns                 The USB device instance.
+ * @param   pv                      The memory to free.  NULL is fine.
+ */
+DECLINLINE(void) PDMUsbHlpMMHeapFree(PPDMUSBINS pUsbIns, void *pv)
+{
+    NOREF(pUsbIns);
+    MMR3HeapFree(pv);
+}
 
 #endif /* IN_RING3 */
 
