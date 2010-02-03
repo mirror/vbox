@@ -1347,7 +1347,7 @@ int main(int argc, char **argv)
     if (showlogo)
         RTPrintf(VBOX_PRODUCT " Guest Additions Command Line Management Interface Version "
                  VBOX_VERSION_STRING "\n"
-                 "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDER "\n"
+                 "(C) 2008-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                  "All rights reserved.\n\n");
     if (dohelp)
         usage();
