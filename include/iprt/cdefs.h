@@ -782,21 +782,21 @@
 #endif
 
 /** @def IN_RT_RC
- * Used to indicate whether we're inside the same link module as
- * the GC Runtime Library.
+ * Used to indicate whether we're inside the same link module as the raw-mode
+ * context (RC) runtime library.
  */
-/** @def RTGCDECL(type)
- * Runtime Library HC Ring-3 export or import declaration.
+/** @def RTRCDECL(type)
+ * Runtime Library raw-mode context export or import declaration.
  * @param   type    The return type of the function declaration.
  */
 #ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
-#  define RTGCDECL(type)    DECLHIDDEN(type) RTCALL
+#  define RTRCDECL(type)    DECLHIDDEN(type) RTCALL
 # else
-#  define RTGCDECL(type)    DECLEXPORT(type) RTCALL
+#  define RTRCDECL(type)    DECLEXPORT(type) RTCALL
 # endif
 #else
-# define RTGCDECL(type)     DECLIMPORT(type) RTCALL
+# define RTRCDECL(type)     DECLIMPORT(type) RTCALL
 #endif
 
 /** @def RTDECL(type)
