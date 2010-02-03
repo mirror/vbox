@@ -6,5 +6,7 @@
     <file alias="vmw_new_user_bg.png">images/vmw_new_user_bg.png</file>
     <file alias="vmw_ovf_import_bg.png">images/vmw_ovf_import_bg.png</file>
     <file alias="vmw_ovf_export_bg.png">images/vmw_ovf_export_bg.png</file>
+    <file alias="monitor.png">images/monitor.png</file>
+    <file alias="monitor_glossy.png">images/monitor_glossy.png</file>
  </qresource>
  </RCC>

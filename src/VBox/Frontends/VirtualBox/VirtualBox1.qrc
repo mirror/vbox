@@ -195,8 +195,6 @@
     <file alias="vrdp_disabled_32px.png">images/vrdp_disabled_32px.png</file>
     <file alias="meditation_32px.png">images/meditation_32px.png</file>
     <file alias="welcome.png">images/welcome.png</file>
-    <file alias="monitor.png">images/monitor.png</file>
-    <file alias="monitor_glossy.png">images/monitor_glossy.png</file>
     <file alias="arrow_right_10px.png">images/arrow_right_10px.png</file>
     <file alias="arrow_left_10px.png">images/arrow_left_10px.png</file>
     <file alias="arrow_up_10px.png">images/arrow_up_10px.png</file>
