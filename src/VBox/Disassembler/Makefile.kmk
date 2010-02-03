@@ -52,7 +52,7 @@ DisasmCoreR3_SOURCES    = \
 ifdef VBOX_WITH_RAW_MODE
  LIBRARIES              += DisasmRC
  DisasmRC_TEMPLATE       = VBoxRc
- DisasmRC_DEFS           = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
+ DisasmRC_DEFS           = IN_DIS IN_RT_RC DIS_CORE_ONLY
  DisasmRC_SOURCES        = \
  	DisasmCore.cpp \
  	DisasmReg.cpp \

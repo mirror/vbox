@@ -232,7 +232,7 @@ ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_INST = $(INST_TESTCASE)
  tstLdrObj_SYSSUFF = .gc
  tstLdrObj_SOURCES = tstLdrObj.cpp
- tstLdrObj_DEFS = IN_DIS IN_RT_GC IN_RT_RC DIS_CORE_ONLY
+ tstLdrObj_DEFS = IN_DIS IN_RT_RC DIS_CORE_ONLY
  ifeq ($(VBOX_LDR_FMT32),elf)
  tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
  endif

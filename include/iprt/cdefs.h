@@ -78,7 +78,7 @@
 #define IN_RING3
 #define IN_RC
 #define IN_RC
-#define IN_RT_GC
+#define IN_RT_RC
 #define IN_RT_R0
 #define IN_RT_R3
 #define IN_RT_STATIC
@@ -742,7 +742,7 @@
  * Used to indicate whether we're linking against a static IPRT
  * or not. The IPRT symbols will be declared as hidden (if
  * supported). Note that this define has no effect without setting
- * IN_RT_R0, IN_RT_R3 or IN_RT_GC indicators are set first.
+ * IN_RT_R0, IN_RT_R3 or IN_RT_RC indicators are set first.
  */
 
 /** @def IN_RT_R0
@@ -781,7 +781,7 @@
 # define RTR3DECL(type)     DECLIMPORT(type) RTCALL
 #endif
 
-/** @def IN_RT_GC
+/** @def IN_RT_RC
  * Used to indicate whether we're inside the same link module as
  * the GC Runtime Library.
  */
@@ -789,7 +789,7 @@
  * Runtime Library HC Ring-3 export or import declaration.
  * @param   type    The return type of the function declaration.
  */
-#ifdef IN_RT_GC
+#ifdef IN_RT_RC
 # ifdef IN_RT_STATIC
 #  define RTGCDECL(type)    DECLHIDDEN(type) RTCALL
 # else
@@ -804,7 +804,7 @@
  * Functions declared using this macro exists in all contexts.
  * @param   type    The return type of the function declaration.
  */
-#if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
+#if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
 #  define RTDECL(type)      DECLHIDDEN(type) RTCALL
 # else
@@ -819,7 +819,7 @@
  * Data declared using this macro exists in all contexts.
  * @param   type    The return type of the function declaration.
  */
-#if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
+#if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
 #  define RTDATADECL(type)  DECLHIDDEN(type)
 # else
@@ -832,7 +832,7 @@
 /** @def RT_DECL_CLASS
  * Declares an class living in the runtime.
  */
-#if defined(IN_RT_R3) || defined(IN_RT_GC) || defined(IN_RT_R0)
+#if defined(IN_RT_R3) || defined(IN_RT_RC) || defined(IN_RT_R0)
 # ifdef IN_RT_STATIC
 #  define RT_DECL_CLASS
 # else
