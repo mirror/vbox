@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Time, win32.
+ * IPRT - Time, Windows.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -36,8 +36,11 @@
 #include <Windows.h>
 
 #include <iprt/time.h>
+#include "internal/iprt.h"
+
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
 #include "internal/time.h"
 
 #define USE_TICK_COUNT
