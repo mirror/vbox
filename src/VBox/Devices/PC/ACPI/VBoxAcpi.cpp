@@ -138,16 +138,23 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
 }
 #endif
 
-/* Two only public functions */
-int acpiPrepareDsdt(PPDMDEVINS pDevIns,  void * *ppPtr, size_t *puDsdtLen)
+/**
+ * Loads an AML file if present in CFGM
+ *
+ * @returns VBox status code
+ * @param   pDevIns        The device instance
+ * @param   pcszCfgName    The configuration key holding the file path
+ * @param   pcszSignature  The signature to check for
+ * @param   ppbAmlCode     Where to store the pointer to the AML code on success.
+ * @param   pcbAmlCode     Where to store the number of bytes of the AML code on success.
+ */
+static int acpiAmlLoadExternal(PPDMDEVINS pDevIns, const char *pcszCfgName, const char *pcszSignature, uint8_t **ppbAmlCode, size_t *pcbAmlCode)
 {
-#ifdef VBOX_WITH_DYNAMIC_DSDT
-    return prepareDynamicDsdt(pDevIns, ppPtr, puDsdtLen);
-#else
     uint8_t *pbAmlCode = NULL;
     size_t cbAmlCode = 0;
     char *pszAmlFilePath = NULL;
-    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfg, "AmlFilePath", &pszAmlFilePath);
+    int rc = CFGMR3QueryStringAlloc(pDevIns->pCfg, pcszCfgName, &pszAmlFilePath);
+
     if (RT_SUCCESS(rc))
     {
         /* Load from file. */
@@ -264,7 +271,7 @@ int acpiPrepareSsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puSsdtLen)
     {
         bool fCpuHotPlug = false;
         uint8_t *pbAmlCode = NULL;
-        rc = CFGMR3QueryBoolDef(pDevIns->pCfgHandle, "CpuHotPlug", &fCpuHotPlug, false);
+        rc = CFGMR3QueryBoolDef(pDevIns->pCfg, "CpuHotPlug", &fCpuHotPlug, false);
 
         if (RT_FAILURE(rc))
             return rc;
