@@ -465,14 +465,49 @@ ifdef VBOX_WITH_DYNAMIC_DSDT
 
 else  # !VBOX_WITH_DYNAMIC_DSDT
  # VBoxAcpi.cpp needs vboxaml.hex which we generate from PC/vbox.dsl
- DevicesR3_CLEAN        += $(PATH_DevicesR3)/vboxaml.hex $(PATH_DevicesR3)/vboxaml.aml
- PC/ACPI/VBoxAcpi.cpp_DEPS = $(PATH_DevicesR3)/vboxaml.hex
+ DevicesR3_CLEAN        += \
+	$(PATH_DevicesR3)/vboxaml.hex \
+	$(PATH_DevicesR3)/vboxaml.aml \
+	$(PATH_DevicesR3)/vboxssdt-standard.hex \
+	$(PATH_DevicesR3)/vboxssdt-standard.aml \
+	$(PATH_DevicesR3)/vboxssdt-standard.aml.tmp \
+	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex \
+	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.aml \
+	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.aml.tmp
+ PC/ACPI/VBoxAcpi.cpp_DEPS = \
+	$(PATH_DevicesR3)/vboxaml.hex \
+	$(PATH_DevicesR3)/vboxssdt-standard.hex \
+	$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex
 
  $$(PATH_DevicesR3)/vboxaml.hex: $(PATH_SUB_CURRENT)/PC/vbox.dsl | $$(dir $$@)
 	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
 	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
 
  vboxaml.hex:: $$(PATH_DevicesR3)/vboxaml.hex
+
+ $$(PATH_DevicesR3)/vboxssdt-standard.hex: $(PATH_SUB_CURRENT)/PC/vbox-standard.dsl | $$(dir $$@)
+	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+	$(QUIET)$(MV) -f $@ $@.tmp
+	$(QUIET)$(SED) "s/AmlCode/AmlCodeSsdtStandard/g" \
+		--output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
+
+
+ vboxssdt-standard.hex:: $$(PATH_DevicesR3)/vboxssdt-standard.hex
+
+ $$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex: $(PATH_SUB_CURRENT)/PC/vbox-cpuhotplug.dsl | $$(dir $$@)
+	$(call MSG_TOOL,iasl,DevicesR3,$<,$@)
+	$(QUIET)$(RM) -f $@ $@.tmp
+	$(QUIET)$(VBOX_IASLCMD) -tc -vs -p $@ $<
+	$(QUIET)$(MV) -f $@ $@.tmp
+	$(QUIET)$(SED) "s/AmlCode/AmlCodeSsdtCpuHotPlug/g" \
+		--output $@ $@.tmp
+	$(QUIET)$(RM) -f $@.tmp
+
+
+ vboxssdt-cpuhotplug.hex:: $$(PATH_DevicesR3)/vboxssdt-cpuhotplug.hex
 
 endif # !VBOX_WITH_DYNAMIC_DSDT
 PC/ACPI/VBoxAcpi.cpp_INCS = $(PATH_DevicesR3)
