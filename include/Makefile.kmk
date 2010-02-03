@@ -72,13 +72,13 @@ SyntaxVBoxIncludeR3_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r3)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r3))))
 
-SyntaxVBoxIncludeR0_TEMPLATE = VBOXR0
+SyntaxVBoxIncludeR0_TEMPLATE = VBoxR0
 SyntaxVBoxIncludeR0_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeR0_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
-SyntaxVBoxIncludeGC_TEMPLATE = VBOXGC
+SyntaxVBoxIncludeGC_TEMPLATE = VBoxGC
 SyntaxVBoxIncludeGC_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeGC_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.gc)))) \

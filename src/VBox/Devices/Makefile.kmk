@@ -524,7 +524,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  # VBoxDDGC (sysmod)
  #
- VBoxDDGC_TEMPLATE       = VBOXGC
+ VBoxDDGC_TEMPLATE       = VBoxRc
  VBoxDDGC_SYSSUFF        = .gc
  ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBoxDDGC_DEFS.darwin   = VBOX_WITH_2X_4GB_ADDR_SPACE
@@ -726,7 +726,7 @@ ifdef VBOX_WITH_RAW_MODE
  #
  # VBoxDD2GC (LGPL sysmod)
  #
- VBoxDD2GC_TEMPLATE       = VBOXGC
+ VBoxDD2GC_TEMPLATE       = VBoxRc
  VBoxDD2GC_DEFS           =
  VBoxDD2GC_SYSSUFF        = .gc
  VBoxDD2GC_INCS          := \
