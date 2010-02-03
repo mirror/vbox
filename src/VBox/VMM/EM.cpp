@@ -88,7 +88,6 @@ static const char *emR3GetStateName(EMSTATE enmState);
 static int emR3Debug(PVM pVM, PVMCPU pVCpu, int rc);
 static int emR3RemStep(PVM pVM, PVMCPU pVCpu);
 static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone);
-DECLINLINE(int) emR3RawExecuteInstruction(PVM pVM, PVMCPU pVCpu, const char *pszPrefix, int rcGC = VINF_SUCCESS);
 int emR3HighPriorityPostForcedActions(PVM pVM, PVMCPU pVCpu, int rc);
 
 
@@ -381,7 +380,6 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
         /* these should be considered for release statistics. */
         EM_REG_COUNTER(&pVCpu->em.s.StatIOEmu,                 "/PROF/CPU%d/EM/Emulation/IO",      "Profiling of emR3RawExecuteIOInstruction.");
         EM_REG_COUNTER(&pVCpu->em.s.StatPrivEmu,               "/PROF/CPU%d/EM/Emulation/Priv",    "Profiling of emR3RawPrivileged.");
-        EM_REG_COUNTER(&pVCpu->em.s.StatMiscEmu,               "/PROF/CPU%d/EM/Emulation/Misc",    "Profiling of emR3RawExecuteInstruction.");
         EM_REG_PROFILE(&pVCpu->em.s.StatHwAccEntry,           "/PROF/CPU%d/EM/HwAccEnter",        "Profiling Hardware Accelerated Mode entry overhead.");
         EM_REG_PROFILE(&pVCpu->em.s.StatHwAccExec,            "/PROF/CPU%d/EM/HwAccExec",         "Profiling Hardware Accelerated Mode execution.");
         EM_REG_PROFILE(&pVCpu->em.s.StatREMEmu,               "/PROF/CPU%d/EM/REMEmuSingle",      "Profiling single instruction REM execution.");
@@ -860,6 +858,25 @@ static int emR3RemStep(PVM pVM, PVMCPU pVCpu)
 
 
 /**
+ * emR3RemExecute helper that syncs the state back from REM and leave the REM
+ * critical section.
+ *
+ * @returns false - new fInREMState value.
+ * @param   pVM         The VM handle.
+ * @param   pVCpu       The virtual CPU handle.
+ */
+DECLINLINE(bool) emR3RemExecuteSyncBack(PVM pVM, PVMCPU pVCpu)
+{
+    STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, a);
+    REMR3StateBack(pVM, pVCpu);
+    STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, a);
+
+    EMRemUnlock(pVM);
+    return false;
+}
+
+
+/**
  * Executes recompiled code.
  *
  * This function contains the recompiler version of the inner
@@ -893,35 +910,37 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
               ("cs:eip=%RX16:%RX32\n", CPUMGetGuestCS(pVCpu), CPUMGetGuestEIP(pVCpu)));
 #endif
 
-    /* Big lock, but you are not supposed to own any lock when coming in here. */
-    EMRemLock(pVM);
-
     /*
      * Spin till we get a forced action which returns anything but VINF_SUCCESS
      * or the REM suggests raw-mode execution.
      */
     *pfFFDone = false;
     bool    fInREMState = false;
-    int     rc = VINF_SUCCESS;
-
-    /* Flush the recompiler TLB if the VCPU has changed. */
-    if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
-    {
-        REMFlushTBs(pVM);
-        /* Also sync the entire state. */
-        CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
-    }
-    pVM->em.s.idLastRemCpu = pVCpu->idCpu;
-
+    int     rc          = VINF_SUCCESS;
     for (;;)
     {
         /*
-         * Update REM state if not already in sync.
+         * Lock REM and update the state if not already in sync.
+         *
+         * Note! Big lock, but you are not supposed to own any lock when
+         *       coming in here.
          */
         if (!fInREMState)
         {
+            EMRemLock(pVM);
             STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, b);
+
+            /* Flush the recompiler translation blocks if the VCPU has changed,
+               also force a full CPU state resync. */
+            if (pVM->em.s.idLastRemCpu != pVCpu->idCpu)
+            {
+                REMFlushTBs(pVM);
+                CPUMSetChangedFlags(pVCpu, CPUM_CHANGED_ALL);
+            }
+            pVM->em.s.idLastRemCpu = pVCpu->idCpu;
+
             rc = REMR3State(pVM, pVCpu);
+
             STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, b);
             if (RT_FAILURE(rc))
                 break;
@@ -949,15 +968,18 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
 
         /*
-         * Deal with high priority post execution FFs before doing anything else.
+         * Deal with high priority post execution FFs before doing anything
+         * else.  Sync back the state and leave the lock to be on the safe side.
          */
         if (    VM_FF_ISPENDING(pVM, VM_FF_HIGH_PRIORITY_POST_MASK)
             ||  VMCPU_FF_ISPENDING(pVCpu, VMCPU_FF_HIGH_PRIORITY_POST_MASK))
+        {
+            fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
             rc = emR3HighPriorityPostForcedActions(pVM, pVCpu, rc);
+        }
 
         /*
          * Process the returned status code.
-         * (Try keep this short! Call functions!)
          */
         if (rc != VINF_SUCCESS)
         {
@@ -977,7 +999,9 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
 
         /*
          * Check and execute forced actions.
-         * Sync back the VM state before calling any of these.
+         *
+         * Sync back the VM state and leave the lock  before calling any of
+         * these, you never know what's going to happen here.
          */
 #ifdef VBOX_HIGH_RES_TIMERS_HACK
         TMTimerPollVoid(pVM, pVCpu);
@@ -988,12 +1012,7 @@ static int emR3RemExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
         {
 l_REMDoForcedActions:
             if (fInREMState)
-            {
-                STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, d);
-                REMR3StateBack(pVM, pVCpu);
-                STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, d);
-                fInREMState = false;
-            }
+                fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
             STAM_REL_PROFILE_ADV_SUSPEND(&pVCpu->em.s.StatREMTotal, a);
             rc = emR3ForcedActions(pVM, pVCpu, rc);
             STAM_REL_PROFILE_ADV_RESUME(&pVCpu->em.s.StatREMTotal, a);
@@ -1012,12 +1031,7 @@ l_REMDoForcedActions:
      * Returning. Sync back the VM state if required.
      */
     if (fInREMState)
-    {
-        STAM_PROFILE_START(&pVCpu->em.s.StatREMSync, e);
-        REMR3StateBack(pVM, pVCpu);
-        STAM_PROFILE_STOP(&pVCpu->em.s.StatREMSync, e);
-    }
-    EMRemUnlock(pVM);
+        fInREMState = emR3RemExecuteSyncBack(pVM, pVCpu);
 
     STAM_REL_PROFILE_ADV_STOP(&pVCpu->em.s.StatREMTotal, a);
     return rc;

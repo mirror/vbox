@@ -379,8 +379,6 @@ typedef struct EMCPU
     STAMPROFILE             StatIOEmu;
     /** R3: Profiling of emR3RawPrivileged. */
     STAMPROFILE             StatPrivEmu;
-    /** R3: Profiling of emR3RawExecuteInstruction. */
-    STAMPROFILE             StatMiscEmu;
     /** R3: Number of time emR3HwAccExecute is called. */
     STAMCOUNTER             StatHwAccExecuteEntry;
 
