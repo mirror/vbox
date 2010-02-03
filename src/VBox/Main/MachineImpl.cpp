@@ -2974,6 +2974,7 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
         if (!medium.isNull())
             medium->attachTo(mData->mUuid);
         pAttach->updateMedium(medium, false /* aImplicit */);
+        setModified(IsModified_Storage);
     }
 
     alock.leave();
