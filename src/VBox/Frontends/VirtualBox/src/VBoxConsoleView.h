@@ -261,6 +261,7 @@ private:
     void storeConsoleSize (int aWidth, int aHeight);
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
+    QRect availableGeometry() const;
 
     VBoxConsoleWnd *mMainWnd;
 
