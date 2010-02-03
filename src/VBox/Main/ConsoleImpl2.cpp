@@ -538,6 +538,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                       RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                    RC_CHECK();
+        rc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), tmpStr2.asOutParam()); RC_CHECK();
+        rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(tmpStr2).raw());RC_CHECK();
     }
 
     /*
