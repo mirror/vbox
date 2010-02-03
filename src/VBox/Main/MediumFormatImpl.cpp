@@ -197,22 +197,22 @@ STDMETHODIMP MediumFormat::COMGETTER(Name)(BSTR *aName)
     return S_OK;
 }
 
-STDMETHODIMP MediumFormat::
-COMGETTER(FileExtensions)(ComSafeArrayOut (BSTR, aFileExtensions))
+STDMETHODIMP MediumFormat::COMGETTER(FileExtensions)(ComSafeArrayOut(BSTR, aFileExtensions))
 {
-    if (ComSafeArrayOutIsNull (aFileExtensions))
+    if (ComSafeArrayOutIsNull(aFileExtensions))
         return E_POINTER;
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> fileExtentions (m.fileExtensions.size());
+    com::SafeArray<BSTR> fileExtentions(m.fileExtensions.size());
     int i = 0;
     for (BstrList::const_iterator it = m.fileExtensions.begin();
-        it != m.fileExtensions.end(); ++ it, ++ i)
-        (*it).cloneTo (&fileExtentions [i]);
-    fileExtentions.detachTo (ComSafeArrayOutArg (aFileExtensions));
+         it != m.fileExtensions.end();
+         ++it, ++i)
+        (*it).cloneTo(&fileExtentions[i]);
+    fileExtentions.detachTo(ComSafeArrayOutArg(aFileExtensions));
 
     return S_OK;
 }
@@ -253,29 +253,30 @@ STDMETHODIMP MediumFormat::DescribeProperties(ComSafeArrayOut (BSTR, aNames),
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    com::SafeArray <BSTR> propertyNames (m.properties.size());
-    com::SafeArray <BSTR> propertyDescriptions (m.properties.size());
-    com::SafeArray <DataType_T> propertyTypes (m.properties.size());
-    com::SafeArray <ULONG> propertyFlags (m.properties.size());
-    com::SafeArray <BSTR> propertyDefaults (m.properties.size());
+    com::SafeArray<BSTR>        propertyNames(m.properties.size());
+    com::SafeArray<BSTR>        propertyDescriptions (m.properties.size());
+    com::SafeArray<DataType_T>  propertyTypes(m.properties.size());
+    com::SafeArray<ULONG>       propertyFlags(m.properties.size());
+    com::SafeArray<BSTR>        propertyDefaults(m.properties.size());
 
     int i = 0;
     for (PropertyList::const_iterator it = m.properties.begin();
-         it != m.properties.end(); ++ it, ++ i)
+         it != m.properties.end();
+         ++it, ++i)
     {
         const Property &prop = (*it);
-        prop.name.cloneTo (&propertyNames [i]);
-        prop.description.cloneTo (&propertyDescriptions [i]);
-        propertyTypes [i] = prop.type;
-        propertyFlags [i] = prop.flags;
-        prop.defaultValue.cloneTo (&propertyDefaults [i]);
+        prop.name.cloneTo(&propertyNames[i]);
+        prop.description.cloneTo(&propertyDescriptions[i]);
+        propertyTypes[i] = prop.type;
+        propertyFlags[i] = prop.flags;
+        prop.defaultValue.cloneTo(&propertyDefaults[i]);
     }
 
-    propertyNames.detachTo (ComSafeArrayOutArg (aNames));
-    propertyDescriptions.detachTo (ComSafeArrayOutArg (aDescriptions));
-    propertyTypes.detachTo (ComSafeArrayOutArg (aTypes));
-    propertyFlags.detachTo (ComSafeArrayOutArg (aFlags));
-    propertyDefaults.detachTo (ComSafeArrayOutArg (aDefaults));
+    propertyNames.detachTo(ComSafeArrayOutArg(aNames));
+    propertyDescriptions.detachTo(ComSafeArrayOutArg(aDescriptions));
+    propertyTypes.detachTo(ComSafeArrayOutArg(aTypes));
+    propertyFlags.detachTo(ComSafeArrayOutArg(aFlags));
+    propertyDefaults.detachTo(ComSafeArrayOutArg(aDefaults));
 
     return S_OK;
 }

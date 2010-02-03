@@ -1752,7 +1752,7 @@ STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
         for (BackRefList::const_iterator it = m->backRefs.begin();
              it != m->backRefs.end(); ++ it, ++ i)
         {
-             it->machineId.toUtf16().detachTo(&machineIds [i]);
+             it->machineId.toUtf16().detachTo(&machineIds[i]);
         }
     }
 
@@ -2169,9 +2169,9 @@ STDMETHODIMP Medium::GetProperties(IN_BSTR aNames,
     {
         it->first.cloneTo(&names[i]);
         if (it->second.isEmpty())
-            Bstr("").cloneTo(&values [i]);
+            Bstr("").cloneTo(&values[i]);
         else
-            it->second.cloneTo(&values [i]);
+            it->second.cloneTo(&values[i]);
         ++ i;
     }
 
@@ -2217,7 +2217,7 @@ STDMETHODIMP Medium::SetProperties(ComSafeArrayIn(IN_BSTR, aNames),
         if (values[i] && !*values[i])
             it->second = (const char *)NULL;
         else
-            it->second = values [i];
+            it->second = values[i];
     }
 
     HRESULT rc = m->pVirtualBox->saveSettings();
@@ -2607,7 +2607,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         rc = aRC;
     }
 
-    if (FAILED (rc))
+    if (FAILED(rc))
     {
         HRESULT rc2 = UnlockWrite(NULL);
         AssertComRC(rc2);

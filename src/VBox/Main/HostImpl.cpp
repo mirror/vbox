@@ -224,19 +224,19 @@ HRESULT Host::init(VirtualBox *aParent)
      * Create and initialize the USB Proxy Service.
      */
 # if defined (RT_OS_DARWIN)
-    m->pUSBProxyService = new USBProxyServiceDarwin (this);
+    m->pUSBProxyService = new USBProxyServiceDarwin(this);
 # elif defined (RT_OS_LINUX)
-    m->pUSBProxyService = new USBProxyServiceLinux (this);
+    m->pUSBProxyService = new USBProxyServiceLinux(this);
 # elif defined (RT_OS_OS2)
     m->pUSBProxyService = new USBProxyServiceOs2 (this);
 # elif defined (RT_OS_SOLARIS)
-    m->pUSBProxyService = new USBProxyServiceSolaris (this);
+    m->pUSBProxyService = new USBProxyServiceSolaris(this);
 # elif defined (RT_OS_WINDOWS)
-    m->pUSBProxyService = new USBProxyServiceWindows (this);
+    m->pUSBProxyService = new USBProxyServiceWindows(this);
 # elif defined (RT_OS_FREEBSD)
-    m->pUSBProxyService = new USBProxyServiceFreeBSD (this);
+    m->pUSBProxyService = new USBProxyServiceFreeBSD(this);
 # else
-    m->pUSBProxyService = new USBProxyService (this);
+    m->pUSBProxyService = new USBProxyService(this);
 # endif
     HRESULT hrc = m->pUSBProxyService->init();
     AssertComRCReturn(hrc, hrc);
@@ -247,11 +247,11 @@ HRESULT Host::init(VirtualBox *aParent)
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
 #if defined (RT_OS_WINDOWS)
-    m->pHostPowerService = new HostPowerServiceWin (m->pParent);
+    m->pHostPowerService = new HostPowerServiceWin(m->pParent);
 #elif defined (RT_OS_DARWIN)
-    m->pHostPowerService = new HostPowerServiceDarwin (m->pParent);
+    m->pHostPowerService = new HostPowerServiceDarwin(m->pParent);
 #else
-    m->pHostPowerService = new HostPowerService (m->pParent);
+    m->pHostPowerService = new HostPowerService(m->pParent);
 #endif
 
     /* Cache the features reported by GetProcessorFeature. */
@@ -1156,7 +1156,7 @@ STDMETHODIMP Host::CreateUSBDeviceFilter(IN_BSTR aName,
 
     ComObjPtr<HostUSBDeviceFilter> filter;
     filter.createObject();
-    HRESULT rc = filter->init (this, aName);
+    HRESULT rc = filter->init(this, aName);
     ComAssertComRCRet (rc, rc);
     rc = filter.queryInterfaceTo(aFilter);
     AssertComRCReturn (rc, rc);
@@ -1202,8 +1202,8 @@ STDMETHODIMP Host::InsertUSBDeviceFilter(ULONG aPosition,
                         tr("The given USB device filter is not created within this VirtualBox instance"));
 
     if (pFilter->mInList)
-        return setError (E_INVALIDARG,
-            tr ("The given USB device filter is already in the list"));
+        return setError(E_INVALIDARG,
+                        tr("The given USB device filter is already in the list"));
 
     /* iterate to the position... */
     USBDeviceFilterList::iterator it = m->llUSBDeviceFilters.begin();
@@ -1247,13 +1247,13 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
     if (FAILED(rc)) return rc;
 
     if (!m->llUSBDeviceFilters.size())
-        return setError (E_INVALIDARG,
-            tr ("The USB device filter list is empty"));
+        return setError(E_INVALIDARG,
+                        tr("The USB device filter list is empty"));
 
     if (aPosition >= m->llUSBDeviceFilters.size())
-        return setError (E_INVALIDARG,
-            tr ("Invalid position: %lu (must be in range [0, %lu])"),
-            aPosition, m->llUSBDeviceFilters.size() - 1);
+        return setError(E_INVALIDARG,
+                        tr("Invalid position: %lu (must be in range [0, %lu])"),
+                        aPosition, m->llUSBDeviceFilters.size() - 1);
 
     ComObjPtr<HostUSBDeviceFilter> filter;
     {
@@ -1368,8 +1368,8 @@ STDMETHODIMP Host::FindHostNetworkInterfaceByName(IN_BSTR name, IHostNetworkInte
     }
 
     if (!found)
-        return setError (E_INVALIDARG, HostNetworkInterface::tr (
-                             "The host network interface with the given name could not be found"));
+        return setError(E_INVALIDARG,
+                        HostNetworkInterface::tr("The host network interface with the given name could not be found"));
 
     found->setVirtualBox(m->pParent);
 
@@ -1406,8 +1406,8 @@ STDMETHODIMP Host::FindHostNetworkInterfaceById(IN_BSTR id, IHostNetworkInterfac
     }
 
     if (!found)
-        return setError (E_INVALIDARG, HostNetworkInterface::tr (
-                             "The host network interface with the given GUID could not be found"));
+        return setError(E_INVALIDARG,
+                        HostNetworkInterface::tr("The host network interface with the given GUID could not be found"));
 
     found->setVirtualBox(m->pParent);
 
@@ -1447,7 +1447,7 @@ STDMETHODIMP Host::FindHostNetworkInterfacesOfType(HostNetworkInterfaceType_T ty
 }
 
 STDMETHODIMP Host::FindUSBDeviceByAddress(IN_BSTR aAddress,
-                                         IHostUSBDevice **aDevice)
+                                          IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
     CheckComArgNotNull(aAddress);
@@ -2401,98 +2401,98 @@ HRESULT Host::checkUSBProxyService()
 #endif /* VBOX_WITH_USB */
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
-void Host::registerMetrics (PerformanceCollector *aCollector)
+void Host::registerMetrics(PerformanceCollector *aCollector)
 {
     pm::CollectorHAL *hal = aCollector->getHAL();
     /* Create sub metrics */
-    pm::SubMetric *cpuLoadUser   = new pm::SubMetric ("CPU/Load/User",
+    pm::SubMetric *cpuLoadUser   = new pm::SubMetric("CPU/Load/User",
         "Percentage of processor time spent in user mode.");
-    pm::SubMetric *cpuLoadKernel = new pm::SubMetric ("CPU/Load/Kernel",
+    pm::SubMetric *cpuLoadKernel = new pm::SubMetric("CPU/Load/Kernel",
         "Percentage of processor time spent in kernel mode.");
-    pm::SubMetric *cpuLoadIdle   = new pm::SubMetric ("CPU/Load/Idle",
+    pm::SubMetric *cpuLoadIdle   = new pm::SubMetric("CPU/Load/Idle",
         "Percentage of processor time spent idling.");
-    pm::SubMetric *cpuMhzSM      = new pm::SubMetric ("CPU/MHz",
+    pm::SubMetric *cpuMhzSM      = new pm::SubMetric("CPU/MHz",
         "Average of current frequency of all processors.");
-    pm::SubMetric *ramUsageTotal = new pm::SubMetric ("RAM/Usage/Total",
+    pm::SubMetric *ramUsageTotal = new pm::SubMetric("RAM/Usage/Total",
         "Total physical memory installed.");
-    pm::SubMetric *ramUsageUsed  = new pm::SubMetric ("RAM/Usage/Used",
+    pm::SubMetric *ramUsageUsed  = new pm::SubMetric("RAM/Usage/Used",
         "Physical memory currently occupied.");
-    pm::SubMetric *ramUsageFree  = new pm::SubMetric ("RAM/Usage/Free",
+    pm::SubMetric *ramUsageFree  = new pm::SubMetric("RAM/Usage/Free",
         "Physical memory currently available to applications.");
     /* Create and register base metrics */
     IUnknown *objptr;
     ComObjPtr<Host> tmp = this;
     tmp.queryInterfaceTo(&objptr);
-    pm::BaseMetric *cpuLoad = new pm::HostCpuLoadRaw (hal, objptr, cpuLoadUser, cpuLoadKernel,
+    pm::BaseMetric *cpuLoad = new pm::HostCpuLoadRaw(hal, objptr, cpuLoadUser, cpuLoadKernel,
                                           cpuLoadIdle);
     aCollector->registerBaseMetric (cpuLoad);
-    pm::BaseMetric *cpuMhz = new pm::HostCpuMhz (hal, objptr, cpuMhzSM);
+    pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, objptr, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
-    pm::BaseMetric *ramUsage = new pm::HostRamUsage (hal, objptr, ramUsageTotal, ramUsageUsed,
+    pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, objptr, ramUsageTotal, ramUsageUsed,
                                            ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
 
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser, 0));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadUser,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel, 0));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadKernel,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel, 0));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadKernel,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle, 0));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuLoad, cpuLoadIdle,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle, 0));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadIdle,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM, 0));
-    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(cpuMhz, cpuMhzSM,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(cpuMhz, cpuMhzSM, 0));
+    aCollector->registerMetric(new pm::Metric(cpuMhz, cpuMhzSM,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(cpuMhz, cpuMhzSM,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(cpuMhz, cpuMhzSM,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal, 0));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageTotal,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageTotal, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageTotal,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageTotal,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageTotal,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed, 0));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageUsed,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageUsed,
+                                              new pm::AggregateMax()));
 
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree, 0));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
-                                               new pm::AggregateAvg()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
-                                               new pm::AggregateMin()));
-    aCollector->registerMetric (new pm::Metric(ramUsage, ramUsageFree,
-                                               new pm::AggregateMax()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
+                                              new pm::AggregateMax()));
 };
 
 void Host::unregisterMetrics (PerformanceCollector *aCollector)
 {
-    aCollector->unregisterMetricsFor (this);
-    aCollector->unregisterBaseMetricsFor (this);
+    aCollector->unregisterMetricsFor(this);
+    aCollector->unregisterBaseMetricsFor(this);
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 

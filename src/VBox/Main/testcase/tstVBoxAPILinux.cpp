@@ -123,11 +123,11 @@ void listVMs(IVirtualBox *virtualBox)
          */
         for (PRUint32 i = 0; i < machineCnt; ++ i)
         {
-            IMachine *machine = machines [i];
+            IMachine *machine = machines[i];
             if (machine)
             {
                 PRBool isAccessible = PR_FALSE;
-                machine->GetAccessible (&isAccessible);
+                machine->GetAccessible(&isAccessible);
 
                 if (isAccessible)
                 {

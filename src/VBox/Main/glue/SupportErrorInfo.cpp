@@ -49,21 +49,21 @@ void MultiResult::incCounter()
     if (sCounter == NIL_RTTLS)
     {
         sCounter = RTTlsAlloc();
-        AssertReturnVoid (sCounter != NIL_RTTLS);
+        AssertReturnVoid(sCounter != NIL_RTTLS);
     }
 
-    uintptr_t counter = (uintptr_t) RTTlsGet (sCounter);
-    ++ counter;
-    RTTlsSet (sCounter, (void *) counter);
+    uintptr_t counter = (uintptr_t)RTTlsGet(sCounter);
+    ++counter;
+    RTTlsSet(sCounter, (void*)counter);
 }
 
 /*static*/
 void MultiResult::decCounter()
 {
-    uintptr_t counter = (uintptr_t) RTTlsGet (sCounter);
-    AssertReturnVoid (counter != 0);
-    -- counter;
-    RTTlsSet (sCounter, (void *) counter);
+    uintptr_t counter = (uintptr_t)RTTlsGet(sCounter);
+    AssertReturnVoid(counter != 0);
+    --counter;
+    RTTlsSet(sCounter, (void*)counter);
 }
 
 // SupportErrorInfoBase methods
@@ -105,7 +105,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                                                IVirtualBoxErrorInfo *aInfo /*= NULL*/)
 {
     /* whether multi-error mode is turned on */
-    bool preserve = ((uintptr_t) RTTlsGet (MultiResult::sCounter)) > 0;
+    bool preserve = ((uintptr_t)RTTlsGet(MultiResult::sCounter)) > 0;
 
     LogRel(("ERROR [COM]: aRC=%#08x aIID={%RTuuid} aComponent={%s} aText={%s} aWarning=%RTbool, aInfo=%p, preserve=%RTbool\n",
             aResultCode,
@@ -119,7 +119,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
     if (aInfo == NULL)
     {
         /* these are mandatory, others -- not */
-        AssertReturn((!aWarning && FAILED (aResultCode)) ||
+        AssertReturn((!aWarning && FAILED(aResultCode)) ||
                       (aWarning && aResultCode != S_OK),
                       E_FAIL);
         AssertReturn(!strText.isEmpty(), E_FAIL);
@@ -142,10 +142,10 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
         {
             /* get the current error info if any */
             ComPtr<IErrorInfo> err;
-            rc = ::GetErrorInfo (0, err.asOutParam());
+            rc = ::GetErrorInfo(0, err.asOutParam());
             if (FAILED(rc)) break;
             rc = err.queryInterfaceTo(curInfo.asOutParam());
-            if (FAILED (rc))
+            if (FAILED(rc))
             {
                 /* create a IVirtualBoxErrorInfo wrapper for the native
                  * IErrorInfo object */
@@ -153,7 +153,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                 rc = wrapper.createObject();
                 if (SUCCEEDED(rc))
                 {
-                    rc = wrapper->init (err);
+                    rc = wrapper->init(err);
                     if (SUCCEEDED(rc))
                         curInfo = wrapper;
                 }
@@ -175,14 +175,14 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                 rc = infoObj.createObject();
                 if (FAILED(rc)) break;
 
-                rc = infoObj->init (aInfo, curInfo);
+                rc = infoObj->init(aInfo, curInfo);
                 if (FAILED(rc)) break;
 
                 info = infoObj;
             }
 
             /* we want to return the head's result code */
-            rc = info->COMGETTER(ResultCode) (&aResultCode);
+            rc = info->COMGETTER(ResultCode)(&aResultCode);
             if (FAILED(rc)) break;
         }
         else
@@ -191,7 +191,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             rc = infoObj.createObject();
             if (FAILED(rc)) break;
 
-            rc = infoObj->init (aResultCode, aIID, aComponent, strText.c_str(), curInfo);
+            rc = infoObj->init(aResultCode, aIID, aComponent, strText.c_str(), curInfo);
             if (FAILED(rc)) break;
 
             info = infoObj;
@@ -200,16 +200,16 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
         ComPtr<IErrorInfo> err;
         rc = info.queryInterfaceTo(err.asOutParam());
         if (SUCCEEDED(rc))
-            rc = ::SetErrorInfo (0, err);
+            rc = ::SetErrorInfo(0, err);
 
 #else // !defined (VBOX_WITH_XPCOM)
 
         nsCOMPtr <nsIExceptionService> es;
-        es = do_GetService (NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
+        es = do_GetService(NS_EXCEPTIONSERVICE_CONTRACTID, &rc);
         if (NS_SUCCEEDED(rc))
         {
             nsCOMPtr <nsIExceptionManager> em;
-            rc = es->GetCurrentExceptionManager (getter_AddRefs (em));
+            rc = es->GetCurrentExceptionManager(getter_AddRefs(em));
             if (FAILED(rc)) break;
 
             ComPtr<IVirtualBoxErrorInfo> curInfo;
@@ -217,10 +217,10 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             {
                 /* get the current error info if any */
                 ComPtr<nsIException> ex;
-                rc = em->GetCurrentException (ex.asOutParam());
+                rc = em->GetCurrentException(ex.asOutParam());
                 if (FAILED(rc)) break;
                 rc = ex.queryInterfaceTo(curInfo.asOutParam());
-                if (FAILED (rc))
+                if (FAILED(rc))
                 {
                     /* create a IVirtualBoxErrorInfo wrapper for the native
                      * nsIException object */
@@ -228,14 +228,14 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                     rc = wrapper.createObject();
                     if (SUCCEEDED(rc))
                     {
-                        rc = wrapper->init (ex);
+                        rc = wrapper->init(ex);
                         if (SUCCEEDED(rc))
                             curInfo = wrapper;
                     }
                 }
             }
             /* On failure, curInfo will stay null */
-            Assert (SUCCEEDED(rc) || curInfo.isNull());
+            Assert(SUCCEEDED(rc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
             if (aInfo != NULL)
@@ -250,7 +250,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
                     rc = infoObj.createObject();
                     if (FAILED(rc)) break;
 
-                    rc = infoObj->init (aInfo, curInfo);
+                    rc = infoObj->init(aInfo, curInfo);
                     if (FAILED(rc)) break;
 
                     info = infoObj;
@@ -258,7 +258,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
 
                 /* we want to return the head's result code */
                 PRInt32 lrc;
-                rc = info->COMGETTER(ResultCode) (&lrc); aResultCode = lrc;
+                rc = info->COMGETTER(ResultCode)(&lrc); aResultCode = lrc;
                 if (FAILED(rc)) break;
             }
             else
@@ -276,7 +276,7 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
             ComPtr<nsIException> ex;
             rc = info.queryInterfaceTo(ex.asOutParam());
             if (SUCCEEDED(rc))
-                rc = em->SetCurrentException (ex);
+                rc = em->SetCurrentException(ex);
         }
         else if (rc == NS_ERROR_UNEXPECTED)
         {
@@ -300,46 +300,46 @@ HRESULT SupportErrorInfoBase::setErrorInternal(HRESULT aResultCode,
     }
     while (0);
 
-    AssertComRC (rc);
+    AssertComRC(rc);
 
     return SUCCEEDED(rc) ? aResultCode : rc;
 }
 
 /* static */
-HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const GUID &aIID,
-                                        const char *aComponent, const char *aText,
-                                        ...)
+HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const GUID &aIID,
+                                       const char *aComponent, const char *aText,
+                                       ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setErrorV (aResultCode, aIID, aComponent, aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setErrorV(aResultCode, aIID, aComponent, aText, args);
+    va_end(args);
     return rc;
 }
 
 /* static */
-HRESULT SupportErrorInfoBase::setWarning (HRESULT aResultCode, const GUID &aIID,
-                                          const char *aComponent, const char *aText,
-                                          ...)
+HRESULT SupportErrorInfoBase::setWarning(HRESULT aResultCode, const GUID &aIID,
+                                         const char *aComponent, const char *aText,
+                                         ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setWarningV (aResultCode, aIID, aComponent, aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setWarningV(aResultCode, aIID, aComponent, aText, args);
+    va_end(args);
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const char *aText, ...)
+HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const char *aText, ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setErrorV (aResultCode, mainInterfaceID(), componentName(),
-                            aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setErrorV(aResultCode, mainInterfaceID(), componentName(),
+                           aText, args);
+    va_end(args);
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const Utf8Str &strText)
+HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const Utf8Str &strText)
 {
     HRESULT rc = setError(aResultCode,
                           mainInterfaceID(),
@@ -348,33 +348,33 @@ HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const Utf8Str &strT
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setWarning (HRESULT aResultCode, const char *aText, ...)
+HRESULT SupportErrorInfoBase::setWarning(HRESULT aResultCode, const char *aText, ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setWarningV (aResultCode, mainInterfaceID(), componentName(),
-                              aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setWarningV(aResultCode, mainInterfaceID(), componentName(),
+                             aText, args);
+    va_end(args);
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setError (HRESULT aResultCode, const GUID &aIID,
-                                        const char *aText, ...)
+HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const GUID &aIID,
+                                       const char *aText, ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setErrorV (aResultCode, aIID, componentName(), aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setErrorV(aResultCode, aIID, componentName(), aText, args);
+    va_end(args);
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setWarning (HRESULT aResultCode, const GUID &aIID,
-                                          const char *aText, ...)
+HRESULT SupportErrorInfoBase::setWarning(HRESULT aResultCode, const GUID &aIID,
+                                         const char *aText, ...)
 {
     va_list args;
-    va_start (args, aText);
-    HRESULT rc = setWarningV (aResultCode, aIID, componentName(), aText, args);
-    va_end (args);
+    va_start(args, aText);
+    HRESULT rc = setWarningV(aResultCode, aIID, componentName(), aText, args);
+    va_end(args);
     return rc;
 }
 

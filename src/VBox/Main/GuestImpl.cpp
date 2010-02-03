@@ -282,8 +282,8 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
         return S_OK;
     }
 
-    return setError (VBOX_E_VM_ERROR,
-        tr ("VMM device is not available (is the VM running?)"));
+    return setError(VBOX_E_VM_ERROR,
+                    tr("VMM device is not available (is the VM running?)"));
 }
 
 STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal)

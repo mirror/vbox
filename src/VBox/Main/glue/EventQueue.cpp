@@ -484,7 +484,7 @@ BOOL EventQueue::postEvent (Event *event)
  */
 BOOL EventQueue::waitForEvent (Event **event)
 {
-    Assert (event);
+    Assert(event);
     if (!event)
         return FALSE;
 
@@ -517,7 +517,7 @@ BOOL EventQueue::waitForEvent (Event **event)
     {
         rc = mEventQ->WaitForEvent (&ev);
         // check for error
-        if (FAILED (rc))
+        if (FAILED(rc))
             return FALSE;
         // check for EINTR signal
         if (!ev)
@@ -544,7 +544,7 @@ BOOL EventQueue::waitForEvent (Event **event)
  */
 BOOL EventQueue::handleEvent (Event *event)
 {
-    Assert (event);
+    Assert(event);
     if (!event)
         return FALSE;
 

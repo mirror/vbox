@@ -68,7 +68,7 @@ typedef struct VUSBIRHCONFIG *PVUSBIRHCONFIG;
 #define CHECK_CONSOLE_DRV(drv) \
     do { \
         if (!(drv)) \
-            return setError (E_ACCESSDENIED, tr ("The console is not powered up")); \
+            return setError(E_ACCESSDENIED, tr("The console is not powered up")); \
     } while (0)
 
 // Console
@@ -216,9 +216,9 @@ public:
 
     static const PDMDRVREG DrvStatusReg;
 
-    void reportAuthLibraryError (const char *filename, int rc)
+    void reportAuthLibraryError(const char *filename, int rc)
     {
-        setError (E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
+        setError(E_FAIL, tr("Could not load the external authentication library '%s' (%Rrc)"), filename, rc);
     }
 
     static HRESULT handleUnexpectedExceptions(RT_SRC_POS_DECL);
@@ -241,18 +241,18 @@ private:
     public:
         AutoVMCallerBase (Console *aThat) : mThat (aThat), mRC (S_OK)
         {
-            Assert (aThat);
+            Assert(aThat);
             mRC = aThat->addVMCaller (taQuiet, taAllowNullVM);
         }
         ~AutoVMCallerBase()
         {
-            if (SUCCEEDED (mRC))
+            if (SUCCEEDED(mRC))
                 mThat->releaseVMCaller();
         }
         /** Decreases the number of callers before the instance is destroyed. */
         void release()
         {
-            AssertReturnVoid (SUCCEEDED (mRC));
+            AssertReturnVoid(SUCCEEDED(mRC));
             mThat->releaseVMCaller();
             mRC = E_FAIL;
         }
@@ -260,13 +260,13 @@ private:
          *  rechecked to ensure the operation succeeded. */
         void add()
         {
-            AssertReturnVoid (!SUCCEEDED (mRC));
+            AssertReturnVoid(!SUCCEEDED(mRC));
             mRC = mThat->addVMCaller (taQuiet, taAllowNullVM);
         }
         /** Returns the result of Console::addVMCaller() */
         HRESULT rc() const { return mRC; }
-        /** Shortcut to SUCCEEDED (rc()) */
-        bool isOk() const { return SUCCEEDED (mRC); }
+        /** Shortcut to SUCCEEDED(rc()) */
+        bool isOk() const { return SUCCEEDED(mRC); }
     protected:
         Console *mThat;
         HRESULT mRC;
@@ -327,7 +327,7 @@ private:
     public:
         SafeVMPtrBase (Console *aThat) : Base (aThat), mpVM (NULL)
         {
-            if (SUCCEEDED (Base::mRC))
+            if (SUCCEEDED(Base::mRC))
                 mpVM = aThat->mpVM;
         }
         /** Smart SaveVMPtr to PVM cast operator */

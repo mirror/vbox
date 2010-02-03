@@ -89,7 +89,7 @@ public:
     HRESULT rc() const { return mRC; }
 
     /**
-     * Returns |true| if |SUCCEEDED (rc())| is |true|, for convenience.
+     * Returns |true| if |SUCCEEDED(rc())| is |true|, for convenience.
      * |true| means the number of callers was successfully increased.
      */
     bool isOk() const { return SUCCEEDED(mRC); }
@@ -244,10 +244,10 @@ typedef AutoCallerBase<true> AutoLimitedCaller;
  *     AutoInitSpan autoInitSpan (this);
  *     AssertReturn (autoInitSpan.isOk(), E_FAIL);
  *     ...
- *     if (FAILED (rc))
+ *     if (FAILED(rc))
  *         return rc;
  *     ...
- *     if (SUCCEEDED (rc))
+ *     if (SUCCEEDED(rc))
  *         autoInitSpan.setSucceeded();
  *     return rc;
  * }
@@ -340,10 +340,10 @@ private:
  *     AutoReinitSpan autoReinitSpan (this);
  *     AssertReturn (autoReinitSpan.isOk(), E_FAIL);
  *     ...
- *     if (FAILED (rc))
+ *     if (FAILED(rc))
  *         return rc;
  *     ...
- *     if (SUCCEEDED (rc))
+ *     if (SUCCEEDED(rc))
  *         autoReinitSpan.setSucceeded();
  *     return rc;
  * }
@@ -477,10 +477,10 @@ private:
  *     if (mayUninitSpan.alreadyInProgress())
  *          return S_OK;
  *     ...
- *     if (FAILED (rc))
+ *     if (FAILED(rc))
  *         return rc; // will go back to Ready
  *     ...
- *     if (SUCCEEDED (rc))
+ *     if (SUCCEEDED(rc))
  *         mayUninitSpan.acceptUninit(); // will call uninit()
  *     return rc;
  * }

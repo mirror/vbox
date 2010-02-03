@@ -443,13 +443,13 @@ HRESULT Initialize()
         {
             /* Use RTPathAppPrivateArch() first */
             vrc = RTPathAppPrivateArch(szAppHomeDir, sizeof(szAppHomeDir));
-            AssertRC (vrc);
+            AssertRC(vrc);
         }
         else
         {
             /* Iterate over all other paths */
             szAppHomeDir[RTPATH_MAX - 1] = '\0';
-            strncpy(szAppHomeDir, kAppPathsToProbe [i], RTPATH_MAX - 1);
+            strncpy(szAppHomeDir, kAppPathsToProbe[i], RTPATH_MAX - 1);
             vrc = VINF_SUCCESS;
         }
         if (RT_FAILURE(vrc))

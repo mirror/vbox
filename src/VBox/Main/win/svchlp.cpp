@@ -234,7 +234,7 @@ int SVCHlpClient::read (Utf8Str &aVal)
     }
 
     aVal.reserve(len + 1);
-    aVal.mutableRaw() [len] = 0;
+    aVal.mutableRaw()[len] = 0;
 
     /* read string data */
     vrc = read (aVal.mutableRaw(), len);
@@ -282,14 +282,13 @@ int SVCHlpServer::run()
             case SVCHlpMsg::DhcpRediscover:
             {
 #ifdef VBOX_WITH_NETFLT
-                vrc = netIfNetworkInterfaceHelperServer (this, msgCode);
+                vrc = netIfNetworkInterfaceHelperServer(this, msgCode);
 #endif
                 break;
             }
             default:
-                AssertMsgFailedReturn ((
-                    "Invalid message code %d (%08lX)\n", msgCode, msgCode),
-                    VERR_GENERAL_FAILURE);
+                AssertMsgFailedReturn(("Invalid message code %d (%08lX)\n", msgCode, msgCode),
+                                      VERR_GENERAL_FAILURE);
         }
 
         if (RT_FAILURE(vrc))

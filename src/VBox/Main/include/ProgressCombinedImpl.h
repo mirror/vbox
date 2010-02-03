@@ -130,7 +130,7 @@ public:
                                     aInitiator, aDescription, aId);
 
         /* Confirm a successful initialization when it's the case */
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             autoInitSpan.setSucceeded();
 
         return rc;

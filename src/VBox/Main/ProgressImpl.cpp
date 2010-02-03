@@ -139,7 +139,7 @@ HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
     /* add to the global collection of progress operations (note: after
      * creating mId) */
-    mParent->addProgress (this);
+    mParent->addProgress(this);
 #endif
 
     unconst(mDescription) = aDescription;
@@ -401,8 +401,8 @@ STDMETHODIMP ProgressBase::COMGETTER(ResultCode) (LONG *aResultCode)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
-        return setError (E_FAIL,
-            tr ("Result code is not available, operation is still in progress"));
+        return setError(E_FAIL,
+                        tr("Result code is not available, operation is still in progress"));
 
     *aResultCode = mResultCode;
 
@@ -419,8 +419,8 @@ STDMETHODIMP ProgressBase::COMGETTER(ErrorInfo) (IVirtualBoxErrorInfo **aErrorIn
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCompleted)
-        return setError (E_FAIL,
-            tr ("Error info is not available, operation is still in progress"));
+        return setError(E_FAIL,
+                        tr("Error info is not available, operation is still in progress"));
 
     mErrorInfo.queryInterfaceTo(aErrorInfo);
 
@@ -1086,7 +1086,7 @@ HRESULT Progress::setResultCode(HRESULT aResultCode)
 /**
  * Marks the whole task as complete and sets the result code.
  *
- * If the result code indicates a failure (|FAILED (@a aResultCode)|) then this
+ * If the result code indicates a failure (|FAILED(@a aResultCode)|) then this
  * method will import the error info from the current thread and assign it to
  * the errorInfo attribute (it will return an error if no info is available in
  * such case).
@@ -1171,7 +1171,7 @@ HRESULT Progress::notifyComplete(HRESULT aResultCode,
     mCompleted = TRUE;
     mResultCode = aResultCode;
 
-    AssertReturn(FAILED (aResultCode), E_FAIL);
+    AssertReturn(FAILED(aResultCode), E_FAIL);
 
     ComObjPtr<VirtualBoxErrorInfo> errorInfo;
     HRESULT rc = errorInfo.createObject();
@@ -1285,8 +1285,7 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
     m_cOperations = 0; /* will be calculated later */
 
     m_ulCurrentOperation = 0;
-    rc = mProgresses [0]->COMGETTER(OperationDescription) (
-        m_bstrOperationDescription.asOutParam());
+    rc = mProgresses[0]->COMGETTER(OperationDescription)(m_bstrOperationDescription.asOutParam());
     if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < mProgresses.size(); i ++)
@@ -1294,7 +1293,7 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
         if (mCancelable)
         {
             BOOL cancelable = FALSE;
-            rc = mProgresses [i]->COMGETTER(Cancelable) (&cancelable);
+            rc = mProgresses[i]->COMGETTER(Cancelable)(&cancelable);
             if (FAILED(rc)) return rc;
 
             if (!cancelable)
@@ -1303,7 +1302,7 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
 
         {
             ULONG opCount = 0;
-            rc = mProgresses [i]->COMGETTER(OperationCount) (&opCount);
+            rc = mProgresses[i]->COMGETTER(OperationCount)(&opCount);
             if (FAILED(rc)) return rc;
 
             m_cOperations += opCount;
@@ -1327,28 +1326,31 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
  * @param aProgress2    Second normal progress object.
  * @param aId           See ProgressBase::init().
  */
-HRESULT CombinedProgress::init (
+HRESULT CombinedProgress::init(
 #if !defined (VBOX_COM_INPROC)
-                                VirtualBox *aParent,
+                               VirtualBox *aParent,
 #endif
-                                IUnknown *aInitiator,
-                                CBSTR aDescription,
-                                IProgress *aProgress1, IProgress *aProgress2,
-                                OUT_GUID aId /* = NULL */)
+                               IUnknown *aInitiator,
+                               CBSTR aDescription,
+                               IProgress *aProgress1,
+                               IProgress *aProgress2,
+                               OUT_GUID aId /* = NULL */)
 {
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    mProgresses.resize (2);
-    mProgresses [0] = aProgress1;
-    mProgresses [1] = aProgress2;
+    mProgresses.resize(2);
+    mProgresses[0] = aProgress1;
+    mProgresses[1] = aProgress2;
 
-    HRESULT rc =  protectedInit (autoInitSpan,
+    HRESULT rc =  protectedInit(autoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                                 aParent,
+                                aParent,
 #endif
-                                 aInitiator, aDescription, aId);
+                                aInitiator,
+                                aDescription,
+                                aId);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -1607,8 +1609,8 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (aOperation >= m_cOperations)
-        return setError (E_FAIL,
-            tr ("Operation number must be in range [0, %d]"), m_ulCurrentOperation - 1);
+        return setError(E_FAIL,
+                        tr("Operation number must be in range [0, %d]"), m_ulCurrentOperation - 1);
 
     /* if we're already completed or if the given operation is already done,
      * then take a shortcut */
@@ -1622,8 +1624,8 @@ STDMETHODIMP CombinedProgress::WaitForOperationCompletion (ULONG aOperation, LON
         do
         {
             ULONG opCount = 0;
-            rc = mProgresses [progress]->COMGETTER(OperationCount) (&opCount);
-            if (FAILED (rc))
+            rc = mProgresses[progress]->COMGETTER(OperationCount)(&opCount);
+            if (FAILED(rc))
                 return rc;
 
             if (completedOps + opCount > aOperation)
@@ -1687,7 +1689,7 @@ STDMETHODIMP CombinedProgress::Cancel()
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!mCancelable)
-        return setError (E_FAIL, tr ("Operation cannot be canceled"));
+        return setError(E_FAIL, tr("Operation cannot be canceled"));
 
     if (!mCanceled)
     {
@@ -1730,29 +1732,29 @@ HRESULT CombinedProgress::checkProgress()
     do
     {
         rc = progress->COMGETTER(Completed)(&fCompleted);
-        if (FAILED (rc))
+        if (FAILED(rc))
             return rc;
 
         if (fCompleted)
         {
             rc = progress->COMGETTER(Canceled)(&mCanceled);
-            if (FAILED (rc))
+            if (FAILED(rc))
                 return rc;
 
             LONG iRc;
             rc = progress->COMGETTER(ResultCode)(&iRc);
-            if (FAILED (rc))
+            if (FAILED(rc))
                 return rc;
             mResultCode = iRc;
 
-            if (FAILED (mResultCode))
+            if (FAILED(mResultCode))
             {
                 rc = progress->COMGETTER(ErrorInfo) (mErrorInfo.asOutParam());
-                if (FAILED (rc))
+                if (FAILED(rc))
                     return rc;
             }
 
-            if (FAILED (mResultCode) || mCanceled)
+            if (FAILED(mResultCode) || mCanceled)
             {
                 mCompleted = TRUE;
             }
@@ -1760,14 +1762,14 @@ HRESULT CombinedProgress::checkProgress()
             {
                 ULONG opCount = 0;
                 rc = progress->COMGETTER(OperationCount) (&opCount);
-                if (FAILED (rc))
+                if (FAILED(rc))
                     return rc;
 
                 mCompletedOperations += opCount;
                 mProgress ++;
 
                 if (mProgress < mProgresses.size())
-                    progress = mProgresses [mProgress];
+                    progress = mProgresses[mProgress];
                 else
                     mCompleted = TRUE;
             }

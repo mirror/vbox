@@ -232,9 +232,9 @@ extern "C" int WINAPI _tWinMain(HINSTANCE hInstance,
                 if (*lpszToken != NULL)
                 {
                     Bstr str (lpszToken);
-                    LPCTSTR lpszToken2 = FindOneOf (lpszToken, szTokens);
+                    LPCTSTR lpszToken2 = FindOneOf(lpszToken, szTokens);
                     if (lpszToken2)
-                        str.mutableRaw() [lpszToken2 - lpszToken] = '\0';
+                        str.mutableRaw()[lpszToken2 - lpszToken] = '\0';
                     pipeName = Utf8Str(lpszToken);
                 }
             }

@@ -208,18 +208,20 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
         hostPath.stripTrailingSlash();
 
     /* Check whether the path is full (absolute) */
-    char hostPathFull [RTPATH_MAX];
+    char hostPathFull[RTPATH_MAX];
     int vrc = RTPathAbsEx(NULL,
                           hostPath.c_str(),
                           hostPathFull,
                           sizeof (hostPathFull));
     if (RT_FAILURE(vrc))
-        return setError (E_INVALIDARG,
-            tr ("Invalid shared folder path: '%s' (%Rrc)"), hostPath.raw(), vrc);
+        return setError(E_INVALIDARG,
+                        tr("Invalid shared folder path: '%s' (%Rrc)"),
+                        hostPath.raw(), vrc);
 
     if (RTPathCompare(hostPath.c_str(), hostPathFull) != 0)
-        return setError (E_INVALIDARG,
-            tr ("Shared folder path '%s' is not absolute"), hostPath.raw());
+        return setError(E_INVALIDARG,
+                        tr("Shared folder path '%s' is not absolute"),
+                        hostPath.raw());
 
     unconst(mParent) = aParent;
 

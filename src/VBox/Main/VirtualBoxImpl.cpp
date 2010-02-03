@@ -313,10 +313,9 @@ HRESULT VirtualBox::init()
         char szHomeDir[RTPATH_MAX];
         int vrc = com::GetVBoxUserHomeDirectory(szHomeDir, sizeof(szHomeDir));
         if (RT_FAILURE(vrc))
-            return setError (E_FAIL,
-                tr ("Could not create the VirtualBox home directory '%s'"
-                    "(%Rrc)"),
-                szHomeDir, vrc);
+            return setError(E_FAIL,
+                            tr("Could not create the VirtualBox home directory '%s' (%Rrc)"),
+                            szHomeDir, vrc);
 
         unconst(m->strHomeDir) = szHomeDir;
     }
@@ -379,17 +378,17 @@ HRESULT VirtualBox::init()
             rc = guestOSTypeObj.createObject();
             if (SUCCEEDED(rc))
             {
-                rc = guestOSTypeObj->init(Global::sOSTypes [i].familyId,
-                                          Global::sOSTypes [i].familyDescription,
-                                          Global::sOSTypes [i].id,
-                                          Global::sOSTypes [i].description,
-                                          Global::sOSTypes [i].osType,
-                                          Global::sOSTypes [i].osHint,
-                                          Global::sOSTypes [i].recommendedRAM,
-                                          Global::sOSTypes [i].recommendedVRAM,
-                                          Global::sOSTypes [i].recommendedHDD,
-                                          Global::sOSTypes [i].networkAdapterType,
-                                          Global::sOSTypes [i].numSerialEnabled);
+                rc = guestOSTypeObj->init(Global::sOSTypes[i].familyId,
+                                          Global::sOSTypes[i].familyDescription,
+                                          Global::sOSTypes[i].id,
+                                          Global::sOSTypes[i].description,
+                                          Global::sOSTypes[i].osType,
+                                          Global::sOSTypes[i].osHint,
+                                          Global::sOSTypes[i].recommendedRAM,
+                                          Global::sOSTypes[i].recommendedVRAM,
+                                          Global::sOSTypes[i].recommendedHDD,
+                                          Global::sOSTypes[i].networkAdapterType,
+                                          Global::sOSTypes[i].numSerialEnabled);
                 if (SUCCEEDED(rc))
                     m->ollGuestOSTypes.addChild(guestOSTypeObj);
             }
@@ -455,7 +454,7 @@ HRESULT VirtualBox::init()
                                  RTTHREADTYPE_MAIN_WORKER,
                                  RTTHREADFLAGS_WAITABLE,
                                  "Watcher");
-        ComAssertRC (vrc);
+        ComAssertRC(vrc);
         if (RT_FAILURE(vrc))
             rc = E_FAIL;
     }
@@ -886,7 +885,7 @@ STDMETHODIMP VirtualBox::COMGETTER(SharedFolders) (ComSafeArrayOut(ISharedFolder
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return setError (E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, "Not yet implemented");
 }
 
 STDMETHODIMP
@@ -1364,7 +1363,7 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
     {
         imageId = Guid(aImageId);
         if (imageId.isEmpty())
-            return setError (E_INVALIDARG, tr ("Argument %s is empty"), "aImageId");
+            return setError(E_INVALIDARG, tr("Argument %s is empty"), "aImageId");
     }
     if (aSetParentId)
         parentId = Guid(aParentId);
@@ -1623,9 +1622,9 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
     Bstr id = aId;
     for (size_t i = 0; i < RT_ELEMENTS (kOldNewIDs) / 2; i += 2)
     {
-        if (id == kOldNewIDs [i])
+        if (id == kOldNewIDs[i])
         {
-            id = kOldNewIDs [i + 1];
+            id = kOldNewIDs[i + 1];
             break;
         }
     }
@@ -1647,9 +1646,9 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
     }
 
     return (*aType) ? S_OK :
-        setError (E_INVALIDARG,
-            tr ("'%ls' is not a valid Guest OS type"),
-            aId);
+        setError(E_INVALIDARG,
+                 tr("'%ls' is not a valid Guest OS type"),
+                 aId);
 }
 
 STDMETHODIMP VirtualBox::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL /* aWritable */)
@@ -1660,7 +1659,7 @@ STDMETHODIMP VirtualBox::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BO
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return setError (E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, "Not yet implemented");
 }
 
 STDMETHODIMP VirtualBox::RemoveSharedFolder(IN_BSTR aName)
@@ -1670,7 +1669,7 @@ STDMETHODIMP VirtualBox::RemoveSharedFolder(IN_BSTR aName)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    return setError (E_NOTIMPL, "Not yet implemented");
+    return setError(E_NOTIMPL, "Not yet implemented");
 }
 
 /**
@@ -1829,8 +1828,8 @@ STDMETHODIMP VirtualBox::OpenSession (ISession *aSession, IN_BSTR aMachineId)
     if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("The given session is already open or being opened"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control = aSession;
@@ -1885,8 +1884,8 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("The given session is already open or being opened"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control = aSession;
@@ -1939,8 +1938,8 @@ STDMETHODIMP VirtualBox::OpenExistingSession (ISession *aSession,
     if (FAILED(rc)) return rc;
 
     if (state != SessionState_Closed)
-        return setError (VBOX_E_INVALID_OBJECT_STATE,
-            tr ("The given session is already open or being opened"));
+        return setError(VBOX_E_INVALID_OBJECT_STATE,
+                        tr("The given session is already open or being opened"));
 
     /* get the IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control = aSession;
@@ -2270,7 +2269,7 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
         }
 
         /* get the path to the executable */
-        char exePathBuf [RTPATH_MAX];
+        char exePathBuf[RTPATH_MAX];
         char *exePath = RTProcGetExecutableName (exePathBuf, RTPATH_MAX);
         ComAssertBreak (exePath, E_FAIL);
 
@@ -2306,12 +2305,12 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
                 /* hide excessive details in case of a frequent error
                  * (pressing the Cancel button to close the Run As dialog) */
                 if (vrc2 == VERR_CANCELLED)
-                    rc = setError (E_FAIL,
-                        tr ("Operation cancelled by the user"));
+                    rc = setError(E_FAIL,
+                                  tr("Operation cancelled by the user"));
                 else
-                    rc = setError (E_FAIL,
-                        tr ("Could not launch a privileged process '%s' (%Rrc)"),
-                        exePath, vrc2);
+                    rc = setError(E_FAIL,
+                                  tr("Could not launch a privileged process '%s' (%Rrc)"),
+                                  exePath, vrc2);
                 break;
             }
         }
@@ -2321,8 +2320,8 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
             vrc = RTProcCreate (exePath, args, RTENV_DEFAULT, 0, &pid);
             if (RT_FAILURE(vrc))
             {
-                rc = setError (E_FAIL,
-                    tr ("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
+                rc = setError(E_FAIL,
+                              tr("Could not launch a process '%s' (%Rrc)"), exePath, vrc);
                 break;
             }
         }
@@ -2345,14 +2344,14 @@ VirtualBox::SVCHelperClientThread (RTTHREAD aThread, void *aUser)
 
         if (SUCCEEDED(rc) && RT_FAILURE(vrc))
         {
-            rc = setError (E_FAIL,
-                tr ("Could not operate the communication channel (%Rrc)"), vrc);
+            rc = setError(E_FAIL,
+                          tr("Could not operate the communication channel (%Rrc)"), vrc);
             break;
         }
     }
     while (0);
 
-    if (FAILED (rc) && !userFuncCalled)
+    if (FAILED(rc) && !userFuncCalled)
     {
         /* call the user function in the "cleanup only" mode
          * to let it free resources passed to in aUser */
@@ -2498,7 +2497,7 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aV
     {
         HRESULT rc = (*it++)->OnExtraDataCanChange (id, aKey, aValue,
                                                     aError.asOutParam(), &allowChange);
-        if (FAILED (rc))
+        if (FAILED(rc))
         {
             /* if a call to this method fails for some reason (for ex., because
              * the other side is dead), we ensure allowChange stays true
@@ -2977,9 +2976,9 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId,
     {
         int vrc = calculateFullPath(Utf8Str(aLocation), location);
         if (RT_FAILURE(vrc))
-            return setError (VBOX_E_FILE_ERROR,
-                tr ("Invalid image file location '%ls' (%Rrc)"),
-                aLocation, vrc);
+            return setError(VBOX_E_FILE_ERROR,
+                            tr("Invalid image file location '%ls' (%Rrc)"),
+                            aLocation, vrc);
     }
 
     AutoReadLock alock(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -3868,7 +3867,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
             else if (rc > WAIT_OBJECT_0 + cnt && rc <= (WAIT_OBJECT_0 + cntSpawned))
             {
                 /* spawned VM process has terminated (normally or abnormally) */
-                (spawnedMachines [rc - WAIT_OBJECT_0 - cnt - 1])->
+                (spawnedMachines[rc - WAIT_OBJECT_0 - cnt - 1])->
                     checkForSpawnFailure();
                 update = true;
             }
@@ -3944,7 +3943,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
 
     /* close old process handles */
     for (size_t i = 1 + cnt; i < 1 + cnt + cntSpawned; ++ i)
-        CloseHandle (handles [i]);
+        CloseHandle (handles[i]);
 
     /* release sets of machines if any */
     machines.clear();
@@ -3957,7 +3956,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
     /// @todo (dmik) processes reaping!
 
     /* according to PMREF, 64 is the maximum for the muxwait list */
-    SEMRECORD handles [64];
+    SEMRECORD handles[64];
 
     HMUX muxSem = NULLHANDLE;
 
@@ -4007,7 +4006,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                     if (arc == NO_ERROR)
                     {
                         /* machine mutex is normally released */
-                        Assert (semId >= 0 && semId < cnt);
+                        Assert(semId >= 0 && semId < cnt);
                         if (semId >= 0 && semId < cnt)
                         {
 #ifdef DEBUG
@@ -4030,14 +4029,13 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                         {
                             PID pid; TID tid;
                             unsigned long reqCnt;
-                            arc = DosQueryMutexSem ((HMTX) handles [i].hsemCur, &pid,
-                                                    &tid, &reqCnt);
+                            arc = DosQueryMutexSem((HMTX)handles[i].hsemCur, &pid, &tid, &reqCnt);
                             if (arc == ERROR_SEM_OWNER_DIED)
                             {
                                 /* close the dead mutex as asked by PMREF */
-                                ::DosCloseMutexSem ((HMTX) handles [i].hsemCur);
+                                ::DosCloseMutexSem((HMTX)handles[i].hsemCur);
 
-                                Assert (i >= 0 && i < cnt);
+                                Assert(i >= 0 && i < cnt);
                                 if (i >= 0 && i < cnt)
                                 {
 #ifdef DEBUG
@@ -4062,7 +4060,7 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
                 if (cntSpawned > 0)
                 {
                     for (size_t i = 0; i < cntSpawned; ++ i)
-                        updateSpawned |= (spawnedMachines [i])->
+                        updateSpawned |= (spawnedMachines[i])->
                             checkForSpawnFailure();
                 }
             }
@@ -4216,11 +4214,11 @@ DECLCALLBACK(int) VirtualBox::ClientWatcher(RTTHREAD /* thread */, void *pvUser)
 
             update = false;
             for (size_t i = 0; i < cnt; ++ i)
-                update |= (machines [i])->checkForDeath();
+                update |= (machines[i])->checkForDeath();
 
             updateSpawned = false;
             for (size_t i = 0; i < cntSpawned; ++ i)
-                updateSpawned |= (spawnedMachines [i])->checkForSpawnFailure();
+                updateSpawned |= (spawnedMachines[i])->checkForSpawnFailure();
 
             /* reap child processes */
             {
@@ -4469,7 +4467,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     if (aSaveRegistry)
     {
         rc = saveSettings();
-        if (FAILED (rc))
+        if (FAILED(rc))
             unregisterDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
 
@@ -4511,7 +4509,7 @@ HRESULT VirtualBox::unregisterDHCPServer(DHCPServer *aDHCPServer,
     if (aSaveRegistry)
     {
         rc = saveSettings();
-        if (FAILED (rc))
+        if (FAILED(rc))
             registerDHCPServer(aDHCPServer, false /* aSaveRegistry */);
     }
 

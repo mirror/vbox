@@ -104,8 +104,8 @@ HRESULT Display::FinalConstruct()
     mLastHeight = 0;
 
 #ifdef VBOX_WITH_OLD_VBVA_LOCK
-    int rc = RTCritSectInit (&mVBVALock);
-    AssertRC (rc);
+    int rc = RTCritSectInit(&mVBVALock);
+    AssertRC(rc);
     mfu32PendingVideoAccelDisable = false;
 #endif /* VBOX_WITH_OLD_VBVA_LOCK */
 
@@ -2246,11 +2246,11 @@ STDMETHODIMP Display::TakeScreenShot (BYTE *address, ULONG width, ULONG height)
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
     if (vrc == VERR_NOT_IMPLEMENTED)
-        rc = setError (E_NOTIMPL,
-                       tr ("This feature is not implemented"));
+        rc = setError(E_NOTIMPL,
+                      tr("This feature is not implemented"));
     else if (RT_FAILURE(vrc))
-        rc = setError (VBOX_E_IPRT_ERROR,
-                       tr ("Could not take a screenshot (%Rrc)"), vrc);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not take a screenshot (%Rrc)"), vrc);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -2322,11 +2322,11 @@ STDMETHODIMP Display::TakeScreenShotSlow (ULONG width, ULONG height,
         screenData.detachTo(ComSafeArrayOutArg(aScreenData));
     }
     else if (vrc == VERR_NOT_IMPLEMENTED)
-        rc = setError (E_NOTIMPL,
-                       tr ("This feature is not implemented"));
+        rc = setError(E_NOTIMPL,
+                      tr("This feature is not implemented"));
     else
-        rc = setError (VBOX_E_IPRT_ERROR,
-                       tr ("Could not take a screenshot (%Rrc)"), vrc);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not take a screenshot (%Rrc)"), vrc);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -2394,8 +2394,8 @@ STDMETHODIMP Display::DrawToScreen (BYTE *address, ULONG x, ULONG y,
         rc = E_NOTIMPL;
     }
     else if (RT_FAILURE(rcVBox))
-        rc = setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not draw to the screen (%Rrc)"), rcVBox);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not draw to the screen (%Rrc)"), rcVBox);
 //@todo
 //    else
 //    {
@@ -2455,8 +2455,8 @@ STDMETHODIMP Display::InvalidateAndUpdate()
     alock.enter ();
 
     if (RT_FAILURE(rcVBox))
-        rc = setError (VBOX_E_IPRT_ERROR,
-            tr ("Could not invalidate and update the screen (%Rrc)"), rcVBox);
+        rc = setError(VBOX_E_IPRT_ERROR,
+                      tr("Could not invalidate and update the screen (%Rrc)"), rcVBox);
 
     LogFlowFunc (("rc=%08X\n", rc));
     LogFlowFuncLeave();
@@ -2486,9 +2486,8 @@ STDMETHODIMP Display::ResizeCompleted(ULONG aScreenId)
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[aScreenId].pFramebuffer == NULL)
-        return setError (VBOX_E_NOT_SUPPORTED,
-            tr ("Resize completed notification is valid only "
-                "for external framebuffers"));
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("Resize completed notification is valid only for external framebuffers"));
 
     /* Set the flag indicating that the resize has completed and display
      * data need to be updated. */
@@ -2522,9 +2521,8 @@ STDMETHODIMP Display::UpdateCompleted()
 
     /* this is only valid for external framebuffers */
     if (maFramebuffers[VBOX_VIDEO_PRIMARY_SCREEN].pFramebuffer == NULL)
-        return setError (VBOX_E_NOT_SUPPORTED,
-            tr ("Resize completed notification is valid only "
-                "for external framebuffers"));
+        return setError(VBOX_E_NOT_SUPPORTED,
+                        tr("Resize completed notification is valid only for external framebuffers"));
 
     return S_OK;
 }

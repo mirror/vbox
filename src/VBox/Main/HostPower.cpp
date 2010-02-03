@@ -35,7 +35,7 @@
 
 HostPowerService::HostPowerService (VirtualBox *aVirtualBox)
 {
-    Assert (aVirtualBox != NULL);
+    Assert(aVirtualBox != NULL);
     mVirtualBox = aVirtualBox;
 }
 
@@ -74,15 +74,15 @@ void HostPowerService::notify(HostPowerEvent aEvent)
 
                 /* get the remote console */
                 ComPtr<IConsole> console;
-                rc = pControl->GetRemoteConsole (console.asOutParam());
+                rc = pControl->GetRemoteConsole(console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
-                if (FAILED (rc))
+                if (FAILED(rc))
                     continue;
 
                 /* note that Pause() will simply return a failure if the VM is
                  * in an inappropriate state */
                 rc = console->Pause();
-                if (FAILED (rc))
+                if (FAILED(rc))
                     continue;
 
                 /* save the control to un-pause the VM later */
@@ -101,14 +101,14 @@ void HostPowerService::notify(HostPowerEvent aEvent)
             size_t resumed = 0;
 
             /* go through VMs we paused on Suspend */
-            for (size_t i = 0; i < mConsoles.size(); ++ i)
+            for (size_t i = 0; i < mConsoles.size(); ++i)
             {
                 /* note that Resume() will simply return a failure if the VM is
                  * in an inappropriate state (it will also fail if the VM has
                  * been somehow closed by this time already so that the
                  * console reference we have is dead) */
-                rc = mConsoles [i]->Resume();
-                if (FAILED (rc))
+                rc = mConsoles[i]->Resume();
+                if (FAILED(rc))
                     continue;
 
                 ++ resumed;
@@ -147,7 +147,7 @@ void HostPowerService::notify(HostPowerEvent aEvent)
                 ComPtr<IConsole> console;
                 rc = pControl->GetRemoteConsole (console.asOutParam());
                 /* the VM could have been powered down and closed or whatever */
-                if (FAILED (rc))
+                if (FAILED(rc))
                     continue;
 
                 ComPtr<IProgress> progress;
@@ -155,7 +155,7 @@ void HostPowerService::notify(HostPowerEvent aEvent)
                 /* note that SaveState() will simply return a failure if the VM
                  * is in an inappropriate state */
                 rc = console->SaveState (progress.asOutParam());
-                if (FAILED (rc))
+                if (FAILED(rc))
                     continue;
 
                 /* Wait until the operation has been completed. */
