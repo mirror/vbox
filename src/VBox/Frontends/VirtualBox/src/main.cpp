@@ -259,7 +259,7 @@ static void showHelp()
 #endif
 
     RTPrintf(VBOX_PRODUCT " Graphical User Interface %s\n"
-            "(C) 2005-2010 " VBOX_VENDOR "\n"
+            "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
             "All rights reserved.\n"
             "\n"
             "Usage:\n"
