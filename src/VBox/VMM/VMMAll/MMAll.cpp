@@ -195,6 +195,7 @@ DECLINLINE(PMMLOOKUPHYPER) mmHyperLookupRC(PVM pVM, RTRCPTR RCPtr, uint32_t *pof
     }
 
     AssertMsgFailed(("RCPtr=%RRv is not inside the hypervisor memory area!\n", RCPtr));
+    *poff = 0; /* shut up gcc */
     return NULL;
 }
 
