@@ -477,8 +477,13 @@ VBOX_X11_SEAMLESS_GUEST = 1
 VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 # Set this to skip installing the redistributable compiler runtime.
 #VBOX_WITHOUT_COMPILER_REDIST = 1
-## For treating compiler and linker warnings as errors where possible.
-if1of ($(USERNAME), bird)
+## @}
+
+
+## @name Compiler and linker config
+## @{
+# For treating compiler and linker warnings as errors where possible.
+if1of ($(KBUILD_TARGET), darwin) # more to come here later.
  VBOX_WITH_WARNINGS_AS_ERRORS = 1
 endif
 ## @}
