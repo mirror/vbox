@@ -646,14 +646,15 @@ DECLINLINE(uint32_t) ataMSF2LBA(const uint8_t *pbBuf)
     return (pbBuf[0] * 60 + pbBuf[1]) * 75 + pbBuf[2];
 }
 
-static uint32_t ataChecksum(void* ptr, size_t count)
+static uint32_t ataChecksum(void *ptr, size_t count)
 {
-    uint8_t u8Sum = 0xa5, *p = (uint8_t*)ptr;
+    uint8_t u8Sum = 0xa5;
+    uint8_t *p = (uint8_t*)ptr;
     size_t i;
 
     for (i = 0; i < count; i++)
     {
-      u8Sum += *p++;
+        u8Sum += *p++;
     }
 
     return (uint8_t)-(int32_t)u8Sum;
