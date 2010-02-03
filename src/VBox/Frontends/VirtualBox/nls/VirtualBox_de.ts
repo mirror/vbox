@@ -4513,7 +4513,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1 ago)</source>
-        <translation>(vor %1)</translation>
+        <translation> (vor %1)</translation>
     </message>
 </context>
 <context>
