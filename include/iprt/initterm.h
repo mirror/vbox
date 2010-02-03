@@ -131,12 +131,12 @@ RTR0DECL(void) RTR0TermForced(void);
  *
  * @param   u64ProgramStartNanoTS  The startup timestamp.
  */
-RTGCDECL(int) RTRCInit(uint64_t u64ProgramStartNanoTS);
+RTRCDECL(int) RTRCInit(uint64_t u64ProgramStartNanoTS);
 
 /**
  * Terminates the raw-mode context runtime library.
  */
-RTGCDECL(void) RTRCTerm(void);
+RTRCDECL(void) RTRCTerm(void);
 #endif
 
 
