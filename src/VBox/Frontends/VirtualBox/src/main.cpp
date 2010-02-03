@@ -264,6 +264,7 @@ static void showHelp()
             "\n"
             "Usage:\n"
             "  --startvm <vmname|UUID>    start a VM by specifying its UUID or name\n"
+            "  --seamless                 switch to seamless mode during startup\n"
             "  --rmode %-18s select different render mode (default is %s)\n"
 # ifdef VBOX_WITH_DEBUGGER_GUI
             "  --dbg                      enable the GUI debug menu\n"
