@@ -3169,7 +3169,8 @@ HRESULT Medium::compareLocationTo(const char *aLocation, int &aResult)
 
 /**
  * Checks that this hard disk may be discarded and performs necessary state
- * changes.
+ * changes. Must not be called for writethrough disks because there is nothing
+ * to discard then.
  *
  * This method is to be called prior to calling the #discard() to perform
  * necessary consistency checks and place involved hard disks to appropriate
@@ -3195,7 +3196,9 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
 
     Assert(m->pVirtualBox->getMediaTreeLockHandle().isWriteLockOnCurrentThread());
 
-    AssertReturn(m->type == MediumType_Normal, E_FAIL);
+    // Medium must not be writethrough at this point
+    AssertReturn(   m->type == MediumType_Normal
+                 || m->type == MediumType_Immutable, E_FAIL);
 
     if (getChildren().size() == 0)
     {
