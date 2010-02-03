@@ -97,6 +97,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_Ubuntu_x64       = 0x5C100,
     VBOXOSTYPE_Xandros          = 0x5D000,
     VBOXOSTYPE_Xandros_x64      = 0x5D100,
+    VBOXOSTYPE_Oracle           = 0x5E000,
+    VBOXOSTYPE_Oracle_x64       = 0x5E100,
     VBOXOSTYPE_FreeBSD          = 0x60000,
     VBOXOSTYPE_FreeBSD_x64      = 0x60100,
     VBOXOSTYPE_OpenBSD          = 0x61000,

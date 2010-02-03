@@ -190,6 +190,8 @@
     <xsd:enumeration value="Ubuntu_64"/>
     <xsd:enumeration value="Xandros"/>
     <xsd:enumeration value="Xandros_64"/>
+    <xsd:enumeration value="Oracle"/>
+    <xsd:enumeration value="Oracle_64"/>
     <xsd:enumeration value="Linux"/>
     <xsd:enumeration value="FreeBSD"/>
     <xsd:enumeration value="FreeBSD_64"/>
