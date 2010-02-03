@@ -108,10 +108,20 @@ typedef struct DEVEFI
     uint8_t         u8IOAPIC;
 
     /* Boot parameters passed to the firmware */
-    char            pszBootArgs[256];
+    char            szBootArgs[256];
 
     /* Host UUID (for DMI) */
     RTUUID          aUuid;
+
+    /* Device properties string */
+    char*           pszDeviceProps;
+    
+    /* Virtual machine front side bus frequency */
+    uint64_t        u64FsbFrequency;
+    /* Virtual machine time stamp counter frequency */
+    uint64_t        u64TscFrequency;
+    /* Virtual machine CPU frequency */
+    uint64_t        u64CpuFrequency;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -140,8 +150,14 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_STACK_BASE:
         case EFI_INFO_INDEX_STACK_SIZE:
             return 4;
-         case EFI_INFO_INDEX_BOOT_ARGS:
-             return RTStrNLen(pThis->pszBootArgs, sizeof pThis->pszBootArgs) + 1;
+        case EFI_INFO_INDEX_BOOT_ARGS:
+            return RTStrNLen(pThis->szBootArgs, sizeof pThis->szBootArgs) + 1;
+        case EFI_INFO_INDEX_DEVICE_PROPS:
+            return RTStrNLen(pThis->pszDeviceProps, RTSTR_MAX) + 1;
+        case EFI_INFO_INDEX_FSB_FREQUENCY:
+        case EFI_INFO_INDEX_CPU_FREQUENCY:
+        case EFI_INFO_INDEX_TSC_FREQUENCY:
+            return 8;
     }
     Assert(false);
     return 0;
@@ -149,37 +165,53 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
 
 static uint8_t efiInfoNextByte(PDEVEFI pThis)
 {
-    uint32_t iValue;
+    union
+    {
+        uint32_t u32;
+        uint64_t u64;
+    } value;
+
     switch (pThis->iInfoSelector)
     {
         case EFI_INFO_INDEX_VOLUME_BASE:
-            iValue = pThis->GCLoadAddress;
+            value.u32 = pThis->GCLoadAddress;
             break;
         case EFI_INFO_INDEX_VOLUME_SIZE:
-            iValue = pThis->cbEfiRom;
+            value.u32 = pThis->cbEfiRom;
             break;
         case EFI_INFO_INDEX_TEMPMEM_BASE:
-            iValue = VBOX_EFI_TOP_OF_STACK; /* just after stack */
+            value.u32 = VBOX_EFI_TOP_OF_STACK; /* just after stack */
             break;
         case EFI_INFO_INDEX_TEMPMEM_SIZE:
-            iValue = 512 * 1024; /* 512 K */
+            value.u32 = 512 * 1024; /* 512 K */
             break;
         case EFI_INFO_INDEX_STACK_BASE:
             /* Keep in sync with value in EfiThunk.asm */
-            iValue = VBOX_EFI_TOP_OF_STACK - 128*1024; /* 2M - 128 K */
+            value.u32 = VBOX_EFI_TOP_OF_STACK - 128*1024; /* 2M - 128 K */
             break;
         case EFI_INFO_INDEX_STACK_SIZE:
-            iValue = 128*1024; /* 128 K */
+            value.u32 = 128*1024; /* 128 K */
+            break;
+        case EFI_INFO_INDEX_FSB_FREQUENCY:
+            value.u64 = pThis->u64FsbFrequency;
+            break;
+        case EFI_INFO_INDEX_TSC_FREQUENCY:
+            value.u64 = pThis->u64TscFrequency;
+            break;
+        case EFI_INFO_INDEX_CPU_FREQUENCY:
+            value.u64 = pThis->u64CpuFrequency;
             break;
         case EFI_INFO_INDEX_BOOT_ARGS:
-            return pThis->pszBootArgs[pThis->iInfoPosition];
+            return pThis->szBootArgs[pThis->iInfoPosition];
+        case EFI_INFO_INDEX_DEVICE_PROPS:
+            return pThis->pszDeviceProps[pThis->iInfoPosition];
         default:
             Assert(false);
-            iValue = 0;
+            value.u64 = 0;
             break;
     }
-    /* somewhat ugly, but works atm */
-    return *((uint8_t*)&iValue+pThis->iInfoPosition);
+    
+    return *((uint8_t*)&value+pThis->iInfoPosition);
 }
 
 /**
@@ -495,6 +527,12 @@ static DECLCALLBACK(int) efiDestruct(PPDMDEVINS pDevIns)
     {
         MMR3HeapFree(pThis->pu8EfiThunk);
         pThis->pu8EfiThunk = NULL;
+    }
+
+    if (pThis->pszDeviceProps)
+    {
+        MMR3HeapFree(pThis->pszDeviceProps);
+        pThis->pszDeviceProps = NULL;
     }
 
     return VINF_SUCCESS;
@@ -905,6 +943,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
 #endif
                               "64BitEntry\0"
                               "BootArgs\0"
+                              "DeviceProps\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
@@ -927,21 +966,25 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"UUID\" failed"));
 
-    /* Convert the UUID to network byte order. Not entirely straightforward as parts are MSB already... */
+    /*
+     * Convert the UUID to network byte order. Not entirely straightforward as
+     * parts are MSB already...
+     */
     uuid.Gen.u32TimeLow = RT_H2BE_U32(uuid.Gen.u32TimeLow);
     uuid.Gen.u16TimeMid = RT_H2BE_U16(uuid.Gen.u16TimeMid);
     uuid.Gen.u16TimeHiAndVersion = RT_H2BE_U16(uuid.Gen.u16TimeHiAndVersion);
     memcpy(&pThis->aUuid, &uuid, sizeof pThis->aUuid);
 
 
-    /* RAM sizes */
+    /*
+     * RAM sizes
+     */
     rc = CFGMR3QueryU64(pCfg, "RamSize", &pThis->cbRam);
     AssertLogRelRCReturn(rc, rc);
     rc = CFGMR3QueryU64(pCfg, "RamHoleSize", &pThis->cbRamHole);
     AssertLogRelRCReturn(rc, rc);
     pThis->cbBelow4GB = RT_MIN(pThis->cbRam, _4G - pThis->cbRamHole);
     pThis->cbAbove4GB = pThis->cbRam - pThis->cbBelow4GB;
-
 
     /*
      * Get the system EFI ROM file name.
@@ -969,21 +1012,40 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         pThis->pszEfiRomFile = NULL;
     }
 
-     /*
+    /*
      * Get boot args.
      */
     rc = CFGMR3QueryString(pCfg, "BootArgs",
-                           pThis->pszBootArgs, sizeof pThis->pszBootArgs);
+                           pThis->szBootArgs, sizeof pThis->szBootArgs);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        strcpy(pThis->pszBootArgs, "");
+        strcpy(pThis->szBootArgs, "");
         rc = VINF_SUCCESS;
     }
     if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
                                    N_("Configuration error: Querying \"BootArgs\" as a string failed"));
 
-    LogRel(("EFI boot args: %s\n", pThis->pszBootArgs));
+    LogRel(("EFI boot args: %s\n", pThis->szBootArgs));
+
+    /*
+     * Get device props.
+     */
+    rc = CFGMR3QueryStringAlloc(pCfg, "DeviceProps", &pThis->pszDeviceProps);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND)
+    {
+        pThis->pszDeviceProps = RTStrDup("");
+        rc = VINF_SUCCESS;
+    }
+    if (RT_FAILURE(rc))
+        return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
+                                   N_("Configuration error: Querying \"DeviceProps\" as a string failed"));
+    LogRel(("EFI device props: %s\n", pThis->pszDeviceProps));
+
+    pThis->u64FsbFrequency = 1333000000;
+    pThis->u64TscFrequency = pThis->u64FsbFrequency * 3;
+    pThis->u64CpuFrequency = pThis->u64TscFrequency;
+
 
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*
