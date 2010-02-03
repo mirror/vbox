@@ -38,7 +38,7 @@
 *   Internal Functions                                                         *
 *******************************************************************************/
 RT_C_DECLS_BEGIN
-DECLEXPORT(int) tstMicroGC(PTSTMICRO pTst, unsigned uTestcase);
+DECLEXPORT(int) tstMicroRC(PTSTMICRO pTst, unsigned uTestcase);
 RT_C_DECLS_END
 
 
@@ -132,7 +132,7 @@ DECLASM(void) idtOnly42(PTSTMICRO pTst)
 
 
 
-DECLEXPORT(int) tstMicroGC(PTSTMICRO pTst, unsigned uTestcase)
+DECLEXPORT(int) tstMicroRC(PTSTMICRO pTst, unsigned uTestcase)
 {
     RTLogPrintf("pTst=%p uTestcase=%d\n", pTst, uTestcase);
 

@@ -237,8 +237,8 @@ ifdef VBOX_WITH_RAW_MODE
  tstLdrObj_DEFS += VBOX_SOME_IMPORT_FUNCTION
  endif
  tstLdrObj_LIBS = \
- 	$(PATH_LIB)/DisasmGC$(VBOX_SUFF_LIB) \
- 	$(PATH_LIB)/RuntimeGC$(VBOX_SUFF_LIB)
+ 	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
+ 	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(VBOX_LDR_FMT32),pe)
  tstLdrObj_LDFLAGS = -Entry:Entrypoint
  tstLdrObj_LIBS += \

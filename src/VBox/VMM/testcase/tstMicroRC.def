@@ -17,13 +17,13 @@
 ; additional information or have any questions.
 ;
 
-LIBRARY tstMicroGC.gc
+LIBRARY tstMicroRC.gc
 EXPORTS
     ; data
 
     ; code
-    tstMicroGCAsmStart
-    tstMicroGCAsmEnd
+    tstMicroRCAsmStart
+    tstMicroRCAsmEnd
     tstPFR1
     tstPFR2
     tstPFR3

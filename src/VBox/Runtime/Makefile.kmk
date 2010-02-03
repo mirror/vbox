@@ -59,7 +59,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  BLDPROGS += uniread
  LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_RAW_MODE
-  LIBRARIES += RuntimeGC
+  LIBRARIES += RuntimeRC
  endif
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
@@ -1546,12 +1546,12 @@ RuntimeGuestR0NT4_DEFS = IPRT_TARGET_NT4
 
 ifdef VBOX_WITH_RAW_MODE
  #
- # RuntimeGC - Guest context library.
+ # RuntimeRC - Raw-mode context library.
  #
- RuntimeGC_TEMPLATE      = VBoxRc
- RuntimeGC_DEFS          = IN_RT_GC RT_WITH_VBOX
- RuntimeGC_INCS          = include
- RuntimeGC_SOURCES       = \
+ RuntimeRC_TEMPLATE      = VBoxRc
+ RuntimeRC_DEFS          = IN_RT_GC RT_WITH_VBOX
+ RuntimeRC_INCS          = include
+ RuntimeRC_SOURCES       = \
  	common/log/log.cpp \
  	common/log/logellipsis.cpp \
  	common/log/logrel.cpp \
@@ -1594,19 +1594,19 @@ ifdef VBOX_WITH_RAW_MODE
  	$(RuntimeNoCrt_SOURCES)
 
  #if1of ($(KBUILD_TARGET_ARCH),amd64 x86)
- # RuntimeGC_SOURCES += common/time/timesupA.asm
+ # RuntimeRC_SOURCES += common/time/timesupA.asm
  #else
-  RuntimeGC_SOURCES += common/time/timesupref.cpp
+  RuntimeRC_SOURCES += common/time/timesupref.cpp
  #endif
 
- RuntimeGC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
+ RuntimeRC_SOURCES.win.x86 = $(RuntimeWin32ASM_SOURCES)
 
  ifeq ($(VBOX_LDR_FMT32),lx)
-  RuntimeGC_SOURCES += os2/sys0.asm
+  RuntimeRC_SOURCES += os2/sys0.asm
  endif
 
  if1of ($(KBUILD_TARGET), darwin solaris freebsd)
-  RuntimeGC_SOURCES += \
+  RuntimeRC_SOURCES += \
  	common/math/gcc/adddi3.c \
  	common/math/gcc/anddi3.c \
  	common/math/gcc/ashldi3.c \
