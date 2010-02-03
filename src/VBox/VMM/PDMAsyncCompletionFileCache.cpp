@@ -274,7 +274,7 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
         pEntry = pEntry->pPrev;
 
         /* We can't evict pages which are currently in progress */
-        if (!(pCurr->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
+        if (   !(pCurr->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
             && (ASMAtomicReadU32(&pCurr->cRefs) == 0))
         {
             /* Ok eviction candidate. Grab the endpoint semaphore and check again
@@ -950,11 +950,11 @@ void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     PPDMACFILECACHEGLOBAL   pCache         = pEndpointCache->pCache;
 
     /* Make sure nobody is accessing the cache while we delete the tree. */
-    RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
     RTCritSectEnter(&pCache->CritSect);
+    RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
     RTAvlrFileOffsetDestroy(pEndpointCache->pTree, pdmacFileEpCacheEntryDestroy, pCache);
-    RTCritSectLeave(&pCache->CritSect);
     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+    RTCritSectLeave(&pCache->CritSect);
 
     RTSemRWDestroy(pEndpointCache->SemRWEntries);
 
