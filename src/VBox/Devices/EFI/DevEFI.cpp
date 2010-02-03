@@ -115,7 +115,7 @@ typedef struct DEVEFI
 
     /* Device properties string */
     char*           pszDeviceProps;
-    
+
     /* Virtual machine front side bus frequency */
     uint64_t        u64FsbFrequency;
     /* Virtual machine time stamp counter frequency */
@@ -210,7 +210,7 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
             value.u64 = 0;
             break;
     }
-    
+
     return *((uint8_t*)&value+pThis->iInfoPosition);
 }
 
@@ -999,7 +999,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         rc = RTPathAppPrivateArch(pThis->pszEfiRomFile, RTPATH_MAX - 32);
         AssertRCReturn(rc, rc);
 
-        size_t offFilename = strlen(pThis->pszEfiRomFile);
+        size_t offFilename = RTStrNLen(pThis->pszEfiRomFile, RTPATH_MAX);
         strcpy(pThis->pszEfiRomFile+offFilename, "/VBoxEFI32.fd");
         rc = VINF_SUCCESS;
     }
