@@ -345,7 +345,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
      * ASSUME that we can limit any special access handling to pages
      * in page tables which the guest believes to be present.
      */
-    if (PdeSrc.n.u1Present)
+    Assert(PdeSrc.n.u1Present);
     {
         RTGCPHYS    GCPhys = NIL_RTGCPHYS;
 
@@ -905,8 +905,6 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
              */
         }
     }
-    /* else: !present (guest) */
-
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
     /*
