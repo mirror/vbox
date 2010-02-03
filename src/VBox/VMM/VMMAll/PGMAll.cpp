@@ -451,10 +451,13 @@ VMMDECL(int) PGMTrap0eHandler(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegFram
     /*
      * Call the worker.
      */
-    pgmLock(pVM);
-    int rc = PGM_BTH_PFN(Trap0eHandler, pVCpu)(pVCpu, uErr, pRegFrame, pvFault);
-    Assert(PGMIsLockOwner(pVM));
-    pgmUnlock(pVM);
+    bool fLockTaken = false;
+    int rc = PGM_BTH_PFN(Trap0eHandler, pVCpu)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
+    if (fLockTaken)
+    {
+        Assert(PGMIsLockOwner(pVM));
+        pgmUnlock(pVM);
+    }
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
 
