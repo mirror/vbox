@@ -357,28 +357,22 @@ bool MediumAttachment::matches(CBSTR aControllerName, LONG aPort, LONG aDevice)
              && aDevice == m->bd->lDevice);
 }
 
-/** Must be called from under this object's AND the machine's write lock. */
+/** Must be called from under this object's write lock. */
 void MediumAttachment::updateMedium(const ComObjPtr<Medium> &aMedium, bool aImplicit)
 {
-    Assert(m->pMachine->isWriteLockOnCurrentThread());
     Assert(isWriteLockOnCurrentThread());
 
     m->bd.backup();
     m->bd->pMedium = aMedium;
     m->bd->fImplicit = aImplicit;
-
-    m->pMachine->setModified(Machine::IsModified_Storage);
 }
 
-/** Must be called from under this object's AND the machine's write lock. */
+/** Must be called from under this object's write lock. */
 void MediumAttachment::updatePassthrough(bool aPassthrough)
 {
-    Assert(m->pMachine->isWriteLockOnCurrentThread());
     Assert(isWriteLockOnCurrentThread());
 
     m->bd.backup();
     m->bd->fPassthrough = aPassthrough;
-
-    m->pMachine->setModified(Machine::IsModified_Storage);
 }
 
