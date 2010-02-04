@@ -523,6 +523,10 @@ static void switch_tss(int tss_selector,
         stl_kernel(env->tr.base + (0x28 + 7 * 4), EDI);
         for(i = 0; i < 6; i++)
             stw_kernel(env->tr.base + (0x48 + i * 4), env->segs[i].selector);
+#ifdef VBOX
+        /* Must store the ldt as it gets reloaded and might have been changed. */
+        stw_kernel(env->tr.base + 0x60, env->ldt.selector);
+#endif
 #if defined(VBOX) && defined(DEBUG)
         printf("TSS 32 bits switch\n");
         printf("Saving CS=%08X\n", env->segs[R_CS].selector);
@@ -541,6 +545,10 @@ static void switch_tss(int tss_selector,
         stw_kernel(env->tr.base + (0x12 + 7 * 2), EDI);
         for(i = 0; i < 4; i++)
             stw_kernel(env->tr.base + (0x22 + i * 4), env->segs[i].selector);
+#ifdef VBOX
+        /* Must store the ldt as it gets reloaded and might have been changed. */
+        stw_kernel(env->tr.base + 0x2a, env->ldt.selector);
+#endif
     }
 
     /* now if an exception occurs, it will occurs in the next task
