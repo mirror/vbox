@@ -107,7 +107,7 @@ HRESULT USBController::init(Machine *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
-    ComAssertRet (aParent, E_INVALIDARG);
+    ComAssertRet(aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -145,7 +145,7 @@ HRESULT USBController::init(Machine *aParent, USBController *aPeer)
 {
     LogFlowThisFunc(("aParent=%p, aPeer=%p\n", aParent, aPeer));
 
-    ComAssertRet (aParent && aPeer, E_INVALIDARG);
+    ComAssertRet(aParent && aPeer, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -189,7 +189,7 @@ HRESULT USBController::initCopy(Machine *aParent, USBController *aPeer)
 {
     LogFlowThisFunc(("aParent=%p, aPeer=%p\n", aParent, aPeer));
 
-    ComAssertRet (aParent && aPeer, E_INVALIDARG);
+    ComAssertRet(aParent && aPeer, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -520,7 +520,7 @@ STDMETHODIMP USBController::InsertDeviceFilter(ULONG aPosition,
     if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
         USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
-        ComAssertRet (service, E_FAIL);
+        ComAssertRet(service, E_FAIL);
 
         ComAssertRet(filter->getId() == NULL, E_FAIL);
         filter->getId() = service->insertFilter (&filter->getData().mUSBFilter);
@@ -591,7 +591,7 @@ STDMETHODIMP USBController::RemoveDeviceFilter(ULONG aPosition,
     if (filter->getData().mActive && Global::IsOnline(adep.machineState()))
     {
         USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
-        ComAssertRet (service, E_FAIL);
+        ComAssertRet(service, E_FAIL);
 
         ComAssertRet(filter->getId() != NULL, E_FAIL);
         service->removeFilter(filter->getId());
@@ -992,7 +992,7 @@ HRESULT USBController::onDeviceFilterChange (USBDeviceFilter *aFilter,
     if (aFilter->mInList && m->pParent->isRegistered())
     {
         USBProxyService *service = m->pParent->getVirtualBox()->host()->usbProxyService();
-        ComAssertRet (service, E_FAIL);
+        ComAssertRet(service, E_FAIL);
 
         if (aActiveChanged)
         {
@@ -1092,51 +1092,51 @@ bool USBController::hasMatchingFilter (IUSBDevice *aUSBDevice, ULONG *aMaskedIfs
 
     USHORT vendorId = 0;
     rc = aUSBDevice->COMGETTER(VendorId) (&vendorId);
-    ComAssertComRCRet (rc, false);
-    ComAssertRet (vendorId, false);
+    ComAssertComRCRet(rc, false);
+    ComAssertRet(vendorId, false);
     int vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_VENDOR_ID, vendorId, true); AssertRC(vrc);
 
     USHORT productId = 0;
     rc = aUSBDevice->COMGETTER(ProductId) (&productId);
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_PRODUCT_ID, productId, true); AssertRC(vrc);
 
     USHORT revision;
     rc = aUSBDevice->COMGETTER(Revision) (&revision);
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     vrc = USBFilterSetNumExact (&dev, USBFILTERIDX_DEVICE, revision, true); AssertRC(vrc);
 
     Bstr manufacturer;
     rc = aUSBDevice->COMGETTER(Manufacturer) (manufacturer.asOutParam());
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     if (!manufacturer.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_MANUFACTURER_STR, Utf8Str(manufacturer).c_str(), true);
 
     Bstr product;
     rc = aUSBDevice->COMGETTER(Product) (product.asOutParam());
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     if (!product.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_PRODUCT_STR, Utf8Str(product).c_str(), true);
 
     Bstr serialNumber;
     rc = aUSBDevice->COMGETTER(SerialNumber) (serialNumber.asOutParam());
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     if (!serialNumber.isNull())
         USBFilterSetStringExact (&dev, USBFILTERIDX_SERIAL_NUMBER_STR, Utf8Str(serialNumber).c_str(), true);
 
     Bstr address;
     rc = aUSBDevice->COMGETTER(Address) (address.asOutParam());
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
 
     USHORT port = 0;
     rc = aUSBDevice->COMGETTER(Port)(&port);
-    ComAssertComRCRet (rc, false);
+    ComAssertComRCRet(rc, false);
     USBFilterSetNumExact (&dev, USBFILTERIDX_PORT, port, true);
 
     BOOL remote = FALSE;
     rc = aUSBDevice->COMGETTER(Remote)(&remote);
-    ComAssertComRCRet (rc, false);
-    ComAssertRet (remote == TRUE, false);
+    ComAssertComRCRet(rc, false);
+    ComAssertRet(remote == TRUE, false);
 
     bool match = false;
 

@@ -60,8 +60,8 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
 {
     LogFlowThisFunc(("aParent=%p, aSlot=%d\n", aParent, aSlot));
 
-    ComAssertRet (aParent, E_INVALIDARG);
-    ComAssertRet (aSlot < SchemaDefs::NetworkAdapterCount, E_INVALIDARG);
+    ComAssertRet(aParent, E_INVALIDARG);
+    ComAssertRet(aSlot < SchemaDefs::NetworkAdapterCount, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -105,7 +105,7 @@ HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (aParent && aThat, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -137,7 +137,7 @@ HRESULT NetworkAdapter::initCopy(Machine *aParent, NetworkAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (aParent && aThat, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -311,7 +311,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComAssertRet (!!mData->mMACAddress, E_FAIL);
+    ComAssertRet(!!mData->mMACAddress, E_FAIL);
 
     mData->mMACAddress.cloneTo(aMACAddress);
 

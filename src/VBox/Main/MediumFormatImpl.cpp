@@ -54,7 +54,7 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
 {
     LogFlowThisFunc (("aVDInfo=%p\n", aVDInfo));
 
-    ComAssertRet (aVDInfo, E_INVALIDARG);
+    ComAssertRet(aVDInfo, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan (this);
@@ -129,7 +129,7 @@ HRESULT MediumFormat::init (const VDBACKENDINFO *aVDInfo)
             /// limit (or make the argument ULONG64 after checking that COM is
             /// capable of defining enums (used to represent bit flags) that
             /// contain 64-bit values)
-            ComAssertRet (pa->uKeyFlags == ((ULONG) pa->uKeyFlags), E_FAIL);
+            ComAssertRet(pa->uKeyFlags == ((ULONG) pa->uKeyFlags), E_FAIL);
 
             /* Create one property structure */
             const Property prop = { Utf8Str (pa->pszKey),
@@ -230,7 +230,7 @@ STDMETHODIMP MediumFormat::COMGETTER(Capabilities)(ULONG *aCaps)
     /// limit (or make the argument ULONG64 after checking that COM is capable
     /// of defining enums (used to represent bit flags) that contain 64-bit
     /// values)
-    ComAssertRet (m.capabilities == ((ULONG) m.capabilities), E_FAIL);
+    ComAssertRet(m.capabilities == ((ULONG) m.capabilities), E_FAIL);
 
     *aCaps = (ULONG) m.capabilities;
 

@@ -3383,7 +3383,7 @@ HRESULT VirtualBox::saveSettings()
  */
 HRESULT VirtualBox::registerMachine(Machine *aMachine)
 {
-    ComAssertRet (aMachine, E_INVALIDARG);
+    ComAssertRet(aMachine, E_INVALIDARG);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();

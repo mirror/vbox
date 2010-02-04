@@ -87,7 +87,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                       aNetworkAdapterType, aNumSerialEnabled));
 #endif
 
-    ComAssertRet (aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
+    ComAssertRet(aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
