@@ -96,7 +96,7 @@ HRESULT SharedFolder::init (Machine *aMachine,
  */
 HRESULT SharedFolder::initCopy (Machine *aMachine, SharedFolder *aThat)
 {
-    ComAssertRet (aThat, E_INVALIDARG);
+    ComAssertRet(aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -184,7 +184,7 @@ HRESULT SharedFolder::protectedInit(VirtualBoxBase *aParent,
     LogFlowThisFunc(("aName={%ls}, aHostPath={%ls}, aWritable={%d}\n",
                       aName, aHostPath, aWritable));
 
-    ComAssertRet (aParent && aName && aHostPath, E_INVALIDARG);
+    ComAssertRet(aParent && aName && aHostPath, E_INVALIDARG);
 
     Utf8Str hostPath = Utf8Str (aHostPath);
     size_t hostPathLen = hostPath.length();

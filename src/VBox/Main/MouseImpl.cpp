@@ -78,7 +78,7 @@ HRESULT Mouse::init (Console *parent)
 {
     LogFlowThisFunc(("\n"));
 
-    ComAssertRet (parent, E_INVALIDARG);
+    ComAssertRet(parent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -141,8 +141,8 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    ComAssertRet (mParent->getVMMDev(), E_FAIL);
-    ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     *absoluteSupported = FALSE;
     uint32_t mouseCaps;
@@ -171,8 +171,8 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *needsHostCursor)
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    ComAssertRet (mParent->getVMMDev(), E_FAIL);
-    ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     *needsHostCursor = FALSE;
     uint32_t mouseCaps;
@@ -205,8 +205,8 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    ComAssertRet (mParent->getVMMDev(), E_FAIL);
-    ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     uint32_t mouseCaps;
     LogRel3(("%s: dx=%d, dy=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
@@ -268,8 +268,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    ComAssertRet (mParent->getVMMDev(), E_FAIL);
-    ComAssertRet (mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev(), E_FAIL);
+    ComAssertRet(mParent->getVMMDev()->getVMMDevPort(), E_FAIL);
 
     uint32_t mouseCaps;
     LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
@@ -290,14 +290,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     }
 
     Display *pDisplay = mParent->getDisplay();
-    ComAssertRet (pDisplay, E_FAIL);
+    ComAssertRet(pDisplay, E_FAIL);
 
     ULONG displayWidth;
     ULONG displayHeight;
     rc = pDisplay->COMGETTER(Width)(&displayWidth);
-    ComAssertComRCRet (rc, rc);
+    ComAssertComRCRet(rc, rc);
     rc = pDisplay->COMGETTER(Height)(&displayHeight);
-    ComAssertComRCRet (rc, rc);
+    ComAssertComRCRet(rc, rc);
 
     uint32_t mouseXAbs = displayWidth? (x * 0xFFFF) / displayWidth: 0;
     uint32_t mouseYAbs = displayHeight? (y * 0xFFFF) / displayHeight: 0;

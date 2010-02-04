@@ -57,7 +57,7 @@ HRESULT AudioAdapter::init (Machine *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
-    ComAssertRet (aParent, E_INVALIDARG);
+    ComAssertRet(aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -100,7 +100,7 @@ HRESULT AudioAdapter::init (Machine *aParent, AudioAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (aParent && aThat, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -132,7 +132,7 @@ HRESULT AudioAdapter::initCopy (Machine *aParent, AudioAdapter *aThat)
 {
     LogFlowThisFunc(("aParent=%p, aThat=%p\n", aParent, aThat));
 
-    ComAssertRet (aParent && aThat, E_INVALIDARG);
+    ComAssertRet(aParent && aThat, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);

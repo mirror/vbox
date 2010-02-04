@@ -5016,7 +5016,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
                         tr("The machine '%ls' does not have an open session"),
                         mUserData->mName.raw());
 
-    ComAssertRet (!mData->mSession.mDirectControl.isNull(), E_FAIL);
+    ComAssertRet(!mData->mSession.mDirectControl.isNull(), E_FAIL);
 
     // copy member variables before leaving lock
     ComPtr<IInternalSessionControl> pDirectControl = mData->mSession.mDirectControl;
@@ -9182,7 +9182,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
     /* get IInternalSessionControl interface */
     ComPtr<IInternalSessionControl> control (aSession);
 
-    ComAssertRet (!control.isNull(), E_INVALIDARG);
+    ComAssertRet(!control.isNull(), E_INVALIDARG);
 
     /* Creating a Progress object requires the VirtualBox lock, and
      * thus locking it here is required by the lock order rules. */
@@ -9190,7 +9190,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd (ISession *aSession,
 
     if (control.equalsTo(mData->mSession.mDirectControl))
     {
-        ComAssertRet (aProgress, E_POINTER);
+        ComAssertRet(aProgress, E_POINTER);
 
         /* The direct session is being normally closed by the client process
          * ----------------------------------------------------------------- */

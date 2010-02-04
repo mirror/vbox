@@ -74,7 +74,7 @@ HRESULT BIOSSettings::init(Machine *aParent)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p\n", aParent));
 
-    ComAssertRet (aParent, E_INVALIDARG);
+    ComAssertRet(aParent, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -106,7 +106,7 @@ HRESULT BIOSSettings::init(Machine *aParent, BIOSSettings *that)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
 
-    ComAssertRet (aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && that, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -136,7 +136,7 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aParent: %p, that: %p\n", aParent, that));
 
-    ComAssertRet (aParent && that, E_INVALIDARG);
+    ComAssertRet(aParent && that, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);

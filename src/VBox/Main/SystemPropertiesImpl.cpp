@@ -70,7 +70,7 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
-    ComAssertRet (aParent, E_FAIL);
+    ComAssertRet(aParent, E_FAIL);
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
