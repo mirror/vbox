@@ -22,6 +22,9 @@
 #include <OpenGL/OpenGL.h>
 
 #include "renderspu.h"
+#include <iprt/process.h>
+#include <iprt/string.h>
+#include <iprt/path.h>
 
 GLboolean renderspu_SystemInitVisual(VisualInfo *pVisInfo)
 {
@@ -66,6 +69,13 @@ GLboolean renderspu_SystemVBoxCreateWindow(VisualInfo *pVisInfo, GLboolean fShow
     CRASSERT(pVisInfo);
     CRASSERT(pWinInfo);
 
+    /* VirtualBox is the only frontend which support 3D right now. */
+    char pszName[256];
+    if (RTProcGetExecutableName(pszName, sizeof(pszName)))
+        /* Check for VirtualBox and VirtualBoxVM */
+        if (RTStrNICmp(RTPathFilename(pszName), "VirtualBox", 10) != 0)
+            return GL_FALSE;
+
     pWinInfo->visual = pVisInfo;
     pWinInfo->window = NULL;
     pWinInfo->nativeWindow = NULL;
@@ -76,9 +86,6 @@ GLboolean renderspu_SystemVBoxCreateWindow(VisualInfo *pVisInfo, GLboolean fShow
 #else /* __LP64__ */
     NativeViewRef pParentWin = (NativeViewRef)(uint32_t)render_spu_parent_window_id;
 #endif /* __LP64__ */
-
-/*    if (!pParentWin)*/
-/*        return GL_FALSE;*/
 
     cocoaViewCreate(&pWinInfo->window, pParentWin, pVisInfo->visAttribs);
 
