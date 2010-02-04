@@ -23,7 +23,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/asm.h>
 #include <iprt/string.h>
+#include <iprt/rand.h>
 #include <VBox/log.h>
 
 #include "VBGLR3Internal.h"
@@ -88,42 +90,52 @@ VBGLR3DECL(int) VbglR3CredentialsRetrieve(char **ppszUser, char **ppszPassword, 
 
 
 /**
- * Clears and frees the strings
+ * Clears and frees the three strings.
  *
- * @returns IPRT status value
  * @param   pszUser        Receives pointer of the user name string to destroy.
  *                         Optional.
  * @param   pszPassword    Receives pointer of the password string to destroy.
  *                         Optional.
  * @param   pszDomain      Receives pointer of allocated domain name string.
  *                         Optional.
- * @param   u8NumPasses    Number of wipe passes. The higher the better (and slower!).
+ * @param   cPasses        Number of wipe passes.  The more the better + slower.
  */
-VBGLR3DECL(void) VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char *pszDomain, uint8_t u8NumPasses)
+VBGLR3DECL(void) VbglR3CredentialsDestroy(char *pszUser, char *pszPassword, char *pszDomain, uint32_t cPasses)
 {
-    size_t l;
+    size_t const    cchUser     = pszUser     ? strlen(pszUser)     : 0;
+    size_t const    cchPassword = pszPassword ? strlen(pszPassword) : 0;
+    size_t const    cchDomain   = pszDomain   ? strlen(pszDomain)   : 0;
 
-    if (u8NumPasses == 0) /* We at least want to have one wipe pass. */
-        u8NumPasses = 1;
+    do
+    {
+        if (cchUser)
+            memset(pszUser,     0xff, cchUser);
+        if (cchPassword)
+            memset(pszPassword, 0xff, cchPassword);
+        if (cchDomain)
+            memset(pszDomain,   0xff, cchDomain);
+        ASMMemoryFence();
 
-    /** @todo add some for-loop with randomized content instead of
-     *        zero'ing out the string only one time. Use u8NumPasses for that. */
-    if (pszUser)
-    {
-        l = strlen(pszUser);
-        RT_BZERO(pszUser, l);
-        RTStrFree(pszUser);
-    }
-    if (pszPassword)
-    {
-        l = strlen(pszPassword);
-        RT_BZERO(pszPassword, l);
-        RTStrFree(pszPassword);
-    }
-    if (pszUser)
-    {
-        l = strlen(pszDomain);
-        RT_BZERO(pszDomain, l);
-        RTStrFree(pszDomain);
-    }
+        if (cchUser)
+            memset(pszUser,     0x00, cchUser);
+        if (cchPassword)
+            memset(pszPassword, 0x00, cchPassword);
+        if (cchDomain)
+            memset(pszDomain,   0x00, cchDomain);
+        ASMMemoryFence();
+
+        if (cchUser)
+            RTRandBytes(pszUser,     cchUser);
+        if (cchPassword)
+            RTRandBytes(pszPassword, cchPassword);
+        if (cchDomain)
+            RTRandBytes(pszDomain,   cchDomain);
+        ASMMemoryFence();
+
+    } while (cPasses-- > 0);
+
+    RTStrFree(pszUser);
+    RTStrFree(pszPassword);
+    RTStrFree(pszDomain);
 }
+
