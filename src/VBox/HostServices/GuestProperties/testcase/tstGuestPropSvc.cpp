@@ -865,20 +865,21 @@ static const struct
     bool isHost;
     /** Should we use SET_PROP or SET_PROP_VALUE? */
     bool useSetProp;
-    /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
+    /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
+     * PERMISSION_DENIED?  The global check is done after the property one. */
     bool isAllowed;
 }
 setPropertiesROGuest[] =
 {
-    { "Red", "Stop!", "transient", false, true, false },
-    { "Amber", "Caution!", "", false, false, false },
+    { "Red", "Stop!", "transient", false, true, true },
+    { "Amber", "Caution!", "", false, false, true },
     { "Green", "Go!", "readonly", true, true, true },
     { "Blue", "What on earth...?", "", true, false, true },
-    { "/test/name", "test", "", false, true, false },
+    { "/test/name", "test", "", false, true, true },
     { "TEST NAME", "test", "", true, true, true },
     { "Green", "gone out...", "", false, false, false },
-    { "Green", "gone out...", "", true, false, false },
-    { NULL, NULL, NULL, false, false, false }
+    { "Green", "gone out....", "", true, false, false },
+    { NULL, NULL, NULL, false, false, true }
 };
 
 /**
@@ -930,13 +931,24 @@ int testSetPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
                            setPropertiesROGuest[i].isHost,
                            setPropertiesROGuest[i].useSetProp);
         if (setPropertiesROGuest[i].isAllowed && RT_FAILURE(rc))
-            RTPrintf("Setting property '%s' failed with rc=%Rrc.\n",
-                     setPropertiesROGuest[i].pcszName, rc);
+            RTPrintf("Setting property '%s' to '%s' failed with rc=%Rrc.\n",
+                     setPropertiesROGuest[i].pcszName,
+                     setPropertiesROGuest[i].pcszValue, rc);
         else if (   !setPropertiesROGuest[i].isAllowed
                  && (rc != VERR_PERMISSION_DENIED))
         {
-            RTPrintf("Setting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
-                     setPropertiesROGuest[i].pcszName, rc);
+            RTPrintf("Setting property '%s' to '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
+                     setPropertiesROGuest[i].pcszName,
+                     setPropertiesROGuest[i].pcszValue, rc);
+            rc = VERR_IPE_UNEXPECTED_STATUS;
+        }
+        else if (   !setPropertiesROGuest[i].isHost
+                 && setPropertiesROGuest[i].isAllowed
+                 && (rc != VINF_PERMISSION_DENIED))
+        {
+            RTPrintf("Setting property '%s' to '%s' returned %Rrc instead of VINF_PERMISSION_DENIED.\n",
+                     setPropertiesROGuest[i].pcszName,
+                     setPropertiesROGuest[i].pcszValue, rc);
             rc = VERR_IPE_UNEXPECTED_STATUS;
         }
         else
@@ -959,19 +971,20 @@ static const struct
     bool shouldCreate;
     /** And with what flags? */
     const char *pcszFlags;
-    /** Should this succeed or be rejected with VERR_PERMISSION_DENIED? */
+    /** Should this succeed or be rejected with VERR_ (NOT VINF_!)
+     * PERMISSION_DENIED?  The global check is done after the property one. */
     bool isAllowed;
 }
 delPropertiesROGuest[] =
 {
     { "Red", true, true, "", true },
-    { "Amber", false, true, "", false },
+    { "Amber", false, true, "", true },
     { "Red2", true, false, "", true },
-    { "Amber2", false, false, "", false },
+    { "Amber2", false, false, "", true },
     { "Red3", true, true, "READONLY", false },
     { "Amber3", false, true, "READONLY", false },
     { "Red4", true, true, "RDONLYHOST", false },
-    { "Amber4", false, true, "RDONLYHOST", false },
+    { "Amber4", false, true, "RDONLYHOST", true },
     { NULL, false, false, "", false }
 };
 
@@ -1006,6 +1019,15 @@ int testDelPropROGuest(VBOXHGCMSVCFNTABLE *pTable)
                 )
         {
             RTPrintf("Deleting property '%s' returned %Rrc instead of VERR_PERMISSION_DENIED.\n",
+                     delPropertiesROGuest[i].pcszName, rc);
+            rc = VERR_IPE_UNEXPECTED_STATUS;
+        }
+        else if (   !delPropertiesROGuest[i].isHost
+                 && delPropertiesROGuest[i].shouldCreate
+                 && delPropertiesROGuest[i].isAllowed
+                 && (rc != VINF_PERMISSION_DENIED))
+        {
+            RTPrintf("Deleting property '%s' as guest returned %Rrc instead of VINF_PERMISSION_DENIED.\n",
                      delPropertiesROGuest[i].pcszName, rc);
             rc = VERR_IPE_UNEXPECTED_STATUS;
         }
