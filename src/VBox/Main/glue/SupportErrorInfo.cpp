@@ -339,15 +339,6 @@ HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const char *aText, .
     return rc;
 }
 
-HRESULT SupportErrorInfoBase::setError(HRESULT aResultCode, const Utf8Str &strText)
-{
-    HRESULT rc = setError(aResultCode,
-                          mainInterfaceID(),
-                          componentName(),
-                          strText);
-    return rc;
-}
-
 HRESULT SupportErrorInfoBase::setWarning(HRESULT aResultCode, const char *aText, ...)
 {
     va_list args;

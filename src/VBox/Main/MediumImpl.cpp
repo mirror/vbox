@@ -1025,7 +1025,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
         if (m->state == MediumState_Inaccessible)
         {
             Assert(!m->strLastAccessError.isEmpty());
-            rc = setError(E_FAIL, m->strLastAccessError);
+            rc = setError(E_FAIL, m->strLastAccessError.c_str());
         }
         else
         {
