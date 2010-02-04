@@ -158,6 +158,8 @@ size_t   g_cbTestPattern;
 /** Array holding test files. */
 PDMACTESTFILE g_aTestFiles[NR_OPEN_ENDPOINTS];
 
+static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2);
+
 static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFILETASK pTestTask)
 {
     size_t   cbLeft = pTestTask->DataSeg.cbSeg;
@@ -349,6 +351,9 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
                     rc = tstPDMACStressTestFileRead(pTestFile, pTask);
 
                 AssertRC(rc);
+
+                if (rc != VINF_AIO_TASK_PENDING)
+                    tstPDMACStressTestFileTaskCompleted(pVM, pTask, pTestFile);
 
                 cTasksStarted++;
             }
