@@ -434,7 +434,7 @@ static void VBoxServiceTimeSyncCancelAdjust(void)
  *
  * @param   pDrift              The time adjustment.
  */
-static bool VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
+static void VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
 {
     /*
      * Query the current time, adjust it by adding the drift and set it.
@@ -459,13 +459,9 @@ static bool VBoxServiceTimeSyncSet(PCRTTIMESPEC pDrift)
                                    RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&Tmp)), sz, sizeof(sz)));
 #endif
         }
-
-        return true;
     }
-
-    if (g_cTimeSyncErrors++ < 10)
+    else if (g_cTimeSyncErrors++ < 10)
         VBoxServiceError("RTTimeSet(%RDtimespec) failed: %Rrc\n", &NewGuestTime, rc);
-    return false;
 }
 
 
