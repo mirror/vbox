@@ -57,7 +57,7 @@ UIFirstRunWzd::UIFirstRunWzd(QWidget *pParent, const CMachine &machine) : QIWiza
     assignBackground(":/vmw_first_run_bg.png");
 #else /* Q_WS_MAC */
     /* Assign watermark */
-    assignWatermark(":/vmw_new_welcome.png");
+    assignWatermark(":/vmw_first_run.png");
 #endif /* Q_WS_MAC */
 }
 
