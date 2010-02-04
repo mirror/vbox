@@ -77,38 +77,38 @@ public:
     typedef BSTR String;
     typedef CBSTR ConstString;
 
-    Bstr () : bstr (NULL) {}
+    Bstr() : bstr(NULL) {}
 
-    Bstr (const Bstr &that) : bstr (NULL) { raw_copy (bstr, that.bstr); }
-    Bstr (CBSTR that) : bstr (NULL) { raw_copy (bstr, that); }
+    Bstr(const Bstr &that) : bstr(NULL) { raw_copy(bstr, that.bstr); }
+    Bstr(CBSTR that) : bstr(NULL) { raw_copy(bstr, that); }
 
 #if defined (VBOX_WITH_XPCOM)
-    Bstr (const wchar_t *that) : bstr (NULL)
+    Bstr(const wchar_t *that) : bstr(NULL)
     {
-        AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        raw_copy (bstr, (CBSTR) that);
+        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
+        raw_copy(bstr, (CBSTR)that);
     }
 #endif
 
-    Bstr (const iprt::MiniString &that);
-    Bstr (const char *that);
+    Bstr(const iprt::MiniString &that);
+    Bstr(const char *that);
 
     /** Shortcut that calls #alloc(aSize) right after object creation. */
-    Bstr (size_t aSize) : bstr (NULL) { alloc (aSize); }
+    Bstr(size_t aSize) : bstr(NULL) { alloc(aSize); }
 
-    ~Bstr () { setNull(); }
+    ~Bstr() { setNull(); }
 
-    Bstr &operator = (const Bstr &that) { safe_assign (that.bstr); return *this; }
-    Bstr &operator = (CBSTR that) { safe_assign (that); return *this; }
+    Bstr &operator=(const Bstr &that) { safe_assign(that.bstr); return *this; }
+    Bstr &operator=(CBSTR that) { safe_assign(that); return *this; }
 
-    Bstr &operator = (const Utf8Str &that);
-    Bstr &operator = (const char *that);
+    Bstr &operator=(const Utf8Str &that);
+    Bstr &operator=(const char *that);
 
     Bstr &setNull()
     {
         if (bstr)
         {
-            ::SysFreeString (bstr);
+            ::SysFreeString(bstr);
             bstr = NULL;
         }
         return *this;
@@ -118,7 +118,7 @@ public:
     {
         if (bstr && *bstr == 0)
         {
-            ::SysFreeString (bstr);
+            ::SysFreeString(bstr);
             bstr = NULL;
         }
         return *this;
@@ -129,63 +129,63 @@ public:
      *  in other words, aSize includes the terminating zero character. If \a aSize
      *  is zero, or if a memory allocation error occurs, this object will become null.
      */
-    Bstr &alloc (size_t aSize)
+    Bstr &alloc(size_t aSize)
     {
         setNull();
         if (aSize)
         {
-            unsigned int size = (unsigned int) aSize; Assert (size == aSize);
-            bstr = ::SysAllocStringLen (NULL, size - 1);
+            unsigned int size = (unsigned int) aSize; Assert(size == aSize);
+            bstr = ::SysAllocStringLen(NULL, size - 1);
             if (bstr)
-                bstr [0] = 0;
+                bstr[0] = 0;
         }
         return *this;
     }
 
-    int compare (CBSTR str) const
+    int compare(CBSTR str) const
     {
-        return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
+        return ::RTUtf16Cmp((PRTUTF16) bstr, (PRTUTF16) str);
     }
 
-    int compare (BSTR str) const
+    int compare(BSTR str) const
     {
-        return ::RTUtf16Cmp ((PRTUTF16) bstr, (PRTUTF16) str);
+        return ::RTUtf16Cmp((PRTUTF16) bstr, (PRTUTF16) str);
     }
 
-    bool operator==(const Bstr &that) const { return !compare (that.bstr); }
-    bool operator!=(const Bstr &that) const { return !!compare (that.bstr); }
-    bool operator==(CBSTR that) const { return !compare (that); }
-    bool operator==(BSTR that) const { return !compare (that); }
+    bool operator==(const Bstr &that) const { return !compare(that.bstr); }
+    bool operator!=(const Bstr &that) const { return !!compare(that.bstr); }
+    bool operator==(CBSTR that) const { return !compare(that); }
+    bool operator==(BSTR that) const { return !compare(that); }
 
 #if defined (VBOX_WITH_XPCOM)
     bool operator!=(const wchar_t *that) const
     {
-        AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return !!compare ((CBSTR) that);
+        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
+        return !!compare((CBSTR) that);
     }
     bool operator==(const wchar_t *that) const
     {
-        AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return !compare ((CBSTR) that);
+        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
+        return !compare((CBSTR) that);
     }
 #endif
 
-    bool operator!=(CBSTR that) const { return !!compare (that); }
-    bool operator!=(BSTR that) const { return !!compare (that); }
-    bool operator<(const Bstr &that) const { return compare (that.bstr) < 0; }
-    bool operator<(CBSTR that) const { return compare (that) < 0; }
-    bool operator<(BSTR that) const { return compare (that) < 0; }
+    bool operator!=(CBSTR that) const { return !!compare(that); }
+    bool operator!=(BSTR that) const { return !!compare(that); }
+    bool operator<(const Bstr &that) const { return compare(that.bstr) < 0; }
+    bool operator<(CBSTR that) const { return compare(that) < 0; }
+    bool operator<(BSTR that) const { return compare(that) < 0; }
 #if defined (VBOX_WITH_XPCOM)
     bool operator<(const wchar_t *that) const
     {
-        AssertCompile (sizeof (wchar_t) == sizeof (OLECHAR));
-        return compare ((CBSTR) that) < 0;
+        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
+        return compare((CBSTR) that) < 0;
     }
 #endif
 
-    int compareIgnoreCase (CBSTR str) const
+    int compareIgnoreCase(CBSTR str) const
     {
-        return ::RTUtf16LocaleICmp (bstr, str);
+        return ::RTUtf16LocaleICmp(bstr, str);
     }
 
     bool isNull() const { return bstr == NULL; }
@@ -193,17 +193,17 @@ public:
 
     bool isEmpty() const { return isNull() || *bstr == 0; }
 
-    size_t length() const { return isNull() ? 0 : ::RTUtf16Len ((PRTUTF16) bstr); }
+    size_t length() const { return isNull() ? 0 : ::RTUtf16Len((PRTUTF16) bstr); }
 
     /** Intended to to pass instances as |CBSTR| input parameters to methods. */
-    operator CBSTR () const { return bstr; }
+    operator CBSTR() const { return bstr; }
 
     /**
      * Intended to to pass instances as |BSTR| input parameters to methods.
      * Note that we have to provide this mutable BSTR operator since in MS COM
      * input BSTR parameters of interface methods are not const.
      */
-    operator BSTR () { return bstr; }
+    operator BSTR() { return bstr; }
 
     /**
      *  The same as operator CBSTR(), but for situations where the compiler
@@ -225,12 +225,12 @@ public:
      *  within the interface method. Transfers the ownership of the duplicated
      *  string to the caller.
      */
-    const Bstr &cloneTo (BSTR *pstr) const
+    const Bstr &cloneTo(BSTR *pstr) const
     {
         if (pstr)
         {
             *pstr = NULL;
-            raw_copy (*pstr, bstr);
+            raw_copy(*pstr, bstr);
         }
         return *this;
     }
@@ -243,7 +243,7 @@ public:
      *  As opposed to cloneTo(), this method doesn't create a copy of the
      *  string.
      */
-    Bstr &detachTo (BSTR *pstr)
+    Bstr &detachTo(BSTR *pstr)
     {
         *pstr = bstr;
         bstr = NULL;
@@ -255,7 +255,7 @@ public:
      *  within the interface method. Transfers the ownership of the duplicated
      *  string to the caller.
      */
-    const Bstr &cloneTo (char **pstr) const;
+    const Bstr &cloneTo(char **pstr) const;
 
     /**
      *  Intended to pass instances as |BSTR| out parameters to methods.
@@ -270,12 +270,12 @@ public:
 
 protected:
 
-    void safe_assign (CBSTR str)
+    void safe_assign(CBSTR str)
     {
         if (bstr != str)
         {
             setNull();
-            raw_copy (bstr, str);
+            raw_copy(bstr, str);
         }
     }
 
@@ -285,14 +285,14 @@ protected:
             ls = ::SysAllocString((const OLECHAR *) rs);
     }
 
-    inline static void raw_copy (BSTR &ls, const char *rs)
+    inline static void raw_copy(BSTR &ls, const char *rs)
     {
         if (rs)
         {
             PRTUTF16 s = NULL;
-            ::RTStrToUtf16 (rs, &s);
-            raw_copy (ls, (BSTR) s);
-            ::RTUtf16Free (s);
+            ::RTStrToUtf16(rs, &s);
+            raw_copy(ls, (BSTR)s);
+            ::RTUtf16Free(s);
         }
     }
 
@@ -302,10 +302,10 @@ protected:
 };
 
 /* symmetric compare operators */
-inline bool operator==(CBSTR l, const Bstr &r) { return r.operator== (l); }
-inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!= (l); }
-inline bool operator==(BSTR l, const Bstr &r) { return r.operator== (l); }
-inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!= (l); }
+inline bool operator==(CBSTR l, const Bstr &r) { return r.operator==(l); }
+inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!=(l); }
+inline bool operator==(BSTR l, const Bstr &r) { return r.operator==(l); }
+inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -523,7 +523,7 @@ protected:
 };
 
 // work around error C2593 of the stupid MSVC 7.x ambiguity resolver
-WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP (Bstr)
+WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Bstr)
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -587,24 +587,24 @@ public:
      *  @param format   printf-like format string (in UTF-8 encoding)
      *  @param ...      list of the arguments for the format string
      */
-    explicit Utf8StrFmt (const char *format, ...)
+    explicit Utf8StrFmt(const char *format, ...)
     {
         va_list args;
-        va_start (args, format);
-        init (format, args);
-        va_end (args);
+        va_start(args, format);
+        init(format, args);
+        va_end(args);
     }
 
 protected:
 
     Utf8StrFmt() {}
 
-    void init (const char *format, va_list args);
+    void init(const char *format, va_list args);
 
 private:
 
-    static DECLCALLBACK(size_t) strOutput (void *pvArg, const char *pachChars,
-                                           size_t cbChars);
+    static DECLCALLBACK(size_t) strOutput(void *pvArg, const char *pachChars,
+                                          size_t cbChars);
 };
 
 /**
@@ -632,11 +632,11 @@ public:
      *  @param format   printf-like format string (in UTF-8 encoding)
      *  @param args     list of arguments for the format string
      */
-    Utf8StrFmtVA (const char *format, va_list args) { init (format, args); }
+    Utf8StrFmtVA(const char *format, va_list args) { init(format, args); }
 };
 
 /**
- * The BstrFmt class is a shortcut to <tt>Bstr (Utf8StrFmt (...))</tt>.
+ * The BstrFmt class is a shortcut to <tt>Bstr(Utf8StrFmt(...))</tt>.
  */
 class BstrFmt : public Bstr
 {
@@ -649,17 +649,17 @@ public:
      * @param aFormat   printf-like format string (in UTF-8 encoding).
      * @param ...       List of the arguments for the format string.
      */
-    explicit BstrFmt (const char *aFormat, ...)
+    explicit BstrFmt(const char *aFormat, ...)
     {
         va_list args;
         va_start(args, aFormat);
         raw_copy(bstr, Utf8StrFmtVA(aFormat, args).c_str());
-        va_end (args);
+        va_end(args);
     }
 };
 
 /**
- * The BstrFmtVA class is a shortcut to <tt>Bstr (Utf8StrFmtVA (...))</tt>.
+ * The BstrFmtVA class is a shortcut to <tt>Bstr(Utf8StrFmtVA(...))</tt>.
  */
 class BstrFmtVA : public Bstr
 {
@@ -672,7 +672,7 @@ public:
      * @param aFormat   printf-like format string (in UTF-8 encoding).
      * @param aArgs     List of arguments for the format string
      */
-    BstrFmtVA (const char *aFormat, va_list aArgs)
+    BstrFmtVA(const char *aFormat, va_list aArgs)
     {
         raw_copy(bstr, Utf8StrFmtVA(aFormat, aArgs).c_str());
     }
