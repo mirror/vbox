@@ -5018,25 +5018,10 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
 
     ComAssertRet (!mData->mSession.mDirectControl.isNull(), E_FAIL);
 
-    /*
-     *  Get the console from the direct session (note that we don't leave the
-     *  lock here because GetRemoteConsole must not call us back).
-     */
-    ComPtr<IConsole> console;
-    HRESULT rc = mData->mSession.mDirectControl->
-                     GetRemoteConsole (console.asOutParam());
-    if (FAILED(rc))
-    {
-        /* The failure may occur w/o any error info (from RPC), so provide one */
-        return setError(VBOX_E_VM_ERROR,
-                        tr("Failed to get a console object from the direct session (%Rrc)"),
-                        rc);
-    }
-
-    ComAssertRet (!console.isNull(), E_FAIL);
-
-    ComObjPtr<SessionMachine> sessionMachine = mData->mSession.mMachine;
-    AssertReturn(!sessionMachine.isNull(), E_FAIL);
+    // copy member variables before leaving lock
+    ComPtr<IInternalSessionControl> pDirectControl = mData->mSession.mDirectControl;
+    ComObjPtr<SessionMachine> pSessionMachine = mData->mSession.mMachine;
+    AssertReturn(!pSessionMachine.isNull(), E_FAIL);
 
     /*
      *  Leave the lock before calling the client process. It's safe here
@@ -5046,9 +5031,21 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
      */
     alock.leave();
 
+    // get the console from the direct session (this is a remote call)
+    ComPtr<IConsole> pConsole;
+    LogFlowThisFunc(("Calling GetRemoteConsole()...\n"));
+    HRESULT rc = pDirectControl->GetRemoteConsole(pConsole.asOutParam());
+    LogFlowThisFunc(("GetRemoteConsole() returned %08X\n", rc));
+    if (FAILED (rc))
+        /* The failure may occur w/o any error info (from RPC), so provide one */
+        return setError (VBOX_E_VM_ERROR,
+            tr ("Failed to get a console object from the direct session (%Rrc)"), rc);
+
+    ComAssertRet(!pConsole.isNull(), E_FAIL);
+
     /* attach the remote session to the machine */
     LogFlowThisFunc(("Calling AssignRemoteMachine()...\n"));
-    rc = aControl->AssignRemoteMachine (sessionMachine, console);
+    rc = aControl->AssignRemoteMachine(pSessionMachine, pConsole);
     LogFlowThisFunc(("AssignRemoteMachine() returned %08X\n", rc));
 
     /* The failure may occur w/o any error info (from RPC), so provide one */
@@ -5070,7 +5067,7 @@ HRESULT Machine::openExistingSession (IInternalSessionControl *aControl)
     }
 
     /* store the control in the list */
-    mData->mSession.mRemoteControls.push_back (aControl);
+    mData->mSession.mRemoteControls.push_back(aControl);
 
     LogFlowThisFuncLeave();
     return S_OK;
