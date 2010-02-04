@@ -7850,7 +7850,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="8030645c-8fef-4320-bb7b-c829f00069dc"
+     uuid="fca0d89c-d2ce-45c1-a7b9-e6e7d8501eb1"
      wsmap="managed"
      >
     <desc>
@@ -7884,6 +7884,10 @@
 
     <attribute name="maxGuestCPUCount" type="unsigned long" readonly="yes">
       <desc>Maximum CPU count.</desc>
+    </attribute>
+
+    <attribute name="maxGuestMonitors" type="unsigned long" readonly="yes">
+      <desc>Maximum of monitors which could be connected.</desc>
     </attribute>
 
     <attribute name="maxVDISize" type="unsigned long long" readonly="yes">
