@@ -66,7 +66,7 @@ UIExportApplianceWzd::UIExportApplianceWzd(QWidget *pParent, const QString &strS
     assignBackground(":/vmw_ovf_export_bg.png");
 #else /* Q_WS_MAC */
     /* Assign watermark */
-    assignWatermark(":/vmw_ovf_import.png");
+    assignWatermark(":/vmw_ovf_export.png");
 #endif /* Q_WS_MAC */
 
     /* Setup connections */
