@@ -1049,16 +1049,14 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     rc = CFGMR3QueryStringAlloc(pCfg, "EfiRom", &pThis->pszEfiRomFile);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
     {
-        pThis->pszEfiRomFile = (char*)PDMDevHlpMMHeapAlloc(pDevIns, RTPATH_MAX);
+        pThis->pszEfiRomFile = (char *)PDMDevHlpMMHeapAlloc(pDevIns, RTPATH_MAX);
         if (!pThis->pszEfiRomFile)
             return VERR_NO_MEMORY;
 
-        rc = RTPathAppPrivateArch(pThis->pszEfiRomFile, RTPATH_MAX - 32);
+        rc = RTPathAppPrivateArch(pThis->pszEfiRomFile, RTPATH_MAX);
         AssertRCReturn(rc, rc);
-
-        size_t offFilename = RTStrNLen(pThis->pszEfiRomFile, RTPATH_MAX);
-        strcpy(pThis->pszEfiRomFile+offFilename, "/VBoxEFI32.fd");
-        rc = VINF_SUCCESS;
+        rc = RTPathAppend(pThis->pszEfiRomFile, RTPATH_MAX, "VBoxEFI32.fd");
+        AssertRCReturn(rc, rc);
     }
     else if (RT_FAILURE(rc))
         return PDMDevHlpVMSetError(pDevIns, rc, RT_SRC_POS,
