@@ -232,30 +232,33 @@ VMMR0DECL(int) PGMR0Trap0eHandlerNestedPaging(PVM pVM, PVMCPU pVCpu, PGMMODE enm
      * We pretend the guest is in protected mode without paging, so we can use existing code to build the
      * nested page tables.
      */
-    pgmLock(pVM);
+    bool fLockTaken = false;
     switch(enmShwPagingMode)
     {
     case PGMMODE_32_BIT:
-        rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_32BIT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
         break;
     case PGMMODE_PAE:
     case PGMMODE_PAE_NX:
-        rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_PAE_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
         break;
     case PGMMODE_AMD64:
     case PGMMODE_AMD64_NX:
-        rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_AMD64_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
         break;
     case PGMMODE_EPT:
-        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault);
+        rc = PGM_BTH_NAME_EPT_PROT(Trap0eHandler)(pVCpu, uErr, pRegFrame, pvFault, &fLockTaken);
         break;
     default:
         AssertFailed();
         rc = VERR_INVALID_PARAMETER;
         break;
     }
-    Assert(PGMIsLockOwner(pVM));
-    pgmUnlock(pVM);
+    if (fLockTaken)
+    {
+        Assert(PGMIsLockOwner(pVM));
+        pgmUnlock(pVM);
+    }
     if (rc == VINF_PGM_SYNCPAGE_MODIFIED_PDE)
         rc = VINF_SUCCESS;
     else
