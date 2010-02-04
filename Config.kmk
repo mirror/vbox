@@ -483,7 +483,7 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 ## @name Compiler and linker config
 ## @{
 # For treating compiler and linker warnings as errors where possible.
-if1of ($(KBUILD_TARGET), darwin) # more to come here later.
+if1of ($(KBUILD_TARGET), darwin linux)
  VBOX_WITH_WARNINGS_AS_ERRORS = 1
 endif
 ## @}
@@ -1260,10 +1260,6 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
   VBOX_GCC_OPT <= -march=i586
  endif
 endif
-ifdef VBOX_WITH_WARNINGS_AS_ERRORS
- VBOX_GCC_WERR ?= -Werror
- VBOX_VCC_WERR ?= -WX
-endif
 
 
 #
@@ -1844,6 +1840,23 @@ endif
 include $(PATH_OUT)/GCCConfig.kmk
 endif # !VBOX_NOINC_GCC_CONFIG_KMK
 
+#
+# Warnings as errors.
+#
+# GCC: We disable warnings on non-X86 systems because of the variadic
+#      macro usage in the logger.
+#
+ifdef VBOX_WITH_WARNINGS_AS_ERRORS
+ if  defined(VBOX_WITH_WARNINGS_AS_ERRORS) \
+  && $(VBOX_GCC_VERSION_CXX) < 40000 \
+  && "$(KBUILD_TARGET_ARCH)" != "x86" \
+  && "$(KBUILD_TARGET)" != "win"
+  VBOX_WITH_WARNINGS_AS_ERRORS=
+ else
+  VBOX_GCC_WERR ?= -Werror
+  VBOX_VCC_WERR ?= -WX
+ endif
+endif
 
 #
 # Code Signing.
