@@ -401,8 +401,11 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
 
                 pCache->cbCached -= pCurr->cbData;
 
+                pdmacFileCacheEntryRemoveFromList(pCurr);
+
                 if (pGhostListDst)
                 {
+                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
 #ifdef VBOX_WITH_2Q_CACHE
                     /* We have to remove the last entries from the paged out list. */
                     while (pGhostListDst->cbCached > pCache->cbRecentlyUsedOutMax)
@@ -432,11 +435,11 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
                     RTAvlrFileOffsetRemove(pCurr->pEndpoint->DataCache.pTree, pCurr->Core.Key);
                     STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
 
-                    pdmacFileCacheEntryRemoveFromList(pCurr);
+                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                     RTMemFree(pCurr);
                 }
             }
-            RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+
         }
         else
             LogFlow(("Entry %#p (%u bytes) is still in progress and can't be evicted\n", pCurr, pCurr->cbData));
@@ -1412,8 +1415,8 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
             cbToRead = RT_MIN(pEntry->cbData - OffDiff, cbRead);
 
-            AssertMsg(off + (RTFOFF)cbToRead <= pEntry->Core.Key + pEntry->Core.KeyLast,
-                      ("Buffer of cache entry exceeded off=%RTfoff cbToRead=%z\n",
+            AssertMsg(off + (RTFOFF)cbToRead <= pEntry->Core.Key + pEntry->Core.KeyLast + 1,
+                      ("Buffer of cache entry exceeded off=%RTfoff cbToRead=%d\n",
                        off, cbToRead));
 
             cbRead  -= cbToRead;
@@ -1625,6 +1628,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToRead,
                                                    PDMACTASKFILETRANSFER_READ);
+                off += cbToRead;
             }
         }
     }
@@ -1955,6 +1959,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToWrite,
                                                    PDMACTASKFILETRANSFER_WRITE);
+                off += cbToWrite;
             }
         }
     }
