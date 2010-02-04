@@ -1174,41 +1174,6 @@ protected:
     }
 
     /**
-     *  Sets the error information for the current thread, BStr variant.
-     *  A convenience method that automatically sets the default interface
-     *  ID (taken from the I template argument) and the component name
-     *  (a value of C::getComponentName()).
-     *
-     *  This method is preferred if you have a ready (translated and formatted)
-     *  Bstr string, because it omits an extra conversion Utf8Str -> Bstr.
-     *
-     *  See #setError(HRESULT, const GUID &, const wchar_t *, const char *text, ...)
-     *  and #setError(HRESULT, const char *, ...)  for details.
-     */
-    static HRESULT setErrorBstr(HRESULT aResultCode, const Bstr &aText)
-    {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setError(
-            aResultCode, COM_IIDOF(I), C::getComponentName(), aText, true /* aLogIt */);
-        return rc;
-    }
-
-    /**
-     *  This method is the same as #setErrorBstr() except that it makes sure @a
-     *  aResultCode doesn't have the error severity bit (31) set when passed
-     *  down to the created IVirtualBoxErrorInfo object.
-     *
-     *  The error severity bit is always cleared by this call, thereof you can
-     *  use ordinary E_XXX result code constants, for convenience. However, this
-     *  behavior may be non-standard on some COM platforms.
-     */
-    static HRESULT setWarningBstr(HRESULT aResultCode, const Bstr &aText)
-    {
-        HRESULT rc = VirtualBoxSupportErrorInfoImplBase::setWarning(
-            aResultCode, COM_IIDOF(I), C::getComponentName(), aText);
-        return rc;
-    }
-
-    /**
      *  Sets the error information for the current thread.
      *  A convenience method that automatically sets the component name
      *  (a value of C::getComponentName()), but allows to specify the interface
