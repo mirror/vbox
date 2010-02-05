@@ -62,7 +62,8 @@ RTR3DECL(int) RTFsQuerySizes(const char *pszFsPath, RTFOFF *pcbTotal, RTFOFF *pc
     {
         /** @todo I'm not quite sure if statvfs was properly specified by SuS, I have to check my own
          * implementation and FreeBSD before this can eventually be promoted to posix. */
-        struct statvfs StatVFS = {0};
+        struct statvfs StatVFS;
+        RT_ZERO(StatVFS);
         if (!statvfs(pszNativeFsPath, &StatVFS))
         {
             /*
@@ -137,7 +138,8 @@ RTR3DECL(int) RTFsQueryProperties(const char *pszFsPath, PRTFSPROPERTIES pProper
     int rc = rtPathToNative(&pszNativeFsPath, pszFsPath);
     if (RT_SUCCESS(rc))
     {
-        struct statvfs StatVFS = {0};
+        struct statvfs StatVFS;
+        RT_ZERO(StatVFS);
         if (!statvfs(pszNativeFsPath, &StatVFS))
         {
             /*
