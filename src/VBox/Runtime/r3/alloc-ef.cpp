@@ -66,7 +66,7 @@ static volatile size_t      g_cbBlocksDelay;
 #endif
 #endif
 /** Array of pointers free watches for. */
-void   *gapvRTMemFreeWatch[4] = {0};
+void   *gapvRTMemFreeWatch[4] = {NULL, NULL, NULL, NULL};
 /** Enable logging of all freed memory. */
 bool    gfRTMemFreeLog = false;
 
