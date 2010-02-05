@@ -226,7 +226,7 @@ void pgmPoolMonitorChainChanging(PVMCPU pVCpu, PPGMPOOL pPool, PPGMPOOLPAGE pPag
     const unsigned off     = GCPhysFault & PAGE_OFFSET_MASK;
     PVM pVM = pPool->CTX_SUFF(pVM);
 
-    LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp cbWrite=%d\n", (RTGCPTR)pvAddress, GCPhysFault, cbWrite));
+    LogFlow(("pgmPoolMonitorChainChanging: %RGv phys=%RGp cbWrite=%d\n", (RTGCPTR)(CTXTYPE(RTGCPTR, uintptr_t, RTGCPTR))pvAddress, GCPhysFault, cbWrite));
 
     for (;;)
     {
@@ -1396,18 +1396,18 @@ static void pgmPoolTrackCheckPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PX86PT
     {
         if (pShwPT->a[i].n.u1Present)
         {
-            RTHCPHYS HCPhys = -1;
+            RTHCPHYS HCPhys = NIL_RTHCPHYS;
             int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, &HCPhys);
             if (    rc != VINF_SUCCESS
                 ||  (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) != HCPhys)
             {
-                RTHCPHYS HCPhysPT = -1;
                 Log(("rc=%d idx=%d guest %RX64 shw=%RX64 vs %RHp\n", rc, i, pGstPT->a[i].u, pShwPT->a[i].u, HCPhys));
                 LastPTE     = i;
                 LastRc      = rc;
                 LastHCPhys  = HCPhys;
                 cErrors++;
 
+                RTHCPHYS HCPhysPT = NIL_RTHCPHYS;
                 rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
                 AssertRC(rc);
 
@@ -1479,7 +1479,7 @@ DECLINLINE(unsigned) pgmPoolTrackFlushPTPaePae(PPGMPOOL pPool, PPGMPOOLPAGE pPag
             if ((pGstPT->a[i].u & X86_PTE_PAE_PG_MASK) == (pOldGstPT->a[i].u & X86_PTE_PAE_PG_MASK))
             {
 #ifdef VBOX_STRICT
-                RTHCPHYS HCPhys = -1;
+                RTHCPHYS HCPhys = NIL_RTGCPHYS;
                 int rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[i].u & X86_PTE_PAE_PG_MASK, &HCPhys);
                 AssertMsg(rc == VINF_SUCCESS && (pShwPT->a[i].u & X86_PTE_PAE_PG_MASK) == HCPhys, ("rc=%d guest %RX64 old %RX64 shw=%RX64 vs %RHp\n", rc, pGstPT->a[i].u, pOldGstPT->a[i].u, pShwPT->a[i].u, HCPhys));
 #endif
