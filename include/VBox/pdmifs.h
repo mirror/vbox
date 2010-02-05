@@ -2062,16 +2062,6 @@ typedef struct PDMIVMMDEVCONNECTOR
     DECLR3CALLBACKMEMBER(int, pfnQueryVisibleRegion,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcRect, PRTRECT pRect));
 
     /**
-     * Request the statistics interval
-     *
-     * @returns VBox status code.
-     * @param   pInterface          Pointer to this interface.
-     * @param   pulInterval         Pointer to interval in seconds
-     * @thread  The emulation thread.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnQueryStatisticsInterval,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval));
-
-    /**
      * Report new guest statistics
      *
      * @returns VBox status code.

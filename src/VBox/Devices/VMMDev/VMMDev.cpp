@@ -1391,32 +1391,6 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             break;
         }
 
-        case VMMDevReq_GetStatisticsChangeRequest:
-        {
-            Log(("VMMDevReq_GetStatisticsChangeRequest\n"));
-            if (pRequestHeader->size != sizeof(VMMDevGetStatisticsChangeRequest))
-            {
-                AssertFailed();
-                pRequestHeader->rc = VERR_INVALID_PARAMETER;
-            }
-            else
-            {
-                VMMDevGetStatisticsChangeRequest *statIntervalChangeRequest = (VMMDevGetStatisticsChangeRequest*)pRequestHeader;
-                /* just pass on the information */
-                Log(("VMMDev: returning statistics interval %d seconds\n", pThis->u32StatIntervalSize));
-                statIntervalChangeRequest->u32StatInterval = pThis->u32StatIntervalSize;
-
-                if (statIntervalChangeRequest->eventAck == VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
-                {
-                    /* Remember which mode the client has queried. */
-                    pThis->u32LastStatIntervalSize= pThis->u32StatIntervalSize;
-                }
-
-                pRequestHeader->rc = VINF_SUCCESS;
-            }
-            break;
-        }
-
         case VMMDevReq_ReportGuestStats:
         {
             Log(("VMMDevReq_ReportGuestStats\n"));
@@ -2068,29 +2042,6 @@ static DECLCALLBACK(int) vmmdevVRDPChange(PPDMIVMMDEVPORT pInterface, bool fVRDP
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(int) vmmdevSetStatisticsInterval(PPDMIVMMDEVPORT pInterface, uint32_t ulStatInterval)
-{
-    VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
-    PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-
-    /* Verify that the new resolution is different and that guest does not yet know about it. */
-    bool fSame = (pThis->u32LastStatIntervalSize == ulStatInterval);
-
-    Log(("vmmdevSetStatisticsInterval: old=%d. new=%d\n", pThis->u32LastStatIntervalSize, ulStatInterval));
-
-    if (!fSame)
-    {
-        /* we could validate the information here but hey, the guest can do that as well! */
-        pThis->u32StatIntervalSize = ulStatInterval;
-
-        /* IRQ so the guest knows what's going on */
-        VMMDevNotifyGuest (pThis, VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST);
-    }
-
-    PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
-}
-
 
 static DECLCALLBACK(int) vmmdevSetCredentials(PPDMIVMMDEVPORT pInterface, const char *pszUsername,
                                               const char *pszPassword, const char *pszDomain,
@@ -2479,9 +2430,6 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     /* disabled memory ballooning */
     pThis->u32LastMemoryBalloonSize = 0;
 
-    /* disabled statistics updating */
-    pThis->u32LastStatIntervalSize = 0;
-
     /* Clear the "HGCM event enabled" flag so the event can be automatically reenabled.  */
     pThis->u32HGCMEnabled = 0;
 
@@ -2592,7 +2540,6 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->IPort.pfnVBVAChange             = vmmdevVBVAChange;
     pThis->IPort.pfnRequestSeamlessChange  = vmmdevRequestSeamlessChange;
     pThis->IPort.pfnSetMemoryBalloon       = vmmdevSetMemoryBalloon;
-    pThis->IPort.pfnSetStatisticsInterval  = vmmdevSetStatisticsInterval;
     pThis->IPort.pfnVRDPChange             = vmmdevVRDPChange;
     pThis->IPort.pfnCpuHotUnplug           = vmmdevCpuHotUnplug;
     pThis->IPort.pfnCpuHotPlug             = vmmdevCpuHotPlug;
