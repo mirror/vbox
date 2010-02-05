@@ -53,7 +53,7 @@ if1of ($(KBUILD_TARGET), linux solaris freebsd)
  # Only Solaris right now needs C stubs because I can't figure out how to
  # generate the GOT based relocation ASM yet.
  ifdef VBoxOGL_FAKEDRI
-  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.x86 solaris.amd64 linux.x86 freebsd.x86 freebsd.amd64)
+  if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),solaris.x86 solaris.amd64 linux.x86 linux.amd64 freebsd.x86 freebsd.amd64)
    VBOX_OGL_GLX_USE_CSTUBS = 1
   endif
  endif
