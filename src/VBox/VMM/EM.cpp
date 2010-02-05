@@ -620,40 +620,6 @@ static const char *emR3GetStateName(EMSTATE enmState)
 }
 
 
-#ifdef VBOX_WITH_STATISTICS
-/**
- * Just a braindead function to keep track of cli addresses.
- * @param   pVM         VM handle.
- * @param   pVMCPU      VMCPU handle.
- * @param   GCPtrInstr  The EIP of the cli instruction.
- */
-static void emR3RecordCli(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtrInstr)
-{
-    PCLISTAT pRec;
-
-    pRec = (PCLISTAT)RTAvlPVGet(&pVCpu->em.s.pCliStatTree, (AVLPVKEY)GCPtrInstr);
-    if (!pRec)
-    {
-        /* New cli instruction; insert into the tree. */
-        pRec = (PCLISTAT)MMR3HeapAllocZ(pVM, MM_TAG_EM, sizeof(*pRec));
-        Assert(pRec);
-        if (!pRec)
-            return;
-        pRec->Core.Key = (AVLPVKEY)GCPtrInstr;
-
-        char szCliStatName[32];
-        RTStrPrintf(szCliStatName, sizeof(szCliStatName), "/EM/Cli/0x%RGv", GCPtrInstr);
-        STAM_REG(pVM, &pRec->Counter, STAMTYPE_COUNTER, szCliStatName, STAMUNIT_OCCURENCES, "Number of times cli was executed.");
-
-        bool fRc = RTAvlPVInsert(&pVCpu->em.s.pCliStatTree, &pRec->Core);
-        Assert(fRc); NOREF(fRc);
-    }
-    STAM_COUNTER_INC(&pRec->Counter);
-    STAM_COUNTER_INC(&pVCpu->em.s.StatTotalClis);
-}
-#endif /* VBOX_WITH_STATISTICS */
-
-
 /**
  * Debug loop.
  *
