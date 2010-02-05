@@ -114,7 +114,6 @@ enum
     MODIFYVM_MACADDRESS,
     MODIFYVM_UARTMODE,
     MODIFYVM_UART,
-    MODIFYVM_GUESTSTATISTICSINTERVAL,
     MODIFYVM_GUESTMEMORYBALLOON,
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIO,
@@ -197,7 +196,6 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--macaddress",               MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
-    { "--gueststatisticsinterval",  MODIFYVM_GUESTSTATISTICSINTERVAL,   RTGETOPT_REQ_UINT32 },
     { "--guestmemoryballoon",       MODIFYVM_GUESTMEMORYBALLOON,        RTGETOPT_REQ_UINT32 },
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
@@ -1281,12 +1279,6 @@ int handleModifyVM(HandlerArg *a)
 
                     CHECK_ERROR(uart, COMSETTER(Enabled)(TRUE));
                 }
-                break;
-            }
-
-            case MODIFYVM_GUESTSTATISTICSINTERVAL:
-            {
-                CHECK_ERROR(machine, COMSETTER(StatisticsUpdateInterval)(ValueUnion.u32));
                 break;
             }
 

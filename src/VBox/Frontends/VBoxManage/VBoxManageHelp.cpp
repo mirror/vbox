@@ -214,7 +214,6 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                                             file <file>|\n"
                  "                                             <devicename>]\n"
                  "                            [--guestmemoryballoon <balloonsize in MB>]\n"
-                 "                            [--gueststatisticsinterval <seconds>]\n"
                  );
         RTPrintf("                            [--audio none|null");
         if (fWin)
