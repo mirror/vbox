@@ -412,7 +412,7 @@ static ssize_t rtLinuxFindDevicePathRecursive(dev_t DevNum, RTFMODE fMode, const
                 rcRet = -1;
                 break;
             }
-            if (RTFS_IS_SYMLINK(Entry.Info.Attr.fMode)) /* paranoia. @todo RTDirReadEx now returns symlinks, see also #if 1 below. */
+            if (RTFS_IS_SYMLINK(Entry.Info.Attr.fMode))
                 continue;
 
             /* Do the matching. */
@@ -437,12 +437,6 @@ static ssize_t rtLinuxFindDevicePathRecursive(dev_t DevNum, RTFMODE fMode, const
                 rcRet = -1;
                 break;
             }
-#if 1 /** @todo This is a temporary hack, as RTDirReadEx in 3.0 doesn't know about symbolic links. */
-            struct stat Stat = { 0 };
-            if (   lstat(szPath, &Stat) < 0
-                || S_ISLNK(Stat.st_mode))
-                continue;
-#endif
             strcat(&szPath[cchBasePath], "/");
             rcRet = rtLinuxFindDevicePathRecursive(DevNum, fMode, szPath, pszBuf, cchBuf);
             if (rcRet >= 0 || errno != ENOENT)
