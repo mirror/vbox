@@ -1021,10 +1021,11 @@ VMMDECL(int) SELMGetRing1Stack(PVM pVM, uint32_t *pSS, PRTGCPTR32 pEsp)
         bool    fTriedAlready = false;
 
 l_tryagain:
-        rc  = MMGCRamRead(pVM, &tss.ss0,  (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, ss0)), sizeof(tss.ss0));
-        rc |= MMGCRamRead(pVM, &tss.esp0, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, esp0)), sizeof(tss.esp0));
+        PVBOXTSS pTss = (PVBOXTSS)(uintptr_t)GCPtrTss;
+        rc  = MMGCRamRead(pVM, &tss.ss0,  &pTss->ss0,  sizeof(tss.ss0));
+        rc |= MMGCRamRead(pVM, &tss.esp0, &pTss->esp0, sizeof(tss.esp0));
 #  ifdef DEBUG
-        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, (RCPTRTYPE(void *))(GCPtrTss + RT_OFFSETOF(VBOXTSS, offIoBitmap)), sizeof(tss.offIoBitmap));
+        rc |= MMGCRamRead(pVM, &tss.offIoBitmap, &pTss->offIoBitmap, sizeof(tss.offIoBitmap));
 #  endif
 
         if (RT_FAILURE(rc))
