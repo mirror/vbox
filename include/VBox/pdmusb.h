@@ -51,6 +51,39 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
+/**
+ * A string entry for the USB descriptor cache.
+ */
+typedef struct PDMUSBDESCCACHESTRING
+{
+    /** The string index. */
+    uint8_t     idx;
+    /** The UTF-8 representation of the string. */
+    const char *psz;
+} PDMUSBDESCCACHESTRING;
+/** Pointer to a const string entry. */
+typedef PDMUSBDESCCACHESTRING const *PCPDMUSBDESCCACHESTRING;
+
+
+/**
+ * A language entry for the USB descriptor cache.
+ */
+typedef struct PDMUSBDESCCACHELANG
+{
+    /** The language ID for the strings in this block. */
+    uint16_t                idLang;
+    /** The number of strings in the array. */
+    uint16_t                cStrings;
+    /** Pointer to an array of associated strings.
+     * This must be sorted in ascending order by string index as a binary lookup
+     * will be performed. */
+    PCPDMUSBDESCCACHESTRING paStrings;
+} PDMUSBDESCCACHELANG;
+/** Pointer to a const language entry. */
+typedef PDMUSBDESCCACHELANG const *PCPDMUSBDESCCACHELANG;
+
+
 /**
  * USB descriptor cache.
  *
@@ -64,11 +97,19 @@ RT_C_DECLS_BEGIN
 typedef struct PDMUSBDESCCACHE
 {
     /** USB device descriptor */
-    PCVUSBDESCDEVICE    pDevice;
+    PCVUSBDESCDEVICE        pDevice;
     /** USB Descriptor arrays (pDev->bNumConfigurations) */
-    PCVUSBDESCCONFIGEX  paConfigs;
+    PCVUSBDESCCONFIGEX      paConfigs;
+    /** Language IDs and their associated strings.
+     * This must be sorted in ascending order by language ID as a binary lookup
+     * will be used. */
+    PCPDMUSBDESCCACHELANG   paLanguages;
+    /** The number of entries in the array pointed to by paLanguages. */
+    uint16_t                cLanguages;
     /** Use the cached descriptors for GET_DESCRIPTOR requests. */
-    bool                fUseCachedDescriptors;
+    bool                    fUseCachedDescriptors;
+    /** Use the cached string descriptors. */
+    bool                    fUseCachedStringsDescriptors;
 } PDMUSBDESCCACHE;
 /** Pointer to an USB descriptor cache. */
 typedef PDMUSBDESCCACHE *PPDMUSBDESCCACHE;
