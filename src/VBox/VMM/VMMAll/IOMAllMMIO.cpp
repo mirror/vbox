@@ -274,7 +274,7 @@ DECLINLINE(int) iomRamRead(PVMCPU pVCpu, void *pDest, RTGCPTR GCSrc, uint32_t cb
     /* Note: This will fail in R0 or RC if it hits an access handler. That
              isn't a problem though since the operation can be restarted in REM. */
 #ifdef IN_RC
-    return MMGCRamReadNoTrapHandler(pDest, (void *)GCSrc, cb);
+    return MMGCRamReadNoTrapHandler(pDest, (void *)(uintptr_t)GCSrc, cb);
 #else
     return PGMPhysReadGCPtr(pVCpu, pDest, GCSrc, cb);
 #endif
@@ -295,7 +295,7 @@ DECLINLINE(int) iomRamWrite(PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, RTGCPTR GCPtrDs
      *        of some shadowed structure in R0. */
 #ifdef IN_RC
     NOREF(pCtxCore);
-    return MMGCRamWriteNoTrapHandler((void *)GCPtrDst, pvSrc, cb);
+    return MMGCRamWriteNoTrapHandler((void *)(uintptr_t)GCPtrDst, pvSrc, cb);
 #elif IN_RING0
     return PGMPhysInterpretedWriteNoHandlers(pVCpu, pCtxCore, GCPtrDst, pvSrc, cb, false /*fRaiseTrap*/);
 #else

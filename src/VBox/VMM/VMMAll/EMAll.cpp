@@ -154,7 +154,7 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
 # elif defined(IN_RC)
     if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
-        int rc = MMGCRamRead(pVM, pDest, (void *)pSrc, cb);
+        int rc = MMGCRamRead(pVM, pDest, (void *)(uintptr_t)pSrc, cb);
         if (rc == VERR_ACCESS_DENIED)
         {
             /* Recently flushed; access the data manually. */
@@ -163,7 +163,7 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
         }
     }
     else /* the hypervisor region is always present. */
-        memcpy(pDest, (RTRCPTR)pSrc, cb);
+        memcpy(pDest, (RTRCPTR)(uintptr_t)pSrc, cb);
 
 # endif /* IN_RING3 */
     return VINF_SUCCESS;
@@ -411,7 +411,7 @@ VMMDECL(VBOXSTRICTRC) EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtx
 DECLINLINE(int) emRamRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, void *pvDst, RTGCPTR GCPtrSrc, uint32_t cb)
 {
 #ifdef IN_RC
-    int rc = MMGCRamRead(pVM, pvDst, (void *)GCPtrSrc, cb);
+    int rc = MMGCRamRead(pVM, pvDst, (void *)(uintptr_t)GCPtrSrc, cb);
     if (RT_LIKELY(rc != VERR_ACCESS_DENIED))
         return rc;
     /*
@@ -936,7 +936,7 @@ static int emInterpretLockOrXorAnd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCP
     RTGCPTR GCPtrPar1 = param1.val.val64;
     GCPtrPar1 = emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, GCPtrPar1);
 #ifdef IN_RC
-    pvParam1  = (void *)GCPtrPar1;
+    pvParam1  = (void *)(uintptr_t)GCPtrPar1;
 #else
     PGMPAGEMAPLOCK Lock;
     rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);
@@ -1669,8 +1669,7 @@ static int emInterpretCmpXchg(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
@@ -1741,8 +1740,7 @@ static int emInterpretCmpXchg8b(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMC
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
@@ -1812,8 +1810,7 @@ static int emInterpretXAdd(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCOR
             switch(param1.type)
             {
             case PARMTYPE_ADDRESS:
-                pParam1 = (RTRCPTR)param1.val.val64;
-                pParam1 = (RTRCPTR)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTGCPTR)(RTRCUINTPTR)pParam1);
+                pParam1 = (RTRCPTR)(uintptr_t)emConvertToFlatAddr(pVM, pRegFrame, pDis, &pDis->param1, (RTRCUINTPTR)param1.val.val64);
                 EM_ASSERT_FAULT_RETURN(pParam1 == (RTRCPTR)pvFault, VERR_EM_INTERPRETER);
                 break;
 
