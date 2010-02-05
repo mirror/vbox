@@ -2357,7 +2357,14 @@ bool VBoxConsoleView::x11Event (XEvent *event)
             flags |= KeyPrint;
             break;
         case XK_Pause:
-            flags |= KeyPause;
+            if (event->xkey.state & ControlMask) /* Break */
+            {
+                ks = XK_Break;
+                flags |= KeyExtended;
+                scan = 0x46;
+            }
+            else
+                flags |= KeyPause;
             break;
     }
 
