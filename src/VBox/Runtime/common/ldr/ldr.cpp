@@ -122,7 +122,7 @@ RTDECL(int) RTLdrGetSymbol(RTLDRMOD hLdrMod, const char *pszSymbol, void **ppvVa
         rc = pMod->pOps->pfnGetSymbolEx(pMod, NULL, 0, pszSymbol, &Value);
         if (RT_SUCCESS(rc))
         {
-            *ppvValue = (void *)Value;
+            *ppvValue = (void *)(uintptr_t)Value;
             if ((uintptr_t)*ppvValue != Value)
                 rc = VERR_BUFFER_OVERFLOW;
         }
