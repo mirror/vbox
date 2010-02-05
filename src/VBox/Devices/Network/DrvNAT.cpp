@@ -541,7 +541,7 @@ static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
     int     nFDs = -1;
-    unsigned int ms;
+    int     ms;
 #ifdef RT_OS_WINDOWS
     DWORD   event;
     HANDLE  *phEvents;
