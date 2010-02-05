@@ -483,7 +483,7 @@ VBOX_WITH_ALL_DOXYGEN_TARGETS = 1
 ## @name Compiler and linker config
 ## @{
 # For treating compiler and linker warnings as errors where possible.
-if1of ($(KBUILD_TARGET), darwin linux)
+if1of ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH), darwin.x86 darwin.amd64 linux.amd64) ## @todo linux.x86
  VBOX_WITH_WARNINGS_AS_ERRORS = 1
 endif
 ## @}
