@@ -324,40 +324,41 @@ static int cdromDoInquiry(const char *pcszNode, uint8_t *pu8Type,
     AssertPtrNullReturn(pchVendor, VERR_INVALID_POINTER);
     AssertPtrNullReturn(pchModel, VERR_INVALID_POINTER);
 
-    unsigned char u8Response[96] = { 0 };
-    struct cdrom_generic_command CdromCommandReq =
-    { { INQUIRY, 0, 0, 0, sizeof(u8Response), 0 }  /* INQUIRY */ };
-    int rc, rcIoCtl = 0;
-    RTFILE file;
-    rc = RTFileOpen(&file, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
+    RTFILE hFile;
+    int rc = RTFileOpen(&hFile, pcszNode, RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE | RTFILE_O_NON_BLOCK);
     if (RT_SUCCESS(rc))
     {
-        CdromCommandReq.buffer = u8Response;
-        CdromCommandReq.buflen = sizeof(u8Response);
+        int                             rcIoCtl        = 0;
+        unsigned char                   u8Response[96] = { 0 };
+        struct cdrom_generic_command    CdromCommandReq;
+        RT_ZERO(CdromCommandReq);
+        CdromCommandReq.cmd[0]         = INQUIRY;
+        CdromCommandReq.cmd[4]         = sizeof(u8Response);
+        CdromCommandReq.buffer         = u8Response;
+        CdromCommandReq.buflen         = sizeof(u8Response);
         CdromCommandReq.data_direction = CGC_DATA_READ;
-        CdromCommandReq.timeout = 5000;  /* ms */
-        rc = RTFileIoCtl(file, CDROM_SEND_PACKET, &CdromCommandReq, 0,
-                         &rcIoCtl);
+        CdromCommandReq.timeout        = 5000;  /* ms */
+        rc = RTFileIoCtl(hFile, CDROM_SEND_PACKET, &CdromCommandReq, 0, &rcIoCtl);
         if (RT_SUCCESS(rc) && rcIoCtl < 0)
             rc = RTErrConvertFromErrno(-CdromCommandReq.stat);
-        RTFileClose(file);
-    }
-    if (RT_SUCCESS(rc))
-    {
-        if (pu8Type)
-            *pu8Type = u8Response[0] & 0x1f;
-        if (pchVendor)
-            RTStrPrintf(pchVendor, cchVendor, "%.8s",
-                        (char *) &u8Response[8] /* vendor id string */);
-        if (pchModel)
-            RTStrPrintf(pchModel, cchModel, "%.16s",
-                        (char *) &u8Response[16] /* product id string */);
+        RTFileClose(hFile);
+
+        if (RT_SUCCESS(rc))
+        {
+            if (pu8Type)
+                *pu8Type = u8Response[0] & 0x1f;
+            if (pchVendor)
+                RTStrPrintf(pchVendor, cchVendor, "%.8s",
+                            &u8Response[8] /* vendor id string */);
+            if (pchModel)
+                RTStrPrintf(pchModel, cchModel, "%.16s",
+                            &u8Response[16] /* product id string */);
+            LogRelFlowFunc(("returning success: type=%u, vendor=%.8s, product=%.16s\n",
+                            u8Response[0] & 0x1f, &u8Response[8], &u8Response[16]));
+            return VINF_SUCCESS;
+        }
     }
     LogRelFlowFunc(("returning %Rrc\n", rc));
-    if (RT_SUCCESS(rc))
-        LogRelFlowFunc(("    type=%u, vendor=%.8s, product=%.16s\n",
-                        u8Response[0] & 0x1f, (char *) &u8Response[8],
-                        (char *) &u8Response[16]));
     return rc;
 }
 
@@ -800,7 +801,6 @@ int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     LogFlowFunc (("pList=%p, isDVD=%u, pfSuccess=%p\n",
                   pList, (unsigned) isDVD, pfSuccess));
     PRTDIR pDir = NULL;
-    RTDIRENTRY entry = {0};
     int rc;
     bool fSuccess = false;
     unsigned cFound = 0;
@@ -812,8 +812,9 @@ int getDriveInfoFromSysfs(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     AssertReturn(rc != VERR_FILE_NOT_FOUND, VINF_SUCCESS);
     fSuccess = true;
     if (RT_SUCCESS(rc))
-        while (true)
+        for (;;)
         {
+            RTDIRENTRY entry;
             rc = RTDirRead(pDir, &entry, NULL);
             Assert(rc != VERR_BUFFER_OVERFLOW);  /* Should never happen... */
             if (RT_FAILURE(rc))  /* Including overflow and no more files */
@@ -988,8 +989,9 @@ int getDriveInfoFromDev(DriveInfoList *pList, bool isDVD, bool *pfSuccess)
     int rc = VINF_SUCCESS;
     bool success = false;
 
-    deviceNodeArray aDevices = { { 0 } };
     char szPath[RTPATH_MAX] = "/dev";
+    deviceNodeArray aDevices;
+    RT_ZERO(aDevices);
     devFindDeviceRecursive(szPath, sizeof(szPath), aDevices, isDVD);
     try
     {

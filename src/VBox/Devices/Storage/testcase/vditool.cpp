@@ -111,7 +111,7 @@ static int NewImage(const char *pszFilename, uint32_t cMBs)
     if (RT_FAILURE(rc))
         return PrintDone(rc);
 
-    PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
+    PDMMEDIAGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
     rc = VDCreateBase(hdd, "vdi", pszUtf8Filename,
                       (uint64_t)cMBs * _1M,
                       VD_IMAGE_FLAGS_NONE,

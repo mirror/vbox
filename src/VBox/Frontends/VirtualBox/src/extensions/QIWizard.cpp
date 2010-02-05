@@ -46,7 +46,7 @@ void QIWizard::resizeToGoldenRatio()
     int iLabelDelta = width() - iLabelsWidth;
 
     /* Calculating nearest 'golden ratio' width. */
-    int iGoldRatioWidth = sqrt(1.61 * width() * height());
+    int iGoldRatioWidth = (int)sqrt(1.61 * width() * height());
     int iNewLabelWidth = iGoldRatioWidth - iLabelDelta;
     resizeAccordingLabelWidth(iNewLabelWidth);
 }

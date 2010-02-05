@@ -393,16 +393,20 @@ void ConfigFileBase::parseTimestamp(RTTIMESPEC &timestamp,
                  && (RT_SUCCESS(rc = RTStrToUInt32Ex(pcsz + 17, NULL, 0, &secs)))
                )
             {
-                RTTIME time = { yyyy,
-                                (uint8_t)mm,
-                                0,
-                                0,
-                                (uint8_t)dd,
-                                (uint8_t)hh,
-                                (uint8_t)min,
-                                (uint8_t)secs,
-                                0,
-                                RTTIME_FLAGS_TYPE_UTC };
+                RTTIME time =
+                {
+                    yyyy,
+                    (uint8_t)mm,
+                    0,
+                    0,
+                    (uint8_t)dd,
+                    (uint8_t)hh,
+                    (uint8_t)min,
+                    (uint8_t)secs,
+                    0,
+                    RTTIME_FLAGS_TYPE_UTC,
+                    0
+                };
                 if (RTTimeNormalize(&time))
                     if (RTTimeImplode(&timestamp, &time))
                         return;

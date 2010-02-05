@@ -390,7 +390,7 @@ VMMDECL(int) PATMSysCall(PVM pVM, PCPUMCTXCORE pRegFrame, PDISCPUSTATE pCpu)
             ||  pRegFrame->eflags.Bits.u1VM
             ||  (pRegFrame->cs & X86_SEL_RPL) != 3
             ||  pVM->patm.s.pfnSysEnterPatchGC == 0
-            ||  pVM->patm.s.pfnSysEnterGC != (RTRCPTR)pCtx->SysEnter.eip
+            ||  pVM->patm.s.pfnSysEnterGC != (RTRCPTR)(RTRCUINTPTR)pCtx->SysEnter.eip
             ||  !(PATMRawGetEFlags(pVM, pRegFrame) & X86_EFL_IF))
             goto end;
 

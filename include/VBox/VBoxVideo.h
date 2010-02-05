@@ -742,8 +742,8 @@ typedef FNVBOXVHWA_HH_CALLBACK *PFNVBOXVHWA_HH_CALLBACK;
 
 #define VBOXVHWA_HH_CALLBACK_SET(_pCmd, _pfn, _parg) \
     do { \
-        (_pCmd)->GuestVBVAReserved1 = (uint64_t)(_pfn); \
-        (_pCmd)->GuestVBVAReserved2 = (uint64_t)(_parg); \
+        (_pCmd)->GuestVBVAReserved1 = (uint64_t)(uintptr_t)(_pfn); \
+        (_pCmd)->GuestVBVAReserved2 = (uint64_t)(uintptr_t)(_parg); \
     }while(0)
 
 #define VBOXVHWA_HH_CALLBACK_GET(_pCmd) ((PFNVBOXVHWA_HH_CALLBACK)(_pCmd)->GuestVBVAReserved1)

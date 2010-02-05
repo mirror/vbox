@@ -43,7 +43,7 @@ int main(int argc, char **argv)
         unsigned    cb;
         DISCPUSTATE cpu;
         cpu.mode = CPUMODE_32BIT;
-        if (DISCoreOne(&cpu, (RTUINTPTR)&DISCoreOne, &cb))
+        if (DISCoreOne(&cpu, (uintptr_t)&DISCoreOne, &cb))
             printf("ok %d\n", cpu.addrmode);
         else
         {
