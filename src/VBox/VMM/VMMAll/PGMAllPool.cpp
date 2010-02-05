@@ -966,7 +966,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSTOSD(PVM pVM, PPGMPOOL pPool, PPGMPOOLPAGE 
         pgmPoolMonitorChainChanging(pVCpu, pPool, pPage, GCPhysFault, (RTGCPTR)pu32, uIncrement);
 #endif
 #ifdef IN_RC
-        *(uint32_t *)pu32 = pRegFrame->eax;
+        *(uint32_t *)(uintptr_t)pu32 = pRegFrame->eax;
 #else
         PGMPhysSimpleWriteGCPhys(pVM, GCPhysFault, &pRegFrame->rax, uIncrement);
 #endif
