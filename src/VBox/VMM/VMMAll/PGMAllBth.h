@@ -4230,7 +4230,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.pGst32BitPdR0 = (R0PTRTYPE(PX86PD))HCPtrGuestCR3;
 #  endif
-            pVCpu->pgm.s.pGst32BitPdRC = (RCPTRTYPE(PX86PD))pVM->pgm.s.GCPtrCR3Mapping;
+            pVCpu->pgm.s.pGst32BitPdRC = (RCPTRTYPE(PX86PD))(RTRCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping;
 
 # elif PGM_GST_TYPE == PGM_TYPE_PAE
             unsigned off = GCPhysCR3 & GST_CR3_PAGE_MASK & PAGE_OFFSET_MASK;
