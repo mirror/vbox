@@ -2293,7 +2293,8 @@ VMMR3DECL(int) CSAMR3CheckCode(PVM pVM, RTRCPTR pInstrGC)
     if (CSAMIsEnabled(pVM))
     {
         // Cache record for PATMGCVirtToHCVirt
-        CSAMP2GLOOKUPREC cacheRec = {0};
+        CSAMP2GLOOKUPREC cacheRec;
+        RT_ZERO(cacheRec);
 
         STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
         rc = csamAnalyseCallCodeStream(pVM, pInstrGC, pInstrGC, true /* 32 bits code */, CSAMR3AnalyseCallback, pPage, &cacheRec);
@@ -2450,8 +2451,9 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
 
             if (pHandler)
             {
-                CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
                 PCSAMPAGE pPage = NULL;
+                CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for PATMGCVirtToHCVirt. */
+                RT_ZERO(cacheRec);
 
                 Log(("CSAMCheckGates: checking previous call instruction %RRv\n", pHandler));
                 STAM_PROFILE_START(&pVM->csam.s.StatTime, a);
@@ -2517,9 +2519,10 @@ VMMR3DECL(int) CSAMR3CheckGates(PVM pVM, uint32_t iGate, uint32_t cGates)
            )
         {
             RTRCPTR pHandler;
-            CSAMP2GLOOKUPREC cacheRec = {0};            /* Cache record for PATMGCVirtToHCVirt. */
             PCSAMPAGE pPage = NULL;
             DBGFSELINFO selInfo;
+            CSAMP2GLOOKUPREC cacheRec;                  /* Cache record for PATMGCVirtToHCVirt. */
+            RT_ZERO(cacheRec);
 
             pHandler = VBOXIDTE_OFFSET(*pGuestIdte);
             pHandler = SELMToFlatBySel(pVM, pGuestIdte->Gen.u16SegSel, pHandler);

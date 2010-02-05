@@ -492,7 +492,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
             rc = SELMValidateAndConvertCSAddr(pVM, fakeflags, 0, GuestIdte.Gen.u16SegSel, NULL, pHandler, &dummy);
             if (rc == VINF_SUCCESS)
             {
-                VBOXGDTR gdtr = {0};
+                VBOXGDTR gdtr = {0, 0};
                 bool     fConforming = false;
                 int      idx = 0;
                 uint32_t dpl;

@@ -5101,13 +5101,14 @@ VMMR3DECL(int) PATMR3DisablePatch(PVM pVM, RTRCPTR pInstrGC)
 static int patmDisableUnusablePatch(PVM pVM, RTRCPTR pInstrGC, RTRCPTR pConflictAddr, PPATCHINFO pConflictPatch)
 {
 #ifdef PATM_RESOLVE_CONFLICTS_WITH_JUMP_PATCHES
-    PATCHINFO            patch = {0};
+    PATCHINFO            patch;
     DISCPUSTATE          cpu;
     R3PTRTYPE(uint8_t *) pInstrHC;
     uint32_t             opsize;
     bool                 disret;
     int                  rc;
 
+    RT_ZERO(patch);
     pInstrHC = PATMGCVirtToHCVirt(pVM, &patch, pInstrGC);
     cpu.mode = (pConflictPatch->flags & PATMFL_CODE32) ? CPUMODE_32BIT : CPUMODE_16BIT;
     disret = PATMR3DISInstr(pVM, &patch, &cpu, pInstrGC, pInstrHC, &opsize, NULL);
