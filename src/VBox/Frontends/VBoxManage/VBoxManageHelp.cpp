@@ -213,9 +213,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                                             client <pipe>|\n"
                  "                                             file <file>|\n"
                  "                                             <devicename>]\n"
-#ifdef VBOX_WITH_MEM_BALLOONING
                  "                            [--guestmemoryballoon <balloonsize in MB>]\n"
-#endif
                  "                            [--gueststatisticsinterval <seconds>]\n"
                  );
         RTPrintf("                            [--audio none|null");
