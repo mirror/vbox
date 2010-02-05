@@ -788,7 +788,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             {
                 if (pShwPT->a[j].n.u1Present)
                 {
-                    RTHCPHYS HCPhys = -1;
+                    RTHCPHYS HCPhys = NIL_RTHCPHYS;
                     rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pGstPT->a[j].u & X86_PTE_PAE_PG_MASK, &HCPhys);
                     if (    rc != VINF_SUCCESS
                         ||  (pShwPT->a[j].u & X86_PTE_PAE_PG_MASK) != HCPhys)
@@ -815,7 +815,7 @@ static DECLCALLBACK(int) pgmR3PoolCmdCheck(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp, 
             }
 
             /* Make sure this page table can't be written to from any shadow mapping. */
-            RTHCPHYS HCPhysPT = -1;
+            RTHCPHYS HCPhysPT = NIL_RTHCPHYS;
             rc = PGMPhysGCPhys2HCPhys(pPool->CTX_SUFF(pVM), pPage->GCPhys, &HCPhysPT);
             AssertMsgRC(rc, ("PGMPhysGCPhys2HCPhys failed with rc=%d for %RGp\n", rc, pPage->GCPhys));
             if (rc == VINF_SUCCESS)
