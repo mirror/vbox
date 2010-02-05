@@ -400,8 +400,9 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
      * The caller has passed the guest context physical address
      * of the request structure. Copy the request packet.
      */
-    VMMDevRequestHeader requestHeader = {0};
     VMMDevRequestHeader *pRequestHeader = NULL;
+    VMMDevRequestHeader requestHeader;
+    RT_ZERO(requestHeader);
 
     PDMDevHlpPhysRead(pDevIns, (RTGCPHYS)u32, &requestHeader, sizeof(requestHeader));
 

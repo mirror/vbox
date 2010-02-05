@@ -924,7 +924,7 @@ static int efiParseDeviceString(PDEVEFI  pThis, char* pszDeviceProps)
 {
     int         rc = 0;
     uint32_t    iStr, iHex, u32OutLen;
-    uint8_t     u8Value;
+    uint8_t     u8Value = 0;                    /* (shut up gcc) */
     bool        fUpper = true;
 
     u32OutLen = (uint32_t)RTStrNLen(pszDeviceProps, RTSTR_MAX) / 2 + 1;
