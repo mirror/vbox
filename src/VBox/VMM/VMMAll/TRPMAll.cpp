@@ -507,7 +507,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                 if (!gdtr.pGdt)
                     goto failure;
 
-                pGdtEntry = (RTGCPTR)(uintptr_t)&((X86DESC *)gdtr.pGdt)[GuestIdte.Gen.u16SegSel >> X86_SEL_SHIFT]; /// @todo fix this
+                pGdtEntry = gdtr.pGdt + (GuestIdte.Gen.u16SegSel >> X86_SEL_SHIFT) * sizeof(X86DESC);
 #ifdef IN_RC
                 rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
 #else
