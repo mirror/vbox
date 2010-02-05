@@ -449,7 +449,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
          */
         pIDTEntry = (RTGCPTR)((RTGCUINTPTR)GCPtrIDT + sizeof(VBOXIDTE) * iGate);
 #ifdef IN_RC
-        rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
+        rc = MMGCRamRead(pVM, &GuestIdte, (void *)(uintptr_t)pIDTEntry, sizeof(GuestIdte));
 #else
         rc = PGMPhysSimpleReadGCPtr(pVCpu, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
@@ -464,7 +464,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                 goto failure;
             }
 #ifdef IN_RC
-            rc = MMGCRamRead(pVM, &GuestIdte, (void *)pIDTEntry, sizeof(GuestIdte));
+            rc = MMGCRamRead(pVM, &GuestIdte, (void *)(uintptr_t)pIDTEntry, sizeof(GuestIdte));
 #else
             rc = PGMPhysSimpleReadGCPtr(pVCpu, &GuestIdte, pIDTEntry, sizeof(GuestIdte));
 #endif
@@ -509,7 +509,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
 
                 pGdtEntry = gdtr.pGdt + (GuestIdte.Gen.u16SegSel >> X86_SEL_SHIFT) * sizeof(X86DESC);
 #ifdef IN_RC
-                rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
+                rc = MMGCRamRead(pVM, &Desc, (void *)(uintptr_t)pGdtEntry, sizeof(Desc));
 #else
                 rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, pGdtEntry, sizeof(Desc));
 #endif
@@ -524,7 +524,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                         goto failure;
                     }
 #ifdef IN_RC
-                    rc = MMGCRamRead(pVM, &Desc, (void *)pGdtEntry, sizeof(Desc));
+                    rc = MMGCRamRead(pVM, &Desc, (void *)(uintptr_t)pGdtEntry, sizeof(Desc));
 #else
                     rc = PGMPhysSimpleReadGCPtr(pVCpu, &Desc, pGdtEntry, sizeof(Desc));
 #endif
@@ -588,7 +588,7 @@ VMMDECL(int) TRPMForwardTrap(PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t iGat
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) != 0);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
                 rc = PGMVerifyAccess(pVCpu, (RTGCUINTPTR)pTrapStackGC - 10*sizeof(uint32_t), 10 * sizeof(uint32_t), X86_PTE_RW);
-                pTrapStack = (uint32_t *)pTrapStackGC;
+                pTrapStack = (uint32_t *)(uintptr_t)pTrapStackGC;
 #else
                 Assert(eflags.Bits.u1VM || (pRegFrame->ss & X86_SEL_RPL) == 0 || (pRegFrame->ss & X86_SEL_RPL) == 3);
                 /* Check maximum amount we need (10 when executing in V86 mode) */
