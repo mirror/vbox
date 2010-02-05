@@ -108,7 +108,7 @@
     do { \
         if (off != RT_OFFSETOF(type, m)) \
         { \
-            printf("%#010x %s  Off by %d!! (off=%#x)\n", RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), off); \
+            printf("tstDeviceStructSize: error! %#010x %s  Off by %d!! (off=%#x)\n", RT_OFFSETOF(type, m), #type "." #m, off - RT_OFFSETOF(type, m), off); \
             rc++; \
         } \
         /*else */ \
@@ -124,11 +124,11 @@
     do { \
         if (size != sizeof(type)) \
         { \
-            printf("sizeof(%s): %#x (%d)  Off by %d!!\n", #type, (int)sizeof(type), (int)sizeof(type), (int)(sizeof(type) - size)); \
+            printf("tstDeviceStructSize: error! sizeof(%s): %#x (%d)  Off by %d!!\n", #type, (int)sizeof(type), (int)sizeof(type), (int)(sizeof(type) - size)); \
             rc++; \
         } \
         else \
-            printf("sizeof(%s): %#x (%d)\n", #type, (int)sizeof(type), (int)sizeof(type)); \
+            printf("tstDeviceStructSize: info: sizeof(%s): %#x (%d)\n", #type, (int)sizeof(type), (int)sizeof(type)); \
     } while (0)
 
 /**
@@ -139,7 +139,7 @@
     { \
         if (RT_OFFSETOF(strct, member) & ((align) - 1) ) \
         { \
-            printf("%s::%s offset=%#x (%u) expected alignment %x, meaning %#x (%u) off\n", \
+            printf("tstDeviceStructSize: error! %s::%s offset=%#x (%u) expected alignment %x, meaning %#x (%u) off\n", \
                    #strct, #member, \
                    (unsigned)RT_OFFSETOF(strct, member), \
                    (unsigned)RT_OFFSETOF(strct, member), \
@@ -157,7 +157,7 @@
     do { \
         if (RT_ALIGN_Z(sizeof(type), (align)) != sizeof(type)) \
         { \
-            printf("%s size=%#x (%u), align=%#x %#x (%u) bytes off\n", \
+            printf("tstDeviceStructSize: error! %s size=%#x (%u), align=%#x %#x (%u) bytes off\n", \
                    #type, \
                    (unsigned)sizeof(type), \
                    (unsigned)sizeof(type), \
@@ -177,13 +177,13 @@
         strct *p; \
         if (sizeof(p->member.s) > sizeof(p->member.padding)) \
         { \
-            printf("padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
+            printf("tstDeviceStructSize: error! padding of %s::%s is too small, padding=%d struct=%d correct=%d\n", #strct, #member, \
                    (int)sizeof(p->member.padding), (int)sizeof(p->member.s), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
             rc++; \
         } \
         else if (RT_ALIGN_Z(sizeof(p->member.padding), (align)) != sizeof(p->member.padding)) \
         { \
-            printf("padding of %s::%s is misaligned, padding=%d correct=%d\n", #strct, #member, \
+            printf("tstDeviceStructSize: error! padding of %s::%s is misaligned, padding=%d correct=%d\n", #strct, #member, \
                    (int)sizeof(p->member.padding), (int)RT_ALIGN_Z(sizeof(p->member.s), (align))); \
             rc++; \
         } \
@@ -198,7 +198,7 @@
         strct *p; \
         if (sizeof(p->s) > sizeof(p->padding)) \
         { \
-            printf("padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
+            printf("tstDeviceStructSize: error! padding of %s is too small, padding=%d struct=%d correct=%d\n", #strct, \
                    (int)sizeof(p->padding), (int)sizeof(p->s), (int)RT_ALIGN_Z(sizeof(p->s), 32)); \
             rc++; \
         } \
@@ -213,7 +213,7 @@
         strct *p; \
         if (sizeof(p->member) > sizeof(p->pad_member)) \
         { \
-            printf("padding of %s::%s is too small, padding=%d struct=%d\n", #strct, #member, \
+            printf("tstDeviceStructSize: error! padding of %s::%s is too small, padding=%d struct=%d\n", #strct, #member, \
                    (int)sizeof(p->pad_member), (int)sizeof(p->member)); \
             rc++; \
         } \
@@ -225,7 +225,7 @@
 #define PRINT_OFFSET(strct, member) \
     do \
     { \
-        printf("%s::%s offset %d sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
+        printf("tstDeviceStructSize: info: %s::%s offset %d sizeof %d\n",  #strct, #member, (int)RT_OFFSETOF(strct, member), (int)RT_SIZEOFMEMB(strct, member)); \
     } while (0)
 
 
