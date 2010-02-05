@@ -2217,7 +2217,7 @@ VMMDECL(int) PGMDynMapGCPageOff(PVM pVM, RTGCPHYS GCPhys, void **ppv)
 #else
     PGMDynMapHCPage(pVM, HCPhys, ppv);
 #endif
-    *ppv = (void *)((uintptr_t)*ppv | (GCPhys & PAGE_OFFSET_MASK));
+    *ppv = (void *)((uintptr_t)*ppv | (uintptr_t)(GCPhys & PAGE_OFFSET_MASK));
     return VINF_SUCCESS;
 }
 

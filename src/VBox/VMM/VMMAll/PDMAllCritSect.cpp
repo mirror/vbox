@@ -70,7 +70,7 @@ DECL_FORCE_INLINE(RTNATIVETHREAD) pdmCritSectGetNativeSelf(PCPDMCRITSECT pCritSe
     RTNATIVETHREAD  hNativeSelf = RTThreadNativeSelf();
 #else
     AssertMsgReturn(pCritSect->s.Core.u32Magic == RTCRITSECT_MAGIC, ("%RX32\n", pCritSect->s.Core.u32Magic),
-                    VERR_SEM_DESTROYED);
+                    NIL_RTNATIVETHREAD);
     PVM             pVM         = pCritSect->s.CTX_SUFF(pVM); AssertPtr(pVM);
     PVMCPU          pVCpu       = VMMGetCpu(pVM);             AssertPtr(pVCpu);
     RTNATIVETHREAD  hNativeSelf = pVCpu->hNativeThread;       Assert(hNativeSelf != NIL_RTNATIVETHREAD);

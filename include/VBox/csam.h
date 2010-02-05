@@ -72,7 +72,7 @@ RT_C_DECLS_BEGIN
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCPTR GCPtr);
+VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr);
 
 /**
  * Check if this page was previously scanned by CSAM
@@ -94,7 +94,7 @@ VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage);
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned);
+VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned);
 
 
 /**
