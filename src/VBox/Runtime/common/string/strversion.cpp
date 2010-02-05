@@ -90,7 +90,7 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
         size_t cchBlock = psz - *ppszVer;
 
         /* Translate standard pre release terms to negative values. */
-        uint32_t iVal1;
+        int32_t iVal1;
         if (     cchBlock == 2 && !RTStrNICmp(*ppszVer, "RC", 2))
             iVal1 = -100000;
         else if (cchBlock == 3 && !RTStrNICmp(*ppszVer, "PRE", 3))
@@ -117,7 +117,7 @@ static bool rtStrVersionParseBlock(const char **ppszVer, int32_t *pi32Value, siz
                 if (RT_SUCCESS(rc) && rc != VWRN_NUMBER_TOO_BIG && *pi32Value)
                     iVal1 += *pi32Value - 1;
                 else
-                {    
+                {
                     AssertRC(rc);
                     psz = psz2;
                 }
@@ -163,7 +163,7 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
                 return iVal1 < iVal2 ? -1 : 1;
         }
         else if (   fNumeric1 != fNumeric2
-                 && (  fNumeric1 
+                 && (  fNumeric1
                      ? iVal1 == 0 && cchBlock2 == 0
                      : iVal2 == 0 && cchBlock1 == 0)
                 )
@@ -172,7 +172,7 @@ RTDECL(int) RTStrVersionCompare(const char *pszVer1, const char *pszVer2)
         }
         else if (   fNumeric1 != fNumeric2
                  && (fNumeric1 ? iVal1 : iVal2) < 0)
-        {    
+        {
             /* Pre-release indicators are smaller than all other strings. */
             return fNumeric1 ? -1 : 1;
         }
