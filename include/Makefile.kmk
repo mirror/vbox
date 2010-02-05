@@ -78,7 +78,7 @@ SyntaxVBoxIncludeR0_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
-SyntaxVBoxIncludeGC_TEMPLATE = VBoxGC
+SyntaxVBoxIncludeGC_TEMPLATE = VBoxRc
 SyntaxVBoxIncludeGC_DEFS = VBOX_WITH_HGCM
 SyntaxVBoxIncludeGC_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.gc)))) \
