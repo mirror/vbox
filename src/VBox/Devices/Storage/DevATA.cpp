@@ -683,11 +683,10 @@ static const PSourceSinkFunc g_apfnSourceSinkFuncs[ATAFN_SS_MAX] =
 };
 
 
-static const ATARequest g_ataDMARequest = { ATA_AIO_DMA, };
-static const ATARequest g_ataPIORequest = { ATA_AIO_PIO, };
-static const ATARequest g_ataResetARequest = { ATA_AIO_RESET_ASSERTED, };
-static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED, };
-
+static const ATARequest g_ataDMARequest    = { ATA_AIO_DMA,            { { 0, 0, 0, 0, 0 } } };
+static const ATARequest g_ataPIORequest    = { ATA_AIO_PIO,            { { 0, 0, 0, 0, 0 } } };
+static const ATARequest g_ataResetARequest = { ATA_AIO_RESET_ASSERTED, { { 0, 0, 0, 0, 0 } } };
+static const ATARequest g_ataResetCRequest = { ATA_AIO_RESET_CLEARED,  { { 0, 0, 0, 0, 0 } } };
 
 static void ataAsyncIOClearRequests(PATACONTROLLER pCtl)
 {
