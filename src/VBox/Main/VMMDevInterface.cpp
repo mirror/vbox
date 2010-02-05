@@ -402,6 +402,32 @@ DECLCALLBACK(int) vmmdevQueryVisibleRegion(PPDMIVMMDEVCONNECTOR pInterface, uint
     return VINF_SUCCESS;
 }
 
+/**
+ * Request the statistics interval
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface.
+ * @param   pulInterval         Pointer to interval in seconds
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pulInterval)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    ULONG          val = 0;
+
+    if (!pulInterval)
+        return VERR_INVALID_POINTER;
+
+    /* store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return VERR_INVALID_PARAMETER; /** @todo wrong error */
+
+    guest->COMGETTER(StatisticsUpdateInterval)(&val);
+    *pulInterval = val;
+    return VINF_SUCCESS;
+}
 
 /**
  * Report new guest statistics
@@ -709,6 +735,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pData->Connector.pfnSetVisibleRegion              = vmmdevSetVisibleRegion;
     pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
     pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
+    pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
     pData->Connector.pfnChangeMemoryBalloon           = vmmdevChangeMemoryBalloon;
 
 #ifdef VBOX_WITH_HGCM

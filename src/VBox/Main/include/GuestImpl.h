@@ -64,6 +64,8 @@ public:
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
+    STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
+    STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
@@ -98,6 +100,7 @@ private:
     };
 
     ULONG mMemoryBalloonSize;
+    ULONG mStatUpdateInterval;
 
     ULONG mCurrentGuestStat[GuestStatisticType_MaxVal];
 
