@@ -1723,21 +1723,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         else
             RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
-    rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
-    if (SUCCEEDED(rc))
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("GuestStatisticsUpdateInterval=%d\n", guestVal);
-        else
-        {
-            if (guestVal == 0)
-                RTPrintf("Statistics update:                   disabled\n");
-            else
-                RTPrintf("Statistics update interval:          %d seconds\n", guestVal);
-        }
-    }
-    if (details != VMINFO_MACHINEREADABLE)
-        RTPrintf("\n");
 
     if (    console
         &&  (   details == VMINFO_STATISTICS
