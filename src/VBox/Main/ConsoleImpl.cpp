@@ -84,12 +84,13 @@
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
+#include <VBox/pdmnetifs.h>
 #include <VBox/vusb.h>
 #include <VBox/mm.h>
 #include <VBox/ssm.h>
 #include <VBox/version.h>
 #ifdef VBOX_WITH_USB
-#   include <VBox/pdmusb.h>
+# include <VBox/pdmusb.h>
 #endif
 
 #include <VBox/VMMDev.h>

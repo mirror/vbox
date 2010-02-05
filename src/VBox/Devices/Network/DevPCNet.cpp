@@ -55,15 +55,15 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DEV_PCNET
 #include <VBox/pdmdev.h>
+#include <VBox/pdmnetifs.h>
 #include <VBox/pgm.h>
-#include <VBox/vm.h> /* for VM_IS_EMT */
 #include <VBox/DevPCNet.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/net.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
-#include <iprt/net.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>
 # include <iprt/semaphore.h>

@@ -24,6 +24,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_INTNET
 #include <VBox/pdmdrv.h>
+#include <VBox/pdmnetifs.h>
 #include <VBox/cfgm.h>
 #include <VBox/intnet.h>
 #include <VBox/vmm.h>
