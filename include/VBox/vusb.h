@@ -197,7 +197,7 @@ typedef struct VUSBDESCCONFIGEX
     void *pvMore;
     /** Pointer to an array of the interfaces referenced in the configuration.
      * Core.bNumInterfaces in size. */
-    const struct VUSBINTERFACE *iface;
+    const struct VUSBINTERFACE *paIfs;
 } VUSBDESCCONFIGEX;
 /** Pointer to a parsed USB configuration descriptor. */
 typedef VUSBDESCCONFIGEX *PVUSBDESCCONFIGEX;
@@ -211,9 +211,9 @@ typedef const VUSBDESCCONFIGEX *PCVUSBDESCCONFIGEX;
 typedef struct VUSBINTERFACE
 {
     /** Pointer to an array of interfaces. */
-    const struct VUSBDESCINTERFACEEX *setting;
+    const struct VUSBDESCINTERFACEEX *paSettings;
     /** The number of entries in the array. */
-    unsigned int num_settings;
+    uint32_t cSettings;
 } VUSBINTERFACE;
 /** Pointer to a VUSBINTERFACE. */
 typedef VUSBINTERFACE *PVUSBINTERFACE;
@@ -232,7 +232,7 @@ typedef struct VUSBDESCINTERFACEEX
     void *pvMore;
     /** Pointer to an array of the endpoints referenced by the interface.
      * Core.bNumEndpoints in size. */
-    const struct VUSBDESCENDPOINTEX *endpoint;
+    const struct VUSBDESCENDPOINTEX *paEndpoints;
 } VUSBDESCINTERFACEEX;
 /** Pointer to an prased USB interface descriptor. */
 typedef VUSBDESCINTERFACEEX *PVUSBDESCINTERFACEEX;
@@ -1009,7 +1009,7 @@ typedef struct VUSBURB
 } VUSBURB;
 
 /** The magic value of a valid VUSBURB. (Murakami Haruki) */
-#define VUSBURB_MAGIC   0x19490112
+#define VUSBURB_MAGIC       UINT32_C(0x19490112)
 
 /** @} */
 
