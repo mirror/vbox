@@ -29,6 +29,7 @@
 #include "slirp/libslirp.h"
 #include "slirp/ctl.h"
 #include <VBox/pdmdrv.h>
+#include <VBox/pdmnetifs.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>

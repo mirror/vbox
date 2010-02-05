@@ -52,6 +52,7 @@
 #include <iprt/string.h>
 #include <iprt/uuid.h>
 #include <VBox/pdmdev.h>
+#include <VBox/pdmnetifs.h>
 #include <VBox/tm.h>
 #include <VBox/vm.h>
 #include "../Builtins.h"

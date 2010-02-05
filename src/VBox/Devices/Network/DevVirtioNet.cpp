@@ -24,6 +24,7 @@
 #define VNET_GC_SUPPORT
 
 #include <VBox/pdmdev.h>
+#include <VBox/pdmnetifs.h>
 #include <iprt/semaphore.h>
 #ifdef IN_RING3
 # include <iprt/mem.h>

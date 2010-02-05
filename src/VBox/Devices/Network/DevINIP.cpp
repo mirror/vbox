@@ -45,6 +45,7 @@ RT_C_DECLS_BEGIN
 #include "netif/etharp.h"
 RT_C_DECLS_END
 #include <VBox/pdmdev.h>
+#include <VBox/pdmnetifs.h>
 #include <VBox/tm.h>
 #include <iprt/assert.h>
 #include <iprt/string.h>

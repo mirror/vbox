@@ -25,6 +25,7 @@
 #define LOG_GROUP LOG_GROUP_DRV_TUN
 #include <VBox/log.h>
 #include <VBox/pdmdrv.h>
+#include <VBox/pdmnetifs.h>
 
 #include <iprt/asm.h>
 #include <iprt/assert.h>
