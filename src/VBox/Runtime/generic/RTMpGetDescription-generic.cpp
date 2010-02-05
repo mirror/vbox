@@ -69,7 +69,8 @@ RTDECL(int) RTMpGetDescription(RTCPUID idCpu, char *pszBuf, size_t cbBuf)
     /*
      * Construct the description string in a temporary buffer.
      */
-    char        szString[4*4*3+1] = {0};
+    char        szString[4*4*3+1];
+    RT_ZERO(szString);
 #if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
     if (!ASMHasCpuId())
         return rtMpGetDescriptionUnknown(pszBuf, cbBuf);
