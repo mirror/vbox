@@ -700,7 +700,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                 uint64_t   fPageGst2;
                 PGMGstGetPage(pVCpu, pvFault, &fPageGst2, &GCPhys2);
                 Log(("Page out of sync: %RGv eip=%08x PdeSrc.n.u1User=%d fPageGst2=%08llx GCPhys2=%RGp scan=%d\n",
-                     pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst2, GCPhys2, CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip)));
+                     pvFault, pRegFrame->eip, PdeSrc.n.u1User, fPageGst2, GCPhys2, CSAMDoesPageNeedScanning(pVM, pRegFrame->eip)));
 #   endif /* LOG_ENABLED */
 
 #   if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0)
@@ -716,7 +716,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                             ||  pvFault - pRegFrame->eip < 8    /* instruction crossing a page boundary */
 #    ifdef CSAM_DETECT_NEW_CODE_PAGES
                             ||  (   !PATMIsPatchGCAddr(pVM, pRegFrame->eip)
-                                 && CSAMDoesPageNeedScanning(pVM, (RTRCPTR)pRegFrame->eip))   /* any new code we encounter here */
+                                 && CSAMDoesPageNeedScanning(pVM, pRegFrame->eip))   /* any new code we encounter here */
 #    endif /* CSAM_DETECT_NEW_CODE_PAGES */
                            )
                         {
@@ -775,7 +775,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                          */
                         /** @todo not correct for pages that contain both code and data!! */
                         Log2(("CSAMMarkPage %RGv; scanned=%d\n", pvFault, true));
-                        CSAMMarkPage(pVM, (RTRCPTR)pvFault, true);
+                        CSAMMarkPage(pVM, pvFault, true);
                     }
                 }
 #   endif /* PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE) && !defined(IN_RING0) */
@@ -1727,7 +1727,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                                 PPGMPAGE pPage;
                                 if (    ((PdeSrc.u & PteSrc.u) & (X86_PTE_RW | X86_PTE_US))
                                     ||  iPTDst == ((GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK)   /* always sync GCPtrPage */
-                                    ||  !CSAMDoesPageNeedScanning(pVM, (RTRCPTR)GCPtrCurPage)
+                                    ||  !CSAMDoesPageNeedScanning(pVM, GCPtrCurPage)
                                     ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
                                          && PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                                    )
@@ -2687,7 +2687,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                          */
                         PPGMPAGE pPage;
                         if (    ((PdeSrc.u & pPTSrc->a[iPTSrc].u) & (X86_PTE_RW | X86_PTE_US))
-                            ||  !CSAMDoesPageNeedScanning(pVM, (RTRCPTR)((iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT)))
+                            ||  !CSAMDoesPageNeedScanning(pVM, (iPDSrc << GST_PD_SHIFT) | (iPTSrc << PAGE_SHIFT))
                             ||  (   (pPage = pgmPhysGetPage(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK))
                                  &&  PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
                            )
@@ -2808,7 +2808,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                          * 4MB can be code or readonly data. Linux enables write access for its large pages.
                          */
                         else if (    !PdeSrc.n.u1User
-                                 &&  CSAMDoesPageNeedScanning(pVM, (RTRCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))))
+                                 &&  CSAMDoesPageNeedScanning(pVM, GCPtr | (iPTDst << SHW_PT_SHIFT)))
                             PteDst.u = 0;
 # endif
                         else
@@ -3147,7 +3147,7 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
          */
         /** @todo not correct for pages that contain both code and data!! */
         Log(("CSAMMarkPage %RGv; scanned=%d\n", GCPtrPage, true));
-        CSAMMarkPage(pVM, (RTRCPTR)GCPtrPage, true);
+        CSAMMarkPage(pVM, GCPtrPage, true);
     }
 # endif
 
@@ -4238,7 +4238,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
             pVCpu->pgm.s.pGstPaePdptR0 = (R0PTRTYPE(PX86PDPT))HCPtrGuestCR3;
 #  endif
-            pVCpu->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RCPTRTYPE(uint8_t *))pVM->pgm.s.GCPtrCR3Mapping + off);
+            pVCpu->pgm.s.pGstPaePdptRC = (RCPTRTYPE(PX86PDPT))((RTRCUINTPTR)pVM->pgm.s.GCPtrCR3Mapping + off);
             Log(("Cached mapping %RRv\n", pVCpu->pgm.s.pGstPaePdptRC));
 
             /*
@@ -4273,7 +4273,7 @@ PGM_BTH_DECL(int, MapCR3)(PVMCPU pVCpu, RTGCPHYS GCPhysCR3)
 #  ifndef VBOX_WITH_2X_4GB_ADDR_SPACE
                         pVCpu->pgm.s.apGstPaePDsR0[i]     = (R0PTRTYPE(PX86PDPAE))HCPtr;
 #  endif
-                        pVCpu->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))GCPtr;
+                        pVCpu->pgm.s.apGstPaePDsRC[i]     = (RCPTRTYPE(PX86PDPAE))(RTRCUINTPTR)GCPtr;
                         pVCpu->pgm.s.aGCPhysGstPaePDs[i]  = GCPhys;
 #  ifdef IN_RC
                         PGM_INVL_PG(pVCpu, GCPtr);

@@ -108,13 +108,13 @@ VMMDECL(bool) CSAMIsPageScanned(PVM pVM, RTRCPTR pPage)
  * @param   fScanned    Mark as scanned or not scanned
  *
  */
-VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
+VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCUINTPTR pPage, bool fScanned)
 {
     int pgdir, bit;
     uintptr_t page;
 
 #ifdef LOG_ENABLED
-    if (fScanned && !CSAMIsPageScanned(pVM, pPage))
+    if (fScanned && !CSAMIsPageScanned(pVM, (RTRCPTR)pPage))
        Log(("CSAMMarkPage %RRv\n", pPage));
 #endif
 
@@ -177,12 +177,12 @@ VMMDECL(int) CSAMMarkPage(PVM pVM, RTRCPTR pPage, bool fScanned)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page
  */
-VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCPTR GCPtr)
+VMMDECL(bool) CSAMDoesPageNeedScanning(PVM pVM, RTRCUINTPTR GCPtr)
 {
     if(!CSAMIsEnabled(pVM))
         return false;
 
-    if(CSAMIsPageScanned(pVM, GCPtr))
+    if(CSAMIsPageScanned(pVM, (RTRCPTR)GCPtr))
     {
         /* Already checked! */
         STAM_COUNTER_ADD(&CTXSUFF(pVM->csam.s.StatNrKnownPages), 1);
