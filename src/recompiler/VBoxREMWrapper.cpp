@@ -372,524 +372,524 @@ static DECLCALLBACKPTR(bool, pfnREMR3IsPageAccessHandled)(PVM, RTGCPHYS);
 /* Common args. */
 static const REMPARMDESC g_aArgsSIZE_T[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsPTR[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL }
 };
 static const REMPARMDESC g_aArgsVM[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL }
 };
 static const REMPARMDESC g_aArgsVMCPU[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL }
 };
 
 static const REMPARMDESC g_aArgsVMandVMCPU[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM) },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL }
 };
 
 /* REM args */
 static const REMPARMDESC g_aArgsBreakpoint[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINTPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINTPTR),        NULL }
 };
 static const REMPARMDESC g_aArgsA20Set[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPhysRamRegister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPhysRamChunkRegister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR),        NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPhysRamDeregister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT),             NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPhysRomRegister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalModify[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalRegister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsNotifyHandlerPhysicalDeregister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PGMPHYSHANDLERTYPE), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsNotifyCodePageChanged[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINTPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINTPTR),        NULL }
 };
 static const REMPARMDESC g_aArgsNotifyPendingInterrupt[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL }
 };
 static const REMPARMDESC g_aArgsDisasEnableStepping[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsIsPageAccessHandled[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL }
 };
 
 
 /* VMM args */
 static const REMPARMDESC g_aArgsCPUMGetGuestCpl[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
 };
 
 /* CPUMGetGuestMsr args */
 static const REMPARMDESC g_aArgsCPUMGetGuestMsr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
 };
 
 /* CPUMGetGuestMsr args */
 static const REMPARMDESC g_aArgsCPUMSetGuestMsr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL },
 };
 
 static const REMPARMDESC g_aArgsCPUMGetGuestCpuId[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
 };
 
 static const REMPARMDESC g_aArgsCPUMSetChangedFlags[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 
 static const REMPARMDESC g_aArgsCPUMQueryGuestCtxPtr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL }
 };
 static const REMPARMDESC g_aArgsCSAMR3MonitorPage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG),            NULL }
 };
 static const REMPARMDESC g_aArgsCSAMR3UnmonitorPage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(CSAMTAG),            NULL }
 };
 
 static const REMPARMDESC g_aArgsCSAMR3RecordCallAddress[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR),            NULL }
 };
 
 #if defined(VBOX_WITH_DEBUGGER) && !(defined(RT_OS_WINDOWS) && defined(RT_ARCH_AMD64)) /* the callbacks are problematic */
 static const REMPARMDESC g_aArgsDBGCRegisterCommands[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGCCMD), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGCCMD),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
 #endif
 static const REMPARMDESC g_aArgsDBGFR3DisasInstrEx[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTSEL), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTSEL),              NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3DisasInstrCurrentLogInternal[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3Info[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFINFOHLP), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFINFOHLP),      NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3AsSymbolByAddr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTDBGAS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFADDRESS), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(PRTGCINTPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGSYMBOL), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGMOD), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTDBGAS),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCDBGFADDRESS),      NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(PRTGCINTPTR),        NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGSYMBOL),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTDBGMOD),          NULL }
 };
 static const REMPARMDESC g_aArgsDBGFR3AddrFromFlat[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PDBGFADDRESS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCUINTPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PDBGFADDRESS),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTGCUINTPTR),        NULL }
 };
 static const REMPARMDESC g_aArgsDISInstr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINTPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINTPTR),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL }
 };
 static const REMPARMDESC g_aArgsEMR3FatalError[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(int),                NULL }
 };
 static const REMPARMDESC g_aArgsHWACCMR3CanExecuteGuest[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsIOMIOPortRead[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsIOMIOPortWrite[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTIOPORT),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsIOMMMIORead[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsIOMMMIOWrite[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsMMR3HeapAlloc[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG),              NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsMMR3HeapAllocZ[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(MMTAG),              NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPATMIsPatchGCAddr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCUINTPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCUINTPTR),        NULL }
 };
 static const REMPARMDESC g_aArgsPATMR3QueryOpcode[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL }
 };
 static const REMPARMDESC g_aArgsPATMR3QueryPatchMem[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
 };
 #ifdef VBOX_WITH_VMI
 static const REMPARMDESC g_aArgsPARAVIsBiosCall[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 #endif
 static const REMPARMDESC g_aArgsPDMApicGetBase[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *),         NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicGetTPR[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicSetBase[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicSetTPR[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicWriteMSR[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPDMApicReadMSR[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *),         NULL }
 };
 static const REMPARMDESC g_aArgsPDMGetInterrupt[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL }
 };
 static const REMPARMDESC g_aArgsPDMIsaSetIrq[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL }
 };
 static const REMPARMDESC g_aArgsPDMR3CritSectInit[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT),       NULL },
     /* RT_SRC_POS_DECL */
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned int),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
     { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
 };
 static const REMPARMDESC g_aArgsPDMCritSectEnter[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(int),                NULL }
 };
 static const REMPARMDESC g_aArgsPDMCritSectEnterDebug[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PPDMCRITSECT),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(int),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTHCUINTPTR),        NULL },
     /* RT_SRC_POS_DECL */
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
 };
 static const REMPARMDESC g_aArgsPGMGetGuestMode[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
 };
 static const REMPARMDESC g_aArgsPGMGstGetPage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPHYS),          NULL }
 };
 static const REMPARMDESC g_aArgsPGMInvalidatePage[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysTlbGCPhys2Ptr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL }
 };
 static const REMPARMDESC g_aArgsPGM3PhysGrowRange[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PCRTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCRTGCPHYS),         NULL }
 };
 static const REMPARMDESC g_aArgsPGMPhysIsGCPhysValid[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL }
 };
 static const REMPARMDESC g_aArgsPGMPhysRead[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsPGMPhysSimpleReadGCPtr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsPGMPhysWrite[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const void *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsPGMChangeMode[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPGMFlushTLB[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(bool), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysReadUxx[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysWriteU8[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysWriteU16[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint16_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint16_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysWriteU32[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL }
 };
 static const REMPARMDESC g_aArgsPGMR3PhysWriteU64[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint64_t),           NULL }
 };
 static const REMPARMDESC g_aArgsRTMemRealloc[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(void*), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t) }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void*),              NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3GetGCPtr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTGCPTR),           NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3GetMem[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3GetU32[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3GetUInt[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTUINT), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTUINT),            NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3PutGCPtr[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3PutMem[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const void *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsSSMR3PutU32[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t),           NULL },
 };
 static const REMPARMDESC g_aArgsSSMR3PutUInt[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTUINT),             NULL },
 };
 
 static const REMPARMDESC g_aArgsSSMIntLiveExecCallback[] =
@@ -915,8 +915,8 @@ static REMFNDESC g_SSMIntLiveVoteCallback =
 
 static const REMPARMDESC g_aArgsSSMIntCallback[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PSSMHANDLE),         NULL },
 };
 static REMFNDESC g_SSMIntCallback =
 {
@@ -955,140 +955,140 @@ static const REMPARMDESC g_aArgsSSMR3RegisterInternal[] =
 
 static const REMPARMDESC g_aArgsSTAMR3Register[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(STAMTYPE), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(STAMVISIBILITY), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(STAMUNIT), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(STAMTYPE),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(STAMVISIBILITY),     NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(STAMUNIT),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
 };
 static const REMPARMDESC g_aArgsSTAMR3Deregister[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
 };
 static const REMPARMDESC g_aArgsTRPMAssertTrap[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT),          NULL }
 };
 static const REMPARMDESC g_aArgsTRPMQueryTrap[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t *),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(TRPMEVENT *),        NULL }
 };
 static const REMPARMDESC g_aArgsTRPMSetErrorCode[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINT), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINT),           NULL }
 };
 static const REMPARMDESC g_aArgsTRPMSetFaultAddress[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU), NULL },
-    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINT), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCUINT),           NULL }
 };
 static const REMPARMDESC g_aArgsVMR3ReqCallWait[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(VMCPUID),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0,                          NULL }
 };
 static const REMPARMDESC g_aArgsVMR3ReqFree[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PVMREQ), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMREQ),             NULL }
 };
 
 /* IPRT args */
 static const REMPARMDESC g_aArgsRTAssertMsg1[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
 };
 static const REMPARMDESC g_aArgsRTAssertMsg2[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTAssertMsg2V[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_VALIST,     0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_VALIST,     0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTLogFlags[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL }
 };
 static const REMPARMDESC g_aArgsRTLogFlush[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER),          NULL }
 };
 static const REMPARMDESC g_aArgsRTLogLoggerEx[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTLogLoggerExV[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_VALIST,     0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(PRTLOGGER),          NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_VALIST,     0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTLogPrintf[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTMemProtect[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(unsigned),           NULL }
 };
 static const REMPARMDESC g_aArgsRTStrPrintf[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_ELLIPSIS,   0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_ELLIPSIS,   0,                          NULL }
 };
 static const REMPARMDESC g_aArgsRTStrPrintfV[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(char *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const char *), NULL },
-    { REMPARMDESC_FLAGS_VALIST,     0 }
+    { REMPARMDESC_FLAGS_INT,        sizeof(char *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const char *),       NULL },
+    { REMPARMDESC_FLAGS_VALIST,     0,                          NULL }
 };
 static const REMPARMDESC g_aArgsThread[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTTHREAD), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTTHREAD),           NULL }
 };
 
 
 /* CRT args */
 static const REMPARMDESC g_aArgsmemcpy[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(const  void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(const  void *),      NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 static const REMPARMDESC g_aArgsmemset[] =
 {
-    { REMPARMDESC_FLAGS_INT,        sizeof(void *), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(int), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(size_t), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(void *),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(int),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(size_t),             NULL }
 };
 
 /** @} */

@@ -39,7 +39,7 @@ typedef struct
 
 static SHFLINTHANDLE *pHandles = NULL;
 static int32_t        lastHandleIndex = 0;
-static RTCRITSECT     lock = {0};
+static RTCRITSECT     lock;
 
 int vbsfInitHandleTable()
 {
