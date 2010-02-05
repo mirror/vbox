@@ -76,7 +76,9 @@ ifdef VBOXWDDM
  SYSMODS += VBoxVideoWddm
  VBoxVideoWddm_TEMPLATE    = VBOXGUESTR0
  ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
-  $(error FIXME)
+  # driver signing rules will be written once there are all files necessary for that are available, 
+  # i.e. a u/m display driver miniport inf 
+  $(warning FIXME: !!!define wddm driver signing & install rules !!!)
   VBoxVideoWddm_NOINST     = true
  endif
  VBoxVideoWddm_SDKS=WINDDKWLH

@@ -623,6 +623,8 @@ DriverEntry(
     );
 RT_C_DECLS_END
 
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes);
+
 NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
         BOOLEAN *pbSupported);

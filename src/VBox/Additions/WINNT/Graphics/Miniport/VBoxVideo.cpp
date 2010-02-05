@@ -862,6 +862,28 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     VBoxVideoCmnRegFini(Reg);
 }
 
+#ifdef VBOXWDDM
+/**
+ * Helper function to dynamically build our table of standard video
+ * modes. We take the amount of VRAM and create modes with standard
+ * geometries until we've either reached the maximum number of modes
+ * or the available VRAM does not allow for additional modes.
+ */
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes)
+{
+    static bool bTableInitialized = false;
+    if(bRebuildTable || !bTableInitialized)
+    {
+        VBoxBuildModesTable(DeviceExtension);
+        bTableInitialized = true;
+    }
+
+    *ppModes = VideoModes;
+    *pcModes = gNumVideoModes;
+}
+
+#endif
+
 /* Computes the size of a framebuffer. DualView has a few framebuffers of the computed size. */
 void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension)
 {
