@@ -834,7 +834,7 @@ AssertCompileSize(struct E1kTcpHeader, 20);
 /**
  * Device state structure. Holds the current state of device.
  *
- * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
  * @implements  PDMILEDPORTS
  */
@@ -842,11 +842,11 @@ struct E1kState_st
 {
     char                    szInstance[8];        /**< Instance name, e.g. E1000#1. */
     PDMIBASE                IBase;
-    PDMINETWORKPORT         INetworkPort;
+    PDMINETWORKDOWN         INetworkDown;
     PDMINETWORKCONFIG       INetworkConfig;
     PDMILEDPORTS            ILeds;                               /**< LED interface */
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
-    R3PTRTYPE(PPDMINETWORKCONNECTOR) pDrv;    /**< Connector of attached network driver. */
+    R3PTRTYPE(PPDMINETWORKUP) pDrv;    /**< Connector of attached network driver. */
     R3PTRTYPE(PPDMILEDCONNECTORS)    pLedsConnector;
 
     PPDMDEVINSR3            pDevInsR3;                   /**< Device instance - R3. */
@@ -2832,7 +2832,7 @@ static void e1kTransmitFrame(E1KSTATE* pState, uint8_t *pFrame, uint16_t u16Fram
         //e1kCsLeave(pState);
         e1kMutexRelease(pState);
         STAM_PROFILE_ADV_START(&pState->StatTransmitSend, a);
-        int rc = pState->pDrv->pfnSend(pState->pDrv, pFrame, u16FrameLen);
+        int rc = pState->pDrv->pfnSendDeprecated(pState->pDrv, pFrame, u16FrameLen);
         STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
         if (rc != VINF_SUCCESS)
         {
@@ -4103,9 +4103,9 @@ static int e1kCanReceive(E1KSTATE *pState)
     return cb > 0 ? VINF_SUCCESS : VERR_NET_NO_BUFFER_SPACE;
 }
 
-static DECLCALLBACK(int) e1kWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) e1kWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
+    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
     int rc = e1kCanReceive(pState);
 
     if (RT_SUCCESS(rc))
@@ -4309,9 +4309,9 @@ static bool e1kAddressFilter(E1KSTATE *pState, const void *pvBuf, size_t cb, E1K
  * @param   cb              Number of bytes available in the buffer.
  * @thread  ???
  */
-static DECLCALLBACK(int) e1kReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) e1kReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
+    E1KSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
     int       rc = VINF_SUCCESS;
 
     /*
@@ -4468,7 +4468,7 @@ static DECLCALLBACK(void *) e1kQueryInterface(struct PDMIBASE *pInterface, const
     Assert(&pThis->IBase == pInterface);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
@@ -4797,8 +4797,8 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -5112,8 +5112,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     /* Interfaces */
     pState->IBase.pfnQueryInterface          = e1kQueryInterface;
-    pState->INetworkPort.pfnWaitReceiveAvail = e1kWaitReceiveAvail;
-    pState->INetworkPort.pfnReceive          = e1kReceive;
+    pState->INetworkDown.pfnWaitReceiveAvail = e1kWaitReceiveAvail;
+    pState->INetworkDown.pfnReceive          = e1kReceive;
     pState->ILeds.pfnQueryStatusLed          = e1kQueryStatusLed;
     pState->INetworkConfig.pfnGetMac         = e1kGetMac;
     pState->INetworkConfig.pfnGetLinkState   = e1kGetLinkState;
@@ -5252,8 +5252,8 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
         }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)

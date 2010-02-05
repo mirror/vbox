@@ -109,7 +109,7 @@ AssertCompileMemberOffset(struct VNetPCIConfig, uStatus, 6);
  * Device state structure. Holds the current state of device.
  *
  * @extends     VPCISTATE
- * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
  */
 struct VNetState_st
@@ -119,10 +119,10 @@ struct VNetState_st
 
 //    PDMCRITSECT             csRx;                           /**< Protects RX queue. */
 
-    PDMINETWORKPORT         INetworkPort;
+    PDMINETWORKDOWN         INetworkDown;
     PDMINETWORKCONFIG       INetworkConfig;
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
-    R3PTRTYPE(PPDMINETWORKCONNECTOR) pDrv;    /**< Connector of attached network driver. */
+    R3PTRTYPE(PPDMINETWORKUP) pDrv;    /**< Connector of attached network driver. */
 
     R3PTRTYPE(PPDMQUEUE)    pCanRxQueueR3;           /**< Rx wakeup signaller - R3. */
     R0PTRTYPE(PPDMQUEUE)    pCanRxQueueR0;           /**< Rx wakeup signaller - R0. */
@@ -545,9 +545,9 @@ static int vnetCanReceive(VNETSTATE *pState)
     return rc;
 }
 
-static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) vnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
+    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
     LogFlow(("%s vnetWaitReceiveAvail(cMillies=%u)\n", INSTANCE(pState), cMillies));
     int rc = vnetCanReceive(pState);
 
@@ -590,7 +590,7 @@ static DECLCALLBACK(void *) vnetQueryInterface(struct PDMIBASE *pInterface, cons
     VNETSTATE *pThis = IFACE_TO_STATE(pInterface, VPCI.IBase);
     Assert(&pThis->VPCI.IBase == pInterface);
 
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     return vpciQueryInterface(pInterface, pszIID);
 }
@@ -732,9 +732,9 @@ static int vnetHandleRxPacket(PVNETSTATE pState, const void *pvBuf, size_t cb)
  * @param   cb              Number of bytes available in the buffer.
  * @thread  RX
  */
-static DECLCALLBACK(int) vnetReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) vnetReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkPort);
+    VNETSTATE *pState = IFACE_TO_STATE(pInterface, INetworkDown);
 
     Log2(("%s vnetReceive: pvBuf=%p cb=%u\n", INSTANCE(pState), pvBuf, cb));
     int rc = vnetCanReceive(pState);
@@ -889,7 +889,7 @@ static DECLCALLBACK(void) vnetTransmitPendingPackets(PVNETSTATE pState, PVQUEUE 
                 vnetPacketDump(pState, pState->pTxBuf, uOffset, "--> Outgoing");
 
                 STAM_PROFILE_START(&pState->StatTransmitSend, a);
-                int rc = pState->pDrv->pfnSend(pState->pDrv, pState->pTxBuf, uOffset);
+                int rc = pState->pDrv->pfnSendDeprecated(pState->pDrv, pState->pTxBuf, uOffset);
                 STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
                 STAM_REL_COUNTER_ADD(&pState->StatTransmitBytes, uOffset);
             }
@@ -1515,8 +1515,8 @@ static DECLCALLBACK(int) vnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -1666,8 +1666,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pState->u32PktNo     = 1;
 
     /* Interfaces */
-    pState->INetworkPort.pfnWaitReceiveAvail = vnetWaitReceiveAvail;
-    pState->INetworkPort.pfnReceive          = vnetReceive;
+    pState->INetworkDown.pfnWaitReceiveAvail = vnetWaitReceiveAvail;
+    pState->INetworkDown.pfnReceive          = vnetReceive;
     pState->INetworkConfig.pfnGetMac         = vnetGetMac;
     pState->INetworkConfig.pfnGetLinkState   = vnetGetLinkState;
     pState->INetworkConfig.pfnSetLinkState   = vnetSetLinkState;
@@ -1736,8 +1736,8 @@ static DECLCALLBACK(int) vnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
             PDMDevHlpVMSetRuntimeError(pDevIns, 0 /*fFlags*/, "NoDNSforNAT",
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
         }
-        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pState->pDrv = PDMIBASE_QUERY_INTERFACE(pState->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pState->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)

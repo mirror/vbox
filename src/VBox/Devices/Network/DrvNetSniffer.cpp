@@ -47,24 +47,25 @@
 /**
  * Block driver instance data.
  *
- * @implements  PDMINETWORKCONNECTOR
- * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKUP
+ * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
  */
 typedef struct DRVNETSNIFFER
 {
     /** The network interface. */
-    PDMINETWORKCONNECTOR    INetworkConnector;
+    PDMINETWORKUP           INetworkUp;
     /** The network interface. */
-    PDMINETWORKPORT         INetworkPort;
-    /** The network config interface. */
+    PDMINETWORKDOWN         INetworkDown;
+    /** The network config interface.
+     * @todo this is a main interface and shouldn't be here...  */
     PDMINETWORKCONFIG       INetworkConfig;
     /** The port we're attached to. */
-    PPDMINETWORKPORT        pPort;
+    PPDMINETWORKDOWN        pIAboveNet;
     /** The config port interface we're attached to. */
-    PPDMINETWORKCONFIG      pConfig;
+    PPDMINETWORKCONFIG      pIAboveConfig;
     /** The connector that's attached to us. */
-    PPDMINETWORKCONNECTOR   pConnector;
+    PPDMINETWORKUP          pIBelowNet;
     /** The filename. */
     char                    szFilename[RTPATH_MAX];
     /** The filehandle. */
@@ -78,29 +79,14 @@ typedef struct DRVNETSNIFFER
 
 } DRVNETSNIFFER, *PDRVNETSNIFFER;
 
-/** Converts a pointer to NAT::INetworkConnector to a PDRVNETSNIFFER. */
-#define PDMINETWORKCONNECTOR_2_DRVNETSNIFFER(pInterface)    ( (PDRVNETSNIFFER)((uintptr_t)pInterface - RT_OFFSETOF(DRVNETSNIFFER, INetworkConnector)) )
-
-/** Converts a pointer to NAT::INetworkPort to a PDRVNETSNIFFER. */
-#define PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface)         ( (PDRVNETSNIFFER)((uintptr_t)pInterface - RT_OFFSETOF(DRVNETSNIFFER, INetworkPort)) )
-
-/** Converts a pointer to NAT::INetworkConfig to a PDRVNETSNIFFER. */
-#define PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface)       ( (PDRVNETSNIFFER)((uintptr_t)pInterface - RT_OFFSETOF(DRVNETSNIFFER, INetworkConfig)) )
-
 
 
 /**
- * Send data to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           Data to send.
- * @param   cb              Number of bytes to send.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvNetSnifferSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNetSnifferSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKCONNECTOR_2_DRVNETSNIFFER(pInterface);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
 
     /* output to sniffer */
     RTCritSectEnter(&pThis->Lock);
@@ -108,9 +94,9 @@ static DECLCALLBACK(int) drvNetSnifferSend(PPDMINETWORKCONNECTOR pInterface, con
     RTCritSectLeave(&pThis->Lock);
 
     /* pass down */
-    if (pThis->pConnector)
+    if (pThis->pIBelowNet)
     {
-        int rc = pThis->pConnector->pfnSend(pThis->pConnector, pvBuf, cb);
+        int rc = pThis->pIBelowNet->pfnSendDeprecated(pThis->pIBelowNet, pvBuf, cb);
 #if 0
         RTCritSectEnter(&pThis->Lock);
         u64TS = RTTimeProgramNanoTS();
@@ -127,37 +113,26 @@ static DECLCALLBACK(int) drvNetSnifferSend(PPDMINETWORKCONNECTOR pInterface, con
 
 
 /**
- * Set promiscuous mode.
- *
- * This is called when the promiscuous mode is set. This means that there doesn't have
- * to be a mode change when it's called.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvNetSnifferSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvNetSnifferSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
     LogFlow(("drvNetSnifferSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
-    PDRVNETSNIFFER pThis = PDMINETWORKCONNECTOR_2_DRVNETSNIFFER(pInterface);
-    if (pThis->pConnector)
-        pThis->pConnector->pfnSetPromiscuousMode(pThis->pConnector, fPromiscuous);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (pThis->pIBelowNet)
+        pThis->pIBelowNet->pfnSetPromiscuousMode(pThis->pIBelowNet, fPromiscuous);
 }
 
 
 /**
- * Notification on link status changes.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   enmLinkState    The new link state.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnNotifyLinkChanged}
  */
-static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
     LogFlow(("drvNetSnifferNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
-    PDRVNETSNIFFER pThis = PDMINETWORKCONNECTOR_2_DRVNETSNIFFER(pInterface);
-    if (pThis->pConnector)
-        pThis->pConnector->pfnNotifyLinkChanged(pThis->pConnector, enmLinkState);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (pThis->pIBelowNet)
+        pThis->pIBelowNet->pfnNotifyLinkChanged(pThis->pIBelowNet, enmLinkState);
 }
 
 
@@ -169,10 +144,10 @@ static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKCONNECTOR p
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface);
-    return pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, cMillies);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
+    return pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, cMillies);
 }
 
 
@@ -185,9 +160,9 @@ static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKPORT pInterfa
  * @param   cb              Number of bytes available in the buffer.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKPORT_2_DRVNETSNIFFER(pInterface);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
 
     /* output to sniffer */
     RTCritSectEnter(&pThis->Lock);
@@ -195,7 +170,7 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKPORT pInterface, const
     RTCritSectLeave(&pThis->Lock);
 
     /* pass up */
-    int rc = pThis->pPort->pfnReceive(pThis->pPort, pvBuf, cb);
+    int rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pvBuf, cb);
 #if 0
     RTCritSectEnter(&pThis->Lock);
     u64TS = RTTimeProgramNanoTS();
@@ -219,8 +194,8 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKPORT pInterface, const
  */
 static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
-    return pThis->pConfig->pfnGetMac(pThis->pConfig, pMac);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
+    return pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, pMac);
 }
 
 /**
@@ -232,8 +207,8 @@ static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PRTM
  */
 static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferGetLinkState(PPDMINETWORKCONFIG pInterface)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
-    return pThis->pConfig->pfnGetLinkState(pThis->pConfig);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
+    return pThis->pIAboveConfig->pfnGetLinkState(pThis->pIAboveConfig);
 }
 
 /**
@@ -246,8 +221,8 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferGetLinkState(PPDMINETWORKC
  */
 static DECLCALLBACK(int) drvNetSnifferSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
-    PDRVNETSNIFFER pThis = PDMINETWORKCONFIG_2_DRVNETSNIFFER(pInterface);
-    return pThis->pConfig->pfnSetLinkState(pThis->pConfig, enmState);
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
+    return pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, enmState);
 }
 
 
@@ -259,8 +234,8 @@ static DECLCALLBACK(void *) drvNetSnifferQueryInterface(PPDMIBASE pInterface, co
     PPDMDRVINS      pDrvIns = PDMIBASE_2_PDMDRV(pInterface);
     PDRVNETSNIFFER  pThis   = PDMINS_2_DATA(pDrvIns, PDRVNETSNIFFER);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUp);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     return NULL;
 }
@@ -278,7 +253,7 @@ static DECLCALLBACK(void) drvNetSnifferDetach(PPDMDRVINS pDrvIns, uint32_t fFlag
 
     LogFlow(("drvNetSnifferDetach: pDrvIns: %p, fFlags: %u\n", pDrvIns, fFlags));
 
-    pThis->pConnector = NULL;
+    pThis->pIBelowNet = NULL;
 }
 
 
@@ -301,11 +276,11 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
     PPDMIBASE   pBaseDown;
     int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        pThis->pConnector = NULL;
+        pThis->pIBelowNet = NULL;
     else if (RT_SUCCESS(rc))
     {
-        pThis->pConnector = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKCONNECTOR);
-        if (!pThis->pConnector)
+        pThis->pIBelowNet = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKUP);
+        if (!pThis->pIBelowNet)
         {
             AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
             return VERR_PDM_MISSING_INTERFACE_BELOW;
@@ -368,19 +343,20 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Init the static parts.
      */
-    pThis->pDrvIns                      = pDrvIns;
-    pThis->File                         = NIL_RTFILE;
+    pThis->pDrvIns                                  = pDrvIns;
+    pThis->File                                     = NIL_RTFILE;
     /* The pcap file *must* start at time offset 0,0. */
-    pThis->StartNanoTS                  = RTTimeNanoTS() - RTTimeProgramNanoTS();
+    pThis->StartNanoTS                              = RTTimeNanoTS() - RTTimeProgramNanoTS();
     /* IBase */
-    pDrvIns->IBase.pfnQueryInterface    = drvNetSnifferQueryInterface;
-    /* INetworkConnector */
-    pThis->INetworkConnector.pfnSend                = drvNetSnifferSend;
-    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvNetSnifferSetPromiscuousMode;
-    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvNetSnifferNotifyLinkChanged;
-    /* INetworkPort */
-    pThis->INetworkPort.pfnWaitReceiveAvail         = drvNetSnifferWaitReceiveAvail;
-    pThis->INetworkPort.pfnReceive                  = drvNetSnifferReceive;
+    pDrvIns->IBase.pfnQueryInterface                = drvNetSnifferQueryInterface;
+    /* INetworkUp */
+    pThis->INetworkUp.pfnSendDeprecated             = drvNetSnifferSendDeprecated;
+    pThis->INetworkUp.pfnSetPromiscuousMode         = drvNetSnifferSetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged          = drvNetSnifferNotifyLinkChanged;
+/** @todo implement the new interfaces methods! */
+    /* INetworkDown */
+    pThis->INetworkDown.pfnWaitReceiveAvail         = drvNetSnifferWaitReceiveAvail;
+    pThis->INetworkDown.pfnReceive                  = drvNetSnifferReceive;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac                 = drvNetSnifferGetMac;
     pThis->INetworkConfig.pfnGetLinkState           = drvNetSnifferGetLinkState;
@@ -407,8 +383,8 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Query the network port interface.
      */
-    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
-    if (!pThis->pPort)
+    pThis->pIAboveNet = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKDOWN);
+    if (!pThis->pIAboveNet)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
@@ -417,8 +393,8 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /*
      * Query the network config interface.
      */
-    pThis->pConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
-    if (!pThis->pConfig)
+    pThis->pIAboveConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
+    if (!pThis->pIAboveConfig)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network config interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
@@ -430,11 +406,11 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     PPDMIBASE   pBaseDown;
     rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
     if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
-        pThis->pConnector = NULL;
+        pThis->pIBelowNet = NULL;
     else if (RT_SUCCESS(rc))
     {
-        pThis->pConnector = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKCONNECTOR);
-        if (!pThis->pConnector)
+        pThis->pIBelowNet = PDMIBASE_QUERY_INTERFACE(pBaseDown, PDMINETWORKUP);
+        if (!pThis->pIBelowNet)
         {
             AssertMsgFailed(("Configuration error: the driver below didn't export the network connector interface!\n"));
             return VERR_PDM_MISSING_INTERFACE_BELOW;

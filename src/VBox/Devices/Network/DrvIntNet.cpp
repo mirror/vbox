@@ -65,17 +65,17 @@ typedef enum ASYNCSTATE
 /**
  * Internal networking driver instance data.
  *
- * @implements  PDMINETWORKCONNECTOR
+ * @implements  PDMINETWORKUP
  */
 typedef struct DRVINTNET
 {
     /** The network interface. */
-    PDMINETWORKCONNECTOR            INetworkConnectorR3;
+    PDMINETWORKUP                   INetworkUpR3;
     /** The network interface. */
-    R3PTRTYPE(PPDMINETWORKPORT)     pIPortR3;
+    R3PTRTYPE(PPDMINETWORKDOWN)     pIAboveNet;
     /** The network config interface.
      * Can (in theory at least) be NULL. */
-    R3PTRTYPE(PPDMINETWORKCONFIG)   pIConfigIfR3;
+    R3PTRTYPE(PPDMINETWORKCONFIG)   pIAboveConfigR3;
     /** Pointer to the driver instance. */
     PPDMDRVINSR3                    pDrvInsR3;
     /** Pointer to the communication buffer. */
@@ -124,11 +124,11 @@ typedef DRVINTNET *PDRVINTNET;
 
 #ifdef IN_RING3
 
-/* -=-=-=-=- PDMINETWORKCONNECTOR -=-=-=-=- */
+/* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
-/** Converts a pointer to DRVINTNET::INetworkConnectorR3 to a PDRVINTNET. */
-#define PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface) \
-    RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkConnectorR3)
+/** Converts a pointer to DRVINTNET::INetworkUpR3 to a PDRVINTNET. */
+#define PDMINETWORKUP_2_DRVINTNET(pInterface) \
+    RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3)
 
 /**
  * Updates the MAC address on the kernel side.
@@ -138,7 +138,7 @@ typedef DRVINTNET *PDRVINTNET;
  */
 static int drvR3IntNetUpdateMacAddress(PDRVINTNET pThis)
 {
-    if (!pThis->pIConfigIfR3)
+    if (!pThis->pIAboveConfigR3)
         return VINF_SUCCESS;
 
     INTNETIFSETMACADDRESSREQ SetMacAddressReq;
@@ -146,7 +146,7 @@ static int drvR3IntNetUpdateMacAddress(PDRVINTNET pThis)
     SetMacAddressReq.Hdr.cbReq = sizeof(SetMacAddressReq);
     SetMacAddressReq.pSession = NIL_RTR0PTR;
     SetMacAddressReq.hIf = pThis->hIf;
-    int rc = pThis->pIConfigIfR3->pfnGetMac(pThis->pIConfigIfR3, &SetMacAddressReq.Mac);
+    int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &SetMacAddressReq.Mac);
     if (RT_SUCCESS(rc))
         rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_MAC_ADDRESS,
                                      &SetMacAddressReq, sizeof(SetMacAddressReq));
@@ -167,7 +167,7 @@ static int drvR3IntNetUpdateMacAddress(PDRVINTNET pThis)
  */
 static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 {
-    if (!pThis->pIConfigIfR3)
+    if (!pThis->pIAboveConfigR3)
         return VINF_SUCCESS;
 
     INTNETIFSETACTIVEREQ SetActiveReq;
@@ -279,17 +279,11 @@ static int drvR3IntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, c
 
 
 /**
- * Send data to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           Data to send.
- * @param   cb              Number of bytes to send.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvR3IntNetSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvR3IntNetSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
 #ifdef LOG_ENABLED
@@ -336,18 +330,11 @@ static DECLCALLBACK(int) drvR3IntNetSend(PPDMINETWORKCONNECTOR pInterface, const
 
 
 /**
- * Set promiscuous mode.
- *
- * This is called when the promiscuous mode is set. This means that there doesn't have
- * to be a mode change when it's called.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
     INTNETIFSETPROMISCUOUSMODEREQ Req;
     Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq       = sizeof(Req);
@@ -361,15 +348,11 @@ static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKCONNECTOR pI
 
 
 /**
- * Notification on link status changes.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   enmLinkState    The new link state.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnNotifyLinkChanged}
  */
-static DECLCALLBACK(void) drvR3IntNetNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvR3IntNetNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PDRVINTNET pThis = PDMINETWORKCONNECTOR_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
     bool fLinkDown;
     switch (enmLinkState)
     {
@@ -400,7 +383,7 @@ static int drvR3IntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
 {
     LogFlow(("drvR3IntNetAsyncIoWaitForSpace:\n"));
     STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-    int rc = pThis->pIPortR3->pfnWaitReceiveAvail(pThis->pIPortR3, RT_INDEFINITE_WAIT);
+    int rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, RT_INDEFINITE_WAIT);
     STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
     LogFlow(("drvR3IntNetAsyncIoWaitForSpace: returns %Rrc\n", rc));
     return rc;
@@ -451,7 +434,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                  * Check if there is room for the frame and pass it up.
                  */
                 size_t cbFrame = pHdr->cbFrame;
-                int rc = pThis->pIPortR3->pfnWaitReceiveAvail(pThis->pIPortR3, 0);
+                int rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, 0);
                 if (rc == VINF_SUCCESS)
                 {
 #ifdef LOG_ENABLED
@@ -463,7 +446,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                           "%.*Rhxd\n",
                           cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
 #endif
-                    rc = pThis->pIPortR3->pfnReceive(pThis->pIPortR3, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
+                    rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
                     AssertRC(rc);
 
                     /* skip to the next frame. */
@@ -628,7 +611,7 @@ static DECLCALLBACK(void *) drvR3IntNetIBase_QueryInterface(PPDMIBASE pInterface
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASER0, &pThis->IBaseR0);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASERC, &pThis->IBaseRC);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnectorR3);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUpR3);
     return NULL;
 }
 
@@ -668,7 +651,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }
     if (   PDMDrvHlpVMTeleportedAndNotFullyResumedYet(pDrvIns)
-        && pThis->pIConfigIfR3)
+        && pThis->pIAboveConfigR3)
     {
         /*
          * We've just been teleported and need to drop a hint to the switch
@@ -687,9 +670,9 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         Frame.Hdr.DstMac.au16[1] = 0xffff;
         Frame.Hdr.DstMac.au16[2] = 0xffff;
         Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
-        int rc = pThis->pIConfigIfR3->pfnGetMac(pThis->pIConfigIfR3, &Frame.Hdr.SrcMac);
+        int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &Frame.Hdr.SrcMac);
         if (RT_SUCCESS(rc))
-            rc = drvR3IntNetSend(&pThis->INetworkConnectorR3, &Frame, sizeof(Frame));
+            rc = drvR3IntNetSendDeprecated(&pThis->INetworkUpR3, &Frame, sizeof(Frame));
         if (RT_FAILURE(rc))
             LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
     }
@@ -827,10 +810,10 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pDrvIns->IBase.pfnQueryInterface                = drvR3IntNetIBase_QueryInterface;
     pThis->IBaseR0.pfnQueryInterface                = drvR3IntNetIBaseR0_QueryInterface;
     pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
-    /* INetwork */
-    pThis->INetworkConnectorR3.pfnSend              = drvR3IntNetSend;
-    pThis->INetworkConnectorR3.pfnSetPromiscuousMode= drvR3IntNetSetPromiscuousMode;
-    pThis->INetworkConnectorR3.pfnNotifyLinkChanged = drvR3IntNetNotifyLinkChanged;
+    /* INetworkUp */
+    pThis->INetworkUpR3.pfnSendDeprecated           = drvR3IntNetSendDeprecated;
+    pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetSetPromiscuousMode;
+    pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3IntNetNotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -864,13 +847,13 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     /*
      * Query the network port interface.
      */
-    pThis->pIPortR3 = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
-    if (!pThis->pIPortR3)
+    pThis->pIAboveNet = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKDOWN);
+    if (!pThis->pIAboveNet)
     {
         AssertMsgFailed(("Configuration error: the above device/driver didn't export the network port interface!\n"));
         return VERR_PDM_MISSING_INTERFACE_ABOVE;
     }
-    pThis->pIConfigIfR3 = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
+    pThis->pIAboveConfigR3 = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
 
     /*
      * Read the configuration.
