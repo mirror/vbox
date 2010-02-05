@@ -862,7 +862,7 @@ DECLCALLBACK(int) patmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, uint32
             AssertRCReturn(rc, rc);
 
             /* rec.pRelocPos now contains the relative position inside the hypervisor area. */
-            offset = (int32_t)(int64_t)rec.pRelocPos;
+            offset = (int32_t)(intptr_t)rec.pRelocPos;
             /* Convert to HC pointer again. */
             PATM_ADD_PTR(rec.pRelocPos, pVM->patm.s.pPatchMemHC);
             pFixup = (RTRCPTR *)rec.pRelocPos;
