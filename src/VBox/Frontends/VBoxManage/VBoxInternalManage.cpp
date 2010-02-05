@@ -1756,39 +1756,6 @@ int CmdModInstall(void)
     return E_FAIL;
 }
 
-int CmdTestSession(HandlerArg *a)
-{
-    HRESULT rc;
-
-    if (a->argc != 2)
-    {
-        RTPrintf("Must specify VM name!\n");
-        return E_FAIL;
-    }
-
-    do
-    {
-        ComPtr<IMachine> pMachine;
-        CHECK_ERROR_BREAK(a->virtualBox, FindMachine(Bstr(a->argv[1]), pMachine.asOutParam()));
-
-        Bstr bstrMachineID;
-        CHECK_ERROR_BREAK(pMachine, COMGETTER(Id)(bstrMachineID.asOutParam()));
-
-        CHECK_ERROR_BREAK(a->virtualBox, OpenSession(a->session, bstrMachineID));
-
-        RTPrintf("Session is open, press any key to terminate!\n");
-
-        RTStrmGetCh(g_pStdIn);
-
-        RTPrintf("Closing session...\n");
-
-        CHECK_ERROR_BREAK(a->session, Close());
-
-    } while (0);
-
-    return rc;
-}
-
 /**
  * Wrapper for handling internal commands
  */
@@ -1827,9 +1794,6 @@ int handleInternalCommands(HandlerArg *a)
         return CmdModInstall();
     if (!strcmp(pszCmd, "moduninstall"))
         return CmdModUninstall();
-
-    if (!strcmp(pszCmd, "testsession"))
-        return CmdTestSession(a);
 
     /* default: */
     return errorSyntax(USAGE_ALL, "Invalid command '%s'", Utf8Str(a->argv[0]).raw());
