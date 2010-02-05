@@ -1192,7 +1192,7 @@ static int emInterpretLockBitTest(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPU
 #endif
 
 #ifdef IN_RC
-    pvParam1  = (void *)GCPtrPar1;
+    pvParam1  = (void *)(uintptr_t)GCPtrPar1;
 #else
     PGMPAGEMAPLOCK Lock;
     rc = PGMPhysGCPtr2CCPtr(pVCpu, GCPtrPar1, &pvParam1, &Lock);

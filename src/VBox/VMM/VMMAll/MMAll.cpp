@@ -289,7 +289,7 @@ DECLINLINE(RTR0PTR) mmHyperLookupCalcR0(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_
  */
 DECLINLINE(RTRCPTR) mmHyperLookupCalcRC(PVM pVM, PMMLOOKUPHYPER pLookup, uint32_t off)
 {
-    return (RTRCPTR)((RTGCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
+    return (RTRCPTR)((RTRCUINTPTR)pVM->mm.s.pvHyperAreaGC + pLookup->off + off);
 }
 
 
