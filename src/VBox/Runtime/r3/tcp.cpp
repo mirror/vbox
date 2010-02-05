@@ -421,7 +421,8 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
             /*
              * Set socket family, address and port.
              */
-            struct sockaddr_in LocalAddr = {0};
+            struct sockaddr_in LocalAddr;
+            RT_ZERO(LocalAddr);
             LocalAddr.sin_family = AF_INET;
             LocalAddr.sin_port = htons(uPort);
             /* if address not specified, use INADDR_ANY. */
@@ -566,7 +567,8 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
         /*
          * Accept connection.
          */
-        struct sockaddr_in  RemoteAddr   = {0};
+        struct sockaddr_in  RemoteAddr;
+        RT_ZERO(RemoteAddr);
         socklen_t           cbRemoteAddr = sizeof(RemoteAddr);
         RTSOCKET Socket = accept(SockServer, (struct sockaddr *)&RemoteAddr, &cbRemoteAddr);
         if (Socket == -1)
@@ -955,7 +957,8 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
     RTSOCKET Sock = socket(PF_INET, SOCK_STREAM, 0);
     if (Sock != -1)
     {
-        struct sockaddr_in InAddr = {0};
+        struct sockaddr_in InAddr;
+        RT_ZERO(InAddr);
         InAddr.sin_family = AF_INET;
         InAddr.sin_port = htons(uPort);
         InAddr.sin_addr = *((struct in_addr *)pHostEnt->h_addr);
