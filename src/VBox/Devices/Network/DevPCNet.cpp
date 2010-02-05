@@ -2825,7 +2825,7 @@ static int pcnetCSRWriteU16(PCNetState *pThis, uint32_t u32RAP, uint32_t val)
                 return rc;
             }
         case 15: /* Mode */
-            if ((pThis->aCSR[15] & 0x8000) != (val & 0x8000) && pThis->pDrv)
+            if ((pThis->aCSR[15] & 0x8000) != (uint16_t)(val & 0x8000) && pThis->pDrv)
             {
                 Log(("#%d: promiscuous mode changed to %d\n", PCNET_INST_NR, !!(val & 0x8000)));
 #ifndef IN_RING3

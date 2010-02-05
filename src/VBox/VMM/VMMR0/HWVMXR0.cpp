@@ -2261,7 +2261,7 @@ VMMR0DECL(int) VMXR0RunGuestCode(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
 {
     int         rc = VINF_SUCCESS;
     RTGCUINTREG val;
-    RTGCUINTREG exitReason = VMX_EXIT_INVALID;
+    RTGCUINTREG exitReason = (RTGCUINTREG)VMX_EXIT_INVALID;
     RTGCUINTREG instrError, cbInstr;
     RTGCUINTPTR exitQualification = 0;
     RTGCUINTPTR intInfo = 0; /* shut up buggy gcc 4 */

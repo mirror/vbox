@@ -163,3 +163,4 @@
     typedef AutoStateDependency<Machine::MutableOrSavedStateDep> AutoMutableOrSavedStateDependency;
 
 #endif // ____H_AUTOSTATEDEP
+

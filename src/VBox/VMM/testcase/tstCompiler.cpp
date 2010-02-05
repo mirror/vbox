@@ -200,7 +200,7 @@ X86PTEPAE64 Return64BitStruct(PX86PTEPAE64 paPT)
 static void DisasFunction(const char *pszName, PFNRT pv)
 {
     RTPrintf("tstBitFields: Disassembly of %s:\n", pszName);
-    RTUINTPTR uCur = (RTUINTPTR)pv;
+    RTUINTPTR uCur = (uintptr_t)pv;
     RTUINTPTR uCurMax = uCur + 256;
     DISCPUSTATE Cpu;
 
@@ -217,7 +217,7 @@ static void DisasFunction(const char *pszName, PFNRT pv)
         }
         else
         {
-            RTPrintf("tstBitFields: %p: %02x - DISInstr failed!\n", uCur, *(uint8_t *)uCur);
+            RTPrintf("tstBitFields: %p: %02x - DISInstr failed!\n", uCur, *(uint8_t *)(uintptr_t)uCur);
             uCur += 1;
         }
     } while (Cpu.pCurInstr->opcode != OP_RETN || uCur > uCurMax);

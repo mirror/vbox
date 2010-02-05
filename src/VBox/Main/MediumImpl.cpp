@@ -4948,7 +4948,7 @@ HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
             rc = VirtualBox::ensureFilePathExists(location);
             if (FAILED(rc)) throw rc;
 
-            PDMMEDIAGEOMETRY geo = { 0 }; /* auto-detect */
+            PDMMEDIAGEOMETRY geo = { 0, 0, 0 }; /* auto-detect */
 
             vrc = VDCreateBase(hdd,
                                format.c_str(),
@@ -5500,7 +5500,7 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
     ComObjPtr<Medium> &pTarget = task.d.target;
     ComObjPtr<Medium> &pParent = task.d.parentDisk;
 
-    bool fCreatingTarget;
+    bool fCreatingTarget; /** @todo warning: 'fCreatingTarget' might be used uninitialized in this function */
 
     uint64_t size = 0, logicalSize = 0;
     bool fGenerateUuid = false;

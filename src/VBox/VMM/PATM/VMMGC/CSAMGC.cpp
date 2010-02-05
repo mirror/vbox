@@ -90,7 +90,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
          */
         rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
         AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
-        ASMInvalidatePage((void *)pvFault);
+        ASMInvalidatePage((void *)(uintptr_t)pvFault);
         return VINF_SUCCESS;
     }
 
@@ -120,8 +120,8 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     VMCPU_FF_SET(pVCpu, VMCPU_FF_CSAM_PENDING_ACTION);
 
     /* Note that pvFault might be a different address in case of aliases. So use pvRange + offset instead!. */
-    pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages] = (RTRCPTR)((RTGCUINTPTR)pvRange + offRange);
-    pVM->csam.s.pvDirtyFaultPage[pVM->csam.s.cDirtyPages] = (RTRCPTR)((RTGCUINTPTR)pvRange + offRange);
+    pVM->csam.s.pvDirtyBasePage[pVM->csam.s.cDirtyPages] = (RTRCPTR)((RTRCUINTPTR)pvRange + offRange);
+    pVM->csam.s.pvDirtyFaultPage[pVM->csam.s.cDirtyPages] = (RTRCPTR)((RTRCUINTPTR)pvRange + offRange);
     if (++pVM->csam.s.cDirtyPages == CSAM_MAX_DIRTY_PAGES)
         return VINF_CSAM_PENDING_ACTION;
 
@@ -131,7 +131,7 @@ VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
     Log(("CSAMGCCodePageWriteHandler: enabled r/w for page %RGv\n", pvFault));
     rc = PGMShwModifyPage(pVCpu, pvFault, 1, X86_PTE_RW, ~(uint64_t)X86_PTE_RW);
     AssertMsgRC(rc, ("PGMShwModifyPage -> rc=%Rrc\n", rc));
-    ASMInvalidatePage((void *)pvFault);
+    ASMInvalidatePage((void *)(uintptr_t)pvFault);
 
     STAM_COUNTER_INC(&pVM->csam.s.StatCodePageModified);
     return VINF_SUCCESS;

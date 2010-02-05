@@ -62,7 +62,7 @@
  */
 VMMRCDECL(int) PATMGCMonitorPage(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
-    pVM->patm.s.pvFaultMonitor = (RTRCPTR)pvFault;
+    pVM->patm.s.pvFaultMonitor = (RTRCPTR)(RTRCUINTPTR)pvFault;
     return VINF_PATM_CHECK_PATCH_PAGE;
 }
 
@@ -91,8 +91,8 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
 
     STAM_PROFILE_ADV_START(&pVM->patm.s.StatPatchWriteDetect, a);
 
-    pWritePageStart = (RTGCUINTPTR)GCPtr & PAGE_BASE_GC_MASK;
-    pWritePageEnd   = ((RTGCUINTPTR)GCPtr + cbWrite - 1) & PAGE_BASE_GC_MASK;
+    pWritePageStart = (RTRCUINTPTR)GCPtr & PAGE_BASE_GC_MASK;
+    pWritePageEnd   = ((RTRCUINTPTR)GCPtr + cbWrite - 1) & PAGE_BASE_GC_MASK;
 
     pPatchPage = (PPATMPATCHPAGE)RTAvloU32Get(CTXSUFF(&pVM->patm.s.PatchLookupTree)->PatchTreeByPage, (AVLOU32KEY)pWritePageStart);
     if (    !pPatchPage
@@ -109,7 +109,7 @@ VMMRCDECL(int) PATMGCHandleWriteToPatchPage(PVM pVM, PCPUMCTXCORE pRegFrame, RTR
 
     if (pPatchPage)
     {
-        if (    pPatchPage->pLowestAddrGC  > (RTRCPTR)((RTGCUINTPTR)GCPtr + cbWrite - 1)
+        if (    pPatchPage->pLowestAddrGC  > (RTRCPTR)((RTRCUINTPTR)GCPtr + cbWrite - 1)
             ||  pPatchPage->pHighestAddrGC < (RTRCPTR)GCPtr)
         {
             /* This part of the page was not patched; try to emulate the instruction. */
@@ -515,7 +515,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                 AssertFailed();
                 return VINF_EM_RAW_EMULATE_INSTR;
             }
-            rc = DISCoreOne(&cpu, (RTUINTPTR)&pRec->patch.aPrivInstr[0], &cbOp);
+            rc = DISCoreOne(&cpu, (uintptr_t)&pRec->patch.aPrivInstr[0], &cbOp);
             if (RT_FAILURE(rc))
             {
                 Log(("DISCoreOne failed with %Rrc\n", rc));

@@ -840,7 +840,10 @@ int avlrogcphys(void)
     {
         AVLROGCPHYSTREE     Tree;
         AVLROGCPHYSNODECORE aNode[4];
-    } s1 = {0}, s2 = {0}, s3 = {0};
+    }   s1, s2, s3;
+    RT_ZERO(s1);
+    RT_ZERO(s2);
+    RT_ZERO(s3);
 
     s1.aNode[0].Key        = 0x00030000;
     s1.aNode[0].KeyLast    = 0x00030fff;

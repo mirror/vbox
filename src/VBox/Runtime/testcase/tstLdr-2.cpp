@@ -125,13 +125,13 @@ static int testLdrOne(const char *pszFilename)
 
                         memset(&Cpu, 0, sizeof(Cpu));
                         Cpu.mode = CPUMODE_32BIT;
-                        if (MyDisBlock(&Cpu, (RTUINTPTR)pvBits + off, 200, Addr - (uintptr_t)pvBits))
+                        if (MyDisBlock(&Cpu, (uintptr_t)pvBits + off, 200, Addr - (uintptr_t)pvBits))
                         {
                             RTUINTPTR Addr2 = 0xd0000000;
                             rc = RTLdrRelocate(hLdrMod, pvBits, Addr2, Addr, testGetImport, NULL);
                             if (RT_SUCCESS(rc))
                             {
-                                if (MyDisBlock(&Cpu, (RTUINTPTR)pvBits + off, 200, Addr2 - (uintptr_t)pvBits))
+                                if (MyDisBlock(&Cpu, (uintptr_t)pvBits + off, 200, Addr2 - (uintptr_t)pvBits))
                                     rcRet = 0;
                                 else
                                     RTPrintf("tstLdr: Disassembly failed!\n");

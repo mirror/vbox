@@ -45,7 +45,7 @@ int main(int argc, char **argv)
     }
     else
     {
-        RTUINTPTR pInstr = (RTUINTPTR)TestProc;
+        RTUINTPTR pInstr = (uintptr_t)TestProc;
 
         for (int i=0;i<50;i++)
         {
@@ -69,7 +69,7 @@ int main(int argc, char **argv)
 
 #ifndef RT_OS_OS2
         printf("\n64 bits disassembly\n");
-        pInstr = (RTUINTPTR)TestProc64;
+        pInstr = (uintptr_t)TestProc64;
 
 ////__debugbreak();
         for (int i=0;i<50;i++)
