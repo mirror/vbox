@@ -624,7 +624,7 @@ static int emR3RawGuestTrap(PVM pVM, PVMCPU pVCpu)
      */
     uint32_t uCpl = CPUMGetGuestCPL(pVCpu, CPUMCTX2CORE(pCtx));
     if (    uCpl == 0
-        &&  PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip))
+        &&  PATMIsPatchGCAddr(pVM, pCtx->eip))
     {
         LogFlow(("emR3RawGuestTrap: trap %#x in patch code; eip=%08x\n", u8TrapNo, pCtx->eip));
         return emR3PatchTrap(pVM, pVCpu, pCtx, rc);
@@ -1156,7 +1156,7 @@ static int emR3RawPrivileged(PVM pVM, PVMCPU pVCpu)
                     return VINF_SUCCESS;
 
                 case OP_HLT:
-                    if (PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip))
+                    if (PATMIsPatchGCAddr(pVM, pCtx->eip))
                     {
                         PATMTRANSSTATE  enmState;
                         RTGCPTR         pOrgInstrGC = PATMR3PatchToGCPtr(pVM, pCtx->eip, &enmState);

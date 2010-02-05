@@ -247,7 +247,7 @@ VMMDECL(int) CSAMDisableScanning(PVM pVM)
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCPTR GCPtr)
+VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr)
 {
     for (uint32_t i=0;i<pVM->csam.s.cDangerousInstr;i++)
     {

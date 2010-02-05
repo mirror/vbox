@@ -1449,7 +1449,7 @@ VMMR3DECL(int) TRPMR3InjectEvent(PVM pVM, PVMCPU pVCpu, TRPMEVENT enmEvent)
     int      rc;
 
     pCtx = CPUMQueryGuestCtxPtr(pVCpu);
-    Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
+    Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
     Assert(!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_INHIBIT_INTERRUPTS));
 
     /* Currently only useful for external hardware interrupts. */

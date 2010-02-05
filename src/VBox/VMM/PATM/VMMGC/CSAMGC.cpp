@@ -65,7 +65,7 @@
 VMMRCDECL(int) CSAMGCCodePageWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPTR pvRange, uintptr_t offRange)
 {
     PPATMGCSTATE pPATMGCState;
-    bool         fPatchCode = PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip);
+    bool         fPatchCode = PATMIsPatchGCAddr(pVM, pRegFrame->eip);
     int          rc;
     PVMCPU       pVCpu = VMMGetCpu0(pVM);
 

@@ -405,7 +405,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
          * UD2 in a patch?
          */
         if (    Cpu.pCurInstr->opcode == OP_ILLUD2
-            &&  PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+            &&  PATMIsPatchGCAddr(pVM, pRegFrame->eip))
         {
             rc = PATMGCHandleIllegalInstrTrap(pVM, pRegFrame);
             /** @todo  These tests are completely unnecessary, should just follow the
@@ -428,7 +428,7 @@ DECLASM(int) TRPMGCTrap06Handler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         {
             Log(("TRPMGCTrap06Handler: pc=%08x op=%d\n", pRegFrame->eip, Cpu.pCurInstr->opcode));
 #ifdef DTRACE_EXPERIMENT /** @todo fix/remove/permanent-enable this when DIS/PATM handles invalid lock sequences. */
-            Assert(!PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip));
+            Assert(!PATMIsPatchGCAddr(pVM, pRegFrame->eip));
             rc = TRPMForwardTrap(pVCpu, pRegFrame, 0x6, 0, TRPM_TRAP_NO_ERRORCODE, TRPM_TRAP, 0x6);
             Assert(rc == VINF_EM_RAW_GUEST_TRAP);
 #else
@@ -617,7 +617,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_INT:
         {
             Assert(pCpu->param1.flags & USE_IMMEDIATE8);
-            Assert(!(PATMIsPatchGCAddr(pVM, (RTRCPTR)PC)));
+            Assert(!(PATMIsPatchGCAddr(pVM, PC)));
             if (pCpu->param1.parval == 3)
             {
                 /* Int 3 replacement patch? */
@@ -645,7 +645,7 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
 
         case OP_HLT:
             /* If it's in patch code, defer to ring-3. */
-            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)PC))
+            if (PATMIsPatchGCAddr(pVM, PC))
                 break;
 
             pRegFrame->eip += pCpu->opsize;
@@ -661,8 +661,8 @@ static int trpmGCTrap0dHandlerRing0(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
         case OP_MOV_CR:
         case OP_MOV_DR:
             /* We can safely emulate control/debug register move instructions in patched code. */
-            if (    !PATMIsPatchGCAddr(pVM, (RTRCPTR)PC)
-                &&  !CSAMIsKnownDangerousInstr(pVM, (RTRCPTR)PC))
+            if (    !PATMIsPatchGCAddr(pVM, PC)
+                &&  !CSAMIsKnownDangerousInstr(pVM, PC))
                 break;
         case OP_INVLPG:
         case OP_LLDT:
@@ -937,7 +937,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
     {
         case VINF_EM_RAW_GUEST_TRAP:
         case VINF_EM_RAW_EXCEPTION_PRIVILEGED:
-            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+            if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
                 rc = VINF_PATM_PATCH_TRAP_GP;
             break;
 
@@ -961,7 +961,7 @@ DECLASM(int) TRPMGCTrap0dHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             break;
 
         default:
-            AssertMsg(PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip) == false, ("return code %d\n", rc));
+            AssertMsg(PATMIsPatchGCAddr(pVM, pRegFrame->eip) == false, ("return code %d\n", rc));
             break;
         }
     Log6(("TRPMGC0d: %Rrc (%04x:%08x)\n", rc, pRegFrame->cs, pRegFrame->eip));
@@ -1002,12 +1002,12 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
         case VINF_EM_RAW_EMULATE_INSTR_TSS_FAULT:
         case VINF_EM_RAW_EMULATE_INSTR_LDT_FAULT:
         case VINF_EM_RAW_EMULATE_INSTR_IDT_FAULT:
-            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+            if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
                 rc = VINF_PATCH_EMULATE_INSTR;
             break;
 
         case VINF_EM_RAW_GUEST_TRAP:
-            if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+            if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
                 return VINF_PATM_PATCH_TRAP_PF;
 
             rc = TRPMForwardTrap(pVCpu, pRegFrame, 0xE, 0, TRPM_TRAP_HAS_ERRORCODE, TRPM_TRAP, 0xe);
@@ -1032,7 +1032,7 @@ DECLASM(int) TRPMGCTrap0eHandler(PTRPMCPU pTrpmCpu, PCPUMCTXCORE pRegFrame)
             break;
 
         default:
-            AssertMsg(PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip) == false, ("Patch address for return code %d. eip=%08x\n", rc, pRegFrame->eip));
+            AssertMsg(PATMIsPatchGCAddr(pVM, pRegFrame->eip) == false, ("Patch address for return code %d. eip=%08x\n", rc, pRegFrame->eip));
             break;
     }
     rc = trpmGCExitTrap(pVM, pVCpu, rc, pRegFrame);

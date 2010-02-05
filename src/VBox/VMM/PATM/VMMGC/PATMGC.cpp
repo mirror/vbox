@@ -159,7 +159,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
 
     /* Very important check -> otherwise we have a security leak. */
     AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
-    Assert(PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip));
+    Assert(PATMIsPatchGCAddr(pVM, pRegFrame->eip));
 
     /* OP_ILLUD2 in PATM generated code? */
     if (CTXSUFF(pVM->patm.s.pGCState)->uPendingAction)
@@ -185,7 +185,7 @@ VMMDECL(int) PATMGCHandleIllegalInstrTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
                  *  edx = GC address to find
                  *  edi = PATCHJUMPTABLE ptr
                  */
-                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->edi), ("edx = %x\n", pRegFrame->edi));
+                AssertMsg(!pRegFrame->edi || PATMIsPatchGCAddr(pVM, pRegFrame->edi), ("edx = %x\n", pRegFrame->edi));
 
                 Log(("PATMGC: lookup %x jump table=%x\n", pRegFrame->edx, pRegFrame->edi));
 
@@ -456,7 +456,7 @@ VMMDECL(int) PATMHandleInt3PatchTrap(PVM pVM, PCPUMCTXCORE pRegFrame)
     AssertReturn(!pRegFrame->eflags.Bits.u1VM && (pRegFrame->ss & X86_SEL_RPL) == 1, VERR_ACCESS_DENIED);
 
     /* Int 3 in PATM generated code? (most common case) */
-    if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+    if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
     {
         /* @note hardcoded assumption about it being a single byte int 3 instruction. */
         pRegFrame->eip--;

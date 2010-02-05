@@ -89,7 +89,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
             break;
 
         case VINF_PATM_DUPLICATE_FUNCTION:
-            Assert(PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
+            Assert(PATMIsPatchGCAddr(pVM, pCtx->eip));
             rc = PATMR3DuplicateFunctionRequest(pVM, pCtx);
             AssertRC(rc);
             rc = VINF_SUCCESS;
@@ -189,7 +189,7 @@ int emR3HwaccmHandleRC(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, int rc)
         case VINF_EM_RAW_INTERRUPT_PENDING:
         case VINF_EM_RAW_RING_SWITCH_INT:
             Assert(TRPMHasTrap(pVCpu));
-            Assert(!PATMIsPatchGCAddr(pVM, (RTGCPTR)pCtx->eip));
+            Assert(!PATMIsPatchGCAddr(pVM, pCtx->eip));
 
             if (TRPMHasTrap(pVCpu))
             {

@@ -148,7 +148,7 @@ VMMDECL(int) CSAMExecFault(PVM pVM, RTRCPTR pvFault);
  * @param   pVM         The VM to operate on.
  * @param   GCPtr       GC pointer of page table entry
  */
-VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCPTR GCPtr);
+VMMDECL(bool) CSAMIsKnownDangerousInstr(PVM pVM, RTRCUINTPTR GCPtr);
 
 
 #ifdef IN_RING3

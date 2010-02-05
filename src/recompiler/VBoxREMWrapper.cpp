@@ -655,7 +655,7 @@ static const REMPARMDESC g_aArgsMMR3HeapAllocZ[] =
 static const REMPARMDESC g_aArgsPATMIsPatchGCAddr[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM), NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCPTR), NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(RTRCUINTPTR), NULL }
 };
 static const REMPARMDESC g_aArgsPATMR3QueryOpcode[] =
 {

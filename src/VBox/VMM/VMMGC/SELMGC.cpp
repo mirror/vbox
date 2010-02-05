@@ -67,7 +67,7 @@ static int selmGCSyncGDTEntry(PVM pVM, PCPUMCTXCORE pRegFrame, unsigned iGDTEntr
      * Read the guest descriptor.
      */
     X86DESC Desc;
-    int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
+    int rc = MMGCRamRead(pVM, &Desc, (uint8_t *)(uintptr_t)GdtrGuest.pGdt + offEntry, sizeof(X86DESC));
     if (RT_FAILURE(rc))
         return VINF_EM_RAW_EMULATE_INSTR_GDT_FAULT;
 
@@ -316,7 +316,7 @@ VMMRCDECL(int) selmRCGuestTSSWriteHandler(PVM pVM, RTGCUINT uErrorCode, PCPUMCTX
          * If it's on the same page as the esp0 and ss0 fields or actually one of them,
          * then check if any of these has changed.
          */
-        PCVBOXTSS pGuestTss = (PVBOXTSS)pVM->selm.s.GCPtrGuestTss;
+        PCVBOXTSS pGuestTss = (PVBOXTSS)(uintptr_t)pVM->selm.s.GCPtrGuestTss;
         if (    PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS(&pGuestTss->padding_ss0)
             &&  PAGE_ADDRESS(&pGuestTss->esp0) == PAGE_ADDRESS((uint8_t *)pGuestTss + offRange)
             &&  (    pGuestTss->esp0 !=  pVM->selm.s.Tss.esp1

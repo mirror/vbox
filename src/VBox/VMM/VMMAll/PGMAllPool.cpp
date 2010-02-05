@@ -891,7 +891,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
     else if (rc2 == VERR_EM_INTERPRETER)
     {
 #ifdef IN_RC
-        if (PATMIsPatchGCAddr(pVM, (RTRCPTR)pRegFrame->eip))
+        if (PATMIsPatchGCAddr(pVM, pRegFrame->eip))
         {
             LogFlow(("pgmPoolAccessHandlerPTWorker: Interpretation failed for patch code %04x:%RGv, ignoring.\n",
                      pRegFrame->cs, (RTGCPTR)pRegFrame->eip));
