@@ -160,7 +160,7 @@ typedef struct DRVNAT
     RTFILE                  PipeRead;
 # if HC_ARCH_BITS == 32
     /** Alignment padding. */
-    uint32_t                alignment2;
+    //uint32_t                alignment2;
 # endif
 #else
     /** for external notification */
