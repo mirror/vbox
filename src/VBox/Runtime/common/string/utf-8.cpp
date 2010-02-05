@@ -441,7 +441,7 @@ RT_EXPORT_SYMBOL(RTStrToUniEx);
  * @returns IPRT status code.
  * @param   psz     Pointer to the UTF-8 string.
  * @param   cch     The max length of the string. (btw cch = cb)
- *                  Use RTSTR_MAX if all of the string is to be examined.s
+ *                  Use RTSTR_MAX if all of the string is to be examined.
  * @param   pcwc    Where to store the length of the UTF-16 string as a number of RTUTF16 characters.
  */
 static int rtUtf8CalcUtf16Length(const char *psz, size_t cch, size_t *pcwc)
