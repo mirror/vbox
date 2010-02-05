@@ -22,8 +22,6 @@
 #include <windows.h>
 #include <psapi.h>
 #include "VBoxTray.h"
-#include "VBoxStatistics.h"
-#include "VBoxMemBalloon.h"
 #include <VBoxDisplay.h>
 #include <VBox/VMMDev.h>
 #include <VBox/VBoxGuest.h>
@@ -34,28 +32,57 @@
 
 typedef struct _VBOXSTATSCONTEXT
 {
-    const VBOXSERVICEENV *pEnv;
     uint32_t              uStatInterval;
 
     uint64_t              ullLastCpuLoad_Idle;
     uint64_t              ullLastCpuLoad_Kernel;
     uint64_t              ullLastCpuLoad_User;
 
+#ifdef RT_OS_WINDOWS
     NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
     void     (WINAPI *pfnGlobalMemoryStatusEx)(LPMEMORYSTATUSEX lpBuffer);
     BOOL     (WINAPI *pfnGetPerformanceInfo)(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb);
+#endif
 } VBOXSTATSCONTEXT;
 
-
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
 static VBOXSTATSCONTEXT gCtx = {0};
 
+/** The semaphore we're blocking on. */
+static RTSEMEVENTMULTI  g_VMStatEvent = NIL_RTSEMEVENTMULTI;
+/** The vmstats interval (millseconds). */
+uint32_t                g_VMStatsInterval = 0;
 
-int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
+
+/** @copydoc VBOXSERVICE::pfnPreInit */
+static DECLCALLBACK(int) VBoxServiceVMStatsPreInit(void)
 {
-    HANDLE gVBoxDriver = pEnv->hDriver;
-    DWORD  cbReturned;
+    return VINF_SUCCESS;
+}
 
-    Log(("VBoxStatsInit\n"));
+
+/** @copydoc VBOXSERVICE::pfnOption */
+static DECLCALLBACK(int) VBoxServiceVMStatsOption(const char **ppszShort, int argc, char **argv, int *pi)
+{
+    int rc = -1;
+    if (ppszShort)
+        /* no short options */;
+    else if (!strcmp(argv[*pi], "--vmstats-interval"))
+        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
+                                  &g_VMStatsInterval, 1000, UINT32_MAX - 1);
+    return rc;
+}
+
+
+/** @copydoc VBOXSERVICE::pfnInit */
+static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
+{
+    VBoxServiceVerbose(3, "VBoxServiceVMStatsInit\n");
+
+    int rc = RTSemEventMultiCreate(&g_VMStatEvent);
+    AssertRCReturn(rc, rc);
 
     gCtx.pEnv                   = pEnv;
     gCtx.uStatInterval          = 0;     /* default */
@@ -75,16 +102,17 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     else
         Log(("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError()));
 
+#ifdef RT_OS_WINDOWS
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
     HMODULE hMod = LoadLibrary("NTDLL.DLL");
     if (hMod)
     {
         *(uintptr_t *)&gCtx.pfnNtQuerySystemInformation = (uintptr_t)GetProcAddress(hMod, "NtQuerySystemInformation");
         if (gCtx.pfnNtQuerySystemInformation)
-            Log(("gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation));
+            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnNtQuerySystemInformation = %x\n", gCtx.pfnNtQuerySystemInformation);
         else
         {
-            Log(("NTDLL.NtQuerySystemInformation not found!!\n"));
+            VBoxServiceError("VBoxStatsInit: NTDLL.NtQuerySystemInformation not found!!\n");
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -95,11 +123,11 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnGlobalMemoryStatusEx = (uintptr_t)GetProcAddress(hMod, "GlobalMemoryStatusEx");
         if (gCtx.pfnGlobalMemoryStatusEx)
-            Log(("gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx));
+            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.GlobalMemoryStatusEx = %x\n", gCtx.pfnGlobalMemoryStatusEx);
         else
         {
             /** @todo now fails in NT4; do we care? */
-            Log(("KERNEL32.GlobalMemoryStatusEx not found!!\n"));
+            VBoxServiceError("VBoxStatsInit: KERNEL32.GlobalMemoryStatusEx not found!!\n");
             return VERR_NOT_IMPLEMENTED;
         }
     }
@@ -109,23 +137,16 @@ int VBoxStatsInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartTh
     {
         *(uintptr_t *)&gCtx.pfnGetPerformanceInfo = (uintptr_t)GetProcAddress(hMod, "GetPerformanceInfo");
         if (gCtx.pfnGetPerformanceInfo)
-            Log(("gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo));
+            VBoxServiceVerbose(3, "VBoxStatsInit: gCtx.pfnGetPerformanceInfo= %x\n", gCtx.pfnGetPerformanceInfo);
         /* failure is not fatal */
     }
+#endif /* RT_OS_WINDOWS */
 
-    *pfStartThread = true;
-    *ppInstance = &gCtx;
     return VINF_SUCCESS;
 }
 
 
-void VBoxStatsDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
-{
-    Log(("VBoxStatsDestroy\n"));
-    return;
-}
-
-void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
+static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
 {
     SYSTEM_INFO systemInfo;
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
@@ -234,17 +255,22 @@ void VBoxStatsReportStatistics(VBOXSTATSCONTEXT *pCtx)
     free(pProcInfo);
 }
 
-/**
- * Thread function to wait for and process seamless mode change
- * requests
- */
-unsigned __stdcall VBoxStatsThread(void *pInstance)
+/** @copydoc VBOXSERVICE::pfnWorker */
+DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
 {
     VBOXSTATSCONTEXT *pCtx = (VBOXSTATSCONTEXT *)pInstance;
     HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
     bool fTerminate = false;
     VBoxGuestFilterMaskInfo maskInfo;
     DWORD cbReturned;
+
+    int rc = VINF_SUCCESS;
+
+    /*
+     * Tell the control thread that it can continue
+     * spawning services.
+     */
+    RTThreadUserSignal(RTThreadSelf());
 
     maskInfo.u32OrMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
     maskInfo.u32NotMask = 0;
@@ -258,57 +284,35 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         return 0;
     }
 
-    do
+    /*
+     * Now enter the loop retrieving runtime data continuously.
+     */
+    for (;;)
     {
-        /* wait for a seamless change event */
-        VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = (pCtx->uStatInterval) ? pCtx->uStatInterval : 5000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
-        {
-            Log(("VBoxStatsThread: DeviceIOControl succeded\n"));
-
-            /* are we supposed to stop? */
-            if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
-                break;
-
-            Log(("VBoxStatsThread: checking event\n"));
-
-            /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST)
-            {
-                VMMDevGetStatisticsChangeRequest req;
-                vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
-                req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-
-                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
-                {
-                    Log(("VBoxStatsThread: new statistics interval %d seconds\n", req.u32StatInterval));
-                    pCtx->uStatInterval = req.u32StatInterval * 1000;
-                }
-                else
-                    Log(("VBoxStatsThread: DeviceIoControl (stat) failed with %d\n", GetLastError()));
-            }
-        }
-        else
-        {
-            Log(("VBoxStatsThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
-
-            /* sleep a bit to not eat too much CPU in case the above call always fails */
-            if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
-            {
-                fTerminate = true;
-                break;
-            }
-        }
         /* Report statistics to the host */
-        if (    gCtx.uStatInterval
-            &&  gCtx.pfnNtQuerySystemInformation)
+        if (gCtx.pfnNtQuerySystemInformation)
         {
-            VBoxStatsReportStatistics(pCtx);
+            VBoxServiceVMStatsReport();
+        }
+
+        /*
+         * Block for a while.
+         *
+         * The event semaphore takes care of ignoring interruptions and it
+         * allows us to implement service wakeup later.
+         */
+        if (*pfShutdown)
+            break;
+        int rc2 = RTSemEventMultiWait(g_VMStatEvent, g_VMStatsInterval);
+        if (*pfShutdown)
+            break;
+        if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
+        {
+            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            rc = rc2;
+            break;
         }
     }
-    while (!fTerminate);
 
     maskInfo.u32OrMask = 0;
     maskInfo.u32NotMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
@@ -321,8 +325,50 @@ unsigned __stdcall VBoxStatsThread(void *pInstance)
         Log(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
     }
 
+    RTSemEventMultiDestroy(g_VMStatsEvent);
+    g_VMStatsEvent = NIL_RTSEMEVENTMULTI;
+
     Log(("VBoxStatsThread: finished statistics change request thread\n"));
     return 0;
 }
 
 
+/** @copydoc VBOXSERVICE::pfnTerm */
+static DECLCALLBACK(void) VBoxServiceVMStatsTerm(void)
+{
+    VBoxServiceVerbose(3, "VBoxServiceVMStatsTerm\n");
+    return;
+}
+
+
+/** @copydoc VBOXSERVICE::pfnStop */
+static DECLCALLBACK(void) VBoxServiceVMStatsStop(void)
+{
+    RTSemEventMultiSignal(g_VMStatsEvent);
+}
+
+
+/**
+ * The 'vminfo' service description.
+ */
+VBOXSERVICE g_VMStatistics =
+{
+    /* pszName. */
+    "vmstats",
+    /* pszDescription. */
+    "Virtual Machine Statistics",
+    /* pszUsage. */
+    "[--vmstats-interval <ms>]"
+    ,
+    /* pszOptions. */
+    "    --vmstats-interval   Specifies the interval at which to retrieve the\n"
+    "                        VM statistcs. The default is 10000 ms.\n"
+    ,
+    /* methods */
+    VBoxServiceVMStatsPreInit,
+    VBoxServiceVMStatsOption,
+    VBoxServiceVMStatsInit,
+    VBoxServiceVMStatsWorker,
+    VBoxServiceVMStatsStop,
+    VBoxServiceVMStatsTerm
+};

@@ -93,6 +93,10 @@ static struct
 #ifdef VBOXSERVICE_CPUHOTPLUG /* Disabled by default. Use --enable-cpuhotplug to enable */
     { &g_CpuHotPlug, NIL_RTTHREAD, false, false, false, false },
 #endif
+#ifdef VBOXSERVICE_MANAGEMENT
+    { &g_MemBalloon, NIL_RTTHREAD, false, false, false, false },
+    { &g_VMStatistics, NIL_RTTHREAD, false, false, false, false },
+#endif
 };
 
 

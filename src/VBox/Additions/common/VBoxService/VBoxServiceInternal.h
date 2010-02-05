@@ -145,6 +145,10 @@ extern VBOXSERVICE g_Control;
 extern VBOXSERVICE g_VMInfo;
 extern VBOXSERVICE g_Exec;
 extern VBOXSERVICE g_CpuHotPlug;
+#ifdef VBOXSERVICE_MANAGEMENT
+extern VBOXSERVICE g_MemBalloon;
+extern VBOXSERVICE g_VMStatistics;
+#endif
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;

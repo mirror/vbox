@@ -24,8 +24,6 @@
 #include "VBoxDisplay.h"
 #include "VBoxRestore.h"
 #include "VBoxVRDP.h"
-#include "VBoxStatistics.h"
-#include "VBoxMemBalloon.h"
 #include "VBoxHostVersion.h"
 #include <VBoxHook.h>
 #include "resource.h"
@@ -71,20 +69,6 @@ static VBOXSERVICEINFO vboxServiceTable[] =
         VBoxSeamlessThread,
         VBoxSeamlessDestroy
     },
-#ifdef VBOX_WITH_MANAGEMENT
-    {
-        "Memory Balloon",
-        VBoxMemBalloonInit,
-        VBoxMemBalloonThread,
-        VBoxMemBalloonDestroy,
-    },
-    {
-        "Guest Statistics",
-        VBoxStatsInit,
-        VBoxStatsThread,
-        VBoxStatsDestroy,
-    },
-#endif
 #ifdef VBOX_WITH_VRDP_SESSION_HANDLING
     {
         "Restore",
