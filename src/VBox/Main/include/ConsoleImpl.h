@@ -580,17 +580,18 @@ private:
 
     enum
     {
-        iLedFloppy = 0,
-        cLedFloppy = 1,
-        iLedIde    = iLedFloppy + cLedFloppy,
-        cLedIde    = 4,
-        iLedSata   = iLedIde + cLedIde,
-        cLedSata   = 30,
-        iLedScsi   = iLedSata + cLedSata,
-        cLedScsi   = 16
+        iLedFloppy  = 0,
+        cLedFloppy  = 1,
+        iLedIde     = iLedFloppy + cLedFloppy,
+        cLedIde     = 4,
+        iLedSata    = iLedIde + cLedIde,
+        cLedSata    = 30,
+        iLedScsi    = iLedSata + cLedSata,
+        cLedScsi    = 16,
+        cLedStorage = cLedFloppy + cLedIde + cLedSata + cLedScsi,
     };
-    DeviceType_T maStorageDevType[cLedFloppy + cLedIde + cLedSata + cLedScsi];
-    PPDMLED      mapStorageLeds[RT_ELEMENTS(maStorageDevType)];
+    DeviceType_T maStorageDevType[cLedStorage];
+    PPDMLED      mapStorageLeds[cLedStorage];
     PPDMLED      mapNetworkLeds[SchemaDefs::NetworkAdapterCount];
     PPDMLED      mapSharedFolderLed;
     PPDMLED      mapUSBLed[2];
