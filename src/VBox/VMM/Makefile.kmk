@@ -203,6 +203,12 @@ SSM.cpp_DEFS +=	\
 	KBUILD_TARGET=\"$(KBUILD_TARGET)\" \
 	KBUILD_TARGET_ARCH=\"$(KBUILD_TARGET_ARCH)\"
 
+# access to pPool->aPages
+ifneq ($(KBUILD_TARGET),win)
+PGMPool.cpp_CXXFLAGS += \
+	$(VBOX_GCC_Wno-array_bounds)
+endif
+
 #
 # The VMM DLL.
 #
