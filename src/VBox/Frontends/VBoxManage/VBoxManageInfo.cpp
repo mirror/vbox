@@ -1715,7 +1715,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("Guest:\n\n");
 
-#ifdef VBOX_WITH_MEM_BALLOONING
     rc = machine->COMGETTER(MemoryBalloonSize)(&guestVal);
     if (SUCCEEDED(rc))
     {
@@ -1724,7 +1723,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         else
             RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
-#endif
     rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
     if (SUCCEEDED(rc))
     {
@@ -1843,7 +1841,6 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                     RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
             }
 
-#ifdef VBOX_WITH_MEM_BALLOONING
             rc = guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
             if (SUCCEEDED(rc))
             {
@@ -1852,7 +1849,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
                 else
                     RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
             }
-#endif
+
             rc = guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
             if (SUCCEEDED(rc))
             {

@@ -1290,13 +1290,11 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-#ifdef VBOX_WITH_MEM_BALLOONING
             case MODIFYVM_GUESTMEMORYBALLOON:
             {
                 CHECK_ERROR(machine, COMSETTER(MemoryBalloonSize)(ValueUnion.u32));
                 break;
             }
-#endif
 
             case MODIFYVM_AUDIOCONTROLLER:
             {
