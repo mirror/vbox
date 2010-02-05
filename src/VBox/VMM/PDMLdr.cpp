@@ -1328,7 +1328,7 @@ VMMR3DECL(int) PDMR3LdrGetInterfaceSymbols(PVM pVM, void *pvInterface, size_t cb
                  * Construct the symbol name, get its value, store it and
                  * advance the interface cursor.
                  */
-                AssertReturn(cchSymPrefix + cchSym >= sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
+                AssertReturn(cchSymPrefix + cchSym < sizeof(szSymbol), VERR_SYMBOL_NOT_FOUND);
                 memcmp(&szSymbol[cchSymPrefix], pszCur, cchSym);
                 szSymbol[cchSymPrefix + cchSym] = '\0';
 
