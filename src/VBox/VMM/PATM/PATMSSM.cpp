@@ -1000,7 +1000,7 @@ static void patmCorrectFixup(PVM pVM, unsigned ulSSMVersion, PATM &patmInfo, PPA
     {
     case FIXUP_ABSOLUTE:
     {
-        if (pRec->pSource && !PATMIsPatchGCAddr(pVM, pRec->pSource))
+        if (pRec->pSource && !PATMIsPatchGCAddr(pVM, (RTRCUINTPTR)pRec->pSource))
             break;
 
         if (    *pFixup >= patmInfo.pGCStateGC

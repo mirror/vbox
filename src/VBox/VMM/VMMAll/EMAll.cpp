@@ -152,7 +152,7 @@ DECLCALLBACK(int) EMReadBytes(RTUINTPTR pSrc, uint8_t *pDest, unsigned cb, void 
         memcpy(pDest, PATMR3GCPtrToHCPtr(pVM, pSrc), cb);
 
 # elif defined(IN_RC)
-    if (!PATMIsPatchGCAddr(pVM, (RTRCPTR)pSrc))
+    if (!PATMIsPatchGCAddr(pVM, pSrc))
     {
         int rc = MMGCRamRead(pVM, pDest, (void *)pSrc, cb);
         if (rc == VERR_ACCESS_DENIED)

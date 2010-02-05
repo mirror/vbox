@@ -193,7 +193,7 @@ VMMDECL(RCPTRTYPE(PPATMGCSTATE)) PATMQueryGCState(PVM pVM);
  * @param   pVM         The VM to operate on.
  * @param   pAddr       Guest context address
  */
-VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCPTR pAddr);
+VMMDECL(bool) PATMIsPatchGCAddr(PVM pVM, RTRCUINTPTR pAddr);
 
 /**
  * Check if we must use raw mode (patch code being executed or marked safe for IF=0)
