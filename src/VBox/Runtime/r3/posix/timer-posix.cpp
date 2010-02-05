@@ -309,7 +309,8 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
         sigaddset(&SigSet, RT_TIMER_SIGNAL);
         do
         {
-            siginfo_t SigInfo = {0};
+            siginfo_t SigInfo;
+            RT_ZERO(SigInfo);
 #ifdef RT_OS_DARWIN
             if (RT_LIKELY(sigwait(&SigSet, &SigInfo.si_signo) >= 0))
             {
@@ -369,7 +370,8 @@ static DECLCALLBACK(int) rttimerThread(RTTHREAD Thread, void *pvArg)
     sigaddset(&SigSet, RT_TIMER_SIGNAL);
     while (g_cTimerInstances)
     {
-        siginfo_t SigInfo = {0};
+        siginfo_t SigInfo;
+        RT_ZERO(SigInfo);
         if (RT_LIKELY(sigwaitinfo(&SigSet, &SigInfo) >= 0))
         {
             LogFlow(("rttimerThread: signo=%d pTimer=%p\n", SigInfo.si_signo, SigInfo.si_value.sival_ptr));
