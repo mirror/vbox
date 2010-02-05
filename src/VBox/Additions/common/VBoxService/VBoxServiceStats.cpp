@@ -52,8 +52,6 @@ static VBOXSTATSCONTEXT gCtx = {0};
 
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_VMStatEvent = NIL_RTSEMEVENTMULTI;
-/** The vmstats interval (millseconds). */
-uint32_t                g_VMStatsInterval = 0;
 
 
 /** @copydoc VBOXSERVICE::pfnPreInit */
@@ -66,13 +64,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsPreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceVMStatsOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
-    int rc = -1;
-    if (ppszShort)
-        /* no short options */;
-    else if (!strcmp(argv[*pi], "--vmstats-interval"))
-        rc = VBoxServiceArgUInt32(argc, argv, "", pi,
-                                  &g_VMStatsInterval, 1000, UINT32_MAX - 1);
-    return rc;
+    return VINF_SUCCESS;
 }
 
 
@@ -96,11 +88,11 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 
     if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
     {
-        Log(("VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval));
+        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval);
         gCtx.uStatInterval = req.u32StatInterval * 1000;
     }
     else
-        Log(("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError()));
+        VBoxServiceVerbose(3, ("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError());
 
 #ifdef RT_OS_WINDOWS
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
@@ -148,6 +140,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 
 static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
 {
+#ifdef RT_OS_WINDOWS
     SYSTEM_INFO systemInfo;
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
     MEMORYSTATUSEX memStatus;
@@ -253,6 +246,10 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
     }
 
     free(pProcInfo);
+#else
+    /* todo: implement for other platforms. */
+    return;
+#endif
 }
 
 /** @copydoc VBOXSERVICE::pfnWorker */
@@ -261,8 +258,6 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
     VBOXSTATSCONTEXT *pCtx = (VBOXSTATSCONTEXT *)pInstance;
     HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
     bool fTerminate = false;
-    VBoxGuestFilterMaskInfo maskInfo;
-    DWORD cbReturned;
 
     int rc = VINF_SUCCESS;
 
@@ -272,15 +267,10 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    maskInfo.u32OrMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-    maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 0);
+    if (RT_FAILED(rc))
     {
-        Log(("VBoxStatsThread: DeviceIOControl(CtlMask - or) succeeded\n"));
-    }
-    else
-    {
-        Log(("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
+        VBoxServiceVerbose(3, ("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n");
         return 0;
     }
 
@@ -289,11 +279,15 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
      */
     for (;;)
     {
-        /* Report statistics to the host */
-        if (gCtx.pfnNtQuerySystemInformation)
+        uint32_t fEvents = 0;
+
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 1000, &fEvents);
+        if (    RT_SUCCESS(rc)
+            &&  (fEvents & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST))
         {
-            VBoxServiceVMStatsReport();
         }
+
+        VBoxServiceVMStatsReport();
 
         /*
          * Block for a while.
@@ -314,16 +308,13 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
         }
     }
 
-    maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+    rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST);
+    if (RT_FAILED(rc))
     {
-        Log(("VBoxStatsThread: DeviceIOControl(CtlMask - not) succeeded\n"));
+        VBoxServiceVerbose(3, ("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n");
+        return 0;
     }
-    else
-    {
-        Log(("VBoxStatsThread: DeviceIOControl(CtlMask) failed\n"));
-    }
+
 
     RTSemEventMultiDestroy(g_VMStatsEvent);
     g_VMStatsEvent = NIL_RTSEMEVENTMULTI;
@@ -358,12 +349,9 @@ VBOXSERVICE g_VMStatistics =
     /* pszDescription. */
     "Virtual Machine Statistics",
     /* pszUsage. */
-    "[--vmstats-interval <ms>]"
-    ,
+    NULL,
     /* pszOptions. */
-    "    --vmstats-interval   Specifies the interval at which to retrieve the\n"
-    "                        VM statistcs. The default is 10000 ms.\n"
-    ,
+    NULL,
     /* methods */
     VBoxServiceVMStatsPreInit,
     VBoxServiceVMStatsOption,
