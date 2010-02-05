@@ -848,6 +848,9 @@ struct E1kState_st
     R3PTRTYPE(PPDMIBASE)    pDrvBase;                 /**< Attached network driver. */
     R3PTRTYPE(PPDMINETWORKUP) pDrv;    /**< Connector of attached network driver. */
     R3PTRTYPE(PPDMILEDCONNECTORS)    pLedsConnector;
+#if HC_ARCH_BITS == 32
+    uint32_t                u32Padding;
+#endif
 
     PPDMDEVINSR3            pDevInsR3;                   /**< Device instance - R3. */
     R3PTRTYPE(PPDMQUEUE)    pTxQueueR3;                   /**< Transmit queue - R3. */
