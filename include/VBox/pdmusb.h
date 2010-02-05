@@ -55,7 +55,7 @@ RT_C_DECLS_BEGIN
  * USB descriptor cache.
  *
  * This structure is owned by the USB device but provided to the PDM/VUSB layer
- * thru the PDMUSBREG::pfnGetDescriptorCache method. PDM/VUSB will use the
+ * thru the PDMUSBREG::pfnGetDescriptorCache method.  PDM/VUSB will use the
  * information here to map addresses to endpoints, perform SET_CONFIGURATION
  * requests, and optionally perform GET_DESCRIPTOR requests (see flag).
  *
