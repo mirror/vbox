@@ -287,13 +287,13 @@ HRESULT Console::FinalConstruct()
 {
     LogFlowThisFunc(("\n"));
 
-    memset(mapFDLeds, 0, sizeof(mapFDLeds));
-    memset(mapIDELeds, 0, sizeof(mapIDELeds));
-    memset(mapSATALeds, 0, sizeof(mapSATALeds));
-    memset(mapSCSILeds, 0, sizeof(mapSCSILeds));
+    memset(mapStorageLeds, 0, sizeof(mapStorageLeds));
     memset(mapNetworkLeds, 0, sizeof(mapNetworkLeds));
     memset(&mapUSBLed, 0, sizeof(mapUSBLed));
     memset(&mapSharedFolderLed, 0, sizeof(mapSharedFolderLed));
+
+    for (unsigned i = 0; i < RT_ELEMENTS(maStorageDevType); ++ i)
+        maStorageDevType[i] = DeviceType_Null;
 
     return S_OK;
 }
@@ -2434,27 +2434,12 @@ STDMETHODIMP Console::GetDeviceActivity(DeviceType_T aDeviceType,
     switch (aDeviceType)
     {
         case DeviceType_Floppy:
-        {
-            for (unsigned i = 0; i < RT_ELEMENTS(mapFDLeds); ++i)
-                SumLed.u32 |= readAndClearLed(mapFDLeds[i]);
-            break;
-        }
-
         case DeviceType_DVD:
-        {
-            SumLed.u32 |= readAndClearLed(mapIDELeds[2]);
-            break;
-        }
-
         case DeviceType_HardDisk:
         {
-            SumLed.u32 |= readAndClearLed(mapIDELeds[0]);
-            SumLed.u32 |= readAndClearLed(mapIDELeds[1]);
-            SumLed.u32 |= readAndClearLed(mapIDELeds[3]);
-            for (unsigned i = 0; i < RT_ELEMENTS(mapSATALeds); ++i)
-                SumLed.u32 |= readAndClearLed(mapSATALeds[i]);
-            for (unsigned i = 0; i < RT_ELEMENTS(mapSCSILeds); ++i)
-                SumLed.u32 |= readAndClearLed(mapSCSILeds[i]);
+            for (unsigned i = 0; i < RT_ELEMENTS(mapStorageLeds); ++i)
+                if (maStorageDevType[i] == aDeviceType)
+                    SumLed.u32 |= readAndClearLed(mapStorageLeds[i]);
             break;
         }
 
