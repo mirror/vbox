@@ -120,7 +120,7 @@ static uint32_t rtMpLinuxGetFrequency(RTCPUID idCpu)
 
 RTDECL(int) RTMpCpuIdToSetIndex(RTCPUID idCpu)
 {
-    return idCpu < rtMpLinuxMaxCpus() ? idCpu : -1;
+    return idCpu < rtMpLinuxMaxCpus() ? (int)idCpu : -1;
 }
 
 
