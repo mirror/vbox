@@ -32,7 +32,15 @@
 
 #define PSTATUS_LNKSTAT 0x0004
 
-#define PSSTAT_LINK     0x0400
+/*
+ * Speed: 1000 Mb/s
+ * Duplex: full
+ * Page received
+ * Resolved
+ * Link up
+ * Receive Pause Enable
+ */
+#define PSSTAT_LINK     0xBC08
 
 namespace Phy
 {
