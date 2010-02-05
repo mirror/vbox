@@ -791,6 +791,32 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
+        else if (   !strcmp(a->argv[1], "--gueststatisticsinterval")
+                 || !strcmp(a->argv[1], "-gueststatisticsinterval"))
+        {
+            if (a->argc != 3)
+            {
+                errorSyntax(USAGE_CONTROLVM, "Incorrect number of parameters");
+                rc = E_FAIL;
+                break;
+            }
+            uint32_t uVal;
+            int vrc;
+            vrc = RTStrToUInt32Ex(a->argv[2], NULL, 0, &uVal);
+            if (vrc != VINF_SUCCESS)
+            {
+                errorArgument("Error parsing guest statistics interval '%s'", a->argv[2]);
+                rc = E_FAIL;
+                break;
+            }
+
+            /* guest is running; update IGuest */
+            ComPtr <IGuest> guest;
+
+            rc = console->COMGETTER(Guest)(guest.asOutParam());
+            if (SUCCEEDED(rc))
+                CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
+        }
         else if (!strcmp(a->argv[1], "teleport"))
         {
             Bstr        bstrHostname;
