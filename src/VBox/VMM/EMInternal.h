@@ -51,7 +51,7 @@ RT_C_DECLS_BEGIN
 typedef struct CLISTAT
 {
     /** The key is the cli address. */
-    AVLPVNODECORE           Core;
+    AVLGCPTRNODECORE        Core;
     /** Occurrences. */
     STAMCOUNTER             Counter;
 } CLISTAT, *PCLISTAT;
@@ -393,7 +393,7 @@ typedef struct EMCPU
 #endif
 
     /** Tree for keeping track of cli occurances (debug only). */
-    R3PTRTYPE(PAVLPVNODECORE)   pCliStatTree;
+    R3PTRTYPE(PAVLGCPTRNODECORE) pCliStatTree;
     STAMCOUNTER             StatTotalClis;
 #if 0
     /** 64-bit Visual C++ rounds the struct size up to 16 byte. */
