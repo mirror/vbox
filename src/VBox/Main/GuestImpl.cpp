@@ -81,13 +81,6 @@ HRESULT Guest::init (Console *aParent)
     else
         mMemoryBalloonSize = 0;                     /* Default is no ballooning */
 
-    ULONG aStatUpdateInterval;
-    ret = mParent->machine()->COMGETTER(StatisticsUpdateInterval)(&aStatUpdateInterval);
-    if (ret == S_OK)
-        mStatUpdateInterval = aStatUpdateInterval;
-    else
-        mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
-
     /* invalidate all stats */
     for (int i=0;i<GuestStatisticType_MaxVal;i++)
         mCurrentGuestStat[i] = GUEST_STAT_INVALID;
@@ -224,39 +217,6 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     return ret;
 }
 
-STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
-{
-    CheckComArgOutPointerValid(aUpdateInterval);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    *aUpdateInterval = mStatUpdateInterval;
-
-    return S_OK;
-}
-
-STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
-{
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    HRESULT ret = mParent->machine()->COMSETTER(StatisticsUpdateInterval)(aUpdateInterval);
-    if (ret == S_OK)
-    {
-        mStatUpdateInterval = aUpdateInterval;
-        /* forward the information to the VMM device */
-        VMMDev *vmmDev = mParent->getVMMDev();
-        if (vmmDev)
-            vmmDev->getVMMDevPort()->pfnSetStatisticsInterval(vmmDev->getVMMDevPort(), aUpdateInterval);
-    }
-
-    return ret;
-}
 
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                                    IN_BSTR aDomain, BOOL aAllowInteractiveLogon)

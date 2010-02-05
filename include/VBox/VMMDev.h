@@ -85,8 +85,8 @@ RT_C_DECLS_BEGIN
 #define VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST           RT_BIT(5)
 /** Memory balloon size changed. */
 #define VMMDEV_EVENT_BALLOON_CHANGE_REQUEST                 RT_BIT(6)
-/** Statistics interval changed. */
-#define VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST     RT_BIT(7)
+/** Reserved (old statistics interval change). */
+#define VMMDEV_EVENT_OBSOLETE                               RT_BIT(7)
 /** VRDP status changed. */
 #define VMMDEV_EVENT_VRDP                                   RT_BIT(8)
 /** New mouse position data available. */

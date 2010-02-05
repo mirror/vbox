@@ -4370,10 +4370,6 @@
       <desc>Initial memory balloon size in megabytes.</desc>
     </attribute>
 
-    <attribute name="statisticsUpdateInterval" type="unsigned long">
-      <desc>Initial interval to update guest statistics in seconds.</desc>
-    </attribute>
-
     <attribute name="VRAMSize" type="unsigned long">
       <desc>Video memory size in megabytes.</desc>
     </attribute>
@@ -8310,10 +8306,6 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Guest system memory balloon size in megabytes.</desc>
-    </attribute>
-
-    <attribute name="statisticsUpdateInterval" type="unsigned long">
-      <desc>Interval to update guest statistics in seconds.</desc>
     </attribute>
 
     <method name="setCredentials">
