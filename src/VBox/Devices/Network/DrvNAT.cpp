@@ -120,16 +120,16 @@ do                                                      \
 /**
  * NAT network transport driver instance data.
  *
- * @implements  PDMINETWORKCONNECTOR
+ * @implements  PDMINETWORKUP
  */
 typedef struct DRVNAT
 {
     /** The network interface. */
-    PDMINETWORKCONNECTOR    INetworkConnector;
+    PDMINETWORKUP           INetworkUp;
     /** The port we're attached to. */
-    PPDMINETWORKPORT        pPort;
+    PPDMINETWORKDOWN        pIAboveNet;
     /** The network config of the port we're attached to. */
-    PPDMINETWORKCONFIG      pConfig;
+    PPDMINETWORKCONFIG      pIAboveConfig;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** Link state */
@@ -216,8 +216,8 @@ static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, v
 static DECLCALLBACK(void) drvNATFast(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser);
 
 
-/** Converts a pointer to NAT::INetworkConnector to a PRDVNAT. */
-#define PDMINETWORKCONNECTOR_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkConnector)) )
+/** Converts a pointer to NAT::INetworkUp to a PRDVNAT. */
+#define PDMINETWORKUP_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkUp)) )
 
 static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -292,10 +292,10 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
 {
     int rc = RTCritSectEnter(&pThis->csDevAccess);
     AssertRC(rc);
-    rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+    rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
-        rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
+        rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pu8Buf, cb);
         AssertRC(rc);
     }
     else if (   RT_FAILURE(rc)
@@ -335,10 +335,10 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
     rc = RTCritSectEnter(&pThis->csDevAccess);
 
-    rc = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+    rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, RT_INDEFINITE_WAIT);
     if (RT_SUCCESS(rc))
     {
-        rc = pThis->pPort->pfnReceive(pThis->pPort, pu8Buf, cb);
+        rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pu8Buf, cb);
         AssertRC(rc);
     }
     else if (   RT_FAILURE(rc)
@@ -373,17 +373,11 @@ static void drvNATSendWorker(PDRVNAT pThis, void *pvBuf, size_t cb)
 
 
 /**
- * Called by the guest to send data to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           Data to send.
- * @param   cb              Number of bytes to send.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvNATSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNATSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVNAT pThis = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
+    PDRVNAT pThis = PDMINETWORKUP_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
     Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
@@ -450,16 +444,9 @@ static void drvNATNotifyNATThread(PDRVNAT pThis)
 
 
 /**
- * Set promiscuous mode.
- *
- * This is called when the promiscuous mode is set. This means that there doesn't have
- * to be a mode change when it's called.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
     LogFlow(("drvNATSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
@@ -499,9 +486,9 @@ static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enm
  * @param   enmLinkState    The new link state.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PDRVNAT pThis = PDMINETWORKCONNECTOR_2_DRVNAT(pInterface);
+    PDRVNAT pThis = PDMINETWORKUP_2_DRVNAT(pInterface);
 
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
@@ -814,7 +801,7 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
     PDRVNAT     pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUp);
     return NULL;
 }
 
@@ -826,10 +813,10 @@ static DECLCALLBACK(void *) drvNATQueryInterface(PPDMIBASE pInterface, const cha
  */
 static void drvNATSetMac(PDRVNAT pThis)
 {
-    if (pThis->pConfig)
+    if (pThis->pIAboveConfig)
     {
         RTMAC Mac;
-        pThis->pConfig->pfnGetMac(pThis->pConfig, &Mac);
+        pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, &Mac);
         /* Re-activate the port forwarding. If  */
         slirp_set_ethaddr_and_activate_port_forwarding(pThis->pNATState, Mac.au8, pThis->GuestIP);
     }
@@ -997,9 +984,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
     /* INetwork */
-    pThis->INetworkConnector.pfnSend               = drvNATSend;
-    pThis->INetworkConnector.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
-    pThis->INetworkConnector.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
+/** @todo implement the new INetworkUp interfaces. */
+    pThis->INetworkUp.pfnSendDeprecated     = drvNATSendDeprecated;
+    pThis->INetworkUp.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
 
     /*
      * Get the configuration settings.
@@ -1024,13 +1012,13 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Query the network port interface.
      */
-    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
-    if (!pThis->pPort)
+    pThis->pIAboveNet = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKDOWN);
+    if (!pThis->pIAboveNet)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "
                                 "export the network port interface"));
-    pThis->pConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
-    if (!pThis->pConfig)
+    pThis->pIAboveConfig = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKCONFIG);
+    if (!pThis->pIAboveConfig)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: the above device/driver didn't "
                                 "export the network config interface"));

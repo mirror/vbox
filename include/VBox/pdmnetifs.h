@@ -39,13 +39,75 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+
+/**
+ * PDM scatter/gather buffer.
+ *
+ * @todo Promote this to VBox/types.h, VBox/pdmcommon.h or some such place.
+ */
+typedef struct PDMSCATTERGATHER
+{
+    /** Flags. */
+    size_t          fFlags;
+    /** The number of bytes used.
+     * This is cleared on alloc and set by the user. */
+    size_t          cbUsed;
+    /** The number of bytes available.
+     * This is set on alloc and not changed by the user. */
+    size_t          cbAvailable;
+    /** Private data member for the allocator side. */
+    void           *pvAllocator;
+    /** Private data member for the user side. */
+    void           *pvUser;
+    /** The number of segments
+     * This is set on alloc and not changed by the user. */
+    size_t          cSegs;
+    /** Variable sized array of segments. */
+    PDMDATASEG      aSegs[1];
+} PDMSCATTERGATHER;
+/** Pointer to a PDM scatter/gather buffer. */
+typedef PDMSCATTERGATHER *PPDMSCATTERGATHER;
+/** Pointer to a PDM scatter/gather buffer pointer. */
+typedef PPDMSCATTERGATHER *PPPDMSCATTERGATHER;
+
+
+/** @name PDMSCATTERGATHER::fFlags
+ * @{  */
+/** Magic value. */
+#define PDMSCATTERGATHER_FLAGS_MAGIC        UINT32_C(0xb1b10000)
+/** Magic mask. */
+#define PDMSCATTERGATHER_FLAGS_MAGIC_MASK   UINT32_C(0xffff0000)
+/** Owned by owner number 1. */
+#define PDMSCATTERGATHER_FLAGS_OWNER_1      UINT32_C(0x00000001)
+/** Owned by owner number 2. */
+#define PDMSCATTERGATHER_FLAGS_OWNER_2      UINT32_C(0x00000002)
+/** Owned by owner number 3. */
+#define PDMSCATTERGATHER_FLAGS_OWNER_3      UINT32_C(0x00000002)
+/** Owner mask. */
+#define PDMSCATTERGATHER_FLAGS_OWNER_MASK   UINT32_C(0x00000003)
+/** @} */
+
+
+/**
+ * Sets the owner of a scatter/gather buffer.
+ *
+ * @param   pSgBuf              .
+ * @param   uNewOwner           The new owner.
+ */
+DECLINLINE(void) PDMScatterGatherSetOwner(PPDMSCATTERGATHER pSgBuf, uint32_t uNewOwner)
+{
+    pSgBuf->fFlags = (pSgBuf->fFlags & ~PDMSCATTERGATHER_FLAGS_OWNER_MASK) | uNewOwner;
+}
+
+
+
 /** Pointer to a network port interface */
-typedef struct PDMINETWORKPORT *PPDMINETWORKPORT;
+typedef struct PDMINETWORKDOWN *PPDMINETWORKDOWN;
 /**
  * Network port interface (down).
- * Pair with PDMINETWORKCONNECTOR.
+ * Pair with PDMINETWORKUP.
  */
-typedef struct PDMINETWORKPORT
+typedef struct PDMINETWORKDOWN
 {
     /**
      * Wait until there is space for receiving data. We do not care how much space is available
@@ -56,8 +118,10 @@ typedef struct PDMINETWORKPORT
      * @returns VBox status code. VINF_SUCCESS means there is at least one receive descriptor available.
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   cMillies        Number of milliseconds to wait. 0 means return immediately.
+     *
+     * @thread  Non-EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnWaitReceiveAvail,(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies));
+    DECLR3CALLBACKMEMBER(int, pfnWaitReceiveAvail,(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies));
 
     /**
      * Receive data from the network.
@@ -66,13 +130,31 @@ typedef struct PDMINETWORKPORT
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pvBuf           The available data.
      * @param   cb              Number of bytes available in the buffer.
-     * @thread  EMT
+     *
+     * @thread  Non-EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb));
+    DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb));
 
-} PDMINETWORKPORT;
-/** PDMINETWORKPORT inteface ID. */
-#define PDMINETWORKPORT_IID                     "eb66670b-7998-4470-8e72-886e30f6a9c3"
+
+    /**
+     * Called when there is a buffered of the required size available.
+     *
+     * When a PDMINETWORKUP::pfnAllocBuf call fails with VERR_TRY_AGAIN, the
+     * driver will notify the device/driver up stream when a large enough buffer
+     * becomes available via this method.
+     *
+     * @param   pInterface      Pointer to this interface.
+     * @param   pSgBuf          Scatter/gather buffer of the size previously
+     *                          requested.  Pass to PDMINETWORKUP::pfnSendBuf or
+     *                          PDMINETWORKUP::pfnFreeBuf.
+     *
+     * @thread  Non-EMT.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnNotifyBufAvailable,(PPDMINETWORKDOWN pInterface));
+
+} PDMINETWORKDOWN;
+/** PDMINETWORKDOWN inteface ID. */
+#define PDMINETWORKDOWN_IID                     "eb66670b-7998-4470-8e72-886e30f6a9c3"
 
 
 /**
@@ -92,23 +174,69 @@ typedef enum PDMNETWORKLINKSTATE
 
 
 /** Pointer to a network connector interface */
-typedef struct PDMINETWORKCONNECTOR *PPDMINETWORKCONNECTOR;
+typedef struct PDMINETWORKUP *PPDMINETWORKUP;
 /**
  * Network connector interface (up).
- * Pair with PDMINETWORKPORT.
+ * Pair with PDMINETWORKDOWN.
  */
-typedef struct PDMINETWORKCONNECTOR
+typedef struct PDMINETWORKUP
 {
+    /**
+     * Get a send buffer for passing to pfnSendBuf.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_TRY_AGAIN if temporarily out of buffer space.  After this
+     *          happens, the driver will call PDMINETWORKDOWN::pfnNotifyBufAvailable
+     *          when this is a buffer of the required size available.
+     * @retval  VERR_NO_MEMORY if really out of buffer space.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   cbMin           The minimum buffer size.
+     * @param   ppSgBuf         Where to return the buffer.  The buffer will be
+     *                          owned by the caller, designation owner number 1.
+     *
+     * @thread  Any, but normally EMT.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAllocBuf,(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf));
+
+    /**
+     * Frees an unused buffer.
+     *
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_TRY_AGAIN if temporarily out of buffer space.  After this
+     *          happens, the driver will call PDMINETWORKDOWN::pfnNotifyBufAvailable
+     *          when this is a buffer of the required size available.
+     * @retval  VERR_NO_MEMORY if really out of buffer space.
+     *
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pSgBuf          A buffer from PDMINETWORKUP::pfnAllocBuf or
+     *                          PDMINETWORKDOWN::pfnNotifyBufAvailable.  The buffer
+     *                          ownership shall be 1.
+     *
+     * @thread  Any.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFreeBuf,(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf));
+
     /**
      * Send data to the network.
      *
-     * @returns VBox status code.
+     * @retval  VINF_SUCCESS on success.
+     * @retval  VERR_NET_NO_NETWORK if the NIC is not connected to a network.
+     *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
-     * @param   pvBuf           Data to send.
-     * @param   cb              Number of bytes to send.
-     * @thread  EMT
+     * @param   pSgBuf          The buffer containing the data to send.  The buffer
+     *                          ownership shall be 1.  Upon sucessfull return the
+     *                          buffer will be owned by the downstream driver and
+     *                          have ownership set to 2.  The caller must not ever
+     *                          touch it again.  On failure the buffer remains in
+     *                          the callers ownership and it should be handed over
+     *                          to PDMINETWORKUP::pfnFreeBuf.
+     * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
+     *                          if an EMT.
+     *
+     * @thread  Any.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSend,(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb));
+    DECLR3CALLBACKMEMBER(int, pfnSendBuf,(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread));
 
     /**
      * Set promiscuous mode.
@@ -118,24 +246,37 @@ typedef struct PDMINETWORKCONNECTOR
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
-     * @thread  EMT
+     * @thread  EMT ??
      */
-    DECLR3CALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous));
+    DECLR3CALLBACKMEMBER(void, pfnSetPromiscuousMode,(PPDMINETWORKUP pInterface, bool fPromiscuous));
 
     /**
      * Notification on link status changes.
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   enmLinkState    The new link state.
-     * @thread  EMT
+     * @thread  EMT ??
      */
-    DECLR3CALLBACKMEMBER(void, pfnNotifyLinkChanged,(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState));
+    DECLR3CALLBACKMEMBER(void, pfnNotifyLinkChanged,(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState));
 
     /** @todo Add a callback that informs the driver chain about MAC address changes if we ever implement that.  */
 
-} PDMINETWORKCONNECTOR;
-/** PDMINETWORKCONNECTOR interface ID. */
-#define PDMINETWORKCONNECTOR_IID                "b4b6f850-50d0-4ddf-9efa-daee80194dca"
+    /**
+     * Send data to the network.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pvBuf           Data to send.
+     * @param   cb              Number of bytes to send.
+     * @thread  EMT ??
+     * @deprecated
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSendDeprecated,(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb));
+
+
+} PDMINETWORKUP;
+/** PDMINETWORKUP interface ID. */
+#define PDMINETWORKUP_IID                       "f915243e-801a-4868-8979-b6b8594b09cc"
 
 
 /** Pointer to a network config port interface */

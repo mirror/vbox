@@ -401,7 +401,7 @@ int main()
     GEN_CHECK_OFF(PCNetState, pDrv);
     GEN_CHECK_OFF(PCNetState, pDrvBase);
     GEN_CHECK_OFF(PCNetState, IBase);
-    GEN_CHECK_OFF(PCNetState, INetworkPort);
+    GEN_CHECK_OFF(PCNetState, INetworkDown);
     GEN_CHECK_OFF(PCNetState, INetworkConfig);
     GEN_CHECK_OFF(PCNetState, MMIOBase);
     GEN_CHECK_OFF(PCNetState, IOPortBase);
@@ -1264,7 +1264,7 @@ int main()
 
     GEN_CHECK_SIZE(E1KSTATE);
     GEN_CHECK_OFF(E1KSTATE, IBase);
-    GEN_CHECK_OFF(E1KSTATE, INetworkPort);
+    GEN_CHECK_OFF(E1KSTATE, INetworkDown);
     GEN_CHECK_OFF(E1KSTATE, INetworkConfig);
     GEN_CHECK_OFF(E1KSTATE, ILeds);
     GEN_CHECK_OFF(E1KSTATE, pDrvBase);
@@ -1356,7 +1356,7 @@ int main()
     GEN_CHECK_OFF(VPCISTATE, Queues);
     GEN_CHECK_OFF(VPCISTATE, Queues[VIRTIO_MAX_NQUEUES]);
     GEN_CHECK_OFF(VNETSTATE, VPCI);
-    GEN_CHECK_OFF(VNETSTATE, INetworkPort);
+    GEN_CHECK_OFF(VNETSTATE, INetworkDown);
     GEN_CHECK_OFF(VNETSTATE, INetworkConfig);
     GEN_CHECK_OFF(VNETSTATE, pDrvBase);
     GEN_CHECK_OFF(VNETSTATE, pCanRxQueueR3);

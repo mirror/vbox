@@ -114,7 +114,7 @@ typedef struct PCNetState_st PCNetState;
  *
  * @extends     PCIDEVICE
  * @implements  PDMIBASE
- * @implements  PDMINETWORKPORT
+ * @implements  PDMINETWORKDOWN
  * @implements  PDMINETWORKCONFIG
  * @implements  PDMILEDPORTS
  */
@@ -203,13 +203,13 @@ struct PCNetState_st
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERR3                          pTimerRestore;
     /** Pointer to the connector of the attached network driver. */
-    R3PTRTYPE(PPDMINETWORKCONNECTOR)    pDrv;
+    R3PTRTYPE(PPDMINETWORKUP)    pDrv;
     /** Pointer to the attached network driver. */
     R3PTRTYPE(PPDMIBASE)                pDrvBase;
     /** LUN\#0 + status LUN: The base interface. */
     PDMIBASE                            IBase;
     /** LUN\#0: The network port interface. */
-    PDMINETWORKPORT                     INetworkPort;
+    PDMINETWORKDOWN                     INetworkDown;
     /** LUN\#0: The network config port interface. */
     PDMINETWORKCONFIG                   INetworkConfig;
     /** Base address of the MMIO region. */
@@ -2163,7 +2163,7 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pThis)
     if (pThis->cbSendFrame > 70) /* unqualified guess */
         pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
 
-    pThis->pDrv->pfnSend(pThis->pDrv, pThis->pvSendFrame, pThis->cbSendFrame);
+    pThis->pDrv->pfnSendDeprecated(pThis->pDrv, pThis->pvSendFrame, pThis->cbSendFrame);
     STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pThis->cbSendFrame);
     pThis->Led.Actual.s.fWriting = 0;
     STAM_PROFILE_ADV_STOP(&pThis->StatTransmitSend, a);
@@ -4487,14 +4487,14 @@ static DECLCALLBACK(void *) pcnetQueryInterface(struct PDMIBASE *pInterface, con
     PCNetState *pThis = RT_FROM_MEMBER(pInterface, PCNetState, IBase);
     Assert(&pThis->IBase == pInterface);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONFIG, &pThis->INetworkConfig);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMILEDPORTS, &pThis->ILeds);
     return NULL;
 }
 
-/** Converts a pointer to PCNetState::INetworkPort to a PCNetState pointer. */
-#define INETWORKPORT_2_DATA(pInterface)  ( (PCNetState *)((uintptr_t)pInterface - RT_OFFSETOF(PCNetState, INetworkPort)) )
+/** Converts a pointer to PCNetState::INetworkDown to a PCNetState pointer. */
+#define INETWORKPORT_2_DATA(pInterface)  ( (PCNetState *)((uintptr_t)pInterface - RT_OFFSETOF(PCNetState, INetworkDown)) )
 
 
 /**
@@ -4534,7 +4534,7 @@ static int pcnetCanReceive(PCNetState *pThis)
 /**
  *
  */
-static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
 
@@ -4582,7 +4582,7 @@ static DECLCALLBACK(int) pcnetWaitReceiveAvail(PPDMINETWORKPORT pInterface, RTMS
  * @param   cb              Number of bytes available in the buffer.
  * @thread  EMT
  */
-static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKPORT pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) pcnetReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
     PCNetState *pThis = INETWORKPORT_2_DATA(pInterface);
     int         rc;
@@ -4819,8 +4819,8 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgStmt(pThis->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -5009,8 +5009,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* IBase */
     pThis->IBase.pfnQueryInterface          = pcnetQueryInterface;
     /* INeworkPort */
-    pThis->INetworkPort.pfnWaitReceiveAvail = pcnetWaitReceiveAvail;
-    pThis->INetworkPort.pfnReceive          = pcnetReceive;
+    pThis->INetworkDown.pfnWaitReceiveAvail = pcnetWaitReceiveAvail;
+    pThis->INetworkDown.pfnReceive          = pcnetReceive;
     /* INetworkConfig */
     pThis->INetworkConfig.pfnGetMac         = pcnetGetMac;
     pThis->INetworkConfig.pfnGetLinkState   = pcnetGetLinkState;
@@ -5200,8 +5200,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
-        AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"),
+        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)

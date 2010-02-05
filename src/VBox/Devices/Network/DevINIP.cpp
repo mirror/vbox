@@ -70,18 +70,18 @@ RT_C_DECLS_END
  * Internal Network IP stack device instance data.
  *
  * @implements PDMIBASE
- * @implements PDMINETWORKPORT
+ * @implements PDMINETWORKDOWN
  */
 typedef struct DEVINTNETIP
 {
     /** The base interface for LUN\#0. */
     PDMIBASE                IBase;
     /** The network port this device provides (LUN\#0). */
-    PDMINETWORKPORT         INetworkPort;
+    PDMINETWORKDOWN         INetworkDown;
     /** The base interface of the network driver below us. */
     PPDMIBASE               pDrvBase;
     /** The connector of the network driver below us. */
-    PPDMINETWORKCONNECTOR   pDrv;
+    PPDMINETWORKUP   pDrv;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
     /** MAC adress. */
@@ -253,8 +253,8 @@ static DECLCALLBACK(err_t) devINIPOutputRaw(struct netif *netif,
         }
     }
     if (cbBuf)
-        rc = g_pDevINIPData->pDrv->pfnSend(g_pDevINIPData->pDrv,
-                                                 &aFrame[0], cbBuf);
+        rc = g_pDevINIPData->pDrv->pfnSendDeprecated(g_pDevINIPData->pDrv,
+                                                     &aFrame[0], cbBuf);
 
 #if ETH_PAD_SIZE
     lwip_pbuf_header(p, ETH_PAD_SIZE);       /* reclaim the padding word */
@@ -299,7 +299,7 @@ static DECLCALLBACK(err_t) devINIPInterface(struct netif *netif)
  * @param   pInterface  PDM network port interface pointer.
  * @param   cMillies    Number of milliseconds to wait. 0 means return immediately.
  */
-static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKPORT pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     LogFlow(("%s: pInterface=%p\n", __FUNCTION__, pInterface));
     LogFlow(("%s: return VINF_SUCCESS\n", __FUNCTION__));
@@ -314,7 +314,7 @@ static DECLCALLBACK(int) devINIPWaitInputAvail(PPDMINETWORKPORT pInterface, RTMS
  * @param   pvBuf       Pointer to frame data.
  * @param   cb          Frame size.
  */
-static DECLCALLBACK(int) devINIPInput(PPDMINETWORKPORT pInterface,
+static DECLCALLBACK(int) devINIPInput(PPDMINETWORKDOWN pInterface,
                                       const void *pvBuf, size_t cb)
 {
     const uint8_t *pbBuf = (const uint8_t *)pvBuf;
@@ -399,7 +399,7 @@ static DECLCALLBACK(void *) devINIPQueryInterface(PPDMIBASE pInterface,
 {
     PDEVINTNETIP pThis = RT_FROM_MEMBER(pInterface, DEVINTNETIP, IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pThis->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKPORT, &pThis->INetworkPort);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKDOWN, &pThis->INetworkDown);
     return NULL;
 }
 
@@ -476,9 +476,9 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     pThis->pDevIns                          = pDevIns;
     /* IBase */
     pThis->IBase.pfnQueryInterface          = devINIPQueryInterface;
-    /* INetworkPort */
-    pThis->INetworkPort.pfnWaitReceiveAvail = devINIPWaitInputAvail;
-    pThis->INetworkPort.pfnReceive          = devINIPInput;
+    /* INetworkDown */
+    pThis->INetworkDown.pfnWaitReceiveAvail = devINIPWaitInputAvail;
+    pThis->INetworkDown.pfnReceive          = devINIPInput;
 
     /*
      * Get the configuration settings.
@@ -557,10 +557,10 @@ static DECLCALLBACK(int) devINIPConstruct(PPDMDEVINS pDevIns, int iInstance,
     }
     else
     {
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKCONNECTOR);
+        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
         if (!pThis->pDrv)
         {
-            AssertMsgFailed(("Failed to obtain the PDMINETWORKCONNECTOR interface!\n"));
+            AssertMsgFailed(("Failed to obtain the PDMINETWORKUP interface!\n"));
             rc = VERR_PDM_MISSING_INTERFACE_BELOW;
             goto out;
         }

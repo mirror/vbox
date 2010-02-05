@@ -83,14 +83,14 @@
 /**
  * TAP driver instance data.
  *
- * @implements PDMINETWORKCONNECTOR
+ * @implements PDMINETWORKUP
  */
 typedef struct DRVTAP
 {
     /** The network interface. */
-    PDMINETWORKCONNECTOR    INetworkConnector;
+    PDMINETWORKUP           INetworkUp;
     /** The network interface. */
-    PPDMINETWORKPORT        pPort;
+    PPDMINETWORKDOWN        pIAboveNet;
     /** Pointer to the driver instance. */
     PPDMDRVINS              pDrvIns;
     /** TAP device file handle. */
@@ -145,8 +145,8 @@ typedef struct DRVTAP
 } DRVTAP, *PDRVTAP;
 
 
-/** Converts a pointer to TAP::INetworkConnector to a PRDVTAP. */
-#define PDMINETWORKCONNECTOR_2_DRVTAP(pInterface) ( (PDRVTAP)((uintptr_t)pInterface - RT_OFFSETOF(DRVTAP, INetworkConnector)) )
+/** Converts a pointer to TAP::INetworkUp to a PRDVTAP. */
+#define PDMINETWORKUP_2_DRVTAP(pInterface) ( (PDRVTAP)((uintptr_t)pInterface - RT_OFFSETOF(DRVTAP, INetworkUp)) )
 
 
 /*******************************************************************************
@@ -163,17 +163,11 @@ static int              SolarisTAPAttach(PDRVTAP pThis);
 
 
 /**
- * Send data to the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           Data to send.
- * @param   cb              Number of bytes to send.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvTAPSend(PPDMINETWORKCONNECTOR pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvTAPSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVTAP pThis = PDMINETWORKCONNECTOR_2_DRVTAP(pInterface);
+    PDRVTAP pThis = PDMINETWORKUP_2_DRVTAP(pInterface);
     STAM_COUNTER_INC(&pThis->StatPktSent);
     STAM_COUNTER_ADD(&pThis->StatPktSentBytes, cb);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
@@ -197,16 +191,9 @@ static DECLCALLBACK(int) drvTAPSend(PPDMINETWORKCONNECTOR pInterface, const void
 
 
 /**
- * Set promiscuous mode.
- *
- * This is called when the promiscuous mode is set. This means that there doesn't have
- * to be a mode change when it's called.
- *
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   fPromiscuous    Set if the adaptor is now in promiscuous mode. Clear if it is not.
- * @thread  EMT
+ * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvTAPSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvTAPSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
     LogFlow(("drvTAPSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
@@ -220,7 +207,7 @@ static DECLCALLBACK(void) drvTAPSetPromiscuousMode(PPDMINETWORKCONNECTOR pInterf
  * @param   enmLinkState    The new link state.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKCONNECTOR pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvTAPNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
     LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
     /** @todo take action on link down and up. Stop the polling and such like. */
@@ -303,7 +290,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                  *    overflow error to allocate more receive buffers
                  */
                 STAM_PROFILE_ADV_STOP(&pThis->StatReceive, a);
-                int rc1 = pThis->pPort->pfnWaitReceiveAvail(pThis->pPort, RT_INDEFINITE_WAIT);
+                int rc1 = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, RT_INDEFINITE_WAIT);
                 STAM_PROFILE_ADV_START(&pThis->StatReceive, a);
 
                 /*
@@ -325,7 +312,7 @@ static DECLCALLBACK(int) drvTAPAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
                 Log2(("drvTAPAsyncIoThread: cbRead=%#x\n" "%.*Rhxd\n", cbRead, cbRead, achBuf));
                 STAM_COUNTER_INC(&pThis->StatPktRecv);
                 STAM_COUNTER_ADD(&pThis->StatPktRecvBytes, cbRead);
-                rc1 = pThis->pPort->pfnReceive(pThis->pPort, achBuf, cbRead);
+                rc1 = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, achBuf, cbRead);
                 AssertRC(rc1);
             }
             else
@@ -786,7 +773,7 @@ static DECLCALLBACK(void *) drvTAPQueryInterface(PPDMIBASE pInterface, const cha
     PDRVTAP     pThis   = PDMINS_2_DATA(pDrvIns, PDRVTAP);
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKCONNECTOR, &pThis->INetworkConnector);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMINETWORKUP, &pThis->INetworkUp);
     return NULL;
 }
 
@@ -904,9 +891,10 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvTAPQueryInterface;
     /* INetwork */
-    pThis->INetworkConnector.pfnSend                = drvTAPSend;
-    pThis->INetworkConnector.pfnSetPromiscuousMode  = drvTAPSetPromiscuousMode;
-    pThis->INetworkConnector.pfnNotifyLinkChanged   = drvTAPNotifyLinkChanged;
+/** @todo implement the new INetworkUp interfaces. */
+    pThis->INetworkUp.pfnSendDeprecated         = drvTAPSendDeprecated;
+    pThis->INetworkUp.pfnSetPromiscuousMode     = drvTAPSetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged      = drvTAPNotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -924,8 +912,8 @@ static DECLCALLBACK(int) drvTAPConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /*
      * Query the network port interface.
      */
-    pThis->pPort = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKPORT);
-    if (!pThis->pPort)
+    pThis->pIAboveNet = PDMIBASE_QUERY_INTERFACE(pDrvIns->pUpBase, PDMINETWORKDOWN);
+    if (!pThis->pIAboveNet)
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_MISSING_INTERFACE_ABOVE,
                                 N_("Configuration error: The above device/driver didn't export the network port interface"));
 
