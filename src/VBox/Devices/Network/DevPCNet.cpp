@@ -226,7 +226,7 @@ struct PCNetState_st
     /** The configured MAC address. */
     RTMAC                               MacConfigured;
     /** Alignment padding. */
-    uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 6 : 2];
+    uint8_t                             Alignment4[HC_ARCH_BITS == 64 ? 6 : 6];
 
     /** The LED. */
     PDMLED                              Led;
