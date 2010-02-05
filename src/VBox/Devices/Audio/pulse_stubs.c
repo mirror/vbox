@@ -1,10 +1,10 @@
+/* $Id$ */
 /** @file
- *
  * Stubs for libpulse.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,14 +32,20 @@
 #define VBOX_PULSE_LIB "libpulse.so.0"
 
 #define PROXY_STUB(function, rettype, signature, shortsig) \
-void (*function ## _fn)(void); \
-rettype function signature \
-{ return ( (rettype (*) signature) function ## _fn ) shortsig; }
+    static rettype (*g_pfn_ ## function) signature; \
+    \
+    rettype function signature \
+    { \
+        return g_pfn_ ## function shortsig; \
+    }
 
 #define PROXY_STUB_VOID(function, signature, shortsig) \
-void (*function ## _fn)(void); \
-void function signature \
-{ ( (void (*) signature) function ## _fn ) shortsig; }
+    static void (*g_pfn_ ## function) signature; \
+    \
+    void function signature \
+    { \
+        g_pfn_ ## function shortsig; \
+    }
 
 #if PA_PROTOCOL_VERSION >= 16
 PROXY_STUB     (pa_stream_connect_playback, int,
@@ -187,7 +193,7 @@ typedef struct
     void (**fn)(void);
 } SHARED_FUNC;
 
-#define ELEMENT(s) { #s , & s ## _fn }
+#define ELEMENT(function) { #function , (void (**)(void)) & g_pfn_ ## function }
 static SHARED_FUNC SharedFuncs[] =
 {
     ELEMENT(pa_stream_connect_playback),
@@ -273,3 +279,4 @@ int audioLoadPulseLib(void)
     isLibLoaded = YES;
     return rc;
 }
+

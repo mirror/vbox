@@ -1240,9 +1240,9 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             break;
         }
 
-        PCFGMNODE pCfg = CFGMR3GetChild(pCurNode, "VDConfig");
+        PCFGMNODE pCfgVDConfig = CFGMR3GetChild(pCurNode, "VDConfig");
         rc = VDInterfaceAdd(&pImage->VDIConfig, "DrvVD_Config", VDINTERFACETYPE_CONFIG,
-                            &pThis->VDIConfigCallbacks, pCfg, &pImage->pVDIfsImage);
+                            &pThis->VDIConfigCallbacks, pCfgVDConfig, &pImage->pVDIfsImage);
         AssertRC(rc);
 
         /*
