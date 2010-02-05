@@ -127,7 +127,7 @@ void idtInstall(PTSTMICRO pTst, int iIDT)
 DECLASM(void) idtOnly42(PTSTMICRO pTst)
 {
     if (pTst->OriginalIDTR.pIdt)
-        memcpy(&pTst->aIDT[0], (void *)pTst->OriginalIDTR.pIdt, sizeof(VBOXIDTE) * 32);
+        memcpy(&pTst->aIDT[0], (void *)(uintptr_t)pTst->OriginalIDTR.pIdt, sizeof(VBOXIDTE) * 32);
 }
 
 
