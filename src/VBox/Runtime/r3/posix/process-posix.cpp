@@ -381,6 +381,6 @@ RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPid
         exit(0);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
