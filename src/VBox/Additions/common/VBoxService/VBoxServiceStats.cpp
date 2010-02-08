@@ -18,17 +18,20 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#define _WIN32_WINNT 0x0500
 #include <windows.h>
 #include <psapi.h>
-#include "VBoxTray.h"
-#include <VBoxDisplay.h>
-#include <VBox/VMMDev.h>
-#include <VBox/VBoxGuest.h>
-#include <VBoxGuestInternal.h>
-#include <iprt/assert.h>
-#include "helpers.h"
 #include <winternl.h>
+
+#include <iprt/assert.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
+#include <iprt/string.h>
+#include <iprt/semaphore.h>
+#include <iprt/system.h>
+#include <iprt/time.h>
+#include <VBox/VBoxGuestLib.h>
+#include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 
 typedef struct _VBOXSTATSCONTEXT
 {
@@ -76,23 +79,16 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
     int rc = RTSemEventMultiCreate(&g_VMStatEvent);
     AssertRCReturn(rc, rc);
 
-    gCtx.pEnv                   = pEnv;
-    gCtx.uStatInterval          = 0;     /* default */
+    gCtx.uStatInterval          = 0;     /* default; update disabled */
     gCtx.ullLastCpuLoad_Idle    = 0;
     gCtx.ullLastCpuLoad_Kernel  = 0;
     gCtx.ullLastCpuLoad_User    = 0;
 
-    VMMDevGetStatisticsChangeRequest req;
-    vmmdevInitRequest(&req.header, VMMDevReq_GetStatisticsChangeRequest);
-    req.eventAck = 0;
-
-    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
-    {
-        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %d seconds\n", req.u32StatInterval);
-        gCtx.uStatInterval = req.u32StatInterval * 1000;
-    }
+    rc = VbglR3StatQueryInterval(&gCtx.uStatInterval);
+    if (RT_SUCCESS(rc))
+        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %d seconds\n", gCtx.uStatInterval);
     else
-        VBoxServiceVerbose(3, ("VBoxStatsInit: DeviceIoControl failed with %d\n", GetLastError());
+        VBoxServiceVerbose(3, "VBoxStatsInit: DeviceIoControl failed with %d\n", rc);
 
 #ifdef RT_OS_WINDOWS
     /* NtQuerySystemInformation might be dropped in future releases, so load it dynamically as per Microsoft's recommendation */
@@ -138,7 +134,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 }
 
 
-static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
+static void VBoxServiceVMStatsReport()
 {
 #ifdef RT_OS_WINDOWS
     SYSTEM_INFO systemInfo;
@@ -147,14 +143,11 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
     VMMDevReportGuestStats req;
     uint32_t cbStruct;
     DWORD    cbReturned;
-    HANDLE   gVBoxDriver = pCtx->pEnv->hDriver;
 
     Assert(gCtx.pfnGlobalMemoryStatusEx && gCtx.pfnNtQuerySystemInformation);
     if (    !gCtx.pfnGlobalMemoryStatusEx
         ||  !gCtx.pfnNtQuerySystemInformation)
         return;
-
-    vmmdevInitRequest(&req.header, VMMDevReq_ReportGuestStats);
 
     /* Query and report guest statistics */
     GetSystemInfo(&systemInfo);
@@ -168,7 +161,7 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
     /* The current size of the committed memory limit, in bytes. This is physical memory plus the size of the page file, minus a small overhead. */
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize) - req.guestStats.u32PhysMemTotal;
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32PhysMemBalloon    = VBoxMemBalloonQuerySize() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
+    req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQuerySize() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
     req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
 
     if (gCtx.pfnGetPerformanceInfo)
@@ -188,7 +181,7 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
             req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_HANDLES | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
         }
         else
-            Log(("GetPerformanceInfo failed with %d\n", GetLastError()));
+            VBoxServiceVerbose(3, "GetPerformanceInfo failed with %d\n", GetLastError());
     }
 
     /* Query CPU load information */
@@ -237,12 +230,13 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
     {
         req.guestStats.u32CpuId = i;
 
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_VMMREQUEST(req.header.size), &req, req.header.size, &req, req.header.size, &cbReturned, NULL))
+        rc = VbglR3StatReport(&req);
+        if (RT_SUCCESS(rc))
         {
-            Log(("VBoxStatsReportStatistics: new statistics reported successfully!\n"));
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
         }
         else
-            Log(("VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError()));
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
     }
 
     free(pProcInfo);
@@ -255,11 +249,15 @@ static void VBoxServiceVMStatsReport(VBOXSTATSCONTEXT *pCtx)
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
 {
-    VBOXSTATSCONTEXT *pCtx = (VBOXSTATSCONTEXT *)pInstance;
-    HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
-    bool fTerminate = false;
-
     int rc = VINF_SUCCESS;
+
+    /* Start monitoring of the stat event change event. */
+    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 0);
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceVerbose(3, "VBoxServiceVMStatsWorker: VbglR3CtlFilterMask failed with %d\n", rc);
+        return rc;
+    }
 
     /*
      * Tell the control thread that it can continue
@@ -267,27 +265,29 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
      */
     RTThreadUserSignal(RTThreadSelf());
 
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 0);
-    if (RT_FAILED(rc))
-    {
-        VBoxServiceVerbose(3, ("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n");
-        return 0;
-    }
-
     /*
      * Now enter the loop retrieving runtime data continuously.
      */
     for (;;)
     {
         uint32_t fEvents = 0;
+        uint32_t u32WaitMillies;
 
-        rc = VbglR3WaitEvent(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 1000, &fEvents);
+        /* Check if an update interval change is pending. */
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 0 /* no wait */, &fEvents);
         if (    RT_SUCCESS(rc)
             &&  (fEvents & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST))
         {
+            VbglR3StatQueryInterval(&gCtx.uStatInterval);
         }
 
-        VBoxServiceVMStatsReport();
+        if (gCtx.uStatInterval)
+        {
+            VBoxServiceVMStatsReport();
+            u32WaitMillies = gCtx.uStatInterval;
+        }
+        else
+            u32WaitMillies = 3000;
 
         /*
          * Block for a while.
@@ -297,7 +297,7 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
-        int rc2 = RTSemEventMultiWait(g_VMStatEvent, g_VMStatsInterval);
+        int rc2 = RTSemEventMultiWait(g_VMStatEvent, u32WaitMillies);
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
@@ -308,18 +308,15 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
         }
     }
 
+    /* Cancel monitoring of the stat event change event. */
     rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST);
-    if (RT_FAILED(rc))
-    {
-        VBoxServiceVerbose(3, ("VBoxStatsThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n");
-        return 0;
-    }
+    if (RT_FAILURE(rc))
+        VBoxServiceVerbose(3, "VBoxServiceVMStatsWorker: VbglR3CtlFilterMask failed with %d\n", rc);
 
+    RTSemEventMultiDestroy(g_VMStatEvent);
+    g_VMStatEvent = NIL_RTSEMEVENTMULTI;
 
-    RTSemEventMultiDestroy(g_VMStatsEvent);
-    g_VMStatsEvent = NIL_RTSEMEVENTMULTI;
-
-    Log(("VBoxStatsThread: finished statistics change request thread\n"));
+    VBoxServiceVerbose(3, "VBoxStatsThread: finished statistics change request thread\n");
     return 0;
 }
 
@@ -335,7 +332,7 @@ static DECLCALLBACK(void) VBoxServiceVMStatsTerm(void)
 /** @copydoc VBOXSERVICE::pfnStop */
 static DECLCALLBACK(void) VBoxServiceVMStatsStop(void)
 {
-    RTSemEventMultiSignal(g_VMStatsEvent);
+    RTSemEventMultiSignal(g_VMStatEvent);
 }
 
 

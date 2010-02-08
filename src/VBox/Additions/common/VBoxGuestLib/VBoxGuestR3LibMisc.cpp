@@ -157,17 +157,10 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
  */
 VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 {
-#if defined(RT_OS_WINDOWS)
-    /** @todo Not yet implemented. */
-    return VERR_NOT_SUPPORTED;
-
-#else
-
     VBoxGuestFilterMaskInfo Info;
     Info.u32OrMask = fOr;
     Info.u32NotMask = fNot;
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
-#endif
 }
 
 
@@ -195,6 +188,49 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
         LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc=%Rrc.\n", fOr, fNot, rc));
 #endif
     return rc;
+}
+
+/**
+ * Query the current statistics update interval
+ *
+ * @returns IPRT status code
+ * @param   pu32Interval    Update interval in ms (out)
+ */
+VBGLR3DECL(int) VbglR3StatQueryInterval(uint32_t *pu32Interval)
+{
+    VMMDevGetStatisticsChangeRequest Req;
+
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetStatisticsChangeRequest);
+    Req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+        *pu32Interval = Req.u32StatInterval * 1000;
+    return rc;
+}
+
+
+/**
+ * Report guest statistics
+ *
+ * @returns IPRT status code
+ * @param   pReq        Request packet with statistics
+ */
+VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
+{
+    vmmdevInitRequest(&pReq->header, VMMDevReq_ReportGuestStats);
+    return vbglR3GRPerform(&pReq->header);
+}
+
+
+/**
+ * Refresh the memory balloon after a change
+ *
+ * @returns IPRT status code
+ * @param   pu32Size    Memory balloon size in MBs (out)
+ */
+VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pu32Size)
+{
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, pu32Size, sizeof(*pu32Size));
 }
 
 

@@ -26,7 +26,6 @@
 #ifdef RT_OS_WINDOWS
 # include <Windows.h>
 # include <process.h> /* Needed for file version information. */
-# include <Ntsecapi.h> /* Needed for process security information. */
 #endif
 
 /**
@@ -152,7 +151,6 @@ extern VBOXSERVICE g_VMStatistics;
 
 #ifdef RT_OS_WINDOWS
 extern DWORD g_rcWinService;
-extern SERVICE_STATUS_HANDLE g_hWinServiceStatus;
 extern SERVICE_TABLE_ENTRY const g_aServiceTable[];     /** @todo generate on the fly, see comment in main() from the enabled sub services. */
 extern PFNWTSGETACTIVECONSOLESESSIONID g_pfnWTSGetActiveConsoleSessionId; /* VBoxServiceVMInfo-win.cpp */
 
@@ -167,6 +165,10 @@ extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
 extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
+
+#ifdef VBOXSERVICE_MANAGEMENT
+extern uint32_t VBoxServiceBalloonQuerySize();
+#endif
 
 RT_C_DECLS_END
 
