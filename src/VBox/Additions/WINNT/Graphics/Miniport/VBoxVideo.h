@@ -623,7 +623,10 @@ DriverEntry(
     );
 RT_C_DECLS_END
 
-VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode);
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
+        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
+        D3DKMDT_2DREGION **pResolutions, uint32_t * pcResolutions);
+
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
@@ -655,6 +658,8 @@ typedef struct VBOXVIDPNCOFUNCMODALITY
     uint32_t cModes;
     uint32_t iPreferredMode;
     VIDEO_MODE_INFORMATION *pModes;
+    uint32_t cResolutions;
+    D3DKMDT_2DREGION *pResolutions;
 }VBOXVIDPNCOFUNCMODALITY, *PVBOXVIDPNCOFUNCMODALITY;
 
 /* !!!NOTE: The callback is responsible for releasing the path */

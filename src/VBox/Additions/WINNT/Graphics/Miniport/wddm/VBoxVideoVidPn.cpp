@@ -497,62 +497,43 @@ NTSTATUS vboxVidPnPopulateSourceModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
 
 NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
         D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo,
-        VIDEO_MODE_INFORMATION *pMode)
+        D3DKMDT_2DREGION *pResolution,
+        BOOLEAN bPreferred)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-#if 0
-    todo();
-    if (pMode->AttributeFlags & VIDEO_MODE_GRAPHICS)
-    {
-        /* this is a graphics mode */
-        pNewVidPnSourceModeInfo->Type = D3DKMDT_RMT_GRAPHICS;
-        pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx = pMode->VisScreenWidth;
-        pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy = pMode->VisScreenHeight;
-        pNewVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize = pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize;
-        pNewVidPnSourceModeInfo->Format.Graphics.Stride = pMode->ScreenStride;
-        pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat = vboxWddmCalcPixelFormat(pInfo);
-        Assert(pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat != D3DDDIFMT_UNKNOWN);
-        if (pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat != D3DDDIFMT_UNKNOWN)
-        {
-            pNewVidPnSourceModeInfo->Format.Graphics.ColorBasis = D3DKMDT_CB_SRGB;
-            if (pNewVidPnSourceModeInfo->Format.Graphics.PixelFormat == D3DDDIFMT_P8)
-                pNewVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_SETTABLEPALETTE;
-            else
-                pNewVidPnSourceModeInfo->Format.Graphics.PixelValueAccessMode = D3DKMDT_PVAM_DIRECT;
-        }
-        else
-        {
-            drprintf((__FUNCTION__": vboxWddmCalcPixelFormat failed\n"));
-            Status = STATUS_INVALID_PARAMETER;
-        }
-    }
-    else
-    {
-        /* @todo: XPDM driver does not seem to return text modes, should we? */
-        drprintf((__FUNCTION__": text mode not supported currently\n"));
-        AssertBreakPoint();
-        Status = STATUS_INVALID_PARAMETER;
-    }
-#endif
+
+    pNewVidPnTargetModeInfo->VideoSignalInfo.VideoStandard  = D3DKMDT_VSS_VESA_DMT;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize = *pResolution;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60000;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1000;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy * 60 * 1.05;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 165000; /* @todo: ? */
+    pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
+    pNewVidPnTargetModeInfo->Preference = bPreferred ? D3DKMDT_MP_PREFERRED : D3DKMDT_MP_NOTPREFERRED;
+
     return Status;
 }
 
 NTSTATUS vboxVidPnPopulateTargetModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet,
         const DXGK_VIDPNTARGETMODESET_INTERFACE *pNewVidPnTargetModeSetInterface,
-        VIDEO_MODE_INFORMATION *pModes,
-        uint32_t cModes,
-        uint32_t iPreferredMomde)
+        D3DKMDT_2DREGION *pResolutions,
+        uint32_t cResolutions,
+        VIDEO_MODE_INFORMATION *pPreferredMode)
 {
     NTSTATUS Status = STATUS_SUCCESS;
-    for (uint32_t i = 0; i < cModes; ++i)
+    for (uint32_t i = 0; i < cResolutions; ++i)
     {
         D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo;
         Status = pNewVidPnTargetModeSetInterface->pfnCreateNewModeInfo(hNewVidPnTargetModeSet, &pNewVidPnTargetModeInfo);
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            Status = vboxVidPnPopulateTargetModeInfoFromLegacy(pDevExt, pNewVidPnTargetModeInfo, &pModes[i]);
+            bool bPreferred = pPreferredMode->VisScreenHeight == pResolutions[i].cx
+                    && pPreferredMode->VisScreenWidth == pResolutions[i].cy;
+            Status = vboxVidPnPopulateTargetModeInfoFromLegacy(pDevExt, pNewVidPnTargetModeInfo, &pResolutions[i], bPreferred);
             Assert(Status == STATUS_SUCCESS);
             if (Status == STATUS_SUCCESS)
             {
@@ -602,6 +583,9 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
     VIDEO_MODE_INFORMATION *pModes = pCbContext->pModes;
     uint32_t cModes = pCbContext->cModes;
     uint32_t iPreferredMode = pCbContext->iPreferredMode;
+    uint32_t cResolutions = pCbContext->cResolutions;
+    D3DKMDT_2DREGION * pResolutions = pCbContext->pResolutions;
+
 
     /* adjust scaling */
     if (pCbContext->pEnumCofuncModalityArg->EnumPivotType != D3DKMDT_EPT_SCALING)
@@ -732,7 +716,7 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
                         {
                             Status = vboxVidPnPopulateTargetModeSetFromLegacy(pDevExt,
                                     hNewVidPnTargetModeSet, pNewVidPnTargetModeSetInterface,
-                                    pModes, cModes, iPreferredMode);
+                                    pResolutions, cResolutions, &pModes[iPreferredMode]);
                             Assert(Status == STATUS_SUCCESS);
                             if (Status == STATUS_SUCCESS)
                             {
