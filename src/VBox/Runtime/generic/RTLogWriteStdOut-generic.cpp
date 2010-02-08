@@ -39,7 +39,8 @@
 
 RTDECL(void) RTLogWriteStdOut(const char *pch, size_t cb)
 {
-    fwrite(pch, 1, cb, stdout);
+    size_t cbWritten = fwrite(pch, 1, cb, stdout);
+    (void)cbWritten;
     fflush(stdout);
 }
 RT_EXPORT_SYMBOL(RTLogWriteStdOut);
