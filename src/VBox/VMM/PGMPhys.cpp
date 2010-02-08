@@ -769,6 +769,46 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
     return rc;
 }
 
+/**
+ * Frees a range of ram pages, replacing them with ZERO pages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   cPages      Number of pages to free
+ * @param   paPhysPage  Array of guest physical addresses
+ */
+VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    uint32_t            cPendingPages = 0;
+    PGMMFREEPAGESREQ    pReq;
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    AssertLogRelRCReturn(rc, rc);
+
+    /* Itegerate the pages. */
+    for (unsigned i = 0; i < cPages; i++)
+    {
+        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
+        if (    pPage == NULL
+            ||  pPage->uTypeY != PGMPAGETYPE_RAM)
+        {
+            Log(("PGMR3PhysFreePageRange: invalid physical page %RGp pPage->u3Type=%d\n", paPhysPage[i], (pPage) ? pPage->uTypeY : 0));
+            break;
+        }
+
+        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i]);
+        AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
+    }
+
+    if (cPendingPages)
+    {
+        rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+        AssertLogRelRCReturn(rc, rc);
+    }
+    GMMR3FreePagesCleanup(pReq);
+
+    return rc;
+}
+
 
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
