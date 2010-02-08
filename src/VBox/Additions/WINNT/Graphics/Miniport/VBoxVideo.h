@@ -623,7 +623,9 @@ DriverEntry(
     );
 RT_C_DECLS_END
 
-VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes);
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode);
+D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
+UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
 NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
@@ -645,27 +647,15 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
         BOOLEAN *pbSupported);
 
-typedef struct VBOXVIDPNCMCONTEXT
+typedef struct VBOXVIDPNCOFUNCMODALITY
 {
     NTSTATUS Status;
     CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* pEnumCofuncModalityArg;
-}VBOXVIDPNCMCONTEXT, *PVBOXVIDPNCMCONTEXT;
-
-typedef struct VBOXVIDPN_NEW_SRCMODESET_CHECK
-{
-    VBOXVIDPNCMCONTEXT CommonInfo;
-    CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
-    BOOLEAN bNeedAdjustment;
-}VBOXVIDPN_NEW_SRCMODESET_CHECK, *PVBOXVIDPN_NEW_SRCMODESET_CHECK;
-
-typedef struct VBOXVIDPN_NEW_SRCMODESET_POPULATION
-{
-    VBOXVIDPNCMCONTEXT CommonInfo;
-    CONST D3DDDI_VIDEO_PRESENT_SOURCE_ID VidPnSourceId;
-    /* new source mode (the one being populated) */
-    D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
-    CONST DXGK_VIDPNSOURCEMODESET_INTERFACE*  pNewVidPnSourceModeSetInterface;
-}VBOXVIDPN_NEW_SRCMODESET_POPULATION, *PVBOXVIDPN_NEW_SRCMODESET_POPULATION;
+    /* legacy mode information populated by the common XPDM-WDDM layer */
+    uint32_t cModes;
+    uint32_t iPreferredMode;
+    VIDEO_MODE_INFORMATION *pModes;
+}VBOXVIDPNCOFUNCMODALITY, *PVBOXVIDPNCOFUNCMODALITY;
 
 /* !!!NOTE: The callback is responsible for releasing the path */
 typedef DECLCALLBACK(BOOLEAN) FNVBOXVIDPNENUMPATHS(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,

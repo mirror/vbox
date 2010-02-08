@@ -200,6 +200,72 @@ UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format)
     }
 }
 
+D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo)
+{
+    switch (pInfo->BitsPerPlane)
+    {
+        case 32:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
+                    return D3DDDIFMT_X8R8G8B8;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 24:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xFF0000 && pInfo->GreenMask == 0xFF00 && pInfo->BlueMask == 0xFF)
+                    return D3DDDIFMT_R8G8B8;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 16:
+            if(!(pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && !(pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                if (pInfo->RedMask == 0xF800 && pInfo->GreenMask == 0x7E0 && pInfo->BlueMask == 0x1F)
+                    return D3DDDIFMT_R5G6B5;
+                drprintf((__FUNCTION__": unsupported format: bpp(%d), rmask(%d), gmask(%d), bmask(%d)\n", pInfo->BitsPerPlane, pInfo->RedMask, pInfo->GreenMask, pInfo->BlueMask));
+                AssertBreakpoint();
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        case 8:
+            if((pInfo->AttributeFlags & VIDEO_MODE_PALETTE_DRIVEN) && (pInfo->AttributeFlags & VIDEO_MODE_MANAGED_PALETTE))
+            {
+                return D3DDDIFMT_P8;
+            }
+            else
+            {
+                drprintf((__FUNCTION__": unsupported AttributeFlags(0x%x)\n", pInfo->AttributeFlags));
+                AssertBreakpoint();
+            }
+            break;
+        default:
+            drprintf((__FUNCTION__": unsupported bpp(%d)\n", pInfo->BitsPerPlane));
+            AssertBreakpoint();
+            break;
+    }
+
+    return D3DDDIFMT_UNKNOWN;
+}
+
 UINT vboxWddmCalcPitch(UINT w, UINT bitsPerPixel)
 {
     UINT Pitch = bitsPerPixel * w;
@@ -1438,8 +1504,11 @@ DxgkDdiEnumVidPnCofuncModality(
         Assert(Status == STATUS_SUCCESS);
         if (Status == STATUS_SUCCESS)
         {
-            VBOXVIDPNCMCONTEXT CbContext = {0};
+            VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
+            VBoxWddmGetModesTable(pContext, true, &CbContext.pModes, &CbContext.cModes, &CbContext.iPreferredMode);
+            Assert(CbContext.cModes);
+            Assert(CbContext.cModes > CbContext.iPreferredMode);
             Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
                     hVidPnTopology, pVidPnTopologyInterface,
                     vboxVidPnCofuncModalityPathEnum, &CbContext);
