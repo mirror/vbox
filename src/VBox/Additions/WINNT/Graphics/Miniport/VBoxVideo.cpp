@@ -171,6 +171,46 @@ static uint32_t gNumVideoModes = 0;
 #ifdef VBOXWDDM
 /* preferred mode index */
 static uint32_t gPreferredVideoMode = 0;
+
+static D3DKMDT_2DREGION g_VBoxWddmVideoResolutions[RT_ELEMENTS(VideoModes)];
+static uint32_t g_VBoxWddmNumResolutions;
+
+DECLINLINE(int) vboxWddmRectComparator(const D3DKMDT_2DREGION *pReg1, const D3DKMDT_2DREGION *pReg2)
+{
+    int tmp = pReg1->cx - pReg2->cx;
+    if(tmp)
+        return tmp;
+    tmp = pReg1->cy - pReg2->cy;
+    return tmp;
+}
+
+/* builds a g_VBoxWddmVideoResolutions given VideoModes info */
+VOID vboxWddmBuildResolutionTable()
+{
+    g_VBoxWddmNumResolutions = 0;
+
+    /* we don't care about the efficiency at this time */
+    for (uint32_t i = 0; i < gNumVideoModes; ++i)
+    {
+        VIDEO_MODE_INFORMATION *pMode = &VideoModes[i];
+        bool bFound = false;
+        for (uint32_t j = 0; j < g_VBoxWddmNumResolutions; ++j)
+        {
+            if (g_VBoxWddmVideoResolutions[j].cx == pMode->VisScreenWidth
+                    && g_VBoxWddmVideoResolutions[j].cy == pMode->VisScreenHeight)
+            {
+                bFound = true;
+                break;
+            }
+        }
+
+        if (!bFound)
+        {
+            g_VBoxWddmVideoResolutions[g_VBoxWddmNumResolutions].cx = pMode->VisScreenWidth;
+            g_VBoxWddmVideoResolutions[g_VBoxWddmNumResolutions].cy = pMode->VisScreenHeight;
+        }
+    }
+}
 #endif
 
 static uint32_t g_xresNoVRAM = 0, g_yresNoVRAM = 0, g_bppNoVRAM = 0;
@@ -892,6 +932,10 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     }
 #endif
 
+#ifdef VBOXWDDM
+    vboxWddmBuildResolutionTable();
+#endif
+
     VBoxVideoCmnRegFini(Reg);
 }
 
@@ -902,7 +946,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
  * geometries until we've either reached the maximum number of modes
  * or the available VRAM does not allow for additional modes.
  */
-VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode)
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
+        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
+        D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions)
 {
     static bool bTableInitialized = false;
     if(bRebuildTable || !bTableInitialized)
@@ -914,6 +960,8 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
     *ppModes = VideoModes;
     *pcModes = gNumVideoModes;
     *pPreferrableMode = gPreferredVideoMode;
+    *ppResolutions = g_VBoxWddmVideoResolutions;
+    *pcResolutions = g_VBoxWddmNumResolutions;
 }
 
 #endif

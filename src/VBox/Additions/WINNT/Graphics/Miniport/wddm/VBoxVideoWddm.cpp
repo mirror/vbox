@@ -1506,7 +1506,7 @@ DxgkDdiEnumVidPnCofuncModality(
         {
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
-            VBoxWddmGetModesTable(pContext, true, &CbContext.pModes, &CbContext.cModes, &CbContext.iPreferredMode);
+            VBoxWddmGetModesTable(pContext, true, &CbContext.pModes, &CbContext.cModes, &CbContext.iPreferredMode, &CbContext.cResolutions, &CbContext.pResolutions);
             Assert(CbContext.cModes);
             Assert(CbContext.cModes > CbContext.iPreferredMode);
             Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,
