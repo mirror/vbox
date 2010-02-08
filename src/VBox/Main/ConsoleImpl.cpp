@@ -48,6 +48,7 @@
 #include "ConsoleImpl.h"
 
 #include "Global.h"
+#include "VirtualBoxErrorInfoImpl.h"
 #include "GuestImpl.h"
 #include "KeyboardImpl.h"
 #include "MouseImpl.h"
@@ -7405,11 +7406,30 @@ DECLCALLBACK(int) Console::powerUpThread(RTTHREAD Thread, void *pvUser)
     {
         /* Notify the progress object of the success */
         task->mProgress->notifyComplete(S_OK);
+        console->mControl->SetPowerUpInfo(NULL);
     }
     else
     {
         /* The progress object will fetch the current error info */
         task->mProgress->notifyComplete(rc);
+        ProgressErrorInfo info(task->mProgress);
+        ComObjPtr<VirtualBoxErrorInfo> errorInfo;
+        rc = errorInfo.createObject();
+        if (SUCCEEDED(rc))
+        {
+            errorInfo->init(info.getResultCode(),
+                            info.getInterfaceID(),
+                            info.getComponent(),
+                            info.getText());
+            console->mControl->SetPowerUpInfo(errorInfo);
+        }
+        else
+        {
+            /* If it's not possible to create an IVirtualBoxErrorInfo object
+             * signal success, as not signalling anything will cause a stuck
+             * progress object in VBoxSVC. */
+            console->mControl->SetPowerUpInfo(NULL);
+        }
 
         LogRel(("Power up failed (vrc=%Rrc, rc=%Rhrc (%#08X))\n", vrc, rc, rc));
     }
