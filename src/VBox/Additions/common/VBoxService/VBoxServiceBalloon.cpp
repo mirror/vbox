@@ -18,145 +18,169 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#define _WIN32_WINNT 0x0500
-#include <windows.h>
-#include <psapi.h>
-#include "VBoxTray.h"
-#include "VBoxMemBalloon.h"
-#include <VBoxDisplay.h>
-#include <VBox/VMMDev.h>
-#include <VBoxGuestInternal.h>
 #include <iprt/assert.h>
-#include "helpers.h"
-#include <winternl.h>
+#include <iprt/mem.h>
+#include <iprt/thread.h>
+#include <iprt/string.h>
+#include <iprt/semaphore.h>
+#include <iprt/system.h>
+#include <iprt/time.h>
+#include <VBox/VBoxGuestLib.h>
+#include "VBoxServiceInternal.h"
+#include "VBoxServiceUtils.h"
 
-typedef struct _VBOXMEMBALLOONCONTEXT
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static uint32_t g_MemBalloonSize = 0;
+
+/** The semaphore we're blocking on. */
+static RTSEMEVENTMULTI  g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
+
+/** @copydoc VBOXSERVICE::pfnPreInit */
+static DECLCALLBACK(int) VBoxServiceBalloonPreInit(void)
 {
-    const VBOXSERVICEENV *pEnv;
-    uint32_t              uMemBalloonSize;
-} VBOXMEMBALLOONCONTEXT;
-
-
-static VBOXMEMBALLOONCONTEXT gCtx = {0};
-
-
-int VBoxMemBalloonInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
-{
-    HANDLE gVBoxDriver = pEnv->hDriver;
-    DWORD  cbReturned;
-
-    Log(("VBoxMemBalloonInit: Init\n"));
-
-    gCtx.pEnv                   = pEnv;
-    gCtx.uMemBalloonSize        = 0;
-
-    /* Check balloon size */
-    DWORD dwMemBalloonSize;
-    if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
-    {
-        Log(("VBoxMemBalloonInit: new balloon size %d MB\n", dwMemBalloonSize));
-        gCtx.uMemBalloonSize = dwMemBalloonSize;
-    }
-    else
-        Log(("VBoxMemBalloonInit: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
-
-    *pfStartThread = true;
-    *ppInstance = &gCtx;
     return VINF_SUCCESS;
 }
 
 
-void VBoxMemBalloonDestroy(const VBOXSERVICEENV *pEnv, void *pInstance)
+/** @copydoc VBOXSERVICE::pfnOption */
+static DECLCALLBACK(int) VBoxServiceBalloonOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
-    Log(("VBoxMemBalloonDestroy\n"));
-    return;
+    return VINF_SUCCESS;
 }
 
-uint32_t VBoxMemBalloonQuerySize()
+
+/** @copydoc VBOXSERVICE::pfnInit */
+static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
 {
-    return gCtx.uMemBalloonSize;
+    VBoxServiceVerbose(3, "VBoxServiceBalloonInit\n");
+
+    int rc = RTSemEventMultiCreate(&g_MemBalloonEvent);
+    AssertRCReturn(rc, rc);
+
+    g_MemBalloonSize = 0;
+
+    /* Check balloon size */
+    rc = VbglR3MemBalloonRefresh(&g_MemBalloonSize);
+    if (RT_SUCCESS(rc))
+        VBoxServiceVerbose(3, "VBoxMemBalloonInit: new balloon size %d MB\n", g_MemBalloonSize);
+    else
+        VBoxServiceVerbose(3, "VBoxMemBalloonInit: VbglR3MemBalloonRefresh failed with %d\n", rc);
+
+    return rc;
 }
 
-/**
- * Thread function to wait for and process seamless mode change
- * requests
- */
-unsigned __stdcall VBoxMemBalloonThread(void *pInstance)
+
+uint32_t VBoxServiceBalloonQuerySize()
 {
-    VBOXMEMBALLOONCONTEXT *pCtx = (VBOXMEMBALLOONCONTEXT *)pInstance;
-    HANDLE gVBoxDriver = pCtx->pEnv->hDriver;
-    bool fTerminate = false;
-    VBoxGuestFilterMaskInfo maskInfo;
-    DWORD cbReturned;
+    return g_MemBalloonSize;
+}
 
-    maskInfo.u32OrMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
-    maskInfo.u32NotMask = 0;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
+/** @copydoc VBOXSERVICE::pfnWorker */
+DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
+{
+    int rc = VINF_SUCCESS;
+
+    /* Start monitoring of the stat event change event. */
+    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0);
+    if (RT_FAILURE(rc))
     {
-        Log(("VBoxMemBalloonThread: DeviceIOControl(CtlMask - or) succeeded\n"));
-    }
-    else
-    {
-        Log(("VBoxMemBalloonThread: DeviceIOControl(CtlMask) failed, SeamlessChangeThread exited\n"));
-        return 0;
+        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %d\n", rc);
+        return rc;
     }
 
-    do
+    /*
+     * Tell the control thread that it can continue
+     * spawning services.
+     */
+    RTThreadUserSignal(RTThreadSelf());
+
+    /*
+     * Now enter the loop retrieving runtime data continuously.
+     */
+    for (;;)
     {
-        /* wait for a seamless change event */
-        VBoxGuestWaitEventInfo waitEvent;
-        waitEvent.u32TimeoutIn = 5000;
-        waitEvent.u32EventMaskIn = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
-        if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent), &waitEvent, sizeof(waitEvent), &cbReturned, NULL))
+        uint32_t fEvents = 0;
+
+        /* Check if an update interval change is pending. */
+        rc = VbglR3WaitEvent(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0 /* no wait */, &fEvents);
+        if (    RT_SUCCESS(rc)
+            &&  (fEvents & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST))
         {
-            Log(("VBoxMemBalloonThread: DeviceIOControl succeded\n"));
-
-            /* are we supposed to stop? */
-            if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 0) == WAIT_OBJECT_0)
-                break;
-
-            Log(("VBoxMemBalloonThread: checking event\n"));
-
-            /* did we get the right event? */
-            if (waitEvent.u32EventFlagsOut & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST)
-            {
-                DWORD dwMemBalloonSize;
-                if (DeviceIoControl(gVBoxDriver, VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, NULL, 0, &dwMemBalloonSize, sizeof(dwMemBalloonSize), &cbReturned, NULL))
-                {
-                    Log(("VBoxMemBalloonThread: new balloon size % MB\n", dwMemBalloonSize));
-                    pCtx->uMemBalloonSize = dwMemBalloonSize;
-                }
-                else
-                    Log(("VBoxMemBalloonThread: DeviceIoControl (balloon) failed with %d\n", GetLastError()));
-            }
+            rc = VbglR3MemBalloonRefresh(&g_MemBalloonSize);
+            if (RT_SUCCESS(rc))
+                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: new balloon size %d MB\n", g_MemBalloonSize);
+            else
+                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3MemBalloonRefresh failed with %d\n", rc);
         }
-        else
+
+        /*
+         * Block for a while.
+         *
+         * The event semaphore takes care of ignoring interruptions and it
+         * allows us to implement service wakeup later.
+         */
+        if (*pfShutdown)
+            break;
+        int rc2 = RTSemEventMultiWait(g_MemBalloonEvent, 5000);
+        if (*pfShutdown)
+            break;
+        if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))
         {
-            Log(("VBoxMemBalloonThread: error 0 from DeviceIoControl VBOXGUEST_IOCTL_WAITEVENT\n"));
-
-            /* sleep a bit to not eat too much CPU in case the above call always fails */
-            if (WaitForSingleObject(pCtx->pEnv->hStopEvent, 10) == WAIT_OBJECT_0)
-            {
-                fTerminate = true;
-                break;
-            }
+            VBoxServiceError("RTSemEventMultiWait failed; rc2=%Rrc\n", rc2);
+            rc = rc2;
+            break;
         }
     }
-    while (!fTerminate);
 
-    maskInfo.u32OrMask = 0;
-    maskInfo.u32NotMask = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
-    if (DeviceIoControl (gVBoxDriver, VBOXGUEST_IOCTL_CTL_FILTER_MASK, &maskInfo, sizeof (maskInfo), NULL, 0, &cbReturned, NULL))
-    {
-        Log(("VBoxMemBalloonThread: DeviceIOControl(CtlMask - not) succeeded\n"));
-    }
-    else
-    {
-        Log(("VBoxMemBalloonThread: DeviceIOControl(CtlMask) failed\n"));
-    }
+    /* Cancel monitoring of the memory balloon change event. */
+    rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_BALLOON_CHANGE_REQUEST);
+    if (RT_FAILURE(rc))
+        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %d\n", rc);
 
-    Log(("VBoxMemBalloonThread: finished mem balloon change request thread\n"));
+    RTSemEventMultiDestroy(g_MemBalloonEvent);
+    g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
+
+    VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: finished mem balloon change request thread\n");
     return 0;
 }
 
+/** @copydoc VBOXSERVICE::pfnTerm */
+static DECLCALLBACK(void) VBoxServiceBalloonTerm(void)
+{
+    VBoxServiceVerbose(3, "VBoxServiceBalloonTerm\n");
+    return;
+}
 
+
+/** @copydoc VBOXSERVICE::pfnStop */
+static DECLCALLBACK(void) VBoxServiceBalloonStop(void)
+{
+    RTSemEventMultiSignal(g_MemBalloonEvent);
+}
+
+
+/**
+ * The 'memballoon' service description.
+ */
+VBOXSERVICE g_MemBalloon =
+{
+    /* pszName. */
+    "memballoon",
+    /* pszDescription. */
+    "Memory Ballooning",
+    /* pszUsage. */
+    NULL,
+    /* pszOptions. */
+    NULL,
+    /* methods */
+    VBoxServiceBalloonPreInit,
+    VBoxServiceBalloonOption,
+    VBoxServiceBalloonInit,
+    VBoxServiceBalloonWorker,
+    VBoxServiceBalloonStop,
+    VBoxServiceBalloonTerm
+};

@@ -26,6 +26,7 @@
 #include <windows.h>
 #include <wtsapi32.h>       /* For WTS* calls. */
 #include <psapi.h>          /* EnumProcesses. */
+#include <Ntsecapi.h>       /* Needed for process security information. */
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
