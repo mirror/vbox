@@ -19,6 +19,9 @@
 # additional information or have any questions.
 #
 
+# Set the build type
+export BUILD_TYPE=_BUILDTYPE_
+
 # Attempt to build using DKMS first
 DKMS=`which dkms 2>/dev/null` 
 if [ "$1" = "--no-dkms" ]; then

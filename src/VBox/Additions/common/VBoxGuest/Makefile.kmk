@@ -120,7 +120,7 @@ ifeq ($(KBUILD_TARGET),linux)
  		$(VBOX_VERSION_STAMP) \
  		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxguest;g" --output $@ $<
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxguest;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" --output $@ $<
 	$(QUIET)$(CHMOD) 0755 $@
 
 endif # Linux

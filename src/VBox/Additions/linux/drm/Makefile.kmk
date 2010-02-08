@@ -84,7 +84,7 @@ $$(PATH_vboxvideo_drm-sh)/build_in_tmp: \
 		$(VBOX_VERSION_STAMP) \
 		| $$(dir $$@)
 	$(call MSG_TOOL,Creating,,$@)
-	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvideo;g" < $< > $@
+	$(QUIET)$(SED) -e "s;_VERSION_;${VBOX_VERSION_STRING};g; s;_MODULE_;vboxvideo;g; s;_BUILDTYPE_;${KBUILD_TYPE};g" < $< > $@
 	$(QUIET)chmod 0755 $@
 
 $$(PATH_vboxvideo_drm-mod)/dkms.conf: \
