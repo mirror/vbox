@@ -775,7 +775,6 @@ ifdef VBOX_OSE
  if1of ($(KBUILD_TARGET), solaris)
   VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=
  endif
- VBOX_WITH_HPET=
  VBOX_WITH_LPC=
  VBOX_WITH_SMC=
  # branding
