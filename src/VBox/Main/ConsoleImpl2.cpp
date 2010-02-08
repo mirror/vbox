@@ -157,6 +157,24 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& 
     return S_OK;
 }
 
+static int getSmcDeviceKey(IMachine* pMachine, BSTR * aKey)
+{
+    int rc;
+
+# if defined(RT_OS_DARWIN)
+    char aKeyBuf[65];
+
+    rc = DarwinSmcKey(aKeyBuf, sizeof aKeyBuf);
+    if (SUCCEEDED(rc))
+    {
+        Bstr(aKeyBuf).detachTo(aKey);
+        return rc;
+    }
+#endif
+
+    return pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), aKey);
+}
+
 /**
  *  Construct the VM configuration tree (CFGM).
  *
@@ -539,7 +557,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
         rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                    RC_CHECK();
-        rc = pMachine->GetExtraData(Bstr("VBoxInternal2/SmcDeviceKey"), tmpStr2.asOutParam()); RC_CHECK();
+        rc = getSmcDeviceKey(pMachine,   tmpStr2.asOutParam());              RC_CHECK();
         rc = CFGMR3InsertString(pCfg,   "DeviceKey", Utf8Str(tmpStr2).raw());RC_CHECK();
     }
 
