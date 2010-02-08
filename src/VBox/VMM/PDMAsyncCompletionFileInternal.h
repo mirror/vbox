@@ -224,7 +224,7 @@ typedef struct PDMACFILECACHEENTRY
     /** Endpoint the entry belongs to. */
     PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint;
     /** Flags for this entry. Combinations of PDMACFILECACHE_* #defines */
-    uint32_t                        fFlags;
+    volatile uint32_t               fFlags;
     /** Reference counter. Prevents eviction of the entry if > 0. */
     volatile uint32_t               cRefs;
     /** Size of the entry. */

@@ -21,23 +21,7 @@
  */
 
 /** @page pg_pdm_async_completion_cache     PDM Async Completion Cache - The file I/O cache
- * This component implements an I/O cache for file endpoints based on the ARC algorithm.
- * http://en.wikipedia.org/wiki/Adaptive_Replacement_Cache
- *
- * The algorithm uses four LRU (Least frequently used) lists to store data in the cache.
- * Two of them contain data where one stores entries which were accessed recently and one
- * which is used for frequently accessed data.
- * The other two lists are called ghost lists and store information about the accessed range
- * but do not contain data. They are used to track data access. If these entries are accessed
- * they will push the data to a higher position in the cache preventing it from getting removed
- * quickly again.
- *
- * The algorithm needs to be modified to meet our requirements. Like the implementation
- * for the ZFS filesystem we need to handle pages with a variable size. It would
- * be possible to use a fixed size but would increase the computational
- * and memory overhead.
- * Because we do I/O asynchronously we also need to mark entries which are currently accessed
- * as non evictable to prevent removal of the entry while the data is being accessed.
+ * This component implements an I/O cache for file endpoints based on the 2Q cache algorithm.
  */
 
 /*******************************************************************************
@@ -73,7 +57,7 @@ typedef struct PDMIOMEMCTX
 # define PDMACFILECACHE_IS_CRITSECT_OWNER(Cache) \
     do \
     { \
-     AssertMsg(RTCritSectIsOwner(&pCache->CritSect), \
+     AssertMsg(RTCritSectIsOwner(&Cache->CritSect), \
                ("Thread does not own critical section\n"));\
     } while(0);
 #else
@@ -167,6 +151,60 @@ DECLINLINE(uint8_t *) pdmIoMemCtxGetBuffer(PPDMIOMEMCTX pIoMemCtx, size_t *pcbDa
     return pbBuf;
 }
 
+#ifdef DEBUG
+static void pdmacFileCacheValidate(PPDMACFILECACHEGLOBAL pCache)
+{
+    /* Amount of cached data should never exceed the maximum amount. */
+    AssertMsg(pCache->cbCached <= pCache->cbMax,
+              ("Current amount of cached data exceeds maximum\n"));
+
+    /* The amount of cached data in the LRU and FRU list should match cbCached */
+    AssertMsg(pCache->LruRecentlyUsedIn.cbCached + pCache->LruFrequentlyUsed.cbCached == pCache->cbCached,
+              ("Amount of cached data doesn't match\n"));
+
+    AssertMsg(pCache->LruRecentlyUsedOut.cbCached <= pCache->cbRecentlyUsedOutMax,
+              ("Paged out list exceeds maximum\n"));
+}
+#endif
+
+DECLINLINE(void) pdmacFileCacheLockEnter(PPDMACFILECACHEGLOBAL pCache)
+{
+    RTCritSectEnter(&pCache->CritSect);
+#ifdef DEBUG
+    pdmacFileCacheValidate(pCache);
+#endif
+}
+
+DECLINLINE(void) pdmacFileCacheLockLeave(PPDMACFILECACHEGLOBAL pCache)
+{
+#ifdef DEBUG
+    pdmacFileCacheValidate(pCache);
+#endif
+    RTCritSectLeave(&pCache->CritSect);
+}
+
+DECLINLINE(void) pdmacFileCacheSub(PPDMACFILECACHEGLOBAL pCache, uint32_t cbAmount)
+{
+    PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
+    pCache->cbCached -= cbAmount;
+}
+
+DECLINLINE(void) pdmacFileCacheAdd(PPDMACFILECACHEGLOBAL pCache, uint32_t cbAmount)
+{
+    PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
+    pCache->cbCached += cbAmount;
+}
+
+DECLINLINE(void) pdmacFileCacheListAdd(PPDMACFILELRULIST pList, uint32_t cbAmount)
+{
+    pList->cbCached += cbAmount;
+}
+
+DECLINLINE(void) pdmacFileCacheListSub(PPDMACFILELRULIST pList, uint32_t cbAmount)
+{
+    pList->cbCached -= cbAmount;
+}
+
 #ifdef PDMACFILECACHE_WITH_LRULIST_CHECKS
 /**
  * Checks consistency of a LRU list.
@@ -250,7 +288,7 @@ static void pdmacFileCacheEntryRemoveFromList(PPDMACFILECACHEENTRY pEntry)
     pEntry->pList    = NULL;
     pEntry->pPrev    = NULL;
     pEntry->pNext    = NULL;
-    pList->cbCached -= pEntry->cbData;
+    pdmacFileCacheListSub(pList, pEntry->cbData);
 #ifdef PDMACFILECACHE_WITH_LRULIST_CHECKS
     pdmacFileCacheCheckList(pList, pEntry);
 #endif
@@ -286,7 +324,7 @@ static void pdmacFileCacheEntryAddToList(PPDMACFILELRULIST pList, PPDMACFILECACH
 
     pEntry->pPrev    = NULL;
     pList->pHead     = pEntry;
-    pList->cbCached += pEntry->cbData;
+    pdmacFileCacheListAdd(pList, pEntry->cbData);
     pEntry->pList    = pList;
 #ifdef PDMACFILECACHE_WITH_LRULIST_CHECKS
     pdmacFileCacheCheckList(pList, NULL);
@@ -344,16 +382,9 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
     PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
 
     AssertMsg(cbData > 0, ("Evicting 0 bytes not possible\n"));
-#ifdef VBOX_WITH_2Q_CACHE
     AssertMsg(   !pGhostListDst
               || (pGhostListDst == &pCache->LruRecentlyUsedOut),
               ("Destination list must be NULL or the recently used but paged out list\n"));
-#else
-    AssertMsg(   !pGhostListDst
-              || (pGhostListDst == &pCache->LruRecentlyGhost)
-              || (pGhostListDst == &pCache->LruFrequentlyGhost),
-              ("Destination list must be NULL or one of the ghost lists\n"));
-#endif
 
     if (fReuseBuffer)
     {
@@ -399,34 +430,51 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
                 pCurr->pbData = NULL;
                 cbEvicted += pCurr->cbData;
 
-                pCache->cbCached -= pCurr->cbData;
-
                 pdmacFileCacheEntryRemoveFromList(pCurr);
+                pdmacFileCacheSub(pCache, pCurr->cbData);
 
                 if (pGhostListDst)
                 {
                     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
-#ifdef VBOX_WITH_2Q_CACHE
+
+                    PPDMACFILECACHEENTRY pGhostEntFree = pGhostListDst->pTail;
+
                     /* We have to remove the last entries from the paged out list. */
-                    while (pGhostListDst->cbCached > pCache->cbRecentlyUsedOutMax)
+                    while (   ((pGhostListDst->cbCached + pCurr->cbData) > pCache->cbRecentlyUsedOutMax)
+                           && pGhostEntFree)
                     {
-                        PPDMACFILECACHEENTRY pFree = pGhostListDst->pTail;
+                        PPDMACFILECACHEENTRY pFree = pGhostEntFree;
                         PPDMACFILEENDPOINTCACHE pEndpointCacheFree = &pFree->pEndpoint->DataCache;
+
+                        pGhostEntFree = pGhostEntFree->pPrev;
 
                         RTSemRWRequestWrite(pEndpointCacheFree->SemRWEntries, RT_INDEFINITE_WAIT);
 
-                        pdmacFileCacheEntryRemoveFromList(pFree);
+                        if (ASMAtomicReadU32(&pFree->cRefs) == 0)
+                        {
+                            pdmacFileCacheEntryRemoveFromList(pFree);
 
-                        STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
-                        RTAvlrFileOffsetRemove(pEndpointCacheFree->pTree, pFree->Core.Key);
-                        STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+                            STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                            RTAvlrFileOffsetRemove(pEndpointCacheFree->pTree, pFree->Core.Key);
+                            STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+
+                            RTMemFree(pFree);
+                        }
 
                         RTSemRWReleaseWrite(pEndpointCacheFree->SemRWEntries);
-                        RTMemFree(pFree);
                     }
-#endif
 
-                    pdmacFileCacheEntryAddToList(pGhostListDst, pCurr);
+                    if (pGhostListDst->cbCached + pCurr->cbData > pCache->cbRecentlyUsedOutMax)
+                    {
+                        /* Couldn't remove enough entries. Delete */
+                        STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                        RTAvlrFileOffsetRemove(pCurr->pEndpoint->DataCache.pTree, pCurr->Core.Key);
+                        STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+
+                        RTMemFree(pCurr);
+                    }
+                    else
+                        pdmacFileCacheEntryAddToList(pGhostListDst, pCurr);
                 }
                 else
                 {
@@ -448,7 +496,6 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
     return cbEvicted;
 }
 
-#ifdef VBOX_WITH_2Q_CACHE
 static bool pdmacFileCacheReclaim(PPDMACFILECACHEGLOBAL pCache, size_t cbData, bool fReuseBuffer, uint8_t **ppbBuffer)
 {
     size_t cbRemoved = 0;
@@ -483,123 +530,6 @@ static bool pdmacFileCacheReclaim(PPDMACFILECACHEGLOBAL pCache, size_t cbData, b
     LogFlowFunc((": removed %u bytes, requested %u\n", cbRemoved, cbData));
     return (cbRemoved >= cbData);
 }
-
-#else
-
-static size_t pdmacFileCacheReplace(PPDMACFILECACHEGLOBAL pCache, size_t cbData, PPDMACFILELRULIST pEntryList,
-                                    bool fReuseBuffer, uint8_t **ppbBuffer)
-{
-    PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
-
-    if (   (pCache->LruRecentlyUsed.cbCached)
-        && (   (pCache->LruRecentlyUsed.cbCached > pCache->uAdaptVal)
-            || (   (pEntryList == &pCache->LruFrequentlyGhost)
-                && (pCache->LruRecentlyUsed.cbCached == pCache->uAdaptVal))))
-    {
-        /* We need to remove entry size pages from T1 and move the entries to B1 */
-        return pdmacFileCacheEvictPagesFrom(pCache, cbData,
-                                            &pCache->LruRecentlyUsed,
-                                            &pCache->LruRecentlyGhost,
-                                            fReuseBuffer, ppbBuffer);
-    }
-    else
-    {
-        /* We need to remove entry size pages from T2 and move the entries to B2 */
-        return pdmacFileCacheEvictPagesFrom(pCache, cbData,
-                                            &pCache->LruFrequentlyUsed,
-                                            &pCache->LruFrequentlyGhost,
-                                            fReuseBuffer, ppbBuffer);
-    }
-}
-
-/**
- * Tries to evict the given amount of the data from the cache.
- *
- * @returns Bytes removed.
- * @param    pCache    The global cache data.
- * @param    cbData    Number of bytes to evict.
- */
-static size_t pdmacFileCacheEvict(PPDMACFILECACHEGLOBAL pCache, size_t cbData, bool fReuseBuffer, uint8_t **ppbBuffer)
-{
-    size_t cbRemoved = ~0;
-
-    PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
-
-    if ((pCache->LruRecentlyUsed.cbCached + pCache->LruRecentlyGhost.cbCached) >= pCache->cbMax)
-    {
-        /* Delete desired pages from the cache. */
-        if (pCache->LruRecentlyUsed.cbCached < pCache->cbMax)
-        {
-            cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
-                                                     &pCache->LruRecentlyGhost,
-                                                     NULL,
-                                                     fReuseBuffer, ppbBuffer);
-        }
-        else
-        {
-            cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
-                                                     &pCache->LruRecentlyUsed,
-                                                     NULL,
-                                                     fReuseBuffer, ppbBuffer);
-        }
-    }
-    else
-    {
-        uint32_t cbUsed = pCache->LruRecentlyUsed.cbCached + pCache->LruRecentlyGhost.cbCached +
-                          pCache->LruFrequentlyUsed.cbCached + pCache->LruFrequentlyGhost.cbCached;
-
-        if (cbUsed >= pCache->cbMax)
-        {
-            if (cbUsed == 2*pCache->cbMax)
-                cbRemoved = pdmacFileCacheEvictPagesFrom(pCache, cbData,
-                                                         &pCache->LruFrequentlyGhost,
-                                                         NULL,
-                                                         fReuseBuffer, ppbBuffer);
-
-            if (cbRemoved >= cbData)
-                cbRemoved = pdmacFileCacheReplace(pCache, cbData, NULL, fReuseBuffer, ppbBuffer);
-        }
-    }
-
-    return cbRemoved;
-}
-
-/**
- * Updates the cache parameters
- *
- * @returns nothing.
- * @param    pCache    The global cache data.
- * @param    pEntry    The entry usign for the update.
- */
-static void pdmacFileCacheUpdate(PPDMACFILECACHEGLOBAL pCache, PPDMACFILECACHEENTRY pEntry)
-{
-    int32_t uUpdateVal = 0;
-
-    PDMACFILECACHE_IS_CRITSECT_OWNER(pCache);
-
-    /* Update parameters */
-    if (pEntry->pList == &pCache->LruRecentlyGhost)
-    {
-        if (pCache->LruRecentlyGhost.cbCached >= pCache->LruFrequentlyGhost.cbCached)
-            uUpdateVal = 1;
-        else
-            uUpdateVal = pCache->LruFrequentlyGhost.cbCached / pCache->LruRecentlyGhost.cbCached;
-
-        pCache->uAdaptVal = RT_MIN(pCache->uAdaptVal + uUpdateVal, pCache->cbMax);
-    }
-    else if (pEntry->pList == &pCache->LruFrequentlyGhost)
-    {
-        if (pCache->LruFrequentlyGhost.cbCached >= pCache->LruRecentlyGhost.cbCached)
-            uUpdateVal = 1;
-        else
-            uUpdateVal = pCache->LruRecentlyGhost.cbCached / pCache->LruFrequentlyGhost.cbCached;
-
-        pCache->uAdaptVal = RT_MIN(pCache->uAdaptVal - uUpdateVal, 0);
-    }
-    else
-        AssertMsgFailed(("Invalid list type\n"));
-}
-#endif
 
 /**
  * Initiates a read I/O task for the given entry.
@@ -798,7 +728,6 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     LogFlowFunc((": Maximum number of bytes cached %u\n", pCache->cbMax));
 
     /* Initialize members */
-#ifdef VBOX_WITH_2Q_CACHE
     pCache->LruRecentlyUsedIn.pHead    = NULL;
     pCache->LruRecentlyUsedIn.pTail    = NULL;
     pCache->LruRecentlyUsedIn.cbCached = 0;
@@ -814,25 +743,6 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     pCache->cbRecentlyUsedInMax  = (pCache->cbMax / 100) * 25; /* 25% of the buffer size */
     pCache->cbRecentlyUsedOutMax = (pCache->cbMax / 100) * 50; /* 50% of the buffer size */
     LogFlowFunc((": cbRecentlyUsedInMax=%u cbRecentlyUsedOutMax=%u\n", pCache->cbRecentlyUsedInMax, pCache->cbRecentlyUsedOutMax));
-#else
-    pCache->LruRecentlyUsed.pHead  = NULL;
-    pCache->LruRecentlyUsed.pTail  = NULL;
-    pCache->LruRecentlyUsed.cbCached = 0;
-
-    pCache->LruFrequentlyUsed.pHead  = NULL;
-    pCache->LruFrequentlyUsed.pTail  = NULL;
-    pCache->LruFrequentlyUsed.cbCached = 0;
-
-    pCache->LruRecentlyGhost.pHead  = NULL;
-    pCache->LruRecentlyGhost.pTail  = NULL;
-    pCache->LruRecentlyGhost.cbCached = 0;
-
-    pCache->LruFrequentlyGhost.pHead  = NULL;
-    pCache->LruFrequentlyGhost.pTail  = NULL;
-    pCache->LruFrequentlyGhost.cbCached = 0;
-
-    pCache->uAdaptVal = 0;
-#endif
 
     STAMR3Register(pClassFile->Core.pVM, &pCache->cbMax,
                    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
@@ -844,7 +754,6 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
                    "/PDM/AsyncCompletion/File/cbCached",
                    STAMUNIT_BYTES,
                    "Currently used cache");
-#ifdef VBOX_WITH_2Q_CACHE
     STAMR3Register(pClassFile->Core.pVM, &pCache->LruRecentlyUsedIn.cbCached,
                    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
                    "/PDM/AsyncCompletion/File/cbCachedMruIn",
@@ -860,27 +769,6 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
                    "/PDM/AsyncCompletion/File/cbCachedFru",
                    STAMUNIT_BYTES,
                    "Number of bytes cached in FRU ghost list");
-#else
-    STAMR3Register(pClassFile->Core.pVM, &pCache->LruRecentlyUsed.cbCached,
-                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
-                   "/PDM/AsyncCompletion/File/cbCachedMru",
-                   STAMUNIT_BYTES,
-                   "Number of bytes cached in Mru list");
-    STAMR3Register(pClassFile->Core.pVM, &pCache->LruFrequentlyUsed.cbCached,
-                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
-                   "/PDM/AsyncCompletion/File/cbCachedFru",
-                   STAMUNIT_BYTES,
-                   "Number of bytes cached in Fru list");
-    STAMR3Register(pClassFile->Core.pVM, &pCache->LruRecentlyGhost.cbCached,
-                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
-                   "/PDM/AsyncCompletion/File/cbCachedMruGhost",
-                   STAMUNIT_BYTES,
-                   "Number of bytes cached in Mru ghost list");
-    STAMR3Register(pClassFile->Core.pVM, &pCache->LruFrequentlyGhost.cbCached,
-                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
-                   "/PDM/AsyncCompletion/File/cbCachedFruGhost",
-                   STAMUNIT_BYTES, "Number of bytes cached in Fru ghost list");
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     STAMR3Register(pClassFile->Core.pVM, &pCache->cHits,
@@ -919,13 +807,6 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
                    STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS,
                    "/PDM/AsyncCompletion/File/CacheBuffersReused",
                    STAMUNIT_COUNT, "Number of times a buffer could be reused");
-#ifndef VBOX_WITH_2Q_CACHE
-    STAMR3Register(pClassFile->Core.pVM, &pCache->uAdaptVal,
-                   STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
-                   "/PDM/AsyncCompletion/File/CacheAdaptValue",
-                   STAMUNIT_COUNT,
-                   "Adaption value of the cache");
-#endif
 #endif
 
     /* Initialize the critical section */
@@ -948,22 +829,14 @@ void pdmacFileCacheDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile)
     PPDMACFILECACHEGLOBAL pCache = &pClassFile->Cache;
 
     /* Make sure no one else uses the cache now */
-    RTCritSectEnter(&pCache->CritSect);
+    pdmacFileCacheLockEnter(pCache);
 
-#ifdef VBOX_WITH_2Q_CACHE
     /* Cleanup deleting all cache entries waiting for in progress entries to finish. */
     pdmacFileCacheDestroyList(&pCache->LruRecentlyUsedIn);
     pdmacFileCacheDestroyList(&pCache->LruRecentlyUsedOut);
     pdmacFileCacheDestroyList(&pCache->LruFrequentlyUsed);
-#else
-    /* Cleanup deleting all cache entries waiting for in progress entries to finish. */
-    pdmacFileCacheDestroyList(&pCache->LruRecentlyUsed);
-    pdmacFileCacheDestroyList(&pCache->LruFrequentlyUsed);
-    pdmacFileCacheDestroyList(&pCache->LruRecentlyGhost);
-    pdmacFileCacheDestroyList(&pCache->LruFrequentlyGhost);
-#endif
 
-    RTCritSectLeave(&pCache->CritSect);
+    pdmacFileCacheLockLeave(pCache);
 
     RTCritSectDelete(&pCache->CritSect);
 }
@@ -1019,7 +892,7 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
     PPDMACFILECACHEGLOBAL pCache = (PPDMACFILECACHEGLOBAL)pvUser;
     PPDMACFILEENDPOINTCACHE pEndpointCache = &pEntry->pEndpoint->DataCache;
 
-    while (pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY))
+    while (ASMAtomicReadU32(&pEntry->fFlags) & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY))
     {
         RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
         RTThreadSleep(250);
@@ -1029,8 +902,13 @@ static int pdmacFileEpCacheEntryDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
     AssertMsg(!(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY)),
                 ("Entry is dirty and/or still in progress fFlags=%#x\n", pEntry->fFlags));
 
+    bool fUpdateCache =    pEntry->pList == &pCache->LruFrequentlyUsed
+                        || pEntry->pList == &pCache->LruRecentlyUsedIn;
+
     pdmacFileCacheEntryRemoveFromList(pEntry);
-    pCache->cbCached -= pEntry->cbData;
+
+    if (fUpdateCache)
+        pdmacFileCacheSub(pCache, pEntry->cbData);
 
     RTMemPageFree(pEntry->pbData);
     RTMemFree(pEntry);
@@ -1050,11 +928,11 @@ void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     PPDMACFILECACHEGLOBAL   pCache         = pEndpointCache->pCache;
 
     /* Make sure nobody is accessing the cache while we delete the tree. */
-    RTCritSectEnter(&pCache->CritSect);
+    pdmacFileCacheLockEnter(pCache);
     RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
     RTAvlrFileOffsetDestroy(pEndpointCache->pTree, pdmacFileEpCacheEntryDestroy, pCache);
     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
-    RTCritSectLeave(&pCache->CritSect);
+    pdmacFileCacheLockLeave(pCache);
 
     RTSemRWDestroy(pEndpointCache->SemRWEntries);
 
@@ -1205,14 +1083,16 @@ DECLINLINE(bool) pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(PPDMACFILEENDPOI
                                                                 PPDMACFILECACHEENTRY pEntry,
                                                                 uint32_t fSet, uint32_t fClear)
 {
-    bool fPassed = ((pEntry->fFlags & fSet) && !(pEntry->fFlags & fClear));
+    uint32_t fFlags = ASMAtomicReadU32(&pEntry->fFlags);
+    bool fPassed = ((fFlags & fSet) && !(fFlags & fClear));
 
     if (fPassed)
     {
         /* Acquire the lock and check again becuase the completion callback might have raced us. */
         RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
-        fPassed = ((pEntry->fFlags & fSet) && !(pEntry->fFlags & fClear));
+        fFlags = ASMAtomicReadU32(&pEntry->fFlags);
+        fPassed = ((fFlags & fSet) && !(fFlags & fClear));
 
         /* Drop the lock if we didn't passed the test. */
         if (!fPassed)
@@ -1420,7 +1300,6 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                        off, cbToRead));
 
             cbRead  -= cbToRead;
-            off     += cbToRead;
 
             if (!cbRead)
                 STAM_COUNTER_INC(&pCache->cHits);
@@ -1430,15 +1309,9 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
             STAM_COUNTER_ADD(&pCache->StatRead, cbToRead);
 
             /* Ghost lists contain no data. */
-#ifdef VBOX_WITH_2Q_CACHE
             if (   (pEntry->pList == &pCache->LruRecentlyUsedIn)
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
             {
-#else
-            if (   (pEntry->pList == &pCache->LruRecentlyUsed)
-                || (pEntry->pList == &pCache->LruFrequentlyUsed))
-            {
-#endif
                 if (pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
                                                                    PDMACFILECACHE_ENTRY_IS_DEPRECATED,
                                                                    0))
@@ -1470,18 +1343,14 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 }
 
                 /* Move this entry to the top position */
-#ifdef VBOX_WITH_2Q_CACHE
                 if (pEntry->pList == &pCache->LruFrequentlyUsed)
                 {
-                    RTCritSectEnter(&pCache->CritSect);
+                    pdmacFileCacheLockEnter(pCache);
                     pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                    RTCritSectLeave(&pCache->CritSect);
+                    pdmacFileCacheLockLeave(pCache);
                 }
-#else
-                RTCritSectEnter(&pCache->CritSect);
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
-#endif
+                /* Release the entry */
+                pdmacFileEpCacheEntryRelease(pEntry);
             }
             else
             {
@@ -1489,39 +1358,48 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                 LogFlow(("Fetching data for ghost entry %#p from file\n", pEntry));
 
-#ifdef VBOX_WITH_2Q_CACHE
-                RTCritSectEnter(&pCache->CritSect);
+                pdmacFileCacheLockEnter(pCache);
                 pdmacFileCacheEntryRemoveFromList(pEntry); /* Remove it before we remove data, otherwise it may get freed when evicting data. */
-                pdmacFileCacheReclaim(pCache, pEntry->cbData, true, &pbBuffer);
+                bool fEnough = pdmacFileCacheReclaim(pCache, pEntry->cbData, true, &pbBuffer);
 
                 /* Move the entry to Am and fetch it to the cache. */
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
-#else
-                RTCritSectEnter(&pCache->CritSect);
-                pdmacFileCacheUpdate(pCache, pEntry);
-                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList, true, &pbBuffer);
+                if (fEnough)
+                {
+                    pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
+                    pdmacFileCacheAdd(pCache, pEntry->cbData);
+                    pdmacFileCacheLockLeave(pCache);
 
-                /* Move the entry to T2 and fetch it to the cache. */
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
-#endif
+                    if (pbBuffer)
+                        pEntry->pbData = pbBuffer;
+                    else
+                        pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+                    AssertPtr(pEntry->pbData);
 
-                if (pbBuffer)
-                    pEntry->pbData = pbBuffer;
+                    pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
+                                                    &IoMemCtx,
+                                                    OffDiff, cbToRead,
+                                                    false /* fWrite */);
+                    pdmacFileCacheReadFromEndpoint(pEntry);
+                    /* Release the entry */
+                    pdmacFileEpCacheEntryRelease(pEntry);
+                }
                 else
-                    pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
-                AssertPtr(pEntry->pbData);
+                {
+                    RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
+                    STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                    RTAvlrFileOffsetRemove(pEndpointCache->pTree, pEntry->Core.Key);
+                    STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
 
-                pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
-                                                &IoMemCtx,
-                                                OffDiff, cbToRead,
-                                                false /* fWrite */);
-                pdmacFileCacheReadFromEndpoint(pEntry);
+                    pdmacFileCacheLockLeave(pCache);
+
+                    RTMemFree(pEntry);
+
+                    pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
+                                                       &IoMemCtx, off, cbToRead,
+                                                       PDMACTASKFILETRANSFER_READ);
+                }
             }
-
-            /* Release the entry finally. */
-            pdmacFileEpCacheEntryRelease(pEntry);
         }
         else
         {
@@ -1573,52 +1451,37 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
             uint8_t *pbBuffer = NULL;
 
-#ifdef VBOX_WITH_2Q_CACHE
-            RTCritSectEnter(&pCache->CritSect);
+            pdmacFileCacheLockEnter(pCache);
             bool fEnough = pdmacFileCacheReclaim(pCache, cbToReadAligned, true, &pbBuffer);
-            RTCritSectLeave(&pCache->CritSect);
 
             if (fEnough)
             {
                 LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbToReadAligned));
-#else
-            RTCritSectEnter(&pCache->CritSect);
-            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToReadAligned, true, &pbBuffer);
-            RTCritSectLeave(&pCache->CritSect);
 
-            if (cbRemoved >= cbToReadAligned)
-            {
-                LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToReadAligned));
-#endif
                 PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned, pbBuffer);
                 AssertPtr(pEntryNew);
 
-                RTCritSectEnter(&pCache->CritSect);
-#ifdef VBOX_WITH_2Q_CACHE
                 pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
-#else
-                pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsed, pEntryNew);
-#endif
-                pCache->cbCached += cbToReadAligned;
-                RTCritSectLeave(&pCache->CritSect);
+                pdmacFileCacheAdd(pCache, cbToReadAligned);
+                pdmacFileCacheLockLeave(pCache);
 
                 pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
 
                 AssertMsg(   (off >= pEntryNew->Core.Key)
-                          && (off + (RTFOFF)cbToRead <= pEntryNew->Core.Key + pEntryNew->Core.KeyLast),
+                          && (off + (RTFOFF)cbToRead <= pEntryNew->Core.Key + pEntryNew->Core.KeyLast + 1),
                           ("Overflow in calculation off=%RTfoff OffsetAligned=%RTfoff\n",
-                           off, pEntry->Core.Key));
+                           off, pEntryNew->Core.Key));
 
                 pdmacFileEpCacheEntryWaitersAdd(pEntryNew, pTask,
                                                 &IoMemCtx, 0, cbToRead,
                                                 false /* fWrite */);
-                off += cbToRead;
-
                 pdmacFileCacheReadFromEndpoint(pEntryNew);
                 pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
             }
             else
             {
+                pdmacFileCacheLockLeave(pCache);
+
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
@@ -1628,9 +1491,9 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToRead,
                                                    PDMACTASKFILETRANSFER_READ);
-                off += cbToRead;
             }
         }
+        off += cbToRead;
     }
 
     ASMAtomicWriteBool(&pTask->fCompleted, false);
@@ -1696,7 +1559,6 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
             cbToWrite = RT_MIN(pEntry->cbData - OffDiff, cbWrite);
             cbWrite  -= cbToWrite;
-            off      += cbToWrite;
 
             if (!cbWrite)
                 STAM_COUNTER_INC(&pCache->cHits);
@@ -1706,13 +1568,8 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
 
             /* Ghost lists contain no data. */
-#ifdef VBOX_WITH_2Q_CACHE
             if (   (pEntry->pList == &pCache->LruRecentlyUsedIn)
                 || (pEntry->pList == &pCache->LruFrequentlyUsed))
-#else
-            if (   (pEntry->pList == &pCache->LruRecentlyUsed)
-                || (pEntry->pList == &pCache->LruFrequentlyUsed))
-#endif
             {
                 /* Check if the buffer is deprecated. */
                 if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
@@ -1720,7 +1577,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                                                                   0))
                 {
                     AssertMsg(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
-                                ("Entry is deprecated but not in progress\n"));
+                              ("Entry is deprecated but not in progress\n"));
                     AssertPtr(pEntry->pbDataReplace);
 
                     LogFlow(("Writing to deprecated buffer of entry %#p\n", pEntry));
@@ -1815,58 +1672,62 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                     } /* Dirty bit not set */
 
                     /* Move this entry to the top position */
-#ifdef VBOX_WITH_2Q_CACHE
-                if (pEntry->pList == &pCache->LruFrequentlyUsed)
-                {
-                    RTCritSectEnter(&pCache->CritSect);
-                    pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                    RTCritSectLeave(&pCache->CritSect);
-                } /* Deprecated flag not set. */
-#else
-                    RTCritSectEnter(&pCache->CritSect);
-                    pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                    RTCritSectLeave(&pCache->CritSect);
-#endif
+                    if (pEntry->pList == &pCache->LruFrequentlyUsed)
+                    {
+                        pdmacFileCacheLockEnter(pCache);
+                        pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
+                        pdmacFileCacheLockLeave(pCache);
+                    } /* Deprecated flag not set. */
                 }
+                pdmacFileEpCacheEntryRelease(pEntry);
             }
             else /* Entry is on the ghost list */
             {
                 uint8_t *pbBuffer = NULL;
 
-#ifdef VBOX_WITH_2Q_CACHE
-                RTCritSectEnter(&pCache->CritSect);
+                pdmacFileCacheLockEnter(pCache);
                 pdmacFileCacheEntryRemoveFromList(pEntry); /* Remove it before we remove data, otherwise it may get freed when evicting data. */
-                pdmacFileCacheReclaim(pCache, pEntry->cbData, true, &pbBuffer);
+                bool fEnough = pdmacFileCacheReclaim(pCache, pEntry->cbData, true, &pbBuffer);
 
-                /* Move the entry to Am and fetch it to the cache. */
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
-#else
-                RTCritSectEnter(&pCache->CritSect);
-                pdmacFileCacheUpdate(pCache, pEntry);
-                pdmacFileCacheReplace(pCache, pEntry->cbData, pEntry->pList, true, &pbBuffer);
+                if (fEnough)
+                {
+                    /* Move the entry to Am and fetch it to the cache. */
+                    pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
+                    pdmacFileCacheAdd(pCache, pEntry->cbData);
+                    pdmacFileCacheLockLeave(pCache);
 
-                /* Move the entry to T2 and fetch it to the cache. */
-                pdmacFileCacheEntryAddToList(&pCache->LruFrequentlyUsed, pEntry);
-                RTCritSectLeave(&pCache->CritSect);
-#endif
+                    if (pbBuffer)
+                        pEntry->pbData = pbBuffer;
+                    else
+                        pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+                    AssertPtr(pEntry->pbData);
 
-                if (pbBuffer)
-                    pEntry->pbData = pbBuffer;
+                    pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
+                                                    &IoMemCtx,
+                                                    OffDiff, cbToWrite,
+                                                    true /* fWrite */);
+                    STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
+                    pdmacFileCacheReadFromEndpoint(pEntry);
+
+                    /* Release the reference. If it is still needed the I/O in progress flag should protect it now. */
+                    pdmacFileEpCacheEntryRelease(pEntry);
+                }
                 else
-                    pEntry->pbData = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
-                AssertPtr(pEntry->pbData);
+                {
+                    RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
+                    STAM_PROFILE_ADV_START(&pCache->StatTreeRemove, Cache);
+                    RTAvlrFileOffsetRemove(pEndpointCache->pTree, pEntry->Core.Key);
+                    STAM_PROFILE_ADV_STOP(&pCache->StatTreeRemove, Cache);
+                    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
 
-                pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
-                                                &IoMemCtx,
-                                                OffDiff, cbToWrite,
-                                                true /* fWrite */);
-                STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
-                pdmacFileCacheReadFromEndpoint(pEntry);
+                    pdmacFileCacheLockLeave(pCache);
+
+                    RTMemFree(pEntry);
+                    pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
+                                                       &IoMemCtx, off, cbToWrite,
+                                                       PDMACTASKFILETRANSFER_WRITE);
+                }
             }
-
-            /* Release the reference. If it is still needed the I/O in progress flag should protect it now. */
-            pdmacFileEpCacheEntryRelease(pEntry);
         }
         else /* No entry found */
         {
@@ -1899,57 +1760,42 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             cbWrite -= cbToWrite;
 
             STAM_COUNTER_INC(&pCache->cMisses);
-            STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
 
             uint8_t *pbBuffer = NULL;
 
-#ifdef VBOX_WITH_2Q_CACHE
-            RTCritSectEnter(&pCache->CritSect);
+            pdmacFileCacheLockEnter(pCache);
             bool fEnough = pdmacFileCacheReclaim(pCache, cbToWrite, true, &pbBuffer);
-            RTCritSectLeave(&pCache->CritSect);
 
             if (fEnough)
             {
                 LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbToWrite));
-#else
-            RTCritSectEnter(&pCache->CritSect);
-            size_t cbRemoved = pdmacFileCacheEvict(pCache, cbToWrite, true, &pbBuffer);
-            RTCritSectLeave(&pCache->CritSect);
 
-            if (cbRemoved >= cbToWrite)
-            {
-                LogFlow(("Evicted %u bytes (%u requested). Creating new cache entry\n", cbRemoved, cbToWrite));
-
-#endif
                 uint8_t *pbBuf;
                 PPDMACFILECACHEENTRY pEntryNew;
 
                 pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite, pbBuffer);
                 AssertPtr(pEntryNew);
 
-                RTCritSectEnter(&pCache->CritSect);
-#ifdef VBOX_WITH_2Q_CACHE
                 pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
-#else
-                pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsed, pEntryNew);
-#endif
-                pCache->cbCached += cbToWrite;
-                RTCritSectLeave(&pCache->CritSect);
+                pdmacFileCacheAdd(pCache, cbToWrite);
+                pdmacFileCacheLockLeave(pCache);
 
                 pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
 
                 pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
                                                  pEntryNew->pbData,
                                                  cbToWrite);
-                off += cbToWrite;
                 ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
 
                 pEntryNew->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
                 pdmacFileCacheWriteToEndpoint(pEntryNew);
                 pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
+                STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
             }
             else
             {
+                pdmacFileCacheLockLeave(pCache);
+
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
@@ -1959,9 +1805,10 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToWrite,
                                                    PDMACTASKFILETRANSFER_WRITE);
-                off += cbToWrite;
             }
         }
+
+        off += cbToWrite;
     }
 
     ASMAtomicWriteBool(&pTask->fCompleted, false);
