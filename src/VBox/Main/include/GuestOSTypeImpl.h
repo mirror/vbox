@@ -72,12 +72,16 @@ public:
     STDMETHOD(COMGETTER(RecommendedVRAM)) (ULONG *aVRAMSize);
     STDMETHOD(COMGETTER(RecommendedHDD)) (ULONG *aHDDSize);
     STDMETHOD(COMGETTER(AdapterType)) (NetworkAdapterType_T *aNetworkAdapterType);
+    STDMETHOD(COMGETTER(RecommendedFirmware)) (FirmwareType_T *aFirmwareType);
+    STDMETHOD(COMGETTER(RecommendedExtHw)) (BOOL *aRecommendedExtHw);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
     bool is64Bit() const { return !!(mOSHint & VBOXOSHINT_64BIT); }
     bool recommendedIOAPIC() const { return !!(mOSHint & VBOXOSHINT_IOAPIC); }
     bool recommendedVirtEx() const { return !!(mOSHint & VBOXOSHINT_HWVIRTEX); }
+    bool recommendedExtHw() const { return !!(mOSHint & VBOXOSHINT_EXTHW); }
+    bool recommendedEFI() const { return !!(mOSHint & VBOXOSHINT_EFI); }
     NetworkAdapterType_T networkAdapterType() const { return mNetworkAdapterType; }
     uint32_t numSerialEnabled() const { return mNumSerialEnabled; }
 

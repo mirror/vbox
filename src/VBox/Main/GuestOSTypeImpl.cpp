@@ -268,4 +268,31 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetwork
 
     return S_OK;
 }
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedExtHw) (BOOL *aRecommendedExtHw)
+{
+    CheckComArgOutPointerValid(aRecommendedExtHw);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* recommended h/w profile is constant during life time, no need to lock */
+    *aRecommendedExtHw = !!(mOSHint & VBOXOSHINT_EXTHW);
+
+    return S_OK;
+}
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedFirmware) (FirmwareType_T *aFirmwareType)
+{
+    CheckComArgOutPointerValid(aFirmwareType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* firmware type is constant during life time, no need to lock */
+    *aFirmwareType = !!(mOSHint & VBOXOSHINT_EFI) ? FirmwareType_EFI : FirmwareType_BIOS;
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

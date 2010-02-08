@@ -162,7 +162,11 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
     { "Other",   "Other",             SchemaDefs_OSTypeId_L4,              "L4",
       VBOXOSTYPE_L4,              VBOXOSHINT_NONE,  64,   4,  2 * _1K, NetworkAdapterType_Am79C973, 0 },
     { "Other",   "Other",             SchemaDefs_OSTypeId_QNX,             "QNX",
-      VBOXOSTYPE_QNX,             VBOXOSHINT_HWVIRTEX,  512,   4,  4 * _1K, NetworkAdapterType_Am79C973, 0 }
+      VBOXOSTYPE_QNX,             VBOXOSHINT_HWVIRTEX,  512,   4,  4 * _1K, NetworkAdapterType_Am79C973, 0 },
+    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS,             "Mac OS X",
+      VBOXOSTYPE_MacOS,           VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_EXTHW,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0 },
+    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS,             "Mac OS X (64 bit)",
+      VBOXOSTYPE_MacOS,           VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_EXTHW |  VBOXOSHINT_64BIT ,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0 },
 };
 
 /**

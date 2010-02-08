@@ -112,6 +112,8 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_OpenSolaris_x64  = 0x81100,
     VBOXOSTYPE_L4               = 0x90000,
     VBOXOSTYPE_QNX              = 0xA0000,
+    VBOXOSTYPE_MacOS            = 0xB0000,
+    VBOXOSTYPE_MacOS_x64        = 0xB0100,
     /** The usual 32-bit hack. */
     VBOXOSTYPE_32BIT_HACK = 0x7fffffff
 } VBOXOSTYPE;

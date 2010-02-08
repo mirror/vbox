@@ -4689,6 +4689,8 @@ void VBoxGlobal::init()
         {"OpenSolaris",     ":/os_opensolaris.png"},
         {"OpenSolaris_64",  ":/os_opensolaris_64.png"},
         {"QNX",             ":/os_qnx.png"},
+        {"MacOS",           ":/os_other.png"},
+        {"MacOS_64",        ":/os_other.png"},
     };
     for (uint n = 0; n < SIZEOF_ARRAY (kOSTypeIcons); ++ n)
     {
