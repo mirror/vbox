@@ -168,6 +168,10 @@ VP_STATUS VBoxVideoCmnRegSetDword(IN VBOXCMNREG Reg, PWSTR pName, uint32_t Val)
 static VIDEO_MODE_INFORMATION VideoModes[MAX_VIDEO_MODES + 2] = { 0 };
 /* number of available video modes, set by VBoxBuildModesTable  */
 static uint32_t gNumVideoModes = 0;
+#ifdef VBOXWDDM
+/* preferred mode index */
+static uint32_t gPreferredVideoMode = 0;
+#endif
 
 static uint32_t g_xresNoVRAM = 0, g_yresNoVRAM = 0, g_bppNoVRAM = 0;
 
@@ -221,6 +225,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     ULONG vramSize = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
 
     gNumVideoModes = 0;
+#ifdef VBOXWDDM
+    gPreferredVideoMode = 0;
+#endif
 
     size_t numModesCurrentColorDepth;
     size_t matrixIndex;
@@ -301,6 +308,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].GreenMask                    = 0xFF00;
                 VideoModes[gNumVideoModes].BlueMask                     = 0xFF;
                 VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
+#ifdef VBOXWDDM
+                gPreferredVideoMode = gNumVideoModes;
+#endif
             } break;
         }
         VideoModes[gNumVideoModes].VideoMemoryBitmapWidth       = 800;
@@ -563,6 +573,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * Next, check the registry for additional modes
      */
     int curKeyNo = 0;
+#ifdef VBOXWDDM
+    int fPreferredSet = 0;
+#endif
     do
     {
         /* check if there is space in the mode list */
@@ -610,6 +623,14 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             break;
 
         dprintf(("VBoxVideo: adding mode from registry: xres = %d, yres = %d, bpp = %d\n", xres, yres, bpp));
+
+#ifdef VBOXWDDM
+        if (!fPreferredSet)
+        {
+            gPreferredVideoMode = gNumVideoModes;
+            fPreferredSet = 1;
+        }
+#endif
         /*
          * Build mode entry.
          * Note that we have to apply the y offset for the custom mode.
@@ -649,6 +670,14 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].RedMask              = 0xFF0000;
                 VideoModes[gNumVideoModes].GreenMask            = 0xFF00;
                 VideoModes[gNumVideoModes].BlueMask             = 0xFF;
+#ifdef VBOXWDDM
+                /* 32-bit mode is more preferable, select it if not yet */
+                if (fPreferredSet < 2)
+                {
+                    gPreferredVideoMode = gNumVideoModes;
+                    fPreferredSet = 2;
+                }
+#endif
                 break;
         }
         VideoModes[gNumVideoModes].AttributeFlags               = VIDEO_MODE_GRAPHICS | VIDEO_MODE_COLOR | VIDEO_MODE_NO_OFF_SCREEN;
@@ -739,6 +768,10 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 }
 
                 dprintf(("VBoxVideo: setting special mode to xres = %d, yres = %d, bpp = %d\n", xres, yres, bpp));
+#ifdef VBOXWDDM
+                /* assign host-supplied as the most preferable */
+                gPreferredVideoMode = gNumVideoModes;
+#endif
                 /*
                  * Build mode entry.
                  * Note that we do not apply the y offset for the custom mode. It is
@@ -869,7 +902,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
  * geometries until we've either reached the maximum number of modes
  * or the available VRAM does not allow for additional modes.
  */
-VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes)
+VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable, VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode)
 {
     static bool bTableInitialized = false;
     if(bRebuildTable || !bTableInitialized)
@@ -880,6 +913,7 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
 
     *ppModes = VideoModes;
     *pcModes = gNumVideoModes;
+    *pPreferrableMode = gPreferredVideoMode;
 }
 
 #endif
