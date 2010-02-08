@@ -204,6 +204,8 @@
     <xsd:enumeration value="OpenSolaris"/>
     <xsd:enumeration value="OpenSolaris_64"/>
     <xsd:enumeration value="QNX"/>
+    <xsd:enumeration value="MacOS"/>
+    <xsd:enumeration value="MacOS_64"/>
   </xsd:restriction>
 </xsd:simpleType>
 
