@@ -70,8 +70,8 @@ using namespace com;
 
 #define LogError(m,rc) \
     do { \
-        Log (("VBoxHeadless: ERROR: " m " [rc=0x%08X]\n", rc)); \
-        RTPrintf ("%s\n", m); \
+        Log(("VBoxHeadless: ERROR: " m " [rc=0x%08X]\n", rc)); \
+        RTPrintf("%s\n", m); \
     } while (0)
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -89,14 +89,14 @@ static EventQueue *gEventQ = NULL;
 class StateChangeEvent : public Event
 {
 public:
-    StateChangeEvent (MachineState_T state) : mState (state) {}
+    StateChangeEvent(MachineState_T state) : mState(state) {}
 protected:
     void *handler()
     {
-        LogFlow (("VBoxHeadless: StateChangeEvent: %d\n", mState));
+        LogFlow(("VBoxHeadless: StateChangeEvent: %d\n", mState));
         /* post the termination event if the machine has been PoweredDown/Saved/Aborted */
         if (mState < MachineState_Running)
-            gEventQ->postEvent (NULL);
+            gEventQ->postEvent(NULL);
         return 0;
     }
 private:
@@ -274,7 +274,7 @@ class ConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
 {
 public:
 
-    ConsoleCallback ()
+    ConsoleCallback()
     {
 #ifndef VBOX_WITH_XPCOM
         refcnt = 0;
@@ -301,13 +301,13 @@ public:
 #endif
     VBOX_SCRIPTABLE_DISPATCH_IMPL(IConsoleCallback)
 
-    STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
-                                          ULONG width, ULONG height, BYTE *shape)
+    STDMETHOD(OnMousePointerShapeChange)(BOOL visible, BOOL alpha, ULONG xHot, ULONG yHot,
+                                         ULONG width, ULONG height, BYTE *shape)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnMouseCapabilityChange) (BOOL supportsAbsolute, BOOL needsHostCursor)
+    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
     {
         /* Emit absolute mouse event to actually enable the host mouse cursor. */
         if (supportsAbsolute && gConsole)
@@ -327,13 +327,13 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnStateChange) (MachineState_T machineState)
+    STDMETHOD(OnStateChange)(MachineState_T machineState)
     {
-        gEventQ->postEvent (new StateChangeEvent (machineState));
+        gEventQ->postEvent(new StateChangeEvent(machineState));
         return S_OK;
     }
 
-    STDMETHOD(OnExtraDataChange) (BSTR key)
+    STDMETHOD(OnExtraDataChange)(BSTR key)
     {
         return S_OK;
     }
@@ -343,17 +343,17 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
+    STDMETHOD(OnNetworkAdapterChange)(INetworkAdapter *aNetworkAdapter)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
+    STDMETHOD(OnSerialPortChange)(ISerialPort *aSerialPort)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
+    STDMETHOD(OnParallelPortChange)(IParallelPort *aParallelPort)
     {
         return S_OK;
     }
@@ -411,13 +411,13 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnUSBDeviceStateChange) (IUSBDevice *aDevice, BOOL aAttached,
+    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached,
                                       IVirtualBoxErrorInfo *aError)
     {
         return S_OK;
     }
 
-    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
+    STDMETHOD(OnSharedFolderChange)(Scope_T aScope)
     {
         return S_OK;
     }
@@ -436,7 +436,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnShowWindow) (ULONG64 *winId)
+    STDMETHOD(OnShowWindow)(ULONG64 *winId)
     {
         /* OnCanShowWindow() always returns FALSE, so this call should never
          * happen. */
@@ -456,10 +456,10 @@ private:
 };
 
 #ifdef VBOX_WITH_XPCOM
-NS_DECL_CLASSINFO (VirtualBoxCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI (VirtualBoxCallback, IVirtualBoxCallback)
-NS_DECL_CLASSINFO (ConsoleCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI (ConsoleCallback, IConsoleCallback)
+NS_DECL_CLASSINFO(VirtualBoxCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(VirtualBoxCallback, IVirtualBoxCallback)
+NS_DECL_CLASSINFO(ConsoleCallback)
+NS_IMPL_THREADSAFE_ISUPPORTS1_CI(ConsoleCallback, IConsoleCallback)
 #endif
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
@@ -596,7 +596,7 @@ static void parse_environ(unsigned long *pulFrameWidth, unsigned long *pulFrameH
 /**
  *  Entry point.
  */
-extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
+extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 {
 #ifdef VBOX_WITH_VRDP
     const char *vrdpPort = NULL;
@@ -861,35 +861,35 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         if (!id)
         {
             ComPtr <IMachine> m;
-            rc = virtualBox->FindMachine (Bstr (name), m.asOutParam());
-            if (FAILED (rc))
+            rc = virtualBox->FindMachine(Bstr(name), m.asOutParam());
+            if (FAILED(rc))
             {
-                LogError ("Invalid machine name!\n", rc);
+                LogError("Invalid machine name!\n", rc);
                 break;
             }
-            m->COMGETTER(Id) (id.asOutParam());
-            AssertComRC (rc);
-            if (FAILED (rc))
+            m->COMGETTER(Id)(id.asOutParam());
+            AssertComRC(rc);
+            if (FAILED(rc))
                 break;
         }
 
-        Log (("VBoxHeadless: Opening a session with machine (id={%s})...\n",
+        Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).raw()));
 
         // open a session
-        CHECK_ERROR_BREAK(virtualBox, OpenSession (session, id));
+        CHECK_ERROR_BREAK(virtualBox, OpenSession(session, id));
         fSessionOpened = true;
 
         /* get the console */
         ComPtr <IConsole> console;
-        CHECK_ERROR_BREAK(session, COMGETTER (Console) (console.asOutParam()));
+        CHECK_ERROR_BREAK(session, COMGETTER(Console)(console.asOutParam()));
 
         /* get the machine */
         ComPtr <IMachine> machine;
-        CHECK_ERROR_BREAK(console, COMGETTER(Machine) (machine.asOutParam()));
+        CHECK_ERROR_BREAK(console, COMGETTER(Machine)(machine.asOutParam()));
 
         ComPtr <IDisplay> display;
-        CHECK_ERROR_BREAK(console, COMGETTER(Display) (display.asOutParam()));
+        CHECK_ERROR_BREAK(console, COMGETTER(Display)(display.asOutParam()));
 
 #ifdef VBOX_FFMPEG
         IFramebuffer *pFramebuffer = 0;
@@ -922,7 +922,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                     LogError("Failed to initialise video capturing - make sure that the file format\n"
                              "you wish to use is supported on your system\n", rcc);
             }
-            if (RT_SUCCESS(rrc) && (S_OK == rcc))
+            if (RT_SUCCESS(rrc) && (rcc == S_OK))
             {
                 Log2(("VBoxHeadless: Registering framebuffer\n"));
                 pFramebuffer->AddRef();
@@ -951,7 +951,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
                 continue;
             }
 #endif /* defined(VBOX_FFMPEG) */
-            VRDPFramebuffer *pVRDPFramebuffer = new VRDPFramebuffer ();
+            VRDPFramebuffer *pVRDPFramebuffer = new VRDPFramebuffer();
             if (!pVRDPFramebuffer)
             {
                 RTPrintf("Error: could not create framebuffer object %d\n", uScreenId);
@@ -1026,11 +1026,11 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
         /* register a callback for machine events */
         {
-            ConsoleCallback *callback = new ConsoleCallback ();
+            ConsoleCallback *callback = new ConsoleCallback();
             callback->AddRef();
-            CHECK_ERROR(console, RegisterCallback (callback));
+            CHECK_ERROR(console, RegisterCallback(callback));
             callback->Release();
-            if (FAILED (rc))
+            if (FAILED(rc))
                 break;
         }
 
@@ -1039,8 +1039,8 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         BOOL fVRDPEnable = true;
         BOOL fVRDPEnabled;
         ComPtr <IVRDPServer> vrdpServer;
-        CHECK_ERROR_BREAK(machine, COMGETTER (VRDPServer) (vrdpServer.asOutParam()));
-        CHECK_ERROR_BREAK(vrdpServer, COMGETTER(Enabled) (&fVRDPEnabled));
+        CHECK_ERROR_BREAK(machine, COMGETTER(VRDPServer)(vrdpServer.asOutParam()));
+        CHECK_ERROR_BREAK(vrdpServer, COMGETTER(Enabled)(&fVRDPEnabled));
 
         if (vrdpEnabled != NULL)
         {
@@ -1061,7 +1061,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
         if (fVRDPEnable)
         {
-            Log (("VBoxHeadless: Enabling VRDP server...\n"));
+            Log(("VBoxHeadless: Enabling VRDP server...\n"));
 
             /* set VRDP port if requested by the user */
             if (vrdpPort != NULL)
@@ -1077,7 +1077,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             /* enable VRDP server (only if currently disabled) */
             if (!fVRDPEnabled)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled) (TRUE));
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(TRUE));
             }
         }
         else
@@ -1085,17 +1085,17 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
             /* disable VRDP server (only if currently enabled */
             if (fVRDPEnabled)
             {
-                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled) (FALSE));
+                CHECK_ERROR_BREAK(vrdpServer, COMSETTER(Enabled)(FALSE));
             }
         }
 #endif
-        Log (("VBoxHeadless: Powering up the machine...\n"));
+        Log(("VBoxHeadless: Powering up the machine...\n"));
 
         ComPtr <IProgress> progress;
-        CHECK_ERROR_BREAK(console, PowerUp (progress.asOutParam()));
+        CHECK_ERROR_BREAK(console, PowerUp(progress.asOutParam()));
 
         /* wait for result because there can be errors */
-        if (SUCCEEDED(progress->WaitForCompletion (-1)))
+        if (SUCCEEDED(progress->WaitForCompletion(-1)))
         {
             LONG progressRc;
             progress->COMGETTER(ResultCode)(&progressRc);
@@ -1119,19 +1119,19 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
         signal(SIGTERM, SaveState);
 #endif
 
-        Log (("VBoxHeadless: Waiting for PowerDown...\n"));
+        Log(("VBoxHeadless: Waiting for PowerDown...\n"));
 
         Event *e;
 
-        while (gEventQ->waitForEvent (&e) && e)
-          gEventQ->handleEvent (e);
+        while (gEventQ->waitForEvent(&e) && e)
+          gEventQ->handleEvent(e);
 
-        Log (("VBoxHeadless: event loop has terminated...\n"));
+        Log(("VBoxHeadless: event loop has terminated...\n"));
 
 #ifdef VBOX_FFMPEG
         if (pFramebuffer)
         {
-            pFramebuffer->Release ();
+            pFramebuffer->Release();
             Log(("Released framebuffer\n"));
             pFramebuffer = NULL;
         }
@@ -1150,7 +1150,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
          * Close the session. This will also uninitialize the console and
          * unregister the callback we've registered before.
          */
-        Log (("VBoxHeadless: Closing the session...\n"));
+        Log(("VBoxHeadless: Closing the session...\n"));
         session->Close();
     }
 
@@ -1160,7 +1160,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 
     com::Shutdown();
 
-    LogFlow (("VBoxHeadless FINISHED.\n"));
+    LogFlow(("VBoxHeadless FINISHED.\n"));
 
     return rc;
 }
@@ -1170,7 +1170,7 @@ extern "C" DECLEXPORT (int) TrustedMain (int argc, char **argv, char **envp)
 /**
  * Main entry point.
  */
-int main (int argc, char **argv, char **envp)
+int main(int argc, char **argv, char **envp)
 {
     // initialize VBox Runtime
     int rc = RTR3InitAndSUPLib();
@@ -1190,7 +1190,7 @@ int main (int argc, char **argv, char **envp)
         return 1;
     }
 
-    return TrustedMain (argc, argv, envp);
+    return TrustedMain(argc, argv, envp);
 }
 #endif /* !VBOX_WITH_HARDENING */
 
