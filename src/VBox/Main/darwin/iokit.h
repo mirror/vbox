@@ -86,7 +86,6 @@ int             DarwinReEnumerateUSBDevice(PCUSBDEVICE pCur);
 #endif /* VBOX_WITH_USB */
 PDARWINDVD      DarwinGetDVDDrives(void);
 PDARWINETHERNIC DarwinGetEthernetControllers(void);
-int             DarwinSmcKey(char* aKey, uint32_t iKeySize);
 RT_C_DECLS_END
 
 #endif

@@ -107,6 +107,68 @@
 #include <VBox/param.h>
 #include <VBox/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
 
+#if defined(RT_OS_DARWIN)
+
+# include "IOKit/IOKitLib.h"
+
+int DarwinSmcKey(char* aKey, uint32_t iKeySize)
+{
+    int rc;
+    /* Based on Amith Singh SMC reading code sample in OS X Book */
+    typedef struct {
+        uint32_t   key;
+        uint8_t    __d0[22];
+        uint32_t   datasize;
+        uint8_t    __d1[10];
+        uint8_t    cmd;
+        uint32_t   __d2;
+        uint8_t    data[32];
+    } AppleSMCBuffer_t;
+
+
+    if (iKeySize < 65)
+        return VERR_INTERNAL_ERROR;
+
+    io_service_t service = IOServiceGetMatchingService(kIOMasterPortDefault,
+                                                       IOServiceMatching("AppleSMC"));
+    if (!service)
+        return VERR_INTERNAL_ERROR;
+
+    io_connect_t port = (io_connect_t)0;
+    kern_return_t kr = IOServiceOpen(service, mach_task_self(), 0, &port);
+    IOObjectRelease(service);
+    if (kr != kIOReturnSuccess)
+        return VERR_INTERNAL_ERROR;
+
+
+    AppleSMCBuffer_t inputStruct = { 0, {0}, 32, {0}, 5, }, outputStruct;
+    size_t outputStructCnt = sizeof(outputStruct);
+
+    for (int i = 0; i < 2; i++)
+    {
+        inputStruct.key = (uint32_t)((i == 0) ? 'OSK0' : 'OSK1');
+        kr = IOConnectCallStructMethod((mach_port_t)port,
+                                       (uint32_t)2,
+                                       (const void*)&inputStruct,
+                                       sizeof(inputStruct),
+                                       (void*)&outputStruct,
+                                       &outputStructCnt);
+        if (kr != kIOReturnSuccess)
+            return VERR_INTERNAL_ERROR;
+
+        for (int j=0; j<32; j++)
+            aKey[j + i*32] = outputStruct.data[j];
+    }
+
+    aKey[64] = 0;
+    
+    //fprintf(stderr, "osk=%s\n", aKey)
+
+    return rc;
+}
+
+#endif
+
 #undef PVM
 
 /* Comment out the following line to remove VMWare compatibility hack. */
