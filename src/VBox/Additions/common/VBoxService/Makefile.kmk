@@ -65,9 +65,9 @@ if1of ($(KBUILD_TARGET), linux)
 endif
 VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
-	VBoxService-win.cpp \
-	VBoxServiceBalloon.cpp \
-	VBoxServiceStats.cpp
+	VBoxService-win.cpp 
+##	VBoxServiceBalloon.cpp \
+##	VBoxServiceStats.cpp
 
 VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
