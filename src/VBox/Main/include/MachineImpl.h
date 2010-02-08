@@ -828,6 +828,7 @@ public:
     STDMETHOD(SetRemoveSavedState)(BOOL aRemove);
     STDMETHOD(UpdateState)(MachineState_T machineState);
     STDMETHOD(GetIPCId)(BSTR *id);
+    STDMETHOD(SetPowerUpInfo)(IVirtualBoxErrorInfo *aError);
     STDMETHOD(RunUSBDeviceFilters)(IUSBDevice *aUSBDevice, BOOL *aMatched, ULONG *aMaskedIfs);
     STDMETHOD(CaptureUSBDevice)(IN_BSTR aId);
     STDMETHOD(DetachUSBDevice)(IN_BSTR aId, BOOL aDone);

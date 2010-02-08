@@ -2688,7 +2688,8 @@
         object remains in the closed state, and accessing the machine or its
         console through it is invalid. It is recommended to use
         <link to="IProgress::waitForCompletion" /> or similar calls to wait for
-        completion.
+        completion. Completion is signalled when the VM is powered on. Error
+        messages etc. can be queried via the progress object, if available.
 
         As with all <link to="ISession" /> objects, it is recommended to call
         <link to="ISession::close" /> on the local session object once openRemoteSession()
@@ -3756,6 +3757,17 @@
 
     <method name="getIPCId">
       <param name="id" type="wstring" dir="return"/>
+    </method>
+
+    <method name="setPowerUpInfo">
+      <desc>
+        Transfers success (@c null) or error information for this session.
+        This method updates the progress object to signal completion of the
+        <link to="IVirtualBox::openRemoteSession"/> method if appropriate,
+        which means that the progress object returned by
+        <link to="IConsole::powerUp"/>.
+      </desc>
+      <param name="error" type="IVirtualBoxErrorInfo" dir="in"/>
     </method>
 
     <method name="runUSBDeviceFilters">

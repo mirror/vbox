@@ -377,8 +377,8 @@ int handleStartVM(HandlerArg *a)
         ComPtr<IProgress> progress;
         CHECK_ERROR_RET(a->virtualBox, OpenRemoteSession(a->session, uuid, sessionType,
                                                          env, progress.asOutParam()), rc);
-        RTPrintf("Waiting for the remote session to open...\n");
-        CHECK_ERROR_RET(progress, WaitForCompletion (-1), 1);
+        RTPrintf("Waiting for the VM to power on...\n");
+        CHECK_ERROR_RET(progress, WaitForCompletion(-1), 1);
 
         BOOL completed;
         CHECK_ERROR_RET(progress, COMGETTER(Completed)(&completed), rc);
@@ -395,7 +395,7 @@ int handleStartVM(HandlerArg *a)
         }
         else
         {
-            RTPrintf("Remote session has been successfully opened.\n");
+            RTPrintf("VM has been successfully started.\n");
         }
     }
 
