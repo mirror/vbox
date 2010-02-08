@@ -160,11 +160,11 @@ int DarwinSmcKey(char* aKey, uint32_t iKeySize)
             aKey[j + i*32] = outputStruct.data[j];
     }
 
+    IOServiceClose(port);
+
     aKey[64] = 0;
     
-    //fprintf(stderr, "osk=%s\n", aKey)
-
-    return rc;
+    return VINF_SUCCESS;
 }
 
 #endif
