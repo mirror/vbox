@@ -839,8 +839,6 @@ int handleControlVM(HandlerArg *a)
                     printf("CPU load user:          %d%%\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Threads, &StatVal) == S_OK)
                     printf("Nr. of threads:         %d\n", StatVal);
-                if (guest->GetStatistic(0, GuestStatisticType_Threads, &StatVal) == S_OK)
-                    printf("Nr. of threads:         %d\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Processes, &StatVal) == S_OK)
                     printf("Nr. of processes:       %d\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Handles, &StatVal) == S_OK)
