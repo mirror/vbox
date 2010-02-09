@@ -2,7 +2,7 @@
  * vboxweb.h:
  *      header file for "real" web server code.
  *
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -32,13 +32,13 @@ void WebLog(const char *pszFormat, ...);
 
 #include <VBox/com/VirtualBox.h>
 #include <VBox/com/Guid.h>
+#include <VBox/com/AutoLock.h>
 
 #include <VBox/err.h>
 
 #include <iprt/stream.h>
 
 #include <string>
-
 
 /****************************************************************************
  *
@@ -50,6 +50,10 @@ extern ComPtr<IVirtualBox> g_pVirtualBox;
 extern bool g_fVerbose;
 
 extern PRTSTREAM g_pstrLog;
+
+extern util::RWLockHandle  *g_pAuthLibLockHandle;
+
+extern util::RWLockHandle  *g_pSessionsLockHandle;
 
 /****************************************************************************
  *
@@ -223,6 +227,10 @@ int findComPtrFromId(struct soap *soap,
                      ComPtr<T> &pComPtr,
                      bool fNullAllowed)
 {
+    // we're only reading the MOR maps, not modifying them, so a readlock is good enough
+    // (allow concurrency, this code gets called from everywhere in methodmaps.cpp)
+    util::AutoReadLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
     int rc;
     ManagedObjectRef *pRef;
     if ((rc = ManagedObjectRef::findRefFromId(id, &pRef, fNullAllowed)))
@@ -269,6 +277,8 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
         return "";
     }
 
+    // we might be modifying the MOR maps below, so request write lock now
+    util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
     WebServiceSession *pSession;
     if ((pSession = WebServiceSession::findSessionFromRef(idParent)))
     {
