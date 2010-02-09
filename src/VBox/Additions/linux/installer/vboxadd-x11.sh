@@ -459,7 +459,7 @@ EOF
             nobak="/etc/X11/xorg.vbox.nobak"
             if test -z "$configured" -a ! -r "$nobak"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config-new.pl" --autoMouse --noBak "$main_cfg"
+                "$lib_dir/x11config-new.pl" $newmouse $automouse $nopsaux --noBak "$main_cfg"
                 touch "$nobak"
             fi
         fi
