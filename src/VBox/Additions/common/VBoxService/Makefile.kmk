@@ -33,8 +33,7 @@ PROGRAMS.win.x86 += VBoxServiceNT
 #
 VBoxService_TEMPLATE      = VBOXGUESTR3EXE
 VBoxService_DEFS          = VBOXSERVICE_TIMESYNC
-VBoxService_DEFS.win     += _WIN32_WINNT=0x0501 
-##VBOXSERVICE_MANAGEMENT
+VBoxService_DEFS.win     += _WIN32_WINNT=0x0501 VBOXSERVICE_MANAGEMENT
 VBoxService_DEFS.os2      = VBOX_WITH_HGCM VBOXSERVICE_CLIPBOARD
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_DEFS        += VBOX_WITH_GUEST_PROPS VBOXSERVICE_VMINFO
@@ -66,9 +65,9 @@ if1of ($(KBUILD_TARGET), linux)
 endif
 VBoxService_SOURCES.win  += \
 	VBoxService-win.rc \
-	VBoxService-win.cpp 
-##	VBoxServiceBalloon.cpp \
-##	VBoxServiceStats.cpp
+	VBoxService-win.cpp \
+	VBoxServiceBalloon.cpp \
+	VBoxServiceStats.cpp
 
 VBoxService_SOURCES.os2   = \
 	VBoxService-os2.def \
@@ -92,7 +91,7 @@ endif
 #
 VBoxServiceNT_TEMPLATE = VBOXGUESTR3EXE
 VBoxServiceNT_EXTENDS  = VBoxService
-VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4
+VBoxServiceNT_DEFS.win = _WIN32_WINNT=0x0400 TARGET_NT4 VBOXSERVICE_MANAGEMENT
 
 VBoxServiceVMInfo.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxServiceVMInfo.cpp_DEPS = $(VBOX_SVN_REV_KMK)
