@@ -273,7 +273,7 @@ static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
 
 static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
 {
-    rewrite_ForceLF,
+    rewrite_ForceCRLF,
     rewrite_ExpandTabs,
     rewrite_StripTrailingBlanks
 };
@@ -1171,7 +1171,40 @@ static void scmDiffPrintLines(PSCMDIFFSTATE pState, char chPrefix, PSCMSTREAM pS
 
         RTStrmPutCh(pState->pDiff, chPrefix);
         if (pchLine && cchLine)
-            RTStrmWrite(pState->pDiff, pchLine, cchLine);
+        {
+            if (!pState->fSpecialChars)
+                RTStrmWrite(pState->pDiff, pchLine, cchLine);
+            else
+            {
+                size_t      offVir   = 0;
+                const char *pchStart = pchLine;
+                const char *pchTab   = (const char *)memchr(pchLine, '\t', cchLine);
+                while (pchTab)
+                {
+                    RTStrmWrite(pState->pDiff, pchStart, pchTab - pchStart);
+                    offVir += pchTab - pchStart;
+
+                    size_t cchTab = g_cchTab - offVir % g_cchTab;
+                    switch (cchTab)
+                    {
+                        case 1: RTStrmPutStr(pState->pDiff, "."); break;
+                        case 2: RTStrmPutStr(pState->pDiff, ".."); break;
+                        case 3: RTStrmPutStr(pState->pDiff, "[T]"); break;
+                        case 4: RTStrmPutStr(pState->pDiff, "[TA]"); break;
+                        case 5: RTStrmPutStr(pState->pDiff, "[TAB]"); break;
+                        default: RTStrmPrintf(pState->pDiff, "[TAB%.*s]", cchTab - 5, g_szTabSpaces); break;
+                    }
+                    offVir += cchTab;
+
+                    /* next */
+                    pchStart = pchTab + 1;
+                    pchTab = (const char *)memchr(pchStart, '\t', cchLine - (pchStart - pchLine));
+                }
+                size_t cchLeft = cchLine - (pchStart - pchLine);
+                if (cchLeft)
+                    RTStrmWrite(pState->pDiff, pchStart, cchLeft);
+            }
+        }
 
         if (!pState->fSpecialChars)
             RTStrmPutCh(pState->pDiff, '\n');
@@ -1451,8 +1484,7 @@ static size_t scmDiffSynchronize(PSCMDIFFSTATE pState, size_t cMatches)
  * @param   fIgnoreLeadingWhite Set if leading white space should be ignored.
  * @param   fIgnoreTrailingWhite  Set if trailing white space should be ignored.
  * @param   fSpecialChars       Whether to print special chars in a human
- *                              readable form or not.  Currently only applicable
- *                              to the EOL marker.
+ *                              readable form or not.
  * @param   pDiff               Where to write the diff.
  */
 size_t ScmDiffStreams(const char *pszFilename, PSCMSTREAM pLeft, PSCMSTREAM pRight, bool fIgnoreEol,
