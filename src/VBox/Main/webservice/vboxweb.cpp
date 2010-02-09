@@ -255,18 +255,65 @@ void WebLogSoapError(struct soap *soap)
            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
 }
 
-int fntSoapQueue(RTTHREAD pThread, void *pvThread);
+/****************************************************************************
+ *
+ * SoapQ, SoapThread (multithreading)
+ *
+ ****************************************************************************/
 
 class SoapQ;
 
-struct SoapThread
+class SoapThread
 {
-    size_t      u;
-    SoapQ       *pQ;
-    struct soap *soap;
-    RTTHREAD    pThread;
+public:
+    /**
+     * Constructor. Creates the new thread and makes it call process() for processing the queue.
+     * @param u Thread number. (So we can count from 1 and be readable.)
+     * @param q SoapQ instance which has the queue to process.
+     * @param soap struct soap instance from main() which we copy here.
+     */
+    SoapThread(size_t u,
+               SoapQ &q,
+               const struct soap *soap)
+        : m_u(u),
+          m_pQ(&q)
+    {
+        // make a copy of the soap struct for the new thread
+        m_soap = soap_copy(soap);
+
+        if (!RT_SUCCESS(RTThreadCreate(&m_pThread,
+                                       fntWrapper,
+                                       this,             // pvUser
+                                       0,               // cbStack,
+                                       RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                                       0,
+                                       "SoapQWorker")))
+        {
+            RTStrmPrintf(g_pStdErr, "[!] Cannot start worker thread %d\n", u);
+            exit(1);
+        }
+    }
+
+    void process();
+
+    static int fntWrapper(RTTHREAD pThread, void *pvThread)
+    {
+        SoapThread *pst = (SoapThread*)pvThread;
+        pst->process();     // this never returns really
+        return 0;
+    }
+
+private:
+    size_t      m_u;            // thread number
+    SoapQ       *m_pQ;
+    struct soap *m_soap;
+    RTTHREAD    m_pThread;
 };
 
+/**
+ * SOAP queue encapsulation. add() adds an item to the queue,
+ * get() fetches one.
+ */
 class SoapQ
 {
 public:
@@ -279,22 +326,9 @@ public:
         // create cThreads threads
         for (size_t u = 0; u < cThreads; ++u)
         {
-            SoapThread *pst = new SoapThread();
-            pst->u = u + 1;
-            pst->pQ = this;
-            pst->soap = soap_copy(pSoap);
-            if (!RT_SUCCESS(RTThreadCreate(&pst->pThread,
-                                           fntSoapQueue,
-                                           pst,             // pvUser
-                                           0,               // cbStack,
-                                           RTTHREADTYPE_MAIN_HEAVY_WORKER,
-                                           0,
-                                           "SoapQWorker")))
-            {
-                RTStrmPrintf(g_pStdErr, "[!] Cannot start worker thread %d\n", pst->u);
-                exit(1);
-            }
-
+            SoapThread *pst = new SoapThread(u + 1,
+                                             *this,
+                                             pSoap);
             m_llAllThreads.push_back(pst);
             ++m_cIdleThreads;
         }
@@ -307,7 +341,8 @@ public:
 
     /**
      * Adds the given socket to the SOAP queue and posts the
-     * member event sem to wake up the workers.
+     * member event sem to wake up the workers. Called on the main thread
+     * whenever a socket has work to do.
      * @param s Socket from soap_accept() which has work to do.
      */
     uint32_t add(int s)
@@ -330,9 +365,10 @@ public:
      * Blocks the current thread until work comes in; then returns
      * the SOAP socket which has work to do. This reduces m_cIdleThreads
      * by one, and the caller MUST call done() when it's done processing.
+     * Called from the worker threads.
      * @return
      */
-    int get()
+    int get(size_t &cIdleThreads)
     {
         while (1)
         {
@@ -344,7 +380,7 @@ public:
             {
                 int socket = m_llSocketsQ.front();
                 m_llSocketsQ.pop_front();
-                --m_cIdleThreads;
+                cIdleThreads = --m_cIdleThreads;
 
                 // reset the multi event only if the queue is now empty; otherwise
                 // another thread will also wake up when we release the mutex and
@@ -362,7 +398,7 @@ public:
     }
 
     /**
-     * To be called by a thread after fetching an item from the
+     * To be called by a worker thread after fetching an item from the
      * queue via get() and having finished its lengthy processing.
      */
     void done()
@@ -372,13 +408,14 @@ public:
     }
 
     util::WriteLockHandle   m_mutex;
-    RTSEMEVENTMULTI         m_event;
+    RTSEMEVENTMULTI         m_event;            // posted by add(), blocked on by get()
 
-    std::list<SoapThread*>  m_llAllThreads;
-    size_t                  m_cIdleThreads;
+    std::list<SoapThread*>  m_llAllThreads;     // all the threads created by the constructor
+    size_t                  m_cIdleThreads;     // threads which are currently idle (statistics)
 
-    std::list<int>          m_llSocketsQ;       // this contains the actual jobs to do,
-                                                // represented by the socket from soap_accept()
+    // A std::list abused as a queue; this contains the actual jobs to do,
+    // each int being a socket from soap_accept()
+    std::list<int>          m_llSocketsQ;
 };
 
 /**
@@ -386,43 +423,42 @@ public:
  * running, blocks on the event semaphore in SoapThread.SoapQ and picks
  * up a socket from the queue therein, which has been put there by
  * beginProcessing().
- *
- * @param pThread
- * @param pvThread
- * @return
  */
-int fntSoapQueue(RTTHREAD pThread, void *pvThread)
+void SoapThread::process()
 {
-    SoapThread *pst = (SoapThread*)pvThread;
-
-    WebLog("Started thread %d\n", pst->u);
+    WebLog("Started thread %d\n", m_u);
 
     while (1)
     {
         // wait for a socket to arrive on the queue
-        pst->soap->socket = pst->pQ->get();
+        size_t cIdleThreads;
+        m_soap->socket = m_pQ->get(cIdleThreads);
 
         WebLog("T%d handles connection from IP=%lu.%lu.%lu.%lu socket=%d (%d threads idle)\n",
-                pst->u,
-                (pst->soap->ip>>24)&0xFF,
-                (pst->soap->ip>>16)&0xFF,
-                (pst->soap->ip>>8)&0xFF,
-                pst->soap->ip&0xFF,
-                pst->soap->socket,
-                pst->pQ->m_cIdleThreads);
+                m_u,
+                (m_soap->ip>>24)&0xFF,
+                (m_soap->ip>>16)&0xFF,
+                (m_soap->ip>>8)&0xFF,
+                m_soap->ip&0xFF,
+                m_soap->socket,
+                cIdleThreads);
 
         // process the request; this goes into the COM code in methodmaps.cpp
-        soap_serve(pst->soap);
+        soap_serve(m_soap);
 
-        soap_destroy(pst->soap); // clean up class instances
-        soap_end(pst->soap); // clean up everything and close socket
+        soap_destroy(m_soap); // clean up class instances
+        soap_end(m_soap); // clean up everything and close socket
 
         // tell the queue we're idle again
-        pst->pQ->done();
+        m_pQ->done();
     }
-
-    return 0;
 }
+
+/****************************************************************************
+ *
+ * Main
+ *
+ ****************************************************************************/
 
 /**
  * Called from main(). This implements the loop that takes SOAP calls
