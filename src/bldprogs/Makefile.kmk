@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -30,5 +30,10 @@ bin2c_SOURCES = bin2c.c
 biossums_TEMPLATE = VBOXBLDPROG
 biossums_SOURCES = biossums.c
 
-include $(KBUILD_PATH)/subfooter.kmk
+PROGRAMS += scm
+scm_TEMPLATE = VBoxR3Static
+scm_SOURCES = scm.cpp
+scm_LIBS = \
+	$(LIB_RUNTIME)
 
+include $(KBUILD_PATH)/subfooter.kmk
