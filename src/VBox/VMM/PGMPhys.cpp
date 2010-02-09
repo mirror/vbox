@@ -740,12 +740,13 @@ static void pgmR3PhysUnlinkRamRange(PVM pVM, PPGMRAMRANGE pRam)
  */
 static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, RTGCPHYS GCPhysLast, uint8_t uType)
 {
+    Assert(PGMIsLockOwner(pVM));
     uint32_t            cPendingPages = 0;
     PGMMFREEPAGESREQ    pReq;
     int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
     AssertLogRelRCReturn(rc, rc);
 
-    /* Itegerate the pages. */
+    /* Iterate the pages. */
     PPGMPAGE pPageDst   = &pRam->aPages[(GCPhys - pRam->GCPhys) >> PAGE_SHIFT];
     uint32_t cPagesLeft = ((GCPhysLast - GCPhys) >> PAGE_SHIFT) + 1;
     while (cPagesLeft-- > 0)
@@ -770,21 +771,34 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
 }
 
 /**
- * Frees a range of ram pages, replacing them with ZERO pages
+ * Rendezvous callback used by PGMR3PhysFreeRamPages that frees a range of guest physical pages
  *
- * @returns VBox status code.
+ * This is only called on one of the EMTs while the other ones are waiting for
+ * it to complete this function.
+ *
+ * @returns VINF_SUCCESS (VBox strict status code).
  * @param   pVM         The VM handle.
- * @param   cPages      Number of pages to free
- * @param   paPhysPage  Array of guest physical addresses
+ * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
+ * @param   pvUser      User parameter
  */
-VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
-    uint32_t            cPendingPages = 0;
+    uintptr_t          *paUser          = (uintptr_t *)pvUser;
+    unsigned            cPages          = paUser[0];
+    RTGCPHYS           *paPhysPage      = (RTGCPHYS *)paUser[1];
+    uint32_t            cPendingPages   = 0;
     PGMMFREEPAGESREQ    pReq;
-    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
-    AssertLogRelRCReturn(rc, rc);
 
-    /* Itegerate the pages. */
+    pgmLock(pVM);
+    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    if (RT_FAILURE(rc))
+    {
+        pgmUnlock(pVM);
+        AssertLogRelRC(rc);
+        return rc;
+    }
+
+    /* Iterate the pages. */
     for (unsigned i = 0; i < cPages; i++)
     {
         PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
@@ -796,19 +810,48 @@ VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysP
         }
 
         rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i]);
-        AssertLogRelRCReturn(rc, rc); /* We're done for if this goes wrong. */
+        if (RT_FAILURE(rc))
+        {
+            pgmUnlock(pVM);
+            AssertLogRelRC(rc);
+            return rc;
+        }
     }
 
     if (cPendingPages)
     {
         rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
-        AssertLogRelRCReturn(rc, rc);
+        if (RT_FAILURE(rc))
+        {
+            pgmUnlock(pVM);
+            AssertLogRelRC(rc);
+            return rc;
+        }
     }
     GMMR3FreePagesCleanup(pReq);
 
+    pgmUnlock(pVM);
     return rc;
 }
 
+/**
+ * Frees a range of ram pages, replacing them with ZERO pages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   cPages      Number of pages to free
+ * @param   paPhysPage  Array of guest physical addresses
+ */
+VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    uintptr_t paUser[2];
+
+    paUser[0] = cPages;
+    paUser[1] = (uintptr_t)paPhysPage;
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
+    AssertRC(rc);
+    return rc;
+}
 
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
