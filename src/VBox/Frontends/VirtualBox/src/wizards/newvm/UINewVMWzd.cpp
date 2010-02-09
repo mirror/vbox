@@ -40,8 +40,7 @@ struct osTypePattern
  * first matching string found, will be used. */
 static const osTypePattern gs_OSTypePattern[] =
 {
-    { QRegExp("DO", Qt::CaseInsensitive), "DOS" },
-    { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
+    { QRegExp("DOS", Qt::CaseInsensitive), "DOS" },
     { QRegExp("L4", Qt::CaseInsensitive), "L4" },
     { QRegExp("Wi.*3", Qt::CaseInsensitive), "Windows31" },
     { QRegExp("Wi.*98", Qt::CaseInsensitive), "Windows98" },
@@ -65,8 +64,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("OS2.*W", Qt::CaseInsensitive), "OS2Warp3" },
     { QRegExp("OS2.*e", Qt::CaseInsensitive), "OS2eCS" },
     { QRegExp("OS2", Qt::CaseInsensitive), "OS2" },
-    { QRegExp("Ar.*64", Qt::CaseInsensitive), "ArchLinux_64" },
-    { QRegExp("Ar", Qt::CaseInsensitive), "ArchLinux" },
+    { QRegExp("Arc.*64", Qt::CaseInsensitive), "ArchLinux_64" },
+    { QRegExp("Arc", Qt::CaseInsensitive), "ArchLinux" },
     { QRegExp("De.*64", Qt::CaseInsensitive), "Debian_64" },
     { QRegExp("De", Qt::CaseInsensitive), "Debian" },
     { QRegExp("(SU)|(No)", Qt::CaseInsensitive), "OpenSUSE" },
@@ -77,9 +76,9 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("(Ge)|(Sab)", Qt::CaseInsensitive), "Gentoo" },
     { QRegExp("Man.*64", Qt::CaseInsensitive), "Mandriva_64" },
     { QRegExp("Man", Qt::CaseInsensitive), "Mandriva" },
-    { QRegExp("Re.*64", Qt::CaseInsensitive), "RedHat_64" },
-    { QRegExp("Re", Qt::CaseInsensitive), "RedHat" },
-    { QRegExp("Tu", Qt::CaseInsensitive), "Turbolinux" },
+    { QRegExp("Red.*64", Qt::CaseInsensitive), "RedHat_64" },
+    { QRegExp("Red", Qt::CaseInsensitive), "RedHat" },
+    { QRegExp("Tur", Qt::CaseInsensitive), "Turbolinux" },
     { QRegExp("Ub.*64", Qt::CaseInsensitive), "Ubuntu_64" },
     { QRegExp("Ub", Qt::CaseInsensitive), "Ubuntu" },
     { QRegExp("Xa.*64", Qt::CaseInsensitive), "Xandros_64" },
@@ -105,6 +104,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
     { QRegExp("Mac.*64", Qt::CaseInsensitive), "MacOS_64" },
     { QRegExp("Mac", Qt::CaseInsensitive), "MacOS" },
+    { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
     { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
 };
 
