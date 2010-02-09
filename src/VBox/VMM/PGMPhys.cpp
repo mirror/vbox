@@ -830,6 +830,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCP
     }
     GMMR3FreePagesCleanup(pReq);
 
+    /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
+    pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
+
     pgmUnlock(pVM);
     return rc;
 }
