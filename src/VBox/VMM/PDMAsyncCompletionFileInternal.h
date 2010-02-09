@@ -33,9 +33,6 @@
 
 #include "PDMAsyncCompletionInternal.h"
 
-/** Enable the 2Q cache alogrithm. */
-#define VBOX_WITH_2Q_CACHE 1
-
 /** @todo: Revise the caching of tasks. We have currently four caches:
  *  Per endpoint task cache
  *  Per class cache
@@ -60,6 +57,8 @@ typedef struct PDMASYNCCOMPLETIONTASKFILE *PPDMASYNCCOMPLETIONTASKFILE;
 typedef struct PDMACFILELRULIST *PPDMACFILELRULIST;
 /** Pointer to the global cache structure. */
 typedef struct PDMACFILECACHEGLOBAL *PPDMACFILECACHEGLOBAL;
+/** Pointer to a task segment. */
+typedef struct PDMACFILETASKSEG *PPDMACFILETASKSEG;
 
 /**
  * Blocking event types.
@@ -188,6 +187,23 @@ typedef PDMACEPFILEMGR *PPDMACEPFILEMGR;
 typedef PPDMACEPFILEMGR *PPPDMACEPFILEMGR;
 
 /**
+ * A file access range lock.
+ */
+typedef struct PDMACFILERANGELOCK
+{
+    /** AVL node in the locked range tree of the endpoint. */
+    AVLRFOFFNODECORE            Core;
+    /** How many tasks have locked this range. */
+    uint32_t                    cRefs;
+    /** Flag whether this is a read or write lock. */
+    bool                        fReadLock;
+    /** List of tasks which are waiting that the range gets unlocked. */
+    PPDMACTASKFILE              pWaitingTasksHead;
+    /** List of tasks which are waiting that the range gets unlocked. */
+    PPDMACTASKFILE              pWaitingTasksTail;
+} PDMACFILERANGELOCK, *PPDMACFILERANGELOCK;
+
+/**
  * Data for one request segment waiting for cache entry.
  */
 typedef struct PDMACFILETASKSEG
@@ -204,7 +220,7 @@ typedef struct PDMACFILETASKSEG
     void                       *pvBuf;
     /** Flag whether this entry writes data to the cache. */
     bool                        fWrite;
-} PDMACFILETASKSEG, *PPDMACFILETASKSEG;
+} PDMACFILETASKSEG;
 
 /**
  * A cache entry
@@ -259,11 +275,11 @@ typedef struct PDMACFILECACHEENTRY
 typedef struct PDMACFILELRULIST
 {
     /** Head of the list. */
-    PPDMACFILECACHEENTRY pHead;
+    PPDMACFILECACHEENTRY  pHead;
     /** Tail of the list. */
-    PPDMACFILECACHEENTRY pTail;
+    PPDMACFILECACHEENTRY  pTail;
     /** Number of bytes cached in the list. */
-    uint32_t             cbCached;
+    uint32_t              cbCached;
 } PDMACFILELRULIST;
 
 /**
@@ -277,24 +293,11 @@ typedef struct PDMACFILECACHEGLOBAL
     uint32_t         cbCached;
     /** Critical section protecting the cache. */
     RTCRITSECT       CritSect;
-#ifdef VBOX_WITH_2Q_CACHE
     uint32_t         cbRecentlyUsedInMax;
     uint32_t         cbRecentlyUsedOutMax;
     PDMACFILELRULIST LruRecentlyUsedIn;
     PDMACFILELRULIST LruRecentlyUsedOut;
     PDMACFILELRULIST LruFrequentlyUsed;
-#else
-    /** Adaption parameter (p) */
-    uint32_t         uAdaptVal;
-    /** LRU list for recently used entries (T1) */
-    PDMACFILELRULIST LruRecentlyUsed;
-    /** LRU list for frequently used entries (T2) */
-    PDMACFILELRULIST LruFrequentlyUsed;
-    /** LRU list for recently evicted entries (B1) */
-    PDMACFILELRULIST LruRecentlyGhost;
-    /** LRU list for evicted entries from T2 (B2) */
-    PDMACFILELRULIST LruFrequentlyGhost;
-#endif
 #ifdef VBOX_WITH_STATISTICS
     /** Hit counter. */
     STAMCOUNTER      cHits;
@@ -485,6 +488,11 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
         R3PTRTYPE(PPDMACTASKFILE)                  pReqsPendingHead;
         /** Tail of pending requests. */
         R3PTRTYPE(PPDMACTASKFILE)                  pReqsPendingTail;
+        /** Tree of currently locked ranges.
+         * If a write task is enqueued the range gets locked and any other
+         * task writing to that range has to wait until the task completes.
+         */
+        PAVLRFOFFTREE                              pTreeRangesLocked;
         /** Number of requests currently being processed for this endpoint
          * (excluded flush requests). */
         unsigned                                   cRequestsActive;
@@ -526,7 +534,9 @@ typedef enum PDMACTASKFILETRANSFER
  */
 typedef struct PDMACTASKFILE
 {
-    /** next task in the list. */
+    /** Pointer to the range lock we are waiting for */
+    PPDMACFILERANGELOCK                  pRangeLock;
+    /** Next task in the list. (Depending on the state) */
     struct PDMACTASKFILE                *pNext;
     /** Endpoint */
     PPDMASYNCCOMPLETIONENDPOINTFILE      pEndpoint;

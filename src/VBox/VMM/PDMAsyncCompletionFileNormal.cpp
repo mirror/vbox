@@ -35,6 +35,14 @@
 /** Maximum number of requests a manager will handle. */
 #define PDMACEPFILEMGR_REQS_MAX 512 /* @todo: Find better solution wrt. the request number*/
 
+/*******************************************************************************
+*   Internal functions                                                         *
+*******************************************************************************/
+static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
+                                                PPDMACEPFILEMGR pAioMgr,
+                                                PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
+
+
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 {
     int rc = VINF_SUCCESS;
@@ -398,6 +406,265 @@ static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
     return rc;
 }
 
+/**
+ * Allocates a async I/O request.
+ *
+ * @returns Handle to the request.
+ * @param   pAioMgr    The I/O manager.
+ */
+static RTFILEAIOREQ pdmacFileAioMgrNormalRequestAlloc(PPDMACEPFILEMGR pAioMgr)
+{
+    RTFILEAIOREQ hReq = NIL_RTFILEAIOREQ;
+
+    /* Get a request handle. */
+    if (pAioMgr->iFreeReqNext != pAioMgr->iFreeEntryNext)
+    {
+        hReq = pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext];
+        pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext] = NIL_RTFILEAIOREQ;
+        pAioMgr->iFreeReqNext = (pAioMgr->iFreeReqNext + 1) % pAioMgr->cReqEntries;
+    }
+    else
+    {
+        int rc = RTFileAioReqCreate(&hReq);
+        AssertRC(rc);
+    }
+
+    return hReq;
+}
+
+static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                               RTFOFF offStart, size_t cbRange,
+                                               PPDMACTASKFILE pTask)
+{
+    PPDMACFILERANGELOCK pRangeLock = NULL; /** < Range lock */
+
+    AssertMsg(   pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE
+              || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ,
+                 ("Invalid task type %d\n", pTask->enmTransferType));
+
+    pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetGet(pEndpoint->AioMgr.pTreeRangesLocked, offStart);
+    if (!pRangeLock)
+    {
+        pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetGetBestFit(pEndpoint->AioMgr.pTreeRangesLocked, offStart, true);
+        /* Check if we intersect with the range. */
+        if (   !pRangeLock
+            || !(   (pRangeLock->Core.Key) <= (offStart + (RTFOFF)cbRange - 1)
+                && (pRangeLock->Core.KeyLast) >= offStart))
+        {
+            pRangeLock = NULL; /* False alarm */
+        }
+    }
+
+    /* Check whether we have one of the situations explained below */
+    if (   pRangeLock
+#if 0 /** @todo: later. For now we will just block all requests if they interfere */
+        && (   (pRangeLock->fReadLock && pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+            || (!pRangeLock->fReadLock)
+#endif
+        )
+    {
+        /* Add to the list. */
+        pTask->pNext = NULL;
+
+        if (!pRangeLock->pWaitingTasksHead)
+        {
+            Assert(!pRangeLock->pWaitingTasksTail);
+            pRangeLock->pWaitingTasksHead = pTask;
+            pRangeLock->pWaitingTasksTail = pTask;
+        }
+        else
+        {
+            AssertPtr(pRangeLock->pWaitingTasksTail);
+            pRangeLock->pWaitingTasksTail->pNext = pTask;
+            pRangeLock->pWaitingTasksTail = pTask;
+        }
+        return true;
+    }
+
+    return false;
+}
+
+static int pdmacFileAioMgrNormalRangeLock(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                          RTFOFF offStart, size_t cbRange,
+                                          PPDMACTASKFILE pTask)
+{
+    AssertMsg(!pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbRange, pTask),
+              ("Range is already locked offStart=%RTfoff cbRange=%u\n",
+               offStart, cbRange));
+
+    PPDMACFILERANGELOCK pRangeLock = (PPDMACFILERANGELOCK)RTMemAllocZ(sizeof(PDMACFILERANGELOCK));
+    if (!pRangeLock)
+        return VERR_NO_MEMORY;
+
+    /* Init the lock. */
+    pRangeLock->Core.Key     = offStart;
+    pRangeLock->Core.KeyLast = offStart + cbRange - 1;
+    pRangeLock->cRefs        = 1;
+    pRangeLock->fReadLock    = pTask->enmTransferType == PDMACTASKFILETRANSFER_READ;
+
+    bool fInserted = RTAvlrFileOffsetInsert(pEndpoint->AioMgr.pTreeRangesLocked, &pRangeLock->Core);
+    AssertMsg(fInserted, ("Range lock was not inserted!\n"));
+
+    /* Let the task point to its lock. */
+    pTask->pRangeLock = pRangeLock;
+
+    return VINF_SUCCESS;
+}
+
+static int pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
+                                              PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                              PPDMACFILERANGELOCK pRangeLock)
+{
+    PPDMACTASKFILE pTasksWaitingHead;
+
+    AssertPtr(pRangeLock);
+    Assert(pRangeLock->cRefs == 1);
+
+    RTAvlrFileOffsetRemove(pEndpoint->AioMgr.pTreeRangesLocked, pRangeLock->Core.Key);
+    pTasksWaitingHead = pRangeLock->pWaitingTasksHead;
+    RTMemFree(pRangeLock);
+
+    return pdmacFileAioMgrNormalProcessTaskList(pTasksWaitingHead, pAioMgr, pEndpoint);
+}
+
+static int pdmacFileAioMgrNormalTaskPrepare(PPDMACEPFILEMGR pAioMgr,
+                                            PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                            PPDMACTASKFILE pTask, PRTFILEAIOREQ phReq)
+{
+    int rc = VINF_SUCCESS;
+    RTFILEAIOREQ hReq = NIL_RTFILEAIOREQ;
+    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
+    void *pvBuf = pTask->DataSeg.pvSeg;
+
+    /* Get a request handle. */
+    hReq = pdmacFileAioMgrNormalRequestAlloc(pAioMgr);
+    AssertMsg(hReq != NIL_RTFILEAIOREQ, ("Out of request handles\n"));
+
+    /*
+     * Check if the alignment requirements are met.
+     * Offset, transfer size and buffer address
+     * need to be on a 512 boundary.
+     */
+    RTFOFF offStart = pTask->Off & ~(RTFOFF)(512-1);
+    size_t cbToTransfer = RT_ALIGN_Z(pTask->DataSeg.cbSeg + (pTask->Off - offStart), 512);
+    PDMACTASKFILETRANSFER enmTransferType = pTask->enmTransferType;
+
+    AssertMsg(   pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE
+              || (uint64_t)(offStart + cbToTransfer) <= pEndpoint->cbFile,
+              ("Read exceeds file size offStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
+               offStart, cbToTransfer, pEndpoint->cbFile));
+
+    pTask->fPrefetch = false;
+
+    /*
+     * Before we start to setup the request we have to check whether there is a task
+     * already active which range intersects with ours. We have to defer execution
+     * of this task in two cases:
+     *     - The pending task is a write and the current is either read or write
+     *     - The pending task is a read and the current task is a write task.
+     *
+     * To check whether a range is currently "locked" we use the AVL tree where every pending task
+     * is stored by its file offset range. The current task will be added to the active task
+     * and will be executed when the active one completes. (The method below
+     * which checks whether a range is already used will add the task)
+     *
+     * This is neccessary because of the requirementto align all requests to a 512 boundary
+     * which is enforced by the host OS (Linux and Windows atm). It is possible that
+     * we have to process unaligned tasks and need to align them using bounce buffers.
+     * While the data is feteched from the file another request might arrive writing to
+     * the same range. This will result in data corruption if both are executed concurrently.
+     */
+    bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbToTransfer, pTask);
+
+    if (!fLocked)
+    {
+        if (   RT_UNLIKELY(cbToTransfer != pTask->DataSeg.cbSeg)
+            || RT_UNLIKELY(offStart != pTask->Off)
+            || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
+        {
+            LogFlow(("Using bounce buffer for task %#p cbToTransfer=%zd cbSeg=%zd offStart=%RTfoff off=%RTfoff\n",
+                     pTask, cbToTransfer, pTask->DataSeg.cbSeg, offStart, pTask->Off));
+
+            /* Create bounce buffer. */
+            pTask->fBounceBuffer = true;
+
+            AssertMsg(pTask->Off >= offStart, ("Overflow in calculation Off=%llu offStart=%llu\n",
+                      pTask->Off, offStart));
+            pTask->uBounceBufOffset = pTask->Off - offStart;
+
+            /** @todo: I think we need something like a RTMemAllocAligned method here.
+             * Current assumption is that the maximum alignment is 4096byte
+             * (GPT disk on Windows)
+             * so we can use RTMemPageAlloc here.
+             */
+            pTask->pvBounceBuffer = RTMemPageAlloc(cbToTransfer);
+            if (RT_LIKELY(pTask->pvBounceBuffer))
+            {
+                pvBuf = pTask->pvBounceBuffer;
+
+                if (pTask->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+                {
+                    if (   RT_UNLIKELY(cbToTransfer != pTask->DataSeg.cbSeg)
+                        || RT_UNLIKELY(offStart != pTask->Off))
+                    {
+                        /* We have to fill the buffer first before we can update the data. */
+                        LogFlow(("Prefetching data for task %#p\n", pTask));
+                        pTask->fPrefetch = true;
+                        enmTransferType = PDMACTASKFILETRANSFER_READ;
+                    }
+                    else
+                        memcpy(pvBuf, pTask->DataSeg.pvSeg, pTask->DataSeg.cbSeg);
+                }
+            }
+            else
+                rc = VERR_NO_MEMORY;
+        }
+        else
+            pTask->fBounceBuffer = false;
+
+        if (RT_SUCCESS(rc))
+        {
+            AssertMsg((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) == (RTR3UINTPTR)pvBuf,
+                      ("AIO: Alignment restrictions not met! pvBuf=%p uBitmaskAlignment=%p\n", pvBuf, pEpClassFile->uBitmaskAlignment));
+
+            if (enmTransferType == PDMACTASKFILETRANSFER_WRITE)
+            {
+                /* Grow the file if needed. */
+                if (RT_UNLIKELY((uint64_t)(pTask->Off + pTask->DataSeg.cbSeg) > pEndpoint->cbFile))
+                {
+                    ASMAtomicWriteU64(&pEndpoint->cbFile, pTask->Off + pTask->DataSeg.cbSeg);
+                    RTFileSetSize(pEndpoint->File, pTask->Off + pTask->DataSeg.cbSeg);
+                }
+
+                rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
+                                              offStart, pvBuf, cbToTransfer, pTask);
+            }
+            else
+                rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
+                                             offStart, pvBuf, cbToTransfer, pTask);
+            AssertRC(rc);
+
+            rc = pdmacFileAioMgrNormalRangeLock(pEndpoint, offStart, cbToTransfer, pTask);
+
+            if (RT_SUCCESS(rc))
+                *phReq = hReq;
+            else
+            {
+                /* Cleanup */
+                if (pTask->fBounceBuffer)
+                    RTMemPageFree(pTask->pvBounceBuffer);
+            }
+        }
+    }
+    else
+    {
+        LogFlow(("Task %#p was deferred because the access range is locked\n", pTask));
+        rc = VINF_SUCCESS;
+    }
+
+    return rc;
+}
+
 static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                                                 PPDMACEPFILEMGR pAioMgr,
                                                 PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
@@ -406,7 +673,6 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     unsigned      cRequests = 0;
     unsigned      cMaxRequests = PDMACEPFILEMGR_REQS_MAX - pAioMgr->cRequestsActive;
     int           rc = VINF_SUCCESS;
-    PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
     AssertMsg(pEndpoint->enmState == PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE,
               ("Trying to process request lists of a non active endpoint!\n"));
@@ -438,6 +704,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 }
                 else
                 {
+                    Assert(!pEndpoint->pFlushReq);
                     pEndpoint->pFlushReq = pCurr;
                 }
                 break;
@@ -446,107 +713,23 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
             case PDMACTASKFILETRANSFER_WRITE:
             {
                 RTFILEAIOREQ hReq = NIL_RTFILEAIOREQ;
-                void *pvBuf = pCurr->DataSeg.pvSeg;
 
-                /* Get a request handle. */
-                if (pAioMgr->iFreeReqNext != pAioMgr->iFreeEntryNext)
-                {
-                    hReq = pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext];
-                    pAioMgr->pahReqsFree[pAioMgr->iFreeReqNext] = NIL_RTFILEAIOREQ;
-                    pAioMgr->iFreeReqNext = (pAioMgr->iFreeReqNext + 1) % pAioMgr->cReqEntries;
-                }
-                else
-                {
-                    rc = RTFileAioReqCreate(&hReq);
-                    AssertRC(rc);
-                }
-
-                AssertMsg(hReq != NIL_RTFILEAIOREQ, ("Out of request handles\n"));
-
-                /* Check if the alignment requirements are met.
-                 * Offset, transfer size and buffer address
-                 * need to be on a 512 boundary. */
-                RTFOFF offStart = pCurr->Off & ~(RTFOFF)(512-1);
-                size_t cbToTransfer = RT_ALIGN_Z(pCurr->DataSeg.cbSeg + (pCurr->Off - offStart), 512);
-                PDMACTASKFILETRANSFER enmTransferType = pCurr->enmTransferType;
-
-                AssertMsg(   pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE
-                          || (uint64_t)(offStart + cbToTransfer) <= pEndpoint->cbFile,
-                          ("Read exceeds file size offStart=%RTfoff cbToTransfer=%d cbFile=%llu\n",
-                          offStart, cbToTransfer, pEndpoint->cbFile));
-
-                pCurr->fPrefetch = false;
-
-                if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
-                    || RT_UNLIKELY(offStart != pCurr->Off)
-                    || ((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) != (RTR3UINTPTR)pvBuf))
-                {
-                    LogFlow(("Using bounce buffer for task %#p cbToTransfer=%zd cbSeg=%zd offStart=%RTfoff off=%RTfoff\n",
-                             pCurr, cbToTransfer, pCurr->DataSeg.cbSeg, offStart, pCurr->Off));
-
-                    /* Create bounce buffer. */
-                    pCurr->fBounceBuffer = true;
-
-                    AssertMsg(pCurr->Off >= offStart, ("Overflow in calculation Off=%llu offStart=%llu\n",
-                              pCurr->Off, offStart));
-                    pCurr->uBounceBufOffset = pCurr->Off - offStart;
-
-                    /** @todo: I think we need something like a RTMemAllocAligned method here.
-                     * Current assumption is that the maximum alignment is 4096byte
-                     * (GPT disk on Windows)
-                     * so we can use RTMemPageAlloc here.
-                     */
-                    pCurr->pvBounceBuffer = RTMemPageAlloc(cbToTransfer);
-                    AssertPtr(pCurr->pvBounceBuffer);
-                    pvBuf = pCurr->pvBounceBuffer;
-
-                    if (pCurr->enmTransferType == PDMACTASKFILETRANSFER_WRITE)
-                    {
-                        if (   RT_UNLIKELY(cbToTransfer != pCurr->DataSeg.cbSeg)
-                            || RT_UNLIKELY(offStart != pCurr->Off))
-                        {
-                            /* We have to fill the buffer first before we can update the data. */
-                            LogFlow(("Prefetching data for task %#p\n", pCurr));
-                            pCurr->fPrefetch = true;
-                            enmTransferType = PDMACTASKFILETRANSFER_READ;
-                        }
-                        else
-                            memcpy(pvBuf, pCurr->DataSeg.pvSeg, pCurr->DataSeg.cbSeg);
-                    }
-                }
-                else
-                    pCurr->fBounceBuffer = false;
-
-                AssertMsg((pEpClassFile->uBitmaskAlignment & (RTR3UINTPTR)pvBuf) == (RTR3UINTPTR)pvBuf,
-                          ("AIO: Alignment restrictions not met! pvBuf=%p uBitmaskAlignment=%p\n", pvBuf, pEpClassFile->uBitmaskAlignment));
-
-                if (enmTransferType == PDMACTASKFILETRANSFER_WRITE)
-                {
-                    /* Grow the file if needed. */
-                    if (RT_UNLIKELY((uint64_t)(pCurr->Off + pCurr->DataSeg.cbSeg) > pEndpoint->cbFile))
-                    {
-                        ASMAtomicWriteU64(&pEndpoint->cbFile, pCurr->Off + pCurr->DataSeg.cbSeg);
-                        RTFileSetSize(pEndpoint->File, pCurr->Off + pCurr->DataSeg.cbSeg);
-                    }
-
-                    rc = RTFileAioReqPrepareWrite(hReq, pEndpoint->File,
-                                                  offStart, pvBuf, cbToTransfer, pCurr);
-                }
-                else
-                    rc = RTFileAioReqPrepareRead(hReq, pEndpoint->File,
-                                                 offStart, pvBuf, cbToTransfer, pCurr);
+                rc = pdmacFileAioMgrNormalTaskPrepare(pAioMgr, pEndpoint, pCurr, &hReq);
                 AssertRC(rc);
 
-                apReqs[cRequests] = hReq;
-                pEndpoint->AioMgr.cReqsProcessed++;
-                cMaxRequests--;
-                cRequests++;
-                if (cRequests == RT_ELEMENTS(apReqs))
+                if (hReq != NIL_RTFILEAIOREQ)
                 {
-                    rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
-                    cRequests = 0;
-                    AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
-                              ("Unexpected return code\n"));
+                    apReqs[cRequests] = hReq;
+                    pEndpoint->AioMgr.cReqsProcessed++;
+                    cMaxRequests--;
+                    cRequests++;
+                    if (cRequests == RT_ELEMENTS(apReqs))
+                    {
+                        rc = pdmacFileAioMgrNormalReqsEnqueue(pAioMgr, pEndpoint, apReqs, cRequests);
+                        cRequests = 0;
+                        AssertMsg(RT_SUCCESS(rc) || (rc == VERR_FILE_AIO_INSUFFICIENT_RESSOURCES),
+                                  ("Unexpected return code\n"));
+                    }
                 }
                 break;
             }
@@ -966,6 +1149,9 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser)
                             pAioMgr->cRequestsActive--;
                             pEndpoint->AioMgr.cRequestsActive--;
                             pEndpoint->AioMgr.cReqsProcessed++;
+
+                            /* Free the lock and process pending tasks if neccessary */
+                            pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
 
                             /* Call completion callback */
                             pTask->pfnCompleted(pTask, pTask->pvUser);
