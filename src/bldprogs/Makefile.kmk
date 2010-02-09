@@ -30,10 +30,12 @@ bin2c_SOURCES = bin2c.c
 biossums_TEMPLATE = VBOXBLDPROG
 biossums_SOURCES = biossums.c
 
-PROGRAMS += scm
-scm_TEMPLATE = VBOXR3EXE
-scm_SOURCES = scm.cpp
-scm_LIBS = \
-	$(LIB_RUNTIME)
+if !defined(VBOX_ONLY_SDK) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_DOCS)
+ PROGRAMS += scm
+ scm_TEMPLATE = VBOXR3EXE
+ scm_SOURCES = scm.cpp
+ scm_LIBS = \
+ 	$(LIB_RUNTIME)
+endif
 
 include $(KBUILD_PATH)/subfooter.kmk
