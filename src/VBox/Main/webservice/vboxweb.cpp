@@ -31,7 +31,7 @@
 #include <VBox/VRDPAuth.h>
 #include <VBox/version.h>
 
-#include <iprt/cpp/lock.h>
+#include <iprt/thread.h>
 #include <iprt/rand.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
@@ -113,10 +113,11 @@ bool                    g_fDaemonize = false;           // run in background.
  *
  ****************************************************************************/
 
-RTLockMtx           g_mutexAuthLib;
+// this mutex protects the auth lib and authentication
+util::RWLockHandle  *g_pAuthLibLockHandle;
 
 // this mutex protects all of the below
-RTLockMtx           g_mutexSessions;
+util::RWLockHandle  *g_pSessionsLockHandle;
 
 SessionsMap         g_mapSessions;
 ULONG64             g_iMaxManagedObjectID = 0;
@@ -246,6 +247,72 @@ void WebLogSoapError(struct soap *soap)
            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
 }
 
+/**
+ * Called from main(). This implements the loop that takes SOAP calls
+ * from HTTP and serves them, calling the COM method implementations
+ * in the generated methodmaps.cpp code.
+ */
+void beginProcessing()
+{
+    // set up gSOAP
+    struct soap soap;
+    soap_init(&soap);
+
+    soap.bind_flags |= SO_REUSEADDR;
+            // avoid EADDRINUSE on bind()
+
+    int m, s; // master and slave sockets
+    m = soap_bind(&soap,
+                  g_pcszBindToHost,     // host: current machine
+                  g_uBindToPort,     // port
+                  g_uBacklog);     // backlog = max queue size for requests
+    if (m < 0)
+        WebLogSoapError(&soap);
+    else
+    {
+        WebLog("Socket connection successful: host = %s, port = %u, master socket = %d\n",
+               (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
+               g_uBindToPort,
+               m);
+
+        for (uint64_t i = 1;
+             ;
+             i++)
+        {
+            // call gSOAP to handle incoming SOAP connection
+            s = soap_accept(&soap);
+            if (s < 0)
+            {
+                WebLogSoapError(&soap);
+                break;
+            }
+
+            WebLog("%llu: accepted connection from IP=%lu.%lu.%lu.%lu socket=%d... ",
+                   i,
+                   (soap.ip>>24)&0xFF,
+                   (soap.ip>>16)&0xFF,
+                   (soap.ip>>8)&0xFF,
+                   soap.ip&0xFF,
+                   s);
+
+            // now process the RPC request (this goes into the
+            // generated code in methodmaps.cpp with all the COM calls)
+            if (soap_serve(&soap) != SOAP_OK)
+            {
+                WebLogSoapError(&soap);
+            }
+
+            WebLog("Request served\n");
+
+            soap_destroy(&soap); // clean up class instances
+            soap_end(&soap); // clean up everything and close socket
+
+            // we have to process main event queue
+            int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
+        }
+    }
+    soap_done(&soap); // close master socket and detach environment
+}
 
 /**
  * Start up the webservice server. This keeps running and waits
@@ -389,6 +456,10 @@ int main(int argc, char* argv[])
         return rc;
     }
 
+    // create the global mutexes
+    g_pAuthLibLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
+    g_pSessionsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
+
     if (g_iWatchdogTimeoutSecs > 0)
     {
         // start our watchdog thread
@@ -406,69 +477,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    // set up gSOAP
-    struct soap soap;
-    soap_init(&soap);
-
-    soap.bind_flags |= SO_REUSEADDR;
-            // avoid EADDRINUSE on bind()
-
-    int m, s; // master and slave sockets
-    m = soap_bind(&soap,
-                  g_pcszBindToHost,     // host: current machine
-                  g_uBindToPort,     // port
-                  g_uBacklog);     // backlog = max queue size for requests
-    if (m < 0)
-        WebLogSoapError(&soap);
-    else
-    {
-        WebLog("Socket connection successful: host = %s, port = %u, master socket = %d\n",
-               (g_pcszBindToHost) ? g_pcszBindToHost : "default (localhost)",
-               g_uBindToPort,
-               m);
-
-        for (uint64_t i = 1;
-             ;
-             i++)
-        {
-            // call gSOAP to handle incoming SOAP connection
-            s = soap_accept(&soap);
-            if (s < 0)
-            {
-                WebLogSoapError(&soap);
-                break;
-            }
-
-            WebLog("%llu: accepted connection from IP=%lu.%lu.%lu.%lu socket=%d... ",
-                   i,
-                   (soap.ip>>24)&0xFF,
-                   (soap.ip>>16)&0xFF,
-                   (soap.ip>>8)&0xFF,
-                   soap.ip&0xFF,
-                   s);
-
-            // enclose the entire RPC call in the sessions lock
-            // so that the watchdog cannot destroy COM objects
-            // while the RPC is ongoing
-            RTLock lock(g_mutexSessions);
-            // now process the RPC request (this goes into the
-            // generated code in methodmaps.cpp with all the COM calls)
-            if (soap_serve(&soap) != SOAP_OK)
-            {
-                WebLogSoapError(&soap);
-            }
-            lock.release();
-
-            WebLog("Request served\n");
-
-            soap_destroy(&soap); // clean up class instances
-            soap_end(&soap); // clean up everything and close socket
-
-            // we have to process main event queue
-            int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
-        }
-    }
-    soap_done(&soap); // close master socket and detach environment
+    beginProcessing();
 
     com::Shutdown();
 }
@@ -498,12 +507,13 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
         time_t                      tNow;
         time(&tNow);
 
-        RTLock lock(g_mutexSessions);
+        // lock the sessions while we're iterating; this blocks
+        // out the COM code from messing with it
+        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
         WEBDEBUG(("Watchdog: checking %d sessions\n", g_mapSessions.size()));
 
-        SessionsMap::iterator
-            it = g_mapSessions.begin(),
-            itEnd = g_mapSessions.end();
+        SessionsMap::iterator it = g_mapSessions.begin(),
+                              itEnd = g_mapSessions.end();
         while (it != itEnd)
         {
             WebServiceSession *pSession = it->second;
@@ -519,7 +529,6 @@ int fntWatchdog(RTTHREAD ThreadSelf, void *pvUser)
             else
                 ++it;
         }
-        lock.release();
     }
 
     WEBDEBUG(("Watchdog thread ending\n"));
@@ -616,8 +625,7 @@ std::string ConvertComString(const com::Bstr &bstr)
  */
 std::string ConvertComString(const com::Guid &uuid)
 {
-    com::Bstr bstr(uuid);
-    com::Utf8Str ustr(bstr);
+    com::Utf8Str ustr(uuid.toString());
     const char *pcsz;
     if ((pcsz = ustr.raw()))
         return pcsz;
@@ -738,7 +746,7 @@ class WebServiceSessionPrivate
 /**
  * Constructor for the session object.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
  *
  * @param username
  * @param password
@@ -752,18 +760,20 @@ WebServiceSession::WebServiceSession()
     _uSessionID = RTRandU64();
 
     // register this session globally
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     g_mapSessions[_uSessionID] = this;
 }
 
 /**
  * Destructor. Cleans up and destroys all contained managed object references on the way.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
  */
 WebServiceSession::~WebServiceSession()
 {
     // delete us from global map first so we can't be found
     // any more while we're cleaning up
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     g_mapSessions.erase(_uSessionID);
 
     // notify ManagedObjectRef destructor so it won't
@@ -777,9 +787,8 @@ WebServiceSession::~WebServiceSession()
     //     _pISession = NULL;
     // }
 
-    ManagedObjectsMapById::iterator
-        it,
-        end = _pp->_mapManagedObjectsById.end();
+    ManagedObjectsMapById::iterator it,
+                                    end = _pp->_mapManagedObjectsById.end();
     for (it = _pp->_mapManagedObjectsById.begin();
          it != end;
          ++it)
@@ -803,7 +812,7 @@ int WebServiceSession::authenticate(const char *pcszUsername,
 {
     int rc = VERR_WEB_NOT_AUTHENTICATED;
 
-    RTLock lock(g_mutexAuthLib);
+    util::AutoReadLock lock(g_pAuthLibLockHandle COMMA_LOCKVAL_SRC_POS);
 
     static bool fAuthLibLoaded = false;
     static PVRDPAUTHENTRY pfnAuthEntry = NULL;
@@ -874,6 +883,8 @@ int WebServiceSession::authenticate(const char *pcszUsername,
         WEBDEBUG(("Could not resolve VRDPAuth2 or VRDPAuth entry point"));
     }
 
+    lock.release();
+
     if (!rc)
     {
         do
@@ -911,13 +922,15 @@ int WebServiceSession::authenticate(const char *pcszUsername,
  *  ComPtr<IVirtualBox>, for example. As we store the ComPtr<IUnknown> in
  *  our private hash table, we must search for one too.
  *
- *  Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in read mode.
  *
  * @param pcu pointer to a COM object.
  * @return The existing ManagedObjectRef that represents the COM object, or NULL if there's none yet.
  */
 ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
 {
+    // Assert(g_pSessionsLockHandle->isReadLockOnCurrentThread());      // @todo
+
     IUnknown *p = pcu;
     uintptr_t ulp = (uintptr_t)p;
     ManagedObjectRef *pRef;
@@ -939,13 +952,15 @@ ManagedObjectRef* WebServiceSession::findRefFromPtr(const ComPtr<IUnknown> &pcu)
  * object reference was created, by splitting the reference into the session and
  * object IDs and then looking up the session object for that session ID.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in read mode.
  *
  * @param id Managed object reference (with combined session and object IDs).
  * @return
  */
 WebServiceSession* WebServiceSession::findSessionFromRef(const WSDLT_ID &id)
 {
+    // Assert(g_pSessionsLockHandle->isReadLockOnCurrentThread()); // @todo
+
     WebServiceSession *pSession = NULL;
     uint64_t sessid;
     if (SplitManagedObjectRef(id,
@@ -1009,7 +1024,7 @@ void WebServiceSession::DumpRefs()
 
 /**
  *  Constructor, which assigns a unique ID to this managed object
- *  reference and stores it two global hashs:
+ *  reference and stores it two global hashes:
  *
  *   a) G_mapManagedObjectsById, which maps ManagedObjectID's to
  *      instances of this class; this hash is then used by the
@@ -1293,6 +1308,9 @@ int __vbox__IWebsessionManager_USCORElogon(
     WEBDEBUG(("\n-- entering %s\n", __FUNCTION__));
 
     do {
+        // WebServiceSession constructor tinkers with global MOR map and requires a write lock
+        util::AutoWriteLock lock(g_pSessionsLockHandle COMMA_LOCKVAL_SRC_POS);
+
         // create new session; the constructor stores the new session
         // in the global map automatically
         WebServiceSession *pSession = new WebServiceSession();
