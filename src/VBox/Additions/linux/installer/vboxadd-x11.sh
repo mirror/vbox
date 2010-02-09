@@ -73,6 +73,8 @@ if [ -f /etc/arch-release ]; then
     system=arch
 elif [ -f /etc/redhat-release ]; then
     system=redhat
+elif [ -f /etc/debian_version ]; then
+    system=debian
 elif [ -f /etc/SuSE-release ]; then
     system=suse
 elif [ -f /etc/gentoo-release ]; then
@@ -162,7 +164,7 @@ if [ "$system" = "lfs" ]; then
     }
 fi
 
-if [ "$system" = "other" ]; then
+if [ "$system" = "debian" -o "$system" = "other" ]; then
     fail_msg() {
         echo " ...fail!"
     }
@@ -287,8 +289,10 @@ setup()
     setupxorgconf="true"
     # But without the workaround for SUSE 11.1 not doing input auto-detection
     newmouse=""
-    # By default we want to use hal for auto-loading the mouse driver
-    usehal="--useHal"
+    # By default we want to use hal/udev/whatever for auto-loading the mouse driver
+    automouse="--autoMouse"
+	# But we only install the udev rule if we detect a server that needs it
+	udevmouse=""
     # We need to tell our xorg.conf hacking script whether /dev/psaux exists
     nopsaux="--nopsaux"
     test -c /dev/psaux && nopsaux=""
@@ -324,6 +328,7 @@ setup()
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
+			test "$system" = "debian" && udevmouse="true"
             ;;
         1.5.99.* | 1.6.* )
             begin "Installing X.Org Server 1.6 modules"
@@ -348,14 +353,14 @@ setup()
             vboxvideo_src=vboxvideo_drv_15.so
             vboxmouse_src=vboxmouse_drv_15.so
             # SUSE with X.Org 1.5 is a special case, and is handled specially
-            test -r /etc/SuSE-release &&
-            { usehal=""; newmouse="--newMouse"; }
+            test "$system" = "suse" &&
+            { automouse=""; newmouse="--newMouse"; }
             ;;
         1.4.* )
             begin "Installing X.Org Server 1.4 modules"
             vboxvideo_src=vboxvideo_drv_14.so
             vboxmouse_src=vboxmouse_drv_14.so
-            usehal=""
+            automouse=""
             newmouse="--newMouse"
             ;;
         1.3.* )
@@ -364,21 +369,21 @@ setup()
             begin "Installing X.Org Server 1.3 modules"
             vboxvideo_src=vboxvideo_drv_13.so
             vboxmouse_src=vboxmouse_drv_13.so
-            usehal=""
+            automouse=""
             newmouse="--newMouse"
             ;;
         7.1.* | 7.2.* )
             begin "Installing X.Org 7.1 modules"
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
-            usehal=""
+            automouse=""
             testrandr=""
             ;;
         6.9.* | 7.0.* )
             begin "Installing X.Org 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
-            usehal=""
+            automouse=""
             testrandr=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
@@ -388,7 +393,7 @@ setup()
             rm "$modules_dir/input/vboxmouse_drv.o" 2>/dev/null
             ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
             ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
-            usehal=""
+            automouse=""
             testrandr=""
             succ_msg
             ;;
@@ -424,11 +429,11 @@ EOF
         # video drivers.  Some versions have the directory and don't use it.
         # Those versions can autoload vboxvideo though, so we don't need to
         # hack the configuration file for them.
-        test -f /etc/debian_version -a -d /usr/share/xserver-xorg/pci &&
+        test "$system" = "debian" -a -d /usr/share/xserver-xorg/pci &&
         {
             rm -f "/usr/share/xserver-xorg/pci/vboxvideo.ids"
             ln -s "$share_dir/vboxvideo.ids" /usr/share/xserver-xorg/pci 2>/dev/null
-            test -n "$usehal" && setupxorgconf=""
+            test -n "$automouse" && setupxorgconf=""
         }
 
         # Do the XF86Config/xorg.conf hack for those versions that require it
@@ -440,7 +445,7 @@ EOF
                     if grep -q "VirtualBox generated" "$i"; then
                         generated="$generated  `printf "$i\n"`"
                     else
-                        "$lib_dir/x11config-new.pl" $newmouse $usehal $nopsaux "$i"
+                        "$lib_dir/x11config-new.pl" $newmouse $automouse $nopsaux "$i"
                     fi
                     configured="true"
                 fi
@@ -454,13 +459,13 @@ EOF
             nobak="/etc/X11/xorg.vbox.nobak"
             if test -z "$configured" -a ! -r "$nobak"; then
                 touch "$main_cfg"
-                "$lib_dir/x11config-new.pl" --useHal --noBak "$main_cfg"
+                "$lib_dir/x11config-new.pl" --autoMouse --noBak "$main_cfg"
                 touch "$nobak"
             fi
         fi
         # X.Org Server versions starting with 1.5 can do mouse auto-detection,
         # to make our lives easier and spare us the nasty hacks.
-        test -n "$usehal" &&
+        test -n "$automouse" &&
             if [ -d /etc/hal/fdi/policy ]
             then
                 # Install hal information about the mouse driver so that X.Org
