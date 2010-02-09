@@ -388,7 +388,8 @@ HRESULT VirtualBox::init()
                                           Global::sOSTypes[i].recommendedVRAM,
                                           Global::sOSTypes[i].recommendedHDD,
                                           Global::sOSTypes[i].networkAdapterType,
-                                          Global::sOSTypes[i].numSerialEnabled);
+                                          Global::sOSTypes[i].numSerialEnabled,
+                                          Global::sOSTypes[i].storageControllerType);
                 if (SUCCEEDED(rc))
                     m->ollGuestOSTypes.addChild(guestOSTypeObj);
             }

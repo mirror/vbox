@@ -39,7 +39,7 @@
 #define VBOXOSHINT_HWVIRTEX             RT_BIT(1)
 #define VBOXOSHINT_IOAPIC               RT_BIT(2)
 #define VBOXOSHINT_EFI                  RT_BIT(3)
-#define VBOXOSHINT_EXTHW                RT_BIT(4)
+#define VBOXOSHINT_PAE                  RT_BIT(4)
 
 /**
  * Contains global static definitions that can be referenced by all COM classes
@@ -52,17 +52,18 @@ public:
     /** Represents OS Type <-> string mappings. */
     struct OSType
     {
-        const char                 *familyId;          /* utf-8 */
-        const char                 *familyDescription; /* utf-8 */
-        const char                 *id;          /* utf-8 */
-        const char                 *description; /* utf-8 */
-        const VBOXOSTYPE            osType;
-        const uint32_t              osHint;
-        const uint32_t              recommendedRAM;
-        const uint32_t              recommendedVRAM;
-        const uint32_t              recommendedHDD;
-        const NetworkAdapterType_T  networkAdapterType;
-        const uint32_t              numSerialEnabled;
+        const char                    *familyId;          /* utf-8 */
+        const char                    *familyDescription; /* utf-8 */
+        const char                    *id;          /* utf-8 */
+        const char                    *description; /* utf-8 */
+        const VBOXOSTYPE               osType;
+        const uint32_t                 osHint;
+        const uint32_t                 recommendedRAM;
+        const uint32_t                 recommendedVRAM;
+        const uint32_t                 recommendedHDD;
+        const NetworkAdapterType_T     networkAdapterType;
+        const uint32_t                 numSerialEnabled;
+        const StorageControllerType_T  storageControllerType;
     };
 
     static const OSType sOSTypes[SchemaDefs::OSTypeId_COUNT];

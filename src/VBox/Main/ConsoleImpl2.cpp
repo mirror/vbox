@@ -114,8 +114,8 @@
 int DarwinSmcKey(char* aKey, uint32_t iKeySize)
 {
     int rc;
-    /* 
-     * Code based on Amit Singh SMC reading code sample in OS X Book, see 
+    /*
+     * Code based on Amit Singh SMC reading code sample in OS X Book, see
      * http://osxbook.com/book/bonus/chapter7/tpmdrmmyth/
      */
     typedef struct {
@@ -330,7 +330,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(OSTypeId)(osTypeId.asOutParam());                     H();
 
     BOOL fIOAPIC;
-    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                          H();
+    hrc = biosSettings->COMGETTER(IOAPICEnabled)(&fIOAPIC);                         H();
+
+    ComPtr<IGuestOSType> guestOSType;
+    hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());           H();
 
     /*
      * Get root node first.
@@ -424,11 +427,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Indicate whether 64-bit guests are supported or not. */
         /** @todo This is currently only forced off on 32-bit hosts only because it
          *        makes a lof of difference there (REM and Solaris performance).
-         */
-
-        ComPtr<IGuestOSType> guestOSType;
-        hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());       H();
-
+         */        
         BOOL fSupportsLongMode = false;
         hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
                                         &fSupportsLongMode);                        H();
@@ -584,18 +583,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
 #endif
 
-    /*
-     * Temporary hack for enabling the next three devices and various ACPI features.
-     */
     Bstr tmpStr2;
-    hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/SupportExtHwProfile"), tmpStr2.asOutParam()); H();
-    BOOL fExtProfile = tmpStr2 == Bstr("on");
+    hrc = guestOSType->COMGETTER(FamilyId)(tmpStr2.asOutParam());                   H();
+    /*
+     * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests */
+    BOOL fExtProfile = tmpStr2 == Bstr("MacOS");
 
     /*
      * High Precision Event Timer (HPET)
      */
     BOOL fHpetEnabled;
 #ifdef VBOX_WITH_HPET
+    /* Need ability to allow enabling HPET in other profiles too */
     fHpetEnabled = fExtProfile;
 #else
     fHpetEnabled = false;
