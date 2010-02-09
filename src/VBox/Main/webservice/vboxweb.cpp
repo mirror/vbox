@@ -393,9 +393,11 @@ void beginProcessing()
             // that one of our threads can pick it up
             util::AutoWriteLock qlock(soapq.m_mutex COMMA_LOCKVAL_SRC_POS);
             soapq.m_llSocketsQ.push_back(s);
-            WebLog("Request %llu on socket %d queued for processing\n", i, s);
-            RTSemEventSignal(soapq.m_event);
             qlock.release();
+
+            WebLog("Request %llu on socket %d queued for processing\n", i, s);
+            // unblock one of the worker threads
+            RTSemEventSignal(soapq.m_event);
 
             // we have to process main event queue
             int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
