@@ -101,6 +101,7 @@ int                     g_iWatchdogCheckInterval = 5;
 const char              *g_pcszBindToHost = NULL;       // host; NULL = current machine
 unsigned int            g_uBindToPort = 18083;          // port
 unsigned int            g_uBacklog = 100;               // backlog = max queue size for requests
+unsigned int            g_cWorkerThreads = 10;          // no. of worker threads
 
 bool                    g_fVerbose = false;             // be verbose
 PRTSTREAM               g_pstrLog = NULL;
@@ -282,13 +283,18 @@ public:
             pst->u = u + 1;
             pst->pQ = this;
             pst->soap = soap_copy(pSoap);
-            RTThreadCreate(&pst->pThread,
-                           fntSoapQueue,
-                           pst,             // pvUser
-                           0,               // cbStack,
-                           RTTHREADTYPE_MAIN_HEAVY_WORKER,
-                           0,
-                           "SoapQWorker");
+            if (!RT_SUCCESS(RTThreadCreate(&pst->pThread,
+                                           fntSoapQueue,
+                                           pst,             // pvUser
+                                           0,               // cbStack,
+                                           RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                                           0,
+                                           "SoapQWorker")))
+            {
+                RTStrmPrintf(g_pStdErr, "[!] Cannot start worker thread %d\n", pst->u);
+                exit(1);
+            }
+
             m_llAllThreads.push_back(pst);
             ++m_cIdleThreads;
         }
@@ -396,7 +402,7 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
         // wait for a socket to arrive on the queue
         pst->soap->socket = pst->pQ->get();
 
-        WebLog("T%d handles connection from IP=%lu.%lu.%lu.%lu socket=%d (%d thr idle)\n",
+        WebLog("T%d handles connection from IP=%lu.%lu.%lu.%lu socket=%d (%d threads idle)\n",
                 pst->u,
                 (pst->soap->ip>>24)&0xFF,
                 (pst->soap->ip>>16)&0xFF,
@@ -423,7 +429,7 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
  * from HTTP and serves them by handing sockets to the SOAP queue
  * worker threads.
  */
-void beginProcessing(size_t cThreads)
+void beginProcessing()
 {
     // set up gSOAP
     struct soap soap;
@@ -447,7 +453,7 @@ void beginProcessing(size_t cThreads)
                m);
 
         // initialize thread queue, mutex and eventsem, create worker threads
-        SoapQ soapq(cThreads, &soap);
+        SoapQ soapq(g_cWorkerThreads, &soap);
 
         for (uint64_t i = 1;
              ;
@@ -486,8 +492,6 @@ void beginProcessing(size_t cThreads)
 int main(int argc, char* argv[])
 {
     int rc;
-
-    uint32_t cWorkerThreads = 5;
 
     // intialize runtime
     RTR3Init();
@@ -535,7 +539,7 @@ int main(int argc, char* argv[])
             break;
 
             case 'T':
-                cWorkerThreads = ValueUnion.u32;
+                g_cWorkerThreads = ValueUnion.u32;
             break;
 
             case 'h':
@@ -642,7 +646,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    beginProcessing(cWorkerThreads);
+    beginProcessing();
 
     com::Shutdown();
 }
