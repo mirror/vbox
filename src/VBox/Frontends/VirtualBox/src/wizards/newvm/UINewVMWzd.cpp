@@ -28,6 +28,86 @@
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxVMSettingsHD.h"
 
+/* Globals */
+struct osTypePattern
+{
+    QRegExp pattern;
+    const char *pcstId;
+};
+
+/* Defines some patterns to guess the right OS type. Should be in sync with
+ * VirtualBox-settings-common.xsd in Main. The list is sorted by priority. The
+ * first matching string found, will be used. */
+static const osTypePattern gs_OSTypePattern[] =
+{
+    { QRegExp("DO", Qt::CaseInsensitive), "DOS" },
+    { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
+    { QRegExp("L4", Qt::CaseInsensitive), "L4" },
+    { QRegExp("Wi.*3", Qt::CaseInsensitive), "Windows31" },
+    { QRegExp("Wi.*98", Qt::CaseInsensitive), "Windows98" },
+    { QRegExp("Wi.*95", Qt::CaseInsensitive), "Windows95" },
+    { QRegExp("Wi.*Me", Qt::CaseInsensitive), "WindowsMe" },
+    { QRegExp("Wi.*NT", Qt::CaseInsensitive), "WindowsNT4" },
+    { QRegExp("Wi.*X.*64", Qt::CaseInsensitive), "WindowsXP_64" },
+    { QRegExp("Wi.*X", Qt::CaseInsensitive), "WindowsXP" },
+    { QRegExp("Wi.*2003.*64", Qt::CaseInsensitive), "Windows2003_64" },
+    { QRegExp("Wi.*2003", Qt::CaseInsensitive), "Windows2003" },
+    { QRegExp("Wi.*V.*64", Qt::CaseInsensitive), "WindowsVista_64" },
+    { QRegExp("Wi.*V", Qt::CaseInsensitive), "WindowsVista" },
+    { QRegExp("Wi.*2008.*64", Qt::CaseInsensitive), "Windows2008_64" },
+    { QRegExp("Wi.*2008", Qt::CaseInsensitive), "Windows2008" },
+    { QRegExp("Wi.*2", Qt::CaseInsensitive), "Windows2000" },
+    { QRegExp("Wi.*7.*64", Qt::CaseInsensitive), "Windows7_64" },
+    { QRegExp("Wi.*7", Qt::CaseInsensitive), "Windows7" },
+    { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
+    { QRegExp("OS2.*W.*4.?5", Qt::CaseInsensitive), "OS2Warp45" },
+    { QRegExp("OS2.*W.*4", Qt::CaseInsensitive), "OS2Warp4" },
+    { QRegExp("OS2.*W", Qt::CaseInsensitive), "OS2Warp3" },
+    { QRegExp("OS2.*e", Qt::CaseInsensitive), "OS2eCS" },
+    { QRegExp("OS2", Qt::CaseInsensitive), "OS2" },
+    { QRegExp("Ar.*64", Qt::CaseInsensitive), "ArchLinux_64" },
+    { QRegExp("Ar", Qt::CaseInsensitive), "ArchLinux" },
+    { QRegExp("De.*64", Qt::CaseInsensitive), "Debian_64" },
+    { QRegExp("De", Qt::CaseInsensitive), "Debian" },
+    { QRegExp("(SU)|(No)", Qt::CaseInsensitive), "OpenSUSE" },
+    { QRegExp("((SU)|(No)).*64", Qt::CaseInsensitive), "OpenSUSE_64" },
+    { QRegExp("Fe.*64", Qt::CaseInsensitive), "Fedora_64" },
+    { QRegExp("Fe", Qt::CaseInsensitive), "Fedora" },
+    { QRegExp("Ge.*64", Qt::CaseInsensitive), "Gentoo_64" },
+    { QRegExp("Ge", Qt::CaseInsensitive), "Gentoo" },
+    { QRegExp("Man.*64", Qt::CaseInsensitive), "Mandriva_64" },
+    { QRegExp("Man", Qt::CaseInsensitive), "Mandriva" },
+    { QRegExp("Re.*64", Qt::CaseInsensitive), "RedHat_64" },
+    { QRegExp("Re", Qt::CaseInsensitive), "RedHat" },
+    { QRegExp("Tu", Qt::CaseInsensitive), "Turbolinux" },
+    { QRegExp("Ub.*64", Qt::CaseInsensitive), "Ubuntu_64" },
+    { QRegExp("Ub", Qt::CaseInsensitive), "Ubuntu" },
+    { QRegExp("Xa.*64", Qt::CaseInsensitive), "Xandros_64" },
+    { QRegExp("Xa", Qt::CaseInsensitive), "Xandros" },
+    { QRegExp("Or.*64", Qt::CaseInsensitive), "Oracle_64" },
+    { QRegExp("Or", Qt::CaseInsensitive), "Oracle" },
+    { QRegExp("Li.*2.?2", Qt::CaseInsensitive), "Linux22" },
+    { QRegExp("Li.*2.?4.*64", Qt::CaseInsensitive), "Linux24_64" },
+    { QRegExp("Li.*2.?4", Qt::CaseInsensitive), "Linux24" },
+    { QRegExp("Li.*2.?6.*64", Qt::CaseInsensitive), "Linux26_64" },
+    { QRegExp("Li.*2.?6", Qt::CaseInsensitive), "Linux26" },
+    { QRegExp("Li", Qt::CaseInsensitive), "Linux26" },
+    { QRegExp("Fr.*B.*64", Qt::CaseInsensitive), "FreeBSD_64" },
+    { QRegExp("Fr.*B", Qt::CaseInsensitive), "FreeBSD" },
+    { QRegExp("Op.*B.*64", Qt::CaseInsensitive), "OpenBSD_64" },
+    { QRegExp("Op.*B", Qt::CaseInsensitive), "OpenBSD" },
+    { QRegExp("Ne.*B.*64", Qt::CaseInsensitive), "NetBSD_64" },
+    { QRegExp("Ne.*B", Qt::CaseInsensitive), "NetBSD" },
+    { QRegExp("Op.*So.*64", Qt::CaseInsensitive), "OpenSolaris_64" },
+    { QRegExp("Op.*So", Qt::CaseInsensitive), "OpenSolaris" },
+    { QRegExp("So.*64", Qt::CaseInsensitive), "Solaris_64" },
+    { QRegExp("So", Qt::CaseInsensitive), "Solaris" },
+    { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
+    { QRegExp("Mac.*64", Qt::CaseInsensitive), "MacOS_64" },
+    { QRegExp("Mac", Qt::CaseInsensitive), "MacOS" },
+    { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
+};
+
 UINewVMWzd::UINewVMWzd(QWidget *pParent) : QIWizard(pParent)
 {
     /* Create & add pages */
@@ -91,6 +171,9 @@ UINewVMWzdPage2::UINewVMWzdPage2()
     registerField("name*", m_pNameEditor);
     registerField("type*", m_pTypeSelector, "type", SIGNAL(osTypeChanged()));
 
+    connect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
+            this, SLOT(sltNameChanged(const QString&)));
+
     /* Setup contents */
     m_pTypeSelector->activateLayout();
 
@@ -114,6 +197,18 @@ void UINewVMWzdPage2::initializePage()
 
     /* 'Name' field should have focus initially */
     m_pNameEditor->setFocus();
+}
+
+void UINewVMWzdPage2::sltNameChanged(const QString &strNewText)
+{
+    /* Search for a matching OS type based on the string the user typed
+     * already. */
+    for (size_t i=0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
+        if (strNewText.contains(gs_OSTypePattern[i].pattern))
+        {
+            m_pTypeSelector->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            break;
+        }
 }
 
 UINewVMWzdPage3::UINewVMWzdPage3()

@@ -72,6 +72,10 @@ public:
 
     UINewVMWzdPage2();
 
+protected slots:
+
+    void sltNameChanged(const QString &strNewText);
+
 protected:
 
     void retranslateUi();
