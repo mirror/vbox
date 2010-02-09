@@ -18,6 +18,11 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+#ifdef TARGET_NT4
+#undef _WIN32_WINNT
+#define _WIN32_WINNT 0x501
+#endif
+
 #include <windows.h>
 #include <psapi.h>
 #include <winternl.h>
