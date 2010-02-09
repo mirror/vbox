@@ -141,6 +141,7 @@ static const RTGETOPTDEF g_aOptions[]
         { "--port",             'p', RTGETOPT_REQ_UINT32 },
         { "--timeout",          't', RTGETOPT_REQ_UINT32 },
         { "--check-interval",   'i', RTGETOPT_REQ_UINT32 },
+        { "--threads",          'T', RTGETOPT_REQ_UINT32 },
         { "--verbose",          'v', RTGETOPT_REQ_NOTHING },
         { "--logfile",          'F', RTGETOPT_REQ_STRING },
     };
@@ -181,6 +182,10 @@ void DisplayHelp()
 
             case 't':
                 pcszDescr = "Session timeout in seconds; 0 = disable timeouts (" DEFAULT_TIMEOUT_SECS_STRING ").";
+            break;
+
+            case 'T':
+                pcszDescr = "Number of worker threads to run in parallel (5).";
             break;
 
             case 'i':
@@ -294,6 +299,72 @@ public:
         RTSemEventMultiDestroy(m_event);
     }
 
+    /**
+     * Adds the given socket to the SOAP queue and posts the
+     * member event sem to wake up the workers.
+     * @param s Socket from soap_accept() which has work to do.
+     */
+    uint32_t add(int s)
+    {
+        uint32_t cItems;
+        // enqueue the socket of this connection and post eventsem so
+        // that one of our threads can pick it up
+        util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
+        m_llSocketsQ.push_back(s);
+        cItems = m_llSocketsQ.size();
+        qlock.release();
+
+        // unblock one of the worker threads
+        RTSemEventMultiSignal(m_event);
+
+        return cItems;
+    }
+
+    /**
+     * Blocks the current thread until work comes in; then returns
+     * the SOAP socket which has work to do. This reduces m_cIdleThreads
+     * by one, and the caller MUST call done() when it's done processing.
+     * @return
+     */
+    int get()
+    {
+        while (1)
+        {
+            // wait for something to happen
+            RTSemEventMultiWait(m_event, RT_INDEFINITE_WAIT);
+
+            util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
+            if (m_llSocketsQ.size())
+            {
+                int socket = m_llSocketsQ.front();
+                m_llSocketsQ.pop_front();
+                --m_cIdleThreads;
+
+                // reset the multi event only if the queue is now empty; otherwise
+                // another thread will also wake up when we release the mutex and
+                // process another one
+                if (m_llSocketsQ.size() == 0)
+                    RTSemEventMultiReset(m_event);
+
+                qlock.release();
+
+                return socket;
+            }
+
+            // nothing to do: keep looping
+        }
+    }
+
+    /**
+     * To be called by a thread after fetching an item from the
+     * queue via get() and having finished its lengthy processing.
+     */
+    void done()
+    {
+        util::AutoWriteLock qlock(m_mutex COMMA_LOCKVAL_SRC_POS);
+        ++m_cIdleThreads;
+    }
+
     util::WriteLockHandle   m_mutex;
     RTSEMEVENTMULTI         m_event;
 
@@ -304,6 +375,16 @@ public:
                                                 // represented by the socket from soap_accept()
 };
 
+/**
+ * Thread function for each of the SOAP queue worker threads. This keeps
+ * running, blocks on the event semaphore in SoapThread.SoapQ and picks
+ * up a socket from the queue therein, which has been put there by
+ * beginProcessing().
+ *
+ * @param pThread
+ * @param pvThread
+ * @return
+ */
 int fntSoapQueue(RTTHREAD pThread, void *pvThread)
 {
     SoapThread *pst = (SoapThread*)pvThread;
@@ -312,42 +393,26 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
 
     while (1)
     {
-        // wait for something to happen
-        RTSemEventMultiWait(pst->pQ->m_event, RT_INDEFINITE_WAIT);
+        // wait for a socket to arrive on the queue
+        pst->soap->socket = pst->pQ->get();
 
-        util::AutoWriteLock qlock(pst->pQ->m_mutex COMMA_LOCKVAL_SRC_POS);
-        if (pst->pQ->m_llSocketsQ.size())
-        {
-            pst->soap->socket = pst->pQ->m_llSocketsQ.front();
-            pst->pQ->m_llSocketsQ.pop_front();
-            --pst->pQ->m_cIdleThreads;
+        WebLog("T%d handles connection from IP=%lu.%lu.%lu.%lu socket=%d (%d thr idle)\n",
+                pst->u,
+                (pst->soap->ip>>24)&0xFF,
+                (pst->soap->ip>>16)&0xFF,
+                (pst->soap->ip>>8)&0xFF,
+                pst->soap->ip&0xFF,
+                pst->soap->socket,
+                pst->pQ->m_cIdleThreads);
 
-            // reset the multi event only if the queue is now empty; otherwise
-            // another thread will also wake up when we release the mutex and
-            // process another one
-            if (pst->pQ->m_llSocketsQ.size() == 0)
-                RTSemEventMultiReset(pst->pQ->m_event);
+        // process the request; this goes into the COM code in methodmaps.cpp
+        soap_serve(pst->soap);
 
-            qlock.release();
+        soap_destroy(pst->soap); // clean up class instances
+        soap_end(pst->soap); // clean up everything and close socket
 
-            WebLog("Thread %d is handling connection from IP=%lu.%lu.%lu.%lu socket=%d (%d threads idle)",
-                   pst->u,
-                   (pst->soap->ip>>24)&0xFF,
-                   (pst->soap->ip>>16)&0xFF,
-                   (pst->soap->ip>>8)&0xFF,
-                   pst->soap->ip&0xFF,
-                   pst->soap->socket,
-                   pst->pQ->m_cIdleThreads);
-
-            // process the request; this goes into the COM code in methodmaps.cpp
-            soap_serve(pst->soap);
-
-            soap_destroy(pst->soap); // clean up class instances
-            soap_end(pst->soap); // clean up everything and close socket
-
-            qlock.acquire();
-            ++pst->pQ->m_cIdleThreads;
-        }
+        // tell the queue we're idle again
+        pst->pQ->done();
     }
 
     return 0;
@@ -355,10 +420,10 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
 
 /**
  * Called from main(). This implements the loop that takes SOAP calls
- * from HTTP and serves them, calling the COM method implementations
- * in the generated methodmaps.cpp code.
+ * from HTTP and serves them by handing sockets to the SOAP queue
+ * worker threads.
  */
-void beginProcessing()
+void beginProcessing(size_t cThreads)
 {
     // set up gSOAP
     struct soap soap;
@@ -381,8 +446,8 @@ void beginProcessing()
                g_uBindToPort,
                m);
 
-        // initialize thread queue, mutex and eventsem, create 10 threads
-        SoapQ soapq(10, &soap);
+        // initialize thread queue, mutex and eventsem, create worker threads
+        SoapQ soapq(cThreads, &soap);
 
         for (uint64_t i = 1;
              ;
@@ -396,15 +461,10 @@ void beginProcessing()
                 break;
             }
 
-            // enqueue the socket of this connection and post eventsem so
-            // that one of our threads can pick it up
-            util::AutoWriteLock qlock(soapq.m_mutex COMMA_LOCKVAL_SRC_POS);
-            soapq.m_llSocketsQ.push_back(s);
-            qlock.release();
-
-            WebLog("Request %llu on socket %d queued for processing\n", i, s);
-            // unblock one of the worker threads
-            RTSemEventMultiSignal(soapq.m_event);
+            // add the socket to the queue and tell worker threads to
+            // pick up the jobn
+            size_t cItemsOnQ = soapq.add(s);
+            WebLog("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ);
 
             // we have to process main event queue
             int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
@@ -426,6 +486,8 @@ void beginProcessing()
 int main(int argc, char* argv[])
 {
     int rc;
+
+    uint32_t cWorkerThreads = 5;
 
     // intialize runtime
     RTR3Init();
@@ -470,6 +532,10 @@ int main(int argc, char* argv[])
                 WebLog("Sun VirtualBox Webservice Version %s\n"
                        "Opened log file \"%s\"\n", VBOX_VERSION_STRING, ValueUnion.psz);
             }
+            break;
+
+            case 'T':
+                cWorkerThreads = ValueUnion.u32;
             break;
 
             case 'h':
@@ -576,7 +642,7 @@ int main(int argc, char* argv[])
         }
     }
 
-    beginProcessing();
+    beginProcessing(cWorkerThreads);
 
     com::Shutdown();
 }
