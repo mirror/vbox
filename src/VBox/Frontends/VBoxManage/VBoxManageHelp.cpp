@@ -334,6 +334,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            nictrace<1-N> on|off\n"
                  "                            nictracefile<1-N> <filename>\n"
 #endif /* VBOX_DYNAMIC_NET_ATTACH */
+                 "                            guestmemoryballoon <balloonsize in MB>]\n"
+                 "                            gueststatisticsinterval <seconds>]\n"
                  "                            usbattach <uuid>|<address> |\n"
                  "                            usbdetach <uuid>|<address> |\n");
         if (fVRDP)
