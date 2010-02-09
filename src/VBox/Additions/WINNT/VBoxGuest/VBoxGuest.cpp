@@ -640,7 +640,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
 
             /* Copy manually as RTGCPHYS is always 64 bits */
             for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
-                req->aPhysPage[j] = pPageDesc[j];
+                req->aPhysPage[j] = pPageDesc[j] << PAGE_SHIFT; /* PFN_NUMBER is physical page nr, so shift left by 12 to get the physical address */
 
             req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
             req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
@@ -676,7 +676,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     else
     {
         /* deflate */
-        for (uint32_t _i=pDevExt->MemBalloon.cBalloons;_i>u32BalloonSize;_i--)
+        for (uint32_t _i = pDevExt->MemBalloon.cBalloons - 1; _i > u32BalloonSize; _i--)
         {
             uint32_t index = _i - 1;
             PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[index];
@@ -691,8 +691,8 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 PPFN_NUMBER pPageDesc = MmGetMdlPfnArray(pMdl);
 
                 /* Copy manually as RTGCPHYS is always 64 bits */
-                for (uint32_t j=0;j<VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;j++)
-                    req->aPhysPage[j] = pPageDesc[j];
+                for (uint32_t j = 0; j < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; j++)
+                    req->aPhysPage[j] = pPageDesc[j] << PAGE_SHIFT; /* PFN_NUMBER is physical page nr, so shift left by 12 to get the physical address */
 
                 req->header.size = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
                 req->cPages      = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
