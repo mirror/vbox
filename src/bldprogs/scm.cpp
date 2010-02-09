@@ -2401,7 +2401,7 @@ int main(int argc, char **argv)
                         RTPrintf("%s: Warning! This program will make changes to your source files and\n"
                                  "%s:          there is a slight risk that bugs or a full disk may cause\n"
                                  "%s:          LOSS OF DATA.   So, please make sure you have checked in\n"
-                                 "%s:          all your changes already.  If you didn't, then don't blam\n"
+                                 "%s:          all your changes already.  If you didn't, then don't blame\n"
                                  "%s:          anyone for not warning you!\n"
                                  "%s:\n"
                                  "%s:          Press any key to continue...\n",
