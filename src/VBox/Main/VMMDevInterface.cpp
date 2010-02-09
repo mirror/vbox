@@ -514,26 +514,6 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     return VINF_SUCCESS;
 }
 
-/**
- * Inflate or deflate the memory balloon
- *
- * @returns VBox status code.
- * @param   pInterface          Pointer to this interface.
- * @param   fInflate            Inflate or deflate
- * @param   cPages              Number of physical pages (must be 256 as we allocate in 1 MB chunks)
- * @param   aPhysPage           Array of physical page addresses
- * @thread  The emulation thread.
- */
-DECLCALLBACK(int) vmmdevChangeMemoryBalloon(PPDMIVMMDEVCONNECTOR pInterface, bool fInflate, uint32_t cPages, RTGCPHYS *aPhysPage)
-{
-    if (    cPages != VMMDEV_MEMORY_BALLOON_CHUNK_PAGES
-        ||  !aPhysPage)
-        return VERR_INVALID_PARAMETER;
-
-    Log(("vmmdevChangeMemoryBalloon @todo\n"));
-    return VINF_SUCCESS;
-}
-
 #ifdef VBOX_WITH_HGCM
 
 /* HGCM connector interface */
@@ -736,7 +716,6 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
     pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
     pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
-    pData->Connector.pfnChangeMemoryBalloon           = vmmdevChangeMemoryBalloon;
 
 #ifdef VBOX_WITH_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;

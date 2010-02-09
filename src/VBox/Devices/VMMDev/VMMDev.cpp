@@ -1386,7 +1386,10 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             }
             else
             {
-                pRequestHeader->rc = pThis->pDrv->pfnChangeMemoryBalloon(pThis->pDrv, !!memBalloonChange->fInflate, memBalloonChange->cPages, memBalloonChange->aPhysPage);
+                if (memBalloonChange->fInflate)
+                    pRequestHeader->rc = PGMR3PhysFreeRamPages(PDMDevHlpGetVM(pDevIns), memBalloonChange->cPages, memBalloonChange->aPhysPage);
+                else
+                    pRequestHeader->rc = VINF_SUCCESS;      /* deflating the balloon doesn't require any action; when the reacquired memory is touched, it will be paged back in. */
             }
             break;
         }
