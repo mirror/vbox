@@ -22,8 +22,7 @@
 /** @page pg_vbox_guideline                 VBox Coding Guidelines
  *
  * The VBox Coding guidelines are followed by all of VBox with the exception of
- * the GUI and qemu. The GUI is using something close to the Qt style. Qemu is
- * using whatever the frenchman does.
+ * qemu. Qemu is using whatever the frenchman does.
  *
  * There are a few compulsory rules and a bunch of optional ones. The following
  * sections will describe these in details. In addition there is a section of
@@ -236,6 +235,29 @@
  *     Write a destructor that calls delete.
  *
  *
+ * @subsection sec_vbox_guideline_compulsory_cppqtgui   C++ guidelines for the Qt GUI
+ *
+ * The Qt GUI is currently (2010) on its way to become more compatible to the
+ * rest of VirtualBox coding style wise. From now on, all the coding style
+ * rules described in this file are also mandatory for the Qt GUI. Additionally
+ * the following rules should be respected:
+ *
+ * - GUI classes which correspond to GUI tasks should be prefixed by UI (no VBox anymore)
+ *
+ * - Classes which extents some of the Qt classes should be prefix by QI
+ *
+ * - General task classes should be prefixed by C
+ *
+ * - Slots are prefixed by slt -> sltName
+ *
+ * - Signals are prefixed by sig -> sigName
+ *
+ * - Use Qt classes for lists, strings and so on, the use of STL classes should
+ *   be avoided
+ *
+ * - All files like .cpp, .h, .ui, which belong together are located in the
+ *   same directory and named the same
+ *
  *
  * @section sec_vbox_guideline_optional         Optional
  *
@@ -375,7 +397,8 @@
  *
  *      - The 'usz' prefix means zero terminated Unicode string (array of RTUNICP).
  *
- *      - The 'str' prefix means C++ string; either a std::string or, in Main, a Utf8Str.
+ *      - The 'str' prefix means C++ string; either a std::string or, in Main,
+ *        a Utf8Str or, in Qt, a QString
  *
  *      - The 'bstr' prefix, in Main, means a UTF-16 Bstr.
  *
