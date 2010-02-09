@@ -104,7 +104,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("cambridge", Qt::CaseInsensitive), "Fedora" },
     { QRegExp("leonidas.*64", Qt::CaseInsensitive), "Fedora_64" },
     { QRegExp("leonidas", Qt::CaseInsensitive), "Fedora" },
-    { QRegExp("constantine.*64", Qt::CaseInsensitive), "Fedora4" },
+    { QRegExp("constantine.*64", Qt::CaseInsensitive), "Fedora_64" },
     { QRegExp("constantine", Qt::CaseInsensitive), "Fedora" },
     { QRegExp("goddard.*64", Qt::CaseInsensitive), "Fedora_64" },
     { QRegExp("goddard", Qt::CaseInsensitive), "Fedora" },
