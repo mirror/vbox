@@ -19,16 +19,16 @@
 # additional information or have any questions.
 #
 
-my $use_hal = 0;
+my $auto_mouse = 0;
 my $new_mouse = 0;
 my $no_bak = 0;
 my $old_mouse_dev = "/dev/psaux";
 
 foreach $arg (@ARGV)
 {
-    if (lc($arg) eq "--usehal")
+    if (lc($arg) eq "--autoMouse")
     {
-        $use_hal = 1;
+        $auto_mouse = 1;
     }
     elsif (lc($arg) eq "--newmouse")
     {
@@ -110,7 +110,7 @@ EndSection
 EOF
             }
 
-            if (!$use_hal && !$new_mouse) {
+            if (!$auto_mouse && !$new_mouse) {
                 print TMP <<EOF;
 
 Section "InputDevice"
@@ -136,7 +136,7 @@ EndSection
 EOF
             }
 
-            if (!$use_hal && $new_mouse) {
+            if (!$auto_mouse && $new_mouse) {
                 print TMP <<EOF;
 
 Section "InputDevice"
