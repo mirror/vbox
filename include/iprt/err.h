@@ -608,6 +608,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_AUTHENTICATION_FAILURE         (-89)
 /** Not a power of two. */
 #define VERR_NOT_POWER_OF_TWO               (-90)
+/** Status code, typically given as a parameter, that isn't supposed to be used. */
+#define VERR_IGNORED                        (-91)
 /** @} */
 
 
