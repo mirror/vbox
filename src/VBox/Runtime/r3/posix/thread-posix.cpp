@@ -56,8 +56,10 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+#ifndef IN_GUEST
 /** The signal we're using for RTThreadPoke. */
-#define RTTHREAD_POSIX_POKE_SIG  SIGUSR2
+# define RTTHREAD_POSIX_POKE_SIG    SIGUSR2
+#endif
 
 
 /*******************************************************************************
@@ -85,6 +87,7 @@ int rtThreadNativeInit(void)
     if (rc)
         return VERR_NO_TLS_FOR_SELF;
 
+#ifdef RTTHREAD_POSIX_POKE_SIG
     /*
      * Register the dummy signal handler for RTThreadPoke.
      * (Assert may explode here, but at least we'll notice.)
@@ -105,6 +108,7 @@ int rtThreadNativeInit(void)
         pthread_key_delete(g_SelfKey);
         g_SelfKey = 0;
     }
+#endif /* RTTHREAD_POSIX_POKE_SIG */
     return rc;
 }
 
@@ -128,6 +132,7 @@ static void rtThreadKeyDestruct(void *pvValue)
 }
 
 
+#ifdef RTTHREAD_POSIX_POKE_SIG
 /**
  * Dummy signal handler for the poke signal.
  *
@@ -138,6 +143,7 @@ static void rtThreadPosixPokeSignal(int iSignal)
     Assert(iSignal == RTTHREAD_POSIX_POKE_SIG);
     NOREF(iSignal);
 }
+#endif
 
 
 /**
@@ -336,6 +342,7 @@ RTR3DECL(int) RTThreadSetAffinity(uint64_t u64Mask)
 }
 
 
+#ifdef RTTHREAD_POSIX_POKE_SIG
 RTDECL(int) RTThreadPoke(RTTHREAD hThread)
 {
     AssertReturn(hThread != RTThreadSelf(), VERR_INVALID_PARAMETER);
@@ -347,3 +354,5 @@ RTDECL(int) RTThreadPoke(RTTHREAD hThread)
     rtThreadRelease(pThread);
     return RTErrConvertFromErrno(rc);
 }
+#endif
+
