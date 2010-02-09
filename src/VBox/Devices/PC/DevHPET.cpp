@@ -176,6 +176,9 @@ typedef struct HpetState
     uint64_t             u64Isr;
     /* main counter */
     uint64_t             u64HpetCounter;
+
+    /* Global device lock */
+    PDMCRITSECT          csLock;
 } HpetState;
 
 
@@ -198,13 +201,12 @@ RT_C_DECLS_END
  */
 static const bool fHpetLocking = true;
 
-DECLINLINE(int) hpetLock(HpetState* pThis)
+DECLINLINE(int) hpetLock(HpetState* pThis, int rcBusy)
 {
     if (!fHpetLocking)
-        return 0;
+        return VINF_SUCCESS;
 
-    return pThis->CTX_SUFF(pHpetHlp)->pfnLock(pThis->CTX_SUFF(pDevIns),
-                                              VERR_INTERNAL_ERROR);
+    return PDMCritSectEnter(&pThis->csLock, rcBusy);
 }
 
 DECLINLINE(void) hpetUnlock(HpetState* pThis)
@@ -212,7 +214,7 @@ DECLINLINE(void) hpetUnlock(HpetState* pThis)
     if (!fHpetLocking)
         return;
 
-    pThis->CTX_SUFF(pHpetHlp)->pfnUnlock(pThis->CTX_SUFF(pDevIns));
+    PDMCritSectLeave(&pThis->csLock);
 }
 
 static uint32_t hpetTimeAfter32(uint64_t a, uint64_t b)
@@ -705,8 +707,9 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
 
     LogFlow(("hpetMMIORead: %llx (%x)\n", (uint64_t)GCPhysAddr, iIndex));
 
-    rc = hpetLock(pThis);
-    AssertLogRelRCReturn(rc, rc);
+    rc = hpetLock(pThis, VINF_IOM_HC_MMIO_READ);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return rc;
 
     switch (cb)
     {
@@ -747,8 +750,9 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
     LogFlow(("hpetMMIOWrite: %llx (%x) <- %x\n",
              (uint64_t)GCPhysAddr, iIndex, *(uint32_t*)pv));
 
-    rc = hpetLock(pThis);
-    AssertLogRelRCReturn(rc, rc);
+    rc = hpetLock(pThis, VINF_IOM_HC_MMIO_WRITE);
+    if (RT_UNLIKELY(rc != VINF_SUCCESS))
+        return rc;
 
     switch (cb)
     {
@@ -920,7 +924,9 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns,
     if (pTimer == NULL)
         return;
 
-    rc = hpetLock(pThis);
+    /* Lock in R3 must either block or succeed */
+    rc = hpetLock(pThis, VERR_IGNORED);
+    
     AssertLogRelRCReturnVoid(rc);
 
     if ((pTimer->u64Config & HPET_TN_PERIODIC) && (u64Period != 0))
@@ -1121,6 +1127,14 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         AssertMsgRC(rc, ("Cannot HPETRegister: %Rrc\n", rc));
         return rc;
     }
+
+    /*
+     * Initialize critical section.
+     */
+    rc = PDMDevHlpCritSectInit(pDevIns, &pThis->csLock, RT_SRC_POS, "HPET");
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc, N_("HPET cannot initialize critical section"));
+
     /*
      * Register the MMIO range, PDM API requests page aligned
      * addresses and sizes.
