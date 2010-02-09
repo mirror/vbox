@@ -223,7 +223,7 @@ static int getSmcDeviceKey(IMachine* pMachine, BSTR * aKey)
 {
     int rc;
 
-# if defined(RT_OS_DARWIN)
+# if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
     char aKeyBuf[65];
 
     rc = DarwinSmcKey(aKeyBuf, sizeof aKeyBuf);
