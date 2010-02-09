@@ -51,6 +51,11 @@
 # define SUPLIB_DLL_SUFF    ".so"
 #endif
 
+#ifdef RT_OS_SOLARIS
+/** Number of dummy files to open (2:ip4, 1:ip6, 1:extra) see #4650 */
+#define SUPLIB_FLT_DUMMYFILES 4
+#endif
+
 /** @def SUPLIB_EXE_SUFF
  * The (typical) executable suffix. */
 #if defined(RT_OS_OS2) || defined(RT_OS_WINDOWS)
@@ -187,6 +192,9 @@ typedef struct SUPLIBDATA
 #elif defined(RT_OS_LINUX)
     /** Indicates whether madvise(,,MADV_DONTFORK) works. */
     bool                fSysMadviseWorks;
+#elif defined(RT_OS_SOLARIS)
+    /** Extra dummy file descriptors to prevent growing file-descriptor table on clean up (see #4650) */
+    int                 hDummy[SUPLIB_FLT_DUMMYFILES];
 #elif defined(RT_OS_WINDOWS)
 #endif
 } SUPLIBDATA;

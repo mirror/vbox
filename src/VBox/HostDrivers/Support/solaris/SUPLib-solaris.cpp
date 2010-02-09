@@ -81,6 +81,23 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
     if (fPreInited)
         return VINF_SUCCESS;
 
+#ifdef VBOXFLT_DUMMYFILES
+    /*
+     * Open dummy files to preallocate file descriptors, see #4650.
+     */
+    for (int i = 0; i < VBOXFLT_DUMMYFILES; i++)
+    {
+        int hDummy = open("/dev/null", O_RDWR, 0);
+        fcntl(hDummy, F_SETFD, FD_CLOEXEC);
+        if (hDummy >= 0)
+            pThis->hDummy[i] = hDummy;
+        else
+        {
+            pThis->hDummy[i] = -1;
+            LogRel(("Failed to open[%d] /dev/null! errno=%d\n", i, errno));
+        }
+    }
+#endif
 
     /*
      * Try to open the device.
@@ -126,6 +143,20 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
 
 int suplibOsTerm(PSUPLIBDATA pThis)
 {
+#ifdef VBOXFLT_DUMMYFILES
+    /*
+     * Close the dummy files first.
+     */
+    for (int i = 0; i < VBOXFLT_DUMMYFILES; i++)
+    {
+        if (pThis->hDummy[i] != -1)
+        {
+            close(pThis->hDummy[i]);
+            pThis->hDummy[i] = -1;
+        }
+    }
+#endif
+
     /*
      * Check if we're initialized
      */
