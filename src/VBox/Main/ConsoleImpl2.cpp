@@ -114,7 +114,10 @@
 int DarwinSmcKey(char* aKey, uint32_t iKeySize)
 {
     int rc;
-    /* Based on Amith Singh SMC reading code sample in OS X Book */
+    /* 
+     * Code based on Amit Singh SMC reading code sample in OS X Book, see 
+     * http://osxbook.com/book/bonus/chapter7/tpmdrmmyth/
+     */
     typedef struct {
         uint32_t   key;
         uint8_t    __d0[22];
@@ -163,7 +166,7 @@ int DarwinSmcKey(char* aKey, uint32_t iKeySize)
     IOServiceClose(port);
 
     aKey[64] = 0;
-    
+
     return VINF_SUCCESS;
 }
 
