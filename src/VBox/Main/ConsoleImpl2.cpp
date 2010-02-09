@@ -107,7 +107,7 @@
 #include <VBox/param.h>
 #include <VBox/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
 
-#if defined(RT_OS_DARWIN)
+#if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
 
 # include "IOKit/IOKitLib.h"
 
