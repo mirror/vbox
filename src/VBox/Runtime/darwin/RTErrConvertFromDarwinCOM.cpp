@@ -64,4 +64,3 @@ RTDECL(int) RTErrConvertFromDarwinCOM(int32_t iNativeCode)
     return VERR_UNRESOLVED_ERROR;
 }
 
-

@@ -126,4 +126,3 @@ int main()
     return !!g_cErrors;
 }
 
-

@@ -1596,5 +1596,3 @@ int rtldrPEOpen(PRTLDRREADER pReader, uint32_t fFlags, RTLDRARCH enmArch, RTFOFF
     return rc;
 }
 
-
-

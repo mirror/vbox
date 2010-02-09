@@ -649,10 +649,10 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
     for (unsigned iSym = 1; iSym < cSyms; iSym++)
     {
         /* Undefined symbols are not exports, they are imports. */
-	if (    paSyms[iSym].st_shndx != SHN_UNDEF
+        if (    paSyms[iSym].st_shndx != SHN_UNDEF
             &&  (   ELF_ST_BIND(paSyms[iSym].st_info) == STB_GLOBAL
                  || ELF_ST_BIND(paSyms[iSym].st_info) == STB_WEAK))
-	{
+        {
             /* Validate the name string and try match with it. */
             if (paSyms[iSym].st_name < pModElf->cbStr)
             {
@@ -681,7 +681,7 @@ static DECLCALLBACK(int) RTLDRELF_NAME(GetSymbolEx)(PRTLDRMODINTERNAL pMod, cons
                 AssertMsgFailed(("String outside string table! iSym=%d paSyms[iSym].st_name=%#x\n", iSym, paSyms[iSym].st_name));
                 return VERR_LDRELF_INVALID_SYMBOL_NAME_OFFSET;
             }
-	}
+        }
     }
 
     return VERR_SYMBOL_NOT_FOUND;

@@ -102,4 +102,3 @@ RTDECL(RTCPUID) RTMpGetOnlineCount(void)
     return sysconf(_SC_NPROCESSORS_ONLN);
 }
 
-

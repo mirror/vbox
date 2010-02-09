@@ -44,4 +44,3 @@ RTDECL(void) RTLogWriteDebugger(const char *pch, size_t cb)
 }
 RT_EXPORT_SYMBOL(RTLogWriteDebugger);
 
-

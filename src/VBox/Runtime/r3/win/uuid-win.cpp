@@ -187,4 +187,3 @@ RTDECL(int)  RTUuidFromStr(PRTUUID pUuid, const char *pszString)
     return RTErrConvertFromWin32(rc);
 }
 
-

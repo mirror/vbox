@@ -1455,4 +1455,3 @@ int XmlFileWriter::CloseCallback(void *aCtxt)
 
 } // end namespace xml
 
-

@@ -339,4 +339,3 @@ int main()
     return RTTestSummaryAndDestroy(hTest);
 }
 
-

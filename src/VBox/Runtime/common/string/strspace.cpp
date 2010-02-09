@@ -239,4 +239,3 @@ RTDECL(int) RTStrSpaceDestroy(PRTSTRSPACE pStrSpace, PFNRTSTRSPACECALLBACK pfnCa
 }
 RT_EXPORT_SYMBOL(RTStrSpaceDestroy);
 
-

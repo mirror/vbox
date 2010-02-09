@@ -79,4 +79,3 @@ RTDECL(void *) RTMemDupEx(const void *pvSrc, size_t cbSrc, size_t cbExtra) RT_NO
 }
 RT_EXPORT_SYMBOL(RTMemDupEx);
 
-

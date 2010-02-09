@@ -738,4 +738,3 @@ RTR3DECL(int) RTFileRename(const char *pszSrc, const char *pszDst, unsigned fRen
     return rc;
 }
 
-

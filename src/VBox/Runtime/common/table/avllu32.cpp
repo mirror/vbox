@@ -78,4 +78,3 @@ static const char szFileId[] = "Id: kAVLULInt.c,v 1.4 2003/02/13 02:02:38 bird E
 #include "avl_DoWithAll.cpp.h"
 #include "avl_Destroy.cpp.h"
 
-

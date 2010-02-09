@@ -112,4 +112,3 @@ RTDECL(int) KAVL_FN(Destroy)(PPKAVLNODECORE ppTree, PKAVLCALLBACK pfnCallBack, v
 
 #endif
 
-

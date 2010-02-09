@@ -97,4 +97,3 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
 }
 RT_EXPORT_SYMBOL(RTMsgErrorV);
 
-

@@ -232,4 +232,3 @@ RTR3DECL(int)  RTStrCurrentCPToUtf8(char **ppszString, const char *pszString)
     return rtstrConvert(pszString, cch, "", (void **)ppszString, 0, "UTF-8", 2);
 }
 
-

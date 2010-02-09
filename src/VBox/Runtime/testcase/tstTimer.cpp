@@ -227,5 +227,3 @@ int main()
     return !!cErrors;
 }
 
-
-

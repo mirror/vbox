@@ -74,4 +74,3 @@ DECLHIDDEN(int) rtProcInitExePath(char *pszPath, size_t cchPath)
     return rc;
 }
 
-
