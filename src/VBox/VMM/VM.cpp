@@ -3608,12 +3608,18 @@ DECLCALLBACK(void) vmR3SetErrorUV(PUVM pUVM, int rc, RT_SRC_POS_DECL, const char
      */
     va_list va3;
     va_copy(va3, *pArgs);
-    RTLogRelPrintf("VMSetError: %s(%d) %s\nVMSetError: %N\n", pszFile, iLine, pszFunction, pszFormat, &va3);
+    RTLogRelPrintf("VMSetError: %s(%d) %s; rc=%Rrc\n"
+                   "VMSetError: %N\n",
+                   pszFile, iLine, pszFunction, rc,
+                   pszFormat, &va3);
     va_end(va3);
 
 #ifdef LOG_ENABLED
     va_copy(va3, *pArgs);
-    RTLogPrintf("VMSetError: %s(%d) %s\n%N\n", pszFile, iLine, pszFunction, pszFormat, &va3);
+    RTLogPrintf("VMSetError: %s(%d) %s; rc=%Rrc\n"
+                "%N\n",
+                pszFile, iLine, pszFunction, rc,
+                pszFormat, &va3);
     va_end(va3);
 #endif
 
