@@ -63,8 +63,8 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_WAITEVENT, &waitEvent, sizeof(waitEvent));
     if (RT_SUCCESS(rc))
     {
-#ifndef VBOX_VBGLR3_XFREE86
-        AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d\n", waitEvent.u32Result));
+#if !defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_WINDOWS)
+        AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d rc=%d\n", waitEvent.u32Result, rc));
 #endif
         if (pfEvents)
             *pfEvents = waitEvent.u32EventFlagsOut;
