@@ -39,6 +39,7 @@
 #include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/ldr.h>
+#include <iprt/semaphore.h>
 
 // workaround for compile problems on gcc 4.1
 #ifdef __GNUC__
@@ -50,6 +51,7 @@
 
 // standard headers
 #include <map>
+#include <list>
 
 #ifdef __GNUC__
 #pragma GCC visibility pop
@@ -247,6 +249,103 @@ void WebLogSoapError(struct soap *soap)
            (ppcszDetail && *ppcszDetail) ? *ppcszDetail : "no details available");
 }
 
+int fntSoapQueue(RTTHREAD pThread, void *pvThread);
+
+class SoapQ;
+
+struct SoapThread
+{
+    size_t      u;
+    SoapQ       *pQ;
+    struct soap *soap;
+    RTTHREAD    pThread;
+};
+
+class SoapQ
+{
+public:
+    SoapQ(size_t cThreads, const struct soap *pSoap)
+        : m_mutex(util::LOCKCLASS_OBJECTSTATE),
+          m_cIdleThreads(0)
+    {
+        RTSemEventCreate(&m_event);
+
+        // create cThreads threads
+        for (size_t u = 0; u < cThreads; ++u)
+        {
+            SoapThread *pst = new SoapThread();
+            pst->u = u + 1;
+            pst->pQ = this;
+            pst->soap = soap_copy(pSoap);
+            RTThreadCreate(&pst->pThread,
+                           fntSoapQueue,
+                           pst,             // pvUser
+                           0,               // cbStack,
+                           RTTHREADTYPE_MAIN_HEAVY_WORKER,
+                           0,
+                           "SoapQWorker");
+            m_llAllThreads.push_back(pst);
+            ++m_cIdleThreads;
+        }
+    }
+
+    ~SoapQ()
+    {
+        RTSemEventDestroy(m_event);
+    }
+
+    util::WriteLockHandle   m_mutex;
+    RTSEMEVENT              m_event;
+
+    std::list<SoapThread*>  m_llAllThreads;
+    size_t                  m_cIdleThreads;
+
+    std::list<int>          m_llSocketsQ;       // this contains the actual jobs to do,
+                                                // represented by the socket from soap_accept()
+};
+
+int fntSoapQueue(RTTHREAD pThread, void *pvThread)
+{
+    SoapThread *pst = (SoapThread*)pvThread;
+
+    WebLog("Started thread %d\n", pst->u);
+
+    while (1)
+    {
+        // wait for something to happen
+        RTSemEventWait(pst->pQ->m_event, RT_INDEFINITE_WAIT);
+
+        util::AutoWriteLock qlock(pst->pQ->m_mutex COMMA_LOCKVAL_SRC_POS);
+        if (pst->pQ->m_llSocketsQ.size())
+        {
+            pst->soap->socket = pst->pQ->m_llSocketsQ.front();
+            pst->pQ->m_llSocketsQ.pop_front();
+            --pst->pQ->m_cIdleThreads;
+            qlock.release();
+
+            WebLog("Thread %d is handling connection from IP=%lu.%lu.%lu.%lu socket=%d (%d threads idle)",
+                   pst->u,
+                   (pst->soap->ip>>24)&0xFF,
+                   (pst->soap->ip>>16)&0xFF,
+                   (pst->soap->ip>>8)&0xFF,
+                   pst->soap->ip&0xFF,
+                   pst->soap->socket,
+                   pst->pQ->m_cIdleThreads);
+
+            // process the request; this goes into the COM code in methodmaps.cpp
+            soap_serve(pst->soap);
+
+            soap_destroy(pst->soap); // clean up class instances
+            soap_end(pst->soap); // clean up everything and close socket
+
+            qlock.acquire();
+            ++pst->pQ->m_cIdleThreads;
+        }
+    }
+
+    return 0;
+}
+
 /**
  * Called from main(). This implements the loop that takes SOAP calls
  * from HTTP and serves them, calling the COM method implementations
@@ -275,6 +374,9 @@ void beginProcessing()
                g_uBindToPort,
                m);
 
+        // initialize thread queue, mutex and eventsem, create 10 threads
+        SoapQ soapq(10, &soap);
+
         for (uint64_t i = 1;
              ;
              i++)
@@ -287,25 +389,13 @@ void beginProcessing()
                 break;
             }
 
-            WebLog("%llu: accepted connection from IP=%lu.%lu.%lu.%lu socket=%d... ",
-                   i,
-                   (soap.ip>>24)&0xFF,
-                   (soap.ip>>16)&0xFF,
-                   (soap.ip>>8)&0xFF,
-                   soap.ip&0xFF,
-                   s);
-
-            // now process the RPC request (this goes into the
-            // generated code in methodmaps.cpp with all the COM calls)
-            if (soap_serve(&soap) != SOAP_OK)
-            {
-                WebLogSoapError(&soap);
-            }
-
-            WebLog("Request served\n");
-
-            soap_destroy(&soap); // clean up class instances
-            soap_end(&soap); // clean up everything and close socket
+            // enqueue the socket of this connection and post eventsem so
+            // that one of our threads can pick it up
+            util::AutoWriteLock qlock(soapq.m_mutex COMMA_LOCKVAL_SRC_POS);
+            soapq.m_llSocketsQ.push_back(s);
+            WebLog("Request %llu on socket %d queued for processing\n", i, s);
+            RTSemEventSignal(soapq.m_event);
+            qlock.release();
 
             // we have to process main event queue
             int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
@@ -331,7 +421,7 @@ int main(int argc, char* argv[])
     // intialize runtime
     RTR3Init();
 
-    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " Webservice Version " VBOX_VERSION_STRING "\n"
+    RTStrmPrintf(g_pStdErr, VBOX_PRODUCT " web service version " VBOX_VERSION_STRING "\n"
                             "(C) 2005-" VBOX_C_YEAR " " VBOX_VENDOR "\n"
                             "All rights reserved.\n");
 
@@ -1044,7 +1134,7 @@ void WebServiceSession::DumpRefs()
  *  createRefFromObject() template function in vboxweb.h, which
  *  does perform that check.
  *
- *  Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
  *
  * @param pObj
  */
@@ -1058,6 +1148,7 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
     ComPtr<IUnknown> pcUnknown(pc);
     _ulp = (uintptr_t)(IUnknown*)pcUnknown;
 
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     _id = ++g_iMaxManagedObjectID;
     // and count globally
     ULONG64 cTotal = ++g_cManagedObjects;           // raise global count and make a copy for the debug message below
@@ -1078,10 +1169,11 @@ ManagedObjectRef::ManagedObjectRef(WebServiceSession &session,
  * Destructor; removes the instance from the global hash of
  * managed objects.
  *
- * Preconditions: Caller must have locked g_mutexSessions.
+ * Preconditions: Caller must have locked g_pSessionsLockHandle in write mode.
  */
 ManagedObjectRef::~ManagedObjectRef()
 {
+    Assert(g_pSessionsLockHandle->isWriteLockOnCurrentThread());
     ULONG64 cTotal = --g_cManagedObjects;
 
     WEBDEBUG(("   * %s: deleting MOR for ID %llX (%s); now %lld objects total\n", __FUNCTION__, _id, _pcszInterface, cTotal));
