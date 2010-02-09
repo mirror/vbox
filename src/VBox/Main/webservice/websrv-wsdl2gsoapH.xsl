@@ -2,18 +2,14 @@
 
 <!--
     websrv-gsoapH.xsl:
-        XSLT stylesheet that generates vboxweb_gsoapH.h from
-        VirtualBox.xidl.Such "header" files can be fed into
-        gSOAP's soapcpp2 to create web service client headers
-        and server stubs. (The reason for this appears to be
-        that gSOAP predates WSDL and thus needed some format
-        to describe the syntax of a web service. gSOAP these
-        days comes with wsdl2h, which converts a WSDL file
-        to gSOAP's "header" format, but that has license
-        problems and so we generate the gSOAP "header" via
-        XSLT.)
+        XSLT stylesheet that generates a gSOAP pseudo-header
+        file from VirtualBox.xidl. Such a pseudo-header files
+        can be fed into gSOAP's soapcpp2 to create web service
+        client headers and server stubs.
+        See webservice/Makefile.kmk for an overview of all the things
+        generated for the webservice.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2010 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;

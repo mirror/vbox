@@ -3,8 +3,10 @@
         this gets included from the other websrv-*.xsl XSLT stylesheets
         so we can share some definitions that must be the same for
         all of them (like method prefixes/suffices).
+        See webservice/Makefile.kmk for an overview of all the things
+        generated for the webservice.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2010 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
