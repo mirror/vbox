@@ -64,6 +64,8 @@
     <file alias="os_xandros_64.png">images/os_xandros_64.png</file>
     <file alias="os_oracle.png">images/os_oracle.png</file>
     <file alias="os_oracle_64.png">images/os_oracle_64.png</file>
+    <file alias="os_macosx.png">images/os_macosx.png</file>
+    <file alias="os_macosx_64.png">images/os_macosx_64.png</file>
     <file alias="hd_16px.png">images/hd_16px.png</file>
     <file alias="hd_disabled_16px.png">images/hd_disabled_16px.png</file>
     <file alias="hd_32px.png">images/hd_32px.png</file>
