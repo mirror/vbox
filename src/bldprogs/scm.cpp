@@ -203,9 +203,18 @@ static bool         g_fDiffIgnoreLeadingWS  = false;
 static bool         g_fDiffIgnoreTrailingWS = false;
 static int          g_iVerbosity            = 2;//99; //0;
 static const char  *g_pszFileFilter         = "*";
-static const char  *g_pszFileFilterOut      = "*.exe|*.com|20*-*-*.log";
+static const char  *g_pszFileFilterOut      =
+    "*.exe|"
+    "*.com|"
+    "20*-*-*.log|"
+    "*/src/VBox/Runtime/testcase/soundcard.h|"
+    "*/src/VBox/Runtime/include/internal/ldrELF*.h|"
+    "*/src/VBox/Runtime/common/math/x86/fenv-x86.c|"
+    "*/src/VBox/Runtime/common/checksum/md5.cpp|"
+    "/dummy/."
+;
 static const char  *g_pszDirFilter          = NULL;
-static const char  *g_pszDirFilterOut       = \
+static const char  *g_pszDirFilterOut       =
     // generic
     ".svn|"
     "CVS|"
@@ -227,7 +236,10 @@ static const char  *g_pszDirFilterOut       = \
     "*/src/VBox/GuestHost/OpenGL/*/.|"
     "*/src/VBox/Devices/PC/Etherboot-src/*/.|"
     "*/src/VBox/Devices/Network/lwip/.|"
-    "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/."
+    "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/.|"
+    "*/src/VBox/Runtime/r0drv/solaris/vbi/*/.|"
+    "*/src/VBox/Runtime/common/math/gcc/.|"
+    "/dummy"
 ;
 
 static PFNSCMREWRITER const g_aRewritersFor_Makefile_kup[] =
@@ -1862,7 +1874,8 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
         return VINF_SUCCESS;
     }
     if (   g_pszFileFilterOut
-        && RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX, pszBasename, cchBasename, NULL))
+        && (   RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX, pszBasename, cchBasename, NULL)
+            || RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX, pszFilename, RTSTR_MAX, NULL)) )
     {
         ScmVerbose(4, "file filter out: \"%s\"\n", pszFilename);
         return VINF_SUCCESS;
@@ -2094,28 +2107,23 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
  * Process a directory tree.
  *
  * @returns IPRT status code.
- * @param   pszDir              The directory to start with.
+ * @param   pszDir              The directory to start with.  This is pointer to
+ *                              a RTPATH_MAX sized buffer.
  */
-static int scmProcessDirTree(const char *pszDir)
+static int scmProcessDirTree(char *pszDir)
 {
     /*
      * Setup the recursion.
      */
-    char szBuf[RTPATH_MAX];
-    int rc = RTPathAbs(pszDir, szBuf, sizeof(szBuf));
+    int rc = RTPathAppend(pszDir, RTPATH_MAX, ".");
     if (RT_SUCCESS(rc))
-        rc = RTPathAppend(szBuf, sizeof(szBuf), ".");
-    if (RT_FAILURE(rc))
     {
-        RTMsgError("RTPathAbs/Append: %Rrc\n", rc);
-        return rc;
+        RTDIRENTRY Entry;
+        rc = scmProcessDirTreeRecursion(pszDir, strlen(pszDir), &Entry, 0);
     }
-
-    /*
-     * Get going.
-     */
-    RTDIRENTRY Entry;
-    return scmProcessDirTreeRecursion(szBuf, strlen(szBuf), &Entry, 0);
+    else
+        RTMsgError("RTPathAppend: %Rrc\n", rc);
+    return rc;
 }
 
 
@@ -2127,28 +2135,30 @@ static int scmProcessDirTree(const char *pszDir)
  */
 static int scmProcessSomething(const char *pszSomething)
 {
-    if (RTFileExists(pszSomething))
+    char szBuf[RTPATH_MAX];
+    int rc = RTPathAbs(pszSomething, szBuf, sizeof(szBuf));
+    if (RT_SUCCESS(rc))
     {
-        const char *pszBasename = RTPathFilename(pszSomething);
-        if (!pszBasename)
-            return VERR_IS_A_DIRECTORY;
-
-        size_t cchBasename = strlen(pszBasename);
-        if (    (   g_pszFileFilter
-                || RTStrSimplePatternMultiMatch(g_pszFileFilter, RTSTR_MAX,
-                                                pszBasename, cchBasename, NULL))
-            &&  (   g_pszFileFilterOut == NULL
-                || !RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX,
-                                                 pszBasename, cchBasename, NULL))
-            )
-            return scmProcessFile(pszSomething, pszBasename, cchBasename);
-        return VINF_SUCCESS;
+        if (RTFileExists(szBuf))
+        {
+            const char *pszBasename = RTPathFilename(szBuf);
+            if (pszBasename)
+            {
+                size_t cchBasename = strlen(pszBasename);
+                rc = scmProcessFile(szBuf, pszBasename, cchBasename);
+            }
+            else
+            {
+                RTMsgError("RTPathFilename: NULL\n");
+                rc = VERR_IS_A_DIRECTORY;
+            }
+        }
+        else
+            rc = scmProcessDirTree(szBuf);
     }
-
-    /*
-     * If it's not a file, try treat it as a directory tree.
-     */
-    return scmProcessDirTree(pszSomething);
+    else
+        RTMsgError("RTPathAbs: %Rrc\n", rc);
+    return rc;
 }
 
 int main(int argc, char **argv)

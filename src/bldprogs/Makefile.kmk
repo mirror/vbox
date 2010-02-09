@@ -31,7 +31,7 @@ biossums_TEMPLATE = VBOXBLDPROG
 biossums_SOURCES = biossums.c
 
 PROGRAMS += scm
-scm_TEMPLATE = VBoxR3Static
+scm_TEMPLATE = VBOXR3EXE
 scm_SOURCES = scm.cpp
 scm_LIBS = \
 	$(LIB_RUNTIME)
