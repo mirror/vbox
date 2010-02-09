@@ -48,6 +48,7 @@
 #include <iprt/stream.h>
 #include <iprt/thread.h>
 #include <iprt/param.h>
+#include <iprt/message.h>
 
 #define TESTCASE "tstPDMAsyncCompletionStress"
 
@@ -178,7 +179,19 @@ static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFIL
         pbTestPattern = pSeg->pbData + offSeg;
 
         if (memcmp(pbBuf, pbTestPattern, cbCompare))
-            AssertMsgFailed(("Unexpected data for off=%RTfoff size=%u\n", pTestTask->off, pTestTask->DataSeg.cbSeg));
+        {
+            unsigned idx = 0;
+
+            while (   (pbBuf[idx] == pbTestPattern[idx])
+                   && (idx < cbCompare))
+                idx++;
+
+            RTMsgError("Unexpected data for off=%RTfoff size=%u\n"
+                       "Expected %c got %c\n",
+                       pTestTask->off + idx, pTestTask->DataSeg.cbSeg,
+                       pbTestPattern[idx], pbBuf[idx]);
+            RTAssertDebugBreak();
+        }
 
         pbBuf  += cbCompare;
         off    += cbCompare;
@@ -314,7 +327,7 @@ static bool tstPDMACTestIsTrue(int iPercentage)
 {
     int uRnd = RTRandU32Ex(0, 100);
 
-    return (uRnd < iPercentage); /* This should be enough for our purpose */
+    return (uRnd <= iPercentage); /* This should be enough for our purpose */
 }
 
 static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)

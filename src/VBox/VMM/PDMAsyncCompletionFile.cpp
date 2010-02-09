@@ -737,12 +737,21 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                     }
                 }
 
-                pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
+                pEpFile->AioMgr.pTreeRangesLocked = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
+                if (!pEpFile->AioMgr.pTreeRangesLocked)
+                    rc = VERR_NO_MEMORY;
+                else
+                {
+                    pEpFile->enmState = PDMASYNCCOMPLETIONENDPOINTFILESTATE_ACTIVE;
 
-                /* Assign the endpoint to the thread. */
-                rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
-                if (RT_FAILURE(rc))
-                    MMR3HeapFree(pEpFile->pTasksFreeHead);
+                    /* Assign the endpoint to the thread. */
+                    rc = pdmacFileAioMgrAddEndpoint(pAioMgr, pEpFile);
+                    if (RT_FAILURE(rc))
+                    {
+                        RTMemFree(pEpFile->AioMgr.pTreeRangesLocked);
+                        MMR3HeapFree(pEpFile->pTasksFreeHead);
+                    }
+                }
             }
         }
 
@@ -766,6 +775,12 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 #endif
 
     return rc;
+}
+
+static int pdmacFileEpRangesLockedDestroy(PAVLRFOFFNODECORE pNode, void *pvUser)
+{
+    AssertMsgFailed(("The locked ranges tree should be empty at that point\n"));
+    return VINF_SUCCESS;
 }
 
 static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
@@ -797,6 +812,9 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
     /* Free the cached data. */
     if (pEpFile->fCaching)
         pdmacFileEpCacheDestroy(pEpFile);
+
+    /* Destroy the locked ranges tree now. */
+    RTAvlrFileOffsetDestroy(pEpFile->AioMgr.pTreeRangesLocked, pdmacFileEpRangesLockedDestroy, NULL);
 
     RTFileClose(pEpFile->File);
 
