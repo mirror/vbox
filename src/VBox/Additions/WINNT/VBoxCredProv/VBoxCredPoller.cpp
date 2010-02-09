@@ -216,7 +216,7 @@ DECLCALLBACK(int) VBoxCredPoller::threadPoller(RTTHREAD ThreadSelf, void *pvUser
     do
     {
         int rc;
-        rc = VbglR3CredentialsAreAvailable();
+        rc = VbglR3CredentialsQueryAvailability();
         if (RT_FAILURE(rc))
         {
             if (rc == VERR_NOT_FOUND)

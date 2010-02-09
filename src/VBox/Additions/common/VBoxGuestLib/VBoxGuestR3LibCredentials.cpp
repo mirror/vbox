@@ -37,7 +37,7 @@
  * @returns IPRT status value; VINF_SUCCESS if credentials are available,
  *          VERR_NOT_FOUND if not. Otherwise an error is occured.
  */
-VBGLR3DECL(int) VbglR3CredentialsAreAvailable(void)
+VBGLR3DECL(int) VbglR3CredentialsQueryAvailability(void)
 {
     VMMDevCredentials Req;
     RT_ZERO(Req);
