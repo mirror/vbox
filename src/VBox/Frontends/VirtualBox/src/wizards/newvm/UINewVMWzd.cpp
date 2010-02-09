@@ -663,7 +663,6 @@ bool UINewVMWzdPage5::constructMachine()
     }
 
 
-    bool fExtHw = type.GetRecommendedExtHw();
     /* RAM size */
     m_Machine.SetMemorySize(field("ram").toInt());
 
@@ -684,30 +683,21 @@ bool UINewVMWzdPage5::constructMachine()
 
     /* Create default storage controllers */
     QString ideCtrName = VBoxVMSettingsHD::tr("IDE Controller");
-    QString floppyCtrName = VBoxVMSettingsHD::tr("Floppy Controller");
     KStorageBus ideBus = KStorageBus_IDE;
-    KStorageBus floppyBus = KStorageBus_Floppy;
 
+    // Add IDE controller
     m_Machine.AddStorageController(ideCtrName, ideBus);
 
-    if (fExtHw)
-    {
-        // Set IDE controller type to ICH6
-        CStorageController ctr = m_Machine.GetStorageControllerByName(ideCtrName);
-        ctr.SetControllerType(KStorageControllerType_ICH6);
+    // Set IDE controller type
+    CStorageController ctr = m_Machine.GetStorageControllerByName(ideCtrName);
+    KStorageControllerType storageControllerType = type.GetRecommendedStorageController();
 
-        // Turn on PAE
-        m_Machine.SetCpuProperty(KCpuPropertyType_PAE, true);
+    ctr.SetControllerType(storageControllerType);
 
-        // Add appropriate extra-data key
-        m_Machine.SetExtraData("VBoxInternal2/SupportExtHwProfile", "on");
-    }
-    else
-    {
-        // Add floppy controller only into regular hardware profiles
-        m_Machine.AddStorageController(floppyCtrName, floppyBus);
-    }
+    // Turn on PAE, if recommended
+    m_Machine.SetCpuProperty(KCpuPropertyType_PAE, type.GetRecommendedPae());
 
+    // Set recommended firmware type
     KFirmwareType fwType = type.GetRecommendedFirmware();
     m_Machine.SetFirmwareType(fwType);
 
@@ -741,14 +731,6 @@ bool UINewVMWzdPage5::constructMachine()
             m.AttachDevice(ideCtrName, 1, 0, KDeviceType_DVD, QString(""));
             if (!m.isOk())
                 vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_DVD, QString(), ideBus, 1, 0);
-
-            /* Attach empty Floppy Device */
-            if (!fExtHw)
-            {
-                m.AttachDevice(floppyCtrName, 0, 0, KDeviceType_Floppy, QString(""));
-                if (!m.isOk())
-                    vboxProblem().cannotAttachDevice(this, m, VBoxDefs::MediumType_Floppy, QString(), floppyBus, 0, 0);
-            }
 
             if (m.isOk())
             {

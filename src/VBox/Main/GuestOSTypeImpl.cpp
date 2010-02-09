@@ -34,6 +34,7 @@ GuestOSType::GuestOSType()
     , mHDDSize (0), mMonitorCount (0)
     , mNetworkAdapterType (NetworkAdapterType_Am79C973)
     , mNumSerialEnabled (0)
+    , mStorageControllerType(StorageControllerType_PIIX3)
 {
 }
 
@@ -72,19 +73,24 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
                            const char *aId, const char *aDescription,
                            VBOXOSTYPE aOSType, uint32_t aOSHint,
                            uint32_t aRAMSize, uint32_t aVRAMSize, uint32_t aHDDSize,
-                           NetworkAdapterType_T aNetworkAdapterType, uint32_t aNumSerialEnabled)
+                           NetworkAdapterType_T aNetworkAdapterType,
+                           uint32_t aNumSerialEnabled,
+                           StorageControllerType_T aStorageControllerType)
 {
 #if 0
     LogFlowThisFunc(("aFamilyId='%s', aFamilyDescription='%s', "
                       "aId='%s', aDescription='%s', "
                       "aType=%d, aOSHint=%x, "
                       "aRAMSize=%d, aVRAMSize=%d, aHDDSize=%d, "
-                      "aNetworkAdapterType=%d, aNumSerialEnabled=%d\n",
+                      "aNetworkAdapterType=%d, aNumSerialEnabled=%d, "
+                      "aStorageControllerType=%d\n",
                       aFamilyId, aFamilyDescription,
                       aId, aDescription,
                       aOSType, aOSHint,
                       aRAMSize, aVRAMSize, aHDDSize,
-                      aNetworkAdapterType, aNumSerialEnabled));
+                      aNetworkAdapterType,
+                      aNumSerialEnabled,
+                      aStorageControllerType));
 #endif
 
     ComAssertRet(aFamilyId && aFamilyDescription && aId && aDescription, E_INVALIDARG);
@@ -104,6 +110,7 @@ HRESULT GuestOSType::init (const char *aFamilyId, const char *aFamilyDescription
     unconst(mHDDSize) = aHDDSize;
     unconst(mNetworkAdapterType) = aNetworkAdapterType;
     unconst(mNumSerialEnabled) = aNumSerialEnabled;
+    unconst(mStorageControllerType) = aStorageControllerType;
 
     /* Confirm a successful initialization when it's the case */
     autoInitSpan.setSucceeded();
@@ -269,15 +276,15 @@ STDMETHODIMP GuestOSType::COMGETTER(AdapterType) (NetworkAdapterType_T *aNetwork
     return S_OK;
 }
 
-STDMETHODIMP GuestOSType::COMGETTER(RecommendedExtHw) (BOOL *aRecommendedExtHw)
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedPae) (BOOL *aRecommendedPae)
 {
-    CheckComArgOutPointerValid(aRecommendedExtHw);
+    CheckComArgOutPointerValid(aRecommendedPae);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* recommended h/w profile is constant during life time, no need to lock */
-    *aRecommendedExtHw = !!(mOSHint & VBOXOSHINT_EXTHW);
+    /* recommended PAE is constant during life time, no need to lock */
+    *aRecommendedPae = !!(mOSHint & VBOXOSHINT_PAE);
 
     return S_OK;
 }
@@ -294,5 +301,19 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedFirmware) (FirmwareType_T *aFirmw
 
     return S_OK;
 }
+
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedStorageController) (StorageControllerType_T * aStorageControllerType)
+{
+    CheckComArgOutPointerValid(aStorageControllerType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* storage controller type is constant during life time, no need to lock */
+    *aStorageControllerType = mStorageControllerType;
+
+    return S_OK;
+}
+
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
