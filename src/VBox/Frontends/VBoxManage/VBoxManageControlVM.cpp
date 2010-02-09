@@ -817,6 +817,56 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
+        /* Undocumented show guest statistics testcase. */
+        else if (   !strcmp(a->argv[1], "--showgueststats")
+                 || !strcmp(a->argv[1], "-showgueststats"))
+        {
+            /* guest is running; update IGuest */
+            ComPtr <IGuest> guest;
+
+            rc = console->COMGETTER(Guest)(guest.asOutParam());
+            if (SUCCEEDED(rc))
+            {
+                ULONG StatVal;
+
+                if (guest->GetStatistic(0, GuestStatisticType_SampleNumber, &StatVal) == S_OK)
+                    printf("Statistics sample:      %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &StatVal) == S_OK)
+                    printf("CPU load idle:          %d%%\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &StatVal) == S_OK)
+                    printf("CPU load kernel:        %d%%\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &StatVal) == S_OK)
+                    printf("CPU load user:          %d%%\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_Threads, &StatVal) == S_OK)
+                    printf("Nr. of threads:         %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_Threads, &StatVal) == S_OK)
+                    printf("Nr. of threads:         %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_Processes, &StatVal) == S_OK)
+                    printf("Nr. of processes:       %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_Handles, &StatVal) == S_OK)
+                    printf("Nr. of handles:         %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &StatVal) == S_OK)
+                    printf("Memory load:            %d\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &StatVal) == S_OK)
+                    printf("Total phys. memory:     %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &StatVal) == S_OK)
+                    printf("Available phys. memory: %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &StatVal) == S_OK)
+                    printf("Balloon size:           %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &StatVal) == S_OK)
+                    printf("Total memory commit:    %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &StatVal) == S_OK)
+                    printf("Kernel memory:          %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &StatVal) == S_OK)
+                    printf("Paged kernel mem:       %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &StatVal) == S_OK)
+                    printf("Locked kernel mem:      %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &StatVal) == S_OK)
+                    printf("System cache:          %dMB\n", StatVal);
+                if (guest->GetStatistic(0, GuestStatisticType_PageFileSize, &StatVal) == S_OK)
+                    printf("Page file size:        %dMB\n", StatVal);
+            }
+        }
         else if (!strcmp(a->argv[1], "teleport"))
         {
             Bstr        bstrHostname;
