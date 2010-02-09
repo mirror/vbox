@@ -699,7 +699,7 @@ size_t ScmStreamCountLines(PSCMSTREAM pStream)
  */
 int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
 {
-    AssertReturn(!pStream->fWriteOrRead, NULL);
+    AssertReturn(!pStream->fWriteOrRead, VERR_ACCESS_DENIED);
     if (RT_FAILURE(pStream->rc))
         return pStream->rc;
 
@@ -930,7 +930,7 @@ int ScmStreamPutLine(PSCMSTREAM pStream, const char *pchLine, size_t cchLine, SC
     {
         int rc = scmStreamGrowLines(pStream, iLine);
         if (RT_FAILURE(rc))
-            return NULL;
+            return rc;
     }
 
     pStream->paLines[iLine].cch    = off - pStream->paLines[iLine].off + cchLine;
@@ -1021,7 +1021,7 @@ int ScmStreamWrite(PSCMSTREAM pStream, const char *pchBuf, size_t cchBuf)
                     iLine = pStream->iLine;
                     pStream->paLines[iLine].cch    = off - pStream->paLines[iLine].off;
                     pStream->paLines[iLine].enmEol = SCMEOL_NONE;
-                    return NULL;
+                    return rc;
                 }
             }
 
