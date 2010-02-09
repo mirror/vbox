@@ -62,6 +62,7 @@
     <file alias="os_winxp_64.png">images/os_winxp_64.png</file>
     <file alias="os_xandros.png">images/os_xandros.png</file>
     <file alias="os_xandros_64.png">images/os_xandros_64.png</file>
+    <file alias="os_oracle.png">images/os_oracle.png</file>
     <file alias="hd_16px.png">images/hd_16px.png</file>
     <file alias="hd_disabled_16px.png">images/hd_disabled_16px.png</file>
     <file alias="hd_32px.png">images/hd_32px.png</file>
