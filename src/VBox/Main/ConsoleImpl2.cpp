@@ -113,20 +113,19 @@
 
 int DarwinSmcKey(char* aKey, uint32_t iKeySize)
 {
-    int rc;
     /*
-     * Code based on Amit Singh SMC reading code sample in OS X Book, see
-     * http://osxbook.com/book/bonus/chapter7/tpmdrmmyth/
+     * Method as described in Amit Singh's article:
+     *   http://osxbook.com/book/bonus/chapter7/tpmdrmmyth/
      */
     typedef struct {
         uint32_t   key;
-        uint8_t    __d0[22];
+        uint8_t    pad0[22];
         uint32_t   datasize;
-        uint8_t    __d1[10];
+        uint8_t    pad1[10];
         uint8_t    cmd;
-        uint32_t   __d2;
+        uint32_t   pad2;
         uint8_t    data[32];
-    } AppleSMCBuffer_t;
+    } AppleSMCBuffer;
 
 
     if (iKeySize < 65)
@@ -140,11 +139,11 @@ int DarwinSmcKey(char* aKey, uint32_t iKeySize)
     io_connect_t port = (io_connect_t)0;
     kern_return_t kr = IOServiceOpen(service, mach_task_self(), 0, &port);
     IOObjectRelease(service);
+
     if (kr != kIOReturnSuccess)
         return VERR_INTERNAL_ERROR;
 
-
-    AppleSMCBuffer_t inputStruct = { 0, {0}, 32, {0}, 5, }, outputStruct;
+    AppleSMCBuffer inputStruct = { 0, {0}, 32, {0}, 5, }, outputStruct;
     size_t outputStructCnt = sizeof(outputStruct);
 
     for (int i = 0; i < 2; i++)
@@ -427,7 +426,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Indicate whether 64-bit guests are supported or not. */
         /** @todo This is currently only forced off on 32-bit hosts only because it
          *        makes a lof of difference there (REM and Solaris performance).
-         */        
+         */
         BOOL fSupportsLongMode = false;
         hrc = host->GetProcessorFeature(ProcessorFeature_LongMode,
                                         &fSupportsLongMode);                        H();
