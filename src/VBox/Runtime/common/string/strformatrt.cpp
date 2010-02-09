@@ -357,7 +357,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                  * Fetch the argument.
                  * It's important that a signed value gets sign-extended up to 64-bit.
                  */
-                u.u64 = 0;
+                RT_ZERO(u);
                 if (fFlags & RTSTR_F_VALSIGNED)
                 {
                     switch (s_aTypes[i].cb)
