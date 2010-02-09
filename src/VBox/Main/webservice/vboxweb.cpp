@@ -268,7 +268,7 @@ public:
         : m_mutex(util::LOCKCLASS_OBJECTSTATE),
           m_cIdleThreads(0)
     {
-        RTSemEventCreate(&m_event);
+        RTSemEventMultiCreate(&m_event);
 
         // create cThreads threads
         for (size_t u = 0; u < cThreads; ++u)
@@ -291,11 +291,11 @@ public:
 
     ~SoapQ()
     {
-        RTSemEventDestroy(m_event);
+        RTSemEventMultiDestroy(m_event);
     }
 
     util::WriteLockHandle   m_mutex;
-    RTSEMEVENT              m_event;
+    RTSEMEVENTMULTI         m_event;
 
     std::list<SoapThread*>  m_llAllThreads;
     size_t                  m_cIdleThreads;
@@ -313,7 +313,7 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
     while (1)
     {
         // wait for something to happen
-        RTSemEventWait(pst->pQ->m_event, RT_INDEFINITE_WAIT);
+        RTSemEventMultiWait(pst->pQ->m_event, RT_INDEFINITE_WAIT);
 
         util::AutoWriteLock qlock(pst->pQ->m_mutex COMMA_LOCKVAL_SRC_POS);
         if (pst->pQ->m_llSocketsQ.size())
@@ -321,6 +321,13 @@ int fntSoapQueue(RTTHREAD pThread, void *pvThread)
             pst->soap->socket = pst->pQ->m_llSocketsQ.front();
             pst->pQ->m_llSocketsQ.pop_front();
             --pst->pQ->m_cIdleThreads;
+
+            // reset the multi event only if the queue is now empty; otherwise
+            // another thread will also wake up when we release the mutex and
+            // process another one
+            if (pst->pQ->m_llSocketsQ.size() == 0)
+                RTSemEventMultiReset(pst->pQ->m_event);
+
             qlock.release();
 
             WebLog("Thread %d is handling connection from IP=%lu.%lu.%lu.%lu socket=%d (%d threads idle)",
@@ -397,7 +404,7 @@ void beginProcessing()
 
             WebLog("Request %llu on socket %d queued for processing\n", i, s);
             // unblock one of the worker threads
-            RTSemEventSignal(soapq.m_event);
+            RTSemEventMultiSignal(soapq.m_event);
 
             // we have to process main event queue
             int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
