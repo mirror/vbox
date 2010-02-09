@@ -34,9 +34,10 @@
 /**
  * Checks whether user credentials are available to the guest or not.
  *
- * @returns true if credentials are available, false if not (or error occured).
+ * @returns IPRT status value; VINF_SUCCESS if credentials are available,
+ *          VERR_NOT_FOUND if not. Otherwise an error is occured.
  */
-VBGLR3DECL(bool) VbglR3CredentialsAreAvailable(void)
+VBGLR3DECL(int) VbglR3CredentialsAreAvailable(void)
 {
     VMMDevCredentials Req;
     RT_ZERO(Req);
@@ -44,8 +45,12 @@ VBGLR3DECL(bool) VbglR3CredentialsAreAvailable(void)
     Req.u32Flags |= VMMDEV_CREDENTIALS_QUERYPRESENCE;
 
     int rc = vbglR3GRPerform(&Req.header);
-    return RT_SUCCESS(rc)
-        && (Req.u32Flags & VMMDEV_CREDENTIALS_PRESENT) != 0;
+    if (RT_SUCCESS(rc))
+    {
+        if ((Req.u32Flags & VMMDEV_CREDENTIALS_PRESENT) == 0)
+            rc = VERR_NOT_FOUND;
+    }
+    return rc;
 }
 
 
