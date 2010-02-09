@@ -190,101 +190,101 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
 #endif
         //41??
 #ifdef ENOMSG
-        //case ENOMSG		42	/* No message of desired type */
+        //case ENOMSG           42      /* No message of desired type */
 #endif
 #ifdef EIDRM
-        //case EIDRM		43	/* Identifier removed */
+        //case EIDRM            43      /* Identifier removed */
 #endif
 #ifdef ECHRNG
-        //case ECHRNG		44	/* Channel number out of range */
+        //case ECHRNG           44      /* Channel number out of range */
 #endif
 #ifdef EL2NSYNC
-        //case EL2NSYNC	45	/* Level 2 not synchronized */
+        //case EL2NSYNC 45      /* Level 2 not synchronized */
 #endif
 #ifdef EL3HLT
-        //case EL3HLT		46	/* Level 3 halted */
+        //case EL3HLT           46      /* Level 3 halted */
 #endif
 #ifdef EL3RST
-        //case EL3RST		47	/* Level 3 reset */
+        //case EL3RST           47      /* Level 3 reset */
 #endif
 #ifdef ELNRNG
-        //case ELNRNG		48	/* Link number out of range */
+        //case ELNRNG           48      /* Link number out of range */
 #endif
 #ifdef EUNATCH
-        //case EUNATCH		49	/* Protocol driver not attached */
+        //case EUNATCH          49      /* Protocol driver not attached */
 #endif
 #ifdef ENOCSI
-        //case ENOCSI		50	/* No CSI structure available */
+        //case ENOCSI           50      /* No CSI structure available */
 #endif
 #ifdef EL2HLT
-        //case EL2HLT		51	/* Level 2 halted */
+        //case EL2HLT           51      /* Level 2 halted */
 #endif
 #ifdef EBADE
-        //case EBADE		52	/* Invalid exchange */
+        //case EBADE            52      /* Invalid exchange */
 #endif
 #ifdef EBADR
-        //case EBADR		53	/* Invalid request descriptor */
+        //case EBADR            53      /* Invalid request descriptor */
 #endif
 #ifdef EXFULL
-        //case EXFULL		54	/* Exchange full */
+        //case EXFULL           54      /* Exchange full */
 #endif
 #ifdef ENOANO
-        //case ENOANO		55	/* No anode */
+        //case ENOANO           55      /* No anode */
 #endif
 #ifdef EBADRQC
-        //case EBADRQC		56	/* Invalid request code */
+        //case EBADRQC          56      /* Invalid request code */
 #endif
 #ifdef EBADSLT
-        //case EBADSLT		57	/* Invalid slot */
+        //case EBADSLT          57      /* Invalid slot */
 #endif
         //case 58:
 #ifdef EBFONT
-        //case EBFONT		59	/* Bad font file format */
+        //case EBFONT           59      /* Bad font file format */
 #endif
 #ifdef ENOSTR
-        //case ENOSTR		60	/* Device not a stream */
+        //case ENOSTR           60      /* Device not a stream */
 #endif
 #ifdef ENODATA
         case VERR_NO_DATA:                          return ENODATA;
 #endif
 #ifdef ETIME
-        //case ETIME		62	/* Timer expired */
+        //case ETIME            62      /* Timer expired */
 #endif
 #ifdef ENOSR
-        //case ENOSR		63	/* Out of streams resources */
+        //case ENOSR            63      /* Out of streams resources */
 #endif
 #ifdef ENONET
         case VERR_NET_NO_NETWORK:                   return ENONET;
 #endif
 #ifdef ENOPKG
-        //case ENOPKG		65	/* Package not installed */
+        //case ENOPKG           65      /* Package not installed */
 #endif
 #ifdef EREMOTE
-        //case EREMOTE		66	/* Object is remote */
+        //case EREMOTE          66      /* Object is remote */
 #endif
 #ifdef ENOLINK
-        //case ENOLINK		67	/* Link has been severed */
+        //case ENOLINK          67      /* Link has been severed */
 #endif
 #ifdef EADV
-        //case EADV		68	/* Advertise error */
+        //case EADV             68      /* Advertise error */
 #endif
 #ifdef ESRMNT
-        //case ESRMNT		69	/* Srmount error */
+        //case ESRMNT           69      /* Srmount error */
 #endif
 #ifdef ECOMM
-        //case ECOMM		70	/* Communication error on send */
+        //case ECOMM            70      /* Communication error on send */
 #endif
 #ifdef EPROTO
-        //case EPROTO		71	/* Protocol error */
+        //case EPROTO           71      /* Protocol error */
 #endif
 #ifdef EMULTIHOP
-        //case EMULTIHOP	72	/* Multihop attempted */
+        //case EMULTIHOP        72      /* Multihop attempted */
 #endif
 #ifdef EDOTDOT
-        //case EDOTDOT		73	/* RFS specific error */
+        //case EDOTDOT          73      /* RFS specific error */
 #endif
 #ifdef EBADMSG
-        //case EBADMSG		74	/* Not a data message */
+        //case EBADMSG          74      /* Not a data message */
 #endif
 #ifdef EOVERFLOW
         //case VERR_TOO_MUCH_DATA:                    return EOVERFLOW;
@@ -296,22 +296,22 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         //case VERR_INVALID_HANDLE:                   return EBADFD;
 #endif
 #ifdef EREMCHG
-        //case EREMCHG		78	/* Remote address changed */
+        //case EREMCHG          78      /* Remote address changed */
 #endif
 #ifdef ELIBACC
-        //case ELIBACC		79	/* Can not access a needed shared library */
+        //case ELIBACC          79      /* Can not access a needed shared library */
 #endif
 #ifdef ELIBBAD
-        //case ELIBBAD		80	/* Accessing a corrupted shared library */
+        //case ELIBBAD          80      /* Accessing a corrupted shared library */
 #endif
 #ifdef ELIBSCN
-        //case ELIBSCN		81	/* .lib section in a.out corrupted */
+        //case ELIBSCN          81      /* .lib section in a.out corrupted */
 #endif
 #ifdef ELIBMAX
-        //case ELIBMAX		82	/* Attempting to link in too many shared libraries */
+        //case ELIBMAX          82      /* Attempting to link in too many shared libraries */
 #endif
 #ifdef ELIBEXEC
-        //case ELIBEXEC	83	/* Cannot exec a shared library directly */
+        //case ELIBEXEC 83      /* Cannot exec a shared library directly */
 #endif
 #ifdef EILSEQ
         case VERR_NO_TRANSLATION:                   return EILSEQ;
@@ -320,10 +320,10 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         //case VERR_INTERRUPTED:                      return ERESTART;
 #endif
 #ifdef ESTRPIPE
-        //case ESTRPIPE	86	/* Streams pipe error */
+        //case ESTRPIPE 86      /* Streams pipe error */
 #endif
 #ifdef EUSERS
-        //case EUSERS		87	/* Too many users */
+        //case EUSERS           87      /* Too many users */
 #endif
 #ifdef ENOTSOCK
         case VERR_NET_NOT_SOCKET:                   return ENOTSOCK;
@@ -410,22 +410,22 @@ RTDECL(int) RTErrConvertToErrno(int iErr)
         case VERR_NET_IN_PROGRESS:                  return EINPROGRESS;
 #endif
 #ifdef ESTALE
-        //case ESTALE		116	/* Stale NFS file handle */
+        //case ESTALE           116     /* Stale NFS file handle */
 #endif
 #ifdef EUCLEAN
-        //case EUCLEAN		117	/* Structure needs cleaning */
+        //case EUCLEAN          117     /* Structure needs cleaning */
 #endif
 #ifdef ENOTNAM
-        //case ENOTNAM		118	/* Not a XENIX named type file */
+        //case ENOTNAM          118     /* Not a XENIX named type file */
 #endif
 #ifdef ENAVAIL
-        //case ENAVAIL		119	/* No XENIX semaphores available */
+        //case ENAVAIL          119     /* No XENIX semaphores available */
 #endif
 #ifdef EISNAM
-        //case EISNAM		120	/* Is a named type file */
+        //case EISNAM           120     /* Is a named type file */
 #endif
 #ifdef EREMOTEIO
-        //case EREMOTEIO	121	/* Remote I/O error */
+        //case EREMOTEIO        121     /* Remote I/O error */
 #endif
 #ifdef EDQUOT
         //case VERR_DISK_FULL:                        return EDQUOT;

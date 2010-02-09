@@ -51,5 +51,3 @@ RTDECL(int) RTSha512FromString(char const *pszDigest, uint8_t pabDigest[RTSHA512
     return RTStrConvertHexBytes(RTStrStripL(pszDigest), &pabDigest[0], RTSHA512_HASH_SIZE, 0 /*fFlags*/);
 }
 
-
-

@@ -109,4 +109,3 @@ extern "C" DECLEXPORT(uintptr_t) SomeExportFunction5(void)
          + (uintptr_t)SomeExportFunction1(NULL) + (uintptr_t)&SomeExportFunction4;
 }
 
-

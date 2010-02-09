@@ -39,8 +39,8 @@
 #include <sys/syscall.h>
 #include <unistd.h>
 #ifndef __NR_clock_gettime
-# define __NR_timer_create	259
-# define __NR_clock_gettime	(__NR_timer_create+6)
+# define __NR_timer_create      259
+# define __NR_clock_gettime     (__NR_timer_create+6)
 #endif
 
 #include <iprt/time.h>

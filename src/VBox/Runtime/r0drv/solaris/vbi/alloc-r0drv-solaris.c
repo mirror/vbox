@@ -98,7 +98,7 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 
     /* Allocate physically contiguous page-aligned memory. */
     caddr_t virtAddr;
-    uint64_t phys = (unsigned)0xffffffff;	/* insist on below 4Gig */
+    uint64_t phys = (unsigned)0xffffffff;       /* insist on below 4Gig */
 
     virtAddr = vbi_contig_alloc(&phys, cb);
     if (virtAddr == NULL)

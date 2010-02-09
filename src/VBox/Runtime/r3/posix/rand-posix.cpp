@@ -138,4 +138,3 @@ RTDECL(int) RTRandAdvCreateSystemTruer(PRTRAND phRand) RT_NO_THROW
     return rtRandAdvPosixCreateSystem(phRand, "/dev/random");
 }
 
-

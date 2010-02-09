@@ -406,4 +406,3 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
     return VERR_UNRESOLVED_ERROR;
 }
 
-

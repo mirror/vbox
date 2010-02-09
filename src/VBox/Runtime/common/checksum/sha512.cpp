@@ -74,4 +74,3 @@ RTDECL(void) RTSha512Final(PRTSHA512CONTEXT pCtx, uint8_t pabDigest[32])
 }
 RT_EXPORT_SYMBOL(RTSha512Final);
 
-

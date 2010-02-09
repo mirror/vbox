@@ -123,5 +123,3 @@ RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax)
 }
 RT_EXPORT_SYMBOL(RTStrDupN);
 
-
-

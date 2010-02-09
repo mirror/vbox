@@ -636,4 +636,3 @@ RTDECL(int) RTLocalIpcSessionQueryGroupId(RTLOCALIPCSESSION hSession, PRTUID pUi
     return VERR_NOT_SUPPORTED;
 }
 
-

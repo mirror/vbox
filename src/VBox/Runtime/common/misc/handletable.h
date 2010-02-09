@@ -247,4 +247,3 @@ DECLINLINE(void) rtHandleTableUnlock(PRTHANDLETABLEINT pThis, PRTSPINLOCKTMP pTm
         RTSpinlockRelease(pThis->hSpinlock, pTmp);
 }
 
-

@@ -67,7 +67,7 @@ RTR0DECL(bool) RTR0MemUserIsValidAddr(RTR3PTR R3Ptr)
 
 
 RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
-{                                   
+{
     /** @todo this is all wrong, see RTR0MemUserIsValidAddr. */
     return (uintptr_t)pv >= UINT32_C(0x20000000); /* 512MB */
 }

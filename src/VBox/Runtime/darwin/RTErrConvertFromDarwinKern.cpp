@@ -47,4 +47,3 @@ RTDECL(int) RTErrConvertFromDarwinKern(int iNativeCode)
     return RTErrConvertFromDarwin(iNativeCode);
 }
 
-

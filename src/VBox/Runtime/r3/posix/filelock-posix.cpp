@@ -141,4 +141,3 @@ RTR3DECL(int)  RTFileUnlock(RTFILE File, int64_t offLock, uint64_t cbLock)
     return RTErrConvertFromErrno(iErr);
 }
 
-

@@ -474,7 +474,7 @@ RT_EXPORT_SYMBOL(RTHeapSimpleAllocZ);
  * @returns NULL on failure.
  *
  * @param   pHeapInt    The heap.
- * @param   cb     	Size of the memory block to allocate.
+ * @param   cb          Size of the memory block to allocate.
  * @param   uAlignment  The alignment specifications for the allocated block.
  */
 static PRTHEAPSIMPLEBLOCK rtHeapSimpleAllocBlock(PRTHEAPSIMPLEINTERNAL pHeapInt, size_t cb, size_t uAlignment)

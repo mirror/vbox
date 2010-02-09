@@ -48,5 +48,3 @@ RTDECL(RTTHREAD) RTThreadSelf(void)
 }
 */
 
-
-

@@ -956,4 +956,3 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
     return 0;
 }
 
-

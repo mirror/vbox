@@ -505,7 +505,7 @@ RT_EXPORT_SYMBOL(RTHeapOffsetAllocZ);
  * @returns NULL on failure.
  *
  * @param   pHeapInt    The heap.
- * @param   cb     	Size of the memory block to allocate.
+ * @param   cb          Size of the memory block to allocate.
  * @param   uAlignment  The alignment specifications for the allocated block.
  */
 static PRTHEAPOFFSETBLOCK rtHeapOffsetAllocBlock(PRTHEAPOFFSETINTERNAL pHeapInt, size_t cb, size_t uAlignment)

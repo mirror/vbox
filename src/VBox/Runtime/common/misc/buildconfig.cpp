@@ -82,4 +82,3 @@ RTDECL(uint32_t) RTBldCfgVersionBuild(void)
 }
 #endif
 
-
