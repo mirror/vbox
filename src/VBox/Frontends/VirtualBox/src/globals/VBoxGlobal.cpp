@@ -4677,6 +4677,8 @@ void VBoxGlobal::init()
         {"Ubuntu_64",       ":/os_ubuntu_64.png"},
         {"Xandros",         ":/os_xandros.png"},
         {"Xandros_64",      ":/os_xandros_64.png"},
+        {"Oracle",          ":/os_linux_other.png"},
+        {"Oracle_64",       ":/os_linux_other.png"},
         {"Linux",           ":/os_linux_other.png"},
         {"FreeBSD",         ":/os_freebsd.png"},
         {"FreeBSD_64",      ":/os_freebsd_64.png"},
