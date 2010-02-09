@@ -830,39 +830,39 @@ int handleControlVM(HandlerArg *a)
                 ULONG StatVal;
 
                 if (guest->GetStatistic(0, GuestStatisticType_SampleNumber, &StatVal) == S_OK)
-                    printf("Statistics sample:      %d\n", StatVal);
+                    RTPrintf("Statistics sample:      %u\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &StatVal) == S_OK)
-                    printf("CPU load idle:          %d%%\n", StatVal);
+                    RTPrintf("CPU load idle:          %u%%\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &StatVal) == S_OK)
-                    printf("CPU load kernel:        %d%%\n", StatVal);
+                    RTPrintf("CPU load kernel:        %u%%\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &StatVal) == S_OK)
-                    printf("CPU load user:          %d%%\n", StatVal);
+                    RTPrintf("CPU load user:          %u%%\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Threads, &StatVal) == S_OK)
-                    printf("Nr. of threads:         %d\n", StatVal);
+                    RTPrintf("Nr. of threads:         %u\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Processes, &StatVal) == S_OK)
-                    printf("Nr. of processes:       %d\n", StatVal);
+                    RTPrintf("Nr. of processes:       %u\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_Handles, &StatVal) == S_OK)
-                    printf("Nr. of handles:         %d\n", StatVal);
+                    RTPrintf("Nr. of handles:         %u\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &StatVal) == S_OK)
-                    printf("Memory load:            %d\n", StatVal);
+                    RTPrintf("Memory load:            %u\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &StatVal) == S_OK)
-                    printf("Total phys. memory:     %dMB\n", StatVal);
+                    RTPrintf("Total phys. memory:     %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &StatVal) == S_OK)
-                    printf("Available phys. memory: %dMB\n", StatVal);
+                    RTPrintf("Available phys. memory: %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &StatVal) == S_OK)
-                    printf("Balloon size:           %dMB\n", StatVal);
+                    RTPrintf("Balloon size:           %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &StatVal) == S_OK)
-                    printf("Total memory commit:    %dMB\n", StatVal);
+                    RTPrintf("Total memory commit:    %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &StatVal) == S_OK)
-                    printf("Kernel memory:          %dMB\n", StatVal);
+                    RTPrintf("Kernel memory:          %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &StatVal) == S_OK)
-                    printf("Paged kernel mem:       %dMB\n", StatVal);
+                    RTPrintf("Paged kernel mem:       %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &StatVal) == S_OK)
-                    printf("Locked kernel mem:      %dMB\n", StatVal);
+                    RTPrintf("Locked kernel mem:      %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &StatVal) == S_OK)
-                    printf("System cache:          %dMB\n", StatVal);
+                    RTPrintf("System cache:          %uMB\n", StatVal);
                 if (guest->GetStatistic(0, GuestStatisticType_PageFileSize, &StatVal) == S_OK)
-                    printf("Page file size:        %dMB\n", StatVal);
+                    RTPrintf("Page file size:        %uMB\n", StatVal);
             }
         }
         else if (!strcmp(a->argv[1], "teleport"))
