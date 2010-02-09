@@ -6,7 +6,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -25,28 +25,37 @@
 # "wsdl2h" and "soapcpp2" executables on your PATH somewhere.
 
 #
-# Here's a temporary outline how all this works.
-
+# Here's an overview how all this works. It's complicated. Essentially,
+# lots of files get generated automatically from our XML XIDL file that
+# describes the VirtualBox API (../idl/VirtualBox.xidl); as a result,
+# no manual coding is necessary when the API changes. All generated
+# web service code gets adjusted automatically.
+#
+# In more detail:
+#
 # 1) We use xsltproc and websrv-wsdl.xsl to generate a WSDL file from
-#    our XML IDL file (../idl/VirtualBox.xidl). This WSDL describes the
-#    web service to third-party clients; for example, one can feed it to
-#    perl and thus easily write a short script that connects to the web
-#    service properly.
+#    our XML IDL file. WSDL (Web Service Description language) is an XML
+#    industry standard that publicly describes a web service.
+#    So, the WSDL generated here describes the VirtualBox web
+#    service to third-party clients; for example, one can feed it to
+#    Java or Perl or some other toolkit that understands WSDL and thus
+#    easily write a short script that connects to the web service properly.
 #    This WSDL file ends up in $(VBOXWEB_OUT_DIR)/vboxweb.wsdl.
 #
-# 2) We use xsltproc and websrv-gsoapH.xsl to generate a gSoap header
-#    file: $(VBOXWEB_OUT_DIR)/gsoapH_from_xslt.h.
-# 	 This file looks like a C header file, but really isn't meant
+# 2) We use xsltproc and websrv-gsoapH.xsl to generate a so-called
+#    "gSoap header file": $(VBOXWEB_OUT_DIR)/gsoapH_from_xslt.h.
+#    This file looks like a C header file, but really isn't meant
 #    to be included by a C compiler. Instead, it just happens to be the
-#    format that gSOAP uses to specify SOAP interfaces instead of WSDL
-#    (apparently because gSOAP was written before the advent of WSDL).
+#    format that gSOAP uses to specify SOAP interfaces instead of WSDL.
+#    (The reason for this appears to be that gSOAP predates WSDL and
+#    thus needed some format to describe the syntax of a web service.)
 #
-#	 Note that gSOAP comes with its own WSDL-to-gsoap.h converter, but
-#    the readme mentions some funny license restrictions, so instead we
+#	 Note that gSOAP now also comes with its own WSDL-to-gsoap.h converter,
+#    but the readme mentions some funny license restrictions, so instead we
 #    have our own converter in XSLT.
 #
-# 3) We then feed that header file to gsoap's soapcpp2, which generates
-#    a ton of files in $(VBOXWEB_OUT_DIR), most importantly:
+# 3) We then feed that pseudo-header file to gSOAP's soapcpp2 compiler,
+#    which generates a ton of files in $(VBOXWEB_OUT_DIR), most importantly:
 #
 #    SOAP_CLIENT_H = $(VBOXWEB_OUT_DIR)/soapStub.h (header file for webservice clients)
 #    SOAP_SERVER_H = $(VBOXWEB_OUT_DIR)/soapH.h (header file for webservice servers)
@@ -57,9 +66,9 @@
 #    code generation via XSLT comes in:
 #
 # 4) We use xsltproc to generate tons of c++ code directly from the XIDL that
-#    maps each soap method to our COM methods. This large c++ file is
+#    maps each SOAP method to our COM methods. This large C++ file is
 #    $(VBOXWEB_OUT_DIR)/methodmaps.cpp. The actual webservice executable (vboxwebsrv,
-#    which acts as an http server) is composed of this file, plus hard-coded
+#    which acts as an HTTP server) is composed of this file, plus hard-coded
 #    method implementations in vboxweb.cpp, plus gSOAP library code for the HTTP
 #    server.
 #

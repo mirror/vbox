@@ -5,8 +5,10 @@
     websrv-typemap.xsl:
         XSLT stylesheet that generates a typemap file from
         VirtualBox.xidl for use with the gSOAP compilers.
+        See webservice/Makefile.kmk for an overview of all the things
+        generated for the webservice.
 
-     Copyright (C) 2006-2007 Sun Microsystems, Inc.
+     Copyright (C) 2006-2010 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
