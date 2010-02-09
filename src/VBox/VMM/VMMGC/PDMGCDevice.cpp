@@ -586,21 +586,6 @@ extern DECLEXPORT(const PDMPCIHLPRC) g_pdmRCPciHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMHPETHLPRC,pfnLock} */
-static DECLCALLBACK(int) pdmRCHpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return pdmLockEx(pDevIns->Internal.s.pVMRC, rc);
-}
-
-
-/** @interface_method_impl{PDMHPETHLPRC,pfnUnlock} */
-static DECLCALLBACK(void) pdmRCHpetHlp_Unlock(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    pdmUnlock(pDevIns->Internal.s.pVMRC);
-}
-
 
 /**
  * The Raw-Mode Context HPET Helper Callbacks.
@@ -608,8 +593,6 @@ static DECLCALLBACK(void) pdmRCHpetHlp_Unlock(PPDMDEVINS pDevIns)
 extern DECLEXPORT(const PDMHPETHLPRC) g_pdmRCHpetHlp =
 {
     PDM_HPETHLPRC_VERSION,
-    pdmRCHpetHlp_Lock,
-    pdmRCHpetHlp_Unlock,
     PDM_HPETHLPRC_VERSION, /* the end */
 };
 
@@ -784,4 +767,3 @@ static void pdmRCIoApicSetIrq(PVM pVM, int iIrq, int iLevel)
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
 }
-

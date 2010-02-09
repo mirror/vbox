@@ -621,30 +621,12 @@ extern DECLEXPORT(const PDMPCIHLPR0) g_pdmR0PciHlp =
  * @{
  */
 
-/** @interface_method_impl{PDMHPETHLPR0,pfnLock} */
-static DECLCALLBACK(int) pdmR0HpetHlp_Lock(PPDMDEVINS pDevIns, int rc)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    return pdmLockEx(pDevIns->Internal.s.pVMR0, rc);
-}
-
-
-/** @interface_method_impl{PDMHPETHLPR0,pfnUnlock} */
-static DECLCALLBACK(void) pdmR0HpetHlp_Unlock(PPDMDEVINS pDevIns)
-{
-    PDMDEV_ASSERT_DEVINS(pDevIns);
-    pdmUnlock(pDevIns->Internal.s.pVMR0);
-}
-
-
 /**
  * The Ring-0 HPET Helper Callbacks.
  */
 extern DECLEXPORT(const PDMHPETHLPR0) g_pdmR0HpetHlp =
 {
     PDM_HPETHLPR0_VERSION,
-    pdmR0HpetHlp_Lock,
-    pdmR0HpetHlp_Unlock,
     PDM_HPETHLPR0_VERSION, /* the end */
 };
 
@@ -817,4 +799,3 @@ static void pdmR0IoApicSetIrq(PVM pVM, int iIrq, int iLevel)
             AssertMsgFailed(("We're out of devhlp queue items!!!\n"));
     }
 }
-
