@@ -188,7 +188,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 #else
             struct m_tag *t;
             STAM_PROFILE_START(&pData->StatALIAS_output, b);
-            if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+            if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
                 rc = LibAliasOut((struct libalias *)&t[1], mtod(m, char *),
                                  m_length(m, NULL));
             else
@@ -206,11 +206,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
         memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-        if_output(pData, so, m);
-#else
         if_encap(pData, ETH_P_IP, m, urg? ETH_ENCAP_URG : 0);
-#endif
         goto done;
      }
 
@@ -236,7 +232,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
         int mhlen, firstlen = len;
         struct mbuf **mnext = &m->m_nextpkt;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-        uint8_t *buf; /* intermediate buffer we'll use for copy from orriginal packet*/
+        char *buf; /* intermediate buffer we'll use for copy from orriginal packet */
 #endif
         {
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
@@ -268,7 +264,7 @@ ip_output0(PNATState pData, struct socket *so, struct mbuf *m0, int urg)
 
             }
 
-            if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
+            if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
                 rcLa = LibAliasOut((struct libalias *)&t[1], tmpbuf, tmplen);
             else
                 rcLa = LibAliasOut(pData->proxy_alias, tmpbuf, tmplen);
@@ -389,11 +385,7 @@ sendorfree:
 #endif
                 memcpy(eh->h_source, eth_dst, ETH_ALEN);
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-                if_output(pData, so, m);
-#else
                 if_encap(pData, ETH_P_IP, m, 0);
-#endif
             }
             else
             {

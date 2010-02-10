@@ -646,33 +646,25 @@ sorecvfrom(PNATState pData, struct socket *so)
         len = sizeof(struct udpiphdr) + ETH_HLEN;
         len += n;
 
+        size = MCLBYTES;
         if (len < MSIZE)
-        {
             size = MCLBYTES;
-        }
         else if (len < MCLBYTES)
-        {
             size = MCLBYTES;
-        }
         else if (len < MJUM9BYTES)
-        {
             size = MJUM9BYTES;
-        }
         else if (len < MJUM16BYTES)
-        {
             size = MJUM16BYTES;
-        }
         else
-        {
             AssertMsgFailed(("Unsupported size"));
-        }
+
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
         m->m_data += ETH_HLEN;
         m->m_pkthdr.header = mtod(m, void *);
         m->m_data += sizeof(struct udpiphdr);
         ret = recvfrom(so->s, mtod(m, char *), n, 0,
                             (struct sockaddr *)&addr, &addrlen);
-        /* @todo (r=vvl) check which flags and type should be passed */
+        /* @todo (vvl) check which flags and type should be passed */
 #endif
         m->m_len = ret;
         if (ret < 0)
@@ -750,7 +742,7 @@ sosendto(PNATState pData, struct socket *so, struct mbuf *m)
     struct sockaddr_in host_addr;
 #endif
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-    uint8_t *buf;
+    caddr_t buf;
     int mlen;
 #endif
 

@@ -125,19 +125,31 @@ static int tftp_send_oack(PNATState pData,
     struct tftp_t *tp;
     int n = 0;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
+#else
+    m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR);
+#endif
     if (!m)
         return -1;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     memset(m->m_data, 0, m->m_size);
-
     m->m_data += if_maxlinkhdr;
+#else
+    m->m_pkthdr.header = mtod(m, void *);
+#endif
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 
     tp->tp_op = RT_H2N_U16_C(TFTP_OACK);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%s", key) + 1;
     n += RTStrPrintf((char *)tp->x.tp_buf + n, M_FREEROOM(m), "%u", value) + 1;
+#else
+    n += RTStrPrintf((char *)tp->x.tp_buf + n, M_TRAILINGSPACE(m), "%s", key) + 1;
+    n += RTStrPrintf((char *)tp->x.tp_buf + n, M_TRAILINGSPACE(m), "%u", value) + 1;
+#endif
 
     saddr.sin_addr = recv_tp->ip.ip_dst;
     saddr.sin_port = recv_tp->udp.uh_dport;
@@ -152,8 +164,6 @@ static int tftp_send_oack(PNATState pData,
     return 0;
 }
 
-
-
 static int tftp_send_error(PNATState pData,
                            struct tftp_session *spt,
                            u_int16_t errorcode, const char *msg,
@@ -164,13 +174,20 @@ static int tftp_send_error(PNATState pData,
     struct tftp_t *tp;
     int nobytes;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
+#else
+    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+#endif
     if (!m)
         return -1;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     memset(m->m_data, 0, m->m_size);
-
     m->m_data += if_maxlinkhdr;
+#else
+    m->m_pkthdr.header = mtod(m, void *);
+#endif
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 
@@ -213,13 +230,20 @@ static int tftp_send_data(PNATState pData,
     if (block_nr < 1)
         return -1;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m = m_get(pData);
+#else
+    if ((m = m_getcl(pData, M_DONTWAIT, MT_HEADER, M_PKTHDR)) == NULL)
+#endif
     if (!m)
         return -1;
 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     memset(m->m_data, 0, m->m_size);
-
     m->m_data += if_maxlinkhdr;
+#else
+    m->m_pkthdr.header = mtod(m, void *);
+#endif
     tp = (void *)m->m_data;
     m->m_data += sizeof(struct udpiphdr);
 

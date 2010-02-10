@@ -397,18 +397,18 @@ int sscanf(const char *s, const char *format, ...);
 #endif /*VBOX_SLIRP_ALIAS*/
 
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
-/* @todo might be useful to make it configurable,
- * especially in terms of Intnet behind NAT
+/**
+ * @todo might be useful to make it configurable, especially in terms of Intnet behind NAT
  */
 # define maxusers 32
 # define max_protohdr 0
-/* @todo (r=vvl) for now ignore value,
- * latter here should be fetching of tuning parameters entered
+/**
+ * @todo (vvl) for now ignore these values, later perhaps initialize tuning parameters
  */
 # define TUNABLE_INT_FETCH(name, pval) do { } while (0)
-# define SYSCTL_PROC(a0, a1, a2, a3, a4, a5, a6, a7, a8)
-# define SYSCTL_STRUCT(a0, a1, a2, a3, a4, a5, a6)
-# define SYSINIT(a0, a1, a2, a3, a4)
+# define SYSCTL_PROC(a0, a1, a2, a3, a4, a5, a6, a7, a8) const int dummy_ ## a6 = 0
+# define SYSCTL_STRUCT(a0, a1, a2, a3, a4, a5, a6) const int dummy_ ## a5 = 0
+# define SYSINIT(a0, a1, a2, a3, a4) const int dummy_ ## a3 = 0
 # define sysctl_handle_int(a0, a1, a2, a3) 0
 # define EVENTHANDLER_INVOKE(a) do{}while(0)
 # define EVENTHANDLER_REGISTER(a0, a1, a2, a3) do{}while(0)

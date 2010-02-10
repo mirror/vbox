@@ -374,26 +374,17 @@ send:
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
         m = m_get(pData);
 #else
+        size = MCLBYTES;
         if ((len + hdrlen + ETH_HLEN) < MSIZE)
-        {
             size = MCLBYTES;
-        }
         else if ((len + hdrlen + ETH_HLEN) < MCLBYTES)
-        {
             size = MCLBYTES;
-        }
         else if((len + hdrlen + ETH_HLEN) < MJUM9BYTES)
-        {
             size = MJUM9BYTES;
-        }
         else if ((len + hdrlen + ETH_HLEN) < MJUM16BYTES)
-        {
             size = MJUM16BYTES;
-        }
         else
-        {
             AssertMsgFailed(("Unsupported size"));
-        }
         m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
 #endif
         if (m == NULL)

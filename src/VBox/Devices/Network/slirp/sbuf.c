@@ -78,7 +78,7 @@ sbappend(PNATState pData, struct socket *so, struct mbuf *m)
     int ret = 0;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     int mlen = 0;
-    uint8_t *buf = NULL;
+    caddr_t buf = NULL;
 #endif
 
     STAM_PROFILE_START(&pData->StatIOSBAppend_pf, a);

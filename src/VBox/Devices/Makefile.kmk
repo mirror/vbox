@@ -825,6 +825,7 @@ VBOX_SLIRP_SOURCES = \
 	Network/slirp/tcp_timer.c \
 	Network/slirp/udp.c \
 	Network/slirp/dnsproxy/hash.c \
+	Network/slirp/tftp.c \
 	Network/slirp/dnsproxy/dnsproxy.c
 
 ifdef VBOX_WITH_SLIRP_BSD_MBUF
@@ -836,11 +837,9 @@ ifdef VBOX_WITH_SLIRP_BSD_MBUF
  	Network/slirp/bsd/$(VBOX_SLIRP_BSD_ARCH)/in_cksum.c
 else
 # some notes dnsproxy will probably deprecate
-# tftp.c is temporally out of global slirp section
  VBOX_SLIRP_SOURCES += \
  	Network/slirp/mbuf.c \
-	Network/slirp/cksum.c \
-	Network/slirp/tftp.c
+	Network/slirp/cksum.c
 endif
 
 VBOX_SLIRP_ALIAS_SOURCES = \

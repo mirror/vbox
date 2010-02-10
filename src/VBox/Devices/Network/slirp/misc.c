@@ -129,6 +129,7 @@ struct uma_zone
 {
     uint32_t magic;
     PNATState pData; /* to minimize changes in the rest of UMA emulation code */
+    RTCRITSECT csZone;
     const char *name;
     size_t size; /* item size */
     ctor_t pfCtor;
@@ -149,9 +150,10 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     int size, uint8_t *pflags, int wait)
 {
     struct item *it;
-    if (    (zone->max_items != 0 && zone->cur_items >= zone->max_items)
+    RTCritSectEnter(&zone->csZone);
+    if (   (zone->max_items != 0 && zone->cur_items >= zone->max_items)
         || (zone->max_items == 0 && !LIST_EMPTY(&zone->free_items))
-    )
+        )
     {
         /*
          * @todo (r=vvl) here should be some
@@ -159,17 +161,22 @@ static void *slirp_uma_alloc(uma_zone_t zone,
          * breakthrough barrier
          */
         if (LIST_EMPTY(&zone->free_items))
+        {
+            RTCritSectLeave(&zone->csZone);
             return NULL;
+        }
         it = LIST_FIRST(&zone->free_items);
         LIST_REMOVE(it, list);
         LIST_INSERT_HEAD(&zone->used_items, it, list);
         goto allocated;
     }
+
     /*@todo 'Z' should be depend on flag */
     it = RTMemAllocZ(sizeof(struct item) + zone->size);
     if (it == NULL)
     {
         Log(("NAT: uma no memory"));
+        RTCritSectLeave(&zone->csZone);
         return NULL;
     }
     it->magic = ITEM_MAGIC;
@@ -180,6 +187,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     allocated:
     if (zone->pfInit)
         zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
+    RTCritSectLeave(&zone->csZone);
     return (void *)&it[1];
 }
 
@@ -191,9 +199,12 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
     it = &((struct item *)item)[-1];
     Assert(it->magic == ITEM_MAGIC);
     zone = it->zone;
+    RTCritSectEnter(&zone->csZone);
     Assert(zone->magic == ZONE_MAGIC);
     LIST_REMOVE(it, list);
     LIST_INSERT_HEAD(&zone->free_items, it, list);
+    zone->cur_items--;
+    RTCritSectLeave(&zone->csZone);
 }
 
 uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
@@ -211,6 +222,7 @@ uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
     zone->pfFini = fini;
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
+    RTCritSectInit(&zone->csZone);
     return zone;
 
 }
@@ -238,6 +250,7 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
     zone->size = master->size;
+    RTCritSectInit(&zone->csZone);
     return zone;
 }
 void uma_zone_set_max(uma_zone_t zone, int max)
@@ -255,9 +268,10 @@ void uma_zone_set_freef(uma_zone_t zone, uma_free_t pfFree)
 
 uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
 {
-    /*@todo (r-vvl) this function supposed to work with special zone storing
+    /*@todo (vvl) this function supposed to work with special zone storing
     reference counters */
     struct item *it = (struct item *)mem; /* 1st element */
+    Assert(mem != NULL);
     Assert(zone->magic == ZONE_MAGIC);
     /* for returning pointer to counter we need get 0 elemnt */
     Assert(it[-1].magic == ITEM_MAGIC);
@@ -269,9 +283,11 @@ void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
     Assert(zone->magic == ZONE_MAGIC);
     if (zone->pfAlloc == NULL)
         return NULL;
+    RTCritSectEnter(&zone->csZone);
     mem = zone->pfAlloc(zone, zone->size, NULL, 0);
     if (zone->pfCtor)
         zone->pfCtor(zone->pData, mem, zone->size, args, M_DONTWAIT);
+    RTCritSectLeave(&zone->csZone);
     return mem;
 }
 
@@ -287,11 +303,13 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     if (zone->pfFree == NULL)
         return;
     Assert((mem));
+    RTCritSectEnter(&zone->csZone);
     it = &((struct item *)mem)[-1];
     if (it->magic != ITEM_MAGIC)
     {
         Log(("NAT:UMA: %p seems to be allocated on heap ... freeing\n", mem));
         RTMemFree(mem);
+        RTCritSectLeave(&zone->csZone);
         return;
     }
     Assert((zone->magic == ZONE_MAGIC && zone == it->zone));
@@ -299,6 +317,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     if (zone->pfDtor)
         zone->pfDtor(zone->pData, mem, zone->size, flags);
     zone->pfFree(mem,  0, 0);
+    RTCritSectLeave(&zone->csZone);
 }
 int uma_zone_exhausted_nolock(uma_zone_t zone)
 {
@@ -319,4 +338,47 @@ void *uma_zalloc(uma_zone_t zone, int len)
 {
     return NULL;
 }
-#endif
+
+void *slirp_ext_m_get(PNATState pData, uint8_t *pkt, size_t pkt_len)
+{
+    struct mbuf *m;
+    size_t size = MCLBYTES;
+    if (pkt_len < MSIZE)
+        size = MCLBYTES;
+    else if (pkt_len < MCLBYTES)
+        size = MCLBYTES;
+    else if (pkt_len < MJUM9BYTES)
+        size = MJUM9BYTES;
+    else if (pkt_len < MJUM16BYTES)
+        size = MJUM16BYTES;
+    else
+        AssertMsgFailed(("Unsupported size"));
+
+    m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
+    m->m_len = pkt_len ;
+    memcpy(m->m_data, pkt, pkt_len);
+    return (void *)m;
+}
+
+void slirp_ext_m_free(PNATState pData, void *arg)
+{
+    struct mbuf *m = (struct mbuf *)arg;
+    m_free(pData, m);
+}
+
+static void zone_destroy(uma_zone_t zone)
+{
+    RTCritSectDelete(&zone->csZone);
+    RTMemFree(zone);
+}
+void m_fini(PNATState pData)
+{
+    zone_destroy(pData->zone_mbuf);
+    zone_destroy(pData->zone_clust);
+    zone_destroy(pData->zone_pack);
+    zone_destroy(pData->zone_jumbop);
+    zone_destroy(pData->zone_jumbo9);
+    zone_destroy(pData->zone_jumbo16);
+    /*@todo do finalize here.*/
+}
+#endif /* VBOX_WITH_SLIRP_BSD_MBUF */

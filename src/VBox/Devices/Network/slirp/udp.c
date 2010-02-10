@@ -180,14 +180,12 @@ udp_input(PNATState pData, register struct mbuf *m, int iphlen)
     /*
      *  handle TFTP
      */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     if (   uh->uh_dport == RT_H2N_U16_C(TFTP_SERVER)
         && CTL_CHECK(RT_N2H_U32(ip->ip_dst.s_addr), CTL_TFTP))
     {
         tftp_input(pData, m);
         goto done;
     }
-#endif
 
     /*
      * Locate pcb for datagram.
