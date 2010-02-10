@@ -1663,7 +1663,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
         while (pSet->cFreePages < cPages)
         {
             RTSemFastMutexRelease(pGMM->Mtx);
-            int rc = gmmR0AllocateOneChunk(pGMM, pSet, NIL_GVM_HANDLE);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM);
             int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
             AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
@@ -2280,6 +2280,7 @@ static void gmmR0FreeChunk(PGMM pGMM, PGVM pGVM, PGMMCHUNK pChunk)
     if (pChunk->cMappings)
     {
         /** @todo R0 -> VM request */
+        /* The chunk can be owned by more than one VM if fBoundMemoryMode is false! */
     }
     else
     {
