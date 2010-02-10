@@ -75,8 +75,8 @@ RT_C_DECLS_BEGIN
 #endif
 
 
-/** The chunk shift. (2^20 = 1 MB) */
-#define GMM_CHUNK_SHIFT                 20
+/** The chunk shift. (2^21 = 2 MB) */
+#define GMM_CHUNK_SHIFT                 21
 /** The allocation chunk size. */
 #define GMM_CHUNK_SIZE                  (1U << GMM_CHUNK_SHIFT)
 /** The allocation chunk size in pages. */
