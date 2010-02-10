@@ -663,10 +663,16 @@ GMMR0DECL(int) GMMR0Init(void)
 #else
 # ifdef RT_OS_WINDOWS
         pGMM->fLegacyAllocationMode = false;
+#  if ARCH_BITS == 32
+        /* Don't reuse possibly partial chunks because of the virtual address space limitation. */
+        pGMM->fBoundMemoryMode = true;
+#  else
+        pGMM->fBoundMemoryMode = false;
+#  endif
 # else
         pGMM->fLegacyAllocationMode = true;
-# endif
         pGMM->fBoundMemoryMode = true;
+# endif
 #endif
 
         /*
