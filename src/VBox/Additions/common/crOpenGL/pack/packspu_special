@@ -94,3 +94,4 @@ FramebufferTexture3DEXT
 FramebufferRenderbufferEXT
 CheckFramebufferStatusEXT
 BindTexture
+DeleteTextures

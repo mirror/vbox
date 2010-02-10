@@ -491,7 +491,7 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
         case GL_AUX3:
             if (g->framebufferobject.drawFB)
             {
-                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is active");
+                crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalid mode while fbo is active");
                 return;
             }
             break;
@@ -500,7 +500,7 @@ void STATE_APIENTRY crStateDrawBuffer (GLenum mode)
             {
                 if (!g->framebufferobject.drawFB)
                 {
-                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalud mode while fbo is inactive");
+                    crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "glDrawBuffer invalid mode while fbo is inactive");
                     return;
                 }
             }
