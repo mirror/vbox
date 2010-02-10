@@ -181,7 +181,11 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
             {
                 m0 = icm->im_m;
                 ip0 = mtod(m0, struct ip *);
-                AssertRelease(ip0->ip_p == IPPROTO_ICMP);
+                if (ip0->ip_p != IPPROTO_ICMP)
+                {
+                    /* try next item */
+                    continue;
+                }
                 icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
                 if (  (   (icp->icmp_type != ICMP_ECHO && ip->ip_src.s_addr == ip0->ip_dst.s_addr)
                        || (icp->icmp_type == ICMP_ECHO && ip->ip_dst.s_addr == ip0->ip_dst.s_addr))
