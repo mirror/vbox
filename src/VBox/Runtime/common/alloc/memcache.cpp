@@ -303,7 +303,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
 {
     RTMEMCACHEINT *pThis = hMemCache;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
-    AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, NULL);
+    AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, VERR_INVALID_PARAMETER);
 
     /*
      * Try grab a free object at the cache level.
