@@ -1625,17 +1625,18 @@ typedef struct PDMHPETREG
 typedef PDMHPETREG *PPDMHPETREG;
 
 /** Current PDMHPETREG version number. */
-#define PDM_HPETREG_VERSION     0x1f010001
+#define PDM_HPETREG_VERSION                     PDM_VERSION_MAKE(0xffe2, 1, 0)
 
 /**
  * HPET RC helpers.
+ *
+ * @remarks Keep this around in case HPET will need PDM interaction in again RC
+ *          at some later point.
  */
 typedef struct PDMHPETHLPRC
 {
     /** Structure version. PDM_HPETHLPRC_VERSION defines the current version. */
     uint32_t                u32Version;
-
-    /* just leave in case HPET will need PDM interaction in RC */
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1647,19 +1648,19 @@ typedef RCPTRTYPE(PDMHPETHLPRC *) PPDMHPETHLPRC;
 typedef RCPTRTYPE(const PDMHPETHLPRC *) PCPDMHPETHLPRC;
 
 /** Current PDMHPETHLPRC version number. */
-#define PDM_HPETHLPRC_VERSION                   PDM_VERSION_MAKE(0xffee, 1, 1)
+#define PDM_HPETHLPRC_VERSION                   PDM_VERSION_MAKE(0xffee, 2, 0)
 
 
 /**
  * HPET R0 helpers.
+ *
+ * @remarks Keep this around in case HPET will need PDM interaction in again R0
+ *          at some later point.
  */
 typedef struct PDMHPETHLPR0
 {
     /** Structure version. PDM_HPETHLPR0_VERSION defines the current version. */
     uint32_t                u32Version;
-
-
-    /* just leave in case HPET will need PDM interaction in R0 */
 
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
@@ -1671,7 +1672,7 @@ typedef R0PTRTYPE(PDMHPETHLPR0 *) PPDMHPETHLPR0;
 typedef R0PTRTYPE(const PDMHPETHLPR0 *) PCPDMHPETHLPR0;
 
 /** Current PDMHPETHLPR0 version number. */
-#define PDM_HPETHLPR0_VERSION                   PDM_VERSION_MAKE(0xffed, 1, 1)
+#define PDM_HPETHLPR0_VERSION                   PDM_VERSION_MAKE(0xffed, 2, 0)
 
 /**
  * HPET R3 helpers.
