@@ -90,7 +90,7 @@ int suplibOsInit(PSUPLIBDATA pThis, bool fPreInited)
         int hDummy = open("/dev/null", O_RDWR, 0);
         if (hDummy >= 0)
         {
-            if (fcntl(ahDummy, F_SETFD, FD_CLOEXEC) == 0)
+            if (fcntl(hDummy, F_SETFD, FD_CLOEXEC) == 0)
                 pThis->ahDummy[i] = hDummy;
             else
             {
