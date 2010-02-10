@@ -60,12 +60,12 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Wi.*2", Qt::CaseInsensitive), "Windows2000" },
     { QRegExp("Wi.*7.*64", Qt::CaseInsensitive), "Windows7_64" },
     { QRegExp("Wi.*7", Qt::CaseInsensitive), "Windows7" },
-    { QRegExp("Wi", Qt::CaseInsensitive), "WindowsXP" },
-    { QRegExp("OS2.*W.*4.?5", Qt::CaseInsensitive), "OS2Warp45" },
-    { QRegExp("OS2.*W.*4", Qt::CaseInsensitive), "OS2Warp4" },
-    { QRegExp("OS2.*W", Qt::CaseInsensitive), "OS2Warp3" },
-    { QRegExp("OS2.*e", Qt::CaseInsensitive), "OS2eCS" },
-    { QRegExp("OS2", Qt::CaseInsensitive), "OS2" },
+    { QRegExp("(Wi)|(XP)", Qt::CaseInsensitive), "WindowsXP" },
+    { QRegExp("OS[/|!-]{,1}2.*W.*4.?5", Qt::CaseInsensitive), "OS2Warp45" },
+    { QRegExp("OS[/|!-]{,1}2.*W.*4", Qt::CaseInsensitive), "OS2Warp4" },
+    { QRegExp("OS[/|!-]{,1}2.*W", Qt::CaseInsensitive), "OS2Warp3" },
+    { QRegExp("(OS[/|!-]{,1}2.*e)|(eCS.*)", Qt::CaseInsensitive), "OS2eCS" },
+    { QRegExp("OS[/|!-]{,1}2", Qt::CaseInsensitive), "OS2" },
 
     /* Code names for Linux distributions */
     { QRegExp("((edgy)|(feisty)|(gutsy)|(hardy)|(intrepid)|(jaunty)|(karmic)|(lucid)).*64", Qt::CaseInsensitive), "Ubuntu_64" },
@@ -217,6 +217,8 @@ void UINewVMWzdPage2::sltNameChanged(const QString &strNewText)
 {
     /* Search for a matching OS type based on the string the user typed
      * already. */
+    /** @todo Perhaps we shouldn't do this if the user has manually selected
+     *        anything in any of the the combo boxes. */
     for (size_t i=0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
         if (strNewText.contains(gs_OSTypePattern[i].pattern))
         {
