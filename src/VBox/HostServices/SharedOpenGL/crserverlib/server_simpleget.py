@@ -60,7 +60,10 @@ for index in range(len(funcs)):
         GLuint texid;
         CRASSERT(tablesize/sizeof(%s)==1);
         texid = (GLuint) *get_values;
-        *get_values = (%s) (texid - cr_server.curClient->number * 100000);
+        if (texid)
+        {
+            *get_values = (%s) (texid - cr_server.curClient->number * 100000);
+        }
     }
     else if (GL_CURRENT_PROGRAM==pname)
     {
