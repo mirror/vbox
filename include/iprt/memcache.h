@@ -101,7 +101,7 @@ typedef FNMEMCACHEDTOR *PFNMEMCACHEDTOR;
  * @param   pfnDtor             Object destructor callback.  Optional.
  * @param   pvUser              User argument for the two callbacks.
  */
-RTDECL(int)     RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, uint32_t cMaxObjects,
+RTDECL(int)     RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbAlignment, uint32_t cMaxObjects,
                                  PFNMEMCACHECTOR pfnCtor, PFNMEMCACHEDTOR pfnDtor, void *pvUser);
 
 /**

@@ -206,7 +206,7 @@ RTDECL(int) RTMemCacheDestroy(RTMEMCACHE hMemCache)
             uint32_t iObj = pPage->cObjects;
             while (iObj-- > 0)
                 if (ASMBitTestAndClear(pPage->pbmCtor, iObj))
-                    pThis->pfnDtor(hMemCache, (uint8_t *)pPage->pbObjects + iObj * pThis->cPerPage, pThis->pvUser);
+                    pThis->pfnDtor(hMemCache, pPage->pbObjects + iObj * pThis->cbObject, pThis->pvUser);
         }
 
         RTMemPageFree(pPage);
@@ -237,17 +237,16 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
          * Allocate and initialize the new page.
          */
         PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAlloc(PAGE_SIZE);
-        if (!pPage)
+        if (pPage)
         {
-            uint32_t cObjects = pThis->cPerPage;
-            if (pThis->cTotal + cObjects > pThis->cMax)
-                cObjects = pThis->cTotal - pThis->cMax;
+            uint32_t const cObjects = RT_MIN(pThis->cPerPage, pThis->cMax - pThis->cTotal);
 
             ASMMemZeroPage(pPage);
             pPage->pCache       = pThis;
             pPage->pNext        = NULL;
             pPage->cFree        = cObjects;
-            pPage->pbmAlloc     = (pThis + 1);
+            pPage->cObjects     = cObjects;
+            pPage->pbmAlloc     = pPage + 1;
             pPage->pbmCtor      = (uint8_t *)pPage->pbmAlloc + pThis->cBits / 8;
             pPage->pbObjects    = (uint8_t *)pPage->pbmCtor  + pThis->cBits / 8;
             pPage->pbObjects    = RT_ALIGN_PT(pPage->pbObjects, pThis->cbAlignment, uint8_t *);
@@ -316,7 +315,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
             || (uint32_t)(cTotal + -cNewFree) <= cTotal)
         {
             ASMAtomicIncS32(&pThis->cFree);
-            return VERR_CACHE_EMPTY;
+            return VERR_MEM_CACHE_MAX_SIZE;
         }
 
         int rc = rtMemCacheGrow(pThis);
@@ -368,12 +367,12 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
                 ASMMemoryFence();
             else if (!ASMAtomicBitTestAndSet(pPage->pbmAlloc, iObj))
                 break;
-            Assert(cLoops2 != 2);
-            Assert(cLoops2 != 10);
+            Assert(cLoops2 != 40);
         }
         Assert(iObj >= 0);
     }
     void *pvObj = &pPage->pbObjects[iObj * pThis->cbObject];
+    Assert((uintptr_t)pvObj - (uintptr_t)pPage < PAGE_SIZE);
 
     /*
      * Call the constructor?
@@ -390,6 +389,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
         }
     }
 
+    *ppvObj = pvObj;
     return VINF_SUCCESS;
 }
 
@@ -422,15 +422,17 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
     /*
      * Find the cache page.  The page structure is at the start of the page.
      */
-    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_SIZE);
+    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
     AssertReturnVoid(pPage->pCache == pThis);
     AssertReturnVoid(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
 
     /*
      * Clear the bitmap bit and update the two object counter. Order matters!
      */
-    uintptr_t iObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
-    AssertReturnVoid(iObj < pThis->cPerPage);
+    uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
+    uintptr_t iObj   = offObj / pThis->cbObject;
+    AssertReturnVoid(iObj * pThis->cbObject == offObj);
+    Assert(iObj < pThis->cPerPage);
     AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
 
     ASMAtomicIncS32(&pPage->cFree);
