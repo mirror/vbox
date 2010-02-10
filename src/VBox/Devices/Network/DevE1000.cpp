@@ -37,6 +37,8 @@
 #define E1kLogRel(a)
 
 /* Options */
+#define E1K_INIT_RA0
+#define E1K_LSC_ON_SLU
 #define E1K_ITR_ENABLED
 //#define E1K_GLOBAL_MUTEX
 //#define E1K_USE_TX_TIMERS
@@ -1619,6 +1621,11 @@ PDMBOTHCBDECL(void) e1kHardReset(E1KSTATE *pState)
     E1kLog(("%s Hard reset triggered\n", INSTANCE(pState)));
     memset(pState->auRegs,        0, sizeof(pState->auRegs));
     memset(pState->aRecAddr.au32, 0, sizeof(pState->aRecAddr.au32));
+#ifdef E1K_INIT_RA0
+    memcpy(pState->aRecAddr.au32, pState->macConfigured.au8,
+           sizeof(pState->macConfigured.au8));
+    pState->aRecAddr.array[0].ctl |= RA_CTL_AV;
+#endif /* E1K_INIT_RA0 */
     STATUS = 0x0081;    /* SPEED=10b (1000 Mb/s), FD=1b (Full Duplex) */
     EECD   = 0x0100;    /* EE_PRES=1b (EEPROM present) */
     CTRL   = 0x0a09;    /* FRCSPD=1b SPEED=10b LRST=1b FD=1b */
@@ -2096,10 +2103,15 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
     else
     {
         if (   (value & CTRL_SLU)
-            && pState->fCableConnected)
+            && pState->fCableConnected
+            && !(STATUS & STATUS_LU))
         {
             /* The driver indicates that we should bring up the link */
             STATUS |= STATUS_LU;
+#ifdef E1K_LSC_ON_SLU
+            Phy::setLinkStatus(&pState->phy, true);
+            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
+#endif /* E1K_LSC_ON_SLU */
         }
         if (value & CTRL_VME)
         {
