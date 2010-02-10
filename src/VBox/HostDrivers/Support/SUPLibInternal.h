@@ -52,8 +52,9 @@
 #endif
 
 #ifdef RT_OS_SOLARIS
-/** Number of dummy files to open (2:ip4, 1:ip6, 1:extra) see #4650 */
-#define SUPLIB_FLT_DUMMYFILES 4
+/** Number of dummy files to open (2:ip4, 1:ip6, 1:extra) see
+ *  @bugref{4650}. */
+# define SUPLIB_FLT_DUMMYFILES 4
 #endif
 
 /** @def SUPLIB_EXE_SUFF
@@ -193,8 +194,9 @@ typedef struct SUPLIBDATA
     /** Indicates whether madvise(,,MADV_DONTFORK) works. */
     bool                fSysMadviseWorks;
 #elif defined(RT_OS_SOLARIS)
-    /** Extra dummy file descriptors to prevent growing file-descriptor table on clean up (see #4650) */
-    int                 hDummy[SUPLIB_FLT_DUMMYFILES];
+    /** Extra dummy file descriptors to prevent growing file-descriptor table on
+     *  clean up (see @bugref{4650}). */
+    int                 ahDummy[SUPLIB_FLT_DUMMYFILES];
 #elif defined(RT_OS_WINDOWS)
 #endif
 } SUPLIBDATA;
