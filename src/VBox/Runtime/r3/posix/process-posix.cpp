@@ -325,7 +325,7 @@ RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPid
         return RTErrConvertFromErrno(errno);
     if (pid != 0)
     {
-        /* Parent exits, no longer necessary. Child creates gets reparented
+        /* Parent exits, no longer necessary. The child gets reparented
          * to the init process. */
         exit(0);
     }
