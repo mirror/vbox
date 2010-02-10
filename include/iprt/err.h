@@ -1204,6 +1204,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_CACHE_EMPTY                        (-851)
 /** @} */
 
+/** @name RTMemCache status codes
+ * @{ */
+/** Reached the max cache size. */
+#define VERR_MEM_CACHE_MAX_SIZE                 (-855)
+/** @} */
+
 /** @name RTS3 status codes
  * @{ */
 /** Access denied error */

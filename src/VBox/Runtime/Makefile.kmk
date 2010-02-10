@@ -210,6 +210,7 @@ RuntimeR3_SOURCES       = \
 	common/alloc/alloc.cpp \
 	common/alloc/heapsimple.cpp \
 	common/alloc/heapoffset.cpp \
+	common/alloc/memcache.cpp \
 	common/checksum/adler32.cpp \
 	common/checksum/crc32-zlib.cpp \
 	common/checksum/crc64.cpp \
