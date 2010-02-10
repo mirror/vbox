@@ -47,11 +47,7 @@ void slirp_select_fill(PNATState pData, int *pnfds, struct pollfd *polls);
 void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs);
 #endif /* !RT_OS_WINDOWS */
 
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
-void slirp_input(PNATState pData, const uint8_t *pkt, int pkt_len);
-#else
 void slirp_input(PNATState pData, void *pvData);
-#endif
 void slirp_set_ethaddr_and_activate_port_forwarding(PNATState pData, const uint8_t *ethaddr, uint32_t GuestIP);
 
 /* you must provide the following functions: */
@@ -122,6 +118,9 @@ void *slirp_ext_m_get(PNATState pData);
 void slirp_ext_m_free(PNATState pData, void *);
 void slirp_ext_m_append(PNATState pData, void *, uint8_t *, size_t);
 void slirp_push_recv_thread(void *pvUser);
+#else
+void *slirp_ext_m_get(PNATState pData, uint8_t *, size_t);
+void slirp_ext_m_free(PNATState pData, void *);
 #endif
 
 /*

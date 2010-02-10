@@ -107,6 +107,7 @@ int uma_zone_exhausted_nolock(uma_zone_t);
 void zone_drain(uma_zone_t);
 
 void slirp_null_arg_free(void *, void *);
-#endif
+void m_fini(PNATState pData);
+#endif /* VBOX_WITH_SLIRP_BSD_MBUF */
 
 #endif

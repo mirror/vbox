@@ -309,6 +309,9 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     AssertRC(rc);
 
     slirp_ext_m_free(pThis->pNATState, pvArg);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    RTMemFree(pu8Buf);
+#endif
     if (ASMAtomicDecU32(&pThis->cUrgPkt) == 0)
     {
         drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
@@ -350,8 +353,12 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
 
     rc = RTCritSectLeave(&pThis->csDevAccess);
     AssertRC(rc);
+
 done_unlocked:
     slirp_ext_m_free(pThis->pNATState, pvArg);
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    RTMemFree(pu8Buf);
+#endif
     ASMAtomicDecU32(&pThis->cPkt);
 
     drvNATNotifyNATThread(pThis);
@@ -368,7 +375,7 @@ static void drvNATSendWorker(PDRVNAT pThis, void *pvBuf, size_t cb)
 {
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
-        slirp_input(pThis->pNATState, pvBuf);
+        slirp_input(pThis->pNATState, (uint8_t *)pvBuf);
 }
 
 
@@ -398,18 +405,13 @@ static DECLCALLBACK(int) drvNATSendDeprecated(PPDMINETWORKUP pInterface, const v
     AssertRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
-#if 0
-    buf = RTMemAlloc(cb);
-    if (buf == NULL)
-    {
-        LogRel(("NAT: Can't allocate send buffer\n"));
-        return VERR_NO_MEMORY;
-    }
-    memcpy(buf, pvBuf, cb);
-#else
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF 
     void *pvmBuf = slirp_ext_m_get(pThis->pNATState);
     Assert(pvmBuf);
     slirp_ext_m_append(pThis->pNATState, pvmBuf, (uint8_t *)pvBuf, cb);
+#else
+    void *pvmBuf = slirp_ext_m_get(pThis->pNATState, (uint8_t *)pvBuf, cb);
+    Assert(pvmBuf);
 #endif
 
     pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
@@ -965,10 +967,8 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     if (!CFGMR3AreValuesValid(pCfg,
                               "PassDomain\0TFTPPrefix\0BootFile\0Network"
                               "\0NextServer\0DNSProxy\0BindIP\0UseHostResolver\0"
-#ifdef VBOX_WITH_SLIRP_BSD_MBUF
                               "SlirpMTU\0"
-#endif
-                              "SocketRcvBuf\0SocketSndBuf\0TcpRcvSpace\0TcpSndSpace\0"))
+                              "SockRcv\0SockSnd\0TcpRcv\0TcpSnd\0"))
         return PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRVINS_UNKNOWN_CFG_VALUES,
                                 N_("Unknown NAT configuration option, only supports PassDomain,"
                                 " TFTPPrefix, BootFile and Network"));
@@ -1072,10 +1072,10 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
                     setter(pThis->pNATState, len);              \
             } while(0)
 
-        SLIRP_SET_TUNING_VALUE("SocketRcvBuf", slirp_set_rcvbuf);
-        SLIRP_SET_TUNING_VALUE("SocketSndBuf", slirp_set_sndbuf);
-        SLIRP_SET_TUNING_VALUE("TcpRcvSpace", slirp_set_tcp_rcvspace);
-        SLIRP_SET_TUNING_VALUE("TcpSndSpace", slirp_set_tcp_sndspace);
+        SLIRP_SET_TUNING_VALUE("SockRcv", slirp_set_rcvbuf);
+        SLIRP_SET_TUNING_VALUE("SockSnd", slirp_set_sndbuf);
+        SLIRP_SET_TUNING_VALUE("TcpRcv", slirp_set_tcp_rcvspace);
+        SLIRP_SET_TUNING_VALUE("TcpSnd", slirp_set_tcp_sndspace);
 
         slirp_register_statistics(pThis->pNATState, pDrvIns);
 #ifdef VBOX_WITH_STATISTICS

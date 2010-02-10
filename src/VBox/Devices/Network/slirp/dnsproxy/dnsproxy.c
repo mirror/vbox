@@ -99,7 +99,7 @@ timeout(int fd, short event, void *arg)
     free((struct request *)arg);
     ++removed_queries;
 }
-#else
+#else /* VBOX */
 static void
 timeout(PNATState pData, struct socket *so, void *arg) 
 {
@@ -153,7 +153,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         m->m_len += sizeof(struct udphdr);
         m->m_len += req->nbyte;
         ip->ip_src.s_addr = so->so_laddr.s_addr;
-        ip->ip_dst.s_addr = htonl(ntohl(pData->special_addr.s_addr) | CTL_DNS);
+        ip->ip_dst.s_addr = RT_H2N_U32(RT_N2H_U32(pData->special_addr.s_addr) | CTL_DNS);
         udp->uh_dport = ntohs(53);
         udp->uh_sport = so->so_lport;
         memcpy(data, req->byte, req->nbyte); /* coping initial req */
@@ -168,7 +168,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         dnsproxy_query(pData, so1, m, iphlen);
     }
 }
-#endif
+#endif /* VBOX */
 
 /* do_query -- Called by the event loop when a packet arrives at our
  * listening socket. Read the packet, create a new query, append it to the

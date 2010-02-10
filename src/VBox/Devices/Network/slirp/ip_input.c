@@ -76,10 +76,8 @@ static struct libalias *select_alias(PNATState pData, struct mbuf* m)
         return m->m_la;
 #else
     struct m_tag *t;
-    if (t = m_tag_find(m, PACKET_TAG_ALIAS, NULL) != 0)
-    {
+    if ((t = m_tag_find(m, PACKET_TAG_ALIAS, NULL)) != 0)
         return (struct libalias *)&t[1];
-    }
 #endif
 
     return la;
