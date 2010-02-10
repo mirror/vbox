@@ -302,7 +302,7 @@ DECL_FORCE_INLINE(int32_t) rtMemCacheGrabObj(PRTMEMCACHEPAGE pPage)
 RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
 {
     RTMEMCACHEINT *pThis = hMemCache;
-    AssertPtrReturn(pThis, NULL);
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, NULL);
 
     /*
