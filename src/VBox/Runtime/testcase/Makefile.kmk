@@ -77,6 +77,7 @@ PROGRAMS += \
 	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
+	tstRTMemCache \
 	tstRTMemPool \
 	tstRTR0MemUserKernelDriver \
 	tstMove \
@@ -307,6 +308,9 @@ tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 tstLog_SOURCES = tstLog.cpp
 
 tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
+
+tstRTMemCache_TEMPLATE = VBOXR3TSTEXE
+tstRTMemCache_SOURCES = tstRTMemCache.cpp
 
 tstRTMemPool_TEMPLATE = VBOXR3TSTEXE
 tstRTMemPool_SOURCES = tstRTMemPool.cpp
