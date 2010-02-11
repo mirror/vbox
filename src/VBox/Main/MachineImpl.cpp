@@ -4141,9 +4141,12 @@ static int readSavedDisplayScreenshot(Utf8Str *pStateFilePath, uint32_t u32Type,
                     }
                     else
                     {
+                        /* displaySSMSaveScreenshot did not write any data, if
+                         * cbBlock was == 2 * sizeof (uint32_t).
+                         */
                         if (cbBlock > 2 * sizeof (uint32_t))
                         {
-                            rc = SSMR3Skip(pSSM, cbBlock - 2 * sizeof (uint32_t));
+                            rc = SSMR3Skip(pSSM, cbBlock);
                             AssertRCBreak(rc);
                         }
                     }
