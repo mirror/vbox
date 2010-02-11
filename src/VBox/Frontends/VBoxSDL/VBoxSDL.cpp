@@ -1403,8 +1403,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr <ISession> session;
     bool sessionOpened = false;
     EventQueue* eventQ = com::EventQueue::getMainEventQueue();
+    const CLSID sessionID = CLSID_Session;
 
-    rc = virtualBox.createLocalObject (CLSID_VirtualBox);
+    rc = virtualBox.createLocalObject(CLSID_VirtualBox);
     if (FAILED(rc))
     {
         com::ErrorInfo info;
@@ -1415,7 +1416,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             RTPrintf("Failed to create VirtualBox object! No error information available (rc = 0x%x).\n", rc);
         goto leave;
     }
-    rc = session.createInprocObject (CLSID_Session);
+    rc = session.createInprocObject(sessionID);
     if (FAILED(rc))
     {
         RTPrintf("Failed to create session object, rc = 0x%x!\n", rc);
