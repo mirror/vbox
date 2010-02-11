@@ -343,17 +343,14 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
 {
     AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
 
-    /* @todo */
-    if (    uAlignment != 0
-        &&  uAlignment != PAGE_SIZE)
-        return VERR_NOT_SUPPORTED;
-
     /*
      * Allocate the memory and create an MDL for it.
      */
-    PHYSICAL_ADDRESS PhysAddrHighest;
-    PhysAddrHighest.QuadPart = PhysHighest;
-    void *pv = MmAllocateContiguousMemory(cb, PhysAddrHighest);
+    PHYSICAL_ADDRESS PhysAddrHighest, PhysAddrLowest, PhysAddrBoundary;
+    PhysAddrHighest.QuadPart  = PhysHighest;
+    PhysAddrLowest.QuadPart   = 0;
+    PhysAddrBoundary.QuadPart = uAlignment;
+    void *pv = MmAllocateContiguousMemorySpecifyCache(cb, PhysAddrLowest, PhysAddrHighest, PhysAddrBoundary, MmCached);
     if (!pv)
         return VERR_NO_MEMORY;
 
