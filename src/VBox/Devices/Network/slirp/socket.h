@@ -95,28 +95,28 @@ struct socket
     do {                                                                \
         int rc;                                                         \
         /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */           \
-        Log2(("lock:%s:%d L on %R[natsock]\n", __FUNCTION__, __LINE__, (so)));       \
-        Assert(!RTCritSectIsOwner(&(so)->so_mutex));                     \
-        rc = RTCritSectEnter(&(so)->so_mutex);                           \
-        AssertReleaseRC(rc);                                            \
+        Log2(("lock:%s:%d L on %R[natsock]\n", __FUNCTION__, __LINE__, (so))); \
+        Assert(!RTCritSectIsOwner(&(so)->so_mutex));                    \
+        rc = RTCritSectEnter(&(so)->so_mutex);                          \
+        AssertRC(rc);                                                   \
     } while (0)
 # define SOCKET_UNLOCK(so)                                              \
     do {                                                                \
         int rc;                                                         \
-        if ((so) != NULL) Log2(("lock:%s:%d U on %R[natsock]\n", __FUNCTION__, __LINE__, (so)));       \
-        rc = RTCritSectLeave(&(so)->so_mutex);                           \
-        AssertReleaseRC(rc);                                            \
+        if ((so) != NULL) Log2(("lock:%s:%d U on %R[natsock]\n", __FUNCTION__, __LINE__, (so))); \
+        rc = RTCritSectLeave(&(so)->so_mutex);                          \
+        Assert(rc);                                                     \
     } while (0)
 # define SOCKET_LOCK_CREATE(so)                                         \
     do {                                                                \
         int rc;                                                         \
-        rc = RTCritSectInit(&(so)->so_mutex);                            \
-        AssertReleaseRC(rc);                                            \
+        rc = RTCritSectInit(&(so)->so_mutex);                           \
+        AssertRC(rc);                                                   \
     } while (0)
 # define SOCKET_LOCK_DESTROY(so)                                        \
     do {                                                                \
-        int rc = RTCritSectDelete(&(so)->so_mutex);                      \
-        AssertReleaseRC(rc);                                            \
+        int rc = RTCritSectDelete(&(so)->so_mutex);                     \
+        AssertRC(rc);                                                   \
     } while (0)
 #else
 # define SOCKET_LOCK(so) do {} while (0)

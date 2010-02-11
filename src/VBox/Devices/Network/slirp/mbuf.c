@@ -85,7 +85,7 @@ m_init(PNATState pData)
     msize_init(pData);
 #if 1
     rc = RTCritSectInit(&pData->cs_mbuf_zone);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     rc = mbuf_zone_init(pData);
     Assert((rc == 0));
 #endif
@@ -126,7 +126,7 @@ m_get(PNATState pData)
     DEBUG_CALL("m_get");
     
     rc = RTCritSectEnter(&pData->cs_mbuf_zone);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 
 recheck_zone:
     if (m_freelist.m_next == &m_freelist)
@@ -178,7 +178,7 @@ recheck_zone:
 end_error:
     DEBUG_ARG("m = %lx", (long )m);
     rc = RTCritSectLeave(&pData->cs_mbuf_zone);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     return m;
 }
 
@@ -190,7 +190,7 @@ m_free(PNATState pData, struct mbuf *m)
     DEBUG_ARG("m = %lx", (long )m);
 
     rc = RTCritSectEnter(&pData->cs_mbuf_zone);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
     mbuf_alloced--;
     if(m)
     {
@@ -225,7 +225,7 @@ m_free(PNATState pData, struct mbuf *m)
         STAM_COUNTER_INC(&pData->StatMBufAllocation);
     } /* if(m) */
     rc = RTCritSectLeave(&pData->cs_mbuf_zone);
-    AssertReleaseRC(rc);
+    AssertRC(rc);
 }
 
 /* update macros for m_get/m_free*/
