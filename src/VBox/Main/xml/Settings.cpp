@@ -2059,17 +2059,13 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             Utf8Str strHidType;
             if (pelmHwChild->getAttributeValue("Keyboard", strHidType))
             {
-                if (    (strHidType == "None")
-                        )
+                if (strHidType == "None")
                     hw.keyboardHidType = KeyboardHidType_None;
-                else if (    (strHidType == "USBKeyboard")
-                        )
+                else if (strHidType == "USBKeyboard")
                     hw.keyboardHidType = KeyboardHidType_USBKeyboard;
-                else if (    (strHidType == "PS2Keyboard")
-                        )
+                else if (strHidType == "PS2Keyboard")
                     hw.keyboardHidType = KeyboardHidType_PS2Keyboard;
-                else if (    (strHidType == "ComboKeyboard")
-                        )
+                else if (strHidType == "ComboKeyboard")
                     hw.keyboardHidType = KeyboardHidType_ComboKeyboard;
                 else
                     throw ConfigFileError(this,
@@ -2079,20 +2075,15 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
             if (pelmHwChild->getAttributeValue("Pointing", strHidType))
             {
-                 if (    (strHidType == "None")
-                        )
+                 if (strHidType == "None")
                     hw.pointingHidType = PointingHidType_None;
-                else if (    (strHidType == "USBMouse")
-                        )
+                else if (strHidType == "USBMouse")
                     hw.pointingHidType = PointingHidType_USBMouse;
-                else if (    (strHidType == "UsbTablet")
-                        )
+                else if (strHidType == "UsbTablet")
                     hw.pointingHidType = PointingHidType_USBTablet;
-                else if (    (strHidType == "PS2Mouse")
-                        )
+                else if (strHidType == "PS2Mouse")
                     hw.pointingHidType = PointingHidType_PS2Mouse;
-                else if (    (strHidType == "ComboMouse")
-                        )
+                else if (strHidType == "ComboMouse")
                     hw.pointingHidType = PointingHidType_ComboMouse;
                 else
                     throw ConfigFileError(this,

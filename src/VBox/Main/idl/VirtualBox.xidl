@@ -1130,7 +1130,7 @@
     uuid="0d3c17a2-821a-4b2e-ae41-890c6c60aa97"
    >
     <desc>
-      Type of pointing device.
+      Type of pointing device used in a virtual machine.
     </desc>
     <const name="None"           value="1">
       <desc>No mouse.</desc>
@@ -1155,7 +1155,7 @@
     uuid="5a5b0996-3a3e-44bb-9019-56979812cbcc"
    >
     <desc>
-      Type of keyboard device.
+      Type of keyboard device used in a virtual machine.
     </desc>
     <const name="None"              value="1">
       <desc>No keyboard.</desc>
@@ -4471,11 +4471,15 @@
     </attribute>
 
     <attribute name="pointingHidType" type="PointingHidType">
-      <desc>Type of pointing HID (such as mouse or tablet), used in this VM.</desc>
+      <desc>Type of pointing HID (such as mouse or tablet) used in this VM.
+        The default is typically "PS2Mouse" but can vary depending on the
+        requirements of the guest operating system.</desc>
     </attribute>
 
     <attribute name="keyboardHidType" type="KeyboardHidType">
-      <desc>Type of keyboard HID, used in this VM.</desc>
+      <desc>Type of keyboard HID used in this VM
+        The default is typically "PS2Keyboard" but can vary depending on the
+        requirements of the guest operating system.</desc>
     </attribute>
 
     <attribute name="snapshotFolder" type="wstring">
