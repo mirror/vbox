@@ -264,42 +264,44 @@ public:
         HWData();
         ~HWData();
 
-        Bstr           mHWVersion;
-        Guid           mHardwareUUID;   /**< If Null, use mData.mUuid. */
-        ULONG          mMemorySize;
-        ULONG          mMemoryBalloonSize;
-        ULONG          mStatisticsUpdateInterval;
-        ULONG          mVRAMSize;
-        ULONG          mMonitorCount;
-        BOOL           mHWVirtExEnabled;
-        BOOL           mHWVirtExExclusive;
-        BOOL           mHWVirtExNestedPagingEnabled;
-        BOOL           mHWVirtExVPIDEnabled;
-        BOOL           mAccelerate2DVideoEnabled;
-        BOOL           mPAEEnabled;
-        BOOL           mSyntheticCpu;
-        ULONG          mCPUCount;
-        BOOL           mCPUHotPlugEnabled;
-        BOOL           mAccelerate3DEnabled;
+        Bstr                 mHWVersion;
+        Guid                 mHardwareUUID;   /**< If Null, use mData.mUuid. */
+        ULONG                mMemorySize;
+        ULONG                mMemoryBalloonSize;
+        ULONG                mStatisticsUpdateInterval;
+        ULONG                mVRAMSize;
+        ULONG                mMonitorCount;
+        BOOL                 mHWVirtExEnabled;
+        BOOL                 mHWVirtExExclusive;
+        BOOL                 mHWVirtExNestedPagingEnabled;
+        BOOL                 mHWVirtExVPIDEnabled;
+        BOOL                 mAccelerate2DVideoEnabled;
+        BOOL                 mPAEEnabled;
+        BOOL                 mSyntheticCpu;
+        ULONG                mCPUCount;
+        BOOL                 mCPUHotPlugEnabled;
+        BOOL                 mAccelerate3DEnabled;
 
-        BOOL           mCPUAttached[SchemaDefs::MaxCPUCount];
+        BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
 
-        settings::CpuIdLeaf mCpuIdStdLeafs[10];
-        settings::CpuIdLeaf mCpuIdExtLeafs[10];
+        settings::CpuIdLeaf  mCpuIdStdLeafs[10];
+        settings::CpuIdLeaf  mCpuIdExtLeafs[10];
 
-        DeviceType_T   mBootOrder[SchemaDefs::MaxBootPosition];
+        DeviceType_T         mBootOrder[SchemaDefs::MaxBootPosition];
 
         typedef std::list< ComObjPtr<SharedFolder> > SharedFolderList;
-        SharedFolderList mSharedFolders;
+        SharedFolderList     mSharedFolders;
 
-        ClipboardMode_T mClipboardMode;
+        ClipboardMode_T      mClipboardMode;
 
         typedef std::list<GuestProperty> GuestPropertyList;
-        GuestPropertyList mGuestProperties;
-        BOOL           mPropertyServiceActive;
-        Utf8Str        mGuestPropertyNotificationPatterns;
+        GuestPropertyList    mGuestProperties;
+        BOOL                 mPropertyServiceActive;
+        Utf8Str              mGuestPropertyNotificationPatterns;
 
-        FirmwareType_T mFirmwareType;
+        FirmwareType_T       mFirmwareType;
+        KeyboardHidType_T    mKeyboardHidType;
+        PointingHidType_T    mPointingHidType;
     };
 
     /**
@@ -471,6 +473,10 @@ public:
     STDMETHOD(GetStorageControllerByInstance(ULONG aInstance, IStorageController **storageController));
     STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);
     STDMETHOD(COMSETTER(FirmwareType)) (FirmwareType_T  aFirmware);
+    STDMETHOD(COMGETTER(KeyboardHidType)) (KeyboardHidType_T *aKeyboardHidType);
+    STDMETHOD(COMSETTER(KeyboardHidType)) (KeyboardHidType_T  aKeyboardHidType);
+    STDMETHOD(COMGETTER(PointingHidType)) (PointingHidType_T *aPointingHidType);
+    STDMETHOD(COMSETTER(PointingHidType)) (PointingHidType_T  aPointingHidType);
 
     STDMETHOD(QuerySavedThumbnailSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
     STDMETHOD(ReadSavedThumbnailToArray)(BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));

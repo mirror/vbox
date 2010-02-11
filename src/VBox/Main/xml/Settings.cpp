@@ -1471,6 +1471,8 @@ Hardware::Hardware()
           fAccelerate3D(false),
           fAccelerate2DVideo(false),
           firmwareType(FirmwareType_BIOS),
+          pointingHidType(PointingHidType_PS2Mouse),
+          keyboardHidType(KeyboardHidType_PS2Keyboard),
           clipboardMode(ClipboardMode_Bidirectional),
           ulMemoryBalloonSize(0),
           ulStatisticsUpdateInterval(0)
@@ -1515,6 +1517,8 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fAccelerate3D             == h.fAccelerate3D)
                   && (fAccelerate2DVideo        == h.fAccelerate2DVideo)
                   && (firmwareType              == h.firmwareType)
+                  && (pointingHidType           == h.pointingHidType)
+                  && (keyboardHidType           == h.keyboardHidType)
                   && (vrdpSettings              == h.vrdpSettings)
                   && (biosSettings              == h.biosSettings)
                   && (usbController             == h.usbController)
@@ -2046,8 +2050,55 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else
                     throw ConfigFileError(this,
                                           pelmHwChild,
-                                          N_("Invalid value '%s' in Boot/Firmware/@type"),
+                                          N_("Invalid value '%s' in Firmware/@type"),
                                           strFirmwareType.c_str());
+            }
+        }
+        else if (pelmHwChild->nameEquals("HID"))
+        {
+            Utf8Str strHidType;
+            if (pelmHwChild->getAttributeValue("Keyboard", strHidType))
+            {
+                if (    (strHidType == "None")
+                        )
+                    hw.keyboardHidType = KeyboardHidType_None;
+                else if (    (strHidType == "USBKeyboard")
+                        )
+                    hw.keyboardHidType = KeyboardHidType_USBKeyboard;
+                else if (    (strHidType == "PS2Keyboard")
+                        )
+                    hw.keyboardHidType = KeyboardHidType_PS2Keyboard;
+                else if (    (strHidType == "ComboKeyboard")
+                        )
+                    hw.keyboardHidType = KeyboardHidType_ComboKeyboard;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in HID/Keyboard/@type"),
+                                          strHidType.c_str());
+            }
+            if (pelmHwChild->getAttributeValue("Pointing", strHidType))
+            {
+                 if (    (strHidType == "None")
+                        )
+                    hw.pointingHidType = PointingHidType_None;
+                else if (    (strHidType == "USBMouse")
+                        )
+                    hw.pointingHidType = PointingHidType_USBMouse;
+                else if (    (strHidType == "UsbTablet")
+                        )
+                    hw.pointingHidType = PointingHidType_USBTablet;
+                else if (    (strHidType == "PS2Mouse")
+                        )
+                    hw.pointingHidType = PointingHidType_PS2Mouse;
+                else if (    (strHidType == "ComboMouse")
+                        )
+                    hw.pointingHidType = PointingHidType_ComboMouse;
+                else
+                    throw ConfigFileError(this,
+                                          pelmHwChild,
+                                          N_("Invalid value '%s' in HID/Pointing/@type"),
+                                          strHidType.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("Boot"))
@@ -2916,6 +2967,34 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
          pelmFirmware->setAttribute("type", pcszFirmware);
     }
 
+    if (    (m->sv >= SettingsVersion_v1_10)
+       )
+    {
+         xml::ElementNode *pelmHid = pelmHardware->createChild("HID");
+         const char *pcszHid;
+
+         switch (hw.pointingHidType)
+         {
+            case PointingHidType_USBMouse:      pcszHid = "USBMouse";   break;
+            case PointingHidType_USBTablet:     pcszHid = "USBTablet";  break;
+            case PointingHidType_PS2Mouse:      pcszHid = "PS2Mouse";   break;
+            case PointingHidType_ComboMouse:    pcszHid = "ComboMouse"; break;
+            case PointingHidType_None:          pcszHid = "None";       break;
+            default:            Assert(false);  pcszHid = "PS2Mouse";   break;
+         }
+         pelmHid->setAttribute("Pointing", pcszHid);
+
+         switch (hw.keyboardHidType)
+         {
+            case KeyboardHidType_USBKeyboard:   pcszHid = "USBKeyboard";   break;
+            case KeyboardHidType_PS2Keyboard:   pcszHid = "PS2Keyboard";   break;
+            case KeyboardHidType_ComboKeyboard: pcszHid = "ComboKeyboard"; break;
+            case KeyboardHidType_None:          pcszHid = "None";          break;
+            default:            Assert(false);  pcszHid = "PS2Keyboard";   break;
+         }
+         pelmHid->setAttribute("Keyboard", pcszHid);
+    }
+
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
     for (BootOrderMap::const_iterator it = hw.mapBootOrder.begin();
          it != hw.mapBootOrder.end();
@@ -3488,6 +3567,8 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     if (    m->sv < SettingsVersion_v1_10
          && (    fRTCUseUTC
               || hardwareMachine.fCpuHotPlug
+              || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
+              || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
             )
        )
         m->sv = SettingsVersion_v1_10;

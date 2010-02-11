@@ -834,6 +834,66 @@ STDMETHODIMP Machine::COMSETTER(FirmwareType)(FirmwareType_T aFirmwareType)
     return S_OK;
 }
 
+STDMETHODIMP Machine::COMGETTER(KeyboardHidType)(KeyboardHidType_T *aKeyboardHidType)
+{
+    CheckComArgOutPointerValid(aKeyboardHidType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aKeyboardHidType = mHWData->mKeyboardHidType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(KeyboardHidType)(KeyboardHidType_T  aKeyboardHidType)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mKeyboardHidType = aKeyboardHidType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMGETTER(PointingHidType)(PointingHidType_T *aPointingHidType)
+{
+    CheckComArgOutPointerValid(aPointingHidType);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aPointingHidType = mHWData->mPointingHidType;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(PointingHidType)(PointingHidType_T  aPointingHidType)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    int rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+    mHWData->mPointingHidType = aPointingHidType;
+
+    return S_OK;
+}
+
 STDMETHODIMP Machine::COMGETTER(HardwareVersion)(BSTR *aHWVersion)
 {
     if (!aHWVersion)
@@ -6193,6 +6253,8 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mAccelerate3DEnabled = data.fAccelerate3D;
         mHWData->mAccelerate2DVideoEnabled = data.fAccelerate2DVideo;
         mHWData->mFirmwareType = data.firmwareType;
+        mHWData->mPointingHidType = data.pointingHidType;
+        mHWData->mKeyboardHidType = data.keyboardHidType;
 
 #ifdef VBOX_WITH_VRDP
         /* RemoteDisplay */
@@ -7203,6 +7265,10 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         // firmware
         data.firmwareType = mHWData->mFirmwareType;
+
+        // HID
+        data.pointingHidType = mHWData->mPointingHidType;
+        data.keyboardHidType = mHWData->mKeyboardHidType;
 
         // boot order
         data.mapBootOrder.clear();

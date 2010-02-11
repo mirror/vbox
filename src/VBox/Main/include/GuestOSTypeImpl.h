@@ -76,6 +76,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedFirmware)) (FirmwareType_T *aFirmwareType);
     STDMETHOD(COMGETTER(RecommendedStorageController)) (StorageControllerType_T *aStorageControllerType);
     STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
+    STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }

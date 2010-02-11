@@ -1104,7 +1104,7 @@
    <enum
     name="FirmwareType"
     uuid="b903f264-c230-483e-ac74-2b37ce60d371"
-  >
+   >
     <desc>
       Firmware type.
     </desc>
@@ -1124,6 +1124,55 @@
       <desc>Efi firmware, combined 32 and 64-bit.</desc>
     </const>
   </enum>
+
+   <enum
+    name="PointingHidType"
+    uuid="0d3c17a2-821a-4b2e-ae41-890c6c60aa97"
+   >
+    <desc>
+      Type of pointing device.
+    </desc>
+    <const name="None"           value="1">
+      <desc>No mouse.</desc>
+    </const>
+    <const name="PS2Mouse"       value="2">
+      <desc>PS/2 auxillary device, a.k.a. mouse.</desc>
+    </const>
+    <const name="USBMouse"       value="3">
+      <desc>USB mouse (relative pointer).</desc>
+    </const>
+    <const name="USBTablet"      value="4">
+      <desc>USB tablet (absolute pointer).</desc>
+    </const>
+    <const name="ComboMouse"     value="5">
+      <desc>Combined device, working as PS/2 or USB mouse, depending on guest behavior.
+      Using of such device can have negative performance implications. </desc>
+    </const>
+  </enum>
+
+   <enum
+    name="KeyboardHidType"
+    uuid="5a5b0996-3a3e-44bb-9019-56979812cbcc"
+   >
+    <desc>
+      Type of keyboard device.
+    </desc>
+    <const name="None"              value="1">
+      <desc>No keyboard.</desc>
+    </const>
+    <const name="PS2Keyboard"       value="2">
+      <desc>PS/2 keyboard.</desc>
+    </const>
+    <const name="USBKeyboard"       value="3">
+      <desc>USB keyboard.</desc>
+    </const>
+    <const name="ComboKeyboard"     value="4">
+      <desc>Combined device, working as PS/2 or USB keyboard, depending on guest behavior.
+      Using of such device can have negative performance implications. </desc>
+    </const>
+  </enum>
+
+
 
   <!--
   // IVirtualBoxErrorInfo
@@ -4177,7 +4226,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="6d7f40fa-77be-4366-a053-f58e81453a6a"
+     uuid="91470ab5-8457-48ab-8a3f-a2e68d8ae923"
      wsmap="managed"
      >
     <desc>
@@ -4416,9 +4465,17 @@
       <desc>Object containing all BIOS settings.</desc>
     </attribute>
 
-     <attribute name="firmwareType" type="FirmwareType">
+    <attribute name="firmwareType" type="FirmwareType">
       <desc>Type of firmware (such as legacy BIOS or EFI), used for initial
        bootstrap in this VM.</desc>
+    </attribute>
+
+    <attribute name="pointingHidType" type="PointingHidType">
+      <desc>Type of pointing HID (such as mouse or tablet), used in this VM.</desc>
+    </attribute>
+
+    <attribute name="keyboardHidType" type="KeyboardHidType">
+      <desc>Type of keyboard HID, used in this VM.</desc>
     </attribute>
 
     <attribute name="snapshotFolder" type="wstring">
@@ -8206,7 +8263,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="a44b7bab-bcfd-407b-8b4a-49877deb9d2d"
+    uuid="1498bf9c-c662-4cee-8f6f-59ec933fa892"
     wsmap="struct"
   >
     <desc>
@@ -8266,6 +8323,10 @@
 
     <attribute name="recommendedFirmware" type="FirmwareType" readonly="yes">
       <desc>Recommended firmware type.</desc>
+    </attribute>
+
+    <attribute name="recommendedUsbHid" type="boolean" readonly="yes">
+      <desc>Returns @c true if using USB Human Interface Devices, such as keyboard and mouse recommended.</desc>
     </attribute>
 
   </interface>

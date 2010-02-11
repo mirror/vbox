@@ -673,6 +673,13 @@ bool UINewVMWzdPage5::constructMachine()
     KFirmwareType fwType = type.GetRecommendedFirmware();
     m_Machine.SetFirmwareType(fwType);
 
+    // Set recommended human interface device types
+    if (type.GetRecommendedUsbHid())
+    {
+        m_Machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
+        m_Machine.SetPointingHidType(KPointingHidType_USBMouse);
+    }
+
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine(m_Machine);
     if (!vbox.isOk())

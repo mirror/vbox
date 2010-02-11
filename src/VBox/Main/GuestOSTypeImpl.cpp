@@ -315,5 +315,17 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedStorageController) (StorageContro
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsbHid) (BOOL *aRecommendedUsbHid)
+{
+    CheckComArgOutPointerValid(aRecommendedUsbHid);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* HID type is constant during life time, no need to lock */
+    *aRecommendedUsbHid = !!(mOSHint & VBOXOSHINT_USBHID);
+
+    return S_OK;
+}
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
