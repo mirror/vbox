@@ -1553,7 +1553,7 @@ static int buslogicRegisterWrite(PBUSLOGIC pBusLogic, unsigned iRegister, uint8_
         case BUSLOGIC_REGISTER_COMMAND:
         {
             /* Fast path for mailbox execution command. */
-            if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode = 0xff))
+            if ((uVal == BUSLOGICCOMMAND_EXECUTE_MAILBOX_COMMAND) && (pBusLogic->uOperationCode == 0xff))
             {
                 ASMAtomicIncU32(&pBusLogic->cMailboxesReady);
                 if (!ASMAtomicXchgBool(&pBusLogic->fNotificationSend, true))
