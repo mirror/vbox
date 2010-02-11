@@ -48,7 +48,7 @@ foreach $arg (@ARGV)
         my $CFG;
         my $xkbopts = "";
         my $kb_driver = "";
-		my $layout_kb = "";
+        my $layout_kb = "";
         if (open(CFG, $cfg))
         {
             my $TMP;
@@ -109,7 +109,7 @@ $xkbopts  Option       "Protocol" "Standard"
   Option       "CoreKeyboard"
 EndSection
 EOF
-				$layout_kb = "  InputDevice  \"Keyboard[0]\" \"CoreKeyboard\"\n"
+               $layout_kb = "  InputDevice  \"Keyboard[0]\" \"CoreKeyboard\"\n"
             }
 
             if (!$auto_mouse && !$new_mouse) {
