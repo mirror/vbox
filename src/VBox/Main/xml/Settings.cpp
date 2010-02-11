@@ -2407,7 +2407,7 @@ void MachineConfigFile::readStorageControllers(const xml::ElementNode &elmStorag
             throw ConfigFileError(this, pelmController, N_("Required StorageController/@name attribute is missing"));
         //  canonicalize storage controller names for configs in the switchover
         //  period.
-        if (m->sv <= SettingsVersion_v1_9)
+        if (m->sv < SettingsVersion_v1_9)
         {
             if (sctl.strName == "IDE")
                 sctl.strName = "IDE Controller";
