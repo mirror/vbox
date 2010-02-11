@@ -444,24 +444,24 @@ typedef struct NATState
         int rc;                                                       \
         /* Assert(strcmp(RTThreadSelfName(), "EMT") != 0); */         \
         rc = RTCritSectEnter(&VBOX_X(queue) ## _mutex);               \
-        AssertReleaseRC(rc);                                          \
+        AssertRC(rc);                                                 \
     } while (0)
 # define QSOCKET_UNLOCK(queue)                                        \
     do {                                                              \
         int rc;                                                       \
         rc = RTCritSectLeave(&VBOX_X(queue) ## _mutex);               \
-        AssertReleaseRC(rc);                                          \
+        AssertRC(rc);                                                 \
     } while (0)
 # define QSOCKET_LOCK_CREATE(queue)                                   \
     do {                                                              \
         int rc;                                                       \
         rc = RTCritSectInit(&pData->queue ## _mutex);                 \
-        AssertReleaseRC(rc);                                          \
+        AssertRC(rc);                                                 \
     } while (0)
 # define QSOCKET_LOCK_DESTROY(queue)                                  \
     do {                                                              \
         int rc = RTCritSectDelete(&pData->queue ## _mutex);           \
-        AssertReleaseRC(rc);                                          \
+        AssertRC(rc);                                                 \
     } while (0)
 
 # define QSOCKET_FOREACH(so, sonext, label)                           \
@@ -506,7 +506,7 @@ typedef struct NATState
         PRTREQ pReq = NULL;                                             \
         int rc;                                                         \
         rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
+        AssertRC(rc);                                                   \
         pReq->u.Internal.pfn      = (PFNRT)tcp_output;                  \
         pReq->u.Internal.cArgs    = 2;                                  \
         pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
