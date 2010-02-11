@@ -267,7 +267,7 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
             pb -= pThis->cBits / 8;
             pb = (uint8_t *)((uintptr_t)pb & ~(uintptr_t)7);
             pPage->pbmAlloc     = pb;
-//            Assert((uintptr_t)pPage->pbmCtor + pThis->cBits / 8 < (uintptr_t)pPage->pdmCtor);
+            Assert((uintptr_t)pPage->pbmCtor + pThis->cBits / 8 < (uintptr_t)pPage->pbmCtor);
 
             /* Mark the bitmap padding and any unused objects as allocated. */
             for (uint32_t iBit = cObjects; iBit < pThis->cBits; iBit++)
