@@ -4,7 +4,7 @@
 
 
 #
-# Copyright (C) 2009,2010 Sun Microsystems, Inc.
+# Copyright (C) 2009-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
