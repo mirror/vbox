@@ -606,11 +606,20 @@ RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS Phy
     AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
     AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
+#if HC_ARCH_BITS == 32
+    /* Memory allocate in this way is typically mapped into kernel space as well; simply don't allow this
+     * on 32 bits hosts as the kernel space is too crowded already.
+     */
+    if (    uAlignment != 0
+        &&  uAlignment != PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+#else
     AssertReturn((    uAlignment == 0 
                   ||  uAlignment == PAGE_SIZE
                   ||  uAlignment == _2M
                   ||  uAlignment == _4M
                   ||  uAlignment == _1G), VERR_INVALID_PARAMETER);
+#endif
     RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
