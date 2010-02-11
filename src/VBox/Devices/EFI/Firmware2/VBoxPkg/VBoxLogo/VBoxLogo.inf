@@ -1,0 +1,30 @@
+# $Id$
+
+#* @file
+# VBoxLogo.inf - Logo module declarations.
+#
+
+#
+# Copyright (C) 2009.2010 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+**/
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = VBoxLogo
+  FILE_GUID                      = 323afebe-cc60-11de-af38-4731b4e5bd74
+  MODULE_TYPE                    = USER_DEFINED
+  VERSION_STRING                 = 1.0
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 IPF EBC
+#
+
+[Binaries.common]
+  BIN|VBoxLogo.bmp|*
+
