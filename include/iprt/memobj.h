@@ -190,7 +190,7 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uin
 RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest);
 
 /**
- * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
+ * Allocates contiguous physical memory without (necessarily) any kernel mapping.
  *
  * @returns IPRT status code.
  * @param   pMemObj         Where to store the ring-0 memory object handle.
