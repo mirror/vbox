@@ -100,9 +100,10 @@ typedef FNMEMCACHEDTOR *PFNMEMCACHEDTOR;
  * @param   pfnCtor             Object constructor callback.  Optional.
  * @param   pfnDtor             Object destructor callback.  Optional.
  * @param   pvUser              User argument for the two callbacks.
+ * @param   fFlags              Flags reserved for future use.  Must be zero.
  */
 RTDECL(int)     RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbAlignment, uint32_t cMaxObjects,
-                                 PFNMEMCACHECTOR pfnCtor, PFNMEMCACHEDTOR pfnDtor, void *pvUser);
+                                 PFNMEMCACHECTOR pfnCtor, PFNMEMCACHEDTOR pfnDtor, void *pvUser, uint32_t fFlags);
 
 /**
  * Destroy a cache destroying and freeing allocated memory.

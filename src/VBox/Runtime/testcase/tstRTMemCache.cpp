@@ -35,6 +35,7 @@
 
 #include <iprt/asm.h>
 #include <iprt/err.h>
+#include <iprt/cache.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
@@ -56,6 +57,7 @@ typedef struct TST3THREAD
     uint64_t volatile   cIterations;
     uint32_t            cbObject;
     bool                fUseCache;
+    bool                fUseOldCache;
 } TST3THREAD, *PTST3THREAD;
 
 
@@ -66,6 +68,8 @@ typedef struct TST3THREAD
 static RTTEST               g_hTest;
 /** Global mem cache handle for use in some of the testcases. */
 static RTMEMCACHE           g_hMemCache;
+/** For testcase 3. */
+static PRTOBJCACHE          g_pOldCacheTst3;
 /** Stop indicator for tst3 threads.  */
 static bool volatile        g_fTst3Stop;
 
@@ -81,7 +85,7 @@ static void tst1(void)
     /* Create one without constructor or destructor. */
     uint32_t const cObjects = PAGE_SIZE * 2 / 256;
     RTMEMCACHE hMemCache;
-    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&hMemCache, 256, cObjects, 32, NULL, NULL, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&hMemCache, 256, cObjects, 32, NULL, NULL, NULL, 0 /*fFlags*/), VINF_SUCCESS);
     RTTESTI_CHECK_RETV(hMemCache != NIL_RTMEMCACHE);
 
     /* Allocate a bit and free it again. */
@@ -162,7 +166,7 @@ static void tst2(void)
     /* Create one without constructor or destructor. */
     bool            fFail    = false;
     uint32_t const  cObjects = PAGE_SIZE * 2 / 256;
-    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&g_hMemCache, 256, cObjects, 32, tst2Ctor, tst2Dtor, &fFail), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&g_hMemCache, 256, cObjects, 32, tst2Ctor, tst2Dtor, &fFail, 0 /*fFlags*/), VINF_SUCCESS);
 
     /* A failure run first. */
     fFail = true;
@@ -207,7 +211,6 @@ static void tst2(void)
 static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
 {
     PTST3THREAD     pThread     = (PTST3THREAD)(pvArg);
-    bool            fUseCache   = pThread->fUseCache;
     size_t          cbObject    = pThread->cbObject;
     uint64_t        cIterations = 0;
 
@@ -215,12 +218,11 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
     RTTEST_CHECK_RC_OK(g_hTest, RTSemEventMultiWait(pThread->hEvt, RT_INDEFINITE_WAIT));
 
     /* allocate and free loop */
-    while (!g_fTst3Stop)
+    if (pThread->fUseCache)
     {
-        void *apv[64];
-
-        if (fUseCache)
+        while (!g_fTst3Stop)
         {
+            void *apv[64];
             for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
             {
                 apv[i] = RTMemCacheAlloc(g_hMemCache);
@@ -228,9 +230,34 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
             }
             for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
                 RTMemCacheFree(g_hMemCache, apv[i]);
+
+            cIterations += RT_ELEMENTS(apv);
         }
-        else
+    }
+    else if (pThread->fUseOldCache)
+    {
+        while (!g_fTst3Stop)
         {
+            void *apv[64];
+
+            for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
+            {
+                apv[i] = NULL;
+                RTTEST_CHECK_RC_OK(g_hTest, RTCacheRequest(g_pOldCacheTst3, &apv[i]));
+            }
+
+            for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
+                RTCacheInsert(g_pOldCacheTst3, apv[i]);
+
+            cIterations += RT_ELEMENTS(apv);
+        }
+    }
+    else
+    {
+        while (!g_fTst3Stop)
+        {
+            void *apv[64];
+
             for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
             {
                 apv[i] = RTMemAlloc(cbObject);
@@ -239,8 +266,9 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
 
             for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
                 RTMemFree(apv[i]);
+
+            cIterations += RT_ELEMENTS(apv);
         }
-        cIterations += RT_ELEMENTS(apv);
     }
 
     /* report back the status */
@@ -251,15 +279,19 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
 /**
  * Time constrained test with and unlimited  N threads.
  */
-static void tst3(uint32_t cThreads, uint32_t cbObject, bool fUseCache, uint32_t cSecs)
+static void tst3(uint32_t cThreads, uint32_t cbObject, int iMethod, uint32_t cSecs)
 {
-    RTTestISubF("Benchmark - %u threads, %u bytes, %u secs, %s", cThreads, cbObject, cSecs, fUseCache ? "RTMemCache" : "RTMemAlloc");
+    RTTestISubF("Benchmark - %u threads, %u bytes, %u secs, %s", cThreads, cbObject, cSecs,
+                iMethod == 0 ? "RTMemCache"
+                : iMethod == 1 ? "RTCache"
+                : "RTMemAlloc");
 
     /*
      * Create a cache with unlimited space, a start semaphore and line up
      * the threads.
      */
-    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&g_hMemCache, cbObject, 0 /*cbAlignment*/, UINT32_MAX, NULL, NULL, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&g_hMemCache, cbObject, 0 /*cbAlignment*/, UINT32_MAX, NULL, NULL, NULL, 0 /*fFlags*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTCacheCreate(&g_pOldCacheTst3, 0, cbObject, RTOBJCACHE_PROTECT_INSERT | RTOBJCACHE_PROTECT_REQUEST), VINF_SUCCESS);
 
     RTSEMEVENTMULTI hEvt;
     RTTESTI_CHECK_RC_OK_RETV(RTSemEventMultiCreate(&hEvt));
@@ -272,7 +304,8 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, bool fUseCache, uint32_t 
     {
         aThreads[i].hThread     = NIL_RTTHREAD;
         aThreads[i].cIterations = 0;
-        aThreads[i].fUseCache   = fUseCache;
+        aThreads[i].fUseCache   = iMethod == 0;
+        aThreads[i].fUseOldCache= iMethod == 1;
         aThreads[i].cbObject    = cbObject;
         aThreads[i].hEvt        = hEvt;
         RTTESTI_CHECK_RC_OK_RETV(RTThreadCreateF(&aThreads[i].hThread, tst3Thread, &aThreads[i], 0,
@@ -304,11 +337,20 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, bool fUseCache, uint32_t 
                   cElapsedNS / cIterations);
 
     /* clean up */
+    RTTESTI_CHECK_RC(RTCacheDestroy(g_pOldCacheTst3), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTMemCacheDestroy(g_hMemCache), VINF_SUCCESS);
     RTTESTI_CHECK_RC_OK(RTSemEventMultiDestroy(hEvt));
 }
 
-int main()
+static void tst3AllMethods(uint32_t cThreads, uint32_t cbObject, uint32_t cSecs)
+{
+    tst3(cThreads, cbObject, 0, cSecs);
+    tst3(cThreads, cbObject, 1, cSecs);
+    tst3(cThreads, cbObject, 2, cSecs);
+}
+
+
+int main(int argc, char **argv)
 {
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstRTMemCache", &hTest);
@@ -321,33 +363,22 @@ int main()
     tst2();
     if (RTTestIErrorCount() == 0)
     {
-        /*  threads, cbObj, fUseCache, cSecs */
-        tst3(     1,   256,      true,     5);
-        tst3(     1,   256,     false,     5);
-        tst3(     1,    32,      true,     5);
-        tst3(     1,    32,     false,     5);
-        tst3(     1,     8,      true,     5);
-        tst3(     1,     8,     false,     5);
-        tst3(     1,     2,      true,     5);
-        tst3(     1,     2,     false,     5);
-        tst3(     1,     1,      true,     5);
-        tst3(     1,     1,     false,     5);
+        uint32_t cSecs = argc == 1 ? 5 : 2;
+        /*            threads, cbObj, cSecs */
+        tst3AllMethods(     1,   256, cSecs);
+        tst3AllMethods(     1,    32, cSecs);
+        tst3AllMethods(     1,     8, cSecs);
+        tst3AllMethods(     1,     2, cSecs);
+        tst3AllMethods(     1,     1, cSecs);
 
-        tst3(     3,   256,      true,     5);
-        tst3(     3,   256,     false,     5);
-        tst3(     3,   128,      true,     5);
-        tst3(     3,   128,     false,     5);
-        tst3(     3,    64,      true,     5);
-        tst3(     3,    64,     false,     5);
-        tst3(     3,    32,      true,     5);
-        tst3(     3,    32,     false,     5);
-        tst3(     3,     2,      true,     5);
-        tst3(     3,     2,     false,     5);
-        tst3(     3,     1,      true,     5);
-        tst3(     3,     1,     false,     5);
+        tst3AllMethods(     3,   256, cSecs);
+        tst3AllMethods(     3,   128, cSecs);
+        tst3AllMethods(     3,    64, cSecs);
+        tst3AllMethods(     3,    32, cSecs);
+        tst3AllMethods(     3,     2, cSecs);
+        tst3AllMethods(     3,     1, cSecs);
 
-        tst3(    16,    32,      true,     5);
-        tst3(    16,    32,     false,     5);
+        tst3AllMethods(    16,    32, cSecs);
     }
 
     /*

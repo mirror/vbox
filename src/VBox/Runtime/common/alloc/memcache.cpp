@@ -54,6 +54,22 @@ typedef struct RTMEMCACHEINT  *PRTMEMCACHEINT;
 typedef struct RTMEMCACHEPAGE *PRTMEMCACHEPAGE;
 
 
+
+/**
+ * A free object.
+ *
+ * @remarks This only works if the objects don't have a constructor or
+ *          destructor and are big enough.
+ */
+typedef struct RTMEMCACHEFREEOBJ
+{
+    /** Pointer to the next free object  */
+    struct RTMEMCACHEFREEOBJ * volatile pNext;
+} RTMEMCACHEFREEOBJ;
+/** Pointer to a free object. */
+typedef RTMEMCACHEFREEOBJ *PRTMEMCACHEFREEOBJ;
+
+
 /**
  * A cache page.
  *
@@ -106,6 +122,8 @@ typedef struct RTMEMCACHEINT
     uint32_t                    cBits;
     /** The maximum number of objects. */
     uint32_t                    cMax;
+    /** Whether to the use the free list or not. */
+    bool                        fUseFreeList;
     /** Head of the page list. */
     PRTMEMCACHEPAGE             pPageHead;
     /** Constructor callback. */
@@ -123,18 +141,28 @@ typedef struct RTMEMCACHEINT
     int32_t volatile            cFree;
     /** This may point to a page with free entries. */
     PRTMEMCACHEPAGE volatile    pPageHint;
+    /** Stack of free items.
+     * These are marked as used in the allocation bitmaps.
+     *
+     * @todo This doesn't scale well when several threads are beating on the
+     *       cache.  Also, it totally doesn't work when we've got a
+     *       constructor/destructor around or the objects are too small. */
+    PRTMEMCACHEFREEOBJ volatile pFreeTop;
 } RTMEMCACHEINT;
 
 
 
 RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbAlignment, uint32_t cMaxObjects,
-                             PFNMEMCACHECTOR pfnCtor, PFNMEMCACHEDTOR pfnDtor, void *pvUser)
+                             PFNMEMCACHECTOR pfnCtor, PFNMEMCACHEDTOR pfnDtor, void *pvUser, uint32_t fFlags)
+
 {
     AssertPtr(phMemCache);
     AssertPtrNull(pfnCtor);
     AssertPtrNull(pfnDtor);
+    AssertReturn(!pfnDtor || pfnCtor, VERR_INVALID_PARAMETER);
     AssertReturn(cbObject > 0, VERR_INVALID_PARAMETER);
     AssertReturn(cbObject <= PAGE_SIZE / 8, VERR_INVALID_PARAMETER);
+    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
 
     if (cbAlignment == 0)
     {
@@ -172,13 +200,17 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
         pThis->cPerPage--;
     pThis->cBits            = RT_ALIGN(pThis->cPerPage, 64);
     pThis->cMax             = cMaxObjects;
-    pThis->cTotal           = 0;
-    pThis->cFree            = 0;
+    pThis->fUseFreeList     = cbObject >= sizeof(RTMEMCACHEFREEOBJ)
+                           && !pfnCtor
+                           && !pfnDtor;
     pThis->pPageHead        = NULL;
-    pThis->pPageHint        = NULL;
     pThis->pfnCtor          = pfnCtor;
     pThis->pfnDtor          = pfnDtor;
     pThis->pvUser           = pvUser;
+    pThis->cTotal           = 0;
+    pThis->cFree            = 0;
+    pThis->pPageHint        = NULL;
+    pThis->pFreeTop         = NULL;
 
     *phMemCache = pThis;
     return VINF_SUCCESS;
@@ -192,7 +224,12 @@ RTDECL(int) RTMemCacheDestroy(RTMEMCACHE hMemCache)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, VERR_INVALID_HANDLE);
-    AssertMsg((uint32_t)pThis->cFree == pThis->cTotal, ("cFree=%u cTotal=%u\n", pThis->cFree, pThis->cTotal));
+#ifdef RT_STRICT
+    uint32_t cFree = pThis->cFree;
+    for (PRTMEMCACHEFREEOBJ pFree = pThis->pFreeTop; pFree; pFree = pFree->pNext)
+        cFree++;
+    AssertMsg(cFree == pThis->cTotal, ("cFree=%u cTotal=%u\n", cFree, pThis->cTotal));
+#endif
 
     /*
      * Destroy it.
@@ -267,7 +304,7 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
             pb -= pThis->cBits / 8;
             pb = (uint8_t *)((uintptr_t)pb & ~(uintptr_t)7);
             pPage->pbmAlloc     = pb;
-            Assert((uintptr_t)pPage->pbmCtor + pThis->cBits / 8 < (uintptr_t)pPage->pbmCtor);
+            Assert((uintptr_t)pPage->pbmCtor + pThis->cBits / 8 <= (uintptr_t)pPage->pbmAlloc);
 
             /* Mark the bitmap padding and any unused objects as allocated. */
             for (uint32_t iBit = cObjects; iBit < pThis->cBits; iBit++)
@@ -321,6 +358,25 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
     RTMEMCACHEINT *pThis = hMemCache;
     AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
     AssertReturn(pThis->u32Magic == RTMEMCACHE_MAGIC, VERR_INVALID_PARAMETER);
+
+    /*
+     * Try grab a free object from the stack.
+     */
+    PRTMEMCACHEFREEOBJ pObj = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+    if (pObj)
+    {
+        PRTMEMCACHEFREEOBJ pNext;
+        do
+        {
+            pNext = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pObj->pNext);
+            if (ASMAtomicCmpXchgPtr((void * volatile *)&pThis->pFreeTop, pNext, pObj))
+            {
+                *ppvObj = pObj;
+                return VINF_SUCCESS;
+            }
+            pObj = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+        } while (pObj);
+    }
 
     /*
      * Try grab a free object at the cache level.
@@ -437,26 +493,54 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
     AssertPtr(pvObj);
     Assert(RT_ALIGN_P(pvObj, pThis->cbAlignment) == pvObj);
 
-    /* Note: Do *NOT* attempt to poison the object if we have a constructor
-             or/and destructor! */
+    if (pThis->fUseFreeList)
+    {
+# ifdef RT_STRICT
+        /* This is the same as the other branch, except it's not actually freed. */
+        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
+        Assert(pPage->pCache == pThis);
+        Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
+        uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
+        uintptr_t iObj   = offObj / pThis->cbObject;
+        Assert(iObj * pThis->cbObject == offObj);
+        Assert(iObj < pThis->cPerPage);
+        AssertReturnVoid(ASMBitTest(pPage->pbmAlloc, iObj));
+# endif
 
-    /*
-     * Find the cache page.  The page structure is at the start of the page.
-     */
-    PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
-    Assert(pPage->pCache == pThis);
-    Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
+        /*
+         * Push it onto the free stack.
+         */
+        PRTMEMCACHEFREEOBJ pObj = (PRTMEMCACHEFREEOBJ)pvObj;
+        PRTMEMCACHEFREEOBJ pNext;
+        do
+        {
+            pNext = (PRTMEMCACHEFREEOBJ)ASMAtomicUoReadPtr((void * volatile *)&pThis->pFreeTop);
+            pObj->pNext = pNext;
+        } while (!ASMAtomicCmpXchgPtr((void * volatile *)&pThis->pFreeTop, pObj, pNext));
+    }
+    else
+    {
+        /* Note: Do *NOT* attempt to poison the object if we have a constructor
+                 or/and destructor! */
 
-    /*
-     * Clear the bitmap bit and update the two object counter. Order matters!
-     */
-    uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
-    uintptr_t iObj   = offObj / pThis->cbObject;
-    Assert(iObj * pThis->cbObject == offObj);
-    Assert(iObj < pThis->cPerPage);
-    AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
+        /*
+         * Find the cache page.  The page structure is at the start of the page.
+         */
+        PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
+        Assert(pPage->pCache == pThis);
+        Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
 
-    ASMAtomicIncS32(&pPage->cFree);
-    ASMAtomicIncS32(&pThis->cFree);
+        /*
+         * Clear the bitmap bit and update the two object counter. Order matters!
+         */
+        uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
+        uintptr_t iObj   = offObj / pThis->cbObject;
+        Assert(iObj * pThis->cbObject == offObj);
+        Assert(iObj < pThis->cPerPage);
+        AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
+
+        ASMAtomicIncS32(&pPage->cFree);
+        ASMAtomicIncS32(&pThis->cFree);
+    }
 }
 
