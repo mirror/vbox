@@ -181,6 +181,7 @@ INF VBoxPkg/VBoxFsDxe/VBoxHfs.inf
 INF VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
 INF VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
 INF VBoxPkg/VBoxSysTables/VBoxSysTables.inf
+INF VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
 INF VBoxPkg/VBoxConsoleDxe/VBoxConsoleDxe.inf
 #INF  RuleOverride=ACPITABLE VBoxPkg/AcpiTables/AcpiTables.inf
 #INF VBoxPkg/VBoxInterceptorDxe/VBoxInterceptorDxe.inf
