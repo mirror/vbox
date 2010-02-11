@@ -40,6 +40,8 @@
 #define VBOXOSHINT_IOAPIC               RT_BIT(2)
 #define VBOXOSHINT_EFI                  RT_BIT(3)
 #define VBOXOSHINT_PAE                  RT_BIT(4)
+#define VBOXOSHINT_USBHID               RT_BIT(5)
+
 
 /**
  * Contains global static definitions that can be referenced by all COM classes
