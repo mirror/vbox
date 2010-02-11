@@ -582,9 +582,41 @@ RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysH
     RT_ASSERT_PREEMPTIBLE();
 
     /* do the allocation. */
-    return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest);
+    return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, PAGE_SIZE /* page aligned */);
 }
 RT_EXPORT_SYMBOL(RTR0MemObjAllocPhys);
+
+/**
+ * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj         Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
+ * @param   PhysHighest     The highest permittable address (inclusive).
+ *                          Pass NIL_RTHCPHYS if any address is acceptable.
+ * @param   uAlignment      The alignment of the physical memory to allocate.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
+ */
+RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
+{
+    /* sanity checks. */
+    const size_t cbAligned = RT_ALIGN_Z(cb, PAGE_SIZE);
+    AssertPtrReturn(pMemObj, VERR_INVALID_POINTER);
+    *pMemObj = NIL_RTR0MEMOBJ;
+    AssertReturn(cb > 0, VERR_INVALID_PARAMETER);
+    AssertReturn(cb <= cbAligned, VERR_INVALID_PARAMETER);
+    AssertReturn(PhysHighest >= cb, VERR_INVALID_PARAMETER);
+    AssertReturn((    uAlignment == 0 
+                  ||  uAlignment == PAGE_SIZE
+                  ||  uAlignment == _2M
+                  ||  uAlignment == _4M
+                  ||  uAlignment == _1G), VERR_INVALID_PARAMETER);
+    RT_ASSERT_PREEMPTIBLE();
+
+    /* do the allocation. */
+    return rtR0MemObjNativeAllocPhys(pMemObj, cbAligned, PhysHighest, uAlignment);
+}
+RT_EXPORT_SYMBOL(RTR0MemObjAllocPhysEx);
 
 
 /**

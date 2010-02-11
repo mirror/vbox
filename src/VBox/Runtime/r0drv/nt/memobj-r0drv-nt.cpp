@@ -336,10 +336,17 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
  * @param   cb              The size.
  * @param   fExecutable     Whether the mapping should be executable or not.
  * @param   PhysHighest     The highest physical address for the pages in allocation.
+ * @param   uAlignment      The alignment of the physical memory to allocate.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
  */
-static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest)
+static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest, size_t uAlignment)
 {
     AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+
+    /* @todo */
+    if (    uAlignment != 0
+        &&  uAlignment != PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
 
     /*
      * Allocate the memory and create an MDL for it.
@@ -377,11 +384,11 @@ static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bo
 
 int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    return rtR0MemObjNativeAllocContEx(ppMem, cb, fExecutable, _4G-1);
+    return rtR0MemObjNativeAllocContEx(ppMem, cb, fExecutable, _4G-1, PAGE_SIZE /* alignment */);
 }
 
 
-int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
+int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
 #ifndef IPRT_TARGET_NT4
     /*
@@ -435,7 +442,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
     }
 #endif /* !IPRT_TARGET_NT4 */
 
-    return rtR0MemObjNativeAllocContEx(ppMem, cb, false, PhysHighest);
+    return rtR0MemObjNativeAllocContEx(ppMem, cb, false, PhysHighest, uAlignment);
 }
 
 

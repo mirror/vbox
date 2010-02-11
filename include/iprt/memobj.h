@@ -190,6 +190,19 @@ RTR0DECL(int) RTR0MemObjLockKernel(PRTR0MEMOBJ pMemObj, void *pv, size_t cb, uin
 RTR0DECL(int) RTR0MemObjAllocPhys(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest);
 
 /**
+ * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj         Where to store the ring-0 memory object handle.
+ * @param   cb              Number of bytes to allocate. This is rounded up to nearest page.
+ * @param   PhysHighest     The highest permittable address (inclusive).
+ *                          Pass NIL_RTHCPHYS if any address is acceptable.
+ * @param   uAlignment      The alignment of the reserved memory.
+ *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
+ */
+RTR0DECL(int) RTR0MemObjAllocPhysEx(PRTR0MEMOBJ pMemObj, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment);
+
+/**
  * Allocates non-contiguous page aligned physical memory without (necessarily) any kernel mapping.
  *
  * This API is for allocating huge amounts of pages and will return
