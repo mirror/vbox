@@ -253,7 +253,7 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
  */
 static void tst3(uint32_t cThreads, uint32_t cbObject, bool fUseCache, uint32_t cSecs)
 {
-    RTTestISubF("Benchmark - %u threads, %s", cThreads, fUseCache ? "RTMemCache" : "RTMemAlloc");
+    RTTestISubF("Benchmark - %u threads, %u bytes, %u secs, %s", cThreads, cbObject, cSecs, fUseCache ? "RTMemCache" : "RTMemAlloc");
 
     /*
      * Create a cache with unlimited space, a start semaphore and line up
@@ -299,8 +299,9 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, bool fUseCache, uint32_t 
     for (uint32_t i = 0; i < cThreads; i++)
         cIterations += aThreads[i].cIterations;
 
-    RTTestIPrintf(RTTESTLVL_ALWAYS, "%'8u iterations per second\n",
-                  (unsigned)((long double)cIterations * 1000000000.0 / cElapsedNS));
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "%'8u iterations per second, %'llu ns on avg\n",
+                  (unsigned)((long double)cIterations * 1000000000.0 / cElapsedNS),
+                  cElapsedNS / cIterations);
 
     /* clean up */
     RTTESTI_CHECK_RC(RTMemCacheDestroy(g_hMemCache), VINF_SUCCESS);
@@ -321,11 +322,29 @@ int main()
     if (RTTestIErrorCount() == 0)
     {
         /*  threads, cbObj, fUseCache, cSecs */
+        tst3(     1,   256,      true,     5);
+        tst3(     1,   256,     false,     5);
         tst3(     1,    32,      true,     5);
         tst3(     1,    32,     false,     5);
+        tst3(     1,     8,      true,     5);
+        tst3(     1,     8,     false,     5);
+        tst3(     1,     2,      true,     5);
+        tst3(     1,     2,     false,     5);
+        tst3(     1,     1,      true,     5);
+        tst3(     1,     1,     false,     5);
 
+        tst3(     3,   256,      true,     5);
+        tst3(     3,   256,     false,     5);
+        tst3(     3,   128,      true,     5);
+        tst3(     3,   128,     false,     5);
+        tst3(     3,    64,      true,     5);
+        tst3(     3,    64,     false,     5);
         tst3(     3,    32,      true,     5);
         tst3(     3,    32,     false,     5);
+        tst3(     3,     2,      true,     5);
+        tst3(     3,     2,     false,     5);
+        tst3(     3,     1,      true,     5);
+        tst3(     3,     1,     false,     5);
 
         tst3(    16,    32,      true,     5);
         tst3(    16,    32,     false,     5);
