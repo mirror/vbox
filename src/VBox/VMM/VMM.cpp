@@ -751,7 +751,9 @@ VMMR3DECL(void) VMMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     /*
      * Recalc the RC address.
      */
+#ifdef VBOX_WITH_RAW_MODE
     pVM->vmm.s.pvCoreCodeRC = MMHyperR3ToRC(pVM, pVM->vmm.s.pvCoreCodeR3);
+#endif
 
     /*
      * The stack.

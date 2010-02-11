@@ -96,7 +96,7 @@ VMMR3DECL(int) PDMR3LdrLoadVMMR0U(PUVM pUVM)
  */
 int pdmR3LdrInitU(PUVM pUVM)
 {
-#ifdef PDMLDR_FAKE_MODE
+#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     return VINF_SUCCESS;
 
 #else
@@ -147,7 +147,9 @@ void pdmR3LdrTermU(PUVM pUVM)
                 break;
             }
 
+#ifdef VBOX_WITH_RAW_MODE
             case PDMMOD_TYPE_RC:
+#endif
             case PDMMOD_TYPE_R3:
                 /* MM will free this memory for us - it's alloc only memory. :-) */
                 break;
@@ -176,6 +178,7 @@ void pdmR3LdrTermU(PUVM pUVM)
  */
 VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
 {
+#ifdef VBOX_WITH_RAW_MODE
     LogFlow(("PDMR3LdrRelocate: offDelta=%RGv\n", offDelta));
 
     /*
@@ -216,6 +219,7 @@ VMMR3DECL(void) PDMR3LdrRelocateU(PUVM pUVM, RTGCINTPTR offDelta)
             }
         }
     }
+#endif
 }
 
 
@@ -301,6 +305,7 @@ int pdmR3LoadR3U(PUVM pUVM, const char *pszFilename, const char *pszName)
 }
 
 
+#ifdef VBOX_WITH_RAW_MODE
 /**
  * Resolve an external symbol during RTLdrGetBits() of a RC module.
  *
@@ -537,6 +542,7 @@ VMMR3DECL(int) PDMR3LdrLoadRC(PVM pVM, const char *pszFilename, const char *pszN
     RTMemTmpFree(pszFile);
     return rc;
 }
+#endif /* VBOX_WITH_RAW_MODE */
 
 
 /**
@@ -775,7 +781,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolR0Lazy(PVM pVM, const char *pszModule, const cha
  */
 VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
-#ifdef PDMLDR_FAKE_MODE
+#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     *pRCPtrValue = 0xfeedf00d;
     return VINF_SUCCESS;
 
@@ -831,7 +837,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
  */
 VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
-#ifdef PDMLDR_FAKE_MODE
+#if defined(PDMLDR_FAKE_MODE) || !defined(PDMR3LdrLoadRC)
     *pRCPtrValue = 0xfeedf00d;
     return VINF_SUCCESS;
 
@@ -1178,6 +1184,7 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
     {
         switch (enmType)
         {
+#ifdef VBOX_WITH_RAW_MODE
             case PDMMOD_TYPE_RC:
             {
                 char *pszFilename = pdmR3FileRC(pszModule);
@@ -1190,6 +1197,7 @@ static PPDMMOD pdmR3LdrFindModule(PUVM pUVM, const char *pszModule, PDMMODTYPE e
                 }
                 break;
             }
+#endif
 
             case PDMMOD_TYPE_R0:
             {
