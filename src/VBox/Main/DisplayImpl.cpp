@@ -453,8 +453,8 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
      *    [blocks]
      *
      *  Each block is:
-     *    uint32_t cbBlock;        size of the block in bytes including 'cbBlock' and 'typeOfBlock' fields.
-     *    uint32_t typeOfBlock;    0 - 32bpp RGB bitmap, 1 - PNG, ignored if no block data.
+     *    uint32_t cbBlock;        if 0 - no 'block data'.
+     *    uint32_t typeOfBlock;    0 - 32bpp RGB bitmap, 1 - PNG, ignored if 'cbBlock' is 0.
      *    [block data]
      *
      *  Block data for bitmap and PNG:
@@ -516,9 +516,13 @@ Display::displaySSMLoadScreenshot(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersi
 
         LogFlowFunc(("[%d] type %d, size %d bytes\n", i, typeOfBlock, cbBlock));
 
+        /* Note: displaySSMSaveScreenshot writes size of a block = 8 and
+         * do not write any data if the image size was 0.
+         * @todo Fix and increase saved state version.
+         */
         if (cbBlock > 2 * sizeof (uint32_t))
         {
-            rc = SSMR3Skip(pSSM, cbBlock - 2 * sizeof (uint32_t));
+            rc = SSMR3Skip(pSSM, cbBlock);
             AssertRCBreak(rc);
         }
     }
