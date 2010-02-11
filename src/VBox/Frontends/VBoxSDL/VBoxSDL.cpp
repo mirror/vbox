@@ -1392,7 +1392,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         return 1;
     }
 
-    do
+    /* NOTE: do not convert the following scope to a "do {} while (0);", as
+     * this would make it all too tempting to use "break;" incorrectly - it
+     * would skip over the cleanup. */
     {
     // scopes all the stuff till shutdown
     ////////////////////////////////////////////////////////////////////////////
@@ -1400,6 +1402,7 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr <IVirtualBox> virtualBox;
     ComPtr <ISession> session;
     bool sessionOpened = false;
+    EventQueue* eventQ = com::EventQueue::getMainEventQueue();
 
     rc = virtualBox.createLocalObject (CLSID_VirtualBox);
     if (FAILED(rc))
@@ -1410,16 +1413,14 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                        info.getText().raw(), info.getComponent().raw());
         else
             RTPrintf("Failed to create VirtualBox object! No error information available (rc = 0x%x).\n", rc);
-        break;
+        goto leave;
     }
     rc = session.createInprocObject (CLSID_Session);
     if (FAILED(rc))
     {
         RTPrintf("Failed to create session object, rc = 0x%x!\n", rc);
-        break;
+        goto leave;
     }
-
-    EventQueue* eventQ = com::EventQueue::getMainEventQueue();
 
     /*
      * Do we have a name but no UUID?
@@ -1751,7 +1752,9 @@ DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             gProgress = NULL;
 
             ComPtr<ISnapshot> pCurrentSnapshot;
-            CHECK_ERROR_BREAK(gMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
+            CHECK_ERROR(gMachine, COMGETTER(CurrentSnapshot)(pCurrentSnapshot.asOutParam()));
+            if (FAILED(rc))
+                goto leave;
 
             CHECK_ERROR(gConsole, RestoreSnapshot(pCurrentSnapshot, gProgress.asOutParam()));
             rc = gProgress->WaitForCompletion(-1);
@@ -2756,16 +2759,17 @@ leave:
             /** @todo power off paused VMs too? */
            )
        )
+    do
     {
         cbConsoleImpl->ignorePowerOffEvents(true);
-        ComPtr <IProgress> progress;
+        ComPtr<IProgress> progress;
         CHECK_ERROR_BREAK(gConsole, PowerDown(progress.asOutParam()));
-        CHECK_ERROR_BREAK (progress, WaitForCompletion (-1));
+        CHECK_ERROR_BREAK(progress, WaitForCompletion(-1));
         BOOL completed;
-        CHECK_ERROR_BREAK (progress, COMGETTER(Completed) (&completed));
+        CHECK_ERROR_BREAK(progress, COMGETTER(Completed)(&completed));
         ASSERT (completed);
         LONG hrc;
-        CHECK_ERROR_BREAK (progress, COMGETTER(ResultCode) (&hrc));
+        CHECK_ERROR_BREAK(progress, COMGETTER(ResultCode)(&hrc));
         if (FAILED(hrc))
         {
             com::ErrorInfo info;
@@ -2776,7 +2780,7 @@ leave:
                 RTPrintf("Failed to power down virtual machine! No error information available (rc = 0x%x).\n", hrc);
             break;
         }
-    }
+    } while (0);
 
     /*
      * Now we discard all settings so that our changes will
@@ -2865,6 +2869,11 @@ leave:
     if (gLibrarySDL_ttf)
         RTLdrClose(gLibrarySDL_ttf);
 #endif
+
+    /* VirtualBox callback unregistration. */
+    if (!virtualBox.isNull() && !callback.isNull())
+        virtualBox->UnregisterCallback(callback);
+
     LogFlow(("Releasing machine, session...\n"));
     gMachine = NULL;
     session = NULL;
@@ -2874,7 +2883,6 @@ leave:
     // end "all-stuff" scope
     ////////////////////////////////////////////////////////////////////////////
     }
-    while (0);
 
     /* Must be before com::Shutdown() */
     callback.setNull();

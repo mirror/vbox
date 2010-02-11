@@ -831,6 +831,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     ComPtr<IVirtualBox> virtualBox;
     ComPtr<ISession> session;
     bool fSessionOpened = false;
+    VirtualBoxCallback *vboxCallback = NULL;
 
     do
     {
@@ -1017,7 +1018,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gEventQ = com::EventQueue::getMainEventQueue();
 
         /* VirtualBox callback registration. */
-        VirtualBoxCallback *vboxCallback = new VirtualBoxCallback();
+        vboxCallback = new VirtualBoxCallback();
         vboxCallback->AddRef();
         CHECK_ERROR(virtualBox, RegisterCallback(vboxCallback));
         vboxCallback->Release();
@@ -1140,6 +1141,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         /* we don't have to disable VRDP here because we don't save the settings of the VM */
     }
     while (0);
+
+    /* VirtualBox callback unregistration. */
+    if (vboxCallback)
+    {
+        vboxCallback->AddRef();
+        CHECK_ERROR(virtualBox, UnregisterCallback(vboxCallback));
+        vboxCallback->Release();
+    }
 
     /* No more access to the 'console' object, which will be uninitialized by the next session->Close call. */
     gConsole = NULL;
