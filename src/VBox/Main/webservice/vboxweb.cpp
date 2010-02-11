@@ -60,15 +60,6 @@
 // include generated namespaces table
 #include "vboxwebsrv.nsmap"
 
-// If this is defined, then thread 1 ONLY performs COM event queue processing
-// (using RT_INDEFINITE_WAIT to wait for events), and the SOAP queue is processed
-// on a separate thread. This appears to be broken
-// as soon as more than one client fires SOAP events at the webservices.
-// If this is NOT defined, then COM events are only serviced after SOAP event
-// processing has completed, and both occur on thread 1.
-
-// #define TEMP_USE_BROKEN_XPCOM_EVENTQUEUE_PROCESSING
-
 /****************************************************************************
  *
  * private typedefs
@@ -428,7 +419,6 @@ void SoapThread::process()
         m_soap->socket = m_pQ->get(cIdleThreads, cThreads);
 
         WebLog("Processing connection from IP=%lu.%lu.%lu.%lu socket=%d (%d out of %d threads idle)\n",
-               m_u,
                (m_soap->ip >> 24) & 0xFF,
                (m_soap->ip >> 16) & 0xFF,
                (m_soap->ip >> 8)  & 0xFF,
@@ -550,17 +540,11 @@ void doQueuesLoop()
             // pick up the jobn
             size_t cItemsOnQ = g_pSoapQ->add(s);
             WebLog("Request %llu on socket %d queued for processing (%d items on Q)\n", i, s, cItemsOnQ);
-
-#ifndef TEMP_USE_BROKEN_XPCOM_EVENTQUEUE_PROCESSING
-            // process the COM event Q
-            int vrc = com::EventQueue::getMainEventQueue()->processEventQueue(0);
-#endif
         }
     }
     soap_done(&soap); // close master socket and detach environment
 }
 
-#ifdef TEMP_USE_BROKEN_XPCOM_EVENTQUEUE_PROCESSING
 /**
  * Thread function for the "queue pumper" thread started from main(). This implements
  * the loop that takes SOAP calls from HTTP and serves them by handing sockets to the
@@ -575,7 +559,6 @@ int fntQPumper(RTTHREAD ThreadSelf, void *pvUser)
 
     return 0;
 }
-#endif
 
 /**
  * Start up the webservice server. This keeps running and waits
@@ -730,7 +713,6 @@ int main(int argc, char* argv[])
     g_pAuthLibLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
     g_pSessionsLockHandle = new util::RWLockHandle(util::LOCKCLASS_OBJECTSTATE);
 
-#ifdef TEMP_USE_BROKEN_XPCOM_EVENTQUEUE_PROCESSING
     // SOAP queue pumper thread
     RTTHREAD  tQPumper;
     if (RTThreadCreate(&tQPumper,
@@ -744,7 +726,6 @@ int main(int argc, char* argv[])
         RTStrmPrintf(g_pStdErr, "[!] Cannot start SOAP queue pumper thread\n");
         exit(1);
     }
-#endif
 
     // watchdog thread
     if (g_iWatchdogTimeoutSecs > 0)
@@ -764,19 +745,15 @@ int main(int argc, char* argv[])
         }
     }
 
-#ifdef TEMP_USE_BROKEN_XPCOM_EVENTQUEUE_PROCESSING
     com::EventQueue *pQ = com::EventQueue::getMainEventQueue();
     while (1)
     {
         // we have to process main event queue
-        WebLog("Pumping COM event queue\n");
+        WEBDEBUG(("Pumping COM event queue\n"));
         int vrc = pQ->processEventQueue(RT_INDEFINITE_WAIT);
         if (FAILED(vrc))
             com::GluePrintRCMessage(vrc);
     }
-#else
-    doQueuesLoop();
-#endif
 
     com::Shutdown();
 
