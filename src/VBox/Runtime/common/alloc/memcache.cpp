@@ -70,17 +70,21 @@ typedef struct RTMEMCACHEPAGE
      * This is marked as volatile since we'll be adding new entries to the list
      * without taking any locks. */
     PRTMEMCACHEPAGE volatile    pNext;
-    /** The number of free objects. */
-    int32_t volatile            cFree;
-    /** The number of objects on this page.  */
-    uint32_t                    cObjects;
     /** Bitmap tracking allocated blocks. */
     void volatile              *pbmAlloc;
     /** Bitmap tracking which blocks that has been thru the constructor. */
     void volatile              *pbmCtor;
     /** Pointer to the object array.. */
     uint8_t                    *pbObjects;
+    /** The number of objects on this page.  */
+    uint32_t                    cObjects;
+
+    /** Padding to force cFree into the next cache line. (ASSUMES CL = 64) */
+    uint8_t                     abPadding[ARCH_BITS == 32 ? 64 - 6*4 : 64 - 5*8 - 4];
+    /** The number of free objects. */
+    int32_t volatile            cFree;
 } RTMEMCACHEPAGE;
+AssertCompileMemberOffset(RTMEMCACHEPAGE, cFree, 64);
 
 
 /**
@@ -102,14 +106,8 @@ typedef struct RTMEMCACHEINT
     uint32_t                    cBits;
     /** The maximum number of objects. */
     uint32_t                    cMax;
-    /** The total object count. */
-    uint32_t volatile           cTotal;
-    /** The number of free objects. */
-    int32_t volatile            cFree;
     /** Head of the page list. */
     PRTMEMCACHEPAGE             pPageHead;
-    /** This may point to a page with free entries. */
-    PRTMEMCACHEPAGE volatile    pPageHint;
     /** Constructor callback. */
     PFNMEMCACHECTOR             pfnCtor;
     /** Destructor callback. */
@@ -118,6 +116,13 @@ typedef struct RTMEMCACHEINT
     void                       *pvUser;
     /** Critical section serializing page allocation and similar. */
     RTCRITSECT                  CritSect;
+
+    /** The total object count. */
+    uint32_t volatile           cTotal;
+    /** The number of free objects. */
+    int32_t volatile            cFree;
+    /** This may point to a page with free entries. */
+    PRTMEMCACHEPAGE volatile    pPageHint;
 } RTMEMCACHEINT;
 
 
@@ -160,12 +165,12 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
     pThis->cbObject         = RT_ALIGN_Z(cbObject, cbAlignment);
     pThis->cbAlignment      = cbAlignment;
     pThis->cPerPage         = (PAGE_SIZE - RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)) / pThis->cbObject;
-    while (    RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)
+    while (    RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), RT_MIN(cbAlignment, 8))
              + pThis->cPerPage * pThis->cbObject
-             + RT_ALIGN(pThis->cPerPage, 32) * 2
+             + RT_ALIGN(pThis->cPerPage, 64) / 8 * 2
            > PAGE_SIZE)
         pThis->cPerPage--;
-    pThis->cBits            = RT_ALIGN(pThis->cPerPage, 32);
+    pThis->cBits            = RT_ALIGN(pThis->cPerPage, 64);
     pThis->cMax             = cMaxObjects;
     pThis->cTotal           = 0;
     pThis->cFree            = 0;
@@ -235,6 +240,13 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
     {
         /*
          * Allocate and initialize the new page.
+         *
+         * We put the constructor bitmap at the lower end right after cFree.
+         * We then push the object array to the end of the page and place the
+         * allocation bitmap below it.  The hope is to increase the chance that
+         * the allocation bitmap is in a different cache line than cFree since
+         * this increases performance markably when lots of threads are beating
+         * on the cache.
          */
         PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)RTMemPageAlloc(PAGE_SIZE);
         if (pPage)
@@ -246,10 +258,16 @@ static int rtMemCacheGrow(RTMEMCACHEINT *pThis)
             pPage->pNext        = NULL;
             pPage->cFree        = cObjects;
             pPage->cObjects     = cObjects;
-            pPage->pbmAlloc     = pPage + 1;
-            pPage->pbmCtor      = (uint8_t *)pPage->pbmAlloc + pThis->cBits / 8;
-            pPage->pbObjects    = (uint8_t *)pPage->pbmCtor  + pThis->cBits / 8;
-            pPage->pbObjects    = RT_ALIGN_PT(pPage->pbObjects, pThis->cbAlignment, uint8_t *);
+            uint8_t *pb = (uint8_t *)(pPage + 1);
+            pb = RT_ALIGN_PT(pb, 8, uint8_t *);
+            pPage->pbmCtor      = pb;
+            pb += pThis->cBits / 8 * 2;
+            pb = (uint8_t *)pPage + PAGE_SIZE - pThis->cbObject * cObjects;
+            pPage->pbObjects    = pb;   Assert(RT_ALIGN_P(pb, pThis->cbAlignment) == pb);
+            pb -= pThis->cBits / 8;
+            pb = (uint8_t *)((uintptr_t)pb & ~(uintptr_t)7);
+            pPage->pbmAlloc     = pb;
+            Assert((uintptr_t)pPage->pbmCtor + pThis->cBits / 8 < (uintptr_t)pPage->pdmDtor);
 
             /* Mark the bitmap padding and any unused objects as allocated. */
             for (uint32_t iBit = cObjects; iBit < pThis->cBits; iBit++)
@@ -308,7 +326,7 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
      * Try grab a free object at the cache level.
      */
     int32_t cNewFree = ASMAtomicDecS32(&pThis->cFree);
-    if (cNewFree < 0)
+    if (RT_LIKELY(cNewFree < 0))
     {
         uint32_t cTotal = ASMAtomicUoReadU32(&pThis->cTotal);
         if (   (uint32_t)(cTotal + -cNewFree) > pThis->cMax
@@ -363,10 +381,13 @@ RTDECL(int) RTMemCacheAllocEx(RTMEMCACHE hMemCache, void **ppvObj)
         for (unsigned cLoops2 = 0;; cLoops2++)
         {
             iObj = ASMBitFirstClear(pPage->pbmAlloc, pThis->cBits);
-            if (iObj < 0)
+            if (RT_LIKELY(iObj >= 0))
+            {
+                if (!ASMAtomicBitTestAndSet(pPage->pbmAlloc, iObj))
+                    break;
+            }
+            else
                 ASMMemoryFence();
-            else if (!ASMAtomicBitTestAndSet(pPage->pbmAlloc, iObj))
-                break;
             Assert(cLoops2 != 40);
         }
         Assert(iObj >= 0);
@@ -423,15 +444,15 @@ RTDECL(void) RTMemCacheFree(RTMEMCACHE hMemCache, void *pvObj)
      * Find the cache page.  The page structure is at the start of the page.
      */
     PRTMEMCACHEPAGE pPage = (PRTMEMCACHEPAGE)(((uintptr_t)pvObj) & ~(uintptr_t)PAGE_OFFSET_MASK);
-    AssertReturnVoid(pPage->pCache == pThis);
-    AssertReturnVoid(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
+    Assert(pPage->pCache == pThis);
+    Assert(ASMAtomicUoReadS32(&pPage->cFree) < (int32_t)pThis->cPerPage);
 
     /*
      * Clear the bitmap bit and update the two object counter. Order matters!
      */
     uintptr_t offObj = (uintptr_t)pvObj - (uintptr_t)pPage->pbObjects;
     uintptr_t iObj   = offObj / pThis->cbObject;
-    AssertReturnVoid(iObj * pThis->cbObject == offObj);
+    Assert(iObj * pThis->cbObject == offObj);
     Assert(iObj < pThis->cPerPage);
     AssertReturnVoid(ASMAtomicBitTestAndClear(pPage->pbmAlloc, iObj));
 
