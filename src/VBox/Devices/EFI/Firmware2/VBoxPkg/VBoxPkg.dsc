@@ -381,8 +381,8 @@
   VBoxPkg/VBoxVgaMiniPortDxe/VBoxVgaMiniPortDxe.inf
   VBoxPkg/VBoxVgaDxe/VBoxVgaDxe.inf
   VBoxPkg/VBoxSysTables/VBoxSysTables.inf
+  VBoxPkg/VBoxAppleSim/VBoxAppleSim.inf
   VBoxPkg/VBoxConsoleDxe/VBoxConsoleDxe.inf
-  #VBoxPkg/AcpiTables/AcpiTables.inf
   # VBOX end
   IntelFrameworkModulePkg/Universal/Console/VgaClassDxe/VgaClassDxe.inf
 
