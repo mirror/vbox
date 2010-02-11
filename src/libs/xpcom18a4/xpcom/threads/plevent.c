@@ -1215,6 +1215,13 @@ _pl_NativeNotify(PLEventQueue* self)
     PRInt32 count;
     unsigned char buf[] = { NOTIFY_TOKEN };
 
+# ifdef VBOX
+    /* Don't write two chars, because we'll only acknowledge one and that'll
+       cause trouble for anyone selecting/polling on the read descriptor. */
+    if (self->notified)
+        return PR_SUCCESS;
+# endif
+
     PR_LOG(event_lm, PR_LOG_DEBUG,
            ("_pl_NativeNotify: self=%p",
             self));
