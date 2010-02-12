@@ -837,7 +837,7 @@ VMMR3DECL(int) PDMR3LdrGetSymbolRC(PVM pVM, const char *pszModule, const char *p
  */
 VMMR3DECL(int) PDMR3LdrGetSymbolRCLazy(PVM pVM, const char *pszModule, const char *pszSymbol, PRTRCPTR pRCPtrValue)
 {
-#if defined(PDMLDR_FAKE_MODE) || !defined(PDMR3LdrLoadRC)
+#if defined(PDMLDR_FAKE_MODE) || !defined(VBOX_WITH_RAW_MODE)
     *pRCPtrValue = 0xfeedf00d;
     return VINF_SUCCESS;
 
