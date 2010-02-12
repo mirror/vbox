@@ -64,6 +64,8 @@ public:
 protected:
 
     void retranslateUi();
+
+    void initializePage();
 };
 
 class UINewHDWzdPage2 : public QIWizardPage, public Ui::UINewHDWzdPage2

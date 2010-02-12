@@ -58,6 +58,8 @@ public:
 protected:
 
     void retranslateUi();
+
+    void initializePage();
 };
 
 class UIFirstRunWzdPage2 : public QIWizardPage, public Ui::UIFirstRunWzdPage2

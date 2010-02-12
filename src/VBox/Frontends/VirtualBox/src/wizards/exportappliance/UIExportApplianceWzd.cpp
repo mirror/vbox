@@ -110,9 +110,6 @@ UIExportApplianceWzdPage1::UIExportApplianceWzdPage1()
 
     /* Fill 'VM Selector' */
     populateVMSelectorItems();
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIExportApplianceWzdPage1::retranslateUi()
@@ -122,6 +119,14 @@ void UIExportApplianceWzdPage1::retranslateUi()
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the Appliance Export Wizard!"));
+
+    m_pPage1Text1->setText(tr("<p>This wizard will guide you through the process of "
+                              "exporting an appliance.</p><p>%1</p><p>Please select "
+                              "the virtual machines that should be added to the "
+                              "appliance. You can select more than one. Please note "
+                              "that these machines have to be turned off before they "
+                              "can be exported.</p>")
+                           .arg(standardHelpText()));
 }
 
 void UIExportApplianceWzdPage1::initializePage()
@@ -205,9 +210,6 @@ UIExportApplianceWzdPage2::UIExportApplianceWzdPage2()
     /* Register 'applianceWidget' field! */
     registerField("applianceWidget", this, "applianceWidget");
     m_pApplianceWidget = m_pSettingsCnt;
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIExportApplianceWzdPage2::retranslateUi()
@@ -325,9 +327,6 @@ UIExportApplianceWzdPage3::UIExportApplianceWzdPage3()
     /* Just select first of types */
     m_pTypeLocalFilesystem->click();
 #endif
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIExportApplianceWzdPage3::retranslateUi()
@@ -387,9 +386,6 @@ UIExportApplianceWzdPage4::UIExportApplianceWzdPage4()
     m_pLeHostname->setText(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_Export_Hostname));
     m_pLeBucket->setText(vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_Export_Bucket));
 #endif
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIExportApplianceWzdPage4::retranslateUi()

@@ -39,9 +39,6 @@
    </property>
    <item>
     <widget class="QILabel" name="m_pPage1Text1">
-     <property name="text">
-      <string>&lt;p&gt;This wizard will guide you through the process of exporting an appliance.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;&lt;p&gt;Please select the virtual machines that you wish to the appliance. You can select more than one. Please note that these machines have to be turned off before they can be exported.&lt;/p&gt;</string>
-     </property>
      <property name="wordWrap">
       <bool>true</bool>
      </property>

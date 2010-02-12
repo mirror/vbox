@@ -28,6 +28,7 @@
 /* Local includes */
 #include "QIWizard.h"
 #include "QILabel.h"
+#include "VBoxGlobal.h"
 
 /* System includes */
 #include <math.h>
@@ -178,3 +179,19 @@ void QIWizardPage::setSummaryFieldLinesNumber(QTextEdit *pSummaryField, int iNum
     int textMargin = 4; /* QTextDocument::documentMargin() returns '4' but available only since Qt 4.5 */
     pSummaryField->setFixedHeight(lineHeight * iNumber + textMargin * 2);
 }
+
+QString QIWizardPage::standardHelpText() const
+{
+    return tr("Use the <b>%1</b> button to go to the next page of the wizard and the "
+              "<b>%2</b> button to return to the previous page. "
+              "You can also press <b>%3</b> if you want to cancel the execution "
+              "of this wizard.</p>")
+        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::NextButton))))
+        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::BackButton))))
+#ifdef Q_WS_MAC
+        .arg(QKeySequence("ESC").toString()); /* There is no button shown on Mac OS X, so just say the key sequence. */
+#else /* Q_WS_MAC */
+        .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::CancelButton))));
+#endif /* Q_WS_MAC */
+}
+
