@@ -23,10 +23,12 @@
 #include "VBoxX11Helper.h"
 
 #include <iprt/cdefs.h>
+#include <iprt/string.h>
 #include <QX11Info>
 
 /* rhel3 build hack */
 RT_C_DECLS_BEGIN
+#include <X11/Xatom.h>
 #include <X11/Xlib.h>
 #include <X11/extensions/dpms.h>
 RT_C_DECLS_END
@@ -82,4 +84,49 @@ void X11ScreenSaverSettingsRestore()
 
     if (gX11DpmsState && gX11ScreenSaverDpmsAvailable)
         DPMSEnable(display);
+}
+
+/**
+ * Determine if the current Window manager is KWin (KDE)
+ */
+bool X11IsWindowManagerKWin()
+{
+    Atom typeReturned;
+    Atom utf8Atom;
+    int formatReturned;
+    unsigned long ulNitemsReturned;
+    unsigned long ulDummy;
+    unsigned char *pcData = NULL;
+    bool fIsKWinManaged = false;
+    Display *display = QX11Info::display();
+    Atom propNameAtom;
+    Window WMWindow = None;
+    
+    propNameAtom = XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", True);
+    if (XGetWindowProperty(display, QX11Info::appRootWindow(), propNameAtom,
+                           0, 512, False, XA_WINDOW, &typeReturned,
+                           &formatReturned, &ulNitemsReturned, &ulDummy, &pcData)
+                            == Success)
+    {
+
+        if (typeReturned == XA_WINDOW && formatReturned == 32)
+            WMWindow = *((Window*) pcData);
+        if (pcData)
+            XFree(pcData);
+        if (WMWindow != None)
+        {
+            propNameAtom = XInternAtom(display, "_NET_WM_NAME", True);
+            utf8Atom = XInternAtom(display, "UTF8_STRING", True);
+            if (XGetWindowProperty(QX11Info::display(), WMWindow, propNameAtom,
+                                   0, 512, False, utf8Atom, &typeReturned,
+                                   &formatReturned, &ulNitemsReturned, &ulDummy, &pcData)
+                    == Success)
+            {
+                fIsKWinManaged = RTStrCmp((const char*)pcData, "KWin") == 0;
+                if (pcData)
+                    XFree(pcData);
+            }
+        }
+    }
+    return fIsKWinManaged;
 }

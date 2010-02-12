@@ -2809,10 +2809,9 @@ void VBoxConsoleWnd::unlockActionsSwitch()
 #endif
 
 #ifdef Q_WS_X11
-    if (!mIsSeamless && !mIsFullscreen)
+    if (vboxGlobal().isKWinManaged() && !mIsSeamless && !mIsFullscreen)
     {
-        /* Workaround for KDE to
-         * let console window to exit
+        /* Workaround for a KWin bug to let console window to exit
          * seamless mode correctly. */
         setWindowFlags(Qt::Window);
         setVisible(true);
