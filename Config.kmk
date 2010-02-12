@@ -321,6 +321,10 @@ VBOX_WITH_PULSE = 1
 if1of ($(KBUILD_TARGET), linux solaris)
  VBOX_WITH_DBUS = 1
 endif
+# Enable building PAM modules
+if1of ($(KBUILD_TARGET), linux)
+ VBOX_WITH_PAM = 1
+endif
 # Disable WINMM support for Windows (not implemented).
 VBOX_WITH_WINMM =
 # Enabled internal networking.

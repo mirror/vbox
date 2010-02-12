@@ -27,6 +27,12 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 include $(PATH_SUB_CURRENT)/sharedfolders/Makefile.kmk
 include $(PATH_SUB_CURRENT)/drm/Makefile.kmk
+ifndef VBOX_OSE
+ # Will be in OSE?
+ ifdef VBOX_WITH_PAM
+  include $(PATH_SUB_CURRENT)/pam/Makefile.kmk
+ endif
+endif
 
 #
 # Globals
