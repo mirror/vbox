@@ -4779,8 +4779,8 @@ void VBoxGlobal::init()
     vm_render_mode_str = RTStrDup (virtualBox()
             .GetExtraData (VBoxDefs::GUI_RenderMode).toAscii().constData());
 
-#ifdef QT_WS_X11
-    mIsKWin = X11IsWindowManagerKWin();
+#ifdef Q_WS_X11
+    mIsKWinManaged = X11IsWindowManagerKWin();
 #endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
