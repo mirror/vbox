@@ -906,6 +906,31 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         /* Get device props */
         Bstr deviceProps;
         hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiDeviceProps"), deviceProps.asOutParam()); H();
+        /* Get GOP mode settings */
+        STR_FREE();
+        uint32_t u32GopMode = UINT32_MAX;
+        hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiGopMode"), &str); H();
+        if (str && *str)
+        {
+            u32GopMode = Utf8Str(str).toUInt32();
+        }
+        /* UGA mode settings */
+        STR_FREE();
+        uint32_t u32UgaHorisontal = 0;
+        hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaHorizontalResolution"), &str); H();
+        if (str && *str)
+        {
+            u32UgaHorisontal = Utf8Str(str).toUInt32();
+        }
+
+        STR_FREE();
+        uint32_t u32UgaVertical = 0;
+        hrc = pMachine->GetExtraData(Bstr("VBoxInternal2/EfiUgaVerticalResolution"), &str); H();
+        if (str && *str)
+        {
+            u32UgaVertical = Utf8Str(str).toUInt32();
+        }
+        STR_FREE();
 
         /*
          * EFI subtree.
@@ -923,6 +948,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC",           fIOAPIC);           RC_CHECK();
         rc = CFGMR3InsertBytes(pCfg,    "UUID", &HardwareUuid,sizeof(HardwareUuid));RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "64BitEntry", f64BitEntry); /* boolean */   RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "GopMode", u32GopMode);    RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaHorizontalResolution", u32UgaHorisontal);    RC_CHECK();
+        rc = CFGMR3InsertInteger(pCfg,  "UgaVerticalResolution", u32UgaVertical);    RC_CHECK();
     }
 
     /*
