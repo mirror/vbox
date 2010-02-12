@@ -192,6 +192,8 @@ UINewVMWzdPage2::UINewVMWzdPage2()
 
     connect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
             this, SLOT(sltNameChanged(const QString&)));
+    connect(m_pTypeSelector, SIGNAL(osTypeChanged()),
+            this, SLOT(sltOsTypeChanged()));
 
     /* Setup contents */
     m_pTypeSelector->activateLayout();
@@ -222,14 +224,22 @@ void UINewVMWzdPage2::sltNameChanged(const QString &strNewText)
 {
     /* Search for a matching OS type based on the string the user typed
      * already. */
-    /** @todo Perhaps we shouldn't do this if the user has manually selected
-     *        anything in any of the the combo boxes. */
     for (size_t i=0; i < RT_ELEMENTS(gs_OSTypePattern); ++i)
         if (strNewText.contains(gs_OSTypePattern[i].pattern))
         {
+            m_pTypeSelector->blockSignals(true);
             m_pTypeSelector->setType(vboxGlobal().vmGuestOSType(gs_OSTypePattern[i].pcstId));
+            m_pTypeSelector->blockSignals(false);
             break;
         }
+}
+
+void UINewVMWzdPage2::sltOsTypeChanged()
+{
+    /* If the user manually edited the OS type, we didn't want our automatic OS
+     * type guessing anymore. So simply disconnect the text edit signal. */
+    disconnect(m_pNameEditor, SIGNAL(textChanged(const QString&)),
+               this, SLOT(sltNameChanged(const QString&)));
 }
 
 UINewVMWzdPage3::UINewVMWzdPage3()

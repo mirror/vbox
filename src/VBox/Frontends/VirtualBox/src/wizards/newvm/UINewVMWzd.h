@@ -75,6 +75,7 @@ public:
 protected slots:
 
     void sltNameChanged(const QString &strNewText);
+    void sltOsTypeChanged();
 
 protected:
 
