@@ -124,6 +124,11 @@ typedef struct DEVEFI
     uint64_t        u64TscFrequency;
     /* Virtual machine CPU frequency */
     uint64_t        u64CpuFrequency;
+    /* GOP mode */
+    uint32_t        u32GopMode;
+    /* Uga mode resolutions */
+    uint32_t        u32UgaHorisontal;
+    uint32_t        u32UgaVertical;
 } DEVEFI;
 typedef DEVEFI *PDEVEFI;
 
@@ -151,6 +156,9 @@ static uint32_t efiInfoSize(PDEVEFI pThis)
         case EFI_INFO_INDEX_TEMPMEM_SIZE:
         case EFI_INFO_INDEX_STACK_BASE:
         case EFI_INFO_INDEX_STACK_SIZE:
+        case EFI_INFO_INDEX_GOP_MODE:
+        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:
+        case EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION:
             return 4;
         case EFI_INFO_INDEX_BOOT_ARGS:
             return (uint32_t)RTStrNLen(pThis->szBootArgs,
@@ -208,6 +216,15 @@ static uint8_t efiInfoNextByte(PDEVEFI pThis)
             return pThis->szBootArgs[pThis->iInfoPosition];
         case EFI_INFO_INDEX_DEVICE_PROPS:
             return pThis->pu8DeviceProps[pThis->iInfoPosition];
+        case EFI_INFO_INDEX_GOP_MODE:
+            value.u32 = pThis->u32GopMode;
+            break;
+        case EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION:
+            value.u32 = pThis->u32UgaHorisontal;
+            break;
+        case EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION:
+            value.u32 = pThis->u32UgaVertical;
+            break;
         default:
             Assert(false);
             value.u64 = 0;
@@ -1001,6 +1018,9 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "64BitEntry\0"
                               "BootArgs\0"
                               "DeviceProps\0"
+                              "GopMode\0"
+                              "UgaHorizontalResolution\0"
+                              "UgaVerticalResolution\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Configuration error: Invalid config value(s) for the EFI device"));
@@ -1114,7 +1134,30 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->u64FsbFrequency = 1333000000;
     pThis->u64TscFrequency = pThis->u64FsbFrequency * 3;
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
-
+    /*
+     * GOP graphics
+     */
+    rc = CFGMR3QueryU32(pCfg, "GopMode", &pThis->u32GopMode);
+    AssertRC(rc);
+    if (pThis->u32GopMode == UINT32_MAX)
+    {
+        pThis->u32GopMode = 2; /* 1024x768 */
+    }
+    /*
+     * Uga graphics
+     */
+    rc = CFGMR3QueryU32(pCfg, "UgaHorizontalResolution", &pThis->u32UgaHorisontal);
+    AssertRC(rc);
+    if (pThis->u32UgaHorisontal == 0)
+    {
+        pThis->u32UgaHorisontal = 1024; /* 1024x768 */
+    }
+    rc = CFGMR3QueryU32(pCfg, "UgaVerticalResolution", &pThis->u32UgaVertical);
+    AssertRC(rc);
+    if (pThis->u32UgaVertical == 0)
+    {
+        pThis->u32UgaVertical = 768; /* 1024x768 */
+    }
 
 #ifdef DEVEFI_WITH_VBOXDBG_SCRIPT
     /*

@@ -20,6 +20,9 @@
  */
 
 #include "VBoxConsole.h"
+#include "VBoxPkg.h"
+#include "DevEFI.h"
+#include "iprt/asm.h"
 
 /* @todo understand the reasons why TextOutputProtocol.SetMode isn't enough to switch mode. */
 #define VBOX_CONSOLE_VAR L"VBOX_CONSOLE_VAR"
@@ -29,6 +32,26 @@ static EFI_GUID gVBoxConsoleVarGuid = { 0xb53865fd, 0xb76c, 0x4433, { 0x9e, 0x85
 static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *TextOutputProtocol; 
 static EFI_GRAPHICS_OUTPUT_PROTOCOL    *Gop;
 static EFI_UGA_DRAW_PROTOCOL           *Uga;
+
+/*
+ *   @todo move this function to the library.
+ */
+static UINT32
+GetVmVariable(UINT32 Variable, CHAR8* Buffer, UINT32 Size )
+{
+    UINT32 VarLen, i;
+
+
+    ASMOutU32(EFI_INFO_PORT, Variable);
+    VarLen = ASMInU32(EFI_INFO_PORT);
+
+    for (i=0; i < VarLen && i < Size; i++)
+    {
+        Buffer[i] = ASMInU8(EFI_INFO_PORT);
+    }
+
+    return VarLen;
+}
 
 static VOID
 EFIAPI
@@ -42,9 +65,19 @@ ConsoleSwitchMode (
     OldTpl = gBS->RaiseTPL (TPL_NOTIFY);
     DEBUG((DEBUG_INFO, "%a:%d - SwitchMode\n", __FILE__,  __LINE__));
     if (Gop)
-        r = Gop->SetMode(Gop, 2);
-    if (Uga)
-        r = Uga->SetMode(Uga, 1024, 768, 32, 60);
+    {
+        UINT32 mode = 2;
+        GetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&mode, sizeof(UINT32));
+        r = Gop->SetMode(Gop, mode);
+    } 
+    else if (Uga)
+    {
+        UINT32 H = 1027;
+        UINT32 V = 768;
+        GetVmVariable(EFI_INFO_INDEX_UGA_HORISONTAL_RESOLUTION, (CHAR8 *)&H, sizeof(UINT32));
+        GetVmVariable(EFI_INFO_INDEX_UGA_VERTICAL_RESOLUTION, (CHAR8 *)&V, sizeof(UINT32));
+        r = Uga->SetMode(Uga, H, V, 32, 60);
+    }
     if(EFI_ERROR(r))
     {
         DEBUG((DEBUG_INFO, "%a:%d - %r\n", __FILE__,  __LINE__, r));
