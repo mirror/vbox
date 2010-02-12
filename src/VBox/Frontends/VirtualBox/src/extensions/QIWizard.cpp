@@ -35,6 +35,11 @@
 
 QIWizard::QIWizard(QWidget *pParent) : QIWithRetranslateUI<QWizard>(pParent)
 {
+#ifdef Q_WS_MAC
+    /* I'm really not sure why there shouldn't be any default button on Mac OS
+     * X. This prevents the using of Enter to jump to the next page. */
+    setOptions(options() ^ QWizard::NoDefaultButton);
+#endif /* Q_WS_MAC */
 }
 
 void QIWizard::resizeToGoldenRatio()
