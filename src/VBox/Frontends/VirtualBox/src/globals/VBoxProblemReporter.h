@@ -206,8 +206,8 @@ public:
     void cannotDiscardSavedState (const CConsole &console);
 
     void cannotSendACPIToMachine();
-    bool warnAboutVirtNotEnabled64BitsGuest();
-    bool warnAboutVirtNotEnabledGuestRequired();
+    bool warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported);
+    bool warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported);
 
     void cannotSetSnapshotFolder (const CMachine &aMachine, const QString &aPath);
 

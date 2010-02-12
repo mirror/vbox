@@ -793,28 +793,44 @@ void VBoxProblemReporter::cannotSendACPIToMachine()
             "does not support software shutdown."));
 }
 
-bool VBoxProblemReporter::warnAboutVirtNotEnabled64BitsGuest()
+bool VBoxProblemReporter::warnAboutVirtNotEnabled64BitsGuest(bool fHWVirtExSupported)
 {
-    return messageOkCancel (mainWindowShown(), Error,
-        tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-            "not operational. Your 64-bit guest will fail to detect a "
-            "64-bit CPU and will not be able to boot.</p><p>Please ensure "
-            "that you have enabled VT-x/AMD-V properly in the BIOS of your "
-            "host computer.</p>"),
-        0 /* aAutoConfirmId */,
-        tr ("Close VM"), tr ("Continue"));
+    if (fHWVirtExSupported)
+        return messageOkCancel (mainWindowShown(), Error,
+            tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
+                "not operational. Your 64-bit guest will fail to detect a "
+                "64-bit CPU and will not be able to boot.</p><p>Please ensure "
+                "that you have enabled VT-x/AMD-V properly in the BIOS of your "
+                "host computer.</p>"),
+            0 /* aAutoConfirmId */,
+            tr ("Close VM"), tr ("Continue"));
+    else
+        return messageOkCancel (mainWindowShown(), Error,
+            tr ("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                "Your 64-bit guest will fail to detect a 64-bit CPU and will "
+                "not be able to boot."),
+            0 /* aAutoConfirmId */,
+            tr ("Close VM"), tr ("Continue"));
 }
 
-bool VBoxProblemReporter::warnAboutVirtNotEnabledGuestRequired()
+bool VBoxProblemReporter::warnAboutVirtNotEnabledGuestRequired(bool fHWVirtExSupported)
 {
-    return messageOkCancel (mainWindowShown(), Error,
-        tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
-            "not operational. Certain guests (e.g. OS/2 and QNX) require "
-            "this feature.</p><p>Please ensure "
-            "that you have enabled VT-x/AMD-V properly in the BIOS of your "
-            "host computer.</p>"),
-        0 /* aAutoConfirmId */,
-        tr ("Close VM"), tr ("Continue"));
+    if (fHWVirtExSupported)
+        return messageOkCancel (mainWindowShown(), Error,
+            tr ("<p>VT-x/AMD-V hardware acceleration has been enabled, but is "
+                "not operational. Certain guests (e.g. OS/2 and QNX) require "
+                "this feature.</p><p>Please ensure "
+                "that you have enabled VT-x/AMD-V properly in the BIOS of your "
+                "host computer.</p>"),
+            0 /* aAutoConfirmId */,
+            tr ("Close VM"), tr ("Continue"));
+    else
+        return messageOkCancel (mainWindowShown(), Error,
+            tr ("<p>VT-x/AMD-V hardware acceleration is not available on your system. "
+                "Certain guests (e.g. OS/2 and QNX) require this feature and will "
+                "fail to boot without it.</p>"),
+            0 /* aAutoConfirmId */,
+            tr ("Close VM"), tr ("Continue"));
 }
 
 void VBoxProblemReporter::cannotSetSnapshotFolder (const CMachine &aMachine,
