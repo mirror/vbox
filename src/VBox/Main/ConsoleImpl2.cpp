@@ -1939,7 +1939,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);        RC_CHECK();
 # endif
 #endif
-#endif
         }
     }
 
