@@ -176,6 +176,7 @@ Machine::HWData::HWData()
 #endif
     mSyntheticCpu = false;
     mPropertyServiceActive = false;
+    mHpetEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
     mBootOrder[0] = DeviceType_Floppy;
@@ -188,6 +189,8 @@ Machine::HWData::HWData()
     mGuestPropertyNotificationPatterns = "";
 
     mFirmwareType = FirmwareType_BIOS;
+    mKeyboardHidType = KeyboardHidType_PS2Keyboard;
+    mPointingHidType = PointingHidType_PS2Mouse;
 
     for (size_t i = 0; i < RT_ELEMENTS(mCPUAttached); i++)
         mCPUAttached[i] = false;
@@ -1135,6 +1138,38 @@ STDMETHODIMP Machine::COMSETTER(CPUHotPlugEnabled)(BOOL enabled)
     }
 
     mHWData->mCPUHotPlugEnabled = enabled;
+
+    return rc;
+}
+
+STDMETHODIMP Machine::COMGETTER(HpetEnabled)(BOOL *enabled)
+{
+    CheckComArgOutPointerValid(enabled);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *enabled = mHWData->mHpetEnabled;
+
+    return S_OK;
+}
+
+STDMETHODIMP Machine::COMSETTER(HpetEnabled)(BOOL enabled)
+{
+    HRESULT rc = S_OK;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
+
+    mHWData->mHpetEnabled = enabled;
 
     return rc;
 }
@@ -6258,6 +6293,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mFirmwareType = data.firmwareType;
         mHWData->mPointingHidType = data.pointingHidType;
         mHWData->mKeyboardHidType = data.keyboardHidType;
+        mHWData->mHpetEnabled = data.fHpetEnabled;
 
 #ifdef VBOX_WITH_VRDP
         /* RemoteDisplay */
@@ -7272,6 +7308,9 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         // HID
         data.pointingHidType = mHWData->mPointingHidType;
         data.keyboardHidType = mHWData->mKeyboardHidType;
+
+        // HPET
+        data.fHpetEnabled = mHWData->mHpetEnabled;
 
         // boot order
         data.mapBootOrder.clear();

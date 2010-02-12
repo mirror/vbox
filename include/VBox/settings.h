@@ -564,8 +564,10 @@ struct Hardware
                         fSyntheticCpu,
                         fPAE;
     uint32_t            cCPUs;
-    bool                fCpuHotPlug;            // requires settings version 1.11 (VirtualBox 3.2)
-    CpuList             llCpus;                 // requires settings version 1.11 (VirtualBox 3.2)
+    bool                fCpuHotPlug;            // requires settings version 1.10 (VirtualBox 3.2)
+    CpuList             llCpus;                 // requires settings version 1.10 (VirtualBox 3.2)
+    bool                fHpetEnabled;           // requires settings version 1.10 (VirtualBox 3.2)
+
     CpuIdLeafsList      llCpuIdLeafs;
 
     uint32_t            ulMemorySizeMB;
@@ -577,6 +579,7 @@ struct Hardware
     bool                fAccelerate3D,
                         fAccelerate2DVideo;     // requires settings version 1.8 (VirtualBox 3.1)
     FirmwareType_T      firmwareType;           // requires settings version 1.9 (VirtualBox 3.1)
+
     PointingHidType_T   pointingHidType;        // requires settings version 1.10 (VirtualBox 3.2)
     KeyboardHidType_T   keyboardHidType;        // requires settings version 1.10 (VirtualBox 3.2)
 
