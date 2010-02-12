@@ -286,6 +286,8 @@ DevicesR3_INCS          = \
 
 DevicesR3_SOURCES       = \
 	Input/DevPS2.cpp \
+	Input/UsbKbd.cpp \
+	Input/UsbMouse.cpp \
 	Bus/DevPCI.cpp \
 	Graphics/DevVGA.cpp \
 	Storage/DevATA.cpp \

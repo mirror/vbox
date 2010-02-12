@@ -122,6 +122,9 @@ extern const PDMDRVREG g_DrvHostSerial;
 #ifdef VBOX_WITH_USB
 extern const PDMUSBREG g_UsbDevProxy;
 extern const PDMUSBREG g_UsbMsd;
+extern const PDMUSBREG g_UsbHid;
+extern const PDMUSBREG g_UsbHidKbd;
+extern const PDMUSBREG g_UsbHidMou;
 #endif
 
 #ifdef VBOX_WITH_SCSI
