@@ -2897,13 +2897,15 @@ void VBoxConsoleWnd::checkRequiredFeatures()
     if (fRecommendVirtEx && !isVirtEnabled)
     {
         bool ret;
+        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost()
+                                 .GetProcessorFeature (KProcessorFeature_HWVirtEx);
 
         vmPause (true);
 
         if (is64BitsGuest)
-            ret = vboxProblem().warnAboutVirtNotEnabled64BitsGuest();
+            ret = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
         else
-            ret = vboxProblem().warnAboutVirtNotEnabledGuestRequired();
+            ret = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
 
         if (ret == true)
             close();
