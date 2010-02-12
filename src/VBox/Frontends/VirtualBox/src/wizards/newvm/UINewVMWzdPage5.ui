@@ -71,9 +71,6 @@
    </item>
    <item>
     <widget class="QILabel" name="m_pPage5Text2">
-     <property name="text">
-      <string>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</string>
-     </property>
      <property name="wordWrap">
       <bool>true</bool>
      </property>

@@ -71,9 +71,6 @@
    </item>
    <item>
     <widget class="QILabel" name="m_pPage4Text2">
-     <property name="text">
-      <string>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</string>
-     </property>
      <property name="wordWrap">
       <bool>true</bool>
      </property>

@@ -3778,6 +3778,16 @@ QString VBoxGlobal::highlight (const QString &aStr, bool aToolTip /* = false */)
     return text;
 }
 
+/* static */
+QString VBoxGlobal::replaceHtmlEntities(QString strText)
+{
+    return strText
+        .replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
+        .replace('\"', "&quot;");
+}
+
 /**
  *  Reformats the input string @a aStr so that:
  *  - strings in single quotes will be put inside <nobr> and marked

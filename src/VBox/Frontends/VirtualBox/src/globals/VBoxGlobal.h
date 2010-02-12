@@ -776,6 +776,7 @@ public:
 
     static QString highlight (const QString &aStr, bool aToolTip = false);
 
+    static QString replaceHtmlEntities(QString strText);
     static QString emphasize (const QString &aStr);
 
     static QString systemLanguageId();

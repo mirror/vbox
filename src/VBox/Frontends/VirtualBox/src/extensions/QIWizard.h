@@ -66,6 +66,8 @@ protected:
 
     static void setSummaryFieldLinesNumber(QTextEdit *pSummaryField, int iNumber);
 
+    QString standardHelpText() const;
+
 private:
 
     QSize m_MinimumSizeHint;

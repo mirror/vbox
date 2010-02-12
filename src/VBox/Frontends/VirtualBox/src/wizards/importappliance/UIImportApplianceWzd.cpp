@@ -155,9 +155,6 @@ UIImportApplianceWzdPage1::UIImportApplianceWzdPage1()
 
     /* Setup validation */
     connect(m_pFileSelector, SIGNAL(pathChanged(const QString &)), this, SIGNAL(completeChanged()));
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIImportApplianceWzdPage1::retranslateUi()
@@ -171,6 +168,18 @@ void UIImportApplianceWzdPage1::retranslateUi()
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the Appliance Import Wizard!"));
+
+    m_pPage1Text1->setText(tr("<p>This wizard will guide you through importing an appliance.</p>"
+                              "<p>%1</p><p>VirtualBox currently supports importing appliances "
+                              "saved in the Open Virtualization Format (OVF). To continue, "
+                              "select the file to import below:</p>")
+                           .arg(standardHelpText()));
+}
+
+void UIImportApplianceWzdPage1::initializePage()
+{
+    /* Translate */
+    retranslateUi();
 }
 
 bool UIImportApplianceWzdPage1::isComplete() const

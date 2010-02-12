@@ -167,9 +167,6 @@ UINewVMWzdPage1::UINewVMWzdPage1()
 {
     /* Decorate page */
     Ui::UINewVMWzdPage1::setupUi(this);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewVMWzdPage1::retranslateUi()
@@ -179,6 +176,16 @@ void UINewVMWzdPage1::retranslateUi()
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the New Virtual Machine Wizard!"));
+
+    m_pPage1Text1->setText(tr("<p>This wizard will guide you through the steps that are necessary "
+                              "to create a new virtual machine for VirtualBox.</p><p>%1</p>")
+                           .arg(standardHelpText()));
+}
+
+void UINewVMWzdPage1::initializePage()
+{
+    /* Translate */
+    retranslateUi();
 }
 
 UINewVMWzdPage2::UINewVMWzdPage2()
@@ -197,9 +204,6 @@ UINewVMWzdPage2::UINewVMWzdPage2()
 
     /* Setup contents */
     m_pTypeSelector->activateLayout();
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewVMWzdPage2::retranslateUi()
@@ -261,9 +265,6 @@ UINewVMWzdPage3::UINewVMWzdPage3()
 
     /* Initialise page connections */
     ramSliderValueChanged(m_pRamSlider->value());
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewVMWzdPage3::retranslateUi()
@@ -357,9 +358,6 @@ UINewVMWzdPage4::UINewVMWzdPage4()
 
     /* Initialise page connections */
     hardDiskSourceChanged();
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewVMWzdPage4::retranslateUi()
@@ -558,9 +556,6 @@ UINewVMWzdPage5::UINewVMWzdPage5()
     m_pSummaryText->viewport()->setAutoFillBackground (false);
     /* Make the summary field read-only */
     m_pSummaryText->setReadOnly (true);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewVMWzdPage5::retranslateUi()
@@ -603,6 +598,13 @@ void UINewVMWzdPage5::retranslateUi()
     }
 
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
+
+    m_pPage5Text2->setText(tr("<p>If the above is correct press the <b>%1</b> button. Once "
+                              "you press it, a new virtual machine will be created. </p><p>Note "
+                              "that you can alter these and all other setting of the created "
+                              "virtual machine at any time using the <b>Settings</b> dialog "
+                              "accessible through the menu of the main window.</p>")
+                           .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
 }
 
 void UINewVMWzdPage5::initializePage()

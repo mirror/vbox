@@ -99,6 +99,8 @@ protected:
 
     void retranslateUi();
 
+    void initializePage();
+
     bool isComplete() const;
     bool validatePage();
 };

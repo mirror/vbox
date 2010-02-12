@@ -71,9 +71,6 @@ UIFirstRunWzdPage1::UIFirstRunWzdPage1()
 {
     /* Decorate page */
     Ui::UIFirstRunWzdPage1::setupUi(this);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIFirstRunWzdPage1::init()
@@ -95,6 +92,31 @@ void UIFirstRunWzdPage1::retranslateUi()
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the First Run Wizard!"));
+
+    m_pPage1Text1Var1->setText(tr("<p>You have started a newly created virtual machine for the "
+                                  "first time. This wizard will help you to perform the steps "
+                                  "necessary for installing an operating system of your choice "
+                                  "onto this virtual machine.</p><p>%1</p>")
+                               .arg(standardHelpText()));
+
+    m_pPage1Text1Var2->setText(tr("<p>You have started a newly created virtual machine for the "
+                                  "first time. This wizard will help you to perform the steps "
+                                  "necessary for booting an operating system of your choice on "
+                                  "the virtual machine.</p><p>Note that you will not be able to "
+                                  "install an operating system into this virtual machine right "
+                                  "now because you did not attach any hard disk to it. If this "
+                                  "is not what you want, you can cancel the execution of this "
+                                  "wizard, select <b>Settings</b> from the <b>Machine</b> menu "
+                                  "of the main VirtualBox window to access the settings dialog "
+                                  "of this machine and change the hard disk configuration.</p>"
+                                  "<p>%1</p>")
+                               .arg(standardHelpText()));
+}
+
+void UIFirstRunWzdPage1::initializePage()
+{
+    /* Translate */
+    retranslateUi();
 }
 
 UIFirstRunWzdPage2::UIFirstRunWzdPage2()
@@ -119,9 +141,6 @@ UIFirstRunWzdPage2::UIFirstRunWzdPage2()
     connect (m_pTypeFD, SIGNAL(clicked()), this, SLOT(sltMediumChanged()));
     connect (m_pMediaSelector, SIGNAL(currentIndexChanged(int)), this, SLOT(sltMediumChanged()));
     connect (m_pSelectMediaButton, SIGNAL(clicked()), this, SLOT(sltOpenVirtualMediaManager()));
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIFirstRunWzdPage2::init()
@@ -230,9 +249,6 @@ UIFirstRunWzdPage3::UIFirstRunWzdPage3()
     m_pSummaryText->viewport()->setAutoFillBackground (false);
     /* Make the summary field read-only */
     m_pSummaryText->setReadOnly (true);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UIFirstRunWzdPage3::init()

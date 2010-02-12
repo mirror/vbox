@@ -102,9 +102,6 @@ UINewHDWzdPage1::UINewHDWzdPage1()
 {
     /* Decorate page */
     Ui::UINewHDWzdPage1::setupUi(this);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewHDWzdPage1::retranslateUi()
@@ -114,6 +111,17 @@ void UINewHDWzdPage1::retranslateUi()
 
     /* Wizard page 1 title */
     setTitle(tr("Welcome to the Create New Virtual Disk Wizard!"));
+
+
+    m_pPage1Text1->setText(tr("<p>This wizard will help you to create a new virtual hard disk "
+                              "for your virtual machine.</p><p>%1</p>")
+                           .arg(standardHelpText()));
+}
+
+void UINewHDWzdPage1::initializePage()
+{
+    /* Translate */
+    retranslateUi();
 }
 
 UINewHDWzdPage2::UINewHDWzdPage2()
@@ -130,10 +138,8 @@ UINewHDWzdPage2::UINewHDWzdPage2()
     /* Setup connections */
     connect (m_pTypeDynamic, SIGNAL(clicked(bool)), this, SLOT(onTypeChanged()));
     connect (m_pTypeFixed, SIGNAL(clicked(bool)), this, SLOT(onTypeChanged()));
-
-    /* Translate */
-    retranslateUi();
 }
+
 void UINewHDWzdPage2::retranslateUi()
 {
     /* Translate uic generated strings */
@@ -234,9 +240,6 @@ UINewHDWzdPage3::UINewHDWzdPage3()
     connect(m_pLocationSelector, SIGNAL(clicked()), this, SLOT(onSelectLocationButtonClicked()));
     connect(m_pSizeSlider, SIGNAL(valueChanged(int)), this, SLOT(onSizeSliderValueChanged(int)));
     connect(m_pSizeEditor, SIGNAL(textChanged(const QString &)), this, SLOT(onSizeEditorTextChanged(const QString &)));
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewHDWzdPage3::retranslateUi()
@@ -410,9 +413,6 @@ UINewHDWzdPage4::UINewHDWzdPage4()
     m_pSummaryText->viewport()->setAutoFillBackground (false);
     /* Make the summary field read-only */
     m_pSummaryText->setReadOnly (true);
-
-    /* Translate */
-    retranslateUi();
 }
 
 void UINewHDWzdPage4::retranslateUi()
@@ -445,6 +445,10 @@ void UINewHDWzdPage4::retranslateUi()
     setSummaryFieldLinesNumber(m_pSummaryText, 3);
 
     m_pSummaryText->setText("<table cellspacing=0 cellpadding=0>" + summary + "</table>");
+
+    m_pPage4Text2->setText(tr("If the above settings are correct, press the <b>%1</b> button. "
+                              "Once you press it, a new hard disk will be created.")
+                           .arg(VBoxGlobal::replaceHtmlEntities(VBoxGlobal::removeAccelMark(wizard()->buttonText(QWizard::FinishButton)))));
 }
 
 void UINewHDWzdPage4::initializePage()
