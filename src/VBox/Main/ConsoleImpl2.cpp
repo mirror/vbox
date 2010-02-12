@@ -593,8 +593,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     BOOL fHpetEnabled;
 #ifdef VBOX_WITH_HPET
-    /* Need ability to allow enabling HPET in other profiles too */
-    fHpetEnabled = fExtProfile;
+    hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                          H();
+    /* Always enable HPET in extended profile */
+    fHpetEnabled |= fExtProfile;
 #else
     fHpetEnabled = false;
 #endif

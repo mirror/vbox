@@ -1465,6 +1465,7 @@ Hardware::Hardware()
           fPAE(false),
           cCPUs(1),
           fCpuHotPlug(false),
+          fHpetEnabled(false),
           ulMemorySizeMB((uint32_t)-1),
           ulVRAMSizeMB(8),
           cMonitors(1),
@@ -1508,6 +1509,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fPAE                      == h.fPAE)
                   && (cCPUs                     == h.cCPUs)
                   && (fCpuHotPlug               == h.fCpuHotPlug)
+                  && (fHpetEnabled              == h.fHpetEnabled)
                   && (llCpus                    == h.llCpus)
                   && (llCpuIdLeafs              == h.llCpuIdLeafs)
                   && (ulMemorySizeMB            == h.ulMemorySizeMB)
@@ -2091,6 +2093,10 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                                           N_("Invalid value '%s' in HID/Pointing/@type"),
                                           strHidType.c_str());
             }
+        }
+        else if (pelmHwChild->nameEquals("HPET"))
+        {
+            pelmHwChild->getAttributeValue("enabled", hw.fHpetEnabled);
         }
         else if (pelmHwChild->nameEquals("Boot"))
         {
@@ -2986,6 +2992,13 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
          pelmHid->setAttribute("Keyboard", pcszHid);
     }
 
+    if (    (m->sv >= SettingsVersion_v1_10)
+       )
+    {
+         xml::ElementNode *pelmHpet = pelmHardware->createChild("HPET");
+         pelmHpet->setAttribute("enabled", hw.fHpetEnabled);
+    }
+
     xml::ElementNode *pelmBoot = pelmHardware->createChild("Boot");
     for (BootOrderMap::const_iterator it = hw.mapBootOrder.begin();
          it != hw.mapBootOrder.end();
@@ -3555,11 +3568,13 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             m->sv = SettingsVersion_v1_9;
     }
 
+    // VirtualBox 3.2 adds support for CPU hotplug, RTC timezone control, HID type and HPET
     if (    m->sv < SettingsVersion_v1_10
          && (    fRTCUseUTC
               || hardwareMachine.fCpuHotPlug
               || hardwareMachine.pointingHidType != PointingHidType_PS2Mouse
               || hardwareMachine.keyboardHidType != KeyboardHidType_PS2Keyboard
+              || hardwareMachine.fHpetEnabled
             )
        )
         m->sv = SettingsVersion_v1_10;

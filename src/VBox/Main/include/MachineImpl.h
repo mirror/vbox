@@ -281,6 +281,7 @@ public:
         ULONG                mCPUCount;
         BOOL                 mCPUHotPlugEnabled;
         BOOL                 mAccelerate3DEnabled;
+        BOOL                 mHpetEnabled;
 
         BOOL                 mCPUAttached[SchemaDefs::MaxCPUCount];
 
@@ -375,6 +376,8 @@ public:
     STDMETHOD(COMSETTER(CPUCount))(ULONG cpuCount);
     STDMETHOD(COMGETTER(CPUHotPlugEnabled))(BOOL *enabled);
     STDMETHOD(COMSETTER(CPUHotPlugEnabled))(BOOL enabled);
+    STDMETHOD(COMGETTER(HpetEnabled))(BOOL *enabled);
+    STDMETHOD(COMSETTER(HpetEnabled))(BOOL enabled);
     STDMETHOD(COMGETTER(MemoryBalloonSize))(ULONG *memoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize))(ULONG memoryBalloonSize);
     STDMETHOD(COMGETTER(StatisticsUpdateInterval))(ULONG *statisticsUpdateInterval);
@@ -422,6 +425,12 @@ public:
     STDMETHOD(COMSETTER(TeleporterPassword))(IN_BSTR aPassword);
     STDMETHOD(COMGETTER(RTCUseUTC))(BOOL *aEnabled);
     STDMETHOD(COMSETTER(RTCUseUTC))(BOOL aEnabled);
+    STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);
+    STDMETHOD(COMSETTER(FirmwareType)) (FirmwareType_T  aFirmware);
+    STDMETHOD(COMGETTER(KeyboardHidType)) (KeyboardHidType_T *aKeyboardHidType);
+    STDMETHOD(COMSETTER(KeyboardHidType)) (KeyboardHidType_T  aKeyboardHidType);
+    STDMETHOD(COMGETTER(PointingHidType)) (PointingHidType_T *aPointingHidType);
+    STDMETHOD(COMSETTER(PointingHidType)) (PointingHidType_T  aPointingHidType);
 
     // IMachine methods
     STDMETHOD(SetBootOrder)(ULONG aPosition, DeviceType_T aDevice);
@@ -471,13 +480,6 @@ public:
     STDMETHOD(RemoveStorageController(IN_BSTR aName));
     STDMETHOD(GetStorageControllerByName(IN_BSTR aName, IStorageController **storageController));
     STDMETHOD(GetStorageControllerByInstance(ULONG aInstance, IStorageController **storageController));
-    STDMETHOD(COMGETTER(FirmwareType)) (FirmwareType_T *aFirmware);
-    STDMETHOD(COMSETTER(FirmwareType)) (FirmwareType_T  aFirmware);
-    STDMETHOD(COMGETTER(KeyboardHidType)) (KeyboardHidType_T *aKeyboardHidType);
-    STDMETHOD(COMSETTER(KeyboardHidType)) (KeyboardHidType_T  aKeyboardHidType);
-    STDMETHOD(COMGETTER(PointingHidType)) (PointingHidType_T *aPointingHidType);
-    STDMETHOD(COMSETTER(PointingHidType)) (PointingHidType_T  aPointingHidType);
-
     STDMETHOD(QuerySavedThumbnailSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
     STDMETHOD(ReadSavedThumbnailToArray)(BOOL aBGR, ULONG *aWidth, ULONG *aHeight, ComSafeArrayOut(BYTE, aData));
     STDMETHOD(QuerySavedScreenshotPNGSize)(ULONG *aSize, ULONG *aWidth, ULONG *aHeight);
