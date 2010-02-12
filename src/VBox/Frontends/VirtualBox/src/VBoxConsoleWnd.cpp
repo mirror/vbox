@@ -2807,6 +2807,17 @@ void VBoxConsoleWnd::unlockActionsSwitch()
     }
     mConsole->setMouseCoalescingEnabled (true);
 #endif
+
+#ifdef Q_WS_X11
+    if (!mIsSeamless && !mIsFullscreen)
+    {
+        /* Workaround for KDE to
+         * let console window to exit
+         * seamless mode correctly. */
+        setWindowFlags(Qt::Window);
+        setVisible(true);
+    }
+#endif
 }
 
 void VBoxConsoleWnd::mtExitMode()
@@ -3511,17 +3522,6 @@ bool VBoxConsoleWnd::toggleFullscreenMode (bool aOn, bool aSeamless)
 #else
     if (wasHidden)
         hide();
-#endif
-
-#ifdef Q_WS_X11
-    if (!aOn & aSeamless)
-    {
-        /* Workaround for KDE to
-         * let console window to exit
-         * seamless mode correctly. */
-        setWindowFlags(Qt::Window);
-        show();
-    }
 #endif
 
     return true;
