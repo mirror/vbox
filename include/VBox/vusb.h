@@ -229,7 +229,11 @@ typedef struct VUSBDESCINTERFACEEX
     /** The USB descriptor data. */
     VUSBDESCINTERFACE Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCINTERFACE. */
-    void *pvMore;
+    const void *pvMore;
+    /** Pointer to additional class- or vendor-specific interface descriptors. */
+    const void *pvClass;
+    /** Size of class- or vendor-specific descriptors. */
+    uint16_t cbClass;
     /** Pointer to an array of the endpoints referenced by the interface.
      * Core.bNumEndpoints in size. */
     const struct VUSBDESCENDPOINTEX *paEndpoints;
@@ -249,7 +253,11 @@ typedef struct VUSBDESCENDPOINTEX
      * @remark The wMaxPacketSize member is converted to native endian. */
     VUSBDESCENDPOINT Core;
     /** Pointer to additional descriptor bytes following what's covered by VUSBDESCENDPOINT. */
-    void *pvMore;
+    const void *pvMore;
+    /** Pointer to additional class- or vendor-specific interface descriptors. */
+    const void *pvClass;
+    /** Size of class- or vendor-specific descriptors. */
+    uint16_t cbClass;
 } VUSBDESCENDPOINTEX;
 /** Pointer to a parsed USB endpoint descriptor. */
 typedef VUSBDESCENDPOINTEX *PVUSBDESCENDPOINTEX;
