@@ -43,6 +43,7 @@ private:
 
     int hostkey;
     bool autoCapture;
+    bool captureMouseOnClick;
     QString guiFeatures;
     QString languageId;
     QString maxGuestRes;
@@ -61,6 +62,7 @@ class VBoxGlobalSettings : public QObject, public CIShared <VBoxGlobalSettingsDa
     Q_OBJECT
     Q_PROPERTY (int hostKey READ hostKey WRITE setHostKey)
     Q_PROPERTY (bool autoCapture READ autoCapture WRITE setAutoCapture)
+    Q_PROPERTY (bool captureMouseOnClick READ captureMouseOnClick WRITE setCaptureMouseOnClick)
     Q_PROPERTY (QString guiFeatures READ guiFeatures WRITE setGuiFeatures)
     Q_PROPERTY (QString languageId READ languageId WRITE setLanguageId)
     Q_PROPERTY (QString maxGuestRes READ maxGuestRes WRITE setMaxGuestRes)
@@ -89,6 +91,13 @@ public:
     void setAutoCapture (bool aAutoCapture)
     {
         mData()->autoCapture = aAutoCapture;
+        resetError();
+    }
+
+    bool captureMouseOnClick() const { return data()->captureMouseOnClick; }
+    void setCaptureMouseOnClick (bool aCaptureMouseOnClick)
+    {
+        mData()->captureMouseOnClick = aCaptureMouseOnClick;
         resetError();
     }
 

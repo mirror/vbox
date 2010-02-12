@@ -26,5 +26,6 @@
 void X11ScreenSaverSettingsInit();
 void X11ScreenSaverSettingsSave();
 void X11ScreenSaverSettingsRestore();
+bool X11IsWindowManagerKWin();
 
 #endif

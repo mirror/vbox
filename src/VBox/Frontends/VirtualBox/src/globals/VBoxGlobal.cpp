@@ -62,13 +62,13 @@
 #include <math.h>
 
 #ifdef Q_WS_X11
-#ifndef VBOX_OSE
-# include "VBoxLicenseViewer.h"
-#endif /* VBOX_OSE */
-
-#include <QTextBrowser>
-#include <QScrollBar>
-#include <QX11Info>
+# ifndef VBOX_OSE
+#  include "VBoxLicenseViewer.h"
+# endif /* VBOX_OSE */
+# include <QTextBrowser>
+# include <QScrollBar>
+# include <QX11Info>
+# include "VBoxX11Helper.h"
 #endif
 
 #ifdef Q_WS_MAC
@@ -589,6 +589,7 @@ VBoxGlobal::VBoxGlobal()
     , mIncreasedWindowCounter (false)
 #endif
     , mMediaEnumThread (NULL)
+    , mIsKWinManaged (false)
     , mVerString ("1.0")
 {
 }
@@ -4777,6 +4778,10 @@ void VBoxGlobal::init()
 
     vm_render_mode_str = RTStrDup (virtualBox()
             .GetExtraData (VBoxDefs::GUI_RenderMode).toAscii().constData());
+
+#ifdef QT_WS_X11
+    mIsKWin = X11IsWindowManagerKWin();
+#endif
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # ifdef VBOX_WITH_DEBUGGER_GUI_MENU

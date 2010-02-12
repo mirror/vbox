@@ -323,6 +323,7 @@ public:
 
     VBoxDefs::RenderMode vmRenderMode() const { return vm_render_mode; }
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
+    bool isKWinManaged() const { return mIsKWinManaged; }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled() const { return mDbgEnabled; }
@@ -916,6 +917,7 @@ private:
 
     VBoxDefs::RenderMode vm_render_mode;
     const char * vm_render_mode_str;
+    bool mIsKWinManaged;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /** Whether the debugger should be accessible or not.
