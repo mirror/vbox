@@ -47,8 +47,18 @@
 
 
 /*******************************************************************************
-*   Internal Functions                                                         *
+*   Defined Constants And Macros                                               *
 *******************************************************************************/
+/** The name of the settings files. */
+#define SCM_SETTINGS_FILENAME           ".scm-settings"
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+/** Pointer to const massager settings. */
+typedef struct SCMSETTINGSBASE const *PCSCMSETTINGSBASE;
+
 /** End of line marker type. */
 typedef enum SCMEOL
 {
@@ -121,10 +131,11 @@ typedef SCMSTREAM const *PCSCMSTREAM;
  * to @a pOut.
  *
  * @returns true if any changes were made, false if not.
- * @param   pIn         The input stream.
- * @param   pOut        The output stream.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-typedef bool (*PFNSCMREWRITER)(PSCMSTREAM pIn, PSCMSTREAM pOut);
+typedef bool (*PFNSCMREWRITER)(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 
 
 /**
@@ -162,25 +173,130 @@ typedef struct SCMDIFFSTATE
     bool            fIgnoreLeadingWhite;
     /** Whether to print special characters in human readable form or not. */
     bool            fSpecialChars;
+    /** The tab size. */
+    size_t          cchTab;
     /** Where to push the diff. */
     PRTSTREAM       pDiff;
 } SCMDIFFSTATE;
 /** Pointer to a diff state. */
 typedef SCMDIFFSTATE *PSCMDIFFSTATE;
 
+/**
+ * Source Code Massager Settings.
+ */
+typedef struct SCMSETTINGSBASE
+{
+    bool            fConvertEol;
+    bool            fConvertTabs;
+    bool            fForceFinalEol;
+    bool            fForceTrailingLine;
+    bool            fStripTrailingBlanks;
+    bool            fStripTrailingLines;
+    unsigned        cchTab;
+} SCMSETTINGSBASE;
+/** Pointer to massager settings. */
+typedef SCMSETTINGSBASE *PSCMSETTINGSBASE;
+
+/**
+ * Option identifiers.
+ *
+ * @note    The first chunk, down to SCMOPT_TAB_SIZE, are alternately set &
+ *          clear.  So, the option setting a flag (boolean) will have an even
+ *          number and the one clearing it will have an odd number.
+ * @note    Down to SCMOPT_LAST_SETTINGS corresponds exactly to SCMSETTINGSBASE.
+ */
+typedef enum SCMOPT
+{
+    SCMOPT_CONVERT_EOL = 10000,
+    SCMOPT_NO_CONVERT_EOL,
+    SCMOPT_CONVERT_TABS,
+    SCMOPT_NO_CONVERT_TABS,
+    SCMOPT_FORCE_FINAL_EOL,
+    SCMOPT_NO_FORCE_FINAL_EOL,
+    SCMOPT_FORCE_TRAILING_LINE,
+    SCMOPT_NO_FORCE_TRAILING_LINE,
+    SCMOPT_STRIP_TRAILING_BLANKS,
+    SCMOPT_NO_STRIP_TRAILING_BLANKS,
+    SCMOPT_STRIP_TRAILING_LINES,
+    SCMOPT_NO_STRIP_TRAILING_LINES,
+    SCMOPT_TAB_SIZE,
+    SCMOPT_LAST_SETTINGS = SCMOPT_TAB_SIZE,
+    //
+    SCMOPT_DIFF_IGNORE_EOL,
+    SCMOPT_DIFF_NO_IGNORE_EOL,
+    SCMOPT_DIFF_IGNORE_SPACE,
+    SCMOPT_DIFF_NO_IGNORE_SPACE,
+    SCMOPT_DIFF_IGNORE_LEADING_SPACE,
+    SCMOPT_DIFF_NO_IGNORE_LEADING_SPACE,
+    SCMOPT_DIFF_IGNORE_TRAILING_SPACE,
+    SCMOPT_DIFF_NO_IGNORE_TRAILING_SPACE,
+    SCMOPT_DIFF_SPECIAL_CHARS,
+    SCMOPT_DIFF_NO_SPECIAL_CHARS,
+    SCMOPT_END
+} SCMOPT;
+
+
+/**
+ * File/dir pattern + options.
+ */
+typedef struct SCMPATRNOPTPAIR
+{
+    char *pszPattern;
+    char *pszOptions;
+} SCMPATRNOPTPAIR;
+/** Pointer to a pattern + option pair. */
+typedef SCMPATRNOPTPAIR *PSCMPATRNOPTPAIR;
+
+
+/** Pointer to a settings set. */
+typedef struct SCMSETTINGS *PSCMSETTINGS;
+/**
+ * Settings set.
+ *
+ * This structure is constructed from the command line arguments or any
+ * .scm-settings file found in a directory we recurse into.  When recusing in
+ * and out of a directory, we push and pop a settings set for it.
+ *
+ * The .scm-settings file has two kinds of setttings, first there are the
+ * unqualified base settings and then there are the settings which applies to a
+ * set of files or directories.  The former are lines with command line options.
+ * For the latter, the options are preceeded by a string pattern and a colon.
+ * The pattern specifies which files (and/or directories) the options applies
+ * to.
+ *
+ * We parse the base options into the Base member and put the others into the
+ * paPairs array.
+ */
+typedef struct SCMSETTINGS
+{
+    /** Pointer to the setting file below us in the stack. */
+    PSCMSETTINGS        pDown;
+    /** Pointer to the setting file above us in the stack. */
+    PSCMSETTINGS        pUp;
+    /** File/dir patterns and their options. */
+    PSCMPATRNOPTPAIR    paPairs;
+    /** The number of entires in paPairs. */
+    uint32_t            cPairs;
+    /** The base settings that was read out of the file. */
+    SCMSETTINGSBASE     Base;
+} SCMSETTINGS;
+/** Pointer to a const settings set. */
+typedef SCMSETTINGS const *PCSCMSETTINGS;
+
+
 
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static bool rewrite_StripTrailingBlanks(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_ForceNativeEol(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_ForceLF(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_ForceCRLF(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut);
-static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut);
+static bool rewrite_StripTrailingBlanks(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_ForceNativeEol(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_ForceLF(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_ForceCRLF(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 
 
 /*******************************************************************************
@@ -188,21 +304,48 @@ static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut);
 *******************************************************************************/
 static const char   g_szProgName[]          = "scm";
 static const char  *g_pszChangedSuff        = "";
-static bool         g_fDryRun               = true;
-static bool         g_fStripTrailingBlanks  = true;
-static bool         g_fStripTrailingLines   = true;
-static bool         g_fForceFinalEol        = true;
-static bool         g_fForceTrailingLine    = false;
-static bool         g_fConvertTabs          = true;
-static unsigned     g_cchTab                = 8;
 static const char   g_szTabSpaces[16+1]     = "                ";
-static bool         g_fConvertEol           = true;
+static bool         g_fDryRun               = true;
 static bool         g_fDiffSpecialChars     = true;
 static bool         g_fDiffIgnoreEol        = false;
 static bool         g_fDiffIgnoreLeadingWS  = false;
 static bool         g_fDiffIgnoreTrailingWS = false;
 static int          g_iVerbosity            = 2;//99; //0;
-static const char  *g_pszFileFilter         = "*";
+
+/** The global settings. */
+static SCMSETTINGSBASE const g_Defaults =
+{
+    /* .fStripTrailingBlanks = */   true,
+    /* .fStripTrailingLines = */    true,
+    /* .fForceFinalEol = */         true,
+    /* .fForceTrailingLine = */     false,
+    /* .fConvertTabs = */           true,
+    /* .cchTab = */                 8,
+    /* .fConvertEol = */            true
+};
+
+/** Option definitions for the base settings. */
+static RTGETOPTDEF  g_aScmOpts[] =
+{
+    { "--convert-eol",                      SCMOPT_CONVERT_EOL,                     RTGETOPT_REQ_NOTHING },
+    { "--no-convert-eol",                   SCMOPT_NO_CONVERT_EOL,                  RTGETOPT_REQ_NOTHING },
+    { "--convert-tabs",                     SCMOPT_CONVERT_TABS,                    RTGETOPT_REQ_NOTHING },
+    { "--no-convert-tabs",                  SCMOPT_NO_CONVERT_TABS,                 RTGETOPT_REQ_NOTHING },
+    { "--force-final-eol",                  SCMOPT_FORCE_FINAL_EOL,                 RTGETOPT_REQ_NOTHING },
+    { "--no-force-final-eol",               SCMOPT_NO_FORCE_FINAL_EOL,              RTGETOPT_REQ_NOTHING },
+    { "--force-trailing-line",              SCMOPT_FORCE_TRAILING_LINE,             RTGETOPT_REQ_NOTHING },
+    { "--no-force-trailing-line",           SCMOPT_NO_FORCE_TRAILING_LINE,          RTGETOPT_REQ_NOTHING },
+    { "--strip-trailing-blanks",            SCMOPT_STRIP_TRAILING_BLANKS,           RTGETOPT_REQ_NOTHING },
+    { "--no-strip-trailing-blanks",         SCMOPT_NO_STRIP_TRAILING_BLANKS,        RTGETOPT_REQ_NOTHING },
+    { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
+    { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
+    { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
+};
+
+/** Consider files matching the following patterns (base names only). */
+static const char  *g_pszFileFilter         = NULL;
+/** Filter out files matching the following patterns.  This is applied to the
+ *  base names as well as the absolute paths. */
 static const char  *g_pszFileFilterOut      =
     "*.exe|"
     "*.com|"
@@ -213,10 +356,16 @@ static const char  *g_pszFileFilterOut      =
     "*/src/VBox/Runtime/common/checksum/md5.cpp|"
     "/dummy/."
 ;
+/** Consider directories matching the following patterns (base names only) */
 static const char  *g_pszDirFilter          = NULL;
+/** Filter out directories matching the following patterns.  This is applied
+ *  to base names as well as the aboslute paths.  All absolute paths ends with a
+ *  slash and dot ("/.").  */
 static const char  *g_pszDirFilterOut       =
     // generic
     ".svn|"
+    ".hg|"
+    ".git|"
     "CVS|"
     // root
     "out|"
@@ -1184,7 +1333,7 @@ static void scmDiffPrintLines(PSCMDIFFSTATE pState, char chPrefix, PSCMSTREAM pS
                     RTStrmWrite(pState->pDiff, pchStart, pchTab - pchStart);
                     offVir += pchTab - pchStart;
 
-                    size_t cchTab = g_cchTab - offVir % g_cchTab;
+                    size_t cchTab = pState->cchTab - offVir % pState->cchTab;
                     switch (cchTab)
                     {
                         case 1: RTStrmPutStr(pState->pDiff, "."); break;
@@ -1485,10 +1634,12 @@ static size_t scmDiffSynchronize(PSCMDIFFSTATE pState, size_t cMatches)
  * @param   fIgnoreTrailingWhite  Set if trailing white space should be ignored.
  * @param   fSpecialChars       Whether to print special chars in a human
  *                              readable form or not.
+ * @param   cchTab              The tab size.
  * @param   pDiff               Where to write the diff.
  */
 size_t ScmDiffStreams(const char *pszFilename, PSCMSTREAM pLeft, PSCMSTREAM pRight, bool fIgnoreEol,
-                      bool fIgnoreLeadingWhite, bool fIgnoreTrailingWhite, bool fSpecialChars, PRTSTREAM pDiff)
+                      bool fIgnoreLeadingWhite, bool fIgnoreTrailingWhite, bool fSpecialChars,
+                      size_t cchTab, PRTSTREAM pDiff)
 {
 #ifdef RT_STRICT
     ScmStreamCheckItegrity(pLeft);
@@ -1507,6 +1658,7 @@ size_t ScmDiffStreams(const char *pszFilename, PSCMSTREAM pLeft, PSCMSTREAM pRig
     State.fIgnoreLeadingWhite   = fIgnoreLeadingWhite;
     State.fIgnoreTrailingWhite  = fIgnoreTrailingWhite;
     State.fSpecialChars         = fSpecialChars;
+    State.cchTab                = cchTab;
     State.pDiff                 = pDiff;
 
     /*
@@ -1554,6 +1706,597 @@ size_t ScmDiffStreams(const char *pszFilename, PSCMSTREAM pLeft, PSCMSTREAM pRig
 
 
 
+/* -=-=-=-=-=- settings -=-=-=-=-=- */
+
+/**
+ * Init a settings structure with settings from @a pSrc.
+ *
+ * @returns IPRT status code
+ * @param   pSettings           The settings.
+ * @param   pSrc                The source settings.
+ */
+static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSBASE pSrc)
+{
+    *pSettings = *pSrc;
+    /* No dynamically allocated stuff yet. */
+    return VINF_SUCCESS;
+}
+
+/**
+ * Init a settings structure.
+ *
+ * @returns IPRT status code
+ * @param   pSettings           The settings.
+ */
+static int scmSettingsBaseInit(PSCMSETTINGSBASE pSettings)
+{
+    return scmSettingsBaseInitAndCopy(pSettings, &g_Defaults);
+}
+
+/**
+ * Deletes the settings, i.e. free any dynamically allocated content.
+ *
+ * @param   pSettings           The settings.
+ */
+static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
+{
+    if (pSettings)
+    {
+        Assert(pSettings->cchTab != ~(unsigned)0);
+        pSettings->cchTab = ~(unsigned)0;
+        /* No dynamically allocated stuff yet. */
+    }
+}
+
+/**
+ * Processes a RTGetOpt result.
+ *
+ * @retval  VINF_SUCCESS if handled.
+ * @retval  VERR_OUT_OF_RANGE if the option value was out of range.
+ * @retval  VERR_GETOPT_UNKNOWN_OPTION if the option was not recognized.
+ *
+ * @param   pSettings           The settings to change.
+ * @param   rc                  The RTGetOpt return value.
+ * @param   pValueUnion         The RTGetOpt value union.
+ */
+static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOPTUNION pValueUnion)
+{
+    switch (rc)
+    {
+        case SCMOPT_CONVERT_EOL:
+            pSettings->fConvertEol = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_CONVERT_EOL:
+            pSettings->fConvertEol = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_CONVERT_TABS:
+            pSettings->fConvertTabs = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_CONVERT_TABS:
+            pSettings->fConvertTabs = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_FORCE_FINAL_EOL:
+            pSettings->fForceFinalEol = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_FORCE_FINAL_EOL:
+            pSettings->fForceFinalEol = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_FORCE_TRAILING_LINE:
+            pSettings->fForceTrailingLine = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_FORCE_TRAILING_LINE:
+            pSettings->fForceTrailingLine = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_STRIP_TRAILING_BLANKS:
+            pSettings->fStripTrailingBlanks = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_STRIP_TRAILING_BLANKS:
+            pSettings->fStripTrailingBlanks = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_STRIP_TRAILING_LINES:
+            pSettings->fStripTrailingLines = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NO_STRIP_TRAILING_LINES:
+            pSettings->fStripTrailingLines = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_TAB_SIZE:
+            if (   pValueUnion->u8 < 1
+                || pValueUnion->u8 >= RT_ELEMENTS(g_szTabSpaces))
+            {
+                RTMsgError("Invalid tab size: %u - must be in {1..%u}\n",
+                           pValueUnion->u8, RT_ELEMENTS(g_szTabSpaces) - 1);
+                return VERR_OUT_OF_RANGE;
+            }
+            pSettings->cchTab = pValueUnion->u8;
+            return VINF_SUCCESS;
+
+        default:
+            return VERR_GETOPT_UNKNOWN_OPTION;
+    }
+}
+
+/**
+ * Parses an option string.
+ *
+ * @returns IPRT status code.
+ * @param   pBase               The base settings structure to apply the options
+ *                              to.
+ * @param   pszOptions          The options to parse.
+ */
+static int scmSettingsBaseParseString(PSCMSETTINGSBASE pBase, const char *pszLine)
+{
+    int    cArgs;
+    char **papszArgs;
+    int rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszLine, NULL);
+    if (RT_SUCCESS(rc))
+    {
+        RTGETOPTUNION   ValueUnion;
+        RTGETOPTSTATE   GetOptState;
+        rc = RTGetOptInit(&GetOptState, cArgs, papszArgs, &g_aScmOpts[0], RT_ELEMENTS(g_aScmOpts), 0, 0 /*fFlags*/);
+        if (RT_SUCCESS(rc))
+        {
+            while ((rc = RTGetOpt(&GetOptState, &ValueUnion)) != 0)
+            {
+                rc = scmSettingsBaseHandleOpt(pBase, rc, &ValueUnion);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        RTGetOptArgvFree(papszArgs);
+    }
+
+    return rc;
+}
+
+/**
+ * Parses an unterminated option string.
+ *
+ * @returns IPRT status code.
+ * @param   pBase               The base settings structure to apply the options
+ *                              to.
+ * @param   pchLine             The line.
+ * @param   cchLine             The line length.
+ */
+static int scmSettingsBaseParseStringN(PSCMSETTINGSBASE pBase, const char *pchLine, size_t cchLine)
+{
+    char *pszLine = RTStrDupN(pchLine, cchLine);
+    if (!pszLine)
+        return VERR_NO_MEMORY;
+    int rc = scmSettingsBaseParseString(pBase, pszLine);
+    RTStrFree(pszLine);
+    return rc;
+}
+
+/**
+ * Verifies the options string.
+ *
+ * @returns IPRT status code.
+ * @param   pszOptions          The options to verify .
+ */
+static int scmSettingsBaseVerifyString(const char *pszOptions)
+{
+    SCMSETTINGSBASE Base;
+    int rc = scmSettingsBaseInit(&Base);
+    if (RT_SUCCESS(rc))
+    {
+        rc = scmSettingsBaseParseString(&Base, pszOptions);
+        scmSettingsBaseDelete(&Base);
+    }
+    return rc;
+}
+
+/**
+ * Loads settings found in editor and SCM settings directives within the
+ * document (@a pStream).
+ *
+ * @returns IPRT status code.
+ * @param   pBase               The settings base to load settings into.
+ * @param   pStream             The stream to scan for settings directives.
+ */
+static int scmSettingsBaseLoadFromDocument(PSCMSETTINGSBASE pBase, PSCMSTREAM pStream)
+{
+    /** @todo Editor and SCM settings directives in documents.  */
+    return VINF_SUCCESS;
+}
+
+/**
+ * Creates a new settings file struct, cloning @a pSettings.
+ *
+ * @returns IPRT status code.
+ * @param   ppSettings          Where to return the new struct.
+ * @param   pSettingsBase       The settings to inherit from.
+ */
+static int scmSettingsCreate(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE pSettingsBase)
+{
+    PSCMSETTINGS pSettings = (PSCMSETTINGS)RTMemAlloc(sizeof(*pSettings));
+    if (!pSettings)
+        return VERR_NO_MEMORY;
+    int rc = scmSettingsBaseInitAndCopy(&pSettings->Base, pSettingsBase);
+    if (RT_SUCCESS(rc))
+    {
+        pSettings->pDown   = NULL;
+        pSettings->pUp     = NULL;
+        pSettings->paPairs = NULL;
+        pSettings->cPairs  = 0;
+        *ppSettings = pSettings;
+        return VINF_SUCCESS;
+    }
+    RTMemFree(pSettings);
+    return rc;
+}
+
+/**
+ * Destroys a settings structure.
+ *
+ * @param   pSettings           The settgins structure to destroy.  NULL is OK.
+ */
+static void scmSettingsDestroy(PSCMSETTINGS pSettings)
+{
+    if (pSettings)
+    {
+        scmSettingsBaseDelete(&pSettings->Base);
+        for (size_t i = 0; i < pSettings->cPairs; i++)
+        {
+            RTStrFree(pSettings->paPairs[i].pszPattern);
+            RTStrFree(pSettings->paPairs[i].pszOptions);
+            pSettings->paPairs[i].pszPattern = NULL;
+            pSettings->paPairs[i].pszOptions = NULL;
+        }
+        RTMemFree(pSettings->paPairs);
+        pSettings->paPairs = NULL;
+        RTMemFree(pSettings);
+    }
+}
+
+/**
+ * Adds a pattern/options pair to the settings structure.
+ *
+ * @returns IPRT status code.
+ * @param   pSettings           The settings.
+ * @param   pchLine             The line containing the unparsed pair.
+ * @param   cchLine             The length of the line.
+ */
+static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_t cchLine)
+{
+    /*
+     * Split the string.
+     */
+    const char *pchOptions = (const char *)memchr(pchLine, ':', cchLine);
+    if (!pchOptions)
+        return VERR_INVALID_PARAMETER;
+    size_t cchPattern = pchOptions - pchLine - 1;
+    size_t cchOptions = cchLine - cchPattern - 1 - 1;
+    pchOptions++;
+
+    /* strip spaces everywhere */
+    while (cchPattern > 0 && RT_C_IS_SPACE(pchLine[cchPattern - 1]))
+        cchPattern--;
+    while (cchPattern > 0 && RT_C_IS_SPACE(*pchLine))
+        cchPattern--, pchLine++;
+
+    while (cchOptions > 0 && RT_C_IS_SPACE(pchOptions[cchOptions - 1]))
+        cchOptions--;
+    while (cchOptions > 0 && RT_C_IS_SPACE(*pchOptions))
+        cchOptions--, cchOptions++;
+
+    /* Quietly ignore empty patterns and empty options. */
+    if (!cchOptions || !cchPattern)
+        return VINF_SUCCESS;
+
+    /*
+     * Add the pair and verify the option string.
+     */
+    uint32_t iPair = pSettings->cPairs;
+    if ((iPair % 32) == 0)
+    {
+        void *pvNew = RTMemRealloc(pSettings->paPairs, (iPair + 32) * sizeof(pSettings->paPairs[0]));
+        if (!pvNew)
+            return VERR_NO_MEMORY;
+        pSettings->paPairs = (PSCMPATRNOPTPAIR)pvNew;
+    }
+
+    pSettings->paPairs[iPair].pszPattern = RTStrDupN(pchLine, cchPattern);
+    pSettings->paPairs[iPair].pszOptions = RTStrDupN(pchOptions, cchOptions);
+    int rc;
+    if (   pSettings->paPairs[iPair].pszPattern
+        && pSettings->paPairs[iPair].pszOptions)
+        rc = scmSettingsBaseVerifyString(pSettings->paPairs[iPair].pszOptions);
+    else
+        rc = VERR_NO_MEMORY;
+    if (RT_SUCCESS(rc))
+        pSettings->cPairs = iPair + 1;
+    else
+    {
+        RTStrFree(pSettings->paPairs[iPair].pszPattern);
+        RTStrFree(pSettings->paPairs[iPair].pszOptions);
+    }
+    return rc;
+}
+
+/**
+ * Loads in the settings from @a pszFilename.
+ *
+ * @returns IPRT status code.
+ * @param   pSettings           Where to load the settings file.
+ * @param   pszFilename         The file to load.
+ */
+static int scmSettingsLoadFile(PSCMSETTINGS pSettings, const char *pszFilename)
+{
+    SCMSTREAM Stream;
+    int rc = ScmStreamInitForReading(&Stream, pszFilename);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("%s: ScmStreamInitForReading -> %Rrc\n", pszFilename, rc);
+        return rc;
+    }
+
+    SCMEOL      enmEol;
+    const char *pchLine;
+    size_t      cchLine;
+    while ((pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol)) != NULL)
+    {
+        /* Ignore leading spaces. */
+        while (cchLine > 0 && RT_C_IS_SPACE(*pchLine))
+            pchLine++, cchLine--;
+
+        /* Ignore empty lines and comment lines. */
+        if (cchLine < 1 || *pchLine == '#')
+            continue;
+
+        /* What kind of line is it? */
+        const char *pchColon = (const char *)memchr(pchLine, ':', cchLine);
+        if (pchColon)
+            rc = scmSettingsAddPair(pSettings, pchLine, cchLine);
+        else
+            rc = scmSettingsBaseParseStringN(&pSettings->Base, pchLine, cchLine);
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("%s:%d: %Rrc\n", pszFilename, ScmStreamTellLine(&Stream), rc);
+            break;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+        rc = ScmStreamGetStatus(&Stream);
+        if (RT_FAILURE(rc))
+            RTMsgError("%s: ScmStreamGetStatus- > %Rrc\n", pszFilename, rc);
+    }
+
+    ScmStreamDelete(&Stream);
+    return rc;
+}
+
+/**
+ * Parse the specified settings file creating a new settings struct from it.
+ *
+ * @returns IPRT status code
+ * @param   ppSettings          Where to return the new settings.
+ * @param   pszFilename         The file to parse.
+ * @param   pSettingsBase       The base settings we inherit from.
+ */
+static int scmSettingsCreateFromFile(PSCMSETTINGS *ppSettings, const char *pszFilename, PCSCMSETTINGSBASE pSettingsBase)
+{
+    PSCMSETTINGS pSettings;
+    int rc = scmSettingsCreate(&pSettings, pSettingsBase);
+    if (RT_SUCCESS(rc))
+    {
+        rc = scmSettingsLoadFile(pSettings, pszFilename);
+        if (RT_SUCCESS(rc))
+        {
+            *ppSettings = pSettings;
+            return VINF_SUCCESS;
+        }
+
+        scmSettingsDestroy(pSettings);
+    }
+    *ppSettings = NULL;
+    return rc;
+}
+
+
+/**
+ * Create an initial settings structure when starting processing a new file or
+ * directory.
+ *
+ * This will look for .scm-settings files from the root and down to the
+ * specified directory, combining them into the returned settings structure.
+ *
+ * @returns IPRT status code.
+ * @param   ppSettings          Where to return the pointer to the top stack
+ *                              object.
+ * @param   pBaseSettings       The base settings we inherit from (globals
+ *                              typically).
+ * @param   pszPath             The absolute path to the new directory or file.
+ */
+static int scmSettingsCreateForPath(PSCMSETTINGS *ppSettings, PCSCMSETTINGSBASE pBaseSettings, const char *pszPath)
+{
+    /*
+     * We'll be working with a stack copy of the path.
+     */
+    char    szFile[RTPATH_MAX];
+    size_t  cchDir = strlen(pszPath);
+    if (cchDir >= sizeof(szFile) - sizeof(SCM_SETTINGS_FILENAME))
+        return VERR_FILENAME_TOO_LONG;
+
+    /*
+     * Create the bottom-most settings.
+     */
+    PSCMSETTINGS pSettings;
+    int rc = scmSettingsCreate(&pSettings, pBaseSettings);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /*
+     * Enumerate the path components from the root and down. Load any setting
+     * files we find.
+     */
+    size_t cComponents = RTPathCountComponents(pszPath);
+    for (size_t i = 1; i < cComponents; i++)
+    {
+        rc = RTPathCopyComponents(szFile, sizeof(szFile), pszPath, i);
+        if (RT_SUCCESS(rc))
+            rc = RTPathAppend(szFile, sizeof(szFile), SCM_SETTINGS_FILENAME);
+        if (RT_FAILURE(rc))
+            break;
+        if (RTFileExists(szFile))
+        {
+            rc = scmSettingsLoadFile(pSettings, szFile);
+            if (RT_FAILURE(rc))
+                break;
+        }
+    }
+
+    if (RT_SUCCESS(rc))
+        *ppSettings = pSettings;
+    else
+        scmSettingsDestroy(pSettings);
+    return rc;
+}
+
+/**
+ * Pushes a new settings set onto the stack.
+ *
+ * @param   ppSettingsStack     The pointer to the pointer to the top stack
+ *                              element.  This will be used as input and output.
+ * @param   pSettings           The settings to push onto the stack.
+ */
+static void scmSettingsStackPush(PSCMSETTINGS *ppSettingsStack, PSCMSETTINGS pSettings)
+{
+    PSCMSETTINGS pOld = *ppSettingsStack;
+    pSettings->pDown  = pOld;
+    pSettings->pUp    = NULL;
+    if (pOld)
+        pOld->pUp = pSettings;
+    *ppSettingsStack = pSettings;
+}
+
+/**
+ * Pushes the settings of the specified directory onto the stack.
+ *
+ * We will load any .scm-settings in the directory.  A stack entry is added even
+ * if no settings file was found.
+ *
+ * @returns IPRT status code.
+ * @param   ppSettingsStack     The pointer to the pointer to the top stack
+ *                              element.  This will be used as input and output.
+ * @param   pszDir              The directory to do this for.
+ */
+static int scmSettingsStackPushDir(PSCMSETTINGS *ppSettingsStack, const char *pszDir)
+{
+    char szFile[RTPATH_MAX];
+    int rc = RTPathJoin(szFile, sizeof(szFile), pszDir, SCM_SETTINGS_FILENAME);
+    if (RT_SUCCESS(rc))
+    {
+        PSCMSETTINGS pSettings;
+        rc = scmSettingsCreate(&pSettings, &(*ppSettingsStack)->Base);
+        if (RT_SUCCESS(rc))
+        {
+            if (RTFileExists(szFile))
+                rc = scmSettingsLoadFile(pSettings, szFile);
+            if (RT_SUCCESS(rc))
+            {
+                scmSettingsStackPush(ppSettingsStack, pSettings);
+                return VINF_SUCCESS;
+            }
+
+            scmSettingsDestroy(pSettings);
+        }
+    }
+    return rc;
+}
+
+
+/**
+ * Pops a settings set off the stack.
+ *
+ * @returns The popped setttings.
+ * @param   ppSettingsStack     The pointer to the pointer to the top stack
+ *                              element.  This will be used as input and output.
+ */
+static PSCMSETTINGS scmSettingsStackPop(PSCMSETTINGS *ppSettingsStack)
+{
+    PSCMSETTINGS pRet = *ppSettingsStack;
+    PSCMSETTINGS pNew = pRet ? pRet->pDown : NULL;
+    *ppSettingsStack = pNew;
+    if (pNew)
+        pNew->pUp    = NULL;
+    if (pRet)
+    {
+        pRet->pUp    = NULL;
+        pRet->pDown  = NULL;
+    }
+    return pRet;
+}
+
+/**
+ * Pops and destroys the top entry of the stack.
+ *
+ * @param   ppSettingsStack     The pointer to the pointer to the top stack
+ *                              element.  This will be used as input and output.
+ */
+static void scmSettingsStackPopAndDestroy(PSCMSETTINGS *ppSettingsStack)
+{
+    scmSettingsDestroy(scmSettingsStackPop(ppSettingsStack));
+}
+
+/**
+ * Constructs the base settings for the specified file name.
+ *
+ * @returns IPRT status code.
+ * @param   pSettingsStack      The top element on the settings stack.
+ * @param   pszFilename         The file name.
+ * @param   pszBasename         The base name (pointer within @a pszFilename).
+ * @param   cchBasename         The length of the base name.  (For passing to
+ *                              RTStrSimplePatternMultiMatch.)
+ * @param   pBase               Base settings to initialize.
+ */
+static int scmSettingsStackMakeFileBase(PCSCMSETTINGS pSettingsStack, const char *pszFilename,
+                                        const char *pszBasename, size_t cchBasename, PSCMSETTINGSBASE pBase)
+{
+    int rc = scmSettingsBaseInitAndCopy(pBase, &pSettingsStack->Base);
+    if (RT_SUCCESS(rc))
+    {
+        /* find the bottom entry in the stack. */
+        PCSCMSETTINGS pCur = pSettingsStack;
+        while (pCur->pDown)
+            pCur = pCur->pDown;
+
+        /* Work our way up thru the stack and look for matching pairs. */
+        while (pCur)
+        {
+            size_t const cPairs = pCur->cPairs;
+            if (cPairs)
+            {
+                for (size_t i = 0; i < cPairs; i++)
+                    if (   RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
+                                                        pszBasename,  cchBasename, NULL)
+                        || RTStrSimplePatternMultiMatch(pCur->paPairs[i].pszPattern, RTSTR_MAX,
+                                                        pszFilename,  RTSTR_MAX, NULL))
+                    {
+                        rc = scmSettingsBaseParseString(pBase, pCur->paPairs[i].pszOptions);
+                        if (RT_FAILURE(rc))
+                            break;
+                    }
+                if (RT_FAILURE(rc))
+                    break;
+            }
+
+            /* advance */
+            pCur = pCur->pUp;
+        }
+    }
+    if (RT_FAILURE(rc))
+        scmSettingsBaseDelete(pBase);
+    return rc;
+}
+
 
 /* -=-=-=-=-=- misc -=-=-=-=-=- */
 
@@ -1587,10 +2330,11 @@ static void ScmVerbose(int iLevel, const char *pszFormat, ...)
  * @returns True if modified, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_StripTrailingBlanks(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_StripTrailingBlanks(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    if (!g_fStripTrailingBlanks)
+    if (!pSettings->fStripTrailingBlanks)
         return false;
 
     bool        fModified = false;
@@ -1625,16 +2369,18 @@ static bool rewrite_StripTrailingBlanks(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns True if modified, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    if (!g_fConvertTabs)
+    if (!pSettings->fConvertTabs)
         return false;
 
-    bool        fModified = false;
-    SCMEOL      enmEol;
-    size_t      cchLine;
-    const char *pchLine;
+    size_t const    cchTab = pSettings->cchTab;
+    bool            fModified = false;
+    SCMEOL          enmEol;
+    size_t          cchLine;
+    const char     *pchLine;
     while ((pchLine = ScmStreamGetLine(pIn, &cchLine, &enmEol)) != NULL)
     {
         int rc;
@@ -1651,7 +2397,7 @@ static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut)
                 offTab += cchChunk;
                 ScmStreamWrite(pOut, pchChunk, cchChunk);
 
-                size_t  cchToTab = g_cchTab - offTab % g_cchTab;
+                size_t  cchToTab = cchTab - offTab % cchTab;
                 ScmStreamWrite(pOut, g_szTabSpaces, cchToTab);
                 offTab += cchToTab;
 
@@ -1681,11 +2427,12 @@ static bool rewrite_ExpandTabs(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  * @param   enmDesiredEol       The desired end of line indicator type.
  */
-static bool rewrite_ForceEol(PSCMSTREAM pIn, PSCMSTREAM pOut, SCMEOL enmDesiredEol)
+static bool rewrite_ForceEol(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings, SCMEOL enmDesiredEol)
 {
-    if (!g_fConvertEol)
+    if (!pSettings->fConvertEol)
         return false;
 
     bool        fModified = false;
@@ -1715,13 +2462,14 @@ static bool rewrite_ForceEol(PSCMSTREAM pIn, PSCMSTREAM pOut, SCMEOL enmDesiredE
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_ForceNativeEol(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_ForceNativeEol(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    return rewrite_ForceEol(pIn, pOut, SCMEOL_CRLF);
+    return rewrite_ForceEol(pIn, pOut, pSettings, SCMEOL_CRLF);
 #else
-    return rewrite_ForceEol(pIn, pOut, SCMEOL_LF);
+    return rewrite_ForceEol(pIn, pOut, pSettings, SCMEOL_LF);
 #endif
 }
 
@@ -1731,10 +2479,11 @@ static bool rewrite_ForceNativeEol(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_ForceLF(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_ForceLF(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    return rewrite_ForceEol(pIn, pOut, SCMEOL_LF);
+    return rewrite_ForceEol(pIn, pOut, pSettings, SCMEOL_LF);
 }
 
 /**
@@ -1743,10 +2492,11 @@ static bool rewrite_ForceLF(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_ForceCRLF(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_ForceCRLF(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    return rewrite_ForceEol(pIn, pOut, SCMEOL_CRLF);
+    return rewrite_ForceEol(pIn, pOut, pSettings, SCMEOL_CRLF);
 }
 
 /**
@@ -1756,12 +2506,15 @@ static bool rewrite_ForceCRLF(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  *
  * @remarks ASSUMES trailing white space has been removed already.
  */
-static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    if (!g_fStripTrailingLines && !g_fForceTrailingLine && !g_fForceFinalEol)
+    if (   !pSettings->fStripTrailingLines
+        && !pSettings->fForceTrailingLine
+        && !pSettings->fForceFinalEol)
         return false;
 
     size_t const cLines = ScmStreamCountLines(pIn);
@@ -1773,7 +2526,7 @@ static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut)
     /* Figure out if we need to adjust the number of lines or not. */
     size_t cLinesNew = cLines;
 
-    if (   g_fStripTrailingLines
+    if (   pSettings->fStripTrailingLines
         && ScmStreamIsWhiteLine(pIn, cLinesNew - 1))
     {
         while (   cLinesNew > 1
@@ -1781,11 +2534,11 @@ static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut)
             cLinesNew--;
     }
 
-    if (    g_fForceTrailingLine
+    if (    pSettings->fForceTrailingLine
         && !ScmStreamIsWhiteLine(pIn, cLinesNew - 1))
         cLinesNew++;
 
-    bool fFixMissingEol = g_fForceFinalEol
+    bool fFixMissingEol = pSettings->fForceFinalEol
                        && ScmStreamGetEolByLine(pIn, cLinesNew - 1) == SCMEOL_NONE;
 
     if (   !fFixMissingEol
@@ -1803,6 +2556,7 @@ static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut)
         while (cCopied++ < cLinesNew)
             ScmStreamPutLine(pOut, "", 0, ScmStreamGetEol(pIn));
     }
+    /* Fix missing EOL if required. */
     else if (fFixMissingEol)
     {
         if (ScmStreamGetEol(pIn) == SCMEOL_LF)
@@ -1821,8 +2575,9 @@ static bool rewrite_AdjustTrailingLines(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  */
-static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     /* These files should be zero bytes. */
     if (pIn->cb == 0)
@@ -1837,6 +2592,7 @@ static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  *
  * @todo
  *
@@ -1844,7 +2600,7 @@ static bool rewrite_Makefile_kup(PSCMSTREAM pIn, PSCMSTREAM pOut)
  *      - sort if1of/ifn1of sets.
  *      - line continuation slashes should only be preceeded by one space.
  */
-static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
     return false;
 }
@@ -1855,6 +2611,7 @@ static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @returns true if modifications were made, false if not.
  * @param   pIn                 The input stream.
  * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
  *
  * @todo
  *
@@ -1878,8 +2635,9 @@ static bool rewrite_Makefile_kmk(PSCMSTREAM pIn, PSCMSTREAM pOut)
  *      - Indentation of precompiler statements (#ifdef, #defines).
  *      - space between functions.
  */
-static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut)
+static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
+
     return false;
 }
 
@@ -1893,8 +2651,11 @@ static bool rewrite_C_and_CPP(PSCMSTREAM pIn, PSCMSTREAM pOut)
  * @param   pszBasename         The base name (pointer within @a pszFilename).
  * @param   cchBasename         The length of the base name.  (For passing to
  *                              RTStrSimplePatternMultiMatch.)
+ * @param   pBaseSettings       The base settings to use.  It's OK to modify
+ *                              these.
  */
-static int scmProcessFile(const char *pszFilename, const char *pszBasename, size_t cchBasename)
+static int scmProcessFileInner(const char *pszFilename, const char *pszBasename, size_t cchBasename,
+                               PSCMSETTINGSBASE pBaseSettings)
 {
     /*
      * Do the file level filtering.
@@ -1945,65 +2706,76 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
         ScmVerbose(1, "Processing '%s'...\n", pszFilename);
 
         /*
-         * Create two more streams for output and push the text thru all the
-         * rewriters, switching the two streams around when something is
-         * actually rewritten.  Stream1 remains unchanged.
+         * Gather SCM and editor settings from the stream.
          */
-        SCMSTREAM Stream2;
-        rc = ScmStreamInitForWriting(&Stream2, &Stream1);
+        rc = scmSettingsBaseLoadFromDocument(pBaseSettings, &Stream1);
         if (RT_SUCCESS(rc))
         {
-            SCMSTREAM Stream3;
-            rc = ScmStreamInitForWriting(&Stream3, &Stream1);
+            ScmStreamRewindForReading(&Stream1);
+
+            /*
+             * Create two more streams for output and push the text thru all the
+             * rewriters, switching the two streams around when something is
+             * actually rewritten.  Stream1 remains unchanged.
+             */
+            SCMSTREAM Stream2;
+            rc = ScmStreamInitForWriting(&Stream2, &Stream1);
             if (RT_SUCCESS(rc))
             {
-                bool        fModified = false;
-                PSCMSTREAM  pIn       = &Stream1;
-                PSCMSTREAM  pOut      = &Stream2;
-                for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
+                SCMSTREAM Stream3;
+                rc = ScmStreamInitForWriting(&Stream3, &Stream1);
+                if (RT_SUCCESS(rc))
                 {
-                    bool fRc = pCfg->papfnRewriter[iRw](pIn, pOut);
-                    if (fRc)
+                    bool        fModified = false;
+                    PSCMSTREAM  pIn       = &Stream1;
+                    PSCMSTREAM  pOut      = &Stream2;
+                    for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
                     {
-                        PSCMSTREAM pTmp = pOut;
-                        pOut = pIn == &Stream1 ? &Stream3 : pIn;
-                        pIn  = pTmp;
-                        fModified = true;
+                        bool fRc = pCfg->papfnRewriter[iRw](pIn, pOut, pBaseSettings);
+                        if (fRc)
+                        {
+                            PSCMSTREAM pTmp = pOut;
+                            pOut = pIn == &Stream1 ? &Stream3 : pIn;
+                            pIn  = pTmp;
+                            fModified = true;
+                        }
+                        ScmStreamRewindForReading(pIn);
+                        ScmStreamRewindForWriting(pOut);
                     }
-                    ScmStreamRewindForReading(pIn);
-                    ScmStreamRewindForWriting(pOut);
-                }
 
-                /*
-                 * If rewritten, write it back to disk.
-                 */
-                if (fModified)
-                {
-                    if (!g_fDryRun)
+                    /*
+                     * If rewritten, write it back to disk.
+                     */
+                    if (fModified)
                     {
-                        ScmVerbose(1, "Writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
-                        rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
-                        if (RT_FAILURE(rc))
-                            RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                        if (!g_fDryRun)
+                        {
+                            ScmVerbose(1, "Writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
+                            rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
+                            if (RT_FAILURE(rc))
+                                RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                        }
+                        else
+                        {
+                            ScmVerbose(1, "Would have modified file \"%s\"\n", pszFilename);
+                            ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
+                                           g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, pBaseSettings->cchTab, g_pStdOut);
+                        }
                     }
                     else
-                    {
-                        ScmVerbose(1, "Would have modified file \"%s\"\n", pszFilename);
-                        ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
-                                       g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, g_pStdOut);
-                    }
+                        ScmVerbose(2, "Unchanged \"%s\"\n", pszFilename);
+
+                    ScmStreamDelete(&Stream3);
                 }
                 else
-                    ScmVerbose(2, "Unchanged \"%s\"\n", pszFilename);
-
-                ScmStreamDelete(&Stream3);
+                    RTMsgError("Failed to init stream for writing: %Rrc\n", rc);
+                ScmStreamDelete(&Stream2);
             }
             else
                 RTMsgError("Failed to init stream for writing: %Rrc\n", rc);
-            ScmStreamDelete(&Stream2);
         }
         else
-            RTMsgError("Failed to init stream for writing: %Rrc\n", rc);
+            RTMsgError("scmSettingsBaseLoadFromDocument: %Rrc\n", rc);
     }
     else
         ScmVerbose(3, "not text file: \"%s\"\n", pszFilename);
@@ -2011,6 +2783,33 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
 
     return rc;
 }
+
+/**
+ * Processes a file.
+ *
+ * This is just a wrapper for scmProcessFileInner for avoid wasting stack in the
+ * directory recursion method.
+ *
+ * @returns IPRT status code.
+ * @param   pszFilename         The file name.
+ * @param   pszBasename         The base name (pointer within @a pszFilename).
+ * @param   cchBasename         The length of the base name.  (For passing to
+ *                              RTStrSimplePatternMultiMatch.)
+ * @param   pSettingsStack      The settings stack (pointer to the top element).
+ */
+static int scmProcessFile(const char *pszFilename, const char *pszBasename, size_t cchBasename,
+                          PSCMSETTINGS pSettingsStack)
+{
+    SCMSETTINGSBASE Base;
+    int rc = scmSettingsStackMakeFileBase(pSettingsStack, pszFilename, pszBasename, cchBasename, &Base);
+    if (RT_SUCCESS(rc))
+    {
+        rc = scmProcessFileInner(pszFilename, pszBasename, cchBasename, &Base);
+        scmSettingsBaseDelete(&Base);
+    }
+    return rc;
+}
+
 
 /**
  * Tries to correct RTDIRENTRY_UNKNOWN.
@@ -2042,10 +2841,12 @@ static RTDIRENTRYTYPE scmFigureUnknownType(const char *pszPath)
  * @param   cchDir              Length of our path in pszbuf.
  * @param   pEntry              Directory entry buffer.  This is also passed
  *                              along when recursing to save stack space.
+ * @param   pSettingsStack      The settings stack (pointer to the top element).
  * @param   iRecursion          The recursion depth.  This is used to restrict
  *                              the recursions.
  */
-static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY pEntry, unsigned iRecursion)
+static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY pEntry,
+                                      PSCMSETTINGS pSettingsStack, unsigned iRecursion)
 {
     Assert(cchDir > 1 && pszBuf[cchDir - 1] == '.');
 
@@ -2100,7 +2901,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
 
         /* Process the file or directory, skip the rest. */
         if (enmType == RTDIRENTRYTYPE_FILE)
-            rc = scmProcessFile(pszBuf, pEntry->szName, pEntry->cbName);
+            rc = scmProcessFile(pszBuf, pEntry->szName, pEntry->cbName, pSettingsStack);
         else if (enmType == RTDIRENTRYTYPE_DIRECTORY)
         {
             /* Append the dot for the benefit of the pattern matching. */
@@ -2124,7 +2925,12 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
                     )
                )
             {
-                rc = scmProcessDirTreeRecursion(pszBuf, cchSubDir, pEntry, iRecursion + 1);
+                rc = scmSettingsStackPushDir(&pSettingsStack, pszBuf);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = scmProcessDirTreeRecursion(pszBuf, cchSubDir, pEntry, pSettingsStack, iRecursion + 1);
+                    scmSettingsStackPopAndDestroy(&pSettingsStack);
+                }
             }
         }
         if (RT_FAILURE(rc))
@@ -2142,7 +2948,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
  * @param   pszDir              The directory to start with.  This is pointer to
  *                              a RTPATH_MAX sized buffer.
  */
-static int scmProcessDirTree(char *pszDir)
+static int scmProcessDirTree(char *pszDir, PSCMSETTINGS pSettingsStack)
 {
     /*
      * Setup the recursion.
@@ -2151,7 +2957,7 @@ static int scmProcessDirTree(char *pszDir)
     if (RT_SUCCESS(rc))
     {
         RTDIRENTRY Entry;
-        rc = scmProcessDirTreeRecursion(pszDir, strlen(pszDir), &Entry, 0);
+        rc = scmProcessDirTreeRecursion(pszDir, strlen(pszDir), &Entry, pSettingsStack, 0);
     }
     else
         RTMsgError("RTPathAppend: %Rrc\n", rc);
@@ -2163,30 +2969,44 @@ static int scmProcessDirTree(char *pszDir)
  * Processes a file or directory specified as an command line argument.
  *
  * @returns IPRT status code
- * @param   pszSomething    What we found in the commad line arguments.
+ * @param   pszSomething        What we found in the commad line arguments.
+ * @param   pSettingsStack      The settings stack (pointer to the top element).
  */
-static int scmProcessSomething(const char *pszSomething)
+static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsStack)
 {
     char szBuf[RTPATH_MAX];
     int rc = RTPathAbs(pszSomething, szBuf, sizeof(szBuf));
     if (RT_SUCCESS(rc))
     {
-        if (RTFileExists(szBuf))
+        PSCMSETTINGS pSettings;
+        rc = scmSettingsCreateForPath(&pSettings, &pSettingsStack->Base, szBuf);
+        if (RT_SUCCESS(rc))
         {
-            const char *pszBasename = RTPathFilename(szBuf);
-            if (pszBasename)
+            scmSettingsStackPush(&pSettingsStack, pSettings);
+
+            if (RTFileExists(szBuf))
             {
-                size_t cchBasename = strlen(pszBasename);
-                rc = scmProcessFile(szBuf, pszBasename, cchBasename);
+                const char *pszBasename = RTPathFilename(szBuf);
+                if (pszBasename)
+                {
+                    size_t cchBasename = strlen(pszBasename);
+                    rc = scmProcessFile(szBuf, pszBasename, cchBasename, pSettingsStack);
+                }
+                else
+                {
+                    RTMsgError("RTPathFilename: NULL\n");
+                    rc = VERR_IS_A_DIRECTORY;
+                }
             }
             else
-            {
-                RTMsgError("RTPathFilename: NULL\n");
-                rc = VERR_IS_A_DIRECTORY;
-            }
+                rc = scmProcessDirTree(szBuf, pSettingsStack);
+
+            PSCMSETTINGS pPopped = scmSettingsStackPop(&pSettingsStack);
+            Assert(pPopped == pSettings);
+            scmSettingsDestroy(pSettings);
         }
         else
-            rc = scmProcessDirTree(szBuf);
+            RTMsgError("scmSettingsInitStack: %Rrc\n", rc);
     }
     else
         RTMsgError("RTPathAbs: %Rrc\n", rc);
@@ -2200,35 +3020,29 @@ int main(int argc, char **argv)
         return 1;
 
     /*
+     * Init the settings.
+     */
+    PSCMSETTINGS pSettings;
+    rc = scmSettingsCreate(&pSettings, &g_Defaults);
+    if (RT_FAILURE(rc))
+    {
+        RTMsgError("scmSettingsCreate: %Rrc\n", rc);
+        return 1;
+    }
+
+    /*
      * Parse arguments and process input in order (because this is the only
      * thing that works at the moment).
      */
-    enum SCMOPT
+    static RTGETOPTDEF s_aOpts[16 + RT_ELEMENTS(g_aScmOpts)] =
     {
-        SCMOPT_DIFF_IGNORE_EOL = 10000,
-        SCMOPT_DIFF_NO_IGNORE_EOL,
-        SCMOPT_DIFF_IGNORE_SPACE,
-        SCMOPT_DIFF_NO_IGNORE_SPACE,
-        SCMOPT_DIFF_IGNORE_LEADING_SPACE,
-        SCMOPT_DIFF_NO_IGNORE_LEADING_SPACE,
-        SCMOPT_DIFF_IGNORE_TRAILING_SPACE,
-        SCMOPT_DIFF_NO_IGNORE_TRAILING_SPACE,
-        SCMOPT_DIFF_SPECIAL_CHARS,
-        SCMOPT_DIFF_NO_SPECIAL_CHARS,
-        SCMOPT_STRIP_TRAILING_LINES,
-        SCMOPT_NO_STRIP_TRAILING_LINES,
-        SCMOPT_FORCE_FINAL_EOL,
-        SCMOPT_NO_FORCE_FINAL_EOL,
-        SCMOPT_FORCE_TRAILING_LINE,
-        SCMOPT_NO_FORCE_TRAILING_LINE,
-        SCMOPT_LAST
-    };
-    static const RTGETOPTDEF s_aOpts[] =
-    {
-        { "--strip-trailing-blanks",            'b',                                    RTGETOPT_REQ_NOTHING },
-        { "--no-strip-trailing-blanks",         'B',                                    RTGETOPT_REQ_NOTHING },
-        { "--convert-tabs",                     'c',                                    RTGETOPT_REQ_NOTHING },
-        { "--no-convert-tabs",                  'C',                                    RTGETOPT_REQ_NOTHING },
+        { "--dry-run",                          'd',                                    RTGETOPT_REQ_NOTHING },
+        { "--real-run",                         'D',                                    RTGETOPT_REQ_NOTHING },
+        { "--file-filter",                      'f',                                    RTGETOPT_REQ_STRING  },
+        { "--help",                             'h',                                    RTGETOPT_REQ_NOTHING },
+        { "--quiet",                            'q',                                    RTGETOPT_REQ_NOTHING },
+        { "--verbose",                          'v',                                    RTGETOPT_REQ_NOTHING },
+        { "--version",                          'V',                                    RTGETOPT_REQ_NOTHING },
         { "--diff-ignore-eol",                  SCMOPT_DIFF_IGNORE_EOL,                 RTGETOPT_REQ_NOTHING },
         { "--diff-no-ignore-eol",               SCMOPT_DIFF_NO_IGNORE_EOL,              RTGETOPT_REQ_NOTHING },
         { "--diff-ignore-space",                SCMOPT_DIFF_IGNORE_SPACE,               RTGETOPT_REQ_NOTHING },
@@ -2239,22 +3053,8 @@ int main(int argc, char **argv)
         { "--diff-no-ignore-trailing-space",    SCMOPT_DIFF_NO_IGNORE_TRAILING_SPACE,   RTGETOPT_REQ_NOTHING },
         { "--diff-special-chars",               SCMOPT_DIFF_SPECIAL_CHARS,              RTGETOPT_REQ_NOTHING },
         { "--diff-no-special-chars",            SCMOPT_DIFF_NO_SPECIAL_CHARS,           RTGETOPT_REQ_NOTHING },
-        { "--dry-run",                          'd',                                    RTGETOPT_REQ_NOTHING },
-        { "--real-run",                         'D',                                    RTGETOPT_REQ_NOTHING },
-        { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
-        { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
-        { "--force-final-eol",                  SCMOPT_FORCE_FINAL_EOL,                 RTGETOPT_REQ_NOTHING },
-        { "--no-force-final-eol",               SCMOPT_NO_FORCE_FINAL_EOL,              RTGETOPT_REQ_NOTHING },
-        { "--force-trailing-line",              SCMOPT_FORCE_TRAILING_LINE,             RTGETOPT_REQ_NOTHING },
-        { "--no-force-trailing-line",           SCMOPT_NO_FORCE_TRAILING_LINE,          RTGETOPT_REQ_NOTHING },
-        { "--convert-eol",                      'e',                                    RTGETOPT_REQ_NOTHING },
-        { "--no-convert-eol",                   'E',                                    RTGETOPT_REQ_NOTHING },
-        { "--file-filter",                      'f',                                    RTGETOPT_REQ_STRING  },
-        { "--help",                             'h',                                    RTGETOPT_REQ_NOTHING },
-        { "--quiet",                            'q',                                    RTGETOPT_REQ_NOTHING },
-        { "--tab-size",                         't',                                    RTGETOPT_REQ_UINT8   },
-        { "--verbose",                          'v',                                    RTGETOPT_REQ_NOTHING },
     };
+    memcpy(&s_aOpts[RT_ELEMENTS(s_aOpts) - RT_ELEMENTS(g_aScmOpts)], &g_aScmOpts[0], sizeof(g_aScmOpts));
 
     RTGETOPTUNION   ValueUnion;
     RTGETOPTSTATE   GetOptState;
@@ -2266,36 +3066,12 @@ int main(int argc, char **argv)
     {
         switch (rc)
         {
-            case 'b':
-                g_fStripTrailingBlanks = true;
-                break;
-
-            case 'B':
-                g_fStripTrailingBlanks = false;
-                break;
-
-            case 'c':
-                g_fConvertTabs = true;
-                break;
-
-            case 'C':
-                g_fConvertTabs = false;
-                break;
-
             case 'd':
                 g_fDryRun = true;
                 break;
 
             case 'D':
                 g_fDryRun = false;
-                break;
-
-            case 'e':
-                g_fConvertEol = true;
-                break;
-
-            case 'E':
-                g_fConvertEol = false;
                 break;
 
             case 'f':
@@ -2321,20 +3097,18 @@ int main(int argc, char **argv)
                 g_iVerbosity = 0;
                 break;
 
-            case 't':
-                if (   ValueUnion.u8 < 1
-                    || ValueUnion.u8 >= RT_ELEMENTS(g_szTabSpaces))
-                {
-                    RTMsgError("Invalid tab size: %u - must be in {1..%u}\n",
-                               ValueUnion.u8, RT_ELEMENTS(g_szTabSpaces) - 1);
-                    return 2;
-                }
-                g_cchTab = ValueUnion.u8;
-                break;
-
             case 'v':
                 g_iVerbosity++;
                 break;
+
+            case 'V':
+            {
+                /* The following is assuming that svn does it's job here. */
+                static const char s_szRev[] = "$Revision$";
+                const char *psz = RTStrStripL(strchr(s_szRev, ' '));
+                RTPrintf("r%.*s\n", strchr(psz, ' ') - psz, psz);
+                return 0;
+            }
 
             case SCMOPT_DIFF_IGNORE_EOL:
                 g_fDiffIgnoreEol = true;
@@ -2371,27 +3145,6 @@ int main(int argc, char **argv)
                 g_fDiffSpecialChars = false;
                 break;
 
-            case SCMOPT_STRIP_TRAILING_LINES:
-                g_fStripTrailingLines = true;
-                break;
-            case SCMOPT_NO_STRIP_TRAILING_LINES:
-                g_fStripTrailingLines = false;
-                break;
-
-            case SCMOPT_FORCE_FINAL_EOL:
-                g_fForceFinalEol = true;
-                break;
-            case SCMOPT_NO_FORCE_FINAL_EOL:
-                g_fForceFinalEol = false;
-                break;
-
-            case SCMOPT_FORCE_TRAILING_LINE:
-                g_fForceTrailingLine = true;
-                break;
-            case SCMOPT_NO_FORCE_TRAILING_LINE:
-                g_fForceTrailingLine = false;
-                break;
-
             case VINF_GETOPT_NOT_OPTION:
             {
                 if (!g_fDryRun)
@@ -2411,17 +3164,25 @@ int main(int argc, char **argv)
                     }
                     cProcessed++;
                 }
-                rc = scmProcessSomething(ValueUnion.psz);
+                rc = scmProcessSomething(ValueUnion.psz, pSettings);
                 if (RT_FAILURE(rc))
                     return rc;
                 break;
             }
 
             default:
+            {
+                int rc2 = scmSettingsBaseHandleOpt(&pSettings->Base, rc, &ValueUnion);
+                if (RT_SUCCESS(rc2))
+                    break;
+                if (rc2 != VERR_GETOPT_UNKNOWN_OPTION)
+                    return 2;
                 return RTGetOptPrintError(rc, &ValueUnion);
+            }
         }
     }
 
+    scmSettingsDestroy(pSettings);
     return 0;
 }
 
