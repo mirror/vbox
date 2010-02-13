@@ -319,6 +319,33 @@ RTDECL(bool) RTPathHaveExt(const char *pszPath);
 RTDECL(bool) RTPathHavePath(const char *pszPath);
 
 /**
+ * Counts the components in the specified path.
+ *
+ * An empty string has zero components.  A lone root slash is considered have
+ * one.  The paths "/init" and "/bin/" are considered having two components.  An
+ * UNC share specifier like "\\myserver\share" will be considered as one single
+ * component.
+ *
+ * @returns The number of path components.
+ * @param   pszPath     The path to parse.
+ */
+RTDECL(size_t) RTPathCountComponents(const char *pszPath);
+
+/**
+ * Copies the specified number of path components from @a pszSrc and into @a
+ * pszDst.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.  In the latter case the buffer
+ *          is not touched.
+ *
+ * @param   pszDst      The destination buffer.
+ * @param   cbDst       The size of the destination buffer.
+ * @param   pszSrc      The source path.
+ * @param   cComponents The number of components to copy from @a pszSrc.
+ */
+RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc, size_t cComponents);
+
+/**
  * Compares two paths.
  *
  * The comparison takes platform-dependent details into account,

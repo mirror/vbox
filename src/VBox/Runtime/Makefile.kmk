@@ -251,6 +251,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/cache.cpp \
 	common/misc/cidr.cpp \
 	common/misc/getopt.cpp \
+	common/misc/getoptargv.cpp \
 	common/misc/handletable.cpp \
 	common/misc/handletablectx.cpp \
 	common/misc/handletablesimple.cpp \
@@ -265,11 +266,14 @@ RuntimeR3_SOURCES       = \
 	common/misc/zip.cpp \
 	common/misc/term.cpp \
 	common/misc/tar.cpp \
+	common/path/rtPathRootSpecLen.cpp \
 	common/path/rtPathVolumeSpecLen.cpp \
 	common/path/RTPathAbsDup.cpp \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
+	common/path/RTPathCopyComponents.cpp \
+	common/path/RTPathCountComponents.cpp \
 	common/path/RTPathExt.cpp \
 	common/path/RTPathFilename.cpp \
 	common/path/RTPathHaveExt.cpp \
