@@ -454,7 +454,7 @@ RTR3DECL(int) RTPathSetTimesEx(const char *pszPath, PCRTTIMESPEC pAccessTime, PC
  *                      source is a directory. If Its RTFS_TYPE_FILE we'll check that it's
  *                      not a directory (we are NOT checking whether it's a file).
  */
-int rtPathWin32MoveRename(const char *pszSrc, const char *pszDst, uint32_t fFlags, RTFMODE fFileType)
+DECLHIDDEN(int) rtPathWin32MoveRename(const char *pszSrc, const char *pszDst, uint32_t fFlags, RTFMODE fFileType)
 {
     /*
      * Convert the strings.

@@ -413,6 +413,89 @@ int main()
     }
 
     /*
+     * RTPathCountComponents
+     */
+    RTTestSub(hTest, "RTPathCountComponents");
+    RTTESTI_CHECK(RTPathCountComponents("") == 0);
+    RTTESTI_CHECK(RTPathCountComponents("/") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//////////////") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//////////////bin") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("//////////////bin/") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("//////////////bin/////") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("..") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("../") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("../..") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("../../") == 2);
+#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
+    RTTESTI_CHECK(RTPathCountComponents("d:") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("d:/") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("d:/\\") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("d:\\") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("c:\\config.sys") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("c:\\windows") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("c:\\windows\\") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("c:\\windows\\system32") == 3);
+    RTTESTI_CHECK(RTPathCountComponents("//./C$") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("\\\\.\\C$") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("/\\.\\C$") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share/") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share\\") == 1);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share\\x") == 2);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share\\x\\y") == 3);
+    RTTESTI_CHECK(RTPathCountComponents("//myserver/share\\x\\y\\") == 3);
+#endif
+
+    /*
+     * RTPathCopyComponents
+     */
+    struct
+    {
+        const char *pszSrc;
+        size_t      cComponents;
+        const char *pszResult;
+    } s_aCopyComponents[] =
+    {
+        { "",                           0, "" },
+        { "",                           5, "" },
+        { "/",                          0, "" },
+        { "/",                          1, "/" },
+        { "/",                          2, "/" },
+        { "/usr/bin/sed",               0, "" },
+        { "/usr/bin/sed",               1, "/" },
+        { "/usr/bin/sed",               2, "/usr/" },
+        { "/usr/bin/sed",               3, "/usr/bin/" },
+        { "/usr/bin/sed",               4, "/usr/bin/sed" },
+        { "/usr/bin/sed",               5, "/usr/bin/sed" },
+        { "/usr/bin/sed",               6, "/usr/bin/sed" },
+        { "/usr///bin/sed",             2, "/usr///" },
+    };
+    for (unsigned i = 0; i < RT_ELEMENTS(s_aCopyComponents); i++)
+    {
+        const char *pszInput    = s_aCopyComponents[i].pszSrc;
+        size_t      cComponents = s_aCopyComponents[i].cComponents;
+        const char *pszResult   = s_aCopyComponents[i].pszResult;
+
+        memset(szPath, 'a', sizeof(szPath));
+        rc = RTPathCopyComponents(szPath, sizeof(szPath), pszInput, cComponents);
+        RTTESTI_CHECK_RC(rc, VINF_SUCCESS);
+        if (RT_SUCCESS(rc) && strcmp(szPath, pszResult))
+            RTTestIFailed("Unexpected result\n"
+                          "   input: '%s' cComponents=%u\n"
+                          "  output: '%s'\n"
+                          "expected: '%s'",
+                          pszInput, cComponents, szPath, pszResult);
+        else if (RT_SUCCESS(rc))
+        {
+            RTTESTI_CHECK_RC(RTPathCopyComponents(szPath, strlen(pszResult) + 1, pszInput, cComponents), VINF_SUCCESS);
+            RTTESTI_CHECK_RC(RTPathCopyComponents(szPath, strlen(pszResult), pszInput, cComponents), VERR_BUFFER_OVERFLOW);
+        }
+    }
+
+    /*
      * Summary.
      */
     return RTTestSummaryAndDestroy(hTest);

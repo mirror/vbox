@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - rtPathVolumeSpecLen
+ * IPRT - RTPathCountComponents
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,41 +33,56 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "internal/iprt.h"
+#include <iprt/path.h>
+
+#include <iprt/assert.h>
+#include <iprt/err.h>
 #include <iprt/string.h>
-#include <iprt/ctype.h>
 #include "internal/path.h"
 
 
-
-/**
- * Returns the length of the volume name specifier of the given path.
- * If no such specifier zero is returned.
- */
-DECLHIDDEN(size_t) rtPathVolumeSpecLen(const char *pszPath)
+RTDECL(int) RTPathCopyComponents(char *pszDst, size_t cbDst, const char *pszSrc, size_t cComponents)
 {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    if (pszPath && *pszPath)
+    /*
+     * Quick input validation.
+     */
+    AssertPtr(pszDst);
+    AssertPtr(pszSrc);
+    if (cbDst == 0)
+        return VERR_BUFFER_OVERFLOW;
+
+    /*
+     * Fend of the simple case where nothing is wanted.
+     */
+    if (cComponents == 0)
     {
-        /* UTC path. */
-        /** @todo r=bird: it's UNC and we have to check that the next char isn't a
-         *        slash, then skip both the server and the share name. */
-        if (    (pszPath[0] == '\\' || pszPath[0] == '/')
-            &&  (pszPath[1] == '\\' || pszPath[1] == '/'))
-            return strcspn(pszPath + 2, "\\/") + 2;
-
-        /* Drive letter. */
-        if (    pszPath[1] == ':'
-            &&  RT_C_IS_ALPHA(pszPath[0]))
-            return 2;
+        *pszDst = '\0';
+        return VINF_SUCCESS;
     }
-    return 0;
 
-#else
-    /* This isn't quite right when looking at the above stuff, but it works assuming that '//' does not mean UNC. */
-    /// @todo (dmik) well, it's better to consider there's no volume name
-    //  at all on *nix systems
-    return 0;
-//    return pszPath && pszPath[0] == '/';
-#endif
+    /*
+     * Parse into the path until we've counted the desired number of objects
+     * or hit the end.
+     */
+    size_t off = rtPathRootSpecLen(pszSrc);
+    size_t c   = off != 0;
+    while (c < cComponents && pszSrc[off])
+    {
+        c++;
+        while (!RTPATH_IS_SLASH(pszSrc[off]) && pszSrc[off])
+            off++;
+        while (RTPATH_IS_SLASH(pszSrc[off]))
+            off++;
+    }
+
+    /*
+     * Copy up to but not including 'off'.
+     */
+    if (off >= cbDst)
+        return VERR_BUFFER_OVERFLOW;
+
+    memcpy(pszDst, pszSrc, off);
+    pszDst[off] = '\0';
+    return VINF_SUCCESS;
 }
 

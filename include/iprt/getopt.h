@@ -357,6 +357,33 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
  */
 RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
 
+/**
+ * Parses the @a pszCmdLine string into an argv array.
+ *
+ * This is useful for converting a response file or similar to an argument
+ * vector that can be used with RTGetOptInit().
+ *
+ * This function aims at following the bourn shell string quoting rules.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   ppapszArgv      Where to return the argument vector.  This must be
+ *                          freed by calling RTGetOptArgvFree.
+ * @param   pcArgs          Where to return the argument count.
+ * @param   pszCmdLine      The string to parse.
+ * @param   pszSeparators   String containing the argument separators. If NULL,
+ *                          then space, tab, line feed (\\n) and return (\\r)
+ *                          are used.
+ */
+RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *pszCmdLine, const char *pszSeparators);
+
+/**
+ * Frees and argument vector returned by RTGetOptStringToArgv.
+ *
+ * @param   papszArgv       Argument vector.  NULL is fine.
+ */
+RTDECL(void) RTGetOptArgvFree(char **paArgv);
+
 /** @} */
 
 RT_C_DECLS_END

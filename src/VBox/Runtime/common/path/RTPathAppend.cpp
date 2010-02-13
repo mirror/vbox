@@ -34,6 +34,7 @@
 *******************************************************************************/
 #include "internal/iprt.h"
 #include <iprt/path.h>
+
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -49,9 +50,10 @@
  * @param   pszPath         The path to investigate.
  *
  * @remarks Unnecessary root slashes will not be counted. The caller will have
- *          to deal with it where it matters.
+ *          to deal with it where it matters.  (Unlike rtPathRootSpecLen which
+ *          counts them.)
  */
-static size_t rtPathRootSpecLen(const char *pszPath)
+static size_t rtPathRootSpecLen2(const char *pszPath)
 {
     /* fend of wildlife. */
     if (!pszPath)
@@ -169,7 +171,7 @@ RTDECL(int) RTPathAppend(char *pszPath, size_t cbPathDst, const char *pszAppend)
 
         /* In the leading path we can skip unnecessary trailing slashes, but
            be sure to leave one. */
-        size_t const cchRoot = rtPathRootSpecLen(pszPath);
+        size_t const cchRoot = rtPathRootSpecLen2(pszPath);
         while (     (size_t)(pszPathEnd - pszPath) > RT_MAX(1, cchRoot)
                &&   RTPATH_IS_SLASH(pszPathEnd[-2]))
             pszPathEnd--;

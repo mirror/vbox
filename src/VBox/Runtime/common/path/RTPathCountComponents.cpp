@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - rtPathVolumeSpecLen
+ * IPRT - RTPathCountComponents
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -33,41 +33,24 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include "internal/iprt.h"
-#include <iprt/string.h>
-#include <iprt/ctype.h>
+#include <iprt/path.h>
+
+#include <iprt/assert.h>
 #include "internal/path.h"
 
 
-
-/**
- * Returns the length of the volume name specifier of the given path.
- * If no such specifier zero is returned.
- */
-DECLHIDDEN(size_t) rtPathVolumeSpecLen(const char *pszPath)
+RTDECL(size_t) RTPathCountComponents(const char *pszPath)
 {
-#if defined (RT_OS_OS2) || defined (RT_OS_WINDOWS)
-    if (pszPath && *pszPath)
+    size_t off = rtPathRootSpecLen(pszPath);
+    size_t c   = off != 0;
+    while (pszPath[off])
     {
-        /* UTC path. */
-        /** @todo r=bird: it's UNC and we have to check that the next char isn't a
-         *        slash, then skip both the server and the share name. */
-        if (    (pszPath[0] == '\\' || pszPath[0] == '/')
-            &&  (pszPath[1] == '\\' || pszPath[1] == '/'))
-            return strcspn(pszPath + 2, "\\/") + 2;
-
-        /* Drive letter. */
-        if (    pszPath[1] == ':'
-            &&  RT_C_IS_ALPHA(pszPath[0]))
-            return 2;
+        c++;
+        while (!RTPATH_IS_SLASH(pszPath[off]) && pszPath[off])
+            off++;
+        while (RTPATH_IS_SLASH(pszPath[off]))
+            off++;
     }
-    return 0;
-
-#else
-    /* This isn't quite right when looking at the above stuff, but it works assuming that '//' does not mean UNC. */
-    /// @todo (dmik) well, it's better to consider there's no volume name
-    //  at all on *nix systems
-    return 0;
-//    return pszPath && pszPath[0] == '/';
-#endif
+    return c;
 }
 
