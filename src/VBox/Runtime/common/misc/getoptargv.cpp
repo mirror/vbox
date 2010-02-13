@@ -190,13 +190,11 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
 
         /* Parse and copy the string over. */
         RTUNICP CpQuote = 0;
+        RTUNICP Cp;
         for (;;)
         {
-            RTUNICP Cp;
             rc = RTStrGetCpEx(&pszSrc, &Cp);
-            if (RT_FAILURE(rc))
-                break;
-            if (!Cp)
+            if (RT_FAILURE(rc) || !Cp)
                 break;
             if (!CpQuote)
             {
@@ -213,7 +211,7 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
                 CpQuote = 0;
         }
         *pszDst++ = '\0';
-        if (RT_FAILURE(rc))
+        if (RT_FAILURE(rc) || !Cp)
             break;
     }
 
