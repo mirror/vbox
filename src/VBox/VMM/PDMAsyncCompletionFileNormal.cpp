@@ -201,6 +201,28 @@ static bool pdmacFileAioMgrNormalRemoveEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE 
     return true;
 }
 
+static bool pdmacFileAioMgrNormalIsBalancePossible(PPDMACEPFILEMGR pAioMgr)
+{
+    /* Balancing doesn't make sense with only one endpoint. */
+    if (pAioMgr->cEndpoints == 1)
+        return false;
+
+    /* Doesn't make sens to move endpoints if only one produces the whole load */
+    unsigned cEndpointsWithLoad = 0;
+
+    PPDMASYNCCOMPLETIONENDPOINTFILE pCurr = pAioMgr->pEndpointsHead;
+
+    while (pCurr)
+    {
+        if (pCurr->AioMgr.cReqsPerSec)
+            cEndpointsWithLoad++;
+
+        pCurr = pCurr->AioMgr.pEndpointNext;
+    }
+
+    return (cEndpointsWithLoad > 1);
+}
+
 /**
  * Creates a new I/O manager and spreads the I/O load of the endpoints
  * between the given I/O manager and the new one.
@@ -213,8 +235,10 @@ static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
     PPDMACEPFILEMGR pAioMgrNew = NULL;
     int rc = VINF_SUCCESS;
 
-    /* Splitting can't be done with only one open endpoint. */
-    if (pAioMgr->cEndpoints > 1)
+    /*
+     * Check if balancing would improve the situation.
+     */
+    if (pdmacFileAioMgrNormalIsBalancePossible(pAioMgr))
     {
         rc = pdmacFileAioMgrCreate((PPDMASYNCCOMPLETIONEPCLASSFILE)pAioMgr->pEndpointsHead->Core.pEpClass,
                                    &pAioMgrNew, false);
@@ -273,6 +297,8 @@ static void pdmacFileAioMgrNormalBalanceLoad(PPDMACEPFILEMGR pAioMgr)
             LogRel(("AIOMgr: Could not create new I/O manager (rc=%Rrc). Expect reduced performance\n", rc));
         }
     }
+    else
+        Log(("AIOMgr: Load balancing would not improve anything\n"));
 }
 
 /**
