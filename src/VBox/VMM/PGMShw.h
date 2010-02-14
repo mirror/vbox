@@ -265,5 +265,3 @@ PGM_SHW_DECL(int, Exit)(PVMCPU pVCpu)
     return VINF_SUCCESS;
 }
 
-
-

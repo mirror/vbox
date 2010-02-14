@@ -696,4 +696,3 @@ VMMR3DECL(void) MMR3HeapFree(void *pv)
     RTMemFree(pHdr);
 }
 
-

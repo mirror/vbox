@@ -136,4 +136,3 @@ PGM_GST_DECL(int, Exit)(PVMCPU pVCpu)
     return rc;
 }
 
-

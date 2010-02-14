@@ -4489,4 +4489,3 @@ VMMR3DECL(int) PGMR3CheckIntegrity(PVM pVM)
     return !cErrors ? VINF_SUCCESS : VERR_INTERNAL_ERROR;
 }
 
-

@@ -1269,6 +1269,3 @@ static int  vmR3ReqProcessOneU(PUVM pUVM, PVMREQ pReq)
     return rcRet;
 }
 
-
-
-

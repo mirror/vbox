@@ -571,7 +571,7 @@ typedef struct HWACCMCPU
     /** Current ASID in use by the VM */
     RTUINT                      uCurrentASID;
 
-    /** World switch exit counter. */ 
+    /** World switch exit counter. */
     volatile uint32_t           cWorldSwitchExit;
     uint32_t                    u32Alignment;
 
