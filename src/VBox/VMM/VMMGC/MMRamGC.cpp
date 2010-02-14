@@ -263,4 +263,3 @@ DECLCALLBACK(int) mmGCRamTrap0eHandler(PVM pVM, PCPUMCTXCORE pRegFrame)
     return VERR_INTERNAL_ERROR;
 }
 
-

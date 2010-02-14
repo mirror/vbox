@@ -593,4 +593,3 @@ VMMR0DECL(int) CPUMR0LoadHyperDebugState(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx, b
     return VINF_SUCCESS;
 }
 
-

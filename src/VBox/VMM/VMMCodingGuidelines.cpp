@@ -41,7 +41,7 @@
  *
  * The rules:
  *
- *      - When declaring pointers in shared structures use the RCPTRTYPE(), 
+ *      - When declaring pointers in shared structures use the RCPTRTYPE(),
  *        R0PTRTYPE() and R3PTRTYPE() macros.
  *
  *      - Use RTGCPTR and RTHCPTR when dealing with the other context in

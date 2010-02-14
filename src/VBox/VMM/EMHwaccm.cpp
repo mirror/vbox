@@ -598,4 +598,3 @@ int emR3HwAccExecute(PVM pVM, PVMCPU pVCpu, bool *pfFFDone)
     return rc;
 }
 
-

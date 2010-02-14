@@ -78,4 +78,3 @@
 # define GST_PT_MASK                X86_PT_PAE_MASK
 #endif
 
-
