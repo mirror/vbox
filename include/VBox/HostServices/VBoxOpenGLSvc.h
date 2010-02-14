@@ -124,7 +124,7 @@ typedef struct
      * Number of commands in the buffer
      */
     HGCMFunctionParameter   cCommands;
-    
+
     /** 64bit, out: retval
      * uint64_t return code of last command
      */
@@ -163,7 +163,7 @@ typedef struct
      * Last command's final parameter memory block
      */
     HGCMFunctionParameter   pLastParam;
-    
+
     /** 64bit, out: retval
      * uint64_t return code of last command
      */
