@@ -34,27 +34,27 @@
 *******************************************************************************/
 #include <iprt/net.h>
 #include <iprt/getopt.h>
-#include <iprt/stream.h>
-#include <iprt/initterm.h>
-#include <iprt/string.h>
+
 #include <iprt/err.h>
+#include <iprt/string.h>
+#include <iprt/test.h>
 
 
 int main()
 {
-    int cErrors = 0;
-    RTR3Init();
-    RTPrintf("tstGetOpt: TESTING...\n");
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTGetOpt", &hTest);
+    if (rc)
+        return rc;
 
     RTGETOPTSTATE GetState;
     RTGETOPTUNION Val;
-#define CHECK(expr)  do { if (!(expr)) { RTPrintf("tstGetOpt: error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); cErrors++; } } while (0)
+#define CHECK(expr)  do { if (!(expr)) { RTTestIFailed("error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); } } while (0)
 #define CHECK2(expr, fmt) \
     do { \
         if (!(expr)) { \
-            RTPrintf("tstGetOpt: error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); \
-            RTPrintf fmt; \
-            cErrors++; \
+            RTTestIFailed("error line %d (iNext=%d): %s\n", __LINE__, GetState.iNext, #expr); \
+            RTTestIFailureDetails fmt; \
          } \
     } while (0)
 
@@ -64,9 +64,19 @@ int main()
 #define CHECK_GETOPT(expr, chRet, iInc) \
     do { \
         const int iPrev = GetState.iNext; \
-        const int rc = (expr); \
-        CHECK2(rc == (chRet), ("got %d, expected %d\n", rc, (chRet))); \
+        const int rcGetOpt = (expr); \
+        CHECK2(rcGetOpt == (chRet), ("got %d, expected %d\n", rcGetOpt, (chRet))); \
         CHECK2(GetState.iNext == (iInc) + iPrev, ("iNext=%d expected %d\n", GetState.iNext, (iInc) + iPrev)); \
+        GetState.iNext = (iInc) + iPrev; \
+    } while (0)
+
+#define CHECK_GETOPT_STR(expr, chRet, iInc, str) \
+    do { \
+        const int iPrev = GetState.iNext; \
+        const int rcGetOpt = (expr); \
+        CHECK2(rcGetOpt == (chRet), ("got %d, expected %d\n", rcGetOpt, (chRet))); \
+        CHECK2(GetState.iNext == (iInc) + iPrev, ("iNext=%d expected %d\n", GetState.iNext, (iInc) + iPrev)); \
+        CHECK2(VALID_PTR(Val.psz) && !strcmp(Val.psz, (str)), ("got %s, expected %s\n", Val.psz, (str))); \
         GetState.iNext = (iInc) + iPrev; \
     } while (0)
 
@@ -74,6 +84,7 @@ int main()
     /*
      * The basics.
      */
+    RTTestSub(hTest, "Basics");
     static const RTGETOPTDEF s_aOpts2[] =
     {
         { "--optwithstring",    's', RTGETOPT_REQ_STRING },
@@ -156,6 +167,7 @@ int main()
         "--twovaluesindex5=2",             "0xB",
         "--threevalues",     "1",          "0xC",          "thirdvalue",
 
+        /* bool on/off */
         "--boolean",         "on",
         "--boolean",         "off",
         "--boolean",         "invalid",
@@ -163,6 +175,16 @@ int main()
         "--booleanindex7",   "off",
         "--booleanindex9",   "invalid",
 
+        /* standard options */
+        "--help",
+        "-help",
+        "-?",
+        "-h",
+        "--version",
+        "-version",
+        "-V",
+
+        /* done */
         NULL
     };
     int argc2 = (int)RT_ELEMENTS(argv2) - 1;
@@ -239,10 +261,12 @@ int main()
     CHECK(Val.i32 == 999);
 
     /* IPv4 */
+    RTTestSub(hTest, "RTGetOpt - IPv4");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'g', 1);
     CHECK(Val.IPv4Addr.u == RT_H2N_U32_C(RT_BSWAP_U32_C(RT_MAKE_U32_FROM_U8(192,168,1,1))));
 
     /* Ethernet MAC address. */
+    RTTestSub(hTest, "RTGetOpt - MAC Address");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'm', 1);
     CHECK(   Val.MacAddr.au8[0] == 0x08
           && Val.MacAddr.au8[1] == 0x00
@@ -259,6 +283,7 @@ int main()
           && Val.MacAddr.au8[5] == 0x0c);
 
     /* string with indexed argument */
+    RTTestSub(hTest, "RTGetOpt - Option w/ Index");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 400, 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "string4"));
     CHECK(GetState.uIndex == 786);
@@ -303,6 +328,7 @@ int main()
     CHECK(GetState.uIndex == UINT32_MAX);
 
     /* RTGetOptFetchValue tests */
+    RTTestSub(hTest, "RTGetOptFetchValue");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 405, 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "firstvalue"));
     CHECK(GetState.uIndex == UINT32_MAX);
@@ -342,6 +368,7 @@ int main()
     CHECK(GetState.uIndex == UINT32_MAX);
 
     /* bool on/off tests */
+    RTTestSub(hTest, "RTGetOpt - bool on/off");
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
     CHECK(Val.f);
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 408, 2);
@@ -359,20 +386,196 @@ int main()
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), VERR_GETOPT_UNKNOWN_OPTION, 2);
     CHECK(VALID_PTR(Val.psz) && !strcmp(Val.psz, "invalid"));
 
+    /* standard options. */
+    RTTestSub(hTest, "Standard options");
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'h', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'h', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'h', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'h', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'V', 1);
+
     /* the end */
     CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
     CHECK(Val.pDef == NULL);
     CHECK(argc2 == GetState.iNext);
 
+    /*
+     * Options first.
+     */
+    RTTestSub(hTest, "Options first");
+    const char *argv3[] =
+    {
+        "foo1",
+        "-s",               "string1",
+        "foo2",
+        "--optwithstring",  "string2",
+        "foo3",
+        "-i",               "-42",
+        "foo4",
+        "-i:-42",
+        "-i=-42",
+        "foo5",
+        "foo6",
+        "foo7",
+        "-i:",              "-42",
+        "-i=",              "-42",
+        "foo8",
+        "--twovalues",       "firstvalue", "secondvalue",
+        "foo9",
+        "--twovalues:firstvalue",          "secondvalue",
+        "foo10",
+        "--",
+        "--optwithstring",
+        "foo11",
+        "foo12",
+
+        /* done */
+        NULL
+    };
+    int argc3 = (int)RT_ELEMENTS(argv3) - 1;
+
+    CHECK(RT_SUCCESS(RTGetOptInit(&GetState, argc3, (char **)argv3, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), 0,
+                                  RTGETOPTINIT_FLAGS_OPTS_FIRST)));
+
+    /* -s */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 's', 2, "string1");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 's', 2, "string2");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    /* -i */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+
+    /* --twovalues */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 405, 2, "firstvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1, "secondvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 405, 1, "firstvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1, "secondvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    /* -- */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 2, "foo1");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo2");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo3");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo4");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo5");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo6");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo7");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo8");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo9");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo10");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "--optwithstring");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo11");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo12");
+
+    /* the end */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
+    CHECK(Val.pDef == NULL);
+    CHECK(argc3 == GetState.iNext);
+
+    /*
+     * Options first, part 2: No dash-dash.
+     */
+    const char *argv4[] =
+    {
+        "foo1",
+        "-s",               "string1",
+        "foo2",
+        "--optwithstring",  "string2",
+        "foo3",
+        "-i",               "-42",
+        "foo4",
+        "-i:-42",
+        "-i=-42",
+        "foo5",
+        "foo6",
+        "foo7",
+        "-i:",              "-42",
+        "-i=",              "-42",
+        "foo8",
+        "--twovalues",       "firstvalue", "secondvalue",
+        "foo9",
+        "--twovalues:firstvalue",          "secondvalue",
+        "foo10",
+        "foo11",
+        "foo12",
+
+        /* done */
+        NULL
+    };
+    int argc4 = (int)RT_ELEMENTS(argv4) - 1;
+
+    CHECK(RT_SUCCESS(RTGetOptInit(&GetState, argc4, (char **)argv4, &s_aOpts2[0], RT_ELEMENTS(s_aOpts2), 0,
+                                  RTGETOPTINIT_FLAGS_OPTS_FIRST)));
+
+    /* -s */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 's', 2, "string1");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 's', 2, "string2");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    /* -i */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 1);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 'i', 2);
+    CHECK(Val.i32 == -42);
+
+    /* --twovalues */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 405, 2, "firstvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1, "secondvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), 405, 1, "firstvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+    CHECK_GETOPT_STR(RTGetOptFetchValue(&GetState, &Val, RTGETOPT_REQ_STRING), VINF_SUCCESS, 1, "secondvalue");
+    CHECK(GetState.uIndex == UINT32_MAX);
+
+    /* -- */
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo1");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo2");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo3");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo4");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo5");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo6");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo7");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo8");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo9");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo10");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo11");
+    CHECK_GETOPT_STR(RTGetOpt(&GetState, &Val), VINF_GETOPT_NOT_OPTION, 1, "foo12");
+
+    /* the end */
+    CHECK_GETOPT(RTGetOpt(&GetState, &Val), 0, 0);
+    CHECK(Val.pDef == NULL);
+    CHECK(argc4 == GetState.iNext);
+
+
 
     /*
      * Summary.
      */
-    if (!cErrors)
-        RTPrintf("tstGetOpt: SUCCESS\n");
-    else
-        RTPrintf("tstGetOpt: FAILURE - %d errors\n", cErrors);
-
-    return !!cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 
