@@ -58,6 +58,8 @@
 # Same format as for the directories, except that we'll also apply them to
 # files specified directly on the command line.
 #
-##--filter-out-files "*/src/VBox/Runtime/common/checksum/md5.cpp"
+--filter-out-files "*/include/VBox/HostServices/glext.h"
+--filter-out-files "*/include/VBox/HostServices/glxext.h"
+--filter-out-files "*/include/VBox/HostServices/wglext.h"
 
 

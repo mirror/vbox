@@ -41,7 +41,7 @@
  * HGSMI_CH_HGSMI channel can be used to map a string channel identifier
  * to a free 16 bit numerical value. values are allocated in range
  * [HGSMI_CH_STRING_FIRST;HGSMI_CH_STRING_LAST].
- * 
+ *
  */
 
 

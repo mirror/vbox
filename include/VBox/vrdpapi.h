@@ -1017,7 +1017,7 @@ typedef struct _VRDPCALLBACKS_1
 
     /**
      * Query or set various information, on how the VRDP server operates, from or to the application.
-     * 
+     *
      *
      * @param pvCallback  The callback specific pointer.
      * @param index       VRDP_QP_* identifier of information to be returned.
