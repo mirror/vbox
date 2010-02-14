@@ -22,7 +22,7 @@
 #ifndef ___VBOXVFS_H___
 #define ___VBOXVFS_H___
 
-#define	VBOXVFS_VFSNAME	"vboxvfs"
+#define VBOXVFS_VFSNAME "vboxvfs"
 #define VBOXVFS_VERSION 1
 
 #define MAX_HOST_NAME 256
@@ -90,7 +90,7 @@ struct sf_reg_info {
     SHFLHANDLE handle;
 };
 
-#endif	/* KERNEL */
+#endif  /* KERNEL */
 
 #endif /* !___VBOXVFS_H___ */
 

@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
         tv.tv_usec = (time % (unsigned long long)1000) * 1000;
         settimeofday(&tv, NULL);
 
-	/* wait for the next run */
+    /* wait for the next run */
         sleep(secInterval);
 
     } while (1);

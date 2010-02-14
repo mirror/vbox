@@ -48,27 +48,27 @@ void HGSMIClearIrq (PDEVICE_EXTENSION PrimaryExtension)
 
 static void HGSMIHostCmdComplete (PDEVICE_EXTENSION PrimaryExtension, void * pvMem)
 {
-	HGSMIOFFSET offMem = HGSMIPointerToOffset (&PrimaryExtension->u.primary.areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
-	Assert(offMem != HGSMIOFFSET_VOID);
-	if(offMem != HGSMIOFFSET_VOID)
-	{
-		HGSMINotifyHostCmdComplete (PrimaryExtension, offMem);
-	}
+    HGSMIOFFSET offMem = HGSMIPointerToOffset (&PrimaryExtension->u.primary.areaHostHeap, HGSMIBufferHeaderFromData (pvMem));
+    Assert(offMem != HGSMIOFFSET_VOID);
+    if(offMem != HGSMIOFFSET_VOID)
+    {
+        HGSMINotifyHostCmdComplete (PrimaryExtension, offMem);
+    }
 }
 
 static void hgsmiHostCmdProcess(PDEVICE_EXTENSION PrimaryExtension, HGSMIOFFSET offBuffer)
 {
-	int rc = HGSMIBufferProcess (&PrimaryExtension->u.primary.areaHostHeap,
-								&PrimaryExtension->u.primary.channels,
-								offBuffer);
-	Assert(!RT_FAILURE(rc));
-	if(RT_FAILURE(rc))
-	{
-		/* failure means the command was not submitted to the handler for some reason
-		 * it's our responsibility to notify its completion in this case */
-		HGSMINotifyHostCmdComplete(PrimaryExtension, offBuffer);
-	}
-	/* if the cmd succeeded it's responsibility of the callback to complete it */
+    int rc = HGSMIBufferProcess (&PrimaryExtension->u.primary.areaHostHeap,
+                                &PrimaryExtension->u.primary.channels,
+                                offBuffer);
+    Assert(!RT_FAILURE(rc));
+    if(RT_FAILURE(rc))
+    {
+        /* failure means the command was not submitted to the handler for some reason
+         * it's our responsibility to notify its completion in this case */
+        HGSMINotifyHostCmdComplete(PrimaryExtension, offBuffer);
+    }
+    /* if the cmd succeeded it's responsibility of the callback to complete it */
 }
 
 static HGSMIOFFSET hgsmiGetHostBuffer (PDEVICE_EXTENSION PrimaryExtension)
@@ -78,12 +78,12 @@ static HGSMIOFFSET hgsmiGetHostBuffer (PDEVICE_EXTENSION PrimaryExtension)
 
 static void hgsmiHostCommandQueryProcess (PDEVICE_EXTENSION PrimaryExtension)
 {
-	HGSMIOFFSET offset = hgsmiGetHostBuffer (PrimaryExtension);
-	Assert(offset != HGSMIOFFSET_VOID);
-	if(offset != HGSMIOFFSET_VOID)
-	{
-		hgsmiHostCmdProcess(PrimaryExtension, offset);
-	}
+    HGSMIOFFSET offset = hgsmiGetHostBuffer (PrimaryExtension);
+    Assert(offset != HGSMIOFFSET_VOID);
+    if(offset != HGSMIOFFSET_VOID)
+    {
+        hgsmiHostCmdProcess(PrimaryExtension, offset);
+    }
 }
 
 #define VBOX_HGSMI_LOCK(_pe, _plock, _dpc, _pold) \
@@ -132,7 +132,7 @@ VOID VBoxVideoHGSMIDpc(
             VBOX_HGSMI_LOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, &OldIrql);
             if(!(PrimaryExtension->u.primary.pHostFlags->u32HostFlags & HGSMIHOSTFLAGS_COMMANDS_PENDING))
             {
-            	Assert(PrimaryExtension->u.primary.bHostCmdProcessing);
+                Assert(PrimaryExtension->u.primary.bHostCmdProcessing);
                 PrimaryExtension->u.primary.bHostCmdProcessing = false;
                 VBOX_HGSMI_UNLOCK(PrimaryExtension, &PrimaryExtension->u.primary.pSynchLock, flags, OldIrql);
                 break;
@@ -186,7 +186,7 @@ typedef int FNHGSMICALLFINALIZE (PDEVICE_EXTENSION PrimaryExtension, void *pvCon
 typedef FNHGSMICALLFINALIZE *PFNHGSMICALLFINALIZE;
 
 static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
-						 uint8_t u8Ch,
+                         uint8_t u8Ch,
                          uint16_t u16Op,
                          HGSMISIZE cbData,
                          PFNHGSMICALLINIT pfnInit,
@@ -250,13 +250,13 @@ static int vboxCallVBVA (PDEVICE_EXTENSION PrimaryExtension,
                          PFNHGSMICALLFINALIZE pfnFinalize,
                          void *pvContext)
 {
-	return vboxCallChannel (PrimaryExtension,
-			HGSMI_CH_VBVA,
-	                          u16Op,
-	                          cbData,
-	                          pfnInit,
-	                          pfnFinalize,
-	                         pvContext);
+    return vboxCallChannel (PrimaryExtension,
+                            HGSMI_CH_VBVA,
+                            u16Op,
+                            cbData,
+                            pfnInit,
+                            pfnFinalize,
+                            pvContext);
 }
 
 typedef struct _QUERYCONFCTX
@@ -1017,7 +1017,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
 typedef struct _VBVAMINIPORT_CHANNELCONTEXT
 {
     PFNHGSMICHANNELHANDLER pfnChannelHandler;
-	void *pvChannelHandler;
+    void *pvChannelHandler;
 }VBVAMINIPORT_CHANNELCONTEXT;
 
 typedef struct _VBVADISP_CHANNELCONTEXT
@@ -1037,16 +1037,16 @@ void dbgCheckListLocked(const VBVADISP_CHANNELCONTEXT *pList, struct _VBVAHOSTCM
     int counter = 0;
     for(struct _VBVAHOSTCMD * pCur = pList->pFirstCmd; pCur; pCur=pCur->u.pNext)
     {
-    	Assert(pCur != pCmd);
-    	if(pCur == pList->pLastCmd)
-    	{
-    		Assert(pCur->u.pNext == NULL);
-    	}
-    	if(pCur->u.pNext == NULL)
-    	{
-    		Assert(pCur == pList->pLastCmd);
-    	}
-    	counter++;
+        Assert(pCur != pCmd);
+        if(pCur == pList->pLastCmd)
+        {
+            Assert(pCur->u.pNext == NULL);
+        }
+        if(pCur->u.pNext == NULL)
+        {
+            Assert(pCur == pList->pLastCmd);
+        }
+        counter++;
     }
 
     Assert(counter == pList->cCmds);
@@ -1074,45 +1074,45 @@ void dbgCheckList(PDEVICE_EXTENSION PrimaryExtension, VBVADISP_CHANNELCONTEXT *p
 typedef struct _VBVA_CHANNELCONTEXTS
 {
     PDEVICE_EXTENSION PrimaryExtension;
-	uint32_t cUsed;
-	uint32_t cContexts;
-	VBVAMINIPORT_CHANNELCONTEXT mpContext;
-	VBVADISP_CHANNELCONTEXT aContexts[1];
+    uint32_t cUsed;
+    uint32_t cContexts;
+    VBVAMINIPORT_CHANNELCONTEXT mpContext;
+    VBVADISP_CHANNELCONTEXT aContexts[1];
 }VBVA_CHANNELCONTEXTS;
 
 static int vboxVBVADeleteChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS * pContext)
 {
     VBoxVideoCmnMemFree(PrimaryExtension,pContext);
-	return VINF_SUCCESS;
+    return VINF_SUCCESS;
 }
 
 static int vboxVBVACreateChannelContexts(PDEVICE_EXTENSION PrimaryExtension, VBVA_CHANNELCONTEXTS ** ppContext)
 {
-	uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
-	const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
-	VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocNonPaged(PrimaryExtension, size, MEM_TAG);
-	if(pContext)
-	{
-		memset(pContext, 0, size);
-		pContext->cContexts = cDisplays;
-		pContext->PrimaryExtension = PrimaryExtension;
-		*ppContext = pContext;
-		return VINF_SUCCESS;
-	}
-	return VERR_GENERAL_FAILURE;
+    uint32_t cDisplays = (uint32_t)PrimaryExtension->u.primary.cDisplays;
+    const size_t size = RT_OFFSETOF(VBVA_CHANNELCONTEXTS, aContexts[cDisplays]);
+    VBVA_CHANNELCONTEXTS * pContext = (VBVA_CHANNELCONTEXTS*)VBoxVideoCmnMemAllocNonPaged(PrimaryExtension, size, MEM_TAG);
+    if(pContext)
+    {
+        memset(pContext, 0, size);
+        pContext->cContexts = cDisplays;
+        pContext->PrimaryExtension = PrimaryExtension;
+        *ppContext = pContext;
+        return VINF_SUCCESS;
+    }
+    return VERR_GENERAL_FAILURE;
 }
 
 static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pCallbacks, int iId)
 {
-	if(iId < 0)
-	{
-		return NULL;
-	}
-	else if(pCallbacks->cContexts > (uint32_t)iId)
-	{
-		return &pCallbacks->aContexts[iId];
-	}
-	return NULL;
+    if(iId < 0)
+    {
+        return NULL;
+    }
+    else if(pCallbacks->cContexts > (uint32_t)iId)
+    {
+        return &pCallbacks->aContexts[iId];
+    }
+    return NULL;
 }
 
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
@@ -1169,16 +1169,16 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
     VBVA_CHANNELCONTEXTS *pCallbacks = (VBVA_CHANNELCONTEXTS*)pvHandler;
 //    Assert(0);
     Assert(cbBuffer > VBVAHOSTCMD_HDRSIZE);
-	if(cbBuffer > VBVAHOSTCMD_HDRSIZE)
-	{
-	    VBVAHOSTCMD *pHdr = (VBVAHOSTCMD*)pvBuffer;
-	    Assert(pHdr->iDstID >= 0);
-	    if(pHdr->iDstID >= 0)
-	    {
-	        VBVADISP_CHANNELCONTEXT* pHandler = vboxVBVAFindHandlerInfo(pCallbacks, pHdr->iDstID);
-	        Assert(pHandler && pHandler->bValid);
-	        if(pHandler && pHandler->bValid)
-	        {
+    if(cbBuffer > VBVAHOSTCMD_HDRSIZE)
+    {
+        VBVAHOSTCMD *pHdr = (VBVAHOSTCMD*)pvBuffer;
+        Assert(pHdr->iDstID >= 0);
+        if(pHdr->iDstID >= 0)
+        {
+            VBVADISP_CHANNELCONTEXT* pHandler = vboxVBVAFindHandlerInfo(pCallbacks, pHdr->iDstID);
+            Assert(pHandler && pHandler->bValid);
+            if(pHandler && pHandler->bValid)
+            {
                 VBVAHOSTCMD *pFirst = NULL, *pLast = NULL;
                 for(VBVAHOSTCMD *pCur = pHdr; pCur; )
                 {
@@ -1223,7 +1223,7 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                         }
                         default:
                         {
-        					DBG_CHECKLIST(pCallbacks->PrimaryExtension, pHandler, pCur);
+                            DBG_CHECKLIST(pCallbacks->PrimaryExtension, pHandler, pCur);
                             Assert(u16ChannelInfo==VBVAHG_EVENT);
                             Assert(!pCur->u.Data);
                             //TODO: use offset here
@@ -1241,103 +1241,103 @@ static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t
                     }
                 }
 
-				DBG_CHECKLIST(pCallbacks->PrimaryExtension, pHandler, pFirst);
+                DBG_CHECKLIST(pCallbacks->PrimaryExtension, pHandler, pFirst);
 
                 /* we do not support lists currently */
                 Assert(pFirst == pLast);
                 if(pLast)
                 {
-                	Assert(pLast->u.pNext == NULL);
+                    Assert(pLast->u.pNext == NULL);
                 }
 
                 if(pFirst)
                 {
-                	Assert(pLast);
-					UCHAR oldIrql;
-					VBoxVideoCmnSpinLockAcquire(pCallbacks->PrimaryExtension,
-							&pHandler->pSynchLock,
-							&oldIrql);
+                    Assert(pLast);
+                    UCHAR oldIrql;
+                    VBoxVideoCmnSpinLockAcquire(pCallbacks->PrimaryExtension,
+                                                &pHandler->pSynchLock,
+                                                &oldIrql);
 
-					DBG_CHECKLIST_LOCKED(pHandler, pFirst);
+                    DBG_CHECKLIST_LOCKED(pHandler, pFirst);
 
-					if(pHandler->pLastCmd)
-					{
-						pHandler->pLastCmd->u.pNext = pFirst;
-						Assert(pHandler->pFirstCmd);
-					}
-					else
-					{
-						Assert(!pHandler->pFirstCmd);
-						pHandler->pFirstCmd = pFirst;
-					}
-					pHandler->pLastCmd = pLast;
+                    if(pHandler->pLastCmd)
+                    {
+                        pHandler->pLastCmd->u.pNext = pFirst;
+                        Assert(pHandler->pFirstCmd);
+                    }
+                    else
+                    {
+                        Assert(!pHandler->pFirstCmd);
+                        pHandler->pFirstCmd = pFirst;
+                    }
+                    pHandler->pLastCmd = pLast;
 #ifdef DEBUG
-					pHandler->cCmds++;
+                    pHandler->cCmds++;
 #endif
-					DBG_CHECKLIST_LOCKED(pHandler, NULL);
+                    DBG_CHECKLIST_LOCKED(pHandler, NULL);
 
-					VBoxVideoCmnSpinLockRelease(pCallbacks->PrimaryExtension,
-							&pHandler->pSynchLock,
-							oldIrql);
+                    VBoxVideoCmnSpinLockRelease(pCallbacks->PrimaryExtension,
+                                                &pHandler->pSynchLock,
+                                                oldIrql);
                 }
                 else
                 {
-                	Assert(!pLast);
+                    Assert(!pLast);
                 }
                 return VINF_SUCCESS;
-	        }
-	    }
-	    else
-	    {
-	        //TODO: impl
-//	        HGSMIMINIPORT_CHANNELCONTEXT *pHandler = vboxVideoHGSMIFindHandler;
-//	         if(pHandler && pHandler->pfnChannelHandler)
-//	         {
-//	             pHandler->pfnChannelHandler(pHandler->pvChannelHandler, u16ChannelInfo, pHdr, cbBuffer);
+            }
+        }
+        else
+        {
+            //TODO: impl
+//          HGSMIMINIPORT_CHANNELCONTEXT *pHandler = vboxVideoHGSMIFindHandler;
+//           if(pHandler && pHandler->pfnChannelHandler)
+//           {
+//               pHandler->pfnChannelHandler(pHandler->pvChannelHandler, u16ChannelInfo, pHdr, cbBuffer);
 //
-//	             return VINF_SUCCESS;
-//	         }
-	    }
-	}
-	/* no handlers were found, need to complete the command here */
-	HGSMIHostCmdComplete(pCallbacks->PrimaryExtension, pvBuffer);
-	return VINF_SUCCESS;
+//               return VINF_SUCCESS;
+//           }
+        }
+    }
+    /* no handlers were found, need to complete the command here */
+    HGSMIHostCmdComplete(pCallbacks->PrimaryExtension, pvBuffer);
+    return VINF_SUCCESS;
 }
 
 static HGSMICHANNELHANDLER g_OldHandler;
 
 int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
-		int iDisplay, /* negative would mean this is a miniport handler */
+        int iDisplay, /* negative would mean this is a miniport handler */
         uint8_t u8Channel)
 {
     VBVA_CHANNELCONTEXTS * pContexts;
-	HGSMICHANNEL * pChannel = HGSMIChannelFindById (&PrimaryExtension->u.primary.channels, u8Channel);
-	if(!pChannel)
-	{
-		int rc = vboxVBVACreateChannelContexts(PrimaryExtension, &pContexts);
-		if(RT_FAILURE(rc))
-		{
-			return rc;
-		}
-	}
-	else
-	{
-	    pContexts = (VBVA_CHANNELCONTEXTS *)pChannel->handler.pvHandler;
-	}
+    HGSMICHANNEL * pChannel = HGSMIChannelFindById (&PrimaryExtension->u.primary.channels, u8Channel);
+    if(!pChannel)
+    {
+        int rc = vboxVBVACreateChannelContexts(PrimaryExtension, &pContexts);
+        if(RT_FAILURE(rc))
+        {
+            return rc;
+        }
+    }
+    else
+    {
+        pContexts = (VBVA_CHANNELCONTEXTS *)pChannel->handler.pvHandler;
+    }
 
-	VBVADISP_CHANNELCONTEXT *pDispContext = vboxVBVAFindHandlerInfo(pContexts, iDisplay);
-	Assert(pDispContext);
-	if(pDispContext)
-	{
+    VBVADISP_CHANNELCONTEXT *pDispContext = vboxVBVAFindHandlerInfo(pContexts, iDisplay);
+    Assert(pDispContext);
+    if(pDispContext)
+    {
 #ifdef DEBUGVHWASTRICT
-	    Assert(!pDispContext->bValid);
+        Assert(!pDispContext->bValid);
 #endif
-	    Assert(!pDispContext->pFirstCmd);
-	    Assert(!pDispContext->pLastCmd);
-		if(!pDispContext->bValid)
-		{
-		    pDispContext->bValid = true;
-		    pDispContext->pFirstCmd = NULL;
+        Assert(!pDispContext->pFirstCmd);
+        Assert(!pDispContext->pLastCmd);
+        if(!pDispContext->bValid)
+        {
+            pDispContext->bValid = true;
+            pDispContext->pFirstCmd = NULL;
             pDispContext->pLastCmd= NULL;
 #ifdef DEBUG
             pDispContext->cCmds = 0;
@@ -1345,31 +1345,31 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
 
             VBoxVideoCmnSpinLockCreate(PrimaryExtension, &pDispContext->pSynchLock);
 
-			int rc = VINF_SUCCESS;
-			if(!pChannel)
-			{
-				rc = HGSMIChannelRegister (&PrimaryExtension->u.primary.channels,
-				                                 u8Channel,
-				                                 "VGA Miniport HGSMI channel",
-				                                 vboxVBVAChannelGenericHandler,
-				                                 pContexts,
-				                                 &g_OldHandler);
-			}
+            int rc = VINF_SUCCESS;
+            if(!pChannel)
+            {
+                rc = HGSMIChannelRegister (&PrimaryExtension->u.primary.channels,
+                                           u8Channel,
+                                           "VGA Miniport HGSMI channel",
+                                           vboxVBVAChannelGenericHandler,
+                                           pContexts,
+                                           &g_OldHandler);
+            }
 
-			if(RT_SUCCESS(rc))
-			{
-				pContexts->cUsed++;
-				return VINF_SUCCESS;
-			}
-		}
-	}
+            if(RT_SUCCESS(rc))
+            {
+                pContexts->cUsed++;
+                return VINF_SUCCESS;
+            }
+        }
+    }
 
-	if(!pChannel)
-	{
-	    vboxVBVADeleteChannelContexts(PrimaryExtension, pContexts);
-	}
+    if(!pChannel)
+    {
+        vboxVBVADeleteChannelContexts(PrimaryExtension, pContexts);
+    }
 
-	return VERR_GENERAL_FAILURE;
+    return VERR_GENERAL_FAILURE;
 }
 
 /** @todo Mouse pointer position to be read from VMMDev memory, address of the memory region

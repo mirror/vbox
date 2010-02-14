@@ -98,8 +98,8 @@ PDRVENABLEDATA pded)
 // Future graphic's engine may break calls down to old driver format.
 
     if (cj >= sizeof(ULONG))
-	// DDI_DRIVER_VERSION is now out-dated. See winddi.h
-	// DDI_DRIVER_VERSION_NT4 is equivalent to the old DDI_DRIVER_VERSION
+    // DDI_DRIVER_VERSION is now out-dated. See winddi.h
+    // DDI_DRIVER_VERSION_NT4 is equivalent to the old DDI_DRIVER_VERSION
         pded->iDriverVersion = DDI_DRIVER_VERSION_NT4;
 
     return(TRUE);

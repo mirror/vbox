@@ -148,16 +148,16 @@ int runDisplay()
             /* Ignore the request if it is stale */
             if ((cx != cx0) || (cy != cy0) || RT_FAILURE(rc2))
             {
-	            /* If we are not stopping, sleep for a bit to avoid using up
-	                too much CPU while retrying. */
-	            if (RT_FAILURE(rc2))
-	                RTThreadYield();
-	            else
-	            {
-	                system("VBoxRandR");
+                /* If we are not stopping, sleep for a bit to avoid using up
+                    too much CPU while retrying. */
+                if (RT_FAILURE(rc2))
+                    RTThreadYield();
+                else
+                {
+                    system("VBoxRandR");
                     cx0 = cx;
                     cy0 = cy;
-	            }
+                }
             }
         }
         if (   RT_SUCCESS(rc)
