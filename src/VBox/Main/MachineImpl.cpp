@@ -9016,7 +9016,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     {
         if (aReason == Uninit::Normal)
             mData->mSession.mProgress->notifyComplete(S_OK);
-	else
+        else
             mData->mSession.mProgress->notifyComplete(E_FAIL,
                                                       COM_IIDOF(ISession),
                                                       getComponentName(),

@@ -121,8 +121,8 @@ namespace pm
         {
             ProcessList::iterator it;
             for (it = mProcesses.begin(); it != mProcesses.end(); it++)
-		if (it->first == process)
-		    return *it;
+                if (it->first == process)
+                    return *it;
 
             /* Not found -- add new */
             mProcesses.push_back(ProcessFlagsPair(process, COLLECT_NONE));
