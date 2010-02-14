@@ -41,7 +41,7 @@
 --filter-out-dirs  "*/debian/."
 --filter-out-dirs  "*/SlickEdit/."
 --filter-out-dirs  "*/src/libs/."
---filter-out-dirs  "*/src/apps/."
+--filter-out-dirs  "*/src/apps/kchmviewer*/."
 --filter-out-dirs  "*/src/VBox/Additions/x11/x11include/."
 --filter-out-dirs  "*/src/VBox/Additions/WINNT/Graphics/Wine/."
 --filter-out-dirs  "*/src/VBox/Additions/WINNT/i8042prt/include/."
