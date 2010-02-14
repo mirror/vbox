@@ -172,7 +172,7 @@ static int handleIpconfig(HandlerArg *a, int iStart, int *pcProcessed)
                  g_aHostOnlyIPOptions,
                  RT_ELEMENTS(g_aHostOnlyIPOptions),
                  index,
-                 0 /* fFlags */);
+                 RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)

@@ -82,7 +82,7 @@ int handleStorageAttach(HandlerArg *a)
         return errorSyntax(USAGE_STORAGEATTACH, "Too many parameters");
 
     RTGetOptInit(&GetState, a->argc, a->argv, g_aStorageAttachOptions,
-                 RT_ELEMENTS(g_aStorageAttachOptions), 1, 0 /* fFlags */);
+                 RT_ELEMENTS(g_aStorageAttachOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
     while (   SUCCEEDED(rc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))
@@ -678,7 +678,7 @@ int handleStorageController(HandlerArg *a)
         return errorSyntax(USAGE_STORAGECONTROLLER, "Too few parameters");
 
     RTGetOptInit (&GetState, a->argc, a->argv, g_aStorageControllerOptions,
-                  RT_ELEMENTS(g_aStorageControllerOptions), 1, 0 /* fFlags */);
+                  RT_ELEMENTS(g_aStorageControllerOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
     while (   SUCCEEDED(rc)
            && (c = RTGetOpt(&GetState, &ValueUnion)))

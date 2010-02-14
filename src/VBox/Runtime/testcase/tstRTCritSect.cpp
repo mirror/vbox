@@ -46,6 +46,7 @@
 #include <iprt/log.h>
 #include <iprt/mem.h>
 #include <iprt/semaphore.h>
+#include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 #include <iprt/time.h>
@@ -494,25 +495,12 @@ int main(int argc, char **argv)
                 RTTestIPrintf(RTTESTLVL_ALWAYS, "%s [--help|-h] [--distribution|-d]\n", argv[0]);
                 return 1;
 
-            case VINF_GETOPT_NOT_OPTION:
-                RTTestIFailed("%Rrs\n", ch);
-                return RTTestSummaryAndDestroy(hTest);
+            case 'V':
+                RTPrintf("$Revision: $\n");
+                return 0;
 
             default:
-                if (ch > 0)
-                {
-                    if (RT_C_IS_GRAPH(ch))
-                        RTTestIFailed("unhandled option: -%c\n", ch);
-                    else
-                        RTTestIFailed("unhandled option: %i\n", ch);
-                }
-                else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    RTTestIFailed("unknown option: %s\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    RTTestIFailed("%s: %Rrs\n", ValueUnion.pDef->pszLong, ch);
-                else
-                    RTTestIFailed("%Rrs\n", ch);
-                return RTTestSummaryAndDestroy(hTest);
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 

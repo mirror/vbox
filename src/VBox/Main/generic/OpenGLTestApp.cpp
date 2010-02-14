@@ -231,7 +231,6 @@ int main(int argc, char **argv)
 #ifdef VBOXGLTEST_WITH_LOGGING
             { "--log",            'l',   RTGETOPT_REQ_STRING },
 #endif
-            { "--help",           'h',   RTGETOPT_REQ_NOTHING },
         };
 
         RTGETOPTSTATE State;
@@ -306,15 +305,20 @@ int main(int argc, char **argv)
                             RTBldCfgVersionMajor(), RTBldCfgVersionMinor(), RTBldCfgVersionBuild());
                     break;
 
+                case 'V':
+                    RTPrintf("$Revision: $\n");
+                    return 0;
+
                 case VERR_GETOPT_UNKNOWN_OPTION:
                 case VINF_GETOPT_NOT_OPTION:
                     rc = 1;
 
                 default:
+                    /* complain? RTGetOptPrintError(rc, &Val); */
                     break;
             }
 
-            if(rc)
+            if (rc)
                 break;
         }
 

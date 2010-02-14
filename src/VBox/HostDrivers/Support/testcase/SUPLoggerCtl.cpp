@@ -32,6 +32,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/sup.h>
+#include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/getopt.h>
 #include <iprt/stream.h>
@@ -78,7 +79,6 @@ int main(int argc, char **argv)
         { "--dest",     'd', RTGETOPT_REQ_STRING },
         { "--what",     'o', RTGETOPT_REQ_STRING },
         { "--which",    'l', RTGETOPT_REQ_STRING },
-        { "--help",     'h', 0 },
     };
 
     const char *pszFlags  = "";
@@ -140,25 +140,16 @@ int main(int argc, char **argv)
             case 'h':
                 return usage();
 
+            case 'V':
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return 0;
+
             case VINF_GETOPT_NOT_OPTION:
                 RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: Unexpected argument '%s'.\n", Val.psz);
                 return 1;
 
             default:
-                if (ch > 0)
-                {
-                    if (RT_C_IS_GRAPH(ch))
-                        RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: unhandled option: -%c\n", ch);
-                    else
-                        RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: unhandled option: %i\n", ch);
-                }
-                else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: unknown option: %s\n", Val.psz);
-                else if (Val.pDef)
-                    RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: %s: %Rrs\n", Val.pDef->pszLong, ch);
-                else
-                    RTStrmPrintf(g_pStdErr, "SUPLoggerCtl: error: %Rrs\n", ch);
-                return 1;
+                return RTGetOptPrintError(ch, &Val);
         }
     }
 

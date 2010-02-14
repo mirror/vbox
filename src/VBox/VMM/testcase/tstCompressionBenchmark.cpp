@@ -25,6 +25,7 @@
 *******************************************************************************/
 #include <iprt/asm.h>
 #include <iprt/assert.h>
+#include <iprt/buildconfig.h>
 #include <iprt/crc.h>
 #include <iprt/ctype.h>
 #include <iprt/err.h>
@@ -247,7 +248,6 @@ int main(int argc, char **argv)
         { "--page-at-a-time", 'c', RTGETOPT_REQ_UINT32 },
         { "--page-file",      'f', RTGETOPT_REQ_STRING },
         { "--offset",         'o', RTGETOPT_REQ_UINT64 },
-        { "--help",           'h', RTGETOPT_REQ_NOTHING },
     };
 
     const char     *pszPageFile = NULL;
@@ -314,23 +314,12 @@ int main(int argc, char **argv)
                          "    Offset into the page file to start reading at.\n");
                 return 0;
 
+            case 'V':
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return 0;
+
             default:
-                if (rc == VINF_GETOPT_NOT_OPTION)
-                    Error("unknown argument: %s\n", Val.psz);
-                else if (rc > 0)
-                {
-                    if (RT_C_IS_GRAPH(rc))
-                        Error("unhandled option: -%c\n", rc);
-                    else
-                        Error("unhandled option: %d\n", rc);
-                }
-                else if (rc == VERR_GETOPT_UNKNOWN_OPTION)
-                    Error("unknown option: %s\n", Val.psz);
-                else if (Val.pDef)
-                    Error("%s: %Rrs\n", Val.pDef->pszLong, rc);
-                else
-                    Error("%Rrs\n", rc);
-                return 1;
+                return RTGetOptPrintError(rc, &Val);
         }
     }
 

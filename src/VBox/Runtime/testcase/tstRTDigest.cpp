@@ -299,20 +299,7 @@ int main(int argc, char **argv)
              }
 
              default:
-                 if (ch > 0)
-                 {
-                     if (RT_C_IS_GRAPH(ch))
-                         Error("unhandled option: -%c\n", ch);
-                     else
-                         Error("unhandled option: %i\n", ch);
-                 }
-                 else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                     Error("unknown option: %s\n", ValueUnion.psz);
-                 else if (ValueUnion.pDef)
-                     Error("%s: %Rrs\n", ValueUnion.pDef->pszLong, ch);
-                 else
-                     Error("%Rrs\n", ch);
-                 return 1;
+                return RTGetOptPrintError(ch, &ValueUnion);
          }
      }
 

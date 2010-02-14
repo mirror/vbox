@@ -822,7 +822,6 @@ int main(int argc, char **argv)
     {
         { "--address",      'a', RTGETOPT_REQ_UINT64 },
         { "--cpumode",      'c', RTGETOPT_REQ_UINT32 },
-        { "--help",         'h', RTGETOPT_REQ_NOTHING },
         { "--bytes",        'b', RTGETOPT_REQ_INT64 },
         { "--listing",      'l', RTGETOPT_REQ_NOTHING },
         { "--no-listing",   'L', RTGETOPT_REQ_NOTHING },
@@ -835,8 +834,9 @@ int main(int argc, char **argv)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
-    while ((ch = RTGetOpt(&GetState, &ValueUnion)))
+    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_OPTS_FIRST);
+    while (   (ch = RTGetOpt(&GetState, &ValueUnion))
+           && ch != VINF_GETOPT_NOT_OPTION)
     {
         switch (ch)
         {
@@ -913,12 +913,12 @@ int main(int argc, char **argv)
                 fHexBytes = true;
                 break;
 
-            case VINF_GETOPT_NOT_OPTION:
-                break;
+            case 'V':
+                RTPrintf("$Revision: $\n");
+                return 0;
 
             default:
-                RTStrmPrintf(g_pStdErr, "%s: syntax error: %Rrc\n", argv0, ch);
-                return 1;
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
     int iArg = GetState.iNext - 1; /** @todo Not pretty, add RTGetOptInit flag for this. */

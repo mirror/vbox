@@ -65,7 +65,7 @@ int main(int argc, char **argv)
     int ch;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
+    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((ch = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (ch)
@@ -86,16 +86,8 @@ int main(int argc, char **argv)
                 fSpin = true;
                 break;
 
-            case VINF_GETOPT_NOT_OPTION:
-                RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
-                return 1;
-
             default:
-                if (ch < 0)
-                    RTPrintf("tstGIP-2: %Rrc: %s\n", ch, ValueUnion.psz);
-                else
-                    RTPrintf("tstGIP-2: syntax error: %s\n", ValueUnion.psz);
-                return 1;
+                return RTGetOptPrintError(ch, &ValueUnion);
         }
     }
 
