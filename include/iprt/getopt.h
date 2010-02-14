@@ -204,8 +204,14 @@ typedef struct RTGETOPTSTATE
     PCRTGETOPTDEF   pDef;
     /** The index of an index option, otherwise UINT32_MAX. */
     uint32_t        uIndex;
-    /* More members will be added later for dealing with initial
-       call, optional sorting, '--' and so on. */
+    /** The flags passed to RTGetOptInit.  */
+    uint32_t        fFlags;
+    /** Number of non-options that we're skipping during a sorted get.  The value
+     * INT32_MAX is used to indicate that there are no more options.  This is used
+     * to implement '--'.   */
+    int32_t         cNonOptions;
+
+    /* More members may be added later for dealing with new features. */
 } RTGETOPTSTATE;
 /** Pointer to RTGetOpt state. */
 typedef RTGETOPTSTATE *PRTGETOPTSTATE;
@@ -234,6 +240,17 @@ typedef RTGETOPTSTATE *PRTGETOPTSTATE;
 RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
                          PCRTGETOPTDEF paOptions, size_t cOptions,
                          int iFirst, uint32_t fFlags);
+
+/** @name RTGetOptInit flags.
+ * @{ */
+/** Sort the arguments so that options comes first, then non-options. */
+#define RTGETOPTINIT_FLAGS_OPTS_FIRST   RT_BIT_32(0)
+/** Prevent add the standard version and help options:
+ *     - "--help", "-h" and "-?" returns 'h'.
+ *     - "--version" and "-V" return 'V'.
+ */
+#define RTGETOPTINIT_FLAGS_NO_STD_OPTS  RT_BIT_32(1)
+/** @} */
 
 /**
  * Command line argument parser, handling both long and short options and checking

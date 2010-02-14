@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2007 Sun Microsystems, Inc.
+ * Copyright (C) 2007-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -43,12 +43,30 @@
 #include <iprt/uuid.h>
 
 
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/**
+ * Standard options that gets included unless RTGETOPTINIT_FLAGS_NO_STD_OPTS is
+ * set.
+ */
+static RTGETOPTDEF const g_aStdOptions[] =
+{
+    {  "--help",        'h',    RTGETOPT_REQ_NOTHING },
+    {  "-help",         'h',    RTGETOPT_REQ_NOTHING },
+    {  "--version",     'V',    RTGETOPT_REQ_NOTHING },
+    {  "-version",      'V',    RTGETOPT_REQ_NOTHING },
+};
+/** The index of --help in g_aStdOptions.  Used for some trickery.  */
+#define RTGETOPT_STD_OPTIONS_HELP_IDX   0
+
+
 
 RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
                          PCRTGETOPTDEF paOptions, size_t cOptions,
                          int iFirst, uint32_t fFlags)
 {
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTGETOPTINIT_FLAGS_OPTS_FIRST | RTGETOPTINIT_FLAGS_NO_STD_OPTS)), VERR_INVALID_PARAMETER);
 
     pState->argv         = argv;
     pState->argc         = argc;
@@ -57,6 +75,9 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
     pState->iNext        = iFirst;
     pState->pszNextShort = NULL;
     pState->pDef         = NULL;
+    pState->uIndex       = UINT32_MAX;
+    pState->fFlags       = fFlags;
+    pState->cNonOptions  = 0;
 
     /* validate the options. */
     for (size_t i = 0; i < cOptions; i++)
@@ -67,8 +88,6 @@ RTDECL(int) RTGetOptInit(PRTGETOPTSTATE pState, int argc, char **argv,
         Assert(paOptions[i].iShort != '-');
     }
 
-    /** @todo Add an flag for sorting the arguments so that all the options comes
-     *        first. */
     return VINF_SUCCESS;
 }
 RT_EXPORT_SYMBOL(RTGetOptInit);
@@ -179,8 +198,9 @@ static int rtgetoptConvertMacAddr(const char *pszValue, PRTMAC pAddr)
  * @param   pszOption       The alleged long option.
  * @param   paOptions       Option array.
  * @param   cOptions        Number of items in the array.
+ * @param   fFlags          Init flags.
  */
-static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paOptions, size_t cOptions)
+static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paOptions, size_t cOptions, uint32_t fFlags)
 {
     PCRTGETOPTDEF pOpt = paOptions;
     while (cOptions-- > 0)
@@ -232,6 +252,12 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
         }
         pOpt++;
     }
+
+    if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
+            if (!strcmp(pszOption, g_aStdOptions[i].pszLong))
+                return &g_aStdOptions[i];
+
     return NULL;
 }
 
@@ -243,8 +269,9 @@ static PCRTGETOPTDEF rtGetOptSearchLong(const char *pszOption, PCRTGETOPTDEF paO
  * @param   chOption        The option char.
  * @param   paOptions       Option array.
  * @param   cOptions        Number of items in the array.
+ * @param   fFlags          Init flags.
  */
-static PCRTGETOPTDEF rtGetOptSearchShort(int chOption, PCRTGETOPTDEF paOptions, size_t cOptions)
+static PCRTGETOPTDEF rtGetOptSearchShort(int chOption, PCRTGETOPTDEF paOptions, size_t cOptions, uint32_t fFlags)
 {
     PCRTGETOPTDEF pOpt = paOptions;
     while (cOptions-- > 0)
@@ -252,6 +279,15 @@ static PCRTGETOPTDEF rtGetOptSearchShort(int chOption, PCRTGETOPTDEF paOptions, 
         if (pOpt->iShort == chOption)
             return pOpt;
         pOpt++;
+    }
+
+    if (!(fFlags & RTGETOPTINIT_FLAGS_NO_STD_OPTS))
+    {
+        for (uint32_t i = 0; i < RT_ELEMENTS(g_aStdOptions); i++)
+            if (g_aStdOptions[i].iShort == chOption)
+                return &g_aStdOptions[i];
+        if (chOption == '?')
+            return &g_aStdOptions[RTGETOPT_STD_OPTIONS_HELP_IDX];
     }
     return NULL;
 }
@@ -394,6 +430,24 @@ static int rtGetOptProcessValue(uint32_t fFlags, const char *pszValue, PRTGETOPT
 }
 
 
+/**
+ * Moves one argv option entries.
+ *
+ * @param   papszTo             Destination.
+ * @param   papszFrom           Source.
+ */
+static void rtGetOptMoveArgvEntries(char **papszTo, char **papszFrom)
+{
+    if (papszTo != papszFrom)
+    {
+        Assert((uintptr_t)papszTo < (uintptr_t)papszFrom);
+        char * const pszMoved = papszFrom[0];
+        memmove(&papszTo[1], &papszTo[0], (uintptr_t)papszFrom - (uintptr_t)papszTo);
+        papszTo[0] = pszMoved;
+    }
+}
+
+
 RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
 {
     /*
@@ -408,12 +462,6 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     pValueUnion->u64 = 0;
     pValueUnion->pDef = NULL;
 
-    /** @todo Handle '--' (end of options).*/
-    /** @todo Add a flag to RTGetOptInit for handling the various help options in
-     *        a common way. (-?,-h,-help,--help,++) */
-    /** @todo Add a flag to RTGetOptInit for handling the standard version options
-     *        in a common way. (-V,--version) */
-
     /*
      * The next option.
      */
@@ -427,7 +475,7 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
         /*
          * We've got short options left over from the previous call.
          */
-        pOpt = rtGetOptSearchShort(*pState->pszNextShort, pState->paOptions, pState->cOptions);
+        pOpt = rtGetOptSearchShort(*pState->pszNextShort, pState->paOptions, pState->cOptions, pState->fFlags);
         if (!pOpt)
         {
             pValueUnion->psz = pState->pszNextShort;
@@ -441,29 +489,83 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
     else
     {
         /*
-         * Pop off the next argument.
+         * Pop off the next argument.  Sorting options and dealing with the
+         * dash-dash makes this a little extra complicated.
          */
-        if (pState->iNext >= pState->argc)
-            return 0;
-        iThis = pState->iNext++;
-        pszArgThis = pState->argv[iThis];
-
-        /*
-         * Do a long option search first and then a short option one.
-         * This way we can make sure single dash long options doesn't
-         * get mixed up with short ones.
-         */
-        pOpt = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions);
-        if (    !pOpt
-            &&  pszArgThis[0] == '-'
-            &&  pszArgThis[1] != '-'
-            &&  pszArgThis[1] != '\0')
+        for (;;)
         {
-            pOpt = rtGetOptSearchShort(pszArgThis[1], pState->paOptions, pState->cOptions);
-            fShort = pOpt != NULL;
+            if (pState->iNext >= pState->argc)
+                return 0;
+
+            if (pState->cNonOptions)
+            {
+                if (pState->cNonOptions == INT32_MAX)
+                {
+                    pValueUnion->psz = pState->argv[pState->iNext++];
+                    return VINF_GETOPT_NOT_OPTION;
+                }
+
+                if (pState->iNext + pState->cNonOptions >= pState->argc)
+                {
+                    pState->cNonOptions = INT32_MAX;
+                    continue;
+                }
+            }
+
+            iThis = pState->iNext++;
+            pszArgThis = pState->argv[iThis + pState->cNonOptions];
+
+            /*
+             * Do a long option search first and then a short option one.
+             * This way we can make sure single dash long options doesn't
+             * get mixed up with short ones.
+             */
+            pOpt = rtGetOptSearchLong(pszArgThis, pState->paOptions, pState->cOptions, pState->fFlags);
+            if (    !pOpt
+                &&  pszArgThis[0] == '-'
+                &&  pszArgThis[1] != '-'
+                &&  pszArgThis[1] != '\0')
+            {
+                pOpt = rtGetOptSearchShort(pszArgThis[1], pState->paOptions, pState->cOptions, pState->fFlags);
+                fShort = pOpt != NULL;
+            }
+            else
+                fShort = false;
+
+            /* Look for dash-dash. */
+            if (!pOpt && !strcmp(pszArgThis, "--"))
+            {
+                rtGetOptMoveArgvEntries(&pState->argv[iThis], &pState->argv[iThis + pState->cNonOptions]);
+                pState->cNonOptions = INT32_MAX;
+                continue;
+            }
+
+            /* Options first hacks. */
+            if (pState->fFlags & RTGETOPTINIT_FLAGS_OPTS_FIRST)
+            {
+                if (pOpt)
+                    rtGetOptMoveArgvEntries(&pState->argv[iThis], &pState->argv[iThis + pState->cNonOptions]);
+                else if (*pszArgThis == '-')
+                {
+                    pValueUnion->psz = pszArgThis;
+                    return VERR_GETOPT_UNKNOWN_OPTION;
+                }
+                else
+                {
+                    /* not an option, add it to the non-options and try again. */
+                    pState->iNext--;
+                    pState->cNonOptions++;
+
+                    /* Switch to returning non-options if we've reached the end. */
+                    if (pState->iNext + pState->cNonOptions >= pState->argc)
+                        pState->cNonOptions = INT32_MAX;
+                    continue;
+                }
+            }
+
+            /* done */
+            break;
         }
-        else
-            fShort = false;
     }
 
     if (pOpt)
@@ -491,7 +593,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                 {
                     if (iThis + 1 >= pState->argc)
                         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                    pszValue = pState->argv[iThis + 1];
+                    pszValue = pState->argv[iThis + pState->cNonOptions + 1];
+                    rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
                     pState->iNext++;
                 }
                 else /* same argument. */
@@ -527,7 +630,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                         if (iThis + 1 >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
                         pState->uIndex = uIndex;
-                        pszValue = pState->argv[iThis + 1];
+                        pszValue = pState->argv[iThis + pState->cNonOptions + 1];
+                        rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
                         pState->iNext++;
                     }
                     else
@@ -540,7 +644,8 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
                     {
                         if (iThis + 1 >= pState->argc)
                             return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
-                        pszValue = pState->argv[iThis + 1];
+                        pszValue = pState->argv[iThis + pState->cNonOptions + 1];
+                        rtGetOptMoveArgvEntries(&pState->argv[iThis + 1], &pState->argv[iThis + pState->cNonOptions + 1]);
                         pState->iNext++;
                     }
                     else /* same argument. */
@@ -599,7 +704,6 @@ RTDECL(int) RTGetOpt(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion)
      * Not a known option argument. If it starts with a switch char (-) we'll
      * fail with unkown option, and if it doesn't we'll return it as a non-option.
      */
-
     if (*pszArgThis == '-')
     {
         pValueUnion->psz = pszArgThis;
@@ -634,8 +738,11 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
     if (pState->iNext >= pState->argc)
         return VERR_GETOPT_REQUIRED_ARGUMENT_MISSING;
     int         iThis    = pState->iNext++;
-    const char *pszValue = pState->argv[iThis];
+    const char *pszValue = pState->argv[iThis + (pState->cNonOptions != INT32_MAX ? pState->cNonOptions : 0)];
     pValueUnion->pDef    = pOpt; /* in case of no value or error. */
+
+    if (pState->cNonOptions && pState->cNonOptions != INT32_MAX)
+        rtGetOptMoveArgvEntries(&pState->argv[iThis], &pState->argv[iThis + pState->cNonOptions]);
 
     return rtGetOptProcessValue(fFlags, pszValue, pValueUnion);
 }
