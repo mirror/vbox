@@ -103,6 +103,7 @@ vboxvideo_drm.c: --no-convert-tabs
 --filter-out-dirs  "*/src/VBox/Devices/PC/PXE/."
 */src/VBox/Additions/solaris/Installer/postinstall.sh: --no-convert-tabs
 */src/VBox/HostDrivers/Support/solaris/mod.sh: --no-convert-tabs
+*/src/VBox/Installer/solaris/vboxconfig.sh: --no-convert-tabs
 
 # --no-convert-tabs
 
