@@ -579,8 +579,8 @@ static struct
     uint8_t uASC;
     uint8_t uASCQ;
     const char * const pszSenseText;
-} g_aSCSISenseText[] 
-= 
+} g_aSCSISenseText[]
+=
 {
     { 0x67, 0x02, "A ADD LOGICAL UNIT FAILED" },
     { 0x13, 0x00, "ADDRESS MARK NOT FOUND FOR DATA FIELD" },
@@ -919,7 +919,7 @@ const char * SCSISenseText(uint8_t uSense)
 {
     if (uSense < RT_ELEMENTS(g_apszSCSISenseNames))
         return g_apszSCSISenseNames[uSense];
-    
+
     return "(SCSI sense out of range)";
 }
 

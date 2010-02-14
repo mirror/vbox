@@ -120,12 +120,12 @@ struct libalias {
 
     int     deleteAllLinks; /* If equal to zero, DeleteLink()  */
     /* will not remove permanent links */
-    
-    /* log descriptor        */ 
+
+    /* log descriptor        */
 #ifdef  _KERNEL
-    char           *logDesc;        
-#else 
-    FILE           *logDesc;    
+    char           *logDesc;
+#else
+    FILE           *logDesc;
 #endif
     /* statistics monitoring */
 
@@ -156,7 +156,7 @@ struct libalias {
     struct in_addr  true_addr;  /* in network byte order. */
     u_short     true_port;  /* in host byte order. */
 #if defined(_KERNEL) && !defined(VBOX)
-    /* 
+    /*
      * avoid races in libalias: every public function has to use it.
      */
     struct mtx mutex;
@@ -177,7 +177,7 @@ struct libalias {
 #define LIBALIAS_LOCK_DESTROY(l)    mtx_destroy(&l->mutex)
 #else
 #define LIBALIAS_LOCK_INIT(l)
-#define LIBALIAS_LOCK_ASSERT(l) 
+#define LIBALIAS_LOCK_ASSERT(l)
 #define LIBALIAS_LOCK(l)
 #define LIBALIAS_UNLOCK(l)
 #define LIBALIAS_LOCK_DESTROY(l)

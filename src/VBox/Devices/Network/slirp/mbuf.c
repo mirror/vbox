@@ -22,7 +22,7 @@ static int mbuf_zone_init(PNATState pData)
     struct mbuf_zone *mzone;
     int i;
     struct mbuf *m;
-    uint8_t *zone = RTMemAlloc(msize * MBUF_ZONE_SIZE);  
+    uint8_t *zone = RTMemAlloc(msize * MBUF_ZONE_SIZE);
     if (zone == NULL)
     {
         LogRel(("NAT: can't allocate new zone\n"));
@@ -50,7 +50,7 @@ static int mbuf_zone_init(PNATState pData)
     pData->mbuf_zone_count++;
     pData->mbuf_water_line_limit = pData->mbuf_zone_count * MBUF_ZONE_SIZE;
     return 0;
-} 
+}
 
 void m_fini(PNATState pData)
 {
@@ -65,7 +65,7 @@ void m_fini(PNATState pData)
         for (i = 0; i < MBUF_ZONE_SIZE; ++i)
         {
             m = (struct mbuf *)((char *)zone + i*msize);
-            if (   (m->m_flags & M_EXT) 
+            if (   (m->m_flags & M_EXT)
                 && m->m_ext != NULL)
                 RTMemFree(m->m_ext);
         }
@@ -124,7 +124,7 @@ m_get(PNATState pData)
     int rc = 0;
 
     DEBUG_CALL("m_get");
-    
+
     rc = RTCritSectEnter(&pData->cs_mbuf_zone);
     AssertRC(rc);
 
@@ -382,7 +382,7 @@ void slirp_ext_m_append(PNATState pData, void *arg, uint8_t *pu8Buf, size_t cbBu
     if (cbBuf > M_FREEROOM(m))
     {
         m_inc(m, cbBuf);
-    } 
+    }
     c = mtod(m, char *);
     memcpy(c, pu8Buf, cbBuf);
     m->m_len = cbBuf;

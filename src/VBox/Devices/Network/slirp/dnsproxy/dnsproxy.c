@@ -101,7 +101,7 @@ timeout(int fd, short event, void *arg)
 }
 #else /* VBOX */
 static void
-timeout(PNATState pData, struct socket *so, void *arg) 
+timeout(PNATState pData, struct socket *so, void *arg)
 {
     struct request *req = (struct request *)arg;
     struct dns_entry *de;
@@ -118,7 +118,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         struct ip *ip;
         struct udphdr *udp;
         int iphlen;
-        struct socket *so1 = socreate(); 
+        struct socket *so1 = socreate();
         struct mbuf *m = NULL;
         char *data;
         if (so1 == NULL)
@@ -145,7 +145,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
         }
         /* mbuf initialization */
         m->m_data += if_maxlinkhdr;
-        ip = mtod(m, struct ip *); 
+        ip = mtod(m, struct ip *);
         udp = (struct udphdr *)&ip[1]; /* ip attributes */
         data = (char *)&udp[1];
         iphlen = sizeof(struct ip);
@@ -174,7 +174,7 @@ timeout(PNATState pData, struct socket *so, void *arg)
  * listening socket. Read the packet, create a new query, append it to the
  * queue and send it to the correct server.
  *
- * Slirp: this routine should be called from udp_input 
+ * Slirp: this routine should be called from udp_input
  * socket is Slirp's construction (here we should set expiration time for socket)
  * mbuf points on ip header to easy fetch information about source and destination.
  * iphlen - len of ip header
@@ -267,7 +267,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
     }
 
     /* fill the request structure */
-    if (so->so_timeout_arg == NULL) 
+    if (so->so_timeout_arg == NULL)
     {
         req->id = QUERYID;
         memcpy(&req->client, &fromaddr, sizeof(struct sockaddr_in));
@@ -279,18 +279,18 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
             RTMemFree(req);
             if (fail_counter == 0)
                 LogRel(("NAT/dnsproxy: Empty DNS entry (suppressed 100 times)\n"));
-            else 
+            else
                 fail_counter = (fail_counter == 100 ? 0 : fail_counter + 1);
             return;
-            
+
         }
         retransmit = 0;
         so->so_timeout = timeout;
         so->so_timeout_arg = req;
         req->nbyte = byte;
         memcpy(req->byte, buf, byte); /* copying original request */
-    } 
-    else 
+    }
+    else
     {
         retransmit = 1;
     }
@@ -382,7 +382,7 @@ dnsproxy_query(PNATState pData, struct socket *so, struct mbuf *m, int iphlen)
 /* do_answer -- Process a packet coming from our authoritative or recursive
  * server. Find the corresponding query and send answer back to querying
  * host.
- * 
+ *
  * Slirp: we call this from the routine from socrecvfrom routine handling UDP responses.
  * So at the moment of call response already has been readed and packed into the mbuf
  */
@@ -429,7 +429,7 @@ dnsproxy_answer(PNATState pData, struct socket *so, struct mbuf *m)
 #ifdef VBOX
     if ((query = hash_find_request(pData, *((unsigned short *)buf))) == NULL) {
         ++late_answers;
-        /* Probably, this request wasn't serviced by 
+        /* Probably, this request wasn't serviced by
          * dnsproxy so we won't care about it here*/
         so->so_expire = curtime + SO_EXPIREFAST;
         Log2(("NAT: query wasn't found\n"));
@@ -631,7 +631,7 @@ main(int argc, char *argv[])
 
 }
 #else
-int 
+int
 dnsproxy_init(PNATState pData)
 {
     /* globals initialization */

@@ -79,17 +79,17 @@ int main(int argc, char **argv)
       pitch = pm->width * ((pm->depth + 7) / 8);
     pages = vram_size / (pm->height * pitch);
     if (pages > 0) {
-      printf("{ 0x%04x, /* %dx%dx%d */\n", 
+      printf("{ 0x%04x, /* %dx%dx%d */\n",
              pm->mode, pm->width, pm->height, pm->depth);
       if (pm->depth == 4)
-        printf("{ /*Bit16u ModeAttributes*/ %s,\n", 
+        printf("{ /*Bit16u ModeAttributes*/ %s,\n",
                "VBE_MODE_ATTRIBUTE_SUPPORTED | "
                "VBE_MODE_ATTRIBUTE_EXTENDED_INFORMATION_AVAILABLE | "
                "VBE_MODE_ATTRIBUTE_COLOR_MODE | "
                "VBE_MODE_ATTRIBUTE_TTY_BIOS_SUPPORT | "
                "VBE_MODE_ATTRIBUTE_GRAPHICS_MODE");
       else
-        printf("{ /*Bit16u ModeAttributes*/ %s,\n", 
+        printf("{ /*Bit16u ModeAttributes*/ %s,\n",
                "VBE_MODE_ATTRIBUTE_SUPPORTED | "
                "VBE_MODE_ATTRIBUTE_EXTENDED_INFORMATION_AVAILABLE | "
                "VBE_MODE_ATTRIBUTE_COLOR_MODE | "
@@ -195,14 +195,14 @@ int main(int argc, char **argv)
           break;
       }
 
-      printf("/*Bit8u  RedMaskSize*/ %d,\n", r_size);               
-      printf("/*Bit8u  RedFieldPosition*/ %d,\n", r_pos);          
-      printf("/*Bit8u  GreenMaskSize*/ %d,\n", g_size);             
-      printf("/*Bit8u  GreenFieldPosition*/ %d,\n", g_pos);        
-      printf("/*Bit8u  BlueMaskSize*/ %d,\n", b_size);              
-      printf("/*Bit8u  BlueFieldPosition*/ %d,\n", b_pos);         
-      printf("/*Bit8u  RsvdMaskSize*/ %d,\n", a_size);              
-      printf("/*Bit8u  RsvdFieldPosition*/ %d,\n", a_pos);         
+      printf("/*Bit8u  RedMaskSize*/ %d,\n", r_size);
+      printf("/*Bit8u  RedFieldPosition*/ %d,\n", r_pos);
+      printf("/*Bit8u  GreenMaskSize*/ %d,\n", g_size);
+      printf("/*Bit8u  GreenFieldPosition*/ %d,\n", g_pos);
+      printf("/*Bit8u  BlueMaskSize*/ %d,\n", b_size);
+      printf("/*Bit8u  BlueFieldPosition*/ %d,\n", b_pos);
+      printf("/*Bit8u  RsvdMaskSize*/ %d,\n", a_size);
+      printf("/*Bit8u  RsvdFieldPosition*/ %d,\n", a_pos);
       if (pm->depth == 32)
         printf("/*Bit8u  DirectColorModeInfo*/ %s,\n",
                "VBE_DIRECTCOLOR_RESERVED_BITS_AVAILABLE");

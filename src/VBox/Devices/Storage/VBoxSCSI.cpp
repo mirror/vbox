@@ -354,5 +354,3 @@ int vboxscsiWriteString(PPDMDEVINS pDevIns, PVBOXSCSI pVBoxSCSI, uint8_t iRegist
     return VERR_MORE_DATA;
 }
 
-
-

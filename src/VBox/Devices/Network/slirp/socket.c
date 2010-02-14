@@ -627,7 +627,7 @@ sorecvfrom(PNATState pData, struct socket *so)
         ret = recvfrom(so->s, m->m_data, len, 0,
                             (struct sockaddr *)&addr, &addrlen);
         Log2(("NAT: %R[natsock] ioctlsocket after read "
-            "(rc:%d errno:%d, n:%d) ret:%d, len:%d\n", so, 
+            "(rc:%d errno:%d, n:%d) ret:%d, len:%d\n", so,
              rc, errno, n, ret, len));
 #else
         /*How many data has been received ?*/

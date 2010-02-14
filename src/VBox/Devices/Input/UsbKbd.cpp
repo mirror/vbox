@@ -242,7 +242,7 @@ static const uint8_t g_UsbHidReportDesc[] =
 };
 
 /* Additional HID class interface descriptor. */
-static const uint8_t g_UsbHidIfHidDesc[] = 
+static const uint8_t g_UsbHidIfHidDesc[] =
 {
     /* .bLength = */                0x09,
     /* .bDescriptorType = */        0x21,       /* HID */
@@ -551,7 +551,7 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
 static int8_t clamp_i8(int32_t val)
 {
     if (val > 127) {
-        val = 127; 
+        val = 127;
     } else if (val < -127) {
         val = -127;
     }
@@ -600,7 +600,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     u8HidCode = aKeycode2Hid[u8KeyCode & 0x7f];
     fKeyDown = !(u8KeyCode & 0x80);
 
-    if (fKeyDown) 
+    if (fKeyDown)
     {
         for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
         {
@@ -836,7 +836,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     break;
                 }
                 break;
-            }    
+            }
             case HID_REQ_GET_IDLE:
             {
                 switch (pSetup->bmRequestType)
@@ -850,7 +850,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                     break;
                 }
                 break;
-            }    
+            }
         }
         Log(("usbHid: Unimplemented class request: bmRequestType=%#x bRequest=%#x wValue=%#x wIndex=%#x wLength=%#x\n",
              pSetup->bmRequestType, pSetup->bRequest, pSetup->wValue, pSetup->wIndex, pSetup->wLength));

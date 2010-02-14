@@ -149,7 +149,7 @@ typedef struct NATState
     int fmbuf_water_line;
     int mbuf_water_line_limit;
     int mbuf_zone_count;
-    int fmbuf_water_warn_sent; 
+    int fmbuf_water_warn_sent;
     uint32_t tsmbuf_water_warn_sent;
 #endif
     /* Stuff from slirp.c */

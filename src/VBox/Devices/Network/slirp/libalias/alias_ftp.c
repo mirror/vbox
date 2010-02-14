@@ -108,14 +108,14 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_ftp.c,v 1.29.2.1.4.1 2009/04/
 #define FTP_CONTROL_PORT_NUMBER 21
 
 static void
-AliasHandleFtpOut(struct libalias *, struct ip *, struct alias_link *,  
+AliasHandleFtpOut(struct libalias *, struct ip *, struct alias_link *,
           int maxpacketsize);
 
-static int 
+static int
 fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
 
-    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL || 
+    if (ah->dport == NULL || ah->sport == NULL || ah->lnk == NULL ||
         ah->maxpktsize == 0)
         return (-1);
     if (ntohs(*ah->dport) == FTP_CONTROL_PORT_NUMBER
@@ -124,23 +124,23 @@ fingerprint(struct libalias *la, struct ip *pip, struct alias_data *ah)
     return (-1);
 }
 
-static int 
+static int
 protohandler(struct libalias *la, struct ip *pip, struct alias_data *ah)
 {
-    
+
     AliasHandleFtpOut(la, pip, ah->lnk, ah->maxpktsize);
     return (0);
 }
 
 #ifndef VBOX
 struct proto_handler handlers[] = {
-    { 
-      .pri = 80, 
-      .dir = OUT, 
-      .proto = TCP, 
-      .fingerprint = &fingerprint, 
+    {
+      .pri = 80,
+      .dir = OUT,
+      .proto = TCP,
+      .fingerprint = &fingerprint,
       .protohandler = &protohandler
-    }, 
+    },
     { EOH }
 };
 #else /* !VBOX */
@@ -180,7 +180,7 @@ ftp_alias_handler(PNATState pData, int type)
     handlers[1].pri = EOH;
 #endif /* VBOX */
 
-    switch (type) {   
+    switch (type) {
     case MOD_LOAD:
         error = 0;
 #ifdef VBOX

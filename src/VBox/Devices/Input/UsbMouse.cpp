@@ -239,7 +239,7 @@ static const uint8_t g_UsbHidReportDesc[] =
 };
 
 /* Additional HID class interface descriptor. */
-static const uint8_t g_UsbHidIfHidDesc[] = 
+static const uint8_t g_UsbHidIfHidDesc[] =
 {
     /* .bLength = */                0x09,
     /* .bDescriptorType = */        0x21,       /* HID */
@@ -533,7 +533,7 @@ static DECLCALLBACK(void *) usbHidMouseQueryInterface(PPDMIBASE pInterface, cons
 static int8_t clamp_i8(int32_t val)
 {
     if (val > 127) {
-        val = 127; 
+        val = 127;
     } else if (val < -127) {
         val = -127;
     }
