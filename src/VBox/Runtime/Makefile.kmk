@@ -1263,6 +1263,11 @@ RuntimeR0Drv_SOURCES    = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/string/RTStrCmp.cpp \
+	common/string/RTStrNCmp.cpp \
+	common/string/RTStrNLen.cpp \
+	common/string/RTStrNLenEx.cpp \
+	common/string/RTStrStr.cpp \
 	common/string/strformat.cpp \
 	common/string/strformatrt.cpp \
 	common/string/strformattype.cpp \
