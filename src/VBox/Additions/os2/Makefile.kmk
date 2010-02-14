@@ -37,4 +37,4 @@ endif
 include $(PATH_SUB_CURRENT)/VBoxSF/Makefile.kmk
 
 include	$(KBUILD_PATH)/subfooter.kmk
-									
+

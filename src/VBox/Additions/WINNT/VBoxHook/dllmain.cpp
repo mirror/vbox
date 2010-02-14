@@ -31,7 +31,7 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
     BOOL	bStatus = TRUE;
 
-    switch (fdwReason) 
+    switch (fdwReason)
     {
     case DLL_PROCESS_ATTACH:
         return TRUE;
@@ -51,5 +51,4 @@ BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 
     return bStatus;
 }
-
 

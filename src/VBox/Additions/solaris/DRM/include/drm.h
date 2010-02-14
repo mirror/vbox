@@ -602,7 +602,7 @@ typedef struct drm_draw {
 typedef enum {
          DRM_DRAWABLE_CLIPRECTS,
 } drm_drawable_info_type_t;
- 
+
 typedef struct drm_update_draw {
 	drm_drawable_t handle;
 	unsigned int type;
@@ -638,9 +638,9 @@ typedef enum {
 	_DRM_VBLANK_SIGNAL = 0x40000000	/**< Send signal instead of blocking */
 } drm_vblank_seq_type_t;
 
-#define _DRM_VBLANK_TYPES_MASK (_DRM_VBLANK_ABSOLUTE | _DRM_VBLANK_RELATIVE) 
+#define _DRM_VBLANK_TYPES_MASK (_DRM_VBLANK_ABSOLUTE | _DRM_VBLANK_RELATIVE)
 #define _DRM_VBLANK_FLAGS_MASK (_DRM_VBLANK_SIGNAL | _DRM_VBLANK_SECONDARY | \
-	_DRM_VBLANK_NEXTONMISS) 
+	_DRM_VBLANK_NEXTONMISS)
 
 struct drm_wait_vblank_request {
 	drm_vblank_seq_type_t type;

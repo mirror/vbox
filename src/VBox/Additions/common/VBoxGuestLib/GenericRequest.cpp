@@ -71,7 +71,7 @@ DECLVBGL(int) VbglGRVerify (const VMMDevRequestHeader *pReq, size_t cbReq)
     }
 
     /* This can be a variable size request. Check the request type and limit the size
-     * to VMMDEV_MAX_VMMDEVREQ_SIZE, which is max size supported by the host. 
+     * to VMMDEV_MAX_VMMDEVREQ_SIZE, which is max size supported by the host.
      */
     if (   pReq->requestType == VMMDevReq_LogString
         || pReq->requestType == VMMDevReq_VideoSetVisibleRegion

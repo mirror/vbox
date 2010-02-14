@@ -385,8 +385,8 @@ static void vboxVideoSolarisConfigure(drm_driver_t *pDriver)
     pDirver->irq_uninstall      = drm_driver_irq_uninstall;
     pDriver->irq_handler        = drm_driver_irq_handler;
 
-    pDriver->driver_ioctls      = 
-    pDriver->max_driver_ioctls  = 
+    pDriver->driver_ioctls      =
+    pDriver->max_driver_ioctls  =
 #endif
 
     pDriver->driver_name        = DRIVER_NAME;

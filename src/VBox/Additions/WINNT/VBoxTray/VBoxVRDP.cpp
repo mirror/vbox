@@ -447,4 +447,3 @@ unsigned __stdcall VBoxVRDPThread(void *pInstance)
     return 0;
 }
 
-

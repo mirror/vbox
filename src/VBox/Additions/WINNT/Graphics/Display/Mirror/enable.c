@@ -159,7 +159,7 @@ HANDLE      hDriver)        // Handle to base driver
         DISPDBG((0,"DISP DrvEnablePDEV failed\n"));
         goto error_free;
     }
-    
+
     // Copy the devinfo into the engine buffer.
 
     memcpy(pDevInfo, &DevInfo, min(sizeof(DEVINFO), cjDevInfo));
@@ -209,7 +209,7 @@ DHPDEV dhpdev)
 {
    PPDEV ppdev = (PPDEV) dhpdev;
    DISPDBG((0,"DrvDisablePDEV\n"));
-   
+
    EngDeletePalette(ppdev->hpalDefault);
 
    EngFreeMem(dhpdev);
@@ -263,12 +263,12 @@ DHPDEV dhpdev)
         ulBitmapType = BMF_32BPP;
         flHooks = HOOKS_BMF32BPP;
     }
-    
+
     flHooks |= flGlobalHooks;
 
-    mirrorsize = (ULONG)(sizeof(MIRRSURF) + 
+    mirrorsize = (ULONG)(sizeof(MIRRSURF) +
                          ppdev->lDeltaScreen * sizl.cy);
-    
+
     mirrsurf = (MIRRSURF *) EngAllocMem(FL_ZERO_MEMORY,
                                         mirrorsize,
                                         0x4D495252);
@@ -276,8 +276,8 @@ DHPDEV dhpdev)
         RIP("DISP DrvEnableSurface failed EngAllocMem\n");
         return(FALSE);
     }
-    
-    
+
+
     dhsurf = (DHSURF) mirrsurf;
 
 //    dhsurf = (DHSURF) ppdev;
@@ -309,7 +309,7 @@ DHPDEV dhpdev)
     mirrsurf->bIsScreen = TRUE;
 
     DISPDBG((0,"DrvEnableSurface OK\n"));
-    
+
     return(hsurf);
 }
 
@@ -328,7 +328,7 @@ DHPDEV dhpdev)
     DISPDBG((0,"DrvDisableSurface:\n"));
 
     EngDeleteSurface( ppdev->hsurfEng );
-    
+
     // deallocate MIRRSURF structure.
 
     EngFreeMem( ppdev->pvTmpBuffer );

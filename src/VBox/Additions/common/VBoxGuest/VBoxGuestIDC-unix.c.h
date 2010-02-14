@@ -93,4 +93,3 @@ DECLVBGL(int) VBoxGuestIDCCall(void *pvSession, unsigned iCmd, void *pvData, siz
     return VBoxGuestCommonIOCtl(iCmd, &g_DevExt, pSession, pvData, cbData, pcbDataReturned);
 }
 
-

@@ -610,7 +610,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
             m_prev  = m;
         }
     }
-	
+
     /* Colour weight - we always call this, since we are always in
        truecolour. */
     if (!xf86SetWeight(pScrn, rzeros, rzeros))

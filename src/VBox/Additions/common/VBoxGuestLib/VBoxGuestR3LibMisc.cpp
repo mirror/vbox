@@ -330,7 +330,7 @@ static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
 {
     return RTErrConvertFromWin32(RegCloseKey(hKey));
 }
-#endif /* RT_OS_WINDOWS */ 
+#endif /* RT_OS_WINDOWS */
 
 
 #ifndef VBOX_VBGLR3_XFREE86

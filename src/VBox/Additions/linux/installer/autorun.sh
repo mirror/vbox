@@ -78,7 +78,7 @@ elif test "$ostype" = "SunOS"; then
                 else
                     idbin=$found
                 fi
-            fi        
+            fi
 
             # check if pfexec can get the job done
             if test "$idbin" = "/usr/xpg4/bin/id"; then
@@ -103,7 +103,7 @@ instance=unique
 idepend=quit
 rdepend=quit
 space=quit
-mail= 
+mail=
 " > /tmp/vbox.autoinstall
 
         # check gnome-terminal, use it if it exists.
