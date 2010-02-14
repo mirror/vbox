@@ -156,13 +156,13 @@ __FBSDID("$FreeBSD: src/sys/netinet/libalias/alias_db.c,v 1.71.2.2.4.1 2009/04/1
 #include <stdio.h>
 #include <sys/errno.h>
 #include <sys/time.h>
-#include <unistd.h> 
+#include <unistd.h>
 #endif
 
 #include <sys/socket.h>
 #include <netinet/tcp.h>
 
-#ifdef _KERNEL  
+#ifdef _KERNEL
 #include <netinet/libalias/alias.h>
 #include <netinet/libalias/alias_local.h>
 #include <netinet/libalias/alias_mod.h>
@@ -337,11 +337,11 @@ struct alias_link {     /* Main data structure */
 #endif
 
 #ifndef NO_USE_SOCKETS
-# ifndef VBOX 
-    /* 
-     * in VBox we do not use host's sockets here, which are managed 
+# ifndef VBOX
+    /*
+     * in VBox we do not use host's sockets here, which are managed
      * inside slirp. yes we have to create new sockets here but latter
-     * managment and deletion are in repsponsible of Slirp. 
+     * managment and deletion are in repsponsible of Slirp.
      */
     int     sockfd; /* socket descriptor                   */
 # endif
@@ -485,9 +485,9 @@ SeqDiff(u_long x, u_long y)
 
 static void
 AliasLog(char *str, const char *format, ...)
-{       
+{
     va_list ap;
-    
+
     va_start(ap, format);
     vsnprintf(str, LIBALIAS_BUF_SIZE, format, ap);
     va_end(ap);
@@ -498,7 +498,7 @@ AliasLog(FILE *stream, const char *format, ...)
 {
 # ifndef VBOX
     va_list ap;
-    
+
     va_start(ap, format);
     vfprintf(stream, format, ap);
     va_end(ap);
@@ -524,11 +524,11 @@ ShowAliasStats(struct libalias *la)
     LIBALIAS_LOCK_ASSERT(la);
 /* Used for debugging */
     if (la->logDesc) {
-        int tot  = la->icmpLinkCount + la->udpLinkCount + 
+        int tot  = la->icmpLinkCount + la->udpLinkCount +
             la->tcpLinkCount + la->pptpLinkCount +
             la->protoLinkCount + la->fragmentIdLinkCount +
             la->fragmentPtrLinkCount;
-        
+
         AliasLog(la->logDesc,
              "icmp=%u, udp=%u, tcp=%u, pptp=%u, proto=%u, frag_id=%u frag_ptr=%u / tot=%u",
              la->icmpLinkCount,
@@ -539,7 +539,7 @@ ShowAliasStats(struct libalias *la)
              la->fragmentIdLinkCount,
              la->fragmentPtrLinkCount, tot);
 #ifndef _KERNEL
-        AliasLog(la->logDesc, " (sock=%u)\n", la->sockCount); 
+        AliasLog(la->logDesc, " (sock=%u)\n", la->sockCount);
 #endif
     }
 }
@@ -780,7 +780,7 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
         la->sockCount++;
 #ifdef VBOX
             so->so_expire = la->curtime + SO_EXPIRE;
-            setsockopt(so->s, SOL_SOCKET, SO_BROADCAST, 
+            setsockopt(so->s, SOL_SOCKET, SO_BROADCAST,
                 (const char *)&opt, sizeof(opt));
             status = getsockname(so->s, &sa_addr, &socklen);
             if (status != 0 || sa_addr.sa_family != AF_INET)
@@ -790,28 +790,28 @@ GetSocket(struct libalias *la, u_short port_net, int *sockfd, int link_type)
                 return 0;
             }
             so->so_hlport = ((struct sockaddr_in *)&sa_addr)->sin_port;
-            so->so_hladdr.s_addr = 
+            so->so_hladdr.s_addr =
                 ((struct sockaddr_in *)&sa_addr)->sin_addr.s_addr;
             NSOCK_INC_EX(la);
-        if (link_type == LINK_TCP) 
+        if (link_type == LINK_TCP)
             {
                 insque(la->pData, so, &la->tcb);
             }
-        else if (link_type == LINK_UDP) 
+        else if (link_type == LINK_UDP)
             {
                 insque(la->pData, so, &la->udb);
             }
-            else {   
+            else {
                 Assert(!"Shouldn't be here");
             }
-        
+
 #else
         *sockfd = sock;
 #endif
         return (1);
     } else {
 #ifdef VBOX
-        if (sock >= 0) 
+        if (sock >= 0)
             closesocket(sock);
         /* socket wasn't enqueued so we shouldn't use sofree */
         RTMemFree(so);
@@ -1527,7 +1527,7 @@ FindFragmentIn2(struct libalias *la, struct in_addr dst_addr,   /* Doesn't add a
     struct in_addr alias_addr,  /* is not found.           */
     u_short ip_id)
 {
-    
+
     LIBALIAS_LOCK_ASSERT(la);
     return FindLinkIn(la, dst_addr, alias_addr,
         NO_DEST_PORT, ip_id,
@@ -2014,7 +2014,7 @@ GetAliasAddress(struct alias_link *lnk)
 struct in_addr
 GetDefaultAliasAddress(struct libalias *la)
 {
-    
+
     LIBALIAS_LOCK_ASSERT(la);
     return (la->aliasAddress);
 }
@@ -2239,7 +2239,7 @@ SetExpire(struct alias_link *lnk, int expire)
 void
 ClearCheckNewLink(struct libalias *la)
 {
-    
+
     LIBALIAS_LOCK_ASSERT(la);
     la->newDefaultLink = 0;
 }
@@ -2349,14 +2349,14 @@ InitPacketAliasLog(struct libalias *la)
 #ifdef _KERNEL
         if ((la->logDesc = malloc(LIBALIAS_BUF_SIZE)))
             ;
-#else       
+#else
         if ((la->logDesc = fopen("/var/log/alias.log", "w")))
-            fprintf(la->logDesc, "PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n");           
+            fprintf(la->logDesc, "PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n");
 #endif
-        else 
+        else
             return (ENOMEM); /* log initialization failed */
 #else
-        Log2(("NAT: PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n"));        
+        Log2(("NAT: PacketAlias/InitPacketAliasLog: Packet alias logging enabled.\n"));
         la->logDesc = (void *)1; /* XXX: in vbox we don't use this param */
 #endif
         la->packetAliasMode |= PKT_ALIAS_LOG;

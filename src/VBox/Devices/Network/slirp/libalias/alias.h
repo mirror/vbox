@@ -76,7 +76,7 @@
  * The instance structure
  */
 struct libalias;
-#if defined(VBOX) && !defined(VBOX_SLIRP_ALIAS) 
+#if defined(VBOX) && !defined(VBOX_SLIRP_ALIAS)
 /* XXX: used only for browsing */
 struct libalias {
     LIST_ENTRY(libalias) instancelist;

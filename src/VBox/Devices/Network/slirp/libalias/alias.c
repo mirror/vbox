@@ -758,14 +758,14 @@ UdpAliasIn(struct libalias *la, struct ip *pip)
         ad.sport = &ud->uh_sport;
         ad.dport = &ud->uh_dport;
         ad.maxpktsize = 0;
-        
+
 
         alias_address = GetAliasAddress(lnk);
         original_address = GetOriginalAddress(lnk);
         alias_port = ud->uh_dport;
         ud->uh_dport = GetOriginalPort(lnk);
 
-        /* Walk out chain. */       
+        /* Walk out chain. */
         error = find_handler(IN, UDP, la, pip, &ad);
 
 /* If UDP checksum is not zero, then adjust since destination port */
@@ -814,7 +814,7 @@ UdpAliasOut(struct libalias *la, struct ip *pip, int create)
         u_short alias_port;
         struct in_addr alias_address;
         struct alias_data ad;
-        ad.lnk = lnk; 
+        ad.lnk = lnk;
         ad.oaddr = NULL;
         ad.aaddr = &alias_address;
         ad.aport = &alias_port;
@@ -825,7 +825,7 @@ UdpAliasOut(struct libalias *la, struct ip *pip, int create)
         alias_address = GetAliasAddress(lnk);
         alias_port = GetAliasPort(lnk);
 
-        /* Walk out chain. */       
+        /* Walk out chain. */
         error = find_handler(OUT, UDP, la, pip, &ad);
 
 /* If UDP checksum is not zero, adjust since source port is */
@@ -875,14 +875,14 @@ TcpAliasIn(struct libalias *la, struct ip *pip)
         u_short proxy_port;
         int accumulate, error;
 
-        /* 
-         * The init of MANY vars is a bit below, but aliashandlepptpin 
+        /*
+         * The init of MANY vars is a bit below, but aliashandlepptpin
          * seems to need the destination port that came within the
          * packet and not the original one looks below [*].
          */
 
         struct alias_data ad;
-        ad.lnk = lnk; 
+        ad.lnk = lnk;
         ad.oaddr = NULL;
         ad.aaddr = NULL;
         ad.aport = NULL;
@@ -890,7 +890,7 @@ TcpAliasIn(struct libalias *la, struct ip *pip)
         ad.dport = &tc->th_dport;
         ad.maxpktsize = 0;
 
-        /* Walk out chain. */       
+        /* Walk out chain. */
         error = find_handler(IN, TCP, la, pip, &ad);
 
         alias_address = GetAliasAddress(lnk);
@@ -900,8 +900,8 @@ TcpAliasIn(struct libalias *la, struct ip *pip)
         tc->th_dport = GetOriginalPort(lnk);
         proxy_port = GetProxyPort(lnk);
 
-        /* 
-         * Look above, if anyone is going to add find_handler AFTER 
+        /*
+         * Look above, if anyone is going to add find_handler AFTER
          * this aliashandlepptpin/point, please redo alias_data too.
          * Uncommenting the piece here below should be enough.
          */
@@ -915,7 +915,7 @@ TcpAliasIn(struct libalias *la, struct ip *pip)
                     .dport = &ud->uh_dport,
                     .maxpktsize = 0
                 };
-        
+
                 /* Walk out chain. */
                 error = find_handler(la, pip, &ad);
                 if (error == EHDNOF)
@@ -1025,7 +1025,7 @@ TcpAliasOut(struct libalias *la, struct ip *pip, int maxpacketsize, int create)
         struct in_addr alias_address;
         int accumulate;
         struct alias_data ad;
-        ad.lnk = lnk; 
+        ad.lnk = lnk;
         ad.oaddr = NULL;
         ad.aaddr = &alias_address;
         ad.aport = &alias_port;
@@ -1048,8 +1048,8 @@ TcpAliasOut(struct libalias *la, struct ip *pip, int maxpacketsize, int create)
 
 /* Monitor TCP connection state */
         TcpMonitorOut(pip, lnk);
-        
-        /* Walk out chain. */       
+
+        /* Walk out chain. */
         error = find_handler(OUT, TCP, la, pip, &ad);
 
 /* Adjust TCP checksum since source port is being aliased */
@@ -1192,7 +1192,7 @@ LibAliasGetFragment(struct libalias *la, char *ptr)
         GetFragmentPtr(lnk, &fptr);
         SetFragmentPtr(lnk, NULL);
         SetExpire(lnk, 0);  /* Deletes link */
-    } else      
+    } else
         fptr = NULL;
 
     LIBALIAS_UNLOCK(la);
@@ -1262,7 +1262,7 @@ LibAliasInLocked(struct libalias *la, char *ptr, int maxpacketsize)
     /* Defense against mangled packets */
     if (ntohs(pip->ip_len) > maxpacketsize
         || (pip->ip_hl << 2) > maxpacketsize) {
-        iresult = PKT_ALIAS_IGNORED; 
+        iresult = PKT_ALIAS_IGNORED;
         goto getout;
     }
 
@@ -1282,22 +1282,22 @@ LibAliasInLocked(struct libalias *la, char *ptr, int maxpacketsize)
         case IPPROTO_GRE: {
             int error;
             struct alias_data ad;
-            ad.lnk = NULL, 
-            ad.oaddr = NULL, 
+            ad.lnk = NULL,
+            ad.oaddr = NULL,
             ad.aaddr = NULL,
             ad.aport = NULL,
             ad.sport = NULL,
             ad.dport = NULL,
-            ad.maxpktsize = 0                  
-            
-            /* Walk out chain. */       
+            ad.maxpktsize = 0
+
+            /* Walk out chain. */
             error = find_handler(IN, IP, la, pip, &ad);
             if (error ==  0)
                 iresult = PKT_ALIAS_OK;
             else
                 iresult = ProtoAliasIn(la, pip);
         }
-            break; 
+            break;
 #endif
         default:
             iresult = ProtoAliasIn(la, pip);
@@ -1425,15 +1425,15 @@ LibAliasOutLocked(struct libalias *la, char *ptr,   /* valid IP packet */
         case IPPROTO_GRE: {
             int error;
             struct alias_data ad = {
-                .lnk = NULL, 
-                .oaddr = NULL, 
+                .lnk = NULL,
+                .oaddr = NULL,
                 .aaddr = NULL,
                 .aport = NULL,
                 .sport = NULL,
                 .dport = NULL,
-                .maxpktsize = 0                  
+                .maxpktsize = 0
             };
-            /* Walk out chain. */       
+            /* Walk out chain. */
             error = find_handler(OUT, IP, la, pip, &ad);
             if (error == 0)
                 iresult = PKT_ALIAS_OK;
@@ -1582,7 +1582,7 @@ LibAliasRefreshModules(void)
 
     for (;;) {
         fgets(buf, 256, fd);
-        if feof(fd) 
+        if feof(fd)
                 break;
         len = strlen(buf);
         if (len > 1) {
@@ -1652,10 +1652,10 @@ LibAliasUnLoadAllModule(void)
     struct proto_handler *p;
 
     /* Unload all modules then reload everything. */
-    while ((p = first_handler()) != NULL) { 
+    while ((p = first_handler()) != NULL) {
         detach_handler(p);
     }
-    while ((t = walk_dll_chain()) != NULL) {    
+    while ((t = walk_dll_chain()) != NULL) {
         dlclose(t->handle);
         free(t);
     }
@@ -1680,16 +1680,16 @@ LibAliasUnLoadAllModule(void)
  */
 struct mbuf *
 #ifndef VBOX
-m_megapullup(struct mbuf *m, int len) 
+m_megapullup(struct mbuf *m, int len)
 #else
 m_megapullup(PNATState pData, struct mbuf *m, int len)
 #endif
 {
     struct mbuf *mcl;
-    
+
     if (len > m->m_pkthdr.len)
         goto bad;
-    
+
     /* Do not reallocate packet if it is sequentional,
      * writable and has some extra space for expansion.
      * XXX: Constant 100bytes is completely empirical. */
@@ -1722,7 +1722,7 @@ m_megapullup(PNATState pData, struct mbuf *m, int len)
     }
     if (mcl == NULL)
         goto bad;
- 
+
     m_move_pkthdr(mcl, m);
     m_copydata(m, 0, len, mtod(mcl, caddr_t));
     mcl->m_len = mcl->m_pkthdr.len = len;
@@ -1731,7 +1731,7 @@ m_megapullup(PNATState pData, struct mbuf *m, int len)
 #else
     m_freem(pData, m);
 #endif
- 
+
     return (mcl);
 bad:
 #ifndef VBOX

@@ -29,7 +29,7 @@
 /*b53865fd-b76c-4433-9e85-c0cadf65aab8*/
 static EFI_GUID gVBoxConsoleVarGuid = { 0xb53865fd, 0xb76c, 0x4433, { 0x9e, 0x85, 0xc0, 0xca, 0xdf, 0x65, 0xaa, 0xb8}};
 
-static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *TextOutputProtocol; 
+static EFI_SIMPLE_TEXT_OUTPUT_PROTOCOL *TextOutputProtocol;
 static EFI_GRAPHICS_OUTPUT_PROTOCOL    *Gop;
 static EFI_UGA_DRAW_PROTOCOL           *Uga;
 
@@ -69,7 +69,7 @@ ConsoleSwitchMode (
         UINT32 mode = 2;
         GetVmVariable(EFI_INFO_INDEX_GOP_MODE, (CHAR8 *)&mode, sizeof(UINT32));
         r = Gop->SetMode(Gop, mode);
-    } 
+    }
     else if (Uga)
     {
         UINT32 H = 1027;
@@ -115,7 +115,7 @@ VBoxConsoleInit(EFI_HANDLE hImage, EFI_SYSTEM_TABLE *pSysTable)
             DEBUG((DEBUG_INFO, "%a:%d - %r\n", __FILE__,  __LINE__, r));
             return r;
         }
-    
+
         r = gBS->LocateProtocol(&gEfiSimpleTextOutProtocolGuid, NULL, (VOID **)&TextOutputProtocol);
         if(EFI_ERROR(r))
         {

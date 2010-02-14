@@ -406,7 +406,7 @@ static DECLCALLBACK(int) drvNATSendDeprecated(PPDMINETWORKUP pInterface, const v
     AssertRC(rc);
 
     /* @todo: Here we should get mbuf instead temporal buffer */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF 
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     void *pvmBuf = slirp_ext_m_get(pThis->pNATState);
     Assert(pvmBuf);
     slirp_ext_m_append(pThis->pNATState, pvmBuf, (uint8_t *)pvBuf, cb);

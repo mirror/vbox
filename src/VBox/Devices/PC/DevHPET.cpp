@@ -926,7 +926,7 @@ static DECLCALLBACK(void) hpetTimer(PPDMDEVINS pDevIns,
 
     /* Lock in R3 must either block or succeed */
     rc = hpetLock(pThis, VERR_IGNORED);
-    
+
     AssertLogRelRCReturnVoid(rc);
 
     if ((pTimer->u64Config & HPET_TN_PERIODIC) && (u64Period != 0))

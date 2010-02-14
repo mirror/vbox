@@ -1,4 +1,4 @@
-/* 
+/*
    This is a little turbo C program that executes
    several int10, and let you inspect the content
    of the vgabios area
@@ -168,7 +168,7 @@ void int10ax13(struct REGPACK *regs)
  pokeb(regs->r_es,regs->r_bp+1,'b');
  printf("Writing from %04x:%04x\n",regs->r_es,regs->r_bp);
  intr(0x10,regs);
- 
+
 }
 
 void switch_50(struct REGPACK *regs)
@@ -202,7 +202,7 @@ char exec_function(struct REGPACK *regs)
  printf("q. Quit\t");
  printf("r. switch to 50 lines\n");
  c=getche();
- 
+
  switch(c)
   {case 'a':
     int10ax0003(regs);
@@ -252,7 +252,7 @@ char exec_function(struct REGPACK *regs)
  if(c=='q')return 1;
  while(kbhit()==0);
  c=getch();
- 
+
  return 0;
 }
 
@@ -339,7 +339,7 @@ void main()
  struct REGPACK regs;
 
  directvideo=0;
- 
+
  while(1)
   {
    read_bios_area(&biosarea);

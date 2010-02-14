@@ -77,12 +77,12 @@ struct request {
     struct request      **prev;
     struct request      *next;
 #ifdef VBOX
-    /* this field used for saving last attempt 
-     * to connect server, timeout function should change 
+    /* this field used for saving last attempt
+     * to connect server, timeout function should change
      * it's value on next server. And dnsproxy_query should
      * initializate with first server in the list
      */
-    struct dns_entry    *dns_server;    
+    struct dns_entry    *dns_server;
     int nbyte; /* length of dns request */
     char byte[1]; /* copy of original request */
 #endif

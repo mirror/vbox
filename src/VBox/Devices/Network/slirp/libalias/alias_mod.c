@@ -62,7 +62,7 @@ LIST_HEAD(handler_chain, proto_handler) handler_chain = LIST_HEAD_INITIALIZER(fo
 #ifdef _KERNEL
 struct rwlock   handler_rw;
 #endif
-SLIST_HEAD(dll_chain, dll) dll_chain = SLIST_HEAD_INITIALIZER(foo); 
+SLIST_HEAD(dll_chain, dll) dll_chain = SLIST_HEAD_INITIALIZER(foo);
 
 #ifdef _KERNEL
 
@@ -122,7 +122,7 @@ _handler_chain_destroy(void)
 #define LIBALIAS_WUNLOCK() ;
 #define _handler_chain_init() ;
 #define _handler_chain_destroy() ;
-#endif 
+#endif
 
 void
 handler_chain_init(void)
@@ -145,9 +145,9 @@ _attach_handler(struct proto_handler *p)
 {
     struct proto_handler *b = NULL;
 
-    LIBALIAS_WLOCK_ASSERT();    
+    LIBALIAS_WLOCK_ASSERT();
     LIST_FOREACH(b, &handler_chain, entries) {
-        if ((b->pri == p->pri) && 
+        if ((b->pri == p->pri) &&
             (b->dir == p->dir) &&
             (b->proto == p->proto))
             return (EEXIST); /* Priority conflict. */
@@ -173,7 +173,7 @@ _detach_handler(struct proto_handler *p)
 {
     struct proto_handler *b, *b_tmp;;
 
-    LIBALIAS_WLOCK_ASSERT();    
+    LIBALIAS_WLOCK_ASSERT();
     LIST_FOREACH_SAFE(b, &handler_chain, entries, b_tmp) {
         if (b == p) {
             LIST_REMOVE(b, entries);
@@ -194,14 +194,14 @@ LibAliasAttachHandlers(struct proto_handler *_p)
 
     LIBALIAS_WLOCK();
     for (i=0; 1; i++) {
-        if (*((int *)&_p[i]) == EOH) 
+        if (*((int *)&_p[i]) == EOH)
             break;
 #ifdef VBOX
         error = _attach_handler(pData, &_p[i]);
 #else
         error = _attach_handler(&_p[i]);
 #endif
-        if (error != 0) 
+        if (error != 0)
             break;
     }
     LIBALIAS_WUNLOCK();
@@ -219,14 +219,14 @@ LibAliasDetachHandlers(struct proto_handler *_p)
 
     LIBALIAS_WLOCK();
     for (i=0; 1; i++) {
-        if (*((int *)&_p[i]) == EOH) 
+        if (*((int *)&_p[i]) == EOH)
             break;
 #ifdef VBOX
         error = _detach_handler(pData, &_p[i]);
 #else
         error = _detach_handler(&_p[i]);
 #endif
-        if (error != 0) 
+        if (error != 0)
             break;
     }
     LIBALIAS_WUNLOCK();
@@ -253,7 +253,7 @@ detach_handler(struct proto_handler *_p)
 }
 
 int
-find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip, 
+find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip,
          struct alias_data *ad)
 {
 #ifdef VBOX
@@ -263,7 +263,7 @@ find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip,
     int error = ENOENT;
 
     LIBALIAS_RLOCK();
-    
+
     LIST_FOREACH(p, &handler_chain, entries) {
         if ((p->dir & dir) && (p->proto & proto))
             if (p->fingerprint(la, pip, ad) == 0) {
@@ -272,7 +272,7 @@ find_handler(int8_t dir, int8_t proto, struct libalias *la, struct ip *pip,
             }
     }
     LIBALIAS_RUNLOCK();
-    return (error); 
+    return (error);
 }
 
 struct proto_handler *
@@ -282,8 +282,8 @@ first_handler(PNATState pData)
 first_handler(void)
 #endif
 {
-    
-    return (LIST_FIRST(&handler_chain));    
+
+    return (LIST_FIRST(&handler_chain));
 }
 
 /* Dll manipulation code - this code is not thread safe... */
@@ -309,7 +309,7 @@ detach_dll(char *p)
 
     SLIST_FOREACH_SAFE(b, &dll_chain, next, b_tmp)
         if (!strncmp(b->name, p, DLL_LEN)) {
-            SLIST_REMOVE(&dll_chain, b, dll, next); 
+            SLIST_REMOVE(&dll_chain, b, dll, next);
             error = b;
             break;
         }

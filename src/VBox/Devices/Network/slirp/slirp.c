@@ -62,9 +62,9 @@
       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
 
   /* specific for Unix API */
-# define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset) 
+# define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
   /* specific for Windows Winsock API */
-# define DO_WIN_CHECK_FD_SET(so, events, fdset) 0 
+# define DO_WIN_CHECK_FD_SET(so, events, fdset) 0
 
 # ifndef RT_OS_LINUX
 #  define readfds_poll   (POLLRDNORM)

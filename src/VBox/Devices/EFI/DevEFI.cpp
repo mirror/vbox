@@ -1134,7 +1134,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     /*
      * CPU frequencies
      */
-    // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default 
+    // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
     pThis->u64TscFrequency = 2500000000; // TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
     pThis->u64FsbFrequency = pThis->u64TscFrequency / 4;

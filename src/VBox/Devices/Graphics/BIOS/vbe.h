@@ -19,7 +19,7 @@ void vbe_biosfn_return_protected_mode_interface(AX);
 
 // The official VBE Information Block
 typedef struct VbeInfoBlock
-{ 
+{
    Bit8u  VbeSignature[4];
    Bit16u VbeVersion;
    Bit16u OemStringPtr_Off;
@@ -93,7 +93,7 @@ typedef struct ModeInfoBlockCompact
    Bit8u  LinRsvdMaskSize;
    Bit8u  LinRsvdFieldPosition;
    Bit32u MaxPixelClock;
-//   Bit8u  Reserved[189]; // DO NOT PUT THIS IN HERE because of Compact Mode Info storage in bios 
+//   Bit8u  Reserved[189]; // DO NOT PUT THIS IN HERE because of Compact Mode Info storage in bios
 } ModeInfoBlockCompact;
 
 typedef struct ModeInfoBlock
@@ -276,13 +276,13 @@ typedef struct ModeInfoListItem
 
   #define VBE_DISPI_BANK_ADDRESS          0xA0000
   #define VBE_DISPI_BANK_SIZE_KB          64
-  
+
   #define VBE_DISPI_MAX_XRES              1024
   #define VBE_DISPI_MAX_YRES              768
-  
+
   #define VBE_DISPI_IOPORT_INDEX          0x01CE
   #define VBE_DISPI_IOPORT_DATA           0x01CF
-  
+
   #define VBE_DISPI_INDEX_ID              0x0
   #define VBE_DISPI_INDEX_XRES            0x1
   #define VBE_DISPI_INDEX_YRES            0x2
@@ -293,7 +293,7 @@ typedef struct ModeInfoListItem
   #define VBE_DISPI_INDEX_VIRT_HEIGHT     0x7
   #define VBE_DISPI_INDEX_X_OFFSET        0x8
   #define VBE_DISPI_INDEX_Y_OFFSET        0x9
-      
+
   #define VBE_DISPI_ID0                   0xB0C0
   #define VBE_DISPI_ID1                   0xB0C1
   #define VBE_DISPI_ID2                   0xB0C2
@@ -306,7 +306,7 @@ typedef struct ModeInfoListItem
   #define VBE_DISPI_8BIT_DAC              0x20
   #define VBE_DISPI_LFB_ENABLED           0x40
   #define VBE_DISPI_NOCLEARMEM            0x80
-  
+
   #define VBE_DISPI_LFB_PHYSICAL_ADDRESS  0xE0000000
 
   /**
@@ -324,7 +324,7 @@ typedef struct ModeInfoListItem
   /** The value of the VBEHEADER::u16Signature field.
    * @remark duplicated in DevVGA.h. */
   #define VBEHEADER_MAGIC      0x77CC
-  
+
   /** The extra port which is used to read the mode list.
    * @remark duplicated in DevVGA.h. */
   #define VBE_EXTRA_PORT       0x3b6
