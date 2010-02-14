@@ -350,7 +350,7 @@ VMMDECL(int) MMHyperAlloc(PVM pVM, size_t cb, unsigned uAlignment, MMTAG enmTag,
  * @returns Pointer to the allocated chunk.
  * @returns NULL on failure.
  * @param   pHeap       The heap.
- * @param   cb     	Size of the memory block to allocate.
+ * @param   cb          Size of the memory block to allocate.
  * @param   uAlignment  The alignment specifications for the allocated block.
  * @internal
  */
@@ -595,7 +595,7 @@ static PMMHYPERCHUNK mmHyperAllocChunk(PMMHYPERHEAP pHeap, uint32_t cb, unsigned
  * @returns Pointer to the allocated chunk.
  * @returns NULL on failure.
  * @param   pHeap       The heap.
- * @param   cb     	Size of the memory block to allocate.
+ * @param   cb          Size of the memory block to allocate.
  * @internal
  */
 static void *mmHyperAllocPages(PMMHYPERHEAP pHeap, uint32_t cb)

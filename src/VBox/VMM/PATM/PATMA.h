@@ -109,7 +109,7 @@ typedef struct
 {
     uint8_t *pFunction;
     uint32_t offJump;
-    uint32_t offRelJump;	//used only by loop/loopz/loopnz
+    uint32_t offRelJump;        //used only by loop/loopz/loopnz
     uint32_t offSizeOverride;   //size override byte position
     uint32_t size;
     uint32_t nrRelocs;

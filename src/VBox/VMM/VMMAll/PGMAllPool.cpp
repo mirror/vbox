@@ -3397,7 +3397,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     switch (pUserPage->enmKind)
     {
         case PGMPOOLKIND_32BIT_PD:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
             Assert(iUserTable < X86_PG_ENTRIES);
             break;
         case PGMPOOLKIND_PAE_PDPT:
@@ -3453,7 +3453,7 @@ static void pgmPoolTrackClearPageUser(PPGMPOOL pPool, PPGMPOOLPAGE pPage, PCPGMP
     {
         /* 32-bit entries */
         case PGMPOOLKIND_32BIT_PD:
- 	    case PGMPOOLKIND_32BIT_PD_PHYS:
+        case PGMPOOLKIND_32BIT_PD_PHYS:
             ASMAtomicWriteSize(&u.pau32[iUserTable], 0);
             break;
 
