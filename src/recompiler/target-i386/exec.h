@@ -162,7 +162,7 @@ DECLINLINE(double) ldfq(target_ulong ptr)
     return u.d;
 }
 
-#ifndef VBOX 
+#ifndef VBOX
 static inline void stfq(target_ulong ptr, double v)
 #else
 DECLINLINE(void) stfq(target_ulong ptr, double v)
@@ -443,7 +443,7 @@ DECLINLINE(void) helper_fstt(CPU86_LDouble f, target_ulong ptr)
 #endif
 {
     CPU86_LDoubleU temp;
-    
+
     temp.d = f;
     stq(ptr, temp.l.lower);
     stw(ptr + 8, temp.l.upper);
@@ -493,7 +493,7 @@ DECLINLINE(void) load_eflags(int eflags, int update_mask)
 {
     CC_SRC = eflags & (CC_O | CC_S | CC_Z | CC_A | CC_P | CC_C);
     DF = 1 - (2 * ((eflags >> 10) & 1));
-    env->eflags = (env->eflags & ~update_mask) | 
+    env->eflags = (env->eflags & ~update_mask) |
         (eflags & update_mask);
 }
 

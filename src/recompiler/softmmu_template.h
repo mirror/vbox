@@ -1,6 +1,6 @@
 /*
  *  Software MMU support
- * 
+ *
  *  Copyright (c) 2003 Fabrice Bellard
  *
  * This library is free software; you can redistribute it and/or
@@ -70,11 +70,11 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                                         int mmu_idx,
                                                         void *retaddr);
 #ifndef VBOX
-static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr, 
+static inline DATA_TYPE glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
                                               target_ulong addr,
                                               void *retaddr)
 #else
-DECLINLINE(DATA_TYPE) glue(io_read, SUFFIX)(target_phys_addr_t physaddr, 
+DECLINLINE(DATA_TYPE) glue(io_read, SUFFIX)(target_phys_addr_t physaddr,
                                             target_ulong addr,
                                             void *retaddr)
 #endif
@@ -114,7 +114,7 @@ DATA_TYPE REGPARM glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 /* Load helpers invoked from generated code, and TCG makes an assumption
    that valid value takes the whole register, why gcc after 4.3 may
    use only lower part of register for smaller types. So force promoution. */
-DATA_TYPE_PROMOTED REGPARM 
+DATA_TYPE_PROMOTED REGPARM
 glue(glue(__ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
                                     int mmu_idx)
 #endif
@@ -223,18 +223,18 @@ static DATA_TYPE glue(glue(slow_ld, SUFFIX), MMUSUFFIX)(target_ulong addr,
 
 #ifndef SOFTMMU_CODE_ACCESS
 
-static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr, 
-                                                   DATA_TYPE val, 
+static void glue(glue(slow_st, SUFFIX), MMUSUFFIX)(target_ulong addr,
+                                                   DATA_TYPE val,
                                                    int mmu_idx,
                                                    void *retaddr);
 
 #ifndef VBOX
-static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr, 
+static inline void glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
                                           DATA_TYPE val,
                                           target_ulong addr,
                                           void *retaddr)
 #else
-DECLINLINE(void) glue(io_write, SUFFIX)(target_phys_addr_t physaddr, 
+DECLINLINE(void) glue(io_write, SUFFIX)(target_phys_addr_t physaddr,
                                         DATA_TYPE val,
                                         target_ulong addr,
                                         void *retaddr)

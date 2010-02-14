@@ -1988,11 +1988,11 @@ void glue(helper_pcmpestri, SUFFIX) (Reg *d, Reg *s, uint32_t ctrl)
                     pcmp_elen(R_EAX, ctrl));
 
     if (res)
-#ifndef VBOX    
+#ifndef VBOX
         env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1 : ffs1)(res) - 1;
 #else
         env->regs[R_ECX] = ((ctrl & (1 << 6)) ? rffs1(res) : ffs1(res)) - 1;
-#endif        
+#endif
     else
         env->regs[R_ECX] = 16 >> (ctrl & (1 << 0));
 }

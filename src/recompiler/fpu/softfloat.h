@@ -101,7 +101,7 @@ typedef int64_t sbits64;
 
 #if defined(VBOX) && (!defined(FLOATX80) || defined(CONFIG_SOFTFLOAT))
 # error misconfigured
-#endif 
+#endif
 
 #define STATUS_PARAM , float_status *status
 #define STATUS(field) status->field

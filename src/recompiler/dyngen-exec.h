@@ -124,7 +124,7 @@ typedef void * host_reg_t;
 #endif
 #endif
 #ifdef __x86_64__
-#if defined(VBOX) 
+#if defined(VBOX)
 /* Must be in sync with TCG register notion, see tcg-target.h */
 #endif
 #define AREG0 "r14"
@@ -242,7 +242,7 @@ typedef void * host_reg_t;
 /* the symbols are considered non exported so a br immediate is generated */
 #define __hidden __attribute__((visibility("hidden")))
 #else
-#define __hidden 
+#define __hidden
 #endif
 
 #if defined(__alpha__)
@@ -277,7 +277,7 @@ extern int __op_jmp0, __op_jmp1, __op_jmp2, __op_jmp3;
 #endif
 
 #ifdef VBOX
-#define GETPC() ASMReturnAddress() 
+#define GETPC() ASMReturnAddress()
 #elif defined(__s390__)
 /* The return address may point to the start of the next instruction.
    Subtracting one gets us the call instruction itself.  */
