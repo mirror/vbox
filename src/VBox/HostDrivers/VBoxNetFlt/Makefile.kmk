@@ -444,4 +444,3 @@ endif # freebsd
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
-

@@ -154,4 +154,3 @@ bool VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF 
     return true;
 }
 
-

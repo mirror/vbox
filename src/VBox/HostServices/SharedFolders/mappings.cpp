@@ -119,7 +119,7 @@ static MAPPING *vbsfMappingGetByName (PRTUTF16 utf16Name, SHFLROOT *pRoot)
             if (!RTUtf16LocaleICmp(FolderMapping[i].pMapName->String.ucs2, utf16Name))
             {
                 SHFLROOT root = vbsfMappingGetRootFromIndex(i);
-                
+
                 if (root != SHFL_ROOT_NIL)
                 {
                     if (pRoot)
