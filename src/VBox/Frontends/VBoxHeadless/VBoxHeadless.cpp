@@ -38,6 +38,7 @@ using namespace com;
 #ifdef VBOX_WITH_VRDP
 # include <VBox/vrdpapi.h>
 #endif
+#include <iprt/buildconfig.h>
 #include <iprt/ctype.h>
 #include <iprt/initterm.h>
 #include <iprt/stream.h>
@@ -680,7 +681,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "-capture", 'c', 0 },
         { "--capture", 'c', 0 },
         { "--width", 'w', RTGETOPT_REQ_UINT32 },
-        { "--height", 'h', RTGETOPT_REQ_UINT32 },
+        { "--height", 'h', RTGETOPT_REQ_UINT32 }, /* great choice of short option! */
         { "--bitrate", 'r', RTGETOPT_REQ_UINT32 },
         { "--filename", 'f', RTGETOPT_REQ_STRING },
 #endif /* VBOX_FFMPEG defined */
@@ -745,9 +746,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 'w':
                 ulFrameWidth = ValueUnion.u32;
                 break;
-            case 'h':
-                ulFrameHeight = ValueUnion.u32;
-                break;
             case 'r':
                 ulBitRate = ValueUnion.u32;
                 break;
@@ -755,29 +753,26 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 pszFileNameParam = ValueUnion.psz;
                 break;
 #endif /* VBOX_FFMPEG defined */
-            case VINF_GETOPT_NOT_OPTION:
-                RTPrintf("Invalid parameter '%s'\n\n", ValueUnion.psz);
+            case 'h':
+#ifdef VBOX_FFMPEG
+                if ((GetState.pDef->fFlags & RTGETOPT_REQ_MASK) != RTGETOPT_REQ_NOTHING)
+                {
+                    ulFrameHeight = ValueUnion.u32;
+                    break;
+                }
+#endif
                 show_usage();
-                return -1;
+                return 0;
             case OPT_COMMENT:
                 /* nothing to do */
                 break;
+            case 'V':
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return 0;
             default:
-                if (ch > 0)
-                {
-                    if (RT_C_IS_PRINT(ch))
-                        RTPrintf("Invalid option -%c\n\n", ch);
-                    else
-                        RTPrintf("Invalid option case %i\n\n", ch);
-                }
-                else if (ch == VERR_GETOPT_UNKNOWN_OPTION)
-                    RTPrintf("Unknown option: %s\n\n", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    RTPrintf("%s: %Rrs\n\n", ValueUnion.pDef->pszLong, ch);
-                else
-                    RTPrintf("Error: %Rrs\n\n", ch);
+                ch = RTGetOptPrintError(ch, &ValueUnion);
                 show_usage();
-                return -1;
+                return ch;
         }
     }
 
@@ -785,30 +780,30 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (ulFrameWidth < 512 || ulFrameWidth > 2048 || ulFrameWidth % 2)
     {
         LogError("VBoxHeadless: ERROR: please specify an even frame width between 512 and 2048", 0);
-        return -1;
+        return 1;
     }
     if (ulFrameHeight < 384 || ulFrameHeight > 1536 || ulFrameHeight % 2)
     {
         LogError("VBoxHeadless: ERROR: please specify an even frame height between 384 and 1536", 0);
-        return -1;
+        return 1;
     }
     if (ulBitRate < 300000 || ulBitRate > 1000000)
     {
         LogError("VBoxHeadless: ERROR: please specify an even bitrate between 300000 and 1000000", 0);
-        return -1;
+        return 1;
     }
     /* Make sure we only have %d or %u (or none) in the file name specified */
     char *pcPercent = (char*)strchr(pszFileNameParam, '%');
     if (pcPercent != 0 && *(pcPercent + 1) != 'd' && *(pcPercent + 1) != 'u')
     {
         LogError("VBoxHeadless: ERROR: Only %%d and %%u are allowed in the capture file name.", -1);
-        return -1;
+        return 1;
     }
     /* And no more than one % in the name */
     if (pcPercent != 0 && strchr(pcPercent + 1, '%') != 0)
     {
         LogError("VBoxHeadless: ERROR: Only one format modifier is allowed in the capture file name.", -1);
-        return -1;
+        return 1;
     }
     RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
 #endif /* defined VBOX_FFMPEG */
@@ -816,7 +811,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (!id && !name)
     {
         show_usage();
-        return -1;
+        return 1;
     }
 
     HRESULT rc;
@@ -825,7 +820,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     if (FAILED(rc))
     {
         RTPrintf("VBoxHeadless: ERROR: failed to initialize COM!\n");
-        return rc;
+        return 1;
     }
 
     ComPtr<IVirtualBox> virtualBox;
@@ -1171,7 +1166,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
     LogFlow(("VBoxHeadless FINISHED.\n"));
 
-    return rc;
+    return FAILED(rc) ? 1 : 0;
 }
 
 

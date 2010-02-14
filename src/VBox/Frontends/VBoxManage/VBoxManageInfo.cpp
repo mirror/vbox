@@ -1964,7 +1964,8 @@ int handleShowVMInfo(HandlerArg *a)
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, a->argc, a->argv, g_aShowVMInfoOptions, RT_ELEMENTS(g_aShowVMInfoOptions), 0, 0 /* fFlags */);
+    RTGetOptInit(&GetState, a->argc, a->argv, g_aShowVMInfoOptions, RT_ELEMENTS(g_aShowVMInfoOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)

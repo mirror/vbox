@@ -419,7 +419,6 @@ int main(int argc, char **argv)
     {
         { "--duration",         'd', RTGETOPT_REQ_UINT32 },
         { "--calc-frequency",   'f', RTGETOPT_REQ_NOTHING },
-        { "--help",             'h', RTGETOPT_REQ_NOTHING }
     };
     int iArg = 1;
     int ch;
@@ -429,20 +428,23 @@ int main(int argc, char **argv)
     while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
-            case 'd':   cMsDuration = Value.u32; break;
-            case 'f':   fCalcFrequency = true; break;
+            case 'd':   cMsDuration = Value.u32;
+                break;
+
+            case 'f':   fCalcFrequency = true;
+                break;
+
             case 'h':
                 RTPrintf("usage: tstTSC\n"
                          "   or: tstTSC <-f|--calc-frequency> [--duration|-d ms]\n");
                 return 1;
 
-            case VINF_GETOPT_NOT_OPTION:
-                RTStrmPrintf(g_pStdErr, "tstTSC: too many arguments\n");
-                break;
+            case 'V':
+                RTPrintf("$Revision: $\n");
+                return 0;
 
             default:
-                RTStrmPrintf(g_pStdErr, "tstTSC: Unknown arg or error (ch=%d)\n", ch);
-                return 1;
+                return RTGetOptPrintError(ch, &Value);
         }
 
     if (fCalcFrequency)

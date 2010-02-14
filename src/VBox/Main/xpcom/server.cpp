@@ -38,6 +38,7 @@
 #include <VBox/param.h>
 #include <VBox/version.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/initterm.h>
 #include <iprt/critsect.h>
 #include <iprt/getopt.h>
@@ -795,6 +796,18 @@ int main(int argc, char **argv)
             {
                 daemon_pipe_wr = ValueUnion.u32;
                 break;
+            }
+
+            case 'h':
+            {
+                RTPrintf("no help\n");
+                return 1;
+            }
+
+            case 'V':
+            {
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+                return 0;
             }
 
             default:

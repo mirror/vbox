@@ -268,7 +268,7 @@ int handleModifyVM(HandlerArg *a)
     machine->COMGETTER(BIOSSettings)(biosSettings.asOutParam());
 
     RTGetOptInit(&GetOptState, a->argc, a->argv, g_aModifyVMOptions,
-                 RT_ELEMENTS(g_aModifyVMOptions), 1, 0 /* fFlags */);
+                 RT_ELEMENTS(g_aModifyVMOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
     while (   SUCCEEDED (rc)
            && (c = RTGetOpt(&GetOptState, &ValueUnion)))

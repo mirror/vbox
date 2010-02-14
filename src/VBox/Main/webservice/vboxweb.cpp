@@ -31,6 +31,7 @@
 #include <VBox/VRDPAuth.h>
 #include <VBox/version.h>
 
+#include <iprt/buildconfig.h>
 #include <iprt/thread.h>
 #include <iprt/rand.h>
 #include <iprt/initterm.h>
@@ -142,7 +143,7 @@ ThreadsMap          g_mapThreads;
 
 static const RTGETOPTDEF g_aOptions[]
     = {
-        { "--help",             'h', RTGETOPT_REQ_NOTHING },
+        { "--help",             'h', RTGETOPT_REQ_NOTHING }, /* for DisplayHelp() */
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
         { "--background",       'b', RTGETOPT_REQ_NOTHING },
 #endif
@@ -587,7 +588,7 @@ int main(int argc, char* argv[])
     int c;
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /* fFlags */);
+    RTGetOptInit(&GetState, argc, argv, g_aOptions, RT_ELEMENTS(g_aOptions), 1, 0 /*fFlags*/);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -628,8 +629,7 @@ int main(int argc, char* argv[])
 
             case 'h':
                 DisplayHelp();
-                exit(0);
-            break;
+            return 0;
 
             case 'v':
                 g_fVerbose = true;
@@ -640,26 +640,13 @@ int main(int argc, char* argv[])
                 g_fDaemonize = true;
             break;
 #endif
-            case VINF_GETOPT_NOT_OPTION:
-                RTStrmPrintf(g_pStdErr, "unhandled parameter: %s\n", ValueUnion.psz);
-            return 1;
+            case 'V':
+                RTPrintf("%sr%s\n", RTBldCfgVersion(), RTBldCfgRevisionStr());
+            return 0;
 
             default:
-                if (c > 0)
-                {
-                    if (RT_C_IS_GRAPH(c))
-                        RTStrmPrintf(g_pStdErr, "unhandled option: -%c", c);
-                    else
-                        RTStrmPrintf(g_pStdErr, "unhandled option: %i", c);
-                }
-                else if (c == VERR_GETOPT_UNKNOWN_OPTION)
-                    RTStrmPrintf(g_pStdErr, "unknown option: %s", ValueUnion.psz);
-                else if (ValueUnion.pDef)
-                    RTStrmPrintf(g_pStdErr, "%s: %Rrs", ValueUnion.pDef->pszLong, c);
-                else
-                    RTStrmPrintf(g_pStdErr, "%Rrs", c);
-                exit(1);
-            break;
+                rc = RTGetOptPrintError(c, &ValueUnion);
+            return rc;
         }
     }
 

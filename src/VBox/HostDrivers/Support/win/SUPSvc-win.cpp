@@ -269,7 +269,7 @@ static int supSvcWinDelete(int argc, char **argv)
     int ch;
     RTGETOPTUNION Value;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, 0 /* fFlags*/);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {

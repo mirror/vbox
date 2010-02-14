@@ -411,7 +411,7 @@ int main(int argc, char **argv)
     int ch;
     RTGETOPTUNION Value;
     RTGETOPTSTATE GetState;
-    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, 0 /* fFlags */);
+    RTGetOptInit(&GetState, argc, argv, s_aOptions, RT_ELEMENTS(s_aOptions), 1, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((ch = RTGetOpt(&GetState, &Value)))
         switch (ch)
         {
@@ -423,13 +423,8 @@ int main(int argc, char **argv)
                 cbSend = Value.u32;
                 break;
 
-            case VINF_GETOPT_NOT_OPTION:
-                RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
-                return 1;
-
             default:
-                RTPrintf("tstIntNetR0: invalid argument: %s\n", Value.psz);
-                return 1;
+                return RTGetOptPrintError(ch, &Value);
         }
 
     /*

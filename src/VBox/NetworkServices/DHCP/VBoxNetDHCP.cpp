@@ -709,13 +709,10 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
         { "--lower-ip",       'l',   RTGETOPT_REQ_IPV4ADDR },
         { "--upper-ip",       'u',   RTGETOPT_REQ_IPV4ADDR },
         { "--netmask",        'm',   RTGETOPT_REQ_IPV4ADDR },
-
-        { "--help",           'h',   RTGETOPT_REQ_NOTHING },
-        { "--version ",       'V',   RTGETOPT_REQ_NOTHING },
     };
 
     RTGETOPTSTATE State;
-    int rc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 0, 0);
+    int rc = RTGetOptInit(&State, argc, argv, &s_aOptionDefs[0], RT_ELEMENTS(s_aOptionDefs), 0, 0 /*fFlags*/);
     AssertRCReturn(rc, 49);
 
     VBoxNetDhcpCfg *pCurCfg = NULL;
@@ -832,13 +829,10 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
                     RTPrintf("    -%c, %s\n", s_aOptionDefs[i].iShort, s_aOptionDefs[i].pszLong);
                 return 1;
 
-            case VERR_GETOPT_UNKNOWN_OPTION:
-            case VINF_GETOPT_NOT_OPTION:
-                RTPrintf("Unknown option '%s'. Use --help for more information.\n", Val.psz);
-                return 1;
-
             default:
-                break;
+                rc = RTGetOptPrintError(rc, &Val);
+                RTPrintf("Use --help for more information.\n");
+                return rc;
         }
     }
 

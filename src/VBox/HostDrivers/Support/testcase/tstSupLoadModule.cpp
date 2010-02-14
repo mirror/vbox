@@ -60,7 +60,7 @@ int main(int argc, char **argv)
      */
     static const RTGETOPTDEF s_aOptions[] =
     {
-        { "--help",             'h', 0 }
+        { "--help",             'h', RTGETOPT_REQ_NOTHING } /* (dummy entry) */
     };
 
     int ch;
@@ -94,6 +94,10 @@ int main(int argc, char **argv)
             case 'h':
                 RTPrintf("%s [mod1 [mod2...]]\n");
                 return 1;
+
+            case 'V':
+                RTPrintf("$Revision$\n");
+                return 0;
 
             default:
                 return RTGetOptPrintError(ch, &ValueUnion);

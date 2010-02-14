@@ -128,7 +128,8 @@ int handleImportAppliance(HandlerArg *arg)
     RTGETOPTUNION ValueUnion;
     RTGETOPTSTATE GetState;
     // start at 0 because main() has hacked both the argc and argv given to us
-    RTGetOptInit(&GetState, arg->argc, arg->argv, g_aImportApplianceOptions, RT_ELEMENTS(g_aImportApplianceOptions), 0, 0 /* fFlags */);
+    RTGetOptInit(&GetState, arg->argc, arg->argv, g_aImportApplianceOptions, RT_ELEMENTS(g_aImportApplianceOptions),
+                 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
     while ((c = RTGetOpt(&GetState, &ValueUnion)))
     {
         switch (c)
@@ -741,7 +742,7 @@ int handleExportAppliance(HandlerArg *a)
         RTGETOPTSTATE GetState;
         // start at 0 because main() has hacked both the argc and argv given to us
         RTGetOptInit(&GetState, a->argc, a->argv, g_aExportOptions,
-                     RT_ELEMENTS(g_aExportOptions), 0, 0 /* fFlags */);
+                     RT_ELEMENTS(g_aExportOptions), 0, RTGETOPTINIT_FLAGS_NO_STD_OPTS);
 
         Utf8Str strProductUrl;
         while ((c = RTGetOpt(&GetState, &ValueUnion)))
