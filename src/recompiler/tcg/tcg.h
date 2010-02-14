@@ -76,7 +76,7 @@ typedef struct TCGRelocation {
     int type;
     uint8_t *ptr;
     tcg_target_long addend;
-} TCGRelocation; 
+} TCGRelocation;
 
 typedef struct TCGLabel {
     int has_value;
@@ -167,7 +167,7 @@ typedef int TCGv;
 /* A pure function only reads its arguments and globals variables and
    cannot raise exceptions. Hence a call to a pure function can be
    safely suppressed if the return value is not used. */
-#define TCG_CALL_PURE           0x0010 
+#define TCG_CALL_PURE           0x0010
 
 /* used to align parameters */
 #define TCG_CALL_DUMMY_TCGV     MAKE_TCGV(-1)
@@ -229,7 +229,7 @@ struct TCGContext {
     int nb_globals;
     int nb_temps;
     /* index of free temps, -1 if none */
-    int first_free_temp[TCG_TYPE_COUNT * 2]; 
+    int first_free_temp[TCG_TYPE_COUNT * 2];
 
     /* goto_tb support */
     uint8_t *code_buf;
@@ -240,7 +240,7 @@ struct TCGContext {
     /* liveness analysis */
     uint16_t *op_dead_iargs; /* for each operation, each bit tells if the
                                 corresponding input argument is dead */
-    
+
     /* tells in which temporary a given register is. It does not take
        into account fixed registers */
     int reg_to_temp[TCG_TARGET_NB_REGS];
@@ -318,7 +318,7 @@ int dyngen_code_search_pc(TCGContext *s, uint8_t *gen_code_buf, long offset);
 void tcg_set_frame(TCGContext *s, int reg,
                    tcg_target_long start, tcg_target_long size);
 TCGv tcg_global_reg_new(TCGType type, int reg, const char *name);
-TCGv tcg_global_reg2_new_hack(TCGType type, int reg1, int reg2, 
+TCGv tcg_global_reg2_new_hack(TCGType type, int reg1, int reg2,
                               const char *name);
 TCGv tcg_global_mem_new(TCGType type, int reg, tcg_target_long offset,
                         const char *name);
@@ -361,7 +361,7 @@ typedef struct TCGArgConstraint {
 
 #define TCG_OPF_BB_END     0x01 /* instruction defines the end of a basic
                                    block */
-#define TCG_OPF_CALL_CLOBBER 0x02 /* instruction clobbers call registers 
+#define TCG_OPF_CALL_CLOBBER 0x02 /* instruction clobbers call registers
                                    and potentially update globals. */
 #define TCG_OPF_SIDE_EFFECTS 0x04 /* instruction has side effects : it
                                      cannot be removed if its output
@@ -375,7 +375,7 @@ typedef struct TCGOpDef {
     TCGArgConstraint *args_ct;
     int *sorted_args;
 } TCGOpDef;
-        
+
 typedef struct TCGTargetOpDef {
     int op;
     const char *args_ct_str[TCG_MAX_OP_ARGS];
@@ -412,7 +412,7 @@ void tcg_add_target_add_op_defs(const TCGTargetOpDef *tdefs);
 void tcg_gen_call(TCGContext *s, TCGv func, unsigned int flags,
                   unsigned int nb_rets, const TCGv *rets,
                   unsigned int nb_params, const TCGv *args1);
-void tcg_gen_shifti_i64(TCGv ret, TCGv arg1, 
+void tcg_gen_shifti_i64(TCGv ret, TCGv arg1,
                         int c, int right, int arith);
 
 /* only used for debugging purposes */
@@ -435,7 +435,7 @@ TCGv tcg_const_i64(int64_t val);
 #define tcg_sub_ptr tcg_sub_i64
 #endif
 
-void tcg_out_reloc(TCGContext *s, uint8_t *code_ptr, int type, 
+void tcg_out_reloc(TCGContext *s, uint8_t *code_ptr, int type,
                    int label_index, long addend);
 const TCGArg *tcg_gen_code_op(TCGContext *s, int opc, const TCGArg *args1,
                               unsigned int dead_iargs);
@@ -464,7 +464,7 @@ extern uint8_t* code_gen_prologue;
 
 #if defined(VBOX) && defined(GCC_WITH_BUGGY_REGPARM)
 #define tcg_qemu_tb_exec(tb_ptr, ret)        \
-    __asm__ __volatile__("call *%%ecx" : "=a"(ret) : "a"(tb_ptr), "c" (&code_gen_prologue[0]) : "memory", "%edx", "cc")	
+    __asm__ __volatile__("call *%%ecx" : "=a"(ret) : "a"(tb_ptr), "c" (&code_gen_prologue[0]) : "memory", "%edx", "cc")
 #else
 #define tcg_qemu_tb_exec(tb_ptr) ((long REGPARM (*)(void *))code_gen_prologue)(tb_ptr)
 #endif

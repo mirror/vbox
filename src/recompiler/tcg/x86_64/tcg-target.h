@@ -59,7 +59,7 @@ enum {
 #define TCG_CT_CONST_U32 0x200
 
 /* used for function call generation */
-#define TCG_REG_CALL_STACK TCG_REG_RSP 
+#define TCG_REG_CALL_STACK TCG_REG_RSP
 #define TCG_TARGET_STACK_ALIGN 16
 #define TCG_TARGET_CALL_STACK_OFFSET 0
 

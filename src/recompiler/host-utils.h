@@ -174,7 +174,7 @@ DECLALWAYSINLINE(int) ctz32 (uint32_t val)
      return cnt;
 #endif
  }
- 
+
 #ifndef VBOX
 static always_inline int cto32 (uint32_t val)
 #else
