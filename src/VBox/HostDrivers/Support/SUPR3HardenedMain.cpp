@@ -1085,4 +1085,3 @@ DECLHIDDEN(int) SUPR3HardenedMain(const char *pszProgName, uint32_t fFlags, int 
     return pfnTrustedMain(argc, argv, envp);
 }
 
-

@@ -367,7 +367,7 @@ endif
 ifdef VBOX_WITH_EFIFW_PACKING
   SOLARIS_COMMON += \
 	VBoxEFI32.fd \
-	VBoxEFI64.fd      
+	VBoxEFI64.fd
 endif
 
 SOLARIS_ARCH_FILES := \
@@ -546,7 +546,7 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_32)/VirtualBox.chm,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../VirtualBox.chm                                                   $(SOLARIS_VBOXINST_DIR_64)/VirtualBox.chm,)
 	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_64)/VBoxEFI32.fd,)
-	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_32)/VBoxEFI32.fd,)	
+	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI32.fd                                             $(SOLARIS_VBOXINST_DIR_32)/VBoxEFI32.fd,)
 	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_64)/VBoxEFI64.fd,)
 	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_32)/VBoxEFI64.fd,)
 else

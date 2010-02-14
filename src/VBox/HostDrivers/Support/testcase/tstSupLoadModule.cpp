@@ -55,7 +55,7 @@ int main(int argc, char **argv)
         return 1;
     }
 
-    /* 
+    /*
      * Process arguments.
      */
     static const RTGETOPTDEF s_aOptions[] =

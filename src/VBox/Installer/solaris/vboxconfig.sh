@@ -557,7 +557,7 @@ cleanup_install()
                 fi
             fi
         fi
-    
+
         inst=`expr $inst + 1`
     done
 }

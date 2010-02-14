@@ -79,7 +79,7 @@ static char SZINVALID_OPCODE[] = "Invalid Opcode";
     INVALID_OPCODE,
 
 /* Invalid opcode */
-const OPCODE g_InvalidOpcode[1] = 
+const OPCODE g_InvalidOpcode[1] =
 {
     INVALID_OPCODE
 };
@@ -1505,7 +1505,7 @@ const OPCODE *g_apThreeByteMapX86_F20F38[16] =
 
 /** Three byte opcode map with prefix 0x66 (0xF 0x3A) */
 /** @todo remainder missing (too lazy now) */
-const OPCODE *g_apThreeByteMapX86_660F3A[16] = 
+const OPCODE *g_apThreeByteMapX86_660F3A[16] =
 {
     /* 0 */
     NULL,

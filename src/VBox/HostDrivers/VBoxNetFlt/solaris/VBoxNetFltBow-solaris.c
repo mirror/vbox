@@ -830,7 +830,7 @@ LOCAL int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis, bool fRedisco
                          */
                         mac_diag_t MacDiag;
                         rc = mac_unicast_add(pThis->u.s.hClient, NULL /* MAC Address */,
-                                            MAC_UNICAST_PRIMARY | MAC_UNICAST_STRIP_DISABLE | 
+                                            MAC_UNICAST_PRIMARY | MAC_UNICAST_STRIP_DISABLE |
                                             MAC_UNICAST_DISABLE_TX_VID_CHECK | MAC_UNICAST_NODUPCHECK | MAC_UNICAST_HW,
                                             &pThis->u.s.hUnicast, 0 /* VLAN id */, &MacDiag);
                         if (!rc)
