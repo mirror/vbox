@@ -180,6 +180,157 @@ RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString);
 RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax);
 
 /**
+ * Appends a string onto an existing IPRT allocated string.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
+ *          remains unchanged.
+ *
+ * @param   ppsz                Pointer to the string pointer.  The string
+ *                              pointer must either be NULL or point to a string
+ *                              returned by an IPRT string API.  (In/Out)
+ * @param   pszAppend           The string to append.  NULL and empty strings
+ *                              are quietly ignored.
+ */
+RTDECL(int) RTStrAAppend(char **ppsz, const char *pszAppend);
+
+/**
+ * Appends N bytes from a strings onto an existing IPRT allocated string.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
+ *          remains unchanged.
+ *
+ * @param   ppsz                Pointer to the string pointer.  The string
+ *                              pointer must either be NULL or point to a string
+ *                              returned by an IPRT string API.  (In/Out)
+ * @param   pszAppend           The string to append.  Can be NULL if cchAppend
+ *                              is NULL.
+ * @param   cchAppend           The number of chars (not code points) to append
+ *                              from pszAppend.   Must not be more than
+ *                              @a pszAppend contains, except for the special
+ *                              value RTSTR_MAX that can be used to indicate all
+ *                              of @a pszAppend without having to strlen it.
+ */
+RTDECL(int) RTStrAAppendN(char **ppsz, const char *pszAppend, size_t cchAppend);
+
+/**
+ * Appends one or more strings onto an existing IPRT allocated string.
+ *
+ * This is a very flexible and efficient alternative to using RTStrAPrintf to
+ * combine several strings together.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
+ *          remains unchanged.
+ *
+ * @param   ppsz                Pointer to the string pointer.  The string
+ *                              pointer must either be NULL or point to a string
+ *                              returned by an IPRT string API.  (In/Out)
+ * @param   cPairs              The number of string / length pairs in the
+ *                              @a va.
+ * @param   va                  List of string (const char *) and length
+ *                              (size_t) pairs.  The strings will be appended to
+ *                              the string in the first argument.
+ */
+RTDECL(int) RTStrAAppendExNV(char **ppsz, size_t cPairs, va_list va);
+
+/**
+ * Appends one or more strings onto an existing IPRT allocated string.
+ *
+ * This is a very flexible and efficient alternative to using RTStrAPrintf to
+ * combine several strings together.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
+ *          remains unchanged.
+ *
+ * @param   ppsz                Pointer to the string pointer.  The string
+ *                              pointer must either be NULL or point to a string
+ *                              returned by an IPRT string API.  (In/Out)
+ * @param   cPairs              The number of string / length pairs in the
+ *                              ellipsis.
+ * @param   ...                 List of string (const char *) and length
+ *                              (size_t) pairs.  The strings will be appended to
+ *                              the string in the first argument.
+ */
+RTDECL(int) RTStrAAppendExN(char **ppsz, size_t cPairs, ...);
+
+/**
+ * Allocates memory for string storage.
+ *
+ * You should normally not use this function, except if there is some very
+ * custom string handling you need doing that isn't covered by any of the other
+ * APIs.
+ *
+ * @returns Pointer to the allocated string.  The first byte is always set
+ *          to the string terminator char, the contents of the remainder of the
+ *          memory is undefined.  The string must be freed by calling RTStrFree.
+ *
+ *          NULL is returned if the allocation failed.  Please translate this to
+ *          VERR_NO_STR_MEMORY and not VERR_NO_MEMORY.  Also consider
+ *          RTStrAllocEx if an IPRT status code is required.
+ *
+ * @param   cb                  How many bytes to allocate.  If this is zero, we
+ *                              will allocate a terminator byte anyway.
+ */
+RTDECL(char *) RTStrAlloc(size_t cb);
+
+/**
+ * Allocates memory for string storage, with status code.
+ *
+ * You should normally not use this function, except if there is some very
+ * custom string handling you need doing that isn't covered by any of the other
+ * APIs.
+ *
+ * @retval  VINF_SUCCESS
+ * @retval  VERR_NO_STR_MEMORY
+ *
+ * @param   ppsz                Where to return the allocated string.  This will
+ *                              be set to NULL on failure.  On success, the
+ *                              returned memory will always start with a
+ *                              terminator char so that it is considered a valid
+ *                              C string, the contents of rest of the memory is
+ *                              undefined.
+ * @param   cb                  How many bytes to allocate.  If this is zero, we
+ *                              will allocate a terminator byte anyway.
+ */
+RTDECL(int) RTStrAllocEx(char **ppsz, size_t cb);
+
+/**
+ * Reallocates the specifed string.
+ *
+ * You should normally not have use this function, except perhaps to truncate a
+ * really long string you've got from some IPRT string API.
+ *
+ * @returns VINF_SUCCESS.
+ * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
+ *          remains unchanged.
+ *
+ * @param   ppsz                Pointer to the string variable containing the
+ *                              input and output string.
+ *
+ *                              When not freeing the string, the result will
+ *                              always have the last byte set to the terminator
+ *                              character so that when used for string
+ *                              truncation the result will be a valid C string
+ *                              (your job to keep it a valid UTF-8 string).
+ *
+ *                              When the input string is NULL and we're supposed
+ *                              to reallocate, the returned string will also
+ *                              have the first byte set to the terminator char
+ *                              so it will be a valid C string.
+ *
+ * @param   cbNew               When @a cbNew is zero, we'll behave like
+ *                              RTStrFree and @a *ppsz will be set to NULL.
+ *
+ *                              When not zero, this will be the new size of the
+ *                              memory backing the string, i.e. it includes the
+ *                              terminator char.
+ */
+RTDECL(int) RTStrRealloc(char **ppsz, size_t cbNew);
+
+/**
  * Validates the UTF-8 encoding of the string.
  *
  * @returns iprt status code.

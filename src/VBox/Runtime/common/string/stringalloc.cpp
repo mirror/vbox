@@ -35,19 +35,65 @@
 #include <iprt/string.h>
 #include "internal/iprt.h"
 
-#include <iprt/alloc.h>
+#include <iprt/alloca.h>
 #include <iprt/assert.h>
+#include <iprt/mem.h>
 #include <iprt/err.h>
 #include "internal/string.h"
 
 
-/**
- * Free string allocated by any of the non-UCS-2 string functions.
- *
- * @returns iprt status code.
- * @param   pszString      Pointer to buffer with string to free.
- *                         NULL is accepted.
- */
+
+RTDECL(char *) RTStrAlloc(size_t cb)
+{
+    char *psz = (char *)RTMemAlloc(RT_MAX(cb, 1));
+    if (psz)
+        *psz = '\0';
+    return psz;
+}
+RT_EXPORT_SYMBOL(RTStrAlloc);
+
+
+RTDECL(int) RTStrAllocEx(char **ppsz, size_t cb)
+{
+    char *psz = *ppsz = (char *)RTMemAlloc(RT_MAX(cb, 1));
+    if (psz)
+    {
+        *psz = '\0';
+        return VINF_SUCCESS;
+    }
+    return VERR_NO_STR_MEMORY;
+}
+RT_EXPORT_SYMBOL(RTStrAlloc);
+
+
+RTDECL(int) RTStrRealloc(char **ppsz, size_t cbNew)
+{
+    char *pszOld = *ppsz;
+    if (!cbNew)
+    {
+        RTMemFree(pszOld);
+        *ppsz = NULL;
+    }
+    else if (pszOld)
+    {
+        char *pszNew = (char *)RTMemRealloc(pszOld, cbNew);
+        if (!pszNew)
+            return VERR_NO_STR_MEMORY;
+        pszNew[cbNew - 1] = '\0';
+        *ppsz = pszNew;
+    }
+    else
+    {
+        char *pszNew = (char *)RTMemAlloc(cbNew);
+        if (!pszNew)
+            return VERR_NO_STR_MEMORY;
+        pszNew[0] = '\0';
+        pszNew[cbNew - 1] = '\0';
+        *ppsz = pszNew;
+    }
+    return VINF_SUCCESS;
+}
+
 RTDECL(void)  RTStrFree(char *pszString)
 {
     if (pszString)
@@ -56,12 +102,6 @@ RTDECL(void)  RTStrFree(char *pszString)
 RT_EXPORT_SYMBOL(RTStrFree);
 
 
-/**
- * Allocates a new copy of the given UTF-8 string.
- *
- * @returns Pointer to the allocated UTF-8 string.
- * @param   pszString       UTF-8 string to duplicate.
- */
 RTDECL(char *) RTStrDup(const char *pszString)
 {
     AssertPtr(pszString);
@@ -74,14 +114,6 @@ RTDECL(char *) RTStrDup(const char *pszString)
 RT_EXPORT_SYMBOL(RTStrDup);
 
 
-/**
- * Allocates a new copy of the given UTF-8 string.
- *
- * @returns iprt status code.
- * @param   ppszString      Receives pointer of the allocated UTF-8 string.
- *                          The returned pointer must be freed using RTStrFree().
- * @param   pszString       UTF-8 string to duplicate.
- */
 RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString)
 {
     AssertPtr(ppszString);
@@ -100,20 +132,12 @@ RTDECL(int)  RTStrDupEx(char **ppszString, const char *pszString)
 RT_EXPORT_SYMBOL(RTStrDupEx);
 
 
-/**
- * Allocates a new copy of the given UTF-8 substring.
- *
- * @returns Pointer to the allocated UTF-8 substring.
- * @param   pszString       UTF-8 string to duplicate.
- * @param   cchMax          The max number of chars to duplicate, not counting
- *                          the terminator.
- */
 RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax)
 {
     AssertPtr(pszString);
     char  *pszEnd = (char *)memchr(pszString, '\0', cchMax);
     size_t cch    = pszEnd ? (uintptr_t)pszEnd - (uintptr_t)pszString : cchMax;
-    char  *pszDst = (char *)RTMemAlloc(cch);
+    char  *pszDst = (char *)RTMemAlloc(cch + 1);
     if (pszDst)
     {
         memcpy(pszDst, pszString, cch);
@@ -122,4 +146,105 @@ RTDECL(char *) RTStrDupN(const char *pszString, size_t cchMax)
     return pszDst;
 }
 RT_EXPORT_SYMBOL(RTStrDupN);
+
+
+RTDECL(int) RTStrAAppend(char **ppsz, const char *pszAppend)
+{
+    if (!pszAppend)
+        return VINF_SUCCESS;
+    return RTStrAAppendN(ppsz, pszAppend, RTSTR_MAX);
+}
+
+
+RTDECL(int) RTStrAAppendN(char **ppsz, const char *pszAppend, size_t cchAppend)
+{
+    if (!cchAppend)
+        return VINF_SUCCESS;
+    if (cchAppend == RTSTR_MAX)
+        cchAppend = strlen(pszAppend);
+    else
+        Assert(cchAppend == RTStrNLen(pszAppend, cchAppend));
+
+    size_t const cchOrg = *ppsz ? strlen(*ppsz) : 0;
+    char *pszNew = (char *)RTMemRealloc(*ppsz, cchOrg + cchAppend + 1);
+    if (!pszNew)
+        return VERR_NO_STR_MEMORY;
+
+    memcpy(&pszNew[cchOrg], pszAppend, cchAppend);
+    pszNew[cchOrg + cchAppend] = '\0';
+
+    *ppsz = pszNew;
+    return VINF_SUCCESS;
+}
+
+
+RTDECL(int) RTStrAAppendExNV(char **ppsz, size_t cPairs, va_list va)
+{
+    AssertPtr(ppsz);
+    if (!cPairs)
+        return VINF_SUCCESS;
+
+    /*
+     * Determin the length of each string and calc the new total.
+     */
+    struct RTStrAAppendExNVStruct
+    {
+        const char *psz;
+        size_t      cch;
+    } *paPairs = (struct RTStrAAppendExNVStruct *)alloca(cPairs * sizeof(*paPairs));
+    AssertReturn(paPairs, VERR_NO_STR_MEMORY);
+
+    size_t  cchOrg      = *ppsz ? strlen(*ppsz) : 0;
+    size_t  cchNewTotal = cchOrg;
+    for (size_t i = 0; i < cPairs; i++)
+    {
+        const char *psz = va_arg(va, const char *);
+        size_t      cch = va_arg(va, size_t);
+        AssertPtrNull(psz);
+        Assert(cch == RTSTR_MAX || cch == RTStrNLen(psz, cch));
+
+        if (cch == RTSTR_MAX)
+            cch = psz ? strlen(psz) : 0;
+        cchNewTotal += cch;
+
+        paPairs[i].cch = cch;
+        paPairs[i].psz = psz;
+    }
+    cchNewTotal++;                      /* '\0' */
+
+    /*
+     * Try reallocate the string.
+     */
+    char *pszNew = (char *)RTMemRealloc(*ppsz, cchNewTotal);
+    if (!pszNew)
+        return VERR_NO_STR_MEMORY;
+
+    /*
+     * Do the appending.
+     */
+    size_t off = cchOrg;
+    for (size_t i = 0; i < cPairs; i++)
+    {
+        memcpy(&pszNew[off], paPairs[i].psz, paPairs[i].cch);
+        off += paPairs[i].cch;
+    }
+    Assert(off + 1 == cchNewTotal);
+    pszNew[off] = '\0';
+
+    /* done */
+    *ppsz = pszNew;
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTStrAAppendExNV);
+
+
+RTDECL(int) RTStrAAppendExN(char **ppsz, size_t cPairs, ...)
+{
+    va_list va;
+    va_start(va, cPairs);
+    int rc = RTStrAAppendExNV(ppsz, cPairs, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTStrAAppendExN);
 
