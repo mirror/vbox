@@ -128,7 +128,7 @@ BOOL VBoxServiceWinSetStatus(DWORD dwStatus, DWORD dwCheckPoint)
     SERVICE_STATUS ss;
     ss.dwServiceType              = SERVICE_WIN32_OWN_PROCESS;
     ss.dwCurrentState             = g_rcWinService;
-    ss.dwControlsAccepted	      = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
+    ss.dwControlsAccepted         = SERVICE_ACCEPT_STOP | SERVICE_ACCEPT_SHUTDOWN;
     ss.dwWin32ExitCode            = NO_ERROR;
     ss.dwServiceSpecificExitCode  = 0; /* Not used */
     ss.dwCheckPoint               = dwCheckPoint;
