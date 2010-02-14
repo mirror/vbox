@@ -146,9 +146,9 @@ ASM_START
 use16 386
 
 vgabios_start:
-.byte	0x55, 0xaa	/* BIOS signature, required for BIOS extensions */
+.byte   0x55, 0xaa      /* BIOS signature, required for BIOS extensions */
 
-.byte	0x40		/* BIOS extension length in units of 512 bytes */
+.byte   0x40            /* BIOS extension length in units of 512 bytes */
 
 
 vgabios_entry_point:
@@ -159,10 +159,10 @@ vgabios_name:
 #ifdef VBOX
 .ascii  "VirtualBox VGA BIOS"
 #else
-.ascii	"Plex86/Bochs VGABios"
+.ascii  "Plex86/Bochs VGABios"
 #endif
-.ascii	" "
-.byte	0x00
+.ascii  " "
+.byte   0x00
 
 // Info from Bart Oldeman
 .org 0x1e
@@ -172,43 +172,43 @@ vgabios_name:
 #ifndef VBOX
 vgabios_version:
 #ifndef VGABIOS_VERS
-.ascii	"current-cvs"
+.ascii  "current-cvs"
 #else
 .ascii VGABIOS_VERS
 #endif
-.ascii	" "
+.ascii  " "
 
 vgabios_date:
 .ascii  VGABIOS_DATE
 .byte   0x0a,0x0d
-.byte	0x00
+.byte   0x00
 #endif
 
 #ifndef VBOX
 vgabios_copyright:
-.ascii	"(C) 2003 the LGPL VGABios developers Team"
-.byte	0x0a,0x0d
-.byte	0x00
+.ascii  "(C) 2003 the LGPL VGABios developers Team"
+.byte   0x0a,0x0d
+.byte   0x00
 #endif
 
 #ifndef VBOX
 vgabios_license:
-.ascii	"This VGA/VBE Bios is released under the GNU LGPL"
-.byte	0x0a,0x0d
-.byte	0x0a,0x0d
-.byte	0x00
+.ascii  "This VGA/VBE Bios is released under the GNU LGPL"
+.byte   0x0a,0x0d
+.byte   0x0a,0x0d
+.byte   0x00
 
 vgabios_website:
-.ascii	"Please visit :"
-.byte	0x0a,0x0d
+.ascii  "Please visit :"
+.byte   0x0a,0x0d
 ;;.ascii  " . http://www.plex86.org"
-;;.byte	0x0a,0x0d
-.ascii	" . http://bochs.sourceforge.net"
-.byte	0x0a,0x0d
-.ascii	" . http://www.nongnu.org/vgabios"
-.byte	0x0a,0x0d
-.byte	0x0a,0x0d
-.byte	0x00
+;;.byte 0x0a,0x0d
+.ascii  " . http://bochs.sourceforge.net"
+.byte   0x0a,0x0d
+.ascii  " . http://www.nongnu.org/vgabios"
+.byte   0x0a,0x0d
+.byte   0x0a,0x0d
+.byte   0x00
 #endif
 
 

@@ -89,7 +89,7 @@ PROXY_STUB     (pa_stream_drain, pa_operation*,
                 (s, cb, userdata))
 PROXY_STUB     (pa_stream_trigger, pa_operation*,
                 (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
-		(s, cb, userdata))
+                (s, cb, userdata))
 PROXY_STUB     (pa_stream_new, pa_stream*,
                 (pa_context *c, const char *name, const pa_sample_spec *ss,
                  const pa_channel_map *map),
@@ -178,13 +178,13 @@ PROXY_STUB_VOID(pa_operation_unref,
                 (o))
 PROXY_STUB     (pa_operation_get_state, pa_operation_state_t,
                 (pa_operation *o),
-		(o))
+                (o))
 PROXY_STUB     (pa_strerror, const char*,
                 (int error),
                 (error))
 PROXY_STUB     (pa_stream_readable_size, size_t,
                 (pa_stream *p),
-		(p))
+                (p))
 
 
 typedef struct
