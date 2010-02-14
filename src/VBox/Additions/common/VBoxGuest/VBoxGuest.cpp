@@ -156,9 +156,9 @@ static int vboxGuestInitFixateGuestMappings(PVBOXGUESTDEVEXT pDevExt)
             {
                 pDevExt->hGuestMappings = hFictive != NIL_RTR0MEMOBJ ? hFictive : hObj;
                 Log(("VBoxGuest: %p LB %#x; uAlignment=%#x iTry=%u hGuestMappings=%p (%s)\n",
-                     	RTR0MemObjAddress(pDevExt->hGuestMappings),
-                     	RTR0MemObjSize(pDevExt->hGuestMappings),
-                     	uAlignment, iTry, pDevExt->hGuestMappings, hFictive != NIL_RTR0PTR ? "fictive" : "reservation"));
+                     RTR0MemObjAddress(pDevExt->hGuestMappings),
+                     RTR0MemObjSize(pDevExt->hGuestMappings),
+                     uAlignment, iTry, pDevExt->hGuestMappings, hFictive != NIL_RTR0PTR ? "fictive" : "reservation"));
                 break;
             }
             ahTries[iTry] = hObj;

@@ -56,9 +56,9 @@ static vfs_unmount_t    vboxvfs_unmount;
 
 static struct vfsops vboxvfs_vfsops = {
     .vfs_init     =    vboxvfs_init,
-    .vfs_cmount   =	   vboxvfs_cmount,
-    .vfs_mount    =	   vboxvfs_mount,
-    .vfs_quotactl =	   vboxvfs_quotactl,
+    .vfs_cmount   =    vboxvfs_cmount,
+    .vfs_mount    =    vboxvfs_mount,
+    .vfs_quotactl =    vboxvfs_quotactl,
     .vfs_root     =    vboxvfs_root,
     .vfs_statfs   =    vboxvfs_statfs,
     .vfs_sync     =    vfs_stdsync,
