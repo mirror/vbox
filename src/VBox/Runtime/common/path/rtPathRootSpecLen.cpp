@@ -95,4 +95,3 @@ DECLHIDDEN(size_t) rtPathRootSpecLen(const char *pszPath)
     return off;
 }
 
-
