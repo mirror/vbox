@@ -193,6 +193,16 @@ typedef struct SCMSETTINGSBASE
     bool            fStripTrailingBlanks;
     bool            fStripTrailingLines;
     unsigned        cchTab;
+   /** Only consider files matcihng these patterns.  This is only applied to the
+    *  base names. */
+    char           *pszFilterFiles;
+   /** Filter out files matching the following patterns.  This is applied to base
+    *  names as well as the aboslute paths.  */
+    char           *pszFilterOutFiles;
+   /** Filter out directories matching the following patterns.  This is applied
+    *  to base names as well as the aboslute paths.  All absolute paths ends with a
+    *  slash and dot ("/.").  */
+    char           *pszFilterOutDirs;
 } SCMSETTINGSBASE;
 /** Pointer to massager settings. */
 typedef SCMSETTINGSBASE *PSCMSETTINGSBASE;
@@ -220,7 +230,10 @@ typedef enum SCMOPT
     SCMOPT_STRIP_TRAILING_LINES,
     SCMOPT_NO_STRIP_TRAILING_LINES,
     SCMOPT_TAB_SIZE,
-    SCMOPT_LAST_SETTINGS = SCMOPT_TAB_SIZE,
+    SCMOPT_FILTER_OUT_DIRS,
+    SCMOPT_FILTER_FILES,
+    SCMOPT_FILTER_OUT_FILES,
+    SCMOPT_LAST_SETTINGS = SCMOPT_FILTER_OUT_FILES,
     //
     SCMOPT_DIFF_IGNORE_EOL,
     SCMOPT_DIFF_NO_IGNORE_EOL,
@@ -321,7 +334,10 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fForceTrailingLine = */     false,
     /* .fConvertTabs = */           true,
     /* .cchTab = */                 8,
-    /* .fConvertEol = */            true
+    /* .fConvertEol = */            true,
+    /* .pszFilterFiles = */         (char *)"",
+    /* .pszFilterOutFiles = */      (char *)"*.exe|*.com|20*-*-*.log",
+    /* .pszFilterOutDirs = */       (char *)".svn|.hg|.git|CVS",
 };
 
 /** Option definitions for the base settings. */
@@ -340,56 +356,13 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
     { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
+    { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
+    { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
+    { "--filter-out-files",                 SCMOPT_FILTER_OUT_FILES,                RTGETOPT_REQ_STRING  },
 };
 
 /** Consider files matching the following patterns (base names only). */
 static const char  *g_pszFileFilter         = NULL;
-/** Filter out files matching the following patterns.  This is applied to the
- *  base names as well as the absolute paths. */
-static const char  *g_pszFileFilterOut      =
-    "*.exe|"
-    "*.com|"
-    "20*-*-*.log|"
-    "*/src/VBox/Runtime/testcase/soundcard.h|"
-    "*/src/VBox/Runtime/include/internal/ldrELF*.h|"
-    "*/src/VBox/Runtime/common/math/x86/fenv-x86.c|"
-    "*/src/VBox/Runtime/common/checksum/md5.cpp|"
-    "/dummy/."
-;
-/** Consider directories matching the following patterns (base names only) */
-static const char  *g_pszDirFilter          = NULL;
-/** Filter out directories matching the following patterns.  This is applied
- *  to base names as well as the aboslute paths.  All absolute paths ends with a
- *  slash and dot ("/.").  */
-static const char  *g_pszDirFilterOut       =
-    // generic
-    ".svn|"
-    ".hg|"
-    ".git|"
-    "CVS|"
-    // root
-    "out|"
-    "tools|"
-    "webtools|"
-    "kBuild|"
-    "debian|"
-    "SlickEdit|"
-    // src
-    "*/src/libs/.|"
-    "*/src/apps/.|"
-    "*/src/VBox/Frontends/.|"
-    "*/src/VBox/Additions/x11/x11include/.|"
-    "*/src/VBox/Additions/WINNT/Graphics/Wine/.|"
-    "*/src/VBox/Additions/common/crOpenGL/.|"
-    "*/src/VBox/HostServices/SharedOpenGL/.|"
-    "*/src/VBox/GuestHost/OpenGL/*/.|"
-    "*/src/VBox/Devices/PC/Etherboot-src/*/.|"
-    "*/src/VBox/Devices/Network/lwip/.|"
-    "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/.|"
-    "*/src/VBox/Runtime/r0drv/solaris/vbi/*/.|"
-    "*/src/VBox/Runtime/common/math/gcc/.|"
-    "/dummy"
-;
 
 static PFNSCMREWRITER const g_aRewritersFor_Makefile_kup[] =
 {
@@ -1718,8 +1691,26 @@ size_t ScmDiffStreams(const char *pszFilename, PSCMSTREAM pLeft, PSCMSTREAM pRig
 static int scmSettingsBaseInitAndCopy(PSCMSETTINGSBASE pSettings, PCSCMSETTINGSBASE pSrc)
 {
     *pSettings = *pSrc;
-    /* No dynamically allocated stuff yet. */
-    return VINF_SUCCESS;
+
+    int rc = RTStrDupEx(&pSettings->pszFilterFiles, pSrc->pszFilterFiles);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrDupEx(&pSettings->pszFilterOutFiles, pSrc->pszFilterOutFiles);
+        if (RT_SUCCESS(rc))
+        {
+            rc = RTStrDupEx(&pSettings->pszFilterOutDirs, pSrc->pszFilterOutDirs);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+
+            RTStrFree(pSettings->pszFilterOutFiles);
+        }
+        RTStrFree(pSettings->pszFilterFiles);
+    }
+
+    pSettings->pszFilterFiles = NULL;
+    pSettings->pszFilterOutFiles = NULL;
+    pSettings->pszFilterOutDirs = NULL;
+    return rc;
 }
 
 /**
@@ -1744,9 +1735,18 @@ static void scmSettingsBaseDelete(PSCMSETTINGSBASE pSettings)
     {
         Assert(pSettings->cchTab != ~(unsigned)0);
         pSettings->cchTab = ~(unsigned)0;
-        /* No dynamically allocated stuff yet. */
+
+        RTStrFree(pSettings->pszFilterFiles);
+        pSettings->pszFilterFiles = NULL;
+
+        RTStrFree(pSettings->pszFilterOutFiles);
+        pSettings->pszFilterOutFiles = NULL;
+
+        RTStrFree(pSettings->pszFilterOutDirs);
+        pSettings->pszFilterOutDirs = NULL;
     }
 }
+
 
 /**
  * Processes a RTGetOpt result.
@@ -1815,6 +1815,44 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             }
             pSettings->cchTab = pValueUnion->u8;
             return VINF_SUCCESS;
+
+        case SCMOPT_FILTER_OUT_DIRS:
+        case SCMOPT_FILTER_FILES:
+        case SCMOPT_FILTER_OUT_FILES:
+        {
+            char **ppsz;
+            switch (rc)
+            {
+                case SCMOPT_FILTER_OUT_DIRS:    ppsz = &pSettings->pszFilterOutDirs; break;
+                case SCMOPT_FILTER_FILES:       ppsz = &pSettings->pszFilterFiles; break;
+                case SCMOPT_FILTER_OUT_FILES:   ppsz = &pSettings->pszFilterOutFiles; break;
+            }
+
+            /*
+             * An empty string zaps the current list.
+             */
+            if (!*pValueUnion->psz)
+                return RTStrATruncate(ppsz, 0);
+
+            /*
+             * Non-empty strings are appended to the pattern list.
+             *
+             * Strip leading and trailing pattern separators before attempting
+             * to append it.  If it's just separators, don't do anything.
+             */
+            const char *pszSrc = pValueUnion->psz;
+            while (*pszSrc == '|')
+                pszSrc++;
+            size_t cchSrc = strlen(pszSrc);
+            while (cchSrc > 0 && pszSrc[cchSrc - 1] == '|')
+                cchSrc--;
+            if (!cchSrc)
+                return VINF_SUCCESS;
+
+            return RTStrAAppendExN(ppsz, 2,
+                                   "|", *ppsz && **ppsz ? 1 : 0,
+                                   pszSrc, cchSrc);
+        }
 
         default:
             return VERR_GETOPT_UNKNOWN_OPTION;
@@ -2660,15 +2698,17 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
     /*
      * Do the file level filtering.
      */
-    if (   g_pszFileFilter
-        && !RTStrSimplePatternMultiMatch(g_pszFileFilter, RTSTR_MAX, pszBasename, cchBasename, NULL))
+    if (   pBaseSettings->pszFilterFiles
+        && *pBaseSettings->pszFilterFiles
+        && !RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterFiles, RTSTR_MAX, pszBasename, cchBasename, NULL))
     {
         ScmVerbose(4, "file filter mismatch: \"%s\"\n", pszFilename);
         return VINF_SUCCESS;
     }
-    if (   g_pszFileFilterOut
-        && (   RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX, pszBasename, cchBasename, NULL)
-            || RTStrSimplePatternMultiMatch(g_pszFileFilterOut, RTSTR_MAX, pszFilename, RTSTR_MAX, NULL)) )
+    if (   pBaseSettings->pszFilterOutFiles
+        && *pBaseSettings->pszFilterOutFiles
+        && (   RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterOutFiles, RTSTR_MAX, pszBasename, cchBasename, NULL)
+            || RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterOutFiles, RTSTR_MAX, pszFilename, RTSTR_MAX, NULL)) )
     {
         ScmVerbose(4, "file filter out: \"%s\"\n", pszFilename);
         return VINF_SUCCESS;
@@ -2913,16 +2953,13 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
             memcpy(&pszBuf[cchDir - 1 + pEntry->cbName], "/.", sizeof("/."));
             size_t cchSubDir = cchDir - 1 + pEntry->cbName + sizeof("/.") - 1;
 
-            if (    (   g_pszDirFilter == NULL
-                     || RTStrSimplePatternMultiMatch(g_pszDirFilter, RTSTR_MAX,
-                                                     pEntry->szName, pEntry->cbName, NULL))
-                 && (   g_pszDirFilterOut == NULL
-                     || (   !RTStrSimplePatternMultiMatch(g_pszDirFilterOut, RTSTR_MAX,
-                                                          pEntry->szName, pEntry->cbName, NULL)
-                         && !RTStrSimplePatternMultiMatch(g_pszDirFilterOut, RTSTR_MAX,
-                                                          pszBuf, cchSubDir, NULL)
-                        )
-                    )
+            if (   !pSettingsStack->Base.pszFilterOutDirs
+                || !*pSettingsStack->Base.pszFilterOutDirs
+                || (   !RTStrSimplePatternMultiMatch(pSettingsStack->Base.pszFilterOutDirs, RTSTR_MAX,
+                                                     pEntry->szName, pEntry->cbName, NULL)
+                    && !RTStrSimplePatternMultiMatch(pSettingsStack->Base.pszFilterOutDirs, RTSTR_MAX,
+                                                     pszBuf, cchSubDir, NULL)
+                   )
                )
             {
                 rc = scmSettingsStackPushDir(&pSettingsStack, pszBuf);

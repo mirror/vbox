@@ -1,0 +1,63 @@
+# $Id$
+## @file
+# Top level source code massager settings.
+#
+# This will be loaded when scm is pointed to any file or directory in the
+# VirtualBox source tree.  It will recursively load all .scm-settings files
+# it find in or above directories or files it's told to work on.  So,
+# .scm-settings files can be placed in sub-directories in the tree to provide
+# additional settins specific to that sub-tree.
+#
+
+#
+# Copyright (C) 2010 Sun Microsystems, Inc.
+#
+# This file is part of VirtualBox Open Source Edition (OSE), as
+# available from http://www.virtualbox.org. This file is free software;
+# you can redistribute it and/or modify it under the terms of the GNU
+# General Public License (GPL) as published by the Free Software
+# Foundation, in version 2 as it comes in the "COPYING" file of the
+# VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+# hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+#
+# Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+# Clara, CA 95054 USA or visit http://www.sun.com if you need
+# additional information or have any questions.
+#
+
+
+#
+# Directories to ignore.
+#
+# These are simple string patterns (see iprt/string.h) and we'll match both the
+# base name as well as the absolute path of each directory we consider for
+# recursion against these patterns.
+#
+--filter-out-dirs  ".svn"
+--filter-out-dirs  "*/out/."
+--filter-out-dirs  "*/tools/."
+--filter-out-dirs  "*/webtools/."
+--filter-out-dirs  "*/kBuild/."
+--filter-out-dirs  "*/debian/."
+--filter-out-dirs  "*/SlickEdit/."
+--filter-out-dirs  "*/src/libs/."
+--filter-out-dirs  "*/src/apps/."
+--filter-out-dirs  "*/src/VBox/Frontends/."
+--filter-out-dirs  "*/src/VBox/Additions/x11/x11include/."
+--filter-out-dirs  "*/src/VBox/Additions/WINNT/Graphics/Wine/."
+--filter-out-dirs  "*/src/VBox/Additions/common/crOpenGL/."
+--filter-out-dirs  "*/src/VBox/HostServices/SharedOpenGL/."
+--filter-out-dirs  "*/src/VBox/GuestHost/OpenGL/*/."
+--filter-out-dirs  "*/src/VBox/Devices/PC/Etherboot-src/*/."
+--filter-out-dirs  "*/src/VBox/Devices/Network/lwip/."
+--filter-out-dirs  "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/."
+
+#
+# Files to ignore.
+#
+# Same format as for the directories, except that we'll also apply them to
+# files specified directly on the command line.
+#
+##--filter-out-files "*/src/VBox/Runtime/common/checksum/md5.cpp"
+
+
