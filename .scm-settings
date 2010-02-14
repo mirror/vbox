@@ -53,6 +53,8 @@
 --filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/Include/*/."
 --filter-out-dirs  "*/src/VBox/Devices/Network/lwip/."
 --filter-out-dirs  "*/src/VBox/Devices/Storage/VBoxHDDFormats/StorageCraft/*/."
+--filter-out-dirs  "*/src/VBox/RDP/client/."
+--filter-out-dirs  "*/src/recompiler/tests/."
 
 
 #
@@ -80,4 +82,6 @@
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxGrext/."
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxMouse/."
 --filter-out-dirs  "*/src/VBox/Devices/PC/PXE/."
+
+--no-convert-tabs
 
