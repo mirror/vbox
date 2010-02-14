@@ -1893,7 +1893,7 @@ end function
 ''
 ' Checks for any Qt4 binaries.
 sub CheckForQt4(strOptQt4)
-   dim strPathQt4 
+   dim strPathQt4
 
    PrintHdr "Qt4"
 
@@ -1958,7 +1958,7 @@ function CheckForPython(strPathPython)
       CfgPrint "VBOX_BLD_PYTHON       := " & strPathPython & "\python.exe"
       CheckForPython = True
    end if
-  
+
    PrintResult "Python ", strPathPython
 end function
 
