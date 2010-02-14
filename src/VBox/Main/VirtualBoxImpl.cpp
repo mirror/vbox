@@ -2590,7 +2590,7 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
     void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         Bstr mid = machineId.toUtf16();
-	Bstr sid = snapshotId.toUtf16();
+        Bstr sid = snapshotId.toUtf16();
 
         switch (what)
         {

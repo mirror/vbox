@@ -156,7 +156,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 #else
 
 #define ROUNDUP(a) \
-	((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
+        ((a) > 0 ? (1 + (((a) - 1) | (sizeof(long) - 1))) : sizeof(long))
 #define ADVANCE(x, n) (x += ROUNDUP((n)->sa_len))
 
 void extractAddresses(int iAddrMask, caddr_t cp, caddr_t cplim, struct sockaddr **pAddresses)
@@ -216,7 +216,7 @@ static int getDefaultIfaceIndex(unsigned short *pu16Index)
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
-    aiMib[3] = PF_INET;	/* address family */
+    aiMib[3] = PF_INET; /* address family */
     aiMib[4] = NET_RT_DUMP;
     aiMib[5] = 0;
 
@@ -290,7 +290,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
-    aiMib[3] = 0;	/* address family */
+    aiMib[3] = 0;       /* address family */
     aiMib[4] = NET_RT_IFLIST;
     aiMib[5] = 0;
 
@@ -439,7 +439,7 @@ int NetIfGetConfigByName(PNETIFINFO pInfo)
     aiMib[0] = CTL_NET;
     aiMib[1] = PF_ROUTE;
     aiMib[2] = 0;
-    aiMib[3] = 0;	/* address family */
+    aiMib[3] = 0;       /* address family */
     aiMib[4] = NET_RT_IFLIST;
     aiMib[5] = 0;
 
