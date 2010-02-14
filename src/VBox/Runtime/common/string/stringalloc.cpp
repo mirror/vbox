@@ -248,3 +248,34 @@ RTDECL(int) RTStrAAppendExN(char **ppsz, size_t cPairs, ...)
 }
 RT_EXPORT_SYMBOL(RTStrAAppendExN);
 
+
+RTDECL(int) RTStrATruncate(char **ppsz, size_t cchNew)
+{
+    char *pszOld = *ppsz;
+    if (!cchNew)
+    {
+        if (pszOld && *pszOld)
+        {
+            *pszOld = '\0';
+            char *pszNew = (char *)RTMemRealloc(pszOld, 1);
+            if (!pszNew)
+                *ppsz = pszNew;
+        }
+    }
+    else
+    {
+        AssertPtrReturn(pszOld, VERR_OUT_OF_RANGE);
+        char *pszZero = (char *)memchr(pszOld, '\0', cchNew + 63);
+        AssertReturn(!pszZero || (size_t)(pszZero - pszOld) >= cchNew, VERR_OUT_OF_RANGE);
+        pszOld[cchNew] = '\0';
+        if (!pszZero)
+        {
+            char *pszNew = (char *)RTMemRealloc(pszOld,  cchNew + 1);
+            if (pszNew)
+                *ppsz = pszNew;
+        }
+    }
+    return VINF_SUCCESS;
+}
+RT_EXPORT_SYMBOL(RTStrATruncate);
+

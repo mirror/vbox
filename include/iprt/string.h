@@ -257,6 +257,24 @@ RTDECL(int) RTStrAAppendExNV(char **ppsz, size_t cPairs, va_list va);
 RTDECL(int) RTStrAAppendExN(char **ppsz, size_t cPairs, ...);
 
 /**
+ * Truncates an IPRT allocated string.
+ *
+ * @retval  VINF_SUCCESS.
+ * @retval  VERR_OUT_OF_RANGE if cchNew is too long.  Nothing is done.
+ *
+ * @param   ppsz                Pointer to the string pointer.  The string
+ *                              pointer can be NULL if @a cchNew is 0, no change
+ *                              is made then.  If we actually reallocate the
+ *                              string, the string pointer might be changed by
+ *                              this call.  (In/Out)
+ * @param   cchNew              The new string length (excluding the
+ *                              terminator).  The string must be at least this
+ *                              long or we'll return VERR_OUT_OF_RANGE and
+ *                              assert on you.
+ */
+RTDECL(int) RTStrATruncate(char **ppsz, size_t cchNew);
+
+/**
  * Allocates memory for string storage.
  *
  * You should normally not use this function, except if there is some very
@@ -301,7 +319,8 @@ RTDECL(int) RTStrAllocEx(char **ppsz, size_t cb);
  * Reallocates the specifed string.
  *
  * You should normally not have use this function, except perhaps to truncate a
- * really long string you've got from some IPRT string API.
+ * really long string you've got from some IPRT string API, but then you should
+ * use RTStrATruncate.
  *
  * @returns VINF_SUCCESS.
  * @retval  VERR_NO_STR_MEMORY if we failed to reallocate the string, @a *ppsz
