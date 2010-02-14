@@ -64,7 +64,7 @@ PROGRAMS += \
 	tstFileAppend-1 \
 	tstFileLock \
 	tstFork \
-	tstGetOpt \
+	tstRTGetOpt \
 	tstRTGetOptArgv \
 	tstHandleTable \
 	tstRTHeapOffset \
@@ -201,7 +201,8 @@ tstFileLock_SOURCES = tstFileLock.cpp
 
 tstFork_SOURCES = tstFork.cpp
 
-tstGetOpt_SOURCES = tstGetOpt.cpp
+tstRTGetOpt_TEMPLATE = VBOXR3TSTEXE
+tstRTGetOpt_SOURCES = tstRTGetOpt.cpp
 
 tstRTGetOptArgv_TEMPLATE = VBOXR3TSTEXE
 tstRTGetOptArgv_SOURCES = tstRTGetOptArgv.cpp
