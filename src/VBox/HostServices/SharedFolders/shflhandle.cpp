@@ -89,8 +89,8 @@ SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData)
     {
         if(pHandles[handle].pvUserData == 0)
         {
-    	    lastHandleIndex = handle;
-	        break;
+            lastHandleIndex = handle;
+            break;
         }
     }
 
@@ -101,8 +101,8 @@ SHFLHANDLE  vbsfAllocHandle(uint32_t uType, uintptr_t pvUserData)
         {
             if(pHandles[handle].pvUserData == 0)
             {
-    	        lastHandleIndex = handle;
-	            break;
+                lastHandleIndex = handle;
+                break;
             }
         }
         if(handle == SHFLHANDLE_MAX)
