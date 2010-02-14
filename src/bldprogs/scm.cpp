@@ -2035,7 +2035,7 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
     while (cchOptions > 0 && RT_C_IS_SPACE(pchOptions[cchOptions - 1]))
         cchOptions--;
     while (cchOptions > 0 && RT_C_IS_SPACE(*pchOptions))
-        cchOptions--, cchOptions++;
+        cchOptions--, pchOptions++;
 
     /* Quietly ignore empty patterns and empty options. */
     if (!cchOptions || !cchPattern)
