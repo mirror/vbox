@@ -73,6 +73,7 @@
 --filter-out-files "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/fsw_strfunc.h"
 --filter-out-files "*/src/VBox/Devices/Audio/sys-queue.h"
 --filter-out-files "*/src/VBox/HostDrivers/VBoxUSB/os2/usbcalls.h"
+--filter-out-files "*/src/VBox/RDP/x11server/Init*.c"
 
 
 #

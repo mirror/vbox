@@ -495,12 +495,12 @@ int HGSMIBufferProcess (HGSMIAREA *pArea,
         }
         else
         {
-        	rc = VERR_INVALID_FUNCTION;
+            rc = VERR_INVALID_FUNCTION;
         }
     }
     else
     {
-    	rc = VERR_INVALID_HANDLE;
+        rc = VERR_INVALID_HANDLE;
 //        LogRel(("HGSMI[%s]: ignored invalid guest buffer 0x%08X!!!\n", pIns->pszName, offBuffer));
     }
     return rc;
