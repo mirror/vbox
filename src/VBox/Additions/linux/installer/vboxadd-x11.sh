@@ -291,8 +291,8 @@ setup()
     newmouse=""
     # By default we want to use hal/udev/whatever for auto-loading the mouse driver
     automouse="--autoMouse"
-	# But we only install the udev rule if we detect a server that needs it
-	udevmouse=""
+    # But we only install the udev rule if we detect a server that needs it
+    udevmouse=""
     # We need to tell our xorg.conf hacking script whether /dev/psaux exists
     nopsaux="--nopsaux"
     test -c /dev/psaux && nopsaux=""
@@ -328,7 +328,7 @@ setup()
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
-			test "$system" = "debian" && udevmouse="true"
+            test "$system" = "debian" && udevmouse="true"
             ;;
         1.5.99.* | 1.6.* )
             begin "Installing X.Org Server 1.6 modules"

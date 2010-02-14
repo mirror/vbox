@@ -673,13 +673,13 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
                 Assert(pCmd->rc == VINF_SUCCESS);
                 if(pCmd->rc == VINF_SUCCESS)
                 {
-                	uint32_t surfSizeX = pBody->SurfInfo.sizeX;
-                	uint32_t surfSizeY = pBody->SurfInfo.sizeY;
+                    uint32_t surfSizeX = pBody->SurfInfo.sizeX;
+                    uint32_t surfSizeY = pBody->SurfInfo.sizeY;
                     pDesc->hHostHandle = pBody->SurfInfo.hSurf;
                     if(!!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_OVERLAY)
-                    		&& !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE))
+                            && !!(lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_VISIBLE))
                     {
-                    	pDesc->bVisible = true;
+                        pDesc->bVisible = true;
                     }
                     lpSurfaceGlobal->dwReserved1 = (ULONG_PTR)pDesc;
                     lPitch = pBody->SurfInfo.pitch;

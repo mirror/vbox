@@ -29,7 +29,7 @@
  */
 BOOL WINAPI DllMain(HINSTANCE hDLLInst, DWORD fdwReason, LPVOID lpvReserved)
 {
-    BOOL	bStatus = TRUE;
+    BOOL    bStatus = TRUE;
 
     switch (fdwReason)
     {

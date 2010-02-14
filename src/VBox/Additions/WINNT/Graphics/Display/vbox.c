@@ -769,7 +769,7 @@ static void vboxVBVAHostCommandHanlder(PPDEV ppdev, VBVAHOSTCMD * pCmd)
 # endif
         default:
         {
-        	Assert(0);
+            Assert(0);
             vboxVBVAHostCommandComplete(ppdev, pCmd);
         }
     }
@@ -784,7 +784,7 @@ void vboxVHWACommandCheckHostCmds(PPDEV ppdev)
     {
         for(;pCmd; pCmd = pNextCmd)
         {
-        	pNextCmd = pCmd->u.pNext;
+            pNextCmd = pCmd->u.pNext;
             vboxVBVAHostCommandHanlder(ppdev, pCmd);
         }
     }

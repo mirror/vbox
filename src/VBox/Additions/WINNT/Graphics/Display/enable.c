@@ -38,37 +38,37 @@
 // Hook functions to track dirty rectangles and generate RDP orders.
 // NT4 functions
 DRVFN gadrvfn_nt4[] = {
-    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },	//  0
-    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },	//  1
-    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },	//  2
-    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },	//  3
-    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4
-    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5
+    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },  //  0
+    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },  //  1
+    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },  //  2
+    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },  //  3
+    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },  //  4
+    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },  //  5
     {   INDEX_DrvOffset,                (PFN) DrvOffset             },  //  6
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8
 //    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
 //    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12
-    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13
-    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14
-    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },	// 15
-    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },	// 17
-    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },	// 18
-    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },	// 19
-    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20
-    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22
-    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23
-    {   INDEX_DrvEscape,                (PFN) DrvEscape             },	// 24
-    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29
-    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30
-    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31
+    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },  // 13
+    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },  // 14
+    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },  // 15
+    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },  // 17
+    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },  // 18
+    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },  // 19
+    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },  // 20
+    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },  // 22
+    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },  // 23
+    {   INDEX_DrvEscape,                (PFN) DrvEscape             },  // 24
+    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },  // 29
+    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },  // 30
+    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },  // 31
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40
-    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41
+    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },  // 41
 #ifdef VBOX_WITH_DDRAW
-    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
-    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
-    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },  // 59 0x3b
+    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },  // 60 0x3c
+    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },  // 61 0x3d
 #endif
 };
 /* Experimental begin */
@@ -273,50 +273,50 @@ BOOL DrvShadowDisconnect (PVOID x1, PVOID x2)
 
 // W2K,XP functions
 DRVFN gadrvfn_nt5[] = {
-    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },	//  0 0x0
-    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },	//  1 0x1
-    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },	//  2 0x2
-    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },	//  3 0x3
-    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },	//  4 0x4
-    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },	//  5 0x5
+    {   INDEX_DrvEnablePDEV,            (PFN) DrvEnablePDEV         },  //  0 0x0
+    {   INDEX_DrvCompletePDEV,          (PFN) DrvCompletePDEV       },  //  1 0x1
+    {   INDEX_DrvDisablePDEV,           (PFN) DrvDisablePDEV        },  //  2 0x2
+    {   INDEX_DrvEnableSurface,         (PFN) DrvEnableSurface      },  //  3 0x3
+    {   INDEX_DrvDisableSurface,        (PFN) DrvDisableSurface     },  //  4 0x4
+    {   INDEX_DrvAssertMode,            (PFN) DrvAssertMode         },  //  5 0x5
     {   INDEX_DrvDisableDriver,         (PFN) DrvDisableDriver      },  //  8 0x8
 //    {   INDEX_DrvCreateDeviceBitmap,    (PFN) DrvCreateDeviceBitmap },  // 10
 //    {   INDEX_DrvDeleteDeviceBitmap,    (PFN) DrvDeleteDeviceBitmap },  // 11
     {   INDEX_DrvRealizeBrush,          (PFN) DrvRealizeBrush       },  // 12 0xc
-    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },	// 13 0xd
-    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },	// 14 0xe
-    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },	// 15 0xf
-//    {   INDEX_DrvStrokeAndFillPath,     (PFN) DrvStrokeAndFillPath  },	// 16 0x10
-    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },	// 17 0x11
-    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },	// 18 0x12
-    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },	// 19 0x13
-    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },	// 20 0x14
-    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },	// 22 0x16
-    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },	// 23 0x17
-    {   INDEX_DrvEscape,                (PFN) DrvEscape             },	// 24 0x18
-    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },	// 29 0x1d
-    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },	// 30 0x1e
-    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },	// 31 0x1f
+    {   INDEX_DrvDitherColor,           (PFN) DrvDitherColor        },  // 13 0xd
+    {   INDEX_DrvStrokePath,            (PFN) DrvStrokePath         },  // 14 0xe
+    {   INDEX_DrvFillPath,              (PFN) DrvFillPath           },  // 15 0xf
+//    {   INDEX_DrvStrokeAndFillPath,     (PFN) DrvStrokeAndFillPath  },    // 16 0x10
+    {   INDEX_DrvPaint,                 (PFN) DrvPaint              },  // 17 0x11
+    {   INDEX_DrvBitBlt,                (PFN) DrvBitBlt             },  // 18 0x12
+    {   INDEX_DrvCopyBits,              (PFN) DrvCopyBits           },  // 19 0x13
+    {   INDEX_DrvStretchBlt,            (PFN) DrvStretchBlt,        },  // 20 0x14
+    {   INDEX_DrvSetPalette,            (PFN) DrvSetPalette         },  // 22 0x16
+    {   INDEX_DrvTextOut,               (PFN) DrvTextOut            },  // 23 0x17
+    {   INDEX_DrvEscape,                (PFN) DrvEscape             },  // 24 0x18
+    {   INDEX_DrvSetPointerShape,       (PFN) DrvSetPointerShape    },  // 29 0x1d
+    {   INDEX_DrvMovePointer,           (PFN) DrvMovePointer        },  // 30 0x1e
+    {   INDEX_DrvLineTo,                (PFN) DrvLineTo             },  // 31 0x1f
     {   INDEX_DrvSynchronize,           (PFN) DrvSynchronize        },  // 38 0x26
     {   INDEX_DrvSaveScreenBits,        (PFN) DrvSaveScreenBits     },  // 40 0x28
-    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },	// 41 0x29
+    {   INDEX_DrvGetModes,              (PFN) DrvGetModes           },  // 41 0x29
 #ifdef VBOX_WITH_DDRAW
-    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },	// 59 0x3b
-    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },	// 60 0x3c
-    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },	// 61 0x3d
+    {   INDEX_DrvGetDirectDrawInfo,     (PFN) DrvGetDirectDrawInfo  },  // 59 0x3b
+    {   INDEX_DrvEnableDirectDraw,      (PFN) DrvEnableDirectDraw   },  // 60 0x3c
+    {   INDEX_DrvDisableDirectDraw,     (PFN) DrvDisableDirectDraw  },  // 61 0x3d
     {   INDEX_DrvDeriveSurface,         (PFN) DrvDeriveSurface      },  // 85 0x55
 #endif
-    {   INDEX_DrvNotify,                (PFN) DrvNotify             },	// 87 0x57
+    {   INDEX_DrvNotify,                (PFN) DrvNotify             },  // 87 0x57
 //     /* Experimental. */
-//     {   0x7,                            (PFN) DrvResetPDEV          },	// 0x7
-//     {   0x5b,                           (PFN) DrvNineGrid           },	// 0x5b
-//     {   0x2b,                           (PFN) DrvDestroyFont        },	// 0x2b
-//     {   0x18,                           (PFN) DrvEscape             },	// 0x18
-//     {   0x4d,                           (PFN) DrvConnect            },	// 0x4d
-//     {   0x4e,                           (PFN) DrvDisconnect         },	// 0x4e
-//     {   0x4f,                           (PFN) DrvReconnect          },	// 0x4f
-//     {   0x50,                           (PFN) DrvShadowConnect      },	// 0x50
-//     {   0x51,                           (PFN) DrvShadowDisconnect   },	// 0x51
+//     {   0x7,                            (PFN) DrvResetPDEV          },   // 0x7
+//     {   0x5b,                           (PFN) DrvNineGrid           },   // 0x5b
+//     {   0x2b,                           (PFN) DrvDestroyFont        },   // 0x2b
+//     {   0x18,                           (PFN) DrvEscape             },   // 0x18
+//     {   0x4d,                           (PFN) DrvConnect            },   // 0x4d
+//     {   0x4e,                           (PFN) DrvDisconnect         },   // 0x4e
+//     {   0x4f,                           (PFN) DrvReconnect          },   // 0x4f
+//     {   0x50,                           (PFN) DrvShadowConnect      },   // 0x50
+//     {   0x51,                           (PFN) DrvShadowDisconnect   },   // 0x51
 
 };
 

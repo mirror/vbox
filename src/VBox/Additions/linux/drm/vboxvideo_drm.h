@@ -56,19 +56,19 @@
 /* General customization:
  */
 
-#define DRIVER_AUTHOR		"Sun Microsystems Inc."
+#define DRIVER_AUTHOR       "Sun Microsystems Inc."
 
-#define DRIVER_NAME		"vboxvideo"
-#define DRIVER_DESC		"VirtualBox Graphics Card"
-#define DRIVER_DATE		"20090303"
+#define DRIVER_NAME     "vboxvideo"
+#define DRIVER_DESC     "VirtualBox Graphics Card"
+#define DRIVER_DATE     "20090303"
 
-#define DRIVER_MAJOR		1
-#define DRIVER_MINOR		0
-#define DRIVER_PATCHLEVEL	0
+#define DRIVER_MAJOR        1
+#define DRIVER_MINOR        0
+#define DRIVER_PATCHLEVEL   0
 
 #define vboxvideo_PCI_IDS \
-	{0x80ee, 0xbeef, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
-	{0, 0, 0}
+    {0x80ee, 0xbeef, PCI_ANY_ID, PCI_ANY_ID, 0, 0, 0}, \
+    {0, 0, 0}
 
 #endif
 

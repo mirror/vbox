@@ -65,8 +65,8 @@ public:
                 Log(("Could not create D-BUS message!\n"));
                 rc = VERR_INVALID_HANDLE;
             }
-	    else
-		rc = VINF_SUCCESS;
+        else
+        rc = VINF_SUCCESS;
         }
         if (RT_SUCCESS(rc))
         {
@@ -116,7 +116,7 @@ public:
                 dbus_message_unref(reply);
             }
             if (dbus_error_is_set(&err))
-        	dbus_error_free(&err);
+            dbus_error_free(&err);
         }
         if (msg != NULL)
             dbus_message_unref(msg);
