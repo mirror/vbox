@@ -522,14 +522,14 @@ typedef struct _WLX_CLIENT_CREDENTIALS_INFO_2_0 {
 // The WLX_CONSOLESWITCH_CREDENTIALS_INFO structure is returned
 // from gina in response to WlxGetConsoleSwitchCredentials calls.
 
-// This structure is also returned from winlogon in response to 
+// This structure is also returned from winlogon in response to
 // to WlxQueryConsoleSwitchCredentials call
 //
-// This is used to implement single session Terminal Server. A remote 
+// This is used to implement single session Terminal Server. A remote
 // session winlogon calls WlxGetConsoleSwitchCredentials to get the token
 // and other info of the logged on user from msgina. This info is then passed to
 // the console session winlogon to autologon the user on the console session.
-// The gina on console session calls WlxQueryConsoleSwitchCredentials to get 
+// The gina on console session calls WlxQueryConsoleSwitchCredentials to get
 // this info from winlogon and logs on the user.
 //
 // The caller is responsible for freeing the memory
@@ -560,7 +560,7 @@ typedef struct _WLX_CONSOLESWITCH_CREDENTIALS_INFO {
     ULONG            ProfileLength;
 
     //
-    // From MSV1_0_INTERACTIVE_PROFILE 
+    // From MSV1_0_INTERACTIVE_PROFILE
     //
     DWORD            MessageType;
     USHORT           LogonCount;

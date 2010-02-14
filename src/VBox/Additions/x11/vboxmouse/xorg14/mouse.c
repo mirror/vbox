@@ -3908,4 +3908,3 @@ _X_EXPORT XF86ModuleData mouseModuleData = {
 */
 #endif /* XFree86LOADER */
 
-

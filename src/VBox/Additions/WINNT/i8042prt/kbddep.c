@@ -882,7 +882,7 @@ Return Value:
 #if !(defined(_X86_) || defined(_PPC_))  // IBMCPK: MIPS specific initialization
     PI8042_CONFIGURATION_INFORMATION configuration;
     PKEYBOARD_ID keyboardId;
-#endif 
+#endif
     LARGE_INTEGER startOfSpin, nextQuery, difference, tenSeconds;
     BOOLEAN waitForAckOnReset = WAIT_FOR_ACKNOWLEDGE;
 

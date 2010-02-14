@@ -9,8 +9,8 @@ Module Name:
 
 Abstract:
 
-    The common portions of the Intel i8042 port driver which 
-    apply to the keyboard device.  
+    The common portions of the Intel i8042 port driver which
+    apply to the keyboard device.
 
 Environment:
 
@@ -78,7 +78,7 @@ Return Value:
     LONG interlockedResult;
     BOOLEAN moreDpcProcessing;
     ULONG dataNotConsumed = 0;
-    ULONG inputDataConsumed = 0; 
+    ULONG inputDataConsumed = 0;
     LARGE_INTEGER deltaTime;
 
     UNREFERENCED_PARAMETER(Dpc);
@@ -99,7 +99,7 @@ Return Value:
     //
     //
 
-    operationContext.VariableAddress = 
+    operationContext.VariableAddress =
         &deviceExtension->DpcInterlockKeyboard;
     operationContext.Operation = IncrementOperation;
     operationContext.NewValue = &interlockedResult;
@@ -120,44 +120,44 @@ Return Value:
         //
         // Get the port InputData queue pointers synchronously.
         //
-    
+
         getPointerContext.DeviceExtension = deviceExtension;
         setPointerContext.DeviceExtension = deviceExtension;
         getPointerContext.DeviceType = (CCHAR) KeyboardDeviceType;
         setPointerContext.DeviceType = (CCHAR) KeyboardDeviceType;
         setPointerContext.InputCount = 0;
-    
+
         KeSynchronizeExecution(
             deviceExtension->KeyboardInterruptObject,
             (PKSYNCHRONIZE_ROUTINE) I8xGetDataQueuePointer,
             (PVOID) &getPointerContext
             );
-    
+
         if (getPointerContext.InputCount != 0) {
-        
+
             //
             // Call the connected class driver's callback ISR with the
             // port InputData queue pointers.  If we have to wrap the queue,
-            // break the operation into two pieces, and call the class 
+            // break the operation into two pieces, and call the class
             // callback ISR once for each piece.
             //
-        
+
             classDeviceObject =
                 deviceExtension->KeyboardExtension.ConnectData.ClassDeviceObject;
             classService =
                 deviceExtension->KeyboardExtension.ConnectData.ClassService;
             ASSERT(classService != NULL);
-        
+
             if (getPointerContext.DataOut >= getPointerContext.DataIn) {
-        
+
                 //
                 // We'll have to wrap the InputData circular buffer.  Call
-                // the class callback ISR with the chunk of data starting at 
+                // the class callback ISR with the chunk of data starting at
                 // DataOut and ending at the end of the queue.
                 //
-        
+
                 I8xPrint((
-                    2, 
+                    2,
                     "I8042PRT-I8042KeyboardIsrDpc: calling class callback\n"
                     ));
                 I8xPrint((
@@ -166,17 +166,17 @@ Return Value:
                     getPointerContext.DataOut,
                     deviceExtension->KeyboardExtension.DataEnd
                     ));
-        
+
                 (*(PSERVICE_CALLBACK_ROUTINE) classService)(
                       classDeviceObject,
                       getPointerContext.DataOut,
                       deviceExtension->KeyboardExtension.DataEnd,
                       &inputDataConsumed
                       );
-        
+
                 dataNotConsumed = (((PUCHAR)
                     deviceExtension->KeyboardExtension.DataEnd -
-                    (PUCHAR) getPointerContext.DataOut) 
+                    (PUCHAR) getPointerContext.DataOut)
                     / sizeof(KEYBOARD_INPUT_DATA)) - inputDataConsumed;
 
                 I8xPrint((
@@ -187,10 +187,10 @@ Return Value:
                     ));
 
                 setPointerContext.InputCount += inputDataConsumed;
-        
+
                 if (dataNotConsumed) {
-                    setPointerContext.DataOut = 
-                        ((PUCHAR)getPointerContext.DataOut) + 
+                    setPointerContext.DataOut =
+                        ((PUCHAR)getPointerContext.DataOut) +
                         (inputDataConsumed * sizeof(KEYBOARD_INPUT_DATA));
                 } else {
                     setPointerContext.DataOut =
@@ -198,15 +198,15 @@ Return Value:
                     getPointerContext.DataOut = setPointerContext.DataOut;
                 }
             }
-        
+
             //
             // Call the class callback ISR with data remaining in the queue.
             //
-        
+
             if ((dataNotConsumed == 0) &&
                 (inputDataConsumed < getPointerContext.InputCount)){
                 I8xPrint((
-                    2, 
+                    2,
                     "I8042PRT-I8042KeyboardIsrDpc: calling class callback\n"
                     ));
                 I8xPrint((
@@ -215,7 +215,7 @@ Return Value:
                     getPointerContext.DataOut,
                     getPointerContext.DataIn
                     ));
-        
+
                 (*(PSERVICE_CALLBACK_ROUTINE) classService)(
                       classDeviceObject,
                       getPointerContext.DataOut,
@@ -223,10 +223,10 @@ Return Value:
                       &inputDataConsumed
                       );
 
-                dataNotConsumed = (((PUCHAR) getPointerContext.DataIn - 
+                dataNotConsumed = (((PUCHAR) getPointerContext.DataIn -
                       (PUCHAR) getPointerContext.DataOut)
                       / sizeof(KEYBOARD_INPUT_DATA)) - inputDataConsumed;
-        
+
                 I8xPrint((
                     2,
                     "I8042PRT-I8042KeyboardIsrDpc: Call callback consumed %d items, left %d\n",
@@ -234,44 +234,44 @@ Return Value:
                     dataNotConsumed
                     ));
 
-                setPointerContext.DataOut = 
+                setPointerContext.DataOut =
                     ((PUCHAR)getPointerContext.DataOut) +
                     (inputDataConsumed * sizeof(KEYBOARD_INPUT_DATA));
                 setPointerContext.InputCount += inputDataConsumed;
 
             }
-        
+
             //
             // Update the port InputData queue DataOut pointer and InputCount
             // synchronously.
             //
-        
+
             KeSynchronizeExecution(
                 deviceExtension->KeyboardInterruptObject,
                 (PKSYNCHRONIZE_ROUTINE) I8xSetDataQueuePointer,
                 (PVOID) &setPointerContext
                 );
-        
+
         }
 
         if (dataNotConsumed) {
 
             //
-            // The class driver was unable to consume all the data.  
+            // The class driver was unable to consume all the data.
             // Reset the interlocked variable to -1.  We do not want
             // to attempt to move more data to the class driver at this
             // point, because it is already overloaded.  Need to wait a
             // while to give the Raw Input Thread a chance to read some
             // of the data out of the class driver's queue.  We accomplish
             // this "wait" via a timer.
-            // 
+            //
 
             I8xPrint((2, "I8042PRT-I8042KeyboardIsrDpc: set timer in DPC\n"));
 
             operationContext.Operation = WriteOperation;
             interlockedResult = -1;
             operationContext.NewValue = &interlockedResult;
-        
+
             KeSynchronizeExecution(
                     deviceExtension->KeyboardInterruptObject,
                     (PKSYNCHRONIZE_ROUTINE) I8xDpcVariableOperation,
@@ -287,24 +287,24 @@ Return Value:
                        &deviceExtension->KeyboardIsrDpcRetry
                        );
 
-            moreDpcProcessing = FALSE; 
+            moreDpcProcessing = FALSE;
 
         } else {
-    
+
             //
             // Decrement DpcInterlockKeyboard.  If the result goes negative,
             // then we're all finished processing the DPC.  Otherwise, either
             // the ISR incremented DpcInterlockKeyboard because it has more
-            // work for the ISR DPC to do, or a concurrent DPC executed on 
-            // some processor while the current DPC was running (the 
-            // concurrent DPC wouldn't have done any work).  Make sure that 
+            // work for the ISR DPC to do, or a concurrent DPC executed on
+            // some processor while the current DPC was running (the
+            // concurrent DPC wouldn't have done any work).  Make sure that
             // the current DPC handles any extra work that is ready to be
             // done.
             //
 
             operationContext.Operation = DecrementOperation;
             operationContext.NewValue = &interlockedResult;
-        
+
             KeSynchronizeExecution(
                     deviceExtension->KeyboardInterruptObject,
                     (PKSYNCHRONIZE_ROUTINE) I8xDpcVariableOperation,
@@ -323,7 +323,7 @@ Return Value:
                 operationContext.Operation = WriteOperation;
                 interlockedResult = 0;
                 operationContext.NewValue = &interlockedResult;
-        
+
                 KeSynchronizeExecution(
                     deviceExtension->KeyboardInterruptObject,
                     (PKSYNCHRONIZE_ROUTINE) I8xDpcVariableOperation,

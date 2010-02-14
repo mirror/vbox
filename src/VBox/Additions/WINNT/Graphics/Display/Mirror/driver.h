@@ -79,7 +79,7 @@ typedef struct  _PDEV
 
 typedef struct _MIRRSURF {
     PPDEV   *pdev;
-    ULONG   cx;               
+    ULONG   cx;
     ULONG   cy;
     ULONG   lDelta;
     ULONG   ulBitCount;

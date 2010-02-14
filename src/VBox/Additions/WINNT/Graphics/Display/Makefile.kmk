@@ -52,7 +52,7 @@ VBoxDisp_SOURCES     = \
 	vbox.c \
 	VBoxDisp.def \
 	VBoxDisp.rc
-	
+
 ifdef VBOX_WITH_VIDEOHWACCEL
 VBoxDisp_SOURCES     += vhwa.c
 endif

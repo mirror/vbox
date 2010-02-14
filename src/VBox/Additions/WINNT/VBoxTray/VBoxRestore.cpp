@@ -166,4 +166,3 @@ unsigned __stdcall VBoxRestoreThread(void *pInstance)
     return 0;
 }
 
-

@@ -1390,4 +1390,3 @@ int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,
  *
  */
 
-

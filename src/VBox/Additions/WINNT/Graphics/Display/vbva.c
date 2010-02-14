@@ -85,17 +85,17 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
     RECTL rclSrc;
     BYTE *pu8Src;
     BYTE *pu8Dest;
-    
+
     if (!prclDest || !pptlSrc)
     {
         return TRUE;
     }
-    
+
     DISPDBG((1, "vbvaFindChangedRect: dest %d,%d %dx%d from %d,%d\n",
              prclDest->left, prclDest->top, prclDest->right - prclDest->left, prclDest->bottom - prclDest->top,
              pptlSrc->x, pptlSrc->y
             ));
-            
+
     switch (psoDest->iBitmapFormat)
     {
         case BMF_16BPP: cbPixelDest = 2; break;
@@ -117,42 +117,42 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
         DISPDBG((1, "vbvaFindChangedRect: unsupported pixel format src %d dst %d\n", psoDest->iBitmapFormat, psoSrc->iBitmapFormat));
         return TRUE;
     }
-    
+
     rclDest = *prclDest;
-    
+
     vrdpAdjustRect (psoDest, &rclDest);
-    
+
     pptlSrc->x += rclDest.left - prclDest->left;
     pptlSrc->y += rclDest.top - prclDest->top;
-    
+
     *prclDest = rclDest;
-    
+
     if (   rclDest.right == rclDest.left
         || rclDest.bottom == rclDest.top)
     {
         DISPDBG((1, "vbvaFindChangedRect: empty dest rect: %d-%d, %d-%d\n", rclDest.left, rclDest.right, rclDest.top, rclDest.bottom));
         return FALSE;
     }
-    
+
     rclSrc.left   = pptlSrc->x;
     rclSrc.top    = pptlSrc->y;
     rclSrc.right  = pptlSrc->x + (rclDest.right - rclDest.left);
     rclSrc.bottom = pptlSrc->y + (rclDest.bottom - rclDest.top);
     vrdpAdjustRect (psoSrc, &rclSrc);
-    
+
     if (   rclSrc.right == rclSrc.left
         || rclSrc.bottom == rclSrc.top)
     {
          prclDest->right = prclDest->left;
          prclDest->bottom = prclDest->top;
-         
+
          DISPDBG((1, "vbvaFindChangedRect: empty src rect: %d-%d, %d-%d\n", rclSrc.left, rclSrc.right, rclSrc.top, rclSrc.bottom));
          return FALSE;
     }
-    
+
     VBVA_ASSERT(pptlSrc->x == rclSrc.left);
     VBVA_ASSERT(pptlSrc->y == rclSrc.top);
-    
+
     /*
      * Compare the content of the screen surface (psoDest) with the source surface (psoSrc).
      * Update the prclDest with the rectangle that will be actually changed after
@@ -160,32 +160,32 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
      */
     pu8Src = (BYTE *)psoSrc->pvScan0 + psoSrc->lDelta * pptlSrc->y + cbPixelSrc * pptlSrc->x;
     pu8Dest = (BYTE *)psoDest->pvScan0 + psoDest->lDelta * prclDest->top + cbPixelDest * prclDest->left;
-    
+
     /* Use the rclDest as the bounding rectangle for the changed area. */
     rclDest.left   = prclDest->right;  /* +inf */
     rclDest.right  = prclDest->left;   /* -inf */
     rclDest.top    = prclDest->bottom; /* +inf */
     rclDest.bottom = prclDest->top;    /* -inf */
-    
+
     fTopNonEqualFound = 0;
     yTopmost = prclDest->top;        /* inclusive */
     yBottommost = prclDest->top - 1; /* inclusive */
-    
+
     for (y = prclDest->top; y < prclDest->bottom; y++)
     {
         int fLeftNonEqualFound = 0;
-        
+
         /* Init to an empty line. */
         int xLeftmost = prclDest->left;      /* inclusive */
         int xRightmost = prclDest->left - 1; /* inclusive */
-        
+
         BYTE *pu8SrcLine = pu8Src;
         BYTE *pu8DestLine = pu8Dest;
-        
+
         for (x = prclDest->left; x < prclDest->right; x++)
         {
             int fEqualPixels;
-            
+
             if (cbPixelSrc == cbPixelDest)
             {
                 fEqualPixels = (memcmp (pu8SrcLine, pu8DestLine, cbPixelDest) == 0);
@@ -209,7 +209,7 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
                     fEqualPixels = (memcmp (&ulConvertedPixel, pu8SrcLine, cbPixelSrc) == 0);
                 }
             }
-            
+
             if (fEqualPixels)
             {
                 /* Equal pixels. */
@@ -223,23 +223,23 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
                 fLeftNonEqualFound = 1;
                 xRightmost = x;
             }
-            
+
             pu8SrcLine += cbPixelSrc;
             pu8DestLine += cbPixelDest;
         }
-        
+
         /* min */
         if (rclDest.left > xLeftmost)
         {
             rclDest.left = xLeftmost;
         }
-        
+
         /* max */
         if (rclDest.right < xRightmost)
         {
             rclDest.right = xRightmost;
         }
-        
+
         if (xLeftmost > xRightmost) /* xRightmost is inclusive, so '>', not '>='. */
         {
             /* Empty line. */
@@ -253,34 +253,34 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
             fTopNonEqualFound = 1;
             yBottommost = y;
         }
-        
+
         pu8Src += psoSrc->lDelta;
         pu8Dest += psoDest->lDelta;
     }
-    
+
     /* min */
     if (rclDest.top > yTopmost)
     {
         rclDest.top = yTopmost;
     }
-        
+
     /* max */
     if (rclDest.bottom < yBottommost)
     {
         rclDest.bottom = yBottommost;
     }
-        
+
     /* rclDest was calculated with right-bottom inclusive.
      * The following checks and the caller require exclusive coords.
      */
     rclDest.right++;
     rclDest.bottom++;
-    
+
     DISPDBG((1, "vbvaFindChangedRect: new dest %d,%d %dx%d from %d,%d\n",
              rclDest.left, rclDest.top, rclDest.right - rclDest.left, rclDest.bottom - rclDest.top,
              pptlSrc->x, pptlSrc->y
             ));
-            
+
     /* Update the rectangle with the changed area. */
     if (   rclDest.left >= rclDest.right
         || rclDest.top >= rclDest.bottom)
@@ -291,14 +291,14 @@ BOOL vbvaFindChangedRect (SURFOBJ *psoDest, SURFOBJ *psoSrc, RECTL *prclDest, PO
         prclDest->bottom = prclDest->top;
         return FALSE;
     }
-    
+
     DISPDBG((1, "vbvaFindChangedRect: not empty\n"));
-    
+
     pptlSrc->x += rclDest.left - prclDest->left;
     pptlSrc->y += rclDest.top - prclDest->top;
-    
+
     *prclDest = rclDest;
-    
+
     return TRUE;
 }
 #endif /* VBOX_VBVA_ADJUST_RECT */
@@ -308,7 +308,7 @@ void vboxReportDirtyRect (PPDEV ppdev, RECTL *pRectOrig)
     if (ppdev)
     {
         VBVACMDHDR hdr;
-        
+
         RECTL rect = *pRectOrig;
 
         if (rect.left < 0) rect.left = 0;

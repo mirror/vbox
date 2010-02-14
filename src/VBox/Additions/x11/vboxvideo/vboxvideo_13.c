@@ -203,7 +203,7 @@ VBOXCrtcResize(ScrnInfoPtr scrn, int width, int height)
     Bool rc = TRUE;
 
     TRACE_LOG("width=%d, height=%d\n", width, height);
-    /* We only support horizontal resolutions which are a multiple of 8. 
+    /* We only support horizontal resolutions which are a multiple of 8.
      * Round up if necessary. */
     width = (width + 7) & ~7;
     if (width * height * bpp / 8 >= scrn->videoRam * 1024)
@@ -1062,7 +1062,7 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 	VBOXUnmapVidMem(pScrn);
     }
     pScrn->vtSema = FALSE;
-    
+
     /* Destroy the VGA hardware record */
     vgaHWFreeHWRec(pScrn);
 

@@ -155,7 +155,7 @@ BOOL credentialsToUI(HWND hwndUserId, HWND hwndPassword, HWND hwndDomain)
                     Log(("VBoxGINA::MyWlxLoggedOutSASDlgProc: Domain seems to be a FQDN (dot)!\n"));
                     bIsFQDN = TRUE;
                 }
-    
+
                 if (bIsFQDN)
                 {
                     swprintf(szUserFQDN, sizeof(szUserFQDN) / sizeof(wchar_t), L"%s@%s", g_Username, g_Domain);

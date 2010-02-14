@@ -305,7 +305,7 @@ sffs_mount(vfs_t *vfsp, vnode_t *mvp, struct mounta *uap, cred_t *cr)
 	error = sf_pn_get(uap->dir, uap, &mount_point);
 	if (error)
 		return (error);
-	
+
 	/*
 	 * find what we are mounting
 	 */

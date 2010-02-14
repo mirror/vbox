@@ -144,7 +144,7 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  *                      the host.  If this is set, the function will return the
  *                      most recent host request, otherwise it will return the
  *                      last request to be acknowleged.
- *                      
+ *
  */
 VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck)
 {

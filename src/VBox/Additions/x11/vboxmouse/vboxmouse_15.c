@@ -103,7 +103,7 @@ VBoxInit(DeviceIntPtr device)
                                  miPointerGetMotionEvents, VBoxPtrCtrlProc,
                                  miPointerGetMotionBufferSize()
 #elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) < 3
-                                 GetMotionHistory, VBoxPtrCtrlProc, 
+                                 GetMotionHistory, VBoxPtrCtrlProc,
                                  GetMotionHistorySize(), 2 /* Number of axes */
 
 #elif GET_ABI_MAJOR(ABI_XINPUT_VERSION) >= 3

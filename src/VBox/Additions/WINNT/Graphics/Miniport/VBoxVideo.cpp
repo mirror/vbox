@@ -739,7 +739,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
      * this will be appended as a special mode so that it can be used by
      * the Additions service process. The mode table is guaranteed to have
      * two spare entries for this mode (alternating index thus 2).
-     * 
+     *
      * ... or ...
      *
      * Also we check if we got an user-stored custom resolution in the adapter
@@ -1470,7 +1470,7 @@ VP_STATUS VBoxVideoFindAdapter(IN PVOID HwDeviceExtension,
           VideoPortZeroMemory(tmpRanges, sizeof(tmpRanges));
 
           /* need to call VideoPortGetAccessRanges to ensure interrupt info in ConfigInfo gets set up */
-          VP_STATUS status; 
+          VP_STATUS status;
           if (vboxQueryWinVersion() == WINNT4)
           {
               /* NT crashes if either of 'vendorId, 'deviceId' or 'slot' parameters is NULL,
