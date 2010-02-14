@@ -1779,7 +1779,7 @@ private:
     int reset();
 
     int resetGl();
-	
+
     void initGl();
 
     VBoxGLWidget *mpOverlayWidget;

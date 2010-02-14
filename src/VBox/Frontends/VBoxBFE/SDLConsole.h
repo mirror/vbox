@@ -31,7 +31,7 @@
 #if defined(RT_OS_WINDOWS) /// @todo someone please explain why this is necessary. This breaks darwin solid.
 // damn SDL redefines main!
 #undef main
-#endif 
+#endif
 
 #include "ConsoleImpl.h"
 #include <iprt/string.h>

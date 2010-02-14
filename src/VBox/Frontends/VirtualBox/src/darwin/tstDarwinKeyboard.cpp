@@ -89,7 +89,7 @@ void     DarwinDisableGlobalHotKeys(bool fDisable);
     }
     const uint64_t u64Elapsed = RTTimeNanoTS() - u64Start;
     RTPrintf("\n"
-             "tstDarwinKeyboard: %u times in %RU64 ms - %RU64 ms per call\n", 
+             "tstDarwinKeyboard: %u times in %RU64 ms - %RU64 ms per call\n",
              i, u64Elapsed / 1000000, (u64Elapsed / i) / 1000000);
     RTPrintf("tstDarwinKeyboard: DarwinGrabKeyboard: %RU64 ms total - %RU64 ms per call\n",
              u64Grab / 1000000, (u64Grab / i) / 1000000);

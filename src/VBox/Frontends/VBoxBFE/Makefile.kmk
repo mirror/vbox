@@ -171,4 +171,3 @@ $$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pn
 endif # !VBOX_WITH_HARDENING || !darwin
 include $(KBUILD_PATH)/subfooter.kmk
 
-

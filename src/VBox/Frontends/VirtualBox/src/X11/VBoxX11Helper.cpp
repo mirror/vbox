@@ -101,7 +101,7 @@ bool X11IsWindowManagerKWin()
     Display *display = QX11Info::display();
     Atom propNameAtom;
     Window WMWindow = None;
-    
+
     propNameAtom = XInternAtom(display, "_NET_SUPPORTING_WM_CHECK", True);
     if (XGetWindowProperty(display, QX11Info::appRootWindow(), propNameAtom,
                            0, 512, False, XA_WINDOW, &typeReturned,

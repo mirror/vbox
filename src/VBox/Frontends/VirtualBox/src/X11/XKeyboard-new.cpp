@@ -243,7 +243,7 @@ int getKeysymsPerKeycode()
     return 8;
 }
 
-/** 
+/**
  * Initialize X11 keyboard including the remapping specified in the
  * global property GUI/RemapScancodes. This property is a string of
  * comma-seperated x=y pairs, where x is the X11 keycode and y is the
@@ -264,11 +264,11 @@ void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes)
 	    (*scancodesTail)[1] = keyc2scan.at(1).toUInt();
 	    /* Do not advance on (ignore) identity mappings as this is
 	       the stop signal to initXKeyboard and friends */
-	    if((*scancodesTail)[0] != (*scancodesTail)[1]) 
+	    if((*scancodesTail)[0] != (*scancodesTail)[1])
 		scancodesTail++;
 	}
 	(*scancodesTail)[0] = (*scancodesTail)[1] = 0;
-    } 
+    }
     /* initialize the X keyboard subsystem */
     initXKeyboard (pDisplay ,scancodes);
 
