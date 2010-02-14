@@ -27,6 +27,11 @@
 
 
 #
+# Global settings.
+#
+--only-svn-dirs
+
+#
 # Directories to ignore.
 #
 # These are simple string patterns (see iprt/string.h) and we'll match both the
@@ -34,7 +39,7 @@
 # recursion against these patterns.
 #
 --filter-out-dirs  ".svn"
---filter-out-dirs  "*/out/."
+--filter-out-dirs  "*/*out*/."
 --filter-out-dirs  "*/tools/."
 --filter-out-dirs  "*/webtools/."
 --filter-out-dirs  "*/kBuild/."
@@ -74,6 +79,7 @@
 --filter-out-files "*/src/VBox/Devices/Audio/sys-queue.h"
 --filter-out-files "*/src/VBox/HostDrivers/VBoxUSB/os2/usbcalls.h"
 --filter-out-files "*/src/VBox/RDP/x11server/Init*.c"
+--filter-out-files "*/vslick.h"
 
 
 #
