@@ -180,7 +180,7 @@ CONEVENT SDLConsole::eventWait()
                         &&  ev->key.keysym.sym == gHostKeySym
                         &&  (SDL_GetModState() & ~(KMOD_MODE | KMOD_NUM | KMOD_RESERVED)) == gHostKey)
                     {
-		        EvHKeyDown = *ev;
+                        EvHKeyDown = *ev;
                         enmHKeyState = HKEYSTATE_DOWN;
                         break;
                     }
@@ -414,7 +414,7 @@ CONEVENT SDLConsole::eventWait()
 
         default:
         {
-	  printf("%s:%d unknown SDL event %d\n",__FILE__,__LINE__,ev->type);
+            printf("%s:%d unknown SDL event %d\n",__FILE__,__LINE__,ev->type);
             LogBird(("unknown SDL event %d\n", ev->type));
             break;
         }
@@ -587,12 +587,12 @@ static uint8_t Keyevent2KeycodeFallback(const SDL_KeyboardEvent *ev)
 #if 0
         case SDLK_CLEAR:            return 0x;
         case SDLK_KP_EQUALS:        return 0x;
-        case SDLK_COMPOSE:	    return 0x;
+        case SDLK_COMPOSE:          return 0x;
         case SDLK_HELP:             return 0x;
         case SDLK_BREAK:            return 0x;
-        case SDLK_POWER:	    return 0x;
-        case SDLK_EURO:		    return 0x;
-        case SDLK_UNDO:		    return 0x;
+        case SDLK_POWER:            return 0x;
+        case SDLK_EURO:             return 0x;
+        case SDLK_UNDO:             return 0x;
 #endif
         default:
             Log(("Unhandled sdl key event: sym=%d scancode=%#x unicode=%#x\n",

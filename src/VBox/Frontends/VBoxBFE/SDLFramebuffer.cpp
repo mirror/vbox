@@ -313,10 +313,10 @@ HRESULT SDLFramebuffer::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    /// @todo
 
-	NOREF(aCount);
-	NOREF(aCountCopied);
+    NOREF(aCount);
+    NOREF(aCountCopied);
 
     return S_OK;
 }
@@ -328,9 +328,9 @@ HRESULT SDLFramebuffer::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
     if (!rects)
         return E_POINTER;
 
-	/// @todo
+    /// @todo
 
-	NOREF(aCount);
+    NOREF(aCount);
 
     return S_OK;
 }

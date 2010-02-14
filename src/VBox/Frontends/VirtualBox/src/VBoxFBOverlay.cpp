@@ -1992,7 +1992,7 @@ void VBoxGLWidget::doSetupMatrix(const QSize & aSize, bool bInverted)
 void VBoxGLWidget::adjustViewport(const QSize &display, const QRect &viewport)
 {
     glViewport(-viewport.x(),
-    		   viewport.height() + viewport.y() - display.height(),
+               viewport.height() + viewport.y() - display.height(),
                display.width(),
                display.height());
 }
@@ -2288,12 +2288,12 @@ int VBoxGLWidget::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
 
             if (!bFound)
             {
-            	VBOXQGLLOG (("!!unsupported fourcc!!!: %c%c%c%c\n",
-            	        (pCmd->SurfInfo.PixelFormat.fourCC & 0x000000ff),
-            			(pCmd->SurfInfo.PixelFormat.fourCC & 0x0000ff00) >> 8,
-            			(pCmd->SurfInfo.PixelFormat.fourCC & 0x00ff0000) >> 16,
-                        (pCmd->SurfInfo.PixelFormat.fourCC & 0xff000000) >> 24
-                        ));
+                VBOXQGLLOG (("!!unsupported fourcc!!!: %c%c%c%c\n",
+                             (pCmd->SurfInfo.PixelFormat.fourCC & 0x000000ff),
+                             (pCmd->SurfInfo.PixelFormat.fourCC & 0x0000ff00) >> 8,
+                             (pCmd->SurfInfo.PixelFormat.fourCC & 0x00ff0000) >> 16,
+                             (pCmd->SurfInfo.PixelFormat.fourCC & 0xff000000) >> 24
+                             ));
                 pCmd->u.out.ErrInfo = -1;
                 return VINF_SUCCESS;
             }
@@ -4137,8 +4137,8 @@ VBoxQGLOverlay::VBoxQGLOverlay (VBoxConsoleView *aView, VBoxFrameBuffer * aConta
 
 void VBoxQGLOverlay::initGl()
 {
-	if(mpOverlayWidget)
-		return;
+    if(mpOverlayWidget)
+        return;
 
     mpOverlayWidget = new VBoxGLWidget (mView, mView->viewport(), &mSettings);
 
@@ -4642,7 +4642,7 @@ void VBoxQGLOverlay::vboxDoVHWACmdExec(void *cmd)
             pCmd->rc = mpOverlayWidget->vhwaQueryInfo2(pBody);
         } break;
         case VBOXVHWACMD_TYPE_ENABLE:
-			initGl();
+            initGl();
         case VBOXVHWACMD_TYPE_DISABLE:
             pCmd->rc = VINF_SUCCESS;
             break;

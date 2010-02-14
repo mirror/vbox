@@ -887,7 +887,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer> (this, &mainWnd->session()) :
 #endif
-            	    new VBoxQuartz2DFrameBuffer (this);
+                    new VBoxQuartz2DFrameBuffer (this);
             break;
 #endif
         default:
@@ -3496,12 +3496,12 @@ void VBoxConsoleView::captureKbd (bool aCapture, bool aEmitSignal /* = true */)
 #if defined (Q_WS_WIN32)
     /**/
 #elif defined (Q_WS_X11)
-	if (aCapture)
-		XGrabKey (QX11Info::display(), AnyKey, AnyModifier,
+    if (aCapture)
+        XGrabKey (QX11Info::display(), AnyKey, AnyModifier,
                   window()->winId(), False,
                   GrabModeAsync, GrabModeAsync);
-	else
-		XUngrabKey (QX11Info::display(),  AnyKey, AnyModifier,
+    else
+        XUngrabKey (QX11Info::display(),  AnyKey, AnyModifier,
                     window()->winId());
 #elif defined (Q_WS_MAC)
     if (aCapture)

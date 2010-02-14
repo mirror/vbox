@@ -657,7 +657,7 @@ bool VBoxEmptyFileSelector::isChooserVisible() const
 
 void VBoxEmptyFileSelector::setPath (const QString& aPath)
 {
-	QString tmpPath = QDir::toNativeSeparators (aPath);
+    QString tmpPath = QDir::toNativeSeparators (aPath);
     if (mLabel)
         mLabel->setText (QString ("<compact elipsis=\"start\">%1</compact>").arg (tmpPath));
     else if (mLineEdit)

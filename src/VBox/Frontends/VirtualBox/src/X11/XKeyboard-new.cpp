@@ -204,7 +204,8 @@ void doXKeyboardLogging(Display *dpy)
         dumpLayout(dpy);
     if ((1 == gfByLayoutOK) && (gfByTypeOK != 1))
         dumpType(dpy);
-    if ((gfByLayoutOK != 1) && (gfByTypeOK != 1)) {
+    if ((gfByLayoutOK != 1) && (gfByTypeOK != 1))
+    {
         LogRel(("Failed to recognize the keyboard mapping or to guess it based on\n"
                 "the keyboard layout.  It is very likely that some keys will not\n"
                 "work correctly in the guest.  If you would like to help us improve\n"
@@ -212,12 +213,12 @@ void doXKeyboardLogging(Display *dpy)
                 "about your keyboard type, its layout and other relevant\n"
                 "information such as whether you are using a remote X server or\n"
                 "something similar. \n"));
-	unsigned *keyc2scan=X11DRV_getKeyc2scan();
+        unsigned *keyc2scan = X11DRV_getKeyc2scan();
 
-	LogRel(("The keycode-to-scancode table is: %d=%d",0,keyc2scan[0]));
-	for(int i=1; i<256; i++)
-	    LogRel((",%d=%d",i,keyc2scan[i]));
-	LogRel(("\n"));
+        LogRel(("The keycode-to-scancode table is: %d=%d",0,keyc2scan[0]));
+        for (int i = 1; i < 256; i++)
+            LogRel((",%d=%d",i,keyc2scan[i]));
+        LogRel(("\n"));
     }
 }
 
@@ -255,22 +256,25 @@ void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes)
     int (*scancodes)[2] = NULL;
     int (*scancodesTail)[2] = NULL;
 
-    if(remapScancodes != QString::null) {
-	QStringList tuples = remapScancodes.split(",", QString::SkipEmptyParts);
-	scancodes = scancodesTail = new int [tuples.size()+1][2];
-	for (int i = 0; i < tuples.size(); ++i) {
-	    QStringList keyc2scan = tuples.at(i).split("=");
-	    (*scancodesTail)[0] = keyc2scan.at(0).toUInt();
-	    (*scancodesTail)[1] = keyc2scan.at(1).toUInt();
-	    /* Do not advance on (ignore) identity mappings as this is
-	       the stop signal to initXKeyboard and friends */
-	    if((*scancodesTail)[0] != (*scancodesTail)[1])
-		scancodesTail++;
-	}
-	(*scancodesTail)[0] = (*scancodesTail)[1] = 0;
+    if (remapScancodes != QString::null)
+    {
+        QStringList tuples = remapScancodes.split(",", QString::SkipEmptyParts);
+        scancodes = scancodesTail = new int [tuples.size()+1][2];
+        for (int i = 0; i < tuples.size(); ++i)
+        {
+            QStringList keyc2scan = tuples.at(i).split("=");
+            (*scancodesTail)[0] = keyc2scan.at(0).toUInt();
+            (*scancodesTail)[1] = keyc2scan.at(1).toUInt();
+            /* Do not advance on (ignore) identity mappings as this is
+               the stop signal to initXKeyboard and friends */
+            if ((*scancodesTail)[0] != (*scancodesTail)[1])
+                scancodesTail++;
+        }
+        (*scancodesTail)[0] = (*scancodesTail)[1] = 0;
     }
     /* initialize the X keyboard subsystem */
     initXKeyboard (pDisplay ,scancodes);
 
-    if(scancodes) delete scancodes;
+    if (scancodes)
+        delete scancodes;
 }

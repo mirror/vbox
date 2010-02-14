@@ -1407,7 +1407,7 @@ public:
 
     bool performDisplayAndSwap(bool bForce)
     {
-    	bForce = mDisplay.performDisplay(bForce | mRepaintNeeded);
+        bForce = mDisplay.performDisplay(bForce | mRepaintNeeded);
         if(bForce)
         {
             swapBuffers();
