@@ -148,24 +148,24 @@ static DECLCALLBACK(int) pcarchIOPortFPUWrite(PPDMDEVINS pDevIns, void *pvUser, 
 0092  RW  PS/2 system control port A  (port B is at PORT 0061h) (see #P0415)
 
 Bitfields for PS/2 system control port A:
-Bit(s)	Description	(Table P0415)
- 7-6	any bit set to 1 turns activity light on
- 5	unused
- 4	watchdog timout occurred
- 3	=0 RTC/CMOS security lock (on password area) unlocked
-	=1 CMOS locked (done by POST)
- 2	unused
- 1	A20 is active
- 0	=0 system reset or write
-	=1 pulse alternate reset pin (high-speed alternate CPU reset)
-Notes:	once set, bit 3 may only be cleared by a power-on reset
-	on at least the C&T 82C235, bit 0 remains set through a CPU reset to
-	  allow the BIOS to determine the reset method
-	on the PS/2 30-286 & "Tortuga" the INT 15h/87h memory copy does
-	  not use this port for A20 control, but instead uses the keyboard
-	  controller (8042). Reportedly this may cause the system to crash
-	  when access to the 8042 is disabled in password server mode
-	  (see #P0398).
+Bit(s)  Description     (Table P0415)
+ 7-6    any bit set to 1 turns activity light on
+ 5      unused
+ 4      watchdog timout occurred
+ 3      =0 RTC/CMOS security lock (on password area) unlocked
+        =1 CMOS locked (done by POST)
+ 2      unused
+ 1      A20 is active
+ 0      =0 system reset or write
+        =1 pulse alternate reset pin (high-speed alternate CPU reset)
+Notes:  once set, bit 3 may only be cleared by a power-on reset
+        on at least the C&T 82C235, bit 0 remains set through a CPU reset to
+          allow the BIOS to determine the reset method
+        on the PS/2 30-286 & "Tortuga" the INT 15h/87h memory copy does
+          not use this port for A20 control, but instead uses the keyboard
+          controller (8042). Reportedly this may cause the system to crash
+          when access to the 8042 is disabled in password server mode
+          (see #P0398).
 SeeAlso: #P0416,#P0417,MSR 00001000h
  * @endverbatim
  */
