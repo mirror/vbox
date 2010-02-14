@@ -2031,8 +2031,8 @@ static int scmSettingsAddPair(PSCMSETTINGS pSettings, const char *pchLine, size_
     const char *pchOptions = (const char *)memchr(pchLine, ':', cchLine);
     if (!pchOptions)
         return VERR_INVALID_PARAMETER;
-    size_t cchPattern = pchOptions - pchLine - 1;
-    size_t cchOptions = cchLine - cchPattern - 1 - 1;
+    size_t cchPattern = pchOptions - pchLine;
+    size_t cchOptions = cchLine - cchPattern - 1;
     pchOptions++;
 
     /* strip spaces everywhere */
