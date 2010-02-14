@@ -455,7 +455,7 @@ X11DRV_InitKeyboardByType(Display *display)
             found = 1;
     }
     if (found != 0)
-	memcpy(keyc2scan, main_keyboard_type_scans[i - 1], KEYC2SCAN_SIZE);
+    memcpy(keyc2scan, main_keyboard_type_scans[i - 1], KEYC2SCAN_SIZE);
     return found;
 }
 
@@ -498,9 +498,9 @@ unsigned X11DRV_InitKeyboard(Display *display, unsigned *byLayoutOK, unsigned *b
 
     /* Remap keycodes after initialization. Remapping stops after an
        identity mapping is seen */
-    if(remapScancodes != NULL)
-	for(; (*remapScancodes)[0] != (*remapScancodes)[1]; remapScancodes++)
-	    keyc2scan[(*remapScancodes)[0]] = (*remapScancodes)[1];
+    if (remapScancodes != NULL)
+        for (; (*remapScancodes)[0] != (*remapScancodes)[1]; remapScancodes++)
+            keyc2scan[(*remapScancodes)[0]] = (*remapScancodes)[1];
 
     return (byLayout || byType) ? 1 : 0;
 }

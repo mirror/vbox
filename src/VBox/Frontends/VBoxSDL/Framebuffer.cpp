@@ -596,8 +596,8 @@ STDMETHODIMP VBoxSDLFB::GetVisibleRegion(BYTE *aRectangles, ULONG aCount,
 
     /// @todo
 
-	NOREF(aCount);
-	NOREF(aCountCopied);
+    NOREF(aCount);
+    NOREF(aCountCopied);
 
     return S_OK;
 }
@@ -611,7 +611,7 @@ STDMETHODIMP VBoxSDLFB::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 
     /// @todo
 
-	NOREF(aCount);
+    NOREF(aCount);
 
     return S_OK;
 }

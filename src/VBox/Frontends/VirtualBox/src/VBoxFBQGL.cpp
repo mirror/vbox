@@ -93,8 +93,8 @@ STDMETHODIMP VBoxQGLFrameBuffer::RequestResize (ULONG aScreenId, ULONG aPixelFor
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished)
 {
-	aWidth = VBOXQGL_PROF_WIDTH;
-	aHeight = VBOXQGL_PROF_HEIGHT;
+    aWidth = VBOXQGL_PROF_WIDTH;
+    aHeight = VBOXQGL_PROF_HEIGHT;
     VBoxFrameBuffer::RequestResize (aScreenId, aPixelFormat,
             aVRAM, aBitsPerPixel, aBytesPerLine,
             aWidth, aHeight,
