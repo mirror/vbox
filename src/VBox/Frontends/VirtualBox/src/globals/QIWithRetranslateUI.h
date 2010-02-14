@@ -48,7 +48,7 @@ protected:
                 aEvent->accept();
                 break;
             }
-            default: 
+            default:
                 break;
         }
     }
@@ -62,7 +62,7 @@ class QIWithRetranslateUI2: public Base
 public:
 
     QIWithRetranslateUI2 (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0) : Base (aParent, aFlags) {}
-    
+
 protected:
 
     virtual void changeEvent (QEvent *aEvent)
@@ -76,7 +76,7 @@ protected:
                 aEvent->accept();
                 break;
             }
-            default: 
+            default:
                 break;
         }
     }

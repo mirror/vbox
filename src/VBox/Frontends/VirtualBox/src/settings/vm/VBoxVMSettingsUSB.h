@@ -43,7 +43,7 @@ public:
         MachineType = 2
     };
 
-    enum RemoteMode 
+    enum RemoteMode
     {
         ModeAny = 0,
         ModeOn,

@@ -294,7 +294,7 @@ static uint32_t     g_fOldHIDModifierMask;
 *******************************************************************************/
 #ifdef USE_HID_FOR_MODIFIERS
 static void darwinBruteForcePropertySearch(CFDictionaryRef DictRef, struct KeyboardCacheData *pKeyboardEntry);
-#endif 
+#endif
 
 
 /**

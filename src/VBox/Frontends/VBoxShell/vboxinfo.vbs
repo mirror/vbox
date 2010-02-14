@@ -16,11 +16,11 @@
 
 Sub Print(str)
    Wscript.Echo str
-End Sub 
+End Sub
 
 Sub StartVm(vb, mach)
   Dim session, progress
- 
+
   Set session = CreateObject("VirtualBox.Session")
   Set progress = vb.openRemoteSession(session, mach.id, "gui", "")
   progress.waitForCompletion(-1)
@@ -30,7 +30,7 @@ End Sub
 
 Sub StopVm(vb, mach)
   Dim session, progress
- 
+
   Set session = CreateObject("VirtualBox.Session")
   vb.openExistingSession session, mach.id
   session.console.powerDown().waitForCompletion(-1)
@@ -40,20 +40,20 @@ End Sub
 
 Sub Main
    Dim vb, mach
-  
+
    set vb = CreateObject("VirtualBox.VirtualBox")
    Print "VirtualBox version " & vb.version
 
-   ' Safe arrays not fully functional from Visual Basic Script, as we 
+   ' Safe arrays not fully functional from Visual Basic Script, as we
    ' return real safe arrays, not ones wrapped to VARIANT and VBS engine
    ' gets confused. Until then, explicitly find VM by name.
-   ' May wish to use hack like one described in 
+   ' May wish to use hack like one described in
    ' http://www.tech-archive.net/Archive/Excel/microsoft.public.excel.programming/2006-05/msg02796.html to handle safearrays
    ' if desperate
 
    Set mach = vb.findMachine("Win")
    Print "Machine: " & mach.name  & " ID: " & mach.id
-   
+
    StartVm vb, mach
 End Sub
 

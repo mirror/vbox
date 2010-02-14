@@ -68,14 +68,14 @@ void QIListView::focusChanged (QWidget * /* aOld */, QWidget *aNow)
 
 /* VBoxVMItemPainter class */
 
-void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption, 
+void QIItemDelegate::drawBackground (QPainter *aPainter, const QStyleOptionViewItem &aOption,
                                         const QModelIndex &aIndex) const
-{   
+{
 #if MAC_LEOPARD_STYLE
     NOREF (aIndex);
     /* Macify for Leopard */
     if (aOption.state & QStyle::State_Selected)
-    {   
+    {
         /* Standard color for selected items and focus on the widget */
         QColor topLineColor (69, 128, 200);
         QColor topGradColor (92, 147, 214);

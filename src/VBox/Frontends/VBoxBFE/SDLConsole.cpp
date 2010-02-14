@@ -1631,4 +1631,3 @@ int SDLConsole::handleHostKey(const SDL_KeyboardEvent *pEv)
     return VINF_SUCCESS;
 }
 
-

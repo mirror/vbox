@@ -77,7 +77,7 @@ class HGCMObject
             int32_t refCnt = ASMAtomicDecS32 (&cRef);
 
             Log(("Dereference: refCnt = %d\n", refCnt));
-            
+
             AssertRelease(refCnt >= 0);
 
             if (refCnt)

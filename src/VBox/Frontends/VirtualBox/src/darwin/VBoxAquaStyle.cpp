@@ -51,7 +51,7 @@ VBoxAquaStyle::VBoxAquaStyle(QStyle &parent)
 }
 
 /**
- * The main purpose here is to make sure the global 
+ * The main purpose here is to make sure the global
  * instance doesn't die on us.
  */
 VBoxAquaStyle::~VBoxAquaStyle()
@@ -154,7 +154,7 @@ void VBoxAquaStyle::drawItem( QPainter *p, const QRect &r, int flags, const QCol
     mparent->drawItem( p, r, flags, g, enabled, pixmap, text, len, penColor );
 }
 
-void VBoxAquaStyle::drawPrimitive( PrimitiveElement pe, QPainter *p, const QRect &r, const QColorGroup &cg, 
+void VBoxAquaStyle::drawPrimitive( PrimitiveElement pe, QPainter *p, const QRect &r, const QColorGroup &cg,
                                    SFlags flags/* = Style_Default*/, const QStyleOption &foo/* = QStyleOption::Default*/ ) const
 {
     //fprintf(stderr, "drawPrimitive %x\n", pe);
@@ -194,7 +194,7 @@ QSize VBoxAquaStyle::sizeFromContents( ContentsType contents, const QWidget *wid
     return mparent->sizeFromContents( contents, widget, contentsSize, foo );
 }
 
-int VBoxAquaStyle::styleHint( StyleHint stylehint, const QWidget *widget/* = 0*/, 
+int VBoxAquaStyle::styleHint( StyleHint stylehint, const QWidget *widget/* = 0*/,
                               const QStyleOption &foo/* = QStyleOption::Default*/,
                               QStyleHintReturn* returnData/* = 0*/) const
 {
@@ -228,5 +228,4 @@ QStyle::SubControl VBoxAquaStyle::querySubControl( ComplexControl control, const
     //fprintf(stderr, "querySubControl %p %x\n", widget, control);
     return mparent->querySubControl( control, widget, pos, foo );
 }
-
 
