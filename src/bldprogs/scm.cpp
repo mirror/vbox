@@ -207,16 +207,19 @@ typedef struct SCMSETTINGSBASE
     bool            fForceTrailingLine;
     bool            fStripTrailingBlanks;
     bool            fStripTrailingLines;
+    /** Only recurse into directories containing an .svn dir.  */
+    bool            fOnlySvnDirs;
+    /**  */
     unsigned        cchTab;
-   /** Only consider files matcihng these patterns.  This is only applied to the
-    *  base names. */
+    /** Only consider files matcihng these patterns.  This is only applied to the
+     *  base names. */
     char           *pszFilterFiles;
-   /** Filter out files matching the following patterns.  This is applied to base
-    *  names as well as the aboslute paths.  */
+    /** Filter out files matching the following patterns.  This is applied to base
+     *  names as well as the aboslute paths.  */
     char           *pszFilterOutFiles;
-   /** Filter out directories matching the following patterns.  This is applied
-    *  to base names as well as the aboslute paths.  All absolute paths ends with a
-    *  slash and dot ("/.").  */
+    /** Filter out directories matching the following patterns.  This is applied
+     *  to base names as well as the aboslute paths.  All absolute paths ends with a
+     *  slash and dot ("/.").  */
     char           *pszFilterOutDirs;
 } SCMSETTINGSBASE;
 /** Pointer to massager settings. */
@@ -244,6 +247,8 @@ typedef enum SCMOPT
     SCMOPT_NO_STRIP_TRAILING_BLANKS,
     SCMOPT_STRIP_TRAILING_LINES,
     SCMOPT_NO_STRIP_TRAILING_LINES,
+    SCMOPT_ONLY_SVN_DIRS,
+    SCMOPT_NOT_ONLY_SVN_DIRS,
     SCMOPT_TAB_SIZE,
     SCMOPT_FILTER_OUT_DIRS,
     SCMOPT_FILTER_FILES,
@@ -348,6 +353,7 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fForceTrailingLine = */     false,
     /* .fStripTrailingBlanks = */   true,
     /* .fStripTrailingLines = */    true,
+    /* .fOnlySvnDirs = */           false,
     /* .cchTab = */                 8,
     /* .pszFilterFiles = */         (char *)"",
     /* .pszFilterOutFiles = */      (char *)"*.exe|*.com|20*-*-*.log",
@@ -369,6 +375,8 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--no-strip-trailing-blanks",         SCMOPT_NO_STRIP_TRAILING_BLANKS,        RTGETOPT_REQ_NOTHING },
     { "--strip-trailing-lines",             SCMOPT_STRIP_TRAILING_LINES,            RTGETOPT_REQ_NOTHING },
     { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
+    { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
+    { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
     { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
@@ -1828,6 +1836,13 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->fStripTrailingLines = false;
             return VINF_SUCCESS;
 
+        case SCMOPT_ONLY_SVN_DIRS:
+            pSettings->fOnlySvnDirs = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NOT_ONLY_SVN_DIRS:
+            pSettings->fOnlySvnDirs = false;
+            return VINF_SUCCESS;
+
         case SCMOPT_TAB_SIZE:
             if (   pValueUnion->u8 < 1
                 || pValueUnion->u8 >= RT_ELEMENTS(g_szTabSpaces))
@@ -2929,6 +2944,7 @@ static RTDIRENTRYTYPE scmFigureUnknownType(const char *pszPath)
 static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY pEntry,
                                       PSCMSETTINGS pSettingsStack, unsigned iRecursion)
 {
+    int rc;
     Assert(cchDir > 1 && pszBuf[cchDir - 1] == '.');
 
     /*
@@ -2941,10 +2957,29 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
     }
 
     /*
+     * Check if it's excluded by --only-svn-dir.
+     */
+    if (pSettingsStack->Base.fOnlySvnDirs)
+    {
+        rc = RTPathAppend(pszBuf, RTPATH_MAX, ".svn");
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("RTPathAppend: %Rrc\n", rc);
+            return rc;
+        }
+        if (!RTDirExists(pszBuf))
+            return VINF_SUCCESS;
+
+        Assert(RTPATH_IS_SLASH(pszBuf[cchDir]));
+        pszBuf[cchDir]     = '\0';
+        pszBuf[cchDir - 1] = '.';
+    }
+
+    /*
      * Try open and read the directory.
      */
     PRTDIR pDir;
-    int rc = RTDirOpenFiltered(&pDir, pszBuf, RTDIRFILTER_NONE);
+    rc = RTDirOpenFiltered(&pDir, pszBuf, RTDIRFILTER_NONE);
     if (RT_FAILURE(rc))
     {
         RTMsgError("Failed to enumerate directory '%s': %Rrc", pszBuf, rc);
@@ -3145,7 +3180,6 @@ int main(int argc, char **argv)
             case 'd':
                 g_fDryRun = true;
                 break;
-
             case 'D':
                 g_fDryRun = false;
                 break;
@@ -3155,7 +3189,7 @@ int main(int argc, char **argv)
                 break;
 
             case 'h':
-                RTPrintf("Source Code Massager\n"
+                RTPrintf("VirtualBox Source Code Massager\n"
                          "\n"
                          "Usage: %s [options] <files & dirs>\n"
                          "\n"
@@ -3165,7 +3199,10 @@ int main(int argc, char **argv)
                     bool fAdvanceTwo = false;
                     if ((s_aOpts[i].fFlags & RTGETOPT_REQ_MASK) == RTGETOPT_REQ_NOTHING)
                     {
-                        if ((fAdvanceTwo = i + 1 < RT_ELEMENTS(s_aOpts) && strstr(s_aOpts[i+1].pszLong, "-no-") != NULL))
+                        fAdvanceTwo = i + 1 < RT_ELEMENTS(s_aOpts)
+                                   && (   strstr(s_aOpts[i+1].pszLong, "-no-") != NULL
+                                       || strstr(s_aOpts[i+1].pszLong, "-not-") != NULL);
+                        if (fAdvanceTwo)
                             RTPrintf("  %s, %s\n", s_aOpts[i].pszLong, s_aOpts[i + 1].pszLong);
                         else
                             RTPrintf("  %s\n", s_aOpts[i].pszLong);
@@ -3182,6 +3219,7 @@ int main(int argc, char **argv)
                         case SCMOPT_FORCE_TRAILING_LINE:    RTPrintf("      Default: %RTbool\n", g_Defaults.fForceTrailingLine); break;
                         case SCMOPT_STRIP_TRAILING_BLANKS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingBlanks); break;
                         case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
+                        case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
                         case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
                         case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
                         case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
