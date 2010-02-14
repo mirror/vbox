@@ -2187,8 +2187,8 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PADAPT *ppAdapt, PNDIS_STRING pO
         RtlFreeAnsiString(&AnsiString);
         if(RT_FAILURE(rc))
         {
-        	Assert(0);
-      		Status = Context.Status != NDIS_STATUS_SUCCESS ? Context.Status : NDIS_STATUS_FAILURE;
+            Assert(0);
+            Status = Context.Status != NDIS_STATUS_SUCCESS ? Context.Status : NDIS_STATUS_FAILURE;
             break;
         }
 
@@ -2205,7 +2205,7 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinPtInitBind(PADAPT *ppAdapt, PNDIS_STRING pO
             if(RT_FAILURE(rc))
             {
                 Assert(0);
-          		Status = Context.Status != NDIS_STATUS_SUCCESS ? Context.Status : NDIS_STATUS_FAILURE;
+                Status = Context.Status != NDIS_STATUS_SUCCESS ? Context.Status : NDIS_STATUS_FAILURE;
                 /* release netflt */
                 vboxNetFltRelease(pInstance, false);
 
@@ -3544,25 +3544,25 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
      * this might include all packets queued for processing */
     for(;;)
     {
-    	if(fActive)
-    	{
-    		if(!pThis->u.s.cModePassThruRefs)
-    		{
-    			break;
-    		}
-    	}
-    	else
-    	{
-    		if(!pThis->u.s.cModeNetFltRefs)
-    		{
-    			break;
-    		}
-    	}
-		vboxNetFltWinSleep(2);
+        if(fActive)
+        {
+            if(!pThis->u.s.cModePassThruRefs)
+            {
+                break;
+            }
+        }
+        else
+        {
+            if(!pThis->u.s.cModeNetFltRefs)
+            {
+                break;
+            }
+        }
+        vboxNetFltWinSleep(2);
     }
 
     if(!vboxNetFltWinReferenceAdapt(pAdapt))
-    	return;
+        return;
 #ifndef VBOXNETADP
 
     /* the packets put to ReceiveQueue Array are currently not holding the references,

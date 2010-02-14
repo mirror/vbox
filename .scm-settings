@@ -50,6 +50,8 @@
 --filter-out-dirs  "*/src/VBox/Additions/solaris/DRM/include/."
 --filter-out-dirs  "*/src/VBox/Additions/solaris/SharedFolders/solaris10/sys/."
 --filter-out-dirs  "*/src/VBox/HostServices/SharedOpenGL/."
+--filter-out-dirs  "*/src/VBox/HostDrivers/VBoxNetFlt/solaris/include/."
+--filter-out-dirs  "*/src/VBox/HostDrivers/VBoxUSB/solaris/include/."
 --filter-out-dirs  "*/src/VBox/GuestHost/OpenGL/*/."
 --filter-out-dirs  "*/src/VBox/Devices/PC/Etherboot-src/*/."
 --filter-out-dirs  "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/Include/*/."
@@ -70,6 +72,7 @@
 --filter-out-files "*/include/VBox/HostServices/wglext.h"
 --filter-out-files "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/fsw_strfunc.h"
 --filter-out-files "*/src/VBox/Devices/Audio/sys-queue.h"
+--filter-out-files "*/src/VBox/HostDrivers/VBoxUSB/os2/usbcalls.h"
 
 
 #
@@ -99,6 +102,7 @@ vboxvideo_drm.c: --no-convert-tabs
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxMouse/."
 --filter-out-dirs  "*/src/VBox/Devices/PC/PXE/."
 */src/VBox/Additions/solaris/Installer/postinstall.sh: --no-convert-tabs
+*/src/VBox/HostDrivers/Support/solaris/mod.sh: --no-convert-tabs
 
 # --no-convert-tabs
 

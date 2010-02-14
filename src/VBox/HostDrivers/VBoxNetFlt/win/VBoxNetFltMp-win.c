@@ -817,13 +817,13 @@ vboxNetFltWinMpSendPackets(
         uint32_t cPassThruRefs;
         if(bNetFltActive)
         {
-        	cNetFltRefs = cNumberOfPackets;
-        	cPassThruRefs = 0;
+            cNetFltRefs = cNumberOfPackets;
+            cPassThruRefs = 0;
         }
         else
         {
-        	cPassThruRefs = cNumberOfPackets;
-        	cNetFltRefs = 0;
+            cPassThruRefs = cNumberOfPackets;
+            cNetFltRefs = 0;
         }
 
         for (i = 0; i < cNumberOfPackets; i++)
@@ -1060,7 +1060,7 @@ vboxNetFltWinMpQueryInformation(
             }
             else if(fAdaptActive)
             {
-            	pAdapt->fProcessingPacketFilter = VBOXNETFLT_PFP_PASSTHRU;
+                pAdapt->fProcessingPacketFilter = VBOXNETFLT_PFP_PASSTHRU;
                 /* we're cleaning it in RequestComplete */
             }
         }
@@ -1385,7 +1385,7 @@ vboxNetFltWinMpSetInformation(
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
             /* need to disable cleaning promiscuous here ?? */
-        	bool fNetFltActive;
+            bool fNetFltActive;
             const bool fAdaptActive = vboxNetFltWinReferenceAdaptNetFlt(pNetFlt, pAdapt, &fNetFltActive);
 
             Assert(InformationBuffer);

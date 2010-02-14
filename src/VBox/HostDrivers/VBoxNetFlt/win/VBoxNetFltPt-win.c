@@ -581,15 +581,15 @@ vboxNetFltWinPtRequestComplete(
         }
         if(Oid == OID_GEN_CURRENT_PACKET_FILTER && VBOXNETFLT_PROMISCUOUS_SUPPORTED(pAdapt))
         {
-        	/* we're here _ONLY_ in the passthru mode */
-        	Assert(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU);
-        	if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU)
-        	{
-				PVBOXNETFLTINS pNetFltIf = PADAPT_2_PVBOXNETFLTINS(pAdapt);
-				Assert(!pNetFltIf->fActive);
-				vboxNetFltWinDereferenceModePassThru(pNetFltIf);
-				vboxNetFltWinDereferenceAdapt(pAdapt);
-        	}
+            /* we're here _ONLY_ in the passthru mode */
+            Assert(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU);
+            if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU)
+            {
+                PVBOXNETFLTINS pNetFltIf = PADAPT_2_PVBOXNETFLTINS(pAdapt);
+                Assert(!pNetFltIf->fActive);
+                vboxNetFltWinDereferenceModePassThru(pNetFltIf);
+                vboxNetFltWinDereferenceAdapt(pAdapt);
+            }
 
             if(Status == NDIS_STATUS_SUCCESS)
             {
@@ -616,7 +616,7 @@ vboxNetFltWinPtRequestComplete(
               Assert(Status == NDIS_STATUS_SUCCESS);
               if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_NETFLT)
               {
-            	  Assert(pNetFltIf->fActive);
+                  Assert(pNetFltIf->fActive);
                   if(Status == NDIS_STATUS_SUCCESS)
                   {
                       pAdapt->fOurSetFilter = *((PULONG)pAdapt->Request.DATA.SET_INFORMATION.InformationBuffer);
@@ -628,7 +628,7 @@ vboxNetFltWinPtRequestComplete(
               }
               else if(pAdapt->fProcessingPacketFilter == VBOXNETFLT_PFP_PASSTHRU)
               {
-            	  Assert(!pNetFltIf->fActive);
+                  Assert(!pNetFltIf->fActive);
 
                   if(Status == NDIS_STATUS_SUCCESS)
                   {
