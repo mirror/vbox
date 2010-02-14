@@ -67,8 +67,17 @@
 --filter-out-files "*/src/VBox/Devices/EFI/Firmware2/VBoxPkg/VBoxFsDxe/fsw_strfunc.h"
 
 
-# temporary
+#
+# Other options.
+#
+*/src/Devices/slirp/*: --no-convert-tabs
+
+
+#
+# Temporary exclusions, awaiting cleanup.
+#
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxGradd/."
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxGrext/."
 --filter-out-dirs  "*/src/VBox/Additions/os2/VBoxMouse/."
+--filter-out-dirs  "*/src/VBox/Devices/PC/PXE/."
 
