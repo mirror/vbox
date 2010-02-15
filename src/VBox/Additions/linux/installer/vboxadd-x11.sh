@@ -457,7 +457,7 @@ EOF
             # need a configuration file for VBoxVideo.
             main_cfg="/etc/X11/xorg.conf"
             nobak="/etc/X11/xorg.vbox.nobak"
-            if test -z "$configured" -a ! -r "$nobak"; then
+            if test -z "$configured"; then
                 touch "$main_cfg"
                 "$lib_dir/x11config-new.pl" $newmouse $automouse $nopsaux --noBak "$main_cfg"
                 touch "$nobak"
