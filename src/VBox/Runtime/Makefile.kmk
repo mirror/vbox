@@ -272,6 +272,8 @@ RuntimeR3_SOURCES       = \
 	common/path/RTPathAbsEx.cpp \
 	common/path/RTPathAbsExDup.cpp \
 	common/path/RTPathAppend.cpp \
+	common/path/RTPathChangeToDosSlashes.cpp \
+	common/path/RTPathChangeToUnixSlashes.cpp \
 	common/path/RTPathCopyComponents.cpp \
 	common/path/RTPathCountComponents.cpp \
 	common/path/RTPathExt.cpp \
