@@ -420,6 +420,12 @@ protected:
     BSTR    m_bstr;                     /**< The string buffer. */
 };
 
+/* symmetric compare operators */
+inline bool operator==(CBSTR l, const Bstr &r) { return r.operator==(l); }
+inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!=(l); }
+inline bool operator==(BSTR l, const Bstr &r) { return r.operator==(l); }
+inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
