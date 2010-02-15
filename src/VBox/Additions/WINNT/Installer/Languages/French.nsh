@@ -9,8 +9,8 @@ LangString VBOX_NT4_NO_SP6 ${LANG_FRENCH}                "Le programme d'install
 
 LangString VBOX_PLATFORM_UNSUPPORTED ${LANG_FRENCH}      "Les Additions invité ne sont pas encore supportés sur cette plateforme!"
 
-LangString VBOX_SUN_FOUND ${LANG_FRENCH}                 "Une ancienne version des Sun Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
-LangString VBOX_SUN_ABORTED ${LANG_FRENCH}               "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Sun Additions!"
+LangString VBOX_SUN_FOUND ${LANG_FRENCH}                 "Une ancienne version des Additions invité Sun est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
+LangString VBOX_SUN_ABORTED ${LANG_FRENCH}               "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Additions Sun!"
 
 LangString VBOX_INNOTEK_FOUND ${LANG_FRENCH}             "Une ancienne version des Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
 LangString VBOX_INNOTEK_ABORTED ${LANG_FRENCH}           "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Additions!"
