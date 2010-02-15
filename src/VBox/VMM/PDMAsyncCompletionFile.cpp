@@ -347,7 +347,7 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
 
-    Assert((uint32_t)cbTransfer == cbTransfer && (uint32_t)cbTransfer >= 0);
+    Assert((uint32_t)cbTransfer == cbTransfer && (int32_t)cbTransfer >= 0);
     ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, (int32_t)cbTransfer);
     ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
 
