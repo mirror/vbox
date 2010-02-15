@@ -523,8 +523,8 @@ static int caInitOutput(HWVoiceOut *hw);
 static void caReinitOutput(HWVoiceOut *hw);
 
 /* Callback for getting notified when the default output device was changed */
-static OSStatus caPlaybackDefaultDeviceChanged(AudioHardwarePropertyID inPropertyID,
-                                               void *inClientData)
+static DECLCALLBACK(OSStatus) caPlaybackDefaultDeviceChanged(AudioHardwarePropertyID inPropertyID,
+                                                             void *inClientData)
 {
     OSStatus err = noErr;
     UInt32 uSize = 0;
@@ -559,11 +559,11 @@ static OSStatus caPlaybackDefaultDeviceChanged(AudioHardwarePropertyID inPropert
 }
 
 /* Callback for getting notified when some of the properties of an audio device has changed */
-static OSStatus caPlaybackAudioDevicePropertyChanged(AudioDeviceID inDevice,
-                                                     UInt32 inChannel,
-                                                     Boolean isInput,
-                                                     AudioDevicePropertyID inPropertyID,
-                                                     void *inClientData)
+static DECLCALLBACK(OSStatus) caPlaybackAudioDevicePropertyChanged(AudioDeviceID inDevice,
+                                                                   UInt32 inChannel,
+                                                                   Boolean isInput,
+                                                                   AudioDevicePropertyID inPropertyID,
+                                                                   void *inClientData)
 {
     switch (inPropertyID)
     {
@@ -581,12 +581,12 @@ static OSStatus caPlaybackAudioDevicePropertyChanged(AudioDeviceID inDevice,
 }
 
 /* Callback to feed audio output buffer */
-static OSStatus caPlaybackCallback(void* inRefCon,
-                                   AudioUnitRenderActionFlags* ioActionFlags,
-                                   const AudioTimeStamp* inTimeStamp,
-                                   UInt32 inBusNumber,
-                                   UInt32 inNumberFrames,
-                                   AudioBufferList* ioData)
+static DECLCALLBACK(OSStatus) caPlaybackCallback(void* inRefCon,
+                                                 AudioUnitRenderActionFlags* ioActionFlags,
+                                                 const AudioTimeStamp* inTimeStamp,
+                                                 UInt32 inBusNumber,
+                                                 UInt32 inNumberFrames,
+                                                 AudioBufferList* ioData)
 {
     uint32_t csAvail = 0;
     uint32_t cbToRead = 0;
@@ -1178,8 +1178,8 @@ static int caInitInput(HWVoiceIn *hw);
 static void caReinitInput(HWVoiceIn *hw);
 
 /* Callback for getting notified when the default input device was changed */
-static OSStatus caRecordingDefaultDeviceChanged(AudioHardwarePropertyID inPropertyID,
-                                                void *inClientData)
+static DECLCALLBACK(OSStatus) caRecordingDefaultDeviceChanged(AudioHardwarePropertyID inPropertyID,
+                                                              void *inClientData)
 {
     OSStatus err = noErr;
     UInt32 uSize = 0;
@@ -1214,11 +1214,11 @@ static OSStatus caRecordingDefaultDeviceChanged(AudioHardwarePropertyID inProper
 }
 
 /* Callback for getting notified when some of the properties of an audio device has changed */
-static OSStatus caRecordingAudioDevicePropertyChanged(AudioDeviceID inDevice,
-                                                      UInt32 inChannel,
-                                                      Boolean isInput,
-                                                      AudioDevicePropertyID inPropertyID,
-                                                      void *inClientData)
+static DECLCALLBACK(OSStatus) caRecordingAudioDevicePropertyChanged(AudioDeviceID inDevice,
+                                                                    UInt32 inChannel,
+                                                                    Boolean isInput,
+                                                                    AudioDevicePropertyID inPropertyID,
+                                                                    void *inClientData)
 {
     caVoiceIn *caVoice = (caVoiceIn *) inClientData;
 
@@ -1247,11 +1247,11 @@ static OSStatus caRecordingAudioDevicePropertyChanged(AudioDeviceID inDevice,
 }
 
 /* Callback to convert audio input data from one format to another */
-static OSStatus caConverterCallback(AudioConverterRef inAudioConverter,
-                                    UInt32 *ioNumberDataPackets,
-                                    AudioBufferList *ioData,
-                                    AudioStreamPacketDescription **outDataPacketDescription,
-                                    void *inUserData)
+static DECLCALLBACK(OSStatus) caConverterCallback(AudioConverterRef inAudioConverter,
+                                                  UInt32 *ioNumberDataPackets,
+                                                  AudioBufferList *ioData,
+                                                  AudioStreamPacketDescription **outDataPacketDescription,
+                                                  void *inUserData)
 {
     /* In principle we had to check here if the source is non interleaved & if
      * so go through all buffers not only the first one like now. */
@@ -1294,12 +1294,12 @@ static OSStatus caConverterCallback(AudioConverterRef inAudioConverter,
 }
 
 /* Callback to feed audio input buffer */
-static OSStatus caRecordingCallback(void* inRefCon,
-                                    AudioUnitRenderActionFlags* ioActionFlags,
-                                    const AudioTimeStamp* inTimeStamp,
-                                    UInt32 inBusNumber,
-                                    UInt32 inNumberFrames,
-                                    AudioBufferList* ioData)
+static DECLCALLBACK(OSStatus) caRecordingCallback(void* inRefCon,
+                                                  AudioUnitRenderActionFlags* ioActionFlags,
+                                                  const AudioTimeStamp* inTimeStamp,
+                                                  UInt32 inBusNumber,
+                                                  UInt32 inNumberFrames,
+                                                  AudioBufferList* ioData)
 {
     OSStatus err = noErr;
     uint32_t csAvail = 0;
