@@ -95,9 +95,9 @@ private:
     void addWarning(const char* aWarning, ...);
 
     void disksWeight(uint32_t &ulTotalMB, uint32_t &cDisks) const;
-    HRESULT setUpProgressFS(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
-    HRESULT setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
-    HRESULT setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription);
+    HRESULT setUpProgressFS(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription);
+    HRESULT setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription);
+    HRESULT setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription);
 
     struct LocationInfo;
     void parseURI(Utf8Str strUri, LocationInfo &locInfo) const;
