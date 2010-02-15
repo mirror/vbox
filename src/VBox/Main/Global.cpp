@@ -155,6 +155,10 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
       VBOXOSTYPE_ECS,             VBOXOSHINT_HWVIRTEX,   96,   4,  2 * _1K, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4 },
     { "OS2",     "IBM OS/2",          SchemaDefs_OSTypeId_OS2,             "Other OS/2",
       VBOXOSTYPE_OS2,             VBOXOSHINT_HWVIRTEX,   96,   4,  2 * _1K, NetworkAdapterType_Am79C973, 1, StorageControllerType_PIIX4 },
+    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS,             "Mac OS X",
+      VBOXOSTYPE_MacOS,           VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE | VBOXOSHINT_USBHID,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0, StorageControllerType_ICH6 },
+    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS_64,          "Mac OS X (64 bit)",
+      VBOXOSTYPE_MacOS_x64,       VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT | VBOXOSHINT_USBHID,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0, StorageControllerType_ICH6 },
     { "Other",   "Other",             SchemaDefs_OSTypeId_DOS,             "DOS",
       VBOXOSTYPE_DOS,             VBOXOSHINT_NONE,  32,   4,      512, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4 },
     { "Other",   "Other",             SchemaDefs_OSTypeId_Netware,         "Netware",
@@ -163,10 +167,6 @@ const Global::OSType Global::sOSTypes[SchemaDefs::OSTypeId_COUNT] =
       VBOXOSTYPE_L4,              VBOXOSHINT_NONE,  64,   4,  2 * _1K, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4 },
     { "Other",   "Other",             SchemaDefs_OSTypeId_QNX,             "QNX",
       VBOXOSTYPE_QNX,             VBOXOSHINT_HWVIRTEX,  512,   4,  4 * _1K, NetworkAdapterType_Am79C973, 0, StorageControllerType_PIIX4 },
-    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS,             "Mac OS X",
-      VBOXOSTYPE_MacOS,           VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE | VBOXOSHINT_USBHID,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0, StorageControllerType_ICH6 },
-    { "MacOS",  "Mac OS X",             SchemaDefs_OSTypeId_MacOS_64,          "Mac OS X (64 bit)",
-      VBOXOSTYPE_MacOS_x64,       VBOXOSHINT_HWVIRTEX | VBOXOSHINT_IOAPIC | VBOXOSHINT_EFI | VBOXOSHINT_PAE |  VBOXOSHINT_64BIT | VBOXOSHINT_USBHID,  1024,   4,  20 * _1K, NetworkAdapterType_I82543GC, 0, StorageControllerType_ICH6 },
 };
 
 /**
