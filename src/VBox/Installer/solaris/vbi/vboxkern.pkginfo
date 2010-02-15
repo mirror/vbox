@@ -11,5 +11,5 @@ EMAIL="info@virtualbox.org"
 HOTLINE="Please contact your local service provider"
 BASEDIR="/"
 CLASSES=none
-DESC="Sun VirtualBox kernel interface module (vbi) for SunOS 32-bit and 64-bit"
+DESC="@VBOX_PRODUCT@ kernel interface module (vbi) for SunOS 32-bit and 64-bit"
 
