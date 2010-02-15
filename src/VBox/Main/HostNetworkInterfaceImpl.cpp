@@ -55,10 +55,10 @@ void HostNetworkInterface::FinalRelease()
  * @param   aInterfaceName name of the network interface
  * @param   aGuid GUID of the host network interface
  */
-HRESULT HostNetworkInterface::init (Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
+HRESULT HostNetworkInterface::init(Bstr aInterfaceName, Guid aGuid, HostNetworkInterfaceType_T ifType)
 {
     LogFlowThisFunc(("aInterfaceName={%ls}, aGuid={%s}\n",
-                      aInterfaceName.raw(), aGuid.toString().raw()));
+                     aInterfaceName.raw(), aGuid.toString().raw()));
 
     ComAssertRet(aInterfaceName, E_INVALIDARG);
     ComAssertRet(!aGuid.isEmpty(), E_INVALIDARG);
@@ -422,9 +422,9 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             if (RT_SUCCESS(rc))
             {
                 m.realIPAddress = 0;
-                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(""))))
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), NULL)))
                     return E_FAIL;
-                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(""))))
+                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), NULL)))
                     return E_FAIL;
                 return S_OK;
             }

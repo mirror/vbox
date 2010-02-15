@@ -227,7 +227,7 @@ public:
         if (!error || !allowChange)
             return E_INVALIDARG;
 
-        if (com::asGuidStr(id).isNull())
+        if (com::asGuidStr(id).isEmpty())
         {
             /* it's a global extra data key someone wants to change */
             QString sKey = QString::fromUtf16 (key);
@@ -309,7 +309,7 @@ public:
     STDMETHOD(OnExtraDataChange) (IN_BSTR id,
                                   IN_BSTR key, IN_BSTR value)
     {
-        if (com::asGuidStr(id).isNull())
+        if (com::asGuidStr(id).isEmpty())
         {
             QString sKey = QString::fromUtf16 (key);
             QString sVal = QString::fromUtf16 (value);
