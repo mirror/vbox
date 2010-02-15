@@ -515,6 +515,8 @@ else
 endif
 	$(call MSG_L1,Installing files $(SOLARIS_VBOXINST_DIR))
 	$(QUIET)$(SED) \
+		-e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
+		-e "s/@VBOX_VENDOR@/$(VBOX_VENDOR)/g" \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
 		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
@@ -576,7 +578,10 @@ endif
 		 $(PATH_BIN)/vboxconfig.sh
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh.tmp                                    $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh
 	$(QUIET)$(RM) -f $(SOLARIS_VBOXINST_DIR)/vboxconfig.sh.tmp
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop         $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop,)
+	$(QUIET)$(SED) \
+		-e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
+		--output $(SOLARIS_USRSHR_APPS_DIR)/virtualbox.desktop \
+		$(VBOX_PATH_SOL_INST_SRC)/virtualbox.desktop
 	$(QUIET)$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN)/VBox.png                                                  $(SOLARIS_USRSHR_PIXMAPS_DIR)/VBox.png
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/postinstall.sh                                     $(SOLARIS_BASEINST_DIR)/postinstall.sh
 	$(QUIET)$(INSTALL) -m 0755 $(VBOX_PATH_SOL_INST_SRC)/checkinstall.sh                                    $(SOLARIS_BASEINST_DIR)/checkinstall.sh
@@ -588,6 +593,8 @@ endif
 	@# Warning!! If we add NON-PYTHON dependencies to vbox.depend, remove the VBOX_WITH_PYTHON setting
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(VBOX_PATH_SOL_INST_SRC)/vbox.depend               $(SOLARIS_BASEINST_DIR)/vbox.depend,)
 	$(QUIET)$(SED) \
+		-e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
+		-e "s/@VBOX_VENDOR@/$(VBOX_VENDOR)/g" \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@BUILD_TARGET_ARCH@/$(KBUILD_TARGET_ARCH)/g" \
 		-e "s/@VBOX_SVN_REV@/$(VBOX_SVN_REV)/g" \
@@ -721,6 +728,7 @@ $(SOLARIS_VBI_DIR)/$(VBIPKG_FILENAME).pkg: \
 	$(QUIET)$(INSTALL) -m 0644 $(PATH_ROOT)/src/VBox/Runtime/r0drv/solaris/vbi/64/vbi                       $(SOLARIS_VBI_DIR)/amd64/vbi
 	$(call MSG_L1,Installing other files $(SOLARIS_VBI_DIR))
 	$(QUIET)$(SED) \
+		-e "s/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g" \
 		-e "s/@VBOX_VERSION_STRING@/$(VBOX_VERSION_STRING)/g" \
 		-e "s/@VBOX_VERSION_REVSTAMP@/$(PKGINFO_REVSTAMP)/g" \
 		-e "s/@UNAME_P@/$(PKGINFO_ARCH)/g" \
