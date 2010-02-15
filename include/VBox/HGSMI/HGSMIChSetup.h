@@ -49,6 +49,10 @@ AssertCompileSize(HGSMIBUFFERLOCATION, 8);
 /* HGSMI setup and configuration data structures. */
 #define HGSMIHOSTFLAGS_COMMANDS_PENDING 0x1
 #define HGSMIHOSTFLAGS_IRQ              0x2
+#ifdef VBOXVDMA
+/* one or more guest commands is completed */
+# define HGSMIHOSTFLAGS_GCOMMAND_COMPLETED 0x4
+#endif
 
 typedef struct _HGSMIHOSTFLAGS
 {

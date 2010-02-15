@@ -116,6 +116,8 @@ typedef PEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 typedef struct _DEVICE_EXTENSION * VBOXCMNREG;
 #else
 #include <VBox/VBoxVideo.h>
+#include "wddm/VBoxVideoShgsmi.h"
+#include "wddm/VBoxVideoVdma.h"
 
 typedef KSPIN_LOCK VBOXVCMNSPIN_LOCK, *PVBOXVCMNSPIN_LOCK;
 typedef KIRQL VBOXVCMNIRQL, *PVBOXVCMNIRQL;
@@ -124,16 +126,14 @@ typedef KEVENT VBOXVCMNEVENT, *PVBOXVCMNEVENT;
 
 typedef HANDLE VBOXCMNREG;
 
-typedef enum
-{
-    VBOXWDDM_CMD_UNEFINED = 0,
-    VBOXWDDM_CMD_DMA_TRANSFER
-} VBOXWDDM_CMD_TYPE;
-
 typedef struct VBOXWDDM_SOURCE
 {
-    HGSMIHEAP hgsmiDisplayHeap;
-//    VBVABUFFER *pVBVA; /* Pointer to the pjScreen + layout->offVBVABuffer. NULL if VBVA is not enabled. */
+    ULONG VisScreenWidth;
+    ULONG VisScreenHeight;
+    ULONG BitsPerPlane;
+
+    ULONG ulFrameBufferOffset;                  /* The framebuffer position in the VRAM. */
+    ULONG ulFrameBufferSize;                    /* The size of the current framebuffer. */
 } VBOXWDDM_SOURCE, *PVBOXWDDM_SOURCE;
 
 typedef enum
@@ -210,7 +210,6 @@ typedef struct VBOXWDDM_DEVICE
     DXGK_CREATEDEVICEFLAGS fCreationFlags; /* device creation flags passed to DxgkDdiCreateDevice, not sure we need it */
     DXGK_DEVICEINFO DeviceInfo;
 } VBOXWDDM_DEVICE, *PVBOXWDDM_DEVICE;
-
 #endif
 
 typedef struct _DEVICE_EXTENSION
@@ -218,11 +217,10 @@ typedef struct _DEVICE_EXTENSION
    struct _DEVICE_EXTENSION *pNext;            /* Next extension in the DualView extension list.
                                                 * The primary extension is the first one.
                                                 */
-
+#ifndef VBOXWDDM
    struct _DEVICE_EXTENSION *pPrimary;         /* Pointer to the primary device extension. */
 
    ULONG iDevice;                              /* Device index: 0 for primary, otherwise a secondary device. */
-
 
    ULONG CurrentMode;                          /* Saved information about video modes */
    ULONG CurrentModeWidth;
@@ -231,7 +229,7 @@ typedef struct _DEVICE_EXTENSION
 
    ULONG ulFrameBufferOffset;                  /* The framebuffer position in the VRAM. */
    ULONG ulFrameBufferSize;                    /* The size of the current framebuffer. */
-
+#endif
    union {
        /* Information that is only relevant to the primary device or is the same for all devices. */
        struct {
@@ -257,6 +255,10 @@ typedef struct _DEVICE_EXTENSION
            PVOID pvMiniportHeap;               /* The pointer to the miniport heap VRAM.
                                                 * This is mapped by miniport separately.
                                                 */
+#ifdef VBOXWDDM
+           VBOXVDMAINFO Vdma;
+#endif
+
 #ifdef VBOX_WITH_HGSMI
            volatile HGSMIHOSTFLAGS * pHostFlags; /* HGSMI host flags */
            volatile bool bHostCmdProcessing;
@@ -314,6 +316,11 @@ typedef struct _DEVICE_EXTENSION
 #ifdef VBOXWDDM
    PDEVICE_OBJECT pPDO;
 
+   VBOXSHGSMILIST CtlList;
+   VBOXSHGSMILIST DmaCmdList;
+   BOOL bSetNotifyDxDpc;
+   BOOL bNotifyDxDpc;
+
    ULONG cSources;
    /* currently we define the array for the max possible size since we do not know
     * the monitor count at the DxgkDdiAddDevice,
@@ -325,6 +332,7 @@ typedef struct _DEVICE_EXTENSION
 #endif
 } DEVICE_EXTENSION, *PDEVICE_EXTENSION;
 
+#ifndef VBOXWDDM
 #define DEV_MOUSE_HIDDEN(dev) ((dev)->pPrimary->u.primary.fMouseHidden)
 #define DEV_SET_MOUSE_HIDDEN(dev)   \
 do { \
@@ -334,7 +342,17 @@ do { \
 do { \
     (dev)->pPrimary->u.primary.fMouseHidden = FALSE; \
 } while (0)
-
+#else
+#define DEV_MOUSE_HIDDEN(dev) ((dev)->u.primary.fMouseHidden)
+#define DEV_SET_MOUSE_HIDDEN(dev)   \
+do { \
+    (dev)->u.primary.fMouseHidden = TRUE; \
+} while (0)
+#define DEV_SET_MOUSE_SHOWN(dev)   \
+do { \
+    (dev)->u.primary.fMouseHidden = FALSE; \
+} while (0)
+#endif
 extern "C"
 {
 #ifndef VBOXWDDM
@@ -625,10 +643,15 @@ RT_C_DECLS_END
 
 VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
         VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
-        D3DKMDT_2DREGION **pResolutions, uint32_t * pcResolutions);
+        D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions);
 
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
+
+DECLINLINE(ULONG) vboxWddmVramReportedSize(PDEVICE_EXTENSION pDevExt)
+{
+    return pDevExt->u.primary.Vdma.CmdHeap.area.offBase;
+}
 
 NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
@@ -763,22 +786,38 @@ void VBoxComputeFrameBufferSizes (PDEVICE_EXTENSION PrimaryExtension);
  */
 DECLINLINE(void) VBoxHGSMIHostWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG data)
 {
+#ifndef VBOXWDDM
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortHost, data);
+#else
+    VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->u.primary.IOPortHost, data);
+#endif
 }
 
 DECLINLINE(ULONG) VBoxHGSMIHostRead(PDEVICE_EXTENSION PrimaryExtension)
 {
+#ifndef VBOXWDDM
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortHost);
+#else
+    return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->u.primary.IOPortHost);
+#endif
 }
 
 DECLINLINE(void) VBoxHGSMIGuestWrite(PDEVICE_EXTENSION PrimaryExtension, ULONG data)
 {
+#ifndef VBOXWDDM
     VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortGuest, data);
+#else
+    VBoxVideoCmnPortWriteUlong((PULONG)PrimaryExtension->u.primary.IOPortGuest, data);
+#endif
 }
 
 DECLINLINE(ULONG) VBoxHGSMIGuestRead(PDEVICE_EXTENSION PrimaryExtension)
 {
+#ifndef VBOXWDDM
     return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->pPrimary->u.primary.IOPortGuest);
+#else
+    return VBoxVideoCmnPortReadUlong((PULONG)PrimaryExtension->u.primary.IOPortGuest);
+#endif
 }
 
 BOOLEAN VBoxHGSMIIsSupported (PDEVICE_EXTENSION PrimaryExtension);
@@ -791,8 +830,10 @@ VOID VBoxSetupDisplaysHGSMI (PDEVICE_EXTENSION PrimaryExtension,
 BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength);
+#ifndef VBOXWDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd);
 DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel, struct _VBVAHOSTCMD ** ppCmd);
+#endif
 
 
 int vboxVBVAChannelDisplayEnable(PDEVICE_EXTENSION PrimaryExtension,

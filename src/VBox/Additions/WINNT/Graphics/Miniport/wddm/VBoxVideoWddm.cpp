@@ -39,6 +39,268 @@ VOID vboxWddmMemFree(PVOID pvMem)
     ExFreePool(pvMem);
 }
 
+void vboxSHGSMICbCommandWrite(struct _HGSMIHEAP * pHeap, HGSMIOFFSET data)
+{
+    /* @todo: this should be taken from PDEVICE_EXTENSION */
+    //VBoxHGSMIGuestWrite(pDevExt, data);
+    VBoxVideoCmnPortWriteUlong((PULONG)VGA_PORT_HGSMI_GUEST, data);
+}
+
+#if 0
+void vboxWddmProcessDisplayInfo (PPDEV ppdev)
+{
+    if (ppdev->bHGSMISupported)
+    {
+        /* Issue the screen info command. */
+        void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
+                                  sizeof (VBVAINFOSCREEN),
+                                  HGSMI_CH_VBVA,
+                                  VBVA_INFO_SCREEN);
+        if (!p)
+        {
+            DISPDBG((0, "VBoxDISP::VBoxProcessDisplayInfo: HGSMIHeapAlloc failed\n"));
+        }
+        else
+        {
+            VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
+
+            pScreen->u32ViewIndex    = ppdev->iDevice;
+            pScreen->i32OriginX      = ppdev->ptlDevOrg.x;
+            pScreen->i32OriginY      = ppdev->ptlDevOrg.y;
+            pScreen->u32StartOffset  = 0;
+            pScreen->u32LineSize     = ppdev->lDeltaScreen > 0?ppdev->lDeltaScreen: -ppdev->lDeltaScreen;
+            pScreen->u32Width        = ppdev->cxScreen;
+            pScreen->u32Height       = ppdev->cyScreen;
+            pScreen->u16BitsPerPixel = (uint16_t)ppdev->ulBitCount;
+            pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
+
+            vboxHGSMIBufferSubmit (ppdev, p);
+
+            HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
+        }
+    }
+
+    return;
+}
+
+NTSTATUS vboxWddmGhInitPrimary(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, D3DKMDT_VIDPN_SOURCE_MODE *pVidPnSourceModeInfo)
+{
+    NTSTATUS Status;
+    PVBOXWDDM_SOURCE pSourceInfo = &pDevExt->aSources[srcId];
+    memset(pSourceInfo, 0, sizeof (VBOXWDDM_SOURCE));
+    pSourceInfo->VisScreenWidth = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx;
+    pSourceInfo->VisScreenHeight = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
+    pSourceInfo->BitsPerPlane = vboxWddmCalcBitsPerPixel(pVidPnSourceModeInfo->Format.Graphics.PixelFormat);
+    Assert(pSourceInfo->BitsPerPlane);
+    if (pSourceInfo->BitsPerPlane)
+    {
+        /*
+         * Set the current mode into the hardware.
+         */
+        if (VBoxVideoSetCurrentMode(pDevExt, srcId, pSourceInfo))
+        {
+
+
+        }
+        else
+        {
+            AssertBreakpoint();
+
+        }
+    }
+    else
+    {
+        drprintf((__FUNCTION__":ERROR: failed to caltulate bpp from pixel format (%d)\n",
+                pVidPnSourceModeInfo->Format.Graphics.PixelFormat));
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    return Status;
+
+
+
+//    DWORD returnedDataLength;
+//    DWORD MaxWidth, MaxHeight;
+//    VIDEO_MEMORY videoMemory;
+//    VIDEO_MEMORY_INFORMATION videoMemoryInformation;
+//    ULONG RemappingNeeded = 0;
+
+
+    /*
+     * don't need to map anything here, we use one common HGSMI heap for all sources
+     */
+
+    // If this is the first time we enable the surface we need to map in the
+    // memory also.
+    //
+
+    if (bFirst || RemappingNeeded)
+    {
+//        videoMemory.RequestedVirtualAddress = NULL;
+//
+//        if (EngDeviceIoControl(ppdev->hDriver,
+//                               IOCTL_VIDEO_MAP_VIDEO_MEMORY,
+//                               &videoMemory,
+//                               sizeof(VIDEO_MEMORY),
+//                               &videoMemoryInformation,
+//                               sizeof(VIDEO_MEMORY_INFORMATION),
+//                               &returnedDataLength))
+//        {
+//            DISPDBG((1, "DISP bInitSURF failed IOCTL_VIDEO_MAP\n"));
+//            return(FALSE);
+//        }
+//
+//        ppdev->pjScreen = (PBYTE)(videoMemoryInformation.FrameBufferBase);
+//
+//        if (videoMemoryInformation.FrameBufferBase !=
+//            videoMemoryInformation.VideoRamBase)
+//        {
+//            DISPDBG((0, "VideoRamBase does not correspond to FrameBufferBase\n"));
+//        }
+//
+//        //
+//        // Make sure we can access this video memory
+//        //
+//
+//        *(PULONG)(ppdev->pjScreen) = 0xaa55aa55;
+//
+//        if (*(PULONG)(ppdev->pjScreen) != 0xaa55aa55) {
+//
+//            DISPDBG((1, "Frame buffer memory is not accessible.\n"));
+//            return(FALSE);
+//        }
+//
+//        /* Clear VRAM to avoid distortions during the video mode change. */
+//        RtlZeroMemory(ppdev->pjScreen,
+//                      ppdev->cyScreen * (ppdev->lDeltaScreen > 0? ppdev->lDeltaScreen: -ppdev->lDeltaScreen));
+//
+//        //
+//        // Initialize the head of the offscreen list to NULL.
+//        //
+//
+//        ppdev->pOffscreenList = NULL;
+//
+//        // It's a hardware pointer; set up pointer attributes.
+//
+//        MaxHeight = ppdev->PointerCapabilities.MaxHeight;
+//
+//        // Allocate space for two DIBs (data/mask) for the pointer. If this
+//        // device supports a color Pointer, we will allocate a larger bitmap.
+//        // If this is a color bitmap we allocate for the largest possible
+//        // bitmap because we have no idea of what the pixel depth might be.
+//
+//        // Width rounded up to nearest byte multiple
+//
+//        if (!(ppdev->PointerCapabilities.Flags & VIDEO_MODE_COLOR_POINTER))
+//        {
+//            MaxWidth = (ppdev->PointerCapabilities.MaxWidth + 7) / 8;
+//        }
+//        else
+//        {
+//            MaxWidth = ppdev->PointerCapabilities.MaxWidth * sizeof(DWORD);
+//        }
+//
+//        ppdev->cjPointerAttributes =
+//                sizeof(VIDEO_POINTER_ATTRIBUTES) +
+//                ((sizeof(UCHAR) * MaxWidth * MaxHeight) * 2);
+//
+//        ppdev->pPointerAttributes = (PVIDEO_POINTER_ATTRIBUTES)
+//                EngAllocMem(0, ppdev->cjPointerAttributes, ALLOC_TAG);
+//
+//        if (ppdev->pPointerAttributes == NULL) {
+//
+//            DISPDBG((0, "bInitPointer EngAllocMem failed\n"));
+//            return(FALSE);
+//        }
+//
+//        ppdev->pPointerAttributes->Flags = ppdev->PointerCapabilities.Flags;
+//        ppdev->pPointerAttributes->WidthInBytes = MaxWidth;
+//        ppdev->pPointerAttributes->Width = ppdev->PointerCapabilities.MaxWidth;
+//        ppdev->pPointerAttributes->Height = MaxHeight;
+//        ppdev->pPointerAttributes->Column = 0;
+//        ppdev->pPointerAttributes->Row = 0;
+//        ppdev->pPointerAttributes->Enable = 0;
+
+        vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
+
+#ifndef VBOX_WITH_HGSMI
+        if (ppdev->bVBoxVideoSupported)
+        {
+            /* Setup the display information. */
+            vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
+        }
+#endif /* !VBOX_WITH_HGSMI */
+    }
+
+
+    DISPDBG((1, "DISP bInitSURF: ppdev->ulBitCount %d\n", ppdev->ulBitCount));
+
+    if (   ppdev->ulBitCount == 16
+        || ppdev->ulBitCount == 24
+        || ppdev->ulBitCount == 32)
+    {
+#ifndef VBOX_WITH_HGSMI
+        if (ppdev->pInfo) /* Do not use VBVA on old hosts. */
+        {
+            /* Enable VBVA for this video mode. */
+            vboxVbvaEnable (ppdev);
+        }
+#else
+        if (ppdev->bHGSMISupported)
+        {
+            /* Enable VBVA for this video mode. */
+            ppdev->bHGSMISupported = vboxVbvaEnable (ppdev);
+            LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
+        }
+#endif /* VBOX_WITH_HGSMI */
+    }
+
+    DISPDBG((1, "DISP bInitSURF success\n"));
+
+#ifndef VBOX_WITH_HGSMI
+    /* Update the display information. */
+    vboxUpdateDisplayInfo (ppdev);
+#else
+    /* Inform the host about this screen layout. */
+    DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
+    VBoxProcessDisplayInfo (ppdev);
+#endif /* VBOX_WITH_HGSMI */
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* tells we can process host commands */
+    vboxVHWAEnable(ppdev);
+#endif
+
+    return(TRUE);
+}
+#endif
+
+HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
+{
+    if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
+        return &pDevExt->u.primary.Vdma.CmdHeap;
+    if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
+        return &pDevExt->u.primary.hgsmiAdapterHeap;
+    return NULL;
+}
+
+typedef enum
+{
+    VBOXWDDM_HGSMICMD_TYPE_UNDEFINED = 0,
+    VBOXWDDM_HGSMICMD_TYPE_CTL       = 1,
+    VBOXWDDM_HGSMICMD_TYPE_DMACMD    = 2
+} VBOXWDDM_HGSMICMD_TYPE;
+
+VBOXWDDM_HGSMICMD_TYPE vboxWddmHgsmiGetCmdTypeFromOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
+{
+    if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
+        return VBOXWDDM_HGSMICMD_TYPE_DMACMD;
+    if (HGSMIAreaContainsOffset(&pDevExt->u.primary.hgsmiAdapterHeap.area, offCmd))
+        return VBOXWDDM_HGSMICMD_TYPE_CTL;
+    return VBOXWDDM_HGSMICMD_TYPE_UNDEFINED;
+}
+
+
 #define VBOXWDDM_REG_DRVKEY_PREFIX L"\\Registry\\Machine\\System\\CurrentControlSet\\Control\\Class\\"
 
 NTSTATUS vboxWddmRegQueryDrvKeyName(PDEVICE_EXTENSION pDevExt, ULONG cbBuf, PWCHAR pBuf, PULONG pcbResult)
@@ -490,14 +752,141 @@ BOOLEAN DxgkDdiInterruptRoutine(
     IN ULONG MessageNumber
     )
 {
-    return false;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
+    BOOLEAN bOur = FALSE;
+    if (pDevExt->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
+    {
+        VBOXSHGSMILIST CtlList;
+        VBOXSHGSMILIST DmaCmdList;
+        vboxSHGSMIListInit(&CtlList);
+        vboxSHGSMIListInit(&DmaCmdList);
+        do
+        {
+            uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+            if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
+            {
+                bOur = TRUE;
+                /* read the command offset */
+                HGSMIOFFSET offCmd = VBoxHGSMIGuestRead(pDevExt);
+                Assert(offCmd != HGSMIOFFSET_VOID);
+                if (offCmd != HGSMIOFFSET_VOID)
+                {
+                    VBOXWDDM_HGSMICMD_TYPE enmType = vboxWddmHgsmiGetCmdTypeFromOffset(pDevExt, offCmd);
+                    PVBOXSHGSMILIST pList;
+                    HGSMIHEAP * pHeap = NULL;
+                    switch (enmType)
+                    {
+                        case VBOXWDDM_HGSMICMD_TYPE_DMACMD:
+                            pList = &DmaCmdList;
+                            pHeap = &pDevExt->u.primary.Vdma.CmdHeap;
+                            break;
+                        case VBOXWDDM_HGSMICMD_TYPE_CTL:
+                            pList = &CtlList;
+                            pHeap = &pDevExt->u.primary.hgsmiAdapterHeap;
+                            break;
+                        default:
+                            AssertBreakpoint();
+                    }
+
+                    if (pHeap)
+                    {
+                        int rc = VBoxSHGSMICommandProcessCompletion (pHeap, offCmd, TRUE /*bool bIrq*/ , pList);
+                        AssertRC(rc);
+                    }
+                }
+            }
+            else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
+            {
+                bOur = TRUE;
+                AssertBreakpoint();
+                /* @todo: FIXME: implement !!! */
+            }
+            else if (flags & HGSMIHOSTFLAGS_IRQ)
+            {
+                bOur = TRUE;
+                AssertBreakpoint();
+                /* unknown command */
+            }
+            else
+                break;
+        } while (1);
+
+        if (!vboxSHGSMIListIsEmpty(&CtlList))
+            vboxSHGSMIListCat(&pDevExt->CtlList, &CtlList);
+
+        if (!vboxSHGSMIListIsEmpty(&DmaCmdList))
+            vboxSHGSMIListCat(&pDevExt->DmaCmdList, &DmaCmdList);
+
+        if (pDevExt->bSetNotifyDxDpc)
+        {
+            pDevExt->bNotifyDxDpc = TRUE;
+            pDevExt->bSetNotifyDxDpc = FALSE;
+        }
+
+        if (bOur)
+            HGSMIClearIrq (pDevExt);
+    }
+
+    return bOur;
+}
+
+
+typedef struct VBOXWDDM_DPCDATA
+{
+    VBOXSHGSMILIST CtlList;
+    VBOXSHGSMILIST DmaCmdList;
+    BOOL bNotifyDpc;
+} VBOXWDDM_DPCDATA, *PVBOXWDDM_DPCDATA;
+
+typedef struct VBOXWDDM_GETDPCDATA_CONTEXT
+{
+    PDEVICE_EXTENSION pDevExt;
+    VBOXWDDM_DPCDATA data;
+} VBOXWDDM_GETDPCDATA_CONTEXT, *PVBOXWDDM_GETDPCDATA_CONTEXT;
+
+BOOLEAN vboxWddmGetDPCDataCallback(PVOID Context)
+{
+    PVBOXWDDM_GETDPCDATA_CONTEXT pdc = (PVBOXWDDM_GETDPCDATA_CONTEXT)Context;
+
+    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->CtlList, &pdc->data.CtlList);
+    vboxSHGSMICmdListDetach2List(&pdc->pDevExt->DmaCmdList, &pdc->data.DmaCmdList);
+    pdc->data.bNotifyDpc = pdc->pDevExt->bNotifyDxDpc;
+    pdc->pDevExt->bNotifyDxDpc = FALSE;
+    return TRUE;
 }
 
 VOID DxgkDdiDpcRoutine(
     IN CONST PVOID  MiniportDeviceContext
     )
 {
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
+    VBOXWDDM_DPCDATA dpcData = {0};
+    BOOLEAN bRet;
+
+    /* get DPC data at IRQL */
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
+            pDevExt->u.primary.DxgkInterface.DeviceHandle,
+            vboxWddmGetDPCDataCallback,
+            &dpcData,
+            0,
+            &bRet);
+    Assert(Status == STATUS_SUCCESS);
+
+    if (!vboxSHGSMIListIsEmpty(&dpcData.CtlList))
+    {
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.hgsmiAdapterHeap, &dpcData.CtlList);
+        AssertRC(rc);
+    }
+
+    if (!vboxSHGSMIListIsEmpty(&dpcData.DmaCmdList))
+    {
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &dpcData.DmaCmdList);
+        AssertRC(rc);
+    }
+
+    if (dpcData.bNotifyDpc)
+        pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 }
 
 NTSTATUS DxgkDdiQueryChildRelations(
@@ -975,6 +1364,9 @@ DxgkDdiDescribeAllocation(
     return STATUS_NOT_IMPLEMENTED;
 }
 
+/**
+ *
+ */
 NTSTATUS
 APIENTRY
 DxgkDdiGetStandardAllocationDriverData(
@@ -1506,7 +1898,13 @@ DxgkDdiEnumVidPnCofuncModality(
         {
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
-            VBoxWddmGetModesTable(pContext, true, &CbContext.pModes, &CbContext.cModes, &CbContext.iPreferredMode, &CbContext.cResolutions, &CbContext.pResolutions);
+            VBoxWddmGetModesTable(pContext, /* PDEVICE_EXTENSION DeviceExtension */
+                    true, /* bool bRebuildTable*/
+                    &CbContext.pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
+                    &CbContext.cModes, /* uint32_t * pcModes */
+                    &CbContext.iPreferredMode, /* uint32_t * pPreferrableMode*/
+                    &CbContext.pResolutions, /* D3DKMDT_2DREGION **ppResolutions */
+                    &CbContext.cResolutions /* uint32_t * pcResolutions */);
             Assert(CbContext.cModes);
             Assert(CbContext.cModes > CbContext.iPreferredMode);
             Status = vboxVidPnEnumPaths(pContext, pEnumCofuncModalityArg->hConstrainingVidPn, pVidPnInterface,

@@ -796,10 +796,17 @@ typedef struct _VBVABUFFER
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # define VBVA_VHWA_CMD    9
 #endif /* # ifdef VBOX_WITH_VIDEOHWACCEL */
+#ifdef VBOXVDMA
+# define VBVA_VDMA_CTL   10 /* setup G<->H DMA channel info */
+# define VBVA_VDMA_CMD    11 /* G->H DMA command             */
+#endif
 
 /* host->guest commands */
-# define VBVAHG_EVENT 1
-# define VBVAHG_DISPLAY_CUSTOM 2
+# define VBVAHG_EVENT              1
+# define VBVAHG_DISPLAY_CUSTOM     2
+#ifdef VBOXVDMA
+# define VBVAHG_SHGSMI_COMPLETION  3
+#endif
 
 # ifdef VBOX_WITH_VIDEOHWACCEL
 #define VBVAHG_DCUSTOM_VHWA_CMDCOMPLETE 1
@@ -986,5 +993,164 @@ typedef struct _VBVAMOUSEPOINTERSHAPE
 #pragma pack()
 
 #endif /* VBOX_WITH_HGSMI */
+
+#ifdef VBOXVDMA
+# pragma pack(1)
+
+/*
+ * VBOXSHGSMI made on top HGSMI and allows receiving notifications
+ * about G->H command completion
+ */
+/* SHGSMI command header */
+typedef struct VBOXSHGSMIHEADER
+{
+    uint64_t pvNext;    /*<- completion processing queue */
+    uint32_t fFlags;    /*<- see VBOXSHGSMI_FLAG_XXX Flags */
+    uint32_t cRefs;     /*<- command referece count */
+    uint64_t u64Info1;  /*<- contents depends on the fFlags value */
+    uint64_t u64Info2;  /*<- contents depends on the fFlags value */
+} VBOXSHGSMIHEADER, *PVBOXSHGSMIHEADER;
+
+/* the command processing was asynch, set by the host to indicate asynch command completion
+ * must not be cleared once set, the command completion is performed by issuing a host->guest completion command
+ * while keeping this flag unchanged */
+#define VBOXSHGSMI_FLAG_HG_ASYNCH               0x00010000
+///* if set     - asynch completion is performed by issuing the event,
+// * if cleared - asynch completion is performed by calling a callback */
+//#define VBOXSHGSMI_FLAG_GH_ASYNCH_EVENT         0x00000001
+/* issue interrupt on asynch completion, used for critical G->H commands,
+ * i.e. for completion of which guest is waiting. */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ           0x00000002
+/* guest does not do any op on completion of this command,
+ * the host may copy the command and indicate that it does not need the command anymore
+ * by not setting VBOXSHGSMI_FLAG_HG_ASYNCH */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_NOCOMPLETION  0x00000004
+/* guest requires the command to be processed asynchronously,
+ * not setting VBOXSHGSMI_FLAG_HG_ASYNCH by the host in this case is treated as command failure */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE         0x00000008
+/* force IRQ on cmd completion */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ_FORCE     0x00000010
+/* an IRQ-level callback is associated with the command */
+#define VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ  0x00000020
+/* guest expects this command to be completed synchronously */
+#define VBOXSHGSMI_FLAG_GH_SYNCH                0x00000040
+
+/* VDMA - Video DMA */
+
+/* VDMA Control API */
+/* VBOXVDMA_CTL::u32Flags */
+#define VBOXVDMA_CTL_NONE    0x00000000
+#define VBOXVDMA_CTL_ENABLE  0x00000001
+#define VBOXVDMA_CTL_DISABLE 0x00000002
+#define VBOXVDMA_CTL_FLUSH   0x00000004
+
+typedef struct VBOXVDMA_CTL
+{
+    uint32_t u32Flags;
+    uint32_t u32Offset;
+    int32_t  i32Result;
+} VBOXVDMA_CTL, *PVBOXVDMA_CTL;
+
+typedef struct VBOXVDMA_RECTL
+{
+    int16_t left;
+    int16_t top;
+    uint16_t width;
+    uint16_t height;
+} VBOXVDMA_RECTL, *PVBOXVDMA_RECTL;
+
+//typedef uint64_t VBOXVDMAPHADDRESS;
+typedef uint64_t VBOXVDMASURFHANDLE;
+
+typedef enum
+{
+    VBOXVDMACMD_TYPE_UNDEFINED        = 0,
+    VBOXVDMACMD_TYPE_DMATRANSFER      = 1
+} VBOXVDMACMD_TYPE;
+
+/* region specified as a rectangle, otherwize it is a size of memory pointed to by phys address */
+#define VBOXVDMAOPERAND_FLAGS_RECTL       0x1
+/* Surface handle is valid */
+#define VBOXVDMAOPERAND_FLAGS_PRIMARY        0x2
+/* address is offset in VRAM */
+#define VBOXVDMAOPERAND_FLAGS_VRAMOFFSET  0x4
+
+typedef struct VBOXVDMA_RANGE_RECTL
+{
+    VBOXVDMA_RECTL RangeRectl;
+    VBOXVDMA_RECTL SurfSize;
+}VBOXVDMA_RANGE_RECTL, *PVBOXVDMA_RANGE_RECTL;
+
+typedef struct VBOXVDMA_RANGE_SIZE
+{
+    uint32_t cbSize;
+    uint32_t u32Reserved;
+}VBOXVDMA_RANGE_SIZE, *PVBOXVDMA_RANGE_SIZE;
+
+typedef struct VBOXVDMAOPERAND
+{
+    uint32_t fFlags;
+    union
+    {
+        /* for Src specifies num of Dsts */
+        uint32_t cDsts;
+        /* for Dst specifies Screen ID in case VBOXVDMAOPERAND_FLAGS_PRIMARY flag is present in fFlags */
+        uint32_t iScreen;
+    } Info;
+    RTGCPHYS phAddress;
+    union
+    {
+        VBOXVDMA_RANGE_RECTL Rectl;
+        VBOXVDMA_RANGE_SIZE  Size;
+    } Range;
+} VBOXVDMAOPERAND, *PVBOXVDMAOPERAND;
+
+/* VBOXVDMACBUF_DR::phBuf specifies offset in VRAM */
+#define VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET 0x00000001
+/* command buffer follows the VBOXVDMACBUF_DR in VRAM, VBOXVDMACBUF_DR::phBuf is ignored */
+#define VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR  0x00000002
+
+/*
+ * We can not submit the DMA command via VRAM since we do not have control over
+ * DMA command buffer [de]allocation, i.e. we only control the buffer contents.
+ * In other words the system may call one of our callbacks to fill a command buffer
+ * with the necessary commands and then discard the buffer w/o any notification.
+ *
+ * We have only DMA command buffer physical address at submission time.
+ *
+ * so the only way is to */
+typedef struct VBOXVDMACBUF_DR
+{
+    uint32_t fFlags;
+    uint32_t cbBuf;
+    uint32_t u32FenceId;
+    /* RT_SUCCESS()     - on success
+     * VERR_INTERRUPTED - on preemption
+     * VERR_xxx         - on error */
+    int32_t  rc;
+    uint64_t phBuf;
+} VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
+
+#define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
+
+typedef struct VBOXVDMACMD
+{
+    VBOXVDMACMD_TYPE enmType;
+    uint32_t cbCmd;
+} VBOXVDMACMD, *PVBOXVDMACMD;
+
+#define VBOXVDMACMD_HEADER_SIZE() sizeof (VBOXVDMACMD)
+#define VBOXVDMACMD_BODY_SIZE(_pCmd) ((_pCmd)->cbBody)
+#define VBOXVDMACMD_SIZE(_pCmd) (VBOXVDMACMD_HEADER_SIZE() + VBOXVDMACMD_BODY_SIZE(_pCmd))
+#define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+
+typedef struct VBOXVDMACMD_DMATRANSFER
+{
+    VBOXVDMAOPERAND Src;
+    /* the size of aDst is specified in Src::u32CmdSpecific*/
+    VBOXVDMAOPERAND aDst[1];
+} VBOXVDMACMD_DMATRANSFER, *PVBOXVDMACMD_DMATRANSFER;
+# pragma pack()
+#endif /* #ifdef VBOXVDMA */
 
 #endif

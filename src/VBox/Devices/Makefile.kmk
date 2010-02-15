@@ -339,6 +339,10 @@ ifdef VBOX_WITH_HGSMI
 	Graphics/HGSMI/HGSMIHostHlp.cpp
 
 endif
+ifdef VBOXVDMA
+ DevicesR3_DEFS         += VBOXVDMA
+endif
+
 ifdef VBOX_WITH_VIDEOHWACCEL
  DevicesR3_DEFS         += VBOX_WITH_VIDEOHWACCEL
 endif
@@ -570,6 +574,9 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_HGSMI
   VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
  endif
+ ifdef VBOXVDMA
+  VBoxDDGC_DEFS         += VBOXVDMA
+ endif
 
  ifdef VBOX_WITH_USB
  VBoxDDGC_DEFS          += VBOX_WITH_USB
@@ -587,6 +594,10 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOX_WITH_HGSMI
   VBoxDDGC_DEFS         += VBOX_WITH_HGSMI
  endif
+ ifdef VBOXVDMA
+  VBoxDDGC_DEFS         += VBOXVDMA
+ endif
+ 
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
  endif
@@ -668,6 +679,10 @@ endif
 ifdef VBOX_WITH_HGSMI
  VBoxDDR0_DEFS         += VBOX_WITH_HGSMI
 endif
+ifdef VBOXVDMA
+ VBoxDDR0_DEFS         += VBOXVDMA
+endif
+
 
 ifdef VBOX_WITH_USB
 VBoxDDR0_DEFS          += VBOX_WITH_USB IN_USB_R0
@@ -705,6 +720,9 @@ ifdef VBOX_WITH_HGSMI
 endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxDDR0_DEFS         += VBOX_WITH_VIDEOHWACCEL
+endif
+ifdef VBOXVDMA
+ VBoxDDR0_DEFS         += VBOXVDMA
 endif
 
 

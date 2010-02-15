@@ -185,6 +185,52 @@ typedef FNHGSMICALLINIT *PFNHGSMICALLINIT;
 typedef int FNHGSMICALLFINALIZE (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData);
 typedef FNHGSMICALLFINALIZE *PFNHGSMICALLFINALIZE;
 
+void* VBoxHGSMIBufferAlloc (PDEVICE_EXTENSION PrimaryExtension,
+                         HGSMISIZE cbData,
+                         uint8_t u8Ch,
+                         uint16_t u16Op)
+{
+#ifdef VBOXWDDM
+    /* @todo: add synchronization */
+#endif
+    return HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+}
+
+void* VBoxHGSMIBufferAlloc (PDEVICE_EXTENSION PrimaryExtension,
+                         uint8_t u8Ch,
+                         uint16_t u16Op,
+                         HGSMISIZE cbData)
+{
+#ifdef VBOXWDDM
+    /* @todo: add synchronization */
+#endif
+    return HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
+}
+
+void VBoxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
+{
+#ifdef VBOXWDDM
+    /* @todo: add synchronization */
+#endif
+    HGSMIHeapFree (&PrimaryExtension->u.primary.hgsmiAdapterHeap, pvBuffer);
+}
+
+int VBoxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer)
+{
+    /* Initialize the buffer and get the offset for port IO. */
+    HGSMIOFFSET offBuffer = HGSMIHeapBufferOffset (&PrimaryExtension->u.primary.hgsmiAdapterHeap, pvBuffer);
+
+    Assert(offBuffer != HGSMIOFFSET_VOID);
+    if (offBuffer != HGSMIOFFSET_VOID)
+    {
+        /* Submit the buffer to the host. */
+        VBoxHGSMIGuestWrite(PrimaryExtension, offBuffer);
+        return VINF_SUCCESS;
+    }
+
+    return VERR_INVALID_PARAMETER;
+}
+
 static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
                          uint8_t u8Ch,
                          uint16_t u16Op,
@@ -196,11 +242,13 @@ static int vboxCallChannel (PDEVICE_EXTENSION PrimaryExtension,
     int rc = VINF_SUCCESS;
 
     /* Allocate the IO buffer. */
+#ifndef VBOXWDDM
     if (PrimaryExtension->pPrimary != PrimaryExtension)
     {
         dprintf(("VBoxVideo::vboxCallChannel: not primary extension %p!!!\n", PrimaryExtension));
         return VERR_INVALID_PARAMETER;
     }
+#endif
 
     void *p = HGSMIHeapAlloc (&PrimaryExtension->u.primary.hgsmiAdapterHeap, cbData, u8Ch, u16Op);
 
@@ -314,7 +362,7 @@ static int vboxQueryConfHGSMI (PDEVICE_EXTENSION PrimaryExtension, uint32_t u32I
 
     return rc;
 }
-
+#ifndef VBOXWDDM
 static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
 {
     NOREF (pvContext);
@@ -347,6 +395,7 @@ static int vbvaInitInfoDisplay (PDEVICE_EXTENSION PrimaryExtension, void *pvCont
     AssertFailed ();
     return VERR_INTERNAL_ERROR;
 }
+#endif
 
 static int vbvaInitInfoHeap (PDEVICE_EXTENSION PrimaryExtension, void *pvContext, void *pvData)
 {
@@ -388,6 +437,7 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
     AssertRC(rc);
     if(RT_SUCCESS (rc))
     {
+#ifndef VBOXWDDM
         rc = vboxCallVBVA (PrimaryExtension,
                                VBVA_INFO_VIEW,
                                sizeof (VBVAINFOVIEW) * PrimaryExtension->u.primary.cDisplays,
@@ -396,6 +446,11 @@ static int vboxSetupAdapterInfoHGSMI (PDEVICE_EXTENSION PrimaryExtension)
                                NULL);
         AssertRC(rc);
         if (RT_SUCCESS (rc))
+#else
+        /* in case of WDDM we do not control the framebuffer location,
+         * i.e. it is assigned by Video Memory Manager,
+         * The FB information should be passed to guest from our DxgkDdiSetVidPnSourceAddress callback */
+#endif
         {
             /* Report the host heap location. */
             rc = vboxCallVBVA (PrimaryExtension,
@@ -659,10 +714,12 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
      * Note: bVBoxVideoSupported is set to FALSE, because HGSMI is active instead.
      */
     PrimaryExtension->pNext                              = NULL;
+#ifndef VBOXWDDM
     PrimaryExtension->pPrimary                           = PrimaryExtension;
     PrimaryExtension->iDevice                            = 0;
     PrimaryExtension->ulFrameBufferOffset                = 0;
     PrimaryExtension->ulFrameBufferSize                  = 0;
+#endif
     PrimaryExtension->u.primary.ulVbvaEnabled            = 0;
     PrimaryExtension->u.primary.bVBoxVideoSupported      = FALSE;
     PrimaryExtension->u.primary.cDisplays                = 1;
@@ -860,10 +917,12 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
         rc = NO_ERROR;
     }
 
+#ifndef VBOXWDDM
     /* Now when the number of monitors is known and extensions are created,
      * calculate the layout of framebuffers.
      */
     VBoxComputeFrameBufferSizes (PrimaryExtension);
+#endif
 
     if (PrimaryExtension->u.primary.bHGSMI)
     {
@@ -875,6 +934,40 @@ VOID VBoxSetupDisplaysHGSMI(PDEVICE_EXTENSION PrimaryExtension,
             PrimaryExtension->u.primary.bHGSMI = FALSE;
         }
     }
+
+#ifdef VBOXWDDM
+    if (PrimaryExtension->u.primary.bHGSMI)
+    {
+        ULONG ulAvailable = PrimaryExtension->u.primary.cbVRAM
+                            - PrimaryExtension->u.primary.cbMiniportHeap
+                            - VBVA_ADAPTER_INFORMATION_SIZE;
+
+        /* use 25% od VRAM for DMA command buffer
+         * @todo: ^^^? */
+        ULONG ulSize = ulAvailable / 4;
+
+        /* Align down to 4096 bytes. */
+        ulSize &= ~0xFFF;
+        ULONG offset = ulAvailable - ulSize;
+
+        Assert(!(offset & 0xFFF));
+
+        rc = vboxVdmaCreate (PrimaryExtension, &PrimaryExtension->u.primary.Vdma, offset, ulSize);
+        AssertRC(rc);
+        if (RT_SUCCESS(rc))
+        {
+            /* can enable it right away since the host does not need any screen/FB info
+             * for basic DMA functionality */
+            rc = vboxVdmaEnable(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
+            AssertRC(rc);
+            if (RT_FAILURE(rc))
+                vboxVdmaDestroy(PrimaryExtension, &PrimaryExtension->u.primary.Vdma);
+        }
+
+        if (RT_FAILURE(rc))
+            PrimaryExtension->u.primary.bHGSMI = FALSE;
+    }
+#endif
 
     if (!PrimaryExtension->u.primary.bHGSMI)
     {
@@ -952,6 +1045,7 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                                 PVIDEO_POINTER_ATTRIBUTES pointerAttr,
                                 uint32_t cbLength)
 {
+#ifndef VBOXWDDM
     PDEVICE_EXTENSION PrimaryExtension = DeviceExtension->pPrimary;
 
     /* In multimonitor case the HW mouse pointer is the same on all screens,
@@ -976,6 +1070,9 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
         /* Success. */
         return TRUE;
     }
+#else
+    PDEVICE_EXTENSION PrimaryExtension = DeviceExtension;
+#endif
 
     uint32_t cbData = 0;
 
@@ -1115,6 +1212,7 @@ static VBVADISP_CHANNELCONTEXT* vboxVBVAFindHandlerInfo(VBVA_CHANNELCONTEXTS *pC
     return NULL;
 }
 
+#ifndef VBOXWDDM
 DECLCALLBACK(void) hgsmiHostCmdComplete (HVBOXVIDEOHGSMI hHGSMI, struct _VBVAHOSTCMD * pCmd)
 {
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)hHGSMI)->pPrimary;
@@ -1163,6 +1261,7 @@ DECLCALLBACK(int) hgsmiHostCmdRequest (HVBOXVIDEOHGSMI hHGSMI, uint8_t u8Channel
 
     return VERR_INVALID_PARAMETER;
 }
+#endif
 
 static DECLCALLBACK(int) vboxVBVAChannelGenericHandler(void *pvHandler, uint16_t u16ChannelInfo, void *pvBuffer, HGSMISIZE cbBuffer)
 {
