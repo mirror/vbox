@@ -1876,13 +1876,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 //rc = CFGMR3InsertInteger(pCfg, "Force11PacketSize", true);            RC_CHECK();
             }
 
-#if 0 /* Enable+edit this to play with the virtual USB devices). */
+#if 1 /* Enable+edit this to play with the virtual USB devices). */
             if (!pUsbDevices)
             {
                 rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                  RC_CHECK();
             }
 
-# if 1  /* Virtual MSD*/
+# if 0  /* Virtual MSD*/
 
             rc = CFGMR3InsertNode(pUsbDevices, "Msd", &pDev);                       RC_CHECK();
             rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
@@ -1904,40 +1904,48 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi"); RC_CHECK();
             rc = CFGMR3InsertString(pCfg,   "Format", "VDI");                       RC_CHECK();
 # endif
-# if 1  /* Virtual USB Mouse*/
 
-            rc = CFGMR3InsertNode(pUsbDevices, "HidMouse", &pDev);                      RC_CHECK();
-            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+            /* Virtual USB Mouse*/
+            PointingHidType_T aPointingHid;
+            hrc = pMachine->COMGETTER(PointingHidType)(&aPointingHid);               H();
+            if (aPointingHid == PointingHidType_USBMouse)
+            {
+                rc = CFGMR3InsertNode(pUsbDevices, "HidMouse", &pDev);               RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                    RC_CHECK();
 
-            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver",               "MouseQueue");      RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);               RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                   RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",        "MouseQueue");      RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                    RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);        RC_CHECK();
 
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",               "MainMouse");       RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            Mouse *pMouse = pConsole->mMouse;
-            rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);           RC_CHECK();
-# endif
-# if 1  /* Virtual USB Keyboard */
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);          RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",        "MainMouse");       RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                    RC_CHECK();
+                pMouse = pConsole->mMouse;
+                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);    RC_CHECK();
+            }
 
-            rc = CFGMR3InsertNode(pUsbDevices, "HidKeyboard", &pDev);                   RC_CHECK();
-            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+            /* Virtual USB Keyboard */
+            KeyboardHidType_T aKbdHid;
+            hrc = pMachine->COMGETTER(KeyboardHidType)(&aKbdHid);                           H();
+            if (aKbdHid == KeyboardHidType_USBKeyboard)
+            {
+                rc = CFGMR3InsertNode(pUsbDevices, "HidKeyboard", &pDev);                   RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
 
-            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-            rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");   RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");   RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                RC_CHECK();
 
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");    RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
-            Keyboard *pKeyboard = pConsole->mKeyboard;
-            rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);        RC_CHECK();
-# endif
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                pKeyboard = pConsole->mKeyboard;
+                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);        RC_CHECK();
+            }
 #endif
         }
     }
