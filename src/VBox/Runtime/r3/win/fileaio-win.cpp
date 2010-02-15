@@ -347,6 +347,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     PRTFILEAIOCTXINTERNAL pCtxInt = hAioCtx;
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
+    Assert(cReqs <= INT32_MAX);
     AssertPtrReturn(pahReqs, VERR_INVALID_POINTER);
     size_t i;
 
@@ -381,7 +382,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
         RTFILEAIOREQ_SET_STATE(pReqInt, SUBMITTED);
     }
 
-    ASMAtomicAddS32(&pCtxInt->cRequests, i);
+    ASMAtomicAddS32(&pCtxInt->cRequests, (int32_t)i);
 
     return rc;
 }
