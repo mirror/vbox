@@ -366,6 +366,14 @@ typedef struct GMMCHUNKMAP
 /** Pointer to a GMM allocation chunk mapping. */
 typedef struct GMMCHUNKMAP *PGMMCHUNKMAP;
 
+typedef enum GMMCHUNKTYPE
+{
+    GMMCHUNKTYPE_INVALID        = 0,
+    GMMCHUNKTYPE_NON_CONTINUOUS = 1,      /* 4 kb pages */
+    GMMCHUNKTYPE_CONTINUOUS     = 2,      /* one 2 MB continuous physical range. */
+    GMMCHUNKTYPE_32BIT_HACK     = 0x7fffffff
+} GMMCHUNKTYPE;
+
 
 /**
  * A GMM allocation chunk.
@@ -402,10 +410,8 @@ typedef struct GMMCHUNK
     uint16_t            cPrivate;
     /** The number of shared pages. */
     uint16_t            cShared;
-#if HC_ARCH_BITS == 64
-    /** Reserved for later. */
-    uint16_t            au16Reserved[2];
-#endif
+    /** Chunk type */
+    GMMCHUNKTYPE        enmType;
     /** The pages. */
     GMMPAGE             aPages[GMM_CHUNK_SIZE >> PAGE_SHIFT];
 } GMMCHUNK;
@@ -1526,13 +1532,14 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
  * the mutex, the caller must not own it.
  *
  * @returns VBox status code.
- * @param   pGMM        Pointer to the GMM instance.
- * @param   pSet        Pointer to the set.
- * @param   MemObj      The memory object for the chunk.
- * @param   hGVM        The affinity of the chunk. NIL_GVM_HANDLE for no
- *                      affinity.
+ * @param   pGMM            Pointer to the GMM instance.
+ * @param   pSet            Pointer to the set.
+ * @param   MemObj          The memory object for the chunk.
+ * @param   hGVM            The affinity of the chunk. NIL_GVM_HANDLE for no
+ *                          affinity.
+ * @param   enmChunkType    Chunk type (continuous or non-continuous)
  */
-static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM)
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, GMMCHUNKTYPE enmChunkType)
 {
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
 
@@ -1547,6 +1554,7 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
         pChunk->cFree = GMM_CHUNK_NUM_PAGES;
         pChunk->hGVM = hGVM;
         pChunk->iFreeHead = 0;
+        pChunk->enmType = enmChunkType;
         for (unsigned iPage = 0; iPage < RT_ELEMENTS(pChunk->aPages) - 1; iPage++)
         {
             pChunk->aPages[iPage].Free.u2State = GMM_PAGE_STATE_FREE;
@@ -1598,22 +1606,32 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
  * Allocate one new chunk and add it to the specified free set.
  *
  * @returns VBox status code.
- * @param   pGMM        Pointer to the GMM instance.
- * @param   pSet        Pointer to the set.
- * @param   hGVM        The affinity of the new chunk.
+ * @param   pGMM            Pointer to the GMM instance.
+ * @param   pSet            Pointer to the set.
+ * @param   hGVM            The affinity of the new chunk.
+ * @param   enmChunkType    Chunk type (continuous or non-continuous)
  *
  * @remarks Called without owning the mutex.
  */
-static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM)
+static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM, GMMCHUNKTYPE enmChunkType)
 {
     /*
      * Allocate the memory.
      */
     RTR0MEMOBJ MemObj;
-    int rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
+    int        rc;
+
+    AssertCompile(GMM_CHUNK_SIZE == _2M);
+    AssertReturn(enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS || enmChunkType == GMMCHUNKTYPE_CONTINUOUS, VERR_INVALID_PARAMETER);
+
+    if (enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS)
+        rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
+    else
+        rc = RTR0MemObjAllocPhysEx(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
+
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM);
+        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM, enmChunkType);
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
@@ -1669,7 +1687,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
         while (pSet->cFreePages < cPages)
         {
             RTSemFastMutexRelease(pGMM->Mtx);
-            int rc = gmmR0AllocateOneChunk(pGMM, pSet, pGVM->hSelf);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
             int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
             AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
@@ -1706,7 +1724,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
 
             /* Allocate more. */
             RTSemFastMutexRelease(pGMM->Mtx);
-            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM);
+            int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM, GMMCHUNKTYPE_NON_CONTINUOUS);
             int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
             AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
@@ -3117,7 +3135,7 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
         /*
          * Add a new chunk with our hGVM.
          */
-        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf);
+        rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
