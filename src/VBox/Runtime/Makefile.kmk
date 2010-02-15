@@ -57,9 +57,11 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeR0 RuntimeR0Stub RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES.win += RuntimeR0Stub
  ifdef VBOX_WITH_RAW_MODE
-  LIBRARIES += RuntimeRC RuntimeRCStub
+  LIBRARIES += RuntimeRC
+  LIBRARIES.win += RuntimeRCStub
  endif
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
