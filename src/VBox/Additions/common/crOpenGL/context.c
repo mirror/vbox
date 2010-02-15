@@ -31,6 +31,10 @@
 #include "cr_environment.h"
 #include "stub.h"
 
+typedef struct {
+    WindowInfo *window;
+    GLboolean   windowInUse;
+} CtxCheckCurrentDrawableParams_t;
 
 /**
  * This function should be called from MakeCurrent().  It'll detect if
@@ -785,6 +789,16 @@ stubCheckUseChromium( WindowInfo *window )
     return GL_TRUE;  /* use Chromium! */
 }
 
+static void stubCtxCheckCurrentDrawableCB(unsigned long key, void *data1, void *data2)
+{
+    ContextInfo *pCtx = (ContextInfo *) data1;
+    CtxCheckCurrentDrawableParams_t *pParams = (CtxCheckCurrentDrawableParams_t *) data2;
+
+    if (pCtx->currentDrawable == pParams->window)
+    {
+        pParams->windowInUse = GL_TRUE;
+    }
+}
 
 GLboolean
 stubMakeCurrent( WindowInfo *window, ContextInfo *context )
@@ -834,6 +848,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
                                                           spuShareCtx );
             if (window->spuWindow == -1)
             {
+                /*crDebug("(1)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
                 CRASSERT(!context->pOwnWindow);
                 context->pOwnWindow = window;
@@ -890,8 +905,30 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
         else {
             if (window->spuWindow == -1)
             {
+                /*crDebug("(2)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
-                CRASSERT(!context->pOwnWindow);
+                if (context->pOwnWindow)
+                {
+                    WindowInfo *pOwnWindow = context->pOwnWindow;
+                    CtxCheckCurrentDrawableParams_t params;
+
+                    context->pOwnWindow = NULL;
+                    context->currentDrawable=NULL;
+
+                    params.window = pOwnWindow;
+                    params.windowInUse = GL_FALSE;
+
+                    crHashtableWalk(stub.contextTable, stubCtxCheckCurrentDrawableCB, &params);
+
+                    if (!params.windowInUse)
+                    {
+#ifdef WINDOWS
+                        crWindowDestroy((GLint)pOwnWindow->hWnd);
+#else
+                        crWindowDestroy((GLint)pOwnWindow->drawable);
+#endif
+                    }
+                }
                 context->pOwnWindow = window;
             }
 
