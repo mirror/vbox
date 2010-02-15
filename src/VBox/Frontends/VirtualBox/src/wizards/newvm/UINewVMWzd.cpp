@@ -121,8 +121,8 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Ne.*B.*64", Qt::CaseInsensitive), "NetBSD_64" },
     { QRegExp("Ne.*B", Qt::CaseInsensitive), "NetBSD" },
     { QRegExp("QN", Qt::CaseInsensitive), "QNX" },
-    { QRegExp("((Mac)|(Tig)|(Leop)).*64", Qt::CaseInsensitive), "MacOS_64" },
-    { QRegExp("(Mac)|(Tig)|(Leop)", Qt::CaseInsensitive), "MacOS" },
+    { QRegExp("((Mac)|(Tig)|(Leop)|(osx)).*64", Qt::CaseInsensitive), "MacOS_64" },
+    { QRegExp("(Mac)|(Tig)|(Leop)|(osx)", Qt::CaseInsensitive), "MacOS" },
     { QRegExp("Net", Qt::CaseInsensitive), "Netware" },
     { QRegExp("Ot", Qt::CaseInsensitive), "Other" },
 };
@@ -691,6 +691,9 @@ bool UINewVMWzdPage5::constructMachine()
         m_Machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
         m_Machine.SetPointingHidType(KPointingHidType_USBMouse);
     }
+
+    // Set HPET flag
+    m_Machine.SetHpetEnabled(type.GetRecommendedHpet());
 
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine(m_Machine);

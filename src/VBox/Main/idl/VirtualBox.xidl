@@ -8274,7 +8274,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="1498bf9c-c662-4cee-8f6f-59ec933fa892"
+    uuid="5e02d197-dfa2-474d-bd1d-3243a1f24afb"
     wsmap="struct"
   >
     <desc>
@@ -8338,6 +8338,10 @@
 
     <attribute name="recommendedUsbHid" type="boolean" readonly="yes">
       <desc>Returns @c true if using USB Human Interface Devices, such as keyboard and mouse recommended.</desc>
+    </attribute>
+
+     <attribute name="recommendedHpet" type="boolean" readonly="yes">
+      <desc>Returns @c true if using HPET is recommended for this OS type.</desc>
     </attribute>
 
   </interface>
