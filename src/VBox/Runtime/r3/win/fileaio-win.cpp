@@ -348,7 +348,7 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
     RTFILEAIOCTX_VALID_RETURN(pCtxInt);
     AssertReturn(cReqs > 0,  VERR_INVALID_PARAMETER);
     AssertPtrReturn(pahReqs, VERR_INVALID_POINTER);
-    int i;
+    size_t i;
 
     for (i = 0; i < cReqs; i++)
     {
