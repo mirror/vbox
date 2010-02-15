@@ -75,6 +75,7 @@ EXPORTS
     RTR0MemObjAllocLow
     RTR0MemObjAllocPage
     RTR0MemObjAllocPhys
+    RTR0MemObjAllocPhysEx
     RTR0MemObjAllocPhysNC
     RTR0MemObjAllocCont
     RTR0MemObjLockUser
