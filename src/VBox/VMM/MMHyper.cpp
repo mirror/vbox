@@ -1089,6 +1089,7 @@ VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
      */
     AssertReturn(!((uintptr_t)pvStart & PAGE_OFFSET_MASK), VERR_INVALID_POINTER);
     AssertReturn(!(cb & PAGE_OFFSET_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(cb <= UINT32_MAX, VERR_INVALID_PARAMETER);
     PMMLOOKUPHYPER pLookup = mmR3HyperLookupR3(pVM, pvStart);
     AssertReturn(pLookup, VERR_INVALID_PARAMETER);
     AssertReturn(pLookup->enmType == MMLOOKUPHYPERTYPE_LOCKED, VERR_INVALID_PARAMETER);
@@ -1107,12 +1108,12 @@ VMMR3DECL(int) MMR3HyperSetGuard(PVM pVM, void *pvStart, size_t cb, bool fSet)
     if (fSet)
     {
         rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, 0);
-        SUPR3PageProtect(pbR3, R0Ptr, off, cb, RTMEM_PROT_NONE);
+        SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_NONE);
     }
     else
     {
         rc = PGMMapSetPage(pVM, MMHyperR3ToRC(pVM, pvStart), cb, X86_PTE_P | X86_PTE_A | X86_PTE_D | X86_PTE_RW);
-        SUPR3PageProtect(pbR3, R0Ptr, off, cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        SUPR3PageProtect(pbR3, R0Ptr, off, (uint32_t)cb, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
     }
     return rc;
 }
