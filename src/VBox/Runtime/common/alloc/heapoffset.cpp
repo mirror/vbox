@@ -374,6 +374,7 @@ RTDECL(int) RTHeapOffsetInit(PRTHEAPOFFSET phHeap, void *pvMemory, size_t cbMemo
      * Validate input. The imposed minimum heap size is just a convenient value.
      */
     AssertReturn(cbMemory >= PAGE_SIZE, VERR_INVALID_PARAMETER);
+    AssertReturn(cbMemory < UINT32_MAX, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pvMemory, VERR_INVALID_POINTER);
     AssertReturn((uintptr_t)pvMemory + (cbMemory - 1) > (uintptr_t)cbMemory, VERR_INVALID_PARAMETER);
 
@@ -393,8 +394,8 @@ RTDECL(int) RTHeapOffsetInit(PRTHEAPOFFSET phHeap, void *pvMemory, size_t cbMemo
 
     /* Init the heap anchor block. */
     pHeapInt->u32Magic = RTHEAPOFFSET_MAGIC;
-    pHeapInt->cbHeap = cbMemory;
-    pHeapInt->cbFree = cbMemory
+    pHeapInt->cbHeap = (uint32_t)cbMemory;
+    pHeapInt->cbFree = (uint32_t)cbMemory
                      - sizeof(RTHEAPOFFSETBLOCK)
                      - sizeof(RTHEAPOFFSETINTERNAL);
     pHeapInt->offFreeTail = pHeapInt->offFreeHead = sizeof(*pHeapInt);

@@ -247,7 +247,6 @@ ifdef VBOX_WITH_RAW_MODE
  	$(PATH_LIB)/DisasmRC$(VBOX_SUFF_LIB) \
  	$(PATH_LIB)/RuntimeRC$(VBOX_SUFF_LIB)
  ifeq ($(VBOX_LDR_FMT32),pe)
- tstLdrObj_LDFLAGS = -Entry:Entrypoint
  tstLdrObj_LIBS += \
  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
  endif # PE
@@ -287,7 +286,6 @@ tstLdrObjR0_LIBS = \
 	$(PATH_LIB)/DisasmR0$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/RuntimeR0$(VBOX_SUFF_LIB)
 ifeq ($(VBOX_LDR_FMT),pe)
- tstLdrObjR0_LDFLAGS = -Entry:Entrypoint
  tstLdrObjR0_LIBS += \
 	$(PATH_LIB)/SUPR0$(VBOX_SUFF_LIB) \
 	$(TARGET_tstLdr-4Imp)

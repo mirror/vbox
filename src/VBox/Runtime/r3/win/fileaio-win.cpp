@@ -355,16 +355,17 @@ RTDECL(int) RTFileAioCtxSubmit(RTFILEAIOCTX hAioCtx, PRTFILEAIOREQ pahReqs, size
         PRTFILEAIOREQINTERNAL pReqInt = pahReqs[i];
         BOOL fSucceeded;
 
+        Assert(pReqInt->cbTransfer == (DWORD)pReqInt->cbTransfer);
         if (pReqInt->enmTransferDirection == TRANSFERDIRECTION_READ)
         {
             fSucceeded = ReadFile(pReqInt->hFile, pReqInt->pvBuf,
-                                  pReqInt->cbTransfer, NULL,
+                                  (DWORD)pReqInt->cbTransfer, NULL,
                                   &pReqInt->Overlapped);
         }
         else if (pReqInt->enmTransferDirection == TRANSFERDIRECTION_WRITE)
         {
             fSucceeded = WriteFile(pReqInt->hFile, pReqInt->pvBuf,
-                                   pReqInt->cbTransfer, NULL,
+                                   (DWORD)pReqInt->cbTransfer, NULL,
                                    &pReqInt->Overlapped);
         }
         else

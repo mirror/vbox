@@ -39,10 +39,30 @@
 
 /** @todo Check if we can't just use the zlib code directly here. */
 
+/**
+ * Deal with blocks that are too big for the uInt type.
+ */
+static uint32_t rtCrc32ProcessTooBig(uint32_t uCRC32, const void *pv, size_t cb)
+{
+    const Bytef *pb = (const Bytef *)pv;
+    do
+    {
+        uInt const cbChunk = cb <= ~(uInt)0 ? (uInt)cb : ~(uInt)0;
+        uCRC32 = crc32(uCRC32, pb, cbChunk);
+        pb += cbChunk;
+        cb -= cbChunk;
+    } while (!cb);
+    return uCRC32;
+}
+
 RTDECL(uint32_t) RTCrc32(const void *pv, register size_t cb)
 {
     uint32_t uCrc = crc32(0, NULL, 0);
-    return crc32(uCrc, (const Bytef *)pv, cb);
+    if (RT_UNLIKELY((uInt)cb == cb))
+        uCrc = crc32(uCrc, (const Bytef *)pv, (uInt)cb);
+    else
+        uCrc = rtCrc32ProcessTooBig(uCrc, pv, cb);
+    return uCrc;
 }
 RT_EXPORT_SYMBOL(RTCrc32);
 
@@ -56,7 +76,11 @@ RT_EXPORT_SYMBOL(RTCrc32Start);
 
 RTDECL(uint32_t) RTCrc32Process(uint32_t uCRC32, const void *pv, size_t cb)
 {
-    return crc32(uCRC32, (const Bytef *)pv, cb);
+    if (RT_UNLIKELY((uInt)cb == cb))
+        uCRC32 = crc32(uCRC32, (const Bytef *)pv, (uInt)cb);
+    else
+        uCRC32 = rtCrc32ProcessTooBig(uCRC32, pv, cb);
+    return uCRC32;
 }
 RT_EXPORT_SYMBOL(RTCrc32Process);
 
