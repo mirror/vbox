@@ -257,6 +257,11 @@ int HGSMIAreaInitialize (HGSMIAREA *pArea,
 
 void HGSMIAreaClear (HGSMIAREA *pArea);
 
+DECLINLINE(bool) HGSMIAreaContainsOffset(HGSMIAREA *pArea, HGSMIOFFSET offSet)
+{
+    return pArea->offBase <= offSet && pArea->offBase + pArea->cbArea < offSet;
+}
+
 HGSMIOFFSET HGSMIBufferInitializeSingle (const HGSMIAREA *pArea,
                                          HGSMIBUFFERHEADER *pHeader,
                                          HGSMISIZE cbBuffer,

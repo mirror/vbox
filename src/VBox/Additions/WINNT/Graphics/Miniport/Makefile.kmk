@@ -81,9 +81,10 @@ ifdef VBOXWDDM
   $(warning FIXME: !!!define wddm driver signing & install rules !!!)
   VBoxVideoWddm_NOINST     = true
  endif
+ 
  VBoxVideoWddm_SDKS=WINDDKWLH
  VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
- VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOXWDDM
+ VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOXWDDM VBOXVDMA
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
  endif
@@ -97,6 +98,8 @@ ifdef VBOXWDDM
     Helper.cpp \
  	wddm/VBoxVideoWddm.cpp \
 	wddm/VBoxVideoVidPn.cpp \
+	wddm/VBoxVideoVdma.cpp \
+	wddm/VBoxVideoShgsmi.cpp \
  	wddm/VBoxVideoWddm.def \
  	wddm/VBoxVideoWddm.rc
  #VBoxVideoWddm_LIBS.x86   += \

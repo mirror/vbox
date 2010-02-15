@@ -507,7 +507,7 @@ NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
     pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
     pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60000;
     pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1000;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy * 60 * 1.05;
+    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy * 63; /* 63 is (60 * 1.05)*/
     pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
     pNewVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 165000; /* @todo: ? */
     pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
@@ -542,7 +542,7 @@ NTSTATUS vboxVidPnPopulateTargetModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
                 Assert(Status == STATUS_SUCCESS);
                 if (Status == STATUS_SUCCESS)
                 {
-                    if (iPreferredMomde == i)
+                    if (bPreferred)
                     {
                         Status = pNewVidPnTargetModeSetInterface->pfnPinMode(hNewVidPnTargetModeSet, modeId);
                         Assert(Status == STATUS_SUCCESS);
