@@ -604,7 +604,7 @@ static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEnd
 {
     PPDMACFILETASKSEG pNext = pTaskSeg->pNext;
 
-    uint32_t uOld = ASMAtomicSubU32(&pTaskSeg->pTask->cbTransferLeft, pTaskSeg->cbTransfer);
+    uint32_t uOld = ASMAtomicSubS32(&pTaskSeg->pTask->cbTransferLeft, pTaskSeg->cbTransfer);
     AssertMsg(uOld >= pTaskSeg->cbTransfer, ("New value would overflow\n"));
     if (!(uOld - pTaskSeg->cbTransfer)
         && !ASMAtomicXchgBool(&pTaskSeg->pTask->fCompleted, true))
@@ -1770,7 +1770,6 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             {
                 LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbToWrite));
 
-                uint8_t *pbBuf;
                 PPDMACFILECACHEENTRY pEntryNew;
 
                 pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite, pbBuffer);

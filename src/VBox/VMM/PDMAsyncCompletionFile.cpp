@@ -325,7 +325,8 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     }
     else
     {
-        uint32_t uOld = ASMAtomicSubU32(&pTaskFile->cbTransferLeft, pTask->DataSeg.cbSeg);
+        Assert((uint32_t)pTask->DataSeg.cbSeg == pTask->DataSeg.cbSeg && (int32_t)pTask->DataSeg.cbSeg >= 0);
+        uint32_t uOld = ASMAtomicSubS32(&pTaskFile->cbTransferLeft, (int32_t)pTask->DataSeg.cbSeg);
 
         if (!(uOld - pTask->DataSeg.cbSeg)
             && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
@@ -346,7 +347,8 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
     Assert(   (enmTransfer == PDMACTASKFILETRANSFER_READ)
            || (enmTransfer == PDMACTASKFILETRANSFER_WRITE));
 
-    ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, cbTransfer);
+    Assert((uint32_t)cbTransfer == cbTransfer && (uint32_t)cbTransfer >= 0);
+    ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, (int32_t)cbTransfer);
     ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
 
     for (unsigned i = 0; i < cSegments; i++)

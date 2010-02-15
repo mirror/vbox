@@ -373,7 +373,7 @@ DECLINLINE(void) pdmacFileAioMgrEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpo
  */
 static int pdmacFileAioMgrNormalReqsEnqueue(PPDMACEPFILEMGR pAioMgr,
                                             PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
-                                            PRTFILEAIOREQ pahReqs, size_t cReqs)
+                                            PRTFILEAIOREQ pahReqs, unsigned cReqs)
 {
     int rc;
 
