@@ -297,7 +297,10 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedFirmware) (FirmwareType_T *aFirmw
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* firmware type is constant during life time, no need to lock */
-    *aFirmwareType = !!(mOSHint & VBOXOSHINT_EFI) ? FirmwareType_EFI : FirmwareType_BIOS;
+    if (mOSHint & VBOXOSHINT_EFI)
+        *aFirmwareType = FirmwareType_EFI;
+    else
+        *aFirmwareType = FirmwareType_BIOS;
 
     return S_OK;
 }
