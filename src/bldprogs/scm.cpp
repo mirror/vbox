@@ -2539,6 +2539,8 @@ static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
     }
     if (fModified)
         ScmVerbose(pState, 2, " * Converted EOL markers\n");
+
+    /** @todo also check the subversion svn:eol-style state! */
     return fModified;
 }
 
@@ -3091,6 +3093,8 @@ static int scmProcessSomething(const char *pszSomething, PSCMSETTINGS pSettingsS
     int rc = RTPathAbs(pszSomething, szBuf, sizeof(szBuf));
     if (RT_SUCCESS(rc))
     {
+        RTPathChangeToUnixSlashes(szBuf, false /*fForce*/);
+
         PSCMSETTINGS pSettings;
         rc = scmSettingsCreateForPath(&pSettings, &pSettingsStack->Base, szBuf);
         if (RT_SUCCESS(rc))
