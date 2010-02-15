@@ -42,7 +42,6 @@
 #include "ipcMessageUtils.h"
 #include "ipcLog.h"
 #include "ipcm.h"
-#include "iprt/thread.h"
 
 #include "nsIFile.h"
 #include "nsEventQueueUtils.h"
