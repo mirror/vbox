@@ -1,5 +1,5 @@
 
-Sun VirtualBox for OpenSolaris (TM) Operating System
+@VBOX_PRODUCT@ for OpenSolaris (TM) Operating System
 ----------------------------------------------------
 
 Upgrading:

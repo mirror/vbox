@@ -1,7 +1,7 @@
 [Desktop Entry]
 Encoding=UTF-8
 Version=1.0
-Name=Sun VirtualBox
+Name=@VBOX_PRODUCT@
 GenericName=Virtual Machine
 Type=Application
 Exec=VirtualBox
