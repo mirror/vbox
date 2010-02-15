@@ -97,7 +97,8 @@ RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void)
 
 RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName)
 {
-    AssertReturn(g_szrtProcExePath[0] != '\0', NULL);
+    if (RT_UNLIKELY(g_szrtProcExePath[0] == '\0'))
+        return NULL;
 
     /*
      * Calc the length and check if there is space before copying.
