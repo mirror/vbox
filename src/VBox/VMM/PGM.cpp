@@ -2294,7 +2294,6 @@ VMMR3DECL(void) PGMR3Reset(PVM pVM)
     }
 
     pgmUnlock(pVM);
-    //return rc;
     AssertReleaseRC(rc);
 }
 
