@@ -180,6 +180,9 @@ ifdef VBOX_WITH_PDM_ASYNC_COMPLETION
  	PDMAsyncCompletionFileNormal.cpp \
  	PDMAsyncCompletionFileCache.cpp
 endif
+if defined(VBOX_WITH_WARNINGS_AS_ERRORS) && "$(KBUILD_TARGET)" == "win"
+PDMAsyncCompletionFileCache.cpp_CXXFLAGS = -WX-
+endif
 
 ifdef VBOX_WITH_RAW_MODE
  VMMR3_SOURCES.x86 += \

@@ -558,7 +558,7 @@ typedef struct SSMHANDLE
             /** @name Header info (set by ssmR3ValidateFile)
              * @{ */
             /** The size of the file header. */
-            size_t          cbFileHdr;
+            uint32_t        cbFileHdr;
             /** The major version number. */
             uint16_t        u16VerMajor;
             /** The minor version number. */
@@ -2345,7 +2345,7 @@ static int ssmR3StrmCommitWriteBufferSpace(PSSMSTRM pStrm, size_t cb)
 {
     Assert(pStrm->pCur);
     Assert(pStrm->off + cb <= RT_SIZEOFMEMB(SSMSTRMBUF, abData));
-    pStrm->off += cb;
+    pStrm->off += (uint32_t)cb;
     return VINF_SUCCESS;
 }
 
@@ -3407,7 +3407,7 @@ static int ssmR3PutZeros(PSSMHANDLE pSSM, uint32_t cbToFill)
 {
     while (cbToFill > 0)
     {
-        size_t cb = RT_MIN(sizeof(g_abZero), cbToFill);
+        uint32_t cb = RT_MIN(sizeof(g_abZero), cbToFill);
         int rc = ssmR3DataWrite(pSSM, g_abZero, cb);
         if (RT_FAILURE(rc))
             return rc;
@@ -5797,7 +5797,7 @@ static int ssmR3DataReadUnbufferedV2(PSSMHANDLE pSSM, void *pvBuf, size_t cbBuf)
                 {
                     /* Spill the remainer into the data buffer. */
                     memset(&pSSM->u.Read.abDataBuffer[0], 0, cbToRead - cbBuf);
-                    pSSM->u.Read.cbDataBuffer  = cbToRead - cbBuf;
+                    pSSM->u.Read.cbDataBuffer  = cbToRead - (uint32_t)cbBuf;
                     pSSM->u.Read.offDataBuffer = 0;
                     cbToRead = (uint32_t)cbBuf;
                 }
@@ -6901,8 +6901,8 @@ VMMR3DECL(int) SSMR3SkipToEndOfUnit(PSSMHANDLE pSSM)
                 /* read the rest of the current record */
                 while (pSSM->u.Read.cbRecLeft)
                 {
-                    uint8_t abBuf[8192];
-                    size_t  cbToRead = RT_MIN(pSSM->u.Read.cbRecLeft, sizeof(abBuf));
+                    uint8_t  abBuf[8192];
+                    uint32_t cbToRead = RT_MIN(pSSM->u.Read.cbRecLeft, sizeof(abBuf));
                     int rc = ssmR3DataReadV2Raw(pSSM, abBuf, cbToRead);
                     if (RT_FAILURE(rc))
                         return pSSM->rc = rc;
@@ -7141,7 +7141,7 @@ static int ssmR3HeaderAndValidate(PSSMHANDLE pSSM, bool fChecksumIt, bool fCheck
     static const struct
     {
         char        szMagic[sizeof(SSMFILEHDR_MAGIC_V2_0)];
-        size_t      cbHdr;
+        uint32_t    cbHdr;
         unsigned    uFmtVerMajor;
         unsigned    uFmtVerMinor;
     }   s_aVers[] =
@@ -8464,7 +8464,7 @@ static int ssmR3FileSeekSubV2(PSSMHANDLE pSSM, PSSMFILEDIR pDir, size_t cbDir, u
      */
     int rc = ssmR3StrmPeekAt(&pSSM->Strm, offDir, pDir, cbDir, NULL);
     AssertLogRelRCReturn(rc, rc);
-    rc = ssmR3ValidateDirectory(pDir, cbDir, offDir, cDirEntries, pSSM->u.Read.cbFileHdr, pSSM->u.Read.u32SvnRev);
+    rc = ssmR3ValidateDirectory(pDir, (uint32_t)cbDir, offDir, cDirEntries, pSSM->u.Read.cbFileHdr, pSSM->u.Read.u32SvnRev);
     if (RT_FAILURE(rc))
         return rc;
 

@@ -1858,6 +1858,7 @@ ifdef VBOX_WITH_WARNINGS_AS_ERRORS
  else
   VBOX_GCC_WERR ?= -Werror
   VBOX_VCC_WERR ?= -WX
+  VBOX_VCC_LD_WERR ?= ## @todo later also: -WX
  endif
 endif
 
@@ -2163,7 +2164,7 @@ ifdef VBOX_WITH_RAW_MODE
    TEMPLATE_VBoxRc_CXXFLAGS          = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_GC_OPT) $(VBOX_VCC_GC_FP) $(VBOX_VCC_WERR)
   endif
   TEMPLATE_VBoxRc_CFLAGS             = $(TEMPLATE_VBoxRc_CXXFLAGS)
-  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD $(VBOX_VCC_WERR)
+  TEMPLATE_VBoxRc_LDFLAGS            = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Lines -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR)
   ifndef VBOX_NOINC_MISC
    include $(KBUILD_PATH)/sdks/W2K3DDKX86.kmk
   endif
@@ -2286,7 +2287,7 @@ TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 -GS- -w
 TEMPLATE_VBoxR0_CXXFLAGS            = -Zi -Zl -GR- -EHs- -GF -W3 -wd4244 $(VBOX_VCC_OPT) $(VBOX_VCC_FP)	$(VBOX_VCC_WERR)
  endif
 TEMPLATE_VBoxR0_CFLAGS              = $(TEMPLATE_VBoxR0_CXXFLAGS)
-TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_WERR)
+TEMPLATE_VBoxR0_LDFLAGS             = -Driver -Subsystem:NATIVE -Incremental:NO -Align:64 -MapInfo:Exports -NoD $(VBOX_VCC_LD_WERR)
 TEMPLATE_VBoxR0_LIBS                = \
 	$(PATH_LIB)/RuntimeR0Stub$(VBOX_SUFF_LIB)
 TEMPLATE_VBoxR0_LIBS.x86            = \
@@ -2724,7 +2725,7 @@ TEMPLATE_VBoxR3Dll_EXTENDS_BY          += appending
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Dll_CFLAGS            += $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3Dll_CXXFLAGS          += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3Dll_LDFLAGS           += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3Dll_LDFLAGS           += $(VBOX_VCC_LD_WERR)
 else
  TEMPLATE_VBoxR3Dll_CFLAGS            += $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3Dll_CXXFLAGS          += $(VBOX_GCC_WERR)
@@ -2765,7 +2766,7 @@ TEMPLATE_VBoxR3Static_EXTENDS_BY    = appending
 ifeq ($(KBUILD_TARGET),win)
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_VCC_WERR)
  TEMPLATE_VBoxR3Static_CXXFLAGS    += $(VBOX_VCC_WERR)
- TEMPLATE_VBoxR3Static_LDFLAGS     += $(VBOX_VCC_WERR)
+ TEMPLATE_VBoxR3Static_LDFLAGS     += $(VBOX_VCC_LD_WERR)
 else
  TEMPLATE_VBoxR3Static_CFLAGS      += $(VBOX_GCC_WERR)
  TEMPLATE_VBoxR3Static_CXXFLAGS    += $(VBOX_GCC_WERR)

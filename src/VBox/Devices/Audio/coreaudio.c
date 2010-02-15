@@ -167,7 +167,7 @@ DECL_FORCE_INLINE(void) IORingBufferReleaseReadBlock(PIORINGBUFFER pBuffer, uint
     /* Split at the end of the buffer. */
     pBuffer->uReadPos = (pBuffer->uReadPos + cSize) % pBuffer->cBufSize;
 
-    ASMAtomicSubU32((int32_t*)&pBuffer->cBufferUsed, cSize);
+    ASMAtomicSubU32(&pBuffer->cBufferUsed, cSize);
 }
 
 static void IORingBufferAquireWriteBlock(PIORINGBUFFER pBuffer, uint32_t cReqSize, char **ppStart, uint32_t *pcSize)
