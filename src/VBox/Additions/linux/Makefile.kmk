@@ -139,6 +139,7 @@ VBOX_ADD_STRIP_MOD.linux = \
 	vboxvideo_drv_15.so \
 	vboxvideo_drv_16.so \
 	vboxvideo_drv_17.so \
+	pam_vbox.so \
 	mount.vboxsf
 
 VBOX_ADD_MOD.linux = \
