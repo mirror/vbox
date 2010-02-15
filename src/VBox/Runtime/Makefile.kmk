@@ -57,9 +57,9 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
  include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 
  BLDPROGS += uniread
- LIBRARIES += RuntimeR3 RuntimeR0 RuntimeEFCPP RuntimeR3NoCRTGCC
+ LIBRARIES += RuntimeR3 RuntimeR0 RuntimeR0Stub RuntimeEFCPP RuntimeR3NoCRTGCC
  ifdef VBOX_WITH_RAW_MODE
-  LIBRARIES += RuntimeRC
+  LIBRARIES += RuntimeRC RuntimeRCStub
  endif
  ifdef VBOX_WITH_VBOXDRV
   LIBRARIES += RuntimeR0Drv
@@ -1108,7 +1108,7 @@ RuntimeR3NoCRTGCC_SOURCES.x86 = \
 ## @todo stop using the old memcpy.c and memset.c code.
 
 #
-# RuntimeR0 - Ring0 library for VMMR0.
+# RuntimeR0 - Ring-0 library for VMMR0.
 #
 RuntimeR0_TEMPLATE      = VBoxR0
 RuntimeR0_DEFS          = IN_RT_R0 RT_WITH_VBOX
@@ -1201,7 +1201,15 @@ RuntimeR0_SOURCES.os2 = \
 
 
 #
-# RuntimeR0Drv - Ring0 library for host drivers.
+# RuntimeR0Stub - Ring-0 context startup stub for Windows.
+#
+RuntimeR0Stub_TEMPLATE    = VBoxR0
+RuntimeR0Stub_SOURCES.win = \
+	nt/NtProcessStartup-stub.cpp
+
+
+#
+# RuntimeR0Drv - Ring-0 library for host drivers.
 #
 RuntimeR0Drv_TEMPLATE   = VBOXR0DRV
 RuntimeR0Drv_SDKS.win   = W2K3DDK WINPSDKINCS
@@ -1638,6 +1646,16 @@ ifdef VBOX_WITH_RAW_MODE
  	common/math/gcc/umoddi3.c \
  	common/math/gcc/xordi3.c
  endif
+
+
+ #
+ # RuntimeRCStub - Raw-mode context startup stub for Windows.
+ #
+ RuntimeRCStub_TEMPLATE    = VBoxRc
+ RuntimeRCStub_SOURCES.win = \
+	nt/NtProcessStartup-stub.cpp
+
+
 endif # VBOX_WITH_RAW_MODE
 
 

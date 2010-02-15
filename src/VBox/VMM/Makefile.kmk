@@ -363,10 +363,6 @@ ifdef VBOX_WITH_RAW_MODE
  	$(PATH_LIB)/VMMGCBuiltin$(VBOX_SUFF_LIB)
  endif
 
- ifeq ($(VBOX_LDR_FMT32),pe)
-  VMMGC_LDFLAGS  = -Entry:VMMGCEntry
- endif
-
  VMMGC_SOURCES   = \
  	VMMGC/VMMGC0.asm \
  	VMMGC/VMMGCDeps.cpp \
@@ -465,9 +461,6 @@ VMMR0_DEFS.darwin.x86 = \
 	VBOX_WITH_HYBRID_32BIT_KERNEL VBOX_WITH_HYBRID_32BIT_KERNEL_IN_R0
 VMMR0_DEFS.win.amd64  = VBOX_WITH_KERNEL_USING_XMM
 
-ifeq ($(VBOX_LDR_FMT),pe)
- VMMR0_LDFLAGS  = -Entry:VMMR0EntryEx
-endif
 ifeq ($(VBOX_LDR_FMT),elf)
  VMMR0_LDFLAGS  = -e VMMR0EntryEx
 endif
