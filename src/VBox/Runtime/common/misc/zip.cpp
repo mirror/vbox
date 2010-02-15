@@ -1725,7 +1725,7 @@ RTDECL(int) RTZipBlockCompress(RTZIPTYPE enmType, RTZIPLEVEL enmLevel, uint32_t 
             }
 # endif
 
-            unsigned cbDstActual = lzf_compress(pvSrc, cbSrc, pvDst, cbDst);
+            unsigned cbDstActual = lzf_compress(pvSrc, (unsigned)cbSrc, pvDst, (unsigned)cbDst);    /** @todo deal with size type overflows */
             if (RT_UNLIKELY(cbDstActual < 1))
                 return VERR_BUFFER_OVERFLOW;
             *pcbDstActual = cbDstActual;
@@ -1817,7 +1817,7 @@ RTDECL(int) RTZipBlockDecompress(RTZIPTYPE enmType, uint32_t fFlags,
         case RTZIPTYPE_LZF:
         {
 #ifdef RTZIP_USE_LZF
-            unsigned cbDstActual = lzf_decompress(pvSrc, cbSrc, pvDst, cbDst);
+            unsigned cbDstActual = lzf_decompress(pvSrc, (unsigned)cbSrc, pvDst, (unsigned)cbDst);  /** @todo deal with size type overflows */
             if (RT_UNLIKELY(cbDstActual < 1))
             {
                 if (errno == E2BIG)

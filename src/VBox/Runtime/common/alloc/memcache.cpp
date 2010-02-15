@@ -166,7 +166,7 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
 
     if (cbAlignment == 0)
     {
-        cbAlignment = UINT32_C(1) << ASMBitLastSetU32((uint32_t)cbObject);
+        cbAlignment = (size_t)1 << ASMBitLastSetU32((uint32_t)cbObject);
         if (cbAlignment > 64)
             cbAlignment = 64;
     }
@@ -190,9 +190,9 @@ RTDECL(int) RTMemCacheCreate(PRTMEMCACHE phMemCache, size_t cbObject, size_t cbA
     }
 
     pThis->u32Magic         = RTMEMCACHE_MAGIC;
-    pThis->cbObject         = RT_ALIGN_Z(cbObject, cbAlignment);
-    pThis->cbAlignment      = cbAlignment;
-    pThis->cPerPage         = (PAGE_SIZE - RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)) / pThis->cbObject;
+    pThis->cbObject         = (uint32_t)RT_ALIGN_Z(cbObject, cbAlignment);
+    pThis->cbAlignment      = (uint32_t)cbAlignment;
+    pThis->cPerPage         = (uint32_t)((PAGE_SIZE - RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), cbAlignment)) / pThis->cbObject);
     while (    RT_ALIGN_Z(sizeof(RTMEMCACHEPAGE), RT_MIN(cbAlignment, 8))
              + pThis->cPerPage * pThis->cbObject
              + RT_ALIGN(pThis->cPerPage, 64) / 8 * 2

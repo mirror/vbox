@@ -136,13 +136,13 @@ static char* rtS3DateHeader()
     return pszDate;
 }
 
-static char* rtS3ParseHeaders(char** ppHeaders, size_t cHead)
+static char* rtS3ParseHeaders(char** ppHeaders, size_t cHeadEnts)
 {
     char pszEmpty[] = "";
     char *pszRes = NULL;
     char *pszDate = pszEmpty;
     char *pszType = pszEmpty;
-    for(size_t i=0; i < cHead; ++i)
+    for(size_t i=0; i < cHeadEnts; ++i)
     {
         if(ppHeaders[i] != NULL)
         {
@@ -170,11 +170,11 @@ static char* rtS3ParseHeaders(char** ppHeaders, size_t cHead)
     return pszRes;
 }
 
-static char* rtS3Canonicalize(const char* pszAction, const char* pszBucket, const char* pszKey, char** ppszHead, size_t cHead)
+static char* rtS3Canonicalize(const char* pszAction, const char* pszBucket, const char* pszKey, char** papszHeadEnts, size_t cHeadEnts)
 {
     char* pszRes;
     /* Grep the necessary info out of the headers & put them in a string */
-    char* pszHead = rtS3ParseHeaders(ppszHead, cHead);
+    char* pszHead = rtS3ParseHeaders(papszHeadEnts, cHeadEnts);
     /* Create the string which will be used as signature */
     RTStrAPrintf(&pszRes, "%s\n%s\n/",
                  pszAction,
@@ -198,15 +198,16 @@ static char* rtS3Canonicalize(const char* pszAction, const char* pszBucket, cons
     return pszRes;
 }
 
-static char* rtS3CreateSignature(PRTS3INTERNAL pS3Int, const char* pszAction, const char* pszBucket, const char* pszKey, char** ppszHead, size_t cHead)
+static char* rtS3CreateSignature(PRTS3INTERNAL pS3Int, const char* pszAction, const char* pszBucket, const char* pszKey,
+                                 char** papszHeadEnts, size_t cHeadEnts)
 {
     /* Create a string we can sign */
-    char* pszSig = rtS3Canonicalize(pszAction, pszBucket, pszKey, ppszHead, cHead);
+    char* pszSig = rtS3Canonicalize(pszAction, pszBucket, pszKey, papszHeadEnts, cHeadEnts);
 //    printf ("Sig %s\n", pszSig);
     /* Sign the string by creating a SHA1 finger print */
     char pszSigEnc[1024];
     unsigned int cSigEnc = sizeof(pszSigEnc);
-    HMAC(EVP_sha1(), pS3Int->pszSecretKey, strlen(pS3Int->pszSecretKey),
+    HMAC(EVP_sha1(), pS3Int->pszSecretKey, (int)strlen(pS3Int->pszSecretKey),
          (const unsigned char*)pszSig, strlen(pszSig),
          (unsigned char*)pszSigEnc, &cSigEnc);
     RTStrFree(pszSig);
@@ -219,11 +220,12 @@ static char* rtS3CreateSignature(PRTS3INTERNAL pS3Int, const char* pszAction, co
     return pszSigBase64Enc;
 }
 
-static char* rtS3CreateAuthHeader(PRTS3INTERNAL pS3Int, const char* pszAction, const char* pszBucket, const char* pszKey, char** ppszHead, size_t cHead)
+static char* rtS3CreateAuthHeader(PRTS3INTERNAL pS3Int, const char* pszAction, const char* pszBucket, const char* pszKey,
+                                  char** papszHeadEnts, size_t cHeadEnts)
 {
     char *pszAuth;
     /* Create a signature out of the header & the bucket/key info */
-    char *pszSigBase64Enc = rtS3CreateSignature(pS3Int, pszAction, pszBucket, pszKey, ppszHead, cHead);
+    char *pszSigBase64Enc = rtS3CreateSignature(pS3Int, pszAction, pszBucket, pszKey, papszHeadEnts, cHeadEnts);
     /* Create the authorization header entry */
     RTStrAPrintf(&pszAuth, "Authorization: AWS %s:%s",
                  pS3Int->pszAccessKey,
@@ -376,7 +378,7 @@ static xmlNodePtr rtS3FindNode(xmlNodePtr pNode, const char* pszName)
 
 static int rtS3ReadXmlFromMemory(PRTS3TMPMEMCHUNK pChunk, const char* pszRootElement, xmlDocPtr *ppDoc, xmlNodePtr *ppCur)
 {
-    *ppDoc = xmlReadMemory(pChunk->pszMem, pChunk->cSize, "", "ISO-8859-1", XML_PARSE_NOBLANKS);
+    *ppDoc = xmlReadMemory(pChunk->pszMem, (int)pChunk->cSize, "", "ISO-8859-1", XML_PARSE_NOBLANKS);
     if (*ppDoc == NULL)
         return VERR_PARSE_ERROR;
 
@@ -565,19 +567,19 @@ RTR3DECL(int) RTS3GetBuckets(RTS3 hS3, PCRTS3BUCKETENTRY *ppBuckets)
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_URL, pS3Int->pszBaseUrl);
 
     /* Create the three basic header entries */
-    char *ppszHead[3] =
+    char *apszHead[3] =
     {
         rtS3HostHeader("", pS3Int->pszBaseUrl), /* Host entry */
         rtS3DateHeader(),                       /* Date entry */
         NULL                                    /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", "", "", ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", "", "", apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -591,8 +593,8 @@ RTR3DECL(int) RTS3GetBuckets(RTS3 hS3, PCRTS3BUCKETENTRY *ppBuckets)
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     /* On success parse the result */
     if (RT_SUCCESS(rc))
@@ -644,7 +646,7 @@ RTR3DECL(int) RTS3CreateBucket(RTS3 hS3, const char* pszBucketName)
     RTStrFree(pszUrl);
 
     /* Create the basic header entries */
-    char *ppszHead[4] =
+    char *apszHead[4] =
     {
         RTStrDup("Content-Length: 0"),                     /* Content length entry */
         rtS3HostHeader(pszBucketName, pS3Int->pszBaseUrl), /* Host entry */
@@ -652,12 +654,12 @@ RTR3DECL(int) RTS3CreateBucket(RTS3 hS3, const char* pszBucketName)
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "PUT", pszBucketName, "", ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "PUT", pszBucketName, "", apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -680,8 +682,8 @@ RTR3DECL(int) RTS3CreateBucket(RTS3 hS3, const char* pszBucketName)
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     return rc;
 }
@@ -699,19 +701,19 @@ RTR3DECL(int) RTS3DeleteBucket(RTS3 hS3, const char* pszBucketName)
     RTStrFree(pszUrl);
 
     /* Create the three basic header entries */
-    char *ppszHead[3] =
+    char *apszHead[3] =
     {
         rtS3HostHeader(pszBucketName, pS3Int->pszBaseUrl), /* Host entry */
         rtS3DateHeader(),                                  /* Date entry */
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "DELETE", pszBucketName, "", ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "DELETE", pszBucketName, "", apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -730,8 +732,8 @@ RTR3DECL(int) RTS3DeleteBucket(RTS3 hS3, const char* pszBucketName)
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     return rc;
 }
@@ -751,19 +753,19 @@ RTR3DECL(int) RTS3GetBucketKeys(RTS3 hS3, const char* pszBucketName, PCRTS3KEYEN
     RTStrFree(pszUrl);
 
     /* Create the three basic header entries */
-    char *ppszHead[3] =
+    char *apszHead[3] =
     {
         rtS3HostHeader(pszBucketName, pS3Int->pszBaseUrl), /* Host entry */
         rtS3DateHeader(),                                  /* Date entry */
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", pszBucketName, "", ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", pszBucketName, "", apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -778,8 +780,8 @@ RTR3DECL(int) RTS3GetBucketKeys(RTS3 hS3, const char* pszBucketName, PCRTS3KEYEN
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     /* On success parse the result */
     if (RT_SUCCESS(rc))
@@ -831,19 +833,19 @@ RTR3DECL(int) RTS3DeleteKey(RTS3 hS3, const char* pszBucketName, const char* psz
     RTStrFree(pszUrl);
 
     /* Create the three basic header entries */
-    char *ppszHead[3] =
+    char *apszHead[3] =
     {
         rtS3HostHeader(pszBucketName, pS3Int->pszBaseUrl), /* Host entry */
         rtS3DateHeader(),                                  /* Date entry */
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "DELETE", pszBucketName, pszKeyName, ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "DELETE", pszBucketName, pszKeyName, apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -856,8 +858,8 @@ RTR3DECL(int) RTS3DeleteKey(RTS3 hS3, const char* pszBucketName, const char* psz
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     return rc;
 }
@@ -881,19 +883,19 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
     RTStrFree(pszUrl);
 
     /* Create the three basic header entries */
-    char *ppszHead[3] =
+    char *apszHead[3] =
     {
         rtS3HostHeader(pszBucketName, pS3Int->pszBaseUrl), /* Host entry */
         rtS3DateHeader(),                                  /* Date entry */
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", pszBucketName, pszKeyName, ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "GET", pszBucketName, pszKeyName, apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -907,8 +909,8 @@ RTR3DECL(int) RTS3GetKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     /* Close the open file */
     RTFileClose(hFile);
@@ -949,7 +951,7 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
     char* pszContentLength;
     RTStrAPrintf(&pszContentLength, "Content-Length: %lu", cbFileSize);
     /* Create the three basic header entries */
-    char *ppszHead[5] =
+    char *apszHead[5] =
     {
         /* todo: For now we use octet-stream for all types. Later we should try
          * to set the right one (libmagic from the file packet could be a
@@ -961,12 +963,12 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
         NULL                                               /* Authorization entry */
     };
     /* Create the authorization header entry */
-    ppszHead[RT_ELEMENTS(ppszHead)-1] = rtS3CreateAuthHeader(pS3Int, "PUT", pszBucketName, pszKeyName, ppszHead, RT_ELEMENTS(ppszHead));
+    apszHead[RT_ELEMENTS(apszHead)-1] = rtS3CreateAuthHeader(pS3Int, "PUT", pszBucketName, pszKeyName, apszHead, RT_ELEMENTS(apszHead));
 
     /* Add all headers to curl */
     struct curl_slist* pHeaders = NULL; /* Init to NULL is important */
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        pHeaders = curl_slist_append(pHeaders, ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        pHeaders = curl_slist_append(pHeaders, apszHead[i]);
 
     /* Pass our list of custom made headers */
     curl_easy_setopt(pS3Int->pCurl, CURLOPT_HTTPHEADER, pHeaders);
@@ -987,8 +989,8 @@ RTR3DECL(int) RTS3PutKey(RTS3 hS3, const char *pszBucketName, const char *pszKey
 
     /* Regardless of the result, free all used resources first*/
     curl_slist_free_all(pHeaders);
-    for(size_t i=0; i < RT_ELEMENTS(ppszHead); ++i)
-        RTStrFree(ppszHead[i]);
+    for(size_t i=0; i < RT_ELEMENTS(apszHead); ++i)
+        RTStrFree(apszHead[i]);
 
     /* Close the open file */
     RTFileClose(hFile);

@@ -86,7 +86,7 @@ DECLINLINE(bool) rtGetOptIsAsciiInSet(char ch, const char *pszSeparators, size_t
         case 1: if (ch == pszSeparators[0]) return true;
             return false;
         default:
-            return memchr(pszSeparators, ch, cchSeparators);
+            return memchr(pszSeparators, ch, cchSeparators) != NULL;
     }
 }
 
