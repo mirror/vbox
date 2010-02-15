@@ -15,7 +15,7 @@ LangString VBOX_SUN_ABORTED ${LANG_FRENCH}               "Le programme ne peut p
 LangString VBOX_INNOTEK_FOUND ${LANG_FRENCH}             "Une ancienne version des Additions invité est installée dans cette machine virtuelle. Les Additions invité actuelles ne peuvent être installées avant que cette version ne soit désinstallée.$\r$\n$\r$\nVoulez-vous désinstaller l'ancienne version maintenant?"
 LangString VBOX_INNOTEK_ABORTED ${LANG_FRENCH}           "Le programme ne peut pas continuer avec l'installation des Additions invité.$\r$\nVeuillez désinstaller d'abord les anciennes Additions!"
 
-LangString VBOX_UNINSTALL_START ${LANG_FRENCH}           "Press OK to start the uninstallation.$\r$\nPlease then wait while the old uninstaller is executed in the background ..."
+LangString VBOX_UNINSTALL_START ${LANG_FRENCH}           "Choisissez OK pour démarrer la désinstallation.$\r$\nLe processus nécessitera quelque temps et se déroulera en arrière-plan."
 LangString VBOX_UNINSTALL_REBOOT ${LANG_FRENCH}          "Nous vous conseillons fortement de redémarer cette machine virtuelle avant d'installer la nouvelle version des Additions invité.$\r$\nVeuillez recommencer l'installation des Additions après le redémarrage.$\r$\n$\r$\nRedémarrer maintenant?"
 
 LangString VBOX_COMPONENT_MAIN ${LANG_FRENCH}                       "Additions invité VirtualBox"
