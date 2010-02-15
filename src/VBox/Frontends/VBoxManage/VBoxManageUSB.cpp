@@ -440,16 +440,16 @@ int handleUSBFilter (HandlerArg *a)
 
                 if (!f.mActive.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(Active) (f.mActive));
-                if (!f.mVendorId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId)(f.mVendorId));
-                if (!f.mProductId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId));
-                if (!f.mRevision.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision));
-                if (!f.mManufacturer.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer));
-                if (!f.mSerialNumber.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber));
+                if (!f.mVendorId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId.setNullIfEmpty()));
+                if (!f.mProductId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId.setNullIfEmpty()));
+                if (!f.mRevision.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision.setNullIfEmpty()));
+                if (!f.mManufacturer.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
+                if (!f.mSerialNumber.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
@@ -465,18 +465,18 @@ int handleUSBFilter (HandlerArg *a)
 
                 if (!f.mActive.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(Active) (f.mActive));
-                if (!f.mVendorId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId));
-                if (!f.mProductId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId));
-                if (!f.mRevision.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision));
-                if (!f.mManufacturer.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer));
-                if (!f.mRemote.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote));
-                if (!f.mSerialNumber.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber));
+                if (!f.mVendorId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId.setNullIfEmpty()));
+                if (!f.mProductId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId.setNullIfEmpty()));
+                if (!f.mRevision.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision.setNullIfEmpty()));
+                if (!f.mManufacturer.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
+                if (!f.mRemote.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote.setNullIfEmpty()));
+                if (!f.mSerialNumber.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
@@ -493,20 +493,20 @@ int handleUSBFilter (HandlerArg *a)
 
                 ComPtr <IHostUSBDeviceFilter> flt = coll[cmd.mIndex];
 
-                if (!f.mName.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Name) (f.mName));
+                if (!f.mName.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Name) (f.mName.setNullIfEmpty()));
                 if (!f.mActive.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(Active) (f.mActive));
-                if (!f.mVendorId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId));
-                if (!f.mProductId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId));
-                if (!f.mRevision.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision));
-                if (!f.mManufacturer.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer));
-                if (!f.mSerialNumber.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber));
+                if (!f.mVendorId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId.setNullIfEmpty()));
+                if (!f.mProductId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId.setNullIfEmpty()));
+                if (!f.mRevision.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision.setNullIfEmpty()));
+                if (!f.mManufacturer.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
+                if (!f.mSerialNumber.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
 
@@ -520,22 +520,22 @@ int handleUSBFilter (HandlerArg *a)
 
                 ComPtr <IUSBDeviceFilter> flt = coll[cmd.mIndex];
 
-                if (!f.mName.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Name) (f.mName));
+                if (!f.mName.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Name) (f.mName.setNullIfEmpty()));
                 if (!f.mActive.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(Active) (f.mActive));
-                if (!f.mVendorId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId));
-                if (!f.mProductId.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId));
-                if (!f.mRevision.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision));
-                if (!f.mManufacturer.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer));
-                if (!f.mRemote.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote));
-                if (!f.mSerialNumber.isEmpty())
-                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber));
+                if (!f.mVendorId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(VendorId) (f.mVendorId.setNullIfEmpty()));
+                if (!f.mProductId.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(ProductId) (f.mProductId.setNullIfEmpty()));
+                if (!f.mRevision.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Revision) (f.mRevision.setNullIfEmpty()));
+                if (!f.mManufacturer.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Manufacturer) (f.mManufacturer.setNullIfEmpty()));
+                if (!f.mRemote.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(Remote) (f.mRemote.setNullIfEmpty()));
+                if (!f.mSerialNumber.isNull())
+                    CHECK_ERROR_BREAK (flt, COMSETTER(SerialNumber) (f.mSerialNumber.setNullIfEmpty()));
                 if (!f.mMaskedInterfaces.isNull())
                     CHECK_ERROR_BREAK (flt, COMSETTER(MaskedInterfaces) (f.mMaskedInterfaces));
             }

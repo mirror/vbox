@@ -681,13 +681,8 @@ STDMETHODIMP Session::OnShowWindow(BOOL aCheck, BOOL *aCanShow, ULONG64 *aWinId)
     return mConsole->onShowWindow(aCheck, aCanShow, aWinId);
 }
 
-STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName,
-                                          IN_BSTR aValue,
-                                          IN_BSTR aFlags,
-                                          BOOL aIsSetter,
-                                          BSTR *aRetValue,
-                                          ULONG64 *aRetTimestamp,
-                                          BSTR *aRetFlags)
+STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR aFlags,
+                                          BOOL aIsSetter, BSTR *aRetValue, ULONG64 *aRetTimestamp, BSTR *aRetFlags)
 {
 #ifdef VBOX_WITH_GUEST_PROPS
     AutoCaller autoCaller(this);
@@ -698,7 +693,7 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName,
                         tr("Machine session is not open (session state: %s)."),
                         Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     if (!aIsSetter && !VALID_PTR(aRetValue))
         return E_POINTER;
     if (!aIsSetter && !VALID_PTR(aRetTimestamp))

@@ -96,13 +96,12 @@ HRESULT ProgressBase::FinalConstruct()
  *
  * @return              COM result indicator.
  */
-HRESULT ProgressBase::protectedInit(AutoInitSpan &aAutoInitSpan,
+HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                                    VirtualBox *aParent,
+                            VirtualBox *aParent,
 #endif
-                                    IUnknown *aInitiator,
-                                    const Utf8Str &strDescription,
-                                    OUT_GUID aId /* = NULL */)
+                            IUnknown *aInitiator,
+                            CBSTR aDescription, OUT_GUID aId /* = NULL */)
 {
     /* Guarantees subclasses call this method at the proper time */
     NOREF (aAutoInitSpan);
@@ -116,7 +115,7 @@ HRESULT ProgressBase::protectedInit(AutoInitSpan &aAutoInitSpan,
     AssertReturn(aInitiator, E_INVALIDARG);
 #endif
 
-    AssertReturn(!strDescription.isEmpty(), E_INVALIDARG);
+    AssertReturn(aDescription, E_INVALIDARG);
 
 #if !defined (VBOX_COM_INPROC)
     /* share parent weakly */
@@ -143,7 +142,7 @@ HRESULT ProgressBase::protectedInit(AutoInitSpan &aAutoInitSpan,
     mParent->addProgress(this);
 #endif
 
-    unconst(m_strDescription) = strDescription;
+    unconst(mDescription) = aDescription;
 
     return S_OK;
 }
@@ -220,7 +219,7 @@ STDMETHODIMP ProgressBase::COMGETTER(Description) (BSTR *aDescription)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mDescription is constant during life time, no need to lock */
-    m_strDescription.cloneTo(aDescription);
+    mDescription.cloneTo(aDescription);
 
     return S_OK;
 }
@@ -465,7 +464,7 @@ STDMETHODIMP ProgressBase::COMGETTER(OperationDescription) (BSTR *aOperationDesc
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    m_strOperationDescription.cloneTo(aOperationDescription);
+    m_bstrOperationDescription.cloneTo(aOperationDescription);
 
     return S_OK;
 }
@@ -663,22 +662,22 @@ HRESULT Progress::init (
                         VirtualBox *aParent,
 #endif
                         IUnknown *aInitiator,
-                        const Utf8Str &strDescription,
+                        CBSTR aDescription,
                         BOOL aCancelable,
                         ULONG cOperations,
                         ULONG ulTotalOperationsWeight,
-                        const Utf8Str &strFirstOperationDescription,
+                        CBSTR bstrFirstOperationDescription,
                         ULONG ulFirstOperationWeight,
                         OUT_GUID aId /* = NULL */)
 {
-    LogFlowThisFunc(("aDescription=\"%s\", cOperations=%d, ulTotalOperationsWeight=%d, strFirstOperationDescription=\"%s\", ulFirstOperationWeight=%d\n",
-                     strDescription.c_str(),
+    LogFlowThisFunc(("aDescription=\"%ls\", cOperations=%d, ulTotalOperationsWeight=%d, bstrFirstOperationDescription=\"%ls\", ulFirstOperationWeight=%d\n",
+                     aDescription,
                      cOperations,
                      ulTotalOperationsWeight,
-                     strFirstOperationDescription.c_str(),
+                     bstrFirstOperationDescription,
                      ulFirstOperationWeight));
 
-    AssertReturn(!strFirstOperationDescription.isEmpty(), E_INVALIDARG);
+    AssertReturn(bstrFirstOperationDescription, E_INVALIDARG);
     AssertReturn(ulTotalOperationsWeight >= 1, E_INVALIDARG);
 
     /* Enclose the state transition NotReady->InInit->Ready */
@@ -687,13 +686,11 @@ HRESULT Progress::init (
 
     HRESULT rc = S_OK;
 
-    rc = ProgressBase::protectedInit(autoInitSpan,
+    rc = ProgressBase::protectedInit (autoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                                     aParent,
+                                      aParent,
 #endif
-                                     aInitiator,
-                                     strDescription,
-                                     aId);
+                                      aInitiator, aDescription, aId);
     if (FAILED(rc)) return rc;
 
     mCancelable = aCancelable;
@@ -702,7 +699,7 @@ HRESULT Progress::init (
     m_ulTotalOperationsWeight = ulTotalOperationsWeight;
     m_ulOperationsCompletedWeight = 0;
     m_ulCurrentOperation = 0;
-    m_strOperationDescription = strFirstOperationDescription;
+    m_bstrOperationDescription = bstrFirstOperationDescription;
     m_ulCurrentOperationWeight = ulFirstOperationWeight;
     m_ulOperationPercent = 0;
 
@@ -735,9 +732,9 @@ HRESULT Progress::init (
  */
 HRESULT Progress::init(BOOL aCancelable,
                        ULONG aOperationCount,
-                       const Utf8Str &strOperationDescription)
+                       CBSTR aOperationDescription)
 {
-    LogFlowThisFunc(("aOperationDescription=\"%s\"\n", strOperationDescription.c_str()));
+    LogFlowThisFunc(("aOperationDescription=\"%ls\"\n", aOperationDescription));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
@@ -745,7 +742,7 @@ HRESULT Progress::init(BOOL aCancelable,
 
     HRESULT rc = S_OK;
 
-    rc = ProgressBase::protectedInit(autoInitSpan);
+    rc = ProgressBase::protectedInit (autoInitSpan);
     if (FAILED(rc)) return rc;
 
     mCancelable = aCancelable;
@@ -756,14 +753,14 @@ HRESULT Progress::init(BOOL aCancelable,
     m_ulTotalOperationsWeight = aOperationCount;
     m_ulOperationsCompletedWeight = 0;
     m_ulCurrentOperation = 0;
-    m_strOperationDescription = strOperationDescription;
+    m_bstrOperationDescription = aOperationDescription;
     m_ulCurrentOperationWeight = 1;
     m_ulOperationPercent = 0;
 
-    int vrc = RTSemEventMultiCreate(&mCompletedSem);
-    ComAssertRCRet(vrc, E_FAIL);
+    int vrc = RTSemEventMultiCreate (&mCompletedSem);
+    ComAssertRCRet (vrc, E_FAIL);
 
-    RTSemEventMultiReset(mCompletedSem);
+    RTSemEventMultiReset (mCompletedSem);
 
     /* Confirm a successful initialization when it's the case */
     if (SUCCEEDED(rc))
@@ -789,14 +786,14 @@ void Progress::uninit()
     /* wake up all threads still waiting on occasion */
     if (mWaitersCount > 0)
     {
-        LogFlow (("WARNING: There are still %d threads waiting for '%s' completion!\n",
-                  mWaitersCount, m_strDescription.c_str()));
-        RTSemEventMultiSignal(mCompletedSem);
+        LogFlow (("WARNING: There are still %d threads waiting for '%ls' completion!\n",
+                  mWaitersCount, mDescription.raw()));
+        RTSemEventMultiSignal (mCompletedSem);
     }
 
-    RTSemEventMultiDestroy(mCompletedSem);
+    RTSemEventMultiDestroy (mCompletedSem);
 
-    ProgressBase::protectedUninit(autoUninitSpan);
+    ProgressBase::protectedUninit (autoUninitSpan);
 }
 
 // IProgress properties
@@ -1006,12 +1003,12 @@ STDMETHODIMP Progress::SetNextOperation(IN_BSTR bstrNextOperationDescription, UL
     ++m_ulCurrentOperation;
     m_ulOperationsCompletedWeight += m_ulCurrentOperationWeight;
 
-    m_strOperationDescription = bstrNextOperationDescription;
+    m_bstrOperationDescription = bstrNextOperationDescription;
     m_ulCurrentOperationWeight = ulNextOperationsWeight;
     m_ulOperationPercent = 0;
 
-    Log(("Progress::setNextOperation(%s): ulNextOperationsWeight = %d; m_ulCurrentOperation is now %d, m_ulOperationsCompletedWeight is now %d\n",
-         m_strOperationDescription.c_str(), ulNextOperationsWeight, m_ulCurrentOperation, m_ulOperationsCompletedWeight));
+    Log(("Progress::setNextOperation(%ls): ulNextOperationsWeight = %d; m_ulCurrentOperation is now %d, m_ulOperationsCompletedWeight is now %d\n",
+         m_bstrOperationDescription.raw(), ulNextOperationsWeight, m_ulCurrentOperation, m_ulOperationsCompletedWeight));
 
     /* wake up all waiting threads */
     if (mWaitersCount > 0)
@@ -1288,9 +1285,7 @@ HRESULT CombinedProgress::protectedInit (AutoInitSpan &aAutoInitSpan,
     m_cOperations = 0; /* will be calculated later */
 
     m_ulCurrentOperation = 0;
-    Bstr bstrOperationDescription;
-    rc = mProgresses[0]->COMGETTER(OperationDescription)(bstrOperationDescription.asOutParam());
-    m_strOperationDescription = bstrOperationDescription;
+    rc = mProgresses[0]->COMGETTER(OperationDescription)(m_bstrOperationDescription.asOutParam());
     if (FAILED(rc)) return rc;
 
     for (size_t i = 0; i < mProgresses.size(); i ++)
@@ -1790,9 +1785,8 @@ HRESULT CombinedProgress::checkProgress()
         if (SUCCEEDED(rc) && mCompletedOperations + operation > m_ulCurrentOperation)
         {
             m_ulCurrentOperation = mCompletedOperations + operation;
-            Bstr bstrOperationDescription;
-            rc = progress->COMGETTER(OperationDescription)(bstrOperationDescription.asOutParam());
-            m_strOperationDescription = bstrOperationDescription;
+            rc = progress->COMGETTER(OperationDescription) (
+                m_bstrOperationDescription.asOutParam());
         }
     }
 

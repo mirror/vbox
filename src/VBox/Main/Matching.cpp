@@ -197,8 +197,8 @@ bool ParsedRegexpFilter_base::isMatch (const Bstr &aValue) const
     // empty or null mSimple matches any match
     return
         mSimple.isEmpty() ||
-        (mIgnoreCase && mSimple.compare(aValue, Bstr::CaseInsensitive) == 0) ||
-        (!mIgnoreCase && mSimple.compare(aValue) == 0);
+        (mIgnoreCase && mSimple.compareIgnoreCase (aValue) == 0) ||
+        (!mIgnoreCase && mSimple.compare (aValue) == 0);
 }
 
 } /* namespace matching */
