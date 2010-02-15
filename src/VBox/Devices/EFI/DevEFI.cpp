@@ -481,9 +481,14 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
                                true /* fPutSmbiosHeaders */);
     Assert(RT_SUCCESS(rc));
 
-    FwCommonPlantMpsTable(pDevIns,
+    if (pThis->u8IOAPIC)
+        FwCommonPlantMpsTable(pDevIns,
                           pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
                           pThis->cCpus);
+    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
+                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
+
+    Assert(RT_SUCCESS(rc));
 
     /*
      * Re-shadow the Firmware Volume and make it RAM/RAM.
@@ -1191,12 +1196,6 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K,
-                              pThis->au8DMIPage,
-                              PGMPHYS_ROM_FLAGS_PERMANENT_BINARY,
-                              "DMI tables");
-    if (RT_FAILURE(rc))
-        return rc;
 
     /*
      * Call reset to set things up.
