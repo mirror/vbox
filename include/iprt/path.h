@@ -263,6 +263,30 @@ RTDECL(void) RTPathStripExt(char *pszPath);
 RTDECL(size_t) RTPathStripTrailingSlash(char *pszPath);
 
 /**
+ * Changes all the slahes in the specified path to DOS style.
+ *
+ * Unless @a fForce is set, nothing will be done when on a UNIX flavored system
+ * since paths wont work with DOS style slashes there.
+ *
+ * @returns @a pszPath.
+ * @param   pszPath             The path to modify.
+ * @param   fForce              Whether to force the conversion on non-DOS OSes.
+ */
+RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce);
+
+/**
+ * Changes all the slahes in the specified path to unix style.
+ *
+ * Unless @a fForce is set, nothing will be done when on a UNIX flavored system
+ * since paths wont work with DOS style slashes there.
+ *
+ * @returns @a pszPath.
+ * @param   pszPath             The path to modify.
+ * @param   fForce              Whether to force the conversion on non-DOS OSes.
+ */
+RTDECL(char *) RTPathChangeToUnixSlashes(char *pszPath, bool fForce);
+
+/**
  * Parses a path.
  *
  * It figures the length of the directory component, the offset of
