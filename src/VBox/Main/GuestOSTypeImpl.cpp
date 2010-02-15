@@ -331,4 +331,17 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsbHid) (BOOL *aRecommendedUsbHid
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedHpet) (BOOL *aRecommendedHpet)
+{
+    CheckComArgOutPointerValid(aRecommendedHpet);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* HPET recomendation is constant during life time, no need to lock */
+    *aRecommendedHpet = !!(mOSHint & VBOXOSHINT_HPET);
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */

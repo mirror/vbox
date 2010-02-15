@@ -549,6 +549,7 @@ def infoCmd(ctx,args):
     print "  Hardware 3d acceleration[accelerate3DEnabled]: " + asState(mach.accelerate3DEnabled)
     print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
+    print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
 

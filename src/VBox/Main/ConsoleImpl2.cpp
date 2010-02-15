@@ -585,7 +585,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     Bstr tmpStr2;
     hrc = guestOSType->COMGETTER(FamilyId)(tmpStr2.asOutParam());                   H();
     /*
-     * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests */
+     * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests
+     */
     BOOL fExtProfile = tmpStr2 == Bstr("MacOS");
 
     /*
@@ -593,8 +594,9 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
      */
     BOOL fHpetEnabled;
 #ifdef VBOX_WITH_HPET
+    /* Other guests may wish to use HPET too, but MacOS X not functional without it */
     hrc = pMachine->COMGETTER(HpetEnabled)(&fHpetEnabled);                          H();
-    /* Always enable HPET in extended profile */
+    /* so always enable HPET in extended profile */
     fHpetEnabled |= fExtProfile;
 #else
     fHpetEnabled = false;
@@ -2091,9 +2093,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         rc = CFGMR3InsertInteger(pCfg,  "IOAPIC", fIOAPIC);                         RC_CHECK();
         rc = CFGMR3InsertInteger(pCfg,  "FdcEnabled", fFdcEnabled);                 RC_CHECK();
-#ifdef VBOX_WITH_HPET
         rc = CFGMR3InsertInteger(pCfg,  "HpetEnabled", fHpetEnabled);               RC_CHECK();
-#endif
 #ifdef VBOX_WITH_SMC
         rc = CFGMR3InsertInteger(pCfg,  "SmcEnabled", fSmcEnabled);                 RC_CHECK();
 #endif

@@ -77,6 +77,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedStorageController)) (StorageControllerType_T *aStorageControllerType);
     STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
     STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
+    STDMETHOD(COMGETTER(RecommendedHpet)) (BOOL *aRecommendedHpet);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }

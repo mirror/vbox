@@ -239,6 +239,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("VRAM size:       %uMB\n", vramSize);
 
+    BOOL fHpetEnabled;
+    machine->COMGETTER(HpetEnabled)(&fHpetEnabled);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("hpet=\"%s\"\n", fHpetEnabled ? "on" : "off");
+    else
+        RTPrintf("HPET:   %s\n", fHpetEnabled ? "on" : "off");
+
     ULONG numCpus;
     rc = machine->COMGETTER(CPUCount)(&numCpus);
     if (details == VMINFO_MACHINEREADABLE)

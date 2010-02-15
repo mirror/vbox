@@ -1,5 +1,6 @@
 /* $Id$ */
 /** @file
+
  * VBoxManage - help and other message output.
  */
 
@@ -161,6 +162,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--acpi on|off]\n"
                  "                            [--ioapic on|off]\n"
                  "                            [--pae on|off]\n"
+                 "                            [--hpet on|off]\n"
                  "                            [--hwvirtex on|off]\n"
                  "                            [--nestedpaging on|off]\n"
                  "                            [--vtxvpid on|off]\n"
@@ -692,4 +694,3 @@ int errorArgument(const char *pszFormat, ...)
     va_end(args);
     return 1;
 }
-
