@@ -301,10 +301,10 @@ HRESULT VirtualBox::init()
     LogFlow (("===========================================================\n"));
     LogFlowThisFuncEnter();
 
-    if (sVersion.isEmpty())
+    if (sVersion.isNull())
         sVersion = VBOX_VERSION_STRING;
     sRevision = RTBldCfgRevision();
-    if (sPackageType.isEmpty())
+    if (sPackageType.isNull())
         sPackageType = VBOX_PACKAGE_STRING;
     LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
 
@@ -322,9 +322,9 @@ HRESULT VirtualBox::init()
 
     /* compose the VirtualBox.xml file name */
     unconst(m->strSettingsFilePath) = Utf8StrFmt("%s%c%s",
-                                                 m->strHomeDir.raw(),
-                                                 RTPATH_DELIMITER,
-                                                 VBOX_GLOBAL_SETTINGS_FILE);
+                                                m->strHomeDir.raw(),
+                                                RTPATH_DELIMITER,
+                                                VBOX_GLOBAL_SETTINGS_FILE);
     HRESULT rc = S_OK;
     bool fCreate = false;
     try
@@ -978,11 +978,11 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                                RTPATH_DELIMITER,
                                firmwareDesc[i].fileName);
         rc = calculateFullPath(shortName, fullName); AssertRCReturn(rc, rc);
-        if (RTFileExists(fullName.c_str()))
+        if (RTFileExists(fullName.raw()))
         {
             *aResult = TRUE;
              if (aFile)
-                fullName.cloneTo(aFile);
+                Utf8Str(fullName).cloneTo(aFile);
             break;
         }
 
@@ -992,11 +992,11 @@ VirtualBox::CheckFirmwarePresent(FirmwareType_T aFirmwareType,
                               pszVBoxPath,
                               RTPATH_DELIMITER,
                               firmwareDesc[i].fileName);
-        if (RTFileExists(fullName.c_str()))
+        if (RTFileExists(fullName.raw()))
         {
             *aResult = TRUE;
             if (aFile)
-                fullName.cloneTo(aFile);
+                Utf8Str(fullName).cloneTo(aFile);
             break;
         }
 
@@ -1224,7 +1224,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
 
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
@@ -1345,7 +1345,9 @@ STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
                                       BOOL aSetParentId, IN_BSTR aParentId,
                                       IMedium **aHardDisk)
 {
-    CheckComArgStrNotEmptyOrNull(aLocation);
+    CheckComArgNotNull(aLocation);
+    CheckComArgNotNull(aImageId);
+    CheckComArgNotNull(aParentId);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
@@ -1420,15 +1422,14 @@ STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
 STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
                                       IMedium **aHardDisk)
 {
-    CheckComArgStrNotEmptyOrNull(aLocation);
+    CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> hardDisk;
-    Utf8Str strLocation(aLocation);
-    HRESULT rc = findHardDisk(NULL, &strLocation, true /* setError */, &hardDisk);
+    HRESULT rc = findHardDisk(NULL, aLocation, true /* setError */, &hardDisk);
 
     /* the below will set *aHardDisk to NULL if hardDisk is null */
     hardDisk.queryInterfaceTo(aHardDisk);
@@ -1477,7 +1478,7 @@ STDMETHODIMP VirtualBox::OpenDVDImage(IN_BSTR aLocation, IN_BSTR aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetDVDImage(IN_BSTR aId, IMedium **aDVDImage)
+STDMETHODIMP VirtualBox::GetDVDImage (IN_BSTR aId, IMedium **aDVDImage)
 {
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
@@ -1495,17 +1496,16 @@ STDMETHODIMP VirtualBox::GetDVDImage(IN_BSTR aId, IMedium **aDVDImage)
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindDVDImage(IN_BSTR aLocation, IMedium **aDVDImage)
+STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IMedium **aDVDImage)
 {
-    CheckComArgStrNotEmptyOrNull(aLocation);
+    CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
-    Utf8Str strLocation(aLocation);
-    HRESULT rc = findDVDImage(NULL, &strLocation, true /* setError */, &image);
+    HRESULT rc = findDVDImage (NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aDVDImage to NULL if dvd is null */
     image.queryInterfaceTo(aDVDImage);
@@ -1514,8 +1514,8 @@ STDMETHODIMP VirtualBox::FindDVDImage(IN_BSTR aLocation, IMedium **aDVDImage)
 }
 
 /** @note Doesn't lock anything. */
-STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation, IN_BSTR aId,
-                                         IMedium **aFloppyImage)
+STDMETHODIMP VirtualBox::OpenFloppyImage (IN_BSTR aLocation, IN_BSTR aId,
+                                          IMedium **aFloppyImage)
 {
     CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
@@ -1554,8 +1554,8 @@ STDMETHODIMP VirtualBox::OpenFloppyImage(IN_BSTR aLocation, IN_BSTR aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::GetFloppyImage(IN_BSTR aId,
-                                        IMedium **aFloppyImage)
+STDMETHODIMP VirtualBox::GetFloppyImage (IN_BSTR aId,
+                                         IMedium **aFloppyImage)
 
 {
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
@@ -1574,18 +1574,17 @@ STDMETHODIMP VirtualBox::GetFloppyImage(IN_BSTR aId,
 }
 
 /** @note Locks objects! */
-STDMETHODIMP VirtualBox::FindFloppyImage(IN_BSTR aLocation,
-                                         IMedium **aFloppyImage)
+STDMETHODIMP VirtualBox::FindFloppyImage (IN_BSTR aLocation,
+                                          IMedium **aFloppyImage)
 {
-    CheckComArgStrNotEmptyOrNull(aLocation);
+    CheckComArgNotNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     ComObjPtr<Medium> image;
-    Utf8Str strLocation(aLocation);
-    HRESULT rc = findFloppyImage(NULL, &strLocation, true /* setError */, &image);
+    HRESULT rc = findFloppyImage(NULL, aLocation, true /* setError */, &image);
 
     /* the below will set *aFloppyImage to NULL if img is null */
     image.queryInterfaceTo(aFloppyImage);
@@ -1594,7 +1593,7 @@ STDMETHODIMP VirtualBox::FindFloppyImage(IN_BSTR aLocation,
 }
 
 /** @note Locks this object for reading. */
-STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
+STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 {
     /* Old ID to new ID conversion table. See r39691 for a source */
     static const wchar_t *kOldNewIDs[] =
@@ -1615,7 +1614,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
         /* the rest is covered by the case-insensitive comparison */
     };
 
-    CheckComArgNotNull(aType);
+    CheckComArgNotNull (aType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1639,7 +1638,8 @@ STDMETHODIMP VirtualBox::GetGuestOSType(IN_BSTR aId, IGuestOSType **aType)
          ++it)
     {
         const Bstr &typeId = (*it)->id();
-        if (typeId.compare(id, Bstr::CaseInsensitive) == 0)
+        AssertMsg (!!typeId, ("ID must not be NULL"));
+        if (typeId.compareIgnoreCase (id) == 0)
         {
             (*it).queryInterfaceTo(aType);
             break;
@@ -1708,14 +1708,14 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
                                       BSTR *aValue)
 {
-    CheckComArgStrNotEmptyOrNull(aKey);
+    CheckComArgNotNull(aKey);
     CheckComArgNotNull(aValue);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with nothing found */
-    Bstr bstrResult;
+    Bstr bstrResult("");
 
     settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
     if (it != m->pMainConfigFile->mapExtraDataItems.end())
@@ -1734,7 +1734,7 @@ STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
 STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
                                       IN_BSTR aValue)
 {
-    CheckComArgStrNotEmptyOrNull(aKey);
+    CheckComArgNotNull(aKey);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1765,12 +1765,16 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
         // onExtraDataCanChange() only briefly requests the VirtualBox
         // lock to copy the list of callbacks to invoke
         Bstr error;
-        Bstr bstrValue(aValue);
+        Bstr bstrValue;
+        if (aValue)
+            bstrValue = aValue;
+        else
+            bstrValue = (const char *)"";
 
         if (!onExtraDataCanChange(Guid::Empty, aKey, bstrValue, error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
-            CBSTR err = error.raw();
+            CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
             LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
                             sep, err));
             return setError(E_ACCESSDENIED,
@@ -1861,8 +1865,9 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
 {
     LogRel(("remotesession=%s\n", Utf8Str(aMachineId).c_str()));
 
-    CheckComArgStrNotEmptyOrNull(aMachineId);
+    CheckComArgNotNull(aMachineId);
     CheckComArgNotNull(aSession);
+    CheckComArgNotNull(aType);
     CheckComArgOutSafeArrayPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -1891,10 +1896,9 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
     /* create a progress object */
     ComObjPtr<Progress> progress;
     progress.createObject();
-    progress->init(this,
-                   static_cast<IMachine*>(machine),
-                   tr("Spawning session"),
-                   FALSE /* aCancelable */);
+    progress->init (this, static_cast <IMachine *> (machine),
+                    Bstr (tr ("Spawning session")),
+                    FALSE /* aCancelable */);
 
     rc = machine->openRemoteSession (control, aType, aEnvironment, progress);
 
@@ -2429,19 +2433,19 @@ struct MachineEvent : public VirtualBox::CallbackEvent
         {
             case DataChanged:
                 LogFlow (("OnMachineDataChange: id={%RTuuid}\n", id.ptr()));
-                aCallback->OnMachineDataChange(id.toUtf16());
+                aCallback->OnMachineDataChange (id.toUtf16());
                 break;
 
             case StateChanged:
                 LogFlow (("OnMachineStateChange: id={%RTuuid}, state=%d\n",
                           id.ptr(), state));
-                aCallback->OnMachineStateChange(id.toUtf16(), state);
+                aCallback->OnMachineStateChange (id.toUtf16(), state);
                 break;
 
             case Registered:
                 LogFlow (("OnMachineRegistered: id={%RTuuid}, registered=%d\n",
                           id.ptr(), registered));
-                aCallback->OnMachineRegistered(id.toUtf16(), registered);
+                aCallback->OnMachineRegistered (id.toUtf16(), registered);
                 break;
         }
     }
@@ -2492,11 +2496,8 @@ BOOL VirtualBox::onExtraDataCanChange (const Guid &aId, IN_BSTR aKey, IN_BSTR aV
     Bstr id = aId.toUtf16();
     while ((it != list.end()) && allowChange)
     {
-        HRESULT rc = (*it++)->OnExtraDataCanChange(id,
-                                                   aKey,
-                                                   aValue,
-                                                   aError.asOutParam(),
-                                                   &allowChange);
+        HRESULT rc = (*it++)->OnExtraDataCanChange (id, aKey, aValue,
+                                                    aError.asOutParam(), &allowChange);
         if (FAILED(rc))
         {
             /* if a call to this method fails for some reason (for ex., because
@@ -2525,7 +2526,7 @@ struct ExtraDataEvent : public VirtualBox::CallbackEvent
     {
         LogFlow (("OnExtraDataChange: machineId={%RTuuid}, key='%ls', val='%ls'\n",
                   machineId.ptr(), key.raw(), val.raw()));
-        aCallback->OnExtraDataChange(machineId.toUtf16(), key, val);
+        aCallback->OnExtraDataChange (machineId.toUtf16(), key, val);
     }
 
     Guid machineId;
@@ -2552,14 +2553,14 @@ void VirtualBox::onMachineRegistered (const Guid &aId, BOOL aRegistered)
 struct SessionEvent : public VirtualBox::CallbackEvent
 {
     SessionEvent (VirtualBox *aVB, const Guid &aMachineId, SessionState_T aState)
-        : CallbackEvent (aVB), machineId(aMachineId), sessionState (aState)
+        : CallbackEvent (aVB), machineId (aMachineId), sessionState (aState)
         {}
 
     void handleCallback (const ComPtr<IVirtualBoxCallback> &aCallback)
     {
         LogFlow (("OnSessionStateChange: machineId={%RTuuid}, sessionState=%d\n",
                   machineId.ptr(), sessionState));
-        aCallback->OnSessionStateChange(machineId.toUtf16(), sessionState);
+        aCallback->OnSessionStateChange (machineId.toUtf16(), sessionState);
     }
 
     Guid machineId;
@@ -2596,19 +2597,19 @@ struct SnapshotEvent : public VirtualBox::CallbackEvent
             case Taken:
                 LogFlow (("OnSnapshotTaken: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotTaken(mid, sid);
+                aCallback->OnSnapshotTaken (mid, sid);
                 break;
 
             case Discarded:
                 LogFlow (("OnSnapshotDiscarded: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotDiscarded(mid, sid);
+                aCallback->OnSnapshotDiscarded (mid, sid);
                 break;
 
             case Changed:
                 LogFlow (("OnSnapshotChange: machineId={%RTuuid}, snapshotId={%RTuuid}\n",
                           machineId.ptr(), snapshotId.ptr()));
-                aCallback->OnSnapshotChange(mid, sid);
+                aCallback->OnSnapshotChange (mid, sid);
                 break;
         }
     }
@@ -2659,7 +2660,7 @@ struct GuestPropertyEvent : public VirtualBox::CallbackEvent
     {
         LogFlow(("OnGuestPropertyChange: machineId={%RTuuid}, name='%ls', value='%ls', flags='%ls'\n",
                  machineId.ptr(), name.raw(), value.raw(), flags.raw()));
-        aCallback->OnGuestPropertyChange(machineId.toUtf16(), name, value, flags);
+        aCallback->OnGuestPropertyChange (machineId.toUtf16(), name, value, flags);
     }
 
     Guid machineId;
@@ -2795,7 +2796,7 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
  * object that matches either of them (not necessarily both) is returned.
  *
  * @param aId           ID of the hard disk (unused when NULL).
- * @param pstrLocation  Full location specification (unused NULL).
+ * @param aLocation     Full location specification (unused NULL).
  * @param aSetError     If @c true , the appropriate error info is set in case
  *                      when the hard disk is not found.
  * @param aHardDisk     Where to store the found hard disk object (can be NULL).
@@ -2805,11 +2806,11 @@ HRESULT VirtualBox::findMachine(const Guid &aId,
  * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findHardDisk(const Guid *aId,
-                                 const Utf8Str *pstrLocation,
+                                 CBSTR aLocation,
                                  bool aSetError,
                                  ComObjPtr<Medium> *aHardDisk /*= NULL*/)
 {
-    AssertReturn(aId || pstrLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
     // we use the hard disks map, but it is protected by the
     // hard disk _list_ lock handle
@@ -2829,15 +2830,17 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
 
     /* then iterate and search by location */
     int result = -1;
-    if (pstrLocation)
+    if (aLocation)
     {
+        Utf8Str location = aLocation;
+
         for (HardDiskMap::const_iterator it = m->mapHardDisks.begin();
              it != m->mapHardDisks.end();
              ++ it)
         {
             const ComObjPtr<Medium> &hd = (*it).second;
 
-            HRESULT rc = hd->compareLocationTo(pstrLocation->c_str(), result);
+            HRESULT rc = hd->compareLocationTo(location.c_str(), result);
             if (FAILED(rc)) return rc;
 
             if (result == 0)
@@ -2860,8 +2863,8 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
                      m->strSettingsFilePath.raw());
         else
             setError(rc,
-                     tr("Could not find a hard disk with location '%s' in the media registry ('%s')"),
-                     pstrLocation->c_str(),
+                     tr("Could not find a hard disk with location '%ls' in the media registry ('%s')"),
+                     aLocation,
                      m->strSettingsFilePath.raw());
     }
 
@@ -2884,21 +2887,21 @@ HRESULT VirtualBox::findHardDisk(const Guid *aId,
  * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findDVDImage(const Guid *aId,
-                                 const Utf8Str *pstrLocation,
+                                 CBSTR aLocation,
                                  bool aSetError,
                                  ComObjPtr<Medium> *aImage /* = NULL */)
 {
-    AssertReturn(aId || pstrLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
     Utf8Str location;
 
-    if (pstrLocation != NULL)
+    if (aLocation != NULL)
     {
-        int vrc = calculateFullPath(*pstrLocation, location);
+        int vrc = calculateFullPath(Utf8Str(aLocation), location);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid image file location '%s' (%Rrc)"),
-                            pstrLocation->c_str(),
+                            tr("Invalid image file location '%ls' (%Rrc)"),
+                            aLocation,
                             vrc);
     }
 
@@ -2913,11 +2916,11 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
         /* no AutoCaller, registered image life time is bound to this */
         AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
 
-        found =    (aId && (*it)->getId() == *aId)
-                || (    pstrLocation != NULL
-                     && RTPathCompare(location.c_str(),
-                                      (*it)->getLocationFull().c_str()
-                                     ) == 0);
+        found = (aId && (*it)->getId() == *aId) ||
+                (aLocation != NULL &&
+                 RTPathCompare(location.c_str(),
+                               (*it)->getLocationFull().c_str()
+                              ) == 0);
         if (found)
         {
             if (aImage)
@@ -2937,8 +2940,8 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
                      m->strSettingsFilePath.raw());
         else
             setError(rc,
-                     tr("Could not find a CD/DVD image with location '%s' in the media registry ('%s')"),
-                     pstrLocation->c_str(),
+                     tr("Could not find a CD/DVD image with location '%ls' in the media registry ('%s')"),
+                     aLocation,
                      m->strSettingsFilePath.raw());
     }
 
@@ -2962,22 +2965,21 @@ HRESULT VirtualBox::findDVDImage(const Guid *aId,
  * @note Locks the media tree for reading.
  */
 HRESULT VirtualBox::findFloppyImage(const Guid *aId,
-                                    const Utf8Str *pstrLocation,
+                                    CBSTR aLocation,
                                     bool aSetError,
                                     ComObjPtr<Medium> *aImage /* = NULL */)
 {
-    AssertReturn(aId || pstrLocation, E_INVALIDARG);
+    AssertReturn(aId || aLocation, E_INVALIDARG);
 
     Utf8Str location;
 
-    if (pstrLocation != NULL)
+    if (aLocation != NULL)
     {
-        int vrc = calculateFullPath(*pstrLocation, location);
+        int vrc = calculateFullPath(Utf8Str(aLocation), location);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
-                            tr("Invalid image file location '%s' (%Rrc)"),
-                            pstrLocation->c_str(),
-                            vrc);
+                            tr("Invalid image file location '%ls' (%Rrc)"),
+                            aLocation, vrc);
     }
 
     AutoReadLock alock(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -2991,11 +2993,11 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId,
         /* no AutoCaller, registered image life time is bound to this */
         AutoReadLock imageLock(*it COMMA_LOCKVAL_SRC_POS);
 
-        found =    (aId && (*it)->getId() == *aId)
-                || (    pstrLocation != NULL
-                     && RTPathCompare(location.c_str(),
-                                      (*it)->getLocationFull().c_str()
-                                     ) == 0);
+        found = (aId && (*it)->getId() == *aId) ||
+                (aLocation != NULL &&
+                 RTPathCompare(location.c_str(),
+                               (*it)->getLocationFull().c_str()
+                              ) == 0);
         if (found)
         {
             if (aImage)
@@ -3015,8 +3017,8 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId,
                      m->strSettingsFilePath.raw());
         else
             setError(rc,
-                     tr("Could not find a floppy image with location '%s' in the media registry ('%s')"),
-                     pstrLocation->c_str(),
+                     tr("Could not find a floppy image with location '%ls' in the media registry ('%s')"),
+                     aLocation,
                      m->strSettingsFilePath.raw());
     }
 
@@ -3194,9 +3196,11 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     HRESULT rc = S_OK;
 
+    Bstr bstrLocation(aLocation);
+
     {
         ComObjPtr<Medium> hardDisk;
-        rc = findHardDisk(&aId, &aLocation, false /* aSetError */, &hardDisk);
+        rc = findHardDisk(&aId, bstrLocation, false /* aSetError */, &hardDisk);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -3210,7 +3214,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findDVDImage(&aId, &aLocation, false /* aSetError */, &image);
+        rc = findDVDImage(&aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -3224,7 +3228,7 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 
     {
         ComObjPtr<Medium> image;
-        rc = findFloppyImage(&aId, &aLocation, false /* aSetError */, &image);
+        rc = findFloppyImage(&aId, bstrLocation, false /* aSetError */, &image);
         if (SUCCEEDED(rc))
         {
             /* Note: no AutoCaller since bound to this */
@@ -4354,7 +4358,7 @@ void *VirtualBox::CallbackEvent::handler()
 
 STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
@@ -4375,7 +4379,7 @@ STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer
 
 STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName(IN_BSTR aName, IDHCPServer ** aServer)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
@@ -4451,7 +4455,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     if (FAILED(rc)) return rc;
 
     ComPtr<IDHCPServer> existing;
-    rc = FindDHCPServerByNetworkName(name, existing.asOutParam());
+    rc = FindDHCPServerByNetworkName(name.mutableRaw(), existing.asOutParam());
     if (SUCCEEDED(rc))
     {
         return E_INVALIDARG;

@@ -1289,7 +1289,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
 
 STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
@@ -1316,7 +1316,7 @@ STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
 
 STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IMedium **aDrive)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
@@ -1450,7 +1450,7 @@ STDMETHODIMP Host::FindUSBDeviceByAddress(IN_BSTR aAddress,
                                           IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgStrNotEmptyOrNull(aAddress);
+    CheckComArgNotNull(aAddress);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;

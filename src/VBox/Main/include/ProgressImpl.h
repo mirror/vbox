@@ -51,11 +51,10 @@ protected:
     // protected initializer/uninitializer for internal purposes only
     HRESULT protectedInit(AutoInitSpan &aAutoInitSpan,
 #if !defined (VBOX_COM_INPROC)
-                          VirtualBox *aParent,
+                  VirtualBox *aParent,
 #endif
-                          IUnknown *aInitiator,
-                          const Utf8Str &strDescription,
-                          OUT_GUID aId = NULL);
+                  IUnknown *aInitiator,
+                  CBSTR aDescription, OUT_GUID aId = NULL);
     HRESULT protectedInit(AutoInitSpan &aAutoInitSpan);
     void protectedUninit(AutoUninitSpan &aAutoUninitSpan);
 
@@ -105,7 +104,7 @@ protected:
     const ComPtr<IUnknown> mInitiator;
 
     const Guid mId;
-    const Utf8Str m_strDescription;
+    const Bstr mDescription;
 
     uint64_t m_ullTimestamp;                        // progress object creation timestamp, for ETA computation
 
@@ -126,7 +125,7 @@ protected:
     ULONG m_ulOperationsCompletedWeight;            // summed-up weight of operations that have been completed; initially 0
 
     ULONG m_ulCurrentOperation;                     // operations counter, incremented with each setNextOperation()
-    Utf8Str m_strOperationDescription;              // name of current operation; initially from constructor, changed with setNextOperation()
+    Bstr m_bstrOperationDescription;                // name of current operation; initially from constructor, changed with setNextOperation()
     ULONG m_ulCurrentOperationWeight;               // weight of current operation, given to setNextOperation()
     ULONG m_ulOperationPercent;                     // percentage of current operation, set with setCurrentOperationProgress()
     ULONG m_cMsTimeout;                             /**< Automatic timeout value. 0 means none. */
@@ -176,7 +175,7 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const Utf8Str &strDescription,
+                  CBSTR aDescription,
                   BOOL aCancelable,
                   OUT_GUID aId = NULL)
     {
@@ -185,11 +184,11 @@ public:
             aParent,
 #endif
             aInitiator,
-            strDescription,
+            aDescription,
             aCancelable,
             1,      // cOperations
             1,      // ulTotalOperationsWeight
-            strDescription, // bstrFirstOperationDescription
+            aDescription, // bstrFirstOperationDescription
             1,      // ulFirstOperationWeight
             aId);
     }
@@ -211,10 +210,9 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const Utf8Str &strDescription,
-                  BOOL aCancelable,
+                  CBSTR aDescription, BOOL aCancelable,
                   ULONG cOperations,
-                  const Utf8Str &strFirstOperationDescription,
+                  CBSTR bstrFirstOperationDescription,
                   OUT_GUID aId = NULL)
     {
         return init(
@@ -222,11 +220,11 @@ public:
             aParent,
 #endif
             aInitiator,
-            strDescription,
+            aDescription,
             aCancelable,
             cOperations,      // cOperations
             cOperations,      // ulTotalOperationsWeight = cOperations
-            strFirstOperationDescription, // bstrFirstOperationDescription
+            bstrFirstOperationDescription, // bstrFirstOperationDescription
             1,      // ulFirstOperationWeight: weigh them all the same
             aId);
     }
@@ -236,17 +234,17 @@ public:
                   VirtualBox *aParent,
 #endif
                   IUnknown *aInitiator,
-                  const Utf8Str &strDescription,
+                  CBSTR aDescription,
                   BOOL aCancelable,
                   ULONG cOperations,
                   ULONG ulTotalOperationsWeight,
-                  const Utf8Str &strFirstOperationDescription,
+                  CBSTR bstrFirstOperationDescription,
                   ULONG ulFirstOperationWeight,
                   OUT_GUID aId = NULL);
 
     HRESULT init(BOOL aCancelable,
                  ULONG aOperationCount,
-                 const Utf8Str &strOperationDescription);
+                 CBSTR aOperationDescription);
 
     void uninit();
 
