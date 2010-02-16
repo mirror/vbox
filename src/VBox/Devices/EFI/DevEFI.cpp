@@ -39,6 +39,7 @@
 #include <iprt/uuid.h>
 #include <iprt/path.h>
 #include <iprt/string.h>
+#include <iprt/mp.h>
 #ifdef DEBUG
 # include <iprt/stream.h>
 # define DEVEFI_WITH_VBOXDBG_SCRIPT
@@ -1140,7 +1141,9 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
      * CPU frequencies
      */
     // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
-    pThis->u64TscFrequency = 2500000000; // TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1024 * 1024;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
+    if (pThis->u64TscFrequency == 0)
+        pThis->u64TscFrequency = 2500000000;
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
     pThis->u64FsbFrequency = pThis->u64TscFrequency / 4;
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
