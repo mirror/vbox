@@ -1,4 +1,4 @@
-/** $Id: $ */
+/** $Id$ */
 /** @file
  * Qt GUI - VBox Variation on the QAquaStyle.
  */

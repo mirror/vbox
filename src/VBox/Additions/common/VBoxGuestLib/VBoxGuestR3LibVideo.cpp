@@ -1,4 +1,4 @@
-/* $Id:$ */
+/* $Id$ */
 /** @file
  * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Video.
  */
