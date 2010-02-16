@@ -1583,7 +1583,6 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
                     *ppChunk = pChunk;
 
                 GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-                RTSemFastMutexRelease(pGMM->Mtx);
                 return VINF_SUCCESS;
             }
 
