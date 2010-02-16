@@ -58,6 +58,13 @@ class VirtualBoxReflectionInfo:
 
               </xsl:for-each>}
 
+   _ValuesSym = {<xsl:for-each select="//enum">
+                '<xsl:value-of select="@name"/>':{
+                  <xsl:for-each select="const">'<xsl:value-of select="@name"/>': '<xsl:value-of select="@name"/>'<xsl:if test="not(position()=last())">,</xsl:if>
+                  </xsl:for-each>}<xsl:if test="not(position()=last())">,</xsl:if>
+
+              </xsl:for-each>}
+
    _ValuesFlat = {<xsl:for-each select="//enum">
                    <xsl:variable name="ename">
                     <xsl:value-of select="@name"/>
@@ -90,6 +97,16 @@ class VirtualBoxReflectionInfo:
          return v
       else:
          raise AttributeError
+
+   def all_values(self,enum_name):
+      if self.isSym:
+        vals = self._ValuesSym.get(enum_name)
+      else:
+        vals = self._Values.get(enum_name)
+      if vals is not None:
+         return vals
+      else:
+         return {}
 
 </xsl:template>
 </xsl:stylesheet>
