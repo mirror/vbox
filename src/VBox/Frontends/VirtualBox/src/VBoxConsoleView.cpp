@@ -1271,8 +1271,8 @@ bool VBoxConsoleView::event (QEvent *e)
                          re->width(), re->height(), re->bitsPerPixel()));
 #endif
 
-                bool notifyManiWnd = mStoredConsoleSize.width() != re->width()
-                        || mStoredConsoleSize.height() != re->height();
+                bool notifyManiWnd = mStoredConsoleSize.width() != (int)re->width()
+                        || mStoredConsoleSize.height() != (int)re->height();
 
                 /* Store the new size to prevent unwanted resize hints being
                  * sent back. */
