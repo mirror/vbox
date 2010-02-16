@@ -191,12 +191,11 @@ packspu_ArrayElement( GLint index )
         GET_CONTEXT(ctx);
         CRClientState *clientState = &(ctx->clientState->client);
 
-        /*Note the comment in packspu_LockArraysEXT*/
-        if (clientState->array.locked && !clientState->array.synced)
-        {
-            crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
-            clientState->array.synced = GL_TRUE;
-        }
+        /* LockArraysEXT can not be executed between glBegin/glEnd pair, it also
+         * leads to vertexpointers being adjusted on the host side between glBegin/glEnd calls which
+         * produces unpredictable results. Locking is done before the glBegin call instead.
+         */
+        CRASSERT(!clientState->array.locked || clientState->array.synced);
 
         /* Send the DrawArrays command over the wire */
         if (pack_spu.swap)
@@ -491,7 +490,7 @@ void PACKSPU_APIENTRY packspu_LockArraysEXT(GLint first, GLint count)
         crStateLockArraysEXT(first, count);
         /*Note: this is a workaround for quake3 based apps.
           It's modifying vertex data between glLockArraysEXT and glDrawElements calls,
-          so we'd pass data to host right before the glDrawSomething call.
+          so we'd pass data to host right before the glDrawSomething or glBegin call.
         */
         /*crPackLockArraysEXT(first, count);*/
     } 
