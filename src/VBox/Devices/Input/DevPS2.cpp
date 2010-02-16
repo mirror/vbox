@@ -1414,7 +1414,8 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const 
  * @param   i32DeltaZ       The Z delta.
  * @param   fButtonStates   The button states.
  */
-static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY,
+                                          int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
 {
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
