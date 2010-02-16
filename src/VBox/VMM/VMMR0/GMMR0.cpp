@@ -1528,8 +1528,8 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
 /**
  * Registers a new chunk of memory.
  *
- * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk. Will take
- * the mutex, the caller must not own it.
+ * This is called by both gmmR0AllocateOneChunk and GMMR0SeedChunk. The caller
+ * must own the global lock.
  *
  * @returns VBox status code.
  * @param   pGMM            Pointer to the GMM instance.
@@ -1538,8 +1538,9 @@ static uint32_t gmmR0AllocateChunkId(PGMM pGMM)
  * @param   hGVM            The affinity of the chunk. NIL_GVM_HANDLE for no
  *                          affinity.
  * @param   enmChunkType    Chunk type (continuous or non-continuous)
+ * @param   ppChunk         Chunk address (out)
  */
-static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, GMMCHUNKTYPE enmChunkType)
+static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemObj, uint16_t hGVM, GMMCHUNKTYPE enmChunkType, PGMMCHUNK *ppChunk = NULL)
 {
     Assert(hGVM != NIL_GVM_HANDLE || pGMM->fBoundMemoryMode);
 
@@ -1567,33 +1568,31 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
          * Allocate a Chunk ID and insert it into the tree.
          * This has to be done behind the mutex of course.
          */
-        rc = RTSemFastMutexRequest(pGMM->Mtx);
-        if (RT_SUCCESS(rc))
+        if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
         {
-            if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+            pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
+            if (    pChunk->Core.Key != NIL_GMM_CHUNKID
+                &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
+                &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
             {
-                pChunk->Core.Key = gmmR0AllocateChunkId(pGMM);
-                if (    pChunk->Core.Key != NIL_GMM_CHUNKID
-                    &&  pChunk->Core.Key <= GMM_CHUNKID_LAST
-                    &&  RTAvlU32Insert(&pGMM->pChunks, &pChunk->Core))
-                {
-                    pGMM->cChunks++;
-                    gmmR0LinkChunk(pChunk, pSet);
-                    LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
+                pGMM->cChunks++;
+                gmmR0LinkChunk(pChunk, pSet);
+                LogFlow(("gmmR0RegisterChunk: pChunk=%p id=%#x cChunks=%d\n", pChunk, pChunk->Core.Key, pGMM->cChunks));
 
-                    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-                    RTSemFastMutexRelease(pGMM->Mtx);
-                    return VINF_SUCCESS;
-                }
+                if (ppChunk)
+                    *ppChunk = pChunk;
 
-                /* bail out */
-                rc = VERR_INTERNAL_ERROR;
+                GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+                RTSemFastMutexRelease(pGMM->Mtx);
+                return VINF_SUCCESS;
             }
-            else
-                rc = VERR_INTERNAL_ERROR_5;
 
-            RTSemFastMutexRelease(pGMM->Mtx);
+            /* bail out */
+            rc = VERR_INTERNAL_ERROR;
         }
+        else
+            rc = VERR_INTERNAL_ERROR_5;
+
         RTMemFree(pChunk);
     }
     else
@@ -1610,10 +1609,11 @@ static int gmmR0RegisterChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, RTR0MEMOBJ MemOb
  * @param   pSet            Pointer to the set.
  * @param   hGVM            The affinity of the new chunk.
  * @param   enmChunkType    Chunk type (continuous or non-continuous)
+ * @param   ppChunk         Chunk address (out)
  *
  * @remarks Called without owning the mutex.
  */
-static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM, GMMCHUNKTYPE enmChunkType)
+static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM, GMMCHUNKTYPE enmChunkType, PGMMCHUNK *ppChunk = NULL)
 {
     /*
      * Allocate the memory.
@@ -1624,14 +1624,20 @@ static int gmmR0AllocateOneChunk(PGMM pGMM, PGMMCHUNKFREESET pSet, uint16_t hGVM
     AssertCompile(GMM_CHUNK_SIZE == _2M);
     AssertReturn(enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS || enmChunkType == GMMCHUNKTYPE_CONTINUOUS, VERR_INVALID_PARAMETER);
 
+    /* Leave the lock temporarily as the allocation might take long. */
+    RTSemFastMutexRelease(pGMM->Mtx);
     if (enmChunkType == GMMCHUNKTYPE_NON_CONTINUOUS)
         rc = RTR0MemObjAllocPhysNC(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS);
     else
         rc = RTR0MemObjAllocPhysEx(&MemObj, GMM_CHUNK_SIZE, NIL_RTHCPHYS, GMM_CHUNK_SIZE);
 
+    /* Grab the lock again. */
+    int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRCReturn(rc2, rc2);
+
     if (RT_SUCCESS(rc))
     {
-        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM, enmChunkType);
+        rc = gmmR0RegisterChunk(pGMM, pSet, MemObj, hGVM, enmChunkType, ppChunk);
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
@@ -1682,14 +1688,10 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
         /*
          * If we need still more pages, allocate new chunks.
          * Note! We will leave the mutex while doing the allocation,
-         *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
          */
         while (pSet->cFreePages < cPages)
         {
-            RTSemFastMutexRelease(pGMM->Mtx);
             int rc = gmmR0AllocateOneChunk(pGMM, pSet, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
-            int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
-            AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
                 return rc;
             if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -1704,7 +1706,6 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
          * our VM handle.
          *
          * Note! We will leave the mutex while doing the allocation,
-         *       gmmR0AllocateOneChunk will re-take it temporarily while registering the chunk.
          */
         uint16_t const hGVM = pGVM->hSelf;
         for (;;)
@@ -1723,10 +1724,7 @@ static int gmmR0AllocateMoreChunks(PGMM pGMM, PGVM pGVM, PGMMCHUNKFREESET pSet, 
                 break;
 
             /* Allocate more. */
-            RTSemFastMutexRelease(pGMM->Mtx);
             int rc = gmmR0AllocateOneChunk(pGMM, pSet, hGVM, GMMCHUNKTYPE_NON_CONTINUOUS);
-            int rc2 = RTSemFastMutexRequest(pGMM->Mtx);
-            AssertRCReturn(rc2, rc2);
             if (RT_FAILURE(rc))
                 return rc;
             if (!GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
@@ -2276,6 +2274,209 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESRE
     return GMMR0AllocatePages(pVM, idCpu, pReq->cPages, &pReq->aPages[0], pReq->enmAccount);
 }
 
+/**
+ * Allocate a large page to represent guest RAM
+ *
+ * The allocated pages are not cleared and will contains random garbage.
+ *
+ * @returns VBox status code:
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_NOT_OWNER if the caller is not an EMT.
+ * @retval  VERR_GMM_SEED_ME if seeding via GMMR0SeedChunk is necessary.
+ * @retval  VERR_GMM_HIT_GLOBAL_LIMIT if we've exhausted the available pages.
+ * @retval  VERR_GMM_HIT_VM_ACCOUNT_LIMIT if we've hit the VM account limit,
+ *          that is we're trying to allocate more than we've reserved.
+ * @returns see GMMR0AllocatePages.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   cbPage          Large page size
+ * @param   pidPage         Id of the page (out)
+ */
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage)
+{
+    LogFlow(("GMMR0AllocateLargePage: pVM=%p cbPage=%x\n", pVM, cbPage));
+
+    AssertReturn(cbPage == GMM_CHUNK_SIZE, VERR_INVALID_PARAMETER);
+
+    /*
+     * Validate, get basics and take the semaphore.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
+    if (pGMM->fLegacyAllocationMode)
+        return VERR_NOT_SUPPORTED;
+
+    *pidPage = NIL_GMM_PAGEID;
+
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRCReturn(rc, rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+        PGMMCHUNK      pChunk;
+        GMMPAGEDESC    PageDesc;
+
+        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+        {
+            Log(("GMMR0AllocateLargePage: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                 pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
+            RTSemFastMutexRelease(pGMM->Mtx);
+            return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
+        }
+
+        /* Allocate a new continous chunk. */
+        rc = gmmR0AllocateOneChunk(pGMM, &pGMM->Private, pGVM->hSelf, GMMCHUNKTYPE_CONTINUOUS, &pChunk);
+        if (RT_FAILURE(rc))
+        {
+            RTSemFastMutexRelease(pGMM->Mtx);
+            return rc;
+        }
+
+        /* Unlink the new chunk from the free list. */
+        gmmR0UnlinkChunk(pChunk);
+
+        /* Allocate all pages. */
+        gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
+        /* Return the first page as we'll use the whole chunk as one big page. */
+        *pidPage = PageDesc.idPage;
+
+        for (unsigned i = 1; i < cPages; i++)
+            gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
+
+        /* Update accounting. */
+        pGVM->gmm.s.Allocated.cBasePages += cPages;
+        pGVM->gmm.s.cPrivatePages        += cPages;
+        pGMM->cAllocatedPages            += cPages;
+
+        gmmR0LinkChunk(pChunk, &pGMM->Private);
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0AllocateLargePage.
+ *
+ * @returns see GMMR0AllocateLargePage.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0AllocateLargePageReq(PVM pVM, VMCPUID idCpu, PGMMALLOCLARGEPAGEREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMALLOCATEPAGESREQ),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(GMMALLOCATEPAGESREQ)),
+                    VERR_INVALID_PARAMETER);
+
+    return GMMR0AllocateLargePage(pVM, idCpu, pReq->cbPage, &pReq->idPage);
+}
+
+
+/**
+ * Free a large page
+ *
+ * @returns VBox status code:
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   idPage          Large page id
+ */
+GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage)
+{
+    LogFlow(("GMMR0FreeLargePage: pVM=%p idPage=%x\n", pVM, idPage));
+
+    /*
+     * Validate, get basics and take the semaphore.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    PGVM pGVM;
+    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* Not supported in legacy mode where we allocate the memory in ring 3 and lock it in ring 0. */
+    if (pGMM->fLegacyAllocationMode)
+        return VERR_NOT_SUPPORTED;
+
+    rc = RTSemFastMutexRequest(pGMM->Mtx);
+    AssertRC(rc);
+    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
+    {
+        const unsigned cPages = (GMM_CHUNK_SIZE >> PAGE_SHIFT);
+
+        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages < cPages))
+        {
+            Log(("gmmR0FreePages: allocated=%#llx cPages=%#x!\n", pGVM->gmm.s.Allocated.cBasePages, cPages));
+            RTSemFastMutexRelease(pGMM->Mtx);
+            return VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+        }
+
+        PGMMPAGE pPage = gmmR0GetPage(pGMM, idPage);
+        if (    RT_LIKELY(pPage)
+            &&  RT_LIKELY(GMM_PAGE_IS_PRIVATE(pPage)))
+        {
+                PGMMCHUNK pChunk = gmmR0GetChunk(pGMM, idPage >> GMM_CHUNKID_SHIFT);
+                Assert(pChunk);
+                Assert(pChunk->cFree < GMM_CHUNK_NUM_PAGES);
+                Assert(pChunk->cPrivate > 0);
+
+                /* Release the memory immediately. */
+                gmmR0FreeChunk(pGMM, NULL, pChunk);
+
+                /* Update accounting. */
+                pGVM->gmm.s.Allocated.cBasePages -= cPages;
+                pGVM->gmm.s.cPrivatePages        -= cPages;
+                pGMM->cAllocatedPages            -= cPages;
+        }
+        else
+            rc = VERR_GMM_PAGE_NOT_FOUND;
+    }
+    else
+        rc = VERR_INTERNAL_ERROR_5;
+
+    RTSemFastMutexRelease(pGMM->Mtx);
+    LogFlow(("GMMR0FreeLargePage: returns %Rrc\n", rc));
+    return rc;
+}
+
+
+/**
+ * VMMR0 request wrapper for GMMR0FreeLargePage.
+ *
+ * @returns see GMMR0FreeLargePage.
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   idCpu           VCPU id
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMFREEPAGESREQ),
+                    ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(GMMFREEPAGESREQ)),
+                    VERR_INVALID_PARAMETER);
+
+    return GMMR0FreeLargePage(pVM, idCpu, pReq->idPage);
+}
 
 /**
  * Frees a chunk, giving it back to the host OS.
@@ -3132,10 +3333,16 @@ GMMR0DECL(int) GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3)
     rc = RTR0MemObjLockUser(&MemObj, pvR3, GMM_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
     if (RT_SUCCESS(rc))
     {
+        /* Grab the lock. */
+        rc = RTSemFastMutexRequest(pGMM->Mtx);
+        AssertRCReturn(rc, rc);
+
         /*
          * Add a new chunk with our hGVM.
          */
         rc = gmmR0RegisterChunk(pGMM, &pGMM->Private, MemObj, pGVM->hSelf, GMMCHUNKTYPE_NON_CONTINUOUS);
+        RTSemFastMutexRelease(pGMM->Mtx);
+
         if (RT_FAILURE(rc))
             RTR0MemObjFree(MemObj, false /* fFreeMappings */);
     }
