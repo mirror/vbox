@@ -25,6 +25,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_SRV_INTNET
 #include <VBox/intnet.h>
+#include <VBox/intnetinline.h>
 #include <VBox/sup.h>
 #include <VBox/pdm.h>
 #include <VBox/log.h>
@@ -1535,42 +1536,8 @@ static void intnetR0IfSnoopAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t 
 }
 
 
-#ifdef IN_INTNET_TESTCASE
 /**
- * Reads the next frame in the buffer.
- * The caller is responsible for ensuring that there is a valid frame in the buffer.
- *
- * @returns Size of the frame in bytes.
- * @param   pBuf        The buffer.
- * @param   pRingBuff   The ring buffer to read from.
- * @param   pvFrame     Where to put the frame. The caller is responsible for
- *                      ensuring that there is sufficient space for the frame.
- */
-static unsigned intnetR0RingReadFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, void *pvFrame)
-{
-    Assert(pRingBuf->offRead < pBuf->cbBuf);
-    Assert(pRingBuf->offRead >= pRingBuf->offStart);
-    Assert(pRingBuf->offRead < pRingBuf->offEnd);
-    uint32_t    offRead   = pRingBuf->offRead;
-    PINTNETHDR  pHdr      = (PINTNETHDR)((uint8_t *)pBuf + offRead);
-    const void *pvFrameIn = INTNETHdrGetFramePtr(pHdr, pBuf);
-    unsigned    cb        = pHdr->cbFrame;
-    memcpy(pvFrame, pvFrameIn, cb);
-
-    /* skip the frame */
-    offRead += pHdr->offFrame + cb;
-    offRead = RT_ALIGN_32(offRead, sizeof(INTNETHDR));
-    Assert(offRead <= pRingBuf->offEnd && offRead >= pRingBuf->offStart);
-    if (offRead >= pRingBuf->offEnd)
-        offRead = pRingBuf->offStart;
-    ASMAtomicXchgU32(&pRingBuf->offRead, offRead);
-    return cb;
-}
-#endif /* IN_INTNET_TESTCASE */
-
-
-/**
- * Writes a frame packet to the buffer.
+ * Writes a frame packet to the ring buffer.
  *
  * @returns VBox status code.
  * @param   pBuf            The buffer.
@@ -1578,92 +1545,21 @@ static unsigned intnetR0RingReadFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, 
  * @param   pSG             The gather list.
  * @param   pNewDstMac      Set the destination MAC address to the address if specified.
  */
-static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTMAC pNewDstMac)
+static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTMAC pNewDstMac)
 {
-    /*
-     * Validate input.
-     */
-    AssertPtr(pBuf);
-    AssertPtr(pRingBuf);
-    AssertPtr(pSG);
-    Assert(pSG->cbTotal >= sizeof(RTMAC) * 2);
-    uint32_t offWrite = pRingBuf->offWrite;
-    Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
-    uint32_t offRead = pRingBuf->offRead;
-    Assert(offRead == RT_ALIGN_32(offRead, sizeof(INTNETHDR)));
-
-    const uint32_t cb = RT_ALIGN_32(pSG->cbTotal, sizeof(INTNETHDR));
-    if (offRead <= offWrite)
+    PINTNETHDR  pHdr;
+    void       *pvDst;
+    int rc = INTNETRingAllocateFrame(pRingBuf, pSG->cbTotal, &pHdr, &pvDst);
+    if (RT_SUCCESS(rc))
     {
-        /*
-         * Try fit it all before the end of the buffer.
-         */
-        if (pRingBuf->offEnd - offWrite >= cb + sizeof(INTNETHDR))
-        {
-            PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = pSG->cbTotal;
-            pHdr->offFrame = sizeof(INTNETHDR);
-
-            intnetR0SgRead(pSG, pHdr + 1);
-            if (pNewDstMac)
-                ((PRTNETETHERHDR)(pHdr + 1))->DstMac = *pNewDstMac;
-
-            offWrite += cb + sizeof(INTNETHDR);
-            Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
-            if (offWrite >= pRingBuf->offEnd)
-                offWrite = pRingBuf->offStart;
-            Log2(("WriteFrame: offWrite: %#x -> %#x (1)\n", pRingBuf->offWrite, offWrite));
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Try fit the frame at the start of the buffer.
-         * (The header fits before the end of the buffer because of alignment.)
-         */
-        AssertMsg(pRingBuf->offEnd - offWrite >= sizeof(INTNETHDR), ("offEnd=%x offWrite=%x\n", pRingBuf->offEnd, offWrite));
-        if (offRead - pRingBuf->offStart > cb) /* not >= ! */
-        {
-            PINTNETHDR  pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            void       *pvFrameOut = (PINTNETHDR)((uint8_t *)pBuf + pRingBuf->offStart);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = pSG->cbTotal;
-            pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
-
-            intnetR0SgRead(pSG, pvFrameOut);
-            if (pNewDstMac)
-                ((PRTNETETHERHDR)pvFrameOut)->DstMac = *pNewDstMac;
-
-            offWrite = pRingBuf->offStart + cb;
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-            Log2(("WriteFrame: offWrite: %#x -> %#x (2)\n", pRingBuf->offWrite, offWrite));
-            return VINF_SUCCESS;
-        }
-    }
-    /*
-     * The reader is ahead of the writer, try fit it into that space.
-     */
-    else if (offRead - offWrite > cb + sizeof(INTNETHDR)) /* not >= ! */
-    {
-        PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = pSG->cbTotal;
-        pHdr->offFrame = sizeof(INTNETHDR);
-
-        intnetR0SgRead(pSG, pHdr + 1);
+        intnetR0SgRead(pSG, pvDst);
         if (pNewDstMac)
-            ((PRTNETETHERHDR)(pHdr + 1))->DstMac = *pNewDstMac;
+            ((PRTNETETHERHDR)pvDst)->DstMac = *pNewDstMac;
 
-        offWrite += cb + sizeof(INTNETHDR);
-        ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-        Log2(("WriteFrame: offWrite: %#x -> %#x (3)\n", pRingBuf->offWrite, offWrite));
+        INTNETRingCommitFrame(pRingBuf, pHdr);
         return VINF_SUCCESS;
     }
-
-    /* (it didn't fit) */
-    /** @todo stats */
-    return VERR_BUFFER_OVERFLOW;
+    return rc;
 }
 
 
@@ -1678,12 +1574,10 @@ static int intnetR0RingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, PCIN
 static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PCRTMAC pNewDstMac)
 {
 //    LogFlow(("intnetR0IfSend: pIf=%p:{.hIf=%RX32}\n", pIf, pIf->hIf));
-    int rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG, pNewDstMac);
+    int rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
     if (RT_SUCCESS(rc))
     {
         pIf->cYields = 0;
-        STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatRecvs);
-        STAM_REL_COUNTER_ADD(&pIf->pIntBuf->cbStatRecv, pSG->cbTotal);
         RTSemEventSignal(pIf->Event);
         return;
     }
@@ -1716,12 +1610,10 @@ static void intnetR0IfSend(PINTNETIF pIf, PINTNETIF pIfSender, PINTNETSG pSG, PC
         {
             RTSemEventSignal(pIf->Event);
             RTThreadYield();
-            rc = intnetR0RingWriteFrame(pIf->pIntBuf, &pIf->pIntBuf->Recv, pSG, pNewDstMac);
+            rc = intnetR0RingWriteFrame(&pIf->pIntBuf->Recv, pSG, pNewDstMac);
             if (RT_SUCCESS(rc))
             {
                 STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatYieldsOk);
-                STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatRecvs);
-                STAM_REL_COUNTER_ADD(&pIf->pIntBuf->cbStatRecv, pSG->cbTotal);
                 RTSemEventSignal(pIf->Event);
                 return;
             }
@@ -2372,15 +2264,6 @@ static bool intnetR0NetworkSend(PINTNETNETWORK pNetwork, PINTNETIF pIfSender, ui
         return fRc;
 
     /*
-     * Send statistics.
-     */
-    if (pIfSender)
-    {
-        STAM_REL_COUNTER_INC(&pIfSender->pIntBuf->cStatSends);
-        STAM_REL_COUNTER_ADD(&pIfSender->pIntBuf->cbStatSend, pSG->cbTotal);
-    }
-
-    /*
      * Get the ethernet header (might theoretically involve multiple segments).
      */
     RTNETETHERHDR EthHdr;
@@ -2517,10 +2400,10 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
     /*
      * Process the send buffer.
      */
-    while (pIf->pIntBuf->Send.offRead != pIf->pIntBuf->Send.offWrite)
+    PINTNETHDR pHdr;
+    while ((pHdr = INTNETRingGetNextFrameToRead(&pIf->pIntBuf->Send)) != NULL)
     {
         /* Send the frame if the type is sane. */
-        PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pIf->pIntBuf + pIf->pIntBuf->Send.offRead);
         if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
         {
             void *pvCurFrame = INTNETHdrGetFramePtr(pHdr, pIf->pIntBuf);
@@ -2532,10 +2415,11 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
                 intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
             }
         }
-        /* else: ignore the frame */
+        else
+            STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
 
         /* Skip to the next frame. */
-        INTNETRingSkipFrame(pIf->pIntBuf, &pIf->pIntBuf->Send);
+        INTNETRingSkipFrame(&pIf->pIntBuf->Send);
     }
 
     /*
@@ -3336,9 +3220,9 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
          * Create the default buffer.
          */
         /** @todo adjust with minimums and apply defaults here. */
-        cbRecv = RT_ALIGN(RT_MAX(cbRecv, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
-        cbSend = RT_ALIGN(RT_MAX(cbSend, sizeof(INTNETHDR) * 4), sizeof(INTNETHDR));
-        const unsigned cbBuf = RT_ALIGN(sizeof(*pIf->pIntBuf), sizeof(INTNETHDR)) + cbRecv + cbSend;
+        cbRecv = RT_ALIGN(RT_MAX(cbRecv, sizeof(INTNETHDR) * 4), INTNETRINGBUF_ALIGNMENT);
+        cbSend = RT_ALIGN(RT_MAX(cbSend, sizeof(INTNETHDR) * 4), INTNETRINGBUF_ALIGNMENT);
+        const unsigned cbBuf = RT_ALIGN(sizeof(*pIf->pIntBuf), INTNETRINGBUF_ALIGNMENT) + cbRecv + cbSend;
         rc = SUPR0MemAlloc(pIf->pSession, cbBuf, (PRTR0PTR)&pIf->pIntBufDefault, (PRTR3PTR)&pIf->pIntBufDefaultR3);
         if (RT_SUCCESS(rc))
         {
@@ -3346,19 +3230,7 @@ static int intnetR0NetworkCreateIf(PINTNETNETWORK pNetwork, PSUPDRVSESSION pSess
 
             pIf->pIntBuf = pIf->pIntBufDefault;
             pIf->pIntBufR3 = pIf->pIntBufDefaultR3;
-            pIf->pIntBuf->cbBuf = cbBuf;
-            pIf->pIntBuf->cbRecv = cbRecv;
-            pIf->pIntBuf->cbSend = cbSend;
-            /* receive ring buffer. */
-            pIf->pIntBuf->Recv.offStart = RT_ALIGN_32(sizeof(*pIf->pIntBuf), sizeof(INTNETHDR));
-            pIf->pIntBuf->Recv.offRead  = pIf->pIntBuf->Recv.offStart;
-            pIf->pIntBuf->Recv.offWrite = pIf->pIntBuf->Recv.offStart;
-            pIf->pIntBuf->Recv.offEnd   = pIf->pIntBuf->Recv.offStart + cbRecv;
-            /* send ring buffer. */
-            pIf->pIntBuf->Send.offStart = pIf->pIntBuf->Recv.offEnd;
-            pIf->pIntBuf->Send.offRead  = pIf->pIntBuf->Send.offStart;
-            pIf->pIntBuf->Send.offWrite = pIf->pIntBuf->Send.offStart;
-            pIf->pIntBuf->Send.offEnd   = pIf->pIntBuf->Send.offStart + cbSend;
+            INTNETBufInit(pIf->pIntBuf, cbBuf, cbRecv, cbSend);
 
             /*
              * Link the interface to the network.
@@ -4106,12 +3978,14 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
     {
         case kIntNetTrunkType_None:
         case kIntNetTrunkType_WhateverNone:
-            AssertReturn(!*pszTrunk, VERR_INVALID_PARAMETER);
+            if (*pszTrunk)
+                return VERR_INVALID_PARAMETER;
             break;
 
         case kIntNetTrunkType_NetFlt:
         case kIntNetTrunkType_NetAdp:
-            AssertReturn(pszTrunk, VERR_INVALID_PARAMETER);
+            if (!*pszTrunk)
+                return VERR_INVALID_PARAMETER;
             break;
 
         default:
@@ -4129,11 +4003,13 @@ INTNETR0DECL(int) INTNETR0Open(PINTNET pIntNet, PSUPDRVSESSION pSession, const c
         return rc;
 
     /*
-     * Try open / create the network and create an interface on it for the caller to use.
+     * Try open / create the network and create an interface on it for the
+     * caller to use.
      *
-     * Note that because of the destructors grabbing INTNET::FastMutex and us being required
-     * to own this semaphore for the entire network opening / creation and interface creation
-     * sequence, intnetR0CreateNetwork will have to defer the network cleanup to us on failure.
+     * Note! Because of the destructors grabbing INTNET::FastMutex and us being
+     * required to own this semaphore for the entire network opening / creation
+     * and interface creation sequence, intnetR0CreateNetwork will have to
+     * defer the network cleanup to us on failure.
      */
     PINTNETNETWORK pNetwork = NULL;
     rc = intnetR0OpenNetwork(pIntNet, pSession, pszNetwork, enmTrunkType, pszTrunk, fFlags, &pNetwork);
@@ -4230,7 +4106,7 @@ INTNETR0DECL(int) INTNETR0Create(PINTNET *ppIntNet)
     PINTNET pIntNet = (PINTNET)RTMemAllocZ(sizeof(*pIntNet));
     if (pIntNet)
     {
-        //pIntNet->pNetworks              = NULL;
+        //pIntNet->pNetworks = NULL;
 
         rc = RTSemFastMutexCreate(&pIntNet->FastMutex);
         if (RT_SUCCESS(rc))

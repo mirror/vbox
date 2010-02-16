@@ -27,6 +27,7 @@
 #include <VBox/pdmnetifs.h>
 #include <VBox/cfgm.h>
 #include <VBox/intnet.h>
+#include <VBox/intnetinline.h>
 #include <VBox/vmm.h>
 #include <VBox/err.h>
 
@@ -34,6 +35,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
+#include <iprt/memcache.h>
 #include <iprt/net.h>
 #include <iprt/semaphore.h>
 #include <iprt/string.h>
@@ -88,7 +90,9 @@ typedef struct DRVINTNET
     /** Reader thread. */
     RTTHREAD                        Thread;
     /** Event semaphore the Thread waits on while the VM is suspended. */
-    RTSEMEVENT                      EventSuspended;
+    RTSEMEVENT                      hEvtSuspended;
+    /** Scatter/gather descriptor cache. */
+    RTMEMCACHE                      hSgCache;
     /** Set if the link is down.
      * When the link is down all incoming packets will be dropped. */
     bool volatile                   fLinkDown;
@@ -126,9 +130,6 @@ typedef DRVINTNET *PDRVINTNET;
 
 /* -=-=-=-=- PDMINETWORKUP -=-=-=-=- */
 
-/** Converts a pointer to DRVINTNET::INetworkUpR3 to a PDRVINTNET. */
-#define PDMINETWORKUP_2_DRVINTNET(pInterface) \
-    RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3)
 
 /**
  * Updates the MAC address on the kernel side.
@@ -186,104 +187,81 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 
 
 /**
- * Writes a frame packet to the buffer.
- *
- * @returns VBox status code.
- * @param   pBuf        The buffer.
- * @param   pRingBuf    The ring buffer to read from.
- * @param   pvFrame     The frame to write.
- * @param   cbFrame     The size of the frame.
- * @remark  This is the same as INTNETRingWriteFrame
+ * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
-static int drvR3IntNetRingWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
+static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf)
 {
+    PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
+    int         rc    = VINF_SUCCESS;
+    Assert(cbMin < UINT32_MAX / 2);
+
     /*
-     * Validate input.
+     * Allocate a S/G buffer.
      */
-    Assert(pBuf);
-    Assert(pRingBuf);
-    Assert(pvFrame);
-    Assert(cbFrame >= sizeof(RTMAC) * 2);
-    uint32_t offWrite = pRingBuf->offWrite;
-    Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
-    uint32_t offRead = pRingBuf->offRead;
-    Assert(offRead == RT_ALIGN_32(offRead, sizeof(INTNETHDR)));
-
-    const uint32_t cb = RT_ALIGN_32(cbFrame, sizeof(INTNETHDR));
-    if (offRead <= offWrite)
+    PPDMSCATTERGATHER pSgBuf = (PPDMSCATTERGATHER)RTMemCacheAlloc(pThis->hSgCache);
+    if (pSgBuf)
     {
-        /*
-         * Try fit it all before the end of the buffer.
-         */
-        if (pRingBuf->offEnd - offWrite >= cb + sizeof(INTNETHDR))
+        PINTNETHDR pHdr;
+        rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
+                                     &pHdr, &pSgBuf->aSegs[0].pvSeg);
+#if 1 /** @todo implement VERR_TRY_AGAIN once this moves to EMT. */
+        if (    RT_FAILURE(rc)
+            &&  pThis->pBufR3->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
         {
-            PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
-            pHdr->offFrame = sizeof(INTNETHDR);
+            INTNETIFSENDREQ SendReq;
+            SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+            SendReq.Hdr.cbReq = sizeof(SendReq);
+            SendReq.pSession = NIL_RTR0PTR;
+            SendReq.hIf = pThis->hIf;
+            PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
-            memcpy(pHdr + 1, pvFrame, cbFrame);
+            rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
+                                         &pHdr, &pSgBuf->aSegs[0].pvSeg);
+        }
+#endif
+        if (RT_SUCCESS(rc))
+        {
+            pSgBuf->fFlags          = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
+            pSgBuf->cbUsed          = 0;
+            pSgBuf->cbAvailable     = cbMin;
+            pSgBuf->pvUser          = pHdr;
+            pSgBuf->cSegs           = 1;
+            pSgBuf->aSegs[0].cbSeg  = cbMin;
 
-            offWrite += cb + sizeof(INTNETHDR);
-            Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
-            if (offWrite >= pRingBuf->offEnd)
-                offWrite = pRingBuf->offStart;
-            Log2(("WriteFrame: offWrite: %#x -> %#x (1)\n", pRingBuf->offWrite, offWrite));
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
+            *ppSgBuf = pSgBuf;
             return VINF_SUCCESS;
         }
 
         /*
-         * Try fit the frame at the start of the buffer.
-         * (The header fits before the end of the buffer because of alignment.)
+         * Arm the try again stuff.
          */
-        AssertMsg(pRingBuf->offEnd - offWrite >= sizeof(INTNETHDR), ("offEnd=%x offWrite=%x\n", pRingBuf->offEnd, offWrite));
-        if (offRead - pRingBuf->offStart > cb) /* not >= ! */
-        {
-            PINTNETHDR  pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            void       *pvFrameOut = (PINTNETHDR)((uint8_t *)pBuf + pRingBuf->offStart);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
-            pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
+/** @todo        if (pThis->pBufR3->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
+            rc = VERR_TRY_AGAIN;
+        else */
+            rc = VERR_NO_MEMORY;
 
-            memcpy(pvFrameOut, pvFrame, cbFrame);
-
-            offWrite = pRingBuf->offStart + cb;
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-            Log2(("WriteFrame: offWrite: %#x -> %#x (2)\n", pRingBuf->offWrite, offWrite));
-            return VINF_SUCCESS;
-        }
+        RTMemCacheFree(pThis->hSgCache, pSgBuf);
     }
-    /*
-     * The reader is ahead of the writer, try fit it into that space.
-     */
-    else if (offRead - offWrite > cb + sizeof(INTNETHDR)) /* not >= ! */
-    {
-        PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = cbFrame;
-        pHdr->offFrame = sizeof(INTNETHDR);
-
-        memcpy(pHdr + 1, pvFrame, cbFrame);
-
-        offWrite += cb + sizeof(INTNETHDR);
-        ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-        Log2(("WriteFrame: offWrite: %#x -> %#x (3)\n", pRingBuf->offWrite, offWrite));
-        return VINF_SUCCESS;
-    }
-
-    /* (it didn't fit) */
-    /** @todo stats */
-    return VERR_BUFFER_OVERFLOW;
+    else
+        rc = VERR_NO_MEMORY;
+    /** @todo implement VERR_TRY_AGAIN  */
+    return rc;
 }
 
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
+ */
+static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvR3IntNetSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvR3IntNetUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     STAM_PROFILE_START(&pThis->StatTransmit, a);
 
 #ifdef LOG_ENABLED
@@ -299,7 +277,7 @@ static DECLCALLBACK(int) drvR3IntNetSendDeprecated(PPDMINETWORKUP pInterface, co
     /*
      * Add the frame to the send buffer and push it onto the network.
      */
-    int rc = drvR3IntNetRingWriteFrame(pThis->pBufR3, &pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+    int rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     if (    rc == VERR_BUFFER_OVERFLOW
         &&  pThis->pBufR3->cbSend < cb)
     {
@@ -310,7 +288,7 @@ static DECLCALLBACK(int) drvR3IntNetSendDeprecated(PPDMINETWORKUP pInterface, co
         SendReq.hIf = pThis->hIf;
         PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
-        rc = drvR3IntNetRingWriteFrame(pThis->pBufR3, &pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
+        rc = INTNETRingWriteFrame(&pThis->pBufR3->Send, pvBuf, (uint32_t)cb);
     }
 
     if (RT_SUCCESS(rc))
@@ -332,9 +310,9 @@ static DECLCALLBACK(int) drvR3IntNetSendDeprecated(PPDMINETWORKUP pInterface, co
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvR3IntNetUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     INTNETIFSETPROMISCUOUSMODEREQ Req;
     Req.Hdr.u32Magic    = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq       = sizeof(Req);
@@ -342,7 +320,7 @@ static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKUP pInterfac
     Req.hIf             = pThis->hIf;
     Req.fPromiscuous    = fPromiscuous;
     int rc = PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SET_PROMISCUOUS_MODE, &Req, sizeof(Req));
-    LogFlow(("drvR3IntNetSetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
+    LogFlow(("drvR3IntNetUp_SetPromiscuousMode: fPromiscuous=%RTbool\n", fPromiscuous));
     AssertRC(rc);
 }
 
@@ -350,9 +328,9 @@ static DECLCALLBACK(void) drvR3IntNetSetPromiscuousMode(PPDMINETWORKUP pInterfac
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnNotifyLinkChanged}
  */
-static DECLCALLBACK(void) drvR3IntNetNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvR3IntNetUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PDRVINTNET pThis = PDMINETWORKUP_2_DRVINTNET(pInterface);
+    PDRVINTNET pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     bool fLinkDown;
     switch (enmLinkState)
     {
@@ -366,7 +344,7 @@ static DECLCALLBACK(void) drvR3IntNetNotifyLinkChanged(PPDMINETWORKUP pInterface
             fLinkDown = false;
             break;
     }
-    LogFlow(("drvR3IntNetNotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
+    LogFlow(("drvR3IntNetUp_NotifyLinkChanged: enmLinkState=%d %d->%d\n", enmLinkState, pThis->fLinkDown, fLinkDown));
     ASMAtomicXchgSize(&pThis->fLinkDown, fLinkDown);
 }
 
@@ -413,7 +391,8 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
         /*
          * Process the receive buffer.
          */
-        while (INTNETRingGetReadable(pRingBuf) > 0)
+        PINTNETHDR pHdr;
+        while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
             /*
              * Check the state and then inspect the packet.
@@ -425,8 +404,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                 return VERR_STATE_CHANGED;
             }
 
-            PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pBuf + pRingBuf->offRead);
-            Log2(("pHdr=%p offRead=%#x: %.8Rhxs\n", pHdr, pRingBuf->offRead, pHdr));
+            Log2(("pHdr=%p offRead=%#x: %.8Rhxs\n", pHdr, pRingBuf->offReadX, pHdr));
             if (    pHdr->u16Type == INTNETHDR_TYPE_FRAME
                 &&  !pThis->fLinkDown)
             {
@@ -450,7 +428,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                     AssertRC(rc);
 
                     /* skip to the next frame. */
-                    INTNETRingSkipFrame(pBuf, pRingBuf);
+                    INTNETRingSkipFrame(pRingBuf);
                 }
                 else
                 {
@@ -466,8 +444,8 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                              * NIC is going down, likely because the VM is being reset. Skip the frame.
                              */
                             AssertMsg(pHdr->u16Type == INTNETHDR_TYPE_FRAME, ("Unknown frame type %RX16! offRead=%#x\n",
-                                                                              pHdr->u16Type, pRingBuf->offRead));
-                            INTNETRingSkipFrame(pBuf, pRingBuf);
+                                                                              pHdr->u16Type, pRingBuf->offReadX));
+                            INTNETRingSkipFrame(pRingBuf);
                         }
                         else
                         {
@@ -484,8 +462,9 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                  * Link down or unknown frame - skip to the next frame.
                  */
                 AssertMsg(pHdr->u16Type == INTNETHDR_TYPE_FRAME, ("Unknown frame type %RX16! offRead=%#x\n",
-                                                                  pHdr->u16Type, pRingBuf->offRead));
-                INTNETRingSkipFrame(pBuf, pRingBuf);
+                                                                  pHdr->u16Type, pRingBuf->offReadX));
+                INTNETRingSkipFrame(pRingBuf);
+                STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
             }
         } /* while more received data */
 
@@ -541,7 +520,7 @@ static DECLCALLBACK(int) drvR3IntNetAsyncIoThread(RTTHREAD ThreadSelf, void *pvU
         {
             case ASYNCSTATE_SUSPENDED:
             {
-                int rc = RTSemEventWait(pThis->EventSuspended, 30000);
+                int rc = RTSemEventWait(pThis->hEvtSuspended, 30000);
                 if (    RT_FAILURE(rc)
                     &&  rc != VERR_TIMEOUT)
                 {
@@ -646,7 +625,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
-        RTSemEventSignal(pThis->EventSuspended);
+        RTSemEventSignal(pThis->hEvtSuspended);
         drvR3IntNetUpdateMacAddress(pThis); /* (could be a state restore) */
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }
@@ -672,7 +651,7 @@ static DECLCALLBACK(void) drvR3IntNetResume(PPDMDRVINS pDrvIns)
         Frame.Hdr.EtherType      = RT_H2BE_U16(0x801e);
         int rc = pThis->pIAboveConfigR3->pfnGetMac(pThis->pIAboveConfigR3, &Frame.Hdr.SrcMac);
         if (RT_SUCCESS(rc))
-            rc = drvR3IntNetSendDeprecated(&pThis->INetworkUpR3, &Frame, sizeof(Frame));
+            rc = drvR3IntNetUp_SendDeprecated(&pThis->INetworkUpR3, &Frame, sizeof(Frame));
         if (RT_FAILURE(rc))
             LogRel(("IntNet#%u: Sending dummy frame failed: %Rrc\n", pDrvIns->iInstance, rc));
     }
@@ -708,7 +687,7 @@ static DECLCALLBACK(void) drvR3IntNetPowerOn(PPDMDRVINS pDrvIns)
     if (!pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
-        RTSemEventSignal(pThis->EventSuspended);
+        RTSemEventSignal(pThis->hEvtSuspended);
         drvR3IntNetUpdateMacAddress(pThis);
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }
@@ -734,8 +713,8 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
      */
     ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_TERMINATE);
     ASMAtomicXchgSize(&pThis->fLinkDown, true);
-    RTSEMEVENT EventSuspended = pThis->EventSuspended;
-    pThis->EventSuspended = NIL_RTSEMEVENT;
+    RTSEMEVENT hEvtSuspended = pThis->hEvtSuspended;
+    pThis->hEvtSuspended = NIL_RTSEMEVENT;
 
     /*
      * Close the interface
@@ -757,28 +736,35 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
      */
     if (pThis->Thread != NIL_RTTHREAD)
     {
-        if (EventSuspended != NIL_RTSEMEVENT)
-            RTSemEventSignal(EventSuspended);
+        if (hEvtSuspended != NIL_RTSEMEVENT)
+            RTSemEventSignal(hEvtSuspended);
         int rc = RTThreadWait(pThis->Thread, 5000, NULL);
         AssertRC(rc);
         pThis->Thread = NIL_RTTHREAD;
     }
 
     /*
-     * Destroy the semaphores.
+     * Destroy the semaphore and S/G cache.
      */
-    if (EventSuspended != NIL_RTSEMEVENT)
-        RTSemEventDestroy(EventSuspended);
+    if (hEvtSuspended != NIL_RTSEMEVENT)
+        RTSemEventDestroy(hEvtSuspended);
+
+    RTMemCacheDestroy(pThis->hSgCache);
+    pThis->hSgCache = NIL_RTMEMCACHE;
 
     /*
      * Deregister statistics in case we're being detached.
      */
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cbStatRecv);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cbStatSend);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatRecvs);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatSends);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cStatFrames);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cOverflows);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cStatFrames);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cbStatWritten);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cOverflows);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsOk);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
+    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
 #ifdef VBOX_WITH_STATISTICS
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
     PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
@@ -803,7 +789,8 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->pDrvInsR3                                = pDrvIns;
     pThis->hIf                                      = INTNET_HANDLE_INVALID;
     pThis->Thread                                   = NIL_RTTHREAD;
-    pThis->EventSuspended                           = NIL_RTSEMEVENT;
+    pThis->hEvtSuspended                            = NIL_RTSEMEVENT;
+    pThis->hSgCache                                 = NIL_RTMEMCACHE;
     pThis->enmState                                 = ASYNCSTATE_SUSPENDED;
     pThis->fActivateEarlyDeactivateLate             = false;
     /* IBase* */
@@ -811,9 +798,11 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IBaseR0.pfnQueryInterface                = drvR3IntNetIBaseR0_QueryInterface;
     pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
     /* INetworkUp */
-    pThis->INetworkUpR3.pfnSendDeprecated           = drvR3IntNetSendDeprecated;
-    pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetSetPromiscuousMode;
-    pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3IntNetNotifyLinkChanged;
+    pThis->INetworkUpR3.pfnAllocBuf                 = drvR3IntNetUp_AllocBuf;
+    pThis->INetworkUpR3.pfnSendBuf                  = drvR3IntNetUp_SendBuf;
+    pThis->INetworkUpR3.pfnSendDeprecated           = drvR3IntNetUp_SendDeprecated;
+    pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetUp_SetPromiscuousMode;
+    pThis->INetworkUpR3.pfnNotifyLinkChanged        = drvR3IntNetUp_NotifyLinkChanged;
 
     /*
      * Validate the config.
@@ -1078,9 +1067,12 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
 #endif /* DARWIN */
 
     /*
-     * Create the event semaphores
+     * Create the event semaphore and S/G cache.
      */
-    rc = RTSemEventCreate(&pThis->EventSuspended);
+    rc = RTSemEventCreate(&pThis->hEvtSuspended);
+    if (RT_FAILURE(rc))
+        return rc;
+    rc = RTMemCacheCreate(&pThis->hSgCache, sizeof(PDMSCATTERGATHER), 0, UINT32_MAX, NULL, NULL, pThis, 0);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -1122,16 +1114,19 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
         AssertRC(rc);
         return rc;
     }
-
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cbStatRecv,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cbStatSend,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatRecvs,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatSends,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of lost packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsNok, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.",  "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of received bytes.",    "/Net/IntNet%d/Bytes/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cbStatWritten, STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_BYTES, "Number of sent bytes.",        "/Net/IntNet%d/Bytes/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cOverflows,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number overflows.",            "/Net/IntNet%d/Overflows/Recv", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cOverflows,    STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number overflows.",            "/Net/IntNet%d/Overflows/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Recv.cStatFrames,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of received packets.",  "/Net/IntNet%d/Packets/Received", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->Send.cStatFrames,   STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of sent packets.",      "/Net/IntNet%d/Packets/Sent", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatLost,          STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of lost packets.",      "/Net/IntNet%d/Packets/Lost", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsNok,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding helped fix an overflow.",      "/Net/IntNet%d/YieldOk", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatYieldsOk,      STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of times yielding didn't help fix an overflow.", "/Net/IntNet%d/YieldNok", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->pBufR3->cStatBadFrames,     STAMTYPE_COUNTER,   STAMVISIBILITY_ALWAYS,  STAMUNIT_COUNT, "Number of bad frames seed by the consumers.",           "/Net/IntNet%d/BadFrames", pDrvIns->iInstance);
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,            STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
-    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,           STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Net/IntNet%d/Transmit", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatReceive,                STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet receive runs.",  "/Net/IntNet%d/Receive", pDrvIns->iInstance);
+    PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatTransmit,               STAMTYPE_PROFILE,   STAMVISIBILITY_ALWAYS,  STAMUNIT_TICKS_PER_CALL, "Profiling packet transmit runs.", "/Net/IntNet%d/Transmit", pDrvIns->iInstance);
 #endif
 
     /*
@@ -1140,7 +1135,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (pThis->fActivateEarlyDeactivateLate)
     {
         ASMAtomicXchgSize(&pThis->enmState, ASYNCSTATE_RUNNING);
-        RTSemEventSignal(pThis->EventSuspended);
+        RTSemEventSignal(pThis->hEvtSuspended);
         drvR3IntNetUpdateMacAddress(pThis);
         drvR3IntNetSetActive(pThis, true /* fActive */);
     }

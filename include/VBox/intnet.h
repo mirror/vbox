@@ -1,5 +1,5 @@
 /** @file
- * INETNET - Internal Networking. (DEV,++)
+ * INTNET - Internal Networking. (DEV,++)
  */
 
 /*
@@ -51,44 +51,66 @@ typedef struct INTNET *PINTNET;
  */
 typedef struct INTNETRINGBUF
 {
-    /** The start of the buffer offset relative to the. (inclusive) */
+    /** The offset from this structure to the start of the buffer. */
     uint32_t            offStart;
-    /** The offset to the end of the buffer. (exclusive) */
+    /** The offset from this structure to the end of the buffer. (exclusive). */
     uint32_t            offEnd;
     /** The current read offset. */
-    uint32_t volatile   offRead;
-    /** The current write offset. */
-    uint32_t volatile   offWrite;
+    uint32_t volatile   offReadX;
+    /** Alignment. */
+    uint32_t            u32Align0;
+
+    /** The committed write offset. */
+    uint32_t volatile   offWriteCom;
+    /** Writer internal current write offset.
+     * This is ahead of offWriteCom when buffer space is handed to a third party for
+     * data gathering.  offWriteCom will be assigned this value by the writer then
+     * the frame is ready. */
+    uint32_t volatile   offWriteInt;
+    /** The number of bytes written (not counting overflows). */
+    STAMCOUNTER         cbStatWritten;
+    /** The number of frames written (not counting overflows). */
+    STAMCOUNTER         cStatFrames;
+    /** The number of overflows. */
+    STAMCOUNTER         cOverflows;
 } INTNETRINGBUF;
+AssertCompileSize(INTNETRINGBUF, 48);
 /** Pointer to a ring buffer. */
 typedef INTNETRINGBUF *PINTNETRINGBUF;
 
-/**
- * Get the amount of space available for writing.
- *
- * @returns Number of available bytes.
- * @param   pRingBuf        The ring buffer.
- */
-DECLINLINE(uint32_t) INTNETRingGetWritable(PINTNETRINGBUF pRingBuf)
-{
-    return pRingBuf->offRead <= pRingBuf->offWrite
-        ?  pRingBuf->offEnd  - pRingBuf->offWrite + pRingBuf->offRead - pRingBuf->offStart - 1
-        :  pRingBuf->offRead - pRingBuf->offWrite - 1;
-}
-
+/** The alignment of a ring buffer. */
+#define INTNETRINGBUF_ALIGNMENT     sizeof(INTNETHDR)
 
 /**
- * Get the amount of data ready for reading.
- *
- * @returns Number of ready bytes.
- * @param   pRingBuf        The ring buffer.
+ * Asserts the sanity of the specified INTNETRINGBUF structure.
  */
-DECLINLINE(uint32_t) INTNETRingGetReadable(PINTNETRINGBUF pRingBuf)
-{
-    return pRingBuf->offRead <= pRingBuf->offWrite
-        ?  pRingBuf->offWrite - pRingBuf->offRead
-        :  pRingBuf->offEnd - pRingBuf->offRead + pRingBuf->offWrite - pRingBuf->offStart;
-}
+#define INTNETRINGBUF_ASSERT_SANITY(pRingBuf) \
+    do \
+    { \
+        AssertPtr(pRingBuf); \
+        { \
+            uint32_t const offWriteCom = (pRingBuf)->offWriteCom; \
+            uint32_t const offRead     = (pRingBuf)->offReadX; \
+            uint32_t const offWriteInt = (pRingBuf)->offWriteInt; \
+            \
+            AssertMsg(offWriteCom == RT_ALIGN_32(offWriteCom, INTNETHDR_ALIGNMENT), ("%#x\n", offWriteCom)); \
+            AssertMsg(offWriteCom >= (pRingBuf)->offStart, ("%#x %#x\n", offWriteCom, (pRingBuf)->offStart)); \
+            AssertMsg(offWriteCom <  (pRingBuf)->offEnd,   ("%#x %#x\n", offWriteCom, (pRingBuf)->offEnd)); \
+            \
+            AssertMsg(offRead == RT_ALIGN_32(offRead, INTNETHDR_ALIGNMENT), ("%#x\n", offRead)); \
+            AssertMsg(offRead >= (pRingBuf)->offStart, ("%#x %#x\n", offRead, (pRingBuf)->offStart)); \
+            AssertMsg(offRead <  (pRingBuf)->offEnd,   ("%#x %#x\n", offRead, (pRingBuf)->offEnd)); \
+            \
+            AssertMsg(offWriteInt == RT_ALIGN_32(offWriteInt, INTNETHDR_ALIGNMENT), ("%#x\n", offWriteInt)); \
+            AssertMsg(offWriteInt >= (pRingBuf)->offStart, ("%#x %#x\n", offWriteInt, (pRingBuf)->offStart)); \
+            AssertMsg(offWriteInt <  (pRingBuf)->offEnd,   ("%#x %#x\n", offWriteInt, (pRingBuf)->offEnd)); \
+            AssertMsg(  offRead <= offWriteCom \
+                      ? offWriteCom <= offWriteInt || offWriteInt < offRead \
+                      : offWriteCom <= offWriteInt, \
+                      ("W=%#x W'=%#x R=%#x\n", offWriteCom, offWriteInt, offRead)); \
+        } \
+    } while (0)
+
 
 
 /**
@@ -96,14 +118,14 @@ DECLINLINE(uint32_t) INTNETRingGetReadable(PINTNETRINGBUF pRingBuf)
  */
 typedef struct INTNETBUF
 {
+    /** Magic number (INTNETBUF_MAGIC). */
+    uint32_t        u32Magic;
     /** The size of the entire buffer. */
     uint32_t        cbBuf;
     /** The size of the send area. */
     uint32_t        cbSend;
     /** The size of the receive area. */
     uint32_t        cbRecv;
-    /** Alignment. */
-    uint32_t        u32Align;
     /** The receive buffer. */
     INTNETRINGBUF   Recv;
     /** The send buffer. */
@@ -114,19 +136,49 @@ typedef struct INTNETBUF
     STAMCOUNTER     cStatYieldsNok;
     /** Number of lost packets due to overflows. */
     STAMCOUNTER     cStatLost;
-    /** Number of packets received (not counting lost ones). */
-    STAMCOUNTER     cStatRecvs;
-    /** Number of frame bytes received (not couting lost frames). */
-    STAMCOUNTER     cbStatRecv;
-    /** Number of packets received. */
-    STAMCOUNTER     cStatSends;
-    /** Number of frame bytes sent. */
-    STAMCOUNTER     cbStatSend;
+    /** Number of bad frames (both rings). */
+    STAMCOUNTER     cStatBadFrames;
+    /** Reserved for future use. */
+    STAMCOUNTER     aStatReserved[2];
 } INTNETBUF;
+AssertCompileSize(INTNETBUF, 160);
+AssertCompileMemberOffset(INTNETBUF, Recv, 16);
+AssertCompileMemberOffset(INTNETBUF, Send, 64);
+
 /** Pointer to an interface buffer. */
 typedef INTNETBUF *PINTNETBUF;
 /** Pointer to a const interface buffer. */
 typedef INTNETBUF const *PCINTNETBUF;
+
+/** Magic number for INTNETBUF::u32Magic (Sir William Gerald Golding). */
+#define INTNETBUF_MAGIC             UINT32_C(0x19110919)
+
+/**
+ * Asserts the sanity of the specified INTNETBUF structure.
+ */
+#define INTNETBUF_ASSERT_SANITY(pBuf) \
+    do \
+    { \
+        AssertPtr(pBuf); \
+        Assert((pBuf)->u32Magic == INTNETBUF_MAGIC); \
+        { \
+            uint32_t const offRecvStart = (pBuf)->Recv.offStart + RT_OFFSETOF(INTNETBUF, Recv); \
+            uint32_t const offRecvEnd   = (pBuf)->Recv.offStart + RT_OFFSETOF(INTNETBUF, Recv); \
+            uint32_t const offSendStart = (pBuf)->Send.offStart + RT_OFFSETOF(INTNETBUF, Send); \
+            uint32_t const offSendEnd   = (pBuf)->Send.offStart + RT_OFFSETOF(INTNETBUF, Send); \
+            \
+            Assert(offRecvEnd > offRecvStart); \
+            Assert(offRecvEnd - offRecvStart == (pBuf)->cbRecv); \
+            Assert(offRecvStart == sizeof(INTNETBUF)); \
+            \
+            Assert(offSendEnd > offSendStart); \
+            Assert(offSendEnd - offSendStart == (pBuf)->cbSend); \
+            Assert(pffSendEnd <= (pBuf)->cbBuf); \
+            \
+            Assert(offSendStart == offRecvEnd); \
+        } \
+    } while (0)
+
 
 /** Internal networking interface handle. */
 typedef uint32_t    INTNETIFHANDLE;
@@ -152,7 +204,6 @@ typedef INTNETIFHANDLE *PINTNETIFHANDLE;
  * that the entire header is contiguous in both virtual and physical
  * memory.
  */
-#pragma pack(1)
 typedef struct INTNETHDR
 {
     /** Header type. This is currently serving as a magic, it
@@ -162,62 +213,45 @@ typedef struct INTNETHDR
     uint16_t        cbFrame;
     /** The offset from the start of this header to where the actual frame starts.
      * This is used to keep the frame it self continguous in virtual memory and
-     * thereby both simplify reading and   */
+     * thereby both simplify access as well as the descriptor. */
     int32_t         offFrame;
 } INTNETHDR;
-#pragma pack()
+AssertCompileSize(INTNETHDR, 8);
+AssertCompileSizeAlignment(INTNETBUF, sizeof(INTNETHDR));
 /** Pointer to a packet header.*/
 typedef INTNETHDR *PINTNETHDR;
 /** Pointer to a const packet header.*/
 typedef INTNETHDR const *PCINTNETHDR;
 
+/** The alignment of a packet header. */
+#define INTNETHDR_ALIGNMENT         sizeof(INTNETHDR)
+AssertCompile(sizeof(INTNETHDR) == INTNETHDR_ALIGNMENT);
+AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
+
 /** INTNETHDR::u16Type value for normal frames. */
-#define INTNETHDR_TYPE_FRAME    0x2442
-
-
-/**
- * Calculates the pointer to the frame.
- *
- * @returns Pointer to the start of the frame.
- * @param   pHdr        Pointer to the packet header
- * @param   pBuf        The buffer the header is within. Only used in strict builds.
- */
-DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
-{
-    uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
-#ifdef VBOX_STRICT
-    const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
-    Assert(off < pBuf->cbBuf);
-    Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
-#endif
-    NOREF(pBuf);
-    return pu8;
-}
-
+#define INTNETHDR_TYPE_FRAME        0x2442
 
 /**
- * Skips to the next (read) frame in the buffer.
- *
- * @param   pBuf        The buffer.
- * @param   pRingBuf    The ring buffer in question.
+ * Asserts the sanity of the specified INTNETHDR.
  */
-DECLINLINE(void) INTNETRingSkipFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf)
-{
-    uint32_t    offRead   = pRingBuf->offRead;
-    PINTNETHDR  pHdr      = (PINTNETHDR)((uint8_t *)pBuf + offRead);
-    Assert(pRingBuf->offRead < pBuf->cbBuf);
-    Assert(pRingBuf->offRead >= pRingBuf->offStart);
-    Assert(pRingBuf->offRead < pRingBuf->offEnd);
-
-    /* skip the frame */
-    offRead += pHdr->offFrame + pHdr->cbFrame;
-    offRead = RT_ALIGN_32(offRead, sizeof(INTNETHDR));
-    Assert(offRead <= pRingBuf->offEnd && offRead >= pRingBuf->offStart);
-    if (offRead >= pRingBuf->offEnd)
-        offRead = pRingBuf->offStart;
-    ASMAtomicXchgU32(&pRingBuf->offRead, offRead);
-}
+#define INTNETHDR_ASSERT_SANITY(pHdr, pRingBuf) \
+    do \
+    { \
+        AssertPtr(pHdr); \
+        Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr); \
+        Assert((pHdr)->u16Type == INTNETHDR_TYPE_FRAME); \
+        { \
+            uintptr_t const offHdr   = (uintptr_t)pHdr - (uintptr_t)pRingBuf; \
+            uintptr_t const offFrame = offHdr + (pHdr)->offFrame; \
+            \
+            Assert(offHdr >= (pRingBuf)->offStart); \
+            Assert(offHdr <  (pRingBuf)->offEnd); \
+            \
+            /* could do more thorough work here... later, perhaps. */ \
+            Assert(offFrame >= (pRingBuf)->offStart); \
+            Assert(offFrame <  (pRingBuf)->offEnd); \
+        } \
+    } while (0)
 
 
 /**

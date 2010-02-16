@@ -1560,18 +1560,23 @@ static void arp_input(PNATState pData, struct mbuf *m)
     }
 }
 
-void slirp_input(PNATState pData, void *pvArg)
+/**
+ * Feed a packet into the slirp engine.
+ *
+ * @param   m               Data buffer, m_len is not valid.
+ * @param   cbBuf           The length of the data in m.
+ */
+void slirp_input(PNATState pData, struct mbuf *m, size_t cbBuf)
 {
-    struct mbuf *m;
     int proto;
     static bool fWarnedIpv6;
     struct ethhdr *eh;
     uint8_t au8Ether[ETH_ALEN];
 
-    m = (struct mbuf *)pvArg;
-    if (m->m_len < ETH_HLEN)
+    m->m_len = cbBuf;
+    if (cbBuf < ETH_HLEN)
     {
-        LogRel(("NAT: packet having size %d has been ingnored\n", m->m_len));
+        LogRel(("NAT: packet having size %d has been ignored\n", m->m_len));
         m_free(pData, m);
         return;
     }

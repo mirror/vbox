@@ -23,6 +23,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <VBox/intnet.h>
+#include <VBox/intnetinline.h>
 #include <VBox/sup.h>
 #include <VBox/vmm.h>
 #include <VBox/err.h>
@@ -166,99 +167,6 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
 
 
 /**
- * Writes a frame packet to the buffer.
- *
- * @returns VBox status code.
- * @param   pBuf        The buffer.
- * @param   pRingBuf    The ring buffer to read from.
- * @param   pvFrame     The frame to write.
- * @param   cbFrame     The size of the frame.
- * @remark  This is the same as INTNETRingWriteFrame and drvIntNetRingWriteFrame.
- */
-static int tstIntNetWriteFrame(PINTNETBUF pBuf, PINTNETRINGBUF pRingBuf, const void *pvFrame, uint32_t cbFrame)
-{
-    /*
-     * Validate input.
-     */
-    Assert(pBuf);
-    Assert(pRingBuf);
-    Assert(pvFrame);
-    Assert(cbFrame >= sizeof(RTMAC) * 2);
-    uint32_t offWrite = pRingBuf->offWrite;
-    Assert(offWrite == RT_ALIGN_32(offWrite, sizeof(INTNETHDR)));
-    uint32_t offRead = pRingBuf->offRead;
-    Assert(offRead == RT_ALIGN_32(offRead, sizeof(INTNETHDR)));
-
-    const uint32_t cb = RT_ALIGN_32(cbFrame, sizeof(INTNETHDR));
-    if (offRead <= offWrite)
-    {
-        /*
-         * Try fit it all before the end of the buffer.
-         */
-        if (pRingBuf->offEnd - offWrite >= cb + sizeof(INTNETHDR))
-        {
-            PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
-            pHdr->offFrame = sizeof(INTNETHDR);
-
-            memcpy(pHdr + 1, pvFrame, cbFrame);
-
-            offWrite += cb + sizeof(INTNETHDR);
-            Assert(offWrite <= pRingBuf->offEnd && offWrite >= pRingBuf->offStart);
-            if (offWrite >= pRingBuf->offEnd)
-                offWrite = pRingBuf->offStart;
-            Log2(("WriteFrame: offWrite: %#x -> %#x (1)\n", pRingBuf->offWrite, offWrite));
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-            return VINF_SUCCESS;
-        }
-
-        /*
-         * Try fit the frame at the start of the buffer.
-         * (The header fits before the end of the buffer because of alignment.)
-         */
-        AssertMsg(pRingBuf->offEnd - offWrite >= sizeof(INTNETHDR), ("offEnd=%x offWrite=%x\n", pRingBuf->offEnd, offWrite));
-        if (offRead - pRingBuf->offStart > cb) /* not >= ! */
-        {
-            PINTNETHDR  pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-            void       *pvFrameOut = (PINTNETHDR)((uint8_t *)pBuf + pRingBuf->offStart);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
-            pHdr->offFrame = (intptr_t)pvFrameOut - (intptr_t)pHdr;
-
-            memcpy(pvFrameOut, pvFrame, cbFrame);
-
-            offWrite = pRingBuf->offStart + cb;
-            ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-            Log2(("WriteFrame: offWrite: %#x -> %#x (2)\n", pRingBuf->offWrite, offWrite));
-            return VINF_SUCCESS;
-        }
-    }
-    /*
-     * The reader is ahead of the writer, try fit it into that space.
-     */
-    else if (offRead - offWrite > cb + sizeof(INTNETHDR)) /* not >= ! */
-    {
-        PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pBuf + offWrite);
-        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = cbFrame;
-        pHdr->offFrame = sizeof(INTNETHDR);
-
-        memcpy(pHdr + 1, pvFrame, cbFrame);
-
-        offWrite += cb + sizeof(INTNETHDR);
-        ASMAtomicXchgU32(&pRingBuf->offWrite, offWrite);
-        Log2(("WriteFrame: offWrite: %#x -> %#x (3)\n", pRingBuf->offWrite, offWrite));
-        return VINF_SUCCESS;
-    }
-
-    /* (it didn't fit) */
-    /** @todo stats */
-    return VERR_BUFFER_OVERFLOW;
-}
-
-
-/**
  * Transmits one frame after appending the CRC.
  *
  * @param   hIf             The interface handle.
@@ -294,7 +202,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
      * Don't bother with dealing with overflows like DrvIntNet does, because
      * it's not supposed to happen here in this testcase.
      */
-    int rc = tstIntNetWriteFrame(pBuf, &pBuf->Send, pvFrame, (uint32_t)cbFrame);
+    int rc = INTNETRingWriteFrame(&pBuf->Send, pvFrame, cbFrame);
     if (RT_SUCCESS(rc))
     {
         if (pFileRaw)
@@ -302,7 +210,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
     }
     else
     {
-        RTPrintf("tstIntNet-1: tstIntNetWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
+        RTPrintf("tstIntNet-1: INTNETRingWriteFrame failed, %Rrc; cbFrame=%d pBuf->cbSend=%d\n", rc, cbFrame, pBuf->cbSend);
         g_cErrors++;
     }
 
@@ -554,14 +462,14 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
         /*
          * Process the receive buffer.
          */
-        while (INTNETRingGetReadable(pRingBuf) > 0)
+        PINTNETHDR pHdr;
+        while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)))
         {
-            PINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pBuf + pRingBuf->offRead);
             if (pHdr->u16Type == INTNETHDR_TYPE_FRAME)
             {
                 size_t      cbFrame = pHdr->cbFrame;
                 const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
-                uint64_t    NanoTS = RTTimeNanoTS() - g_StartTS;
+                uint64_t    NanoTS  = RTTimeNanoTS() - g_StartTS;
 
                 if (pFileRaw)
                     PcapStreamFrame(pFileRaw, g_StartTS, pvFrame, cbFrame, 0xffff);
@@ -637,11 +545,12 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
             else
             {
                 RTPrintf("tstIntNet-1: Unknown frame type %d\n", pHdr->u16Type);
+                STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
                 g_cErrors++;
             }
 
             /* Advance to the next frame. */
-            INTNETRingSkipFrame(pBuf, pRingBuf);
+            INTNETRingSkipFrame(pRingBuf);
         }
     }
 
@@ -649,8 +558,8 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
     RTStrmPrintf(pFileText ? pFileText : g_pStdOut,
                  "%3RU64.%09u: stopped. cRecvs=%RU64 cbRecv=%RU64 cLost=%RU64 cOYs=%RU64 cNYs=%RU64\n",
                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
-                 pBuf->cStatRecvs.c,
-                 pBuf->cbStatRecv.c,
+                 pBuf->Recv.cStatFrames.c,
+                 pBuf->Recv.cbStatWritten.c,
                  pBuf->cStatLost.c,
                  pBuf->cStatYieldsOk.c,
                  pBuf->cStatYieldsNok.c

@@ -25,6 +25,7 @@
 #define LOG_GROUP LOG_GROUP_DEFAULT
 #include "VBoxNetLib.h"
 #include <iprt/string.h>
+#include <VBox/intnetinline.h>
 #include <VBox/log.h>
 
 
@@ -44,12 +45,13 @@ bool VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF 
     /*
      * Valid IntNet Ethernet frame?
      */
-    PCINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pBuf + pBuf->Recv.offRead);
-    if (pHdr->u16Type != INTNETHDR_TYPE_FRAME)
+    PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
+    if (   !pHdr
+        || pHdr->u16Type != INTNETHDR_TYPE_FRAME)
         return false;
 
-    size_t      cbFrame = pHdr->cbFrame;
-    const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+    size_t          cbFrame = pHdr->cbFrame;
+    const void     *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
 
     /*

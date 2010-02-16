@@ -26,6 +26,8 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define RTMEM_WRAP_TO_EF_APIS       // debugging debugging remove
+#define INTNET_POISON_READ_FRAMES   // debugging debugging remove
 #define IN_INTNET_TESTCASE
 #define IN_INTNET_R3
 #include <VBox/cdefs.h>
@@ -211,7 +213,7 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 #undef LOG_GROUP
 #include "../SrvIntNetR0.cpp"
 
-typedef struct ARGS
+typedef struct MYARGS
 {
     PINTNET pIntNet;
     PINTNETBUF pBuf;
@@ -219,7 +221,7 @@ typedef struct ARGS
     RTMAC Mac;
     uint64_t u64Start;
     uint64_t u64End;
-} ARGS, *PARGS;
+} MYARGS, *PMYARGS;
 
 
 #define TEST_TRANSFER_SIZE (_1M*384)
@@ -230,20 +232,21 @@ typedef struct ARGS
  */
 DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 {
-    PARGS   pArgs = (PARGS)pvArg;
+    PMYARGS pArgs = (PMYARGS)pvArg;
 
     /*
      * Send 64 MB of data.
      */
     uint8_t abBuf[4096] = {0};
-    PRTMAC pMacSrc = (PRTMAC)&abBuf[0];
-    PRTMAC pMacDst = pMacSrc + 1;
+    PRTMAC  pMacSrc = (PRTMAC)&abBuf[0];
+    PRTMAC  pMacDst = pMacSrc + 1;
     *pMacSrc = pArgs->Mac;
     *pMacDst = pArgs->Mac;
     pMacDst->au16[2] = pArgs->Mac.au16[2] ? 0 : 1;
     unsigned *puFrame = (unsigned *)(pMacDst + 1);
     unsigned iFrame = 0;
-    unsigned cbSent = 0;
+    uint32_t cbSent = 0;
+    uint32_t cSend  = 0;
     pArgs->u64Start = RTTimeNanoTS();
     for (; cbSent < TEST_TRANSFER_SIZE; iFrame++)
     {
@@ -254,7 +257,7 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
 #else
         INTNETSG Sg;
         intnetR0SgInitTemp(&Sg, abBuf, cb);
-        int rc = intnetR0RingWriteFrame(pArgs->pBuf, &pArgs->pBuf->Send, &Sg, NULL);
+        int rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL);
         if (RT_SUCCESS(rc))
             rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, NULL, 0);
 #endif
@@ -284,7 +287,9 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
         RTThreadSleep(1);
     }
 
-    RTPrintf("tstIntNetR0: sender thread %.6Rhxs terminating. iFrame=%d cbSent=%d\n", &pArgs->Mac, iFrame, cbSent);
+    RTPrintf("tstIntNetR0: sender   thread %.6Rhxs terminating.\n"
+             "tstIntNetR0:   iFrame=%u  cb=%'u\n",
+             &pArgs->Mac, iFrame, cbSent);
     return 0;
 }
 
@@ -298,10 +303,10 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
  */
 DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
 {
-    unsigned    cbReceived = 0;
-    unsigned    cLostFrames = 0;
-    unsigned    iFrame = ~0;
-    PARGS       pArgs = (PARGS)pvArg;
+    uint32_t    cbReceived  = 0;
+    uint32_t    cLostFrames = 0;
+    uint32_t    iFrame      = UINT32_MAX;
+    PMYARGS     pArgs       = (PMYARGS)pvArg;
     for (;;)
     {
         /*
@@ -314,13 +319,13 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
             case VINF_SUCCESS:
                 break;
             case VERR_SEM_DESTROYED:
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating. cbReceived=%u cLostFrames=%u iFrame=%u\n",
-                         &pArgs->Mac, cbReceived, cLostFrames, iFrame);
+                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating. iFrame=%u cb=%'u c=%'u cLost=%'u\n",
+                         &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
                 return VINF_SUCCESS;
 
             default:
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs got odd return value %Rrc! cbReceived=%u cLostFrames=%u iFrame=%u\n",
-                         &pArgs->Mac, rc, cbReceived, cLostFrames, iFrame);
+                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs got odd return value %Rrc! iFrame=%u cb=%'u c=%'u cLost=%'u\n",
+                         &pArgs->Mac, rc, iFrame, cbReceived, iFrame - cLostFrames, cLostFrames);
                 g_cErrors++;
                 return rc;
         }
@@ -328,10 +333,10 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
         /*
          * Read data.
          */
-        while (INTNETRingGetReadable(&pArgs->pBuf->Recv))
+        while (INTNETRingHasMoreToRead(&pArgs->pBuf->Recv))
         {
             uint8_t abBuf[16384];
-            unsigned cb = intnetR0RingReadFrame(pArgs->pBuf, &pArgs->pBuf->Recv, abBuf);
+            uint32_t cb = INTNETRingReadAndSkipFrame(&pArgs->pBuf->Recv, abBuf);
             unsigned *puFrame = (unsigned *)&abBuf[sizeof(RTMAC) * 2];
 
             /* check for termination frame. */
@@ -341,9 +346,13 @@ DECLCALLBACK(int) ReceiveThread(RTTHREAD Thread, void *pvArg)
                 &&  puFrame[2] == 0xffffdead
                 &&  puFrame[3] == 0xffffdead)
             {
-                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating. cbReceived=%u cLostFrames=%u iFrame=%u\n",
-                         &pArgs->Mac, cbReceived, cLostFrames, iFrame);
                 pArgs->u64End = RTTimeNanoTS();
+                RTPrintf("tstIntNetR0: receiver thread %.6Rhxs terminating.\n"
+                         "tstIntNetR0:   iFrame=%u  cb=%'u  c=%'u  %'uKB/s  %'ufps  cLost=%'u \n",
+                         &pArgs->Mac, iFrame, cbReceived, iFrame - cLostFrames,
+                         (unsigned)(cbReceived * 1000000000.0 / 1024 / (pArgs->u64End - pArgs->u64Start)),
+                         (unsigned)((iFrame - cLostFrames) * 1000000000.0 / (pArgs->u64End - pArgs->u64Start)),
+                         cLostFrames);
                 return VINF_SUCCESS;
             }
 
@@ -522,7 +531,7 @@ int main(int argc, char **argv)
                                 RTPrintf("tstIntNetR0: %d readable bytes, expected %d!\n", INTNETRingGetReadable(&pBuf1->Recv), cbExpect);
                                 g_cErrors++;
                             }
-                            unsigned cb = intnetR0RingReadFrame(pBuf1, &pBuf1->Recv, abBuf);
+                            uint32_t cb = INTNETRingReadAndSkipFrame(&pBuf1->Recv, abBuf);
                             if (cb != sizeof(g_TestFrame0))
                             {
                                 RTPrintf("tstIntNetR0: read %d frame bytes, expected %d!\n", cb, sizeof(g_TestFrame0));
@@ -554,7 +563,7 @@ int main(int argc, char **argv)
                              */
                             if (!g_cErrors)
                             {
-                                ARGS Args0;
+                                MYARGS Args0;
                                 RT_ZERO(Args0);
                                 Args0.hIf = hIf0;
                                 Args0.pBuf = pBuf0;
@@ -563,7 +572,7 @@ int main(int argc, char **argv)
                                 Args0.Mac.au16[1] = 0;
                                 Args0.Mac.au16[2] = 0;
 
-                                ARGS Args1;
+                                MYARGS Args1;
                                 RT_ZERO(Args1);
                                 Args1.hIf = hIf1;
                                 Args1.pBuf = pBuf1;
@@ -587,25 +596,11 @@ int main(int argc, char **argv)
                                 {
                                     int rc2 = VINF_SUCCESS;
                                     rc = RTThreadWait(ThreadSend0, 5*60*1000, &rc2);
-#if 1 /** @todo it looks like I'm subject to some false wakeup calls here (2.6.23-gentoo-r3 amd64). See #3023.*/
-                                    for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
-                                    {
-                                        RTThreadSleep(1);
-                                        rc = RTThreadWait(ThreadSend0, 1, &rc2);
-                                    }
-#endif
                                     AssertRC(rc);
                                     if (RT_SUCCESS(rc))
                                     {
                                         ThreadSend0 = NIL_RTTHREAD;
                                         rc = RTThreadWait(ThreadSend1, 5*60*1000, RT_SUCCESS(rc2) ? &rc2 : NULL);
-#if 1 /** @todo it looks like I'm subject to some false wakeup calls here (2.6.23-gentoo-r3 amd64). See #3023.*/
-                                        for (int cTries = 100; rc == VERR_TIMEOUT && cTries > 0; cTries--)
-                                        {
-                                            RTThreadSleep(1);
-                                            rc = RTThreadWait(ThreadSend1, 1, &rc2);
-                                        }
-#endif
                                         AssertRC(rc);
                                         if (RT_SUCCESS(rc))
                                             ThreadSend1 = NIL_RTTHREAD;
@@ -617,14 +612,14 @@ int main(int argc, char **argv)
                                          * Wait a bit for the receivers to finish up.
                                          */
                                         unsigned cYields = 100000;
-                                        while (     (   INTNETRingGetReadable(&pBuf0->Recv)
-                                                    ||  INTNETRingGetReadable(&pBuf1->Recv))
+                                        while (     (  INTNETRingHasMoreToRead(&pBuf0->Recv)
+                                                    || INTNETRingHasMoreToRead(&pBuf1->Recv))
                                                &&   cYields-- > 0)
                                             RTThreadYield();
 
                                         uint64_t u64Elapsed = RT_MAX(Args0.u64End, Args1.u64End) - RT_MIN(Args0.u64Start, Args1.u64Start);
                                         uint64_t u64Speed = (uint64_t)((2 * TEST_TRANSFER_SIZE / 1024) / (u64Elapsed / 1000000000.0));
-                                        RTPrintf("tstIntNetR0: transfered %d bytes in %RU64 ns (%RU64 KB/s)\n",
+                                        RTPrintf("tstIntNetR0: transfered %d bytes in %'RU64 ns (%'RU64 KB/s)\n",
                                                  2 * TEST_TRANSFER_SIZE, u64Elapsed, u64Speed);
 
                                         /*

@@ -28,6 +28,7 @@
 #include <iprt/string.h>
 #include <iprt/rand.h>
 #include <VBox/log.h>
+#include <VBox/intnetinline.h>
 
 
 /**
@@ -45,7 +46,7 @@
  *                          Optional.
  * @param   pcb             Where to return the size of the data on success.
  */
-void *VBoxNetUDPMatch(PCINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint32_t fFlags, PVBOXNETUDPHDRS pHdrs, size_t *pcb)
+void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint32_t fFlags, PVBOXNETUDPHDRS pHdrs, size_t *pcb)
 {
     /*
      * Clear return values so we can return easier on mismatch.
@@ -61,12 +62,12 @@ void *VBoxNetUDPMatch(PCINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint
     /*
      * Valid IntNet Ethernet frame?
      */
-    PCINTNETHDR pHdr = (PINTNETHDR)((uintptr_t)pBuf + pBuf->Recv.offRead);
-    if (pHdr->u16Type != INTNETHDR_TYPE_FRAME)
+    PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
+    if (!pHdr || pHdr->u16Type != INTNETHDR_TYPE_FRAME)
         return NULL;
 
-    size_t      cbFrame = pHdr->cbFrame;
-    const void *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+    size_t          cbFrame = pHdr->cbFrame;
+    const void     *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
     if (pHdrs)
         pHdrs->pEth = pEthHdr;
