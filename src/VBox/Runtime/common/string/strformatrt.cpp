@@ -51,6 +51,7 @@
  *      - \%RTiop           - Takes a #RTIOPORT value.
  *      - \%RTldrm          - Takes a #RTLDRMOD value.
  *      - \%RTmac           - Takes a #PCRTMAC pointer.
+ *      - \%RTnaddr         - Takes a #PCRTNETADDR value.
  *      - \%RTnaipv4        - Takes a #RTNETADDRIPV4 value.
  *      - \%RTnaipv6        - Takes a #PCRTNETADDRIPV6 value.
  *      - \%RTnthrd         - Takes a #RTNATIVETHREAD value.
@@ -214,6 +215,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     RTSF_IPV4,
                     RTSF_IPV6,
                     RTSF_MAC,
+                    RTSF_NETADDR,
                     RTSF_UUID
                 } RTSF;
                 static const struct
@@ -265,6 +267,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     { STRMEM("Tiop"),    sizeof(RTIOPORT),       16, RTSF_INTW,  0 },
                     { STRMEM("Tldrm"),   sizeof(RTLDRMOD),       16, RTSF_INTW,  0 },
                     { STRMEM("Tmac"),    sizeof(PCRTMAC),        16, RTSF_MAC,   0 },
+                    { STRMEM("Tnaddr"),  sizeof(PCRTNETADDR),    10, RTSF_NETADDR,0 },
                     { STRMEM("Tnaipv4"), sizeof(RTNETADDRIPV4),  10, RTSF_IPV4,  0 },
                     { STRMEM("Tnaipv6"), sizeof(PCRTNETADDRIPV6),16, RTSF_IPV6,  0 },
                     { STRMEM("Tnthrd"),  sizeof(RTNATIVETHREAD), 16, RTSF_INTW,  0 },
@@ -315,6 +318,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                     PCRTMAC             pMac;
                     RTNETADDRIPV4       Ipv4Addr;
                     PCRTNETADDRIPV6     pIpv6Addr;
+                    PCRTNETADDR         pNetAddr;
                     PCRTUUID            pUuid;
                 } u;
                 char        szBuf[80];
@@ -528,6 +532,87 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                                                u.pMac->au8[3],
                                                u.pMac->au8[4],
                                                u.pMac->au8[5]);
+                        return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
+                    }
+
+                    case RTSF_NETADDR:
+                    {
+                        if (VALID_PTR(u.pNetAddr))
+                        {
+                            switch (u.pNetAddr->enmType)
+                            {
+                                case RTNETADDRTYPE_IPV4:
+                                    if (u.pNetAddr->uPort == RTNETADDR_PORT_NA)
+                                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                           "%u.%u.%u.%u",
+                                                           u.pNetAddr->uAddr.IPv4.au8[0],
+                                                           u.pNetAddr->uAddr.IPv4.au8[1],
+                                                           u.pNetAddr->uAddr.IPv4.au8[2],
+                                                           u.pNetAddr->uAddr.IPv4.au8[3]);
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                       "%u.%u.%u.%u:%u",
+                                                       u.pNetAddr->uAddr.IPv4.au8[0],
+                                                       u.pNetAddr->uAddr.IPv4.au8[1],
+                                                       u.pNetAddr->uAddr.IPv4.au8[2],
+                                                       u.pNetAddr->uAddr.IPv4.au8[3],
+                                                       u.pNetAddr->uPort);
+
+                                case RTNETADDRTYPE_IPV6:
+                                    if (u.pNetAddr->uPort == RTNETADDR_PORT_NA)
+                                        return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                           "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x",
+                                                           u.pNetAddr->uAddr.IPv6.au8[0],
+                                                           u.pNetAddr->uAddr.IPv6.au8[1],
+                                                           u.pNetAddr->uAddr.IPv6.au8[2],
+                                                           u.pNetAddr->uAddr.IPv6.au8[3],
+                                                           u.pNetAddr->uAddr.IPv6.au8[4],
+                                                           u.pNetAddr->uAddr.IPv6.au8[5],
+                                                           u.pNetAddr->uAddr.IPv6.au8[6],
+                                                           u.pNetAddr->uAddr.IPv6.au8[7],
+                                                           u.pNetAddr->uAddr.IPv6.au8[8],
+                                                           u.pNetAddr->uAddr.IPv6.au8[9],
+                                                           u.pNetAddr->uAddr.IPv6.au8[10],
+                                                           u.pNetAddr->uAddr.IPv6.au8[11],
+                                                           u.pNetAddr->uAddr.IPv6.au8[12],
+                                                           u.pNetAddr->uAddr.IPv6.au8[13],
+                                                           u.pNetAddr->uAddr.IPv6.au8[14],
+                                                           u.pNetAddr->uAddr.IPv6.au8[15]);
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                       "%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x:%02x%02x %u",
+                                                       u.pNetAddr->uAddr.IPv6.au8[0],
+                                                       u.pNetAddr->uAddr.IPv6.au8[1],
+                                                       u.pNetAddr->uAddr.IPv6.au8[2],
+                                                       u.pNetAddr->uAddr.IPv6.au8[3],
+                                                       u.pNetAddr->uAddr.IPv6.au8[4],
+                                                       u.pNetAddr->uAddr.IPv6.au8[5],
+                                                       u.pNetAddr->uAddr.IPv6.au8[6],
+                                                       u.pNetAddr->uAddr.IPv6.au8[7],
+                                                       u.pNetAddr->uAddr.IPv6.au8[8],
+                                                       u.pNetAddr->uAddr.IPv6.au8[9],
+                                                       u.pNetAddr->uAddr.IPv6.au8[10],
+                                                       u.pNetAddr->uAddr.IPv6.au8[11],
+                                                       u.pNetAddr->uAddr.IPv6.au8[12],
+                                                       u.pNetAddr->uAddr.IPv6.au8[13],
+                                                       u.pNetAddr->uAddr.IPv6.au8[14],
+                                                       u.pNetAddr->uAddr.IPv6.au8[15],
+                                                       u.pNetAddr->uPort);
+
+                                case RTNETADDRTYPE_MAC:
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                       "%02x:%02x:%02x:%02x:%02x:%02x",
+                                                       u.pNetAddr->uAddr.Mac.au8[0],
+                                                       u.pNetAddr->uAddr.Mac.au8[1],
+                                                       u.pNetAddr->uAddr.Mac.au8[2],
+                                                       u.pNetAddr->uAddr.Mac.au8[3],
+                                                       u.pNetAddr->uAddr.Mac.au8[4],
+                                                       u.pNetAddr->uAddr.Mac.au8[5]);
+
+                                default:
+                                    return RTStrFormat(pfnOutput, pvArgOutput, NULL, 0,
+                                                       "unsupported-netaddr-type=%u", u.pNetAddr->enmType);
+
+                            }
+                        }
                         return pfnOutput(pvArgOutput, s_szNull, sizeof(s_szNull) - 1);
                     }
 

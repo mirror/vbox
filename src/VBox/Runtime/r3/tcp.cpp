@@ -909,6 +909,54 @@ RTR3DECL(int)  RTTcpSelectOne(RTSOCKET Sock, RTMSINTERVAL cMillies)
 }
 
 
+RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
+{
+    union
+    {
+        struct sockaddr     Addr;
+        struct sockaddr_in  Ipv4;
+        struct sockaddr_in6 Ipv6;
+    }               u;
+#ifdef RT_OS_WINDOWS
+    int             cbAddr = sizeof(u);
+#else
+    socklen_t       cbAddr = sizeof(u);
+#endif
+    RT_ZERO(u);
+    if (!getpeername(Sock, &u.Addr, &cbAddr))
+    {
+        /*
+         * Convert the address.
+         */
+        if (   cbAddr == sizeof(struct sockaddr_in)
+            && u.Addr.sa_family == AF_INET)
+        {
+            RT_ZERO(*pAddr);
+            pAddr->enmType      = RTNETADDRTYPE_IPV4;
+            pAddr->uPort        = u.Ipv4.sin_port;
+            pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
+        }
+#ifdef AF_INET6
+        else if (   cbAddr == sizeof(struct sockaddr_in6)
+                 && u.Addr.sa_family == AF_INET6)
+        {
+            RT_ZERO(*pAddr);
+            pAddr->enmType            = RTNETADDRTYPE_IPV6;
+            pAddr->uPort              = u.Ipv6.sin6_port;
+            pAddr->uAddr.IPv6.au32[0] = u.Ipv6.sin6_addr.s6_addr32[0];
+            pAddr->uAddr.IPv6.au32[1] = u.Ipv6.sin6_addr.s6_addr32[1];
+            pAddr->uAddr.IPv6.au32[2] = u.Ipv6.sin6_addr.s6_addr32[2];
+            pAddr->uAddr.IPv6.au32[3] = u.Ipv6.sin6_addr.s6_addr32[3];
+        }
+#endif
+        else
+            return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
+        return VINF_SUCCESS;
+    }
+    return rtTcpError();
+}
+
+
 RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCKET pSock)
 {
     int rc;
