@@ -404,6 +404,20 @@ WaitTarget(const nsID           &aTarget,
       rv = NS_OK;
       break;
     }
+#ifdef VBOX
+    else
+    {
+      /* Special client liveness check if there is no message to process.
+       * This is necessary as there might be several threads waiting for
+       * a message from a single client, and only one gets the DOWN msg. */
+      PRBool alive = (aSelector)(aArg, td, NULL);
+      if (!alive)
+      {
+        *aMsg = NULL;
+        break;
+      }
+    }
+#endif /* VBOX */
 
     PRIntervalTime t = PR_IntervalNow();
     if (t > timeEnd) // check if timeout has expired
@@ -586,6 +600,10 @@ static nsresult nsresult_from_ipcm_result(PRInt32 status)
 static PRBool
 WaitIPCMResponseSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 {
+#ifdef VBOX
+  if (!msg)
+    return PR_TRUE;
+#endif /* VBOX */
   PRUint32 requestIndex = *(PRUint32 *) arg;
   return IPCM_GetRequestIndex(msg) == requestIndex;
 }
@@ -913,6 +931,25 @@ struct WaitMessageSelectorData
 static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage *msg)
 {
   WaitMessageSelectorData *data = (WaitMessageSelectorData *) arg;
+#ifdef VBOX
+  if (!msg)
+  {
+    /* Special NULL message which asks to check whether the client is
+     * still alive. Called when there is nothing suitable in the queue. */
+    ipcIMessageObserver *obs = data->observer;
+    if (!obs)
+      obs = td->observer;
+    NS_ASSERTION(obs, "must at least have a default observer");
+
+    nsresult rv = obs->OnMessageAvailable(IPC_SENDER_ANY, nsID(), 0, 0);
+    if (rv != IPC_WAIT_NEXT_MESSAGE)
+    {
+      data->senderDead = PR_TRUE;
+      return PR_FALSE;
+    }
+    return PR_TRUE;
+  }
+#endif /* VBOX */
 
   // process the specially forwarded client state message to see if the
   // sender we're waiting a message from has died.
@@ -942,7 +979,7 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
           else
           {
             // otherwise inform the observer about the client death using a special
-            // null message with an emply target id, and fail IPC_WaitMessage call
+            // null message with an empty target id, and fail IPC_WaitMessage call
             // with NS_ERROR_xxx only if the observer accepts this message.
 
             ipcIMessageObserver *obs = data->observer;
@@ -958,6 +995,36 @@ static PRBool WaitMessageSelector(void *arg, ipcTargetData *td, const ipcMessage
             }
           }
         }
+#ifdef VBOX
+        else if ((data->senderID == IPC_SENDER_ANY ||
+                  status->ClientID() == data->senderID) &&
+                 status->ClientState() == IPCM_CLIENT_STATE_UP)
+        {
+          LOG(("sender (%d) we're waiting a message from (%d) has come up\n",
+               status->ClientID(), data->senderID));
+          if (data->senderID == IPC_SENDER_ANY)
+          {
+            // inform the observer about the client appearance using a special
+            // null message with an empty target id, but a length of 1.
+
+            ipcIMessageObserver *obs = data->observer;
+            if (!obs)
+              obs = td->observer;
+            NS_ASSERTION(obs, "must at least have a default observer");
+
+            nsresult rv = obs->OnMessageAvailable(status->ClientID(), nsID(), 0, 1);
+            /* VBoxSVC/VBoxXPCOMIPCD auto-start can cause that a client up
+             * message arrives while we're already waiting for a response
+             * from this client. Don't declare the connection as dead in
+             * this case. A client ID wraparound can't falsely trigger
+             * this, since the waiting thread would have hit the liveness
+             * check in the mean time. Also, DO NOT consume the message,
+             * otherwise it gets passed to the DConnect message handling
+             * without any further checks. IPCM messages are automatically
+             * discarded if they are left unclaimed. */
+          }
+        }
+#endif /* VBOX */
         break;
       }
       default:
