@@ -336,10 +336,13 @@ typedef struct PDMIKEYBOARDPORT
 {
     /**
      * Puts a keyboard event.
-     * This is called by the source of keyboard events. The event will be passed up until the
-     * topmost driver, which then calls the registered event handler.
      *
-     * @returns VBox status code.
+     * This is called by the source of keyboard events. The event will be passed up
+     * until the topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
      * @param   pInterface          Pointer to this interface structure.
      * @param   u8KeyCode           The keycode to queue.
      * @thread  The emulation thread.
