@@ -270,7 +270,9 @@ GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePa
 GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
 GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint64_t cbPage, uint32_t *pidPage);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
+GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
 GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, VMCPUID idCpu, uint32_t cPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
@@ -400,6 +402,44 @@ typedef struct GMMMAPUNMAPCHUNKREQ
 typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
 
 GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, VMCPUID idCpu, PGMMMAPUNMAPCHUNKREQ pReq);
+
+/**
+ * Request buffer for GMMR0AllocateLargePageReq / VMMR0_DO_GMM_ALLOC_LARGE_PAGE.
+ * @see GMMR0AllocateLargePage
+ */
+typedef struct GMMALLOCLARGEPAGEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /* Large page size. */
+    uint32_t        cbPage;
+    /** The Page ID.
+     *
+     * @output  The ID of the page, NIL_GMM_PAGEID if the allocation failed.
+     */
+    uint32_t        idPage;
+} GMMALLOCLARGEPAGEREQ;
+/** Pointer to a GMMR0AllocateLargePageReq / VMMR0_DO_GMM_ALLOC_LARGE_PAGE request buffer. */
+typedef GMMALLOCLARGEPAGEREQ *PGMMALLOCLARGEPAGEREQ;
+
+GMMR0DECL(int) GMMR0AllocateLargePageReq(PVM pVM, VMCPUID idCpu, PGMMALLOCLARGEPAGEREQ pReq);
+
+
+/**
+ * Request buffer for GMMR0FreeLargePageReq / VMMR0_DO_GMM_FREE_LARGE_PAGE.
+ * @see GMMR0FreeLargePage.
+ */
+typedef struct GMMFREELARGEPAGEREQ
+{
+    /** The header. */
+    SUPVMMR0REQHDR  Hdr;
+    /** The Page ID. */
+    uint32_t        idPage;
+} GMMFREELARGEPAGEREQ;
+/** Pointer to a GMMR0FreePagesReq / VMMR0_DO_GMM_FREE_PAGES request buffer. */
+typedef GMMFREELARGEPAGEREQ *PGMMFREELARGEPAGEREQ;
+
+GMMR0DECL(int) GMMR0FreeLargePageReq(PVM pVM, VMCPUID idCpu, PGMMFREELARGEPAGEREQ pReq);
 
 
 #ifdef IN_RING3

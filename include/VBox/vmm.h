@@ -291,8 +291,12 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_UPDATE_RESERVATION,
     /** Call GMMR0AllocatePages(). */
     VMMR0_DO_GMM_ALLOCATE_PAGES,
+    /** Call GMMR0AllocateLargePage(). */
+    VMMR0_DO_GMM_ALLOC_LARGE_PAGE,
     /** Call GMMR0FreePages(). */
     VMMR0_DO_GMM_FREE_PAGES,
+    /** Call GMMR0FreeLargePage(). */
+    VMMR0_DO_GMM_FREE_LARGE_PAGE,
     /** Call GMMR0BalloonedPages(). */
     VMMR0_DO_GMM_BALLOONED_PAGES,
     /** Call GMMR0DeflatedBalloon(). */
