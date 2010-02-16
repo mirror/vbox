@@ -1547,8 +1547,8 @@ static void intnetR0IfSnoopAddr(PINTNETIF pIf, uint8_t const *pbFrame, uint32_t 
  */
 static int intnetR0RingWriteFrame(PINTNETRINGBUF pRingBuf, PCINTNETSG pSG, PCRTMAC pNewDstMac)
 {
-    PINTNETHDR  pHdr;
-    void       *pvDst;
+    PINTNETHDR  pHdr  = NULL; /* shut up gcc*/
+    void       *pvDst = NULL; /* ditto */
     int rc = INTNETRingAllocateFrame(pRingBuf, pSG->cbTotal, &pHdr, &pvDst);
     if (RT_SUCCESS(rc))
     {
