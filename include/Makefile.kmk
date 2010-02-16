@@ -23,7 +23,7 @@
 DEPTH = ..
 include $(KBUILD_PATH)/header.kmk
 
-LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeGC
+LIBRARIES = SyntaxVBoxIncludeR3 SyntaxVBoxIncludeR0 SyntaxVBoxIncludeRC
 
 cpp_hdrs := \
 	VBox/dbggui.h \
@@ -78,9 +78,9 @@ SyntaxVBoxIncludeR0_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.r0)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.r0))))
 
-SyntaxVBoxIncludeGC_TEMPLATE = VBoxRc
-SyntaxVBoxIncludeGC_DEFS = VBOX_WITH_HGCM
-SyntaxVBoxIncludeGC_SOURCES := \
+SyntaxVBoxIncludeRC_TEMPLATE = VBoxRc
+SyntaxVBoxIncludeRC_DEFS = VBOX_WITH_HGCM
+SyntaxVBoxIncludeRC_SOURCES := \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-c.c,     $(subst /,_,$(hdrs.gc)))) \
 	$(addprefix $(PATH_TARGET)/,$(subst .h,-cpp.cpp, $(subst /,_,$(hdrs.gc))))
 
@@ -97,7 +97,7 @@ $$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
 $$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE)  | $$(PATH_TARGET)/
-ifn1of ($(hdr),$(cpp_hdrs))
+ifn1of ($(hdr), $(cpp_hdrs) VBox/intnetinline.h)
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 else
 	$(QUIET)$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'

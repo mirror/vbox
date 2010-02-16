@@ -42,6 +42,7 @@
 
 #include <VBox/sup.h>
 #include <VBox/intnet.h>
+#include <VBox/intnetinline.h>
 #include <VBox/vmm.h>
 
 #include "../NetLib/VBoxNetLib.h"
@@ -814,7 +815,7 @@ int VBoxNetDhcp::parseArgs(int argc, char **argv)
 
             case 'V':
                 RTPrintf("%sr%u\n", RTBldCfgVersion(), RTBldCfgRevision());
-                return 0;
+                return 1;
 
             case 'h':
                 RTPrintf("VBoxNetDHCP Version %s\n"
@@ -984,7 +985,7 @@ int VBoxNetDhcp::run(void)
         /*
          * Process the receive buffer.
          */
-        while (INTNETRingGetReadable(pRingBuf) > 0)
+        while (INTNETRingHasMoreToRead(pRingBuf))
         {
             size_t  cb;
             void   *pv = VBoxNetUDPMatch(m_pIfBuf, RTNETIPV4_PORT_BOOTPS, &m_MacAddress,
@@ -1016,7 +1017,7 @@ int VBoxNetDhcp::run(void)
             }
 
             /* Advance to the next frame. */
-            INTNETRingSkipFrame(m_pIfBuf, pRingBuf);
+            INTNETRingSkipFrame(pRingBuf);
         }
     }
 

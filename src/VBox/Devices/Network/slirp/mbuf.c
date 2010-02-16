@@ -266,12 +266,12 @@ m_inc(struct mbuf *m, int size)
 
     if (m->m_flags & M_EXT)
     {
+        void *pvNew;
         datasize = m->m_data - m->m_ext;
-        m->m_ext = (char *)RTMemRealloc(m->m_ext, size);
-#if 0
-        if (m->m_ext == NULL)
-            return (struct mbuf *)NULL;
-#endif
+        pvNew = (char *)RTMemRealloc(m->m_ext, size);
+        if (pvNew)
+            return; /** @todo better error reporting. */
+        m->m_ext = (char *)pvNew;
         m->m_data = m->m_ext + datasize;
     }
     else
@@ -279,10 +279,8 @@ m_inc(struct mbuf *m, int size)
         char *dat;
         datasize = m->m_data - m->m_dat;
         dat = (char *)RTMemAlloc(size);
-#if 0
-        if (dat == NULL)
-            return (struct mbuf *)NULL;
-#endif
+        if (!dat)
+            return; /** @todo better error reporting. */
         memcpy(dat, m->m_dat, m->m_size);
 
         m->m_ext = dat;
@@ -364,27 +362,57 @@ dtom(PNATState pData, void *dat)
 
     return (struct mbuf *)0;
 }
+
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
-void *slirp_ext_m_get(PNATState pData)
+
+/**
+ * Interface that DrvNAT.cpp uses for allocating a buffer.
+ *
+ * @returns Opaque m_buf pointer.
+ *
+ * @param   pData       The NAT state.
+ * @param   cbMin       The minimum buffer size.
+ * @param   ppvBuf      Where to return the pointer to the start of the data
+ *                      buffer.
+ * @param   pcbBuf      Where to return the actual buffer size.
+ */
+struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf)
 {
-    return (void *)m_get(pData);
+    struct mbuf *m = m_get(pData);
+    if (!m)
+        return NULL;
+    if (cbMin > M_FREEROOM(m))
+    {
+        m_inc(m, cbMin);
+        if (RT_UNLIKELY(cbMin > M_FREEROOM(m)))
+        {
+            m_free(pData, m);
+            return NULL;
+        }
+    }
+
+    *ppvBuf = mtod(m, void *);
+    *pcbBuf = M_FREEROOM(m);
+    return m;
 }
 
-void slirp_ext_m_free(PNATState pData, void *arg)
+void slirp_ext_m_free(PNATState pData, struct mbuf *m)
 {
-    struct mbuf *m = (struct mbuf *)arg;
     m_free(pData, m);
 }
-void slirp_ext_m_append(PNATState pData, void *arg, uint8_t *pu8Buf, size_t cbBuf)
+
+void slirp_ext_m_append(PNATState pData, struct mbuf *m, uint8_t *pu8Buf, size_t cbBuf)
 {
     char *c;
-    struct mbuf *m = (struct mbuf *)arg;
     if (cbBuf > M_FREEROOM(m))
     {
         m_inc(m, cbBuf);
+        if (RT_UNLIKELY(cbBuf > M_FREEROOM(m)))
+            cbBuf = M_FREEROOM(m);
     }
     c = mtod(m, char *);
     memcpy(c, pu8Buf, cbBuf);
     m->m_len = cbBuf;
 }
-#endif
+
+#endif /* VBOX_WITH_SLIRP_BSD_MBUF */

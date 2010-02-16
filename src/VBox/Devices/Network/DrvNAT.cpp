@@ -216,8 +216,6 @@ static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, v
 static DECLCALLBACK(void) drvNATFast(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser);
 
 
-/** Converts a pointer to NAT::INetworkUp to a PRDVNAT. */
-#define PDMINETWORKUP_2_DRVNAT(pInterface)   ( (PDRVNAT)((uintptr_t)pInterface - RT_OFFSETOF(DRVNAT, INetworkUp)) )
 
 static DECLCALLBACK(void) drvNATSlowTimer(PPDMDRVINS pDrvIns, PTMTIMER pTimer, void *pvUser)
 {
@@ -279,6 +277,7 @@ static DECLCALLBACK(int) drvNATUrgRecv(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
     }
     return VINF_SUCCESS;
 }
+
 static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
     PDRVNAT pThis = PDMINS_2_DATA(pDrvIns, PDRVNAT);
@@ -288,7 +287,7 @@ static DECLCALLBACK(int) drvNATUrgRecvWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     return VINF_SUCCESS;
 }
 
-static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, void *pvArg)
+static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, struct mbuf *m)
 {
     int rc = RTCritSectEnter(&pThis->csDevAccess);
     AssertRC(rc);
@@ -308,7 +307,7 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
     rc = RTCritSectLeave(&pThis->csDevAccess);
     AssertRC(rc);
 
-    slirp_ext_m_free(pThis->pNATState, pvArg);
+    slirp_ext_m_free(pThis->pNATState, m);
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree(pu8Buf);
 #endif
@@ -320,7 +319,7 @@ static DECLCALLBACK(void) drvNATUrgRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, in
 }
 
 
-static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, void *pvArg)
+static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int cb, struct mbuf *m)
 {
     int rc;
     STAM_PROFILE_START(&pThis->StatNATRecv, a);
@@ -356,7 +355,7 @@ static DECLCALLBACK(void) drvNATRecvWorker(PDRVNAT pThis, uint8_t *pu8Buf, int c
     AssertRC(rc);
 
 done_unlocked:
-    slirp_ext_m_free(pThis->pNATState, pvArg);
+    slirp_ext_m_free(pThis->pNATState, m);
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     RTMemFree(pu8Buf);
 #endif
@@ -369,65 +368,136 @@ done_unlocked:
 }
 
 /**
- * Worker function for drvNATSend().
- * @thread "NAT" thread.
+ * Frees a S/G buffer allocated by drvNATNetworkUp_AllocBuf.
+ *
+ * @param   pThis               Pointer to the NAT instance.
+ * @param   pSgBuf              The S/G buffer to free.
  */
-static void drvNATSendWorker(PDRVNAT pThis, void *pvBuf, size_t cb)
+static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
+{
+    Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_MAGIC_MASK) == PDMSCATTERGATHER_FLAGS_MAGIC);
+    pSgBuf->fFlags = 0;
+    if (pSgBuf->pvAllocator)
+    {
+        slirp_ext_m_free(pThis->pNATState, (struct mbuf *)pSgBuf->pvAllocator);
+        pSgBuf->pvAllocator = NULL;
+    }
+    RTMemFree(pSgBuf);
+}
+
+/**
+ * Worker function for drvNATSend().
+ *
+ * @param   pThis               Pointer to the NAT instance.
+ * @param   pSgBuf              The scatter/gather buffer.
+ * @thread  NAT
+ */
+static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 {
     Assert(pThis->enmLinkState == PDMNETWORKLINKSTATE_UP);
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
-        slirp_input(pThis->pNATState, (uint8_t *)pvBuf);
+    {
+        struct mbuf *m = (struct mbuf *)pSgBuf->pvAllocator;
+        pSgBuf->pvAllocator = NULL;
+        slirp_input(pThis->pNATState, m, pSgBuf->cbUsed);
+    }
+    drvNATFreeSgBuf(pThis, pSgBuf);
+
+    /** @todo Implement the VERR_TRY_AGAIN drvNATNetworkUp_AllocBuf sematics. */
 }
 
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
+ */
+static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf)
+{
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
+
+    /*
+     * Drop the incoming frame if the NAT thread isn't running.
+     */
+    if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
+    {
+        Log(("drvNATNetowrkUp_AllocBuf: returns VERR_NET_NO_NETWORK\n"));
+        return VERR_NET_NO_NETWORK;
+    }
+
+    /*
+     * Allocate a scatter/gather buffer and an mbuf.
+     */
+    PPDMSCATTERGATHER pSgBuf = (PPDMSCATTERGATHER)RTMemAlloc(sizeof(*pSgBuf));
+    if (!pSgBuf)
+        return VERR_NO_MEMORY;
+    pSgBuf->pvAllocator = slirp_ext_m_get(pThis->pNATState, cbMin,
+                                          &pSgBuf->aSegs[0].pvSeg, &pSgBuf->aSegs[0].cbSeg);
+    if (!pSgBuf->pvAllocator)
+    {
+        RTMemFree(pSgBuf);
+        /** @todo Implement the VERR_TRY_AGAIN sematics. */
+        return VERR_NO_MEMORY;
+    }
+
+    /*
+     * Initialize the S/G buffer and return.
+     */
+    pSgBuf->fFlags      = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
+    pSgBuf->cbUsed      = 0;
+    pSgBuf->cbAvailable = pSgBuf->aSegs[0].cbSeg;
+    pSgBuf->pvUser      = NULL;
+    pSgBuf->cSegs       = 1;
+
+    *ppSgBuf = pSgBuf;
+    return VINF_SUCCESS;
+}
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
+ */
+static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+{
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
+    Assert((pSgBuf->fFlags & PDMSCATTERGATHER_FLAGS_OWNER_MASK) == PDMSCATTERGATHER_FLAGS_OWNER_1);
+
+    int rc;
+    if (pThis->pSlirpThread->enmState == PDMTHREADSTATE_RUNNING)
+    {
+#ifdef VBOX_WITH_SLIRP_MT
+        PRTREQQUEUE pQueue = (PRTREQQUEUE)slirp_get_queue(pThis->pNATState);
+#else
+        PRTREQQUEUE pQueue = pThis->pSlirpReqQueue;
+#endif
+        rc = RTReqCallEx(pQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                         (PFNRT)drvNATSendWorker, 2, pThis, pSgBuf);
+        if (RT_SUCCESS(rc))
+        {
+            drvNATNotifyNATThread(pThis);
+            return VINF_SUCCESS;
+        }
+
+        rc = VERR_NET_NO_BUFFER_SPACE;
+    }
+    else
+        rc = VERR_NET_DOWN;
+    drvNATFreeSgBuf(pThis, pSgBuf);
+    return rc;
+}
 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvNATSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNATNetworkUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
-    PDRVNAT pThis = PDMINETWORKUP_2_DRVNAT(pInterface);
-
-    LogFlow(("drvNATSend: pvBuf=%p cb=%#x\n", pvBuf, cb));
-    Log2(("drvNATSend: pvBuf=%p cb=%#x\n%.*Rhxd\n", pvBuf, cb, cb, pvBuf));
-
-    PRTREQ pReq = NULL;
-    int rc;
-    void *buf;
-
-    /* don't queue new requests when the NAT thread is about to stop */
-    if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
-        return VINF_SUCCESS;
-
-#ifndef VBOX_WITH_SLIRP_MT
-    rc = RTReqAlloc(pThis->pSlirpReqQueue, &pReq, RTREQTYPE_INTERNAL);
-#else
-    rc = RTReqAlloc((PRTREQQUEUE)slirp_get_queue(pThis->pNATState), &pReq, RTREQTYPE_INTERNAL);
-#endif
-    AssertRC(rc);
-
-    /* @todo: Here we should get mbuf instead temporal buffer */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
-    void *pvmBuf = slirp_ext_m_get(pThis->pNATState);
-    Assert(pvmBuf);
-    slirp_ext_m_append(pThis->pNATState, pvmBuf, (uint8_t *)pvBuf, cb);
-#else
-    void *pvmBuf = slirp_ext_m_get(pThis->pNATState, (uint8_t *)pvBuf, cb);
-    Assert(pvmBuf);
-#endif
-
-    pReq->u.Internal.pfn      = (PFNRT)drvNATSendWorker;
-    pReq->u.Internal.cArgs    = 2;
-    pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
-    pReq->u.Internal.aArgs[1] = (uintptr_t)pvmBuf;
-    pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-
-    rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
-    AssertRC(rc);
-    drvNATNotifyNATThread(pThis);
-    LogFlow(("drvNATSend: end\n"));
+    PPDMSCATTERGATHER pSgBuf;
+    int rc = drvNATNetworkUp_AllocBuf(pInterface, cb, &pSgBuf);
+    if (RT_SUCCESS(rc))
+    {
+        memcpy(pSgBuf->aSegs[0].pvSeg, pvBuf, cb);
+        pSgBuf->cbUsed = cb;
+        rc = drvNATNetworkUp_SendBuf(pInterface, pSgBuf, false);
+    }
+    LogFlow(("drvNATNetworkUp_SendDeprecated: (rc=%Rrc)\n", rc));
     return VINF_SUCCESS;
 }
-
 
 /**
  * Get the NAT thread out of poll/WSAWaitForMultipleEvents
@@ -445,18 +515,17 @@ static void drvNATNotifyNATThread(PDRVNAT pThis)
     AssertRC(rc);
 }
 
-
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvNATSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvNATNetworkUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    LogFlow(("drvNATSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
+    LogFlow(("drvNATNetworkUp_SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     /* nothing to do */
 }
 
 /**
- * Worker function for drvNATNotifyLinkChanged().
+ * Worker function for drvNATNetworkUp_NotifyLinkChanged().
  * @thread "NAT" thread.
  */
 static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enmLinkState)
@@ -477,10 +546,9 @@ static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enm
             break;
 
         default:
-            AssertMsgFailed(("drvNATNotifyLinkChanged: unexpected link state %d\n", enmLinkState));
+            AssertMsgFailed(("drvNATNetworkUp_NotifyLinkChanged: unexpected link state %d\n", enmLinkState));
     }
 }
-
 
 /**
  * Notification on link status changes.
@@ -489,26 +557,19 @@ static void drvNATNotifyLinkChangedWorker(PDRVNAT pThis, PDMNETWORKLINKSTATE enm
  * @param   enmLinkState    The new link state.
  * @thread  EMT
  */
-static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvNATNetworkUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    PDRVNAT pThis = PDMINETWORKUP_2_DRVNAT(pInterface);
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
 
-    LogFlow(("drvNATNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
-
-    PRTREQ pReq = NULL;
+    LogFlow(("drvNATNetworkUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
 
     /* don't queue new requests when the NAT thread is about to stop */
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
         return;
 
-    int rc = RTReqAlloc(pThis->pSlirpReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertRC(rc);
-    pReq->u.Internal.pfn      = (PFNRT)drvNATNotifyLinkChangedWorker;
-    pReq->u.Internal.cArgs    = 2;
-    pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
-    pReq->u.Internal.aArgs[1] = (uintptr_t)enmLinkState;
-    pReq->fFlags              = RTREQFLAGS_VOID;
-    rc = RTReqQueue(pReq, 0); /* don't wait, we have to wakeup the NAT thread fist */
+    PRTREQ pReq;
+    int rc = RTReqCallEx(pThis->pSlirpReqQueue, &pReq, 0 /*cMillies*/, RTREQFLAGS_VOID,
+                         (PFNRT)drvNATNotifyLinkChangedWorker, 2, pThis, enmLinkState);
     if (RT_LIKELY(rc == VERR_TIMEOUT))
     {
         drvNATNotifyNATThread(pThis);
@@ -521,12 +582,14 @@ static DECLCALLBACK(void) drvNATNotifyLinkChanged(PPDMINETWORKUP pInterface, PDM
 }
 
 /**
- * NAT thread handling the slirp stuff. The slirp implementation is single-threaded
- * so we execute this enginre in a dedicated thread. We take care that this thread
- * does not become the bottleneck: If the guest wants to send, a request is enqueued
- * into the pSlirpReqQueue and handled asynchronously by this thread. If this thread
- * wants to deliver packets to the guest, it enqueues a request into pRecvReqQueue
- * which is later handled by the Recv thread.
+ * NAT thread handling the slirp stuff.
+ *
+ * The slirp implementation is single-threaded so we execute this enginre in a
+ * dedicated thread. We take care that this thread does not become the
+ * bottleneck: If the guest wants to send, a request is enqueued into the
+ * pSlirpReqQueue and handled asynchronously by this thread.  If this thread
+ * wants to deliver packets to the guest, it enqueues a request into
+ * pRecvReqQueue which is later handled by the Recv thread.
  */
 static DECLCALLBACK(int) drvNATAsyncIoThread(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 {
@@ -735,7 +798,7 @@ void slirp_push_recv_thread(void *pvUser)
     drvNATUrgRecvWakeup(pThis->pDrvIns, pThis->pUrgRecvThread);
 }
 
-void slirp_urg_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
+void slirp_urg_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
@@ -746,25 +809,17 @@ void slirp_urg_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
         return;
 
-    int rc = RTReqAlloc(pThis->pUrgRecvReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertRC(rc);
     ASMAtomicIncU32(&pThis->cUrgPkt);
-    pReq->u.Internal.pfn      = (PFNRT)drvNATUrgRecvWorker;
-    pReq->u.Internal.cArgs    = 4;
-    pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
-    pReq->u.Internal.aArgs[1] = (uintptr_t)pu8Buf;
-    pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
-    pReq->u.Internal.aArgs[3] = (uintptr_t)pvArg;
-    pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-    rc = RTReqQueue(pReq, 0);
+    int rc = RTReqCallEx(pThis->pUrgRecvReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                         (PFNRT)drvNATUrgRecvWorker, 4, pThis, pu8Buf, cb, m);
     AssertRC(rc);
     drvNATUrgRecvWakeup(pThis->pDrvIns, pThis->pUrgRecvThread);
 }
 
 /**
- * Function called by slirp to feed incoming data to the network port.
+ * Function called by slirp to feed incoming data to the NIC.
  */
-void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
+void slirp_output(void *pvUser, struct mbuf *m, const uint8_t *pu8Buf, int cb)
 {
     PDRVNAT pThis = (PDRVNAT)pvUser;
     Assert(pThis);
@@ -778,17 +833,9 @@ void slirp_output(void *pvUser, void *pvArg, const uint8_t *pu8Buf, int cb)
     if (pThis->pSlirpThread->enmState != PDMTHREADSTATE_RUNNING)
         return;
 
-    int rc = RTReqAlloc(pThis->pRecvReqQueue, &pReq, RTREQTYPE_INTERNAL);
-    AssertRC(rc);
     ASMAtomicIncU32(&pThis->cPkt);
-    pReq->u.Internal.pfn      = (PFNRT)drvNATRecvWorker;
-    pReq->u.Internal.cArgs    = 4;
-    pReq->u.Internal.aArgs[0] = (uintptr_t)pThis;
-    pReq->u.Internal.aArgs[1] = (uintptr_t)pu8Buf;
-    pReq->u.Internal.aArgs[2] = (uintptr_t)cb;
-    pReq->u.Internal.aArgs[3] = (uintptr_t)pvArg;
-    pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT;
-    rc = RTReqQueue(pReq, 0);
+    int rc = RTReqCallEx(pThis->pRecvReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                         (PFNRT)drvNATRecvWorker, 4, pThis, pu8Buf, cb, m);
     AssertRC(rc);
     drvNATRecvWakeup(pThis->pDrvIns, pThis->pRecvThread);
     STAM_COUNTER_INC(&pThis->StatQueuePktSent);
@@ -985,10 +1032,11 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
     /* INetwork */
-/** @todo implement the new INetworkUp interfaces. */
-    pThis->INetworkUp.pfnSendDeprecated     = drvNATSendDeprecated;
-    pThis->INetworkUp.pfnSetPromiscuousMode = drvNATSetPromiscuousMode;
-    pThis->INetworkUp.pfnNotifyLinkChanged  = drvNATNotifyLinkChanged;
+    pThis->INetworkUp.pfnAllocBuf           = drvNATNetworkUp_AllocBuf;
+    pThis->INetworkUp.pfnSendBuf            = drvNATNetworkUp_SendBuf;
+    pThis->INetworkUp.pfnSendDeprecated     = drvNATNetworkUp_SendDeprecated;
+    pThis->INetworkUp.pfnSetPromiscuousMode = drvNATNetworkUp_SetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged  = drvNATNetworkUp_NotifyLinkChanged;
 
     /*
      * Get the configuration settings.

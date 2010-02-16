@@ -586,7 +586,11 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 #else
     new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
     if (new_m_size > m->m_size)
+    {
         m_inc(m, new_m_size);
+        if (new_m_size > m->m_size)
+            goto end_error_free_m;
+    }
 #endif
 
     memcpy(m->m_data, msrc->m_data, msrc->m_len);
@@ -666,6 +670,8 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 
     return;
 
+end_error_free_m:
+    m_free(pData, m);
 end_error:
     LogRel(("NAT: error occurred while sending ICMP error message \n"));
 }

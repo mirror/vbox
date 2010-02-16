@@ -189,6 +189,10 @@ typedef struct PDMINETWORKUP
      *          happens, the driver will call PDMINETWORKDOWN::pfnNotifyBufAvailable
      *          when this is a buffer of the required size available.
      * @retval  VERR_NO_MEMORY if really out of buffer space.
+     * @retval  VERR_NET_DOWN if we cannot send anything to the network at this
+     *          point in time.  Drop the frame with a xmit error.  This is typically
+     *          only seen when pausing the VM since the device keeps the link state,
+     *          but there could of course be races.
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   cbMin           The minimum buffer size.
@@ -221,16 +225,17 @@ typedef struct PDMINETWORKUP
      * Send data to the network.
      *
      * @retval  VINF_SUCCESS on success.
-     * @retval  VERR_NET_NO_NETWORK if the NIC is not connected to a network.
+     * @retval  VERR_NET_DOWN if the NIC is not connected to a network.  pSgBuf will
+     *          be freed.
+     * @retval  VERR_NET_NO_BUFFER_SPACE if we're out of resources.  pSgBuf will be
+     *          freed.
      *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pInterface      Pointer to the interface structure containing the
+     *                          called function pointer.
      * @param   pSgBuf          The buffer containing the data to send.  The buffer
-     *                          ownership shall be 1.  Upon sucessfull return the
-     *                          buffer will be owned by the downstream driver and
-     *                          have ownership set to 2.  The caller must not ever
-     *                          touch it again.  On failure the buffer remains in
-     *                          the callers ownership and it should be handed over
-     *                          to PDMINETWORKUP::pfnFreeBuf.
+     *                          ownership shall be 1.  The buffer will always be
+     *                          consumed, regardless of the status code.
+     *
      * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
      *                          if an EMT.
      *
