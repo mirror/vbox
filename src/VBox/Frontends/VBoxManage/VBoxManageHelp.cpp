@@ -1,6 +1,5 @@
 /* $Id$ */
 /** @file
-
  * VBoxManage - help and other message output.
  */
 
