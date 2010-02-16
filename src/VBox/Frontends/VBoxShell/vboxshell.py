@@ -294,7 +294,7 @@ def asState(var):
     else:
         return 'off'
 
-def guestStats(ctx,mach):
+def perfStats(ctx,mach):
     if not ctx['perf']:
         return
     for metric in ctx['perf'].query(["*"], [mach]):
@@ -381,6 +381,31 @@ def teleport(ctx,session,console,args):
     else:
         reportError(ctx,session,rc)
 
+
+def guestStats(ctx,session,console,args):
+    guest = console.guest
+    # we need to set up guest statistics
+    if len(args) > 0 :
+        update = args[0]
+    else:
+        update = 1
+    if guest.statisticsUpdateInterval != update:
+        guest.statisticsUpdateInterval = update
+        try:
+            time.sleep(float(update)+0.1)
+        except:
+            # to allow sleep interruption
+            pass
+    all_stats = ctx['ifaces'].all_values('GuestStatisticType')
+    cpu = 0
+    for s in all_stats.keys():
+        try:
+            val = guest.getStatistic( cpu, all_stats[s])
+            print "%s: %d" %(s, val)
+        except:
+            # likely not implemented
+            pass
+
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -396,9 +421,9 @@ def cmdExistingVm(ctx,mach,cmd,args):
     if str(session.state) != str(ctx['ifaces'].SessionState_Open):
         print "Session to '%s' in wrong state: %s" %(mach.name, session.state)
         return
-    # unfortunately IGuest is suppressed, thus WebServices knows not about it
-    # this is an example how to handle local only functionality
-    if ctx['remote'] and cmd == 'stats2':
+    # this could be an example how to handle local only (i.e. unavailable
+    # in Webservices) functionality
+    if ctx['remote'] and cmd == 'some_local_only_command':
         print 'Trying to use local only functionality, ignored'
         return
     console=session.console
@@ -406,12 +431,13 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'resume':          lambda: console.resume(),
          'powerdown':       lambda: console.powerDown(),
          'powerbutton':     lambda: console.powerButton(),
-         'stats':           lambda: guestStats(ctx, mach),
+         'stats':           lambda: perfStats(ctx, mach),
          'guest':           lambda: guestExec(ctx, mach, console, args),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
          'save':            lambda: progressBar(ctx,console.saveState()),
          'screenshot':      lambda: takeScreenshot(ctx,console,args),
-         'teleport':        lambda: teleport(ctx,session,console,args)
+         'teleport':        lambda: teleport(ctx,session,console,args),
+         'gueststats':      lambda: guestStats(ctx, mach, console, args),
          }
     try:
         ops[cmd]()
@@ -744,6 +770,16 @@ def closeportalCmd(ctx, args):
         mach1.teleporterEnabled = False
         mach1.saveSettings()
         session.close()
+    return 0
+
+def gueststatsCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: gueststats name <check interval>"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'gueststats', args[2:])
     return 0
 
 
@@ -1128,7 +1164,7 @@ aliases = {'s':'start',
            'v':'verbose'}
 
 commands = {'help':['Prints help information', helpCmd, 0],
-            'start':['Start virtual machine by name or uuid', startCmd, 0],
+            'start':['Start virtual machine by name or uuid: start Linux', startCmd, 0],
             'create':['Create virtual machine', createCmd, 0],
             'remove':['Remove virtual machine', removeCmd, 0],
             'pause':['Pause virtual machine', pauseCmd, 0],
@@ -1160,7 +1196,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
             'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0],
             'getextra':['Get extra data, empty key lists all: getextra <vm|global> <key>', getExtraDataCmd, 0],
-            'setextra':['Set extra data, empty value removes key: setextra <vm|global> <key> <value>', setExtraDataCmd, 0]            
+            'setextra':['Set extra data, empty value removes key: setextra <vm|global> <key> <value>', setExtraDataCmd, 0],
+            'gueststats':['Print available guest stats (only Windows guests with additions so far): gueststats Win32', gueststatsCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
