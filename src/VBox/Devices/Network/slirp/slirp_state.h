@@ -503,16 +503,10 @@ typedef struct NATState
 
 # define DO_TCP_OUTPUT(data, sotcb)                                     \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertRC(rc);                                                   \
-        pReq->u.Internal.pfn      = (PFNRT)tcp_output;                  \
-        pReq->u.Internal.cArgs    = 2;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(sotcb);                 \
-        pReq->fFlags              = RTREQFLAGS_VOID;                    \
-        rc = RTReqQueue(pReq, 0);                                       \
+        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
+                           (PFNRT)tcp_output 2, data, sotcb);           \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -527,33 +521,19 @@ typedef struct NATState
 
 # define DO_TCP_INPUT(data, mbuf, size, so)                             \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)tcp_input;                   \
-        pReq->u.Internal.cArgs    = 4;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(mbuf);                  \
-        pReq->u.Internal.aArgs[2] = (uintptr_t)(size);                  \
-        pReq->u.Internal.aArgs[3] = (uintptr_t)(so);                    \
-        pReq->fFlags              = RTREQFLAGS_VOID|RTREQFLAGS_NO_WAIT; \
-        rc = RTReqQueue(pReq, 0);                                       \
+        rc = RTReqCallEx((data)->pReqQueue, NULL, 0 /*cMillies*/,       \
+                         RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,          \
+                         (PFNRT)tcp_input, 4, data, mbuf, size, so);    \
         AssertReleaseRC(rc);                                            \
     } while(0)
 
 # define DO_TCP_CONNECT(data, so)                                       \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)tcp_connect;                 \
-        pReq->u.Internal.cArgs    = 2;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                    \
-        pReq->fFlags              = RTREQFLAGS_VOID;                    \
-        rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
+                           (PFNRT)tcp_connect, 2, data, so);            \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -568,18 +548,11 @@ typedef struct NATState
 
 # define DO_SOREAD(ret, data, so, ifclose)                              \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)soread_queue;                \
-        pReq->u.Internal.cArgs    = 4;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                    \
-        pReq->u.Internal.aArgs[2] = (uintptr_t)(ifclose);               \
-        pReq->u.Internal.aArgs[3] = (uintptr_t)&(ret);                  \
-        pReq->fFlags              = RTREQFLAGS_VOID;                    \
-        rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies*/,    \
+                           (PFNRT)soread_queue, 4,                      \
+                           data, so, ifclose, &(ret));                  \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -594,16 +567,10 @@ typedef struct NATState
 
 # define DO_SOWRITE(ret, data, so)                                      \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)sowrite;                     \
-        pReq->u.Internal.cArgs    = 2;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                    \
-        pReq->fFlags              = RTREQFLAGS_RETURN_MASK;             \
-        rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+        rc = RTReqCall((data)->pReqQueue, &pReq, 0 /*cMillies*/,        \
+                       (PFNRT)sowrite, 2, data, so);                    \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -618,16 +585,10 @@ typedef struct NATState
 
 # define DO_SORECFROM(data, so)                                         \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)sorecvfrom;                  \
-        pReq->u.Internal.cArgs    = 2;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                    \
-        pReq->fFlags              = RTREQFLAGS_VOID;                    \
-        rc = RTReqQueue(pReq, 0);                                       \
+        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /*cMillies */,   \
+                           (PFNRT)sorecvfrom, 2, data, so);             \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
@@ -642,16 +603,10 @@ typedef struct NATState
 
 # define DO_UDP_DETACH(data, so, so_next)                               \
     do {                                                                \
-        PRTREQ pReq = NULL;                                             \
+        PRTREQ pReq;                                                    \
         int rc;                                                         \
-        rc = RTReqAlloc((data)->pReqQueue, &pReq, RTREQTYPE_INTERNAL);  \
-        AssertReleaseRC(rc);                                            \
-        pReq->u.Internal.pfn      = (PFNRT)udp_detach;                  \
-        pReq->u.Internal.cArgs    = 2;                                  \
-        pReq->u.Internal.aArgs[0] = (uintptr_t)(data);                  \
-        pReq->u.Internal.aArgs[1] = (uintptr_t)(so);                    \
-        pReq->fFlags              = RTREQFLAGS_VOID;                    \
-        rc = RTReqQueue(pReq, 0); /* don't wait, we have to release lock before*/ \
+        rc = RTReqCallVoid((data)->pReqQueue, &pReq, 0 /* cMillies*/,   \
+                           (PFNRT)udp_detach, 2, data, so);             \
         if (RT_LIKELY(rc) == VERR_TIMEOUT)                              \
         {                                                               \
             SOCKET_UNLOCK(so);                                          \
