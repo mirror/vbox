@@ -237,6 +237,10 @@ typedef struct SCMSETTINGSBASE
     bool            fOnlySvnDirs;
     /** Set svn:eol-style if missing or incorrect. */
     bool            fSetSvnEol;
+    /** Set svn:executable according to type (unually this means deleting it). */
+    bool            fSetSvnExecutable;
+    /** Set svn:keyword if completely or partially missing. */
+    bool            fSetSvnKeywords;
     /**  */
     unsigned        cchTab;
     /** Only consider files matcihng these patterns.  This is only applied to the
@@ -281,6 +285,10 @@ typedef enum SCMOPT
     SCMOPT_NOT_ONLY_SVN_FILES,
     SCMOPT_SET_SVN_EOL,
     SCMOPT_DONT_SET_SVN_EOL,
+    SCMOPT_SET_SVN_EXECUTABLE,
+    SCMOPT_DONT_SET_SVN_EXECUTABLE,
+    SCMOPT_SET_SVN_KEYWORDS,
+    SCMOPT_DONT_SET_SVN_KEYWORDS,
     SCMOPT_TAB_SIZE,
     SCMOPT_FILTER_OUT_DIRS,
     SCMOPT_FILTER_FILES,
@@ -358,6 +366,8 @@ static bool rewrite_ForceNativeEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREA
 static bool rewrite_ForceLF(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 static bool rewrite_ForceCRLF(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 static bool rewrite_AdjustTrailingLines(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_SvnNoExecutable(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
+static bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 static bool rewrite_Makefile_kup(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 static bool rewrite_Makefile_kmk(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
 static bool rewrite_C_and_CPP(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings);
@@ -388,6 +398,8 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fOnlySvnFiles = */          false,
     /* .fOnlySvnDirs = */           false,
     /* .fSetSvnEol = */             false,
+    /* .fSetSvnExecutable = */      false,
+    /* .fSetSvnKeywords = */        false,
     /* .cchTab = */                 8,
     /* .pszFilterFiles = */         (char *)"",
     /* .pszFilterOutFiles = */      (char *)"*.exe|*.com|20*-*-*.log",
@@ -415,6 +427,10 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--not-only-svn-files",               SCMOPT_NOT_ONLY_SVN_FILES,              RTGETOPT_REQ_NOTHING },
     { "--set-svn-eol",                      SCMOPT_SET_SVN_EOL,                     RTGETOPT_REQ_NOTHING },
     { "--dont-set-svn-eol",                 SCMOPT_DONT_SET_SVN_EOL,                RTGETOPT_REQ_NOTHING },
+    { "--set-svn-executable",               SCMOPT_SET_SVN_EXECUTABLE,              RTGETOPT_REQ_NOTHING },
+    { "--dont-set-svn-executable",          SCMOPT_DONT_SET_SVN_EXECUTABLE,         RTGETOPT_REQ_NOTHING },
+    { "--set-svn-keywords",                 SCMOPT_SET_SVN_KEYWORDS,                RTGETOPT_REQ_NOTHING },
+    { "--dont-set-svn-keywords",            SCMOPT_DONT_SET_SVN_KEYWORDS,           RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
     { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
@@ -426,6 +442,7 @@ static const char  *g_pszFileFilter         = NULL;
 
 static PFNSCMREWRITER const g_aRewritersFor_Makefile_kup[] =
 {
+    rewrite_SvnNoExecutable,
     rewrite_Makefile_kup
 };
 
@@ -434,6 +451,8 @@ static PFNSCMREWRITER const g_aRewritersFor_Makefile_kmk[] =
     rewrite_ForceNativeEol,
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
     rewrite_Makefile_kmk
 };
 
@@ -443,6 +462,18 @@ static PFNSCMREWRITER const g_aRewritersFor_C_and_CPP[] =
     rewrite_ExpandTabs,
     rewrite_StripTrailingBlanks,
     rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords,
+    rewrite_C_and_CPP
+};
+
+static PFNSCMREWRITER const g_aRewritersFor_H_and_HPP[] =
+{
+    rewrite_ForceNativeEol,
+    rewrite_ExpandTabs,
+    rewrite_StripTrailingBlanks,
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
     rewrite_C_and_CPP
 };
 
@@ -451,7 +482,9 @@ static PFNSCMREWRITER const g_aRewritersFor_RC[] =
     rewrite_ForceNativeEol,
     rewrite_ExpandTabs,
     rewrite_StripTrailingBlanks,
-    rewrite_AdjustTrailingLines
+    rewrite_AdjustTrailingLines,
+    rewrite_SvnNoExecutable,
+    rewrite_SvnKeywords
 };
 
 static PFNSCMREWRITER const g_aRewritersFor_ShellScripts[] =
@@ -471,8 +504,9 @@ static PFNSCMREWRITER const g_aRewritersFor_BatchFiles[] =
 static SCMCFGENTRY const g_aConfigs[] =
 {
     { RT_ELEMENTS(g_aRewritersFor_Makefile_kup), &g_aRewritersFor_Makefile_kup[0], "Makefile.kup" },
-    { RT_ELEMENTS(g_aRewritersFor_Makefile_kmk), &g_aRewritersFor_Makefile_kmk[0], "Makefile.kmk" },
-    { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.h|*.cpp|*.hpp|*.C|*.CPP|*.cxx|*.cc" },
+    { RT_ELEMENTS(g_aRewritersFor_Makefile_kmk), &g_aRewritersFor_Makefile_kmk[0], "Makefile.kmk|Config.kmk" },
+    { RT_ELEMENTS(g_aRewritersFor_C_and_CPP),    &g_aRewritersFor_C_and_CPP[0],    "*.c|*.cpp|*.C|*.CPP|*.cxx|*.cc" },
+    { RT_ELEMENTS(g_aRewritersFor_H_and_HPP),    &g_aRewritersFor_H_and_HPP[0],    "*.h|*.hpp" },
     { RT_ELEMENTS(g_aRewritersFor_RC),           &g_aRewritersFor_RC[0],           "*.rc" },
     { RT_ELEMENTS(g_aRewritersFor_ShellScripts), &g_aRewritersFor_ShellScripts[0], "*.sh|configure" },
     { RT_ELEMENTS(g_aRewritersFor_BatchFiles),   &g_aRewritersFor_BatchFiles[0],   "*.bat|*.cmd|*.btm|*.vbs|*.ps1" },
@@ -2023,6 +2057,21 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->fSetSvnEol = true;
             return VINF_SUCCESS;
         case SCMOPT_DONT_SET_SVN_EOL:
+            pSettings->fSetSvnEol = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_SET_SVN_EXECUTABLE:
+            pSettings->fSetSvnExecutable = true;
+            return VINF_SUCCESS;
+        case SCMOPT_DONT_SET_SVN_EXECUTABLE:
+            pSettings->fSetSvnExecutable = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_SET_SVN_KEYWORDS:
+            pSettings->fSetSvnKeywords = true;
+            return VINF_SUCCESS;
+        case SCMOPT_DONT_SET_SVN_KEYWORDS:
+            pSettings->fSetSvnKeywords = false;
             return VINF_SUCCESS;
 
         case SCMOPT_TAB_SIZE:
@@ -3210,13 +3259,15 @@ static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
             || rc == VERR_NOT_FOUND)
         {
             if (rc == VERR_NOT_FOUND)
-                ScmVerbose(pState, 2, " * Settings svn:eol-style to %s (missing)\n", pszDesiredSvnEol);
+                ScmVerbose(pState, 2, " * Setting svn:eol-style to %s (missing)\n", pszDesiredSvnEol);
             else
-                ScmVerbose(pState, 2, " * Settings svn:eol-style to %s (was: %s)\n", pszDesiredSvnEol, pszEol);
-            rc = scmSvnSetProperty(pState, "svn:eol-style", pszDesiredSvnEol);
-            if (RT_FAILURE(rc))
-                RTMsgError("scmSvnSetProperty: %Rrc\n", rc); /** @todo propagate the error somehow... */
+                ScmVerbose(pState, 2, " * Setting svn:eol-style to %s (was: %s)\n", pszDesiredSvnEol, pszEol);
+            int rc2 = scmSvnSetProperty(pState, "svn:eol-style", pszDesiredSvnEol);
+            if (RT_FAILURE(rc2))
+                RTMsgError("scmSvnSetProperty: %Rrc\n", rc2); /** @todo propagate the error somehow... */
         }
+        if (RT_SUCCESS(rc))
+            RTStrFree(pszEol);
     }
 
     /** @todo also check the subversion svn:eol-style state! */
@@ -3334,6 +3385,83 @@ static bool rewrite_AdjustTrailingLines(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCM
 
     ScmVerbose(pState, 2, " * Adjusted trailing blank lines\n");
     return true;
+}
+
+/**
+ * Make sure there is no svn:executable keyword on the current file.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+static bool rewrite_SvnNoExecutable(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (   !pSettings->fSetSvnExecutable
+        || !scmSvnIsInWorkingCopy(pState))
+        return false;
+
+    int rc = scmSvnQueryProperty(pState, "svn:executable", NULL);
+    if (RT_SUCCESS(rc))
+    {
+        ScmVerbose(pState, 2, " * removing svn:executable\n");
+        rc = scmSvnDelProperty(pState, "svn:executable");
+        if (RT_FAILURE(rc))
+            RTMsgError("scmSvnSetProperty: %Rrc\n", rc); /** @todo error propagation here.. */
+    }
+    return false;
+}
+
+/**
+ * Make sure the Id and Revision keywords are expanded.
+ *
+ * @returns false - the state carries these kinds of changes.
+ * @param   pState              The rewriter state.
+ * @param   pIn                 The input stream.
+ * @param   pOut                The output stream.
+ * @param   pSettings           The settings.
+ */
+static bool rewrite_SvnKeywords(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
+{
+    if (   !pSettings->fSetSvnKeywords
+        || !scmSvnIsInWorkingCopy(pState))
+        return false;
+
+    char *pszKeywords;
+    int rc = scmSvnQueryProperty(pState, "svn:keywords", &pszKeywords);
+    if (    RT_SUCCESS(rc)
+        && (   !strstr(pszKeywords, "Id") /** @todo need some function for finding a word in a string.  */
+            || !strstr(pszKeywords, "Revision")) )
+    {
+        if (!strstr(pszKeywords, "Id") && !strstr(pszKeywords, "Revision"))
+            rc = RTStrAAppend(&pszKeywords, " Id Revision");
+        else if (!strstr(pszKeywords, "Id"))
+            rc = RTStrAAppend(&pszKeywords, " Id");
+        else
+            rc = RTStrAAppend(&pszKeywords, " Revision");
+        if (RT_SUCCESS(rc))
+        {
+            ScmVerbose(pState, 2, " * changing svn:keywords to '%s'\n", pszKeywords);
+            rc = scmSvnSetProperty(pState, "svn:keywords", pszKeywords);
+            if (RT_FAILURE(rc))
+                RTMsgError("scmSvnSetProperty: %Rrc\n", rc); /** @todo error propagation here.. */
+        }
+        else
+            RTMsgError("RTStrAppend: %Rrc\n", rc); /** @todo error propagation here.. */
+        RTStrFree(pszKeywords);
+    }
+    else if (rc == VERR_NOT_FOUND)
+    {
+        ScmVerbose(pState, 2, " * setting svn:keywords to 'Id Revision'\n");
+        rc = scmSvnSetProperty(pState, "svn:keywords", "Id Revision");
+        if (RT_FAILURE(rc))
+            RTMsgError("scmSvnSetProperty: %Rrc\n", rc); /** @todo error propagation here.. */
+    }
+    else if (RT_SUCCESS(rc))
+        RTStrFree(pszKeywords);
+
+    return false;
 }
 
 /**
@@ -3543,8 +3671,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                 ScmVerbose(pState, 1, NULL);
                                 ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
                                                g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, pBaseSettings->cchTab, g_pStdOut);
-                                ScmVerbose(pState, 3, "would have modified the file \"%s%s\"\n", pszFilename, g_pszChangedSuff);
-                                scmSvnDisplayChanges(pState);
+                                ScmVerbose(pState, 2, "would have modified the file \"%s%s\"\n", pszFilename, g_pszChangedSuff);
                             }
                         }
 
@@ -3951,6 +4078,9 @@ int main(int argc, char **argv)
                         case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
                         case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
                         case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
+                        case SCMOPT_SET_SVN_EOL:            RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnEol); break;
+                        case SCMOPT_SET_SVN_EXECUTABLE:     RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnExecutable); break;
+                        case SCMOPT_SET_SVN_KEYWORDS:       RTPrintf("      Default: %RTbool\n", g_Defaults.fSetSvnKeywords); break;
                         case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
                         case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
                         case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
