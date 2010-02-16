@@ -29,7 +29,11 @@
 #
 # Global settings.
 #
+# Only consider directories and files that are part of a SVN working set.
+#
 --only-svn-dirs
+--only-svn-files
+--set-svn-eol
 
 #
 # Directories to ignore.
