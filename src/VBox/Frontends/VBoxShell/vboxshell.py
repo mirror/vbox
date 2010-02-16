@@ -768,6 +768,58 @@ def setvarCmd(ctx, args):
     session.close()
     return 0
 
+
+def setExtraDataCmd(ctx, args):
+    if (len(args) < 3):
+        print "usage: setextra [vmname|uuid|global] key <value>"
+        return 0
+    key = args[2]
+    if len(args) == 4:
+        value = args[3]
+    else:
+        value = None
+    if args[1] == 'global':
+        ctx['vb'].setExtraData(key, value)
+        return 0
+
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    session = ctx['global'].openMachineSession(mach.id)
+    mach = session.machine
+    mach.setExtraData(key, value)
+    mach.saveSettings()
+    session.close()
+    return 0
+
+def printExtraKey(obj, key, value):
+    print "%s: '%s' = '%s'" %(obj, key, value)
+
+def getExtraDataCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: getextra [vmname|uuid|global] <key>"
+        return 0
+    if len(args) == 3:
+        key = args[2]
+    else:
+        key = None
+
+    if args[1] == 'global':
+        obj = ctx['vb']
+    else:
+        obj = argsToMach(ctx,args)
+        if obj == None:
+            return 0
+
+    if key == None:
+        keys = obj.getExtraDataKeys()
+    else:
+        keys = [ key ]
+    for k in keys:
+        printExtraKey(args[1], k, ctx['vb'].getExtraData(k))
+
+    return 0
+
 def quitCmd(ctx, args):
     return 1
 
@@ -1106,7 +1158,9 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
             'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd>', teleportCmd, 0],
             'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
-            'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0]
+            'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0],
+            'getextra':['Get extra data, empty key lists all: getextra <vm|global> <key>', getExtraDataCmd, 0],
+            'setextra':['Set extra data, empty value removes key: setextra <vm|global> <key> <value>', setExtraDataCmd, 0]            
             }
 
 def runCommandArgs(ctx, args):
@@ -1258,6 +1312,7 @@ def main(argv):
            'type':g_virtualBoxManager.type,
            'run': lambda cmd,args: runCommandCb(ctx, cmd, args),
            'machById': lambda id: machById(ctx,id),
+           'argsToMach': lambda args: argsToMach(ctx,args),
            'progressBar': lambda p: progressBar(ctx,p),
            '_machlist':None
            }
