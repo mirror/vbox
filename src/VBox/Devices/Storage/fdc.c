@@ -1,5 +1,5 @@
 #ifdef VBOX
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBox storage devices: Floppy disk controller
  */

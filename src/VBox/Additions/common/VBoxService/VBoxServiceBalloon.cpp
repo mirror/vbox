@@ -1,4 +1,4 @@
-/* $Id: $ */
+/* $Id$ */
 /** @file
  * VBoxMemBalloon - Memory balloon notification.
  */
