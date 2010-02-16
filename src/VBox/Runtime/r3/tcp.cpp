@@ -915,7 +915,9 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
     {
         struct sockaddr     Addr;
         struct sockaddr_in  Ipv4;
+#ifdef AF_INET6
         struct sockaddr_in6 Ipv6;
+#endif
     }               u;
 #ifdef RT_OS_WINDOWS
     int             cbAddr = sizeof(u);
