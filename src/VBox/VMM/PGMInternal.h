@@ -2649,13 +2649,14 @@ typedef struct PGM
     RTR0PTR                         pvZeroPgR0;
     /** The GC mapping of the zero page. */
     RTGCPTR                         pvZeroPgRC;
-#if GC_ARCH_BITS != 32
-    uint32_t                        u32ZeroAlignment; /**< Alignment padding. */
-#endif
     /** @}*/
 
     /** The number of handy pages. */
     uint32_t                        cHandyPages;
+
+    /** The number of large handy pages. */
+    uint32_t                        cLargeHandyPages;
+
     /**
      * Array of handy pages.
      *
@@ -2667,6 +2668,15 @@ typedef struct PGM
      * (The current size of 32 pages, means 128 KB of handy memory.)
      */
     GMMPAGEDESC                     aHandyPages[PGM_HANDY_PAGES];
+
+    /**
+     * Array of large handy pages. (currently size 1)
+     *
+     * This array is used in a two way communication between pgmPhysAllocLargePage
+     * and GMMR0AllocateLargePage, with PGMR3PhysAllocateLargePage serving as
+     * an intermediary.
+     */
+    GMMPAGEDESC                     aLargeHandyPage[1];
 
     /**
      * Live save data.

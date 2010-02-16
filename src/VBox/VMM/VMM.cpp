@@ -2070,6 +2070,15 @@ static int vmmR3ServiceCallRing3Request(PVM pVM, PVMCPU pVCpu)
         }
 
         /*
+         * Allocates a large page.
+         */
+        case VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE:
+        {
+            pVCpu->vmm.s.rcCallRing3 = PGMR3PhysAllocateLargePage(pVM);
+            break;
+        }
+
+        /*
          * Acquire the PGM lock.
          */
         case VMMCALLRING3_PGM_LOCK:

@@ -2290,12 +2290,15 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESRE
  * @param   idCpu           VCPU id
  * @param   cbPage          Large page size
  * @param   pidPage         Id of the page (out)
+ * @param   HCPhys          Host physical address of the page (out)
  */
-GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage)
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys)
 {
     LogFlow(("GMMR0AllocateLargePage: pVM=%p cbPage=%x\n", pVM, cbPage));
 
     AssertReturn(cbPage == GMM_CHUNK_SIZE, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pidPage, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pHCPhys, VERR_INVALID_PARAMETER);
 
     /*
      * Validate, get basics and take the semaphore.
@@ -2312,6 +2315,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
         return VERR_NOT_SUPPORTED;
 
     *pidPage = NIL_GMM_PAGEID;
+    *pHCPhys = NIL_RTHCPHYS;
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRCReturn(rc, rc);
@@ -2344,6 +2348,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
         gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
         /* Return the first page as we'll use the whole chunk as one big page. */
         *pidPage = PageDesc.idPage;
+        *pHCPhys = PageDesc.HCPhysGCPhys;
 
         for (unsigned i = 1; i < cPages; i++)
             gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
@@ -2383,7 +2388,7 @@ GMMR0DECL(int) GMMR0AllocateLargePageReq(PVM pVM, VMCPUID idCpu, PGMMALLOCLARGEP
                     ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(GMMALLOCATEPAGESREQ)),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0AllocateLargePage(pVM, idCpu, pReq->cbPage, &pReq->idPage);
+    return GMMR0AllocateLargePage(pVM, idCpu, pReq->cbPage, &pReq->idPage, &pReq->HCPhys);
 }
 
 

@@ -270,7 +270,7 @@ GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePa
 GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
 GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
-GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint64_t cbPage, uint32_t *pidPage);
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
@@ -418,6 +418,8 @@ typedef struct GMMALLOCLARGEPAGEREQ
      * @output  The ID of the page, NIL_GMM_PAGEID if the allocation failed.
      */
     uint32_t        idPage;
+    /* Host physical address of the large page. */
+    RTHCPHYS        HCPhys;
 } GMMALLOCLARGEPAGEREQ;
 /** Pointer to a GMMR0AllocateLargePageReq / VMMR0_DO_GMM_ALLOC_LARGE_PAGE request buffer. */
 typedef GMMALLOCLARGEPAGEREQ *PGMMALLOCLARGEPAGEREQ;
@@ -458,6 +460,8 @@ GMMR3DECL(void) GMMR3FreePagesRePrep(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cP
 GMMR3DECL(int)  GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cActualPages);
 GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq);
 GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq);
+GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys);
+GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);

@@ -94,6 +94,8 @@ typedef enum VMMCALLRING3
     VMMCALLRING3_PGM_MAP_CHUNK,
     /** Allocates more handy pages. */
     VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
+    /** Allocates a large (2MB) page. */
+    VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE,
     /** Acquire the MM hypervisor heap lock. */
     VMMCALLRING3_MMHYPER_LOCK,
     /** Replay the REM handler notifications. */
