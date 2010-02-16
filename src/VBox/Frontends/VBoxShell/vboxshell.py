@@ -382,7 +382,7 @@ def teleport(ctx,session,console,args):
         reportError(ctx,session,rc)
 
 
-def guestStats(ctx,session,console,args):
+def guestStats(ctx,console,args):
     guest = console.guest
     # we need to set up guest statistics
     if len(args) > 0 :
@@ -437,7 +437,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'save':            lambda: progressBar(ctx,console.saveState()),
          'screenshot':      lambda: takeScreenshot(ctx,console,args),
          'teleport':        lambda: teleport(ctx,session,console,args),
-         'gueststats':      lambda: guestStats(ctx, mach, console, args),
+         'gueststats':      lambda: guestStats(ctx, console, args),
          }
     try:
         ops[cmd]()
