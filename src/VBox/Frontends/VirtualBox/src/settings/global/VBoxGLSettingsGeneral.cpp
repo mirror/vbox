@@ -33,14 +33,10 @@ VBoxGLSettingsGeneral::VBoxGLSettingsGeneral()
 #ifndef VBOX_GUI_WITH_SYSTRAY
     mCbCheckTrayIcon->hide();
 #endif /* VBOX_GUI_WITH_SYSTRAY */
-#ifndef Q_WS_MAC
-    mCbCheckDockPreview->hide();
-#endif /* Q_WS_MAC */
 #ifndef QT_MAC_USE_COCOA
     mCbCheckPresentationMode->hide();
 #endif /* QT_MAC_USE_COCOA */
     if (   mCbCheckTrayIcon->isHidden()
-        && mCbCheckDockPreview->isHidden()
         && mCbCheckPresentationMode->isHidden())
         mLnSeparator2->hide();
 
@@ -61,7 +57,6 @@ void VBoxGLSettingsGeneral::getFrom (const CSystemProperties &aProps,
     mPsVRDP->setPath (aProps.GetRemoteDisplayAuthLibrary());
     mCbCheckTrayIcon->setChecked (aGs.trayIconEnabled());
 #ifdef Q_WS_MAC
-    mCbCheckDockPreview->setChecked (aGs.dockPreviewEnabled());
     mCbCheckPresentationMode->setChecked (aGs.presentationModeEnabled());
 #endif /* Q_WS_MAC */
 }
@@ -77,7 +72,6 @@ void VBoxGLSettingsGeneral::putBackTo (CSystemProperties &aProps,
         aProps.SetRemoteDisplayAuthLibrary (mPsVRDP->path());
     aGs.setTrayIconEnabled (mCbCheckTrayIcon->isChecked());
 #ifdef Q_WS_MAC
-    aGs.setDockPreviewEnabled (mCbCheckDockPreview->isChecked());
     aGs.setPresentationModeEnabled (mCbCheckPresentationMode->isChecked());
 #endif /* Q_WS_MAC */
 }
@@ -88,9 +82,6 @@ void VBoxGLSettingsGeneral::setOrderAfter (QWidget *aWidget)
     setTabOrder (mPsHardDisk, mPsMach);
     setTabOrder (mPsMach, mPsVRDP);
     setTabOrder (mPsVRDP, mCbCheckTrayIcon);
-#ifdef Q_WS_MAC
-    setTabOrder (mCbCheckTrayIcon, mCbCheckDockPreview);
-#endif /* Q_WS_MAC */
 }
 
 void VBoxGLSettingsGeneral::retranslateUi()

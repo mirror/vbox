@@ -372,14 +372,7 @@ public:
                     QApplication::postEvent (&mGlobal, new VBoxChangeTrayIconEvent ((sVal.toLower() == "true") ? true : false));
 #endif
 #ifdef Q_WS_MAC
-                if (sKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled)
-                {
-                    /* Default to true if it is an empty value */
-                    QString testStr = sVal.toLower();
-                    bool f = (testStr.isEmpty() || testStr == "true");
-                    QApplication::postEvent (&mGlobal, new VBoxChangeDockIconUpdateEvent (f));
-                }
-                else if (sKey == VBoxDefs::GUI_PresentationModeEnabled)
+                if (sKey == VBoxDefs::GUI_PresentationModeEnabled)
                 {
                     /* Default to true if it is an empty value */
                     QString testStr = sVal.toLower();
@@ -394,6 +387,25 @@ public:
                 Assert (!!mGlobal.gset);
             }
         }
+#ifdef Q_WS_MAC
+        else if (mGlobal.isVMConsoleProcess())
+        {
+            /* Check for the currently running machine */
+            CMachine machine = mGlobal.consoleWnd().session().GetMachine();
+            if (QString::fromUtf16(id) == machine.GetId())
+            {
+                QString strKey = QString::fromUtf16(key);
+                QString strVal = QString::fromUtf16(value);
+                if (strKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled)
+                {
+                    /* Default to true if it is an empty value */
+                    QString strTest = strVal.toLower();
+                    bool f = (strTest.isEmpty() || strTest == "true");
+                    QApplication::postEvent(&mGlobal, new VBoxChangeDockIconUpdateEvent(f));
+                }
+            }
+        }
+#endif /* Q_WS_MAC */
         return S_OK;
     }
 
