@@ -32,7 +32,7 @@ endif
 ## FIXME
 PATH_DDKVIDEO = D:/dev/ddk/200402/video
 PATH_DDKBASE  = D:/dev/ddk/200402/base
- 
+
 #
 # Template for VAC308 Gradd stuff.
 #
@@ -56,14 +56,14 @@ TEMPLATE_VBOXOS2VAC308_CFLAGS  += /Oi+               # Turn on function inlining
 TEMPLATE_VBOXOS2VAC308_CFLAGS  += /Ge-               # Use the version of the runtime library that assumes a DLL is being built. (_DLL_InitTerm++)
 TEMPLATE_VBOXOS2VAC308_CFLAGS := $(strip $(TEMPLATE_VBOXOS2VAC308_CFLAGS))
 TEMPLATE_VBOXOS2VAC308_CXXFLAGS = $(VBoxGradd_CFLAGS)
-						 
+
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Nologo"        # Quiet! (ILINK308.kmk?)
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Debug"         # Debug info (ILINK308.kmk?)
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Map"           # Generate map file (ILINK308.kmk?)
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Linenumbers"   # Map file with linenumbers.
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Exepack:2"     # Compress the file using exepack 2.
 TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/Alignment:32"  # Pack LX pages on 32 byte boundraries (default is 512 bytes).
-TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/NoDefaultLibrarySearch" 
+TEMPLATE_VBOXOS2VAC308_LDFLAGS += -B"/NoDefaultLibrarySearch"
 TEMPLATE_VBOXOS2VAC308_LDFLAGS := $(strip $(TEMPLATE_VBOXOS2VAC308_LDFLAGS))
 
 TEMPLATE_VBOXOS2VAC308_INCS = \
