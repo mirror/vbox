@@ -1264,15 +1264,12 @@ bool VBoxConsoleView::event (QEvent *e)
                 mIgnoreMainwndResize = true;
 
                 VBoxResizeEvent *re = (VBoxResizeEvent *) e;
-                LogFlow (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
-                          re->width(), re->height(), re->bitsPerPixel()));
-#ifdef DEBUG_michael
-                LogRel (("Resize event from guest: %d x %d x %d bpp\n",
-                         re->width(), re->height(), re->bitsPerPixel()));
-#endif
+                LogRelFlowFunc (("VBoxDefs::ResizeEventType: %d x %d x %d bpp\n",
+                                 re->width(), re->height(),
+                                 re->bitsPerPixel()));
 
-                bool notifyManiWnd = mStoredConsoleSize.width() != (int)re->width()
-                        || mStoredConsoleSize.height() != (int)re->height();
+                bool notifyMainWnd = mFrameBuf->width() != re->width()
+                        || mFrameBuf->height() != re->height();
 
                 /* Store the new size to prevent unwanted resize hints being
                  * sent back. */
@@ -1360,7 +1357,7 @@ bool VBoxConsoleView::event (QEvent *e)
                     mIgnoreFrameBufferResize = false;
                 }
 
-                if (notifyManiWnd)
+                if (notifyMainWnd)
                     mMainWnd->onDisplayResize (re->width(), re->height());
 
                 return true;
