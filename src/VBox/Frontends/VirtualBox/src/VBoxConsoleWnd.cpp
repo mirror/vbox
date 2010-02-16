@@ -1238,16 +1238,16 @@ void VBoxConsoleWnd::onDisplayResize (ulong aWidth, ulong aHeight)
 {
     if (mIsSeamless)
     {
-    	const QRect & geo = QApplication::desktop()->availableGeometry (this);
-    	int dW = geo.width() - (int)aWidth;
+        const QRect & geo = QApplication::desktop()->availableGeometry (this);
+        int dW = geo.width() - (int)aWidth;
         int dH = geo.height() - (int)aHeight;
-    	if (RT_ABS (dW) > 16 || RT_ABS (dH) > 16)
-    	{
-			mVmSeamlessAction->setChecked (false);
-			/* should be cleared already, but just in case */
-			if (mIsSeamless)
-				toggleFullscreenMode (false, true);
-    	}
+        if (RT_ABS (dW) > 16 || RT_ABS (dH) > 16)
+        {
+            mVmSeamlessAction->setChecked (false);
+            /* should be cleared already, but just in case */
+            if (mIsSeamless)
+                toggleFullscreenMode (false, true);
+        }
     }
 }
 

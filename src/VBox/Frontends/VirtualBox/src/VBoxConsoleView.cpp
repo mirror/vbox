@@ -1273,8 +1273,7 @@ bool VBoxConsoleView::event (QEvent *e)
 #endif
 
                 bool notifyManiWnd = mStoredConsoleSize.width() != re->width()
-                		|| mStoredConsoleSize.height() != re->height();
-
+                        || mStoredConsoleSize.height() != re->height();
 
                 /* Store the new size to prevent unwanted resize hints being
                  * sent back. */
@@ -1363,7 +1362,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 }
 
                 if (notifyManiWnd)
-                	mMainWnd->onDisplayResize (re->width(), re->height());
+                    mMainWnd->onDisplayResize (re->width(), re->height());
 
                 return true;
             }
