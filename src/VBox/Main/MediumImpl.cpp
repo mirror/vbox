@@ -1360,18 +1360,13 @@ STDMETHODIMP Medium::COMGETTER(Description)(BSTR *aDescription)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->strDescription.isEmpty())
-        Bstr("").cloneTo(aDescription);
-    else
-        m->strDescription.cloneTo(aDescription);
+    m->strDescription.cloneTo(aDescription);
 
     return S_OK;
 }
 
 STDMETHODIMP Medium::COMSETTER(Description)(IN_BSTR aDescription)
 {
-    CheckComArgNotNull(aDescription);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -1414,7 +1409,7 @@ STDMETHODIMP Medium::COMGETTER(Location)(BSTR *aLocation)
 
 STDMETHODIMP Medium::COMSETTER(Location)(IN_BSTR aLocation)
 {
-    CheckComArgNotNull(aLocation);
+    CheckComArgStrNotEmptyOrNull(aLocation);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1724,10 +1719,7 @@ STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->strLastAccessError.isEmpty())
-        Bstr("").cloneTo(aLastAccessError);
-    else
-        m->strLastAccessError.cloneTo(aLastAccessError);
+    m->strLastAccessError.cloneTo(aLastAccessError);
 
     return S_OK;
 }
@@ -2101,10 +2093,7 @@ STDMETHODIMP Medium::GetProperty(IN_BSTR aName, BSTR *aValue)
         return setError(VBOX_E_OBJECT_NOT_FOUND,
                         tr("Property '%ls' does not exist"), aName);
 
-    if (it->second.isEmpty())
-        Bstr("").cloneTo(aValue);
-    else
-        it->second.cloneTo(aValue);
+    it->second.cloneTo(aValue);
 
     return S_OK;
 }
@@ -2168,10 +2157,7 @@ STDMETHODIMP Medium::GetProperties(IN_BSTR aNames,
          ++it)
     {
         it->first.cloneTo(&names[i]);
-        if (it->second.isEmpty())
-            Bstr("").cloneTo(&values[i]);
-        else
-            it->second.cloneTo(&values[i]);
+        it->second.cloneTo(&values[i]);
         ++ i;
     }
 
@@ -2361,9 +2347,9 @@ STDMETHODIMP Medium::MergeTo(IN_BSTR /* aTargetId */, IProgress ** /* aProgress 
 }
 
 STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
-                              MediumVariant_T aVariant,
-                              IMedium *aParent,
-                              IProgress **aProgress)
+                             MediumVariant_T aVariant,
+                             IMedium *aParent,
+                             IProgress **aProgress)
 {
     CheckComArgNotNull(aTarget);
     CheckComArgOutPointerValid(aProgress);
@@ -3089,7 +3075,7 @@ HRESULT Medium::saveSettings(settings::Medium &data)
          ++it)
     {
         /* only save properties that have non-default values */
-        if (!it->second.isNull())
+        if (!it->second.isEmpty())
         {
             Utf8Str name = it->first;
             Utf8Str value = it->second;
@@ -4857,7 +4843,7 @@ DECLCALLBACK(int) Medium::vdConfigQuerySize(void *pvUser, const char *pszName,
         return VERR_CFGM_VALUE_NOT_FOUND;
 
     /* we interpret null values as "no value" in Medium */
-    if (it->second.isNull())
+    if (it->second.isEmpty())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
     *pcbValue = it->second.length() + 1 /* include terminator */;
@@ -4884,7 +4870,7 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
         return VERR_CFGM_NOT_ENOUGH_SPACE;
 
     /* we interpret null values as "no value" in Medium */
-    if (it->second.isNull())
+    if (it->second.isEmpty())
         return VERR_CFGM_VALUE_NOT_FOUND;
 
     memcpy(pszValue, value.c_str(), value.length() + 1);

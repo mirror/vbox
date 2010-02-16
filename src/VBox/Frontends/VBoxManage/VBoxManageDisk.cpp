@@ -254,7 +254,7 @@ int handleCreateHardDisk(HandlerArg *a)
     }
 
     /* check the outcome */
-    if (   !filename
+    if (   filename.isEmpty()
         || sizeMB == 0)
         return errorSyntax(USAGE_CREATEHD, "Parameters --filename and --size are required");
 
@@ -280,7 +280,7 @@ int handleCreateHardDisk(HandlerArg *a)
          * created unless fRemember is set */
         bool doClose = false;
 
-        if (!comment.isNull())
+        if (!comment.isEmpty())
         {
             CHECK_ERROR(hardDisk,COMSETTER(Description)(comment));
         }
@@ -1011,7 +1011,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
     }
 
     /* check for required options */
-    if (!server || !target)
+    if (server.isEmpty() || target.isEmpty())
         return errorSyntax(USAGE_ADDISCSIDISK, "Parameters --server and --target are required");
 
     do
@@ -1037,7 +1037,7 @@ int handleAddiSCSIDisk(HandlerArg *a)
         }
         if (FAILED(rc)) break;
 
-        if (!port.isNull())
+        if (!port.isEmpty())
             server = BstrFmt ("%ls:%ls", server.raw(), port.raw());
 
         com::SafeArray <BSTR> names;
@@ -1046,19 +1046,19 @@ int handleAddiSCSIDisk(HandlerArg *a)
         Bstr ("TargetAddress").detachTo (names.appendedRaw());
         server.detachTo (values.appendedRaw());
         Bstr ("TargetName").detachTo (names.appendedRaw());
-        target.detachTo (values.appendedRaw());
+        target.detachTo(values.appendedRaw());
 
-        if (!lun.isNull())
+        if (!lun.isEmpty())
         {
             Bstr ("LUN").detachTo (names.appendedRaw());
             lun.detachTo (values.appendedRaw());
         }
-        if (!username.isNull())
+        if (!username.isEmpty())
         {
             Bstr ("InitiatorUsername").detachTo (names.appendedRaw());
             username.detachTo (values.appendedRaw());
         }
-        if (!password.isNull())
+        if (!password.isEmpty())
         {
             Bstr ("InitiatorSecret").detachTo (names.appendedRaw());
             password.detachTo (values.appendedRaw());
