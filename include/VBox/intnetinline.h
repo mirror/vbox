@@ -194,7 +194,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
+            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = sizeof(INTNETHDR);
 
             *ppHdr = pHdr;
@@ -215,7 +215,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
+            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = pRingBuf->offStart - offWriteInt;
 
             *ppHdr = pHdr;
@@ -235,7 +235,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
         pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = cbFrame;
+        pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
         pHdr->offFrame = sizeof(INTNETHDR);
 
         *ppHdr = pHdr;
@@ -328,7 +328,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
+            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = sizeof(INTNETHDR);
 
             memcpy(pHdr + 1, pvFrame, cbFrame);
@@ -353,7 +353,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
             pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-            pHdr->cbFrame  = cbFrame;
+            pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = pRingBuf->offStart - offWriteInt;
 
             memcpy((uint8_t *)pRingBuf + pRingBuf->offStart, pvFrame, cbFrame);
@@ -377,7 +377,7 @@ DECLINLINE(int) INTNETRingWriteFrame(PINTNETRINGBUF pRingBuf, const void *pvFram
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
         pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
-        pHdr->cbFrame  = cbFrame;
+        pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
         pHdr->offFrame = sizeof(INTNETHDR);
 
         memcpy(pHdr + 1, pvFrame, cbFrame);
