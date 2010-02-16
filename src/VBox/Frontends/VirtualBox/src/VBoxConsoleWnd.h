@@ -112,7 +112,7 @@ public:
     void clearMask();
 
     /* informs that the guest display is resized */
-    void onDisplayResize (ulong aHeight, ulong aWidth);
+    void onDisplayResize (ulong aWidth, ulong aHeight);
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* used for obtaining the extradata settings */
