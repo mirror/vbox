@@ -114,10 +114,8 @@ public:
     /* informs that the guest display is resized */
     void onDisplayResize (ulong aWidth, ulong aHeight);
 
-#ifdef VBOX_WITH_VIDEOHWACCEL
     /* used for obtaining the extradata settings */
     CSession &session() { return mSession; }
-#endif
 signals:
 
     void closing();
@@ -187,6 +185,10 @@ private slots:
     void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &aEvent);
     void changePresentationMode (const VBoxChangePresentationModeEvent &aEvent);
     void processGlobalSettingChange (const char *aPublicName, const char *aName);
+
+#ifdef RT_OS_DARWIN /* Stupid moc doesn't recognize Q_WS_MAC */
+    void sltDockPreviewModeChanged(QAction *pAction);
+#endif /* RT_OS_DARWIN */
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void dbgPrepareDebugMenu();
@@ -306,6 +308,13 @@ private:
     /** The virtual method table for the debugger GUI. */
     PCDBGGUIVT mDbgGuiVT;
 #endif
+
+#ifdef Q_WS_MAC
+    QMenu *m_pDockMenu;
+    QMenu *m_pDockSettingsMenu;
+    QAction *m_pDockDisablePreview;
+    QAction *m_pDockEnablePreviewMonitor;
+#endif /* Q_WS_MAC */
 
     /* Timer to update LEDs */
     QTimer *mIdleTimer;

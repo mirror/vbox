@@ -677,6 +677,31 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     mAutoresizeLed->setStateIcon (3, QPixmap (":/auto_resize_on_16px.png"));
 #endif
 
+#ifdef Q_WS_MAC
+    m_pDockMenu = new QMenu(this);
+    /* Add all VM menu entries to the dock menu. Leave out close and stuff like
+     * this. */
+    QList<QAction*> actions = mVMMenu->actions();
+    for (int i=0; i < actions.size(); ++i)
+        if (actions.at(i)->menuRole() == QAction::TextHeuristicRole)
+            m_pDockMenu->addAction(actions.at(i));
+    m_pDockMenu->addSeparator();
+
+    m_pDockSettingsMenu = new QMenu(this);
+    QActionGroup *pDockPreviewModeGroup = new QActionGroup(this);
+    m_pDockEnablePreviewMonitor = new QAction(pDockPreviewModeGroup);
+    m_pDockEnablePreviewMonitor->setCheckable(true);
+    m_pDockDisablePreview = new QAction(pDockPreviewModeGroup);
+    m_pDockDisablePreview->setCheckable(true);
+    m_pDockSettingsMenu->addActions(pDockPreviewModeGroup->actions());
+
+    m_pDockMenu->addMenu(m_pDockSettingsMenu);
+
+    /* Add it to the dock. */
+    extern void qt_mac_set_dock_menu(QMenu *);
+    qt_mac_set_dock_menu(m_pDockMenu);
+#endif /* Q_WS_MAC */
+
     /* add to statusbar */
     statusBar()->addPermanentWidget (indicatorBox, 0);
 
@@ -738,6 +763,8 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     connect (&vboxGlobal().settings(), SIGNAL (propertyChanged (const char *, const char *)),
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
 #ifdef Q_WS_MAC
+    connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
+            this, SLOT(sltDockPreviewModeChanged(QAction*)));
     connect (&vboxGlobal(), SIGNAL (dockIconUpdateChanged (const VBoxChangeDockIconUpdateEvent &)),
              this, SLOT (changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &)));
     connect (&vboxGlobal(), SIGNAL (presentationModeChanged (const VBoxChangePresentationModeEvent &)),
@@ -776,6 +803,24 @@ VBoxConsoleWnd::~VBoxConsoleWnd()
     dbgDestroy();
 #endif
 }
+
+#ifdef Q_WS_MAC
+void VBoxConsoleWnd::sltDockPreviewModeChanged(QAction *pAction)
+{
+    if (mConsole)
+    {
+        CMachine machine = mSession.GetMachine();
+        if (!machine.isNull())
+        {
+            if (pAction == m_pDockDisablePreview)
+                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "false");
+            else if (pAction == m_pDockEnablePreviewMonitor)
+                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "true");
+            mConsole->updateDockOverlay();
+        }
+    }
+}
+#endif /* Q_WS_MAC */
 
 /**
  *  Opens a new console view to interact with a given VM.
@@ -1001,9 +1046,13 @@ bool VBoxConsoleWnd::openView (const CSession &aSession)
     connect (mConsole, SIGNAL (sharedFoldersChanged()), this, SLOT (updateSharedFoldersState()));
 
 #ifdef Q_WS_MAC
-    QString testStr = vboxGlobal().virtualBox().GetExtraData (VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    QString strTest = machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
     /* Default to true if it is an empty value */
-    bool f = (testStr.isEmpty() || testStr == "true");
+    bool f = (strTest.isEmpty() || strTest == "true");
+    if (f)
+        m_pDockEnablePreviewMonitor->setChecked(true);
+    else
+        m_pDockDisablePreview->setChecked(true);
     mConsole->setDockIconEnabled (f);
     mConsole->updateDockOverlay();
 #endif
@@ -1758,6 +1807,12 @@ void VBoxConsoleWnd::retranslateUi()
 #endif
     mHelpMenu->setTitle (tr ("&Help"));
     // mHelpMenu->setIcon (VBoxGlobal::iconSet (":/help_16px.png"));
+
+#ifdef Q_WS_MAC
+    m_pDockSettingsMenu->setTitle(tr("Dock Icon"));
+    m_pDockDisablePreview->setText(tr("Show Application Icon"));
+    m_pDockEnablePreviewMonitor->setText(tr("Show Monitor Preview"));
+#endif /* Q_WS_MAC */
 
     /* Status bar widgets */
     mMouseLed->setToolTip (
