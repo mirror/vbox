@@ -33,7 +33,9 @@
 #
 --only-svn-dirs
 --only-svn-files
---set-svn-eol
+#--set-svn-eol
+--set-svn-executable
+#--set-svn-keywords
 
 #
 # Directories to ignore.
