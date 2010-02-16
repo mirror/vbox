@@ -42,6 +42,9 @@
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <arpa/inet.h>
+# ifdef IPRT_TCP_IN6
+#  include <netinet6/in6.h>
+# endif
 # include <sys/un.h>
 # include <netdb.h>
 # include <unistd.h>
@@ -915,7 +918,7 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
     {
         struct sockaddr     Addr;
         struct sockaddr_in  Ipv4;
-#ifdef AF_INET6
+#ifdef IPRT_TCP_IN6
         struct sockaddr_in6 Ipv6;
 #endif
     }               u;
@@ -938,7 +941,7 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
             pAddr->uPort        = u.Ipv4.sin_port;
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
-#ifdef AF_INET6
+#ifdef IPRT_TCP_IN6
         else if (   cbAddr == sizeof(struct sockaddr_in6)
                  && u.Addr.sa_family == AF_INET6)
         {
