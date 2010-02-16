@@ -64,4 +64,3 @@ RTDECL(char *) RTPathChangeToDosSlashes(char *pszPath, bool fForce)
     return pszPath;
 }
 
-

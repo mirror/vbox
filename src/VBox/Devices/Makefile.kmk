@@ -597,7 +597,7 @@ ifdef VBOX_WITH_RAW_MODE
  ifdef VBOXVDMA
   VBoxDDGC_DEFS         += VBOXVDMA
  endif
- 
+
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxDDGC_DEFS         += VBOX_WITH_VIDEOHWACCEL
  endif
