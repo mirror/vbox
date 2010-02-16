@@ -24,6 +24,23 @@ void PACKSPU_APIENTRY packspu_Begin( GLenum mode )
     /* XXX comparing mode >= 0 here is not needed since mode is unsigned */
     CRASSERT( mode >= GL_POINTS && mode <= GL_POLYGON );
 
+#if CR_ARB_vertex_buffer_object
+    {
+        GLboolean serverArrays = GL_FALSE;
+        GET_CONTEXT(ctx);
+        if (ctx->clientState->extensions.ARB_vertex_buffer_object)
+            serverArrays = crStateUseServerArrays();
+        if (serverArrays) {
+            CRClientState *clientState = &(ctx->clientState->client);
+            if (clientState->array.locked && !clientState->array.synced)
+            {
+                crPackLockArraysEXT(clientState->array.lockFirst, clientState->array.lockCount);
+                clientState->array.synced = GL_TRUE;
+            }
+        }
+    }
+#endif
+
     if (pack_spu.swap)
     {
         crPackBeginSWAP( mode );
