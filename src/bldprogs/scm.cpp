@@ -34,6 +34,7 @@
 #include <iprt/assert.h>
 #include <iprt/ctype.h>
 #include <iprt/dir.h>
+#include <iprt/env.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/getopt.h>
@@ -42,6 +43,7 @@
 #include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
+#include <iprt/process.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 
@@ -126,6 +128,24 @@ typedef SCMSTREAM const *PCSCMSTREAM;
 
 
 /**
+ * SVN property.
+ */
+typedef struct SCMSVNPROP
+{
+    /** The property. */
+    char           *pszName;
+    /** The value.
+     * When used to record updates, this can be set to NULL to trigger the
+     * deletion of the property. */
+    char           *pszValue;
+} SCMSVNPROP;
+/** Pointer to a SVN property. */
+typedef SCMSVNPROP *PSCMSVNPROP;
+/** Pointer to a const  SVN property. */
+typedef SCMSVNPROP const *PCSCMSVNPROP;
+
+
+/**
  * Rewriter state.
  */
 typedef struct SCMRWSTATE
@@ -135,6 +155,10 @@ typedef struct SCMRWSTATE
     /** Set after the printing the first verbose message about a file under
      *  rewrite. */
     bool            fFirst;
+    /** The number of SVN property changes. */
+    size_t          cSvnPropChanges;
+    /** Pointer to an array of SVN property changes. */
+    PSCMSVNPROP     paSvnPropChanges;
 } SCMRWSTATE;
 /** Pointer to the rewriter state. */
 typedef SCMRWSTATE *PSCMRWSTATE;
@@ -207,8 +231,12 @@ typedef struct SCMSETTINGSBASE
     bool            fForceTrailingLine;
     bool            fStripTrailingBlanks;
     bool            fStripTrailingLines;
+    /** Only process files that are part of a SVN working copy. */
+    bool            fOnlySvnFiles;
     /** Only recurse into directories containing an .svn dir.  */
     bool            fOnlySvnDirs;
+    /** Set svn:eol-style if missing or incorrect. */
+    bool            fSetSvnEol;
     /**  */
     unsigned        cchTab;
     /** Only consider files matcihng these patterns.  This is only applied to the
@@ -249,6 +277,10 @@ typedef enum SCMOPT
     SCMOPT_NO_STRIP_TRAILING_LINES,
     SCMOPT_ONLY_SVN_DIRS,
     SCMOPT_NOT_ONLY_SVN_DIRS,
+    SCMOPT_ONLY_SVN_FILES,
+    SCMOPT_NOT_ONLY_SVN_FILES,
+    SCMOPT_SET_SVN_EOL,
+    SCMOPT_DONT_SET_SVN_EOL,
     SCMOPT_TAB_SIZE,
     SCMOPT_FILTER_OUT_DIRS,
     SCMOPT_FILTER_FILES,
@@ -353,7 +385,9 @@ static SCMSETTINGSBASE const g_Defaults =
     /* .fForceTrailingLine = */     false,
     /* .fStripTrailingBlanks = */   true,
     /* .fStripTrailingLines = */    true,
+    /* .fOnlySvnFiles = */          false,
     /* .fOnlySvnDirs = */           false,
+    /* .fSetSvnEol = */             false,
     /* .cchTab = */                 8,
     /* .pszFilterFiles = */         (char *)"",
     /* .pszFilterOutFiles = */      (char *)"*.exe|*.com|20*-*-*.log",
@@ -377,6 +411,10 @@ static RTGETOPTDEF  g_aScmOpts[] =
     { "--strip-no-trailing-lines",          SCMOPT_NO_STRIP_TRAILING_LINES,         RTGETOPT_REQ_NOTHING },
     { "--only-svn-dirs",                    SCMOPT_ONLY_SVN_DIRS,                   RTGETOPT_REQ_NOTHING },
     { "--not-only-svn-dirs",                SCMOPT_NOT_ONLY_SVN_DIRS,               RTGETOPT_REQ_NOTHING },
+    { "--only-svn-files",                   SCMOPT_ONLY_SVN_FILES,                  RTGETOPT_REQ_NOTHING },
+    { "--not-only-svn-files",               SCMOPT_NOT_ONLY_SVN_FILES,              RTGETOPT_REQ_NOTHING },
+    { "--set-svn-eol",                      SCMOPT_SET_SVN_EOL,                     RTGETOPT_REQ_NOTHING },
+    { "--dont-set-svn-eol",                 SCMOPT_DONT_SET_SVN_EOL,                RTGETOPT_REQ_NOTHING },
     { "--tab-size",                         SCMOPT_TAB_SIZE,                        RTGETOPT_REQ_UINT8   },
     { "--filter-out-dirs",                  SCMOPT_FILTER_OUT_DIRS,                 RTGETOPT_REQ_STRING  },
     { "--filter-files",                     SCMOPT_FILTER_FILES,                    RTGETOPT_REQ_STRING  },
@@ -830,6 +868,17 @@ static int scmStreamLineate(PSCMSTREAM pStream)
 }
 
 /**
+ * Get the current stream position as an byte offset.
+ *
+ * @returns The current byte offset
+ * @param   pStream             The stream.
+ */
+size_t ScmStreamTell(PSCMSTREAM pStream)
+{
+    return pStream->off;
+}
+
+/**
  * Get the current stream position as a line number.
  *
  * @returns The current line (0-based).
@@ -838,6 +887,17 @@ static int scmStreamLineate(PSCMSTREAM pStream)
 size_t ScmStreamTellLine(PSCMSTREAM pStream)
 {
     return pStream->iLine;
+}
+
+/**
+ * Get the current stream size in bytes.
+ *
+ * @returns Count of bytes.
+ * @param   pStream             The stream.
+ */
+size_t ScmStreamSize(PSCMSTREAM pStream)
+{
+    return pStream->cb;
 }
 
 /**
@@ -854,7 +914,85 @@ size_t ScmStreamCountLines(PSCMSTREAM pStream)
 }
 
 /**
- * Seeks to a given line in the tream.
+ * Seeks to a given byte offset in the stream.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SEEK if the new stream position is the middle of an EOL marker.
+ *          This is a temporary restriction.
+ *
+ * @param   pStream             The stream.  Must be in read mode.
+ * @param   offAbsolute         The offset to seek to.  If this is beyond the
+ *                              end of the stream, the position is set to the
+ *                              end.
+ */
+int ScmStreamSeekAbsolute(PSCMSTREAM pStream, size_t offAbsolute)
+{
+    AssertReturn(!pStream->fWriteOrRead, VERR_ACCESS_DENIED);
+    if (RT_FAILURE(pStream->rc))
+        return pStream->rc;
+
+    /* Must be fully lineated. (lazy bird) */
+    if (RT_UNLIKELY(!pStream->fFullyLineated))
+    {
+        int rc = scmStreamLineate(pStream);
+        if (RT_FAILURE(rc))
+            return rc;
+    }
+
+    /* Ok, do the job. */
+    if (offAbsolute < pStream->cb)
+    {
+        /** @todo Should do a binary search here, but I'm too darn lazy tonight. */
+        pStream->off = ~(size_t)0;
+        for (size_t i = 0; i < pStream->cLines; i++)
+        {
+            if (offAbsolute < pStream->paLines[i].off + pStream->paLines[i].cch + pStream->paLines[i].enmEol)
+            {
+                pStream->off   = offAbsolute;
+                pStream->iLine = i;
+                if (offAbsolute > pStream->paLines[i].off + pStream->paLines[i].cch)
+                    return pStream->rc = VERR_SEEK;
+                break;
+            }
+        }
+        AssertReturn(pStream->off != ~(size_t)0, pStream->rc = VERR_INTERNAL_ERROR_3);
+    }
+    else
+    {
+        pStream->off   = pStream->cb;
+        pStream->iLine = pStream->cLines;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Seeks a number of bytes relative to the current stream position.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_SEEK if the new stream position is the middle of an EOL marker.
+ *          This is a temporary restriction.
+ *
+ * @param   pStream             The stream.  Must be in read mode.
+ * @param   offRelative         The offset to seek to.  A negative offset
+ *                              rewinds and positive one fast forwards the
+ *                              stream.  Will quietly stop at the begining and
+ *                              end of the stream.
+ */
+int ScmStreamSeekRelative(PSCMSTREAM pStream, ssize_t offRelative)
+{
+    size_t offAbsolute;
+    if (offRelative >= 0)
+        offAbsolute = pStream->off + offRelative;
+    else if ((size_t)-offRelative <= pStream->off)
+        offAbsolute = pStream->off + offRelative;
+    else
+        offAbsolute = 0;
+    return ScmStreamSeekAbsolute(pStream, offAbsolute);
+}
+
+/**
+ * Seeks to a given line in the stream.
  *
  * @returns IPRT status code.
  *
@@ -868,7 +1006,7 @@ int ScmStreamSeekByLine(PSCMSTREAM pStream, size_t iLine)
     if (RT_FAILURE(pStream->rc))
         return pStream->rc;
 
-    /* Must be fully lineated of course. */
+    /* Must be fully lineated. (lazy bird) */
     if (RT_UNLIKELY(!pStream->fFullyLineated))
     {
         int rc = scmStreamLineate(pStream);
@@ -934,7 +1072,7 @@ static const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t
     *penmEol           = pStream->paLines[iLine].enmEol;
 
     /* update the stream position. */
-    pStream->off       = pStream->paLines[iLine].cch + pStream->paLines[iLine].enmEol;
+    pStream->off       = pStream->paLines[iLine].off + pStream->paLines[iLine].cch + pStream->paLines[iLine].enmEol;
     pStream->iLine     = iLine + 1;
 
     return pchRet;
@@ -957,9 +1095,40 @@ static const char *ScmStreamGetLineByNo(PSCMSTREAM pStream, size_t iLine, size_t
  */
 static const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEOL penmEol)
 {
+    /** @todo this doesn't work when pStream->off !=
+     *        pStream->paLines[pStream->iLine-1].pff. */
     if (!pStream->fFullyLineated)
         return scmStreamGetLineInternal(pStream, pcchLine, penmEol);
     return ScmStreamGetLineByNo(pStream, pStream->iLine, pcchLine, penmEol);
+}
+
+/**
+ * Reads @a cbToRead bytes into @a pvBuf.
+ *
+ * Will fail if end of stream is encountered before the entire read has been
+ * completed.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_EOF if there isn't @a cbToRead bytes left to read.  Stream
+ *          position will be unchanged.
+ *
+ * @param   pStream             The stream.  Must be in read mode.
+ * @param   pvBuf               The buffer to read into.
+ * @param   cbToRead            The number of bytes to read.
+ */
+static int ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead)
+{
+    AssertReturn(!pStream->fWriteOrRead, NULL);
+    if (RT_FAILURE(pStream->rc))
+        return NULL;
+
+    /* If there isn't enough stream left, fail already. */
+    if (RT_UNLIKELY(pStream->cb - pStream->cb < cbToRead))
+        return VERR_EOF;
+
+    /* Copy the data and simply seek to the new stream position. */
+    memcpy(pvBuf, &pStream->pch[pStream->off], cbToRead);
+    return ScmStreamSeekAbsolute(pStream, pStream->off + cbToRead);
 }
 
 /**
@@ -1843,6 +2012,19 @@ static int scmSettingsBaseHandleOpt(PSCMSETTINGSBASE pSettings, int rc, PRTGETOP
             pSettings->fOnlySvnDirs = false;
             return VINF_SUCCESS;
 
+        case SCMOPT_ONLY_SVN_FILES:
+            pSettings->fOnlySvnFiles = true;
+            return VINF_SUCCESS;
+        case SCMOPT_NOT_ONLY_SVN_FILES:
+            pSettings->fOnlySvnFiles = false;
+            return VINF_SUCCESS;
+
+        case SCMOPT_SET_SVN_EOL:
+            pSettings->fSetSvnEol = true;
+            return VINF_SUCCESS;
+        case SCMOPT_DONT_SET_SVN_EOL:
+            return VINF_SUCCESS;
+
         case SCMOPT_TAB_SIZE:
             if (   pValueUnion->u8 < 1
                 || pValueUnion->u8 >= RT_ELEMENTS(g_szTabSpaces))
@@ -2392,18 +2574,494 @@ static void ScmVerbose(PSCMRWSTATE pState, int iLevel, const char *pszFormat, ..
     {
         if (pState && !pState->fFirst)
         {
-            RTPrintf("%s: info: Rewriting '%s'...\n", g_szProgName, pState->pszFilename);
+            RTPrintf("%s: info: --= Rewriting '%s' =--\n", g_szProgName, pState->pszFilename);
             pState->fFirst = true;
         }
         if (pszFormat)
         {
-            RTPrintf("%s: info: ", g_szProgName);
+            RTPrintf(pState
+                     ? "%s: info:   "
+                     : "%s: info: ",
+                     g_szProgName);
             va_list va;
             va_start(va, pszFormat);
             RTPrintfV(pszFormat, va);
             va_end(va);
         }
     }
+}
+
+
+/* -=-=-=-=-=- subversion -=-=-=-=-=- */
+
+#define SCM_WITHOUT_LIBSVN
+
+#ifdef SCM_WITHOUT_LIBSVN
+
+/**
+ * Callback that is call for each path to search.
+ */
+static DECLCALLBACK(int) scmSvnFindSvnBinaryCallback(char const *pchPath, size_t cchPath, void *pvUser1, void *pvUser2)
+{
+    char   *pszDst = (char *)pvUser1;
+    size_t  cchDst = (size_t)pvUser2;
+    if (cchDst > cchPath)
+    {
+        memcpy(pszDst, pchPath, cchPath);
+        pszDst[cchPath] = '\0';
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        int rc = RTPathAppend(pszDst, cchDst, "svn.exe");
+#else
+        int rc = RTPathAppend(pszDst, cchDst, "svn");
+#endif
+        if (   RT_SUCCESS(rc)
+            && RTFileExists(pszDst))
+            return VINF_SUCCESS;
+    }
+    return VERR_TRY_AGAIN;
+}
+
+
+/**
+ * Finds the svn binary.
+ *
+ * @param   pszPath             Where to store it.  Worst case, we'll return
+ *                              "svn" here.
+ * @param   cchPath             The size of the buffer pointed to by @a pszPath.
+ */
+static void scmSvnFindSvnBinary(char *pszPath, size_t cchPath)
+{
+    /** @todo code page fun... */
+    Assert(cchPath >= sizeof("svn"));
+#ifdef RT_OS_WINDOWS
+    const char *pszEnvVar = RTEnvGet("Path");
+#else
+    const char *pszEnvVar = RTEnvGet("PATH");
+#endif
+    if (pszPath)
+    {
+#if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
+        int rc = RTPathTraverseList(pszEnvVar, ';', scmSvnFindSvnBinaryCallback, pszPath, (void *)cchPath);
+#else
+        int rc = RTPathTraverseList(pszEnvVar, ':', scmSvnFindSvnBinaryCallback, pszPath, (void *)cchPath);
+#endif
+        if (RT_SUCCESS(rc))
+            return;
+    }
+    strcpy(pszPath, "svn");
+}
+
+
+/**
+ * Construct a dot svn filename for the file being rewritten.
+ *
+ * @returns IPRT status code.
+ * @param   pState              The rewrite state (for the name).
+ * @param   pszDir              The directory, including ".svn/".
+ * @param   pszSuff             The filename suffix.
+ * @param   pszDst              The output buffer.  RTPATH_MAX in size.
+ */
+static int scmSvnConstructName(PSCMRWSTATE pState, const char *pszDir, const char *pszSuff, char *pszDst)
+{
+    strcpy(pszDst, pState->pszFilename); /* ASSUMES sizeof(szBuf) <= sizeof(szPath) */
+    RTPathStripFilename(pszDst);
+
+    int rc = RTPathAppend(pszDst, RTPATH_MAX, pszDir);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTPathAppend(pszDst, RTPATH_MAX, RTPathFilename(pState->pszFilename));
+        if (RT_SUCCESS(rc))
+        {
+            size_t cchDst  = strlen(pszDst);
+            size_t cchSuff = strlen(pszSuff);
+            if (cchDst + cchSuff < RTPATH_MAX)
+            {
+                memcpy(&pszDst[cchDst], pszSuff, cchSuff + 1);
+                return VINF_SUCCESS;
+            }
+            else
+                rc = VERR_BUFFER_OVERFLOW;
+        }
+    }
+    return rc;
+}
+
+/**
+ * Interprets the specified string as decimal numbers.
+ *
+ * @returns true if parsed successfully, false if not.
+ * @param   pch                 The string (not terminated).
+ * @param   cch                 The string length.
+ * @param   pu                  Where to return the value.
+ */
+static bool scmSvnReadNumber(const char *pch, size_t cch, size_t *pu)
+{
+    size_t u = 0;
+    while (cch-- > 0)
+    {
+        char ch = *pch++;
+        if (ch < '0' || ch > '9')
+            return false;
+        u *= 10;
+        u += ch - '0';
+    }
+    *pu = u;
+    return true;
+}
+
+#endif /* SCM_WITHOUT_LIBSVN */
+
+/**
+ * Checks if the file we're operating on is part of a SVN working copy.
+ *
+ * @returns true if it is, false if it isn't or we cannot tell.
+ * @param   pState              The rewrite state to work on.
+ */
+static bool scmSvnIsInWorkingCopy(PSCMRWSTATE pState)
+{
+#ifdef SCM_WITHOUT_LIBSVN
+    /*
+     * Hack: check if the .svn/text-base/<file>.svn-base file exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = scmSvnConstructName(pState, ".svn/text-base/", ".svn-base", szPath);
+    if (RT_SUCCESS(rc))
+        return RTFileExists(szPath);
+
+#else
+    NOREF(pState);
+#endif
+    return false;
+}
+
+/**
+ * Queries the value of an SVN property.
+ *
+ * This will automatically adjust for scheduled changes.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_STATE if not a SVN WC file.
+ * @retval  VERR_NOT_FOUND if the property wasn't found.
+ * @param   pState              The rewrite state to work on.
+ * @param   pszName             The property name.
+ * @param   ppszValue           Where to return the property value.  Free this
+ *                              using RTStrFree.  Optional.
+ */
+static int scmSvnQueryProperty(PSCMRWSTATE pState, const char *pszName, char **ppszValue)
+{
+    /*
+     * Look it up in the scheduled changes.
+     */
+    uint32_t i = pState->cSvnPropChanges;
+    while (i-- > 0)
+        if (!strcmp(pState->paSvnPropChanges[i].pszName, pszName))
+        {
+            const char *pszValue = pState->paSvnPropChanges[i].pszValue;
+            if (!pszValue)
+                return VERR_NOT_FOUND;
+            if (ppszValue)
+                return RTStrDupEx(ppszValue, pszValue);
+            return VINF_SUCCESS;
+        }
+
+#ifdef SCM_WITHOUT_LIBSVN
+    /*
+     * Hack: Read the .svn/props/<file>.svn-work file exists.
+     */
+    char szPath[RTPATH_MAX];
+    int rc = scmSvnConstructName(pState, ".svn/props/", ".svn-work", szPath);
+    if (RT_SUCCESS(rc) && !RTFileExists(szPath))
+        rc = scmSvnConstructName(pState, ".svn/prop-base/", ".svn-base", szPath);
+    if (RT_SUCCESS(rc))
+    {
+        SCMSTREAM Stream;
+        rc = ScmStreamInitForReading(&Stream, szPath);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * The current format is K len\n<name>\nV len\n<value>\n" ... END.
+             */
+            rc = VERR_NOT_FOUND;
+            size_t const    cchName = strlen(pszName);
+            SCMEOL          enmEol;
+            size_t          cchLine;
+            const char     *pchLine;
+            while ((pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol)) != NULL)
+            {
+                /*
+                 * Parse the 'K num' / 'END' line.
+                 */
+                if (   cchLine == 3
+                    && !memcmp(pchLine, "END", 3))
+                    break;
+                size_t cchKey;
+                if (   cchLine < 3
+                    || pchLine[0] != 'K'
+                    || pchLine[1] != ' '
+                    || !scmSvnReadNumber(&pchLine[2], cchLine - 2, &cchKey)
+                    || cchKey == 0
+                    || cchKey > 4096)
+                {
+                    RTMsgError("%s:%u: Unexpected data '%.*s'\n", szPath, ScmStreamTellLine(&Stream), cchLine, pchLine);
+                    rc = VERR_PARSE_ERROR;
+                    break;
+                }
+
+                /*
+                 * Match the key and skip to the value line.  Don't bother with
+                 * names containing EOL markers.
+                 */
+                size_t const offKey = ScmStreamTell(&Stream);
+                bool fMatch = cchName == cchKey;
+                if (fMatch)
+                {
+                    pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol);
+                    if (!pchLine)
+                        break;
+                    fMatch = cchLine == cchName
+                          && !memcmp(pchLine, pszName, cchName);
+                }
+
+                if (RT_FAILURE(ScmStreamSeekAbsolute(&Stream, offKey + cchKey)))
+                    break;
+                if (RT_FAILURE(ScmStreamSeekByLine(&Stream, ScmStreamTellLine(&Stream) + 1)))
+                    break;
+
+                /*
+                 * Read and Parse the 'V num' line.
+                 */
+                pchLine = ScmStreamGetLine(&Stream, &cchLine, &enmEol);
+                if (!pchLine)
+                    break;
+                size_t cchValue;
+                if (   cchLine < 3
+                    || pchLine[0] != 'V'
+                    || pchLine[1] != ' '
+                    || !scmSvnReadNumber(&pchLine[2], cchLine - 2, &cchValue)
+                    || cchValue == 0
+                    || cchValue > _1M)
+                {
+                    RTMsgError("%s:%u: Unexpected data '%.*s'\n", szPath, ScmStreamTellLine(&Stream), cchLine, pchLine);
+                    rc = VERR_PARSE_ERROR;
+                    break;
+                }
+
+                /*
+                 * If we have a match, allocate a return buffer and read the
+                 * value into it.  Otherwise skip this value and continue
+                 * searching.
+                 */
+                if (fMatch)
+                {
+                    if (!ppszValue)
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        char *pszValue;
+                        rc = RTStrAllocEx(&pszValue, cchValue + 1);
+                        if (RT_SUCCESS(rc))
+                        {
+                            rc = ScmStreamRead(&Stream, pszValue, cchValue);
+                            if (RT_SUCCESS(rc))
+                                *ppszValue = pszValue;
+                            else
+                                RTStrFree(pszValue);
+                        }
+                    }
+                    break;
+                }
+
+                if (RT_FAILURE(ScmStreamSeekRelative(&Stream, cchValue)))
+                    break;
+                if (RT_FAILURE(ScmStreamSeekByLine(&Stream, ScmStreamTellLine(&Stream) + 1)))
+                    break;
+            }
+
+            if (RT_FAILURE(ScmStreamGetStatus(&Stream)))
+            {
+                rc = ScmStreamGetStatus(&Stream);
+                RTMsgError("%s: stream error %Rrc\n", szPath, rc);
+            }
+            ScmStreamDelete(&Stream);
+        }
+    }
+
+    if (rc == VERR_FILE_NOT_FOUND)
+        rc = VERR_NOT_FOUND;
+    return rc;
+
+#else
+    NOREF(pState);
+#endif
+    return VERR_NOT_FOUND;
+}
+
+
+/**
+ * Schedules the setting of a property.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_INVALID_STATE if not a SVN WC file.
+ * @param   pState              The rewrite state to work on.
+ * @param   pszName             The name of the property to set.
+ * @param   pszValue            The value.  NULL means deleting it.
+ */
+static int scmSvnSetProperty(PSCMRWSTATE pState, const char *pszName, const char *pszValue)
+{
+    /*
+     * Update any existing entry first.
+     */
+    size_t i = pState->cSvnPropChanges;
+    while (i-- > 0)
+        if (!strcmp(pState->paSvnPropChanges[i].pszName,  pszName))
+        {
+            if (!pszValue)
+            {
+                RTStrFree(pState->paSvnPropChanges[i].pszValue);
+                pState->paSvnPropChanges[i].pszValue = NULL;
+            }
+            else
+            {
+                char *pszCopy;
+                int rc = RTStrDupEx(&pszCopy, pszValue);
+                if (RT_FAILURE(rc))
+                    return rc;
+                pState->paSvnPropChanges[i].pszValue = pszCopy;
+            }
+            return VINF_SUCCESS;
+        }
+
+    /*
+     * Insert a new entry.
+     */
+    i = pState->cSvnPropChanges;
+    if ((i % 32) == 0)
+    {
+        void *pvNew = RTMemRealloc(pState->paSvnPropChanges, (i + 32) * sizeof(SCMSVNPROP));
+        if (!pvNew)
+            return VERR_NO_MEMORY;
+        pState->paSvnPropChanges = (PSCMSVNPROP)pvNew;
+    }
+
+    pState->paSvnPropChanges[i].pszName  = RTStrDup(pszName);
+    pState->paSvnPropChanges[i].pszValue = pszValue ? RTStrDup(pszValue) : NULL;
+    if (   pState->paSvnPropChanges[i].pszName
+        && (pState->paSvnPropChanges[i].pszValue || !pszValue) )
+        pState->cSvnPropChanges = i + 1;
+    else
+    {
+        RTStrFree(pState->paSvnPropChanges[i].pszName);
+        pState->paSvnPropChanges[i].pszName = NULL;
+        RTStrFree(pState->paSvnPropChanges[i].pszValue);
+        pState->paSvnPropChanges[i].pszValue = NULL;
+        return VERR_NO_MEMORY;
+    }
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Schedules a property deletion.
+ *
+ * @returns IPRT status code.
+ * @param   pState              The rewrite state to work on.
+ * @param   pszName             The name of the property to delete.
+ */
+static int scmSvnDelProperty(PSCMRWSTATE pState, const char *pszName)
+{
+    return scmSvnSetProperty(pState, pszName, NULL);
+}
+
+
+/**
+ * Applies any SVN property changes to the work copy of the file.
+ *
+ * @returns IPRT status code.
+ * @param   pState              The rewrite state which SVN property changes
+ *                              should be applied.
+ */
+static int scmSvnDisplayChanges(PSCMRWSTATE pState)
+{
+    size_t i = pState->cSvnPropChanges;
+    while (i-- > 0)
+    {
+        const char *pszName  = pState->paSvnPropChanges[i].pszName;
+        const char *pszValue = pState->paSvnPropChanges[i].pszValue;
+        if (pszValue)
+            ScmVerbose(pState, 0, "svn ps '%s' '%s'  %s\n", pszName, pszValue, pState->pszFilename);
+        else
+            ScmVerbose(pState, 0, "svn pd '%s'  %s\n", pszName, pszValue, pState->pszFilename);
+    }
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Applies any SVN property changes to the work copy of the file.
+ *
+ * @returns IPRT status code.
+ * @param   pState              The rewrite state which SVN property changes
+ *                              should be applied.
+ */
+static int scmSvnApplyChanges(PSCMRWSTATE pState)
+{
+#ifdef SCM_WITHOUT_LIBSVN
+    /*
+     * This sucks. We gotta find svn(.exe).
+     */
+    static char s_szSvnPath[RTPATH_MAX];
+    if (s_szSvnPath[0] == '\0')
+        scmSvnFindSvnBinary(s_szSvnPath, sizeof(s_szSvnPath));
+
+    /*
+     * Iterate thru the changes and apply them by starting the svn client.
+     */
+    for (size_t i = 0; i <pState->cSvnPropChanges; i++)
+    {
+        const char *apszArgv[6];
+        apszArgv[0] = s_szSvnPath;
+        apszArgv[1] = pState->paSvnPropChanges[i].pszValue ? "ps" : "pd";
+        apszArgv[2] = pState->paSvnPropChanges[i].pszName;
+        int iArg = 3;
+        if (pState->paSvnPropChanges[i].pszValue)
+            apszArgv[iArg++] = pState->paSvnPropChanges[i].pszValue;
+        apszArgv[iArg++] = pState->pszFilename;
+        apszArgv[iArg++] = NULL;
+        ScmVerbose(pState, 2, "executing: %s %s %s %s %s\n",
+                   apszArgv[0], apszArgv[1], apszArgv[2], apszArgv[3], apszArgv[4]);
+
+        RTPROCESS pid;
+        int rc = RTProcCreate(s_szSvnPath, apszArgv, RTENV_DEFAULT, 0 /*fFlags*/, &pid);
+        if (RT_SUCCESS(rc))
+        {
+            RTPROCSTATUS Status;
+            rc = RTProcWait(pid, RTPROCWAIT_FLAGS_BLOCK, &Status);
+            if (    RT_SUCCESS(rc)
+                &&  (   Status.enmReason != RTPROCEXITREASON_NORMAL
+                     || Status.iStatus != 0) )
+            {
+                RTMsgError("%s: %s %s %s %s %s -> %s %u\n",
+                           pState->pszFilename, apszArgv[0], apszArgv[1], apszArgv[2], apszArgv[3], apszArgv[4],
+                           Status.enmReason == RTPROCEXITREASON_NORMAL   ? "exit code"
+                           : Status.enmReason == RTPROCEXITREASON_SIGNAL ? "signal"
+                           : Status.enmReason == RTPROCEXITREASON_ABEND  ? "abnormal end"
+                           : "abducted by alien",
+                           Status.iStatus);
+                return VERR_GENERAL_FAILURE;
+            }
+        }
+        if (RT_FAILURE(rc))
+        {
+            RTMsgError("%s: error executing %s %s %s %s %s: %Rrc\n",
+                       pState->pszFilename, apszArgv[0], apszArgv[1], apszArgv[2], apszArgv[3], apszArgv[4], rc);
+            return rc;
+        }
+    }
+
+    return VINF_SUCCESS;
+#else
+    return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -2515,8 +3173,10 @@ static bool rewrite_ExpandTabs(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pO
  * @param   pOut                The output stream.
  * @param   pSettings           The settings.
  * @param   enmDesiredEol       The desired end of line indicator type.
+ * @param   pszDesiredSvnEol    The desired svn:eol-style.
  */
-static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings, SCMEOL enmDesiredEol)
+static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings,
+                             SCMEOL enmDesiredEol, const char *pszDesiredSvnEol)
 {
     if (!pSettings->fConvertEol)
         return false;
@@ -2540,6 +3200,25 @@ static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
     if (fModified)
         ScmVerbose(pState, 2, " * Converted EOL markers\n");
 
+    /* Check svn:eol-style if appropriate */
+    if (   pSettings->fSetSvnEol
+        && scmSvnIsInWorkingCopy(pState))
+    {
+        char *pszEol;
+        int rc = scmSvnQueryProperty(pState, "svn:eol-style", &pszEol);
+        if (   (RT_SUCCESS(rc) && strcmp(pszEol, pszDesiredSvnEol))
+            || rc == VERR_NOT_FOUND)
+        {
+            if (rc == VERR_NOT_FOUND)
+                ScmVerbose(pState, 2, " * Settings svn:eol-style to %s (missing)\n", pszDesiredSvnEol);
+            else
+                ScmVerbose(pState, 2, " * Settings svn:eol-style to %s (was: %s)\n", pszDesiredSvnEol, pszEol);
+            rc = scmSvnSetProperty(pState, "svn:eol-style", pszDesiredSvnEol);
+            if (RT_FAILURE(rc))
+                RTMsgError("scmSvnSetProperty: %Rrc\n", rc); /** @todo propagate the error somehow... */
+        }
+    }
+
     /** @todo also check the subversion svn:eol-style state! */
     return fModified;
 }
@@ -2555,9 +3234,9 @@ static bool rewrite_ForceEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut
 static bool rewrite_ForceNativeEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
 #if defined(RT_OS_WINDOWS) || defined(RT_OS_OS2)
-    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_CRLF);
+    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_CRLF, "native");
 #else
-    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_LF);
+    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_LF,   "native");
 #endif
 }
 
@@ -2571,7 +3250,7 @@ static bool rewrite_ForceNativeEol(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREA
  */
 static bool rewrite_ForceLF(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_LF);
+    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_LF, "LF");
 }
 
 /**
@@ -2584,7 +3263,7 @@ static bool rewrite_ForceLF(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut,
  */
 static bool rewrite_ForceCRLF(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOut, PCSCMSETTINGSBASE pSettings)
 {
-    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_CRLF);
+    return rewrite_ForceEol(pState, pIn, pOut, pSettings, SCMEOL_CRLF, "CRLF");
 }
 
 /**
@@ -2735,6 +3414,7 @@ static bool rewrite_C_and_CPP(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOu
  * Processes a file.
  *
  * @returns IPRT status code.
+ * @param   pState              The rewriter state.
  * @param   pszFilename         The file name.
  * @param   pszBasename         The base name (pointer within @a pszFilename).
  * @param   cchBasename         The length of the base name.  (For passing to
@@ -2742,16 +3422,9 @@ static bool rewrite_C_and_CPP(PSCMRWSTATE pState, PSCMSTREAM pIn, PSCMSTREAM pOu
  * @param   pBaseSettings       The base settings to use.  It's OK to modify
  *                              these.
  */
-static int scmProcessFileInner(const char *pszFilename, const char *pszBasename, size_t cchBasename,
+static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, const char *pszBasename, size_t cchBasename,
                                PSCMSETTINGSBASE pBaseSettings)
 {
-    /*
-     * Init the rewriter state data.
-     */
-    SCMRWSTATE State;
-    State.fFirst      = false;
-    State.pszFilename = pszFilename;
-
     /*
      * Do the file level filtering.
      */
@@ -2759,7 +3432,7 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
         && *pBaseSettings->pszFilterFiles
         && !RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterFiles, RTSTR_MAX, pszBasename, cchBasename, NULL))
     {
-        ScmVerbose(NULL, 5, "file filter mismatch: \"%s\"\n", pszFilename);
+        ScmVerbose(NULL, 5, "skipping '%s': file filter mismatch\n", pszFilename);
         return VINF_SUCCESS;
     }
     if (   pBaseSettings->pszFilterOutFiles
@@ -2767,7 +3440,13 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
         && (   RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterOutFiles, RTSTR_MAX, pszBasename, cchBasename, NULL)
             || RTStrSimplePatternMultiMatch(pBaseSettings->pszFilterOutFiles, RTSTR_MAX, pszFilename, RTSTR_MAX, NULL)) )
     {
-        ScmVerbose(NULL, 5, "file filter out: \"%s\"\n", pszFilename);
+        ScmVerbose(NULL, 5, "skipping '%s': filterd out\n", pszFilename);
+        return VINF_SUCCESS;
+    }
+    if (   pBaseSettings->fOnlySvnFiles
+        && !scmSvnIsInWorkingCopy(pState))
+    {
+        ScmVerbose(NULL, 5, "skipping '%s': not in SVN WC\n", pszFilename);
         return VINF_SUCCESS;
     }
 
@@ -2783,10 +3462,10 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
         }
     if (!pCfg)
     {
-        ScmVerbose(NULL, 4, "No rewriters configured for \"%s\"\n", pszFilename);
+        ScmVerbose(NULL, 4, "skipping '%s': no rewriters configured\n", pszFilename);
         return VINF_SUCCESS;
     }
-    ScmVerbose(&State, 4, "matched \"%s\"\n", pCfg->pszFilePattern);
+    ScmVerbose(pState, 4, "matched \"%s\"\n", pCfg->pszFilePattern);
 
     /*
      * Create an input stream from the file and check that it's text.
@@ -2800,7 +3479,7 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
     }
     if (ScmStreamIsText(&Stream1))
     {
-        ScmVerbose(&State, 3, NULL);
+        ScmVerbose(pState, 3, NULL);
 
         /*
          * Gather SCM and editor settings from the stream.
@@ -2828,7 +3507,7 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
                     PSCMSTREAM  pOut      = &Stream2;
                     for (size_t iRw = 0; iRw < pCfg->cRewriters; iRw++)
                     {
-                        bool fRc = pCfg->papfnRewriter[iRw](&State, pIn, pOut, pBaseSettings);
+                        bool fRc = pCfg->papfnRewriter[iRw](pState, pIn, pOut, pBaseSettings);
                         if (fRc)
                         {
                             PSCMSTREAM pTmp = pOut;
@@ -2840,29 +3519,55 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
                         ScmStreamRewindForWriting(pOut);
                     }
 
-                    /*
-                     * If rewritten, write it back to disk.
-                     */
-                    if (fModified)
+                    rc = ScmStreamGetStatus(&Stream1);
+                    if (RT_SUCCESS(rc))
+                        rc = ScmStreamGetStatus(&Stream2);
+                    if (RT_SUCCESS(rc))
+                        rc = ScmStreamGetStatus(&Stream3);
+                    if (RT_SUCCESS(rc))
                     {
-                        if (!g_fDryRun)
+                        /*
+                         * If rewritten, write it back to disk.
+                         */
+                        if (fModified)
                         {
-                            ScmVerbose(&State, 1, "Writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
-                            rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
-                            if (RT_FAILURE(rc))
-                                RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                            if (!g_fDryRun)
+                            {
+                                ScmVerbose(pState, 1, "writing modified file to \"%s%s\"\n", pszFilename, g_pszChangedSuff);
+                                rc = ScmStreamWriteToFile(pIn, "%s%s", pszFilename, g_pszChangedSuff);
+                                if (RT_FAILURE(rc))
+                                    RTMsgError("Error writing '%s%s': %Rrc\n", pszFilename, g_pszChangedSuff, rc);
+                            }
+                            else
+                            {
+                                ScmVerbose(pState, 1, NULL);
+                                ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
+                                               g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, pBaseSettings->cchTab, g_pStdOut);
+                                ScmVerbose(pState, 3, "would have modified the file \"%s%s\"\n", pszFilename, g_pszChangedSuff);
+                                scmSvnDisplayChanges(pState);
+                            }
                         }
-                        else
+
+                        /*
+                         * If pending SVN property changes, apply them.
+                         */
+                        if (pState->cSvnPropChanges && RT_SUCCESS(rc))
                         {
-                            ScmVerbose(&State, 1, NULL);
-                            ScmDiffStreams(pszFilename, &Stream1, pIn, g_fDiffIgnoreEol, g_fDiffIgnoreLeadingWS,
-                                           g_fDiffIgnoreTrailingWS, g_fDiffSpecialChars, pBaseSettings->cchTab, g_pStdOut);
-                            ScmVerbose(&State, 3, "Would have modified the file \"%s%s\"\n", pszFilename, g_pszChangedSuff);
+                            if (!g_fDryRun)
+                            {
+                                rc = scmSvnApplyChanges(pState);
+                                if (RT_FAILURE(rc))
+                                    RTMsgError("%s: failed to apply SVN property changes (%Rrc)\n", pszFilename, rc);
+                            }
+                            else
+                                scmSvnDisplayChanges(pState);
                         }
+
+                        if (!fModified && !pState->cSvnPropChanges);
+                            ScmVerbose(pState, 3, "no change\n", pszFilename);
                     }
                     else
-                        ScmVerbose(&State, 3, "No change\n", pszFilename);
-
+                        RTMsgError("%s: stream error %Rrc\n", pszFilename);
                     ScmStreamDelete(&Stream3);
                 }
                 else
@@ -2876,7 +3581,7 @@ static int scmProcessFileInner(const char *pszFilename, const char *pszBasename,
             RTMsgError("scmSettingsBaseLoadFromDocument: %Rrc\n", rc);
     }
     else
-        ScmVerbose(&State, 4, "not text file: \"%s\"\n", pszFilename);
+        ScmVerbose(pState, 4, "not text file: \"%s\"\n", pszFilename);
     ScmStreamDelete(&Stream1);
 
     return rc;
@@ -2902,7 +3607,22 @@ static int scmProcessFile(const char *pszFilename, const char *pszBasename, size
     int rc = scmSettingsStackMakeFileBase(pSettingsStack, pszFilename, pszBasename, cchBasename, &Base);
     if (RT_SUCCESS(rc))
     {
-        rc = scmProcessFileInner(pszFilename, pszBasename, cchBasename, &Base);
+        SCMRWSTATE State;
+        State.fFirst           = false;
+        State.pszFilename      = pszFilename;
+        State.cSvnPropChanges  = 0;
+        State.paSvnPropChanges = NULL;
+
+        rc = scmProcessFileInner(&State, pszFilename, pszBasename, cchBasename, &Base);
+
+        size_t i = State.cSvnPropChanges;
+        while (i-- > 0)
+        {
+            RTStrFree(State.paSvnPropChanges[i].pszName);
+            RTStrFree(State.paSvnPropChanges[i].pszValue);
+        }
+        RTMemFree(State.paSvnPropChanges);
+
         scmSettingsBaseDelete(&Base);
     }
     return rc;
@@ -2991,10 +3711,14 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
     {
         /* Read the next entry. */
         rc = RTDirRead(pDir, pEntry, NULL);
-        if (RT_FAILURE(rc) && rc != VERR_NO_MORE_FILES)
-            RTMsgError("RTDirRead -> %Rrc\n", rc);
         if (RT_FAILURE(rc))
+        {
+            if (rc == VERR_NO_MORE_FILES)
+                rc = VINF_SUCCESS;
+            else
+                RTMsgError("RTDirRead -> %Rrc\n", rc);
             break;
+        }
 
         /* Skip '.' and '..'. */
         if (    pEntry->szName[0] == '.'
@@ -3052,7 +3776,7 @@ static int scmProcessDirTreeRecursion(char *pszBuf, size_t cchDir, PRTDIRENTRY p
             break;
     }
     RTDirClose(pDir);
-    return RT_SUCCESS(rc) ? 0 : 1;
+    return rc;
 
 }
 
@@ -3205,7 +3929,9 @@ int main(int argc, char **argv)
                     {
                         fAdvanceTwo = i + 1 < RT_ELEMENTS(s_aOpts)
                                    && (   strstr(s_aOpts[i+1].pszLong, "-no-") != NULL
-                                       || strstr(s_aOpts[i+1].pszLong, "-not-") != NULL);
+                                       || strstr(s_aOpts[i+1].pszLong, "-not-") != NULL
+                                       || strstr(s_aOpts[i+1].pszLong, "-dont-") != NULL
+                                      );
                         if (fAdvanceTwo)
                             RTPrintf("  %s, %s\n", s_aOpts[i].pszLong, s_aOpts[i + 1].pszLong);
                         else
@@ -3224,6 +3950,7 @@ int main(int argc, char **argv)
                         case SCMOPT_STRIP_TRAILING_BLANKS:  RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingBlanks); break;
                         case SCMOPT_STRIP_TRAILING_LINES:   RTPrintf("      Default: %RTbool\n", g_Defaults.fStripTrailingLines); break;
                         case SCMOPT_ONLY_SVN_DIRS:          RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnDirs); break;
+                        case SCMOPT_ONLY_SVN_FILES:         RTPrintf("      Default: %RTbool\n", g_Defaults.fOnlySvnFiles); break;
                         case SCMOPT_TAB_SIZE:               RTPrintf("      Default: %u\n", g_Defaults.cchTab); break;
                         case SCMOPT_FILTER_OUT_DIRS:        RTPrintf("      Default: %s\n", g_Defaults.pszFilterOutDirs); break;
                         case SCMOPT_FILTER_FILES:           RTPrintf("      Default: %s\n", g_Defaults.pszFilterFiles); break;
