@@ -57,9 +57,9 @@ typedef RTNETADDRIPV4 const *PCRTNETADDRIPV4;
  */
 typedef RTUINT128U RTNETADDRIPV6;
 AssertCompileSize(RTNETADDRIPV6, 16);
-/** Pointer to a IPv4 address. */
+/** Pointer to a IPv6 address. */
 typedef RTNETADDRIPV6 *PRTNETADDRIPV6;
-/** Pointer to a const IPv4 address. */
+/** Pointer to a const IPv6 address. */
 typedef RTNETADDRIPV6 const *PCRTNETADDRIPV6;
 
 /**
@@ -81,7 +81,9 @@ typedef RTNETADDRIPX *PRTNETADDRIPX;
 typedef RTNETADDRIPX const *PCRTNETADDRIPX;
 
 /**
- * Address union.
+ * Network address union.
+ *
+ * @remarks The size of this structure may change in the future.
  */
 typedef union RTNETADDRU
 {
@@ -108,6 +110,55 @@ typedef RTNETADDRU *PRTNETADDRU;
 /** Pointer to a const address union. */
 typedef RTNETADDRU const *PCRTNETADDRU;
 
+/**
+ * Network address type.
+ *
+ * @remarks The value assignments may change in the future.
+ */
+typedef enum RTNETADDRTYPE
+{
+    /** The invalid 0 entry. */
+    RTNETADDRTYPE_INVALID = 0,
+    /** IP version 4. */
+    RTNETADDRTYPE_IPV4,
+    /** IP version 6. */
+    RTNETADDRTYPE_IPV6,
+    /** IPX. */
+    RTNETADDRTYPE_IPX,
+    /** MAC address. */
+    RTNETADDRTYPE_MAC,
+    /** The end of the valid values. */
+    RTNETADDRTYPE_END,
+    /** The usual 32-bit hack. */
+    RTNETADDRTYPE_32_BIT_HACK = 0x7fffffff
+} RTNETADDRTYPE;
+/** Pointer to a network address type. */
+typedef RTNETADDRTYPE *PRTNETADDRTYPE;
+/** Pointer to a const network address type. */
+typedef RTNETADDRTYPE const  *PCRTNETADDRTYPE;
+
+/**
+ * Network address.
+ *
+ * @remarks The size and type values may change.
+ */
+typedef struct RTNETADDR
+{
+    /** The address union. */
+    RTNETADDRU      uAddr;
+    /** Indicates which view of @a u that is valid. */
+    RTNETADDRTYPE   enmType;
+    /** The port number for IPv4 and IPv6 addresses.  This is set to
+     *  RTNETADDR_NA_PORT if not applicable. */
+    uint32_t        uPort;
+} RTNETADDR;
+/** Pointer to a network address. */
+typedef RTNETADDR *PRTNETADDR;
+/** Pointer to a const network address. */
+typedef RTNETADDR const *PCRTNETADDR;
+
+/** The not applicable value of  RTNETADDR::uPort value use to inid. */
+#define RTNETADDR_PORT_NA       UINT32_MAX
 
 /**
  * Ethernet header.
