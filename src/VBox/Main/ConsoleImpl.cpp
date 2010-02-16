@@ -583,21 +583,21 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, Bstr("RDONLYGUEST"));
         RTStrFree(pszPropertyName);
     }
 
@@ -1189,9 +1189,9 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
 #ifdef VBOX_WITH_GUEST_PROPS
 
 // static
-DECLCALLBACK(int)
-Console::doGuestPropNotification(void *pvExtension, uint32_t u32Function,
-                                 void *pvParms, uint32_t cbParms)
+DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
+                                                   uint32_t u32Function,
+                                                   void *pvParms, uint32_t cbParms)
 {
     using namespace guestProp;
 
@@ -1211,27 +1211,19 @@ Console::doGuestPropNotification(void *pvExtension, uint32_t u32Function,
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
-    if (   !name.isNull()
-        && (!value.isNull() || pCBData->pcszValue == NULL)
-        && (!flags.isNull() || pCBData->pcszFlags == NULL)
-       )
-    {
-        ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
-        HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
-                                                              value,
-                                                              pCBData->u64Timestamp,
-                                                              flags);
-        if (SUCCEEDED(hrc))
-            rc = VINF_SUCCESS;
-        else
-        {
-            LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
-                     pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
-            rc = Global::vboxStatusCodeFromCOM(hrc);
-        }
-    }
+    ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
+    HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
+                                                          value,
+                                                          pCBData->u64Timestamp,
+                                                          flags);
+    if (SUCCEEDED(hrc))
+        rc = VINF_SUCCESS;
     else
-        rc = VERR_NO_MEMORY;
+    {
+        LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+                    pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+        rc = Global::vboxStatusCodeFromCOM(hrc);
+    }
     return rc;
 }
 
@@ -2593,7 +2585,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
 STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgNotNull(aAddress);
+    CheckComArgStrNotEmptyOrNull(aAddress);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;
@@ -2660,11 +2652,10 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 #endif  /* !VBOX_WITH_USB */
 }
 
-STDMETHODIMP
-Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
+STDMETHODIMP Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aHostPath);
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull(aHostPath);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2731,7 +2722,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 
 STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2797,7 +2788,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName='%ls' mMachineState=%08X\n", aName, mMachineState));
 
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -5033,7 +5024,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
                 /* a valid host interface must have been set */
                 Bstr hostif;
                 adapter->COMGETTER(HostInterface)(hostif.asOutParam());
-                if (!hostif)
+                if (hostif.isEmpty())
                 {
                     return setError(VBOX_E_HOST_ERROR,
                         tr("VM cannot start because host interface networking requires a host interface name to be set"));
@@ -5089,7 +5080,7 @@ HRESULT Console::powerUp(IProgress **aProgress, bool aPaused)
     {
         rc = mMachine->COMGETTER(StateFilePath)(savedStateFile.asOutParam());
         if (FAILED(rc)) return rc;
-        ComAssertRet(!!savedStateFile, E_FAIL);
+        ComAssertRet(!savedStateFile.isEmpty(), E_FAIL);
         int vrc = SSMR3ValidateFile(Utf8Str(savedStateFile).c_str(), false /* fChecksumIt */);
         if (RT_FAILURE(vrc))
             return setError(VBOX_E_FILE_ERROR,
@@ -5817,7 +5808,7 @@ bool Console::findOtherSharedFolder(IN_BSTR aName,
 HRESULT Console::createSharedFolder(CBSTR aName, SharedFolderData aData)
 {
     ComAssertRet(aName && *aName, E_FAIL);
-    ComAssertRet(aData.mHostPath, E_FAIL);
+    ComAssertRet(!aData.mHostPath.isEmpty(), E_FAIL);
 
     /* sanity checks */
     AssertReturn(mpVM, E_FAIL);
@@ -7724,8 +7715,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * state file is non-null only when the VM is paused
          * (i.e. creating a snapshot online)
          */
-        ComAssertThrow(    (!pTask->bstrSavedStateFile.isNull() && pTask->fTakingSnapshotOnline)
-                        || (pTask->bstrSavedStateFile.isNull() && !pTask->fTakingSnapshotOnline),
+        ComAssertThrow(    (!pTask->bstrSavedStateFile.isEmpty() && pTask->fTakingSnapshotOnline)
+                        || (pTask->bstrSavedStateFile.isEmpty() && !pTask->fTakingSnapshotOnline),
                        rc = E_FAIL);
 
         /* sync the state with the server */

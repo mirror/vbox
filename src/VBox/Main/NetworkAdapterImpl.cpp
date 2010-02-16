@@ -311,7 +311,7 @@ STDMETHODIMP NetworkAdapter::COMGETTER(MACAddress)(BSTR *aMACAddress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    ComAssertRet(!!mData->mMACAddress, E_FAIL);
+    ComAssertRet(!mData->mMACAddress.isEmpty(), E_FAIL);
 
     mData->mMACAddress.cloneTo(aMACAddress);
 
@@ -1025,8 +1025,6 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     {
         case NetworkAttachmentType_NAT:
             mData->mNATNetwork = data.strName;
-            if (mData->mNATNetwork.isNull())
-                mData->mNATNetwork = "";
             rc = AttachToNAT();
             if (FAILED(rc)) return rc;
         break;
@@ -1040,7 +1038,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
 
         case NetworkAttachmentType_Internal:
             mData->mInternalNetwork = data.strName;
-            Assert(!mData->mInternalNetwork.isNull());
+            Assert(!mData->mInternalNetwork.isEmpty());
 
             rc = AttachToInternalNetwork();
             if (FAILED(rc)) return rc;

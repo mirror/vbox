@@ -500,7 +500,7 @@ void Appliance::disksWeight(uint32_t &ulTotalMB, uint32_t &cDisks) const
 
 }
 
-HRESULT Appliance::setUpProgressFS(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
+HRESULT Appliance::setUpProgressFS(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription)
 {
     HRESULT rc;
 
@@ -531,16 +531,16 @@ HRESULT Appliance::setUpProgressFS(ComObjPtr<Progress> &pProgress, const Bstr &b
          ulTotalMB, cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription,
+                         strDescription,
                          TRUE /* aCancelable */,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         bstrDescription, // CBSTR bstrFirstOperationDescription,
+                         strDescription, // CBSTR bstrFirstOperationDescription,
                          m->ulWeightPerOperation); // ULONG ulFirstOperationWeight,
     return rc;
 }
 
-HRESULT Appliance::setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
+HRESULT Appliance::setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription)
 {
     HRESULT rc;
 
@@ -571,16 +571,16 @@ HRESULT Appliance::setUpProgressImportS3(ComObjPtr<Progress> &pProgress, const B
          ulTotalMB, cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription,
+                         strDescription,
                          TRUE /* aCancelable */,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         Bstr(tr("Init")), // CBSTR bstrFirstOperationDescription,
+                         tr("Init"), // CBSTR bstrFirstOperationDescription,
                          ulInitWeight); // ULONG ulFirstOperationWeight,
     return rc;
 }
 
-HRESULT Appliance::setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bstr &bstrDescription)
+HRESULT Appliance::setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Utf8Str &strDescription)
 {
     HRESULT rc;
 
@@ -613,11 +613,11 @@ HRESULT Appliance::setUpProgressWriteS3(ComObjPtr<Progress> &pProgress, const Bs
          ulTotalMB, cDisks, cOperations, ulTotalOperationsWeight, m->ulWeightPerOperation));
 
     rc = pProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
-                         bstrDescription,
+                         strDescription,
                          TRUE /* aCancelable */,
                          cOperations, // ULONG cOperations,
                          ulTotalOperationsWeight, // ULONG ulTotalOperationsWeight,
-                         bstrDescription, // CBSTR bstrFirstOperationDescription,
+                         strDescription, // CBSTR bstrFirstOperationDescription,
                          ulOVFCreationWeight); // ULONG ulFirstOperationWeight,
     return rc;
 }
@@ -836,8 +836,8 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
     /* Copy the current location info to the task */
     task->locInfo = aLocInfo;
 
-    Bstr progressDesc = BstrFmt(tr("Import appliance '%s'"),
-                                aLocInfo.strPath.c_str());
+    Utf8Str progressDesc = Utf8StrFmt(tr("Import appliance '%s'"),
+                                      aLocInfo.strPath.c_str());
 
     HRESULT rc = S_OK;
 
@@ -1568,7 +1568,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                                     mhda.lChannel,
                                                     mhda.lDevice,
                                                     DeviceType_Floppy,
-                                                    Bstr(""));
+                                                    NULL);
                         if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
@@ -1617,7 +1617,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                                     mhda.lChannel,
                                                     mhda.lDevice,
                                                     DeviceType_DVD,
-                                                    Bstr(""));
+                                                    NULL);
                         if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
@@ -1743,7 +1743,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             /* First open the existing disk image */
                             rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
                                                            AccessMode_ReadOnly,
-                                                           false, Bstr(""), false, Bstr(""),
+                                                           false, NULL, false, NULL,
                                                            srcHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             fSourceHdNeedsClosing = true;
@@ -4280,9 +4280,6 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
                                                       IN_BSTR aVboxValue,
                                                       IN_BSTR aExtraConfigValue)
 {
-    CheckComArgNotNull(aVboxValue);
-    CheckComArgNotNull(aExtraConfigValue);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
