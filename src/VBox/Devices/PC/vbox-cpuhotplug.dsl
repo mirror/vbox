@@ -40,17 +40,6 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
         Name (_HID, "ACPI0004")                                            \
         Name (_UID, sckuid)                                                \
                                                                            \
-        Method (_STA, 0, NotSerialized)                                    \
-        {                                                                  \
-            IF (CPCK(id))                                                  \
-            {                                                              \
-                Return (0xF)                                               \
-            }                                                              \
-            Else                                                           \
-            {                                                              \
-                Return (0x0)                                               \
-            }                                                              \
-        }                                                                  \
                                                                            \
         Processor (cpu, /* Name */                                         \
                    id,  /* Id */                                           \
@@ -132,11 +121,11 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
     Scope (\_GPE)
     {
 
-#define CHECK_CPU(cpu, sck)          \
-    IF (LEqual(Local0, cpu))      \
-    {                                \
-        Notify (\_SB.sck, Local1) \
-    }                                \
+#define CHECK_CPU(cpu, sck, cpuname)      \
+    IF (LEqual(Local0, cpu))              \
+    {                                     \
+        Notify (\_SB.sck.cpuname, Local1) \
+    }                                     \
 
         // GPE bit 1 handler
         // GPE.1 must be set and SCI raised when
@@ -147,37 +136,37 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
             Store(\_SB.CPEV, Local0)
             Store(\_SB.CPET, Local1)
 
-            CHECK_CPU(0x01, SCK1)
-            CHECK_CPU(0x02, SCK2)
-            CHECK_CPU(0x03, SCK3)
-            CHECK_CPU(0x04, SCK4)
-            CHECK_CPU(0x05, SCK5)
-            CHECK_CPU(0x06, SCK6)
-            CHECK_CPU(0x07, SCK7)
-            CHECK_CPU(0x08, SCK8)
-            CHECK_CPU(0x09, SCK9)
-            CHECK_CPU(0x0a, SCKA)
-            CHECK_CPU(0x0b, SCKB)
-            CHECK_CPU(0x0c, SCKC)
-            CHECK_CPU(0x0d, SCKD)
-            CHECK_CPU(0x0e, SCKE)
-            CHECK_CPU(0x0f, SCKF)
-            CHECK_CPU(0x10, SCKG)
-            CHECK_CPU(0x11, SCKH)
-            CHECK_CPU(0x12, SCKI)
-            CHECK_CPU(0x13, SCKJ)
-            CHECK_CPU(0x14, SCKK)
-            CHECK_CPU(0x15, SCKL)
-            CHECK_CPU(0x16, SCKM)
-            CHECK_CPU(0x17, SCKN)
-            CHECK_CPU(0x18, SCKO)
-            CHECK_CPU(0x19, SCKP)
-            CHECK_CPU(0x1a, SCKQ)
-            CHECK_CPU(0x1b, SCKR)
-            CHECK_CPU(0x1c, SCKS)
-            CHECK_CPU(0x1d, SCKT)
-            CHECK_CPU(0x1e, SCKU)
-            CHECK_CPU(0x1f, SCKV)
+            CHECK_CPU(0x01, SCK1, CPU1)
+            CHECK_CPU(0x02, SCK2, CPU2)
+            CHECK_CPU(0x03, SCK3, CPU3)
+            CHECK_CPU(0x04, SCK4, CPU4)
+            CHECK_CPU(0x05, SCK5, CPU5)
+            CHECK_CPU(0x06, SCK6, CPU6)
+            CHECK_CPU(0x07, SCK7, CPU7)
+            CHECK_CPU(0x08, SCK8, CPU8)
+            CHECK_CPU(0x09, SCK9, CPU9)
+            CHECK_CPU(0x0a, SCKA, CPUA)
+            CHECK_CPU(0x0b, SCKB, CPUB)
+            CHECK_CPU(0x0c, SCKC, CPUC)
+            CHECK_CPU(0x0d, SCKD, CPUD)
+            CHECK_CPU(0x0e, SCKE, CPUE)
+            CHECK_CPU(0x0f, SCKF, CPUF)
+            CHECK_CPU(0x10, SCKG, CPUG)
+            CHECK_CPU(0x11, SCKH, CPUH)
+            CHECK_CPU(0x12, SCKI, CPUI)
+            CHECK_CPU(0x13, SCKJ, CPUJ)
+            CHECK_CPU(0x14, SCKK, CPUK)
+            CHECK_CPU(0x15, SCKL, CPUL)
+            CHECK_CPU(0x16, SCKM, CPUM)
+            CHECK_CPU(0x17, SCKN, CPUN)
+            CHECK_CPU(0x18, SCKO, CPUO)
+            CHECK_CPU(0x19, SCKP, CPUP)
+            CHECK_CPU(0x1a, SCKQ, CPUQ)
+            CHECK_CPU(0x1b, SCKR, CPUR)
+            CHECK_CPU(0x1c, SCKS, CPUS)
+            CHECK_CPU(0x1d, SCKT, CPUT)
+            CHECK_CPU(0x1e, SCKU, CPUU)
+            CHECK_CPU(0x1f, SCKV, CPUV)
         }
 
 #undef CHECK_CPU
