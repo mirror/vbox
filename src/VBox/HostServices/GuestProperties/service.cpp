@@ -1157,13 +1157,9 @@ void Service::doNotifications(const char *pszProperty, uint64_t u64Timestamp)
  * @thread  request thread
  */
 /* static */
-DECLCALLBACK(int) Service::reqNotify(PFNHGCMSVCEXT pfnCallback,
-                                     void *pvData,
-                                     char *pszName,
-                                     char *pszValue,
-                                     uint32_t u32TimeHigh,
-                                     uint32_t u32TimeLow,
-                                     char *pszFlags)
+DECLCALLBACK(int) Service::reqNotify(PFNHGCMSVCEXT pfnCallback, void *pvData,
+                                     char *pszName, char *pszValue, uint32_t u32TimeHigh,
+                                     uint32_t u32TimeLow, char *pszFlags)
 {
     LogFlowFunc (("pfnCallback=%p, pvData=%p, pszName=%p, pszValue=%p, u32TimeHigh=%u, u32TimeLow=%u, pszFlags=%p\n", pfnCallback, pvData, pszName, pszValue, u32TimeHigh, u32TimeLow, pszFlags));
     LogFlowFunc (("pszName=%s\n", pszName));

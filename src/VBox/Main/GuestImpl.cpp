@@ -126,15 +126,15 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // redirect the call to IMachine if no additions are installed
-    if (mData.mAdditionsVersion.isEmpty())
-        return mParent->machine()->COMGETTER(OSTypeId)(aOSTypeId);
+    if (mData.mAdditionsVersion.isNull())
+        return mParent->machine()->COMGETTER(OSTypeId) (aOSTypeId);
 
     mData.mOSTypeId.cloneTo(aOSTypeId);
 
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMGETTER(AdditionsActive)(BOOL *aAdditionsActive)
+STDMETHODIMP Guest::COMGETTER(AdditionsActive) (BOOL *aAdditionsActive)
 {
     CheckComArgOutPointerValid(aAdditionsActive);
 
@@ -261,6 +261,10 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                                    IN_BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
+    CheckComArgNotNull(aUserName);
+    CheckComArgNotNull(aPassword);
+    CheckComArgNotNull(aDomain);
+
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -273,10 +277,8 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
             u32Flags = VMMDEV_SETCREDENTIALS_NOLOCALLOGON;
 
         vmmDev->getVMMDevPort()->pfnSetCredentials(vmmDev->getVMMDevPort(),
-                                                   Utf8Str(aUserName).raw(),
-                                                   Utf8Str(aPassword).raw(),
-                                                   Utf8Str(aDomain).raw(),
-                                                   u32Flags);
+            Utf8Str(aUserName).raw(), Utf8Str(aPassword).raw(),
+            Utf8Str(aDomain).raw(), u32Flags);
         return S_OK;
     }
 
@@ -314,7 +316,7 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 
 void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
 {
-    Assert(aVersion.isEmpty() || !aVersion.isEmpty());
+    Assert(aVersion.isNull() || !aVersion.isEmpty());
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
@@ -322,9 +324,9 @@ void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData.mAdditionsVersion = aVersion;
-    mData.mAdditionsActive = !aVersion.isEmpty();
+    mData.mAdditionsActive = !aVersion.isNull();
 
-    mData.mOSTypeId = Global::OSTypeId(aOsType);
+    mData.mOSTypeId = Global::OSTypeId (aOsType);
 }
 
 void Guest::setSupportsSeamless (BOOL aSupportsSeamless)

@@ -169,7 +169,7 @@ void ErrorInfo::init (IUnknown *aI, const GUID &aIID, bool aKeepObj /* = false *
     if (mIsBasicAvailable)
     {
         mCalleeIID = aIID;
-        GetInterfaceNameByIID(aIID, mCalleeName.asOutParam());
+        GetInterfaceNameByIID (aIID, mCalleeName.asOutParam());
     }
 }
 

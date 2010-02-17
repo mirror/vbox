@@ -247,13 +247,11 @@ static int handleGetGuestProperty(HandlerArg *a)
         if (!value)
             RTPrintf("No value set!\n");
         if (value)
-        {
             RTPrintf("Value: %lS\n", value.raw());
-            if (verbose)
-            {
-                RTPrintf("Timestamp: %lld\n", u64Timestamp);
-                RTPrintf("Flags: %lS\n", flags.raw());
-            }
+        if (value && verbose)
+        {
+            RTPrintf("Timestamp: %lld\n", u64Timestamp);
+            RTPrintf("Flags: %lS\n", flags.raw());
         }
     }
     return SUCCEEDED(rc) ? 0 : 1;

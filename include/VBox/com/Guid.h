@@ -96,7 +96,7 @@ public:
     Guid(const Bstr &that)
     {
         ::RTUuidClear (&uuid);
-        if (!that.isEmpty())
+        if (!that.isNull())
            ::RTUuidFromUtf16(&uuid, that.raw());
         refresh();
     }
@@ -144,7 +144,7 @@ public:
         return Utf8Str(buf);
     }
 
-    Bstr toUtf16() const
+    Bstr toUtf16 () const
     {
         if (isEmpty())
           return Bstr();

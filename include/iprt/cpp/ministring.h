@@ -44,12 +44,6 @@ namespace iprt
  * "MiniString" is a small C++ string class that does not depend on anything
  * else except IPRT memory management functions.  Semantics are like in
  * std::string, except it can do a lot less.
- *
- * Note that MiniString does not differentiate between NULL strings and
- * empty strings. In other words, MiniString("") and MiniString(NULL)
- * behave the same. In both cases, MiniString allocates no memory, reports
- * a zero length and zero allocated bytes for both, and returns an empty
- * C string from c_str().
  */
 #ifdef VBOX
  /** @remarks Much of the code in here used to be in com::Utf8Str so that
@@ -76,7 +70,7 @@ public:
     /**
      * Creates a copy of another MiniString.
      *
-     * This allocates s.length() + 1 bytes for the new instance, unless s is empty.
+     * This allocates s.length() + 1 bytes for the new instance.
      *
      * @param   s               The source string.
      *
@@ -88,9 +82,9 @@ public:
     }
 
     /**
-     * Creates a copy of a C string.
+     * Creates a copy of another MiniString.
      *
-     * This allocates strlen(pcsz) + 1 bytes for the new instance, unless s is empty.
+     * This allocates strlen(pcsz) + 1 bytes for the new instance.
      *
      * @param   pcsz            The source string.
      *
@@ -128,7 +122,7 @@ public:
      * The allocated buffer size (in bytes).
      *
      * Returns the number of bytes allocated in the internal string buffer, which is
-     * at least length() + 1 if length() > 0. Returns 0 for an empty string.
+     * at least length() + 1 if length() > 0.
      *
      * @returns m_cbAllocated.
      */
@@ -280,7 +274,7 @@ public:
      *
      * Returns the byte at the given index, or a null byte if the index is not
      * smaller than length().  This does _not_ count codepoints but simply points
-     * into the member C string; the result may not be a valid UTF-8 character.
+     * into the member C string.
      *
      * @param   i       The index into the string buffer.
      * @returns char at the index or null.
@@ -294,30 +288,26 @@ public:
 
     /**
      * Returns the contained string as a C-style const char* pointer.
-     * This never returns NULL; if the string is empty, returns a
-     * pointer to static null byte.
      *
      * @returns const pointer to C-style string.
      */
     inline const char *c_str() const
     {
-        return (m_psz) ? m_psz : "";
+        return m_psz;
     }
 
     /**
      * Like c_str(), for compatibility with lots of VirtualBox Main code.
-     * This never returns NULL; if the string is empty, returns a
-     * pointer to static null byte.
      *
      * @returns const pointer to C-style string.
      */
     inline const char *raw() const
     {
-        return (m_psz) ? m_psz : "";
+        return m_psz;
     }
 
     /**
-     * Empty string or not?
+     * Emptry string or not?
      *
      * Returns true if the member string has no length.  This states nothing about
      * how much memory might be allocated.
@@ -481,6 +471,11 @@ public:
 protected:
 
     /**
+     * Hide operator bool() to force people to use isEmpty() explicitly.
+     */
+    operator bool() const { return false; }
+
+    /**
      * Destructor implementation, also used to clean up in operator=() before
      * assigning a new string.
      */
@@ -496,7 +491,8 @@ protected:
     }
 
     /**
-     * Protected internal helper to copy a string, ignoring the previous object state.
+     * Protected internal helper for copy a string that completely ignors the
+     * current object state.
      *
      * copyFrom() unconditionally sets the members to a copy of the given other
      * strings and makes no assumptions about previous contents. Can therefore be
@@ -504,7 +500,7 @@ protected:
      * and in assignments after having called cleanup().
      *
      * This variant copies from another MiniString and is fast since
-     * the length of the source string is known.
+     * the length of source string is known.
      *
      * @param   s               The source string.
      *
@@ -536,7 +532,8 @@ protected:
     }
 
     /**
-     * Protected internal helper to copy a string, ignoring the previous object state.
+     * Protected internal helper for copy a string that completely ignors the
+     * current object state.
      *
      * See copyFrom() above.
      *
@@ -573,15 +570,6 @@ protected:
             m_psz = NULL;
         }
     }
-
-private:
-
-    /**
-     * Hide operator bool() to force people to use isEmpty() explicitly.
-     */
-    operator bool() const;
-
-protected:
 
     char    *m_psz;                     /**< The string buffer. */
     size_t  m_cbLength;                 /**< strlen(m_psz) - i.e. no terminator included. */
