@@ -32,9 +32,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/system.h>
-#include <iprt/initterm.h>
 #include <iprt/string.h>
-#include <iprt/stream.h>
+#include <iprt/test.h>
 
 
 /*******************************************************************************
@@ -45,27 +44,28 @@ static int g_cErrors = 0;
 
 int main()
 {
-    RTR3Init();
-
-    RTPrintf("tstSystemQueryOsInfo: TESTINGS...\n");
+    RTTEST hTest;
+    int rc = RTTestInitAndCreate("tstRTSystemQueryOsInfo", &hTest);
+    if (rc)
+        return rc;
+    RTTestBanner(hTest);
 
     /*
      * Simple stuff.
      */
     char szInfo[256];
-    int rc;
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
-    RTPrintf("tstSystemQueryOsInfo: PRODUCT: \"%s\", rc=%Rrc\n", szInfo, rc);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "PRODUCT: \"%s\", rc=%Rrc\n", szInfo, rc);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    RTPrintf("tstSystemQueryOsInfo: RELEASE: \"%s\", rc=%Rrc\n", szInfo, rc);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "RELEASE: \"%s\", rc=%Rrc\n", szInfo, rc);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_VERSION, szInfo, sizeof(szInfo));
-    RTPrintf("tstSystemQueryOsInfo: VERSION: \"%s\", rc=%Rrc\n", szInfo, rc);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "VERSION: \"%s\", rc=%Rrc\n", szInfo, rc);
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_SERVICE_PACK, szInfo, sizeof(szInfo));
-    RTPrintf("tstSystemQueryOsInfo: SERVICE_PACK: \"%s\", rc=%Rrc\n", szInfo, rc);
+    RTTestIPrintf(RTTESTLVL_ALWAYS, "SERVICE_PACK: \"%s\", rc=%Rrc\n", szInfo, rc);
 
     /*
      * Check that unsupported stuff is terminated correctly.
@@ -76,10 +76,11 @@ int main()
         rc = RTSystemQueryOSInfo((RTSYSOSINFO)i, szInfo, sizeof(szInfo));
         if (    rc == VERR_NOT_SUPPORTED
             &&  szInfo[0] != '\0')
-        {
-            RTPrintf("tstSystemQueryOsInfo: FAILED - level=%d, rc=VERR_NOT_SUPPORTED, buffer not terminated\n", i);
-            g_cErrors++;
-        }
+            RTTestIFailed("level=%d; unterminated buffer on VERR_NOT_SUPPORTED\n", i);
+        else if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
+            RTTESTI_CHECK(memchr(szInfo, '\0', sizeof(szInfo)) != NULL);
+        else if (rc != VERR_NOT_SUPPORTED)
+            RTTestIFailed("level=%d unexpected rc=%Rrc\n", i, rc);
     }
 
     /*
@@ -97,8 +98,7 @@ int main()
             for (size_t off = cch; off < sizeof(szInfo); off++)
                 if (szInfo[off] != 0x7f)
                 {
-                    RTPrintf("tstSystemQueryOsInfo: FAILED - level=%d, rc=%Rrc, cch=%zu, off=%zu: Wrote too much!\n", i, rc, cch, off);
-                    g_cErrors++;
+                    RTTestIFailed("level=%d, rc=%Rrc, cch=%zu, off=%zu: Wrote too much!\n", i, rc, cch, off);
                     break;
                 }
 
@@ -110,19 +110,12 @@ int main()
                 &&  !memchr(szInfo, '\0', cch))
             {
 
-                RTPrintf("tstSystemQueryOsInfo: FAILED - level=%d, rc=%Rrc, cch=%zu: Buffer not terminated!\n", i, rc, cch);
+                RTTestIFailed("level=%d, rc=%Rrc, cch=%zu: Buffer not terminated!\n", i, rc, cch);
                 g_cErrors++;
             }
         }
     }
 
-    /*
-     * Summarize and exit.
-     */
-    if (!g_cErrors)
-        RTPrintf("tstSystemQueryOsInfo: SUCCESS\n");
-    else
-        RTPrintf("tstSystemQueryOsInfo: FAILED - %d errors\n", g_cErrors);
-    return !!g_cErrors;
+    return RTTestSummaryAndDestroy(hTest);
 }
 

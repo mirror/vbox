@@ -407,6 +407,7 @@ tstStrToNum_SOURCES = tstStrToNum.cpp
 tstRTStrVersion_TEMPLATE = VBOXR3TSTEXE
 tstRTStrVersion_SOURCES = tstRTStrVersion.cpp
 
+tstSystemQueryOsInfo_TEMPLATE = VBOXR3TSTEXE
 tstSystemQueryOsInfo_SOURCES = tstSystemQueryOsInfo.cpp
 
 tstRTTemp_TEMPLATE = VBOXR3TSTEXE
