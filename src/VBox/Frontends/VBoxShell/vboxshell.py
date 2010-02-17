@@ -406,6 +406,16 @@ def guestStats(ctx,console,args):
             # likely not implemented
             pass
 
+def plugCpu(ctx,machine,session,args):
+    cpu = int(args)
+    print "Adding CPU %d..." %(cpu)
+    machine.HotPlugCPU(cpu)
+
+def unplugCpu(ctx,machine,session,args):
+    cpu = int(args)
+    print "Removing CPU %d..." %(cpu)
+    machine.HotUnplugCPU(cpu)
+
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
     vb=ctx['vb']
@@ -438,6 +448,8 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'screenshot':      lambda: takeScreenshot(ctx,console,args),
          'teleport':        lambda: teleport(ctx,session,console,args),
          'gueststats':      lambda: guestStats(ctx, console, args),
+         'plugcpu':         lambda: plugCpu(ctx, session.machine, session, args),
+         'unplugcpu':       lambda: unplugCpu(ctx, session.machine, session, args),
          }
     try:
         ops[cmd]()
@@ -782,6 +794,25 @@ def gueststatsCmd(ctx, args):
     cmdExistingVm(ctx, mach, 'gueststats', args[2:])
     return 0
 
+def plugcpuCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: plugcpu name cpuid"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'plugcpu', args[2])
+    return 0
+
+def unplugcpuCmd(ctx, args):
+    if (len(args) < 2):
+        print "usage: unplugcpu name cpuid"
+        return 0
+    mach = argsToMach(ctx,args)
+    if mach == None:
+        return 0
+    cmdExistingVm(ctx, mach, 'unplugcpu', args[2])
+    return 0
 
 def setvarCmd(ctx, args):
     if (len(args) < 4):
@@ -1198,6 +1229,8 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'getextra':['Get extra data, empty key lists all: getextra <vm|global> <key>', getExtraDataCmd, 0],
             'setextra':['Set extra data, empty value removes key: setextra <vm|global> <key> <value>', setExtraDataCmd, 0],
             'gueststats':['Print available guest stats (only Windows guests with additions so far): gueststats Win32', gueststatsCmd, 0],
+            'plugcpu':['Add a CPU to a running VM: plugcpu Win 1', plugcpuCmd, 0],
+            'unplugcpu':['Remove a CPU from a running VM: plugcpu Win 1', unplugcpuCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
