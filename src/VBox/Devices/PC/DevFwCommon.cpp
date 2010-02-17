@@ -35,6 +35,7 @@
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/uuid.h>
+#include <iprt/system.h>
 
 #include "../Builtins.h"
 #include "../Builtins2.h"
@@ -57,8 +58,8 @@ static const char   *s_szDefDmiBIOSVendor       = "innotek GmbH";
 static const char   *s_szDefDmiBIOSVersion      = "VirtualBox";
 static const char   *s_szDefDmiBIOSReleaseDate  = "12/01/2006";
 static const char   *s_szDefDmiSystemVendor     = "innotek GmbH";
-static const char   *s_szDefDmiSystemProduct    = "VirtualBox";
-static const char   *s_szDefDmiSystemVersion    = "1.2";
+static       char    s_szDefDmiSystemProduct[13]  = "VirtualBox";
+static       char    s_szDefDmiSystemVersion[4]   = "1.2";
 static const char   *s_szDefDmiSystemSerial     = "0";
 static const char   *s_szDefDmiSystemFamily     = "Virtual Machine";
 static const char   *s_szDefDmiChassisVendor    = "Sun Microsystems, Inc.";
@@ -295,14 +296,36 @@ static uint8_t fwCommonChecksum(const uint8_t * const au8Data, uint32_t u32Lengt
     return -u8Sum;
 }
 
-static bool sharedfwChecksumOk(const uint8_t * const au8Data, uint32_t u32Length)
+static bool fwCommonChecksumOk(const uint8_t * const au8Data, uint32_t u32Length)
 {
     uint8_t u8Sum = 0;
     for (size_t i = 0; i < u32Length; i++)
         u8Sum += au8Data[i];
     return (u8Sum == 0);
 }
+/*
+ * Macmini2,1 - matches Mac Mini
+ */
+static void fwCommonUseHostDMIStrings(void)
+{
+    int rc;
 
+    rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME,
+                                s_szDefDmiSystemProduct,
+                                sizeof s_szDefDmiSystemProduct);
+    if (RT_FAILURE(rc))
+    {
+        // ignore rc?
+    }
+
+    rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_VERSION,
+                                s_szDefDmiSystemVersion,
+                                sizeof s_szDefDmiSystemVersion);
+    if (RT_FAILURE(rc))
+    {
+        // ignore rc?
+    }
+}
 
 /**
  * Construct the DMI table.
@@ -406,10 +429,19 @@ int FwCommonPlantDMITable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, P
     bool fHideErrors = false;
 #endif
 
+    uint8_t fDmiUseHostInfo;
+    int rc = CFGMR3QueryU8Def(pCfg, "DmiUseHostInfo", &fDmiUseHostInfo, 1);
+    if (RT_FAILURE (rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"DmiUseHostInfo\""));
+
+    /* Sync up with host default DMI values */
+    if (fDmiUseHostInfo)
+        fwCommonUseHostDMIStrings();
+
     for  (;; fForceDefault = true, fHideErrors = false)
     {
         int  iStrNr;
-        int  rc;
         char szBuf[256];
         char *pszStr = (char *)pTable;
         char szDmiSystemUuid[64];
