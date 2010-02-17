@@ -52,16 +52,18 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     const char *pszSysFsName;
     switch (enmString)
     {
-        case RTSYSDMISTR_PRODUCT_NAME:      pszSysFsName = "devices/virtual/dmi/id/product_name"; break;
-        case RTSYSDMISTR_PRODUCT_VERSION:   pszSysFsName = "devices/virtual/dmi/id/product_version"; break;
-        case RTSYSDMISTR_PRODUCT_UUID:      pszSysFsName = "devices/virtual/dmi/id/product_uuid"; break;
-        case RTSYSDMISTR_PRODUCT_SERIAL:    pszSysFsName = "devices/virtual/dmi/id/product_serial"; break;
+        case RTSYSDMISTR_PRODUCT_NAME:      pszSysFsName = "id/product_name"; break;
+        case RTSYSDMISTR_PRODUCT_VERSION:   pszSysFsName = "id/product_version"; break;
+        case RTSYSDMISTR_PRODUCT_UUID:      pszSysFsName = "id/product_uuid"; break;
+        case RTSYSDMISTR_PRODUCT_SERIAL:    pszSysFsName = "id/product_serial"; break;
         default:
             return VERR_NOT_SUPPORTED;
     }
 
     int rc;
-    int fd = RTLinuxSysFsOpen(pszSysFsName);
+    int fd = RTLinuxSysFsOpen("devices/virtual/dmi/%s", pszSysFsName);
+    if (fd < 0)
+        fd = RTLinuxSysFsOpen("class/dmi/%s", pszSysFsName);
     if (fd >= 0)
     {
         /* Note! This will return VERR_BUFFER_OVERFLOW even if there is a
