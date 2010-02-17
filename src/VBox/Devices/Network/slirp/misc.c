@@ -151,9 +151,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
 {
     struct item *it;
     RTCritSectEnter(&zone->csZone);
-    if (   (zone->max_items != 0 && zone->cur_items >= zone->max_items)
-        || (zone->max_items == 0 && !LIST_EMPTY(&zone->free_items))
-        )
+    if (!LIST_EMPTY(&zone->free_items))
     {
         /*
          * @todo (r=vvl) here should be some
@@ -183,6 +181,8 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     LIST_INSERT_HEAD(&zone->used_items, it, list);
     zone->cur_items++;
     it->zone = zone;
+    if (zone->cur_items >= zone->max_items)
+        LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
 
     allocated:
     if (zone->pfInit)
@@ -368,6 +368,23 @@ void slirp_ext_m_free(PNATState pData, void *arg)
 
 static void zone_destroy(uma_zone_t zone)
 {
+    struct item *it;
+    RTCritSectEnter(&zone->csZone);
+    LogRel(("NAT: zone(nm:%s, used:%d)\n", zone->name, zone->cur_items));
+    /* freeing */
+    while (!LIST_EMPTY(&zone->free_items))
+    {
+        it = LIST_FIRST(&zone->free_items);
+        LIST_REMOVE(it, list);
+        RTMemFree(it);
+    }
+    while (!LIST_EMPTY(&zone->used_items))
+    {
+        it = LIST_FIRST(&zone->used_items);
+        LIST_REMOVE(it, list);
+        RTMemFree(it);
+    }
+    RTCritSectLeave(&zone->csZone);
     RTCritSectDelete(&zone->csZone);
     RTMemFree(zone);
 }
