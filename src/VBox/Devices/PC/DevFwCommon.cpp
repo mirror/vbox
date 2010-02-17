@@ -58,14 +58,17 @@ static const char   *s_szDefDmiBIOSVendor       = "innotek GmbH";
 static const char   *s_szDefDmiBIOSVersion      = "VirtualBox";
 static const char   *s_szDefDmiBIOSReleaseDate  = "12/01/2006";
 static const char   *s_szDefDmiSystemVendor     = "innotek GmbH";
-static       char    s_szDefDmiSystemProduct[13]  = "VirtualBox";
-static       char    s_szDefDmiSystemVersion[4]   = "1.2";
+static const char   *s_szDefDmiSystemProduct    = "VirtualBox";
+static const char   *s_szDefDmiSystemVersion    = "1.2";
 static const char   *s_szDefDmiSystemSerial     = "0";
 static const char   *s_szDefDmiSystemFamily     = "Virtual Machine";
 static const char   *s_szDefDmiChassisVendor    = "Sun Microsystems, Inc.";
 static const char   *s_szDefDmiChassisVersion   = "";
 static const char   *s_szDefDmiChassisSerial    = "";
 static const char   *s_szDefDmiChassisAssetTag  = "";
+
+static       char    g_szHostDmiSystemProduct[64];
+static       char    g_szHostDmiSystemVersion[64];
 
 
 /*******************************************************************************
@@ -303,6 +306,7 @@ static bool fwCommonChecksumOk(const uint8_t * const au8Data, uint32_t u32Length
         u8Sum += au8Data[i];
     return (u8Sum == 0);
 }
+
 /*
  * Macmini2,1 - matches Mac Mini
  */
@@ -311,19 +315,19 @@ static void fwCommonUseHostDMIStrings(void)
     int rc;
 
     rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME,
-                                s_szDefDmiSystemProduct,
-                                sizeof s_szDefDmiSystemProduct);
-    if (RT_FAILURE(rc))
+                                g_szHostDmiSystemProduct, sizeof(g_szHostDmiSystemProduct));
+    if (RT_SUCCESS(rc))
     {
-        // ignore rc?
+        s_szDefDmiSystemProduct = g_szHostDmiSystemProduct;
+        LogRel(("DMI: Using DmiSystemProduct from host: %s\n", g_szHostDmiSystemProduct));
     }
 
     rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_VERSION,
-                                s_szDefDmiSystemVersion,
-                                sizeof s_szDefDmiSystemVersion);
-    if (RT_FAILURE(rc))
+                                g_szHostDmiSystemVersion, sizeof(g_szHostDmiSystemVersion));
+    if (RT_SUCCESS(rc))
     {
-        // ignore rc?
+        s_szDefDmiSystemVersion = g_szHostDmiSystemVersion;
+        LogRel(("DMI: Using DmiSystemVersion from host: %s\n", g_szHostDmiSystemVersion));
     }
 }
 
