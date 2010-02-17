@@ -173,8 +173,12 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
             while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
             {
                 /** @todo r-bird: This code is bringing all CPUs online; the idCpuCore and
-                 *        idCpuPackage parameters are unused!   
-                 *        aeichner: These files are not available at this point unfortunately. (see comment above) 
+                 *        idCpuPackage parameters are unused!
+                 *        aeichner: These files are not available at this point unfortunately. (see comment above)
+                 *        bird: Yes, but isn't that easily dealt with by doing:
+                 *              if (matching_topology() || !have_topology_directory())
+                 *                  bring_cpu_online()
+                 *              That could save you the cpu0 and cpuidle checks to.
                  */
                 /*
                  * Check if this is a CPU object.
