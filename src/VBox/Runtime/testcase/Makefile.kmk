@@ -103,7 +103,7 @@ PROGRAMS += \
 	tstStrSimplePattern \
 	tstStrToNum \
 	tstRTStrVersion \
-	tstSystemQueryOsInfo \
+	tstRTSystemQueryOsInfo \
 	tstRTTemp \
 	tstTermCallbacks \
 	tstThread-1 \
@@ -407,8 +407,8 @@ tstStrToNum_SOURCES = tstStrToNum.cpp
 tstRTStrVersion_TEMPLATE = VBOXR3TSTEXE
 tstRTStrVersion_SOURCES = tstRTStrVersion.cpp
 
-tstSystemQueryOsInfo_TEMPLATE = VBOXR3TSTEXE
-tstSystemQueryOsInfo_SOURCES = tstSystemQueryOsInfo.cpp
+tstRTSystemQueryOsInfo_TEMPLATE = VBOXR3TSTEXE
+tstRTSystemQueryOsInfo_SOURCES = tstRTSystemQueryOsInfo.cpp
 
 tstRTTemp_TEMPLATE = VBOXR3TSTEXE
 tstRTTemp_SOURCES = tstRTTemp.cpp
