@@ -1793,7 +1793,7 @@ HRESULT Console::doCPURemove(ULONG aCpu)
         vrc = getVMMDev()->getVMMDevPort()->pfnCpuHotUnplug(getVMMDev()->getVMMDevPort(), idCpuCore, idCpuPackage);
         if (RT_SUCCESS(vrc))
         {
-            unsigned cTries = 10;
+            unsigned cTries = 100;
 
             do
             {
