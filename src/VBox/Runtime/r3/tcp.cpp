@@ -938,7 +938,7 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
         {
             RT_ZERO(*pAddr);
             pAddr->enmType      = RTNETADDRTYPE_IPV4;
-            pAddr->uPort        = u.Ipv4.sin_port;
+            pAddr->uPort        = RT_N2H_U16(u.Ipv4.sin_port);
             pAddr->uAddr.IPv4.u = u.Ipv4.sin_addr.s_addr;
         }
 #ifdef IPRT_WITH_TCPIP_V6
@@ -947,7 +947,7 @@ RTR3DECL(int) RTTcpGetPeerAddress(RTSOCKET Sock, PRTNETADDR pAddr)
         {
             RT_ZERO(*pAddr);
             pAddr->enmType            = RTNETADDRTYPE_IPV6;
-            pAddr->uPort              = u.Ipv6.sin6_port;
+            pAddr->uPort              = RT_N2H_U16(u.Ipv6.sin6_port);
             pAddr->uAddr.IPv6.au32[0] = u.Ipv6.sin6_addr.s6_addr32[0];
             pAddr->uAddr.IPv6.au32[1] = u.Ipv6.sin6_addr.s6_addr32[1];
             pAddr->uAddr.IPv6.au32[2] = u.Ipv6.sin6_addr.s6_addr32[2];
