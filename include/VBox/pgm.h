@@ -533,7 +533,7 @@ VMMR3DECL(int)      PGMR3PhysGCPhys2CCPtrReadOnlyExternal(PVM pVM, RTGCPHYS GCPh
 VMMR3DECL(int)      PGMR3PhysChunkMap(PVM pVM, uint32_t idChunk);
 VMMR3DECL(void)     PGMR3PhysChunkInvalidateTLB(PVM pVM);
 VMMR3DECL(int)      PGMR3PhysAllocateHandyPages(PVM pVM);
-VMMR3DECL(int)      PGMR3PhysAllocateLargeHandyPage(PVM pVM);
+VMMR3DECL(int)      PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys);
 
 VMMR3DECL(void)     PGMR3ReleaseOwnedLocks(PVM pVM);
 

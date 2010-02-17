@@ -435,6 +435,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     PGM_PAGE_SET_HCPHYS(pPage, HCPhys);
     PGM_PAGE_SET_PAGEID(pPage, pVM->pgm.s.aHandyPages[iHandyPage].idPage);
     PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ALLOCATED);
+    PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
     PGMPhysInvalidatePageMapTLBEntry(pVM, GCPhys);
 
     if (    fFlushTLBs
@@ -443,6 +444,46 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     return rc;
 }
 
+/**
+ * Replace a 2 MB range of zero pages with new pages that we can write to.
+ *
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success, pPage is modified.
+ * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
+ * @retval  VERR_EM_NO_MEMORY if we're totally out of memory.
+ *
+ * @todo    Propagate VERR_EM_NO_MEMORY up the call tree.
+ *
+ * @param   pVM         The VM address.
+ * @param   GCPhys      The address of the page.
+ *
+ * @remarks Must be called from within the PGM critical section. It may
+ *          nip back to ring-3/0 in some cases.
+ *
+ * @remarks This function shouldn't really fail, however if it does
+ *          it probably means we've screwed up the size of handy pages and/or
+ *          the low-water mark. Or, that some device I/O is causing a lot of
+ *          pages to be allocated while while the host is in a low-memory
+ *          condition. This latter should be handled elsewhere and in a more
+ *          controlled manner, it's on the @bugref{3170} todo list...
+ */
+int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
+{
+    LogFlow(("pgmPhysAllocLargePage: %RGp\n", GCPhys));
+
+    /*
+     * Prereqs.
+     */
+    Assert(PGMIsLocked(pVM));
+    Assert((GCPhys & X86_PD_PAE_MASK) == 0);
+
+#ifdef IN_RING3
+    int rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhys);
+#else
+    int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhys);
+#endif
+    return rc;
+}
 
 /**
  * Deal with a write monitored page.

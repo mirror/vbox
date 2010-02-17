@@ -611,7 +611,7 @@ typedef struct PGMPAGE
      *    (PGM_PAGE_HNDL_PHYS_STATE_*).
      *  - [8-9]: u2HandlerVirtStateY - the virtual handler state
      *    (PGM_PAGE_HNDL_VIRT_STATE_*).
-     *  - [14]:  u1LargePage - flag indicating that it's part of a large (2 MB) page 
+     *  - [13-14]: u2PDEType  - paging structure needed to map the page (PGM_PAGE_PDE_TYPE_*)
      *  - [15]:  fWrittenToY - flag indicating that a write monitored page was
      *    written to when set.
      *  - [10-13]: 4 unused bits.
@@ -831,24 +831,34 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_IS_WRITTEN_TO(pPage)       ( !!((pPage)->u16MiscY.au8[1] & UINT8_C(0x80)) )
 
-/**
- * Marks the page as part of a large continuous page
- * @param   pPage       Pointer to the physical guest page tracking structure.
- */
-#define PGM_PAGE_SET_LARGE_PAGE(pPage)      do { (pPage)->u16MiscY.au8[1] |= UINT8_C(0x40); } while (0)
+/** @name PT usage values (PGMPAGE::u2PDEType).
+ *
+ * @{ */
+/** Either as a PT or PDE. */
+#define PGM_PAGE_PDE_TYPE_DONTCARE             0
+/** Must use a page table to map the range. */
+#define PGM_PAGE_PDE_TYPE_PT                   1
+/** Can use a page directory entry to map the continous range. */
+#define PGM_PAGE_PDE_TYPE_PDE                  2
+/** @} */
 
 /**
- * Clears the page as part of a large continuous page indicator.
+ * Set the PDE type of the page
  * @param   pPage       Pointer to the physical guest page tracking structure.
+ * @param   uType       PGM_PAGE_PDE_TYPE_*
  */
-#define PGM_PAGE_CLEAR_LARGE_PAGE(pPage)    do { (pPage)->u16MiscY.au8[1] &= UINT8_C(0xbf); } while (0)
+#define PGM_PAGE_SET_PDE_TYPE(pPage, uType) \
+    do { \
+        (pPage)->u16MiscY.au8[1] = ((pPage)->u16MiscY.au8[1] & UINT8_C(0x9f)) \
+                                 | (((uType)                 & UINT8_C(0x03)) << 5); \
+    } while (0)
 
 /**
  * Checks if the page was marked being part of a large page
  * @returns true/false.
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
-#define PGM_PAGE_IS_LARGE_PAGE(pPage)       ( !!((pPage)->u16MiscY.au8[1] & UINT8_C(0x40)) )
+#define PGM_PAGE_GET_PDE_TYPE(pPage)       ( ((pPage)->u16MiscY.au8[1] & UINT8_C(0x60)) >> 5)
 
 /** Enabled optimized access handler tests.
  * These optimizations makes ASSUMPTIONS about the state values and the u16MiscY
@@ -3307,6 +3317,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
+int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
