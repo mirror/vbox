@@ -467,6 +467,8 @@ int main()
     GEN_CHECK_OFF(ACPIState, CpuSetAttached);
     GEN_CHECK_OFF(ACPIState, idCpuLockCheck);
     GEN_CHECK_OFF(ACPIState, CpuSetLocked);
+    GEN_CHECK_OFF(ACPIState, u32CpuEventType);
+    GEN_CHECK_OFF(ACPIState, u32CpuEvent);
     GEN_CHECK_OFF(ACPIState, fCpuHotPlug);
     GEN_CHECK_OFF(ACPIState, IBase);
     GEN_CHECK_OFF(ACPIState, IACPIPort);

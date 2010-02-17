@@ -145,6 +145,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             URTC,  32,
             CPUL,  32,
             CPUC,  32,
+            CPET,  32,
+            CPEV,  32,
             Offset (0x80),
             ININ, 32,
             Offset (0x200),
