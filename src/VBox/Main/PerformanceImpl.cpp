@@ -37,7 +37,7 @@
 
 #include "Performance.h"
 
-static Bstr gMetricNames[] =
+static const char *g_papcszMetricNames[] =
 {
     "CPU/Load/User",
     "CPU/Load/User:avg",
@@ -177,10 +177,10 @@ STDMETHODIMP PerformanceCollector::COMGETTER(MetricNames)(ComSafeArrayOut(BSTR, 
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> metricNames(RT_ELEMENTS(gMetricNames));
-    for (size_t i = 0; i < RT_ELEMENTS(gMetricNames); i++)
+    com::SafeArray<BSTR> metricNames(RT_ELEMENTS(g_papcszMetricNames));
+    for (size_t i = 0; i < RT_ELEMENTS(g_papcszMetricNames); i++)
     {
-        Bstr tmp(gMetricNames[i]); /* gcc-3.3 cruft */
+        Bstr tmp(g_papcszMetricNames[i]); /* gcc-3.3 cruft */
         tmp.cloneTo(&metricNames[i]);
     }
     //gMetricNames.detachTo(ComSafeArrayOutArg(theMetricNames));
