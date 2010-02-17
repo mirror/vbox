@@ -140,6 +140,41 @@ RTDECL(int) RTSystemQueryTotalRam(uint64_t *pcb);
 RTDECL(int) RTSystemQueryUnavailableRam(uint64_t *pcb);
 
 
+/**
+ * The DMI strings.
+ */
+typedef enum RTSYSDMISTR
+{
+    /** Invalid zero entry. */
+    RTSYSDMISTR_INVALID = 0,
+    /** The product name. */
+    RTSYSDMISTR_PRODUCT_NAME,
+    /** The product version. */
+    RTSYSDMISTR_PRODUCT_VERSION,
+    /** The end of the valid strings. */
+    RTSYSDMISTR_END,
+    /** The usual 32-bit hack.  */
+    RTSYSDMISTR_32_BIT_HACK = 0x7fffffff
+} RTSYSDMISTR;
+
+/**
+ * Queries a DMI string.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small.  The buffer will
+ *          contain the chopped off result in this case, provided cbBuf isn't 0.
+ * @retval  VERR_ACCESS_DENIED if the information isn't accessible to the
+ *          caller.
+ * @retval  VERR_NOT_SUPPORTED if the information isn't available on the system
+ *          in general.  The caller must expect this status code and deal with
+ *          it.
+ *
+ * @param   enmString           Which string to query.
+ * @param   pszBuf              Where to store the string.
+ * @param   cbBuf               The buffer size.
+ */
+RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf);
+
 /** @} */
 
 RT_C_DECLS_END
