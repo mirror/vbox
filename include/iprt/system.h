@@ -151,6 +151,10 @@ typedef enum RTSYSDMISTR
     RTSYSDMISTR_PRODUCT_NAME,
     /** The product version. */
     RTSYSDMISTR_PRODUCT_VERSION,
+    /** The product UUID. */
+    RTSYSDMISTR_PRODUCT_UUID,
+    /** The product serial. */
+    RTSYSDMISTR_PRODUCT_SERIAL,
     /** The end of the valid strings. */
     RTSYSDMISTR_END,
     /** The usual 32-bit hack.  */
@@ -160,6 +164,7 @@ typedef enum RTSYSDMISTR
 /**
  * Queries a DMI string.
  *
+ * @returns IPRT status code.
  * @retval  VINF_SUCCESS on success.
  * @retval  VERR_BUFFER_OVERFLOW if the buffer is too small.  The buffer will
  *          contain the chopped off result in this case, provided cbBuf isn't 0.
@@ -170,7 +175,8 @@ typedef enum RTSYSDMISTR
  *          it.
  *
  * @param   enmString           Which string to query.
- * @param   pszBuf              Where to store the string.
+ * @param   pszBuf              Where to store the string.  This is always
+ *                              terminated, even on error.
  * @param   cbBuf               The buffer size.
  */
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf);

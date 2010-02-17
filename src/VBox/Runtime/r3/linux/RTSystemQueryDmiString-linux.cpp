@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - RTSystemQueryDmiString, generic stub.
+ * IPRT - RTSystemQueryDmiString, linux ring-3.
  */
 
 /*
@@ -37,6 +37,9 @@
 
 #include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/linux/sysfs.h>
+
+#include <errno.h>
 
 
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf)
@@ -45,7 +48,55 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     AssertReturn(cbBuf > 0, VERR_INVALID_PARAMETER);
     *pszBuf = '\0';
     AssertReturn(enmString > RTSYSDMISTR_INVALID && enmString < RTSYSDMISTR_END, VERR_INVALID_PARAMETER);
-    return VERR_NOT_SUPPORTED;
+
+    const char *pszSysFsName;
+    switch (enmString)
+    {
+        case RTSYSDMISTR_PRODUCT_NAME:      pszSysFsName = "devices/virtual/dmi/id/product_name"; break;
+        case RTSYSDMISTR_PRODUCT_VERSION:   pszSysFsName = "devices/virtual/dmi/id/product_version"; break;
+        case RTSYSDMISTR_PRODUCT_UUID:      pszSysFsName = "devices/virtual/dmi/id/product_uuid"; break;
+        case RTSYSDMISTR_PRODUCT_SERIAL:    pszSysFsName = "devices/virtual/dmi/id/product_serial"; break;
+        default:
+            return VERR_NOT_SUPPORTED;
+    }
+
+    int rc;
+    int fd = RTLinuxSysFsOpen(pszSysFsName);
+    if (fd >= 0)
+    {
+        /* Note! This will return VERR_BUFFER_OVERFLOW even if there is a
+                 trailing newline that we don't care about. */
+        size_t cbRead;
+        rc = RTLinuxSysFsReadFile(fd, pszBuf, cbBuf - 1, &cbRead);
+        if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
+        {
+            pszBuf[cbRead] = '\0';
+            while (cbRead > 0 && pszBuf[cbRead - 1] == '\n')
+                pszBuf[--cbRead] = '\0';
+        }
+        RTLinuxSysFsClose(fd);
+    }
+    else
+    {
+        rc = RTErrConvertFromErrno(errno);
+        switch (rc)
+        {
+            case VINF_SUCCESS:
+                AssertFailed();
+            case VERR_FILE_NOT_FOUND:
+            case VERR_PATH_NOT_FOUND:
+            case VERR_IS_A_DIRECTORY:
+                rc = VERR_NOT_SUPPORTED;
+                break;
+            case VERR_PERMISSION_DENIED:
+            case VERR_ACCESS_DENIED:
+                rc = VERR_ACCESS_DENIED;
+                break;
+        }
+    }
+
+    return rc;
 }
 RT_EXPORT_SYMBOL(RTSystemQueryDmiString);
+
 

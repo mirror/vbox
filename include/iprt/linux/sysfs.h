@@ -99,6 +99,18 @@ RTDECL(void) RTLinuxSysFsClose(int fd);
 RTDECL(ssize_t) RTLinuxSysFsReadStr(int fd, char *pszBuf, size_t cchBuf);
 
 /**
+ * Reads the remainder of a file opened with RTLinuxSysFsOpen or
+ * RTLinuxSysFsOpenV.
+ *
+ * @returns IPRT status code.
+ * @param   fd          The file descriptor returned by RTLinuxSysFsOpen or RTLinuxSysFsOpenV.
+ * @param   pvBuf       Where to store the bits from the file.
+ * @param   cbBuf       The size of the buffer.
+ * @param   pcbRead     Where to return the number of bytes read.  Optional.
+ */
+RTDECL(int) RTLinuxSysFsReadFile(int fd, void *pvBuf, size_t cbBuf, size_t *pcbRead);
+
+/**
  * Reads a number from a sysfs file.
  *
  * @returns 64-bit signed value on success, -1 and errno on failure.
