@@ -339,30 +339,30 @@ void *uma_zalloc(uma_zone_t zone, int len)
     return NULL;
 }
 
-void *slirp_ext_m_get(PNATState pData, uint8_t *pkt, size_t pkt_len)
+struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf)
 {
     struct mbuf *m;
     size_t size = MCLBYTES;
-    if (pkt_len < MSIZE)
+    if (cbMin < MSIZE)
         size = MCLBYTES;
-    else if (pkt_len < MCLBYTES)
+    else if (cbMin < MCLBYTES)
         size = MCLBYTES;
-    else if (pkt_len < MJUM9BYTES)
+    else if (cbMin < MJUM9BYTES)
         size = MJUM9BYTES;
-    else if (pkt_len < MJUM16BYTES)
+    else if (cbMin < MJUM16BYTES)
         size = MJUM16BYTES;
     else
         AssertMsgFailed(("Unsupported size"));
 
     m = m_getjcl(pData, M_NOWAIT, MT_HEADER, M_PKTHDR, size);
-    m->m_len = pkt_len ;
-    memcpy(m->m_data, pkt, pkt_len);
-    return (void *)m;
+    m->m_len = size ;
+    *ppvBuf = mtod(m, void *);
+    *pcbBuf = size;
+    return m;
 }
 
-void slirp_ext_m_free(PNATState pData, void *arg)
+void slirp_ext_m_free(PNATState pData, struct mbuf *m)
 {
-    struct mbuf *m = (struct mbuf *)arg;
     m_free(pData, m);
 }
 

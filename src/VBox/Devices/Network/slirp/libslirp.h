@@ -115,14 +115,11 @@ void slirp_process_queue(PNATState pData);
 void *slirp_get_queue(PNATState pData);
 #endif
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 struct mbuf *slirp_ext_m_get(PNATState pData, size_t cbMin, void **ppvBuf, size_t *pcbBuf);
 void slirp_ext_m_free(PNATState pData, struct mbuf *);
+#ifndef VBOX_WITH_SLIRP_BSD_MBUF
 void slirp_ext_m_append(PNATState pData, struct mbuf *, uint8_t *, size_t);
 void slirp_push_recv_thread(void *pvUser);
-#else
-void *slirp_ext_m_get(PNATState pData, uint8_t *, size_t);
-void slirp_ext_m_free(PNATState pData, void *);
 #endif
 
 /*
