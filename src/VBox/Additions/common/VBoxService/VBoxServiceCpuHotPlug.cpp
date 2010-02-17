@@ -64,26 +64,53 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
     AssertPtr(ppszPath);
 
     PRTDIR pDirDevices = NULL;
-    int rc = RTDirOpen(&pDirDevices, SYSFS_ACPI_CPU_PATH);  /*could use RTDirOpenFiltered*/
+    int rc = RTDirOpen(&pDirDevices, SYSFS_ACPI_CPU_PATH);  /* could use RTDirOpenFiltered */
     if (RT_SUCCESS(rc))
     {
-        RTDIRENTRY DirFolderContent;
-        while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
+        /* Search every ACPI0004 container device for LNXCPU devices. */
+        RTDIRENTRY DirFolderAcpiContainer;
+        bool fFound = false;
+
+        while (   RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderAcpiContainer, NULL))
+               && !fFound) /* Assumption that szName has always enough space */
         {
-            if (!strncmp(DirFolderContent.szName, "LNXCPU", 6))
+            if (!strncmp(DirFolderAcpiContainer.szName, "ACPI0004", 8))
             {
-                /* Get the sysdev */
-                uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/core_id",
-                                                             SYSFS_ACPI_CPU_PATH, DirFolderContent.szName);
-                uint32_t idPackage = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/physical_package_id",
-                                                             SYSFS_ACPI_CPU_PATH, DirFolderContent.szName);
-                if (   idCore    == idCpuCore
-                    && idPackage == idCpuPackage)
-                {
-                    /* Return the path */
-                    rc = RTStrAPrintf(ppszPath, "%s/%s", SYSFS_ACPI_CPU_PATH, DirFolderContent.szName);
+                char *pszAcpiContainerPath = NULL;
+                PRTDIR pDirAcpiContainer = NULL;
+
+                rc = RTStrAPrintf(&pszAcpiContainerPath, "%s/%s", SYSFS_ACPI_CPU_PATH, DirFolderAcpiContainer.szName);
+                if (RT_FAILURE(rc))
                     break;
+
+                rc = RTDirOpen(&pDirAcpiContainer, pszAcpiContainerPath);
+                if (RT_SUCCESS(rc))
+                {
+                    RTDIRENTRY DirFolderContent;
+                    while (RT_SUCCESS(RTDirRead(pDirAcpiContainer, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
+                    {
+                        if (!strncmp(DirFolderContent.szName, "LNXCPU", 6))
+                        {
+                            /* Get the sysdev */
+                            uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/core_id",
+                                                                         pszAcpiContainerPath, DirFolderContent.szName);
+                            uint32_t idPackage = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/physical_package_id",
+                                                                         pszAcpiContainerPath, DirFolderContent.szName);
+                            if (   idCore    == idCpuCore
+                                && idPackage == idCpuPackage)
+                            {
+                                /* Return the path */
+                                rc = RTStrAPrintf(ppszPath, "%s/%s", pszAcpiContainerPath, DirFolderContent.szName);
+                                fFound = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    RTDirClose(pDirAcpiContainer);
                 }
+
+                RTStrFree(pszAcpiContainerPath);
             }
         }
 
@@ -138,7 +165,9 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
         while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
         {
 /** @todo r-bird: This code is bringing all CPUs online; the idCpuCore and
- *        idCpuPackage parameters are unused!   */
+ *        idCpuPackage parameters are unused!   
+ *        aeichner: These files are not available at this point unfortunately. (see comment above) 
+ */
             /*
              * Check if this is a CPU object.
              * cpu0 is excluded because it is not possible to change the state
