@@ -1612,6 +1612,9 @@ static void pgmR3InitStats(PVM pVM)
         rc = STAMR3RegisterF(pVM, a, STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, c, b); \
         AssertRC(rc);
 
+    PGM_REG_COUNTER(&pPGM->StatLargePageUsed,                 "/PGM/LargePage/Alloc",               "The number of large pages we've used.");
+    PGM_REG_COUNTER(&pPGM->StatLargePageRefused,              "/PGM/LargePage/Refused",             "The number of times we couldn't use a large page.");
+
     PGM_REG_COUNTER(&pPGM->StatR3DetectedConflicts,           "/PGM/R3/DetectedConflicts",          "The number of times PGMR3CheckMappingConflicts() detected a conflict.");
     PGM_REG_PROFILE(&pPGM->StatR3ResolveConflict,             "/PGM/R3/ResolveConflict",            "pgmR3SyncPTResolveConflict() profiling (includes the entire relocation).");
     PGM_REG_COUNTER(&pPGM->StatR3PhysRead,                    "/PGM/R3/Phys/Read",                  "The number of times PGMPhysRead was called.");
