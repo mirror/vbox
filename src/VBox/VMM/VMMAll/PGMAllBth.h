@@ -2938,7 +2938,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 
 # if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS) && defined(DEBUG_sandervl)
     PPGMPAGE pPage;
-    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & SHW_PD_MASK, &pPage);
+    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & SHW_PDE_PG_MASK, &pPage);
     if (    RT_SUCCESS(rc)
         &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
     {
@@ -2955,7 +2955,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
         if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
              && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
         {
-            RTGCPHYS GCPhysBase = GCPtrPage & SHW_PD_MASK;
+            RTGCPHYS GCPhysBase = GCPtrPage & SHW_PDE_PG_MASK;
             RTGCPHYS GCPhys = GCPhysBase;
             unsigned iPage;
 
