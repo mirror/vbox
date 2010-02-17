@@ -2982,6 +2982,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
             if (iPage != _2M/PAGE_SIZE)
             {
                 /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
+                STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
                 PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
             }
             else
@@ -2991,6 +2992,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 {   
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
                     HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageUsed);
                 }
                 else
                     LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
