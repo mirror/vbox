@@ -924,6 +924,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
                               "DmiOEMVBoxVer\0"
                               "DmiOEMVBoxRev\0"
 #endif
+                              "DmiUseHostInfo\0"
                               ))
         return PDMDEV_SET_ERROR(pDevIns, VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES,
                                 N_("Invalid configuration for device pcbios device"));
