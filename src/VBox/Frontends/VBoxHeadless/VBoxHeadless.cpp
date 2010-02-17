@@ -1012,14 +1012,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         gConsole = console;
         gEventQ = com::EventQueue::getMainEventQueue();
 
-        /* VirtualBox callback registration. */
-        vboxCallback = new VirtualBoxCallback();
-        vboxCallback->AddRef();
-        CHECK_ERROR(virtualBox, RegisterCallback(vboxCallback));
-        vboxCallback->Release();
-        if (FAILED (rc))
-            break;
-
         /* register a callback for machine events */
         {
             ConsoleCallback *callback = new ConsoleCallback();
@@ -1109,6 +1101,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 }
             }
         }
+
+        /* VirtualBox callback registration. */
+        vboxCallback = new VirtualBoxCallback();
+        vboxCallback->AddRef();
+        CHECK_ERROR(virtualBox, RegisterCallback(vboxCallback));
+        vboxCallback->Release();
+        if (FAILED(rc))
+            break;
 
 #ifdef VBOX_WITH_SAVESTATE_ON_SIGNAL
         signal(SIGINT, SaveState);
