@@ -876,6 +876,11 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_CPU_ID;
             return PGMR0PhysAllocateHandyPages(pVM, &pVM->aCpus[idCpu]);
 
+        case VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE:
+            if (idCpu == NIL_VMCPUID)
+                return VERR_INVALID_CPU_ID;
+            return PGMR0PhysAllocateLargeHandyPage(pVM, &pVM->aCpus[idCpu]);
+
         /*
          * GMM wrappers.
          */
@@ -893,11 +898,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GMMR0AllocatePagesReq(pVM, idCpu, (PGMMALLOCATEPAGESREQ)pReqHdr);
-
-        case VMMR0_DO_GMM_ALLOC_LARGE_PAGE:
-            if (u64Arg)
-                return VERR_INVALID_PARAMETER;
-            return GMMR0AllocateLargePageReq(pVM, idCpu, (PGMMALLOCLARGEPAGEREQ)pReqHdr);
 
         case VMMR0_DO_GMM_FREE_PAGES:
             if (u64Arg)

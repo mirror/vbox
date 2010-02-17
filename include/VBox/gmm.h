@@ -270,7 +270,7 @@ GMMR0DECL(int)  GMMR0InitialReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePa
 GMMR0DECL(int)  GMMR0UpdateReservation(PVM pVM, VMCPUID idCpu, uint64_t cBasePages, uint32_t cShadowPages, uint32_t cFixedPages);
 GMMR0DECL(int)  GMMR0AllocateHandyPages(PVM pVM, VMCPUID idCpu, uint32_t cPagesToUpdate, uint32_t cPagesToAlloc, PGMMPAGEDESC paPages);
 GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMPAGEDESC paPages, GMMACCOUNT enmAccount);
-GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys);
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
 GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
@@ -403,29 +403,6 @@ typedef GMMMAPUNMAPCHUNKREQ *PGMMMAPUNMAPCHUNKREQ;
 
 GMMR0DECL(int)  GMMR0MapUnmapChunkReq(PVM pVM, VMCPUID idCpu, PGMMMAPUNMAPCHUNKREQ pReq);
 
-/**
- * Request buffer for GMMR0AllocateLargePageReq / VMMR0_DO_GMM_ALLOC_LARGE_PAGE.
- * @see GMMR0AllocateLargePage
- */
-typedef struct GMMALLOCLARGEPAGEREQ
-{
-    /** The header. */
-    SUPVMMR0REQHDR  Hdr;
-    /* Large page size. */
-    uint32_t        cbPage;
-    /** The Page ID.
-     *
-     * @output  The ID of the page, NIL_GMM_PAGEID if the allocation failed.
-     */
-    uint32_t        idPage;
-    /* Host physical address of the large page. */
-    RTHCPHYS        HCPhys;
-} GMMALLOCLARGEPAGEREQ;
-/** Pointer to a GMMR0AllocateLargePageReq / VMMR0_DO_GMM_ALLOC_LARGE_PAGE request buffer. */
-typedef GMMALLOCLARGEPAGEREQ *PGMMALLOCLARGEPAGEREQ;
-
-GMMR0DECL(int) GMMR0AllocateLargePageReq(PVM pVM, VMCPUID idCpu, PGMMALLOCLARGEPAGEREQ pReq);
-
 
 /**
  * Request buffer for GMMR0FreeLargePageReq / VMMR0_DO_GMM_FREE_LARGE_PAGE.
@@ -460,7 +437,7 @@ GMMR3DECL(void) GMMR3FreePagesRePrep(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cP
 GMMR3DECL(int)  GMMR3FreePagesPerform(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t cActualPages);
 GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq);
 GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq);
-GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys);
+GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage);
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
