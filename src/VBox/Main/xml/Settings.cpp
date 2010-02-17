@@ -194,9 +194,10 @@ public:
         if (pNode)
             strLine = Utf8StrFmt(" (line %RU32)", pNode->getLineNumber());
 
+        const char *pcsz = strLine.c_str();
         Utf8StrFmt str(N_("Error in %s%s -- %s"),
                        file->m->strFilename.c_str(),
-                       strLine.c_str(),
+                       (pcsz) ? pcsz : "",
                        strWhat.c_str());
 
         setWhat(str.c_str());

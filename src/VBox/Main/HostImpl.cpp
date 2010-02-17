@@ -450,7 +450,10 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
     Assert(hr == S_OK);
     if(hr == S_OK)
     {
-        Bstr name(lpszName);
+        size_t cUnicodeName = wcslen(lpszName) + 1;
+        size_t uniLen = (cUnicodeName * 2 + sizeof (OLECHAR) - 1) / sizeof (OLECHAR);
+        Bstr name (uniLen + 1 /* extra zero */);
+        wcscpy((wchar_t *) name.mutableRaw(), lpszName);
 
         hr = pncc->GetInstanceGuid(&IfGuid);
         Assert(hr == S_OK);
@@ -460,7 +463,7 @@ static int vboxNetWinAddComponent(std::list< ComObjPtr<HostNetworkInterface> > *
             ComObjPtr<HostNetworkInterface> iface;
             iface.createObject();
             /* remove the curly bracket at the end */
-            if (SUCCEEDED(iface->init(name, Guid (IfGuid), HostNetworkInterfaceType_Bridged)))
+            if (SUCCEEDED(iface->init (name, Guid (IfGuid), HostNetworkInterfaceType_Bridged)))
             {
 //                iface->setVirtualBox(m->pParent);
                 pPist->push_back(iface);
@@ -1286,7 +1289,7 @@ STDMETHODIMP Host::RemoveUSBDeviceFilter(ULONG aPosition)
 
 STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
@@ -1313,7 +1316,7 @@ STDMETHODIMP Host::FindHostDVDDrive(IN_BSTR aName, IMedium **aDrive)
 
 STDMETHODIMP Host::FindHostFloppyDrive(IN_BSTR aName, IMedium **aDrive)
 {
-    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgNotNull(aName);
     CheckComArgOutPointerValid(aDrive);
 
     *aDrive = NULL;
@@ -1447,7 +1450,7 @@ STDMETHODIMP Host::FindUSBDeviceByAddress(IN_BSTR aAddress,
                                           IHostUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgStrNotEmptyOrNull(aAddress);
+    CheckComArgNotNull(aAddress);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;

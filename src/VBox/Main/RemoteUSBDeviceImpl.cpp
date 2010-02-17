@@ -133,7 +133,7 @@ void RemoteUSBDevice::uninit()
 // IUSBDevice properties
 /////////////////////////////////////////////////////////////////////////////
 
-STDMETHODIMP RemoteUSBDevice::COMGETTER(Id)(BSTR *aId)
+STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (BSTR *aId)
 {
     CheckComArgOutPointerValid(aId);
 
@@ -141,7 +141,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Id)(BSTR *aId)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    Bstr(mData.id.toUtf16()).cloneTo(aId);
+    Bstr(mData.id).cloneTo(aId);
 
     return S_OK;
 }

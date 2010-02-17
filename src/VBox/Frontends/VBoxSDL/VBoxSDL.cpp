@@ -310,7 +310,7 @@ public:
             if (ourGuid == machineId)
             {
                 Bstr keyString = key;
-                if (keyString == VBOXSDL_SECURELABEL_EXTRADATA)
+                if (keyString && keyString == VBOXSDL_SECURELABEL_EXTRADATA)
                 {
                     /*
                      * Notify SDL thread of the string update

@@ -1919,11 +1919,11 @@
  */
 #if defined(_MSC_VER)
 # define WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Cls) \
-    inline bool operator! (const Cls &that) { return !bool(that); } \
-    inline bool operator&& (const Cls &that, bool b) { return bool(that) && b; } \
-    inline bool operator|| (const Cls &that, bool b) { return bool(that) || b; } \
-    inline bool operator&& (bool b, const Cls &that) { return b && bool(that); } \
-    inline bool operator|| (bool b, const Cls &that) { return b || bool(that); }
+    inline bool operator! (const Cls &that) { return !bool (that); } \
+    inline bool operator&& (const Cls &that, bool b) { return bool (that) && b; } \
+    inline bool operator|| (const Cls &that, bool b) { return bool (that) || b; } \
+    inline bool operator&& (bool b, const Cls &that) { return b && bool (that); } \
+    inline bool operator|| (bool b, const Cls &that) { return b || bool (that); }
 #else
 # define WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Cls)
 #endif

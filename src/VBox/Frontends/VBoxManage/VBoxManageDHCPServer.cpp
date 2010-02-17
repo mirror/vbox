@@ -229,7 +229,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
         CHECK_ERROR(a->virtualBox, COMGETTER(Host)(host.asOutParam()));
 
         ComPtr<IHostNetworkInterface> hif;
-        CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pIfName), hif.asOutParam()));
+        CHECK_ERROR(host, FindHostNetworkInterfaceByName(Bstr(pIfName).mutableRaw(), hif.asOutParam()));
         if(FAILED(rc))
             return errorArgument("could not find interface '%s'", pIfName);
 
@@ -243,13 +243,13 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     }
 
     ComPtr<IDHCPServer> svr;
-    rc = a->virtualBox->FindDHCPServerByNetworkName(NetName, svr.asOutParam());
+    rc = a->virtualBox->FindDHCPServerByNetworkName(NetName.mutableRaw(), svr.asOutParam());
     if(enmCode == OP_ADD)
     {
         if(SUCCEEDED(rc))
             return errorArgument("dhcp server already exists");
 
-        CHECK_ERROR(a->virtualBox, CreateDHCPServer(NetName, svr.asOutParam()));
+        CHECK_ERROR(a->virtualBox, CreateDHCPServer(NetName.mutableRaw(), svr.asOutParam()));
         if(FAILED(rc))
             return errorArgument("failed to create server");
     }
@@ -262,7 +262,7 @@ static int handleOp(HandlerArg *a, OPCODE enmCode, int iStart, int *pcProcessed)
     {
         if (pIp || pNetmask || pLowerIp || pUpperIp)
         {
-            CHECK_ERROR(svr, SetConfiguration(Bstr(pIp), Bstr(pNetmask), Bstr(pLowerIp), Bstr(pUpperIp)));
+            CHECK_ERROR(svr, SetConfiguration (Bstr(pIp).mutableRaw(), Bstr(pNetmask).mutableRaw(), Bstr(pLowerIp).mutableRaw(), Bstr(pUpperIp).mutableRaw()));
             if(FAILED(rc))
                 return errorArgument("failed to set configuration");
         }

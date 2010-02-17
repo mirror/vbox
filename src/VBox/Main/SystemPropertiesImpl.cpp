@@ -813,7 +813,7 @@ HRESULT SystemProperties::saveSettings(settings::SystemProperties &data)
  *
  * @return ComObjPtr<MediumFormat>
  */
-ComObjPtr<MediumFormat> SystemProperties::mediumFormat(CBSTR aFormat)
+ComObjPtr<MediumFormat> SystemProperties::mediumFormat (CBSTR aFormat)
 {
     ComObjPtr<MediumFormat> format;
 
@@ -823,12 +823,11 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormat(CBSTR aFormat)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     for (MediumFormatList::const_iterator it = mMediumFormats.begin();
-         it != mMediumFormats.end();
-         ++it)
+         it != mMediumFormats.end(); ++ it)
     {
         /* MediumFormat is all const, no need to lock */
 
-        if ((*it)->id().compare(aFormat, Bstr::CaseInsensitive) == 0)
+        if ((*it)->id().compareIgnoreCase (aFormat) == 0)
         {
             format = *it;
             break;
