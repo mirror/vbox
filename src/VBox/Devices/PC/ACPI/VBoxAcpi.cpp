@@ -136,6 +136,140 @@ static int patchAml(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
 
     return 0;
 }
+
+/**
+ * Patch the CPU hot-plug SSDT version to
+ * only contain the ACPI containers which may have a CPU
+ */
+static int patchAmlCpuHotPlug(PPDMDEVINS pDevIns, uint8_t* pAml, size_t uAmlLen)
+{
+    uint16_t cNumCpus;
+    int rc;
+    uint32_t idxAml = 0;
+
+    rc = CFGMR3QueryU16Def(pDevIns->pCfg, "NumCPUs", &cNumCpus, 1);
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /**
+     * Now search AML for:
+     *  AML_DEVICE_OP               (UINT16) 0x5b82
+     * and replace whole block with
+     *  AML_NOOP_OP                 (UINT16) 0xa3
+     * for VCPU not configured
+     */
+    while (idxAml < uAmlLen - 7)
+    {
+        /*
+         * AML_DEVICE_OP
+         *
+         * DefDevice    := DeviceOp PkgLength NameString ObjectList
+         * DeviceOp     := ExtOpPrefix 0x82
+         */
+        if ((pAml[idxAml] == 0x5b) && (pAml[idxAml+1] == 0x82))
+        {
+            /* Check if the enclosed CPU device is configured. */
+            uint8_t *pbAmlPkgLength = &pAml[idxAml+2];
+            uint32_t cBytes = 0;
+            uint32_t cLengthBytesFollow = pbAmlPkgLength[0] >> 6;
+
+            if (cLengthBytesFollow == 0)
+            {
+                /* Simple package length */
+                cBytes = pbAmlPkgLength[0];
+            }
+            else
+            {
+                unsigned idxLengthByte = 1;
+
+                cBytes = pbAmlPkgLength[0] & 0xF;
+
+                while (idxLengthByte <= cLengthBytesFollow)
+                {
+                    cBytes |= pbAmlPkgLength[idxLengthByte] << (4*idxLengthByte);
+                    idxLengthByte++;
+                }
+            }
+
+            uint8_t *pbAmlDevName = &pbAmlPkgLength[cLengthBytesFollow+1];
+            uint8_t *pbAmlCpu     = &pbAmlDevName[4];
+            bool fCpuConfigured = false;
+            bool fCpuFound      = false;
+
+            if ((pbAmlDevName[0] != 'S') || (pbAmlDevName[1] != 'C') || (pbAmlDevName[2] != 'K'))
+            {
+                /* false alarm, not named starting SCK */
+                idxAml++;
+                continue;
+            }
+
+            for (uint32_t idxAmlCpu = 0; idxAmlCpu < cBytes - 7; idxAmlCpu++)
+            {
+                /*
+                 * AML_PROCESSOR_OP
+                 *
+                 * DefProcessor := ProcessorOp PkgLength NameString ProcID
+                                     PblkAddr PblkLen ObjectList
+                 * ProcessorOp  := ExtOpPrefix 0x83
+                 * ProcID       := ByteData
+                 * PblkAddr     := DwordData
+                 * PblkLen      := ByteData
+                 */
+                if ((pbAmlCpu[idxAmlCpu] == 0x5b) && (pbAmlCpu[idxAmlCpu+1] == 0x83))
+                {
+                    if ((pbAmlCpu[idxAmlCpu+4] != 'C') || (pbAmlCpu[idxAmlCpu+5] != 'P'))
+                        /* false alarm, not named starting CP */
+                        continue;
+
+                    fCpuFound = true;
+
+                    /* Processor ID */
+                    if (pbAmlCpu[idxAmlCpu+8] < cNumCpus)
+                    {
+                        LogFlow(("CPU %d is configured\n", pbAmlCpu[idxAmlCpu+8]));
+                        fCpuConfigured = true;
+                        break;
+                    }
+                    else
+                    {
+                        LogFlow(("CPU %d is not configured\n", pbAmlCpu[idxAmlCpu+8]));
+                        fCpuConfigured = false;
+                        break;
+                    }
+                }
+            }
+
+            Assert(fCpuFound);
+
+            if (!fCpuConfigured)
+            {
+                /* Will fill unwanted CPU block with NOOPs */
+                /*
+                 * See 18.2.4 Package Length Encoding in ACPI spec
+                 * for full format
+                 */
+
+                /* including AML_DEVICE_OP itself */
+                for (uint32_t j = 0; j < cBytes + 2; j++)
+                    pAml[idxAml+j] = 0xa3;
+            }
+
+            idxAml++;
+        }
+        else
+            idxAml++;
+    }
+
+    /* now recompute checksum, whole file byte sum must be 0 */
+    pAml[9] = 0;
+    uint8_t         aSum = 0;
+    for (uint32_t i = 0; i < uAmlLen; i++)
+      aSum = aSum + (uint8_t)pAml[i];
+    pAml[9] = (uint8_t) (0 - aSum);
+
+    return 0;
+}
 #endif
 
 /**
@@ -289,7 +423,14 @@ int acpiPrepareSsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puSsdtLen)
 
         pbAmlCodeSsdt = (uint8_t *)RTMemAllocZ(cbAmlCodeSsdt);
         if (pbAmlCodeSsdt)
+        {
             memcpy(pbAmlCodeSsdt, pbAmlCode, cbAmlCodeSsdt);
+
+            if (fCpuHotPlug)
+                patchAmlCpuHotPlug(pDevIns, pbAmlCodeSsdt, cbAmlCodeSsdt);
+            else
+                patchAml(pDevIns, pbAmlCodeSsdt, cbAmlCodeSsdt);
+        }
         else
             rc = VERR_NO_MEMORY;
     }
@@ -299,7 +440,6 @@ int acpiPrepareSsdt(PPDMDEVINS pDevIns, void* *ppPtr, size_t *puSsdtLen)
 
     if (RT_SUCCESS(rc))
     {
-        patchAml(pDevIns, pbAmlCodeSsdt, cbAmlCodeSsdt);
         *ppPtr = pbAmlCodeSsdt;
         *puSsdtLen = cbAmlCodeSsdt;
     }
