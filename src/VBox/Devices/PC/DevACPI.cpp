@@ -152,8 +152,8 @@ enum
     SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
-    SYSTEM_INFO_INDEX_CPU_LOCKED        = 11,
-    SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12,
+    SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
+    SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
     SYSTEM_INFO_INDEX_END               = 15,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
@@ -1530,10 +1530,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPO
                 break;
 
             case SYSTEM_INFO_INDEX_CPU_LOCK_CHECK:
-                if (u32 < s->cCpus)
-                    s->idCpuLockCheck = u32;
-                else
-                    LogRel(("ACPI: CPU %u does not exist\n", u32));
+                s->idCpuLockCheck = u32;
                 break;
 
             case SYSTEM_INFO_INDEX_CPU_LOCKED:
