@@ -314,25 +314,6 @@ GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChun
 }
 
 /**
- * @see GMMR0AllocateLargePage
- */
-GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys)
-{
-    GMMALLOCLARGEPAGEREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.cbPage = cbPage;
-    Req.idPage = NIL_GMM_PAGEID;
-    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_ALLOC_LARGE_PAGE, 0, &Req.Hdr);
-    if (RT_SUCCESS(rc) && pidPage)
-        *pidPage = Req.idPage;
-    
-    if (RT_SUCCESS(rc) && pHCPhys)
-        *pHCPhys = Req.HCPhys;
-    return rc;
-}
-
-/**
  * @see GMMR0FreeLargePage
  */
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage)

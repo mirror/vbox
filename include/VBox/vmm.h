@@ -95,7 +95,7 @@ typedef enum VMMCALLRING3
     /** Allocates more handy pages. */
     VMMCALLRING3_PGM_ALLOCATE_HANDY_PAGES,
     /** Allocates a large (2MB) page. */
-    VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE,
+    VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE,
     /** Acquire the MM hypervisor heap lock. */
     VMMCALLRING3_MMHYPER_LOCK,
     /** Replay the REM handler notifications. */
@@ -286,6 +286,8 @@ typedef enum VMMR0OPERATION
 
     /** Call PGMR0PhysAllocateHandyPages(). */
     VMMR0_DO_PGM_ALLOCATE_HANDY_PAGES,
+    /** Call PGMR0AllocateLargePage(). */
+    VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE,
 
     /** Call GMMR0InitialReservation(). */
     VMMR0_DO_GMM_INITIAL_RESERVATION,
@@ -293,8 +295,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_UPDATE_RESERVATION,
     /** Call GMMR0AllocatePages(). */
     VMMR0_DO_GMM_ALLOCATE_PAGES,
-    /** Call GMMR0AllocateLargePage(). */
-    VMMR0_DO_GMM_ALLOC_LARGE_PAGE,
     /** Call GMMR0FreePages(). */
     VMMR0_DO_GMM_FREE_PAGES,
     /** Call GMMR0FreeLargePage(). */

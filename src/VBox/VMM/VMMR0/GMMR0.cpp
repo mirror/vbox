@@ -2289,15 +2289,13 @@ GMMR0DECL(int) GMMR0AllocatePagesReq(PVM pVM, VMCPUID idCpu, PGMMALLOCATEPAGESRE
  * @param   pVM             Pointer to the shared VM structure.
  * @param   idCpu           VCPU id
  * @param   cbPage          Large page size
- * @param   pidPage         Id of the page (out)
- * @param   HCPhys          Host physical address of the page (out)
  */
-GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pidPage, RTHCPHYS *pHCPhys)
+GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys)
 {
     LogFlow(("GMMR0AllocateLargePage: pVM=%p cbPage=%x\n", pVM, cbPage));
 
     AssertReturn(cbPage == GMM_CHUNK_SIZE, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pidPage, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(pIdPage, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pHCPhys, VERR_INVALID_PARAMETER);
 
     /*
@@ -2314,8 +2312,8 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
     if (pGMM->fLegacyAllocationMode)
         return VERR_NOT_SUPPORTED;
 
-    *pidPage = NIL_GMM_PAGEID;
     *pHCPhys = NIL_RTHCPHYS;
+    *pIdPage = NIL_GMM_PAGEID;
 
     rc = RTSemFastMutexRequest(pGMM->Mtx);
     AssertRCReturn(rc, rc);
@@ -2347,7 +2345,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
         /* Allocate all pages. */
         gmmR0AllocatePage(pGMM, pGVM->hSelf, pChunk, &PageDesc);
         /* Return the first page as we'll use the whole chunk as one big page. */
-        *pidPage = PageDesc.idPage;
+        *pIdPage = PageDesc.idPage;
         *pHCPhys = PageDesc.HCPhysGCPhys;
 
         for (unsigned i = 1; i < cPages; i++)
@@ -2366,29 +2364,6 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
     RTSemFastMutexRelease(pGMM->Mtx);
     LogFlow(("GMMR0AllocatePages: returns %Rrc\n", rc));
     return rc;
-}
-
-
-/**
- * VMMR0 request wrapper for GMMR0AllocateLargePage.
- *
- * @returns see GMMR0AllocateLargePage.
- * @param   pVM             Pointer to the shared VM structure.
- * @param   idCpu           VCPU id
- * @param   pReq            The request packet.
- */
-GMMR0DECL(int) GMMR0AllocateLargePageReq(PVM pVM, VMCPUID idCpu, PGMMALLOCLARGEPAGEREQ pReq)
-{
-    /*
-     * Validate input and pass it on.
-     */
-    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
-    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMALLOCATEPAGESREQ),
-                    ("%#x != %#x\n", pReq->Hdr.cbReq, sizeof(GMMALLOCATEPAGESREQ)),
-                    VERR_INVALID_PARAMETER);
-
-    return GMMR0AllocateLargePage(pVM, idCpu, pReq->cbPage, &pReq->idPage, &pReq->HCPhys);
 }
 
 

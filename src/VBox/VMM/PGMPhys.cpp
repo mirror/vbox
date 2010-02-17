@@ -3173,20 +3173,34 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
  *
  * @param   pVM         The VM handle.
  */
-VMMR3DECL(int) PGMR3PhysAllocateLargePage(PVM pVM)
+VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM)
 {
-    int      rc = VINF_SUCCESS;
-    uint32_t idPage;
-    RTHCPHYS HCPhys;
-    void    *pvDummy;
-
     pgmLock(pVM);
 
-    rc = GMMR3AllocateLargePage(pVM, _2M, &idPage, &HCPhys);
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_PGM_ALLOCATE_LARGE_HANDY_PAGE, 0, NULL);
     if (RT_SUCCESS(rc))
     {
-        /* Map the large page into our address space. */
-        rc = pgmPhysPageMapByPageID(pVM, idPage, HCPhys, &pvDummy);
+        Assert(pVM->pgm.s.cLargeHandyPages == 1);
+
+        uint32_t idPage = pVM->pgm.s.aLargeHandyPage[0].idPage;
+        RTHCPHYS HCPhys = pVM->pgm.s.aLargeHandyPage[0].HCPhysGCPhys;
+
+        /*
+         * Clear the pages.
+         */
+        for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
+        {
+            void *pv;
+
+            /* Map the large page into our address space. Could only fail the first time */
+            rc = pgmPhysPageMapByPageID(pVM, idPage, HCPhys, &pv);
+            AssertLogRelMsgBreak(RT_SUCCESS(rc), ("idPage=%#x HCPhysGCPhys=%RHp rc=%Rrc", idPage, HCPhys, rc));
+            ASMMemZeroPage(pv);
+            idPage++;
+            HCPhys += PAGE_SIZE;
+            Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
+        }
+        pVM->pgm.s.cLargeHandyPages = 0;
     }
 
     pgmUnlock(pVM);

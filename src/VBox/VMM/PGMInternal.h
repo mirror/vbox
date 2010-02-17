@@ -611,9 +611,10 @@ typedef struct PGMPAGE
      *    (PGM_PAGE_HNDL_PHYS_STATE_*).
      *  - [8-9]: u2HandlerVirtStateY - the virtual handler state
      *    (PGM_PAGE_HNDL_VIRT_STATE_*).
+     *  - [14]:  u1LargePage - flag indicating that it's part of a large (2 MB) page 
      *  - [15]:  fWrittenToY - flag indicating that a write monitored page was
      *    written to when set.
-     *  - [10-14]: 5 unused bits.
+     *  - [10-13]: 4 unused bits.
      * @remarks Warning! All accesses to the bits are hardcoded.
      *
      * @todo    Change this to a union with both bitfields, u8 and u accessors.
@@ -812,7 +813,7 @@ typedef PPGMPAGE *PPPGMPAGE;
 
 
 /**
- * Marks the paget as written to (for GMM change monitoring).
+ * Marks the page as written to (for GMM change monitoring).
  * @param   pPage       Pointer to the physical guest page tracking structure.
  */
 #define PGM_PAGE_SET_WRITTEN_TO(pPage)      do { (pPage)->u16MiscY.au8[1] |= UINT8_C(0x80); } while (0)
@@ -830,6 +831,24 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_IS_WRITTEN_TO(pPage)       ( !!((pPage)->u16MiscY.au8[1] & UINT8_C(0x80)) )
 
+/**
+ * Marks the page as part of a large continuous page
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_SET_LARGE_PAGE(pPage)      do { (pPage)->u16MiscY.au8[1] |= UINT8_C(0x40); } while (0)
+
+/**
+ * Clears the page as part of a large continuous page indicator.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_CLEAR_LARGE_PAGE(pPage)    do { (pPage)->u16MiscY.au8[1] &= UINT8_C(0xbf); } while (0)
+
+/**
+ * Checks if the page was marked being part of a large page
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_LARGE_PAGE(pPage)       ( !!((pPage)->u16MiscY.au8[1] & UINT8_C(0x40)) )
 
 /** Enabled optimized access handler tests.
  * These optimizations makes ASSUMPTIONS about the state values and the u16MiscY
