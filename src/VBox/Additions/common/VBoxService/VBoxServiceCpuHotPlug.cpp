@@ -153,55 +153,72 @@ static void VBoxServiceCpuHotPlugHandlePlugEvent(uint32_t idCpuCore, uint32_t id
 {
 #ifdef RT_OS_LINUX
     /*
-     * The topology directory is not available until the CPU is online. So we just iterate over all directories
+     * The topology directory (containing the physical and core id properties)
+     * is not available until the CPU is online. So we just iterate over all directories
      * and enable every CPU which is not online already.
+     * Because the directory might not be available immediately we try a few times.
+     *
+     * @todo: Maybe use udev to monitor hot-add events from the kernel
      */
-    /** @todo Maybe use udev to monitor events from the kernel */
-    PRTDIR pDirDevices = NULL;
-    int rc = RTDirOpen(&pDirDevices, SYSFS_CPU_PATH);  /*could use RTDirOpenFiltered*/
-    if (RT_SUCCESS(rc))
+    bool fCpuOnline = false;
+    unsigned cTries = 5;
+
+    do
     {
-        RTDIRENTRY DirFolderContent;
-        while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
+        PRTDIR pDirDevices = NULL;
+        int rc = RTDirOpen(&pDirDevices, SYSFS_CPU_PATH);
+        if (RT_SUCCESS(rc))
         {
-/** @todo r-bird: This code is bringing all CPUs online; the idCpuCore and
- *        idCpuPackage parameters are unused!   
- *        aeichner: These files are not available at this point unfortunately. (see comment above) 
- */
-            /*
-             * Check if this is a CPU object.
-             * cpu0 is excluded because it is not possible to change the state
-             * of the first CPU on Linux (it doesn't even have an online file)
-             * and cpuidle is no CPU device. Prevents error messages later.
-             */
-            if(   !strncmp(DirFolderContent.szName, "cpu", 3)
-                && strncmp(DirFolderContent.szName, "cpu0", 4)
-                && strncmp(DirFolderContent.szName, "cpuidle", 7))
+            RTDIRENTRY DirFolderContent;
+            while (RT_SUCCESS(RTDirRead(pDirDevices, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
             {
-                /* Get the sysdev */
-                RTFILE hFileCpuOnline = NIL_RTFILE;
-                rc = RTFileOpenF(&hFileCpuOnline, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
-                                 "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
-                if (RT_SUCCESS(rc))
+                /** @todo r-bird: This code is bringing all CPUs online; the idCpuCore and
+                 *        idCpuPackage parameters are unused!   
+                 *        aeichner: These files are not available at this point unfortunately. (see comment above) 
+                 */
+                /*
+                 * Check if this is a CPU object.
+                 * cpu0 is excluded because it is not possible to change the state
+                 * of the first CPU on Linux (it doesn't even have an online file)
+                 * and cpuidle is no CPU device. Prevents error messages later.
+                 */
+                if(   !strncmp(DirFolderContent.szName, "cpu", 3)
+                    && strncmp(DirFolderContent.szName, "cpu0", 4)
+                    && strncmp(DirFolderContent.szName, "cpuidle", 7))
                 {
-                    /* Write a 1 to online the CPU */
-                    rc = RTFileWrite(hFileCpuOnline, "1", 1, NULL);
-                    RTFileClose(hFileCpuOnline);
+                    /* Get the sysdev */
+                    RTFILE hFileCpuOnline = NIL_RTFILE;
+
+                    rc = RTFileOpenF(&hFileCpuOnline, RTFILE_O_WRITE | RTFILE_O_OPEN | RTFILE_O_DENY_NONE,
+                                     "%s/%s/online", SYSFS_CPU_PATH, DirFolderContent.szName);
                     if (RT_SUCCESS(rc))
                     {
-                        VBoxServiceVerbose(1, "CpuHotPlug: CPU %u/%u was brought online\n", idCpuPackage, idCpuCore);
-                        break;
+                        /* Write a 1 to online the CPU */
+                        rc = RTFileWrite(hFileCpuOnline, "1", 1, NULL);
+                        RTFileClose(hFileCpuOnline);
+                        if (RT_SUCCESS(rc))
+                        {
+                            VBoxServiceVerbose(1, "CpuHotPlug: CPU %u/%u was brought online\n", idCpuPackage, idCpuCore);
+                            fCpuOnline = true;
+                            break;
+                        }
+                        /* Error means CPU not present or online already  */
                     }
-                    /* Error means CPU not present or online already  */
+                    else
+                        VBoxServiceError("CpuHotPlug: Failed to open \"%s/%s/online\" rc=%Rrc\n",
+                                         SYSFS_CPU_PATH, DirFolderContent.szName, rc);
                 }
-                else
-                    VBoxServiceError("CpuHotPlug: Failed to open \"%s/%s/online\" rc=%Rrc\n",
-                                     SYSFS_CPU_PATH, DirFolderContent.szName, rc);
             }
         }
-    }
-    else
-        VBoxServiceError("CpuHotPlug: Failed to open path %s rc=%Rrc\n", SYSFS_CPU_PATH, rc);
+        else
+            VBoxServiceError("CpuHotPlug: Failed to open path %s rc=%Rrc\n", SYSFS_CPU_PATH, rc);
+
+        /* Sleep a bit */
+        if (!fCpuOnline)
+            RTThreadSleep(10);
+
+    } while (   !fCpuOnline
+             && cTries-- > 0);
 #else
 # error "Port me"
 #endif
