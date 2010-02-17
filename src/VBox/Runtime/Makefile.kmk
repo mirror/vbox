@@ -470,7 +470,6 @@ RuntimeR3_SOURCES.linux = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
@@ -484,6 +483,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/linux/sysfs.cpp \
 	r3/linux/time-linux.cpp \
 	r3/linux/RTProcIsRunningByName-linux.cpp \
+	r3/linux/RTSystemQueryDmiString-linux.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
 	r3/posix/RTSystemQueryOSInfo-posix.cpp \
 	r3/posix/alloc-posix.cpp \

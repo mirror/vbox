@@ -210,6 +210,39 @@ RTDECL(ssize_t) RTLinuxSysFsReadStr(int fd, char *pszBuf, size_t cchBuf)
 }
 
 
+RTDECL(int) RTLinuxSysFsReadFile(int fd, void *pvBuf, size_t cbBuf, size_t *pcbRead)
+{
+    int     rc;
+    ssize_t cbRead = read(fd, pvBuf, cbBuf);
+    if (cbRead >= 0)
+    {
+        if (pcbRead)
+            *pcbRead = cbRead;
+        if ((size_t)cbRead < cbBuf)
+            rc = VINF_SUCCESS;
+        else
+        {
+            /* Check for EOF */
+            char    ch;
+            off_t   off     = lseek(fd, 0, SEEK_CUR);
+            ssize_t cbRead2 = read(fd, &ch, 1);
+            if (cbRead2 == 0)
+                rc = VINF_SUCCESS;
+            else if (cbRead2 > 0)
+            {
+                lseek(fd, off, SEEK_SET);
+                rc = VERR_BUFFER_OVERFLOW;
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
+        }
+    }
+    else
+        rc = RTErrConvertFromErrno(errno);
+    return rc;
+}
+
+
 RTDECL(int64_t) RTLinuxSysFsReadIntFileV(unsigned uBase, const char *pszFormat, va_list va)
 {
     int fd = RTLinuxSysFsOpenV(pszFormat, va);
