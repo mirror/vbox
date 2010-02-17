@@ -141,6 +141,12 @@ enum
 
 enum
 {
+    CPU_EVENT_TYPE_ADD                  = 0x01, /**< Event type add */
+    CPU_EVENT_TYPE_REMOVE               = 0x03  /**< Event type remove */
+};
+
+enum
+{
     SYSTEM_INFO_INDEX_LOW_MEMORY_LENGTH = 0,
     SYSTEM_INFO_INDEX_USE_IOAPIC        = 1,
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
@@ -154,6 +160,8 @@ enum
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
+    SYSTEM_INFO_INDEX_CPU_EVENT_TYPE    = 13, /**< Type of the CPU hot-plug event */
+    SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
     SYSTEM_INFO_INDEX_END               = 15,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
@@ -241,6 +249,10 @@ typedef struct ACPIState
     uint32_t            idCpuLockCheck;
     /** Mask of locked CPUs (used by the guest) */
     VMCPUSET            CpuSetLocked;
+    /** The CPU event type */
+    uint32_t            u32CpuEventType;
+    /** The CPU id affected */
+    uint32_t            u32CpuEvent;
     /** Flag whether CPU hot plugging is enabled */
     bool                fCpuHotPlug;
     /** Aligning IBase. */
@@ -1490,6 +1502,18 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                     break;
                 }
 
+                case SYSTEM_INFO_INDEX_CPU_EVENT_TYPE:
+                {
+                    *pu32 = s->u32CpuEventType;
+                    break;
+                }
+
+                case SYSTEM_INFO_INDEX_CPU_EVENT:
+                {
+                    *pu32 = s->u32CpuEvent;
+                    break;
+                }
+
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
                     *pu32 = 0;
@@ -2186,6 +2210,8 @@ static DECLCALLBACK(int) acpiAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
          * Prevents ejection while the CPU is still used
          */
         VMCPUSET_ADD(&s->CpuSetLocked, iLUN);
+        s->u32CpuEventType = CPU_EVENT_TYPE_ADD;
+        s->u32CpuEvent     = iLUN;
         /* Notify the guest */
         update_gpe0(s, s->gpe0_sts | 0x2, s->gpe0_en);
     }
@@ -2355,6 +2381,8 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     VMCPUSET_EMPTY(&s->CpuSetAttached);
     VMCPUSET_EMPTY(&s->CpuSetLocked);
     s->idCpuLockCheck = UINT32_C(0xffffffff);
+    s->u32CpuEventType = 0;
+    s->u32CpuEvent     = UINT32_C(0xffffffff);
 
     /* The first CPU can't be attached/detached */
     VMCPUSET_ADD(&s->CpuSetAttached, 0);

@@ -21,6 +21,8 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
 {
     External(\_SB.CPUC)
     External(\_SB.CPUL)
+    External(\_SB.CPEV)
+    External(\_SB.CPET)
 
     // Method to check for the CPU status
     Method(CPCK, 1)
@@ -130,11 +132,11 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
     Scope (\_GPE)
     {
 
-#define CHECK_CPU(cpu, sck)    \
-    IF (CPCK(cpu))             \
-    {                          \
-        Notify (\_SB.sck, 0x1) \
-    }                          \
+#define CHECK_CPU(cpu, sck)          \
+    IF (LEqual(Local0, cpu))      \
+    {                                \
+        Notify (\_SB.sck, Local1) \
+    }                                \
 
         // GPE bit 1 handler
         // GPE.1 must be set and SCI raised when
@@ -142,8 +144,8 @@ DefinitionBlock ("SSDT-cpuhotplug.aml", "SSDT", 1, "VBOX  ", "VBOXCPUT", 2)
         // re-evaluated
         Method (_L01, 0, NotSerialized)
         {
-            /*Store(\_SB.CPET, Local0)*/
-            /*Store(\_SB.CPEV, Local1)*/
+            Store(\_SB.CPEV, Local0)
+            Store(\_SB.CPET, Local1)
 
             CHECK_CPU(0x01, SCK1)
             CHECK_CPU(0x02, SCK2)
