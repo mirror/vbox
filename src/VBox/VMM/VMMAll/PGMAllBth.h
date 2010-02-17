@@ -2936,8 +2936,80 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if PGM_SHW_TYPE == PGM_TYPE_EPT
+# if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS) && defined(DEBUG_sandervl)
+    PPGMPAGE pPage;
+    rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & SHW_PD_MASK, &pPage);
+    if (    RT_SUCCESS(rc)
+        &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+    {
+        RTHCPHYS HCPhys = NIL_RTHCPHYS;
+        unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pPage);
 
+        if  (uPDEType == PGM_PAGE_PDE_TYPE_PDE)
+        {
+            /* Previously allocated 2 MB range can be reused. */
+            Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+            HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+        }
+        else
+        if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
+             && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
+        {
+            RTGCPHYS GCPhysBase = GCPtrPage & SHW_PD_MASK;
+            RTGCPHYS GCPhys = GCPhysBase;
+            unsigned iPage;
+
+            /* Lazy approach: check all pages in the 2 MB range. 
+             * The whole range must be ram and unallocated
+             */
+            for (iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
+            {
+                rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+                if  (   RT_FAILURE(rc)
+                     || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM
+                     || PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
+                {
+                    break;
+                }
+                Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
+                GCPhys += PAGE_SIZE;
+            }
+            /* Fetch the start page of the 2 MB range again. */
+            rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
+            AssertRC(rc);   /* can't fail */
+
+            if (iPage != _2M/PAGE_SIZE)
+            {
+                /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
+                PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
+            }
+            else
+            {
+                rc = pgmPhysAllocLargePage(pVM, GCPhysBase);
+                if (RT_SUCCESS(rc))
+                {   
+                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                }
+            }
+        }
+
+        if (HCPhys != NIL_RTHCPHYS)
+        {
+            PdeDst.u &= X86_PDE_AVL_MASK;
+            PdeDst.u |= HCPhys;
+            PdeDst.n.u1Present   = 1;
+            PdeDst.n.u1Write     = 1;
+            PdeDst.n.u1Execute   = 1;
+            PdeDst.b.u1Size      = 1;
+            PdeDst.b.u1IgnorePAT = 1;
+            PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
+            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+
+            STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
+            return VINF_SUCCESS;
+        }
+    }
 # endif
 
     GSTPDE PdeSrc;
