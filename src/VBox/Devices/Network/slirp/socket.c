@@ -644,6 +644,10 @@ sorecvfrom(PNATState pData, struct socket *so)
         }
 
         len = sizeof(struct udpiphdr) + ETH_HLEN;
+        if (n > (if_mtu - len))
+        {
+            n = if_mtu - len; /* can't read than we can put in the mbuf*/
+        }
         len += n;
 
         size = MCLBYTES;
