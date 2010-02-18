@@ -1720,6 +1720,10 @@ VMMDECL(bool) CPUMIsGuestNXEnabled(PVMCPU pVCpu)
  */
 VMMDECL(bool) CPUMIsGuestPageSizeExtEnabled(PVMCPU pVCpu)
 {
+    /* PAE or AMD64 implies support for big pages regardless of CR4.PSE */
+    if (pVCpu->cpum.s.Guest.cr4 & X86_CR4_PAE)
+        return true;
+
     return !!(pVCpu->cpum.s.Guest.cr4 & X86_CR4_PSE);
 }
 
