@@ -466,6 +466,8 @@
 #define VINF_PGM_HANDLER_ALREADY_ALIASED        (1643)
 /** PGM pool flush pending - return to ring 3. */
 #define VINF_PGM_POOL_FLUSH_PENDING             (1644)
+/** Unable to use the range for a large page. */
+#define VERR_PGM_INVALID_LARGE_PAGE_RANGE       (-1645)
 /** @} */
 
 
