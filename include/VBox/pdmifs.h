@@ -279,7 +279,7 @@ typedef struct PDMIDUMMY
 
 
 /** PDMIMOUSEPORT interface ID. */
-#define PDMIMOUSEPORT_IID "dcf20e6b-6cd5-4517-8759-91064605b8a8"
+#define PDMIMOUSEPORT_IID "f8d45ecc-bd6f-4a8d-b262-b85498e7f143"
 /** Pointer to a mouse port interface. */
 typedef struct PDMIMOUSEPORT *PPDMIMOUSEPORT;
 /**
@@ -312,9 +312,12 @@ typedef struct PDMIMOUSEPORT
      * @param   pInterface          Pointer to this interface structure.
      * @param   i32cX               The X value, in the range 0 to 0xffff.
      * @param   i32cY               The Y value, in the range 0 to 0xffff.
+     * @param   i32DeltaZ           The Z delta.
+     * @param   i32DeltaW           The W (horizontal scroll button) delta.
+     * @param   fButtonStates       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, int32_t i32cX, int32_t i32cY));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, uint32_t i32cX, uint32_t i32cY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates));
 } PDMIMOUSEPORT;
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
@@ -346,7 +349,7 @@ typedef struct PDMIMOUSECONNECTOR
 } PDMIMOUSECONNECTOR;
 
 /** PDMIMOUSECONNECTOR interface ID.  */
-#define PDMIMOUSECONNECTOR_IID                  "847f965f-0eb8-4363-88ac-b0ee58a05bde"
+#define PDMIMOUSECONNECTOR_IID                  "39e48c1c-1514-4ac6-8a9c-88034d36ae98"
 
 
 /** Pointer to a keyboard port interface. */
