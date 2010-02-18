@@ -123,8 +123,7 @@ static const uint16_t g_aDarwinToSet1[] =
     0x2d,                       /* QZ_x            0x07 */
     0x2e,                       /* QZ_c            0x08 */
     0x2f,                       /* QZ_v            0x09 */
-//    0x56,                       /* between lshift and z. 'INT 1'? */
-    0x29,                       /* between lshift and z. 'INT 1'? */
+    0x56,                       /* between lshift and z. 'INT 1'? */
     0x30,                       /* QZ_b            0x0B */
     0x10,                       /* QZ_q            0x0C */
     0x11,                       /* QZ_w            0x0D */
@@ -164,8 +163,7 @@ static const uint16_t g_aDarwinToSet1[] =
     0x34,                       /* QZ_PERIOD       0x2F */
     0x0f,                       /* QZ_TAB          0x30 */
     0x39,                       /* QZ_SPACE        0x31 */
-//    0x29,                       /* QZ_BACKQUOTE    0x32 */
-    0x56,                       /* QZ_BACKQUOTE    0x32 */
+    0x29,                       /* QZ_BACKQUOTE    0x32 */
     0x0e,                       /* QZ_BACKSPACE    0x33 */
     0x9c,                       /* QZ_IBOOK_ENTER  0x34 */
     0x01,                       /* QZ_ESCAPE       0x35 */
