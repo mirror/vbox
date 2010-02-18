@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -24,7 +24,7 @@
 #ifndef __QIWithRetranslateUI_h
 #define __QIWithRetranslateUI_h
 
-/* Qt includes */
+/* Global includes */
 #include <QObject>
 #include <QEvent>
 
@@ -33,19 +33,19 @@ class QIWithRetranslateUI: public Base
 {
 public:
 
-    QIWithRetranslateUI (QWidget *aParent = 0) : Base (aParent) {}
+    QIWithRetranslateUI(QWidget *pParent = 0) : Base(pParent) {}
 
 protected:
 
-    virtual void changeEvent (QEvent *aEvent)
+    virtual void changeEvent(QEvent *pEvent)
     {
-        Base::changeEvent (aEvent);
-        switch (aEvent->type())
+        Base::changeEvent (pEvent);
+        switch (pEvent->type())
         {
             case QEvent::LanguageChange:
             {
                 retranslateUi();
-                aEvent->accept();
+                pEvent->accept();
                 break;
             }
             default:
@@ -61,19 +61,19 @@ class QIWithRetranslateUI2: public Base
 {
 public:
 
-    QIWithRetranslateUI2 (QWidget *aParent = 0, Qt::WindowFlags aFlags = 0) : Base (aParent, aFlags) {}
+    QIWithRetranslateUI2(QWidget *pParent = 0, Qt::WindowFlags fFlags = 0) : Base(pParent, fFlags) {}
 
 protected:
 
-    virtual void changeEvent (QEvent *aEvent)
+    virtual void changeEvent(QEvent *pEvent)
     {
-        Base::changeEvent (aEvent);
-        switch (aEvent->type())
+        Base::changeEvent (pEvent);
+        switch (pEvent->type())
         {
             case QEvent::LanguageChange:
             {
                 retranslateUi();
-                aEvent->accept();
+                pEvent->accept();
                 break;
             }
             default:
@@ -84,5 +84,34 @@ protected:
     virtual void retranslateUi() = 0;
 };
 
-#endif /* __QIWithRetranslateUI_h */
+template <class Base>
+class QIWithRetranslateUI3: public Base
+{
+public:
 
+    QIWithRetranslateUI3(QObject *pParent = 0) : Base(pParent) {}
+
+protected:
+
+    virtual bool event(QEvent *pEvent)
+    {
+        bool bResult = Base::event(pEvent);
+        switch (pEvent->type())
+        {
+            case QEvent::LanguageChange:
+            {
+                retranslateUi();
+                pEvent->accept();
+                bResult = true;
+                break;
+            }
+            default:
+                break;
+        }
+        return bResult;
+    }
+
+    virtual void retranslateUi() = 0;
+};
+
+#endif /* __QIWithRetranslateUI_h */
