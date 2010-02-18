@@ -679,7 +679,6 @@ RuntimeR3_SOURCES.solaris = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
@@ -713,7 +712,8 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
-	r3/solaris/rtProcInitExePath-solaris.cpp \
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
+	r3/solaris/rtProcInitExePath-solaris.cpp
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
@@ -991,7 +991,7 @@ VBoxRT_LIBS.freebsd            = \
 	iconv \
 	rt
 VBoxRT_LIBS.solaris            = \
-	kstat
+	kstat smbios
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
