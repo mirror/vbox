@@ -454,7 +454,7 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
 {
     int rc2;
     Log(("VBoxGuestDeleteDevExt:\n"));
-    LogRel(("VBoxGuest: The additions driver is terminating.\n"));
+    Log(("VBoxGuest: The additions driver is terminating.\n"));
 
     /*
      * Unfix the guest mappings, filter all events and clear
