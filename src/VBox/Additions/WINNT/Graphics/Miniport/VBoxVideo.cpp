@@ -759,7 +759,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
         /* handle the startup case */
         if (DeviceExtension->CurrentMode == 0)
 #else
-        if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].ulFrameBufferSize)
+        if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pAllocation)
 #endif
         {
             /* Use the stored custom resolution values only if nothing was read from host.
@@ -789,14 +789,14 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 bpp  = DeviceExtension->CurrentModeBPP;
         }
 #else
-        if (DeviceExtension->cSources && DeviceExtension->aSources[0].ulFrameBufferSize)
+        if (DeviceExtension->cSources && DeviceExtension->aSources[0].pAllocation)
         {
             if (!xres)
-                xres = DeviceExtension->aSources[0].VisScreenWidth;
+                xres = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.width;
             if (!yres)
-                yres = DeviceExtension->aSources[0].VisScreenHeight;
+                yres = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.height;
             if (!bpp)
-                bpp  = DeviceExtension->aSources[0].BitsPerPlane;
+                bpp  = DeviceExtension->aSources[0].pAllocation->u.SurfInfo.bpp;
         }
 #endif
 
@@ -823,7 +823,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode != 0)
 #else
-                if (DeviceExtension->cSources && DeviceExtension->aSources[0].ulFrameBufferSize)
+                if (DeviceExtension->cSources && DeviceExtension->aSources[0].pAllocation)
 #endif
                 {
                     if (gInvocationCounter % 2)
@@ -903,7 +903,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
                 if (DeviceExtension->CurrentMode == 0)
 #else
-                if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].ulFrameBufferSize)
+                if (!DeviceExtension->cSources || !DeviceExtension->aSources[0].pAllocation)
 #endif
                 {
                     dprintf(("VBoxVideo: making a copy of the custom mode as #%d\n", gNumVideoModes + 1));
@@ -2497,16 +2497,6 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
                  DeviceExtension->iDevice));
         return TRUE;
     }
-#else
-    Assert(!srcId);
-
-    if (srcId)
-    {
-        dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: Skipping for ? non-primary ? source ? %d\n",
-                srcId));
-        return TRUE;
-    }
-#endif
 
     /* set the mode characteristics */
     VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
@@ -2526,6 +2516,36 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
      *        (for example Qt GUI debug build asserts when seamless is being enabled).
      */
     // VBoxVideoSetGraphicsCap(TRUE);
+#else
+    Assert(!srcId);
+
+    if (srcId)
+    {
+        dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: Skipping for ? non-primary ? source ? %d\n",
+                srcId));
+        return TRUE;
+    }
+
+    /* set the mode characteristics */
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.width);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.height);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.bpp);
+    /* enable the mode */
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    /** @todo read from the port to see if the mode switch was successful */
+
+    /* Tell the host that we now support graphics in the additions.
+     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
+     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
+     *        (for example Qt GUI debug build asserts when seamless is being enabled).
+     */
+    // VBoxVideoSetGraphicsCap(TRUE);
+
+#endif
     return TRUE;
 }
 
