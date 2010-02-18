@@ -1059,13 +1059,61 @@ typedef struct VBOXVDMA_RECTL
     uint16_t height;
 } VBOXVDMA_RECTL, *PVBOXVDMA_RECTL;
 
+typedef enum
+{
+    VBOXVDMA_PIXEL_FORMAT_UNKNOWN      =  0,
+    VBOXVDMA_PIXEL_FORMAT_R8G8B8       = 20,
+    VBOXVDMA_PIXEL_FORMAT_A8R8G8B8     = 21,
+    VBOXVDMA_PIXEL_FORMAT_X8R8G8B8     = 22,
+    VBOXVDMA_PIXEL_FORMAT_R5G6B5       = 23,
+    VBOXVDMA_PIXEL_FORMAT_X1R5G5B5     = 24,
+    VBOXVDMA_PIXEL_FORMAT_A1R5G5B5     = 25,
+    VBOXVDMA_PIXEL_FORMAT_A4R4G4B4     = 26,
+    VBOXVDMA_PIXEL_FORMAT_R3G3B2       = 27,
+    VBOXVDMA_PIXEL_FORMAT_A8           = 28,
+    VBOXVDMA_PIXEL_FORMAT_A8R3G3B2     = 29,
+    VBOXVDMA_PIXEL_FORMAT_X4R4G4B4     = 30,
+    VBOXVDMA_PIXEL_FORMAT_A2B10G10R10  = 31,
+    VBOXVDMA_PIXEL_FORMAT_A8B8G8R8     = 32,
+    VBOXVDMA_PIXEL_FORMAT_X8B8G8R8     = 33,
+    VBOXVDMA_PIXEL_FORMAT_G16R16       = 34,
+    VBOXVDMA_PIXEL_FORMAT_A2R10G10B10  = 35,
+    VBOXVDMA_PIXEL_FORMAT_A16B16G16R16 = 36,
+    VBOXVDMA_PIXEL_FORMAT_A8P8         = 40,
+    VBOXVDMA_PIXEL_FORMAT_P8           = 41,
+    VBOXVDMA_PIXEL_FORMAT_L8           = 50,
+    VBOXVDMA_PIXEL_FORMAT_A8L8         = 51,
+    VBOXVDMA_PIXEL_FORMAT_A4L4         = 52,
+    VBOXVDMA_PIXEL_FORMAT_V8U8         = 60,
+    VBOXVDMA_PIXEL_FORMAT_L6V5U5       = 61,
+    VBOXVDMA_PIXEL_FORMAT_X8L8V8U8     = 62,
+    VBOXVDMA_PIXEL_FORMAT_Q8W8V8U8     = 63,
+    VBOXVDMA_PIXEL_FORMAT_V16U16       = 64,
+    VBOXVDMA_PIXEL_FORMAT_W11V11U10    = 65,
+    VBOXVDMA_PIXEL_FORMAT_A2W10V10U10  = 67
+} VBOXVDMA_PIXEL_FORMAT;
+
+typedef struct VBOXVDMA_SURF_DESC
+{
+    uint32_t width;
+    uint32_t height;
+    VBOXVDMA_PIXEL_FORMAT format;
+    uint32_t bpp;
+    uint32_t pitch;
+    uint32_t fFlags;
+} VBOXVDMA_SURF_DESC, *PVBOXVDMA_SURF_DESC;
+
 //typedef uint64_t VBOXVDMAPHADDRESS;
 typedef uint64_t VBOXVDMASURFHANDLE;
+
+typedef uint32_t VBOXVIDEOOFFSET;
+
+#define VBOXVIDEOOFFSET_VOID ((VBOXVIDEOOFFSET)~0)
 
 typedef enum
 {
     VBOXVDMACMD_TYPE_UNDEFINED        = 0,
-    VBOXVDMACMD_TYPE_DMATRANSFER      = 1
+    VBOXVDMACMD_TYPE_DMA_PRESENT_BLT      = 1
 } VBOXVDMACMD_TYPE;
 
 /* region specified as a rectangle, otherwize it is a size of memory pointed to by phys address */
@@ -1075,35 +1123,6 @@ typedef enum
 /* address is offset in VRAM */
 #define VBOXVDMAOPERAND_FLAGS_VRAMOFFSET  0x4
 
-typedef struct VBOXVDMA_RANGE_RECTL
-{
-    VBOXVDMA_RECTL RangeRectl;
-    VBOXVDMA_RECTL SurfSize;
-}VBOXVDMA_RANGE_RECTL, *PVBOXVDMA_RANGE_RECTL;
-
-typedef struct VBOXVDMA_RANGE_SIZE
-{
-    uint32_t cbSize;
-    uint32_t u32Reserved;
-}VBOXVDMA_RANGE_SIZE, *PVBOXVDMA_RANGE_SIZE;
-
-typedef struct VBOXVDMAOPERAND
-{
-    uint32_t fFlags;
-    union
-    {
-        /* for Src specifies num of Dsts */
-        uint32_t cDsts;
-        /* for Dst specifies Screen ID in case VBOXVDMAOPERAND_FLAGS_PRIMARY flag is present in fFlags */
-        uint32_t iScreen;
-    } Info;
-    RTGCPHYS phAddress;
-    union
-    {
-        VBOXVDMA_RANGE_RECTL Rectl;
-        VBOXVDMA_RANGE_SIZE  Size;
-    } Range;
-} VBOXVDMAOPERAND, *PVBOXVDMAOPERAND;
 
 /* VBOXVDMACBUF_DR::phBuf specifies offset in VRAM */
 #define VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET 0x00000001
@@ -1136,20 +1155,28 @@ typedef struct VBOXVDMACBUF_DR
 typedef struct VBOXVDMACMD
 {
     VBOXVDMACMD_TYPE enmType;
-    uint32_t cbCmd;
+    uint32_t u32CmdSpecific;
 } VBOXVDMACMD, *PVBOXVDMACMD;
 
 #define VBOXVDMACMD_HEADER_SIZE() sizeof (VBOXVDMACMD)
-#define VBOXVDMACMD_BODY_SIZE(_pCmd) ((_pCmd)->cbBody)
-#define VBOXVDMACMD_SIZE(_pCmd) (VBOXVDMACMD_HEADER_SIZE() + VBOXVDMACMD_BODY_SIZE(_pCmd))
-#define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_SIZE_FROMBODYSIZE(_s) (VBOXVDMACMD_HEADER_SIZE() + (_s))
+#define VBOXVDMACMD_SIZE(_t) (VBOXVDMACMD_SIZE_FROMBODYSIZE(sizeof (_t)))
+#define VBOXVDMACMD_BODY(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + VBOXVDMACMD_HEADER_SIZE()) )
+#define VBOXVDMACMD_BODY_FIELD_OFFSET(_ot, _t, _f) ( (_ot)( VBOXVDMACMD_BODY(0, uint8_t) + RT_OFFSETOF(_t, _f) ) )
 
-typedef struct VBOXVDMACMD_DMATRANSFER
+typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
 {
-    VBOXVDMAOPERAND Src;
-    /* the size of aDst is specified in Src::u32CmdSpecific*/
-    VBOXVDMAOPERAND aDst[1];
-} VBOXVDMACMD_DMATRANSFER, *PVBOXVDMACMD_DMATRANSFER;
+    VBOXVIDEOOFFSET offSrc;
+    VBOXVIDEOOFFSET offDst;
+    VBOXVDMA_SURF_DESC srcDesc;
+    VBOXVDMA_SURF_DESC dstDesc;
+    VBOXVDMA_RECTL srcRectl;
+    VBOXVDMA_RECTL dstRectl;
+    uint32_t u32Reserved;
+    uint32_t cDstSubRects;
+    VBOXVDMA_RECTL aDstSubRects[1];
+} VBOXVDMACMD_DMA_PRESENT_BLT, *PVBOXVDMACMD_DMA_PRESENT_BLT;
+
 # pragma pack()
 #endif /* #ifdef VBOXVDMA */
 
