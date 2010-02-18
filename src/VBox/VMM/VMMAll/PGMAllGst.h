@@ -103,7 +103,7 @@ PGM_GST_DECL(int, GetPage)(PVMCPU pVCpu, RTGCPTR GCPtr, uint64_t *pfFlags, PRTGC
         return VERR_PAGE_TABLE_NOT_PRESENT;
 
     if (    !Pde.b.u1Size
-# if PGM_GST_TYPE != PGM_TYPE_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
         ||  !CPUMIsGuestPageSizeExtEnabled(pVCpu)
 # endif
         )
@@ -220,7 +220,7 @@ PGM_GST_DECL(int, ModifyPage)(PVMCPU pVCpu, RTGCPTR GCPtr, size_t cb, uint64_t f
             return VERR_PAGE_TABLE_NOT_PRESENT;
 
         if (    !Pde.b.u1Size
-# if PGM_GST_TYPE != PGM_TYPE_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
             ||  !CPUMIsGuestPageSizeExtEnabled(pVCpu)
 # endif
             )
@@ -361,7 +361,7 @@ static DECLCALLBACK(int) PGM_GST_NAME(VirtHandlerUpdateOne)(PAVLROGCPTRNODECORE 
         if (Pde.n.u1Present)
         {
             if (    !Pde.b.u1Size
-# if PGM_GST_TYPE != PGM_TYPE_AMD64
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
                 ||  !(pState->cr4 & X86_CR4_PSE)
 # endif
                 )

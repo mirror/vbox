@@ -375,7 +375,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
 
 #  if PGM_WITH_PAGING(PGM_GST_TYPE, PGM_SHW_TYPE)
         if (    PdeSrc.b.u1Size
-#   if PGM_GST_TYPE != PGM_TYPE_AMD64
+#   if PGM_GST_TYPE == PGM_TYPE_32BIT
             &&  CPUMIsGuestPageSizeExtEnabled(pVCpu)
 #   endif
             )
@@ -1094,10 +1094,10 @@ PGM_BTH_DECL(int, InvalidatePage)(PVMCPU pVCpu, RTGCPTR GCPtrPage)
         PdeSrc.u = 0;
 # endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
 
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    const bool      fIsBigPage  = PdeSrc.b.u1Size;
-# else
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     const bool      fIsBigPage  = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
+# else
+    const bool      fIsBigPage  = PdeSrc.b.u1Size;
 # endif
 
 # ifdef IN_RING3
@@ -1638,10 +1638,10 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     /*
      * Check that the page is present and that the shadow PDE isn't out of sync.
      */
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    const bool      fBigPage = PdeSrc.b.u1Size;
-# else
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     const bool      fBigPage = PdeSrc.b.u1Size && CPUMIsGuestPageSizeExtEnabled(pVCpu);
+# else
+    const bool      fBigPage = PdeSrc.b.u1Size;
 # endif
     RTGCPHYS        GCPhys;
     if (!fBigPage)
@@ -2098,7 +2098,7 @@ PGM_BTH_DECL(int, CheckPageFault)(PVMCPU pVCpu, uint32_t uErr, PGSTPDE pPdeSrc, 
      * the dirty bit of an emulated BIG page
      */
     if (   pPdeSrc->b.u1Size
-#  if PGM_GST_TYPE != PGM_TYPE_AMD64
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
         && CPUMIsGuestPageSizeExtEnabled(pVCpu)
 #  endif
        )
@@ -2205,7 +2205,7 @@ l_UpperLevelPageFault:
     {
         /* Check the present bit as the shadow tables can cause different error codes by being out of sync. */
         if (   pPdeSrc->b.u1Size
-#  if PGM_GST_TYPE != PGM_TYPE_AMD64
+#  if PGM_GST_TYPE == PGM_TYPE_32BIT
             && CPUMIsGuestPageSizeExtEnabled(pVCpu)
 #  endif
            )
@@ -2243,10 +2243,10 @@ l_UpperLevelPageFault:
  */
 PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPdeDst, PGSTPDE pPdeSrc, RTGCPTR GCPtrPage)
 {
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    const bool fBigPagesSupported = true;
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
+    const bool fBigPagesSupported = CPUMIsGuestPageSizeExtEnabled(pVCpu);
 # else
-    const bool fBigPagesSupported = !!(CPUMGetGuestCR4(pVCpu) & X86_CR4_PSE);
+    const bool fBigPagesSupported = true;
 # endif
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
@@ -2525,10 +2525,10 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
          * Allocate & map the page table.
          */
         PSHWPT          pPTDst;
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-        const bool      fPageTable = !PdeSrc.b.u1Size;
-# else
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
         const bool      fPageTable = !PdeSrc.b.u1Size || !CPUMIsGuestPageSizeExtEnabled(pVCpu);
+# else
+        const bool      fPageTable = !PdeSrc.b.u1Size;
 # endif
         PPGMPOOLPAGE    pShwPage;
         RTGCPHYS        GCPhys;
@@ -3477,10 +3477,10 @@ PGM_BTH_DECL(unsigned, AssertCR3)(PVMCPU pVCpu, uint64_t cr3, uint64_t cr4, RTGC
     || PGM_GST_TYPE == PGM_TYPE_PAE \
     || PGM_GST_TYPE == PGM_TYPE_AMD64
 
-# if PGM_GST_TYPE == PGM_TYPE_AMD64
-    bool            fBigPagesSupported = true;
-# else
+# if PGM_GST_TYPE == PGM_TYPE_32BIT
     bool            fBigPagesSupported = CPUMIsGuestPageSizeExtEnabled(pVCpu);
+# else
+    bool            fBigPagesSupported = true;
 # endif
     PPGMCPU         pPGM = &pVCpu->pgm.s;
     RTGCPHYS        GCPhysGst;              /* page address derived from the guest page tables. */
