@@ -2391,6 +2391,16 @@ bool VBoxConsoleView::darwinKeyboardEvent (const void *pvCocoaEvent, EventRef in
         /* convert keycode to set 1 scan code. */
         UInt32 keyCode = ~0U;
         ::GetEventParameter (inEvent, kEventParamKeyCode, typeUInt32, NULL, sizeof (keyCode), NULL, &keyCode);
+        /* The usb keyboard driver translates these codes to different virtual
+         * key codes depending of the keyboard type. There are ANSI, ISO, JIS
+         * and unknown. For European keyboards (ISO) the key 0xa and 0x32 have
+         * to be switched. Here we are doing this at runtime, cause the user
+         * can have more than one keyboard (of different type), where he may
+         * switch at will all the time. Default is the ANSI standard as defined
+         * in g_aDarwinToSet1. */
+        if (   (keyCode == 0xa || keyCode == 0x32)
+            && KBGetLayoutType(LMGetKbdType()) == kKeyboardISO)
+            keyCode = 0x3c - keyCode;
         unsigned scanCode = ::DarwinKeycodeToSet1Scancode (keyCode);
         if (scanCode)
         {
