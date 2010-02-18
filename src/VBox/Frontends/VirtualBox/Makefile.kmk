@@ -1,4 +1,3 @@
-# $Id$
 ## @file
 # Makefile for the VirtualBox Qt GUI.
 #
@@ -784,7 +783,7 @@ $$(PATH_VirtualBox.app)/Info.plist: $(PATH_SUB_CURRENT)/src/darwin/Info.plist $(
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_CURRENT_YEAR@/$(VBOX_CURRENT_YEAR)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		$< > $@
 
 INSTALLS += VirtualBoxVM.app
@@ -807,7 +806,7 @@ $$(PATH_VirtualBoxVM.app)/VM-Info.plist: $(PATH_SUB_CURRENT)/src/darwin/VM-Info.
 		-e 's/@VBOX_VERSION_BUILD@/$(VBOX_VERSION_BUILD)/g' \
 		-e 's/@VBOX_VENDOR@/$(VBOX_VENDOR)/g' \
 		-e 's/@VBOX_PRODUCT@/$(VBOX_PRODUCT)/g' \
-		-e 's/@VBOX_CURRENT_YEAR@/$(VBOX_CURRENT_YEAR)/g' \
+		-e 's/@VBOX_C_YEAR@/$(VBOX_C_YEAR)/g' \
 		--output $@ $<
 endif # darwin
 
