@@ -68,11 +68,14 @@ typedef struct DRVMOUSEQUEUEITEM
 {
     /** The core part owned by the queue manager. */
     PDMQUEUEITEMCORE    Core;
+    uint32_t            fAbs;
     int32_t             i32DeltaX;
     int32_t             i32DeltaY;
     int32_t             i32DeltaZ;
     int32_t             i32DeltaW;
     uint32_t            fButtonStates;
+    int32_t             i32cX;
+    int32_t             i32cY;
 } DRVMOUSEQUEUEITEM, *PDRVMOUSEQUEUEITEM;
 
 
@@ -120,6 +123,7 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
     PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
     if (pItem)
     {
+        pItem->fAbs = 0;
         pItem->i32DeltaX = i32DeltaX;
         pItem->i32DeltaY = i32DeltaY;
         pItem->i32DeltaZ = i32DeltaZ;
@@ -130,6 +134,54 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
     }
     return VERR_PDM_NO_QUEUE_ITEMS;
 }
+
+/**
+ * Queues an absolute mouse event.
+ * Because of the event queueing the EMT context requirement is lifted.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to interface structure.
+ * @param   i32cX           The X value.
+ * @param   i32cY           The Y value.
+ * @thread  Any thread.
+ */
+static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, int32_t i32cX, int32_t i32cY)
+{
+    PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
+    if (pDrv->fInactive)
+        return VINF_SUCCESS;
+
+    PDRVMOUSEQUEUEITEM pItem = (PDRVMOUSEQUEUEITEM)PDMQueueAlloc(pDrv->pQueue);
+    if (pItem)
+    {
+        pItem->fAbs = 1;
+        pItem->i32cX = i32cX;
+        pItem->i32cY = i32cY;
+        PDMQueueInsert(pDrv->pQueue, &pItem->Core);
+        return VINF_SUCCESS;
+    }
+    return VERR_PDM_NO_QUEUE_ITEMS;
+}
+
+
+/* -=-=-=-=- IConnector -=-=-=-=- */
+
+#define PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface) ( (PDRVMOUSEQUEUE)((char *)(pInterface) - RT_OFFSETOF(DRVMOUSEQUEUE, IConnector)) )
+
+
+/**
+ * Pass absolute mode status changes from the guest through to the frontend
+ * driver.
+ *
+ * @param   pInterface  Pointer to the mouse connector interface structure.
+ * @param   fAbs        The new absolute mode state.
+ */
+static DECLCALLBACK(void) drvMousePassThruAbsMode(PPDMIMOUSECONNECTOR pInterface, bool fAbs)
+{
+    PDRVMOUSEQUEUE pDrv = PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface);
+    pDrv->pDownConnector->pfnAbsModeChange(pDrv->pDownConnector, fAbs);
+}
+
 
 
 /* -=-=-=-=- queue -=-=-=-=- */
@@ -146,7 +198,11 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
 {
     PDRVMOUSEQUEUE        pThis = PDMINS_2_DATA(pDrvIns, PDRVMOUSEQUEUE);
     PDRVMOUSEQUEUEITEM    pItem = (PDRVMOUSEQUEUEITEM)pItemCore;
-    int rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
+    int rc;
+    if (!pItem->fAbs)
+        rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
+    else
+        rc = pThis->pUpPort->pfnPutEventAbs(pThis->pUpPort, pItem->i32cX, pItem->i32cY);
     return RT_SUCCESS(rc);
 }
 
@@ -240,8 +296,11 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     pDrv->fInactive                         = true;
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvMouseQueueQueryInterface;
+    /* IMouseConnector. */
+    pDrv->IConnector.pfnAbsModeChange       = drvMousePassThruAbsMode;
     /* IMousePort. */
     pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
+    pDrv->IPort.pfnPutEventAbs              = drvMouseQueuePutEventAbs;
 
     /*
      * Get the IMousePort interface of the above driver/device.
