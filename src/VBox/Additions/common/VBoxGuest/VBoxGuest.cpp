@@ -356,7 +356,7 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
         rc = RTSpinlockCreate(&pDevExt->SessionSpinlock);
     if (RT_FAILURE(rc))
     {
-        Log(("VBoxGuestInitDevExt: failed to spinlock, rc=%d!\n", rc));
+        LogRel(("VBoxGuestInitDevExt: failed to spinlock, rc=%d!\n", rc));
         if (pDevExt->EventSpinlock != NIL_RTSPINLOCK)
             RTSpinlockDestroy(pDevExt->EventSpinlock);
         return rc;
@@ -393,18 +393,24 @@ int VBoxGuestInitDevExt(PVBOXGUESTDEVEXT pDevExt, uint16_t IOPortBase,
                         Log(("VBoxGuestInitDevExt: returns success\n"));
                         return VINF_SUCCESS;
                     }
+                    else
+                        LogRel(("VBoxGuestInitDevExt: VBoxGuestSetGuestCapabilities failed, rc=%Rrc\n", rc));
                 }
+                else
+                    LogRel(("VBoxGuestInitDevExt: vboxGuestSetFilterMask failed, rc=%Rrc\n", rc));
             }
+            else
+                LogRel(("VBoxGuestInitDevExt: vboxGuestInitReportGuestInfo failed, rc=%Rrc\n", rc));
 
-            /* failure cleanup */
+            VbglGRFree((VMMDevRequestHeader *)pDevExt->pIrqAckEvents);
         }
         else
-            Log(("VBoxGuestInitDevExt: VBoxGRAlloc failed, rc=%Rrc\n", rc));
+            LogRel(("VBoxGuestInitDevExt: VBoxGRAlloc failed, rc=%Rrc\n", rc));
 
         VbglTerminate();
     }
     else
-        Log(("VBoxGuestInitDevExt: VbglInit failed, rc=%Rrc\n", rc));
+        LogRel(("VBoxGuestInitDevExt: VbglInit failed, rc=%Rrc\n", rc));
 
     rc2 = RTSpinlockDestroy(pDevExt->EventSpinlock); AssertRC(rc2);
     rc2 = RTSpinlockDestroy(pDevExt->SessionSpinlock); AssertRC(rc2);
@@ -900,7 +906,7 @@ static int VBoxGuestCommonIOCtl_WaitEvent(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSE
              || rc == VERR_INTERRUPTED)
     {
         pInfo->u32Result = VBOXGUEST_WAITEVENT_INTERRUPTED;
-        rc == VERR_INTERRUPTED;
+        rc = VERR_INTERRUPTED;
         Log(("VBoxGuestCommonIOCtl: WAITEVENT: returns VERR_INTERRUPTED\n"));
     }
     else if (rc == VERR_TIMEOUT)
@@ -953,7 +959,7 @@ static int VBoxGuestCommonIOCtl_CancelAllWaitEvents(PVBOXGUESTDEVEXT pDevExt, PV
             if (    pWait->pSession   == pSession
                 &&  pWait->fResEvents != UINT32_MAX)
             {
-                RTSEMEVENTMULTI     hEvent;
+                RTSEMEVENTMULTI hEvent = pWait->Event;
                 pWait->fResEvents = UINT32_MAX;
                 RTSpinlockReleaseNoInts(pDevExt->EventSpinlock, &Tmp);
                 /* HACK ALRET! This races wakeup + reuse! */
