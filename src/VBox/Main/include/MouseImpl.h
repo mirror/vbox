@@ -45,6 +45,11 @@ public:
 // template instantiation
 typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
 
+enum
+{
+    MOUSE_DEVCAP_ABSOLUTE = 1
+};
+
 class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<Mouse, IMouse>,
@@ -89,19 +94,37 @@ public:
 
     static const PDMDRVREG  DrvReg;
 
+    Console *getParent() const
+    {
+        return mParent;
+    }
+
 private:
 
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
+    static DECLCALLBACK(void)   mouseAbsModeChange (PPDMIMOUSECONNECTOR pInterface, bool fAbs);
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
+    
+    int getVMMDevMouseCaps(uint32_t *pfCaps);
+    int setVMMDevMouseCaps(uint32_t fCaps);
+    int reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
+                                 int32_t dw, uint32_t fButtons);
+    int reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
+    int reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
+    int convertDisplayWidth(LONG x, uint32_t *pcX);
+    int convertDisplayHeight(LONG y, uint32_t *pcY);
+    bool needsRelativeEvent(uint32_t cXAbs, uint32_t cYAbs, int32_t dz, int32_t dw, uint32_t fButtons, uint32_t fCaps);
 
     const ComObjPtr<Console, ComWeakRef> mParent;
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv;
 
     LONG uHostCaps;
+    LONG uDevCaps;
     uint32_t mLastAbsX;
     uint32_t mLastAbsY;
+    uint32_t mLastButtons;
 };
 
 #endif // !____H_MOUSEIMPL

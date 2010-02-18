@@ -303,6 +303,18 @@ typedef struct PDMIMOUSEPORT
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates));
+    /**
+     * Puts an absolute mouse event.
+     * This is called by the source of mouse events. The event will be passed up until the
+     * topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface structure.
+     * @param   i32cX               The X value, in the range 0 to 0xffff.
+     * @param   i32cY               The Y value, in the range 0 to 0xffff.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, int32_t i32cX, int32_t i32cY));
 } PDMIMOUSEPORT;
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
@@ -315,13 +327,24 @@ typedef struct PDMIMOUSEPORT
 /** @} */
 
 
+/** Pointer to a mouse connector interface. */
+typedef struct PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
 /**
  * Mouse connector interface (up).
  * Pair with PDMIMOUSEPORT.
  */
-typedef PDMIDUMMY PDMIMOUSECONNECTOR;
- /** Pointer to a mouse connector interface. */
-typedef PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
+typedef struct PDMIMOUSECONNECTOR
+{
+    /**
+     * Notifies the the downstream driver when the guest switches the device into or out of absolute mode.
+     *
+     * @param   pInterface      Pointer to the this interface.
+     * @param   fAbs            Whether absolute mode is currently enabled
+     */
+    DECLR3CALLBACKMEMBER(void, pfnAbsModeChange,(PPDMIMOUSECONNECTOR pInterface, bool fAbs));
+
+} PDMIMOUSECONNECTOR;
+
 /** PDMIMOUSECONNECTOR interface ID.  */
 #define PDMIMOUSECONNECTOR_IID                  "847f965f-0eb8-4363-88ac-b0ee58a05bde"
 
