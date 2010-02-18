@@ -1311,10 +1311,9 @@ public:
         // Insert new client down information. Start by expiring outdated
         // entries and free one element if there's still no space (if needed).
         PRIntervalTime now = PR_IntervalNow();
-        do {
+        while (!g_ClientDownList.empty())
+        {
             ClientDownInfo *cInfo = g_ClientDownList.back();
-            if (!cInfo)
-                break;
             PRInt64 diff = (PRInt64)now - cInfo->uTimestamp;
             if (diff < 0)
                 diff += (PRInt64)((PRIntervalTime)-1) + 1;
@@ -1322,26 +1321,33 @@ public:
             {
                 g_ClientDownMap.erase(cInfo->uClient);
                 g_ClientDownList.pop_back();
+                NS_ASSERTION(g_ClientDownMap.size() == g_ClientDownList.size(),
+                             "client down info inconsistency during expiry");
                 delete cInfo;
             }
             else
                 break;
-        } while (true);
+        }
 
         ClientDownMap::iterator it = g_ClientDownMap.find(aSenderID);
         if (it == g_ClientDownMap.end())
         {
-            while (g_ClientDownList.size() >= MAX_CLIENT_DOWN_SIZE)
+            /* Getting size of a map is O(1), size of a list can be O(n). */
+            while (g_ClientDownMap.size() >= MAX_CLIENT_DOWN_SIZE)
             {
                 ClientDownInfo *cInfo = g_ClientDownList.back();
                 g_ClientDownMap.erase(cInfo->uClient);
                 g_ClientDownList.pop_back();
+                NS_ASSERTION(g_ClientDownMap.size() == g_ClientDownList.size(),
+                             "client down info inconsistency during emergency evicting");
                 delete cInfo;
             }
 
             ClientDownInfo *cInfo = new ClientDownInfo(aSenderID);
             g_ClientDownMap[aSenderID] = cInfo;
             g_ClientDownList.push_front(cInfo);
+            NS_ASSERTION(g_ClientDownMap.size() == g_ClientDownList.size(),
+                         "client down info inconsistency after adding entry");
         }
         return (aSenderID == mPeer) ? NS_OK : IPC_WAIT_NEXT_MESSAGE;
     }
@@ -1355,6 +1361,8 @@ public:
             ClientDownInfo *cInfo = it->second;
             g_ClientDownMap.erase(it);
             g_ClientDownList.remove(cInfo);
+            NS_ASSERTION(g_ClientDownMap.size() == g_ClientDownList.size(),
+                         "client down info inconsistency in client up case");
             delete cInfo;
         }
         return (aSenderID == mPeer) ? NS_OK : IPC_WAIT_NEXT_MESSAGE;
