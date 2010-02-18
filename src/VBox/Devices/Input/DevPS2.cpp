@@ -229,8 +229,8 @@ typedef struct KBDState {
     int32_t mouse_dz;
     int32_t mouse_dw;
     int32_t mouse_flags;
-    int32_t mouse_cx;
-    int32_t mouse_cy;
+    uint32_t mouse_cx;
+    uint32_t mouse_cy;
     uint8_t mouse_buttons;
     uint8_t mouse_buttons_reported;
     uint8_t mouse_last_button;
@@ -846,24 +846,30 @@ static void kbd_mouse_send_rel_packet(KBDState *s, bool fToCmdQueue)
 static void kbd_mouse_send_abs_packet(KBDState *s, bool fToCmdQueue)
 {
     int aux = fToCmdQueue ? 1 : 2;
-    int cx1 = s->mouse_cx * 4096 / 0xffff;
-    int cy1 = 4096 - (s->mouse_cy * 4096 / 0xffff);
+    unsigned cx1 = s->mouse_cx * 4095 / 0xffff;
+    unsigned cy1 = 4095 - (s->mouse_cy * 4095 / 0xffff);
     unsigned fButtons = s->mouse_buttons & 0x03;
-    unsigned int b;
+    unsigned int b[6];
 
     LogRel3(("%s: cx1=%d, cy1=%d, fButtons=0x%x\n", __PRETTY_FUNCTION__,
              cx1, cy1, fButtons));
-    b = 4 /* Screen is being touched */ | fButtons;
-    kbd_queue(s, b, aux);
-    b = ((cy1 << 2) & 0xc0) | (cx1 >> 6);
-    kbd_queue(s, b, aux);
-    b = ((cx1 << 2) & 0xc0) | (cx1 & 0x3f);
-    kbd_queue(s, b, aux);
-    kbd_queue(s, 0xc0, aux);  /* This byte is really wasted in the protocol */
-    b = ((cx1 << 2) & 0xc0) | (cy1 >> 6);
-    kbd_queue(s, b, aux);
-    b = ((cy1 << 2) & 0xc0) | (cy1 & 0x3f);
-    kbd_queue(s, b, aux);
+    b[0] = 4 /* Screen is being touched */ | fButtons;
+    Assert((b[0] & 0xf8) == 0);
+    kbd_queue(s, b[0], aux);
+    b[1] = ((cy1 << 2) & 0xc0) | (cx1 >> 6);
+    kbd_queue(s, b[1], aux);
+    b[2] = ((cx1 << 2) & 0xc0) | (cx1 & 0x3f);
+    Assert(((b[2] & 0x30) << 2) == (b[2] & 0xc0));
+    kbd_queue(s, b[2], aux);
+    b[3] = 0xc0;
+    kbd_queue(s, b[3], aux);  /* This byte is really wasted in the protocol */
+    b[4] = ((cx1 << 2) & 0xc0) | (cy1 >> 6);
+    Assert((b[4] & 0xc0) == (b[2] & 0xc0));
+    kbd_queue(s, b[4], aux);
+    b[5] = ((cy1 << 2) & 0xc0) | (cy1 & 0x3f);
+    Assert(   (((b[5] & 0x30) << 2) == (b[1] & 0xc0))
+           && ((b[5] & 0xc0) == (b[1] & 0xc0)));
+    kbd_queue(s, b[5], aux);
 }
 
 static bool kbd_mouse_rel_unreported(KBDState *s)
@@ -1338,8 +1344,8 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     qemu_get_8s(f, &s->mouse_buttons);
     if (version_id > 3)
     {
-        SSMR3GetS32(f, &s->mouse_cx);
-        SSMR3GetS32(f, &s->mouse_cy);
+        SSMR3GetU32(f, &s->mouse_cx);
+        SSMR3GetU32(f, &s->mouse_cy);
         SSMR3GetU8(f, &s->mouse_buttons_reported);
         SSMR3GetU8(f, &s->mouse_last_button);
     }
@@ -1680,13 +1686,16 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32
  * @param   i32cX           The X value.
  * @param   i32cY           The Y value.
  */
-static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, int32_t i32cX, int32_t i32cY)
+static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32cX, uint32_t u32cY, int32_t dz, int32_t dw, uint32_t fButtons)
 {
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    pc_kbd_mouse_event_abs(pThis, i32cX, i32cY);
+    if (u32cX != pThis->mouse_cx || u32cY != pThis->mouse_cy)
+        pc_kbd_mouse_event_abs(pThis, u32cX, u32cY);
+    if (dz || dw || fButtons != pThis->mouse_buttons)
+        pc_kbd_mouse_event(pThis, 0, 0, dz, dw, fButtons);
 
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;

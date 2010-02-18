@@ -257,14 +257,19 @@ int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
  *
  * @returns   COM status code
  */
-int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
+int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
+                                    int32_t dz, int32_t dw, uint32_t fButtons)
 {
     CHECK_CONSOLE_DRV (mpDrv);
 
-    if (mouseXAbs != mLastAbsX || mouseYAbs != mLastAbsY)
+    if (   mouseXAbs != mLastAbsX
+        || mouseYAbs != mLastAbsY
+        || dz
+        || dw
+        || fButtons != mLastButtons)
     {
         int vrc = mpDrv->pUpPort->pfnPutEventAbs(mpDrv->pUpPort, mouseXAbs,
-                                                 mouseYAbs);
+                                                 mouseYAbs, dz, dw, fButtons);
         if (RT_FAILURE(vrc))
             setError(VBOX_E_IPRT_ERROR,
                      tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
@@ -404,22 +409,26 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d\n", __PRETTY_FUNCTION__,
-             x, y, dz, dw));
+    LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, buttonState=0x%x\n",
+             __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
 
     uint32_t mouseXAbs;
     rc = convertDisplayWidth(x, &mouseXAbs);
     ComAssertComRCRet(rc, rc);
+    if (mouseXAbs > 0xffff)
+        mouseXAbs = mLastAbsX;
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
     ComAssertComRCRet(rc, rc);
+    if (mouseYAbs > 0xffff)
+        mouseYAbs = mLastAbsY;
     uint32_t fButtons = mouseButtonsToPDM(buttonState);
     /* Older guest additions rely on a small phony movement event on the
      * PS/2 device to notice absolute events. */
     bool fNeedsJiggle = false;
 
     if (uDevCaps & MOUSE_DEVCAP_ABSOLUTE)
-        rc = reportAbsEventToMouseDev(mouseXAbs, mouseYAbs);
+        rc = reportAbsEventToMouseDev(mouseXAbs, mouseYAbs, dz, dw, fButtons);
     else
     {
         uint32_t mouseCaps;
@@ -442,16 +451,19 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     ComAssertComRCRet (rc, rc);
     mLastAbsX = mouseXAbs;
     mLastAbsY = mouseYAbs;
-    /* We may need to send a relative event for button information or to
-     * wake the guest up to the changed absolute co-ordinates. */
-    /* If the event is a pure wake up one, we make sure it contains some
-     * (possibly phony) event data to make sure it isn't just discarded on
-     * the way.  Note: we ignore dw as it is optional. */
-    if (fNeedsJiggle || fButtons != mLastButtons || dz || dw)
-        rc = reportRelEventToMouseDev(fNeedsJiggle ? 1 : 0, 0, dz, dw,
-                                      fButtons);
-    if (SUCCEEDED(rc))
-        mLastButtons = fButtons;
+    if (!(uDevCaps & MOUSE_DEVCAP_ABSOLUTE))
+    {
+        /* We may need to send a relative event for button information or to
+         * wake the guest up to the changed absolute co-ordinates.
+         * If the event is a pure wake up one, we make sure it contains some
+         * (possibly phony) event data to make sure it isn't just discarded on
+         * the way. */
+        if (fNeedsJiggle || fButtons != mLastButtons || dz || dw)
+            rc = reportRelEventToMouseDev(fNeedsJiggle ? 1 : 0, 0, dz, dw,
+                                          fButtons);
+        ComAssertComRCRet (rc, rc);
+    }
+    mLastButtons = fButtons;
     return rc;
 }
 

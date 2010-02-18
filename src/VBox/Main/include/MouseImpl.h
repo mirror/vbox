@@ -110,11 +110,11 @@ private:
     int setVMMDevMouseCaps(uint32_t fCaps);
     int reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                                  int32_t dw, uint32_t fButtons);
-    int reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
+    int reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
+                                 int32_t dz, int32_t dw, uint32_t fButtons);
     int reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
     int convertDisplayWidth(LONG x, uint32_t *pcX);
     int convertDisplayHeight(LONG y, uint32_t *pcY);
-    bool needsRelativeEvent(uint32_t cXAbs, uint32_t cYAbs, int32_t dz, int32_t dw, uint32_t fButtons, uint32_t fCaps);
 
     const ComObjPtr<Console, ComWeakRef> mParent;
     /** Pointer to the associated mouse driver. */

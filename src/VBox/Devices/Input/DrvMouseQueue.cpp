@@ -74,8 +74,8 @@ typedef struct DRVMOUSEQUEUEITEM
     int32_t             i32DeltaZ;
     int32_t             i32DeltaW;
     uint32_t            fButtonStates;
-    int32_t             i32cX;
-    int32_t             i32cY;
+    uint32_t            u32cX;
+    uint32_t            u32cY;
 } DRVMOUSEQUEUEITEM, *PDRVMOUSEQUEUEITEM;
 
 
@@ -111,6 +111,7 @@ static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, c
  * @param   i32DeltaX       The X delta.
  * @param   i32DeltaY       The Y delta.
  * @param   i32DeltaZ       The Z delta.
+ * @param   i32DeltaW       The W delta.
  * @param   fButtonStates   The button states.
  * @thread  Any thread.
  */
@@ -141,11 +142,14 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
  *
  * @returns VBox status code.
  * @param   pInterface      Pointer to interface structure.
- * @param   i32cX           The X value.
- * @param   i32cY           The Y value.
+ * @param   u32cX           The X value.
+ * @param   u32cY           The Y value.
+ * @param   i32DeltaZ       The Z delta.
+ * @param   i32DeltaW       The W delta.
+ * @param   fButtonStates   The button states.
  * @thread  Any thread.
  */
-static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, int32_t i32cX, int32_t i32cY)
+static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32cX, uint32_t u32cY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
 {
     PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
     if (pDrv->fInactive)
@@ -155,8 +159,11 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, int
     if (pItem)
     {
         pItem->fAbs = 1;
-        pItem->i32cX = i32cX;
-        pItem->i32cY = i32cY;
+        pItem->u32cX = u32cX;
+        pItem->u32cY = u32cY;
+        pItem->i32DeltaZ = i32DeltaZ;
+        pItem->i32DeltaW = i32DeltaW;
+        pItem->fButtonStates = fButtonStates;
         PDMQueueInsert(pDrv->pQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
@@ -202,7 +209,7 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
     if (!pItem->fAbs)
         rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
     else
-        rc = pThis->pUpPort->pfnPutEventAbs(pThis->pUpPort, pItem->i32cX, pItem->i32cY);
+        rc = pThis->pUpPort->pfnPutEventAbs(pThis->pUpPort, pItem->u32cX, pItem->u32cY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
     return RT_SUCCESS(rc);
 }
 
