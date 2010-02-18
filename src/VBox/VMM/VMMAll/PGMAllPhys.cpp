@@ -456,33 +456,94 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @param   pVM         The VM address.
  * @param   GCPhys      The address of the page.
+ * @param   pHCPhys     Pointer to HC physical address (out)
  *
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
- *
- * @remarks This function shouldn't really fail, however if it does
- *          it probably means we've screwed up the size of handy pages and/or
- *          the low-water mark. Or, that some device I/O is causing a lot of
- *          pages to be allocated while while the host is in a low-memory
- *          condition. This latter should be handled elsewhere and in a more
- *          controlled manner, it's on the @bugref{3170} todo list...
  */
-int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
+int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
 {
-    LogFlow(("pgmPhysAllocLargePage: %RGp\n", GCPhys));
+    RTGCPHYS GCPhysBase = GCPhys & X86_PDE_PAE_PG_MASK_FULL;
+    LogFlow(("pgmPhysAllocLargePage: %RGp base %RGp\n", GCPhys, GCPhysBase));
 
     /*
      * Prereqs.
      */
     Assert(PGMIsLocked(pVM));
     Assert((GCPhys & X86_PD_PAE_MASK) == 0);
+    AssertPtr(pHCPhys);
 
+    PPGMPAGE pPage;
+    int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
+    if (    RT_SUCCESS(rc)
+        &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
+    {
+        RTHCPHYS HCPhys = NIL_RTHCPHYS;
+        unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pPage);
+
+        if  (uPDEType == PGM_PAGE_PDE_TYPE_PDE)
+        {
+            /* Previously allocated 2 MB range can be reused. */
+            Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+
+            *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+            return VINF_SUCCESS;
+        }
+        else
+        if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
+             && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
+        {
+            unsigned iPage;
+
+            GCPhys = GCPhysBase;
+
+            /* Lazy approach: check all pages in the 2 MB range. 
+             * The whole range must be ram and unallocated
+             */
+            for (iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
+            {
+                rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+                if  (   RT_FAILURE(rc)
+                     || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM
+                     || PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
+                {
+                    LogFlow(("Found page with wrong attributes; cancel check. rc=%d\n", rc));
+                    break;
+                }
+                Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
+                GCPhys += PAGE_SIZE;
+            }
+            /* Fetch the start page of the 2 MB range again. */
+            rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
+            AssertRC(rc);   /* can't fail */
+
+            if (iPage != _2M/PAGE_SIZE)
+            {
+                /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
+                STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
+                PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
+                return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
+            }
+            else
+            {
 #ifdef IN_RING3
-    int rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhys);
+                rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhysBase);
 #else
-    int rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhys);
+                rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
 #endif
-    return rc;
+                if (RT_SUCCESS(rc))
+                {   
+                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                    STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageUsed);
+                    return VINF_SUCCESS;
+                }
+                LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
+                return rc;
+            }
+        }
+    }
+    return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
 }
 
 /**
