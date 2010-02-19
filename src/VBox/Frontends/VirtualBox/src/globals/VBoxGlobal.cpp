@@ -32,6 +32,9 @@
 #include "QIMessageBox.h"
 #include "QIDialogButtonBox.h"
 
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+#include "UIMachine.h"
+#endif
 #ifdef VBOX_WITH_REGISTRATION
 #include "UIRegistrationWzd.h"
 #endif
@@ -591,6 +594,9 @@ static VBoxDefs::RenderMode vboxGetRenderMode (const char *aModeStr)
 VBoxGlobal::VBoxGlobal()
     : mValid (false)
     , mSelectorWnd (NULL), mConsoleWnd (NULL)
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    , m_pVirtualMachine(0)
+#endif
     , mMainWindow (NULL)
 #ifdef VBOX_WITH_REGISTRATION
     , mRegDlg (NULL)
@@ -776,6 +782,19 @@ VBoxConsoleWnd &VBoxGlobal::consoleWnd()
 
     return *mConsoleWnd;
 }
+
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+UIMachine& VBoxGlobal::virtualMachine(const CSession &session /* = CSession() */)
+{
+    if (!m_pVirtualMachine)
+    {
+        UIMachine *pVirtualMachine = new UIMachine(&m_pVirtualMachine, session);
+        Assert(pVirtualMachine == m_pVirtualMachine);
+        NOREF(pVirtualMachine);
+    }
+    return *m_pVirtualMachine;
+}
+#endif
 
 bool VBoxGlobal::brandingIsActive (bool aForce /* = false*/)
 {
@@ -2247,7 +2266,12 @@ bool VBoxGlobal::startMachine (const QString &id)
     if (session.isNull())
         return false;
 
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    virtualMachine(session);
+    return true;
+#else
     return consoleWnd().openView (session);
+#endif
 }
 
 /**
@@ -4991,6 +5015,10 @@ void VBoxGlobal::cleanup()
         delete mConsoleWnd;
     if (mSelectorWnd)
         delete mSelectorWnd;
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    if (m_pVirtualMachine)
+        delete m_pVirtualMachine;
+#endif
 
     /* ensure CGuestOSType objects are no longer used */
     mFamilyIDs.clear();

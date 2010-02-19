@@ -44,6 +44,9 @@
 class QAction;
 class QLabel;
 class QToolButton;
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+class UIMachine;
+#endif
 
 // VirtualBox callback events
 ////////////////////////////////////////////////////////////////////////////////
@@ -303,6 +306,9 @@ public:
 
     VBoxSelectorWnd &selectorWnd();
     VBoxConsoleWnd &consoleWnd();
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    UIMachine &virtualMachine(const CSession &session = CSession());
+#endif
 
     /* main window handle storage */
     void setMainWindow (QWidget *aMainWindow) { mMainWindow = aMainWindow; }
@@ -898,6 +904,9 @@ private:
 
     VBoxSelectorWnd *mSelectorWnd;
     VBoxConsoleWnd *mConsoleWnd;
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    UIMachine *m_pVirtualMachine;
+#endif
     QWidget* mMainWindow;
 
 #ifdef VBOX_WITH_REGISTRATION
