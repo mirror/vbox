@@ -37,6 +37,7 @@ typedef struct VBOXVDMACMDBUF_INFO
         ULONG offVramBuf;
         void *pvBuf;
     } Location;
+    uint32_t u32FenceId;
 } VBOXVDMACMDBUF_INFO, *PVBOXVDMACMDBUF_INFO;
 
 int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer);
@@ -44,6 +45,6 @@ int vboxVdmaDisable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaEnable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaFlush (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaDestroy (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
-int vboxVdmaCBufSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo, uint32_t u32FenceId);
+int vboxVdmaCBufSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo);
 
 #endif /* #ifndef ___VBoxVideoVdma_h___ */
