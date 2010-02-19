@@ -161,7 +161,7 @@ RT_C_DECLS_END
 
 #define KBD_QUEUE_SIZE 256
 
-/* Supported mouse protocols */
+/** Supported mouse protocols */
 enum
 {
     MOUSE_PROT_PS2 = 0,
@@ -170,10 +170,11 @@ enum
     MOUSE_PROT_LIFEBOOK = 5
 };
 
-/* Mouse flags */
+/** Mouse flags */
 # define MOUSE_REPORT_HORIZONTAL  0x01
 
-/** Extended mouse button values for Lifebook mode */
+/** @name Extended mouse button values for Lifebook mode
+ * @{ */
 /** Downwards scrollwheel movement of one step.  Doesn't affect the mouse
  * buttons */
 # define MOUSE_EXT_VSCROLL_DN   4
@@ -183,6 +184,7 @@ enum
 # define MOUSE_EXT_HSCROLL_BW   6
 /** Rightwards scrollwheel movement of one step. */
 # define MOUSE_EXT_HSCROLL_FW   7
+/** @} */
 
 typedef struct {
     uint8_t data[KBD_QUEUE_SIZE];
@@ -229,7 +231,7 @@ typedef struct KBDState {
     int32_t mouse_dz;
     int32_t mouse_dw;
     int32_t mouse_flags;
-    uint32_t mouse_cx;
+    uint32_t mouse_cx; /** @todo r=bird: cx/cy? aren't these absolute coordinates? 'c' usually means 'count of'. mouse_abs_x or just mouse_x would probably be clearer. */
     uint32_t mouse_cy;
     uint8_t mouse_buttons;
     uint8_t mouse_buttons_reported;
@@ -706,7 +708,7 @@ static bool kbd_mouse_test_clear_last_button(KBDState *s)
 }
 
 /**
- * Send a single relative packet in 3-byte PS/2 format, optionally with our 
+ * Send a single relative packet in 3-byte PS/2 format, optionally with our
  * packed button protocol extension, to the PS/2 controller.
  * @param  s               keyboard state object
  * @param  dx              relative X value, must be between -256 and +255
@@ -838,10 +840,8 @@ static void kbd_mouse_send_rel_packet(KBDState *s, bool fToCmdQueue)
 /**
  * Send a single absolute packet in 6-byte lifebook format to the PS/2
  * controller.
- * @param  s         keyboard state object
- * @param  cx        absolute X value
- * @param  cy        absolute y value
- * @param  fButtons  the state of the two first mouse buttons
+ * @param  s            keyboard state object
+ * @param  fToCmdQueue  Which queue.
  */
 static void kbd_mouse_send_abs_packet(KBDState *s, bool fToCmdQueue)
 {
@@ -1227,7 +1227,8 @@ static void kbd_reset(void *opaque)
     s->mouse_sample_rate = 0;
     s->mouse_wrap = 0;
     s->mouse_type = MOUSE_PROT_PS2;
-    s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, false);
+    if (s->Mouse.pDrv)
+        s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, false);
     s->mouse_detect_state = 0;
     s->mouse_dx = 0;
     s->mouse_dy = 0;
@@ -1330,7 +1331,7 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     qemu_get_8s(f, &s->mouse_sample_rate);
     qemu_get_8s(f, &s->mouse_wrap);
     qemu_get_8s(f, &s->mouse_type);
-    if (s->mouse_type == MOUSE_PROT_LIFEBOOK)
+    if (s->mouse_type == MOUSE_PROT_LIFEBOOK && s->Mouse.pDrv)
         s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, true);
     qemu_get_8s(f, &s->mouse_detect_state);
     qemu_get_be32s(f, (uint32_t *)&s->mouse_dx);
@@ -1656,46 +1657,34 @@ static DECLCALLBACK(void *)  kbdMouseQueryInterface(PPDMIBASE pInterface, const 
 /* -=-=-=-=-=- Mouse: IMousePort  -=-=-=-=-=- */
 
 /**
- * Mouse event handler.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.IPort).
- * @param   i32DeltaX       The X delta.
- * @param   i32DeltaY       The Y delta.
- * @param   i32DeltaZ       The Z delta.
- * @param   fButtonStates   The button states.
+ * @interface_method_impl{PDMIMOUSEPORT, pfnPutEvent}
  */
-static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY,
-                                          int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY,
+                                          int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates)
 {
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    pc_kbd_mouse_event(pThis, i32DeltaX, i32DeltaY, i32DeltaZ, i32DeltaW, fButtonStates);
+    pc_kbd_mouse_event(pThis, iDeltaX, iDeltaY, iDeltaZ, iDeltaW, fButtonStates);
 
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
 /**
- * Mouse event handler.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.IPort).
- * @param   i32cX           The X value.
- * @param   i32cY           The Y value.
+ * @interface_method_impl{PDMIMOUSEPORT, pfnPutEventAbs}
  */
-static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32cX, uint32_t u32cY, int32_t dz, int32_t dw, uint32_t fButtons)
+static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtons)
 {
     KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
     int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
     AssertReleaseRC(rc);
 
-    if (u32cX != pThis->mouse_cx || u32cY != pThis->mouse_cy)
-        pc_kbd_mouse_event_abs(pThis, u32cX, u32cY);
-    if (dz || dw || fButtons != pThis->mouse_buttons)
-        pc_kbd_mouse_event(pThis, 0, 0, dz, dw, fButtons);
+    if (uX != pThis->mouse_cx || uY != pThis->mouse_cy)
+        pc_kbd_mouse_event_abs(pThis, uX, uY);
+    if (iDeltaZ || iDeltaW || fButtons != pThis->mouse_buttons)
+        pc_kbd_mouse_event(pThis, 0, 0, iDeltaZ, iDeltaW, fButtons);
 
     PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;

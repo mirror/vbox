@@ -69,13 +69,13 @@ typedef struct DRVMOUSEQUEUEITEM
     /** The core part owned by the queue manager. */
     PDMQUEUEITEMCORE    Core;
     uint32_t            fAbs;
-    int32_t             i32DeltaX;
-    int32_t             i32DeltaY;
-    int32_t             i32DeltaZ;
-    int32_t             i32DeltaW;
+    int32_t             iDeltaX;
+    int32_t             iDeltaY;
+    int32_t             iDeltaZ;
+    int32_t             iDeltaW;
     uint32_t            fButtonStates;
-    uint32_t            u32cX;
-    uint32_t            u32cY;
+    uint32_t            uX;
+    uint32_t            uY;
 } DRVMOUSEQUEUEITEM, *PDRVMOUSEQUEUEITEM;
 
 
@@ -103,19 +103,9 @@ static DECLCALLBACK(void *)  drvMouseQueueQueryInterface(PPDMIBASE pInterface, c
 
 
 /**
- * Queues a mouse event.
- * Because of the event queueing the EMT context requirement is lifted.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to interface structure.
- * @param   i32DeltaX       The X delta.
- * @param   i32DeltaY       The Y delta.
- * @param   i32DeltaZ       The Z delta.
- * @param   i32DeltaW       The W delta.
- * @param   fButtonStates   The button states.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEvent}
  */
-static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates)
 {
     PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
     if (pDrv->fInactive)
@@ -125,11 +115,13 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
     if (pItem)
     {
         pItem->fAbs = 0;
-        pItem->i32DeltaX = i32DeltaX;
-        pItem->i32DeltaY = i32DeltaY;
-        pItem->i32DeltaZ = i32DeltaZ;
-        pItem->i32DeltaW = i32DeltaW;
+        pItem->iDeltaX = iDeltaX;
+        pItem->iDeltaY = iDeltaY;
+        pItem->iDeltaZ = iDeltaZ;
+        pItem->iDeltaW = iDeltaW;
         pItem->fButtonStates = fButtonStates;
+        pItem->uX = 0;
+        pItem->uY = 0;
         PDMQueueInsert(pDrv->pQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
@@ -137,19 +129,9 @@ static DECLCALLBACK(int) drvMouseQueuePutEvent(PPDMIMOUSEPORT pInterface, int32_
 }
 
 /**
- * Queues an absolute mouse event.
- * Because of the event queueing the EMT context requirement is lifted.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to interface structure.
- * @param   u32cX           The X value.
- * @param   u32cY           The Y value.
- * @param   i32DeltaZ       The Z delta.
- * @param   i32DeltaW       The W delta.
- * @param   fButtonStates   The button states.
- * @thread  Any thread.
+ * @interface_method_impl{PDMIMOUSEPORT,pfnPutEventAbs}
  */
-static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32cX, uint32_t u32cY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates)
 {
     PDRVMOUSEQUEUE pDrv = IMOUSEPORT_2_DRVMOUSEQUEUE(pInterface);
     if (pDrv->fInactive)
@@ -159,11 +141,13 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, uin
     if (pItem)
     {
         pItem->fAbs = 1;
-        pItem->u32cX = u32cX;
-        pItem->u32cY = u32cY;
-        pItem->i32DeltaZ = i32DeltaZ;
-        pItem->i32DeltaW = i32DeltaW;
+        pItem->iDeltaX = 0;
+        pItem->iDeltaY = 0;
+        pItem->iDeltaZ = iDeltaZ;
+        pItem->iDeltaW = iDeltaW;
         pItem->fButtonStates = fButtonStates;
+        pItem->uX = uX;
+        pItem->uY = uY;
         PDMQueueInsert(pDrv->pQueue, &pItem->Core);
         return VINF_SUCCESS;
     }
@@ -207,9 +191,9 @@ static DECLCALLBACK(bool) drvMouseQueueConsumer(PPDMDRVINS pDrvIns, PPDMQUEUEITE
     PDRVMOUSEQUEUEITEM    pItem = (PDRVMOUSEQUEUEITEM)pItemCore;
     int rc;
     if (!pItem->fAbs)
-        rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->i32DeltaX, pItem->i32DeltaY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
+        rc = pThis->pUpPort->pfnPutEvent(pThis->pUpPort, pItem->iDeltaX, pItem->iDeltaY, pItem->iDeltaZ, pItem->iDeltaW, pItem->fButtonStates);
     else
-        rc = pThis->pUpPort->pfnPutEventAbs(pThis->pUpPort, pItem->u32cX, pItem->u32cY, pItem->i32DeltaZ, pItem->i32DeltaW, pItem->fButtonStates);
+        rc = pThis->pUpPort->pfnPutEventAbs(pThis->pUpPort, pItem->uX,   pItem->uY,      pItem->iDeltaZ, pItem->iDeltaW, pItem->fButtonStates);
     return RT_SUCCESS(rc);
 }
 
