@@ -1708,7 +1708,7 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, target_phys_ad
         val = s->id << 24;
         break;
     case 0x03: /* version */
-        val = 0x11 | ((APIC_LVT_NB - 1) << 16); /* version 0x11 */
+        val = 0x14 | ((APIC_LVT_NB - 1) << 16); /* version 0x14 */
         break;
     case 0x08:
         val = s->tpr;
