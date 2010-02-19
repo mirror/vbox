@@ -410,7 +410,7 @@
  *
  *      - When writing code think as the reader.
  *
- *      - When writing code think as the compiler.
+ *      - When writing code think as the compiler. (2)
  *
  *      - When reading code think as if it's full of bugs - find them and fix them.
  *
@@ -437,6 +437,10 @@
  * (1)  Important, be very careful with the casting. In particular, note that
  *      a compiler might treat pointers as signed (IIRC).
  *
+ * (2)  "A really advanced hacker comes to understand the true inner workings of
+ *      the machine - he sees through the language he's working in and glimpses
+ *      the secret functioning of the binary code - becomes a Ba'al Shem of
+ *      sorts."   (Neal Stephenson "Snow Crash")
  *
  *
  *
