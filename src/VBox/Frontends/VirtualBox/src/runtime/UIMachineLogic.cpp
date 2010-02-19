@@ -371,24 +371,10 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_bIsAutoSaveMedia(true)
     , m_bIsPreventAutoClose(false)
 {
-    /* Prepare action groups: */
-    prepareActionGroups();
-
-    /* Prepare action connections: */
-    prepareActionConnections();
-
-    /* Check the status of required features: */
-    prepareRequiredFeatures();
-
-    /* Load common logic settings: */
-    loadLogicSettings();
 }
 
 UIMachineLogic::~UIMachineLogic()
 {
-    /* Save common logic settings: */
-    saveLogicSettings();
-
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Close debugger: */
     // TODO: Check that logic!
@@ -398,6 +384,7 @@ UIMachineLogic::~UIMachineLogic()
 
 void UIMachineLogic::updateAppearanceOf(int iElement)
 {
+    /* Update logic: */
     CMachine machine = session().GetMachine();
 
     bool isRunningOrPaused = machineState() == KMachineState_Running ||
@@ -409,27 +396,224 @@ void UIMachineLogic::updateAppearanceOf(int iElement)
     {
         actionsPool()->action(UIActionIndex_Toggle_Pause)->setEnabled(isRunningOrPaused);
     }
+
+    /* Update window: */
+    machineWindowWrapper()->updateAppearanceOf(iElement);
+}
+
+void UIMachineLogic::prepareActionGroups()
+{
+    /* Create group for all actions that are enabled only when the VM is running.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    m_pRunningActions = new QActionGroup(this);
+    m_pRunningActions->setExclusive(false);
+
+    /* Create group for all actions that are enabled when the VM is running or paused.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    m_pRunningOrPausedActions = new QActionGroup(this);
+    m_pRunningOrPausedActions->setExclusive(false);
+
+    // TODO: Move actions into approprivate action groups!
+}
+
+void UIMachineLogic::prepareActionConnections()
+{
+    /* "Machine" actions connections */
+    connect(actionsPool()->action(UIActionIndex_Simple_AdjustWindow), SIGNAL(triggered()),
+            this, SLOT(sltAdjustWindow()));
+    connect(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration), SIGNAL(toggled(bool)),
+            this, SLOT(sltToggleMouseIntegration(bool)));
+    connect(actionsPool()->action(UIActionIndex_Simple_TypeCAD), SIGNAL(triggered()),
+            this, SLOT(sltTypeCAD()));
+#ifdef Q_WS_X11
+    connect(actionsPool()->action(UIActionIndex_Simple_TypeCABS), SIGNAL(triggered()),
+            this, SLOT(sltTypeCABS()));
+#endif
+    connect(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot), SIGNAL(triggered()),
+            this, SLOT(sltTakeSnapshot()));
+    connect(actionsPool()->action(UIActionIndex_Simple_InformationDialog), SIGNAL(triggered()),
+            this, SLOT(sltShowInformationDialog()));
+    connect(actionsPool()->action(UIActionIndex_Simple_Reset), SIGNAL(triggered()),
+            this, SLOT(sltReset()));
+    connect(actionsPool()->action(UIActionIndex_Toggle_Pause), SIGNAL(toggled(bool)),
+            this, SLOT(sltPause(bool)));
+    connect(actionsPool()->action(UIActionIndex_Simple_Shutdown), SIGNAL(triggered()),
+            this, SLOT(sltACPIShutdown()));
+    connect(actionsPool()->action(UIActionIndex_Simple_Close), SIGNAL(triggered()),
+            this, SLOT(sltClose()));
+
+    /* "Devices" actions connections */
+    connect(actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareStorageMenu()));
+    connect(actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareStorageMenu()));
+    connect(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog), SIGNAL(triggered()),
+            this, SLOT(sltOpenNetworkAdaptersDialog()));
+    connect(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog), SIGNAL(triggered()),
+            this, SLOT(sltOpenSharedFoldersDialog()));
+    connect(actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareUSBMenu()));
+    connect(actionsPool()->action(UIActionIndex_Toggle_VRDP), SIGNAL(toggled(bool)),
+            this, SLOT(sltSwitchVrdp(bool)));
+    connect(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools), SIGNAL(triggered()),
+            this, SLOT(sltInstallGuestAdditions()));
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    /* "Debug" actions connections */
+    connect(actionsPool()->action(UIActionIndex_Menu_Debug)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareDebugMenu()));
+    connect(actionsPool()->action(UIActionIndex_Simple_Statistics), SIGNAL(triggered()),
+            this, SLOT(sltShowDebugStatistics()));
+    connect(actionsPool()->action(UIActionIndex_Simple_CommandLine), SIGNAL(triggered()),
+            this, SLOT(sltShowDebugCommandLine()));
+    connect(actionsPool()->action(UIActionIndex_Toggle_Logging), SIGNAL(toggled(bool)),
+            this, SLOT(sltLoggingToggled(bool)));
+#endif
+}
+
+void UIMachineLogic::prepareRequiredFeatures()
+{
+    CConsole console = session().GetConsole();
+
+    /* Check if the virtualization feature is required. */
+    bool bIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
+    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
+    AssertMsg(!bIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
+    bool bIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
+    if (fRecommendVirtEx && !bIsVirtEnabled)
+    {
+        bool ret;
+
+        // TODO: Check that logic!
+        //sltPause(true);
+
+        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+
+        if (bIs64BitsGuest)
+            ret = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
+        else
+            ret = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
+
+        // TODO: Close application!
+        //if (ret == true)
+        //    machineWindowWrapper()->machineWindow()->close();
+        // TODO: Check that logic!
+        //else
+        //    sltPause(false);
+    }
+
+#ifdef Q_WS_MAC
+# ifdef VBOX_WITH_ICHAT_THEATER
+    initSharedAVManager();
+# endif
+#endif
+}
+
+void UIMachineLogic::loadLogicSettings()
+{
+    CMachine machine = session().GetMachine();
+
+    /* Extra-data settings */
+    {
+        QString strSettings;
+
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
+        if (strSettings != "off")
+            actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setChecked(true);
+
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_FirstRun);
+        if (strSettings == "yes")
+            m_bIsFirstTimeStarted = true;
+
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
+        if (strSettings == "no")
+            m_bIsAutoSaveMedia = false;
+    }
+
+    /* Initial settings */
+    {
+        /* Initialize storage stuff: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++ iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++ iDevicesCountFD;
+        }
+        actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->setData(iDevicesCountCD);
+        actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->setData(iDevicesCountFD);
+        actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->setVisible(iDevicesCountCD);
+        actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->setVisible(iDevicesCountFD);
+    }
+
+    /* Availability settings */
+    {
+        /* USB Stuff: */
+        CUSBController usbController = machine.GetUSBController();
+        if (usbController.isNull())
+        {
+            /* Hide USB_Menu: */
+            actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setVisible(false);
+        }
+        else
+        {
+            /* Enable/Disable USB_Menu: */
+            actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setEnabled(usbController.GetEnabled());
+        }
+
+        /* VRDP Stuff: */
+        CVRDPServer vrdpServer = machine.GetVRDPServer();
+        if (vrdpServer.isNull())
+        {
+            /* Hide VRDP Action: */
+            actionsPool()->action(UIActionIndex_Toggle_VRDP)->setVisible(false);
+        }
+    }
+}
+
+void UIMachineLogic::saveLogicSettings()
+{
+    CMachine machine = session().GetMachine();
+
+    /* Extra-data settings */
+    {
+        machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
+                             actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ? "on" : "off");
+
+        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
+
+        // TODO: Move to fullscreen/seamless logic:
+        //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
+    }
 }
 
 void UIMachineLogic::sltAdjustWindow()
 {
-    if (!machineWindowWrapper())
+    /* Do not process if window or view is missing! */
+    if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
         return;
 
+    /* Exit maximized window state if actual: */
     if (machineWindowWrapper()->machineWindow()->isMaximized())
         machineWindowWrapper()->machineWindow()->showNormal();
 
+    /* Normalize view's geometry: */
     machineWindowWrapper()->machineView()->normalizeGeometry(true);
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool aOff)
 {
-    if (!machineWindowWrapper())
+    /* Do not process if window or view is missing! */
+    if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
         return;
 
+    /* Disable/Enable mouse-integration for view: */
     machineWindowWrapper()->machineView()->setMouseIntegrationEnabled(!aOff);
-
-    updateAppearanceOf(UIVisualElement_MouseIntegrationStuff);
 }
 
 void UIMachineLogic::sltTypeCAD()
@@ -444,7 +628,7 @@ void UIMachineLogic::sltTypeCAD()
 void UIMachineLogic::sltTypeCABS()
 {
     CKeyboard keyboard = session().GetConsole().GetKeyboard();
-    Assert (!keyboard.isNull());
+    Assert(!keyboard.isNull());
     static QVector<LONG> aSequence(6);
     aSequence[0] = 0x1d; /* Ctrl down */
     aSequence[1] = 0x38; /* Alt down */
@@ -459,6 +643,7 @@ void UIMachineLogic::sltTypeCABS()
 
 void UIMachineLogic::sltTakeSnapshot()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
@@ -509,39 +694,43 @@ void UIMachineLogic::sltTakeSnapshot()
 
 void UIMachineLogic::sltShowInformationDialog()
 {
+    /* Do not process if window is missing! */
+    if (!machineWindowWrapper())
+        return;
+
     // TODO: Call for singleton information dialog for this machine!
     //VBoxVMInformationDlg::createInformationDlg(session(), machineWindowWrapper()->machineWindow());
 }
 
 void UIMachineLogic::sltReset()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
+    /* Confirm/Reset current console: */
     if (vboxProblem().confirmVMReset(machineWindowWrapper()->machineWindow()))
         session().GetConsole().Reset();
 }
 
 void UIMachineLogic::sltPause(bool aOn)
 {
-    if (!machineWindowWrapper())
-        return;
-
+    /* Do not process if window is missing! */
     pause(aOn);
 
+    /* Update appearance: */
     updateAppearanceOf(UIVisualElement_PauseStuff);
 }
 
 void UIMachineLogic::sltACPIShutdown()
 {
-    if (!machineWindowWrapper())
-        return;
-
     CConsole console = session().GetConsole();
 
+    /* Warn the user about ACPI is not available if so: */
     if (!console.GetGuestEnteredACPIMode())
         return vboxProblem().cannotSendACPIToMachine();
 
+    /* Send ACPI shutdown signal, warn if failed: */
     console.PowerButton();
     if (!console.isOk())
         vboxProblem().cannotACPIShutdownMachine(console);
@@ -549,9 +738,11 @@ void UIMachineLogic::sltACPIShutdown()
 
 void UIMachineLogic::sltClose()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
+    /* Close machine window: */
     machineWindowWrapper()->machineWindow()->close();
 }
 
@@ -806,18 +997,22 @@ void UIMachineLogic::sltMountStorageMedium()
 
 void UIMachineLogic::sltOpenNetworkAdaptersDialog()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
+    /* Show network settings dialog: */
     UINetworkAdaptersDialog dlg(machineWindowWrapper()->machineWindow(), session());
     dlg.exec();
 }
 
 void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
+    /* Show shared folders settings dialog: */
     UISharedFoldersDialog dlg(machineWindowWrapper()->machineWindow(), session());
     dlg.exec();
 }
@@ -832,19 +1027,18 @@ void UIMachineLogic::sltAttachUSBDevice()
 
 void UIMachineLogic::sltSwitchVrdp(bool aOn)
 {
-    if (!machineWindowWrapper())
-        return;
-
+    /* Enable VRDP server if possible: */
     CVRDPServer server = session().GetMachine().GetVRDPServer();
     AssertMsg(!server.isNull(), ("VRDP Server should not be null!\n"));
-
     server.SetEnabled(aOn);
 
+    /* Update appearance: */
     updateAppearanceOf(UIVisualElement_VRDPStuff);
 }
 
 void UIMachineLogic::sltInstallGuestAdditions()
 {
+    /* Do not process if window is missing! */
     if (!machineWindowWrapper())
         return;
 
@@ -876,19 +1070,19 @@ void UIMachineLogic::sltInstallGuestAdditions()
     }
 
     /* Download the required image */
+    // TODO: Rework additions downloader logic...
+    #if 0
     int result = vboxProblem().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
     if (result == QIMessageBox::Yes)
     {
-        QString source = QString("http://download.virtualbox.org/virtualbox/%1/")
-                                 .arg (vbox.GetVersion().remove("_OSE")) + name;
+        QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + name;
         QString target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
 
-        // TODO: Think more about additions downloader...
-        //UIAdditionsDownloader *dl =
-        //    new UIAdditionsDownloader(source, target, mDevicesInstallGuestToolsAction);
-        //machineWindowWrapper()->statusBar()->addWidget(dl, 0);
-        //dl->start();
+        //UIAdditionsDownloader *pdl = new UIAdditionsDownloader(source, target, mDevicesInstallGuestToolsAction);
+        //machineWindowWrapper()->statusBar()->addWidget(pdl, 0);
+        //pdl->start();
     }
+    #endif
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1088,197 +1282,6 @@ void UIMachineLogic::sltUpdateAdditionsState(const QString &strVersion, bool bIs
 void UIMachineLogic::sltUpdateMouseState(int iState)
 {
     actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setEnabled(iState & UIMouseStateType_MouseAbsolute);
-}
-
-void UIMachineLogic::prepareActionGroups()
-{
-    /* Create group for all actions that are enabled only when the VM is running.
-     * Note that only actions whose enabled state depends exclusively on the
-     * execution state of the VM are added to this group. */
-    m_pRunningActions = new QActionGroup(this);
-    m_pRunningActions->setExclusive(false);
-
-    /* Create group for all actions that are enabled when the VM is running or paused.
-     * Note that only actions whose enabled state depends exclusively on the
-     * execution state of the VM are added to this group. */
-    m_pRunningOrPausedActions = new QActionGroup(this);
-    m_pRunningOrPausedActions->setExclusive(false);
-
-    // TODO: Move actions into approprivate action groups!
-}
-
-void UIMachineLogic::prepareActionConnections()
-{
-    /* "Machine" actions connections */
-    connect(actionsPool()->action(UIActionIndex_Simple_AdjustWindow), SIGNAL(triggered()),
-            this, SLOT(sltAdjustWindow()));
-    connect(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration), SIGNAL(toggled(bool)),
-            this, SLOT(sltToggleMouseIntegration(bool)));
-    connect(actionsPool()->action(UIActionIndex_Simple_TypeCAD), SIGNAL(triggered()),
-            this, SLOT(sltTypeCAD()));
-#ifdef Q_WS_X11
-    connect(actionsPool()->action(UIActionIndex_Simple_TypeCABS), SIGNAL(triggered()),
-            this, SLOT(sltTypeCABS()));
-#endif
-    connect(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot), SIGNAL(triggered()),
-            this, SLOT(sltTakeSnapshot()));
-    connect(actionsPool()->action(UIActionIndex_Simple_InformationDialog), SIGNAL(triggered()),
-            this, SLOT(sltShowInformationDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Reset), SIGNAL(triggered()),
-            this, SLOT(sltReset()));
-    connect(actionsPool()->action(UIActionIndex_Toggle_Pause), SIGNAL(toggled(bool)),
-            this, SLOT(sltPause(bool)));
-    connect(actionsPool()->action(UIActionIndex_Simple_Shutdown), SIGNAL(triggered()),
-            this, SLOT(sltACPIShutdown()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Close), SIGNAL(triggered()),
-            this, SLOT(sltClose()));
-
-    /* "Devices" actions connections */
-    connect(actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareStorageMenu()));
-    connect(actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareStorageMenu()));
-    connect(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog), SIGNAL(triggered()),
-            this, SLOT(sltOpenNetworkAdaptersDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog), SIGNAL(triggered()),
-            this, SLOT(sltOpenSharedFoldersDialog()));
-    connect(actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareUSBMenu()));
-    connect(actionsPool()->action(UIActionIndex_Toggle_VRDP), SIGNAL(toggled(bool)),
-            this, SLOT(sltSwitchVrdp(bool)));
-    connect(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools), SIGNAL(triggered()),
-            this, SLOT(sltInstallGuestAdditions()));
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    /* "Debug" actions connections */
-    connect(actionsPool()->action(UIActionIndex_Menu_Debug)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareDebugMenu()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Statistics), SIGNAL(triggered()),
-            this, SLOT(sltShowDebugStatistics()));
-    connect(actionsPool()->action(UIActionIndex_Simple_CommandLine), SIGNAL(triggered()),
-            this, SLOT(sltShowDebugCommandLine()));
-    connect(actionsPool()->action(UIActionIndex_Toggle_Logging), SIGNAL(toggled(bool)),
-            this, SLOT(dbgLoggingToggled(bool)));
-#endif
-}
-
-void UIMachineLogic::prepareRequiredFeatures()
-{
-    CConsole console = session().GetConsole();
-
-    /* Check if the virtualization feature is required. */
-    bool bIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
-    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
-    AssertMsg(!bIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool bIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !bIsVirtEnabled)
-    {
-        bool ret;
-
-        // TODO: Check that logic!
-        //sltPause(true);
-
-        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-
-        if (bIs64BitsGuest)
-            ret = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
-        else
-            ret = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
-
-        // TODO: Close application!
-        //if (ret == true)
-        //    machineWindowWrapper()->machineWindow()->close();
-        // TODO: Check that logic!
-        //else
-        //    sltPause(false);
-    }
-
-#ifdef Q_WS_MAC
-# ifdef VBOX_WITH_ICHAT_THEATER
-    initSharedAVManager();
-# endif
-#endif
-}
-
-void UIMachineLogic::loadLogicSettings()
-{
-    CMachine machine = session().GetMachine();
-
-    /* Extra-data settings */
-    {
-        QString strSettings;
-
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
-        if (strSettings != "off")
-            actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setChecked(true);
-
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_FirstRun);
-        if (strSettings == "yes")
-            m_bIsFirstTimeStarted = true;
-
-        strSettings = machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
-        if (strSettings == "no")
-            m_bIsAutoSaveMedia = false;
-    }
-
-    /* Initial settings */
-    {
-        /* Initialize storage stuff: */
-        int iDevicesCountCD = 0;
-        int iDevicesCountFD = 0;
-        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            if (attachment.GetType() == KDeviceType_DVD)
-                ++ iDevicesCountCD;
-            if (attachment.GetType() == KDeviceType_Floppy)
-                ++ iDevicesCountFD;
-        }
-        actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->setData(iDevicesCountCD);
-        actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->setData(iDevicesCountFD);
-        actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->setVisible(iDevicesCountCD);
-        actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->setVisible(iDevicesCountFD);
-    }
-
-    /* Availability settings */
-    {
-        /* USB Stuff: */
-        CUSBController usbController = machine.GetUSBController();
-        if (usbController.isNull())
-        {
-            /* Hide USB_Menu: */
-            actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setVisible(false);
-        }
-        else
-        {
-            /* Enable/Disable USB_Menu: */
-            actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setEnabled(usbController.GetEnabled());
-        }
-
-        /* VRDP Stuff: */
-        CVRDPServer vrdpServer = machine.GetVRDPServer();
-        if (vrdpServer.isNull())
-        {
-            /* Hide VRDP Action: */
-            actionsPool()->action(UIActionIndex_Toggle_VRDP)->setVisible(false);
-        }
-    }
-}
-
-void UIMachineLogic::saveLogicSettings()
-{
-    CMachine machine = session().GetMachine();
-
-    /* Extra-data settings */
-    {
-        machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
-                             actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ? "on" : "off");
-
-        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
-
-        // TODO: Move to fullscreen/seamless logic:
-        //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
-    }
 }
 
 bool UIMachineLogic::pause(bool bOn)

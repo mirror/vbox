@@ -72,6 +72,18 @@ protected:
     /* Update routines: */
     virtual void updateAppearanceOf(int iElement);
 
+    /* Prepare helpers: */
+    virtual void prepareActionGroups();
+    virtual void prepareActionConnections();
+    virtual void prepareRequiredFeatures();
+    virtual void loadLogicSettings();
+
+    /* Cleanup helpers: */
+    void saveLogicSettings();
+    //void cleanupRequiredFeatures();
+    //void cleanupActionConnections();
+    //void cleanupActionGroups();
+
     /* Protected getters: */
     UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowContainer; }
     bool isFirstTimeStarted() const { return m_bIsFirstTimeStarted; }
@@ -126,18 +138,6 @@ private slots:
     void sltUpdateMouseState(int iState);
 
 private:
-
-    /* Prepare helpers: */
-    void prepareActionGroups();
-    void prepareActionConnections();
-    void prepareRequiredFeatures();
-    void loadLogicSettings();
-
-    /* Cleanup helpers: */
-    void saveLogicSettings();
-    //void cleanupRequiredFeatures();
-    //void cleanupActionConnections();
-    //void cleanupActionGroups();
 
     /* Utility functions: */
     void installGuestAdditionsFrom(const QString &strSource);

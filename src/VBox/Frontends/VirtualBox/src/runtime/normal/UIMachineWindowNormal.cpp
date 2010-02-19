@@ -50,6 +50,9 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
     /* "This" is machine window: */
     m_pMachineWindow = this;
 
+    /* Prepare window icon: */
+    prepareWindowIcon();
+
     /* Prepare menu: */
     prepareMenu();
 
@@ -67,6 +70,12 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
 
     /* Retranslate normal window finally: */
     retranslateUi();
+
+    /* Update all the elements: */
+    updateAppearanceOf(UIVisualElement_AllStuff);
+
+    /* Show window: */
+    show();
 }
 
 UIMachineWindowNormal::~UIMachineWindowNormal()
@@ -284,7 +293,7 @@ void UIMachineWindowNormal::sltUpdateMouseState(int iState)
 void UIMachineWindowNormal::retranslateUi()
 {
     /* Translate parent class: */
-    retranslateWindow();
+    UIMachineWindow::retranslateUi();
 }
 
 void UIMachineWindowNormal::updateAppearanceOf(int iElement)
@@ -677,6 +686,8 @@ void UIMachineWindowNormal::prepareConnections()
 
 void UIMachineWindowNormal::prepareMachineView()
 {
+    return; // TODO: Do not create view for now!
+
     CMachine machine = machineLogic()->session().GetMachine();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -706,6 +717,10 @@ void UIMachineWindowNormal::prepareMachineView()
 
 void UIMachineWindowNormal::loadWindowSettings()
 {
+    /* Load parent class settings: */
+    UIMachineWindow::loadWindowSettings();
+
+    /* Load this class settings: */
     CMachine machine = machineLogic()->session().GetMachine();
 
     /* Extra-data settings */
@@ -732,8 +747,9 @@ void UIMachineWindowNormal::loadWindowSettings()
             m_normalGeometry = QRect(x, y, w, h);
             setGeometry(m_normalGeometry);
 
-            /* Normalize to the optimal size */
-            machineView()->normalizeGeometry(true /* adjust position? */);
+            /* Normalize view to the optimal size */
+            if (machineView())
+                machineView()->normalizeGeometry(true /* adjust position? */);
 
             /* Maximize if needed */
             if (max)
@@ -742,7 +758,8 @@ void UIMachineWindowNormal::loadWindowSettings()
         else
         {
             /* Normalize to the optimal size */
-            machineView()->normalizeGeometry(true /* adjust position? */);
+            if (machineView())
+                machineView()->normalizeGeometry(true /* adjust position? */);
 
             /* Move newly created window to the screen center: */
             m_normalGeometry = geometry();
@@ -783,8 +800,8 @@ void UIMachineWindowNormal::saveWindowSettings()
     /* Extra-data settings */
     {
         QString strWindowPosition = QString("%1,%2,%3,%4")
-                                .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
-                                .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
+                                    .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
+                                    .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
         if (isMaximized())
             strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowPosition_Max);
         machine.SetExtraData(VBoxDefs::GUI_LastWindowPosition, strWindowPosition);
@@ -795,5 +812,5 @@ void UIMachineWindowNormal::cleanupStatusBar()
 {
     /* Stop LED-update timer: */
     m_pIdleTimer->stop();
-    m_pIdleTimer->disconnect(SIGNAL(timeout()), this, SLOT(updateDeviceLights()));
+    m_pIdleTimer->disconnect(SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
 }
