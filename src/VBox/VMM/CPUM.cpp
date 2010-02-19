@@ -833,9 +833,15 @@ VMMR3DECL(void) CPUMR3SetHWVirtEx(PVM pVM, bool fHWVirtExEnabled)
      * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdDef:
      * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
      * of processors from (cpuid(4).eax >> 26) + 1.
+     *
+     * Note: this code is obsolete, but let's keep it here for reference.
+     *       Purpose is valid when we artifically cap the max std id to less than 4.
      */
     if (!fHWVirtExEnabled)
+    {
+        Assert(pVM->cpum.s.aGuestCpuIdStd[4].eax == 0);
         pVM->cpum.s.aGuestCpuIdStd[4].eax = 0;
+    }
 }
 
 /**
