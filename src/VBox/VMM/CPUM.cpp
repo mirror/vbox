@@ -563,8 +563,7 @@ static int cpumR3CpuIdInit(PVM pVM)
      */
     pCPUM->aGuestCpuIdStd[1].ebx &= 0x0000ffff;
 #ifdef VBOX_WITH_MULTI_CORE
-    if (    pVM->cCpus > 1
-        &&  pCPUM->enmGuestCpuVendor != CPUMCPUVENDOR_SYNTHETIC)
+    if (pCPUM->enmGuestCpuVendor != CPUMCPUVENDOR_SYNTHETIC)
     {
         /* If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the number of threads per CPU core times the number of CPU cores per processor */
         pCPUM->aGuestCpuIdStd[1].ebx |= (pVM->cCpus << 16);
@@ -734,14 +733,6 @@ static int cpumR3CpuIdInit(PVM pVM)
            : 0;
          i < RT_ELEMENTS(pCPUM->aGuestCpuIdExt); i++)
         pCPUM->aGuestCpuIdExt[i] = pCPUM->GuestCpuIdDef;
-
-    /*
-     * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdDef:
-     * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
-     * of processors from (cpuid(4).eax >> 26) + 1.
-     */
-    if (pVM->cCpus == 1)
-        pCPUM->aGuestCpuIdStd[4].eax = 0;
 
     /*
      * Centaur stuff (VIA).
