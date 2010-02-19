@@ -102,7 +102,10 @@ RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 
     virtAddr = vbi_contig_alloc(&phys, cb);
     if (virtAddr == NULL)
+    {
+        cmn_err("vbi_contig_alloc for %u failed\n", cb);
         return NULL;
+    }
 
     Assert(phys < (uint64_t)1 << 32);
 
