@@ -45,8 +45,6 @@ typedef struct DRVMAINMOUSE
     PDMIMOUSECONNECTOR          IConnector;
 } DRVMAINMOUSE, *PDRVMAINMOUSE;
 
-/** Converts a PDMIMOUSECONNECTOR pointer to a DRVMAINMOUSE pointer. */
-#define PPDMIMOUSECONNECTOR_2_MAINMOUSE(pInterface) ( (PDRVMAINMOUSE) ((uintptr_t)pInterface - RT_OFFSETOF(DRVMAINMOUSE, IConnector)) )
 
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
@@ -402,8 +400,6 @@ int Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
 STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
                                           LONG buttonState)
 {
-    HRESULT rc = S_OK;
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -413,16 +409,19 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
              __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
 
     uint32_t mouseXAbs;
-    rc = convertDisplayWidth(x, &mouseXAbs);
+    HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
     ComAssertComRCRet(rc, rc);
     if (mouseXAbs > 0xffff)
         mouseXAbs = mLastAbsX;
+
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
     ComAssertComRCRet(rc, rc);
     if (mouseYAbs > 0xffff)
         mouseYAbs = mLastAbsY;
+
     uint32_t fButtons = mouseButtonsToPDM(buttonState);
+
     /* Older guest additions rely on a small phony movement event on the
      * PS/2 device to notice absolute events. */
     bool fNeedsJiggle = false;
@@ -434,6 +433,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         uint32_t mouseCaps;
         rc = getVMMDevMouseCaps(&mouseCaps);
         ComAssertComRCRet(rc, rc);
+
         /*
          * This method being called implies that the host wants
          * to use absolute coordinates. If the VMM device isn't
@@ -448,9 +448,11 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         rc = reportAbsEventToVMMDev(mouseXAbs, mouseYAbs);
         fNeedsJiggle = !(mouseCaps & VMMDEV_MOUSE_GUEST_USES_VMMDEV);
     }
-    ComAssertComRCRet (rc, rc);
+    ComAssertComRCRet(rc, rc);
+
     mLastAbsX = mouseXAbs;
     mLastAbsY = mouseYAbs;
+
     if (!(uDevCaps & MOUSE_DEVCAP_ABSOLUTE))
     {
         /* We may need to send a relative event for button information or to
@@ -459,9 +461,11 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
          * (possibly phony) event data to make sure it isn't just discarded on
          * the way. */
         if (fNeedsJiggle || fButtons != mLastButtons || dz || dw)
+        {
             rc = reportRelEventToMouseDev(fNeedsJiggle ? 1 : 0, 0, dz, dw,
                                           fButtons);
-        ComAssertComRCRet (rc, rc);
+            ComAssertComRCRet(rc, rc);
+        }
     }
     mLastButtons = fButtons;
     return rc;
@@ -469,6 +473,33 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
 // private methods
 /////////////////////////////////////////////////////////////////////////////
+
+
+/**
+ * @interface_method_impl{PDMIMOUSECONNECTOR,pfnAbsModeChange}
+ */
+DECLCALLBACK(void) Mouse::mouseAbsModeChange(PPDMIMOUSECONNECTOR pInterface, bool fEnabled)
+{
+    PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
+    if (fEnabled)
+        pDrv->pMouse->uDevCaps |= MOUSE_DEVCAP_ABSOLUTE;
+    else
+        pDrv->pMouse->uDevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
+
+    /** @todo we have to hack around the fact that VMMDev may not be
+     * initialised too close to startup.  The real fix is to change the
+     * protocol for onMouseCapabilityChange so that we no longer need to
+     * query VMMDev, but that requires more changes that I want to do in
+     * the next commit, so it must be put off until the followup one. */
+    uint32_t fMouseCaps = 0;
+    int rc = S_OK;
+    if (   pDrv->pMouse->mParent->getVMMDev()
+        && pDrv->pMouse->mParent->getVMMDev()->mpDrv)
+        rc = pDrv->pMouse->getVMMDevMouseCaps(&fMouseCaps);
+    AssertComRCReturnVoid(rc);
+    pDrv->pMouse->getParent()->onMouseCapabilityChange(fEnabled, fMouseCaps & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+}
+
 
 /**
  * @interface_method_impl{PDMIBASE,pfnQueryInterface}
@@ -501,28 +532,6 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
         AutoWriteLock mouseLock(pData->pMouse COMMA_LOCKVAL_SRC_POS);
         pData->pMouse->mpDrv = NULL;
     }
-}
-
-
-DECLCALLBACK(void) Mouse::mouseAbsModeChange (PPDMIMOUSECONNECTOR pInterface, bool fAbs)
-{
-    PDRVMAINMOUSE pDrv = PPDMIMOUSECONNECTOR_2_MAINMOUSE (pInterface);
-    if (fAbs)
-        pDrv->pMouse->uDevCaps |= MOUSE_DEVCAP_ABSOLUTE;
-    else
-        pDrv->pMouse->uDevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
-    /** @todo we have to hack around the fact that VMMDev may not be
-     * initialised too close to startup.  The real fix is to change the
-     * protocol for onMouseCapabilityChange so that we no longer need to
-     * query VMMDev, but that requires more changes that I want to do in
-     * the next commit, so it must be put off until the followup one. */
-    uint32_t fMouseCaps = 0;
-    int rc = S_OK;
-    if (   pDrv->pMouse->mParent->getVMMDev()
-        && pDrv->pMouse->mParent->getVMMDev()->mpDrv)
-        rc = pDrv->pMouse->getVMMDevMouseCaps(&fMouseCaps);
-    AssertComRCReturnVoid(rc);
-    pDrv->pMouse->getParent()->onMouseCapabilityChange (fAbs, fMouseCaps & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
 }
 
 

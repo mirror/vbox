@@ -278,8 +278,6 @@ typedef struct PDMIDUMMY
 } PDMIDUMMY;
 
 
-/** PDMIMOUSEPORT interface ID. */
-#define PDMIMOUSEPORT_IID "f8d45ecc-bd6f-4a8d-b262-b85498e7f143"
 /** Pointer to a mouse port interface. */
 typedef struct PDMIMOUSEPORT *PPDMIMOUSEPORT;
 /**
@@ -290,35 +288,41 @@ typedef struct PDMIMOUSEPORT
 {
     /**
      * Puts a mouse event.
-     * This is called by the source of mouse events. The event will be passed up until the
-     * topmost driver, which then calls the registered event handler.
      *
-     * @returns VBox status code.
+     * This is called by the source of mouse events.  The event will be passed up
+     * until the topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
      * @param   pInterface          Pointer to this interface structure.
-     * @param   i32DeltaX       The X delta.
-     * @param   i32DeltaY       The Y delta.
-     * @param   i32DeltaZ       The Z delta.
-     * @param   i32DeltaW       The W (horizontal scroll button) delta.
-     * @param   fButtonStates   The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
-     * @thread  The emulation thread.
+     * @param   iDeltaX             The X delta.
+     * @param   iDeltaY             The Y delta.
+     * @param   iDeltaZ             The Z delta.
+     * @param   iDeltaW             The W (horizontal scroll button) delta.
+     * @param   fButtonStates       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t i32DeltaX, int32_t i32DeltaY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates));
+    DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIMOUSEPORT pInterface, int32_t iDeltaX, int32_t iDeltaY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates));
     /**
      * Puts an absolute mouse event.
-     * This is called by the source of mouse events. The event will be passed up until the
-     * topmost driver, which then calls the registered event handler.
      *
-     * @returns VBox status code.
+     * This is called by the source of mouse events.  The event will be passed up
+     * until the topmost driver, which then calls the registered event handler.
+     *
+     * @returns VBox status code.  Return VERR_TRY_AGAIN if you cannot process the
+     *          event now and want it to be repeated at a later point.
+     *
      * @param   pInterface          Pointer to this interface structure.
-     * @param   i32cX               The X value, in the range 0 to 0xffff.
-     * @param   i32cY               The Y value, in the range 0 to 0xffff.
-     * @param   i32DeltaZ           The Z delta.
-     * @param   i32DeltaW           The W (horizontal scroll button) delta.
+     * @param   uX                  The X value, in the range 0 to 0xffff.
+     * @param   uY                  The Y value, in the range 0 to 0xffff.
+     * @param   iDeltaZ             The Z delta.
+     * @param   iDeltaW             The W (horizontal scroll button) delta.
      * @param   fButtonStates       The button states, see the PDMIMOUSEPORT_BUTTON_* \#defines.
-     * @thread  The emulation thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, uint32_t i32cX, uint32_t i32cY, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates));
+    DECLR3CALLBACKMEMBER(int, pfnPutEventAbs,(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtonStates));
 } PDMIMOUSEPORT;
+/** PDMIMOUSEPORT interface ID. */
+#define PDMIMOUSEPORT_IID                       "442136fe-6f3c-49ec-9964-259b378ffa64"
 
 /** Mouse button defines for PDMIMOUSEPORT::pfnPutEvent.
  * @{ */
@@ -339,17 +343,17 @@ typedef struct PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
 typedef struct PDMIMOUSECONNECTOR
 {
     /**
-     * Notifies the the downstream driver when the guest switches the device into or out of absolute mode.
+     * Notifies the the downstream driver when the guest switches the device into or
+     * out of absolute mode.
      *
      * @param   pInterface      Pointer to the this interface.
-     * @param   fAbs            Whether absolute mode is currently enabled
+     * @param   fEnabled        Whether absolute mode is currently enabled.
      */
-    DECLR3CALLBACKMEMBER(void, pfnAbsModeChange,(PPDMIMOUSECONNECTOR pInterface, bool fAbs));
+    DECLR3CALLBACKMEMBER(void, pfnAbsModeChange,(PPDMIMOUSECONNECTOR pInterface, bool fEnabled));
 
 } PDMIMOUSECONNECTOR;
-
 /** PDMIMOUSECONNECTOR interface ID.  */
-#define PDMIMOUSECONNECTOR_IID                  "39e48c1c-1514-4ac6-8a9c-88034d36ae98"
+#define PDMIMOUSECONNECTOR_IID                  "6b7be703-c1de-40a2-a977-0ef68d8760ca"
 
 
 /** Pointer to a keyboard port interface. */
@@ -371,7 +375,6 @@ typedef struct PDMIKEYBOARDPORT
      *
      * @param   pInterface          Pointer to this interface structure.
      * @param   u8KeyCode           The keycode to queue.
-     * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnPutEvent,(PPDMIKEYBOARDPORT pInterface, uint8_t u8KeyCode));
 } PDMIKEYBOARDPORT;
