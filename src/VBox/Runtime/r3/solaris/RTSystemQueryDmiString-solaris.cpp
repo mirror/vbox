@@ -40,6 +40,7 @@
 #include <iprt/string.h>
 
 #include <smbios.h>
+#include <errno.h>
 
 
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf)
@@ -54,11 +55,12 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     smbios_hdl_t *pSMB = smbios_open(NULL /* default fd */, SMB_VERSION, 0 /* flags */, &err);
     if (pSMB)
     {
-        if (enmString == RTSYSDMISTR_PRODUCT_UUID)
+        smbios_system_t hSMBSys;
+        id_t hSMBId = smbios_info_system(pSMB, &hSMBSys);
+        if (hSMBId != SMB_ERR)
         {
-            smbios_system_t hSMBSys;
-            id_t hSMBId = smbios_info_system(pSMB, &hSMBSys);
-            if (hSMBId != SMB_ERR)
+            /* Don't need the common bits for the product UUID. */
+            if (enmString == RTSYSDMISTR_PRODUCT_UUID)
             {
                 static char const s_szHex[17] = "0123456789ABCDEF";
                 char     szData[64];
@@ -76,9 +78,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
                 smbios_close(pSMB);
                 return rc;
             }
-        }
-        else
-        {
+
             smbios_info_t hSMBInfo;
             id_t hSMBInfoId = smbios_info_common(pSMB, hSMBId, &hSMBInfo);
             if (hSMBInfoId != SMB_ERR)
