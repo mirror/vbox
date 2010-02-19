@@ -468,7 +468,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_PBE       RT_BIT(31)
 /** @} */
 
-/** @name CPUID Feature information.
+/** @name CPUID mwait/monitor information.
  * CPUID query with EAX=5.
  * @{
  */
