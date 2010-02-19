@@ -41,6 +41,7 @@
 
 #include <smbios.h>
 
+
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf)
 {
     AssertPtrReturn(pszBuf, VERR_INVALID_POINTER);
@@ -48,14 +49,35 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     *pszBuf = '\0';
     AssertReturn(enmString > RTSYSDMISTR_INVALID && enmString < RTSYSDMISTR_END, VERR_INVALID_PARAMETER);
 
-    int rc = VINF_SUCCESS;
+    int rc = VERR_NOT_SUPPORTED;
     int err = 0;
     smbios_hdl_t *pSMB = smbios_open(NULL /* default fd */, SMB_VERSION, 0 /* flags */, &err);
     if (pSMB)
     {
-        smbios_system_t hSMBSys;
-        id_t hSMBId = smbios_info_system(pSMB, &hSMBSys);
-        if (hSMBId != SMB_ERR)
+        if (enmString == RTSYSDMISTR_PRODUCT_UUID)
+        {
+            smbios_system_t hSMBSys;
+            id_t hSMBId = smbios_info_system(pSMB, &hSMBSys);
+            if (hSMBId != SMB_ERR)
+            {
+                static char const s_szHex[17] = "0123456789ABCDEF";
+                char     szData[64];
+                char    *pszData = szData;
+                unsigned cchUuid = RT_MIN(hSMBSys.smbs_uuidlen, sizeof(szData) - 1);
+                for (unsigned i = 0; i < cchUuid; i++)
+                {
+                    *pszData++ = s_szHex[hSMBSys.smbs_uuid[i] >> 4];
+                    *pszData++ = s_szHex[hSMBSys.smbs_uuid[i] & 0xf];
+                    if (i == 3 || i == 5 || i == 7 || i == 9)
+                        *pszData++ = '-';
+                }
+                *pszData = '\0';
+                rc = RTStrCopy(pszBuf, cbBuf, szData);
+                smbios_close(pSMB);
+                return rc;
+            }
+        }
+        else
         {
             smbios_info_t hSMBInfo;
             id_t hSMBInfoId = smbios_info_common(pSMB, hSMBId, &hSMBInfo);
@@ -63,43 +85,26 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
             {
                 switch (enmString)
                 {
-                    case RTSYSDMISTR_PRODUCT_UUID:
-                    {
-                        static char const s_szHex[17] = "0123456789ABCDEF";
-                        char szData[64];
-                        char *pszData = szData;
-                        for (unsigned i = 0; i < RT_MIN(hSMBSys.smbs_uuidlen, sizeof(szData) - 1); i++)
-                        {
-                            *pszData++ = s_szHex[hSMBSys.smbs_uuid[i] >> 4];
-                            *pszData++ = s_szHex[hSMBSys.smbs_uuid[i] & 0xf];
-                            if (i == 3 || i == 5 || i == 7 || i == 9)
-                                *pszData++ = '-';
-                        }
-                        *pszData = '\0';
-                        RTStrPrintf(pszBuf, cbBuf, "%s", szData);
-                        rc = VINF_SUCCESS;
-                        break;
-                    }
+                    case RTSYSDMISTR_PRODUCT_NAME:      rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_product); break;
+                    case RTSYSDMISTR_PRODUCT_VERSION:   rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_version); break;
+                    case RTSYSDMISTR_PRODUCT_SERIAL:    rc = RTStrCopy(pszBuf, cbBuf, hSMBInfo.smbi_serial);  break;
 
-                    case RTSYSDMISTR_PRODUCT_NAME:      RTStrPrintf(pszBuf, cbBuf, "%s", hSMBInfo.smbi_product); rc = VINF_SUCCESS; break;
-                    case RTSYSDMISTR_PRODUCT_VERSION:   RTStrPrintf(pszBuf, cbBuf, "%s", hSMBInfo.smbi_version); rc = VINF_SUCCESS; break;
-                    case RTSYSDMISTR_PRODUCT_SERIAL:    RTStrPrintf(pszBuf, cbBuf, "%s", hSMBInfo.smbi_serial);  rc = VINF_SUCCESS; break;
-
-                    default:
+                    default:  /* make gcc happy */
                         rc = VERR_NOT_SUPPORTED;
                 }
+                smbios_close(pSMB);
+                return rc;
             }
-            else
-                rc = VERR_INTERNAL_ERROR_2;
         }
-        else
-            rc = VERR_INTERNAL_ERROR;
 
+        /* smbios_* error path. */
+        err = smbios_errno(pSMB);
         smbios_close(pSMB);
     }
-    else
-        rc = VERR_OPEN_FAILED;
 
+    /* Do some error conversion.  */
+    if (err == EPERM || err == EACCES)
+        rc = VERR_ACCESS_DENIED;
     return rc;
 }
 
