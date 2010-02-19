@@ -992,6 +992,9 @@ VBoxRT_LIBS.freebsd            = \
 	rt
 VBoxRT_LIBS.solaris            = \
 	kstat smbios
+VBoxRT_LIBS.win                = \
+	$(PATH_SDK_W2K3DDK_LIB)/vccomsup.lib \
+	$(PATH_SDK_W2K3DDK_LIB)/wbemuuid.lib
 VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
