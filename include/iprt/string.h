@@ -1011,6 +1011,37 @@ RTDECL(char *) RTStrStripL(const char *psz);
 RTDECL(char *) RTStrStripR(char *psz);
 
 /**
+ * String copy with overflow handling.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   pszDst              The destination buffer.
+ * @param   cbDst               The size of the destination buffer (in bytes).
+ * @param   pszSrc              The source string.  NULL is not OK.
+ */
+RTDECL(int) RTStrCopy(char *pszDst, size_t cbDst, const char *pszSrc);
+
+/**
+ * String copy with overflow handling.
+ *
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VERR_BUFFER_OVERFLOW if the destination buffer is too small.  The
+ *          buffer will contain as much of the string as it can hold, fully
+ *          terminated.
+ *
+ * @param   pszDst              The destination buffer.
+ * @param   cbDst               The size of the destination buffer (in bytes).
+ * @param   pszSrc              The source string.  NULL is not OK.
+ * @param   cchSrcMax           The maximum number of chars (not code points) to
+ *                              copy from the source string, not counting the
+ *                              terminator as usual.
+ */
+RTDECL(int) RTStrCopyEx(char *pszDst, size_t cbDst, const char *pszSrc, size_t cchSrcMax);
+
+/**
  * Performs a case sensitive string compare between two UTF-8 strings.
  *
  * Encoding errors are ignored by the current implementation. So, the only

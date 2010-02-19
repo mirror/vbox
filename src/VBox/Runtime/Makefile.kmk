@@ -295,6 +295,8 @@ RuntimeR3_SOURCES       = \
 	common/rand/randparkmiller.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrConvertHexBytes.cpp \
+	common/string/RTStrCopy.cpp \
+	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
@@ -859,6 +861,8 @@ RuntimeGuestR3Mini_SOURCES = \
 	common/path/RTPathStripFilename.cpp \
 	common/path/RTPathStripTrailingSlash.cpp \
 	common/string/RTStrCmp.cpp \
+	common/string/RTStrCopy.cpp \
+	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrNCmp.cpp \
         common/string/RTStrNLen.cpp \
         common/string/RTStrNLenEx.cpp \
@@ -1286,6 +1290,8 @@ RuntimeR0Drv_SOURCES    = \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
 	common/string/RTStrCmp.cpp \
+	common/string/RTStrCopy.cpp \
+	common/string/RTStrCopyEx.cpp \
 	common/string/RTStrNCmp.cpp \
 	common/string/RTStrNLen.cpp \
 	common/string/RTStrNLenEx.cpp \
