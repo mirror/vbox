@@ -1020,7 +1020,10 @@ static int vmR3InitRing0(PVM pVM)
 
     /** @todo Move this to the VMINITCOMPLETED_RING0 notification handler. */
     if (RT_SUCCESS(rc))
+    {
         rc = HWACCMR3InitFinalizeR0(pVM);
+        CPUMR3SetHWVirtEx(pVM, HWACCMIsEnabled(pVM));
+    }
 
     LogFlow(("vmR3InitRing0: returns %Rrc\n", rc));
     return rc;
