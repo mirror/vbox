@@ -157,6 +157,8 @@ int vbglInitCommon (void)
         /* other subsystems, none yet */
         ;
     }
+    else
+        LogRel(("vbglInitCommon: VbglPhysHeapInit failed. rc=%Rrc\n", rc));
 
     dprintf(("vbglInitCommon: rc = %d\n", rc));
 
