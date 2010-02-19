@@ -1201,10 +1201,9 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                             pAllocation->u.SurfInfo = pAllocInfo->u.SurfInfo;
                             PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocInfo, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
                             PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE pAllocI = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
-//                            memcpy(&pAlloc->AllocInfo, pInfo, sizeof (pAlloc->AllocInfo));
                             pAlloc->RefreshRate = pAllocI->RefreshRate;
                             pAlloc->VidPnSourceId = pAllocI->VidPnSourceId;
-                            pAlloc->offAddress = VBOXVIDEOOFFSET_VOID;
+//                            pAlloc->offAddress = VBOXVIDEOOFFSET_VOID;
                             pAlloc->bVisible = FALSE;
 
                             pAllocationInfo->pPrivateDriverData = NULL;
@@ -1499,7 +1498,40 @@ DxgkDdiPatch(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_PATCH*  pPatch)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiPatch should be made pageable. */
+    PAGED_CODE();
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    /* Value == 2 is Present
+     * Value == 4 is RedirectedPresent
+     * we do not expect any other flags to be set here */
+    Assert(pPatch->Flags.Value == 2 || pPatch->Flags.Value == 4);
+
+    uint8_t *pBuf = ((uint8_t *)pPatch->pDmaBuffer) + pPatch->DmaBufferPrivateDataSubmissionStartOffset;
+    for (UINT i = pPatch->PatchLocationListSubmissionStart; i < pPatch->PatchLocationListSubmissionLength; ++i)
+    {
+        const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[i];
+        Assert(pPatchList->AllocationIndex < pPatch->AllocationListSize);
+        const DXGK_ALLOCATIONLIST *pAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
+        if (pAllocationList->PhysicalAddress.QuadPart)
+        {
+            Assert(pPatchList->PatchOffset < (pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset));
+            *((PHYSICAL_ADDRESS*)(pBuf+pPatchList->PatchOffset)) = pAllocationList->PhysicalAddress;
+        }
+        else
+        {
+            /* sanity */
+            if (pPatch->Flags.Value == 2 || pPatch->Flags.Value == 4)
+                Assert(i == 0);
+        }
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
@@ -1508,7 +1540,41 @@ DxgkDdiSubmitCommand(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_SUBMITCOMMAND*  pSubmitCommand)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiSubmitCommand runs at dispatch, should not be pageable. */
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    VBOXVDMACMDBUF_INFO BufInfo = {0};
+
+    Assert(pSubmitCommand->DmaBufferSegmentId);
+
+    /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
+    //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
+    BufInfo.cbBuf =  pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
+    BufInfo.Location.phBuf = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
+    BufInfo.u32FenceId = pSubmitCommand->SubmissionFenceId;
+
+    int rc = vboxVdmaCBufSubmit (pDevExt, &pDevExt->u.primary.Vdma, &BufInfo);
+    AssertRC(rc);
+    if (!RT_SUCCESS(rc))
+    {
+        switch (rc)
+        {
+            case VERR_OUT_OF_RESOURCES:
+                /* @todo: try flushing.. */
+                Status = STATUS_INSUFFICIENT_RESOURCES;
+                break;
+            default:
+                Status = STATUS_UNSUCCESSFUL;
+                break;
+        }
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
@@ -1526,7 +1592,17 @@ DxgkDdiBuildPagingBuffer(
     CONST HANDLE  hAdapter,
     DXGKARG_BUILDPAGINGBUFFER*  pBuildPagingBuffer)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiBuildPagingBuffer should be made pageable. */
+    PAGED_CODE();
+
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    return Status;
+
 }
 
 NTSTATUS
@@ -2224,18 +2300,21 @@ DxgkDdiPresent(
                 {
                     if (vboxWddmPixFormatConversionSupported(pSrcAlloc->u.SurfInfo.format, pDstAlloc->u.SurfInfo.format))
                     {
-                        memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
-                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offSrc);
+                        memset(pPresent->pPatchLocationListOut, 0, 3*sizeof (D3DDDI_PATCHLOCATIONLIST));
+                        pPresent->pPatchLocationListOut->PatchOffset = 0;
                         ++pPresent->pPatchLocationListOut;
-                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offDst);
-                        pPresent->pPatchLocationListOut->AllocationIndex = 1;
+                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, phSrc);
+                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
+                        ++pPresent->pPatchLocationListOut;
+                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, phDst);
+                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_DESTINATION_INDEX;
                         ++pPresent->pPatchLocationListOut;
 
                         pCmd->enmType = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
                         pCmd->u32CmdSpecific = 0;
                         PVBOXVDMACMD_DMA_PRESENT_BLT pTransfer = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);
-                        pTransfer->offSrc = vboxWddmOffsetFromPhAddress(pSrc->PhysicalAddress);
-                        pTransfer->offDst = vboxWddmOffsetFromPhAddress(pDst->PhysicalAddress);
+                        pTransfer->phSrc = pSrc->PhysicalAddress.QuadPart;
+                        pTransfer->phDst = pDst->PhysicalAddress.QuadPart;
                         vboxWddmSurfDescFromAllocation(pSrcAlloc, &pTransfer->srcDesc);
                         vboxWddmSurfDescFromAllocation(pDstAlloc, &pTransfer->dstDesc);
                         vboxWddmRectlFromRect(&pPresent->SrcRect, &pTransfer->srcRectl);

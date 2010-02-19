@@ -1147,7 +1147,11 @@ typedef struct VBOXVDMACBUF_DR
      * VERR_INTERRUPTED - on preemption
      * VERR_xxx         - on error */
     int32_t  rc;
-    uint64_t phBuf;
+    union
+    {
+        uint64_t phBuf;
+        VBOXVIDEOOFFSET offVramBuf;
+    } Location;
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
 #define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
@@ -1166,8 +1170,8 @@ typedef struct VBOXVDMACMD
 
 typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
 {
-    VBOXVIDEOOFFSET offSrc;
-    VBOXVIDEOOFFSET offDst;
+    uint64_t phSrc;
+    uint64_t phDst;
     VBOXVDMA_SURF_DESC srcDesc;
     VBOXVDMA_SURF_DESC dstDesc;
     VBOXVDMA_RECTL srcRectl;

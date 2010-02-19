@@ -164,7 +164,7 @@ void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
 }
 
-PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo, uint32_t u32FenceId)
+PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo)
 {
     PVBOXVDMACBUF_DR pCmdDr;
 
@@ -187,14 +187,14 @@ PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO
             return NULL;
 
         if (!(pBufInfo->fFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET))
-            pCmdDr->phBuf = pBufInfo->Location.phBuf;
+            pCmdDr->Location.phBuf = pBufInfo->Location.phBuf;
         else
-            pCmdDr->phBuf = pBufInfo->Location.offVramBuf;
+            pCmdDr->Location.offVramBuf = pBufInfo->Location.offVramBuf;
     }
 
     pCmdDr->fFlags = pBufInfo->fFlags;
     pCmdDr->cbBuf = pBufInfo->cbBuf;
-    pCmdDr->u32FenceId = u32FenceId;
+    pCmdDr->u32FenceId = pBufInfo->u32FenceId;
 
     return pCmdDr;
 }
@@ -258,11 +258,11 @@ void vboxVdmaCBufDrSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOX
     VBoxSHGSMICommandSubmitAsynchIrq (&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, 0);
 }
 
-int vboxVdmaCBufSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo, uint32_t u32FenceId)
+int vboxVdmaCBufSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo)
 {
     dfprintf((__FUNCTION__"\n"));
 
-    PVBOXVDMACBUF_DR pdr = vboxVdmaCBufDrCreate (pInfo, pBufInfo, u32FenceId);
+    PVBOXVDMACBUF_DR pdr = vboxVdmaCBufDrCreate (pInfo, pBufInfo);
     if (!pdr)
         return VERR_OUT_OF_RESOURCES;
 
