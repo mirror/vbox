@@ -2824,8 +2824,7 @@ REMR3DECL(void) REMR3ReplayHandlerNotifications(PVM pVM)
             } while (!ASMAtomicCmpXchgU32(&pVM->rem.s.idxFreeList, idxCur, idxNext));
         } while (idxHead != UINT32_MAX);
 
-/* Temporarily turned on for release builds to investigate #4113 */
-#if 1 //def VBOX_STRICT
+#ifdef VBOX_STRICT
         if (pVM->cCpus == 1)
         {
             unsigned c;
