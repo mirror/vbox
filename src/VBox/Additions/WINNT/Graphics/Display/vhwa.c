@@ -78,7 +78,8 @@ void vboxVHWASurfDescFree(PVBOXVHWASURFDESC pDesc)
         )
 
 #define VBOXVHWA_SUPPORTED_PF ( \
-        VBOXVHWA_PF_RGB \
+        VBOXVHWA_PF_PALETTEINDEXED8 \
+        | VBOXVHWA_PF_RGB \
         | VBOXVHWA_PF_RGBTOYUV \
         | VBOXVHWA_PF_YUV \
         | VBOXVHWA_PF_FOURCC \
