@@ -55,25 +55,23 @@ UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisual
     return window;
 }
 
+void UIMachineWindow::destroy(UIMachineWindow *pWhichWindow)
+{
+    delete pWhichWindow;
+}
+
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
+    , m_pMachineWindow(0)
+    , m_pMachineView(0)
 {
-    /* Prepare window icon: */
-    prepareWindowIcon();
-
-    /* Load common window settings: */
-    loadWindowSettings();
-
-    /* Translate common window: */
-    retranslateWindow();
 }
 
 UIMachineWindow::~UIMachineWindow()
 {
-    // Nothing for now!
 }
 
-void UIMachineWindow::retranslateWindow()
+void UIMachineWindow::retranslateUi()
 {
 #ifdef VBOX_OSE
     m_strWindowTitlePrefix = UIMachineLogic::tr("VirtualBox OSE");
@@ -107,6 +105,33 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         // TODO: Move that to fullscreen/seamless update routine:
         // mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
     }
+}
+
+void UIMachineWindow::prepareWindowIcon()
+{
+#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
+    /* The default application icon (will be changed to VM-specific icon little bit later):
+     * 1. On Win32, it's built-in to the executable;
+     * 2. On Mac OS X the icon referenced in info.plist is used. */
+    machineWindow()->setWindowIcon(QIcon(":/VirtualBox_48px.png"));
+#endif
+
+#ifndef Q_WS_MAC
+    /* Set the VM-specific application icon except Mac OS X: */
+    CMachine machine = machineLogic()->session().GetMachine();
+    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()));
+#endif
+}
+
+void UIMachineWindow::loadWindowSettings()
+{
+#ifdef Q_WS_MAC
+    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value */
+    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
+    machineView()->setDockIconEnabled(bIsDockIconEnabled);
+    machineView()->updateDockOverlay();
+#endif
 }
 
 void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
@@ -366,31 +391,4 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         // TODO: Notify about closing!
         // emit closing();
     }
-}
-
-void UIMachineWindow::prepareWindowIcon()
-{
-#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
-    /* The default application icon (will be changed to VM-specific icon little bit later):
-     * 1. On Win32, it's built-in to the executable;
-     * 2. On Mac OS X the icon referenced in info.plist is used. */
-    machineWindow()->setWindowIcon(QIcon(":/VirtualBox_48px.png"));
-#endif
-
-#ifndef Q_WS_MAC
-    /* Set the VM-specific application icon except Mac OS X: */
-    CMachine machine = machineLogic()->session().GetMachine();
-    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()));
-#endif
-}
-
-void UIMachineWindow::loadWindowSettings()
-{
-#ifdef Q_WS_MAC
-    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value */
-    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
-    machineView()->setDockIconEnabled(bIsDockIconEnabled);
-    machineView()->updateDockOverlay();
-#endif
 }

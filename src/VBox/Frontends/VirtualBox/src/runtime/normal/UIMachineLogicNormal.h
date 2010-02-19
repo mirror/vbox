@@ -61,6 +61,7 @@ private:
     /* Cleanup helpers: */
     //void saveLogicSettings();
     void cleanupMachineWindow();
+    //void cleanupActionConnections();
 
     friend class UIMachineLogic;
 };

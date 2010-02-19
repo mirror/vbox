@@ -39,6 +39,7 @@ public:
 
     /* Factory function to create required machine window child: */
     static UIMachineWindow* create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType);
+    static void destroy(UIMachineWindow *pWhichWindow);
 
     /* Abstract slot to close machine window: */
     virtual void sltTryClose() = 0;
@@ -55,10 +56,18 @@ protected:
     virtual ~UIMachineWindow();
 
     /* Translate routine: */
-    void retranslateWindow();
+    virtual void retranslateUi();
 
     /* Update routines: */
     virtual void updateAppearanceOf(int iElement);
+
+    /* Prepare helpers: */
+    virtual void prepareWindowIcon();
+    virtual void loadWindowSettings();
+
+    /* Cleanup helpers: */
+    //virtual void saveWindowSettings();
+    //virtual void cleanupWindowIcon();
 
     /* Common machine window event handlers: */
     void closeEvent(QCloseEvent *pEvent);
@@ -67,24 +76,12 @@ protected:
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
 
     /* Protected variables: */
+    UIMachineLogic *m_pMachineLogic;
     QWidget *m_pMachineWindow;
     UIMachineView *m_pMachineView;
-
-private:
-
-    /* Prepare helpers: */
-    void prepareWindowIcon();
-    void loadWindowSettings();
-
-    /* Cleanup helpers: */
-    //void saveWindowSettings();
-    //void cleanupWindowIcon();
-
-    /* Getter variables: */
-    UIMachineLogic *m_pMachineLogic;
-
-    /* Helper variables: */
     QString m_strWindowTitlePrefix;
+
+    friend class UIMachineLogic;
 };
 
 #endif // __UIMachineWindow_h__

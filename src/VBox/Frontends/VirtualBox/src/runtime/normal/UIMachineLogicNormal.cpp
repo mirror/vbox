@@ -38,15 +38,30 @@
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, const CSession &session, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, session, pActionsPool, UIVisualStateType_Normal)
 {
+    /* Prepare action groups: */
+    prepareActionGroups();
+
     /* Prepare action connections: */
     prepareActionConnections();
 
+    /* Check the status of required features: */
+    prepareRequiredFeatures();
+
     /* Prepare normal machine window: */
     prepareMachineWindow();
+
+    /* Load common logic settings: */
+    loadLogicSettings();
+
+    /* Update all the elements: */
+    updateAppearanceOf(UIVisualElement_AllStuff);
 }
 
 UIMachineLogicNormal::~UIMachineLogicNormal()
 {
+    /* Save common logic settings: */
+    saveLogicSettings();
+
     /* Cleanup normal machine window: */
     cleanupMachineWindow();
 }
@@ -75,6 +90,10 @@ void UIMachineLogicNormal::updateAppearanceOf(int iElement)
 
 void UIMachineLogicNormal::prepareActionConnections()
 {
+    /* Parent class connections: */
+    UIMachineLogic::prepareActionConnections();
+
+    /* This class connections: */
     connect(actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareNetworkAdaptersMenu()));
     connect(actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
@@ -83,6 +102,7 @@ void UIMachineLogicNormal::prepareActionConnections()
 
 void UIMachineLogicNormal::prepareMachineWindow()
 {
+    /* Do not prepare window if its ready: */
     if (machineWindowWrapper())
         return;
 
@@ -93,39 +113,37 @@ void UIMachineLogicNormal::prepareMachineWindow()
     ::SetFrontProcess(&psn);
 #endif /* Q_WS_MAC */
 
+    /* Create machine window: */
     m_pMachineWindowContainer = UIMachineWindow::create(this, visualStateType());
 
     /* Get the correct initial machineState() value */
     setMachineState(session().GetConsole().GetState());
 
-    /* Update all the stuff: */
-    updateAppearanceOf(UIVisualElement_AllStuff);
-
+    /* Notify user about mouse&keyboard auto-capturing: */
     if (vboxGlobal().settings().autoCapture())
         vboxProblem().remindAboutAutoCapture();
-
-    /* Notify the console scroll-view about the console-window is opened: */
-    machineWindowWrapper()->machineView()->onViewOpened();
 
     bool saved = machineState() == KMachineState_Saved;
 
     CMachine machine = session().GetMachine();
     CConsole console = session().GetConsole();
 
+    /* Shows first run wizard if necessary: */
     if (isFirstTimeStarted())
     {
         UIFirstRunWzd wzd(machineWindowWrapper()->machineWindow(), machine);
         wzd.exec();
-
-        /* Remove GUI_FirstRun extra data key from the machine settings
-         * file after showing the wizard once. */
-        machine.SetExtraData (VBoxDefs::GUI_FirstRun, QString::null);
+        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
     }
+
+
+    // TODO: Do not start VM yet!
+    return;
+
 
     /* Start VM: */
     CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
                          console.PowerUpPaused() : console.PowerUp();
-
     /* Check for an immediate failure */
     if (!console.isOk())
     {
@@ -133,8 +151,6 @@ void UIMachineLogicNormal::prepareMachineWindow()
         machineWindowWrapper()->machineWindow()->close();
         return;
     }
-
-    //machineWindowWrapper()->machineView()->attach();
 
     /* Disable auto closure because we want to have a chance to show the error dialog on startup failure: */
     setPreventAutoClose(true);
@@ -164,17 +180,7 @@ void UIMachineLogicNormal::prepareMachineWindow()
         return;
     }
 
-#if 0 // TODO: Is it necessary now?
-     * Checking if the fullscreen mode should be activated: */
-    QString str = machine.GetExtraData (VBoxDefs::GUI_Fullscreen);
-    if (str == "on")
-        mVmFullscreenAction->setChecked (true);
-
-    /* If seamless mode should be enabled then check if it is enabled
-     * currently and re-enable it if seamless is supported: */
-    if (mVmSeamlessAction->isChecked() && m_bIsSeamlessSupported && m_bIsGraphicsSupported)
-        toggleFullscreenMode (true, true);
-
+#if 0 // TODO: Rework debugger logic!
 # ifdef VBOX_WITH_DEBUGGER_GUI
     /* Open the debugger in "full screen" mode requested by the user. */
     else if (vboxGlobal().isDebuggerAutoShowEnabled())
@@ -204,19 +210,27 @@ void UIMachineLogicNormal::prepareMachineWindow()
     vboxGlobal().showUpdateDialog(false /* aForce */);
 #endif
 
-    connect(machineWindowWrapper()->machineView(), SIGNAL(machineStateChanged(KMachineState)), this, SLOT(sltUpdateMachineState(KMachineState)));
-    connect(machineWindowWrapper()->machineView(), SIGNAL(additionsStateChanged(const QString&, bool, bool, bool)),
-            this, SLOT(sltUpdateAdditionsState(const QString &, bool, bool, bool)));
-    connect(machineWindowWrapper()->machineView(), SIGNAL(mouseStateChanged(int)), this, SLOT(sltUpdateMouseState(int)));
-
-    /* Re-request all the static values finally after view is really opened and attached: */
-    updateAppearanceOf(UIVisualElement_VirtualizationStuff);
+    /* Configure view connections: */
+    if (machineWindowWrapper()->machineView())
+    {
+        connect(machineWindowWrapper()->machineView(), SIGNAL(machineStateChanged(KMachineState)),
+                this, SLOT(sltUpdateMachineState(KMachineState)));
+        connect(machineWindowWrapper()->machineView(), SIGNAL(additionsStateChanged(const QString&, bool, bool, bool)),
+                this, SLOT(sltUpdateAdditionsState(const QString &, bool, bool, bool)));
+        connect(machineWindowWrapper()->machineView(), SIGNAL(mouseStateChanged(int)),
+                this, SLOT(sltUpdateMouseState(int)));
+    }
 }
 
 void UIMachineLogicNormal::cleanupMachineWindow()
 {
+    /* Do not cleanup machine window if it is not present: */
     if (!machineWindowWrapper())
         return;
+
+    /* Cleanup machine window: */
+    UIMachineWindow::destroy(m_pMachineWindowContainer);
+    m_pMachineWindowContainer = 0;
 
     // TODO: What should be done on window destruction?
     //machineWindowWrapper()->machineView()->detach();
