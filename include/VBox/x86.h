@@ -468,6 +468,16 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define X86_CPUID_FEATURE_EDX_PBE       RT_BIT(31)
 /** @} */
 
+/** @name CPUID Feature information.
+ * CPUID query with EAX=5.
+ * @{
+ */
+/** ECX Bit 0 - MWAITEXT - Supports mwait/monitor extensions or not. */
+#define X86_CPUID_MWAIT_ECX_EXT            RT_BIT(0)
+/** ECX Bit 1 - MWAITBREAK - Break mwait for external interrupt even if EFLAGS.IF=0. */
+#define X86_CPUID_MWAIT_ECX_BREAKIRQIF0    RT_BIT(1)
+/** @} */
+
 
 /** @name CPUID AMD Feature information.
  * CPUID query with EAX=0x80000001.
