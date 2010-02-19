@@ -395,6 +395,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                      RC_CHECK();
     }
 
+    if (osTypeId == "MacOS")
+    {
+        /*
+         * Expose extended MWAIT features to Mac OS guests.
+         */
+        LogRel(("Using MWAIT extensions\n"));
+        PCFGMNODE pCPUM;
+        rc = CFGMR3InsertNode(pRoot, "CPUM", &pCPUM);                               RC_CHECK();
+        rc = CFGMR3InsertInteger(pCPUM, "MWaitExtensions", true);                   RC_CHECK();
+    }
+
     /* hardware virtualization extensions */
     BOOL fHWVirtExEnabled;
     BOOL fHwVirtExtForced;

@@ -620,6 +620,14 @@ static int cpumR3CpuIdInit(PVM pVM)
         pCPUM->aGuestCpuIdStd[5].eax = pCPUM->aGuestCpuIdStd[5].ebx = 0;
 
     pCPUM->aGuestCpuIdStd[5].ecx = pCPUM->aGuestCpuIdStd[5].edx = 0;
+    /** @cfgm{/CPUM/MWaitExtensions, boolean, false}
+     * Expose MWAIT extended features to the guest.
+     * For now we expose just MWAIT break on interrupt feature (bit 1)
+     */
+    bool fMWaitExtensions;
+    rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &fMWaitExtensions, false); AssertRCReturn(rc, rc);
+    if (fMWaitExtensions)
+        pCPUM->aGuestCpuIdStd[5].ecx = 3;
 
     /*
      * Determine the default.
