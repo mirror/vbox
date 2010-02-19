@@ -816,6 +816,14 @@ VMMR3DECL(void) CPUMR3Relocate(PVM pVM)
         PVMCPU pVCpu = &pVM->aCpus[i];
         pVCpu->cpum.s.pHyperCoreRC = MMHyperCCToRC(pVM, pVCpu->cpum.s.pHyperCoreR3);
         Assert(pVCpu->cpum.s.pHyperCoreRC != NIL_RTRCPTR);
+
+        /*
+         * Workaround for missing cpuid(0) patches when leaf 4 returns GuestCpuIdDef:
+         * If we miss to patch a cpuid(0).eax then Linux tries to determine the number
+         * of processors from (cpuid(4).eax >> 26) + 1.
+         */
+        if (!HWACCMR3IsAllowed(pVM))
+            pCPUM->aGuestCpuIdStd[4].eax = 0;
     }
 }
 
