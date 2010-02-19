@@ -58,7 +58,8 @@ public:
                    const QString &strIcon = QString(), const QString &strIconDis = QString())
         : UIAction(pParent, UIActionType_Simple)
     {
-        setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
+        if (!strIcon.isNull())
+            setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
     }
 };
 
@@ -72,7 +73,8 @@ public:
                    const QString &strIcon = QString(), const QString &strIconDis = QString())
         : UIAction(pParent, UIActionType_Toggle)
     {
-        setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
+        if (!strIcon.isNull())
+            setIcon(VBoxGlobal::iconSet(strIcon.toLatin1().data(), strIconDis.toLatin1().data()));
         init();
     }
 
@@ -112,7 +114,8 @@ public:
                  const QString &strIcon = QString(), const QString &strIconDis = QString())
         : UIAction(pParent, UIActionType_Menu)
     {
-        setIcon(VBoxGlobal::iconSet(strIcon, strIconDis));
+        if (!strIcon.isNull())
+            setIcon(VBoxGlobal::iconSet(strIcon, strIconDis));
         setMenu(new QMenu);
     }
 };
