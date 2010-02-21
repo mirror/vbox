@@ -550,11 +550,10 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
 
 static int8_t clamp_i8(int32_t val)
 {
-    if (val > 127) {
+    if (val > 127)
         val = 127;
-    } else if (val < -127) {
+    else if (val < -127)
         val = -127;
-    }
     return val;
 }
 
@@ -591,7 +590,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     PUSBHIDK_REPORT pReport = &pThis->Report;
     uint8_t u8HidCode;
     int fKeyDown;
-    int i;
+    unsigned i;
 
 //    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 //    AssertReleaseRC(rc);
@@ -606,7 +605,8 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         {
             if (pReport->aKeys[i] == u8HidCode)
                 break;                              /* Skip repeat events. */
-            if (pReport->aKeys[i] == 0) {
+            if (pReport->aKeys[i] == 0)
+            {
                 pReport->aKeys[i] = u8HidCode;      /* Report key down. */
                 break;
             }
