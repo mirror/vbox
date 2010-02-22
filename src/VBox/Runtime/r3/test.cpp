@@ -288,21 +288,21 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
 }
 
 
-RTR3DECL(int) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest)
+RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest)
 {
     int rc = RTR3Init();
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3Init failed with rc=%Rrc\n",  pszTest, rc);
-        return 16;
+        return RTEXITCODE_INIT;
     }
     rc = RTTestCreate(pszTest, phTest);
     if (RT_FAILURE(rc))
     {
         RTStrmPrintf(g_pStdErr, "%s: fatal error: RTTestCreate failed with rc=%Rrc\n",  pszTest, rc);
-        return 17;
+        return RTEXITCODE_INIT;
     }
-    return 0;
+    return RTEXITCODE_SUCCESS;
 }
 
 
@@ -805,67 +805,67 @@ static int rtTestSubCleanup(PRTTESTINT pTest)
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
  */
-RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest)
+RTR3DECL(RTEXITCODE) RTTestSummaryAndDestroy(RTTEST hTest)
 {
     PRTTESTINT pTest = hTest;
-    RTTEST_GET_VALID_RETURN_RC(pTest, 2);
+    RTTEST_GET_VALID_RETURN_RC(pTest, RTEXITCODE_FAILURE);
 
     RTCritSectEnter(&pTest->Lock);
     rtTestSubTestReport(pTest);
     RTCritSectLeave(&pTest->Lock);
 
-    int rc;
+    RTEXITCODE enmExitCode;
     if (!pTest->cErrors)
     {
         RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SUCCESS\n", pTest->cErrors);
-        rc = 0;
+        enmExitCode = RTEXITCODE_SUCCESS;
     }
     else
     {
         RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "FAILURE - %u errors\n", pTest->cErrors);
-        rc = 1;
+        enmExitCode = RTEXITCODE_FAILURE;
     }
 
     RTTestDestroy(pTest);
-    return rc;
+    return enmExitCode;
 }
 
 
-RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va)
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va)
 {
     PRTTESTINT pTest = hTest;
-    RTTEST_GET_VALID_RETURN_RC(pTest, 2);
+    RTTEST_GET_VALID_RETURN_RC(pTest, RTEXITCODE_SKIPPED);
 
     RTCritSectEnter(&pTest->Lock);
     rtTestSubTestReport(pTest);
     RTCritSectLeave(&pTest->Lock);
 
-    int rc;
+    RTEXITCODE enmExitCode;
     if (!pTest->cErrors)
     {
         if (pszReasonFmt)
             RTTestPrintfNlV(hTest, RTTESTLVL_FAILURE, pszReasonFmt, va);
         RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "SKIPPED\n", pTest->cErrors);
-        rc = 2;
+        enmExitCode = RTEXITCODE_SKIPPED;
     }
     else
     {
         RTTestPrintfNl(hTest, RTTESTLVL_ALWAYS, "FAILURE - %u errors\n", pTest->cErrors);
-        rc = 1;
+        enmExitCode = RTEXITCODE_FAILURE;
     }
 
     RTTestDestroy(pTest);
-    return rc;
+    return enmExitCode;
 }
 
 
-RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...)
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...)
 {
     va_list va;
     va_start(va, pszReasonFmt);
-    int rc = RTTestSkipAndDestroyV(hTest, pszReasonFmt, va);
+    RTEXITCODE enmExitCode = RTTestSkipAndDestroyV(hTest, pszReasonFmt, va);
     va_end(va);
-    return rc;
+    return enmExitCode;
 }
 
 

@@ -70,6 +70,28 @@ RTDECL(int)  RTMsgError(const char *pszFormat, ...);
 RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va);
 
 /**
+ * Same as RTMsgError() except for the return value.
+ *
+ * @returns @a enmExitCode
+ * @param   enmExitCode     What to exit code to return.  This is mainly for
+ *                          saving some vertical space in the source file.
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitcode, const char *pszFormat, ...);
+
+/**
+ * Same as RTMsgErrorV() except for the return value.
+ *
+ * @returns @a enmExitCode
+ * @param   enmExitCode     What to exit code to return.  This is mainly for
+ *                          saving some vertical space in the source file.
+ * @param   pszFormat       The message format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va);
+
+/**
  * Print an error message for a RTR3Init failure and suggest an exit code.
  *
  * @code
@@ -83,7 +105,7 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va);
  * @returns Appropriate exit code.
  * @param   rcRTR3Init      The status code returned by RTR3Init.
  */
-RTDECL(int)  RTMsgInitFailure(int rcRTR3Init);
+RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init);
 
 /** @} */
 
