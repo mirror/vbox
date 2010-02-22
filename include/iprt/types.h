@@ -1511,6 +1511,29 @@ typedef struct RTLOCKVALSRCPOS const   *PCRTLOCKVALSRCPOS;
 /** @} */
 
 
+/**
+ * Process exit codes.
+ */
+typedef enum RTEXITCODE
+{
+    /** Success. */
+    RTEXITCODE_SUCCESS = 0,
+    /** General failure. */
+    RTEXITCODE_FAILURE = 1,
+    /** Invalid arguments.  */
+    RTEXITCODE_SYNTAX = 2,
+    /** Initialization failure (usually IPRT, but could be used for other
+     *  components as well). */
+    RTEXITCODE_INIT = 3,
+    /** Test skipped. */
+    RTEXITCODE_SKIPPED = 4,
+    /** The end of valid exit codes. */
+    RTEXITCODE_END,
+    /** The usual 32-bit type hack. */
+    RTEXITCODE_32BIT_HACK = 0x7fffffff
+} RTEXITCODE;
+
+
 #ifdef __cplusplus
 /**
  * Strict type validation helper class.

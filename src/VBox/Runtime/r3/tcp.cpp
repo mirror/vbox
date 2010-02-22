@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -34,7 +34,6 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <winsock.h>
-# include <limits.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/stat.h>
@@ -49,6 +48,7 @@
 # include <netdb.h>
 # include <unistd.h>
 #endif /* !RT_OS_WINDOWS */
+#include <limits.h>
 
 #include "internal/iprt.h"
 #include <iprt/tcp.h>
@@ -656,6 +656,97 @@ static int rcTcpServerListenCleanup(PRTTCPSERVER pServer)
 
 
 /**
+ * Listen and accept one incomming connection.
+ *
+ * This is an alternative to RTTcpServerListen for the use the callbacks are not
+ * possible.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TCP_SERVER_SHUTDOWN if shut down by RTTcpServerShutdown.
+ * @retval  VERR_INTERRUPTED if the listening was interrupted.
+ *
+ * @param   pServer         The server handle as returned from RTTcpServerCreateEx().
+ * @param   pSockClient     Where to return the socket handle to the client
+ *                          connection (on success only).  Use
+ *                          RTTcpServerDisconnectClient() to clean it, this must
+ *                          be done before the next call to RTTcpServerListen2.
+ *
+ * @todo    This can easily be extended to support multiple connections by
+ *          adding a new state and a RTTcpServerDisconnectClient variant for
+ *          closing client sockets.
+ */
+RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient)
+{
+    /*
+     * Validate input and retain the instance.
+     */
+    AssertPtrReturn(pSockClient, VERR_INVALID_HANDLE);
+    *pSockClient = NIL_RTSOCKET;
+    AssertReturn(pServer->u32Magic == RTTCPSERVER_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTMemPoolRetain(pServer) != UINT32_MAX, VERR_INVALID_HANDLE);
+
+    int rc = VERR_INVALID_STATE;
+    for (;;)
+    {
+        /*
+         * Change state to accepting.
+         */
+        RTTCPSERVERSTATE    enmState   = pServer->enmState;
+        RTSOCKET            SockServer = pServer->SockServer;
+        if (    enmState != RTTCPSERVERSTATE_SERVING
+            &&  enmState != RTTCPSERVERSTATE_CREATED)
+        {
+            rc = rcTcpServerListenCleanup(pServer);
+            break;
+        }
+        if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_ACCEPTING, enmState))
+            continue;
+        Assert(!pServer->pfnServe);
+        Assert(!pServer->pvUser);
+        Assert(pServer->Thread == NIL_RTTHREAD);
+        Assert(pServer->SockClient == NIL_RTSOCKET);
+
+        /*
+         * Accept connection.
+         */
+        struct sockaddr_in  RemoteAddr;
+        socklen_t           cbRemoteAddr = sizeof(RemoteAddr);
+        RTSOCKET            Socket;
+        RT_ZERO(RemoteAddr);
+        rtTcpErrorReset();
+        Socket = accept(SockServer, (struct sockaddr *)&RemoteAddr, &cbRemoteAddr);
+        if (Socket == -1)
+        {
+            rc = rtTcpError();
+            if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_CREATED, RTTCPSERVERSTATE_ACCEPTING))
+                rc = rcTcpServerListenCleanup(pServer);
+            if (RT_FAILURE(rc))
+                break;
+            continue;
+        }
+
+        /*
+         * Chance to the 'serving' state and return the socket.
+         */
+        if (rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_SERVING, RTTCPSERVERSTATE_ACCEPTING))
+        {
+            *pSockClient = Socket;
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+            rtTcpClose(Socket, "RTTcpServerListen2", true /*fTryGracefulShutdown*/);
+            rc = rcTcpServerListenCleanup(pServer);
+        }
+        break;
+    }
+
+    RTMemPoolRelease(RTMEMPOOL_DEFAULT, pServer);
+    return rc;
+}
+
+
+/**
  * Terminate the open connection to the server.
  *
  * @returns iprt status code.
@@ -854,24 +945,52 @@ RTR3DECL(int) RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *
 
 RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 {
-
-    do
-    {
+    /*
+     * Try write all at once.
+     */
 #ifdef RT_OS_WINDOWS
-        int    cbNow = cbBuffer >= INT_MAX/2 ? INT_MAX/2 : (int)cbBuffer;
+    int     cbNow     = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
 #else
-        size_t cbNow = cbBuffer;
+    size_t  cbNow     = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
 #endif
-        ssize_t cbWritten = send(Sock, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
-        if (cbWritten < 0)
-            return rtTcpError();
-        AssertMsg(cbBuffer >= (size_t)cbWritten, ("Wrote more than we requested!!! cbWritten=%d cbBuffer=%d rtTcpError()=%d\n",
-                                                  cbWritten, cbBuffer, rtTcpError()));
-        cbBuffer -= cbWritten;
-        pvBuffer = (char *)pvBuffer + cbWritten;
-    } while (cbBuffer);
+    ssize_t cbWritten = send(Sock, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
+    if (RT_LIKELY((size_t)cbWritten == cbBuffer && cbWritten >= 0))
+        return VINF_SUCCESS;
+    if (cbWritten < 0)
+        return rtTcpError();
 
-    return VINF_SUCCESS;
+    /*
+     * Unfinished business, write the remainder of the request.  Must ignore
+     * VERR_INTERRUPTED here if we've managed to send something.
+     */
+    size_t cbSentSoFar = 0;
+    for (;;)
+    {
+        /* advance */
+        cbBuffer    -= (size_t)cbWritten;
+        if (!cbBuffer)
+            return VINF_SUCCESS;
+        cbSentSoFar += (size_t)cbWritten;
+        pvBuffer     = (char const *)pvBuffer + cbWritten;
+
+        /* send */
+#ifdef RT_OS_WINDOWS
+        cbNow = cbBuffer >= INT_MAX / 2 ? INT_MAX / 2 : (int)cbBuffer;
+#else
+        cbNow = cbBuffer >= SSIZE_MAX   ? SSIZE_MAX   :      cbBuffer;
+#endif
+        cbWritten = send(Sock, (const char *)pvBuffer, cbNow, MSG_NOSIGNAL);
+        if (cbWritten >= 0)
+            AssertMsg(cbBuffer >= (size_t)cbWritten, ("Wrote more than we requested!!! cbWritten=%zu cbBuffer=%zu rtTcpError()=%d\n",
+                                                      cbWritten, cbBuffer, rtTcpError()));
+        else
+        {
+            int rc = rtTcpError();
+            if (rc != VERR_INTERNAL_ERROR || cbSentSoFar == 0)
+                return rc;
+            cbWritten = 0;
+        }
+    }
 }
 
 

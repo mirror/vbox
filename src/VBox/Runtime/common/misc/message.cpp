@@ -98,7 +98,26 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
 RT_EXPORT_SYMBOL(RTMsgErrorV);
 
 
-RTDECL(int) RTMsgInitFailure(int rcRTR3Init)
+RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitCode, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return enmExitCode;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorExitV);
+
+
+RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va)
+{
+    RTMsgErrorV(pszFormat, va);
+    return enmExitCode;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorExitV);
+
+
+RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init)
 {
     if (   g_offrtProcName
         && g_offrtProcName < sizeof(g_szrtProcExePath)
@@ -107,7 +126,7 @@ RTDECL(int) RTMsgInitFailure(int rcRTR3Init)
         RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3Init: %Rrc\n", &g_szrtProcExePath[g_offrtProcName], rcRTR3Init);
     else
         RTStrmPrintf(g_pStdErr, "fatal error: RTR3Init: %Rrc\n", rcRTR3Init);
-    return 12;
+    return RTEXITCODE_INIT;
 }
 RT_EXPORT_SYMBOL(RTMsgInitFailure);
 

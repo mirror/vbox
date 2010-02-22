@@ -125,6 +125,28 @@ RTR3DECL(int) RTTcpServerDestroy(PRTTCPSERVER pServer);
 RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, void *pvUser);
 
 /**
+ * Listen and accept one incomming connection.
+ *
+ * This is an alternative to RTTcpServerListen for the use the callbacks are not
+ * possible.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_TCP_SERVER_SHUTDOWN if shut down by RTTcpServerShutdown.
+ * @retval  VERR_INTERRUPTED if the listening was interrupted.
+ *
+ * @param   pServer         The server handle as returned from RTTcpServerCreateEx().
+ * @param   pSockClient     Where to return the socket handle to the client
+ *                          connection (on success only).  Use
+ *                          RTTcpServerDisconnectClient() to clean it, this must
+ *                          be done before the next call to RTTcpServerListen2.
+ *
+ * @todo    This can easily be extended to support multiple connections by
+ *          adding a new state and a RTTcpServerDisconnectClient variant for
+ *          closing client sockets.
+ */
+RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient);
+
+/**
  * Terminate the open connection to the server.
  *
  * @returns iprt status code.
@@ -175,6 +197,8 @@ RTR3DECL(int)  RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t 
  * Send data from a socket.
  *
  * @returns iprt status code.
+ * @retval  VERR_INTERRUPTED if interrupted before anything was written.
+ *
  * @param   Sock        Socket descriptor.
  * @param   pvBuffer    Buffer to write data to socket.
  * @param   cbBuffer    How much to write.

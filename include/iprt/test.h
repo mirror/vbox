@@ -97,13 +97,13 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest);
     }
    @endcode
  *
- * @returns 0 on success. On failure an error message is printed and
- *          a suitable exit code is return.
+ * @returns RTEXITCODE_SUCCESS on success.  On failure an error message is
+ *          printed and a suitable exit code is return.
  *
  * @param   pszTest     The test name.
  * @param   phTest      Where to store the test instance handle.
  */
-RTR3DECL(int) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest);
+RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest);
 
 /**
  * Destroys a test instance previously created by RTTestCreate.
@@ -232,7 +232,7 @@ RTR3DECL(int) RTTestBanner(RTTEST hTest);
  * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
  *                      associated with the calling thread.
  */
-RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
+RTR3DECL(RTEXITCODE) RTTestSummaryAndDestroy(RTTEST hTest);
 
 /**
  * Skips the test, destroys the test instance and return an exit code.
@@ -243,7 +243,7 @@ RTR3DECL(int) RTTestSummaryAndDestroy(RTTEST hTest);
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
  * @param   va              Arguments for the reason format string.
  */
-RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va);
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_list va);
 
 /**
  * Skips the test, destroys the test instance and return an exit code.
@@ -254,7 +254,7 @@ RTR3DECL(int) RTTestSkipAndDestroyV(RTTEST hTest, const char *pszReasonFmt, va_l
  * @param   pszReasonFmt    Text explaining why, optional (NULL).
  * @param   ...             Arguments for the reason format string.
  */
-RTR3DECL(int) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...);
+RTR3DECL(RTEXITCODE) RTTestSkipAndDestroy(RTTEST hTest, const char *pszReasonFmt, ...);
 
 /**
  * Starts a sub-test.
