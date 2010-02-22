@@ -711,7 +711,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
     {
         PPDMACTASKFILE pCurr = pTaskHead;
 
-        if (!pdmacFileBwMgrIsTransferAllowed(pEndpoint->pBwMgr, pCurr->DataSeg.cbSeg))
+        if (!pdmacFileBwMgrIsTransferAllowed(pEndpoint->pBwMgr, (uint32_t)pCurr->DataSeg.cbSeg))
         {
             pAioMgr->fBwLimitReached = true;
             break;
