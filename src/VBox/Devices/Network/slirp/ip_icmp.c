@@ -89,7 +89,7 @@ icmp_init(PNATState pData)
     if (pData->icmp_socket.s == -1)
     {
         int rc = RTErrConvertFromErrno(errno);
-        LogRel(("NAT: ICMP/ping not available (could open ICMP socket, error %Rrc)\n", rc));
+        LogRel(("NAT: ICMP/ping not available (could not open ICMP socket, error %Rrc)\n", rc));
         return 1;
     }
     fd_nonblock(pData->icmp_socket.s);
