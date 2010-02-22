@@ -186,7 +186,7 @@ SOLARIS_STRIP_EXES = \
 	VBoxSVC \
 	$(if $(VBOX_WITH_CROGL),VBoxTestOGL,) \
 	VBoxXPCOMIPCD \
-	kchmviewer
+	$(if $(VBOX_WITH_KCHMVIEWER),kchmviewer,)
 
 ifdef VBOX_WITH_USB
  ifndef VBOX_WITH_NEW_USB_CODE_ON_SOLARIS
