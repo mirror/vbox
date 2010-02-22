@@ -358,12 +358,18 @@ check_environment()
   DEVDIR_BIN="$DEVDIR/$OS.$BUILD_MACHINE/bin"
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
-  echo "export BUILD_PLATFORM=\"$OS\"" >> $ENV
-  echo "export BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
-  echo "export BUILD_TARGET=\"$OS\"" >> $ENV
-  echo "export BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
-  echo "export BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
-  echo "export BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
+  echo "BUILD_PLATFORM=\"$OS\"" >> $ENV
+  echo "export BUILD_PLATFORM"
+  echo "BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
+  echo "export BUILD_PLATFORM_ARCH" >> $ENV
+  echo "BUILD_TARGET=\"$OS\"" >> $ENV
+  echo "export BUILD_TARGET" >> $ENV
+  echo "BUILD_TARGET_ARCH=\"$TARGET_MACHINE\"" >> $ENV
+  echo "export BUILD_TARGET_ARCH" >> $ENV
+  echo "BUILD_TARGET_CPU=\"$TARGET_CPU\"" >> $ENV
+  echo "export BUILD_TARGET_CPU" >> $ENV
+  echo "BUILD_TYPE=\"$BUILD_TYPE\"" >> $ENV
+  echo "export BUILD_TYPE" >> $ENV
 }
 
 #
@@ -1615,10 +1621,12 @@ check_kbuild()
   test_header kBuild
   if which_wrapper "$KBUILDDIR/bin/$OS.$BUILD_MACHINE/kmk" > /dev/null; then
     KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.$BUILD_MACHINE"
-    echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
-    echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
+    echo "export PATH_KBUILD" >> $ENV
+    echo "PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "export PATH_DEVTOOLS" >> $ENV
     echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"" >> $ENV
-    echo "export PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
+    echo "export PATH_KBUILD_BIN" >> $ENV
     echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
     if [ "$OS" = "solaris" ]; then
       # Because of sh being non-default shell in Solaris we need to export PATH again when
@@ -1636,10 +1644,13 @@ check_kbuild()
   elif [ "$OS.$BUILD_MACHINE" = "darwin.amd64" ]; then
     # Currently there are no amd64 kBuild bins. So use the x86 variant in any case.
     KBUILDDIR_BIN="$KBUILDDIR/bin/$OS.x86"
-    echo "export PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
-    echo "export PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "PATH_KBUILD=\"`cd $KBUILDDIR ; pwd`\"" >> $ENV
+    echo "export PATH_KBUILD" >> $ENV
+    echo "PATH_DEVTOOLS=\"$DEVDIR\"" >> $ENV
+    echo "export PATH_DEVTOOLS" >> $ENV
     echo "path_kbuild_bin=\"\$PATH_KBUILD/bin/\$BUILD_TARGET.x86\"" >> $ENV
-    echo "export PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
+    echo "PATH_KBUILD_BIN=\"\$path_kbuild_bin\"" >> $ENV
+    echo "export PATH_KBUILD_BIN" >> $ENV
     echo "path_dev_bin=\"\$PATH_DEVTOOLS/\$BUILD_TARGET.\$BUILD_PLATFORM_ARCH\"/bin" >> $ENV
     echo "echo \"\$PATH\" | grep -q \"\$path_kbuild_bin\" || PATH=\"\$path_kbuild_bin:\$PATH\"" >> $ENV
     echo "echo \"\$PATH\" | grep -q \"\$path_dev_bin\" || PATH=\"\$path_dev_bin:\$PATH\"" >> $ENV
@@ -1816,7 +1827,8 @@ setup_wine()
     fail
   fi
   export WINEPREFIX="${ODIR}wine.$BUILD_MACHINE"
-  echo "export WINEPREFIX=\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
+  echo "WINEPREFIX=\"${ODIR}wine.$BUILD_MACHINE\"" >> $ENV
+  echo "export WINEPREFIX" >> $ENV
   rm -rf $WINEPREFIX
   mkdir -p $WINEPREFIX
   touch $WINEPREFIX/.no_prelaunch_window_flag
@@ -2262,9 +2274,12 @@ export PATH
 
 # if we will be writing to a different out directory then set this up now
 if [ $OUT_PATH_OVERRIDE -eq 1 ]; then
-  echo "export AUTOCFG=$OUT_PATH/AutoConfig.kmk" >> $ENV
-  echo "export LOCALCFG=$OUT_PATH/LocalConfig.kmk" >> $ENV
-  echo "export PATH_OUT_BASE=$OUT_PATH" >> $ENV
+  echo "AUTOCFG=$OUT_PATH/AutoConfig.kmk" >> $ENV
+  echo "export AUTOCFG" >> $ENV
+  echo "LOCALCFG=$OUT_PATH/LocalConfig.kmk" >> $ENV
+  echo "export LOCALCFG" >> $ENV
+  echo "PATH_OUT_BASE=$OUT_PATH" >> $ENV
+  echo "export PATH_OUT_BASE" >> $ENV
 fi
 
 # some things are not available in for OSE
