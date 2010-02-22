@@ -2081,7 +2081,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                     hw.pointingHidType = PointingHidType_None;
                 else if (strHidType == "USBMouse")
                     hw.pointingHidType = PointingHidType_USBMouse;
-                else if (strHidType == "UsbTablet")
+                else if (strHidType == "USBTablet")
                     hw.pointingHidType = PointingHidType_USBTablet;
                 else if (strHidType == "PS2Mouse")
                     hw.pointingHidType = PointingHidType_PS2Mouse;
