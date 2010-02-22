@@ -367,7 +367,8 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
-    if (PGMIsUsingLargePages(pVM))
+    if (    PGMIsUsingLargePages(pVM)
+        &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
         RTHCPHYS HCPhysDummy;
 
