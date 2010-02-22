@@ -69,6 +69,22 @@ RTDECL(int)  RTMsgError(const char *pszFormat, ...);
  */
 RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va);
 
+/**
+ * Print an error message for a RTR3Init failure and suggest an exit code.
+ *
+ * @code
+ *
+ * int rc = RTR3Init();
+ * if (RT_FAILURE(rc))
+ *     return RTMsgInitFailure(rc);
+ *
+ * @endcode
+ *
+ * @returns Appropriate exit code.
+ * @param   rcRTR3Init      The status code returned by RTR3Init.
+ */
+RTDECL(int)  RTMsgInitFailure(int rcRTR3Init);
+
 /** @} */
 
 RT_C_DECLS_END
