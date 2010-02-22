@@ -463,33 +463,6 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
 }
 
 /**
- * I/O refresh timer callback.
- */
-static void pdmacFileBwRefresh(PVM pVM, PTMTIMER pTimer, void *pvUser)
-{
-    PPDMACFILEBWMGR pBwMgr = (PPDMACFILEBWMGR)pvUser;
-
-    LogFlowFunc(("pVM=%p pTimer=%p pvUser=%p\n", pVM, pTimer, pvUser));
-
-    /* Reset the counter growing the maximum if allowed and needed */
-    bool fIncreaseNeeded = ASMAtomicReadBool(&pBwMgr->fVMTransferLimitReached);
-
-    if (   fIncreaseNeeded
-        && pBwMgr->cbVMTransferPerSecStart < pBwMgr->cbVMTransferPerSecMax)
-    {
-       pBwMgr->cbVMTransferPerSecStart = RT_MIN(pBwMgr->cbVMTransferPerSecMax, pBwMgr->cbVMTransferPerSecStart + pBwMgr->cbVMTransferPerSecStep);
-       LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecStart));
-    }
-
-    /* Update */
-    ASMAtomicWriteU32(&pBwMgr->cbVMTransferAllowed, pBwMgr->cbVMTransferPerSecStart);
-    ASMAtomicWriteBool(&pBwMgr->fVMTransferLimitReached, false);
-
-    /* Arm the timer */
-    TMTimerSetMillies(pTimer, 1000);
-}
-
-/**
  * Destroys a async I/O manager.
  *
  * @returns nothing.
@@ -548,18 +521,9 @@ static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
         AssertLogRelRCReturn(rc, rc);
 
         pBwMgr->cbVMTransferAllowed = pBwMgr->cbVMTransferPerSecStart;
+        pBwMgr->tsUpdatedLast       = RTTimeSystemNanoTS();
 
-        /* Init the refresh timer */
-        rc = TMR3TimerCreateInternal(pEpClassFile->Core.pVM,
-                                     TMCLOCK_REAL,
-                                     pdmacFileBwRefresh,
-                                     pBwMgr,
-                                     "AsyncCompletionFile-BW-Refresh",
-                                     &pBwMgr->pBwRefreshTimer);
-        if (RT_SUCCESS(rc))
-            *ppBwMgr = pBwMgr;
-        else
-            MMR3HeapFree(pBwMgr);
+        *ppBwMgr = pBwMgr;
     }
 
     return rc;
@@ -567,23 +531,18 @@ static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
 
 static void pdmacFileBwMgrDestroy(PPDMACFILEBWMGR pBwMgr)
 {
-    TMR3TimerDestroy(pBwMgr->pBwRefreshTimer);
     MMR3HeapFree(pBwMgr);
 }
 
 static void pdmacFileBwRef(PPDMACFILEBWMGR pBwMgr)
 {
     pBwMgr->cRefs++;
-    if (pBwMgr->cRefs == 1)
-        TMTimerSetMillies(pBwMgr->pBwRefreshTimer, 1000); /* 1sec update interval */
 }
 
 static void pdmacFileBwUnref(PPDMACFILEBWMGR pBwMgr)
 {
     Assert(pBwMgr->cRefs > 0);
     pBwMgr->cRefs--;
-    if (!pBwMgr->cRefs)
-        TMTimerStop(pBwMgr->pBwRefreshTimer);
 }
 
 bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer)
@@ -597,9 +556,28 @@ bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer
         fAllowed = true;
     else
     {
-        /* We are out of ressources */
-        ASMAtomicAddU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
-        ASMAtomicXchgBool(&pBwMgr->fVMTransferLimitReached, true);
+        /* We are out of ressources  Check if we can update again. */
+        uint64_t tsNow          = RTTimeSystemNanoTS();
+        uint64_t tsUpdatedLast  = ASMAtomicUoReadU64(&pBwMgr->tsUpdatedLast);
+
+        if (tsNow - tsUpdatedLast >= (1000*1000*1000))
+        {
+            if (ASMAtomicCmpXchgU64(&pBwMgr->tsUpdatedLast, tsNow, tsUpdatedLast))
+            {
+                if (pBwMgr->cbVMTransferPerSecStart < pBwMgr->cbVMTransferPerSecMax)
+                {
+                   pBwMgr->cbVMTransferPerSecStart = RT_MIN(pBwMgr->cbVMTransferPerSecMax, pBwMgr->cbVMTransferPerSecStart + pBwMgr->cbVMTransferPerSecStep);
+                   LogFlow(("AIOMgr: Increasing maximum bandwidth to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecStart));
+                }
+
+                /* Update */
+                ASMAtomicWriteU32(&pBwMgr->cbVMTransferAllowed, pBwMgr->cbVMTransferPerSecStart - cbTransfer);
+                fAllowed = true;
+                LogFlow(("AIOMgr: Refreshed bandwidth\n"));
+            }
+        }
+        else
+            ASMAtomicAddU32(&pBwMgr->cbVMTransferAllowed, cbTransfer);
     }
 
     LogFlowFunc(("fAllowed=%RTbool\n", fAllowed));
