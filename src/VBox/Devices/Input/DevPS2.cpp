@@ -853,7 +853,7 @@ static void kbd_mouse_send_abs_packet(KBDState *s, bool fToCmdQueue)
 
     LogRel3(("%s: cx1=%d, cy1=%d, fButtons=0x%x\n", __PRETTY_FUNCTION__,
              cx1, cy1, fButtons));
-    b[0] = 4 /* Screen is being touched */ | fButtons;
+    b[0] = fButtons;
     Assert((b[0] & 0xf8) == 0);
     kbd_queue(s, b[0], aux);
     b[1] = ((cy1 << 2) & 0xc0) | (cx1 >> 6);
