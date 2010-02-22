@@ -337,4 +337,3 @@ VMMDECL(bool) HWACCMHasPendingIrq(PVM pVM)
     PVMCPU pVCpu = VMMGetCpu(pVM);
     return !!pVCpu->hwaccm.s.Event.fPending;
 }
-

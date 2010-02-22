@@ -783,6 +783,8 @@ typedef struct VM
     bool                        fHwVirtExtForced;
     /** PARAV enabled flag. */
     bool                        fPARAVEnabled;
+    /** Large page enabled flag. */
+    bool                        fUseLargePages;
     /** @} */
 
 

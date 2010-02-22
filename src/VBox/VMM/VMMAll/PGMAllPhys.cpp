@@ -367,6 +367,16 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
+    if (PGMIsUsingLargePages(pVM))
+    {
+        RTHCPHYS HCPhysDummy;
+
+        int rc = pgmPhysAllocLargePage(pVM, GCPhys, &HCPhysDummy);
+        if (rc == VINF_SUCCESS)
+            return rc;
+
+        /* fall back to 4kb pages. */
+    }
 
     /*
      * Flush any shadow page table mappings of the page.
@@ -470,6 +480,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
      * Prereqs.
      */
     Assert(PGMIsLocked(pVM));
+    Assert(PGMIsUsingLargePages(pVM));
     Assert((GCPhys & X86_PD_PAE_MASK) == 0);
     AssertPtr(pHCPhys);
 
@@ -539,6 +550,9 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
                     return VINF_SUCCESS;
                 }
                 LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
+
+                /* If we fail once, it most likely means the host's memory is too fragmented; don't bother trying again. */
+                PGMSetLargePageUsage(pVM, false);
                 return rc;
             }
         }
