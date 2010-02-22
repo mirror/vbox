@@ -507,7 +507,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
                      || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM
                      || PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
                 {
-                    LogFlow(("Found page with wrong attributes; cancel check. rc=%d\n", rc));
+                    LogFlow(("Found page %RGp with wrong attributes; cancel check. rc=%d\n", GCPhys, rc));
                     break;
                 }
                 Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_DONTCARE);
