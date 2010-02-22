@@ -283,6 +283,8 @@ typedef enum PGMMODE
     (    (enmProt) == PGMROMPROT_READ_ROM_WRITE_IGNORE \
       || (enmProt) == PGMROMPROT_READ_ROM_WRITE_RAM )
 
+
+
 VMMDECL(bool)       PGMIsLocked(PVM pVM);
 VMMDECL(bool)       PGMIsLockOwner(PVM pVM);
 
@@ -402,6 +404,17 @@ VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
 VMMDECL(uint32_t)   PGMDynMapPushAutoSubset(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapPopAutoSubset(PVMCPU pVCpu, uint32_t iPrevSubset);
 #endif
+
+
+VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages);
+
+/**
+ * Query large page usage state
+ *
+ * @returns 0 - disabled, 1 - enabled
+ * @param   pVM         The VM to operate on.
+ */
+#define PGMIsUsingLargePages(pVM) (pVM->fUseLargePages)
 
 
 #ifdef IN_RC

@@ -2936,12 +2936,13 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS) && defined(DEBUG_sandervl)
+# if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS)
+    if (PGMIsUsingLargePages(pVM))
     {
         RTHCPHYS HCPhys;
         rc = pgmPhysAllocLargePage(pVM, GCPtrPage & SHW_PDE_PG_MASK, &HCPhys);
         if (RT_SUCCESS(rc))
-        {   
+        {
             PdeDst.u &= X86_PDE_AVL_MASK;
             PdeDst.u |= HCPhys;
             PdeDst.n.u1Present   = 1;

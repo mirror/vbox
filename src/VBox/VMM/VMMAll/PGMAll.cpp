@@ -2107,6 +2107,17 @@ VMMDECL(bool) PGMIsLockOwner(PVM pVM)
 
 
 /**
+ * Enable or disable large page usage
+ *
+ * @param   pVM             The VM to operate on.
+ * @param   fUseLargePages  Use/not use large pages
+ */
+VMMDECL(void) PGMSetLargePageUsage(PVM pVM, bool fUseLargePages)
+{
+      pVM->fUseLargePages = fUseLargePages;
+}
+
+/**
  * Acquire the PGM lock.
  *
  * @returns VBox status code

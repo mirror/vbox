@@ -1156,6 +1156,11 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
                     LogRel(("HWACCM: EPT root page                 = %RHp\n", PGMGetHyperCR3(VMMGetCpu(pVM))));
                     if (pVM->hwaccm.s.vmx.fUnrestrictedGuest)
                         LogRel(("HWACCM: Unrestricted guest execution enabled!\n"));
+
+#ifdef DEBUG_sandervl
+                    /* Use large (2 MB) pages for our EPT PDEs where possible. */
+                    PGMSetLargePageUsage(pVM, true);
+#endif
                 }
                 else
                     Assert(!pVM->hwaccm.s.vmx.fUnrestrictedGuest);
