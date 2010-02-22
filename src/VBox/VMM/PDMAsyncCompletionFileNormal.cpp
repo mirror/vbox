@@ -1025,6 +1025,9 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
         pAioMgr->pahReqsFree[pAioMgr->iFreeEntryNext] = hReq;
         pAioMgr->iFreeEntryNext = (pAioMgr->iFreeEntryNext + 1) % pAioMgr->cReqEntries;
 
+        /* Free the lock and process pending tasks if neccessary */
+        pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
+
         pAioMgr->cRequestsActive--;
         pEndpoint->AioMgr.cRequestsActive--;
         pEndpoint->AioMgr.cReqsProcessed++;

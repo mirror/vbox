@@ -203,12 +203,10 @@ typedef struct PDMACFILEBWMGR
     /** Number of bytes we are allowed to transfer till the next update.
      * Resetted by the refresh timer. */
     volatile uint32_t cbVMTransferAllowed;
-    /** Flag whether a request could not processed due to the limit. */
-    volatile bool     fVMTransferLimitReached;
+    /** Timestamp of the last update */
+    volatile uint64_t tsUpdatedLast;
     /** Reference counter - How many endpoints are associated with this manager. */
     uint32_t          cRefs;
-    /** The refresh timer */
-    PTMTIMERR3        pBwRefreshTimer;
 } PDMACFILEBWMGR;
 /** Pointer to a bandwidth control manager */
 typedef PDMACFILEBWMGR *PPDMACFILEBWMGR;
