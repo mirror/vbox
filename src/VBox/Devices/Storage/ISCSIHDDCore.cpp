@@ -2564,16 +2564,24 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     sr.cbSense = sizeof(sense);
     sr.pvSense = sense;
 
-    rc = iscsiCommand(pImage, &sr);
+    for (unsigned i = 0; i < 10; i++)
+    {
+        rc = iscsiCommand(pImage, &sr);
+        if (    (RT_SUCCESS(rc) && !sr.cbSense)
+            ||  RT_FAILURE(rc))
+            break;
+        rc = VERR_INVALID_STATE;
+    }
     if (RT_SUCCESS(rc))
     {
-        if ((data8[0] & SCSI_DEVTYPE_MASK) != SCSI_DEVTYPE_DISK)
+        uint8_t devType = (sr.cbT2IData > 0) ? data8[0] & SCSI_DEVTYPE_MASK : 255;
+        if (devType != SCSI_DEVTYPE_DISK)
         {
             rc = iscsiError(pImage, VERR_VD_ISCSI_INVALID_TYPE,
                             RT_SRC_POS, N_("iSCSI: target address %s, target name %s, SCSI LUN %lld reports device type=%u"),
                             pImage->pszTargetAddress, pImage->pszTargetName,
-                            pImage->LUN, data8[0]);
-            LogRel(("iSCSI: Unsupported SCSI peripheral device type %d for target %s\n", data8[0] & SCSI_DEVTYPE_MASK, pImage->pszTargetName));
+                            pImage->LUN, devType);
+            LogRel(("iSCSI: Unsupported SCSI peripheral device type %d for target %s\n", devType & SCSI_DEVTYPE_MASK, pImage->pszTargetName));
             goto out;
         }
     }
