@@ -31,7 +31,8 @@
 /** @name USB HID string IDs
  * @{ */
 #define USBHID_STR_ID_MANUFACTURER  1
-#define USBHID_STR_ID_PRODUCT       2
+#define USBHID_STR_ID_PRODUCT_M     2
+#define USBHID_STR_ID_PRODUCT_T     3
 /** @} */
 
 /** @name USB HID specific descriptor types
@@ -43,6 +44,7 @@
  * @{ */
 #define VBOX_USB_VENDOR             0x80EE
 #define USBHID_PID_MOUSE            0x0020
+#define USBHID_PID_TABLET           0x0021
 /** @} */
 
 /*******************************************************************************
@@ -141,6 +143,9 @@ typedef struct USBHID
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
 
+    /** Is this an absolute pointing device (tablet)? Relative (mouse) otherwise. */
+    bool                isAbsolute;
+
     /**
      * Mouse port - LUN#0.
      *
@@ -165,7 +170,7 @@ typedef struct USBHID
 typedef USBHID *PUSBHID;
 
 /**
- * The USB HID report structure.
+ * The USB HID report structure for relative device.
  */
 typedef struct USBHIDM_REPORT
 {
@@ -175,13 +180,26 @@ typedef struct USBHIDM_REPORT
     int8_t      dz;
 } USBHIDM_REPORT, *PUSBHIDM_REPORT;
 
+/**
+ * The USB HID report structure for relative device.
+ */
+
+typedef struct USBHIDT_REPORT
+{
+    uint16_t    cx;
+    uint16_t    cy;
+    int8_t      dz;
+    uint8_t     btn;
+} USBHIDT_REPORT, *PUSBHIDT_REPORT;
+
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
 static const PDMUSBDESCCACHESTRING g_aUsbHidStrings_en_US[] =
 {
     { USBHID_STR_ID_MANUFACTURER,   "VirtualBox"    },
-    { USBHID_STR_ID_PRODUCT,        "USB Mouse"     },
+    { USBHID_STR_ID_PRODUCT_M,      "USB Mouse"     },
+    { USBHID_STR_ID_PRODUCT_T,      "USB Tablet"    },
 };
 
 static const PDMUSBDESCCACHELANG g_aUsbHidLanguages[] =
@@ -189,7 +207,7 @@ static const PDMUSBDESCCACHELANG g_aUsbHidLanguages[] =
     { 0x0409, RT_ELEMENTS(g_aUsbHidStrings_en_US), g_aUsbHidStrings_en_US }
 };
 
-static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescs[] =
+static const VUSBDESCENDPOINTEX g_aUsbHidMEndpointDescs[] =
 {
     {
         {
@@ -206,8 +224,25 @@ static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescs[] =
     },
 };
 
-/* HID report descriptor. */
-static const uint8_t g_UsbHidReportDesc[] =
+static const VUSBDESCENDPOINTEX g_aUsbHidTEndpointDescs[] =
+{
+    {
+        {
+            /* .bLength = */            sizeof(VUSBDESCENDPOINT),
+            /* .bDescriptorType = */    VUSB_DT_ENDPOINT,
+            /* .bEndpointAddress = */   0x81 /* ep=1, in */,
+            /* .bmAttributes = */       3 /* interrupt */,
+            /* .wMaxPacketSize = */     6,
+            /* .bInterval = */          10,
+        },
+        /* .pvMore = */     NULL,
+        /* .pvClass = */    NULL,
+        /* .cbClass = */    0
+    },
+};
+
+/* HID report descriptor (mouse). */
+static const uint8_t g_UsbHidMReportDesc[] =
 {
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
     /* Usage */                     0x09, 0x02,     /* Mouse */
@@ -238,8 +273,48 @@ static const uint8_t g_UsbHidReportDesc[] =
     /* End Collection */            0xC0,
 };
 
+/* HID report descriptor (tablet). */
+static const uint8_t g_UsbHidTReportDesc[] =
+{
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x02,     /* Mouse */
+    /* Collection */                0xA1, 0x01,     /* Application */
+    /* Usage */                     0x09, 0x01,     /* Pointer */
+    /* Collection */                0xA1, 0x00,     /* Physical */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x38,     /* Z (wheel) */
+    /* Logical Minimum */           0x15, 0x81,     /* -127 */
+    /* Logical Maximum */           0x25, 0x7F,     /* +127 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
+    /* Usage Page */                0x05, 0x09,     /* Button */
+    /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
+    /* Usage Maximum */             0x29, 0x03,     /* Button 3 */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x25, 0x01,     /* 1 */
+    /* Report Count */              0x95, 0x03,     /* 3 */
+    /* Report Size */               0x75, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Report Size */               0x75, 0x05,     /* 5 (padding bits) */
+    /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* End Collection */            0xC0,
+    /* End Collection */            0xC0,
+};
+
 /* Additional HID class interface descriptor. */
-static const uint8_t g_UsbHidIfHidDesc[] =
+static const uint8_t g_UsbHidMIfHidDesc[] =
 {
     /* .bLength = */                0x09,
     /* .bDescriptorType = */        0x21,       /* HID */
@@ -247,10 +322,22 @@ static const uint8_t g_UsbHidIfHidDesc[] =
     /* .bCountryCode = */           0,
     /* .bNumDescriptors = */        1,
     /* .bDescriptorType = */        0x22,       /* Report */
-    /* .wDescriptorLength = */      sizeof(g_UsbHidReportDesc), 0x00
+    /* .wDescriptorLength = */      sizeof(g_UsbHidMReportDesc), 0x00
 };
 
-static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDesc =
+/* Additional HID class interface descriptor. */
+static const uint8_t g_UsbHidTIfHidDesc[] =
+{
+    /* .bLength = */                0x09,
+    /* .bDescriptorType = */        0x21,       /* HID */
+    /* .bcdHID = */                 0x10, 0x01, /* 1.1 */
+    /* .bCountryCode = */           0,
+    /* .bNumDescriptors = */        1,
+    /* .bDescriptorType = */        0x22,       /* Report */
+    /* .wDescriptorLength = */      sizeof(g_UsbHidTReportDesc), 0x00
+};
+
+static const VUSBDESCINTERFACEEX g_UsbHidMInterfaceDesc =
 {
     {
         /* .bLength = */                sizeof(VUSBDESCINTERFACE),
@@ -264,35 +351,75 @@ static const VUSBDESCINTERFACEEX g_UsbHidInterfaceDesc =
         /* .iInterface = */             0
     },
     /* .pvMore = */     NULL,
-    /* .pvClass = */    &g_UsbHidIfHidDesc,
-    /* .cbClass = */    sizeof(g_UsbHidIfHidDesc),
-    &g_aUsbHidEndpointDescs[0]
+    /* .pvClass = */    &g_UsbHidMIfHidDesc,
+    /* .cbClass = */    sizeof(g_UsbHidMIfHidDesc),
+    &g_aUsbHidMEndpointDescs[0]
 };
 
-static const VUSBINTERFACE g_aUsbHidInterfaces[] =
+static const VUSBDESCINTERFACEEX g_UsbHidTInterfaceDesc =
 {
-    { &g_UsbHidInterfaceDesc, /* .cSettings = */ 1 },
+    {
+        /* .bLength = */                sizeof(VUSBDESCINTERFACE),
+        /* .bDescriptorType = */        VUSB_DT_INTERFACE,
+        /* .bInterfaceNumber = */       0,
+        /* .bAlternateSetting = */      0,
+        /* .bNumEndpoints = */          1,
+        /* .bInterfaceClass = */        3 /* HID */,
+        /* .bInterfaceSubClass = */     1 /* Boot Interface */,
+        /* .bInterfaceProtocol = */     2 /* Mouse */,
+        /* .iInterface = */             0
+    },
+    /* .pvMore = */     NULL,
+    /* .pvClass = */    &g_UsbHidTIfHidDesc,
+    /* .cbClass = */    sizeof(g_UsbHidTIfHidDesc),
+    &g_aUsbHidTEndpointDescs[0]
 };
 
-static const VUSBDESCCONFIGEX g_UsbHidConfigDesc =
+static const VUSBINTERFACE g_aUsbHidMInterfaces[] =
+{
+    { &g_UsbHidMInterfaceDesc, /* .cSettings = */ 1 },
+};
+
+static const VUSBINTERFACE g_aUsbHidTInterfaces[] =
+{
+    { &g_UsbHidTInterfaceDesc, /* .cSettings = */ 1 },
+};
+
+static const VUSBDESCCONFIGEX g_UsbHidMConfigDesc =
 {
     {
         /* .bLength = */            sizeof(VUSBDESCCONFIG),
         /* .bDescriptorType = */    VUSB_DT_CONFIG,
         /* .wTotalLength = */       0 /* recalculated on read */,
-        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidInterfaces),
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidMInterfaces),
         /* .bConfigurationValue =*/ 1,
         /* .iConfiguration = */     0,
         /* .bmAttributes = */       RT_BIT(7),
         /* .MaxPower = */           50 /* 100mA */
     },
     NULL,
-    &g_aUsbHidInterfaces[0]
+    &g_aUsbHidMInterfaces[0]
 };
 
-static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
+static const VUSBDESCCONFIGEX g_UsbHidTConfigDesc =
 {
-    /* .bLength = */                sizeof(g_UsbHidDeviceDesc),
+    {
+        /* .bLength = */            sizeof(VUSBDESCCONFIG),
+        /* .bDescriptorType = */    VUSB_DT_CONFIG,
+        /* .wTotalLength = */       0 /* recalculated on read */,
+        /* .bNumInterfaces = */     RT_ELEMENTS(g_aUsbHidTInterfaces),
+        /* .bConfigurationValue =*/ 1,
+        /* .iConfiguration = */     0,
+        /* .bmAttributes = */       RT_BIT(7),
+        /* .MaxPower = */           50 /* 100mA */
+    },
+    NULL,
+    &g_aUsbHidTInterfaces[0]
+};
+
+static const VUSBDESCDEVICE g_UsbHidMDeviceDesc =
+{
+    /* .bLength = */                sizeof(g_UsbHidMDeviceDesc),
     /* .bDescriptorType = */        VUSB_DT_DEVICE,
     /* .bcdUsb = */                 0x110,  /* 1.1 */
     /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
@@ -303,15 +430,43 @@ static const VUSBDESCDEVICE g_UsbHidDeviceDesc =
     /* .idProduct = */              USBHID_PID_MOUSE,
     /* .bcdDevice = */              0x0100, /* 1.0 */
     /* .iManufacturer = */          USBHID_STR_ID_MANUFACTURER,
-    /* .iProduct = */               USBHID_STR_ID_PRODUCT,
+    /* .iProduct = */               USBHID_STR_ID_PRODUCT_M,
     /* .iSerialNumber = */          0,
     /* .bNumConfigurations = */     1
 };
 
-static const PDMUSBDESCCACHE g_UsbHidDescCache =
+static const VUSBDESCDEVICE g_UsbHidTDeviceDesc =
 {
-    /* .pDevice = */                &g_UsbHidDeviceDesc,
-    /* .paConfigs = */              &g_UsbHidConfigDesc,
+    /* .bLength = */                sizeof(g_UsbHidTDeviceDesc),
+    /* .bDescriptorType = */        VUSB_DT_DEVICE,
+    /* .bcdUsb = */                 0x110,  /* 1.1 */
+    /* .bDeviceClass = */           0 /* Class specified in the interface desc. */,
+    /* .bDeviceSubClass = */        0 /* Subclass specified in the interface desc. */,
+    /* .bDeviceProtocol = */        0 /* Protocol specified in the interface desc. */,
+    /* .bMaxPacketSize0 = */        8,
+    /* .idVendor = */               VBOX_USB_VENDOR,
+    /* .idProduct = */              USBHID_PID_TABLET,
+    /* .bcdDevice = */              0x0100, /* 1.0 */
+    /* .iManufacturer = */          USBHID_STR_ID_MANUFACTURER,
+    /* .iProduct = */               USBHID_STR_ID_PRODUCT_T,
+    /* .iSerialNumber = */          0,
+    /* .bNumConfigurations = */     1
+};
+
+static const PDMUSBDESCCACHE g_UsbHidMDescCache =
+{
+    /* .pDevice = */                &g_UsbHidMDeviceDesc,
+    /* .paConfigs = */              &g_UsbHidMConfigDesc,
+    /* .paLanguages = */            g_aUsbHidLanguages,
+    /* .cLanguages = */             RT_ELEMENTS(g_aUsbHidLanguages),
+    /* .fUseCachedDescriptors = */  true,
+    /* .fUseCachedStringsDescriptors = */ true
+};
+
+static const PDMUSBDESCCACHE g_UsbHidTDescCache =
+{
+    /* .pDevice = */                &g_UsbHidTDeviceDesc,
+    /* .paConfigs = */              &g_UsbHidTConfigDesc,
     /* .paLanguages = */            g_aUsbHidLanguages,
     /* .cLanguages = */             RT_ELEMENTS(g_aUsbHidLanguages),
     /* .fUseCachedDescriptors = */  true,
@@ -541,7 +696,7 @@ static int8_t clamp_i8(int32_t val)
 }
 
 /**
- * Mouse event handler.
+ * Relative mouse event handler.
  *
  * @returns VBox status code.
  * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.iPort).
@@ -557,6 +712,10 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
 //    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 //    AssertReleaseRC(rc);
 
+    /* If we aren't in the expected mode, switch. This should only really need to be done once. */
+//    if (pThis->isAbsolute)
+//        pThis->Lun0.pDrv->pfnAbsModeChange(pThis->Lun0.pDrv, pThis->isAbsolute);
+
     /* Accumulate movement - the events from the front end may arrive
      * at a much higher rate than USB can handle.
      */
@@ -570,8 +729,8 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
     PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
     if (pUrb)
     {
-        USBHIDM_REPORT  report;
         size_t          cbCopy;
+        USBHIDM_REPORT  report;
 
         //@todo: fix/extend
         report.btn = pThis->PtrDelta.btn;
@@ -581,10 +740,67 @@ static DECLCALLBACK(int) usbHidMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t 
 
         cbCopy = sizeof(report);
         memcpy(&pUrb->abData[0], &report, cbCopy);
-        usbHidCompleteOk(pThis, pUrb, cbCopy);
 
         /* Clear the accumulated movement. */
         pThis->PtrDelta.dX = pThis->PtrDelta.dY = pThis->PtrDelta.dZ = 0;
+
+        /* Complete the URB. */
+        usbHidCompleteOk(pThis, pUrb, cbCopy);
+//        LogRel(("Rel movement, dX=%d, dY=%d, dZ=%d, btn=%02x, report size %d\n", report.dx, report.dy, report.dz, report.btn, cbCopy));
+    }
+
+//    PDMCritSectLeave(&pThis->CritSect);
+    return VINF_SUCCESS;
+}
+
+/**
+ * Absolute mouse event handler.
+ *
+ * @returns VBox status code.
+ * @param   pInterface      Pointer to the mouse port interface (KBDState::Mouse.iPort).
+ * @param   u32X            The X coordinate.
+ * @param   u32Y            The Y coordinate.
+ * @param   i32DeltaZ       The Z delta.
+ * @param   i32DeltaW       The W delta.
+ * @param   fButtonStates   The button states.
+ */
+static DECLCALLBACK(int) usbHidMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t u32X, uint32_t u32Y, int32_t i32DeltaZ, int32_t i32DeltaW, uint32_t fButtonStates)
+{
+    PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
+//    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+//    AssertReleaseRC(rc);
+
+    Assert(pThis->isAbsolute);
+
+    /* Accumulate movement - the events from the front end may arrive
+     * at a much higher rate than USB can handle. Probably not a real issue
+     * when only the Z axis is relative.
+     */
+    pThis->PtrDelta.btn = fButtonStates;
+    pThis->PtrDelta.dZ -= i32DeltaZ;    /* Inverted! */
+
+    /* Check if there's a URB waiting. If so, send a report.
+     */
+    PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->ToHostQueue);
+    if (pUrb)
+    {
+        size_t          cbCopy;
+        USBHIDT_REPORT  report;
+
+        report.btn = pThis->PtrDelta.btn;
+        report.cx  = u32X / 2;
+        report.cy  = u32Y / 2;
+        report.dz  = clamp_i8(pThis->PtrDelta.dZ);
+
+        cbCopy = sizeof(report);
+        memcpy(&pUrb->abData[0], &report, cbCopy);
+
+        /* Clear the accumulated movement. */
+        pThis->PtrDelta.dZ = 0;
+
+        /* Complete the URB. */
+        usbHidCompleteOk(pThis, pUrb, cbCopy);
+//        LogRel(("Abs movement, X=%d, Y=%d, dZ=%d, btn=%02x, report size %d\n", report.cx, report.cy, report.dz, report.btn, cbCopy));
     }
 
 //    PDMCritSectLeave(&pThis->CritSect);
@@ -733,13 +949,25 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         switch (pSetup->wValue >> 8)
                         {
                             case DT_IF_HID_REPORT:
-                                uint32_t    cbCopy;
+                                uint32_t        cbCopy;
+                                uint32_t        cbDesc;
+                                const uint8_t   *pDesc;
 
+                                if (pThis->isAbsolute)
+                                {
+                                    cbDesc = sizeof(g_UsbHidTReportDesc);
+                                    pDesc = (const uint8_t *)&g_UsbHidTReportDesc;
+                                }
+                                else
+                                {
+                                    cbDesc = sizeof(g_UsbHidMReportDesc);
+                                    pDesc = (const uint8_t *)&g_UsbHidMReportDesc;
+                                }
                                 /* Returned data is written after the setup message. */
                                 cbCopy = pUrb->cbData - sizeof(*pSetup);
-                                cbCopy = RT_MIN(cbCopy, sizeof(g_UsbHidReportDesc));
+                                cbCopy = RT_MIN(cbCopy, cbDesc);
                                 Log(("usbHid: GET_DESCRIPTOR DT_IF_HID_REPORT wValue=%#x wIndex=%#x cbCopy=%#x\n", pSetup->wValue, pSetup->wIndex, cbCopy));
-                                memcpy(&pUrb->abData[sizeof(*pSetup)], &g_UsbHidReportDesc, cbCopy);
+                                memcpy(&pUrb->abData[sizeof(*pSetup)], pDesc, cbCopy);
                                 return usbHidCompleteOk(pThis, pUrb, cbCopy + sizeof(*pSetup));
                             default:
                                 Log(("usbHid: GET_DESCRIPTOR, huh? wValue=%#x wIndex=%#x\n", pSetup->wValue, pSetup->wIndex));
@@ -870,6 +1098,11 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
         usbHidResetWorker(pThis, NULL, true /*fSetConfig*/); /** @todo figure out the exact difference */
     pThis->bConfigurationValue = bConfigurationValue;
 
+    /* 
+     * Set received event type to absolute or relative.
+     */
+    pThis->Lun0.pDrv->pfnAbsModeChange(pThis->Lun0.pDrv, pThis->isAbsolute);
+
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
@@ -882,7 +1115,11 @@ static DECLCALLBACK(PCPDMUSBDESCCACHE) usbHidUsbGetDescriptorCache(PPDMUSBINS pU
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUsbGetDescriptorCache/#%u:\n", pUsbIns->iInstance));
-    return &g_UsbHidDescCache;
+    if (pThis->isAbsolute) {
+        return &g_UsbHidTDescCache;
+    } else {
+        return &g_UsbHidMDescCache;
+    }
 }
 
 
@@ -951,12 +1188,16 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     /*
      * Validate and read the configuration.
      */
-    rc = CFGMR3ValidateConfig(pCfg, "/", "", "", "UsbHid", iInstance);
+    rc = CFGMR3ValidateConfig(pCfg, "/", "Absolute", "Config", "UsbHid", iInstance);
     if (RT_FAILURE(rc))
         return rc;
-
+    rc = CFGMR3QueryBoolDef(pCfg, "Absolute", &pThis->isAbsolute, false);
+    if (RT_FAILURE(rc))
+        return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
+    
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;
+    pThis->Lun0.IPort.pfnPutEventAbs    = usbHidMousePutEventAbs;
 
     /*
      * Attach the mouse driver.
@@ -964,6 +1205,10 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     rc = pUsbIns->pHlpR3->pfnDriverAttach(pUsbIns, 0 /*iLun*/, &pThis->Lun0.IBase, &pThis->Lun0.pDrvBase, "Mouse Port");
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to attach mouse driver"));
+
+    pThis->Lun0.pDrv = PDMIBASE_QUERY_INTERFACE(pThis->Lun0.pDrvBase, PDMIMOUSECONNECTOR);
+    if (!pThis->Lun0.pDrv)
+        return PDMUsbHlpVMSetError(pUsbIns, VERR_PDM_MISSING_INTERFACE, RT_SRC_POS, N_("HID failed to query mouse interface"));
 
     return VINF_SUCCESS;
 }
