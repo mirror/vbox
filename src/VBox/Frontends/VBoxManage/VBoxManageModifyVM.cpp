@@ -78,7 +78,9 @@ enum
     MODIFYVM_DELALLCPUID,
     MODIFYVM_MONITORCOUNT,
     MODIFYVM_ACCELERATE3D,
+#ifdef VBOX_WITH_VIDEOHWACCEL
     MODIFYVM_ACCELERATE2DVIDEO,
+#endif
     MODIFYVM_BIOSLOGOFADEIN,
     MODIFYVM_BIOSLOGOFADEOUT,
     MODIFYVM_BIOSLOGODISPLAYTIME,
@@ -119,12 +121,14 @@ enum
     MODIFYVM_AUDIOCONTROLLER,
     MODIFYVM_AUDIO,
     MODIFYVM_CLIPBOARD,
+#ifdef VBOX_WITH_VRDP
     MODIFYVM_VRDPPORT,
     MODIFYVM_VRDPADDRESS,
     MODIFYVM_VRDPAUTHTYPE,
     MODIFYVM_VRDPMULTICON,
     MODIFYVM_VRDPREUSECON,
     MODIFYVM_VRDP,
+#endif
     MODIFYVM_RTCUSEUTC,
     MODIFYVM_USBEHCI,
     MODIFYVM_USB,
@@ -162,7 +166,9 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--rtcuseutc",                MODIFYVM_RTCUSEUTC,                 RTGETOPT_REQ_BOOL_ONOFF },
     { "--monitorcount",             MODIFYVM_MONITORCOUNT,              RTGETOPT_REQ_UINT32 },
     { "--accelerate3d",             MODIFYVM_ACCELERATE3D,              RTGETOPT_REQ_BOOL_ONOFF },
+#ifdef VBOX_WITH_VIDEOHWACCEL
     { "--accelerate2dvideo",        MODIFYVM_ACCELERATE2DVIDEO,         RTGETOPT_REQ_BOOL_ONOFF },
+#endif
     { "--bioslogofadein",           MODIFYVM_BIOSLOGOFADEIN,            RTGETOPT_REQ_BOOL_ONOFF },
     { "--bioslogofadeout",          MODIFYVM_BIOSLOGOFADEOUT,           RTGETOPT_REQ_BOOL_ONOFF },
     { "--bioslogodisplaytime",      MODIFYVM_BIOSLOGODISPLAYTIME,       RTGETOPT_REQ_UINT32 },
@@ -203,12 +209,14 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--audiocontroller",          MODIFYVM_AUDIOCONTROLLER,           RTGETOPT_REQ_STRING },
     { "--audio",                    MODIFYVM_AUDIO,                     RTGETOPT_REQ_STRING },
     { "--clipboard",                MODIFYVM_CLIPBOARD,                 RTGETOPT_REQ_STRING },
+#ifdef VBOX_WITH_VRDP
     { "--vrdpport",                 MODIFYVM_VRDPPORT,                  RTGETOPT_REQ_STRING },
     { "--vrdpaddress",              MODIFYVM_VRDPADDRESS,               RTGETOPT_REQ_STRING },
     { "--vrdpauthtype",             MODIFYVM_VRDPAUTHTYPE,              RTGETOPT_REQ_STRING },
     { "--vrdpmulticon",             MODIFYVM_VRDPMULTICON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdpreusecon",             MODIFYVM_VRDPREUSECON,              RTGETOPT_REQ_BOOL_ONOFF },
     { "--vrdp",                     MODIFYVM_VRDP,                      RTGETOPT_REQ_BOOL_ONOFF },
+#endif
     { "--usbehci",                  MODIFYVM_USBEHCI,                   RTGETOPT_REQ_BOOL_ONOFF },
     { "--usb",                      MODIFYVM_USB,                       RTGETOPT_REQ_BOOL_ONOFF },
     { "--snapshotfolder",           MODIFYVM_SNAPSHOTFOLDER,            RTGETOPT_REQ_STRING },
