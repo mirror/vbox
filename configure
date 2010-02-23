@@ -360,7 +360,7 @@ check_environment()
   log_success "Determined build machine: $OS.$BUILD_MACHINE, target machine: $OS.$TARGET_MACHINE"
 
   echo "BUILD_PLATFORM=\"$OS\"" >> $ENV
-  echo "export BUILD_PLATFORM"
+  echo "export BUILD_PLATFORM" >> $ENV
   echo "BUILD_PLATFORM_ARCH=\"$BUILD_MACHINE\"" >> $ENV
   echo "export BUILD_PLATFORM_ARCH" >> $ENV
   echo "BUILD_TARGET=\"$OS\"" >> $ENV
