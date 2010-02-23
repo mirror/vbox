@@ -520,7 +520,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
             if (iPage != _2M/PAGE_SIZE)
             {
                 /* Failed. Mark as requiring a PT so we don't check the whole thing again in the future. */
-                STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
+                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRefused);
                 PGM_PAGE_SET_PDE_TYPE(pPage, PGM_PAGE_PDE_TYPE_PT);
                 return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
             }
@@ -534,7 +534,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
                 if (RT_SUCCESS(rc))
                 {   
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                    STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageUsed);
+                    STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageAlloc);
                     return VINF_SUCCESS;
                 }
                 LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
