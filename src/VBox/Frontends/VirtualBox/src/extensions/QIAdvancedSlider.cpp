@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -5,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2009-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -35,253 +36,253 @@
 class CPrivateSlider: public QSlider
 {
 public:
-    CPrivateSlider (Qt::Orientation aOrientation, QWidget *aParent = 0)
-      : QSlider (aOrientation, aParent)
-      , mOptColor (0x0, 0xff, 0x0, 0x3c)
-      , mWrnColor (0xff, 0x54, 0x0, 0x3c)
-      , mErrColor (0xff, 0x0, 0x0, 0x3c)
-      , mMinOpt (-1)
-      , mMaxOpt (-1)
-      , mMinWrn (-1)
-      , mMaxWrn (-1)
-      , mMinErr (-1)
-      , mMaxErr (-1)
+    CPrivateSlider(Qt::Orientation fOrientation, QWidget *pParent = 0)
+      : QSlider(fOrientation, pParent)
+      , m_optColor(0x0, 0xff, 0x0, 0x3c)
+      , m_wrnColor(0xff, 0x54, 0x0, 0x3c)
+      , m_errColor(0xff, 0x0, 0x0, 0x3c)
+      , m_minOpt(-1)
+      , m_maxOpt(-1)
+      , m_minWrn(-1)
+      , m_maxWrn(-1)
+      , m_minErr(-1)
+      , m_maxErr(-1)
     {}
 
-    int positionForValue (int aVal) const
+    int positionForValue(int val) const
     {
         QStyleOptionSlider opt;
-        initStyleOption (&opt);
+        initStyleOption(&opt);
         opt.subControls = QStyle::SC_All;
-        int available = opt.rect.width() - style()->pixelMetric (QStyle::PM_SliderLength, &opt, this);
-        return QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, aVal, available);
+        int available = opt.rect.width() - style()->pixelMetric(QStyle::PM_SliderLength, &opt, this);
+        return QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, val, available);
     }
 
-    virtual void paintEvent (QPaintEvent *aEvent)
+    virtual void paintEvent(QPaintEvent *pEvent)
     {
         QPainter p(this);
 
         QStyleOptionSlider opt;
-        initStyleOption (&opt);
+        initStyleOption(&opt);
         opt.subControls = QStyle::SC_All;
 
-        int available = opt.rect.width() - style()->pixelMetric (QStyle::PM_SliderLength, &opt, this);
+        int available = opt.rect.width() - style()->pixelMetric(QStyle::PM_SliderLength, &opt, this);
         QSize s = size();
 
-        QRect ticks = style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
+        QRect ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderTickmarks, this);
 #ifdef Q_WS_MAC
-        ticks.setRect ((s.width() - available) / 2, s.height() - ticks.y(), available, ticks.height());
+        ticks.setRect((s.width() - available) / 2, s.height() - ticks.y(), available, ticks.height());
 #else /* Q_WS_MAC */
         if (ticks.isNull() || ticks.isEmpty())
         {
-            ticks = style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this) | style()->subControlRect (QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
-            ticks.setRect ((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
+            ticks = style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderHandle, this) | style()->subControlRect(QStyle::CC_Slider, &opt, QStyle::SC_SliderGroove, this);
+            ticks.setRect((s.width() - available) / 2, ticks.bottom() + 1, available, s.height() - ticks.bottom() - 1);
         }
 #endif /* Q_WS_MAC */
-        if ((mMinOpt != -1 &&
-             mMaxOpt != -1) &&
-            mMinOpt != mMaxOpt)
+        if ((m_minOpt != -1 &&
+             m_maxOpt != -1) &&
+            m_minOpt != m_maxOpt)
         {
-            int posMinOpt = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinOpt, available);
-            int posMaxOpt = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxOpt, available);
-            p.fillRect (ticks.x() + posMinOpt, ticks.y(), posMaxOpt - posMinOpt + 1, ticks.height(), mOptColor);
+            int posMinOpt = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minOpt, available);
+            int posMaxOpt = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxOpt, available);
+            p.fillRect(ticks.x() + posMinOpt, ticks.y(), posMaxOpt - posMinOpt + 1, ticks.height(), m_optColor);
         }
-        if ((mMinWrn != -1 &&
-             mMaxWrn != -1) &&
-            mMinWrn != mMaxWrn)
+        if ((m_minWrn != -1 &&
+             m_maxWrn != -1) &&
+            m_minWrn != m_maxWrn)
         {
-            int posMinWrn = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinWrn, available);
-            int posMaxWrn = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxWrn, available);
-            p.fillRect (ticks.x() + posMinWrn, ticks.y(), posMaxWrn - posMinWrn + 1, ticks.height(), mWrnColor);
+            int posMinWrn = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minWrn, available);
+            int posMaxWrn = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxWrn, available);
+            p.fillRect(ticks.x() + posMinWrn, ticks.y(), posMaxWrn - posMinWrn + 1, ticks.height(), m_wrnColor);
         }
-        if ((mMinErr != -1 &&
-             mMaxErr != -1) &&
-            mMinErr != mMaxErr)
+        if ((m_minErr != -1 &&
+             m_maxErr != -1) &&
+            m_minErr != m_maxErr)
         {
-            int posMinErr = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMinErr, available);
-            int posMaxErr = QStyle::sliderPositionFromValue (opt.minimum, opt.maximum, mMaxErr, available);
-            p.fillRect (ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), mErrColor);
+            int posMinErr = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_minErr, available);
+            int posMaxErr = QStyle::sliderPositionFromValue(opt.minimum, opt.maximum, m_maxErr, available);
+            p.fillRect(ticks.x() + posMinErr, ticks.y(), posMaxErr - posMinErr + 1, ticks.height(), m_errColor);
         }
         p.end();
 
-        QSlider::paintEvent (aEvent);
+        QSlider::paintEvent(pEvent);
     }
 
-    QColor mOptColor;
-    QColor mWrnColor;
-    QColor mErrColor;
+    QColor m_optColor;
+    QColor m_wrnColor;
+    QColor m_errColor;
 
-    int mMinOpt;
-    int mMaxOpt;
-    int mMinWrn;
-    int mMaxWrn;
-    int mMinErr;
-    int mMaxErr;
+    int m_minOpt;
+    int m_maxOpt;
+    int m_minWrn;
+    int m_maxWrn;
+    int m_minErr;
+    int m_maxErr;
 };
 
-QIAdvancedSlider::QIAdvancedSlider (QWidget *aParent /* = 0 */)
-  : QWidget (aParent)
+QIAdvancedSlider::QIAdvancedSlider(QWidget *pParent /* = 0 */)
+  : QWidget(pParent)
 {
     init();
 }
 
-QIAdvancedSlider::QIAdvancedSlider (Qt::Orientation aOrientation, QWidget *aParent /* = 0 */)
-  : QWidget (aParent)
+QIAdvancedSlider::QIAdvancedSlider(Qt::Orientation fOrientation, QWidget *pParent /* = 0 */)
+  : QWidget(pParent)
 {
-    init (aOrientation);
+    init(fOrientation);
 }
 
 int QIAdvancedSlider::value() const
 {
-    return mSlider->value();
+    return m_pSlider->value();
 }
 
-void QIAdvancedSlider::setRange (int aMinV, int aMaxV)
+void QIAdvancedSlider::setRange(int minV, int maxV)
 {
-    mSlider->setRange (aMinV, aMaxV);
+    m_pSlider->setRange(minV, maxV);
 }
 
-void QIAdvancedSlider::setMaximum (int aVal)
+void QIAdvancedSlider::setMaximum(int val)
 {
-    mSlider->setMaximum (aVal);
+    m_pSlider->setMaximum(val);
 }
 
 int QIAdvancedSlider::maximum() const
 {
-    return mSlider->maximum();
+    return m_pSlider->maximum();
 }
 
-void QIAdvancedSlider::setMinimum (int aVal)
+void QIAdvancedSlider::setMinimum(int val)
 {
-    mSlider->setMinimum (aVal);
+    m_pSlider->setMinimum(val);
 }
 
 int QIAdvancedSlider::minimum() const
 {
-    return mSlider->minimum();
+    return m_pSlider->minimum();
 }
 
-void QIAdvancedSlider::setPageStep (int aVal)
+void QIAdvancedSlider::setPageStep(int val)
 {
-    mSlider->setPageStep (aVal);
+    m_pSlider->setPageStep(val);
 }
 
 int QIAdvancedSlider::pageStep() const
 {
-    return mSlider->pageStep();
+    return m_pSlider->pageStep();
 }
 
-void QIAdvancedSlider::setSingleStep (int aVal)
+void QIAdvancedSlider::setSingleStep(int val)
 {
-    mSlider->setSingleStep (aVal);
+    m_pSlider->setSingleStep(val);
 }
 
 int QIAdvancedSlider::singelStep() const
 {
-    return mSlider->singleStep();
+    return m_pSlider->singleStep();
 }
 
-void QIAdvancedSlider::setTickInterval (int aVal)
+void QIAdvancedSlider::setTickInterval(int val)
 {
-    mSlider->setTickInterval (aVal);
+    m_pSlider->setTickInterval(val);
 }
 
 int QIAdvancedSlider::tickInterval() const
 {
-    return mSlider->tickInterval();
+    return m_pSlider->tickInterval();
 }
 
-void QIAdvancedSlider::setTickPosition (QSlider::TickPosition aPos)
+void QIAdvancedSlider::setTickPosition(QSlider::TickPosition fPos)
 {
-    mSlider->setTickPosition (aPos);
+    m_pSlider->setTickPosition(fPos);
 }
 
 QSlider::TickPosition QIAdvancedSlider::tickPosition() const
 {
-    return mSlider->tickPosition();
+    return m_pSlider->tickPosition();
 }
 
 Qt::Orientation QIAdvancedSlider::orientation() const
 {
-    return mSlider->orientation();
+    return m_pSlider->orientation();
 }
 
-void QIAdvancedSlider::setSnappingEnabled (bool aOn)
+void QIAdvancedSlider::setSnappingEnabled(bool fOn)
 {
-    mSnappingEnabled = aOn;
+    m_fSnappingEnabled = fOn;
 }
 
 bool QIAdvancedSlider::isSnappingEnabled() const
 {
-    return mSnappingEnabled;
+    return m_fSnappingEnabled;
 }
 
-void QIAdvancedSlider::setOptimalHint (int aMin, int aMax)
+void QIAdvancedSlider::setOptimalHint(int min, int max)
 {
-    mSlider->mMinOpt = aMin;
-    mSlider->mMaxOpt = aMax;
+    m_pSlider->m_minOpt = min;
+    m_pSlider->m_maxOpt = max;
 }
 
-void QIAdvancedSlider::setWarningHint (int aMin, int aMax)
+void QIAdvancedSlider::setWarningHint(int min, int max)
 {
-    mSlider->mMinWrn = aMin;
-    mSlider->mMaxWrn = aMax;
+    m_pSlider->m_minWrn = min;
+    m_pSlider->m_maxWrn = max;
 }
 
-void QIAdvancedSlider::setErrorHint (int aMin, int aMax)
+void QIAdvancedSlider::setErrorHint(int min, int max)
 {
-    mSlider->mMinErr = aMin;
-    mSlider->mMaxErr = aMax;
+    m_pSlider->m_minErr = min;
+    m_pSlider->m_maxErr = max;
 }
 
-void QIAdvancedSlider::setOrientation (Qt::Orientation aOrientation)
+void QIAdvancedSlider::setOrientation(Qt::Orientation fOrientation)
 {
-    mSlider->setOrientation (aOrientation);
+    m_pSlider->setOrientation(fOrientation);
 }
 
-void QIAdvancedSlider::setValue (int aVal)
+void QIAdvancedSlider::setValue (int val)
 {
-    mSlider->setValue (aVal);
+    m_pSlider->setValue(val);
 }
 
-void QIAdvancedSlider::prvSliderMoved(int val)
+void QIAdvancedSlider::sltSliderMoved(int val)
 {
     val = snapValue(val);
-    mSlider->setValue(val);
+    m_pSlider->setValue(val);
     emit sliderMoved(val);
 }
 
-void QIAdvancedSlider::init (Qt::Orientation aOrientation /* = Qt::Horizontal */)
+void QIAdvancedSlider::init(Qt::Orientation fOrientation /* = Qt::Horizontal */)
 {
-    mSnappingEnabled = false;
+    m_fSnappingEnabled = false;
 
-    QVBoxLayout *pMainLayout = new QVBoxLayout (this);
-    VBoxGlobal::setLayoutMargin (pMainLayout, 0);
-    mSlider = new CPrivateSlider (aOrientation, this);
-    pMainLayout->addWidget (mSlider);
+    QVBoxLayout *pMainLayout = new QVBoxLayout(this);
+    VBoxGlobal::setLayoutMargin(pMainLayout, 0);
+    m_pSlider = new CPrivateSlider(fOrientation, this);
+    pMainLayout->addWidget(m_pSlider);
 
-    connect(mSlider, SIGNAL (sliderMoved(int)), this, SLOT (prvSliderMoved(int)));
-    connect(mSlider, SIGNAL (valueChanged(int)), this, SIGNAL (valueChanged(int)));
-    connect(mSlider, SIGNAL (sliderPressed()), this, SIGNAL (sliderPressed()));
-    connect(mSlider, SIGNAL (sliderReleased()), this, SIGNAL (sliderReleased()));
+    connect(m_pSlider, SIGNAL(sliderMoved(int)), this, SLOT(sltSliderMoved(int)));
+    connect(m_pSlider, SIGNAL(valueChanged(int)), this, SIGNAL(valueChanged(int)));
+    connect(m_pSlider, SIGNAL(sliderPressed()), this, SIGNAL(sliderPressed()));
+    connect(m_pSlider, SIGNAL(sliderReleased()), this, SIGNAL(sliderReleased()));
 }
 
 int QIAdvancedSlider::snapValue(int val)
 {
-    if (mSnappingEnabled &&
+    if (m_fSnappingEnabled &&
         val > 2)
     {
-        float l2 = log ((float)val)/log (2.0);
-        int newVal = (int) pow ((float)2, (int)qRound (l2)); /* The value to snap on */
-        int pos = mSlider->positionForValue (val); /* Get the relative screen pos for the original value */
-        int newPos = mSlider->positionForValue (newVal); /* Get the relative screen pos for the snap value */
-        if (abs (newPos - pos) < 5) /* 10 pixel snapping range */
+        float l2 = log((float)val)/log(2.0);
+        int newVal = (int)pow((float)2, (int)qRound(l2)); /* The value to snap on */
+        int pos = m_pSlider->positionForValue(val); /* Get the relative screen pos for the original value */
+        int newPos = m_pSlider->positionForValue(newVal); /* Get the relative screen pos for the snap value */
+        if (abs(newPos - pos) < 5) /* 10 pixel snapping range */
         {
             val = newVal;
-            if (val > mSlider->maximum())
-                val = mSlider->maximum();
-            else if (val < mSlider->minimum())
-                val = mSlider->minimum();
+            if (val > m_pSlider->maximum())
+                val = m_pSlider->maximum();
+            else if (val < m_pSlider->minimum())
+                val = m_pSlider->minimum();
         }
     }
     return val;
