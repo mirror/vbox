@@ -32,7 +32,6 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
-#include <iprt/stdarg.h>
 
 RT_C_DECLS_BEGIN
 
@@ -65,7 +64,7 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe);
  * @returns The native handle.
  * @param   hPipe           The IPRT pipe handle.
  */
-RTR3DECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
+RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
 
 /**
  * Read bytes from a pipe, non-blocking.
