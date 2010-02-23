@@ -34,63 +34,63 @@ class QIAdvancedSlider: public QWidget
     Q_PROPERTY(int value READ value WRITE setValue);
 
 public:
-    QIAdvancedSlider (QWidget *aParent = 0);
-    QIAdvancedSlider (Qt::Orientation aOrientation, QWidget *aParent = 0);
+    QIAdvancedSlider(QWidget *pParent = 0);
+    QIAdvancedSlider(Qt::Orientation fOrientation, QWidget *pParent = 0);
 
     int value() const;
 
-    void setRange (int aMinV, int aMaxV);
+    void setRange(int minV, int maxV);
 
-    void setMaximum (int aVal);
+    void setMaximum(int val);
     int maximum() const;
 
-    void setMinimum (int aVal);
+    void setMinimum(int val);
     int minimum() const;
 
-    void setPageStep (int aVal);
+    void setPageStep(int val);
     int pageStep() const;
 
-    void setSingleStep (int aVal);
+    void setSingleStep(int val);
     int singelStep() const;
 
-    void setTickInterval (int aVal);
+    void setTickInterval(int val);
     int tickInterval() const;
 
-    void setTickPosition (QSlider::TickPosition aPos);
+    void setTickPosition(QSlider::TickPosition fPos);
     QSlider::TickPosition tickPosition() const;
 
     Qt::Orientation orientation() const;
 
-    void setSnappingEnabled (bool aOn);
+    void setSnappingEnabled(bool fOn);
     bool isSnappingEnabled() const;
 
-    void setOptimalHint (int aMin, int aMax);
-    void setWarningHint (int aMin, int aMax);
-    void setErrorHint (int aMin, int aMax);
+    void setOptimalHint(int min, int max);
+    void setWarningHint(int min, int max);
+    void setErrorHint(int min, int max);
 
 public slots:
 
-    void setOrientation (Qt::Orientation aOrientation);
-    void setValue (int aVal);
+    void setOrientation(Qt::Orientation fOrientation);
+    void setValue(int val);
 
 signals:
-    void valueChanged (int);
-    void sliderMoved (int);
+    void valueChanged(int);
+    void sliderMoved(int);
     void sliderPressed();
     void sliderReleased();
 
 private slots:
 
-    void prvSliderMoved (int val);
+    void sltSliderMoved(int val);
 
 private:
 
-    void init (Qt::Orientation aOrientation = Qt::Horizontal);
+    void init(Qt::Orientation fOrientation = Qt::Horizontal);
     int snapValue(int val);
 
     /* Private member vars */
-    CPrivateSlider *mSlider;
-    bool mSnappingEnabled;
+    CPrivateSlider *m_pSlider;
+    bool m_fSnappingEnabled;
 };
 
 #endif /* __QIAdvancedSlider__ */
