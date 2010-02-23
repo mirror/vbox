@@ -1155,12 +1155,11 @@ typedef RTNATIVETHREAD                             *PRTNATIVETHREAD;
 #define NIL_RTNATIVETHREAD                          (~(RTNATIVETHREAD)0)
 
 /** Pipe handle. */
-typedef RTHCUINTPTR                                 RTPIPE;
+typedef R3R0PTRTYPE(struct RTPIPEINTERNAL *)        RTPIPE;
 /** Pointer to a pipe handle. */
 typedef RTPIPE                                     *PRTPIPE;
 /** Nil pipe handle.
- * @remarks This is not 0 because because of UNIX and OS/2 handle values.
- *          Take care! */
+ * @remarks This is not 0 because of UNIX and OS/2 handle values. Take care! */
 #define NIL_RTPIPE                                 (~(RTPIPE)0)
 
 /** @typedef RTPOLLSET

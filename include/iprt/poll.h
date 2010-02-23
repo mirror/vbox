@@ -40,18 +40,29 @@ RT_C_DECLS_BEGIN
  * @{
  */
 
+/** @name Poll events
+ * @{ */
+/** Readable without blocking. */
+#define RTPOLL_EVT_READ     RT_BIT_32(0)
+/** Writable without blocking. */
+#define RTPOLL_EVT_WRITE    RT_BIT_32(1)
+/** Error condition, hangup, exception or similar. */
+#define RTPOLL_EVT_ERROR    RT_BIT_32(2)
+/** @} */
+
 /**
- * Polls on the specified poll set until timeout or one of them becomes ready.
+ * Polls on the specified poll set until an event occures on one of the handles
+ * or the timeout expires.
  *
  * @returns IPRT status code.
  * @param   hPollSet        The set to poll on.
  * @param   cMillies        Number of milliseconds to wait.  Use
  *                          RT_INDEFINITE_WAIT to wait for ever.
- * @param   pHandle         Where to return the info for the read handle.
- * @param   pfWhy           Where to return details about why the handle is
- *                          considered ready.
+ * @param   pHandle         Where to return the info about the handle.
+ * @param   pfEvent         Where to return details about the events that
+ *                          occured.
  */
-RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies);
+RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies, uint32_t *pfEvent);
 
 /**
  * Creates a poll set with zero or more initial members.
@@ -60,8 +71,11 @@ RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies);
  * @param   phPollSet       Where to return the poll set handle.
  * @param   cHandles        The number of initial members.
  * @param   paHandles       Array with the initial members.
+ * @param   pafEvents       Which events to poll for.  This is an array running
+ *                          parallel to @a paHandles.  If NULL, we assume
+ *                          RTPOLL_EVT_READ and RTPOLL_EVT_ERROR.
  */
-RTDECL(int)  RTPollCreateSet(PRTPOLLSET hPollSet, size_t cHandles, PCRTHANDLE paHandles);
+RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet, size_t cHandles, PCRTHANDLE paHandles, uint32_t const *pafEvents);
 
 /**
  * Destroys a poll set.
@@ -70,31 +84,65 @@ RTDECL(int)  RTPollCreateSet(PRTPOLLSET hPollSet, size_t cHandles, PCRTHANDLE pa
  * @param   hPollSet        The poll set to destroy.  NIL_POLLSET is quietly
  *                          ignored (VINF_SUCCESS).
  */
-RTDECL(int)  RTPollDestroySet(RTPOLLSET hPollSet);
+RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
 
 /**
- * Adds a handle to the poll set.
+ * Adds a generic handle to the poll set.
  *
  * @returns IPRT status code
  * @param   hPollSet        The poll set to modify.
  * @param   pHandle         The handle to add.
+ * @param   fEvents         Which events to poll for.
  */
-RTDECL(int) RTPollAddToSet(RTPOLLSET hPollSet, PCRTHANDLE pHandle);
+RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvents);
 
 /**
- * Removes a handle from the poll set.
+ * Removes a generic handle from the poll set.
  *
  * @returns IPRT status code
  * @param   hPollSet        The poll set to modify.
  * @param   pHandle         The handle to remove.
  */
-RTDECL(int) RTPollRemoveFromSet(RTPOLLSET hPollSet, PCRTHANDLE pHandle);
+RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, PCRTHANDLE pHandle);
+
+/**
+ * Adds a pipe handle to the set.
+ *
+ * @returns IPRT status code.
+ * @param   hPollSet        The poll set.
+ * @param   hPipe           The pipe handle.
+ * @param   fEvents         Which events to poll for.
+ *
+ * @todo    Maybe we could figure out what to poll for depending on the kind of
+ *          pipe we're dealing with.
+ */
+DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEvents)
+{
+    RTHANDLE Handle;
+    Handle.enmType = RTHANDLETYPE_PIPE;
+    Handle.u.hPipe = hPipe;
+    return RTPollSetAdd(hPollSet, &Handle, fEvents);
+}
+
+/**
+ * Adds a socket handle to the set.
+ *
+ * @returns IPRT status code.
+ * @param   hPollSet        The poll set.
+ * @param   hSocket         The socket handle.
+ * @param   fEvents         Which events to poll for.
+ */
+DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_t fEvents)
+{
+    RTHANDLE Handle;
+    Handle.enmType   = RTHANDLETYPE_SOCKET;
+    Handle.u.hSocket = hSocket;
+    return RTPollSetAdd(hPollSet, &Handle, fEvents);
+}
 
 /** @} */
 
 RT_C_DECLS_END
 
 #endif
-
-
 
