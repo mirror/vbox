@@ -2938,6 +2938,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     rc = pgmShwGetEPTPDPtr(pVCpu, GCPtrPage, &pPdptDst, &pPDDst);
     if (rc != VINF_SUCCESS)
     {
+        STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
         AssertRC(rc);
         return rc;
     }
@@ -2954,28 +2955,50 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
 # if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS)
-    if (PGMIsUsingLargePages(pVM))
     {
-        RTHCPHYS HCPhys;
-        rc = pgmPhysAllocLargePage(pVM, GCPtrPage & SHW_PDE_PG_MASK, &HCPhys);
+        PPGMPAGE pPage;
+
+        /* Check if we allocated a big page before for this 2 MB range. */
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPtrPage & X86_PDE2M_PAE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
-            PdeDst.u &= X86_PDE_AVL_MASK;
-            PdeDst.u |= HCPhys;
-            PdeDst.n.u1Present   = 1;
-            PdeDst.n.u1Write     = 1;
-            PdeDst.n.u1Execute   = 1;
-            PdeDst.b.u1Size      = 1;
-            PdeDst.b.u1IgnorePAT = 1;
-            PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
-            ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+            RTHCPHYS HCPhys = NIL_RTHCPHYS;
 
-            STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
-            return VINF_SUCCESS;
+            if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+            {
+                AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+            }
+            else
+            if (PGMIsUsingLargePages(pVM))
+            {
+                rc = pgmPhysAllocLargePage(pVM, GCPtrPage);
+                if (RT_SUCCESS(rc))
+                {
+                    Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+                    Assert(PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE);
+                    HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
+                }
+                else
+                    LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
+            }
 
+            if (HCPhys != NIL_RTHCPHYS)
+            {
+                PdeDst.u &= X86_PDE_AVL_MASK;
+                PdeDst.u |= HCPhys;
+                PdeDst.n.u1Present   = 1;
+                PdeDst.n.u1Write     = 1;
+                PdeDst.n.u1Execute   = 1;
+                PdeDst.b.u1Size      = 1;
+                PdeDst.b.u1IgnorePAT = 1;
+                PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
+                ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+
+                STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
+                return VINF_SUCCESS;
+            }
         }
-        else
-            LogFlow(("pgmPhysAllocLargePage failed with %Rrc\n", rc));
     }
 # endif
 
