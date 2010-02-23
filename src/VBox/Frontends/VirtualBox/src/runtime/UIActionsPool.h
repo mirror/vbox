@@ -34,10 +34,7 @@ enum UIActionType
     UIActionType_Separator,
     UIActionType_Simple,
     UIActionType_Toggle,
-    UIActionType_Menu,
-
-    /** The usual 32-bit type hack. */
-    UIActionType_32Bit_Hack = 0x7fffffff
+    UIActionType_Menu
 };
 
 class UIAction : public QIWithRetranslateUI3<QAction>
@@ -99,9 +96,7 @@ enum UIActionIndex
     UIActionIndex_Toggle_Logging,
 #endif
 
-    UIActionIndex_End,
-    /** The usual 32-bit type hack. */
-    UIActionIndex_32Bit_Hack = 0x7fffffff
+    UIActionIndex_End
 };
 
 class UIActionsPool : public QObject
