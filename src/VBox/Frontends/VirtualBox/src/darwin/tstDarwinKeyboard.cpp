@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  * Common GUI Library - Testcase - Darwin Keyboard routines.
  *
@@ -31,7 +32,6 @@
 #include <iprt/assert.h>
 
 #include "DarwinKeyboard.h"
-
 
 int main(int argc, char **argv)
 {
@@ -98,3 +98,4 @@ void     DarwinDisableGlobalHotKeys(bool fDisable);
 
     return 0;
 }
+
