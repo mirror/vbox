@@ -36,7 +36,7 @@ enum UIIndicatorIndex
     UIIndicatorIndex_Virtualization,
     UIIndicatorIndex_Mouse,
     UIIndicatorIndex_Hostkey,
-    UIIndicatorIndex_Max
+    UIIndicatorIndex_End
 };
 
 class UIIndicatorsPool : public QObject

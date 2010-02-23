@@ -160,16 +160,13 @@ public:
 
 UIIndicatorsPool::UIIndicatorsPool(QObject *pParent)
     : QObject(pParent)
+    , m_IndicatorsPool(UIIndicatorIndex_End, 0)
 {
-    /* Resize & clean actions vector */
-    m_IndicatorsPool.resize(UIIndicatorIndex_Max);
-    for (int i = 0; i < m_IndicatorsPool.size(); ++ i)
-        m_IndicatorsPool[i] = 0;
 }
 
 UIIndicatorsPool::~UIIndicatorsPool()
 {
-    for (int i = 0; i < m_IndicatorsPool.size(); ++ i)
+    for (int i = 0; i < m_IndicatorsPool.size(); ++i)
     {
         delete m_IndicatorsPool[i];
         m_IndicatorsPool[i] = 0;
@@ -179,7 +176,7 @@ UIIndicatorsPool::~UIIndicatorsPool()
 
 QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
 {
-    if (!m_IndicatorsPool[index])
+    if (!m_IndicatorsPool.at(index))
     {
         switch (index)
         {
@@ -211,7 +208,8 @@ QIStateIndicator* UIIndicatorsPool::indicator(UIIndicatorIndex index)
                 break;
         }
     }
-    return m_IndicatorsPool[index];
+    return m_IndicatorsPool.at(index);
 }
 
 #include "UIIndicatorsPool.moc"
+
