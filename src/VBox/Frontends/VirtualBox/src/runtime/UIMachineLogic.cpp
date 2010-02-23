@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -1972,3 +1973,4 @@ void UIMachineLogic::setViewInSeamlessMode (const QRect &aTargetRect)
 #endif
 
 #include "UIMachineLogic.moc"
+

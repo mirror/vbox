@@ -93,3 +93,4 @@ protected:
 };
 
 #endif // __UIMachineWindow_h__
+

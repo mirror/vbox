@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -242,3 +243,4 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     UIMachineWindow::destroy(m_pMachineWindowContainer);
     m_pMachineWindowContainer = 0;
 }
+

@@ -65,3 +65,4 @@ enum UIViewStateType
 };
 
 #endif // __UIMachineDefs_h__
+

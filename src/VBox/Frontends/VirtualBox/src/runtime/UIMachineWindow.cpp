@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -430,3 +431,4 @@ void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
 {
     updateAppearanceOf(UIVisualElement_WindowCaption);
 }
+

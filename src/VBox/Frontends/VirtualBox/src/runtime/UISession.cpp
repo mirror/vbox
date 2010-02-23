@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -795,3 +796,4 @@ qulonglong UISession::winId() const
 {
     return machine()->machineLogic()->machineWindowWrapper()->machineWindow()->winId();
 }
+

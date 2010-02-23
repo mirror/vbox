@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -218,3 +219,4 @@ void UIMachine::enterBaseVisualState()
 }
 
 #include "UIMachine.moc"
+

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -680,3 +681,4 @@ void UIFrameBufferSDL::resizeEvent(UIResizeEvent *pEvent)
 /* The class is defined in VBoxQuartz2D.cpp */
 #endif
 #endif
+
