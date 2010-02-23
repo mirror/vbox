@@ -35,23 +35,20 @@ class UIMachineLogicNormal : public UIMachineLogic
 
 protected:
 
-    /* Normal machine logic constructor: */
+    /* Normal machine logic constructor/destructor: */
     UIMachineLogicNormal(QObject *pParent,
-                         const CSession &session,
+                         UISession *pSession,
                          UIActionsPool *pActionsPool);
-    /* Normal machine logic destructor: */
     virtual ~UIMachineLogicNormal();
 
 private slots:
 
-    /* Status-bar LED funtionality: */
+    /* Windowed mode funtionality: */
     void sltPrepareNetworkAdaptersMenu();
     void sltPrepareSharedFoldersMenu();
+    void sltPrepareMouseIntegrationMenu();
 
 private:
-
-    /* Update routines: */
-    void updateAppearanceOf(int);
 
     /* Prepare helpers: */
     void prepareActionConnections();
@@ -63,6 +60,7 @@ private:
     void cleanupMachineWindow();
     //void cleanupActionConnections();
 
+    /* Friend classes: */
     friend class UIMachineLogic;
 };
 

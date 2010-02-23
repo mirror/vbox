@@ -389,28 +389,6 @@ protected:
     }
 };
 
-class PerformResetAction : public UISimpleAction
-{
-    Q_OBJECT;
-
-public:
-
-    PerformResetAction(QObject *pParent)
-        : UISimpleAction(pParent,
-                         ":/reset_16px.png", ":/reset_disabled_16px.png")
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        setText(VBoxGlobal::insertKeyToActionText(tr ("&Reset"), "R"));
-        setStatusTip(tr("Reset the virtual machine"));
-    }
-};
-
 class TogglePauseAction : public UIToggleAction
 {
     Q_OBJECT;
@@ -438,6 +416,28 @@ protected:
             setText(VBoxGlobal::insertKeyToActionText(tr ("R&esume"), "P"));
             setStatusTip(tr("Resume the execution of the virtual machine"));
         }
+    }
+};
+
+class PerformResetAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    PerformResetAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/reset_16px.png", ":/reset_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(VBoxGlobal::insertKeyToActionText(tr ("&Reset"), "R"));
+        setStatusTip(tr("Reset the virtual machine"));
     }
 };
 
@@ -553,6 +553,27 @@ protected:
     }
 };
 
+class MenuUSBDevicesAction : public UIMenuAction
+{
+    Q_OBJECT;
+
+public:
+
+    MenuUSBDevicesAction(QObject *pParent)
+        : UIMenuAction(pParent,
+                       ":/usb_16px.png", ":/usb_disabled_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        menu()->setTitle(tr("&USB Devices"));
+    }
+};
+
 class MenuNetworkAdaptersAction : public UIMenuAction
 {
     Q_OBJECT;
@@ -632,27 +653,6 @@ protected:
     {
         setText(tr("&Shared Folders..."));
         setStatusTip(tr("Create or modify shared folders"));
-    }
-};
-
-class MenuUSBDevicesAction : public UIMenuAction
-{
-    Q_OBJECT;
-
-public:
-
-    MenuUSBDevicesAction(QObject *pParent)
-        : UIMenuAction(pParent,
-                       ":/usb_16px.png", ":/usb_disabled_16px.png")
-    {
-        retranslateUi();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        menu()->setTitle(tr("&USB Devices"));
     }
 };
 
@@ -808,8 +808,8 @@ UIActionsPool::UIActionsPool(QObject *pParent)
 #endif
     m_actionsPool[UIActionIndex_Simple_TakeSnapshot] = new PerformTakeSnapshotAction(this);
     m_actionsPool[UIActionIndex_Simple_InformationDialog] = new ShowInformationDialogAction(this);
-    m_actionsPool[UIActionIndex_Simple_Reset] = new PerformResetAction(this);
     m_actionsPool[UIActionIndex_Toggle_Pause] = new TogglePauseAction(this);
+    m_actionsPool[UIActionIndex_Simple_Reset] = new PerformResetAction(this);
     m_actionsPool[UIActionIndex_Simple_Shutdown] = new PerformShutdownAction(this);
     m_actionsPool[UIActionIndex_Simple_Close] = new PerformCloseAction(this);
 
@@ -817,11 +817,11 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Menu_Devices] = new MenuDevicesAction(this);
     m_actionsPool[UIActionIndex_Menu_OpticalDevices] = new MenuOpticalDevicesAction(this);
     m_actionsPool[UIActionIndex_Menu_FloppyDevices] = new MenuFloppyDevicesAction(this);
+    m_actionsPool[UIActionIndex_Menu_USBDevices] = new MenuUSBDevicesAction(this);
     m_actionsPool[UIActionIndex_Menu_NetworkAdapters] = new MenuNetworkAdaptersAction(this);
     m_actionsPool[UIActionIndex_Simple_NetworkAdaptersDialog] = new ShowNetworkAdaptersDialogAction(this);
     m_actionsPool[UIActionIndex_Menu_SharedFolders] = new MenuSharedFoldersAction(this);
     m_actionsPool[UIActionIndex_Simple_SharedFoldersDialog] = new ShowSharedFoldersDialogAction(this);
-    m_actionsPool[UIActionIndex_Menu_USBDevices] = new MenuUSBDevicesAction(this);
     m_actionsPool[UIActionIndex_Toggle_VRDP] = new ToggleVRDPAction(this);
     m_actionsPool[UIActionIndex_Simple_InstallGuestTools] = new PerformInstallGuestToolsAction(this);
 

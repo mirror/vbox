@@ -22,12 +22,14 @@
 
 /* Global includes */
 #include <QCloseEvent>
+#include <QTimer>
 
 /* Local includes */
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxCloseVMDlg.h"
 
+#include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
@@ -60,6 +62,24 @@ void UIMachineWindow::destroy(UIMachineWindow *pWhichWindow)
     delete pWhichWindow;
 }
 
+void UIMachineWindow::sltTryClose()
+{
+    /* First close any open modal & popup widgets.
+     * Use a single shot with timeout 0 to allow the widgets to cleany close and test then again.
+     * If all open widgets are closed destroy ourself: */
+    QWidget *widget = QApplication::activeModalWidget() ?
+                      QApplication::activeModalWidget() :
+                      QApplication::activePopupWidget() ?
+                      QApplication::activePopupWidget() : 0;
+    if (widget)
+    {
+        widget->close();
+        QTimer::singleShot(0, machineWindow(), SLOT(sltTryClose()));
+    }
+    else
+        machineWindow()->close();
+}
+
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
     , m_pMachineWindow(0)
@@ -88,7 +108,7 @@ void UIMachineWindow::retranslateUi()
 
 void UIMachineWindow::updateAppearanceOf(int iElement)
 {
-    CMachine machine = machineLogic()->session().GetMachine();
+    CMachine machine = session().GetMachine();
 
     if (iElement & UIVisualElement_WindowCaption)
     {
@@ -118,9 +138,14 @@ void UIMachineWindow::prepareWindowIcon()
 
 #ifndef Q_WS_MAC
     /* Set the VM-specific application icon except Mac OS X: */
-    CMachine machine = machineLogic()->session().GetMachine();
-    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(machine.GetOSTypeId()));
+    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(session().GetMachine().GetOSTypeId()));
 #endif
+}
+
+void UIMachineWindow::prepareConsoleConnections()
+{
+    QObject::connect(machineLogic()->uisession(), SIGNAL(sigStateChange(KMachineState)),
+                     machineWindow(), SLOT(sltMachineStateChanged(KMachineState)));
 }
 
 void UIMachineWindow::loadWindowSettings()
@@ -129,8 +154,11 @@ void UIMachineWindow::loadWindowSettings()
     QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
     /* Default to true if it is an empty value */
     bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
-    machineView()->setDockIconEnabled(bIsDockIconEnabled);
-    machineView()->updateDockOverlay();
+    if (machineView())
+    {
+        machineView()->setDockIconEnabled(bIsDockIconEnabled);
+        machineView()->updateDockOverlay();
+    }
 #endif
 }
 
@@ -141,7 +169,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     static const char *pstrPowerOff = "powerOff";
     static const char *pstrDiscardCurState = "discardCurState";
 
-    if (!machineView())
+    if (!machineWindow())
     {
         pEvent->accept();
         return;
@@ -173,7 +201,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             /* Start with ignoring the close event */
             pEvent->ignore();
 
-            bool isACPIEnabled = machineLogic()->session().GetConsole().GetGuestEnteredACPIMode();
+            bool isACPIEnabled = session().GetConsole().GetGuestEnteredACPIMode();
 
             bool success = true;
 
@@ -184,14 +212,14 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             {
                 /* Suspend the VM and ignore the close event if failed to do so.
                  * pause() will show the error message to the user. */
-                success = machineLogic()->pause(true);
+                success = machineLogic()->pause();
             }
 
             if (success)
             {
                 success = false;
 
-                CMachine machine = machineLogic()->session().GetMachine();
+                CMachine machine = session().GetMachine();
                 VBoxCloseVMDlg dlg(machineWindow());
                 QString typeId = machine.GetOSTypeId();
                 dlg.pmIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(typeId));
@@ -242,7 +270,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                     // TODO: process for multiple windows!
                     //m_bNoAutoClose = true;
 
-                    CConsole console = machineLogic()->session().GetConsole();
+                    CConsole console = session().GetConsole();
 
                     if (dlg.mRbSave->isChecked())
                     {
@@ -263,7 +291,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                     else if (dlg.mRbShutdown->isChecked())
                     {
                         /* Unpause the VM to let it grab the ACPI shutdown event */
-                        machineLogic()->pause(false);
+                        machineLogic()->unpause();
                         /* Prevent the subsequent unpause request */
                         wasPaused = true;
                         /* Signal ACPI shutdown (if there is no ACPI device, the
@@ -363,7 +391,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 {
                     /* Restore the running state if needed */
                     if (!wasPaused && machineLogic()->machineState() == KMachineState_Paused)
-                        machineLogic()->pause(false);
+                        machineLogic()->unpause();
                 }
             }
             break;
@@ -391,4 +419,14 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         // TODO: Notify about closing!
         // emit closing();
     }
+}
+
+CSession UIMachineWindow::session()
+{
+    return m_pMachineLogic->uisession()->session();
+}
+
+void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
+{
+    updateAppearanceOf(UIVisualElement_WindowCaption);
 }

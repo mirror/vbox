@@ -23,13 +23,18 @@
 #ifndef __UIMachine_h__
 #define __UIMachine_h__
 
+/* Global includes */
+#include <QObject>
+
 /* Local includes */
-#include "COMDefs.h"
 #include "UIMachineDefs.h"
 
 /* Local forwards */
+class UISession;
 class UIActionsPool;
 class UIVisualState;
+class UIMachineLogic;
+class CSession;
 
 class UIMachine : public QObject
 {
@@ -37,19 +42,29 @@ class UIMachine : public QObject
 
 public:
 
+    /* Virtual Machine constructor: */
     UIMachine(UIMachine **ppSelf, const CSession &session);
 
 private slots:
 
+    /* Visual state-change handler: */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
 private:
 
+    /* Move VM to default (normal) state: */
     void enterBaseVisualState();
 
-    CSession m_session;
+    /* Private getters: */
+    UIMachineLogic* machineLogic() const;
+
+    /* Private variables: */
+    UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
     UIVisualState *m_pVisualState;
+
+    /* Friend classes: */
+    friend class UISession;
 };
 
 #endif // __UIMachine_h__

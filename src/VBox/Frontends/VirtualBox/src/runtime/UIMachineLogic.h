@@ -34,6 +34,7 @@
 class QActionGroup;
 
 /* Local forwards */
+class UISession;
 class UIActionsPool;
 class UIMachineWindow;
 
@@ -45,34 +46,30 @@ public:
 
     /* Factory function to create required logic sub-child: */
     static UIMachineLogic* create(QObject *pParent,
-                                  const CSession &session,
+                                  UISession *pSession,
                                   UIActionsPool *pActionsPool,
                                   UIVisualStateType visualStateType);
 
     /* Public getters: */
-    CSession& session() { return m_session; }
+    UISession* uisession() { return m_pSession; }
     UIActionsPool* actionsPool() { return m_pActionsPool; }
-    KMachineState machineState() const { return m_machineState; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
-    bool isPaused() const { return m_machineState == KMachineState_Paused || m_machineState == KMachineState_TeleportingPausedVM; }
-
-    /* Public setters: */
-    bool pause(bool bPaused);
+    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowContainer; }
+    KMachineState machineState() const { return m_machineState; }
+    bool isPaused() const { return m_machineState == KMachineState_Paused ||
+                            m_machineState == KMachineState_TeleportingPausedVM; }
 
 protected:
 
-    /* Common machine logic constructor: */
+    /* Machine logic constructor/destructor: */
     UIMachineLogic(QObject *pParent,
-                   const CSession &session,
+                   UISession *pSession,
                    UIActionsPool *pActionsPool,
                    UIVisualStateType visualStateType);
-    /* Common machine logic destructor: */
     virtual ~UIMachineLogic();
 
-    /* Update routines: */
-    virtual void updateAppearanceOf(int iElement);
-
     /* Prepare helpers: */
+    virtual void prepareConsoleConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
     virtual void prepareRequiredFeatures();
@@ -83,9 +80,10 @@ protected:
     //void cleanupRequiredFeatures();
     //void cleanupActionConnections();
     //void cleanupActionGroups();
+    //void cleanupConsoleConnections();
 
     /* Protected getters: */
-    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowContainer; }
+    CSession& session();
     bool isFirstTimeStarted() const { return m_bIsFirstTimeStarted; }
     bool isPreventAutoClose() const { return m_bIsPreventAutoClose; }
 
@@ -94,14 +92,23 @@ protected:
     void setPreventAutoClose(bool bIsPreventAutoClose) { m_bIsPreventAutoClose = bIsPreventAutoClose; }
     void setOpenViewFinished(bool bIsOpenViewFinished) { m_bIsOpenViewFinished = bIsOpenViewFinished; }
 
+    /* Console related routines: */
+    bool pause() { return pause(true); }
+    bool unpause() { return pause(false); }
+
     /* Protected variables: */
     UIMachineWindow *m_pMachineWindowContainer;
 
 private slots:
 
+    /* Console callback handlers: */
+    void sltMachineStateChanged(KMachineState newMachineState);
+    void sltAdditionsStateChanged();
+
     /* "Machine" menu funtionality */
+    void sltToggleGuestAutoresize(bool bEnabled);
     void sltAdjustWindow();
-    void sltToggleMouseIntegration(bool bOff);
+    void sltToggleMouseIntegration(bool bDisabled);
     void sltTypeCAD();
 #ifdef Q_WS_X11
     void sltTypeCABS();
@@ -116,10 +123,10 @@ private slots:
     /* "Device" menu funtionality */
     void sltPrepareStorageMenu();
     void sltMountStorageMedium();
-    void sltOpenNetworkAdaptersDialog();
-    void sltOpenSharedFoldersDialog();
     void sltPrepareUSBMenu();
     void sltAttachUSBDevice();
+    void sltOpenNetworkAdaptersDialog();
+    void sltOpenSharedFoldersDialog();
     void sltSwitchVrdp(bool bOn);
     void sltInstallGuestAdditions();
 
@@ -130,36 +137,20 @@ private slots:
     void sltLoggingToggled(bool);
 #endif
 
-    /* Machine state change handler */
-    void sltUpdateMachineState(KMachineState machineState);
-    /* Guest Additions state change handler */
-    void sltUpdateAdditionsState(const QString &strVersion, bool bActive, bool bSeamlessSupported, bool bGraphicsSupported);
-    /* Mouse Integration state change handler */
-    void sltUpdateMouseState(int iState);
+    /* Machine view handlers: */
+    void sltMouseStateChanged(int iState);
 
 private:
 
     /* Utility functions: */
+    bool pause(bool bPaused);
     void installGuestAdditionsFrom(const QString &strSource);
-    static int searchMaxSnapshotIndex(const CMachine &machine, const CSnapshot &snapshot, const QString &strNameTemplate);
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    bool dbgCreated();
-    void dbgDestroy();
-    void dbgAdjustRelativePos();
-#endif
-
-#if 0 // TODO: Where to move that?
-# ifdef Q_WS_MAC
-    void fadeToBlack();
-    void fadeToNormal();
-# endif
-    bool toggleFullscreenMode(bool aOn, bool aSeamless);
-    void switchToFullscreen(bool aOn, bool aSeamless);
-    void setViewInSeamlessMode(const QRect &aTargetRect);
-#endif
+    static int searchMaxSnapshotIndex(const CMachine &machine,
+                                      const CSnapshot &snapshot,
+                                      const QString &strNameTemplate);
 
     /* Private variables: */
-    CSession m_session;
+    UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
     KMachineState m_machineState;
     UIVisualStateType m_visualStateType;
@@ -174,11 +165,28 @@ private:
     bool m_bIsAutoSaveMedia : 1;
     bool m_bIsPreventAutoClose : 1;
 
+    /* Friend classes: */
+    friend class UIMachineWindow;
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debugger functionality: */
+    bool dbgCreated();
+    void dbgDestroy();
+    void dbgAdjustRelativePos();
     /* The handle to the debugger gui: */
     PDBGGUI m_dbgGui;
     /* The virtual method table for the debugger GUI: */
     PCDBGGUIVT m_dbgGuiVT;
+#endif
+
+#if 0 // TODO: Where to move that?
+# ifdef Q_WS_MAC
+    void fadeToBlack();
+    void fadeToNormal();
+# endif
+    bool toggleFullscreenMode(bool aOn, bool aSeamless);
+    void switchToFullscreen(bool aOn, bool aSeamless);
+    void setViewInSeamlessMode(const QRect &aTargetRect);
 #endif
 };
 

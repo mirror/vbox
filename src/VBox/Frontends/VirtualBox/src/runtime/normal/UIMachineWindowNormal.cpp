@@ -31,6 +31,7 @@
 
 #include "VBoxVMInformationDlg.h"
 
+#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachineLogic.h"
@@ -52,6 +53,9 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
 
     /* Prepare window icon: */
     prepareWindowIcon();
+
+    /* Prepare console connections: */
+    prepareConsoleConnections();
 
     /* Prepare menu: */
     prepareMenu();
@@ -89,22 +93,41 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
 
 void UIMachineWindowNormal::sltTryClose()
 {
-    // TODO: Could be moved to parent class?
+    UIMachineWindow::sltTryClose();
+}
 
-    /* First close any open modal & popup widgets.
-     * Use a single shot with timeout 0 to allow the widgets to cleany close and test then again.
-     * If all open widgets are closed destroy ourself: */
-    QWidget *widget = QApplication::activeModalWidget() ?
-                      QApplication::activeModalWidget() :
-                      QApplication::activePopupWidget() ?
-                      QApplication::activePopupWidget() : 0;
-    if (widget)
-    {
-        widget->close();
-        QTimer::singleShot(0, this, SLOT(sltTryClose()));
-    }
-    else
-        close();
+void UIMachineWindowNormal::sltMachineStateChanged(KMachineState machineState)
+{
+    UIMachineWindow::sltMachineStateChanged(machineState);
+}
+
+void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
+{
+    KDeviceType type = attachment.GetType();
+    Assert(type == KDeviceType_DVD || type == KDeviceType_Floppy);
+    updateAppearanceOf(type == KDeviceType_DVD ? UIVisualElement_CDStuff :
+                       type == KDeviceType_Floppy ? UIVisualElement_FDStuff :
+                       UIVisualElement_AllStuff);
+}
+
+void UIMachineWindowNormal::sltUSBControllerChange()
+{
+    updateAppearanceOf(UIVisualElement_USBStuff);
+}
+
+void UIMachineWindowNormal::sltUSBDeviceStateChange()
+{
+    updateAppearanceOf(UIVisualElement_USBStuff);
+}
+
+void UIMachineWindowNormal::sltNetworkAdapterChange()
+{
+    updateAppearanceOf(UIVisualElement_NetworkStuff);
+}
+
+void UIMachineWindowNormal::sltSharedFolderChange()
+{
+    updateAppearanceOf(UIVisualElement_SharedFolderStuff);
 }
 
 void UIMachineWindowNormal::sltPrepareMenuMachine()
@@ -131,8 +154,8 @@ void UIMachineWindowNormal::sltPrepareMenuMachine()
     menu->addSeparator();
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_InformationDialog));
     menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Reset));
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Pause));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Reset));
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Shutdown));
 #ifndef Q_WS_MAC
     menu->addSeparator();
@@ -151,9 +174,9 @@ void UIMachineWindowNormal::sltPrepareMenuDevices()
     /* Devices submenu */
     menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu());
     menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu());
+    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu());
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
-    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu());
     menu->addSeparator();
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP));
     menu->addSeparator();
@@ -178,7 +201,7 @@ void UIMachineWindowNormal::sltPrepareMenuDebug()
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
-    CConsole console = machineLogic()->session().GetConsole();
+    CConsole console = session().GetConsole();
     QIStateIndicator *pStateIndicator = 0;
 
     pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_HardDisks);
@@ -195,17 +218,17 @@ void UIMachineWindowNormal::sltUpdateIndicators()
         if (pStateIndicator->state() != state)
             pStateIndicator->setState(state);
     }
-    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
-    if (pStateIndicator->state() != KDeviceActivity_Null)
-    {
-        int state = console.GetDeviceActivity(KDeviceType_Network);
-        if (pStateIndicator->state() != state)
-            pStateIndicator->setState(state);
-    }
     pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_USBDevices);
     if (pStateIndicator->state() != KDeviceActivity_Null)
     {
         int state = console.GetDeviceActivity(KDeviceType_USB);
+        if (pStateIndicator->state() != state)
+            pStateIndicator->setState(state);
+    }
+    pStateIndicator = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
+    if (pStateIndicator->state() != KDeviceActivity_Null)
+    {
+        int state = console.GetDeviceActivity(KDeviceType_Network);
         if (pStateIndicator->state() != state)
             pStateIndicator->setState(state);
     }
@@ -222,27 +245,27 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
 {
     if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu()->isEnabled())
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->isEnabled())
             machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu()->exec(pEvent->globalPos());
-    }
-    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters))
-    {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu()->isEnabled())
-            machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_USBDevices))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->isEnabled())
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->isEnabled())
             machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->exec(pEvent->globalPos());
+    }
+    else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters))
+    {
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->isEnabled())
+            machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu()->isEnabled())
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->isEnabled())
             machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu()->exec(pEvent->globalPos());
     }
     else if (pIndicator == indicatorsPool()->indicator(UIIndicatorIndex_Mouse))
     {
-        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu()->isEnabled())
+        if (machineLogic()->actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->isEnabled())
             machineLogic()->actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu()->exec(pEvent->globalPos());
     }
 }
@@ -250,29 +273,6 @@ void UIMachineWindowNormal::sltShowIndicatorsContextMenu(QIStateIndicator *pIndi
 void UIMachineWindowNormal::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
 {
     m_pNameHostkey->setText(QIHotKeyEdit::keyName(vboxGlobal().settings().hostKey()));
-}
-
-void UIMachineWindowNormal::sltUpdateMediaDriveState(VBoxDefs::MediumType type)
-{
-    Assert(type == VBoxDefs::MediumType_DVD || type == VBoxDefs::MediumType_Floppy);
-    updateAppearanceOf(type == VBoxDefs::MediumType_DVD ? UIVisualElement_CDStuff :
-                       type == VBoxDefs::MediumType_Floppy ? UIVisualElement_FDStuff :
-                       UIVisualElement_AllStuff);
-}
-
-void UIMachineWindowNormal::sltUpdateNetworkAdaptersState()
-{
-    updateAppearanceOf(UIVisualElement_NetworkStuff);
-}
-
-void UIMachineWindowNormal::sltUpdateUsbState()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowNormal::sltUpdateSharedFoldersState()
-{
-    updateAppearanceOf(UIVisualElement_SharedFolderStuff);
 }
 
 void UIMachineWindowNormal::sltUpdateMouseState(int iState)
@@ -304,10 +304,8 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     // TODO: Move most of this update code into indicators-pool!
 
     /* Update that machine window: */
-    CMachine machine = machineLogic()->session().GetMachine();
-    CConsole console = machineLogic()->session().GetConsole();
-    bool bIsStrictRunningOrPaused = machineLogic()->machineState() == KMachineState_Running ||
-                                    machineLogic()->machineState() == KMachineState_Paused;
+    CMachine machine = session().GetMachine();
+    CConsole console = session().GetConsole();
 
     if (iElement & UIVisualElement_HDStuff)
     {
@@ -375,6 +373,34 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->setToolTip(strToolTip.arg(strFullData));
         indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->setState(bAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
     }
+    if (iElement & UIVisualElement_USBStuff)
+    {
+        if (!indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
+        {
+            QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of "
+                                    "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
+            QString strFullData;
+
+            CUSBController usbctl = machine.GetUSBController();
+            if (!usbctl.isNull() && usbctl.GetEnabled())
+            {
+                CUSBDeviceVector devsvec = console.GetUSBDevices();
+                for (int i = 0; i < devsvec.size(); ++ i)
+                {
+                    CUSBDevice usb = devsvec[i];
+                    strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usb));
+                }
+                if (strFullData.isNull())
+                    strFullData = tr("<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
+            }
+            else
+            {
+                strFullData = tr("<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
+            }
+
+            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setToolTip(strToolTip.arg(strFullData));
+        }
+    }
     if (iElement & UIVisualElement_NetworkStuff)
     {
         ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
@@ -383,9 +409,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
             if (machine.GetNetworkAdapter(uSlot).GetEnabled())
                 ++ uCount;
         indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->setState(uCount > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
-
-        machineLogic()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog)->setEnabled(bIsStrictRunningOrPaused && uCount > 0);
-        machineLogic()->actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->setEnabled(bIsStrictRunningOrPaused && uCount > 0);
 
         QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of the "
                                 "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
@@ -408,47 +431,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
 
         indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->setToolTip(strToolTip.arg(strFullData));
     }
-    if (iElement & UIVisualElement_USBStuff)
-    {
-        if (!indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
-        {
-            QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of "
-                                    "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
-            QString strFullData;
-
-            CUSBController usbctl = machine.GetUSBController();
-            if (!usbctl.isNull() && usbctl.GetEnabled())
-            {
-                machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setEnabled(bIsStrictRunningOrPaused);
-
-                CUSBDeviceVector devsvec = console.GetUSBDevices();
-                for (int i = 0; i < devsvec.size(); ++ i)
-                {
-                    CUSBDevice usb = devsvec[i];
-                    strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usb));
-                }
-                if (strFullData.isNull())
-                    strFullData = tr("<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
-            }
-            else
-            {
-                machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu()->setEnabled(false);
-                strFullData = tr("<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
-            }
-
-            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setToolTip(strToolTip.arg(strFullData));
-        }
-    }
-    if (iElement & UIVisualElement_VRDPStuff)
-    {
-        CVRDPServer vrdpsrv = machineLogic()->session().GetMachine().GetVRDPServer();
-        if (!vrdpsrv.isNull())
-        {
-            /* Update menu&status icon state */
-            bool isVRDPEnabled = vrdpsrv.GetEnabled();
-            machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setChecked(isVRDPEnabled);
-        }
-    }
     if (iElement & UIVisualElement_SharedFolderStuff)
     {
         QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of "
@@ -456,8 +438,6 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
 
         QString strFullData;
         QMap<QString, QString> sfs;
-
-        machineLogic()->actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu()->setEnabled(true);
 
         /* Permanent folders */
         CSharedFolderVector psfvec = machine.GetSharedFolders();
@@ -492,6 +472,16 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
             strFullData = tr("<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
 
         indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->setToolTip(strToolTip.arg(strFullData));
+    }
+    if (iElement & UIVisualElement_VRDPStuff)
+    {
+        CVRDPServer vrdpsrv = session().GetMachine().GetVRDPServer();
+        if (!vrdpsrv.isNull())
+        {
+            /* Update menu&status icon state */
+            bool isVRDPEnabled = vrdpsrv.GetEnabled();
+            machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setChecked(isVRDPEnabled);
+        }
     }
     if (iElement & UIVisualElement_VirtualizationStuff)
     {
@@ -581,6 +571,23 @@ bool UIMachineWindowNormal::x11Event(XEvent *pEvent)
 }
 #endif
 
+void UIMachineWindowNormal::prepareConsoleConnections()
+{
+    /* Parent class connections: */
+    UIMachineWindow::prepareConsoleConnections();
+    /* Other console connections: */
+    connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
+            this, SLOT(sltMediumChange(const CMediumAttachment &)));
+    connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
+            this, SLOT(sltUSBControllerChange()));
+    connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
+            this, SLOT(sltUSBDeviceStateChange()));
+    connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
+            this, SLOT(sltNetworkAdapterChange()));
+    connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
+            this, SLOT(sltSharedFolderChange()));
+}
+
 void UIMachineWindowNormal::prepareMenu()
 {
     /* Machine submenu: */
@@ -621,16 +628,16 @@ void UIMachineWindowNormal::prepareStatusBar()
     connect(pLedOpticalDisks, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
-    /* Network Adapters: */
-    QIStateIndicator *pLedNetworkAdapters = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
-    pIndicatorBoxHLayout->addWidget(pLedNetworkAdapters);
-    connect(pLedNetworkAdapters, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
-            this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
-
     /* USB Devices: */
     QIStateIndicator *pLedUSBDevices = indicatorsPool()->indicator(UIIndicatorIndex_USBDevices);
     pIndicatorBoxHLayout->addWidget(pLedUSBDevices);
     connect(pLedUSBDevices, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
+            this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
+
+    /* Network Adapters: */
+    QIStateIndicator *pLedNetworkAdapters = indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters);
+    pIndicatorBoxHLayout->addWidget(pLedNetworkAdapters);
+    connect(pLedNetworkAdapters, SIGNAL(contextMenuRequested(QIStateIndicator*, QContextMenuEvent*)),
             this, SLOT(sltShowIndicatorsContextMenu(QIStateIndicator*, QContextMenuEvent*)));
 
     /* Shared Folders: */
@@ -688,7 +695,7 @@ void UIMachineWindowNormal::prepareMachineView()
 {
     return; // TODO: Do not create view for now!
 
-    CMachine machine = machineLogic()->session().GetMachine();
+    CMachine machine = session().GetMachine();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled: */
@@ -706,12 +713,6 @@ void UIMachineWindowNormal::prepareMachineView()
     /* Setup machine view <-> indicators connections: */
     connect(machineView(), SIGNAL(keyboardStateChanged(int)),
             indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
-    // TODO: Update these 5 indicators through indicators pool!
-    connect(machineView(), SIGNAL(mediaDriveChanged(VBoxDefs::MediumType)),
-            this, SLOT(sltUpdateMediaDriveState(VBoxDefs::MediumType)));
-    connect(machineView(), SIGNAL(networkStateChange()), this, SLOT(sltUpdateNetworkAdaptersState()));
-    connect(machineView(), SIGNAL(usbStateChange()), this, SLOT(sltUpdateUsbState()));
-    connect(machineView(), SIGNAL(sharedFoldersChanged()), this, SLOT(sltUpdateSharedFoldersState()));
     connect(machineView(), SIGNAL(mouseStateChanged(int)), this, SLOT(sltUpdateMouseState(int)));
 }
 
@@ -721,7 +722,7 @@ void UIMachineWindowNormal::loadWindowSettings()
     UIMachineWindow::loadWindowSettings();
 
     /* Load this class settings: */
-    CMachine machine = machineLogic()->session().GetMachine();
+    CMachine machine = session().GetMachine();
 
     /* Extra-data settings */
     {
@@ -795,7 +796,7 @@ void UIMachineWindowNormal::loadWindowSettings()
 
 void UIMachineWindowNormal::saveWindowSettings()
 {
-    CMachine machine = machineLogic()->session().GetMachine();
+    CMachine machine = session().GetMachine();
 
     /* Extra-data settings */
     {

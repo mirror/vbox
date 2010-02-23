@@ -24,10 +24,12 @@
 #define __UIMachineWindow_h__
 
 /* Local includes */
+#include "COMDefs.h"
 #include "UIMachineDefs.h"
 
 /* Global forwards */
 class QWidget;
+class QCloseEvent;
 
 /* Local forwards */
 class UIMachineLogic;
@@ -42,7 +44,7 @@ public:
     static void destroy(UIMachineWindow *pWhichWindow);
 
     /* Abstract slot to close machine window: */
-    virtual void sltTryClose() = 0;
+    virtual void sltTryClose();
 
     /* Public getters: */
     virtual UIMachineLogic* machineLogic() { return m_pMachineLogic; }
@@ -63,17 +65,23 @@ protected:
 
     /* Prepare helpers: */
     virtual void prepareWindowIcon();
+    virtual void prepareConsoleConnections();
     virtual void loadWindowSettings();
 
     /* Cleanup helpers: */
     //virtual void saveWindowSettings();
+    //virtual void cleanupConsoleConnections();
     //virtual void cleanupWindowIcon();
 
     /* Common machine window event handlers: */
     void closeEvent(QCloseEvent *pEvent);
 
     /* Protected getters: */
+    CSession session();
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
+
+    /* Protected signals: */
+    void sltMachineStateChanged(KMachineState machineState);
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;

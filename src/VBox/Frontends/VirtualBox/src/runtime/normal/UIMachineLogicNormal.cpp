@@ -30,14 +30,18 @@
 
 #include "UIFirstRunWzd.h"
 
+#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogicNormal.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 
-UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, const CSession &session, UIActionsPool *pActionsPool)
-    : UIMachineLogic(pParent, session, pActionsPool, UIVisualStateType_Normal)
+UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
+    : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Normal)
 {
+    /* Prepare console connections: */
+    prepareConsoleConnections();
+
     /* Prepare action groups: */
     prepareActionGroups();
 
@@ -52,9 +56,6 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, const CSession &ses
 
     /* Load common logic settings: */
     loadLogicSettings();
-
-    /* Update all the elements: */
-    updateAppearanceOf(UIVisualElement_AllStuff);
 }
 
 UIMachineLogicNormal::~UIMachineLogicNormal()
@@ -82,10 +83,12 @@ void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
     menu->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
 }
 
-void UIMachineLogicNormal::updateAppearanceOf(int iElement)
+void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
 {
-    /* Update parent-class elements: */
-    UIMachineLogic::updateAppearanceOf(iElement);
+    QMenu *menu = qobject_cast<QMenu*>(sender());
+    AssertMsg(menu, ("This slot should be called only on Mouse Integration Menu show!\n"));
+    menu->clear();
+    menu->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
 }
 
 void UIMachineLogicNormal::prepareActionConnections()
@@ -98,6 +101,8 @@ void UIMachineLogicNormal::prepareActionConnections()
             this, SLOT(sltPrepareNetworkAdaptersMenu()));
     connect(actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareSharedFoldersMenu()));
+    connect(actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu(), SIGNAL(aboutToShow()),
+            this, SLOT(sltPrepareMouseIntegrationMenu()));
 }
 
 void UIMachineLogicNormal::prepareMachineWindow()
@@ -119,107 +124,111 @@ void UIMachineLogicNormal::prepareMachineWindow()
     /* Get the correct initial machineState() value */
     setMachineState(session().GetConsole().GetState());
 
-    /* Notify user about mouse&keyboard auto-capturing: */
-    if (vboxGlobal().settings().autoCapture())
-        vboxProblem().remindAboutAutoCapture();
+    bool bIsSaved = machineState() == KMachineState_Saved;
+    bool bIsRunning = machineState() == KMachineState_Running ||
+                      machineState() == KMachineState_Teleporting ||
+                      machineState() == KMachineState_LiveSnapshotting;
+    bool bIsRunningOrPaused = bIsRunning ||
+                              machineState() == KMachineState_Paused;
 
-    bool saved = machineState() == KMachineState_Saved;
-
-    CMachine machine = session().GetMachine();
-    CConsole console = session().GetConsole();
-
-    /* Shows first run wizard if necessary: */
-    if (isFirstTimeStarted())
+    /* If we are not started yet: */
+    if (!bIsRunningOrPaused)
     {
-        UIFirstRunWzd wzd(machineWindowWrapper()->machineWindow(), machine);
-        wzd.exec();
-        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
-    }
+        /* Get current machine/console: */
+        CMachine machine = session().GetMachine();
+        CConsole console = session().GetConsole();
 
+        /* Notify user about mouse&keyboard auto-capturing: */
+        if (vboxGlobal().settings().autoCapture())
+            vboxProblem().remindAboutAutoCapture();
 
-    // TODO: Do not start VM yet!
-    return;
+        /* Shows first run wizard if necessary: */
+        if (isFirstTimeStarted())
+        {
+            UIFirstRunWzd wzd(machineWindowWrapper()->machineWindow(), machine);
+            wzd.exec();
+        }
 
+        /* Start VM: */
+        CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+                             console.PowerUpPaused() : console.PowerUp();
+        /* Check for an immediate failure */
+        if (!console.isOk())
+        {
+            vboxProblem().cannotStartMachine(console);
+            machineWindowWrapper()->machineWindow()->close();
+            return;
+        }
 
-    /* Start VM: */
-    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                         console.PowerUpPaused() : console.PowerUp();
-    /* Check for an immediate failure */
-    if (!console.isOk())
-    {
-        vboxProblem().cannotStartMachine(console);
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
+        /* Disable auto closure because we want to have a chance to show the error dialog on startup failure: */
+        setPreventAutoClose(true);
 
-    /* Disable auto closure because we want to have a chance to show the error dialog on startup failure: */
-    setPreventAutoClose(true);
+        /* Show "Starting/Restoring" progress dialog: */
+        if (bIsSaved)
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow(), 0);
+        else
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow());
 
-    /* Show "Starting/Restoring" progress dialog: */
-    if (saved)
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineView(), 0);
-    else
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineView());
+        /* Check for an progress failure */
+        if (progress.GetResultCode() != 0)
+        {
+            vboxProblem().cannotStartMachine(progress);
+            machineWindowWrapper()->machineWindow()->close();
+            return;
+        }
 
-    /* Check for an progress failure */
-    if (progress.GetResultCode() != 0)
-    {
-        vboxProblem().cannotStartMachine(progress);
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
+        /* Process pending events: */
+        qApp->processEvents();
 
-    /* Enable auto closure again: */
-    setPreventAutoClose(false);
+        /* Enable auto closure again: */
+        setPreventAutoClose(false);
 
-    /* Check if we missed a really quick termination after successful startup, and process it if we did: */
-    if (machineState() == KMachineState_PoweredOff || machineState() == KMachineState_Saved ||
-        machineState() == KMachineState_Teleported || machineState() == KMachineState_Aborted)
-    {
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
+        /* Check if we missed a really quick termination after successful startup, and process it if we did: */
+        if (machineState() == KMachineState_PoweredOff || machineState() == KMachineState_Saved ||
+            machineState() == KMachineState_Teleported || machineState() == KMachineState_Aborted)
+        {
+            machineWindowWrapper()->machineWindow()->close();
+            return;
+        }
 
 #if 0 // TODO: Rework debugger logic!
 # ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Open the debugger in "full screen" mode requested by the user. */
-    else if (vboxGlobal().isDebuggerAutoShowEnabled())
-    {
-        /* console in upper left corner of the desktop. */
-        QRect rct (0, 0, 0, 0);
-        QDesktopWidget *desktop = QApplication::desktop();
-        if (desktop)
-            rct = desktop->availableGeometry(pos());
-        move (QPoint (rct.x(), rct.y()));
+        /* Open the debugger in "full screen" mode requested by the user. */
+        else if (vboxGlobal().isDebuggerAutoShowEnabled())
+        {
+            /* console in upper left corner of the desktop. */
+            QRect rct (0, 0, 0, 0);
+            QDesktopWidget *desktop = QApplication::desktop();
+            if (desktop)
+                rct = desktop->availableGeometry(pos());
+            move (QPoint (rct.x(), rct.y()));
 
-        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
-            sltShowDebugStatistics();
-        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
-            sltShowDebugCommandLine();
+            if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
+                sltShowDebugStatistics();
+            if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
+                sltShowDebugCommandLine();
 
-        if (!vboxGlobal().isStartPausedEnabled())
-            machineWindowWrapper()->machineView()->pause (false);
-    }
+            if (!vboxGlobal().isStartPausedEnabled())
+                machineWindowWrapper()->machineView()->pause (false);
+        }
 # endif
 #endif
 
-    setOpenViewFinished(true);
-
 #ifdef VBOX_WITH_UPDATE_REQUEST
-    /* Check for updates if necessary: */
-    vboxGlobal().showUpdateDialog(false /* aForce */);
+        /* Check for updates if necessary: */
+        vboxGlobal().showUpdateDialog(false /* aForce */);
 #endif
+    }
 
     /* Configure view connections: */
     if (machineWindowWrapper()->machineView())
     {
-        connect(machineWindowWrapper()->machineView(), SIGNAL(machineStateChanged(KMachineState)),
-                this, SLOT(sltUpdateMachineState(KMachineState)));
-        connect(machineWindowWrapper()->machineView(), SIGNAL(additionsStateChanged(const QString&, bool, bool, bool)),
-                this, SLOT(sltUpdateAdditionsState(const QString &, bool, bool, bool)));
         connect(machineWindowWrapper()->machineView(), SIGNAL(mouseStateChanged(int)),
-                this, SLOT(sltUpdateMouseState(int)));
+                this, SLOT(sltMouseStateChanged(int)));
     }
+
+    /* Set what view opened: */
+    setOpenViewFinished(true);
 }
 
 void UIMachineLogicNormal::cleanupMachineWindow()
@@ -231,9 +240,4 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     /* Cleanup machine window: */
     UIMachineWindow::destroy(m_pMachineWindowContainer);
     m_pMachineWindowContainer = 0;
-
-    // TODO: What should be done on window destruction?
-    //machineWindowWrapper()->machineView()->detach();
-    //m_session.Close();
-    //m_session.detach();
 }
