@@ -785,12 +785,8 @@ protected:
 
 UIActionsPool::UIActionsPool(QObject *pParent)
     : QObject(pParent)
+    , m_actionsPool(UIActionIndex_End, 0)
 {
-    /* Resize & clean actions vector */
-    m_actionsPool.resize(UIActionIndex_Max);
-    for (int i = 0; i < m_actionsPool.size(); ++ i)
-        m_actionsPool[i] = 0;
-
     /* Common actions: */
     m_actionsPool[UIActionIndex_Separator] = new SeparatorAction(this);
 
@@ -834,25 +830,22 @@ UIActionsPool::UIActionsPool(QObject *pParent)
 #endif
 
     /* Test all actions were initialized */
-    for (int i = 0; i < m_actionsPool.size(); ++ i)
-    {
-        if (!m_actionsPool[i])
-        {
+    for (int i = 0; i < m_actionsPool.size(); ++i)
+        if (!m_actionsPool.at(i))
             AssertMsgFailed(("Action #%d is not created!\n", i));
-        }
-    }
 }
 
 UIActionsPool::~UIActionsPool()
 {
-    for (int i = 0; i < m_actionsPool.size(); ++ i)
-        delete m_actionsPool[i];
+    for (int i = 0; i < m_actionsPool.size(); ++i)
+        delete m_actionsPool.at(i);
     m_actionsPool.clear();
 }
 
 UIAction* UIActionsPool::action(UIActionIndex index) const
 {
-    return m_actionsPool[index];
+    return m_actionsPool.at(index);
 }
 
 #include "UIActionsPool.moc"
+

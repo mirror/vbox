@@ -96,7 +96,9 @@ enum UIActionIndex
     UIActionIndex_Toggle_Logging,
 #endif
 
-    UIActionIndex_Max
+    UIActionIndex_End,
+    /** The usual 32-bit type hack. */
+    UIActionIndex_32Bit_Hack = 0x7fffffff
 };
 
 class UIActionsPool : public QObject
