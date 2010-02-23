@@ -85,6 +85,7 @@ private:
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
 #endif
+    void closeEvent(QCloseEvent *pEvent);
 
     /* Private getters: */
     UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }

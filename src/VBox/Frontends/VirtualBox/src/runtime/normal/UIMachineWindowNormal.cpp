@@ -571,6 +571,11 @@ bool UIMachineWindowNormal::x11Event(XEvent *pEvent)
 }
 #endif
 
+void UIMachineWindowNormal::closeEvent(QCloseEvent *pEvent)
+{
+    return UIMachineWindow::closeEvent(pEvent);
+}
+
 void UIMachineWindowNormal::prepareConsoleConnections()
 {
     /* Parent class connections: */
