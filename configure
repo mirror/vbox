@@ -77,6 +77,7 @@ TARGET_MACHINE=""
 TARGET_CPU=""
 WITH_XPCOM=1
 WITH_PYTHON=1
+WITH_VMMRAW=1
 WITH_LIBIDL=1
 WITH_GSOAP=0
 WITH_QT4=1
@@ -420,6 +421,10 @@ check_gcc()
         [ -z "$CC64"  ] && CC64="$CC -m64"
         [ -z "$CXX64" ] && CXX64="$CXX -m64"
       fi
+      if [ "$TARGET_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 0 ]; then
+        CC32="undefined"
+        CXX32="undefined"
+      fi
       if [ "$CC" != "gcc" ]; then
         cnf_append "TOOL_GCC3_CC"   "$CC"
         cnf_append "TOOL_GCC3_AS"   "$CC"
@@ -432,14 +437,14 @@ check_gcc()
         cnf_append "TOOL_GXX3_CXX"  "$CXX"
         cnf_append "TOOL_GXX3_LD"   "$CXX"
       fi
-      if [ "$CC32" != "gcc -m32" ]; then
+      if [ "$CC32" != "gcc -m32" -a "$CC32" != "undefined" ]; then
         cnf_append "TOOL_GCC32_CC"  "$CC32"
         cnf_append "TOOL_GCC32_AS"  "$CC32"
         cnf_append "TOOL_GCC32_LD"  "$CC32"
         cnf_append "TOOL_GXX32_CC"  "$CC32"
         cnf_append "TOOL_GXX32_AS"  "$CC32"
       fi
-      if [ "$CXX32" != "g++ -m32" ]; then
+      if [ "$CXX32" != "g++ -m32" -a "$CXX32" != "undefined" ]; then
         cnf_append "TOOL_GCC32_CXX" "$CXX32"
         cnf_append "TOOL_GXX32_CXX" "$CXX32"
         cnf_append "TOOL_GXX32_LD"  "$CXX32"
@@ -1987,6 +1992,7 @@ Configuration:
 EOF
 [ $WITH_XPCOM   -eq 1 ] && echo "  --disable-xpcom          disable XPCOM and related stuff"
 [ $WITH_PYTHON  -eq 1 ] && echo "  --disable-python         disable python bindings"
+[ $WITH_VMMRAW  -eq 1 ] && echo "  --disable-vmmraw         disable VMM raw mode (VT-x/AMD-V mandatory!)"
 [ $WITH_SDL_TTF -eq 1 ] && echo "  --disable-sdl-ttf        disable SDL_ttf detection"
 [ $WITH_ALSA    -eq 1 ] && echo "  --disable-alsa           disable the ALSA sound backend"
 [ $WITH_PULSE   -eq 1 ] && echo "  --disable-pulse          disable the PulseAudio backend"
@@ -2115,6 +2121,9 @@ for option in $*; do
       ;;
     --disable-python)
       [ $WITH_PYTHON -eq 1 ] && WITH_PYTHON=0
+      ;;
+    --disable-vmmraw)
+      [ $WITH_VMMRAW -eq 1 ] && WITH_VMMRAW=0
       ;;
     --disable-sdl-ttf)
       [ $WITH_SDL_TTF -eq 1 ] && WITH_SDL_TTF=0
@@ -2309,6 +2318,7 @@ fi
 [ $WITH_PYTHON -eq 0 ]    && cnf_append "VBOX_WITH_PYTHON" ""
 [ $WITH_HARDENING -eq 0 ] && cnf_append "VBOX_WITHOUT_HARDENING" "1"
 [ $WITH_HARDENING -eq 2 ] && cnf_append "VBOX_WITH_HARDENING" "2"
+[ $WITH_VMMRAW -eq 0 ]    && cnf_append "VBOX_WITH_RAW_MODE" ""
 
 # Darwin-specific
 if [ "$OS" = "darwin" ]; then
@@ -2375,7 +2385,7 @@ if [ "$OS" = "linux" ]; then
   fi
   check_libcap
   check_compiler_h
-  [ "$BUILD_MACHINE" = "amd64" ] && check_32bit
+  [ "$BUILD_MACHINE" = "amd64" -a $WITH_VMMRAW -eq 1 ] && check_32bit
 fi
 
 [ -n "$SETUP_WINE" ] && setup_wine
