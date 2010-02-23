@@ -10061,7 +10061,6 @@ bool SessionMachine::hasMatchingUSBFilter(const ComObjPtr<HostUSBDevice> &aDevic
     if (!autoCaller.isOk())
         return false;
 
-    AssertReturn(isWriteLockOnCurrentThread(), false);
 
 #ifdef VBOX_WITH_USB
     switch (mData->mMachineState)
