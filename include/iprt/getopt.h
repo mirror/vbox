@@ -372,7 +372,7 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
  * @param   ch          The RTGetOpt return value.
  * @param   pValueUnion The value union returned by RTGetOpt.
  */
-RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
+RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion);
 
 /**
  * Parses the @a pszCmdLine string into an argv array.

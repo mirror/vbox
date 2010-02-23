@@ -749,7 +749,7 @@ RTDECL(int) RTGetOptFetchValue(PRTGETOPTSTATE pState, PRTGETOPTUNION pValueUnion
 RT_EXPORT_SYMBOL(RTGetOptFetchValue);
 
 
-RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
+RTDECL(RTEXITCODE) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
 {
     if (ch == VINF_GETOPT_NOT_OPTION)
         RTMsgError("Invalid parameter: %s", pValueUnion->psz);
@@ -767,7 +767,7 @@ RTDECL(int) RTGetOptPrintError(int ch, PCRTGETOPTUNION pValueUnion)
     else
         RTMsgError("%Rrs\n", ch);
 
-    return 2; /** @todo add defines for EXIT_SUCCESS, EXIT_FAILURE, EXIT_INVAL, etc... */
+    return RTEXITCODE_SYNTAX;
 }
 RT_EXPORT_SYMBOL(RTGetOptPrintError);
 
