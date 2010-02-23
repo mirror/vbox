@@ -34,7 +34,10 @@ enum UIActionType
     UIActionType_Separator,
     UIActionType_Simple,
     UIActionType_Toggle,
-    UIActionType_Menu
+    UIActionType_Menu,
+
+    /** The usual 32-bit type hack. */
+    UIActionType_32Bit_Hack = 0x7fffffff
 };
 
 class UIAction : public QIWithRetranslateUI3<QAction>
