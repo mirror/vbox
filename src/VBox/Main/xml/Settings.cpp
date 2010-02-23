@@ -1794,7 +1794,7 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         if ((pelmAdapterChild = pelmAdapter->findChildElement("NAT")))
         {
             nic.mode = NetworkAttachmentType_NAT;
-            pelmAdapterChild->getAttributeValue("name", nic.strName);    // optional network name
+            pelmAdapterChild->getAttributeValue("network", nic.strName);    // optional network name
         }
         else if (    ((pelmAdapterChild = pelmAdapter->findChildElement("HostInterface")))
                   || ((pelmAdapterChild = pelmAdapter->findChildElement("BridgedInterface")))
