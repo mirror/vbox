@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -71,3 +72,4 @@ void QITreeWidget::addTopBottomMarginToItems (int aMargin)
         item->setSizeHint (0, QSize (s.width(), s.height() + 2 * aMargin));
     }
 }
+

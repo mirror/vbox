@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -389,3 +390,4 @@ QValidator::State QIULongValidator::validate (QString &aInput, int &aPos) const
 
     return (entered > mTop ) ? Invalid : Intermediate;
 }
+

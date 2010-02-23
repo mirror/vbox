@@ -36,3 +36,4 @@ int getKeysymsPerKeycode();
 void doXKeyboardLogging(Display *dpy);
 
 #endif // __XKeyboard_h__
+

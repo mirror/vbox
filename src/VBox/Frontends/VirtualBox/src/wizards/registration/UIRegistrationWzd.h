@@ -80,3 +80,4 @@ private:
 };
 
 #endif // __UIRegistrationWzd_h__
+

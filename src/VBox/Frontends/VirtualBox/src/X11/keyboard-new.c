@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -512,3 +513,4 @@ unsigned *X11DRV_getKeyc2scan(void)
 {
     return keyc2scan;
 }
+

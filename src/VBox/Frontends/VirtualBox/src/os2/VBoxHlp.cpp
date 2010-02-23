@@ -190,3 +190,4 @@ ULONG _System _DLL_InitTerm (HMODULE aHandle, ULONG aFlag)
 
     return (unsigned long) ok;
 }
+

@@ -194,3 +194,4 @@ private:
 Q_DECLARE_METATYPE(CMedium);
 
 #endif // __UINewHDWzd_h__
+

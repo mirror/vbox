@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -889,3 +890,4 @@ bool UIRegistrationWzdPage1::isFieldValid(QWidget *pWidget) const
 }
 
 #include "UIRegistrationWzd.moc"
+

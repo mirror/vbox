@@ -118,3 +118,4 @@ unsigned main_keyboard_type_scans[][256] = {
     },
     { 0 } /* Sentinal */
 };
+

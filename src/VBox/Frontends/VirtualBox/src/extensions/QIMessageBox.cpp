@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -454,3 +455,4 @@ void QIMessageBox::reject()
         setResult (mButtonEsc & ButtonMask);
     }
 }
+

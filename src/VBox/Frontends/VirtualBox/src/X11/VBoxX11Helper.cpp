@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -130,3 +131,4 @@ bool X11IsWindowManagerKWin()
     }
     return fIsKWinManaged;
 }
+

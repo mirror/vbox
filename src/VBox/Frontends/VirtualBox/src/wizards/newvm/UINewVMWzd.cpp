@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -763,3 +764,4 @@ void UINewVMWzdPage5::setMachine(const CMachine &machine)
 {
     m_Machine = machine;
 }
+

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -5154,3 +5155,4 @@ void VBoxSwitchMenu::processAboutToShow()
     QString text = mAction->isChecked() ^ mInverted ? tr ("Disable") : tr ("Enable");
     mAction->setText (text);
 }
+
