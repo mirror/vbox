@@ -58,10 +58,12 @@
 #define VBOXNETADP_MTU           1500
 
 #if defined(DEBUG_ramshankar)
+# undef LogFlowFunc
+# define LogFlowFunc        LogRel
 # undef Log
-# define Log        LogRel
+# define Log                LogRel
 # undef LogFlow
-# define LogFlow    LogRel
+# define LogFlow            LogRel
 #endif
 
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd);
@@ -216,7 +218,7 @@ static int vboxNetAdpSolarisSetMulticast(gld_mac_info_t *pMacInfo, unsigned char
  */
 int _init(void)
 {
-    LogFlow((DEVICE_NAME ":_init\n"));
+    LogFlowFunc((DEVICE_NAME ":_init\n"));
 
     /*
      * Prevent module autounloading.
@@ -249,7 +251,7 @@ int _init(void)
 
 int _fini(void)
 {
-    LogFlow((DEVICE_NAME ":_fini\n"));
+    LogFlowFunc((DEVICE_NAME ":_fini\n"));
 
     /*
      * Undo the work done during start (in reverse order).
@@ -262,7 +264,7 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    LogFlow((DEVICE_NAME ":_info\n"));
+    LogFlowFunc((DEVICE_NAME ":_info\n"));
 
     int rc = mod_info(&g_VBoxNetAdpSolarisModLinkage, pModInfo);
 
@@ -281,7 +283,7 @@ int _info(struct modinfo *pModInfo)
  */
 static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetAdpSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
 
     int rc = -1;
     switch (enmCmd)
@@ -385,7 +387,7 @@ static int VBoxNetAdpSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  */
 static int VBoxNetAdpSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetAdpSolarisDetach pDip=%p enmCmd=%d\n", pDip, enmCmd));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetAdpSolarisDetach pDip=%p enmCmd=%d\n", pDip, enmCmd));
 
     switch (enmCmd)
     {
