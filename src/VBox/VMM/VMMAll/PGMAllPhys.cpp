@@ -370,9 +370,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     if (    PGMIsUsingLargePages(pVM)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
-        RTHCPHYS HCPhysDummy;
-
-        int rc = pgmPhysAllocLargePage(pVM, GCPhys, &HCPhysDummy);
+        int rc = pgmPhysAllocLargePage(pVM, GCPhys);
         if (rc == VINF_SUCCESS)
             return rc;
 
@@ -467,12 +465,11 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
  *
  * @param   pVM         The VM address.
  * @param   GCPhys      The address of the page.
- * @param   pHCPhys     Pointer to HC physical address (out)
  *
  * @remarks Must be called from within the PGM critical section. It may
  *          nip back to ring-3/0 in some cases.
  */
-int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
+int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
 {
     RTGCPHYS GCPhysBase = GCPhys & X86_PDE2M_PAE_PG_MASK;
     LogFlow(("pgmPhysAllocLargePage: %RGp base %RGp\n", GCPhys, GCPhysBase));
@@ -482,26 +479,17 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
      */
     Assert(PGMIsLocked(pVM));
     Assert(PGMIsUsingLargePages(pVM));
-    Assert((GCPhys & X86_PD_PAE_MASK) == 0);
-    AssertPtr(pHCPhys);
 
     PPGMPAGE pPage;
     int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhysBase, &pPage);
     if (    RT_SUCCESS(rc)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
-        RTHCPHYS HCPhys = NIL_RTHCPHYS;
         unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pPage);
 
-        if  (uPDEType == PGM_PAGE_PDE_TYPE_PDE)
-        {
-            /* Previously allocated 2 MB range can be reused. */
-            Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
+        /* Don't call this function for already allocated pages. */
+        Assert(uPDEType != PGM_PAGE_PDE_TYPE_PDE); 
 
-            *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
-            return VINF_SUCCESS;
-        }
-        else
         if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
              && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
         {
@@ -546,7 +534,6 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys)
                 if (RT_SUCCESS(rc))
                 {   
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
-                    *pHCPhys = PGM_PAGE_GET_HCPHYS(pPage);
                     STAM_COUNTER_INC(&pVM->pgm.s.StatLargePageUsed);
                     return VINF_SUCCESS;
                 }
