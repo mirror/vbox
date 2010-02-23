@@ -2775,12 +2775,13 @@ typedef struct PGM
 
     /** The number of times we were forced to change the hypervisor region location. */
     STAMCOUNTER                     cRelocations;
+
+    STAMCOUNTER                     StatLargePageAlloc;                 /**< The number of large pages we've allocated.*/
+    STAMCOUNTER                     StatLargePageReused;                /**< The number of large pages we've reused.*/
+    STAMCOUNTER                     StatLargePageRefused;               /**< The number of times we couldn't use a large page.*/
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
-    STAMCOUNTER StatLargePageUsed;                  /**< The number of large pages we've used.*/
-    STAMCOUNTER StatLargePageRefused;               /**< The number of times we couldn't use a large page.*/
-
     /* R3 only: */
     STAMCOUNTER StatR3DetectedConflicts;            /**< R3: Number of times PGMR3MapHasConflicts() detected a conflict. */
     STAMPROFILE StatR3ResolveConflict;              /**< R3: pgmR3SyncPTResolveConflict() profiling (includes the entire relocation). */
@@ -3320,7 +3321,7 @@ DECLCALLBACK(void) pgmR3InfoHandlers(PVM pVM, PCDBGFINFOHLP pHlp, const char *ps
 int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys, RTHCPHYS *pHCPhys);
+int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
