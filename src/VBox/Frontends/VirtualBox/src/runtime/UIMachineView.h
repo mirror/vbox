@@ -27,7 +27,6 @@
 class UIFrameBuffer;
 class UIMachineWindow;
 class VBoxGlobalSettings;
-class MousePointerChangeEvent;
 
 /* Global includes */
 #include <QAbstractScrollArea>
@@ -199,7 +198,7 @@ private:
     void saveKeyStates();
     void sendChangedKeyStates();
     void updateMouseClipping();
-    void setPointerShape(MousePointerChangeEvent *pEvent);
+    //void setPointerShape(MousePointerChangeEvent *pEvent);
 
     enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
     void storeConsoleSize(int aWidth, int aHeight);
@@ -263,7 +262,6 @@ private:
 #endif
 
     UIFrameBuffer *mFrameBuf;
-    CConsoleCallback mCallback;
 
     QPixmap mPausedShot;
 #if defined(Q_WS_MAC)
@@ -279,8 +277,6 @@ private:
     bool mPassCAD;
     bool mHideHostPointer;
     QCursor mLastCursor;
-
-    friend class UIConsoleCallback;
 };
 
 #endif // !___UIMachineViewNormal_h___

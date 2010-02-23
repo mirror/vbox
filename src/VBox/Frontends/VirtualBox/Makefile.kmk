@@ -374,6 +374,7 @@ VirtualBox_QT_MOCHDRS = \
 	src/widgets/VBoxWarningPane.h
 ifdef VBOX_WITH_NEW_RUNTIME_CORE
 VirtualBox_QT_MOCHDRS += \
+	src/runtime/UISession.h \
 	src/runtime/UIActionsPool.h \
 	src/runtime/UIIndicatorsPool.h \
 	src/runtime/UIMachine.h \
@@ -495,6 +496,7 @@ VirtualBox_SOURCES = \
 	src/widgets/VBoxWarningPane.cpp
 ifdef VBOX_WITH_NEW_RUNTIME_CORE
 VirtualBox_SOURCES += \
+	src/runtime/UISession.cpp \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIFrameBuffer.cpp \

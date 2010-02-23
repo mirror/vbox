@@ -44,10 +44,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 #endif
                    )
 {
-    /* Connect actions to view: */
-    connect(machineWindowWrapper()->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize),
-            SIGNAL(toggled(bool)), this, SLOT(sltToggleGuestAutoresize(bool)));
-
     /* Connect view to handlers */
     connect(this, SIGNAL(additionsStateChanged(const QString&, bool, bool, bool)),
             this, SLOT(sltAdditionsStateChanged(const QString &, bool, bool, bool)));

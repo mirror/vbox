@@ -31,6 +31,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
+#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
@@ -83,123 +84,6 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
-/** Guest mouse pointer shape change event. */
-class MousePointerChangeEvent : public QEvent
-{
-public:
-
-    MousePointerChangeEvent (bool visible, bool alpha, uint xhot, uint yhot, uint width, uint height, const uchar *shape)
-        : QEvent((QEvent::Type)VBoxDefs::MousePointerChangeEventType)
-        , vis(visible), alph(alpha), xh(xhot), yh(yhot), w(width), h(height), data(0)
-    {
-        uint dataSize = ((((width + 7) / 8 * height) + 3) & ~3) + width * 4 * height;
-
-        if (shape)
-        {
-            data = new uchar[dataSize];
-            memcpy((void*)data, (void*)shape, dataSize);
-        }
-    }
-
-    ~MousePointerChangeEvent()
-    {
-        if (data) delete[] data;
-    }
-
-    bool isVisible() const { return vis; }
-    bool hasAlpha() const { return alph; }
-    uint xHot() const { return xh; }
-    uint yHot() const { return yh; }
-    uint width() const { return w; }
-    uint height() const { return h; }
-    const uchar *shapeData() const { return data; }
-
-private:
-
-    bool vis, alph;
-    uint xh, yh, w, h;
-    const uchar *data;
-};
-
-/** Guest mouse absolute positioning capability change event. */
-class MouseCapabilityEvent : public QEvent
-{
-public:
-
-    MouseCapabilityEvent (bool supportsAbsolute, bool needsHostCursor)
-        : QEvent((QEvent::Type) VBoxDefs::MouseCapabilityEventType)
-        , can_abs(supportsAbsolute), needs_host_cursor(needsHostCursor) {}
-
-    bool supportsAbsolute() const { return can_abs; }
-    bool needsHostCursor() const { return needs_host_cursor; }
-
-private:
-
-    bool can_abs;
-    bool needs_host_cursor;
-};
-
-/** Machine state change. */
-class StateChangeEvent : public QEvent
-{
-public:
-
-    StateChangeEvent (KMachineState state)
-        : QEvent((QEvent::Type)VBoxDefs::MachineStateChangeEventType)
-        , s (state) {}
-
-    KMachineState machineState() const { return s; }
-
-private:
-
-    KMachineState s;
-};
-
-/** Guest Additions property changes. */
-class GuestAdditionsEvent : public QEvent
-{
-public:
-
-    GuestAdditionsEvent (const QString &aOsTypeId,
-                         const QString &aAddVersion,
-                         bool aAddActive,
-                         bool aSupportsSeamless,
-                         bool aSupportsGraphics)
-        : QEvent((QEvent::Type)VBoxDefs::AdditionsStateChangeEventType)
-        , mOsTypeId(aOsTypeId), mAddVersion(aAddVersion)
-        , mAddActive(aAddActive), mSupportsSeamless(aSupportsSeamless)
-        , mSupportsGraphics (aSupportsGraphics) {}
-
-    const QString &osTypeId() const { return mOsTypeId; }
-    const QString &additionVersion() const { return mAddVersion; }
-    bool additionActive() const { return mAddActive; }
-    bool supportsSeamless() const { return mSupportsSeamless; }
-    bool supportsGraphics() const { return mSupportsGraphics; }
-
-private:
-
-    QString mOsTypeId;
-    QString mAddVersion;
-    bool mAddActive;
-    bool mSupportsSeamless;
-    bool mSupportsGraphics;
-};
-
-/** DVD/Floppy drive change event */
-class MediaDriveChangeEvent : public QEvent
-{
-public:
-
-    MediaDriveChangeEvent(VBoxDefs::MediumType aType)
-        : QEvent ((QEvent::Type) VBoxDefs::MediaDriveChangeEventType)
-        , mType (aType) {}
-    VBoxDefs::MediumType type() const { return mType; }
-
-private:
-
-    VBoxDefs::MediumType mType;
-};
-
 /** Menu activation event */
 class ActivateMenuEvent : public QEvent
 {
@@ -213,89 +97,6 @@ public:
 private:
 
     QAction *mAction;
-};
-
-/** VM Runtime error event */
-class RuntimeErrorEvent : public QEvent
-{
-public:
-
-    RuntimeErrorEvent(bool aFatal, const QString &aErrorID, const QString &aMessage)
-        : QEvent((QEvent::Type)VBoxDefs::RuntimeErrorEventType)
-        , mFatal(aFatal), mErrorID(aErrorID), mMessage(aMessage) {}
-
-    bool fatal() const { return mFatal; }
-    QString errorID() const { return mErrorID; }
-    QString message() const { return mMessage; }
-
-private:
-
-    bool mFatal;
-    QString mErrorID;
-    QString mMessage;
-};
-
-/** Modifier key change event */
-class ModifierKeyChangeEvent : public QEvent
-{
-public:
-
-    ModifierKeyChangeEvent(bool fNumLock, bool fCapsLock, bool fScrollLock)
-        : QEvent((QEvent::Type)VBoxDefs::ModifierKeyChangeEventType)
-        , mNumLock(fNumLock), mCapsLock(fCapsLock), mScrollLock(fScrollLock) {}
-
-    bool numLock()    const { return mNumLock; }
-    bool capsLock()   const { return mCapsLock; }
-    bool scrollLock() const { return mScrollLock; }
-
-private:
-
-    bool mNumLock, mCapsLock, mScrollLock;
-};
-
-/** Network adapter change event */
-class NetworkAdapterChangeEvent : public QEvent
-{
-public:
-
-    NetworkAdapterChangeEvent(INetworkAdapter *aAdapter)
-        : QEvent((QEvent::Type)VBoxDefs::NetworkAdapterChangeEventType)
-        , mAdapter(aAdapter) {}
-
-    INetworkAdapter* networkAdapter() { return mAdapter; }
-
-private:
-
-    INetworkAdapter *mAdapter;
-};
-
-/** USB controller state change event */
-class USBControllerStateChangeEvent : public QEvent
-{
-public:
-
-    USBControllerStateChangeEvent()
-        : QEvent((QEvent::Type)VBoxDefs::USBCtlStateChangeEventType) {}
-};
-
-/** USB device state change event */
-class USBDeviceStateChangeEvent : public QEvent
-{
-public:
-
-    USBDeviceStateChangeEvent(const CUSBDevice &aDevice, bool aAttached, const CVirtualBoxErrorInfo &aError)
-        : QEvent((QEvent::Type)VBoxDefs::USBDeviceStateChangeEventType)
-        , mDevice(aDevice), mAttached(aAttached), mError(aError) {}
-
-    CUSBDevice device() const { return mDevice; }
-    bool attached() const { return mAttached; }
-    CVirtualBoxErrorInfo error() const { return mError; }
-
-private:
-
-    CUSBDevice mDevice;
-    bool mAttached;
-    CVirtualBoxErrorInfo mError;
 };
 
 class VBoxViewport: public QWidget
@@ -316,219 +117,6 @@ public:
             return QWidget::paintEngine();
     }
 };
-
-class UIConsoleCallback : VBOX_SCRIPTABLE_IMPL(IConsoleCallback)
-{
-public:
-
-    UIConsoleCallback (UIMachineView *v)
-    {
-#if defined (Q_WS_WIN)
-        mRefCnt = 0;
-#endif
-        mView = v;
-    }
-
-    virtual ~UIConsoleCallback() {}
-
-    NS_DECL_ISUPPORTS
-
-#if defined (Q_WS_WIN)
-    STDMETHOD_(ULONG, AddRef)()
-    {
-        return ::InterlockedIncrement(&mRefCnt);
-    }
-    STDMETHOD_(ULONG, Release)()
-    {
-        long cnt = ::InterlockedDecrement(&mRefCnt);
-        if (cnt == 0)
-            delete this;
-        return cnt;
-    }
-#endif
-    VBOX_SCRIPTABLE_DISPATCH_IMPL(IConsoleCallback)
-
-    STDMETHOD(OnMousePointerShapeChange) (BOOL visible, BOOL alpha,
-                                          ULONG xhot, ULONG yhot,
-                                          ULONG width, ULONG height,
-                                          BYTE *shape)
-    {
-        QApplication::postEvent(mView, new MousePointerChangeEvent(visible, alpha, xhot, yhot, width, height, shape));
-        return S_OK;
-    }
-
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
-    {
-        QApplication::postEvent(mView, new MouseCapabilityEvent (supportsAbsolute, needsHostCursor));
-        return S_OK;
-    }
-
-    STDMETHOD(OnKeyboardLedsChange)(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)
-    {
-        QApplication::postEvent(mView, new ModifierKeyChangeEvent (fNumLock, fCapsLock, fScrollLock));
-        return S_OK;
-    }
-
-    STDMETHOD(OnStateChange)(MachineState_T machineState)
-    {
-        QApplication::postEvent(mView, new StateChangeEvent ((KMachineState) machineState));
-        return S_OK;
-    }
-
-    STDMETHOD(OnAdditionsStateChange)()
-    {
-        CGuest guest = mView->console().GetGuest();
-        QApplication::postEvent (mView, new GuestAdditionsEvent(guest.GetOSTypeId(), guest.GetAdditionsVersion(),
-                                                                guest.GetAdditionsActive(), guest.GetSupportsSeamless(),
-                                                                guest.GetSupportsGraphics()));
-        return S_OK;
-    }
-
-    STDMETHOD(OnNetworkAdapterChange) (INetworkAdapter *aNetworkAdapter)
-    {
-        QApplication::postEvent (mView, new NetworkAdapterChangeEvent (aNetworkAdapter));
-        return S_OK;
-    }
-
-    STDMETHOD(OnStorageControllerChange) ()
-    {
-        //QApplication::postEvent(mView, new StorageControllerChangeEvent());
-        return S_OK;
-    }
-
-    STDMETHOD(OnMediumChange)(IMediumAttachment *aMediumAttachment)
-    {
-        CMediumAttachment att(aMediumAttachment);
-        switch (att.GetType())
-        {
-            case KDeviceType_Floppy:
-                QApplication::postEvent(mView, new MediaDriveChangeEvent(VBoxDefs::MediumType_Floppy));
-                break;
-            case KDeviceType_DVD:
-                QApplication::postEvent(mView, new MediaDriveChangeEvent(VBoxDefs::MediumType_DVD));
-                break;
-            default:
-                break;
-        }
-        return S_OK;
-    }
-
-    STDMETHOD(OnCPUChange)(ULONG aCPU, BOOL aRemove)
-    {
-        NOREF(aCPU);
-        NOREF(aRemove);
-        return S_OK;
-    }
-
-    STDMETHOD(OnSerialPortChange) (ISerialPort *aSerialPort)
-    {
-        NOREF(aSerialPort);
-        return S_OK;
-    }
-
-    STDMETHOD(OnParallelPortChange) (IParallelPort *aParallelPort)
-    {
-        NOREF(aParallelPort);
-        return S_OK;
-    }
-
-    STDMETHOD(OnVRDPServerChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnRemoteDisplayInfoChange)()
-    {
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBControllerChange)()
-    {
-        QApplication::postEvent (mView, new USBControllerStateChangeEvent());
-        return S_OK;
-    }
-
-    STDMETHOD(OnUSBDeviceStateChange)(IUSBDevice *aDevice, BOOL aAttached, IVirtualBoxErrorInfo *aError)
-    {
-        QApplication::postEvent (mView, new USBDeviceStateChangeEvent(CUSBDevice(aDevice), bool(aAttached), CVirtualBoxErrorInfo(aError)));
-        return S_OK;
-    }
-
-    STDMETHOD(OnSharedFolderChange) (Scope_T aScope)
-    {
-        NOREF(aScope);
-        QApplication::postEvent (mView, new QEvent((QEvent::Type)VBoxDefs::SharedFolderChangeEventType));
-        return S_OK;
-    }
-
-    STDMETHOD(OnRuntimeError)(BOOL fatal, IN_BSTR id, IN_BSTR message)
-    {
-        QApplication::postEvent (mView, new RuntimeErrorEvent(!!fatal, QString::fromUtf16(id), QString::fromUtf16(message)));
-        return S_OK;
-    }
-
-    STDMETHOD(OnCanShowWindow) (BOOL *canShow)
-    {
-        if (!canShow)
-            return E_POINTER;
-
-        *canShow = TRUE;
-        return S_OK;
-    }
-
-    STDMETHOD(OnShowWindow) (ULONG64 *winId)
-    {
-        if (!winId)
-            return E_POINTER;
-
-#if defined (Q_WS_MAC)
-        /*
-         * Let's try the simple approach first - grab the focus.
-         * Getting a window out of the dock (minimized or whatever it's called)
-         * needs to be done on the GUI thread, so post it a note.
-         */
-        *winId = 0;
-        if (!mView)
-            return S_OK;
-
-        ProcessSerialNumber psn = { 0, kCurrentProcess };
-        OSErr rc = ::SetFrontProcess (&psn);
-        if (!rc)
-            QApplication::postEvent(mView, new QEvent((QEvent::Type)VBoxDefs::ShowWindowEventType));
-        else
-        {
-            /*
-             * It failed for some reason, send the other process our PSN so it can try.
-             * (This is just a precaution should Mac OS X start imposing the same sensible
-             * focus stealing restrictions that other window managers implement.)
-             */
-            AssertMsgFailed(("SetFrontProcess -> %#x\n", rc));
-            if (::GetCurrentProcess (&psn))
-                *winId = RT_MAKE_U64(psn.lowLongOfPSN, psn.highLongOfPSN);
-        }
-
-#else
-        /* Return the ID of the top-level console window. */
-        *winId = (ULONG64)mView->window()->winId();
-#endif
-
-        return S_OK;
-    }
-
-protected:
-
-    UIMachineView *mView;
-
-#if defined (Q_WS_WIN)
-private:
-    long mRefCnt;
-#endif
-};
-
-#if !defined (Q_WS_WIN)
-NS_DECL_CLASSINFO(UIConsoleCallback)
-NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIConsoleCallback, IConsoleCallback)
-#endif
 
 UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                      , VBoxDefs::RenderMode renderMode
@@ -658,7 +246,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_bIsGuestSupportsGraphics(false)
     /* Private members: */
     , m_pMachineWindow(pMachineWindow)
-    , m_console(pMachineWindow->machineLogic()->session().GetConsole())
+    , m_console(pMachineWindow->machineLogic()->uisession()->session().GetConsole())
     , m_globalSettings(vboxGlobal().settings())
     , m_iLastMouseWheelDelta(0)
     , muNumLockAdaptionCnt(2)
@@ -860,11 +448,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
         display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(mFrameBuf));
     }
 
-    /* setup the callback */
-    mCallback = CConsoleCallback(new UIConsoleCallback(this));
-    m_console.RegisterCallback(mCallback);
-    AssertWrapperOk(m_console);
-
     QPalette palette(viewport()->palette());
     palette.setColor(viewport()->backgroundRole(), Qt::black);
     viewport()->setPalette(palette);
@@ -941,8 +524,6 @@ UIMachineView::~UIMachineView()
         mFrameBuf->Release();
         mFrameBuf = NULL;
     }
-
-    m_console.UnregisterCallback(mCallback);
 
 #if defined (Q_WS_MAC)
 # if !defined (QT_MAC_USE_COCOA)
@@ -1223,112 +804,6 @@ bool UIMachineView::event(QEvent *e)
             }
             #endif
 
-            case VBoxDefs::MousePointerChangeEventType:
-            {
-                MousePointerChangeEvent *me = (MousePointerChangeEvent *) e;
-                /* change cursor shape only when mouse integration is
-                 * supported (change mouse shape type event may arrive after
-                 * mouse capability change that disables integration */
-                if (m_bIsMouseAbsolute)
-                    setPointerShape (me);
-                else
-                    /* Note: actually we should still remember the requested
-                     * cursor shape.  If we can't do that, at least remember
-                     * the requested visiblilty. */
-                    mHideHostPointer = !me->isVisible();
-                return true;
-            }
-            case VBoxDefs::MouseCapabilityEventType:
-            {
-                MouseCapabilityEvent *me = (MouseCapabilityEvent *) e;
-                if (m_bIsMouseAbsolute != me->supportsAbsolute())
-                {
-                    m_bIsMouseAbsolute = me->supportsAbsolute();
-                    /* correct the mouse capture state and reset the cursor
-                     * to the default shape if necessary */
-                    if (m_bIsMouseAbsolute)
-                    {
-                        CMouse mouse = m_console.GetMouse();
-                        mouse.PutMouseEventAbsolute (-1, -1, 0,
-                                                     0 /* Horizontal wheel */,
-                                                     0);
-                        captureMouse (false, false);
-                    }
-                    else
-                        viewport()->unsetCursor();
-                    emitMouseStateChanged();
-                    vboxProblem().remindAboutMouseIntegration (m_bIsMouseAbsolute);
-                }
-                if (me->needsHostCursor())
-                    setMouseIntegrationLocked (false);
-                else
-                    setMouseIntegrationLocked (true);
-                return true;
-            }
-
-            case VBoxDefs::ModifierKeyChangeEventType:
-            {
-                ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )e;
-                if (me->numLock() != mNumLock)
-                    muNumLockAdaptionCnt = 2;
-                if (me->capsLock() != mCapsLock)
-                    muCapsLockAdaptionCnt = 2;
-                mNumLock    = me->numLock();
-                mCapsLock   = me->capsLock();
-                mScrollLock = me->scrollLock();
-                return true;
-            }
-
-            case VBoxDefs::MachineStateChangeEventType:
-            {
-                StateChangeEvent *me = (StateChangeEvent *) e;
-                LogFlowFunc (("MachineStateChangeEventType: state=%d\n",
-                               me->machineState()));
-                onStateChange (me->machineState());
-                emit machineStateChanged (me->machineState());
-                return true;
-            }
-
-            case VBoxDefs::AdditionsStateChangeEventType:
-            {
-                GuestAdditionsEvent *ge = (GuestAdditionsEvent *) e;
-                LogFlowFunc (("AdditionsStateChangeEventType\n"));
-
-                /* Always send a size hint if we are in fullscreen or seamless
-                 * when the graphics capability is enabled, in case the host
-                 * resolution has changed since the VM was last run. */
-#if 0
-                if (!mDoResize && !m_bIsGuestSupportsGraphics &&
-                    ge->supportsGraphics() &&
-                    (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen()))
-                    mDoResize = true;
-#endif
-
-                m_bIsGuestSupportsGraphics = ge->supportsGraphics();
-
-                maybeRestrictMinimumSize();
-
-#if 0
-                /* This will only be acted upon if mDoResize is true. */
-                doResizeHint();
-#endif
-
-                emit additionsStateChanged (ge->additionVersion(),
-                                            ge->additionActive(),
-                                            ge->supportsSeamless(),
-                                            ge->supportsGraphics());
-                return true;
-            }
-
-            case VBoxDefs::MediaDriveChangeEventType:
-            {
-                MediaDriveChangeEvent *mce = (MediaDriveChangeEvent *) e;
-                LogFlowFunc (("MediaChangeEvent\n"));
-
-                emit mediaDriveChanged (mce->type());
-                return true;
-            }
-
             #if 0
             case VBoxDefs::ActivateMenuEventType:
             {
@@ -1349,57 +824,6 @@ bool UIMachineView::event(QEvent *e)
                 return true;
             }
             #endif
-
-            case VBoxDefs::NetworkAdapterChangeEventType:
-            {
-                /* no specific adapter information stored in this
-                 * event is currently used */
-                emit networkStateChange();
-                return true;
-            }
-
-            case VBoxDefs::USBCtlStateChangeEventType:
-            {
-                emit usbStateChange();
-                return true;
-            }
-
-            case VBoxDefs::USBDeviceStateChangeEventType:
-            {
-                USBDeviceStateChangeEvent *ue = (USBDeviceStateChangeEvent *)e;
-
-                bool success = ue->error().isNull();
-
-                if (!success)
-                {
-                    if (ue->attached())
-                        vboxProblem().cannotAttachUSBDevice (
-                            m_console,
-                            vboxGlobal().details (ue->device()), ue->error());
-                    else
-                        vboxProblem().cannotDetachUSBDevice (
-                            m_console,
-                            vboxGlobal().details (ue->device()), ue->error());
-                }
-
-                emit usbStateChange();
-
-                return true;
-            }
-
-            case VBoxDefs::SharedFolderChangeEventType:
-            {
-                emit sharedFoldersChanged();
-                return true;
-            }
-
-            case VBoxDefs::RuntimeErrorEventType:
-            {
-                RuntimeErrorEvent *ee = (RuntimeErrorEvent *) e;
-                vboxProblem().showRuntimeError (m_console, ee->fatal(),
-                                                ee->errorID(), ee->message());
-                return true;
-            }
 
             case QEvent::KeyPress:
             case QEvent::KeyRelease:
@@ -3473,6 +2897,7 @@ void UIMachineView::updateMouseClipping()
     }
 }
 
+#if 0
 void UIMachineView::setPointerShape(MousePointerChangeEvent *pEvent)
 {
     if (pEvent->shapeData() != NULL)
@@ -3729,6 +3154,7 @@ void UIMachineView::setPointerShape(MousePointerChangeEvent *pEvent)
     }
     mHideHostPointer = !pEvent->isVisible();
 }
+#endif
 
 inline QRgb qRgbIntensity(QRgb rgb, int mul, int div)
 {

@@ -71,8 +71,8 @@ enum UIActionIndex
 #endif
     UIActionIndex_Simple_TakeSnapshot,
     UIActionIndex_Simple_InformationDialog,
-    UIActionIndex_Simple_Reset,
     UIActionIndex_Toggle_Pause,
+    UIActionIndex_Simple_Reset,
     UIActionIndex_Simple_Shutdown,
     UIActionIndex_Simple_Close,
 
@@ -80,11 +80,11 @@ enum UIActionIndex
     UIActionIndex_Menu_Devices,
     UIActionIndex_Menu_OpticalDevices,
     UIActionIndex_Menu_FloppyDevices,
+    UIActionIndex_Menu_USBDevices,
     UIActionIndex_Menu_NetworkAdapters,
     UIActionIndex_Simple_NetworkAdaptersDialog,
     UIActionIndex_Menu_SharedFolders,
     UIActionIndex_Simple_SharedFoldersDialog,
-    UIActionIndex_Menu_USBDevices,
     UIActionIndex_Toggle_VRDP,
     UIActionIndex_Simple_InstallGuestTools,
 

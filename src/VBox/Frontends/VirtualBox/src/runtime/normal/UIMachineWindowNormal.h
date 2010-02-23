@@ -52,6 +52,13 @@ private slots:
 
     void sltTryClose();
 
+    void sltMachineStateChanged(KMachineState machineState);
+    void sltMediumChange(const CMediumAttachment &attachment);
+    void sltUSBControllerChange();
+    void sltUSBDeviceStateChange();
+    void sltNetworkAdapterChange();
+    void sltSharedFolderChange();
+
     void sltPrepareMenuMachine();
     void sltPrepareMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -63,10 +70,6 @@ private slots:
 
     void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
 
-    void sltUpdateMediaDriveState(VBoxDefs::MediumType type);
-    void sltUpdateNetworkAdaptersState();
-    void sltUpdateUsbState();
-    void sltUpdateSharedFoldersState();
     void sltUpdateMouseState(int iState);
 
 private:
@@ -87,6 +90,7 @@ private:
     UIIndicatorsPool* indicatorsPool() { return m_pIndicatorsPool; }
 
     /* Prepare helpers: */
+    void prepareConsoleConnections();
     void prepareMenu();
     void prepareStatusBar();
     void prepareConnections();
@@ -99,6 +103,7 @@ private:
     //void cleanupConnections();
     void cleanupStatusBar();
     //void cleanupMenu();
+    void cleanupConsoleConnections();
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;
