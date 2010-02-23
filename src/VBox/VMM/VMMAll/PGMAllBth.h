@@ -1614,6 +1614,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     PX86PDEPAE      pPdeDst = &pPDDst->a[iPDDst];
 # endif
     SHWPDE          PdeDst   = *pPdeDst;
+
+    /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
     if (!PdeDst.n.u1Present)
     {
         AssertMsg(pVM->cCpus > 1, ("Unexpected missing PDE p=%p/%RX64\n", pPdeDst, (uint64_t)PdeDst.u));
@@ -1919,9 +1921,20 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
     Assert(pPDDst);
     PdeDst = pPDDst->a[iPDDst];
 # endif
-    AssertMsg(PdeDst.n.u1Present, ("%#llx\n", (uint64_t)PdeDst.u));
+    /* In the guest SMP case we could have blocked while another VCPU reused this page table. */
+    if (!PdeDst.n.u1Present)
+    {
+        AssertMsg(pVM->cCpus > 1, ("Unexpected missing PDE %RX64\n", (uint64_t)PdeDst.u));
+        Log(("CPU%d: SyncPage: Pde at %RGv changed behind our back!\n", GCPtrPage));
+        return VINF_SUCCESS;    /* force the instruction to be executed again. */
+    }
+
     PPGMPOOLPAGE  pShwPage = pgmPoolGetPage(pPool, PdeDst.u & SHW_PDE_PG_MASK);
     PSHWPT        pPTDst   = (PSHWPT)PGMPOOL_PAGE_2_PTR(pVM, pShwPage);
+
+    /* Can happen in the guest SMP case; other VCPU activated this PDE while we were blocking to handle the page fault. */
+    if (PdeDst.n.u1Size)
+        return VINF_SUCCESS;
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1

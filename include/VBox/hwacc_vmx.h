@@ -202,7 +202,7 @@ typedef struct EPTPDEBITS
     /** Reserved (must be 0). */
     uint64_t    u4Reserved      : 4;
     /** Big page (must be 0 here). */
-    uint64_t    u1Big           : 1;
+    uint64_t    u1Size          : 1;
     /** Available for software. */
     uint64_t    u4Available     : 4;
     /** Physical address of page table. Restricted by maximum physical address width of the cpu. */
