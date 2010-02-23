@@ -50,6 +50,14 @@ RT_C_DECLS_BEGIN
  */
 RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFlags);
 
+/** @name RTPipeCreate flags.
+ * @{ */
+/** Mark the read end as inheritable. */
+#define RTPIPE_C_INHERIT_READ       RT_BIT(0)
+/** Mark the write end as inheritable. */
+#define RTPIPE_C_INHERIT_WRITE      RT_BIT(1)
+/** @} */
+
 /**
  * Closes one end of a pipe created by RTPipeCreate.
  *
