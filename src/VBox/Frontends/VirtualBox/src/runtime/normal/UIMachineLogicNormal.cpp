@@ -36,6 +36,8 @@
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 
+#include "VBoxUtils.h"
+
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Normal)
 {
@@ -114,8 +116,7 @@ void UIMachineLogicNormal::prepareMachineWindow()
 #ifdef Q_WS_MAC
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
-    ProcessSerialNumber psn = { 0, kCurrentProcess };
-    ::SetFrontProcess(&psn);
+    ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
     /* Create machine window: */

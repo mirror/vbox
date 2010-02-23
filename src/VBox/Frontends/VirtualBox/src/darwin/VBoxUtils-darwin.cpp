@@ -149,6 +149,21 @@ int darwinWindowToolBarHeight (QWidget *aWidget)
 #endif /* QT_MAC_USE_COCOA */
 }
 
+bool darwinSetFrontMostProcess()
+{
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    return ::SetFrontProcess(&psn) == 0;
+}
+
+uint64_t darwinGetCurrentProcessId()
+{
+    uint64_t processId = 0;
+    ProcessSerialNumber psn = { 0, kCurrentProcess };
+    if (::GetCurrentProcess(&psn) == 0)
+        processId = RT_MAKE_U64(psn.lowLongOfPSN, psn.highLongOfPSN);
+    return processId;
+}
+
 CGContextRef darwinToCGContextRef (QWidget *aWidget)
 {
     return static_cast<CGContext *> (aWidget->macCGHandle());

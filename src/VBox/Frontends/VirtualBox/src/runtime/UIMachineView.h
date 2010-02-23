@@ -35,6 +35,15 @@ class VBoxGlobalSettings;
 #include "COMDefs.h"
 #include "UIMachineDefs.h"
 
+#ifdef Q_WS_MAC
+# include <CoreFoundation/CFBase.h>
+#endif /* Q_WS_MAC */
+
+/* Local forward declarations */
+class VBoxChangeDockIconUpdateEvent;
+class VBoxChangePresentationModeEvent;
+class VBoxDockIconPreview;
+
 class UIMachineView : public QAbstractScrollArea
 {
     Q_OBJECT;
@@ -65,6 +74,13 @@ public:
     /* Public setters: */
     void setIgnoreGuestResize(bool bIgnore);
     void setMouseIntegrationEnabled(bool bEnabled);
+
+#if defined(Q_WS_MAC)
+    void updateDockIcon();
+    void updateDockOverlay();
+    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
+    void setMouseCoalescingEnabled(bool aOn);
+#endif
 
 signals:
 
@@ -132,14 +148,14 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 #if defined(Q_WS_WIN32)
     bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
-    bool winEvent (MSG *aMsg, long *aResult);
+    bool winEvent(MSG *aMsg, long *aResult);
 #elif defined(Q_WS_PM)
-    bool pmEvent (QMSG *aMsg);
+    bool pmEvent(QMSG *aMsg);
 #elif defined(Q_WS_X11)
-    bool x11Event (XEvent *event);
+    bool x11Event(XEvent *event);
 #elif defined(Q_WS_MAC)
-    bool darwinKeyboardEvent (const void *pvCocoaEvent, EventRef inEvent);
-    void darwinGrabKeyboardEvents (bool fGrab);
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
+    void darwinGrabKeyboardEvents(bool fGrab);
 #endif
 #if defined (Q_WS_WIN32)
     static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
@@ -183,12 +199,6 @@ private:
     void updateSliders();
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void scrollContentsBy(int dx, int dy);
-#endif
-#if defined(Q_WS_MAC)
-    void updateDockIcon();
-    void updateDockOverlay();
-    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
-    void setMouseCoalescingEnabled(bool aOn);
 #endif
     void onStateChange(KMachineState state);
     void captureKbd(bool aCapture, bool aEmitSignal = true);
