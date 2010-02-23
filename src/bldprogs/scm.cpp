@@ -3690,7 +3690,7 @@ static int scmProcessFileInner(PSCMRWSTATE pState, const char *pszFilename, cons
                                 scmSvnDisplayChanges(pState);
                         }
 
-                        if (!fModified && !pState->cSvnPropChanges);
+                        if (!fModified && !pState->cSvnPropChanges)
                             ScmVerbose(pState, 3, "no change\n", pszFilename);
                     }
                     else
