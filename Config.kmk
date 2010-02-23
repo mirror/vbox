@@ -464,8 +464,10 @@ VBOX_WITH_SHARED_FOLDERS = 1
 VBOX_WITH_SHARED_CLIPBOARD = 1
 # Enable the host/guest information service (aka guest properties).
 VBOX_WITH_GUEST_PROPS = 1
-# Enable this to prevent the guest from writing guest properties
+# Enable this to prevent the guest from writing guest properties.
 VBOX_WITH_GUEST_PROPS_RDONLY_GUEST =
+# Enable the guest control service.
+VBOX_WITH_GUEST_CONTROL =
 # Enable crOpenGL service
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
