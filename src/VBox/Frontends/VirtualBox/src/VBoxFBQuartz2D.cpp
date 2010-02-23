@@ -467,3 +467,4 @@ void VBoxQuartz2DFrameBuffer::testAndSetSNCarbonFix()
 #endif /* QT_MAC_USE_COCOA */
 
 #endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
+

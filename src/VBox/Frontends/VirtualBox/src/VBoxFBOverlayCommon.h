@@ -106,3 +106,4 @@ private:
     }while(0)
 
 #endif /* #ifndef __VBoxFBOverlayCommon_h__ */
+

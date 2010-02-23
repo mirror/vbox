@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -600,3 +601,4 @@ void VBoxLogSearchPanel::find (int aButton)
     else
         findBack();
 }
+

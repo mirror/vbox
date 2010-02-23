@@ -426,7 +426,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
               // TODO_NEW_CORE
 //                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) :
 #endif
-//            	    new UIFrameBufferQuartz2D(this);
+//                  new UIFrameBufferQuartz2D(this);
             break;
 #endif
         default:
@@ -2691,10 +2691,10 @@ void UIMachineView::captureKbd(bool aCapture, bool aEmitSignal /* = true */)
 #if defined (Q_WS_WIN32)
     /**/
 #elif defined (Q_WS_X11)
-	if (aCapture)
-		XGrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId(), False, GrabModeAsync, GrabModeAsync);
-	else
-		XUngrabKey(QX11Info::display(),  AnyKey, AnyModifier, window()->winId());
+        if (aCapture)
+                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId(), False, GrabModeAsync, GrabModeAsync);
+        else
+                XUngrabKey(QX11Info::display(),  AnyKey, AnyModifier, window()->winId());
 #elif defined (Q_WS_MAC)
     if (aCapture)
     {

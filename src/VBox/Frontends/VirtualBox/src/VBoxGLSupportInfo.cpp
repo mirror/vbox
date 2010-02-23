@@ -710,3 +710,4 @@ const class QGLContext * VBoxGLTmpContext::makeCurrent()
     }
     return NULL;
 }
+

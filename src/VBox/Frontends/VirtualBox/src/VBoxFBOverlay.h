@@ -1876,3 +1876,4 @@ private:
 #endif
 
 #endif /* #ifndef __VBoxFBOverlay_h__ */
+
