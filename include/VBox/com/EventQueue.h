@@ -81,7 +81,7 @@ protected:
  *  XPCOM/IPC events while waiting for its own (Event) events.
  *
  *  When using Windows, Darwin and OS/2, this will map onto the native thread
- *  queue/runloop.  So, windows messages and want not will be processed while
+ *  queue/runloop.  So, windows messages and what not will be processed while
  *  waiting for events.
  */
 class EventQueue
