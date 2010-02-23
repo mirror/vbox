@@ -109,6 +109,11 @@ ifdef VBOX_WITH_GUEST_PROPS
 	VBoxGuestR3LibGuestProp.cpp \
 	VBoxGuestR3LibHostVersion.cpp
 endif
+ifdef VBOX_WITH_GUEST_CONTROL
+ VBoxGuestR3Lib_SOURCES   += \
+	VBoxGuestR3LibGuestCtrl.cpp
+endif
+
 VBoxGuestR3LibMisc.cpp_DEFS = VBOX_SVN_REV=$(VBOX_SVN_REV)
 VBoxGuestR3LibMisc.cpp_DEPS = $(VBOX_SVN_REV_KMK)
 

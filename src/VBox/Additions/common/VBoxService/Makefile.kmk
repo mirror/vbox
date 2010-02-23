@@ -40,6 +40,11 @@ ifdef VBOX_WITH_GUEST_PROPS
  if1of ($(KBUILD_TARGET), win)
   VBoxService_DEFS       += VBOX_WITH_HGCM VBOXSERVICE_EXEC
  endif
+ifdef VBOX_WITH_GUEST_CONTROL
+ if1of ($(KBUILD_TARGET), win)
+  VBoxService_DEFS        += VBOXSERVICE_CONTROL
+ endif
+endif
 endif
 if1of ($(KBUILD_TARGET), linux)
  VBoxService_DEFS        += VBOXSERVICE_CPUHOTPLUG
@@ -49,6 +54,12 @@ VBoxService_SOURCES       = \
 	VBoxService.cpp \
 	VBoxServiceTimeSync.cpp \
 	VBoxServiceUtils.cpp
+ifdef VBOX_WITH_GUEST_CONTROL
+ if1of ($(KBUILD_TARGET), win)
+  VBoxService_SOURCES    += \
+	VBoxServiceControl.cpp
+ endif
+endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
  	VBoxServiceVMInfo-win.cpp
