@@ -258,7 +258,7 @@ RTDECL(int) RTStrATruncate(char **ppsz, size_t cchNew)
         {
             *pszOld = '\0';
             char *pszNew = (char *)RTMemRealloc(pszOld, 1);
-            if (!pszNew)
+            if (pszNew)
                 *ppsz = pszNew;
         }
     }
