@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -109,3 +110,4 @@ void VBoxExportApplianceWgt::prepareExport()
     if (mAppliance)
         mModel->putBack();
 }
+

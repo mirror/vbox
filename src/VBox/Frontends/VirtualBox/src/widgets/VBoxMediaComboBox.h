@@ -103,3 +103,4 @@ protected:
 };
 
 #endif /* __VBoxMediaComboBox_h__ */
+
