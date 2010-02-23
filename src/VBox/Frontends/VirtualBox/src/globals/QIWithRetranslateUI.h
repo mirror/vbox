@@ -115,3 +115,4 @@ protected:
 };
 
 #endif /* __QIWithRetranslateUI_h */
+

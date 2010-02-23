@@ -106,3 +106,4 @@ private:
 };
 
 #endif // __VBoxVMSettingsSF_h__
+

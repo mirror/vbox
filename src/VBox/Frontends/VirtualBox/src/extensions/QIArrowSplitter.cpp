@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -166,3 +167,4 @@ void QIArrowSplitter::relayout()
     else
         window()->setFixedHeight (window()->minimumSizeHint().height());
 }
+

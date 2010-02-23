@@ -402,3 +402,4 @@ private:
 inline VBoxProblemReporter &vboxProblem() { return VBoxProblemReporter::instance(); }
 
 #endif // __VBoxProblemReporter_h__
+

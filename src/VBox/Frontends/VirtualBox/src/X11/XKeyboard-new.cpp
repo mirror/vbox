@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -278,3 +279,4 @@ void initMappedX11Keyboard(Display *pDisplay, QString remapScancodes)
     if (scancodes)
         delete scancodes;
 }
+

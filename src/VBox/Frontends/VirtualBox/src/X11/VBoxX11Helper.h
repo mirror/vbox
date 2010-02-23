@@ -29,3 +29,4 @@ void X11ScreenSaverSettingsRestore();
 bool X11IsWindowManagerKWin();
 
 #endif
+

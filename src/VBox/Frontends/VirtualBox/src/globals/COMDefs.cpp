@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -411,3 +412,4 @@ QString COMErrorInfo::getInterfaceNameFromIID (const QUuid &id)
 #if defined (VBOX_WITH_XPCOM)
 #include "COMDefs.moc"
 #endif
+

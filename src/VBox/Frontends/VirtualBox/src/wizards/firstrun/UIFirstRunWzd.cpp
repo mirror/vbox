@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -343,3 +344,4 @@ bool UIFirstRunWzdPage3::insertDevice()
         return false;
     }
 }
+

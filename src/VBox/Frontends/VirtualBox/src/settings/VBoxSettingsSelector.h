@@ -176,3 +176,4 @@ private:
 };
 
 #endif /* __VBoxSettingsSelector_h__ */
+

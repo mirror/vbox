@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -249,3 +250,4 @@ bool UIImportApplianceWzdPage2::validatePage()
     /* Now import all virtual systems */
     return m_pSettingsCnt->import();
 }
+

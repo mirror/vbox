@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -335,3 +336,4 @@ QString QILabel::compressText (const QString &aText) const
     }
     return strResult.join ("<br />");
 }
+

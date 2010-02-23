@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -516,3 +517,4 @@ bool UINewHDWzdPage4::createHardDisk()
     m_HardDisk = hardDisk;
     return true;
 }
+

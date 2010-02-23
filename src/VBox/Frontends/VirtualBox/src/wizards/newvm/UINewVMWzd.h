@@ -186,3 +186,4 @@ private:
 Q_DECLARE_METATYPE(CMachine);
 
 #endif // __UINewVMWzd_h__
+

@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -115,3 +116,4 @@ void QIRichToolButton::paintEvent (QPaintEvent *aEvent)
     }
     QWidget::paintEvent (aEvent);
 }
+

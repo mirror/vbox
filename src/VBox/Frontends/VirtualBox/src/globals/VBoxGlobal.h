@@ -1087,3 +1087,4 @@ private:
 };
 
 #endif /* __VBoxGlobal_h__ */
+

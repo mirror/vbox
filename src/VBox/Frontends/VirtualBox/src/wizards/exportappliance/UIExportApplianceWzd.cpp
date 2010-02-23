@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt4 GUI ("VirtualBox"):
@@ -650,3 +651,4 @@ QString UIExportApplianceWzdPage4::uri() const
     }
     return QString();
 }
+

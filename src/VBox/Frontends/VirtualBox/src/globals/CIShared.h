@@ -410,3 +410,4 @@ template< class D > bool CIShared<D>::Data::deref() {
 #endif // VBOX_CHECK_STATE
 
 #endif // __CIShared_h__
+
