@@ -93,6 +93,8 @@ void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
 int  darwinWindowToolBarHeight (NativeWindowRef aWindow);
 float darwinSmallFontSize();
+bool darwinSetFrontMostProcess();
+uint64_t darwinGetCurrentProcessId();
 
 RT_C_DECLS_END
 

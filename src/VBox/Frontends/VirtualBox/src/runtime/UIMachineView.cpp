@@ -290,7 +290,9 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     /* Overlay logo for the dock icon */
     //mVirtualBoxLogo = ::darwinToCGImageRef("VirtualBox_cube_42px.png");
     QString osTypeId = m_console.GetGuest().GetOSTypeId();
-    mDockIconPreview = new VBoxDockIconPreview(machineWindowWrapper(), vboxGlobal().vmGuestOSTypeIcon (osTypeId));
+
+    // TODO_NEW_CORE
+//    mDockIconPreview = new VBoxDockIconPreview(machineWindowWrapper(), vboxGlobal().vmGuestOSTypeIcon (osTypeId));
 
 # ifdef QT_MAC_USE_COCOA
     /** @todo Carbon -> Cocoa */
@@ -418,11 +420,12 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
             /* Indicate that we are doing all
              * drawing stuff ourself */
             pViewport->setAttribute(Qt::WA_PaintOnScreen);
-            mFrameBuf =
+//            mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) :
+              // TODO_NEW_CORE
+//                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) :
 #endif
-            	    new VBoxQuartz2DFrameBuffer(this);
+//            	    new UIFrameBufferQuartz2D(this);
             break;
 #endif
         default:
@@ -581,15 +584,18 @@ QSize UIMachineView::sizeHint() const
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
+void UIMachineView::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
 {
     setDockIconEnabled(event.mChanged);
     updateDockOverlay();
 }
 
 # ifdef QT_MAC_USE_COCOA
-void UIMachineLogic::sltChangePresentationMode(const VBoxChangePresentationModeEvent &event)
+void UIMachineView::sltChangePresentationMode(const VBoxChangePresentationModeEvent &event)
 {
+    // TODO_NEW_CORE
+    // this is full screen related
+#if 0
     if (mIsFullscreen)
     {
         /* First check if we are on the primary screen, only than the presentation mode have to be changed. */
@@ -606,6 +612,7 @@ void UIMachineLogic::sltChangePresentationMode(const VBoxChangePresentationModeE
     }
     else
         SetSystemUIMode(kUIModeNormal, 0);
+#endif
 }
 # endif /* QT_MAC_USE_COCOA */
 #endif
@@ -2040,10 +2047,11 @@ bool UIMachineView::keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniK
             }
         }
 #elif defined (Q_WS_MAC)
-        if (aUniKey && aUniKey [0] && !aUniKey [1])
-            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
-                                                     QChar (aUniKey [0]).toUpper().unicode()),
-                                       machineWindowWrapper()->menuBar()->actions());
+        // TODO_NEW_CORE
+//        if (aUniKey && aUniKey [0] && !aUniKey [1])
+//            processed = processHotKey (QKeySequence (Qt::UNICODE_ACCEL +
+//                                                     QChar (aUniKey [0]).toUpper().unicode()),
+//                                       machineWindowWrapper()->menuBar()->actions());
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
@@ -2542,18 +2550,20 @@ void UIMachineView::updateDockIcon()
         else
         {
 # if defined (VBOX_GUI_USE_QUARTZ2D)
-            if (mode == VBoxDefs::Quartz2DMode)
-            {
+                // TODO_NEW_CORE
+//            if (mode == VBoxDefs::Quartz2DMode)
+//            {
                 /* If the render mode is Quartz2D we could use the CGImageRef
                  * of the framebuffer for the dock icon creation. This saves
                  * some conversion time. */
-                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef());
-            }
-            else
+//                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef());
+//            }
+//            else
 # endif
                 /* In image mode we have to create the image ref out of the
                  * framebuffer */
-                mDockIconPreview->updateDockPreview (mFrameBuf);
+                // TODO_NEW_CORE
+//                mDockIconPreview->updateDockPreview (mFrameBuf);
         }
     }
 }

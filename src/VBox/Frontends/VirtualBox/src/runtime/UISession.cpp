@@ -31,6 +31,8 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 
+#include "VBoxUtils.h"
+
 /* Guest mouse pointer shape change event: */
 class UIMousePointerShapeChangeEvent : public QEvent
 {
@@ -474,18 +476,14 @@ public:
         if (!m_pEventHandler)
             return S_OK;
 
-        ProcessSerialNumber psn = { 0, kCurrentProcess };
-        OSErr rc = ::SetFrontProcess(&psn);
-        if (!rc)
+        if (::darwinSetFrontMostProcess())
             QApplication::postEvent(m_pEventHandler, new UIShowWindowEvent);
         else
         {
             /* It failed for some reason, send the other process our PSN so it can try.
              * (This is just a precaution should Mac OS X start imposing the same sensible
              * focus stealing restrictions that other window managers implement). */
-            AssertMsgFailed(("SetFrontProcess -> %#x\n", rc));
-            if (::GetCurrentProcess(&psn))
-                *puWinId = RT_MAKE_U64(psn.lowLongOfPSN, psn.highLongOfPSN);
+            *puWinId = ::darwinGetCurrentProcessId();
         }
 #else
         /* Return the ID of the top-level console window. */
@@ -778,8 +776,11 @@ bool UISession::event(QEvent *pEvent)
              * I might have overlooked something, but I'm buggered what if I know
              * what. So, I'll just always show & activate the stupid window to
              * make it get out of the dock when the user wishes to show a VM. */
+#if 0
+            // TODO_NEW_CORE
             window()->show();
             window()->activateWindow();
+#endif
             return true;
         }
 #endif

@@ -740,9 +740,10 @@ void UIMachineLogic::sltMachineStateChanged(KMachineState newMachineState)
 
 #ifdef Q_WS_MAC
         /* Update Dock Overlay: */
-        if (machineWindowWrapper())
-            machineWindowWrapper()->updateDockOverlay();
-#endif
+        if (   machineWindowWrapper()
+            && machineWindowWrapper()->machineView())
+            machineWindowWrapper()->machineView()->updateDockOverlay();
+#endif /* Q_WS_MAC */
     }
 }
 

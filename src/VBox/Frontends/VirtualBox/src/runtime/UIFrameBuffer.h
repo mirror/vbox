@@ -429,6 +429,7 @@ private:
 };
 #endif
 
+#endif
 #if defined (Q_WS_MAC) && defined (VBOX_GUI_USE_QUARTZ2D)
 #include <Carbon/Carbon.h>
 
@@ -495,6 +496,5 @@ private:
 #endif /* QT_MAC_USE_COCOA */
 };
 #endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
-#endif
 
 #endif // !___UIFrameBuffer_h___
