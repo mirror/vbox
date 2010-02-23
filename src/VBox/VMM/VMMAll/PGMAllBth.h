@@ -1934,7 +1934,11 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 
     /* Can happen in the guest SMP case; other VCPU activated this PDE while we were blocking to handle the page fault. */
     if (PdeDst.n.u1Size)
+    {
+        Assert(HWACCMIsNestedPagingActive(pVM));
+        Log(("CPU%d: SyncPage: Pde (big) at %RGv changed behind our back!\n", GCPtrPage));
         return VINF_SUCCESS;
+    }
 
     Assert(cPages == 1 || !(uErr & X86_TRAP_PF_P));
     if (    cPages > 1
