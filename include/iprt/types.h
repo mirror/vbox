@@ -1154,6 +1154,23 @@ typedef RTNATIVETHREAD                             *PRTNATIVETHREAD;
 /** Nil native thread handle. */
 #define NIL_RTNATIVETHREAD                          (~(RTNATIVETHREAD)0)
 
+/** Pipe handle. */
+typedef RTHCUINTPTR                                 RTPIPE;
+/** Pointer to a pipe handle. */
+typedef RTPIPE                                     *PRTPIPE;
+/** Nil pipe handle.
+ * @remarks This is not 0 because because of UNIX and OS/2 handle values.
+ *          Take care! */
+#define NIL_RTPIPE                                 (~(RTPIPE)0)
+
+/** @typedef RTPOLLSET
+ * Poll set handle. */
+typedef R3R0PTRTYPE(struct RTPOLLSETINTERNAL *)     RTPOLLSET;
+/** Pointer to a poll set handle. */
+typedef RTPOLLSET                                  *PRTPOLLSET;
+/** Nil poll set handle handle. */
+#define NIL_RTPOLLSET                               ((RTPOLLSET)0)
+
 /** Process identifier. */
 typedef uint32_t                                    RTPROCESS;
 /** Pointer to a process identifier. */
@@ -1350,6 +1367,63 @@ typedef RTSTRCACHE                                 *PRTSTRCACHE;
 #define NIL_RTSTRCACHE                              ((RTSTRCACHE)0)
 /** The default string cache handle. */
 #define RTSTRCACHE_DEFAULT                          ((RTSTRCACHE)-2)
+
+/**
+ * Handle type.
+ *
+ * This is usually used together with RTHANDLEUNION.
+ */
+typedef enum RTHANDLETYPE
+{
+    /** The invalid zero value. */
+    RTHANDLETYPE_INVALID = 0,
+    /** File handle. */
+    RTHANDLETYPE_FILE,
+    /** Pipe handle */
+    RTHANDLETYPE_PIPE,
+    /** Socket handle. */
+    RTHANDLETYPE_SOCKET,
+    /** Thread handle. */
+    RTHANDLETYPE_THREAD,
+    /** The end of the valid values. */
+    RTHANDLETYPE_END,
+    /** The 32-bit type blow up. */
+    RTHANDLETYPE_32BIT_HACK = 0x7fffffff
+} RTHANDLETYPE;
+/** Pointer to a handle type. */
+typedef RTHANDLETYPE *PRTHANDLETYPE;
+
+/**
+ * Handle union.
+ *
+ * This is usually used together with RTHANDLETYPE or as RTHANDLE.
+ */
+typedef union RTHANDLEUNION
+{
+    RTFILE          hFile;              /**< File handle. */
+    RTPIPE          hPipe;              /**< Pipe handle. */
+    RTSOCKET        hSocket;            /**< Socket handle. */
+    RTTHREAD        hThread;            /**< Thread handle. */
+} RTHANDLEUNION;
+/** Pointer to a handle union. */
+typedef RTHANDLEUNION *PRTHANDLEUNION;
+/** Pointer to a const handle union. */
+typedef RTHANDLEUNION const *PCRTHANDLEUNION;
+
+/**
+ * Generic handle.
+ */
+typedef struct RTHANDLE
+{
+    /** The handle type. */
+    RTHANDLETYPE    enmType;
+    /** The handle value. */
+    RTHANDLEUNION   u;
+} RTHANDLE;
+/** Pointer to a generic handle. */
+typedef RTHANDLE *PRTHANDLE;
+/** Pointer to a const generic handle. */
+typedef RTHANDLE const *PCRTHANDLE;
 
 
 /**
