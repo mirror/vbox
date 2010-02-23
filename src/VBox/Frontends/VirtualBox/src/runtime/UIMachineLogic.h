@@ -191,3 +191,4 @@ private:
 };
 
 #endif // __UIMachineLogic_h__
+

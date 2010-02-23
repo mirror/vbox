@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -3252,3 +3253,4 @@ void UIMachineView::dimImage(QImage &img)
         }
     }
 }
+

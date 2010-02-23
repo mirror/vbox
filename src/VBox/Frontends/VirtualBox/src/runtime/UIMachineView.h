@@ -290,3 +290,4 @@ private:
 };
 
 #endif // !___UIMachineViewNormal_h___
+

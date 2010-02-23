@@ -65,3 +65,4 @@ private:
 };
 
 #endif // __UIMachineLogicNormal_h__
+

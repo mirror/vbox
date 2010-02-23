@@ -121,3 +121,4 @@ private:
 };
 
 #endif // __UIMachineWindowNormal_h__
+
