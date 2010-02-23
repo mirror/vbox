@@ -392,7 +392,11 @@ endef
  VBOX_JAR                      = jar
  # Keep in sync with G_virtualBoxPackage in glue-jaxws.xsl
  # Changed with every new version, so beware!
- VBOX_API_SUFFIX               = _$(VBOX_VERSION_MAJOR)_$(VBOX_VERSION_MINOR)
+ ifeq ($(int-lt $(VBOX_VERSION_BUILD),51),1)
+  VBOX_API_SUFFIX               = _$(VBOX_VERSION_MAJOR)_$(VBOX_VERSION_MINOR)
+ else
+  VBOX_API_SUFFIX               = _$(VBOX_VERSION_MAJOR)_$(int-add $(VBOX_VERSION_MINOR),1)
+ endif
  VBOX_JAVA_PACKAGE             = org.virtualbox$(VBOX_API_SUFFIX)
 
  VBOXWEB_OTHERS               += \
