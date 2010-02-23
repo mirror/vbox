@@ -176,3 +176,4 @@ private:
 };
 
 #endif // __VBoxGlobalSettings_h__
+

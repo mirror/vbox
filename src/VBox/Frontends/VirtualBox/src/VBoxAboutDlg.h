@@ -52,3 +52,4 @@ private:
 };
 
 #endif /* __VBoxAboutDlg_h__ */
+

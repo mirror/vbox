@@ -519,3 +519,4 @@ private:
 #endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
 
 #endif // !___VBoxFrameBuffer_h___
+

@@ -170,3 +170,4 @@ STDMETHODIMP VBoxQGLFrameBuffer::ProcessVHWACommand(BYTE *pCommand)
 #endif
 
 #endif
+

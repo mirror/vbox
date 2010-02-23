@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -516,3 +517,4 @@ void VBoxDDRAWFrameBuffer::getWindowPosition (void)
 }
 
 #endif /* defined (VBOX_GUI_USE_DDRAW) */
+
