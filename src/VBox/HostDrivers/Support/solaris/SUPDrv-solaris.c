@@ -191,7 +191,7 @@ static RTSPINLOCK           g_Spinlock = NIL_RTSPINLOCK;
  */
 int _init(void)
 {
-    LogFlow((DEVICE_NAME ":_init\n"));
+    LogFlowFunc((DEVICE_NAME ":_init\n"));
 
     /*
      * Prevent module autounloading.
@@ -255,7 +255,7 @@ int _init(void)
 
 int _fini(void)
 {
-    LogFlow((DEVICE_NAME ":_fini\n"));
+    LogFlowFunc((DEVICE_NAME ":_fini\n"));
 
     /*
      * Undo the work we did at start (in the reverse order).
@@ -281,7 +281,7 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    LogFlow((DEVICE_NAME ":_info\n"));
+    LogFlowFunc((DEVICE_NAME ":_info\n"));
     int e = mod_info(&g_VBoxDrvSolarisModLinkage, pModInfo);
     return e;
 }
@@ -297,7 +297,7 @@ int _info(struct modinfo *pModInfo)
  */
 static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisAttach\n"));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisAttach\n"));
 
     switch (enmCmd)
     {
@@ -379,7 +379,7 @@ static int VBoxDrvSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  */
 static int VBoxDrvSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisDetach\n"));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisDetach\n"));
     switch (enmCmd)
     {
         case DDI_DETACH:
@@ -425,7 +425,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 {
     int                 rc;
     PSUPDRVSESSION      pSession;
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisOpen: pDev=%p:%#x\n", pDev, *pDev));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisOpen: pDev=%p:%#x\n", pDev, *pDev));
 
 #ifndef USE_SESSION_HASH
     /*
@@ -519,7 +519,7 @@ static int VBoxDrvSolarisOpen(dev_t *pDev, int fFlag, int fType, cred_t *pCred)
 
 static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
 {
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisClose: Dev=%#x\n", Dev));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisClose: Dev=%#x\n", Dev));
 
 #ifndef USE_SESSION_HASH
     /*
@@ -600,14 +600,14 @@ static int VBoxDrvSolarisClose(dev_t Dev, int flag, int otyp, cred_t *cred)
 
 static int VBoxDrvSolarisRead(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisRead"));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisRead"));
     return 0;
 }
 
 
 static int VBoxDrvSolarisWrite(dev_t Dev, struct uio *pUio, cred_t *pCred)
 {
-    LogFlow((DEVICE_NAME ":VBoxDrvSolarisWrite"));
+    LogFlowFunc((DEVICE_NAME ":VBoxDrvSolarisWrite"));
     return 0;
 }
 

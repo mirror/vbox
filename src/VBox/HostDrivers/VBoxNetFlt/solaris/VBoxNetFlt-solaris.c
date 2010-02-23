@@ -97,10 +97,12 @@
 #define DEVICE_DESC_MOD                 "VirtualBox NetMod"
 
 #if defined(DEBUG_ramshankar)
+# undef LogFlowFunc
+# define LogFlowFunc            LogRel
 # undef Log
-# define Log        LogRel
+# define Log                    LogRel
 # undef LogFlow
-# define LogFlow    LogRel
+# define LogFlow                LogRel
 #endif
 
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
@@ -401,7 +403,7 @@ static int g_VBoxNetFltSolarisPollInterval = -1;
  */
 int _init(void)
 {
-    LogFlow((DEVICE_NAME ":_init\n"));
+    LogFlowFunc((DEVICE_NAME ":_init\n"));
 
     /*
      * Prevent module autounloading.
@@ -472,7 +474,7 @@ int _init(void)
 int _fini(void)
 {
     int rc;
-    LogFlow((DEVICE_NAME ":_fini\n"));
+    LogFlowFunc((DEVICE_NAME ":_fini\n"));
 
     /*
      * Undo the work done during start (in reverse order).
@@ -508,7 +510,7 @@ int _fini(void)
 
 int _info(struct modinfo *pModInfo)
 {
-    LogFlow((DEVICE_NAME ":_info\n"));
+    LogFlowFunc((DEVICE_NAME ":_info\n"));
 
     int rc = mod_info(&g_VBoxNetFltSolarisModLinkage, pModInfo);
 
@@ -527,7 +529,7 @@ int _info(struct modinfo *pModInfo)
  */
 static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisAttach pDip=%p enmCmd=%d\n", pDip, enmCmd));
 
     switch (enmCmd)
     {
@@ -585,7 +587,7 @@ static int VBoxNetFltSolarisAttach(dev_info_t *pDip, ddi_attach_cmd_t enmCmd)
  */
 static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisDetach pDip=%p enmCmd=%d\n", pDip, enmCmd));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisDetach pDip=%p enmCmd=%d\n", pDip, enmCmd));
 
     switch (enmCmd)
     {
@@ -621,7 +623,7 @@ static int VBoxNetFltSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
  */
 static int VBoxNetFltSolarisGetInfo(dev_info_t *pDip, ddi_info_cmd_t enmCmd, void *pvArg, void **ppResult)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd,
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisGetInfo pDip=%p enmCmd=%d pArg=%p instance=%d\n", pDip, enmCmd,
                 getminor((dev_t)pvArg)));
 
     switch (enmCmd)
@@ -659,7 +661,7 @@ static int VBoxNetFltSolarisModOpen(queue_t *pQueue, dev_t *pDev, int fOpenMode,
 {
     Assert(pQueue);
 
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModOpen pQueue=%p pDev=%p fOpenMode=%d fStreamMode=%d\n", pQueue, pDev,
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisModOpen pQueue=%p pDev=%p fOpenMode=%d fStreamMode=%d\n", pQueue, pDev,
             fOpenMode, fStreamMode));
 
     /*
@@ -860,7 +862,7 @@ static int VBoxNetFltSolarisModClose(queue_t *pQueue, int fOpenMode, cred_t *pCr
 {
     Assert(pQueue);
 
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModClose pQueue=%p fOpenMode=%d\n", pQueue, fOpenMode));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisModClose pQueue=%p fOpenMode=%d\n", pQueue, fOpenMode));
 
     vboxnetflt_stream_t *pStream = NULL;
     vboxnetflt_stream_t **ppPrevStream = NULL;
@@ -973,7 +975,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
     if (!pMsg)
         return 0;
 
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModReadPut pQueue=%p pMsg=%p\n", pQueue, pMsg));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisModReadPut pQueue=%p pMsg=%p\n", pQueue, pMsg));
 
     bool fSendUpstream = true;
     vboxnetflt_stream_t *pStream = pQueue->q_ptr;
@@ -1204,7 +1206,7 @@ static int VBoxNetFltSolarisModReadPut(queue_t *pQueue, mblk_t *pMsg)
  */
 static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":VBoxNetFltSolarisModWritePut pQueue=%p pMsg=%p\n", pQueue, pMsg));
+    LogFlowFunc((DEVICE_NAME ":VBoxNetFltSolarisModWritePut pQueue=%p pMsg=%p\n", pQueue, pMsg));
 
     putnext(pQueue, pMsg);
     return 0;
@@ -1219,7 +1221,7 @@ static int VBoxNetFltSolarisModWritePut(queue_t *pQueue, mblk_t *pMsg)
  */
 static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStream)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetRawMode pPromiscStream=%p\n", pPromiscStream));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisSetRawMode pPromiscStream=%p\n", pPromiscStream));
 
     mblk_t *pRawMsg = NULL;
     pRawMsg = mkiocb(DLIOCRAW);
@@ -1248,7 +1250,7 @@ static int vboxNetFltSolarisSetRawMode(vboxnetflt_promisc_stream_t *pPromiscStre
  */
 static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetFastMode pQueue=%p\n", pQueue));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisSetFastMode pQueue=%p\n", pQueue));
 
     mblk_t *pFastMsg = mkiocb(DL_IOC_HDR_INFO);
     if (RT_UNLIKELY(!pFastMsg))
@@ -1297,7 +1299,7 @@ static int vboxNetFltSolarisSetFastMode(queue_t *pQueue)
  */
 static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisPromiscReq pQueue=%p fPromisc=%d\n", pQueue, fPromisc));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisPromiscReq pQueue=%p fPromisc=%d\n", pQueue, fPromisc));
 
     t_uscalar_t Cmd;
     size_t cbReq = 0;
@@ -1349,7 +1351,7 @@ static int vboxNetFltSolarisPromiscReq(queue_t *pQueue, bool fPromisc)
  */
 static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisPhysAddrReq pQueue=%p\n", pQueue));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisPhysAddrReq pQueue=%p\n", pQueue));
 
     t_uscalar_t Cmd = DL_PHYS_ADDR_REQ;
     size_t cbReq = DL_PHYS_ADDR_REQ_SIZE;
@@ -1374,7 +1376,7 @@ static int vboxNetFltSolarisPhysAddrReq(queue_t *pQueue)
  */
 static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr pThis=%p pMsg=%p\n", pThis, pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisCachePhysAddr pThis=%p pMsg=%p\n", pThis, pMsg));
 
     AssertCompile(sizeof(RTMAC) == ETHERADDRL);
     dl_phys_addr_ack_t *pPhysAddrAck = (dl_phys_addr_ack_t *)pMsg->b_rptr;
@@ -1402,7 +1404,7 @@ static void vboxNetFltSolarisCachePhysAddr(PVBOXNETFLTINS pThis, mblk_t *pMsg)
  */
 static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisBindReq SAP=%d\n", SAP));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisBindReq SAP=%d\n", SAP));
 
     mblk_t *pBindMsg = mexchange(NULL, NULL, DL_BIND_REQ_SIZE, M_PROTO, DL_BIND_REQ);
     if (RT_UNLIKELY(!pBindMsg))
@@ -1428,7 +1430,7 @@ static int vboxNetFltSolarisBindReq(queue_t *pQueue, int SAP)
  */
 static int vboxNetFltSolarisNotifyReq(queue_t *pQueue)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisNotifyReq\n"));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisNotifyReq\n"));
 
     mblk_t *pNotifyMsg = mexchange(NULL, NULL, DL_NOTIFY_REQ_SIZE, M_PROTO, DL_NOTIFY_REQ);
     if (RT_UNLIKELY(!pNotifyMsg))
@@ -1663,7 +1665,7 @@ static int vboxNetFltSolarisMuxIdToFd(vnode_t *pVNode, int MuxId, int *pFd)
  */
 static int vboxNetFltSolarisRelinkIp4(vnode_t *pVNode, struct lifreq *pInterface, int IpMuxFd, int ArpMuxFd)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRelinkIp4: pVNode=%p pInterface=%p IpMuxFd=%d ArpMuxFd=%d\n", pVNode,
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisRelinkIp4: pVNode=%p pInterface=%p IpMuxFd=%d ArpMuxFd=%d\n", pVNode,
             pInterface, IpMuxFd, ArpMuxFd));
 
     int NewIpMuxId;
@@ -1698,7 +1700,7 @@ static int vboxNetFltSolarisRelinkIp4(vnode_t *pVNode, struct lifreq *pInterface
  */
 static int vboxNetFltSolarisRelinkIp6(vnode_t *pVNode, struct lifreq *pInterface, int Ip6MuxFd)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRelinkIp6: pVNode=%p pInterface=%p Ip6MuxFd=%d\n", pVNode, pInterface, Ip6MuxFd));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisRelinkIp6: pVNode=%p pInterface=%p Ip6MuxFd=%d\n", pVNode, pInterface, Ip6MuxFd));
 
     int NewIp6MuxId;
     int rc = strioctl(pVNode, I_PLINK, (intptr_t)Ip6MuxFd, 0, K_TO_K, kcred, &NewIp6MuxId);
@@ -1727,7 +1729,7 @@ static int vboxNetFltSolarisRelinkIp6(vnode_t *pVNode, struct lifreq *pInterface
  */
 static int vboxNetFltSolarisDetermineModPos(bool fAttach, vnode_t *pVNode, int *pModPos)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: fAttach=%d pVNode=%p pModPos=%p\n", fAttach, pVNode, pModPos));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisDetermineModPos: fAttach=%d pVNode=%p pModPos=%p\n", fAttach, pVNode, pModPos));
 
     int cMod;
     int rc = strioctl(pVNode, I_LIST, (intptr_t)NULL, 0, K_TO_K, kcred, &cMod);
@@ -1961,7 +1963,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
  */
 static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisCloseStream pThis=%p\n"));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisCloseStream pThis=%p\n"));
 
     ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
 }
@@ -1976,7 +1978,7 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
  */
 static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp4 pThis=%p fAttach=%d\n", pThis, fAttach));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachIp4 pThis=%p fAttach=%d\n", pThis, fAttach));
 
     /*
      * Statuatory Warning: Hackish code ahead.
@@ -2243,7 +2245,7 @@ static int vboxNetFltSolarisAttachIp4(PVBOXNETFLTINS pThis, bool fAttach)
  */
 static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachIp6 pThis=%p fAttach=%d\n", pThis, fAttach));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachIp6 pThis=%p fAttach=%d\n", pThis, fAttach));
 
     /*
      * Statuatory Warning: Hackish code ahead.
@@ -2440,7 +2442,7 @@ static int vboxNetFltSolarisAttachIp6(PVBOXNETFLTINS pThis, bool fAttach)
  */
 static void vboxNetFltSolarispIp6Timer(PRTTIMER pTimer, void *pvData, uint64_t iTick)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarispIp6Timer pTimer=%p pvData=%p\n", pTimer, pvData));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarispIp6Timer pTimer=%p pvData=%p\n", pTimer, pvData));
 
     PVBOXNETFLTINS pThis = (PVBOXNETFLTINS)pvData;
     if (   RT_LIKELY(pThis)
@@ -2479,7 +2481,7 @@ static void vboxNetFltSolarispIp6Timer(PRTTIMER pTimer, void *pvData, uint64_t i
  */
 static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling pThis=%p\n", pThis));
 
     int rc = VINF_SUCCESS;
     vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
@@ -2528,7 +2530,7 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
  */
 static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisDetachFromInterface pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisDetachFromInterface pThis=%p\n", pThis));
 
     ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, true);
     vboxNetFltSolarisCloseStream(pThis);
@@ -2561,7 +2563,7 @@ static int vboxNetFltSolarisDetachFromInterface(PVBOXNETFLTINS pThis)
  */
 static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface pThis=%p\n", pThis));
 
     int rc = vboxNetFltSolarisOpenStream(pThis);
     if (RT_SUCCESS(rc))
@@ -2604,7 +2606,7 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
  */
 static mblk_t *vboxNetFltSolarisMBlkFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisMBlkFromSG pThis=%p pSG=%p\n", pThis, pSG));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisMBlkFromSG pThis=%p pSG=%p\n", pThis, pSG));
 
     mblk_t *pMsg = allocb(pSG->cbTotal, BPRI_MED);
     if (RT_UNLIKELY(!pMsg))
@@ -2668,7 +2670,7 @@ static unsigned vboxNetFltSolarisMBlkCalcSGSegs(PVBOXNETFLTINS pThis, mblk_t *pM
  */
 static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNETSG pSG, unsigned cSegs, uint32_t fSrc)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG pThis=%p pMsg=%p pSG=%p cSegs=%d\n", pThis, pMsg, pSG, cSegs));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG pThis=%p pMsg=%p pSG=%p cSegs=%d\n", pThis, pMsg, pSG, cSegs));
 
     pSG->pvOwnerData = NULL;
     pSG->pvUserData = NULL;
@@ -2731,7 +2733,7 @@ static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNET
  */
 static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData pMsg=%p\n", pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisRawToUnitData pMsg=%p\n", pMsg));
 
     if (DB_TYPE(pMsg) != M_DATA)
         return VERR_NO_MEMORY;
@@ -2783,7 +2785,7 @@ static int vboxNetFltSolarisRawToUnitData(mblk_t *pMsg, mblk_t **ppDlpiMsg)
  */
 static int vboxNetFltSolarisUnitDataToRaw(PVBOXNETFLTINS pThis, mblk_t *pMsg, mblk_t **ppRawMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisUnitDataToRaw pMsg=%p\n", pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisUnitDataToRaw pMsg=%p\n", pMsg));
 
     if (   !pMsg->b_cont
         || DB_TYPE(pMsg) != M_PROTO)
@@ -2902,7 +2904,7 @@ static int vboxNetFltSolarisQueueLoopback(PVBOXNETFLTINS pThis, vboxnetflt_promi
     Assert(DB_TYPE(pMsg) == M_DATA);
     Assert(pPromiscStream);
 
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback pThis=%p pPromiscStream=%p pMsg=%p\n", pThis, pPromiscStream, pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisQueueLoopback pThis=%p pPromiscStream=%p pMsg=%p\n", pThis, pPromiscStream, pMsg));
 
     if (RT_UNLIKELY(pMsg->b_cont))
     {
@@ -3030,7 +3032,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
     Assert(pMsg);
     Assert(DB_TYPE(pMsg) == M_DATA);
 
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk pThis=%p pMsg=%p\n", pThis, pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisIsOurMBlk pThis=%p pMsg=%p\n", pThis, pMsg));
 
     if (pMsg->b_cont)
     {
@@ -3116,7 +3118,7 @@ static bool vboxNetFltSolarisIsOurMBlk(PVBOXNETFLTINS pThis, vboxnetflt_promisc_
  */
 static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStream, queue_t *pQueue, mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisRecv pThis=%p pMsg=%p\n", pThis, pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisRecv pThis=%p pMsg=%p\n", pThis, pMsg));
 
     AssertCompile(sizeof(struct ether_header) == sizeof(RTNETETHERHDR));
     Assert(pStream->Type == kPromiscStream);
@@ -3214,7 +3216,7 @@ static int vboxNetFltSolarisRecv(PVBOXNETFLTINS pThis, vboxnetflt_stream_t *pStr
  */
 static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisFixChecksums pMsg=%p\n"));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisFixChecksums pMsg=%p\n"));
 
     Assert(DB_TYPE(pMsg) == M_DATA);
 
@@ -3341,7 +3343,7 @@ static mblk_t *vboxNetFltSolarisFixChecksums(mblk_t *pMsg)
  */
 static void vboxNetFltSolarisAnalyzeMBlk(mblk_t *pMsg)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltSolarisAnalyzeMBlk pMsg=%p\n", pMsg));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisAnalyzeMBlk pMsg=%p\n", pMsg));
 
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pMsg->b_rptr;
     uint8_t *pb = pMsg->b_rptr;
@@ -3422,7 +3424,7 @@ bool vboxNetFltPortOsIsPromiscuous(PVBOXNETFLTINS pThis)
 
 void vboxNetFltPortOsGetMacAddress(PVBOXNETFLTINS pThis, PRTMAC pMac)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltPortOsGetMacAddress pThis=%p\n", pThis));
     *pMac = pThis->u.s.Mac;
 }
 
@@ -3441,7 +3443,7 @@ bool vboxNetFltPortOsIsHostMac(PVBOXNETFLTINS pThis, PCRTMAC pMac)
 
 void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltPortOsSetActive pThis=%p fActive=%d\n", pThis, fActive));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltPortOsSetActive pThis=%p fActive=%d\n", pThis, fActive));
 
     /*
      * Enable/disable promiscuous mode.
@@ -3465,7 +3467,7 @@ void vboxNetFltPortOsSetActive(PVBOXNETFLTINS pThis, bool fActive)
 
 int vboxNetFltOsDisconnectIt(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltOsDisconnectIt pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltOsDisconnectIt pThis=%p\n", pThis));
 
     vboxNetFltSolarisDetachFromInterface(pThis);
 
@@ -3496,14 +3498,14 @@ int  vboxNetFltOsConnectIt(PVBOXNETFLTINS pThis)
 
 void vboxNetFltOsDeleteInstance(PVBOXNETFLTINS pThis)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n", pThis));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltOsDeleteInstance pThis=%p\n", pThis));
     /* Nothing to do here. */
 }
 
 
 int vboxNetFltOsInitInstance(PVBOXNETFLTINS pThis, void *pvContext)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltOsInitInstance pThis=%p\n"));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltOsInitInstance pThis=%p\n"));
 
     /*
      * Mutex used for loopback lockouts.
@@ -3571,7 +3573,7 @@ bool vboxNetFltOsMaybeRediscovered(PVBOXNETFLTINS pThis)
 
 int vboxNetFltPortOsXmit(PVBOXNETFLTINS pThis, PINTNETSG pSG, uint32_t fDst)
 {
-    LogFlow((DEVICE_NAME ":vboxNetFltPortOsXmit pThis=%p pSG=%p fDst=%d\n", pThis, pSG, fDst));
+    LogFlowFunc((DEVICE_NAME ":vboxNetFltPortOsXmit pThis=%p pSG=%p fDst=%d\n", pThis, pSG, fDst));
 
     int rc = VINF_SUCCESS;
     if (fDst & INTNETTRUNKDIR_WIRE)
