@@ -215,27 +215,34 @@ typedef const RTPROCSTATUS *PCRTPROCSTATUS;
 /**
  * Waits for a process, resumes on interruption.
  *
- * @returns VINF_SUCCESS when the status code for the process was collected and put in *pProcStatus.
+ * @returns VINF_SUCCESS when the status code for the process was collected and
+ *          put in *pProcStatus.
  * @returns VERR_PROCESS_NOT_FOUND if the specified process wasn't found.
- * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exited yet.
+ * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAGS_NOBLOCK and the
+ *          process haven't exited yet.
  *
  * @param   Process         The process to wait for.
  * @param   fFlags          The wait flags, any of the RTPROCWAIT_FLAGS_ \#defines.
  * @param   pProcStatus     Where to store the exit status on success.
+ *                          Optional.
  */
 RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProcStatus);
 
 /**
  * Waits for a process, returns on interruption.
  *
- * @returns VINF_SUCCESS when the status code for the process was collected and put in *pProcStatus.
+ * @returns VINF_SUCCESS when the status code for the process was collected and
+ *          put in *pProcStatus.
  * @returns VERR_PROCESS_NOT_FOUND if the specified process wasn't found.
- * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAG_NOBLOCK and the process haven't exited yet.
- * @returns VERR_INTERRUPTED when the wait was interrupted by the arrival of a signal or other async event.
+ * @returns VERR_PROCESS_RUNNING when the RTPROCWAIT_FLAGS_NOBLOCK and the
+ *          process haven't exited yet.
+ * @returns VERR_INTERRUPTED when the wait was interrupted by the arrival of a
+ *          signal or other async event.
  *
  * @param   Process         The process to wait for.
  * @param   fFlags          The wait flags, any of the RTPROCWAIT_FLAGS_ \#defines.
  * @param   pProcStatus     Where to store the exit status on success.
+ *                          Optional.
  */
 RTR3DECL(int) RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProcStatus);
 
