@@ -699,8 +699,6 @@ void UIMachineWindowNormal::prepareConnections()
 
 void UIMachineWindowNormal::prepareMachineView()
 {
-    return; // TODO: Do not create view for now!
-
     CMachine machine = session().GetMachine();
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -709,16 +707,17 @@ void UIMachineWindowNormal::prepareMachineView()
 #endif
 
     m_pMachineView = UIMachineView::create(  this
-                                           , vboxGlobal().vmRenderMode() // TODO: use correct variable here!
+                                           , vboxGlobal().vmRenderMode()
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo // TODO: use correct variable here!
+                                           , bAccelerate2DVideo
 #endif
                                            , machineLogic()->visualStateType());
-    qobject_cast<QGridLayout*>(centralWidget()->layout())->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
+
+    //qobject_cast<QGridLayout*>(centralWidget()->layout())->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
+    setCentralWidget(m_pMachineView);
 
     /* Setup machine view <-> indicators connections: */
-    connect(machineView(), SIGNAL(keyboardStateChanged(int)),
-            indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
+    connect(machineView(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
     connect(machineView(), SIGNAL(mouseStateChanged(int)), this, SLOT(sltUpdateMouseState(int)));
 }
 

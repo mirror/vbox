@@ -58,44 +58,24 @@ public:
 #endif
                                  , UIVisualStateType visualStateType);
 
-    /* Adjust view geometry: */
-    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
-
-    /* Public members: */
-    // TODO: Is it needed now?
-    void onViewOpened();
-
-    /* Public getters: */
-    int contentsX() const;
-    int contentsY() const;
-    QRect desktopGeometry() const;
-    bool isMouseAbsolute() const { return m_bIsMouseAbsolute; }
-
     /* Public setters: */
-    void setIgnoreGuestResize(bool bIgnore);
+    void setIgnoreGuestResize(bool bIgnore) { m_bIsGuestResizeIgnored = bIgnore; }
     void setMouseIntegrationEnabled(bool bEnabled);
-
-#if defined(Q_WS_MAC)
-    void updateDockIcon();
-    void updateDockOverlay();
-    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
-    void setMouseCoalescingEnabled(bool aOn);
-#endif
+    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
+    //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
 signals:
 
+    /* Machine view signals: */
     void keyboardStateChanged(int iState);
     void mouseStateChanged(int iState);
-    void machineStateChanged(KMachineState state);
-    void additionsStateChanged(const QString &strVersion, bool bIsActive, bool bIsGraphicSupported, bool bIsSeamlessSupported);
-    void mediaDriveChanged(VBoxDefs::MediumType type);
-    void networkStateChange();
-    void usbStateChange();
-    void sharedFoldersChanged();
+
+    /* Utility signals: */
     void resizeHintDone();
 
 protected slots:
 
+    /* Initiate resize request to guest: */
     virtual void doResizeHint(const QSize &aSize = QSize()) = 0;
 
 protected:
@@ -108,12 +88,33 @@ protected:
     );
     virtual ~UIMachineView();
 
-    /* Protected members: */
-    void calculateDesktopGeometry();
-
     /* Protected getters: */
     UIMachineWindow* machineWindowWrapper() { return m_pMachineWindow; }
+    CConsole &console() { return m_console; }
+
+    /* Protected members: */
     QSize sizeHint() const;
+    int contentsX() const;
+    int contentsY() const;
+    int contentsWidth() const;
+    int contentsHeight() const;
+    int visibleWidth() const;
+    int visibleHeight() const;
+    void calculateDesktopGeometry();
+    QRect desktopGeometry() const;
+    //bool isMouseAbsolute() const { return m_bIsMouseAbsolute; }
+
+    /* Prepare routines: */
+    void prepareFrameBuffer();
+    void prepareCommon();
+    void prepareFilters();
+    void loadMachineViewSettings();
+
+    /* Cleanup routines: */
+    //void saveMachineViewSettings();
+    //void cleanupFilters();
+    void cleanupCommon();
+    void cleanupFrameBuffer();
 
     /* Protected variables: */
     VBoxDefs::RenderMode mode;
@@ -124,7 +125,6 @@ private slots:
 #ifdef Q_WS_MAC
     /* Dock icon update handler */
     void sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event);
-
 # ifdef QT_MAC_USE_COCOA
     /* Presentation mode handler */
     void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
@@ -132,16 +132,6 @@ private slots:
 #endif
 
 private:
-
-    /* Private getters: */
-    int contentsWidth() const;
-    int contentsHeight() const;
-    int visibleWidth() const;
-    int visibleHeight() const;
-    const QPixmap& pauseShot() const { return mPausedShot; }
-    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && mHideHostPointer); }
-    bool isRunning() { return mLastState == KMachineState_Running || mLastState == KMachineState_Teleporting || mLastState == KMachineState_LiveSnapshotting; }
-    CConsole &console() { return m_console; }
 
     /* Event processors: */
     bool event(QEvent *pEvent);
@@ -191,6 +181,8 @@ private:
     void paintEvent(QPaintEvent *pEvent);
 
     /* Private members: */
+    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && mHideHostPointer); }
+    bool isRunning() { return mLastState == KMachineState_Running || mLastState == KMachineState_Teleporting || mLastState == KMachineState_LiveSnapshotting; }
     void fixModifierState(LONG *piCodes, uint *puCount);
     void scrollBy(int dx, int dy);
     QPoint viewportToContents(const QPoint &vp) const;
@@ -216,6 +208,15 @@ private:
     QRect availableGeometry();
 
     static void dimImage(QImage &img);
+
+#if defined(Q_WS_MAC)
+    void updateDockIcon();
+    void updateDockOverlay();
+    void setMouseCoalescingEnabled(bool aOn);
+    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
+
+    const QPixmap& pauseShot() const { return mPausedShot; }
+#endif
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
@@ -285,6 +286,10 @@ private:
     bool mPassCAD;
     bool mHideHostPointer;
     QCursor mLastCursor;
+
+    /* Friend classes: */
+    friend class UIFrameBuffer;
+    friend class UIFrameBufferQImage;
 };
 
 #endif // !___UIMachineViewNormal_h___
