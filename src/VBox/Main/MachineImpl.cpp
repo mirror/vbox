@@ -2412,8 +2412,11 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     // @todo r=dj there is no error handling so far...
     bool fNeedsSaveSettings = false;
 
-    /* protect the media tree all the while we're in here, as well as our member variables */
-    AutoMultiWriteLock2 alock(this->lockHandle(), &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+    // request the host lock first, since might be calling Host methods for getting host drives;
+    // next, protect the media tree all the while we're in here, as well as our member variables
+    AutoMultiWriteLock3 alock(mParent->host()->lockHandle(),
+                              this->lockHandle(),
+                              &mParent->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
