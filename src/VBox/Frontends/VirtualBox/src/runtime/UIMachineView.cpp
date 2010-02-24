@@ -78,10 +78,9 @@ const int XKeyRelease = KeyRelease;
 # include "DarwinKeyboard.h"
 # ifdef QT_MAC_USE_COCOA
 #  include "darwin/VBoxCocoaApplication.h"
-# elif defined(VBOX_WITH_HACKED_QT)
-#  include "QIApplication.h"
-# endif
-# include <Carbon/Carbon.h>
+# else /* QT_MAC_USE_COCOA */
+#  include <Carbon/Carbon.h>
+# endif /* !QT_MAC_USE_COCOA */
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
@@ -273,9 +272,9 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , mAlphaCursor (NULL)
 #endif
 #if defined(Q_WS_MAC)
-# if !defined (VBOX_WITH_HACKED_QT) && !defined (QT_MAC_USE_COCOA)
+# ifndef QT_MAC_USE_COCOA
     , mDarwinEventHandlerRef (NULL)
-# endif
+# endif /* !QT_MAC_USE_COCOA */
     , mDarwinKeyModifiers (0)
     , mKeyboardGrabbed (false)
     , mDockIconEnabled (true)
@@ -1627,7 +1626,7 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
         ::VBoxCocoaApplication_setCallback (UINT32_MAX, /** @todo fix mask */
                                             UIMachineView::darwinEventHandlerProc, this);
 
-# elif !defined (VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
         EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
         eventTypes[0].eventKind  = kEventRawKeyDown;
@@ -1650,10 +1649,7 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
         ::InstallApplicationEventHandler(eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
                                          this, &mDarwinEventHandlerRef);
         ::DisposeEventHandlerUPP(eventHandler);
-
-# else  /* VBOX_WITH_HACKED_QT */
-        ((QIApplication *)qApp)->setEventFilter(UIMachineView::macEventFilter, this);
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 
         ::DarwinGrabKeyboard (false);
     }
@@ -1663,15 +1659,13 @@ void UIMachineView::darwinGrabKeyboardEvents(bool fGrab)
 # ifdef QT_MAC_USE_COCOA
         ::VBoxCocoaApplication_unsetCallback(UINT32_MAX, /** @todo fix mask */
                                              UIMachineView::darwinEventHandlerProc, this);
-# elif !defined(VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
         if (mDarwinEventHandlerRef)
         {
             ::RemoveEventHandler(mDarwinEventHandlerRef);
             mDarwinEventHandlerRef = NULL;
         }
-# else  /* VBOX_WITH_HACKED_QT */
-        ((QIApplication *)qApp)->setEventFilter(NULL, NULL);
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
     }
 }
 
@@ -1692,7 +1686,7 @@ LRESULT CALLBACK UIMachineView::lowLevelKeyboardProc(int nCode, WPARAM wParam, L
 #endif
 
 #if defined (Q_WS_MAC)
-# if defined (QT_MAC_USE_COCOA)
+# ifdef QT_MAC_USE_COCOA
 bool UIMachineView::darwinEventHandlerProc (const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser)
 {
     UIMachineView *view = (UIMachineView*)pvUser;
@@ -1714,7 +1708,7 @@ bool UIMachineView::darwinEventHandlerProc (const void *pvCocoaEvent, const void
     return false;
 }
 
-# elif !defined (VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
 
 pascal OSStatus UIMachineView::darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData)
 {
@@ -1746,29 +1740,7 @@ pascal OSStatus UIMachineView::darwinEventHandlerProc (EventHandlerCallRef inHan
     }
     return ::CallNextEventHandler(inHandlerCallRef, inEvent);
 }
-
-# else /* VBOX_WITH_HACKED_QT */
-
-bool UIMachineView::macEventFilter(EventRef inEvent, void *inUserData)
-{
-    UIMachineView *view = static_cast<UIMachineView *>(inUserData);
-    UInt32 eventClass = ::GetEventClass(inEvent);
-    UInt32 eventKind = ::GetEventKind(inEvent);
-
-    /* Not sure but this seems an triggered event if the spotlight searchbar is
-     * displayed. So flag that the host key isn't pressed alone. */
-    if (eventClass == 'cgs ' && eventKind == 0x15 &&
-        view->m_bIsHostkeyPressed)
-        view->m_bIsHostkeyAlone = false;
-
-    if (eventClass == kEventClassKeyboard)
-    {
-        if (view->darwinKeyboardEvent (NULL, inEvent))
-            return true;
-    }
-    return false;
-}
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 
 #endif /* Q_WS_MAC */
 

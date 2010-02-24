@@ -450,3 +450,4 @@ private:
 };
 
 #endif // __VBoxConsoleWnd_h__
+

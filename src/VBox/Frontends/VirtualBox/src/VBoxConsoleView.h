@@ -326,10 +326,10 @@ private:
 #endif
 
 #if defined(Q_WS_MAC)
-# if !defined (VBOX_WITH_HACKED_QT) && !defined (QT_MAC_USE_COCOA)
+# ifndef QT_MAC_USE_COCOA
     /** Event handler reference. NULL if the handler isn't installed. */
     EventHandlerRef mDarwinEventHandlerRef;
-# endif
+# endif /* !QT_MAC_USE_COCOA */
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 mDarwinKeyModifiers;
@@ -345,15 +345,13 @@ private:
     static LRESULT CALLBACK lowLevelKeyboardProc (int nCode,
                                                   WPARAM wParam, LPARAM lParam);
 #elif defined (Q_WS_MAC)
-# if defined (QT_MAC_USE_COCOA)
+# ifdef QT_MAC_USE_COCOA
     static bool darwinEventHandlerProc (const void *pvCocoaEvent, const
                                         void *pvCarbonEvent, void *pvUser);
-# elif !defined (VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
     static pascal OSStatus darwinEventHandlerProc (EventHandlerCallRef inHandlerCallRef,
                                                    EventRef inEvent, void *inUserData);
-# else  /* VBOX_WITH_HACKED_QT */
-    static bool macEventFilter (EventRef inEvent, void *inUserData);
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 #endif
 
     QPixmap mPausedShot;
