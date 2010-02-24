@@ -136,7 +136,38 @@ RTR3DECL(RTPROCPRIORITY) RTProcGetPriority(void);
  */
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess);
 
-/** @name RTProcCreate flags
+
+/**
+ * Create a child process.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszExec     Executable image to use to create the child process.
+ * @param   papszArgs   Pointer to an array of arguments to the child.  The
+ *                      array terminated by an entry containing NULL.
+ * @param   hEnv        Handle to the environment block for the child.  Pass
+ *                      RTENV_DEFAULT to use the environment of the current
+ *                      process.
+ * @param   fFlags      Flags, one of the RTPROC_FLAGS_* defines.
+ * @param   phStdIn     The standard in handle to assign the new process. Pass
+ *                      NULL to use the same as the current process.
+ * @param   phStdOut    The standard out handle to assign the new process.  Pass
+ *                      NULL to use the same as the current process.
+ * @param   phStdErr    The standard error handle to assign the new process.  Pass
+ *                      NULL to use the same as the current process.
+ * @param   pszAsUser   User to run the process as.  Pass NULL to use the same
+ *                      user as the current process.
+ * @param   phProcess   Where to store the process handle on successful return.
+ *                      The content is not changed on failure.  NULL is allowed.
+ *
+ * @remarks The as-user feature isn't supported/implemented on all platforms and
+ *          will cause a-yet-to-be-determined-error-status on these.
+ */
+RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
+                               PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
+                               PRTPROCESS phProcess);
+
+/** @name RTProcCreate and RTProcCreateEx flags
  * @{ */
 /** Daemonize the child process, without changing the directory.
  * @remarks Not implemented on all platforms yet... */
