@@ -2260,6 +2260,10 @@ DxgkDdiSetVidPnSourceVisibility(
                 if (Status != STATUS_SUCCESS)
                     drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
             }
+            else
+            {
+                vboxVdmaFlush (pDevExt, &pDevExt->u.primary.Vdma);
+            }
         }
     }
     else
