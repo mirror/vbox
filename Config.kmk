@@ -603,10 +603,9 @@ if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_VMMR0_DISABLE_PREEMPTION = 1
 endif
 ## For testing deadlock detection and lock order validation.
-# (Temporary, will be made default for debug and strict builds soon.)
-if1of ($(KBUILD_TARGET),)
- VBOX_WITH_STRICT_LOCKS = 1
-endif
+# If issues are found, create high priority defects and temporarily comment
+# the next line.
+VBOX_WITH_STRICT_LOCKS = 1
 
 
 #
