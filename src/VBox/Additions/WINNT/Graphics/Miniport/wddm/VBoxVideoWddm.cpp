@@ -46,42 +46,162 @@ void vboxSHGSMICbCommandWrite(struct _HGSMIHEAP * pHeap, HGSMIOFFSET data)
     VBoxVideoCmnPortWriteUlong((PULONG)VGA_PORT_HGSMI_GUEST, data);
 }
 
-#if 0
-void vboxWddmProcessDisplayInfo (PPDEV ppdev)
+//VBOXVIDEOOFFSET vboxWddmVRAMAddressToOffset(PDEVICE_EXTENSION pDevExt, PHYSICAL_ADDRESS phAddress)
+//{
+//    Assert(phAddress.QuadPart >= VBE_DISPI_LFB_PHYSICAL_ADDRESS);
+//    if (phAddress.QuadPart < VBE_DISPI_LFB_PHYSICAL_ADDRESS)
+//        return VBOXVIDEOOFFSET_VOID;
+//
+//    VBOXVIDEOOFFSET off = phAddress.QuadPart - VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+//    Assert(off < pDevExt->u.primary.cbVRAM);
+//    if (off >= pDevExt->u.primary.cbVRAM)
+//        return VBOXVIDEOOFFSET_VOID;
+//
+//    return off;
+//}
+
+VBOXVIDEOOFFSET vboxWddmValidatePrimary(PVBOXWDDM_ALLOCATION pAllocation)
 {
-    if (ppdev->bHGSMISupported)
+    Assert(pAllocation);
+    if (!pAllocation)
     {
-        /* Issue the screen info command. */
-        void *p = HGSMIHeapAlloc (&ppdev->hgsmiDisplayHeap,
-                                  sizeof (VBVAINFOSCREEN),
-                                  HGSMI_CH_VBVA,
-                                  VBVA_INFO_SCREEN);
-        if (!p)
-        {
-            DISPDBG((0, "VBoxDISP::VBoxProcessDisplayInfo: HGSMIHeapAlloc failed\n"));
-        }
-        else
-        {
-            VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
-
-            pScreen->u32ViewIndex    = ppdev->iDevice;
-            pScreen->i32OriginX      = ppdev->ptlDevOrg.x;
-            pScreen->i32OriginY      = ppdev->ptlDevOrg.y;
-            pScreen->u32StartOffset  = 0;
-            pScreen->u32LineSize     = ppdev->lDeltaScreen > 0?ppdev->lDeltaScreen: -ppdev->lDeltaScreen;
-            pScreen->u32Width        = ppdev->cxScreen;
-            pScreen->u32Height       = ppdev->cyScreen;
-            pScreen->u16BitsPerPixel = (uint16_t)ppdev->ulBitCount;
-            pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
-
-            vboxHGSMIBufferSubmit (ppdev, p);
-
-            HGSMIHeapFree (&ppdev->hgsmiDisplayHeap, p);
-        }
+        drprintf((__FUNCTION__": no allocation specified for Source\n"));
+        return VBOXVIDEOOFFSET_VOID;
     }
 
-    return;
+    Assert(pAllocation->SegmentId);
+    if (!pAllocation->SegmentId)
+    {
+        drprintf((__FUNCTION__": allocation is not paged in\n"));
+        return VBOXVIDEOOFFSET_VOID;
+    }
+
+    VBOXVIDEOOFFSET offVram = pAllocation->offVram;
+    Assert(offVram != VBOXVIDEOOFFSET_VOID);
+    if (offVram == VBOXVIDEOOFFSET_VOID)
+        drprintf((__FUNCTION__": VRAM pffset is not defined\n"));
+
+    return offVram;
 }
+
+NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    VBOXVIDEOOFFSET offVram = pAllocation->offVram;
+    Assert(offVram != VBOXVIDEOOFFSET_VOID);
+    if (offVram == VBOXVIDEOOFFSET_VOID)
+        return STATUS_INVALID_PARAMETER;
+
+    PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+    /* Issue the screen info command. */
+    void *p = vboxHGSMIBufferAlloc (pDevExt,
+                                      sizeof (VBVAINFOSCREEN),
+                                      HGSMI_CH_VBVA,
+                                      VBVA_INFO_SCREEN);
+    Assert(p);
+    if (p)
+    {
+        VBVAINFOSCREEN *pScreen = (VBVAINFOSCREEN *)p;
+
+        pScreen->u32ViewIndex    = pPrimaryInfo->VidPnSourceId;
+        pScreen->i32OriginX      = 0;
+        pScreen->i32OriginY      = 0;
+        pScreen->u32StartOffset  = offVram;
+        pScreen->u32LineSize     = pAllocation->u.SurfInfo.pitch;
+        pScreen->u32Width        = pAllocation->u.SurfInfo.width;
+        pScreen->u32Height       = pAllocation->u.SurfInfo.height;
+        pScreen->u16BitsPerPixel = (uint16_t)pAllocation->u.SurfInfo.bpp;
+        pScreen->u16Flags        = VBVA_SCREEN_F_ACTIVE;
+
+        vboxHGSMIBufferSubmit (pDevExt, p);
+
+        vboxHGSMIBufferFree (pDevExt, p);
+    }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxWddmGhDisplayPostInfoView (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    VBOXVIDEOOFFSET offVram = pAllocation->offVram;
+    Assert(offVram != VBOXVIDEOOFFSET_VOID);
+    if (offVram == VBOXVIDEOOFFSET_VOID)
+        return STATUS_INVALID_PARAMETER;
+
+    PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+    /* Issue the screen info command. */
+    void *p = vboxHGSMIBufferAlloc (pDevExt,
+                                      sizeof (VBVAINFOVIEW),
+                                      HGSMI_CH_VBVA,
+                                      VBVA_INFO_VIEW);
+    Assert(p);
+    if (p)
+    {
+        VBVAINFOVIEW *pView = (VBVAINFOVIEW *)p;
+
+        pView->u32ViewIndex     = pPrimaryInfo->VidPnSourceId;
+        pView->u32ViewOffset    = offVram;
+        pView->u32ViewSize      = vboxWddmVramReportedSize(pDevExt)/pDevExt->u.primary.cDisplays;
+
+        pView->u32MaxScreenSize = pView->u32ViewSize;
+
+        vboxHGSMIBufferSubmit (pDevExt, p);
+
+        vboxHGSMIBufferFree (pDevExt, p);
+    }
+
+    return STATUS_SUCCESS;
+}
+
+NTSTATUS vboxWddmGhDisplaySetMode (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATION pAllocation)
+{
+    PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+    if (pPrimaryInfo->VidPnSourceId)
+        return STATUS_SUCCESS;
+
+    if (VBoxVideoSetCurrentModePerform(pDevExt, pAllocation->u.SurfInfo.width,
+            pAllocation->u.SurfInfo.height, pAllocation->u.SurfInfo.bpp))
+        return STATUS_SUCCESS;
+
+    AssertBreakpoint();
+    drprintf((__FUNCTION__": VBoxVideoSetCurrentModePerform failed\n"));
+    return STATUS_UNSUCCESSFUL;
+}
+
+
+NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource)
+{
+    PVBOXWDDM_ALLOCATION pAllocation = pSource->pAllocation;
+    VBOXVIDEOOFFSET offVram = vboxWddmValidatePrimary(pAllocation);
+    Assert(offVram != VBOXVIDEOOFFSET_VOID);
+    if (offVram == VBOXVIDEOOFFSET_VOID)
+        return STATUS_INVALID_PARAMETER;
+
+    /*
+     * Set the current mode into the hardware.
+     */
+    NTSTATUS Status = vboxWddmGhDisplaySetMode (pDevExt, pAllocation);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        Status = vboxWddmGhDisplayPostInfoView (pDevExt, pAllocation);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxWddmGhDisplayPostInfoScreen (pDevExt, pAllocation);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status != STATUS_SUCCESS)
+                drprintf((__FUNCTION__": vboxWddmGhDisplayPostInfoScreen failed\n"));
+        }
+        else
+            drprintf((__FUNCTION__": vboxWddmGhDisplayPostInfoView failed\n"));
+    }
+    else
+        drprintf((__FUNCTION__": vboxWddmGhDisplaySetMode failed\n"));
+
+    return Status;
+}
+
+#if 0
 
 NTSTATUS vboxWddmGhInitPrimary(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, D3DKMDT_VIDPN_SOURCE_MODE *pVidPnSourceModeInfo)
 {
@@ -1106,7 +1226,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pQsOut->pSegmentDescriptor->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pQsOut->pSegmentDescriptor->Size = (pContext->u.primary.cbVRAM - VBVA_ADAPTER_INFORMATION_SIZE - pContext->u.primary.cbMiniportHeap) & (~0xfffUL);
+                pQsOut->pSegmentDescriptor->Size = vboxWddmVramReportedSize(pContext);
                 pQsOut->pSegmentDescriptor->NbOfBanks = 0;
                 pQsOut->pSegmentDescriptor->pBankRangeTable = 0;
                 pQsOut->pSegmentDescriptor->CommitLimit = pQsOut->pSegmentDescriptor->Size;
@@ -1516,10 +1636,10 @@ DxgkDdiPatch(
         const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[i];
         Assert(pPatchList->AllocationIndex < pPatch->AllocationListSize);
         const DXGK_ALLOCATIONLIST *pAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
-        if (pAllocationList->PhysicalAddress.QuadPart)
+        if (pAllocationList->SegmentId)
         {
             Assert(pPatchList->PatchOffset < (pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset));
-            *((PHYSICAL_ADDRESS*)(pBuf+pPatchList->PatchOffset)) = pAllocationList->PhysicalAddress;
+            *((VBOXVIDEOOFFSET*)(pBuf+pPatchList->PatchOffset)) = (VBOXVIDEOOFFSET)pAllocationList->PhysicalAddress.QuadPart;
         }
         else
         {
@@ -2078,11 +2198,17 @@ DxgkDdiSetVidPnSourceAddress(
         {
             Assert(pAllocation->enmType == VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE);
             PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimary = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
-            pAllocation->phAddress = pSetVidPnSourceAddress->PrimaryAddress;
+            pAllocation->offVram = (VBOXVIDEOOFFSET)pSetVidPnSourceAddress->PrimaryAddress.QuadPart;
+            pAllocation->SegmentId = pSetVidPnSourceAddress->PrimarySegment;
+            Assert (pAllocation->SegmentId);
             Assert (!pPrimary->bVisible);
             if (pPrimary->bVisible)
             {
-                /* @todo: should not generally happen, but still inform host*/
+                /* should not generally happen, but still inform host*/
+                Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
             }
         }
         else
@@ -2109,7 +2235,42 @@ DxgkDdiSetVidPnSourceVisibility(
     CONST DXGKARG_SETVIDPNSOURCEVISIBILITY* pSetVidPnSourceVisibility
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiSetVidPnSourceVisibility should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    NTSTATUS Status = STATUS_SUCCESS;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    Assert(pDevExt->cSources > pSetVidPnSourceVisibility->VidPnSourceId);
+    if (pDevExt->cSources > pSetVidPnSourceVisibility->VidPnSourceId)
+    {
+        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pSetVidPnSourceVisibility->VidPnSourceId];
+        PVBOXWDDM_ALLOCATION pAllocation = pSource->pAllocation;
+        PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimary = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+
+        Assert(pPrimary->bVisible != pSetVidPnSourceVisibility->Visible);
+        if (pPrimary->bVisible != pSetVidPnSourceVisibility->Visible)
+        {
+            pPrimary->bVisible = pSetVidPnSourceVisibility->Visible;
+            if (pPrimary->bVisible)
+            {
+                Status = vboxWddmGhDisplaySetInfo(pDevExt, pSource);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    drprintf((__FUNCTION__": vboxWddmGhDisplaySetInfo failed, Status (0x%x)\n", Status));
+            }
+        }
+    }
+    else
+    {
+        drprintf((__FUNCTION__": invalid VidPnSourceId (%d), should be smaller than (%d)\n", pSetVidPnSourceVisibility->VidPnSourceId, pDevExt->cSources));
+        Status = STATUS_INVALID_PARAMETER;
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 NTSTATUS
@@ -2119,6 +2280,7 @@ DxgkDdiCommitVidPn(
     CONST DXGKARG_COMMITVIDPN* CONST  pCommitVidPnArg
     )
 {
+
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2367,21 +2529,21 @@ DxgkDdiPresent(
                 {
                     if (vboxWddmPixFormatConversionSupported(pSrcAlloc->u.SurfInfo.format, pDstAlloc->u.SurfInfo.format))
                     {
-                        memset(pPresent->pPatchLocationListOut, 0, 3*sizeof (D3DDDI_PATCHLOCATIONLIST));
-                        pPresent->pPatchLocationListOut->PatchOffset = 0;
+                        memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
+//                        pPresent->pPatchLocationListOut->PatchOffset = 0;
+//                        ++pPresent->pPatchLocationListOut;
+                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offSrc);
+                        pPresent->pPatchLocationListOut->AllocationIndex = 0;
                         ++pPresent->pPatchLocationListOut;
-                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, phSrc);
-                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
-                        ++pPresent->pPatchLocationListOut;
-                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, phDst);
-                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_DESTINATION_INDEX;
+                        pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offDst);
+                        pPresent->pPatchLocationListOut->AllocationIndex = 1;
                         ++pPresent->pPatchLocationListOut;
 
                         pCmd->enmType = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
                         pCmd->u32CmdSpecific = 0;
                         PVBOXVDMACMD_DMA_PRESENT_BLT pTransfer = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);
-                        pTransfer->phSrc = pSrc->PhysicalAddress.QuadPart;
-                        pTransfer->phDst = pDst->PhysicalAddress.QuadPart;
+                        pTransfer->offSrc = (VBOXVIDEOOFFSET)pSrc->PhysicalAddress.QuadPart;
+                        pTransfer->offDst = (VBOXVIDEOOFFSET)pDst->PhysicalAddress.QuadPart;
                         vboxWddmSurfDescFromAllocation(pSrcAlloc, &pTransfer->srcDesc);
                         vboxWddmSurfDescFromAllocation(pDstAlloc, &pTransfer->dstDesc);
                         vboxWddmRectlFromRect(&pPresent->SrcRect, &pTransfer->srcRectl);

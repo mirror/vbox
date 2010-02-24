@@ -66,8 +66,8 @@ typedef struct VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE
 typedef struct VBOXWDDM_ALLOCATION
 {
     VBOXWDDM_ALLOC_TYPE enmType;
-    PHYSICAL_ADDRESS phAddress;
-    BOOLEAN bPagedIn;
+    VBOXVIDEOOFFSET offVram;
+    UINT SegmentId;
     union
     {
         VBOXWDDM_SURFACE_DESC SurfInfo;
