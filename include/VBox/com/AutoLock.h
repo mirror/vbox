@@ -35,8 +35,8 @@
 
 // macros for automatic lock validation; these will amount to nothing
 // unless lock validation is enabled for the runtime
-#if defined(RT_LOCK_STRICT) && defined (DEBUG)
-#define VBOX_WITH_MAIN_LOCK_VALIDATION
+#if defined(RT_LOCK_STRICT)
+# define VBOX_WITH_MAIN_LOCK_VALIDATION
 # define COMMA_LOCKVAL_SRC_POS , RT_SRC_POS
 # define LOCKVAL_SRC_POS_DECL RT_SRC_POS_DECL
 # define COMMA_LOCKVAL_SRC_POS_DECL , RT_SRC_POS_DECL
