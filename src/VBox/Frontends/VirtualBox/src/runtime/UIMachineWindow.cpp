@@ -119,9 +119,11 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
             CSnapshot snapshot = machine.GetCurrentSnapshot();
             strSnapshotName = " (" + snapshot.GetName() + ")";
         }
-        machineWindow()->setWindowTitle(machine.GetName() + strSnapshotName + " [" +
-                                        vboxGlobal().toString(machineLogic()->machineState()) + "] - " +
-                                        m_strWindowTitlePrefix);
+        QString strMachineName = machine.GetName() + strSnapshotName;
+        if (machineLogic()->machineState() != KMachineState_Null)
+            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
+        strMachineName += m_strWindowTitlePrefix;
+        machineWindow()->setWindowTitle(strMachineName);
 
         // TODO: Move that to fullscreen/seamless update routine:
         // mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);

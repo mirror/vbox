@@ -38,6 +38,7 @@ protected:
                         , bool bAccelerate2DVideo
 #endif
     );
+    virtual ~UIMachineViewNormal();
 
     void normalizeGeometry(bool bAdjustPosition = false);
 

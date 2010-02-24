@@ -158,51 +158,6 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     return view;
 }
 
-void UIMachineView::onViewOpened()
-{
-    /* Variable m_bIsMachineWindowResizeIgnored was initially "true" to ignore QT
-     * initial resize event in case of auto-resize feature is on.
-     * Currently, initial resize event is already processed, so we set
-     * m_bIsMachineWindowResizeIgnored to "false" to process all further resize
-     * events as user-initiated window resize events. */
-    m_bIsMachineWindowResizeIgnored = false;
-}
-
-int UIMachineView::contentsX() const
-{
-    return horizontalScrollBar()->value();
-}
-
-int UIMachineView::contentsY() const
-{
-    return verticalScrollBar()->value();
-}
-
-QRect UIMachineView::desktopGeometry() const
-{
-    QRect rc;
-    switch (mDesktopGeo)
-    {
-        case DesktopGeo_Fixed:
-        case DesktopGeo_Automatic:
-            rc = QRect(0, 0,
-                       qMax(mDesktopGeometry.width(), mStoredConsoleSize.width()),
-                       qMax(mDesktopGeometry.height(), mStoredConsoleSize.height()));
-            break;
-        case DesktopGeo_Any:
-            rc = QRect(0, 0, 0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Bad geometry type %d\n", mDesktopGeo));
-    }
-    return rc;
-}
-
-void UIMachineView::setIgnoreGuestResize(bool bIgnore)
-{
-    m_bIsGuestResizeIgnored = bIgnore;
-}
-
 void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
 {
     if (m_bIsMouseIntegrated == bEnabled)
@@ -284,9 +239,249 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
       /* Don't show a hardware pointer until we have one to show */
     , mHideHostPointer (true)
 {
-    Assert (!m_console.isNull() && !m_console.GetDisplay().isNull() && !m_console.GetKeyboard().isNull() && !m_console.GetMouse().isNull());
+}
 
-#ifdef Q_WS_MAC
+UIMachineView::~UIMachineView()
+{
+}
+
+QSize UIMachineView::sizeHint() const
+{
+#ifdef VBOX_WITH_DEBUGGER
+    /** @todo figure out a more proper fix. */
+    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done
+     *             by DevVGA if provoked before power on. */
+    QSize fb(mFrameBuf->width(), mFrameBuf->height());
+    if ((fb.width() < 16 || fb.height() < 16) && (vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled()))
+        fb = QSize(640, 480);
+    return QSize(fb.width() + frameWidth() * 2, fb.height() + frameWidth() * 2);
+#else
+    return QSize(mFrameBuf->width() + frameWidth() * 2, mFrameBuf->height() + frameWidth() * 2);
+#endif
+}
+
+int UIMachineView::contentsX() const
+{
+    return horizontalScrollBar()->value();
+}
+
+int UIMachineView::contentsY() const
+{
+    return verticalScrollBar()->value();
+}
+
+int UIMachineView::contentsWidth() const
+{
+    return mFrameBuf->width();
+}
+
+int UIMachineView::contentsHeight() const
+{
+    return mFrameBuf->height();
+}
+
+int UIMachineView::visibleWidth() const
+{
+    return horizontalScrollBar()->pageStep();
+}
+
+int UIMachineView::visibleHeight() const
+{
+    return verticalScrollBar()->pageStep();
+}
+
+void UIMachineView::calculateDesktopGeometry()
+{
+    /* This method should not get called until we have initially set up the mDesktopGeo: */
+    Assert((mDesktopGeo != DesktopGeo_Invalid));
+    /* If we are not doing automatic geometry calculation then there is nothing to do: */
+    if (DesktopGeo_Automatic == mDesktopGeo)
+    {
+        /* Available geometry of the desktop.  If the desktop is a single
+         * screen, this will exclude space taken up by desktop taskbars
+         * and things, but this is unfortunately not true for the more
+         * complex case of a desktop spanning multiple screens: */
+        QRect desktop = availableGeometry();
+        /* The area taken up by the console window on the desktop,
+         * including window frame, title and menu bar and whatnot. */
+        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
+        /* The area taken up by the console window, minus all decorations. */
+        QRect window = geometry();
+        /* To work out how big we can make the console window while still
+         * fitting on the desktop, we calculate desktop - frame + window.
+         * This works because the difference between frame and window
+         * (or at least its width and height) is a constant. */
+        mDesktopGeometry = QRect(0, 0, desktop.width() - frame.width() + window.width(),
+                                       desktop.height() - frame.height() + window.height());
+    }
+}
+
+QRect UIMachineView::desktopGeometry() const
+{
+    QRect rc;
+    switch (mDesktopGeo)
+    {
+        case DesktopGeo_Fixed:
+        case DesktopGeo_Automatic:
+            rc = QRect(0, 0,
+                       qMax(mDesktopGeometry.width(), mStoredConsoleSize.width()),
+                       qMax(mDesktopGeometry.height(), mStoredConsoleSize.height()));
+            break;
+        case DesktopGeo_Any:
+            rc = QRect(0, 0, 0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Bad geometry type %d\n", mDesktopGeo));
+    }
+    return rc;
+}
+
+void UIMachineView::prepareFrameBuffer()
+{
+    CDisplay display = m_console.GetDisplay();
+    Assert(!display.isNull());
+    mFrameBuf = NULL;
+
+    switch (mode)
+    {
+#if defined (VBOX_GUI_USE_QIMAGE)
+        case VBoxDefs::QImageMode:
+#if 0 // TODO: Enable QImage + Video Acceleration!
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            mFrameBuf = mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQImage(this);
+# else
+            mFrameBuf = new UIFrameBufferQImage(this);
+# endif
+#endif
+            mFrameBuf = new UIFrameBufferQImage(this);
+            break;
+#endif
+#if 0 // TODO: Enable OpenGL frame buffer!
+#if defined (VBOX_GUI_USE_QGL)
+        case VBoxDefs::QGLMode:
+            mFrameBuf = new UIQGLFrameBuffer(this);
+            break;
+        case VBoxDefs::QGLOverlayMode:
+            mFrameBuf = new UIQGLOverlayFrameBuffer(this);
+            break;
+#endif
+#endif
+#if 0 // TODO: Enable SDL frame buffer!
+#if defined (VBOX_GUI_USE_SDL)
+        case VBoxDefs::SDLMode:
+            /* Indicate that we are doing all drawing stuff ourself: */
+            pViewport->setAttribute(Qt::WA_PaintOnScreen);
+# ifdef Q_WS_X11
+            /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
+            XFlush(QX11Info::display());
+# endif
+# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+            mFrameBuf = mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UISDLFrameBuffer> (this, &machineWindowWrapper()->session()) : new UISDLFrameBuffer(this);
+# else
+            mFrameBuf = new UISDLFrameBuffer(this);
+# endif
+            /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
+            horizontalScrollBar()->setEnabled(false);
+            verticalScrollBar()->setEnabled(false);
+            break;
+#endif
+#endif
+#if 0 // TODO: Enable DDraw frame buffer!
+#if defined (VBOX_GUI_USE_DDRAW)
+        case VBoxDefs::DDRAWMode:
+            mFrameBuf = new UIDDRAWFrameBuffer(this);
+            if (!mFrameBuf || mFrameBuf->address() == NULL)
+            {
+                if (mFrameBuf)
+                    delete mFrameBuf;
+                mode = VBoxDefs::QImageMode;
+                mFrameBuf = new UIFrameBufferQImage(this);
+            }
+            break;
+#endif
+#endif
+#if 0 // TODO: Enable Quartz2D frame buffer!
+#if defined (VBOX_GUI_USE_QUARTZ2D)
+        case VBoxDefs::Quartz2DMode:
+            /* Indicate that we are doing all drawing stuff ourself: */
+            pViewport->setAttribute(Qt::WA_PaintOnScreen);
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            mFrameBuf = mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+# else
+            mFrameBuf = new UIFrameBufferQuartz2D(this);
+# endif
+            break;
+#endif
+#endif
+        default:
+            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", mode));
+            LogRel(("Invalid render mode: %d\n", mode));
+            qApp->exit(1);
+            break;
+    }
+    if (mFrameBuf)
+    {
+        mFrameBuf->AddRef();
+        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(mFrameBuf));
+    }
+}
+
+void UIMachineView::prepareCommon()
+{
+    /* Prepare view frame: */
+    setFrameStyle(QFrame::NoFrame);
+
+    /* Pressed keys: */
+    ::memset(mPressedKeys, 0, sizeof(mPressedKeys));
+
+    /* Prepare viewport: */
+#ifdef VBOX_GUI_USE_QGL
+    QWidget *pViewport;
+    switch (mode)
+    {
+#if 0 // TODO: Create Open GL viewport!
+        case VBoxDefs::QGLMode:
+            pViewport = new VBoxGLWidget(this, this, NULL);
+            break;
+#endif
+        default:
+            pViewport = new VBoxViewport(this);
+    }
+#else
+    VBoxViewport *pViewport = new VBoxViewport(this);
+#endif
+    setViewport(pViewport);
+
+    /* Setup palette: */
+    QPalette palette(viewport()->palette());
+    palette.setColor(viewport()->backgroundRole(), Qt::black);
+    viewport()->setPalette(palette);
+
+    /* Setup size-policy: */
+    setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
+    setMaximumSize(sizeHint());
+
+    /* Setup focus policy: */
+    setFocusPolicy(Qt::WheelFocus);
+
+#if defined Q_WS_WIN
+    gView = this;
+#endif
+
+#if defined Q_WS_PM
+    bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
+    Assert(ok);
+    NOREF(ok);
+#endif
+
+#if defined Q_WS_MAC
+    /* Dock icon update connection */
+    connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
+            this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
+    /* Presentation Mode connection */
+    connect(&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
+            this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
+
     /* Overlay logo for the dock icon */
     //mVirtualBoxLogo = ::darwinToCGImageRef("VirtualBox_cube_42px.png");
     QString osTypeId = m_console.GetGuest().GetOSTypeId();
@@ -313,200 +508,65 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     ::InstallApplicationEventHandler(eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0], this, &mDarwinWindowOverlayHandlerRef);
     ::DisposeEventHandlerUPP(eventHandler);
 # endif /* !QT_MAC_USE_COCOA */
-#endif /* QT_WS_MAC */
-
-    /* No frame around the view */
-    setFrameStyle(QFrame::NoFrame);
-
-#ifdef VBOX_GUI_USE_QGL
-    QWidget *pViewport;
-    switch (mode)
-    {
-        // TODO: Fix that!
-        //case VBoxDefs::QGLMode:
-        //    pViewport = new VBoxGLWidget(this, this, NULL);
-        //    break;
-        default:
-            pViewport = new VBoxViewport(this);
-    }
-#else
-    VBoxViewport *pViewport = new VBoxViewport(this);
-#endif
-    setViewport(pViewport);
-//    pViewport->vboxDoInit();
-
-    /* enable MouseMove events */
-    viewport()->setMouseTracking(true);
-
-    /*
-     *  QScrollView does the below on its own, but let's do it anyway
-     *  for the case it will not do it in the future.
-     */
-    viewport()->installEventFilter(this);
-
-    /* to fix some focus issues */
-    // TODO: Fix that!
-    //machineWindowWrapper()->menuBar()->installEventFilter(this);
-
-    /* we want to be notified on some parent's events */
-    machineWindowWrapper()->machineWindow()->installEventFilter(this);
-
-#ifdef Q_WS_X11
-    /* initialize the X keyboard subsystem */
-    initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
-#endif
-
-    ::memset(mPressedKeys, 0, sizeof(mPressedKeys));
-
-    /* setup rendering */
-
-    CDisplay display = m_console.GetDisplay();
-    Assert(!display.isNull());
-
-    mFrameBuf = NULL;
-
-    LogFlowFunc(("Rendering mode: %d\n", mode));
-
-    switch (mode)
-    {
-#if defined (VBOX_GUI_USE_QGL)
-// TODO: Fix that!
-//        case VBoxDefs::QGLMode:
-//            mFrameBuf = new VBoxQGLFrameBuffer(this);
-//            break;
-//        case VBoxDefs::QGLOverlayMode:
-//            mFrameBuf = new VBoxQGLOverlayFrameBuffer(this);
-//            break;
-#endif
-#if defined (VBOX_GUI_USE_QIMAGE)
-        case VBoxDefs::QImageMode:
-            mFrameBuf =
-#ifdef VBOX_WITH_VIDEOHWACCEL
-//                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage>(this, &machineWindowWrapper()->session()) :
-#endif
-                    new UIFrameBufferQImage(this);
-            break;
-#endif
-#if defined (VBOX_GUI_USE_SDL)
-        case VBoxDefs::SDLMode:
-            /* Indicate that we are doing all
-             * drawing stuff ourself */
-            pViewport->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef Q_WS_X11
-            /* This is somehow necessary to prevent strange X11 warnings on
-             * i386 and segfaults on x86_64. */
-            XFlush(QX11Info::display());
-# endif
-//            mFrameBuf =
-#if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-//                mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer> (this, &machineWindowWrapper()->session()) :
-#endif
-//                new VBoxSDLFrameBuffer(this);
-            /*
-             *  disable scrollbars because we cannot correctly draw in a
-             *  scrolled window using SDL
-             */
-            horizontalScrollBar()->setEnabled(false);
-            verticalScrollBar()->setEnabled(false);
-            break;
-#endif
-#if defined (VBOX_GUI_USE_DDRAW)
-        case VBoxDefs::DDRAWMode:
-            mFrameBuf = new VBoxDDRAWFrameBuffer(this);
-            break;
-#endif
-#if defined (VBOX_GUI_USE_QUARTZ2D)
-        case VBoxDefs::Quartz2DMode:
-            /* Indicate that we are doing all
-             * drawing stuff ourself */
-            pViewport->setAttribute(Qt::WA_PaintOnScreen);
-//            mFrameBuf =
-#ifdef VBOX_WITH_VIDEOHWACCEL
-              // TODO_NEW_CORE
-//                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) :
-#endif
-//                  new UIFrameBufferQuartz2D(this);
-            break;
-#endif
-        default:
-            AssertReleaseMsgFailed(("Render mode must be valid: %d\n", mode));
-            LogRel (("Invalid render mode: %d\n", mode));
-            qApp->exit (1);
-            break;
-    }
-
-#if defined (VBOX_GUI_USE_DDRAW)
-    if (!mFrameBuf || mFrameBuf->address() == NULL)
-    {
-        if (mFrameBuf)
-            delete mFrameBuf;
-        mode = VBoxDefs::QImageMode;
-        mFrameBuf = new UIFrameBufferQImage(this);
-    }
-#endif
-
-    if (mFrameBuf)
-    {
-        mFrameBuf->AddRef();
-        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(mFrameBuf));
-    }
-
-    QPalette palette(viewport()->palette());
-    palette.setColor(viewport()->backgroundRole(), Qt::black);
-    viewport()->setPalette(palette);
-
-    setSizePolicy(QSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum));
-    setMaximumSize(sizeHint());
-
-    setFocusPolicy(Qt::WheelFocus);
-
-    /* Remember the desktop geometry and register for geometry change
-       events for telling the guest about video modes we like. */
-
-    QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-    if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
-        setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
-    else if (desktopGeometry == "any")
-        setDesktopGeometry(DesktopGeo_Any, 0, 0);
-    else
-    {
-        int width = desktopGeometry.section(',', 0, 0).toInt();
-        int height = desktopGeometry.section(',', 1, 1).toInt();
-        setDesktopGeometry(DesktopGeo_Fixed, width, height);
-    }
-    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(doResizeDesktop(int)));
-
-    QString passCAD = m_console.GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
-    if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
-        mPassCAD = true;
-
-#if defined (Q_WS_WIN)
-    gView = this;
-#endif
-
-#if defined (Q_WS_PM)
-    bool ok = VBoxHlpInstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert (ok);
-    NOREF (ok);
-#endif
-
-#ifdef Q_WS_MAC
-    /* Dock icon update connection */
-    connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
-            this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
-    /* Presentation Mode connection */
-    connect(&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
-            this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
 #endif
 }
 
-UIMachineView::~UIMachineView()
+void UIMachineView::prepareFilters()
 {
-#if 0
+    /* Enable MouseMove events: */
+    viewport()->setMouseTracking(true);
+
+    /* QScrollView does the below on its own, but let's
+     * do it anyway for the case it will not do it in the future: */
+    viewport()->installEventFilter(this);
+
+    /* To fix some focus issues: */
+    //qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
+
+    /* We want to be notified on some parent's events: */
+    machineWindowWrapper()->machineWindow()->installEventFilter(this);
+}
+
+void UIMachineView::loadMachineViewSettings()
+{
+    /* Global settings: */
+    {
+        /* Remember the desktop geometry and register for geometry
+         * change events for telling the guest about video modes we like: */
+        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
+        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
+            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
+        else if (desktopGeometry == "any")
+            setDesktopGeometry(DesktopGeo_Any, 0, 0);
+        else
+        {
+            int width = desktopGeometry.section(',', 0, 0).toInt();
+            int height = desktopGeometry.section(',', 1, 1).toInt();
+            setDesktopGeometry(DesktopGeo_Fixed, width, height);
+        }
+        connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(doResizeDesktop(int)));
+
+#ifdef Q_WS_X11
+        /* Initialize the X keyboard subsystem: */
+        initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
+#endif
+    }
+
+    /* Exatra data settings: */
+    {
+        /* CAD settings: */
+        QString passCAD = m_console.GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
+        if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
+            mPassCAD = true;
+    }
+}
+
+void UIMachineView::cleanupCommon()
+{
 #if defined (Q_WS_PM)
     bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
-    Assert (ok);
-    NOREF (ok);
+    Assert(ok);
+    NOREF(ok);
 #endif
 
 #if defined (Q_WS_WIN)
@@ -516,17 +576,6 @@ UIMachineView::~UIMachineView()
     if (mAlphaCursor)
         DestroyIcon(mAlphaCursor);
 #endif
-
-    if (mFrameBuf)
-    {
-        /* detach our framebuffer from Display */
-        CDisplay display = m_console.GetDisplay();
-        Assert(!display.isNull());
-        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
-        /* release the reference */
-        mFrameBuf->Release();
-        mFrameBuf = NULL;
-    }
 
 #if defined (Q_WS_MAC)
 # if !defined (QT_MAC_USE_COCOA)
@@ -539,48 +588,20 @@ UIMachineView::~UIMachineView()
     delete mDockIconPreview;
     mDockIconPreview = NULL;
 #endif
-#endif
 }
 
-void UIMachineView::calculateDesktopGeometry()
+void UIMachineView::cleanupFrameBuffer()
 {
-    /* This method should not get called until we have initially set up the */
-    Assert((mDesktopGeo != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do. */
-    if (DesktopGeo_Automatic == mDesktopGeo)
+    /* Cleanup: */
+    if (mFrameBuf)
     {
-        /* Available geometry of the desktop.  If the desktop is a single
-         * screen, this will exclude space taken up by desktop taskbars
-         * and things, but this is unfortunately not true for the more
-         * complex case of a desktop spanning multiple screens. */
-        QRect desktop = availableGeometry();
-        /* The area taken up by the console window on the desktop,
-         * including window frame, title and menu bar and whatnot. */
-        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
-        /* The area taken up by the console window, minus all decorations. */
-        //QRect window = machineWindowWrapper()->centralWidget()->geometry(); // TODO check that!
-        /* To work out how big we can make the console window while still
-         * fitting on the desktop, we calculate desktop - frame + window.
-         * This works because the difference between frame and window
-         * (or at least its width and height) is a constant. */
-        //mDesktopGeometry = QRect(0, 0, desktop.width() - frame.width() + window.width(),
-        //                               desktop.height() - frame.height() + window.height());
+        /* Detach framebuffer from Display: */
+        CDisplay display = console().GetDisplay();
+        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
+        /* Release the reference: */
+        mFrameBuf->Release();
+        mFrameBuf = NULL;
     }
-}
-
-QSize UIMachineView::sizeHint() const
-{
-#ifdef VBOX_WITH_DEBUGGER
-    /** @todo figure out a more proper fix. */
-    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done
-     *             by DevVGA if provoked before power on. */
-    QSize fb(mFrameBuf->width(), mFrameBuf->height());
-    if ((fb.width() < 16 || fb.height() < 16) && (vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled()))
-        fb = QSize(640, 480);
-    return QSize(fb.width() + frameWidth() * 2, fb.height() + frameWidth() * 2);
-#else
-    return QSize(mFrameBuf->width() + frameWidth() * 2, mFrameBuf->height() + frameWidth() * 2);
-#endif
 }
 
 #ifdef Q_WS_MAC
@@ -616,26 +637,6 @@ void UIMachineView::sltChangePresentationMode(const VBoxChangePresentationModeEv
 }
 # endif /* QT_MAC_USE_COCOA */
 #endif
-
-int UIMachineView::contentsWidth() const
-{
-    return mFrameBuf->width();
-}
-
-int UIMachineView::contentsHeight() const
-{
-    return mFrameBuf->height();
-}
-
-int UIMachineView::visibleWidth() const
-{
-    return horizontalScrollBar()->pageStep();
-}
-
-int UIMachineView::visibleHeight() const
-{
-    return verticalScrollBar()->pageStep();
-}
 
 bool UIMachineView::event(QEvent *e)
 {
@@ -2508,72 +2509,6 @@ void UIMachineView::scrollContentsBy (int dx, int dy)
 }
 #endif
 
-#if defined(Q_WS_MAC)
-void UIMachineView::updateDockIcon()
-{
-    if (mDockIconEnabled)
-    {
-        if (!mPausedShot.isNull())
-        {
-            CGImageRef pauseImg = ::darwinToCGImageRef (&mPausedShot);
-            /* Use the pause image as background */
-            mDockIconPreview->updateDockPreview (pauseImg);
-            CGImageRelease (pauseImg);
-        }
-        else
-        {
-# if defined (VBOX_GUI_USE_QUARTZ2D)
-                // TODO_NEW_CORE
-//            if (mode == VBoxDefs::Quartz2DMode)
-//            {
-                /* If the render mode is Quartz2D we could use the CGImageRef
-                 * of the framebuffer for the dock icon creation. This saves
-                 * some conversion time. */
-//                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef());
-//            }
-//            else
-# endif
-                /* In image mode we have to create the image ref out of the
-                 * framebuffer */
-                // TODO_NEW_CORE
-//                mDockIconPreview->updateDockPreview (mFrameBuf);
-        }
-    }
-}
-
-void UIMachineView::updateDockOverlay()
-{
-    /* Only to an update to the realtime preview if this is enabled by the user
-     * & we are in an state where the framebuffer is likely valid. Otherwise to
-     * the overlay stuff only. */
-    if (mDockIconEnabled &&
-        (mLastState == KMachineState_Running ||
-         mLastState == KMachineState_Paused ||
-         mLastState == KMachineState_Teleporting ||
-         mLastState == KMachineState_LiveSnapshotting ||
-         mLastState == KMachineState_Restoring ||
-         mLastState == KMachineState_TeleportingPausedVM ||
-         mLastState == KMachineState_TeleportingIn ||
-         mLastState == KMachineState_Saving))
-        updateDockIcon();
-    else
-        mDockIconPreview->updateDockOverlay();
-}
-
-void UIMachineView::setMouseCoalescingEnabled (bool aOn)
-{
-    /* Enable mouse event compression if we leave the VM view. This
-       is necessary for having smooth resizing of the VM/other
-       windows.
-       Disable mouse event compression if we enter the VM view. So
-       all mouse events are registered in the VM. Only do this if
-       the keyboard/mouse is grabbed (this is when we have a valid
-       event handler). */
-    if (aOn || mKeyboardGrabbed)
-        ::darwinSetMouseCoalescingEnabled (aOn);
-}
-#endif /* Q_WS_MAC */
-
 void UIMachineView::onStateChange(KMachineState state)
 {
     switch (state)
@@ -3225,4 +3160,70 @@ void UIMachineView::dimImage(QImage &img)
         }
     }
 }
+
+#if defined(Q_WS_MAC)
+void UIMachineView::updateDockIcon()
+{
+    if (mDockIconEnabled)
+    {
+        if (!mPausedShot.isNull())
+        {
+            CGImageRef pauseImg = ::darwinToCGImageRef (&mPausedShot);
+            /* Use the pause image as background */
+            mDockIconPreview->updateDockPreview (pauseImg);
+            CGImageRelease (pauseImg);
+        }
+        else
+        {
+# if defined (VBOX_GUI_USE_QUARTZ2D)
+                // TODO_NEW_CORE
+//            if (mode == VBoxDefs::Quartz2DMode)
+//            {
+                /* If the render mode is Quartz2D we could use the CGImageRef
+                 * of the framebuffer for the dock icon creation. This saves
+                 * some conversion time. */
+//                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (mFrameBuf)->imageRef());
+//            }
+//            else
+# endif
+                /* In image mode we have to create the image ref out of the
+                 * framebuffer */
+                // TODO_NEW_CORE
+//                mDockIconPreview->updateDockPreview (mFrameBuf);
+        }
+    }
+}
+
+void UIMachineView::updateDockOverlay()
+{
+    /* Only to an update to the realtime preview if this is enabled by the user
+     * & we are in an state where the framebuffer is likely valid. Otherwise to
+     * the overlay stuff only. */
+    if (mDockIconEnabled &&
+        (mLastState == KMachineState_Running ||
+         mLastState == KMachineState_Paused ||
+         mLastState == KMachineState_Teleporting ||
+         mLastState == KMachineState_LiveSnapshotting ||
+         mLastState == KMachineState_Restoring ||
+         mLastState == KMachineState_TeleportingPausedVM ||
+         mLastState == KMachineState_TeleportingIn ||
+         mLastState == KMachineState_Saving))
+        updateDockIcon();
+    else
+        mDockIconPreview->updateDockOverlay();
+}
+
+void UIMachineView::setMouseCoalescingEnabled (bool aOn)
+{
+    /* Enable mouse event compression if we leave the VM view. This
+       is necessary for having smooth resizing of the VM/other
+       windows.
+       Disable mouse event compression if we enter the VM view. So
+       all mouse events are registered in the VM. Only do this if
+       the keyboard/mouse is grabbed (this is when we have a valid
+       event handler). */
+    if (aOn || mKeyboardGrabbed)
+        ::darwinSetMouseCoalescingEnabled (aOn);
+}
+#endif /* Q_WS_MAC */
 
