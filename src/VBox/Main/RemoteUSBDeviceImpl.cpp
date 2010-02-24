@@ -141,7 +141,7 @@ STDMETHODIMP RemoteUSBDevice::COMGETTER(Id) (BSTR *aId)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* this is const, no need to lock */
-    Bstr(mData.id).cloneTo(aId);
+    mData.id.toUtf16().detachTo(aId);
 
     return S_OK;
 }

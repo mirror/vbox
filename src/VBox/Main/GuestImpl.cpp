@@ -126,8 +126,8 @@ STDMETHODIMP Guest::COMGETTER(OSTypeId) (BSTR *aOSTypeId)
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // redirect the call to IMachine if no additions are installed
-    if (mData.mAdditionsVersion.isNull())
-        return mParent->machine()->COMGETTER(OSTypeId) (aOSTypeId);
+    if (mData.mAdditionsVersion.isEmpty())
+        return mParent->machine()->COMGETTER(OSTypeId)(aOSTypeId);
 
     mData.mOSTypeId.cloneTo(aOSTypeId);
 
@@ -261,10 +261,6 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                                    IN_BSTR aDomain, BOOL aAllowInteractiveLogon)
 {
-    CheckComArgNotNull(aUserName);
-    CheckComArgNotNull(aPassword);
-    CheckComArgNotNull(aDomain);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -314,17 +310,15 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 // public methods only for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 
-void Guest::setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType)
+void Guest::setAdditionsVersion(Bstr aVersion, VBOXOSTYPE aOsType)
 {
-    Assert(aVersion.isNull() || !aVersion.isEmpty());
-
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid (autoCaller.rc());
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     mData.mAdditionsVersion = aVersion;
-    mData.mAdditionsActive = !aVersion.isNull();
+    mData.mAdditionsActive = !aVersion.isEmpty();
 
     mData.mOSTypeId = Global::OSTypeId (aOsType);
 }

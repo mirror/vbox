@@ -332,10 +332,7 @@ STDMETHODIMP SharedFolder::COMGETTER(LastAccessError) (BSTR *aLastAccessError)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m.lastAccessError.isEmpty())
-        Bstr("").cloneTo(aLastAccessError);
-    else
-        m.lastAccessError.cloneTo(aLastAccessError);
+    m.lastAccessError.cloneTo(aLastAccessError);
 
     return S_OK;
 }

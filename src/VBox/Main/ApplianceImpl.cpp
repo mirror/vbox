@@ -1568,7 +1568,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                                     mhda.lChannel,
                                                     mhda.lDevice,
                                                     DeviceType_Floppy,
-                                                    Bstr(""));
+                                                    NULL);
                         if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
@@ -1617,7 +1617,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
                                                     mhda.lChannel,
                                                     mhda.lDevice,
                                                     DeviceType_DVD,
-                                                    Bstr(""));
+                                                    NULL);
                         if (FAILED(rc)) throw rc;
 
                         llHardDiskAttachments.push_back(mhda);
@@ -1743,7 +1743,10 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             /* First open the existing disk image */
                             rc = mVirtualBox->OpenHardDisk(Bstr(strSrcFilePath),
                                                            AccessMode_ReadOnly,
-                                                           false, Bstr(""), false, Bstr(""),
+                                                           false,
+                                                           NULL,
+                                                           false,
+                                                           NULL,
                                                            srcHdVBox.asOutParam());
                             if (FAILED(rc)) throw rc;
                             fSourceHdNeedsClosing = true;
@@ -4280,9 +4283,6 @@ STDMETHODIMP VirtualSystemDescription::AddDescription(VirtualSystemDescriptionTy
                                                       IN_BSTR aVboxValue,
                                                       IN_BSTR aExtraConfigValue)
 {
-    CheckComArgNotNull(aVboxValue);
-    CheckComArgNotNull(aExtraConfigValue);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

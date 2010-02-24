@@ -301,10 +301,10 @@ HRESULT VirtualBox::init()
     LogFlow (("===========================================================\n"));
     LogFlowThisFuncEnter();
 
-    if (sVersion.isNull())
+    if (sVersion.isEmpty())
         sVersion = VBOX_VERSION_STRING;
     sRevision = RTBldCfgRevision();
-    if (sPackageType.isNull())
+    if (sPackageType.isEmpty())
         sPackageType = VBOX_PACKAGE_STRING;
     LogFlowThisFunc(("Version: %ls, Package: %ls\n", sVersion.raw(), sPackageType.raw()));
 
@@ -1224,7 +1224,7 @@ STDMETHODIMP VirtualBox::FindMachine(IN_BSTR aName, IMachine **aMachine)
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName=\"%ls\", aMachine={%p}\n", aName, aMachine));
 
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutSafeArrayPointerValid(aMachine);
 
     AutoCaller autoCaller(this);
@@ -1341,13 +1341,13 @@ STDMETHODIMP VirtualBox::CreateHardDisk(IN_BSTR aFormat,
 
 STDMETHODIMP VirtualBox::OpenHardDisk(IN_BSTR aLocation,
                                       AccessMode_T accessMode,
-                                      BOOL aSetImageId, IN_BSTR aImageId,
-                                      BOOL aSetParentId, IN_BSTR aParentId,
+                                      BOOL aSetImageId,
+                                      IN_BSTR aImageId,
+                                      BOOL aSetParentId,
+                                      IN_BSTR aParentId,
                                       IMedium **aHardDisk)
 {
-    CheckComArgNotNull(aLocation);
-    CheckComArgNotNull(aImageId);
-    CheckComArgNotNull(aParentId);
+    CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
@@ -1422,7 +1422,7 @@ STDMETHODIMP VirtualBox::GetHardDisk(IN_BSTR   aId,
 STDMETHODIMP VirtualBox::FindHardDisk(IN_BSTR aLocation,
                                       IMedium **aHardDisk)
 {
-    CheckComArgNotNull(aLocation);
+    CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aHardDisk);
 
     AutoCaller autoCaller(this);
@@ -1498,7 +1498,7 @@ STDMETHODIMP VirtualBox::GetDVDImage (IN_BSTR aId, IMedium **aDVDImage)
 /** @note Locks objects! */
 STDMETHODIMP VirtualBox::FindDVDImage (IN_BSTR aLocation, IMedium **aDVDImage)
 {
-    CheckComArgNotNull(aLocation);
+    CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aDVDImage);
 
     AutoCaller autoCaller(this);
@@ -1577,7 +1577,7 @@ STDMETHODIMP VirtualBox::GetFloppyImage (IN_BSTR aId,
 STDMETHODIMP VirtualBox::FindFloppyImage (IN_BSTR aLocation,
                                           IMedium **aFloppyImage)
 {
-    CheckComArgNotNull(aLocation);
+    CheckComArgStrNotEmptyOrNull(aLocation);
     CheckComArgOutSafeArrayPointerValid(aFloppyImage);
 
     AutoCaller autoCaller(this);
@@ -1614,7 +1614,7 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
         /* the rest is covered by the case-insensitive comparison */
     };
 
-    CheckComArgNotNull (aType);
+    CheckComArgNotNull(aType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1638,8 +1638,8 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
          ++it)
     {
         const Bstr &typeId = (*it)->id();
-        AssertMsg (!!typeId, ("ID must not be NULL"));
-        if (typeId.compareIgnoreCase (id) == 0)
+        AssertMsg(!typeId.isEmpty(), ("ID must not be NULL"));
+        if (typeId.compare(id, Bstr::CaseInsensitive) == 0)
         {
             (*it).queryInterfaceTo(aType);
             break;
@@ -1654,8 +1654,8 @@ STDMETHODIMP VirtualBox::GetGuestOSType (IN_BSTR aId, IGuestOSType **aType)
 
 STDMETHODIMP VirtualBox::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL /* aWritable */)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aHostPath);
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull(aHostPath);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1665,7 +1665,7 @@ STDMETHODIMP VirtualBox::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BO
 
 STDMETHODIMP VirtualBox::RemoveSharedFolder(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1708,16 +1708,17 @@ STDMETHODIMP VirtualBox::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
                                       BSTR *aValue)
 {
-    CheckComArgNotNull(aKey);
+    CheckComArgStrNotEmptyOrNull(aKey);
     CheckComArgNotNull(aValue);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* start with nothing found */
-    Bstr bstrResult("");
+    Utf8Str strKey(aKey);
+    Bstr bstrResult;
 
-    settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
+    settings::ExtraDataItemsMap::const_iterator it = m->pMainConfigFile->mapExtraDataItems.find(strKey);
     if (it != m->pMainConfigFile->mapExtraDataItems.end())
         // found:
         bstrResult = it->second; // source is a Utf8Str
@@ -1734,7 +1735,7 @@ STDMETHODIMP VirtualBox::GetExtraData(IN_BSTR aKey,
 STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
                                       IN_BSTR aValue)
 {
-    CheckComArgNotNull(aKey);
+    CheckComArgStrNotEmptyOrNull(aKey);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1765,16 +1766,12 @@ STDMETHODIMP VirtualBox::SetExtraData(IN_BSTR aKey,
         // onExtraDataCanChange() only briefly requests the VirtualBox
         // lock to copy the list of callbacks to invoke
         Bstr error;
-        Bstr bstrValue;
-        if (aValue)
-            bstrValue = aValue;
-        else
-            bstrValue = (const char *)"";
+        Bstr bstrValue(aValue);
 
         if (!onExtraDataCanChange(Guid::Empty, aKey, bstrValue, error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
-            CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
+            CBSTR err = error.raw();
             LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
                             sep, err));
             return setError(E_ACCESSDENIED,
@@ -1865,9 +1862,9 @@ STDMETHODIMP VirtualBox::OpenRemoteSession (ISession *aSession,
 {
     LogRel(("remotesession=%s\n", Utf8Str(aMachineId).c_str()));
 
-    CheckComArgNotNull(aMachineId);
+    CheckComArgStrNotEmptyOrNull(aMachineId);
     CheckComArgNotNull(aSession);
-    CheckComArgNotNull(aType);
+    CheckComArgStrNotEmptyOrNull(aType);
     CheckComArgOutSafeArrayPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -4358,7 +4355,7 @@ void *VirtualBox::CallbackEvent::handler()
 
 STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
@@ -4379,7 +4376,7 @@ STDMETHODIMP VirtualBox::CreateDHCPServer (IN_BSTR aName, IDHCPServer ** aServer
 
 STDMETHODIMP VirtualBox::FindDHCPServerByNetworkName(IN_BSTR aName, IDHCPServer ** aServer)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgNotNull(aServer);
 
     AutoCaller autoCaller(this);
@@ -4455,7 +4452,7 @@ HRESULT VirtualBox::registerDHCPServer(DHCPServer *aDHCPServer,
     if (FAILED(rc)) return rc;
 
     ComPtr<IDHCPServer> existing;
-    rc = FindDHCPServerByNetworkName(name.mutableRaw(), existing.asOutParam());
+    rc = FindDHCPServerByNetworkName(name, existing.asOutParam());
     if (SUCCEEDED(rc))
     {
         return E_INVALIDARG;

@@ -341,7 +341,7 @@ STDMETHODIMP Snapshot::COMGETTER(Name)(BSTR *aName)
  */
 STDMETHODIMP Snapshot::COMSETTER(Name)(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -377,8 +377,6 @@ STDMETHODIMP Snapshot::COMGETTER(Description)(BSTR *aDescription)
 
 STDMETHODIMP Snapshot::COMSETTER(Description)(IN_BSTR aDescription)
 {
-    CheckComArgNotNull(aDescription);
-
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 

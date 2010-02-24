@@ -195,10 +195,9 @@ bool ParsedRegexpFilter_base::isMatch (const Bstr &aValue) const
     /// @todo (dmik) do regexp matching
 
     // empty or null mSimple matches any match
-    return
-        mSimple.isEmpty() ||
-        (mIgnoreCase && mSimple.compareIgnoreCase (aValue) == 0) ||
-        (!mIgnoreCase && mSimple.compare (aValue) == 0);
+    return     mSimple.isEmpty()
+            || (mIgnoreCase && mSimple.compare(aValue, Bstr::CaseInsensitive) == 0)
+            || (!mIgnoreCase && mSimple.compare(aValue) == 0);
 }
 
 } /* namespace matching */

@@ -696,11 +696,7 @@ STDMETHODIMP Machine::COMGETTER(Name)(BSTR *aName)
 
 STDMETHODIMP Machine::COMSETTER(Name)(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
-
-    if (!*aName)
-        return setError(E_INVALIDARG,
-                        tr("Machine name cannot be empty"));
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -778,7 +774,7 @@ STDMETHODIMP Machine::COMGETTER(OSTypeId)(BSTR *aOSTypeId)
 
 STDMETHODIMP Machine::COMSETTER(OSTypeId)(IN_BSTR aOSTypeId)
 {
-    CheckComArgNotNull(aOSTypeId);
+    CheckComArgStrNotEmptyOrNull(aOSTypeId);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1929,10 +1925,7 @@ STDMETHODIMP Machine::COMGETTER(SessionType)(BSTR *aSessionType)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mData->mSession.mType.isNull())
-        Bstr("").cloneTo(aSessionType);
-    else
-        mData->mSession.mType.cloneTo(aSessionType);
+    mData->mSession.mType.cloneTo(aSessionType);
 
     return S_OK;
 }
@@ -1989,10 +1982,7 @@ STDMETHODIMP Machine::COMGETTER(StateFilePath)(BSTR *aStateFilePath)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (mSSData->mStateFilePath.isEmpty())
-        Bstr("").cloneTo(aStateFilePath);
-    else
-        mSSData->mStateFilePath.cloneTo(aStateFilePath);
+    mSSData->mStateFilePath.cloneTo(aStateFilePath);
 
     return S_OK;
 }
@@ -2136,7 +2126,6 @@ Machine::COMGETTER(GuestPropertyNotificationPatterns)(BSTR *aPatterns)
 STDMETHODIMP
 Machine::COMSETTER(GuestPropertyNotificationPatterns)(IN_BSTR aPatterns)
 {
-    CheckComArgNotNull(aPatterns);
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
@@ -2402,8 +2391,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d aType=%d aId=\"%ls\"\n",
                      aControllerName, aControllerPort, aDevice, aType, aId));
 
-    CheckComArgNotNull(aControllerName);
-    CheckComArgNotNull(aId);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2828,7 +2816,7 @@ STDMETHODIMP Machine::AttachDevice(IN_BSTR aControllerName,
 STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort,
                                    LONG aDevice)
 {
-    CheckComArgNotNull(aControllerName);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
 
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
                      aControllerName, aControllerPort, aDevice));
@@ -2913,7 +2901,7 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 STDMETHODIMP Machine::PassthroughDevice(IN_BSTR aControllerName, LONG aControllerPort,
                                         LONG aDevice, BOOL aPassthrough)
 {
-    CheckComArgNotNull(aControllerName);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
 
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aPassthrough=%d\n",
                      aControllerName, aControllerPort, aDevice, aPassthrough));
@@ -2967,8 +2955,8 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld aForce=%d\n",
                      aControllerName, aControllerPort, aDevice, aForce));
 
-    CheckComArgNotNull(aControllerName);
-    CheckComArgNotNull(aId);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
+    CheckComArgStrNotEmptyOrNull(aId);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3108,7 +3096,7 @@ STDMETHODIMP Machine::GetMedium(IN_BSTR aControllerName,
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%ld aDevice=%ld\n",
                      aControllerName, aControllerPort, aDevice));
 
-    CheckComArgNotNull(aControllerName);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
     CheckComArgOutPointerValid(aMedium);
 
     AutoCaller autoCaller(this);
@@ -3207,7 +3195,7 @@ STDMETHODIMP Machine::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
                                    BSTR *aValue)
 {
-    CheckComArgNotNull(aKey);
+    CheckComArgStrNotEmptyOrNull(aKey);
     CheckComArgOutPointerValid(aValue);
 
     AutoCaller autoCaller(this);
@@ -3234,7 +3222,7 @@ STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
    */
 STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
 {
-    CheckComArgNotNull(aKey);
+    CheckComArgStrNotEmptyOrNull(aKey);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3265,16 +3253,12 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         // onExtraDataCanChange() only briefly requests the VirtualBox
         // lock to copy the list of callbacks to invoke
         Bstr error;
-        Bstr bstrValue;
-        if (aValue)
-            bstrValue = aValue;
-        else
-            bstrValue = (const char *)"";
+        Bstr bstrValue(aValue);
 
         if (!mParent->onExtraDataCanChange(mData->mUuid, aKey, bstrValue, error))
         {
             const char *sep = error.isEmpty() ? "" : ": ";
-            CBSTR err = error.isNull() ? (CBSTR) L"" : error.raw();
+            CBSTR err = error.raw();
             LogWarningFunc(("Someone vetoed! Change refused%s%ls\n",
                             sep, err));
             return setError(E_ACCESSDENIED,
@@ -3458,7 +3442,7 @@ STDMETHODIMP Machine::GetSnapshot(IN_BSTR aId, ISnapshot **aSnapshot)
 
 STDMETHODIMP Machine::FindSnapshot(IN_BSTR aName, ISnapshot **aSnapshot)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aSnapshot);
 
     AutoCaller autoCaller(this);
@@ -3484,8 +3468,8 @@ STDMETHODIMP Machine::SetCurrentSnapshot(IN_BSTR /* aId */)
 
 STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aHostPath);
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull(aHostPath);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3519,7 +3503,7 @@ STDMETHODIMP Machine::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL 
 
 STDMETHODIMP Machine::RemoveSharedFolder(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -3609,7 +3593,7 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
 #ifndef VBOX_WITH_GUEST_PROPS
     ReturnComNotImplemented();
 #else // VBOX_WITH_GUEST_PROPS
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aValue);
     CheckComArgOutPointerValid(aTimestamp);
     CheckComArgOutPointerValid(aFlags);
@@ -3688,8 +3672,7 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
 #else // VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aValue);
+    CheckComArgStrNotEmptyOrNull(aName);
     if ((aFlags != NULL) && !VALID_PTR(aFlags))
         return E_INVALIDARG;
 
@@ -3933,7 +3916,7 @@ STDMETHODIMP Machine::GetMediumAttachment(IN_BSTR aControllerName,
     LogFlowThisFunc(("aControllerName=\"%ls\" aControllerPort=%d aDevice=%d\n",
                      aControllerName, aControllerPort, aDevice));
 
-    CheckComArgNotNull(aControllerName);
+    CheckComArgStrNotEmptyOrNull(aControllerName);
     CheckComArgOutPointerValid(aAttachment);
 
     AutoCaller autoCaller(this);
@@ -8949,7 +8932,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 #endif /* VBOX_WITH_USB */
 
-    if (!mData->mSession.mType.isNull())
+    if (!mData->mSession.mType.isEmpty())
     {
         /* mType is not null when this machine's process has been started by
          * VirtualBox::OpenRemoteSession(), therefore it is our child.  We
@@ -9657,7 +9640,7 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 #ifdef VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     if (aValue != NULL && (!VALID_PTR(aValue) || !VALID_PTR(aFlags)))
         return E_POINTER;  /* aValue can be NULL to indicate deletion */
 

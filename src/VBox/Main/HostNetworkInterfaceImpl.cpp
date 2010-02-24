@@ -422,9 +422,9 @@ STDMETHODIMP HostNetworkInterface::EnableStaticIpConfig (IN_BSTR aIPAddress, IN_
             if (RT_SUCCESS(rc))
             {
                 m.realIPAddress = 0;
-                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw())), Bstr(""))))
+                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPAddress", mInterfaceName.raw()), NULL)))
                     return E_FAIL;
-                if (FAILED(mVBox->SetExtraData(Bstr(Utf8StrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw())), Bstr(""))))
+                if (FAILED(mVBox->SetExtraData(BstrFmt("HostOnly/%ls/IPNetMask", mInterfaceName.raw()), NULL)))
                     return E_FAIL;
                 return S_OK;
             }

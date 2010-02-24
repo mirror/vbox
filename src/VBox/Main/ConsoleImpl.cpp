@@ -573,9 +573,9 @@ void Console::updateGuestPropertiesVRDPLogon(uint32_t u32ClientId, const char *p
 void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
 {
     if (!enabledGuestPropertiesVRDP())
-    {
         return;
-    }
+
+    Bstr bstrReadOnlyGuest(L"RDONLYGUEST");
 
     int rc;
     char *pszPropertyName;
@@ -583,21 +583,21 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
@@ -605,7 +605,7 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszClientId, "%d", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId), Bstr("RDONLYGUEST"));
+        mMachine->SetGuestProperty(Bstr("/VirtualBox/HostInfo/VRDP/LastDisconnectedClient"), Bstr(pszClientId), bstrReadOnlyGuest);
         RTStrFree(pszClientId);
     }
 
@@ -1189,9 +1189,10 @@ Console::loadStateFileExecInternal(PSSMHANDLE pSSM, uint32_t u32Version)
 #ifdef VBOX_WITH_GUEST_PROPS
 
 // static
-DECLCALLBACK(int)
-Console::doGuestPropNotification(void *pvExtension, uint32_t u32Function,
-                                 void *pvParms, uint32_t cbParms)
+DECLCALLBACK(int) Console::doGuestPropNotification(void *pvExtension,
+                                                   uint32_t u32Function,
+                                                   void *pvParms,
+                                                   uint32_t cbParms)
 {
     using namespace guestProp;
 
@@ -1211,27 +1212,19 @@ Console::doGuestPropNotification(void *pvExtension, uint32_t u32Function,
     Bstr name(pCBData->pcszName);
     Bstr value(pCBData->pcszValue);
     Bstr flags(pCBData->pcszFlags);
-    if (   !name.isNull()
-        && (!value.isNull() || pCBData->pcszValue == NULL)
-        && (!flags.isNull() || pCBData->pcszFlags == NULL)
-       )
-    {
-        ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
-        HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
-                                                              value,
-                                                              pCBData->u64Timestamp,
-                                                              flags);
-        if (SUCCEEDED(hrc))
-            rc = VINF_SUCCESS;
-        else
-        {
-            LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
-                     pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
-            rc = Global::vboxStatusCodeFromCOM(hrc);
-        }
-    }
+    ComObjPtr<Console> ptrConsole = reinterpret_cast<Console *>(pvExtension);
+    HRESULT hrc = ptrConsole->mControl->PushGuestProperty(name,
+                                                          value,
+                                                          pCBData->u64Timestamp,
+                                                          flags);
+    if (SUCCEEDED(hrc))
+        rc = VINF_SUCCESS;
     else
-        rc = VERR_NO_MEMORY;
+    {
+        LogFunc(("Console::doGuestPropNotification: hrc=%Rhrc pCBData={.pcszName=%s, .pcszValue=%s, .pcszFlags=%s}\n",
+                 pCBData->pcszName, pCBData->pcszValue, pCBData->pcszFlags));
+        rc = Global::vboxStatusCodeFromCOM(hrc);
+    }
     return rc;
 }
 
@@ -1247,6 +1240,14 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
 
     Utf8Str utf8Patterns(aPatterns);
     parm[0].type = VBOX_HGCM_SVC_PARM_PTR;
+    // mutableRaw() returns NULL for an empty string
+//     if ((parm[0].u.pointer.addr = utf8Patterns.mutableRaw()))
+//         parm[0].u.pointer.size = (uint32_t)utf8Patterns.length() + 1;
+//     else
+//     {
+//         parm[0].u.pointer.addr = (void*)"";
+//         parm[0].u.pointer.size = 1;
+//     }
     parm[0].u.pointer.addr = utf8Patterns.mutableRaw();
     parm[0].u.pointer.size = (uint32_t)utf8Patterns.length() + 1;
 
@@ -1363,17 +1364,18 @@ HRESULT Console::doMoveGuestPropertiesOnPowerOff(bool fSaving)
     com::SafeArray<BSTR>    flagsOut;
     try
     {
-        Bstr                pattern("");
-        hrc = doEnumerateGuestProperties(pattern, ComSafeArrayAsOutParam(namesOut),
+        Bstr pattern;
+        hrc = doEnumerateGuestProperties(pattern,
+                                         ComSafeArrayAsOutParam(namesOut),
                                          ComSafeArrayAsOutParam(valuesOut),
                                          ComSafeArrayAsOutParam(timestampsOut),
                                          ComSafeArrayAsOutParam(flagsOut));
         if (SUCCEEDED(hrc))
         {
-            std::vector <BSTR>      names;
-            std::vector <BSTR>      values;
-            std::vector <ULONG64>   timestamps;
-            std::vector <BSTR>      flags;
+            std::vector<BSTR>      names;
+            std::vector<BSTR>      values;
+            std::vector<ULONG64>   timestamps;
+            std::vector<BSTR>      flags;
             for (size_t i = 0; i < namesOut.size(); ++i)
             {
                 uint32_t fFlags = guestProp::NILFLAG;
@@ -1391,12 +1393,6 @@ HRESULT Console::doMoveGuestPropertiesOnPowerOff(bool fSaving)
             com::SafeArray<BSTR>    valuesIn(values);
             com::SafeArray<ULONG64> timestampsIn(timestamps);
             com::SafeArray<BSTR>    flagsIn(flags);
-            if (   namesIn.isNull()
-                || valuesIn.isNull()
-                || timestampsIn.isNull()
-                || flagsIn.isNull()
-               )
-                throw std::bad_alloc();
             /* PushGuestProperties() calls DiscardSettings(), which calls us back */
             mControl->PushGuestProperties(ComSafeArrayAsInParam(namesIn),
                                           ComSafeArrayAsInParam(valuesIn),
@@ -2593,7 +2589,7 @@ STDMETHODIMP Console::DetachUSBDevice(IN_BSTR aId, IUSBDevice **aDevice)
 STDMETHODIMP Console::FindUSBDeviceByAddress(IN_BSTR aAddress, IUSBDevice **aDevice)
 {
 #ifdef VBOX_WITH_USB
-    CheckComArgNotNull(aAddress);
+    CheckComArgStrNotEmptyOrNull(aAddress);
     CheckComArgOutPointerValid(aDevice);
 
     *aDevice = NULL;
@@ -2663,8 +2659,8 @@ STDMETHODIMP Console::FindUSBDeviceById(IN_BSTR aId, IUSBDevice **aDevice)
 STDMETHODIMP
 Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 {
-    CheckComArgNotNull(aName);
-    CheckComArgNotNull(aHostPath);
+    CheckComArgStrNotEmptyOrNull(aName);
+    CheckComArgStrNotEmptyOrNull(aHostPath);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2731,7 +2727,7 @@ Console::CreateSharedFolder(IN_BSTR aName, IN_BSTR aHostPath, BOOL aWritable)
 
 STDMETHODIMP Console::RemoveSharedFolder(IN_BSTR aName)
 {
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2797,7 +2793,7 @@ STDMETHODIMP Console::TakeSnapshot(IN_BSTR aName,
     LogFlowThisFuncEnter();
     LogFlowThisFunc(("aName='%ls' mMachineState=%08X\n", aName, mMachineState));
 
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     CheckComArgOutPointerValid(aProgress);
 
     AutoCaller autoCaller(this);
@@ -7724,8 +7720,8 @@ DECLCALLBACK(int) Console::fntTakeSnapshotWorker(RTTHREAD Thread, void *pvUser)
          * state file is non-null only when the VM is paused
          * (i.e. creating a snapshot online)
          */
-        ComAssertThrow(    (!pTask->bstrSavedStateFile.isNull() && pTask->fTakingSnapshotOnline)
-                        || (pTask->bstrSavedStateFile.isNull() && !pTask->fTakingSnapshotOnline),
+        ComAssertThrow(    (!pTask->bstrSavedStateFile.isEmpty() &&  pTask->fTakingSnapshotOnline)
+                        || ( pTask->bstrSavedStateFile.isEmpty() && !pTask->fTakingSnapshotOnline),
                        rc = E_FAIL);
 
         /* sync the state with the server */
@@ -8039,7 +8035,7 @@ DECLCALLBACK(int) Console::saveStateThread(RTTHREAD Thread, void *pvUser)
         if (errMsg.length())
             task->mProgress->notifyComplete(rc,
                                             COM_IIDOF(IConsole),
-                                            Console::getComponentName(),
+                                            (CBSTR)Console::getComponentName(),
                                             errMsg.c_str());
         else
             task->mProgress->notifyComplete(rc);
