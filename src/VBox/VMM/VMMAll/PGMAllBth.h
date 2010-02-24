@@ -2966,6 +2966,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 
             if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
             {
+                STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageReused);
                 AssertRelease(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
                 HCPhys = PGM_PAGE_GET_HCPHYS(pPage);
             }
