@@ -266,6 +266,15 @@ RTR3DECL(int)  RTFileOpenF(PRTFILE pFile, uint32_t fOpen, const char *pszFilenam
 RTR3DECL(int)  RTFileOpenV(PRTFILE pFile, uint32_t fOpen, const char *pszFilenameFmt, va_list va);
 
 /**
+ * Open the bit bucket (aka /dev/null or nul).
+ *
+ * @returns IPRT status code.
+ * @param   pFile           Where to store the handle to the opened file.
+ * @param   fAccess         The desired access only, i.e. read, write or both.
+ */
+RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE pFile, uint32_t fAccess);
+
+/**
  * Close a file opened by RTFileOpen().
  *
  * @returns iprt status code.
