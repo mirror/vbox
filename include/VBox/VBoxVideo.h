@@ -1171,8 +1171,8 @@ typedef struct VBOXVDMACMD
 
 typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
 {
-    uint64_t phSrc;
-    uint64_t phDst;
+    VBOXVIDEOOFFSET offSrc;
+    VBOXVIDEOOFFSET offDst;
     VBOXVDMA_SURF_DESC srcDesc;
     VBOXVDMA_SURF_DESC dstDesc;
     VBOXVDMA_RECTL srcRectl;

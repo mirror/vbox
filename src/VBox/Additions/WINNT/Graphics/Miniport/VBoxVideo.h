@@ -572,6 +572,10 @@ UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
 DECLINLINE(ULONG) vboxWddmVramReportedSize(PDEVICE_EXTENSION pDevExt)
 {
+    /* all memory layout info should be initialized */
+    Assert(pDevExt->u.primary.Vdma.CmdHeap.area.offBase);
+    /* page aligned */
+    Assert(!(pDevExt->u.primary.Vdma.CmdHeap.area.offBase & 0xfff));
     return pDevExt->u.primary.Vdma.CmdHeap.area.offBase;
 }
 
@@ -650,6 +654,16 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
         PFNVBOXVIDPNENUMTARGETMODES pfnCallback, PVOID pContext);
 #endif
+
+void* vboxHGSMIBufferAlloc(PDEVICE_EXTENSION PrimaryExtension,
+                         HGSMISIZE cbData,
+                         uint8_t u8Ch,
+                         uint16_t u16Op);
+void vboxHGSMIBufferFree (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
+int vboxHGSMIBufferSubmit (PDEVICE_EXTENSION PrimaryExtension, void *pvBuffer);
+
+BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
+        USHORT width, USHORT height, USHORT bpp);
 
 BOOLEAN FASTCALL VBoxVideoSetCurrentMode(
    PDEVICE_EXTENSION DeviceExtension,

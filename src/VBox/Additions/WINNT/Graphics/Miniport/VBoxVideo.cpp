@@ -2463,21 +2463,42 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
     return RT_SUCCESS(rc);
 }
 
+
+BOOLEAN FASTCALL VBoxVideoSetCurrentModePerform(PDEVICE_EXTENSION DeviceExtension,
+        USHORT width, USHORT height, USHORT bpp)
+{
+    /* set the mode characteristics */
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, width);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, height);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, bpp);
+    /* enable the mode */
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
+    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
+    /** @todo read from the port to see if the mode switch was successful */
+
+    /* Tell the host that we now support graphics in the additions.
+     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
+     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
+     *        (for example Qt GUI debug build asserts when seamless is being enabled).
+     */
+    // VBoxVideoSetGraphicsCap(TRUE);
+
+    return TRUE;
+}
+
+#ifndef VBOXWDDM
+
 /**
  * VBoxVideoSetCurrentMode
  *
  * Sets the adapter to the specified operating mode.
  */
 BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
-#ifndef VBOXWDDM
-                                         PVIDEO_MODE RequestedMode, PSTATUS_BLOCK StatusBlock
-#else
-                                         D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId,
-                                         PVBOXWDDM_SOURCE ModeInfo
-#endif
-                                         )
+                                         PVIDEO_MODE RequestedMode, PSTATUS_BLOCK StatusBlock)
 {
-#ifndef VBOXWDDM
     PVIDEO_MODE_INFORMATION ModeInfo;
 
     dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: mode = %d\n", RequestedMode->RequestedMode));
@@ -2498,58 +2519,11 @@ BOOLEAN FASTCALL VBoxVideoSetCurrentMode(PDEVICE_EXTENSION DeviceExtension,
         return TRUE;
     }
 
-    /* set the mode characteristics */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenWidth);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->VisScreenHeight);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->BitsPerPlane);
-    /* enable the mode */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
-    /** @todo read from the port to see if the mode switch was successful */
-
-    /* Tell the host that we now support graphics in the additions.
-     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
-     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
-     *        (for example Qt GUI debug build asserts when seamless is being enabled).
-     */
-    // VBoxVideoSetGraphicsCap(TRUE);
-#else
-    Assert(!srcId);
-
-    if (srcId)
-    {
-        dprintf(("VBoxVideo::VBoxVideoSetCurrentMode: Skipping for ? non-primary ? source ? %d\n",
-                srcId));
-        return TRUE;
-    }
-
-    /* set the mode characteristics */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.width);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.height);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_BPP);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, (USHORT)ModeInfo->pAllocation->u.SurfInfo.bpp);
-    /* enable the mode */
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_ENABLE);
-    VBoxVideoCmnPortWriteUshort((PUSHORT)VBE_DISPI_IOPORT_DATA, VBE_DISPI_ENABLED | VBE_DISPI_LFB_ENABLED);
-    /** @todo read from the port to see if the mode switch was successful */
-
-    /* Tell the host that we now support graphics in the additions.
-     * @todo: Keep old behaviour, because VBoxVideoResetDevice is called on every graphics
-     *        mode switch and causes an OFF/ON sequence which is not handled by frontends
-     *        (for example Qt GUI debug build asserts when seamless is being enabled).
-     */
-    // VBoxVideoSetGraphicsCap(TRUE);
-
-#endif
-    return TRUE;
+    return VBoxVideoSetCurrentModePerform(DeviceExtension,
+            (USHORT)ModeInfo->VisScreenWidth,
+                    (USHORT)ModeInfo->VisScreenHeight,
+                    (USHORT)ModeInfo->BitsPerPlane);
 }
-
-#ifndef VBOXWDDM
 
 /*
  * VBoxVideoResetDevice
