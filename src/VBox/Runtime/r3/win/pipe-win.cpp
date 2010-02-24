@@ -55,7 +55,7 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
 {
-    return INVALID_HANDLE_VALUE;
+    return (RTHCINTPTR)INVALID_HANDLE_VALUE;
 }
 
 
