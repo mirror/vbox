@@ -26,13 +26,17 @@
 /* Local includes */
 #include "QIStateIndicator.h"
 
+class CSession;
+
 enum UIIndicatorIndex
 {
     UIIndicatorIndex_HardDisks,
     UIIndicatorIndex_OpticalDisks,
+    UIIndicatorIndex_FloppyDisks,
     UIIndicatorIndex_NetworkAdapters,
     UIIndicatorIndex_USBDevices,
     UIIndicatorIndex_SharedFolders,
+    UIIndicatorIndex_VRDP,
     UIIndicatorIndex_Virtualization,
     UIIndicatorIndex_Mouse,
     UIIndicatorIndex_Hostkey,
@@ -45,13 +49,14 @@ class UIIndicatorsPool : public QObject
 
 public:
 
-    UIIndicatorsPool(QObject *pParent);
+    UIIndicatorsPool(CSession &session, QObject *pParent);
    ~UIIndicatorsPool();
 
     QIStateIndicator* indicator(UIIndicatorIndex index);
 
 private:
 
+    CSession &m_session;
     QVector<QIStateIndicator*> m_IndicatorsPool;
 };
 

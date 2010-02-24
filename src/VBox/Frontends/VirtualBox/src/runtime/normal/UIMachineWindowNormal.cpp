@@ -46,7 +46,7 @@
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
     : QIWithRetranslateUI<QIMainDialog>(0)
     , UIMachineWindow(pMachineLogic)
-    , m_pIndicatorsPool(new UIIndicatorsPool(this))
+    , m_pIndicatorsPool(new UIIndicatorsPool(pMachineLogic->uisession()->session(), this))
     , m_pIdleTimer(0)
 {
     /* "This" is machine window: */
@@ -295,6 +295,20 @@ void UIMachineWindowNormal::retranslateUi()
 {
     /* Translate parent class: */
     UIMachineWindow::retranslateUi();
+
+#ifdef Q_WS_MAC
+    // TODO_NEW_CORE
+//    m_pDockSettingsMenu->setTitle(tr("Dock Icon"));
+//    m_pDockDisablePreview->setText(tr("Show Application Icon"));
+//    m_pDockEnablePreviewMonitor->setText(tr("Show Monitor Preview"));
+#endif /* Q_WS_MAC */
+
+    m_pNameHostkey->setToolTip(
+        tr("Shows the currently assigned Host key.<br>"
+           "This key, when pressed alone, toggles the keyboard and mouse "
+           "capture state. It can also be used in combination with other keys "
+           "to quickly perform actions from the main menu."));
+    m_pNameHostkey->setText(QIHotKeyEdit::keyName(vboxGlobal().settings().hostKey()));
 }
 
 void UIMachineWindowNormal::updateAppearanceOf(int iElement)
@@ -302,216 +316,28 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
     /* Update parent-class window: */
     UIMachineWindow::updateAppearanceOf(iElement);
 
-    // TODO: Move most of this update code into indicators-pool!
-
     /* Update that machine window: */
-    CMachine machine = session().GetMachine();
-    CConsole console = session().GetConsole();
-
     if (iElement & UIVisualElement_HDStuff)
-    {
-        QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity "
-                                "of the virtual hard disks:</nobr>%1</p>", "HDD tooltip");
-
-        QString strFullData;
-        bool bAttachmentsPresent = false;
-
-        CStorageControllerVector controllers = machine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
-        {
-            QString strAttData;
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
-            {
-                if (attachment.GetType() != KDeviceType_HardDisk)
-                    continue;
-                strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
-                    .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg(VBoxMedium(attachment.GetMedium(), VBoxDefs::MediumType_HardDisk).location());
-                bAttachmentsPresent = true;
-            }
-            if (!strAttData.isNull())
-                strFullData += QString("<br><nobr><b>%1</b></nobr>").arg(controller.GetName()) + strAttData;
-        }
-
-        if (!bAttachmentsPresent)
-            strFullData += tr("<br><nobr><b>No hard disks attached</b></nobr>", "HDD tooltip");
-
-        indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->setToolTip(strToolTip.arg(strFullData));
-        indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->setState(bAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->updateAppearance();
     if (iElement & UIVisualElement_CDStuff)
-    {
-        QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity "
-                                "of the CD/DVD devices:</nobr>%1</p>", "CD/DVD tooltip");
-
-        QString strFullData;
-        bool bAttachmentsPresent = false;
-
-        CStorageControllerVector controllers = machine.GetStorageControllers();
-        foreach (const CStorageController &controller, controllers)
-        {
-            QString strAttData;
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            foreach (const CMediumAttachment &attachment, attachments)
-            {
-                if (attachment.GetType() != KDeviceType_DVD)
-                    continue;
-                VBoxMedium vboxMedium(attachment.GetMedium(), VBoxDefs::MediumType_DVD);
-                strAttData += QString("<br>&nbsp;<nobr>%1:&nbsp;%2</nobr>")
-                    .arg(vboxGlobal().toString(StorageSlot(controller.GetBus(), attachment.GetPort(), attachment.GetDevice())))
-                    .arg(vboxMedium.isNull() || vboxMedium.isHostDrive() ? vboxMedium.name() : vboxMedium.location());
-                if (!vboxMedium.isNull())
-                    bAttachmentsPresent = true;
-            }
-            if (!strAttData.isNull())
-                strFullData += QString("<br><nobr><b>%1</b></nobr>").arg(controller.GetName()) + strAttData;
-        }
-
-        if (strFullData.isNull())
-            strFullData = tr("<br><nobr><b>No CD/DVD devices attached</b></nobr>", "CD/DVD tooltip");
-
-        indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->setToolTip(strToolTip.arg(strFullData));
-        indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->setState(bAttachmentsPresent ? KDeviceActivity_Idle : KDeviceActivity_Null);
-    }
-    if (iElement & UIVisualElement_USBStuff)
-    {
-        if (!indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
-        {
-            QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of "
-                                    "the attached USB devices:</nobr>%1</p>", "USB device tooltip");
-            QString strFullData;
-
-            CUSBController usbctl = machine.GetUSBController();
-            if (!usbctl.isNull() && usbctl.GetEnabled())
-            {
-                CUSBDeviceVector devsvec = console.GetUSBDevices();
-                for (int i = 0; i < devsvec.size(); ++ i)
-                {
-                    CUSBDevice usb = devsvec[i];
-                    strFullData += QString("<br><b><nobr>%1</nobr></b>").arg(vboxGlobal().details(usb));
-                }
-                if (strFullData.isNull())
-                    strFullData = tr("<br><nobr><b>No USB devices attached</b></nobr>", "USB device tooltip");
-            }
-            else
-            {
-                strFullData = tr("<br><nobr><b>USB Controller is disabled</b></nobr>", "USB device tooltip");
-            }
-
-            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->setToolTip(strToolTip.arg(strFullData));
-        }
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->updateAppearance();
+#if 0 /* TODO: Allow to setup status-bar! */
+    if (iElement & UIVisualElement_FDStuff)
+        indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks)->updateAppearance();
+#endif
+    if (    iElement & UIVisualElement_USBStuff
+        && !indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
+            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
     if (iElement & UIVisualElement_NetworkStuff)
-    {
-        ulong uMaxCount = vboxGlobal().virtualBox().GetSystemProperties().GetNetworkAdapterCount();
-        ulong uCount = 0;
-        for (ulong uSlot = 0; uSlot < uMaxCount; ++ uSlot)
-            if (machine.GetNetworkAdapter(uSlot).GetEnabled())
-                ++ uCount;
-        indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->setState(uCount > 0 ? KDeviceActivity_Idle : KDeviceActivity_Null);
-
-        QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of the "
-                                "network interfaces:</nobr>%1</p>", "Network adapters tooltip");
-        QString strFullData;
-
-        for (ulong uSlot = 0; uSlot < uMaxCount; ++ uSlot)
-        {
-            CNetworkAdapter adapter = machine.GetNetworkAdapter(uSlot);
-            if (adapter.GetEnabled())
-                strFullData += tr("<br><nobr><b>Adapter %1 (%2)</b>: cable %3</nobr>", "Network adapters tooltip")
-                    .arg(uSlot + 1)
-                    .arg(vboxGlobal().toString(adapter.GetAttachmentType()))
-                    .arg(adapter.GetCableConnected() ?
-                          tr("connected", "Network adapters tooltip") :
-                          tr("disconnected", "Network adapters tooltip"));
-        }
-
-        if (strFullData.isNull())
-            strFullData = tr("<br><nobr><b>All network adapters are disabled</b></nobr>", "Network adapters tooltip");
-
-        indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->setToolTip(strToolTip.arg(strFullData));
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->updateAppearance();
     if (iElement & UIVisualElement_SharedFolderStuff)
-    {
-        QString strToolTip = tr("<p style='white-space:pre'><nobr>Indicates the activity of "
-                                "the machine's shared folders:</nobr>%1</p>", "Shared folders tooltip");
-
-        QString strFullData;
-        QMap<QString, QString> sfs;
-
-        /* Permanent folders */
-        CSharedFolderVector psfvec = machine.GetSharedFolders();
-
-        for (int i = 0; i < psfvec.size(); ++ i)
-        {
-            CSharedFolder sf = psfvec[i];
-            sfs.insert(sf.GetName(), sf.GetHostPath());
-        }
-
-        /* Transient folders */
-        CSharedFolderVector tsfvec = console.GetSharedFolders();
-
-        for (int i = 0; i < tsfvec.size(); ++ i)
-        {
-            CSharedFolder sf = tsfvec[i];
-            sfs.insert(sf.GetName(), sf.GetHostPath());
-        }
-
-        for (QMap<QString, QString>::const_iterator it = sfs.constBegin(); it != sfs.constEnd(); ++ it)
-        {
-            /* Select slashes depending on the OS type */
-            if (VBoxGlobal::isDOSType(console.GetGuest().GetOSTypeId()))
-                strFullData += QString("<br><nobr><b>\\\\vboxsvr\\%1&nbsp;</b></nobr><nobr>%2</nobr>")
-                                       .arg(it.key(), it.value());
-            else
-                strFullData += QString("<br><nobr><b>%1&nbsp;</b></nobr><nobr>%2</nobr>")
-                                       .arg(it.key(), it.value());
-        }
-
-        if (sfs.count() == 0)
-            strFullData = tr("<br><nobr><b>No shared folders</b></nobr>", "Shared folders tooltip");
-
-        indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->setToolTip(strToolTip.arg(strFullData));
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->updateAppearance();
+#if 0 /* TODO: Allow to setup status-bar! */
     if (iElement & UIVisualElement_VRDPStuff)
-    {
-        CVRDPServer vrdpsrv = session().GetMachine().GetVRDPServer();
-        if (!vrdpsrv.isNull())
-        {
-            /* Update menu&status icon state */
-            bool isVRDPEnabled = vrdpsrv.GetEnabled();
-            machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setChecked(isVRDPEnabled);
-        }
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_VRDP)->updateAppearance();
+#endif
     if (iElement & UIVisualElement_VirtualizationStuff)
-    {
-        bool bVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
-        QString virtualization = bVirtEnabled ?
-            VBoxGlobal::tr("Enabled", "details report (VT-x/AMD-V)") :
-            VBoxGlobal::tr("Disabled", "details report (VT-x/AMD-V)");
-
-        bool bNestEnabled = console.GetDebugger().GetHWVirtExNestedPagingEnabled();
-        QString nestedPaging = bNestEnabled ?
-            VBoxVMInformationDlg::tr("Enabled", "nested paging") :
-            VBoxVMInformationDlg::tr("Disabled", "nested paging");
-
-        QString tip(tr("Indicates the status of the hardware virtualization "
-                       "features used by this virtual machine:"
-                       "<br><nobr><b>%1:</b>&nbsp;%2</nobr>"
-                       "<br><nobr><b>%3:</b>&nbsp;%4</nobr>",
-                       "Virtualization Stuff LED")
-                       .arg(VBoxGlobal::tr("VT-x/AMD-V", "details report"), virtualization)
-                       .arg(VBoxVMInformationDlg::tr("Nested Paging"), nestedPaging));
-
-        int cpuCount = console.GetMachine().GetCPUCount();
-        if (cpuCount > 1)
-            tip += tr("<br><nobr><b>%1:</b>&nbsp;%2</nobr>", "Virtualization Stuff LED")
-                      .arg(VBoxGlobal::tr("Processor(s)", "details report")).arg(cpuCount);
-
-        indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->setToolTip(tip);
-        indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->setState(bVirtEnabled);
-    }
+        indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->updateAppearance();
 }
 
 bool UIMachineWindowNormal::event(QEvent *pEvent)
