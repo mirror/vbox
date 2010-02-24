@@ -536,19 +536,6 @@ bool UISession::event(QEvent *pEvent)
     {
         case UIConsoleEventType_MousePointerShapeChange:
         {
-#if 0 // TODO: Move to machine view!
-            MousePointerChangeEvent *me = (MousePointerChangeEvent*)pEvent;
-            /* Change cursor shape only when mouse integration is
-             * supported (change mouse shape type event may arrive after
-             * mouse capability change that disables integration. */
-            if (m_bIsMouseAbsolute)
-                setPointerShape (me);
-            else
-                /* Note: actually we should still remember the requested
-                 * cursor shape.  If we can't do that, at least remember
-                 * the requested visiblilty. */
-                mHideHostPointer = !me->isVisible();
-#endif
             UIMousePointerShapeChangeEvent *pConsoleEvent = static_cast<UIMousePointerShapeChangeEvent*>(pEvent);
             emit sigMousePointerShapeChange(pConsoleEvent->isVisible(), pConsoleEvent->hasAlpha(),
                                             pConsoleEvent->xHot(), pConsoleEvent->yHot(),
@@ -559,32 +546,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_MouseCapabilityChange:
         {
-#if 0 // TODO: Move to machine view!
-            MouseCapabilityEvent *me = (MouseCapabilityEvent*)pEvent;
-            if (m_bIsMouseAbsolute != me->supportsAbsolute())
-            {
-                m_bIsMouseAbsolute = me->supportsAbsolute();
-                /* correct the mouse capture state and reset the cursor
-                 * to the default shape if necessary */
-                if (m_bIsMouseAbsolute)
-                {
-                    CMouse mouse = m_console.GetMouse();
-                    mouse.PutMouseEventAbsolute (-1, -1, 0,
-                                                 0 /* Horizontal wheel */,
-                                                 0);
-                    captureMouse (false, false);
-                }
-                else
-                    viewport()->unsetCursor();
-                emitMouseStateChanged();
-                vboxProblem().remindAboutMouseIntegration (m_bIsMouseAbsolute);
-            }
-            if (me->needsHostCursor())
-                setMouseIntegrationLocked (false);
-            else
-                setMouseIntegrationLocked (true);
-            return true;
-#endif
             UIMouseCapabilityChangeEvent *pConsoleEvent = static_cast<UIMouseCapabilityChangeEvent*>(pEvent);
             emit sigMouseCapabilityChange(pConsoleEvent->supportsAbsolute(), pConsoleEvent->needsHostCursor());
             return true;
@@ -592,16 +553,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_KeyboardLedsChange:
         {
-#if 0 // TODO: Move to machine view!
-            ModifierKeyChangeEvent *me = (ModifierKeyChangeEvent* )pEvent;
-            if (me->numLock() != mNumLock)
-                muNumLockAdaptionCnt = 2;
-            if (me->capsLock() != mCapsLock)
-                muCapsLockAdaptionCnt = 2;
-            mNumLock    = me->numLock();
-            mCapsLock   = me->capsLock();
-            mScrollLock = me->scrollLock();
-#endif
             UIKeyboardLedsChangeEvent *pConsoleEvent = static_cast<UIKeyboardLedsChangeEvent*>(pEvent);
             emit sigKeyboardLedsChange(pConsoleEvent->numLock(), pConsoleEvent->capsLock(), pConsoleEvent->scrollLock());
             return true;
@@ -609,13 +560,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_StateChange:
         {
-#if 0 // TODO: Move to machine view!
-            MachineUIStateChangeEvent *me = (MachineUIStateChangeEvent *) pEvent;
-            LogFlowFunc (("MachineUIStateChangeEventType: state=%d\n",
-                           me->machineState()));
-            onStateChange (me->machineState());
-            emit machineStateChanged (me->machineState());
-#endif
             UIStateChangeEvent *pConsoleEvent = static_cast<UIStateChangeEvent*>(pEvent);
             emit sigStateChange(pConsoleEvent->machineState());
             return true;
@@ -623,43 +567,12 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_AdditionsStateChange:
         {
-#if 0 // TODO: Move to machine view!
-            GuestAdditionsChangeEvent *ge = (GuestAdditionsChangeEvent *) pEvent;
-            LogFlowFunc (("UIAdditionsStateChangeEventType\n"));
-            /* Always send a size hint if we are in fullscreen or seamless
-             * when the graphics capability is enabled, in case the host
-             * resolution has changed since the VM was last run. */
-#if 0
-            if (!mDoResize && !m_bIsGuestSupportsGraphics &&
-                ge->supportsGraphics() &&
-                (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen()))
-                mDoResize = true;
-#endif
-            m_bIsGuestSupportsGraphics = ge->supportsGraphics();
-
-            maybeRestrictMinimumSize();
-
-#if 0
-            /* This will only be acted upon if mDoResize is true. */
-            doResizeHint();
-#endif
-
-            emit additionsStateChanged (ge->additionVersion(),
-                                        ge->additionActive(),
-                                        ge->supportsSeamless(),
-                                        ge->supportsGraphics());
-#endif
             emit sigAdditionsStateChange();
             return true;
         }
 
         case UIConsoleEventType_NetworkAdapterChange:
         {
-#if 0 // TODO: Move to machine view!
-            /* no specific adapter information stored in this
-             * event is currently used */
-            emit networkStateChange();
-#endif
             UINetworkAdapterChangeEvent *pConsoleEvent = static_cast<UINetworkAdapterChangeEvent*>(pEvent);
             emit sigNetworkAdapterChange(pConsoleEvent->networkAdapter());
             return true;
@@ -687,12 +600,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_MediumChange:
         {
-#if 0 // TODO: Move to machine view!
-            MediaDriveChangeEvent *mce = (MediaDriveChangeEvent *) pEvent;
-            LogFlowFunc (("MediaChangeEvent\n"));
-
-            emit mediaDriveChanged (mce->type());
-#endif
             UIMediumChangeEvent *pConsoleEvent = static_cast<UIMediumChangeEvent*>(pEvent);
             emit sigMediumChange(pConsoleEvent->mediumAttahment());
             return true;
@@ -725,25 +632,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_USBDeviceStateChange:
         {
-#if 0 // TODO: Move to machine view!
-            UIUSBDeviceUIStateChangeEvent *ue = (UIUSBDeviceUIStateChangeEvent *)pEvent;
-
-            bool success = ue->error().isNull();
-
-            if (!success)
-            {
-                if (ue->attached())
-                    vboxProblem().cannotAttachUSBDevice (
-                        m_console,
-                        vboxGlobal().details (ue->device()), ue->error());
-                else
-                    vboxProblem().cannotDetachUSBDevice (
-                        m_console,
-                        vboxGlobal().details (ue->device()), ue->error());
-            }
-
-            emit usbStateChange();
-#endif
             UIUSBDeviceUIStateChangeEvent *pConsoleEvent = static_cast<UIUSBDeviceUIStateChangeEvent*>(pEvent);
             emit sigUSBDeviceStateChange(pConsoleEvent->device(), pConsoleEvent->attached(), pConsoleEvent->error());
             return true;
@@ -757,10 +645,6 @@ bool UISession::event(QEvent *pEvent)
 
         case UIConsoleEventType_RuntimeError:
         {
-#if 0 // TODO: Move to machine view!
-            UIRuntimeErrorEvent *pConsoleEvent = (UIRuntimeErrorEvent *) pEvent;
-            vboxProblem().showRuntimeError(m_console, ee->fatal(), ee->errorID(), ee->message());
-#endif
             UIRuntimeErrorEvent *pConsoleEvent = static_cast<UIRuntimeErrorEvent*>(pEvent);
             emit sigRuntimeError(pConsoleEvent->fatal(), pConsoleEvent->errorID(), pConsoleEvent->message());
             return true;

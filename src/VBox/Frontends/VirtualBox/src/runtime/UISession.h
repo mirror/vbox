@@ -74,7 +74,7 @@ public:
 signals:
 
     /* Console signals: */
-    void sigMousePointerShapeChange(bool bIsVisible, bool bHasAlpha, bool uXHot, bool uYHot, bool uWidth, bool uHeight, const uchar *pShapeData);
+    void sigMousePointerShapeChange(bool bIsVisible, bool bHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight, const uchar *pShapeData);
     void sigMouseCapabilityChange(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
     void sigKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock);
     void sigStateChange(KMachineState machineState);
@@ -90,7 +90,7 @@ signals:
     void sigUSBControllerChange();
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
-    void sigRuntimeError(bool bIsFatal, QString strErrorId, QString strMessage);
+    void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
 private:
 

@@ -56,6 +56,9 @@ private slots:
                                   bool bIsSeamlessSupported, bool bIsGraphicsSupported);
 private:
 
+    /* Prepare routines: */
+    void prepareFilters();
+
     bool m_bIsGuestAutoresizeEnabled : 1;
 
     friend class UIMachineView;

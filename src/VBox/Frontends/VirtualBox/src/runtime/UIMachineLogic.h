@@ -76,11 +76,11 @@ protected:
     virtual void loadLogicSettings();
 
     /* Cleanup helpers: */
-    void saveLogicSettings();
-    //void cleanupRequiredFeatures();
-    //void cleanupActionConnections();
-    //void cleanupActionGroups();
-    //void cleanupConsoleConnections();
+    virtual void saveLogicSettings();
+    //virtual void cleanupRequiredFeatures();
+    //virtual void cleanupActionConnections();
+    //virtual void cleanupActionGroups();
+    //virtual void cleanupConsoleConnections();
 
     /* Protected getters: */
     CSession& session();
@@ -104,6 +104,8 @@ private slots:
     /* Console callback handlers: */
     void sltMachineStateChanged(KMachineState newMachineState);
     void sltAdditionsStateChanged();
+    void sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
+    void sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
     /* "Machine" menu funtionality */
     void sltToggleGuestAutoresize(bool bEnabled);
