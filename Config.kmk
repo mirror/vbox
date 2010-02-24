@@ -3091,7 +3091,7 @@ TEMPLATE_VBOXMAINEXE_LIBPATH            += \
 else ifeq ($(KBUILD_TARGET),solaris)
 TEMPLATE_VBOXMAINEXE_TOOL                = GXX3PLAIN
 TEMPLATE_VBOXMAINEXE_DEFS               += _REENTRANT
-TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt
+TEMPLATE_VBOXMAINEXE_LIBS                = $(LIB_RUNTIME) rt thread
  else
 $(warning Warning: VBOX Build: Target $(KBUILD_TARGET) is not officially supported!)
 TEMPLATE_VBOXMAINEXE_LIBS                =
