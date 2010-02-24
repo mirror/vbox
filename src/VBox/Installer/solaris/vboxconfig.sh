@@ -29,6 +29,7 @@ HOST_OS_MAJORVERSION=`uname -r`
 HOST_OS_MINORVERSION=`uname -v | sed -e "s/snv_//" -e "s/[^0-9]//"`
 
 DIR_VBOXBASE=/opt/VirtualBox
+DIR_CONF="/platform/i86pc/kernel/drv"
 DIR_MOD_32="/platform/i86pc/kernel/drv"
 DIR_MOD_64=$DIR_MOD_32/amd64
 
@@ -366,17 +367,17 @@ install_drivers()
 
     if test $? -eq 0 && test -h "/dev/vboxdrv"; then
 
-        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+        if test -f "$DIR_CONF/vboxnet.conf"; then
             add_driver "$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
             load_module "drv/$MOD_VBOXNET" "$DESC_VBOXNET" "$FATALOP"
         fi
 
-        if test -f /platform/i86pc/kernel/drv/vboxflt.conf; then
+        if test -f "$DIR_CONF/vboxflt.conf"; then
             add_driver "$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
             load_module "drv/$MOD_VBOXFLT" "$DESC_VBOXFLT" "$FATALOP"
         fi
 
-        if test -f /platform/i86pc/kernel/drv/vboxusbmon.conf && test "$HOST_OS_MAJORVERSION" != "5.10"; then
+        if test -f "$DIR_CONF/vboxusbmon.conf" && test "$HOST_OS_MAJORVERSION" != "5.10"; then
             # For VirtualBox 3.1 the new USB code requires Nevada > 123
             if test "$HOST_OS_MINORVERSION" -gt 123; then
                 add_driver "$MOD_VBOXUSBMON" "$DESC_VBOXUSBMON" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
@@ -398,7 +399,7 @@ install_drivers()
                 # This driver is special, we need it in the boot-archive but since there is no
                 # USB device to attach to now (it's done at runtime) it will fail to attach so
                 # redirect attaching failure output to /dev/null
-                if test -f /platform/i86pc/kernel/drv/vboxusb.conf; then
+                if test -f "$DIR_CONF/vboxusb.conf"; then
                     add_driver "$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP" "$NULLOP"
                     load_module "drv/$MOD_VBOXUSB" "$DESC_VBOXUSB" "$FATALOP"
                 fi
@@ -571,7 +572,7 @@ postinstall()
     install_drivers
 
     if test "$?" -eq 0; then
-        if test -f /platform/i86pc/kernel/drv/vboxnet.conf; then
+        if test -f "$DIR_CONF/vboxnet.conf"; then
             # nwam/dhcpagent fix
             nwamfile=/etc/nwam/llp
             nwambackupfile=$nwamfile.vbox
@@ -699,7 +700,7 @@ find_bins
 while test $# -gt 0;
 do
     case "$1" in
-        --postinstall | --preremove | --installdrivers | --removedrivers)
+        --postinstall | --preremove | --installdrivers | --removedrivers | --setupdrivers)
             drvop="$1"
             ;;
         --fatal)
@@ -710,6 +711,10 @@ do
             ;;
         --ips)
             ISIPS="$IPSOP"
+            ;;
+        --altkerndir)
+            # Use alternate kernel driver config folder (dev only)
+            DIR_CONF="/usr/kernel/drv"
             ;;
         *)
             break
@@ -732,6 +737,10 @@ case "$drvop" in
     ;;
 --removedrivers)
     remove_drivers "$fatal"
+    ;;
+--setupdrivers)
+    remove_drivers "$fatal"
+    install_drivers
     ;;
 *)
     errorprint "Invalid operation $drvop"
