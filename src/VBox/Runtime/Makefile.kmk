@@ -214,7 +214,7 @@ RuntimeR3_SOURCES       = \
 	common/alloc/heapoffset.cpp \
 	common/alloc/memcache.cpp \
 	common/checksum/adler32.cpp \
-	common/checksum/crc32-zlib.cpp \
+	common/checksum/crc32.cpp \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/md5str.cpp \
@@ -940,11 +940,12 @@ VBoxRT_DEFS                    = $(filter-out RT_NO_GIP,$(RuntimeR3_DEFS)) IN_SU
 VBoxRT_DEFS.$(KBUILD_TYPE)     = $(RuntimeR3_DEFS.$(KBUILD_TYPE))
 VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
-	$(RuntimeR3_SOURCES)
+	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES))
 VBoxRT_SOURCES                += \
 	common/misc/s3.cpp \
 	r3/xml.cpp \
 	common/checksum/RTSha1Digest.cpp \
+	common/checksum/crc32-zlib.cpp \
 	common/checksum/manifest.cpp \
 	common/checksum/sha1.cpp \
 	common/checksum/sha1str.cpp \
