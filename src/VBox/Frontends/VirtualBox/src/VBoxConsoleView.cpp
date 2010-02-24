@@ -91,10 +91,9 @@ const int XKeyRelease = KeyRelease;
 # include "DarwinKeyboard.h"
 # ifdef QT_MAC_USE_COCOA
 #  include "darwin/VBoxCocoaApplication.h"
-# elif defined(VBOX_WITH_HACKED_QT)
-#  include "QIApplication.h"
-# endif
-# include <Carbon/Carbon.h>
+# else /* QT_MAC_USE_COCOA */
+#  include <Carbon/Carbon.h>
+# endif /* !QT_MAC_USE_COCOA */
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
@@ -160,7 +159,7 @@ bool VBoxConsoleView::darwinEventHandlerProc (const void *pvCocoaEvent,
     return false;
 }
 
-# elif !defined (VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
 /**
  *  Event handler callback for Mac OS X.
  */
@@ -193,7 +192,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
      * Command-H and Command-Q aren't properly disabled yet, and it's still
      * possible to use the left command key to invoke them when the keyboard
      * is captured. We discard the events these if the keyboard is captured
-     * as a half measure to prevent unexpected behaviour. However, we don't
+     * as a half measure to prevent unexpected behavior. However, we don't
      * get any key down/up events, so these combinations are dead to the guest...
      */
     else if (eventClass == kEventClassCommand)
@@ -203,38 +202,7 @@ pascal OSStatus VBoxConsoleView::darwinEventHandlerProc (EventHandlerCallRef inH
     }
     return ::CallNextEventHandler (inHandlerCallRef, inEvent);
 }
-
-# else /* VBOX_WITH_HACKED_QT */
-/**
- *  Event handler callback for Mac OS X.
- */
-/* static */
-bool VBoxConsoleView::macEventFilter (EventRef inEvent, void *inUserData)
-{
-    VBoxConsoleView *view = static_cast<VBoxConsoleView *> (inUserData);
-    UInt32 eventClass = ::GetEventClass (inEvent);
-    UInt32 eventKind = ::GetEventKind (inEvent);
-
-    /* For debugging events */
-    /*
-    if (!(eventClass == 'cute'))
-        ::darwinDebugPrintEvent ("view: ", inEvent);
-    */
-
-    /* Not sure but this seems an triggered event if the spotlight searchbar is
-     * displayed. So flag that the host key isn't pressed alone. */
-    if (eventClass == 'cgs ' && eventKind == 0x15 &&
-        view->mIsHostkeyPressed)
-        view->mIsHostkeyAlone = false;
-
-    if (eventClass == kEventClassKeyboard)
-    {
-        if (view->darwinKeyboardEvent (NULL, inEvent))
-            return true;
-    }
-    return false;
-}
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 
 #endif /* Q_WS_MAC */
 
@@ -736,7 +704,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mAlphaCursor (NULL)
 #endif
 #if defined(Q_WS_MAC)
-# if !defined (VBOX_WITH_HACKED_QT) && !defined (QT_MAC_USE_COCOA)
+# ifndef QT_MAC_USE_COCOA
     , mDarwinEventHandlerRef (NULL)
 # endif
     , mDarwinKeyModifiers (0)
@@ -758,9 +726,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     QString osTypeId = mConsole.GetGuest().GetOSTypeId();
     mDockIconPreview = new VBoxDockIconPreview (mMainWnd, vboxGlobal().vmGuestOSTypeIcon (osTypeId));
 
-# ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-# else /* !QT_MAC_USE_COCOA */
+# ifndef QT_MAC_USE_COCOA
     /* Install the event handler which will proceed external window handling */
     EventHandlerUPP eventHandler = ::NewEventHandlerUPP (::darwinOverlayWindowHandler);
     EventTypeSpec eventTypes[] =
@@ -2498,7 +2464,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         ::VBoxCocoaApplication_setCallback (UINT32_MAX, /** @todo fix mask */
                                             VBoxConsoleView::darwinEventHandlerProc, this);
 
-# elif !defined (VBOX_WITH_HACKED_QT)
+# else /* QT_MAC_USE_COCOA */
         EventTypeSpec eventTypes[6];
         eventTypes[0].eventClass = kEventClassKeyboard;
         eventTypes[0].eventKind  = kEventRawKeyDown;
@@ -2521,10 +2487,7 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
         ::InstallApplicationEventHandler (eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
                                           this, &mDarwinEventHandlerRef);
         ::DisposeEventHandlerUPP (eventHandler);
-
-# else  /* VBOX_WITH_HACKED_QT */
-        ((QIApplication *)qApp)->setEventFilter (VBoxConsoleView::macEventFilter, this);
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
 
         ::DarwinGrabKeyboard (false);
     }
@@ -2534,15 +2497,13 @@ void VBoxConsoleView::darwinGrabKeyboardEvents (bool fGrab)
 # ifdef QT_MAC_USE_COCOA
         ::VBoxCocoaApplication_unsetCallback (UINT32_MAX, /** @todo fix mask */
                                               VBoxConsoleView::darwinEventHandlerProc, this);
-# elif !defined(VBOX_WITH_HACKED_QT)
+# else /* !QT_MAC_USE_COCOA */
         if (mDarwinEventHandlerRef)
         {
             ::RemoveEventHandler (mDarwinEventHandlerRef);
             mDarwinEventHandlerRef = NULL;
         }
-# else  /* VBOX_WITH_HACKED_QT */
-        ((QIApplication *)qApp)->setEventFilter (NULL, NULL);
-# endif /* VBOX_WITH_HACKED_QT */
+# endif /* !QT_MAC_USE_COCOA */
     }
 }
 

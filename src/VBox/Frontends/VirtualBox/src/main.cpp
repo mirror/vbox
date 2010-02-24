@@ -32,11 +32,6 @@
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxUtils.h"
-#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
-# include "QIApplication.h"
-#else
-# define QIApplication QApplication
-#endif
 #ifdef QT_MAC_USE_COCOA
 # include "darwin/VBoxCocoaApplication.h"
 #endif
@@ -339,7 +334,7 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
 
     int rc = 1; /* failure */
 
-    /* scope the QIApplication variable */
+    /* scope the QApplication variable */
     {
 #ifdef Q_WS_X11
         /* Qt has a complex algorithm for selecting the right visual which
@@ -376,9 +371,9 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char ** /*envp*/)
                           ? DefaultVisual(pDisplay, DefaultScreen(pDisplay))
                           : NULL;
         /* Now create the application object */
-        QIApplication a (pDisplay, argc, argv, (Qt::HANDLE) pVisual);
+        QApplication a (pDisplay, argc, argv, (Qt::HANDLE) pVisual);
 #else /* Q_WS_X11 */
-        QIApplication a (argc, argv);
+        QApplication a (argc, argv);
 #endif /* Q_WS_X11 */
 
         /* Qt4.3 version has the QProcess bug which freezing the application
