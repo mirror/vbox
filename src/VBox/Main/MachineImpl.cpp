@@ -2956,7 +2956,6 @@ STDMETHODIMP Machine::MountMedium(IN_BSTR aControllerName,
                      aControllerName, aControllerPort, aDevice, aForce));
 
     CheckComArgStrNotEmptyOrNull(aControllerName);
-    CheckComArgStrNotEmptyOrNull(aId);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
