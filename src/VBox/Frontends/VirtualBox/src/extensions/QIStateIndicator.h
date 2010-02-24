@@ -33,6 +33,7 @@ class QIStateIndicator : public QFrame
 
 public:
 
+    QIStateIndicator (QWidget *pParent = 0);
     QIStateIndicator (int aState);
     ~QIStateIndicator();
 
@@ -42,6 +43,8 @@ public:
 
     QPixmap stateIcon (int aState) const;
     void setStateIcon (int aState, const QPixmap &aPixmap);
+
+    virtual void updateAppearance() {}
 
 public slots:
 

@@ -35,6 +35,14 @@
  *  the state of some thing, as described by the state property.
  */
 
+QIStateIndicator::QIStateIndicator(QWidget *pParent /* = 0 */)
+  : QFrame(pParent)
+  , mState(0)
+  , mSize(0, 0)
+{
+    setSizePolicy(QSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed));
+}
+
 /**
  *  Constructs a new QIStateIndicator instance. This instance is useless
  *  until icons are specified for necessary states.
