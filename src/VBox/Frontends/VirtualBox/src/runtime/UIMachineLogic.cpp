@@ -402,6 +402,10 @@ void UIMachineLogic::prepareConsoleConnections()
 {
     connect(uisession(), SIGNAL(sigStateChange(KMachineState)), this, SLOT(sltMachineStateChanged(KMachineState)));
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
+            this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
+    connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
+            this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
 }
 
 void UIMachineLogic::prepareActionGroups()
@@ -797,6 +801,24 @@ void UIMachineLogic::sltAdditionsStateChanged()
     {
         vboxProblem().warnAboutNewAdditions(machineWindowWrapper()->machineWindow(), strRealVersion, strExpectedVersion);
     }
+}
+
+void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error)
+{
+    bool success = error.isNull();
+
+    if (!success)
+    {
+        if (bIsAttached)
+            vboxProblem().cannotAttachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+        else
+            vboxProblem().cannotDetachUSBDevice(session().GetConsole(), vboxGlobal().details(device), error);
+    }
+}
+
+void UIMachineLogic::sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage)
+{
+    vboxProblem().showRuntimeError(session().GetConsole(), bIsFatal, strErrorId, strMessage);
 }
 
 void UIMachineLogic::sltToggleGuestAutoresize(bool /* bEnabled */)

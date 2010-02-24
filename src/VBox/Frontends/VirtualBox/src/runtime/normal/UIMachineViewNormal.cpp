@@ -24,6 +24,8 @@
 /* Global includes */
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QMainWindow>
+#include <QMenuBar>
 
 /* Local includes */
 #include "VBoxGlobal.h"
@@ -53,6 +55,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 
     /* Prepare event-filters: */
     prepareFilters();
+
+    /* Prepare console connections: */
+    prepareConsoleConnections();
 
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -103,7 +108,7 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition /* = false */)
             /* Get just a simple available rectangle */
             ar = dwt->availableGeometry(pTopLevelWidget->pos());
 
-        fr = VBoxGlobal::normalizeGeometry(fr, ar, mode != VBoxDefs::SDLMode /* canResize */);
+        fr = VBoxGlobal::normalizeGeometry(fr, ar, mode() != VBoxDefs::SDLMode /* canResize */);
     }
 
 #if 0
@@ -121,9 +126,9 @@ void UIMachineViewNormal::maybeRestrictMinimumSize()
      * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
      * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
      * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (mode == VBoxDefs::SDLMode)
+    if (mode() == VBoxDefs::SDLMode)
     {
-        if (!m_bIsGuestSupportsGraphics || !m_bIsGuestAutoresizeEnabled)
+        if (!isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
             setMinimumSize(sizeHint());
         else
             setMinimumSize(0, 0);
@@ -133,7 +138,7 @@ void UIMachineViewNormal::maybeRestrictMinimumSize()
 void UIMachineViewNormal::doResizeHint(const QSize & /*toSize*/)
 {
 #if 0 // TODO: fix that logic!
-    if (m_bIsGuestSupportsGraphics && m_bIsGuestAutoresizeEnabled)
+    if (isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
@@ -179,7 +184,7 @@ void UIMachineViewNormal::sltToggleGuestAutoresize(bool bOn)
 
         maybeRestrictMinimumSize();
 
-        if (m_bIsGuestSupportsGraphics && m_bIsGuestAutoresizeEnabled)
+        if (isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
             doResizeHint();
     }
 }
@@ -189,5 +194,14 @@ void UIMachineViewNormal::sltAdditionsStateChanged(const QString & /* strVersion
 {
     /* Enable/Disable guest auto-resizing depending on advanced graphics availablability: */
     sltToggleGuestAutoresize(bIsGraphicsSupported && m_bIsGuestAutoresizeEnabled);
+}
+
+void UIMachineViewNormal::prepareFilters()
+{
+    /* Parent class filters: */
+    UIMachineView::prepareFilters();
+
+    /* Normal window filters: */
+    qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 }
 

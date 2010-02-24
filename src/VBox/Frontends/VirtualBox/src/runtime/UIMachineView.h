@@ -39,10 +39,12 @@ class VBoxGlobalSettings;
 # include <CoreFoundation/CFBase.h>
 #endif /* Q_WS_MAC */
 
-/* Local forward declarations */
+/* Local forwards */
+#ifdef Q_WS_MAC
 class VBoxChangeDockIconUpdateEvent;
 class VBoxChangePresentationModeEvent;
 class VBoxDockIconPreview;
+#endif /* Q_WS_MAC */
 
 class UIMachineView : public QAbstractScrollArea
 {
@@ -58,10 +60,12 @@ public:
 #endif
                                  , UIVisualStateType visualStateType);
 
+    /* Public virtual members: */
+    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
+
     /* Public setters: */
     void setIgnoreGuestResize(bool bIgnore) { m_bIsGuestResizeIgnored = bIgnore; }
     void setMouseIntegrationEnabled(bool bEnabled);
-    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
     //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
 #if defined(Q_WS_MAC)
@@ -69,13 +73,11 @@ public:
     void updateDockOverlay();
     void setMouseCoalescingEnabled(bool aOn);
     void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
-
-    const QPixmap& pauseShot() const { return mPausedShot; }
 #endif
 
 signals:
 
-    /* Machine view signals: */
+    /* Mouse/Keyboard state-change signals: */
     void keyboardStateChanged(int iState);
     void mouseStateChanged(int iState);
 
@@ -97,11 +99,15 @@ protected:
     );
     virtual ~UIMachineView();
 
+    /* Desktop geometry types: */
+    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
+
     /* Protected getters: */
     UIMachineWindow* machineWindowWrapper() { return m_pMachineWindow; }
     CConsole &console() { return m_console; }
 
-    /* Protected members: */
+    /* Protected getters: */
+    VBoxDefs::RenderMode mode() const { return m_mode; }
     QSize sizeHint() const;
     int contentsX() const;
     int contentsY() const;
@@ -109,27 +115,41 @@ protected:
     int contentsHeight() const;
     int visibleWidth() const;
     int visibleHeight() const;
-    void calculateDesktopGeometry();
     QRect desktopGeometry() const;
+    bool isGuestSupportsGraphics() const { return m_bIsGuestSupportsGraphics; }
+    const QPixmap& pauseShot() const { return m_pauseShot; }
     //bool isMouseAbsolute() const { return m_bIsMouseAbsolute; }
 
+    /* Protected members: */
+    void calculateDesktopGeometry();
+    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
+    void storeConsoleSize(int iWidth, int iHeight);
+    QRect availableGeometry();
+    virtual void maybeRestrictMinimumSize() = 0;
+
     /* Prepare routines: */
-    void prepareFrameBuffer();
-    void prepareCommon();
-    void prepareFilters();
-    void loadMachineViewSettings();
+    virtual void prepareFrameBuffer();
+    virtual void prepareCommon();
+    virtual void prepareFilters();
+    virtual void prepareConsoleConnections();
+    virtual void loadMachineViewSettings();
 
     /* Cleanup routines: */
-    //void saveMachineViewSettings();
-    //void cleanupFilters();
-    void cleanupCommon();
-    void cleanupFrameBuffer();
-
-    /* Protected variables: */
-    VBoxDefs::RenderMode mode;
-    bool m_bIsGuestSupportsGraphics : 1;
+    //virtual void saveMachineViewSettings();
+    //virtual void cleanupConsoleConnections();
+    //virtual void cleanupFilters();
+    virtual void cleanupCommon();
+    virtual void cleanupFrameBuffer();
 
 private slots:
+
+    void sltMousePointerShapeChange(bool fIsVisible, bool fHasAlpha,
+                                    uint uXHot, uint uYHot, uint uWidth, uint uHeight,
+                                    const uchar *pShapeData);
+    void sltMouseCapabilityChange(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
+    void sltKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock);
+    void sltStateChange(KMachineState state);
+    void sltAdditionsStateChange();
 
 #ifdef Q_WS_MAC
     /* Dock icon update handler */
@@ -142,44 +162,9 @@ private slots:
 
 private:
 
-    /* Event processors: */
+    /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
-#if defined(Q_WS_WIN32)
-    bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
-    bool winEvent(MSG *aMsg, long *aResult);
-#elif defined(Q_WS_PM)
-    bool pmEvent(QMSG *aMsg);
-#elif defined(Q_WS_X11)
-    bool x11Event(XEvent *event);
-#elif defined(Q_WS_MAC)
-    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
-    void darwinGrabKeyboardEvents(bool fGrab);
-#endif
-#if defined (Q_WS_WIN32)
-    static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
-#elif defined (Q_WS_MAC)
-# ifdef QT_MAC_USE_COCOA
-    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
-# else /* QT_MAC_USE_COCOA */
-    static pascal OSStatus darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
-# endif /* !QT_MAC_USE_COCOA */
-#endif
-
-    /* Flags for keyEvent() */
-    enum { KeyExtended = 0x01, KeyPressed = 0x02, KeyPause = 0x04, KeyPrint = 0x08 };
-    void emitKeyboardStateChanged()
-    {
-        emit keyboardStateChanged((m_bIsKeyboardCaptured ? UIViewStateType_KeyboardCaptured : 0) |
-                                  (m_bIsHostkeyPressed ? UIViewStateType_HostKeyPressed : 0));
-    }
-    void emitMouseStateChanged()
-    {
-        emit mouseStateChanged((m_bIsMouseCaptured ? UIMouseStateType_MouseCaptured : 0) |
-                               (m_bIsMouseAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
-                               (!m_bIsMouseIntegrated ? UIMouseStateType_MouseAbsoluteDisabled : 0));
-    }
-
     void focusEvent(bool aHasFocus, bool aReleaseHostKey = true);
     bool keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniKey = NULL);
     bool mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlobalPos,
@@ -189,51 +174,73 @@ private:
     void moveEvent(QMoveEvent *pEvent);
     void paintEvent(QPaintEvent *pEvent);
 
-    /* Private members: */
-    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && mHideHostPointer); }
-    bool isRunning() { return mLastState == KMachineState_Running || mLastState == KMachineState_Teleporting || mLastState == KMachineState_LiveSnapshotting; }
+    /* Platform specific event processors: */
+#if defined(Q_WS_WIN32)
+    static LRESULT CALLBACK lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam);
+    bool winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event);
+    bool winEvent(MSG *aMsg, long *aResult);
+#elif defined(Q_WS_PM)
+    bool pmEvent(QMSG *aMsg);
+#elif defined(Q_WS_X11)
+    bool x11Event(XEvent *event);
+#elif defined(Q_WS_MAC)
+    bool darwinKeyboardEvent(const void *pvCocoaEvent, EventRef inEvent);
+    void darwinGrabKeyboardEvents(bool fGrab);
+# ifdef QT_MAC_USE_COCOA
+    static bool darwinEventHandlerProc(const void *pvCocoaEvent, const void *pvCarbonEvent, void *pvUser);
+# else /* QT_MAC_USE_COCOA */
+    static pascal OSStatus darwinEventHandlerProc(EventHandlerCallRef inHandlerCallRef, EventRef inEvent, void *inUserData);
+# endif /* !QT_MAC_USE_COCOA */
+#endif
+
+    /* Private helpers: */
     void fixModifierState(LONG *piCodes, uint *puCount);
-    void scrollBy(int dx, int dy);
     QPoint viewportToContents(const QPoint &vp) const;
     void updateSliders();
+    void scrollBy(int dx, int dy);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void scrollContentsBy(int dx, int dy);
 #endif
-    void onStateChange(KMachineState state);
-    void captureKbd(bool aCapture, bool aEmitSignal = true);
-    void captureMouse(bool aCapture, bool aEmitSignal = true);
+    void emitKeyboardStateChanged();
+    void emitMouseStateChanged();
+    void captureKbd(bool fCapture, bool fEmitSignal = true);
+    void captureMouse(bool fCapture, bool fEmitSignal = true);
+    void saveKeyStates();
     bool processHotKey(const QKeySequence &key, const QList<QAction*> &data);
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
-    void saveKeyStates();
     void sendChangedKeyStates();
     void updateMouseClipping();
-    //void setPointerShape(MousePointerChangeEvent *pEvent);
+    void setPointerShape(const uchar *pShapeData, bool fHasAlpha,
+                         uint uXHot, uint uYHot, uint uWidth, uint uHeight);
+    void setMouseIntegrationLocked(bool fDisabled);
 
-    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
-    void storeConsoleSize(int aWidth, int aHeight);
-    void setMouseIntegrationLocked(bool bDisabled);
-    void setDesktopGeometry(DesktopGeo aGeo, int aWidth, int aHeight);
-    virtual void maybeRestrictMinimumSize() = 0;
-    QRect availableGeometry();
+    /* Private getters: */
+    bool isRunning() { return m_machineState == KMachineState_Running || m_machineState == KMachineState_Teleporting || m_machineState == KMachineState_LiveSnapshotting; }
+    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && m_fHideHostPointer); }
 
     static void dimImage(QImage &img);
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
     CConsole m_console;
+    VBoxDefs::RenderMode m_mode;
     const VBoxGlobalSettings &m_globalSettings;
-    KMachineState mLastState;
+    KMachineState m_machineState;
+    UIFrameBuffer *m_pFrameBuffer;
 
-    QPoint mLastPos;
-    QPoint mCapturedPos;
+    QCursor m_lastCursor;
+#if defined(Q_WS_WIN)
+    HCURSOR m_alphaCursor;
+#endif
+    QPoint m_lastMousePos;
+    QPoint m_capturedMousePos;
     int m_iLastMouseWheelDelta;
 
-    enum { IsKeyPressed = 0x01, IsExtKeyPressed = 0x02, IsKbdCaptured = 0x80 };
-    uint8_t mPressedKeys[128];
-    uint8_t mPressedKeysCopy[128];
+    uint8_t m_pressedKeys[128];
+    uint8_t m_pressedKeysCopy[128];
 
-    long muNumLockAdaptionCnt;
-    long muCapsLockAdaptionCnt;
+    long m_uNumLockAdaptionCnt;
+    long m_uCapsLockAdaptionCnt;
 
     bool m_bIsAutoCaptureDisabled : 1;
     bool m_bIsKeyboardCaptured : 1;
@@ -242,37 +249,35 @@ private:
     bool m_bIsMouseIntegrated : 1;
     bool m_bIsHostkeyPressed : 1;
     bool m_bIsHostkeyAlone : 1;
-    bool hostkey_in_capture : 1;
+    bool m_bHostkeyInCapture : 1;
+    bool m_bIsGuestSupportsGraphics : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
     bool m_bIsFrameBufferResizeIgnored : 1;
     bool m_bIsGuestResizeIgnored : 1;
-    bool mDoResize : 1;
-    bool mNumLock : 1;
-    bool mScrollLock : 1;
-    bool mCapsLock : 1;
-
+    bool m_numLock : 1;
+    bool m_scrollLock : 1;
+    bool m_capsLock : 1;
+    bool m_fPassCAD;
+    bool m_fHideHostPointer;
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    bool mAccelerate2DVideo;
+    bool m_fAccelerate2DVideo;
 #endif
-
-#if defined(Q_WS_WIN)
-    HCURSOR mAlphaCursor;
+#if 0 // TODO: Do we need this flag?
+    bool mDoResize : 1;
 #endif
 
 #if defined(Q_WS_MAC)
 # ifndef QT_MAC_USE_COCOA
     /** Event handler reference. NULL if the handler isn't installed. */
-    EventHandlerRef mDarwinEventHandlerRef;
+    EventHandlerRef m_darwinEventHandlerRef;
 # endif /* !QT_MAC_USE_COCOA */
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
-    UInt32 mDarwinKeyModifiers;
-    bool mKeyboardGrabbed;
+    UInt32 m_darwinKeyModifiers;
+    bool m_fKeyboardGrabbed;
 #endif
 
-    UIFrameBuffer *mFrameBuf;
-
-    QPixmap mPausedShot;
+    QPixmap m_pauseShot;
 #if defined(Q_WS_MAC)
 # if !defined (QT_MAC_USE_COCOA)
     EventHandlerRef mDarwinWindowOverlayHandlerRef;
@@ -280,16 +285,14 @@ private:
     VBoxDockIconPreview *mDockIconPreview;
     bool mDockIconEnabled;
 #endif
-    DesktopGeo mDesktopGeo;
-    QRect mDesktopGeometry;
-    QRect mStoredConsoleSize;
-    bool mPassCAD;
-    bool mHideHostPointer;
-    QCursor mLastCursor;
+    DesktopGeo m_desktopGeometryType;
+    QRect m_desktopGeometry;
+    QRect m_storedConsoleSize;
 
     /* Friend classes: */
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
+    friend class UIFrameBufferQuartz2D;
 };
 
 #endif // !___UIMachineViewNormal_h___
