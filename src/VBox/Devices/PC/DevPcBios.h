@@ -26,7 +26,15 @@
 #define VBOX_DMI_TABLE_BASE          0xe1000
 #define VBOX_DMI_TABLE_VER           0x25
 #define VBOX_DMI_TABLE_ENTR          5
-#define VBOX_DMI_TABLE_SIZE          0x100
+
+/** def VBOX_DMI_TABLE_SIZE
+ *
+ * Must not be bigger than the minimal size of the DMI tables + 255 because
+ * the length field of the the DMI end-of-table marker is 8 bits only. And
+ * the size should be at least 16-byte aligned for a proper alignment of
+ * the MPS table.
+ */
+#define VBOX_DMI_TABLE_SIZE          352
 
 /** @def VBOX_VMI_BIOS_BASE
  *
@@ -37,6 +45,8 @@
 
 
 /** @def VBOX_LANBOOT_SEG
+ *
+ * Should usually start right after the DMI BIOS page
  */
 #define VBOX_LANBOOT_SEG             0xe200
 
