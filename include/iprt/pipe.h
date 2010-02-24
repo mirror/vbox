@@ -78,11 +78,14 @@ RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
  * Read bytes from a pipe, non-blocking.
  *
  * @returns IPRT status code.
+ * @retval  VERR_WRONG_ORDER if racing a call to RTPipeReadBlocking.
+ *
  * @param   hPipe           The IPRT pipe handle to read from.
  * @param   pvBuf           Where to put the bytes we read.
- * @param   cbToRead        How much to read.
+ * @param   cbToRead        How much to read.  Must be greater than 0.
  * @param   pcbRead         Where to return the number of bytes that has been
- *                          read (mandatory).
+ *                          read (mandatory).  This is 0 if there is no more
+ *                          bytes to read.
  * @sa      RTPipeReadBlocking.
  */
 RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRead);
@@ -91,6 +94,8 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
  * Read bytes from a pipe, blocking.
  *
  * @returns IPRT status code.
+ * @retval  VERR_WRONG_ORDER if racing a call to RTPipeRead.
+ *
  * @param   hPipe           The IPRT pipe handle to read from.
  * @param   pvBuf           Where to put the bytes we read.
  * @param   cbToRead        How much to read.
@@ -98,16 +103,29 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
 RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead);
 
 /**
- * Write bytes to a pipe.
- *
- * This will block until all bytes are written.
+ * Write bytes to a pipe, non-blocking.
  *
  * @returns IPRT status code.
+ * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWriteBlocking.
+ *
+ * @param   hPipe           The IPRT pipe handle to write to.
+ * @param   pvBuf           What to write.
+ * @param   cbToWrite       How much to write.
+ * @param   pcbWritten      How many bytes we wrote.
+ */
+RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
+
+/**
+ * Write bytes to a pipe, blocking.
+ *
+ * @returns IPRT status code.
+ * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWrite.
+ *
  * @param   hPipe           The IPRT pipe handle to write to.
  * @param   pvBuf           What to write.
  * @param   cbToWrite       How much to write.
  */
-RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite);
+RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite);
 
 /**
  * Flushes the buffers for the specified pipe and making sure the other party
