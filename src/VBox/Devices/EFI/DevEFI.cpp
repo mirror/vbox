@@ -479,13 +479,14 @@ static DECLCALLBACK(void) efiReset(PPDMDEVINS pDevIns)
                                VBOX_DMI_TABLE_SIZE,
                                &pThis->aUuid,
                                pDevIns->pCfg,
-                               true /* fPutSmbiosHeaders */);
+                               /*fPutSmbiosHeaders=*/true);
     Assert(RT_SUCCESS(rc));
 
     if (pThis->u8IOAPIC)
         FwCommonPlantMpsTable(pDevIns,
-                          pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
-                          pThis->cCpus);
+                              pThis->au8DMIPage + VBOX_DMI_TABLE_SIZE,
+                              _4K - VBOX_DMI_TABLE_SIZE,
+                              pThis->cCpus);
     rc = PDMDevHlpROMRegister(pDevIns, VBOX_DMI_TABLE_BASE, _4K, pThis->au8DMIPage,
                               PGMPHYS_ROM_FLAGS_PERMANENT_BINARY, "DMI tables");
 
@@ -1144,7 +1145,7 @@ static DECLCALLBACK(int)  efiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     // @todo: we need to have VMM API to access TSC increase speed, for now provide reasonable default
     pThis->u64TscFrequency = RTMpGetMaxFrequency(0) * 1024 * 1024;// TMCpuTicksPerSecond(PDMDevHlpGetVM(pDevIns));
     if (pThis->u64TscFrequency == 0)
-        pThis->u64TscFrequency = 2500000000;
+        pThis->u64TscFrequency = UINT64_C(2500000000);
     /* Multiplier is read from MSR_IA32_PERF_STATUS, and now is hardcoded as 4 */
     pThis->u64FsbFrequency = pThis->u64TscFrequency / 4;
     pThis->u64CpuFrequency = pThis->u64TscFrequency;
