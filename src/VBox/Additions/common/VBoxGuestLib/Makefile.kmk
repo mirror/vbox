@@ -91,6 +91,7 @@ VBoxGuestR3Lib_DEFS        = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBOX_WITH_GUEST_PROPS,)
 VBoxGuestR3Lib_SOURCES     = \
 	VBoxGuestR3Lib.cpp \
+	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibCredentials.cpp \
 	VBoxGuestR3LibGR.cpp \
 	VBoxGuestR3LibTime.cpp \
@@ -99,7 +100,6 @@ VBoxGuestR3Lib_SOURCES     = \
 ifneq ($(KBUILD_TARGET),win) ## @todo get rid of this hack (as soon as it's all implemented / #defined).
  VBoxGuestR3Lib_SOURCES   += \
 	VBoxGuestR3LibDaemonize.cpp \
-	VBoxGuestR3LibClipboard.cpp \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibVideo.cpp
