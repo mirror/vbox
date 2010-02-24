@@ -37,7 +37,6 @@
  *     schedule interrupt earlier than in 1ms
  *   - interaction with RTC and PIT in legacy mode not yet fully implemented
  *     (HPET part OK, PDM and PIT/RTC to be done)
- *   - status register writes not implemented
  *   - statistics not implemented
  */
 /*
@@ -381,8 +380,12 @@ static void irqUpdate(struct HpetTimer *pTimer)
         (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_ENABLE))
       {
         Log4(("HPET: raising IRQ %d\n", irq));
-        PDMDevHlpISASetIrq(pTimer->CTX_SUFF(pHpet)->CTX_SUFF(pDevIns),
-                           irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        if ((pTimer->u64Config & HPET_TIMER_TYPE_LEVEL) == 0)
+        {
+            pTimer->CTX_SUFF(pHpet)->u64Isr |= (1 <<  pTimer->u8TimerNumber);
+            PDMDevHlpISASetIrq(pTimer->CTX_SUFF(pHpet)->CTX_SUFF(pDevIns),
+                               irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        }
       }
 }
 
@@ -463,7 +466,7 @@ static int configRegRead32(HpetState* pThis,
             else
                 u64Ticks = pThis->u64HpetCounter;
             /** @todo: is it correct? */
-            *pValue = (iIndex == HPET_COUNTER) ?  (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
+            *pValue = (iIndex == HPET_COUNTER) ? (uint32_t)u64Ticks : (uint32_t)(u64Ticks >> 32);
             break;
         }
         case HPET_STATUS:
@@ -668,8 +671,15 @@ static int configRegWrite32(HpetState* pThis,
         case HPET_STATUS:
         {
             Log(("write HPET_STATUS: %x\n", iNewValue));
-            /** @todo: need to implement, see p. 14 of HPET spec */
-            LogRel(("HPET_STATUS writes unimplemented\n"));
+            // clear ISR for all set bits in iNewValue, see p. 14 of HPET spec
+            pThis->u64Isr &= ~((uint64_t)iNewValue);
+            break;
+        }
+        case HPET_STATUS + 4:
+        {
+            Log(("write HPET_STATUS + 4: %x\n", iNewValue));
+            if (iNewValue != 0)
+                LogRel(("Writing HPET_STATUS + 4 with non-zero, ignored\n"));
             break;
         }
         case HPET_COUNTER:
@@ -726,6 +736,42 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
                 rc = configRegRead32(pThis, iIndex, (uint32_t*)pv);
             break;
         }
+        case 8:
+        {
+            union {
+                uint32_t u32[2];
+                uint64_t u64;
+            } value;
+
+            /* Unaligned accesses not allowed */
+            if (iIndex % 8 != 0)
+            {
+                AssertMsgFailed(("Unaligned HPET read access\n"));
+                rc = VERR_INTERNAL_ERROR;
+                break;
+            }
+            // for 8-byte accesses we just split them, happens under lock anyway
+            if ((iIndex >= 0x100) && (iIndex < 0x400))
+            {
+                uint32_t iTimer = (iIndex - 0x100) / 0x20;
+                uint32_t iTimerReg = (iIndex - 0x100) % 0x20;
+
+                rc = timerRegRead32(pThis, iTimer, iTimerReg, &value.u32[0]);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    break;
+                rc = timerRegRead32(pThis, iTimer, iTimerReg + 4, &value.u32[1]);
+            }
+            else
+            {
+                rc = configRegRead32(pThis, iIndex, &value.u32[0]);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    break;
+                rc = configRegRead32(pThis, iIndex+4, &value.u32[1]);
+            }
+            if (rc == VINF_SUCCESS)
+                *(uint64_t*)pv = value.u64;
+            break;
+        }
 
         default:
             AssertReleaseMsgFailed(("cb=%d\n", cb)); /* for now we assume simple accesses. */
@@ -770,6 +816,41 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
                                      *(uint32_t*)pv);
             else
                 rc = configRegWrite32(pThis, iIndex, *(uint32_t*)pv);
+            break;
+        }
+        case 8:
+        {
+            union {
+                uint32_t u32[2];
+                uint64_t u64;
+            } value;
+
+            /* Unaligned accesses not allowed */
+            if (iIndex % 8 != 0)
+            {
+                AssertMsgFailed(("Unaligned HPET write access\n"));
+                rc = VERR_INTERNAL_ERROR;
+                break;
+            }
+            value.u64 = *(uint64_t*)pv;
+            // for 8-byte accesses we just split them, happens under lock anyway
+            if ((iIndex >= 0x100) && (iIndex < 0x400))
+            {
+                uint32_t iTimer = (iIndex - 0x100) / 0x20;
+                uint32_t iTimerReg = (iIndex - 0x100) % 0x20;
+
+                rc = timerRegWrite32(pThis, iTimer, iTimerReg, value.u32[0]);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    break;
+                rc = timerRegWrite32(pThis, iTimer, iTimerReg + 4, value.u32[1]);
+            }
+            else
+            {
+                rc = configRegWrite32(pThis, iIndex, value.u32[0]);
+                if (RT_UNLIKELY(rc != VINF_SUCCESS))
+                    break;
+                rc = configRegWrite32(pThis, iIndex+4, value.u32[1]);
+            }
             break;
         }
 
