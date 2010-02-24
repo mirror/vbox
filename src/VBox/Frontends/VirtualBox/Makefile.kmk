@@ -115,10 +115,7 @@ OTHER_CLEAN += \
 VirtualBoxHardened_TEMPLATE = VBOXR3HARDENEDEXE
 VirtualBoxHardened_SOURCES = src/hardenedmain.cpp
 VirtualBoxHardened_NAME = VirtualBox
-ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
- #VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
- VirtualBoxHardened_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
-endif
+VirtualBoxHardened_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 
 
 #
@@ -136,10 +133,7 @@ USES += qt4
 VirtualBox_TEMPLATE := $(if $(VBOX_WITH_HARDENING),VBOXQT4GUI,VBOXQT4GUIEXE)
 VirtualBox_NAME = VirtualBox
 ifndef VBOX_WITH_HARDENING      # For the launch trick we need different inode numbers.
- ifeq ($(KBUILD_TARGET),darwin) ## @todo use .darwin when ticket 36 has been fixed.
-  #VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
-  VirtualBox_INST = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
- endif
+ VirtualBox_INST.darwin = $(INST_BIN)VirtualBox $(INST_BIN)VirtualBoxVM
 endif
 VirtualBox_SDKS.win = WINPSDK DXSDK
 ifeq ($(filter-out freebsd linux netbsd openbsd os2,$(KBUILD_TARGET)),) # X11 + os2 ## @todo solaris
@@ -589,8 +583,8 @@ endif
 VirtualBox_SOURCES += $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc
 $(VBOX_VIRTUALBOX4_OUT_DIR)/VirtualBoxBrand.qrc_RCCFLAGS = -name BRAND
 if defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOX_GUI_USE_QGL)
-VirtualBox_SOURCES += VirtualBoxShaders.qrc
-VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
+ VirtualBox_SOURCES += VirtualBoxShaders.qrc
+ VirtualBoxShaders.qrc_RCCFLAGS = -name SHADERS
 endif
 
 # Import the translation source from VBoxUI.pro and add the qt_xx_YY counterparts
@@ -859,11 +853,6 @@ if defined(VBOX_WITH_VIDEOHWACCEL)
   LIBRARIES += VBoxOGL2D
   VBoxOGL2D_TEMPLATE = VBOXR3STATIC
   VBoxOGL2D_USES = qt4
-#  VBoxOGL2D_QTTOOL = QT4
-#  VBoxOGL2D_MOCTOOL = QT4
-#  VBoxOGL2D_UICTOOL = QT4
-#  VBoxOGL2D_RCCTOOL = QT4
-#  VBoxOGL2D_LRCTOOL = QT4
   VBoxOGL2D_SDKS = QT4
   VBoxOGL2D_DEFS = IN_RING3 QT_NO_DEBUG QT_THREAD_SUPPORT QT_SHARED HAVE_CONFIG_H $(ARCH_BITS_DEFS) VBOX_WITH_VIDEOHWACCEL VBOX_GUI_USE_QGL
   VBoxOGL2D_QT_MODULES += OpenGL
