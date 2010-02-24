@@ -55,21 +55,51 @@ RT_C_DECLS_BEGIN
  * or the timeout expires.
  *
  * @returns IPRT status code.
- * @param   hPollSet        The set to poll on.
- * @param   cMillies        Number of milliseconds to wait.  Use
- *                          RT_INDEFINITE_WAIT to wait for ever.
- * @param   pfEvent         Where to return details about the events that
- *                          occured.  Optional.
- * @param   pid             Where to return the ID associated with the handle
- *                          when calling RTPollSetAdd.  Optional.
+ * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
+ * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
+ * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
+ *          are no valid handles in the set.
+ *
+ * @param   hPollSet            The set to poll on.
+ * @param   cMillies            Number of milliseconds to wait.  Use
+ *                              RT_INDEFINITE_WAIT to wait for ever.
+ * @param   pfEvents            Where to return details about the events that
+ *                              occured.  Optional.
+ * @param   pid                 Where to return the ID associated with the
+ *                              handle when calling RTPollSetAdd.  Optional.
+ *
+ * @sa      RTPollNoResume
  */
-RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies, uint32_t *pfEvent, uint32_t *pid);
+RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents, uint32_t *pid);
+
+/**
+ * Same as RTPoll except that it will return when interrupted.
+ *
+ * @returns IPRT status code.
+ * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
+ * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
+ * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
+ *          are no valid handles in the set.
+ * @retval  VERR_INTERRUPTED if a signal or other asynchronous event interrupted
+ *          the polling.
+ *
+ * @param   hPollSet            The set to poll on.
+ * @param   cMillies            Number of milliseconds to wait.  Use
+ *                              RT_INDEFINITE_WAIT to wait for ever.
+ * @param   pfEvents            Where to return details about the events that
+ *                              occured.  Optional.
+ * @param   pid                 Where to return the ID associated with the
+ *                              handle when calling RTPollSetAdd.  Optional.
+ */
+RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents, uint32_t *pid);
 
 /**
  * Creates a poll set with no members.
  *
  * @returns IPRT status code.
- * @param   phPollSet       Where to return the poll set handle.
+ * @param   phPollSet           Where to return the poll set handle.
  */
 RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet);
 
@@ -77,8 +107,8 @@ RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet);
  * Destroys a poll set.
  *
  * @returns IPRT status code.
- * @param   hPollSet        The poll set to destroy.  NIL_POLLSET is quietly
- *                          ignored (VINF_SUCCESS).
+ * @param   hPollSet            The poll set to destroy.  NIL_POLLSET is quietly
+ *                              ignored (VINF_SUCCESS).
  */
 RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
 
@@ -86,10 +116,10 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
  * Adds a generic handle to the poll set.
  *
  * @returns IPRT status code
- * @param   hPollSet        The poll set to modify.
- * @param   pHandle         The handle to add.
- * @param   fEvents         Which events to poll for.
- * @param   id              The handle ID.
+ * @param   hPollSet            The poll set to modify.
+ * @param   pHandle             The handle to add.
+ * @param   fEvents             Which events to poll for.
+ * @param   id                  The handle ID.
  */
 RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvents, uint32_t id);
 
@@ -97,19 +127,45 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
  * Removes a generic handle from the poll set.
  *
  * @returns IPRT status code
- * @param   hPollSet        The poll set to modify.
- * @param   id              The handle ID of the handle that should be removed.
+ * @param   hPollSet            The poll set to modify.
+ * @param   id                  The handle ID of the handle that should be
+ *                              removed.
  */
 RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id);
+
+
+/**
+ * Query a handle in the poll set by it's ID.
+ *
+ * @returns IPRT status code
+ * @retval  VINF_SUCCESS if the handle was found.  @a *pHandle is set.
+ * @retval  VERR_NOT_FOUND if there is no handle with that ID.
+ * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ *
+ * @param   hPollSet            The poll set to query.
+ * @param   id                  The ID of the handle.
+ * @param   pHandle             Where to return the handle details.  Optional.
+ */
+RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHandle);
+
+/**
+ * Gets the number of handles in the set.
+ *
+ * @retval  The handle count.
+ * @retval  UINT32_MAX if @a hPollSet is invalid.
+ *
+ * @param   hPollSet            The poll set.
+ */
+RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet);
 
 /**
  * Adds a pipe handle to the set.
  *
  * @returns IPRT status code.
- * @param   hPollSet        The poll set.
- * @param   hPipe           The pipe handle.
- * @param   fEvents         Which events to poll for.
- * @param   id              The handle ID.
+ * @param   hPollSet            The poll set.
+ * @param   hPipe               The pipe handle.
+ * @param   fEvents             Which events to poll for.
+ * @param   id                  The handle ID.
  *
  * @todo    Maybe we could figure out what to poll for depending on the kind of
  *          pipe we're dealing with.
@@ -126,10 +182,10 @@ DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEve
  * Adds a socket handle to the set.
  *
  * @returns IPRT status code.
- * @param   hPollSet        The poll set.
- * @param   hSocket         The socket handle.
- * @param   fEvents         Which events to poll for.
- * @param   id              The handle ID.
+ * @param   hPollSet            The poll set.
+ * @param   hSocket             The socket handle.
+ * @param   fEvents             Which events to poll for.
+ * @param   id                  The handle ID.
  */
 DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_t fEvents, uint32_t id)
 {
