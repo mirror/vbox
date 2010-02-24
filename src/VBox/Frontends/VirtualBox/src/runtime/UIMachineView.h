@@ -64,6 +64,15 @@ public:
     virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
     //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
+#if defined(Q_WS_MAC)
+    void updateDockIcon();
+    void updateDockOverlay();
+    void setMouseCoalescingEnabled(bool aOn);
+    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
+
+    const QPixmap& pauseShot() const { return mPausedShot; }
+#endif
+
 signals:
 
     /* Machine view signals: */
@@ -208,15 +217,6 @@ private:
     QRect availableGeometry();
 
     static void dimImage(QImage &img);
-
-#if defined(Q_WS_MAC)
-    void updateDockIcon();
-    void updateDockOverlay();
-    void setMouseCoalescingEnabled(bool aOn);
-    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
-
-    const QPixmap& pauseShot() const { return mPausedShot; }
-#endif
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
