@@ -792,12 +792,15 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
      * First repack the patterns into the format expected by RTStrSimplePatternMatch()
      */
     char pszPatterns[MAX_PATTERN_LEN];
-    for (unsigned i = 0; i < cchPatterns - 1; ++i)
-        if (pcchPatterns[i] != '\0')
-            pszPatterns[i] = pcchPatterns[i];
-        else
-            pszPatterns[i] = '|';
-    pszPatterns[cchPatterns - 1] = '\0';
+    if (RT_SUCCESS(rc))
+    {
+        for (unsigned i = 0; i < cchPatterns - 1; ++i)
+            if (pcchPatterns[i] != '\0')
+                pszPatterns[i] = pcchPatterns[i];
+            else
+                pszPatterns[i] = '|';
+        pszPatterns[cchPatterns - 1] = '\0';
+    }
 
     /*
      * Next enumerate into a temporary buffer.  This can throw, but this is
@@ -826,7 +829,8 @@ int Service::enumProps(uint32_t cParms, VBOXHGCMSVCPARM paParms[])
             buffer += '\0';
         }
     }
-    buffer.append(4, '\0');  /* The final terminators */
+    if (RT_SUCCESS(rc))
+        buffer.append(4, '\0');  /* The final terminators */
 
     /*
      * Finally write out the temporary buffer to the real one if it is not too
