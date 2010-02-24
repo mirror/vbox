@@ -117,7 +117,8 @@ PROGRAMS += \
 	tstRTTimeSpec \
 	tstTSC \
 	tstUtf8 \
-	tstRTUuid
+	tstRTUuid \
+	tstRTList
 # tstSems
 PROGRAMS.win += \
 	tstRTProcWait \
@@ -444,6 +445,7 @@ tstRTUuid_SOURCES = tstRTUuid.cpp
 
 tstUtf8_SOURCES = tstUtf8.cpp
 
+tstRTList_SOURCES = tstRTList.cpp
 
 #
 # odds and  ends
