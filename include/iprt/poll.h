@@ -58,24 +58,20 @@ RT_C_DECLS_BEGIN
  * @param   hPollSet        The set to poll on.
  * @param   cMillies        Number of milliseconds to wait.  Use
  *                          RT_INDEFINITE_WAIT to wait for ever.
- * @param   pHandle         Where to return the info about the handle.
  * @param   pfEvent         Where to return details about the events that
- *                          occured.
+ *                          occured.  Optional.
+ * @param   pid             Where to return the ID associated with the handle
+ *                          when calling RTPollSetAdd.  Optional.
  */
-RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies, uint32_t *pfEvent);
+RTDECL(int) RTPoll(RTPIPE hPipe, RTMSINTERVAL cMillies, uint32_t *pfEvent, uint32_t *pid);
 
 /**
- * Creates a poll set with zero or more initial members.
+ * Creates a poll set with no members.
  *
  * @returns IPRT status code.
  * @param   phPollSet       Where to return the poll set handle.
- * @param   cHandles        The number of initial members.
- * @param   paHandles       Array with the initial members.
- * @param   pafEvents       Which events to poll for.  This is an array running
- *                          parallel to @a paHandles.  If NULL, we assume
- *                          RTPOLL_EVT_READ and RTPOLL_EVT_ERROR.
  */
-RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet, size_t cHandles, PCRTHANDLE paHandles, uint32_t const *pafEvents);
+RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet);
 
 /**
  * Destroys a poll set.
@@ -93,17 +89,18 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
  * @param   hPollSet        The poll set to modify.
  * @param   pHandle         The handle to add.
  * @param   fEvents         Which events to poll for.
+ * @param   id              The handle ID.
  */
-RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvents);
+RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvents, uint32_t id);
 
 /**
  * Removes a generic handle from the poll set.
  *
  * @returns IPRT status code
  * @param   hPollSet        The poll set to modify.
- * @param   pHandle         The handle to remove.
+ * @param   id              The handle ID of the handle that should be removed.
  */
-RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, PCRTHANDLE pHandle);
+RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id);
 
 /**
  * Adds a pipe handle to the set.
@@ -112,16 +109,17 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, PCRTHANDLE pHandle);
  * @param   hPollSet        The poll set.
  * @param   hPipe           The pipe handle.
  * @param   fEvents         Which events to poll for.
+ * @param   id              The handle ID.
  *
  * @todo    Maybe we could figure out what to poll for depending on the kind of
  *          pipe we're dealing with.
  */
-DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEvents)
+DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEvents, uint32_t id)
 {
     RTHANDLE Handle;
     Handle.enmType = RTHANDLETYPE_PIPE;
     Handle.u.hPipe = hPipe;
-    return RTPollSetAdd(hPollSet, &Handle, fEvents);
+    return RTPollSetAdd(hPollSet, &Handle, fEvents, id);
 }
 
 /**
@@ -131,13 +129,14 @@ DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEve
  * @param   hPollSet        The poll set.
  * @param   hSocket         The socket handle.
  * @param   fEvents         Which events to poll for.
+ * @param   id              The handle ID.
  */
-DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_t fEvents)
+DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_t fEvents, uint32_t id)
 {
     RTHANDLE Handle;
     Handle.enmType   = RTHANDLETYPE_SOCKET;
     Handle.u.hSocket = hSocket;
-    return RTPollSetAdd(hPollSet, &Handle, fEvents);
+    return RTPollSetAdd(hPollSet, &Handle, fEvents, id);
 }
 
 /** @} */
