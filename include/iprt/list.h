@@ -1,9 +1,9 @@
 /** @file
- * IPRT - List handling functions.
+ * IPRT - Generic Doubly Linked List.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -31,17 +31,22 @@
 #define ___iprt_list_h
 
 #include <iprt/types.h>
-#include <iprt/cdefs.h>
 
-/** @defgroup grp_rt_list    RTList - Generic List Interface.
+/** @defgroup grp_rt_list    RTList - Generic Doubly Linked List
  * @ingroup grp_rt
+ *
+ * The list implementation is circular without any type wise distintion between
+ * the list and its nodes.  This can be confusing since the list head usually
+ * resides in a different structure than the nodes, so care must be taken when
+ * walking the list.
+ *
  * @{
  */
 
 RT_C_DECLS_BEGIN
 
 /**
- * A list node of a double linked list.
+ * A list node of a doubly linked list.
  */
 typedef struct RTLISTNODE
 {
@@ -58,8 +63,7 @@ typedef PRTLISTNODE *PPRTLISTNODE;
 /**
  * Initialize a list.
  *
- * @returns nothing.
- * @param   pList    Pointer to an unitialised list.
+ * @param   pList               Pointer to an unitialised list.
  */
 DECLINLINE(void) RTListInit(PRTLISTNODE pList)
 {
@@ -68,11 +72,10 @@ DECLINLINE(void) RTListInit(PRTLISTNODE pList)
 }
 
 /**
- * Append a node to the end of the list
+ * Append a node to the end of the list.
  *
- * @returns nothing.
- * @param   pList    The list to append the node to.
- * @param   pNode    The node to append.
+ * @param   pList               The list to append the node to.
+ * @param   pNode               The node to append.
  */
 DECLINLINE(void) RTListAppend(PRTLISTNODE pList, PRTLISTNODE pNode)
 {
@@ -83,11 +86,10 @@ DECLINLINE(void) RTListAppend(PRTLISTNODE pList, PRTLISTNODE pNode)
 }
 
 /**
- * Add a node as the first element of the list
+ * Add a node as the first element of the list.
  *
- * @returns nothing.
- * @param   pList    The list to prepend the node to.
- * @param   pNode    The node to prepend.
+ * @param   pList               The list to prepend the node to.
+ * @param   pNode               The node to prepend.
  */
 DECLINLINE(void) RTListPrepend(PRTLISTNODE pList, PRTLISTNODE pNode)
 {
@@ -100,8 +102,7 @@ DECLINLINE(void) RTListPrepend(PRTLISTNODE pList, PRTLISTNODE pNode)
 /**
  * Remove a node from a list.
  *
- * @returns nothing.
- * @param   pNode    The node to remove.
+ * @param   pNode               The node to remove.
  */
 DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 {
@@ -110,80 +111,93 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 
     pPrev->pNext = pNext;
     pNext->pPrev = pPrev;
+
+    /* poison */
+    pNode->pNext = NULL;
+    pNode->pPrev = NULL;
 }
 
 /**
- * Checks if a node is the last element in the list
+ * Checks if a node is the last element in the list.
  *
- * @returns true if the node is the last element in the list.
- *          false otherwise
- * @param   list    The list.
- * @param   node    The node to check.
+ * @retval  @c true if the node is the last element in the list.
+ * @retval  @c false otherwise
+ *
+ * @param   pList               The list.
+ * @param   pNode               The node to check.
  */
-#define RTListNodeIsLast(list, node) ((node)->pNext == list)
+#define RTListNodeIsLast(pList, pNode)  ((pNode)->pNext == (pList))
 
 /**
- * Checks if a node is the first element in the list
+ * Checks if a node is the first element in the list.
  *
- * @returns true if the node is the first element in the list.
- *          false otherwise
- * @param   list    The list.
- * @param   node    The node to check.
+ * @retval  @c true if the node is the first element in the list.
+ * @retval  @c false otherwise.
+ *
+ * @param   pList               The list.
+ * @param   pNode               The node to check.
  */
-#define RTListNodeIsFirst(list, node) ((node)->pPrev == list)
+#define RTListNodeIsFirst(pList, pNode) ((pNode)->pPrev == (pList))
 
 /**
  * Checks if a list is empty.
  *
- * @returns true if the list is empty
- *          false otherwise
- * @param   list    The list to check.
+ * @retval  @c true if the list is empty.
+ * @retval  @c false otherwise.
+ *
+ * @param   pList               The list to check.
  */
-#define RTListIsEmpty(list) ((list)->pPrev == list)
+#define RTListIsEmpty(pList)            ((pList)->pPrev == (pList))
 
 /**
  * Returns the next node in the list.
  *
- * @returns Next node.
- * @param   node   The current node.
- * @param   type   Structure the list node is a member of.
- * @param   member The list node member.
+ * @returns The next node.
+ *
+ * @param   pCurNode            The current node.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
  */
-#define RTListNodeGetNext(node, type, member) ((type *)((uint8_t *)((node)->pNext) - RT_OFFSETOF(type, member)))
+#define RTListNodeGetNext(pCurNode, Type, Member) \
+    RT_FROM_MEMBER((pCurNode)->pNext, Type, Member)
 
 /**
  * Returns the previous node in the list.
  *
- * @returns Next node.
- * @param   node   The current node.
- * @param   type   Structure the list node is a member of.
- * @param   member The list node member.
+ * @returns The previous node.
+ *
+ * @param   pCurNode            The current node.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
  */
-#define RTListNodeGetPrev(node, type, member) ((type *)((uint8_t *)((node)->pPrev) - RT_OFFSETOF(type, member)))
+#define RTListNodeGetPrev(pCurNode, Type, Member) \
+    RT_FROM_MEMBER((pCurNode)->pPrev, Type, Member)
 
 /**
- * Returns the first element in the list
- * or NULL if the list is empty.
+ * Returns the first element in the list (checks for empty list).
  *
- * @returns Pointer to the first list element
- *          or NULL if the list is empty.
- * @param   list    List to get the first element from.
- * @param   type   Structure the list node is a member of.
- * @param   member The list node member.
+ * @retval  Pointer to the first list element.
+ * @retval  NULL if the list is empty.
+ *
+ * @param   pList               List to get the first element from.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
  */
-#define RTListNodeGetFirst(list, type, member) (RTListIsEmpty(list) ? NULL : RTListNodeGetNext(list, type, member))
+#define RTListNodeGetFirst(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RTListNodeGetNext(pList, Type, Member) : NULL)
 
 /**
- * Returns the last element in the list
- * or NULL if the list is empty.
+ * Returns the last element in the list (checks for empty list).
  *
- * @returns Pointer to the last list element
- *          or NULL if the list is empty.
- * @param   list    List to get the first element from.
- * @param   type   Structure the list node is a member of.
- * @param   member The list node member.
+ * @retval  Pointer to the last list element.
+ * @retval  NULL if the list is empty.
+ *
+ * @param   pList               List to get the last element from.
+ * @param   Type                Structure the list node is a member of.
+ * @param   Member              The list node member.
  */
-#define RTListNodeGetLast(list, type, member) (RTListIsEmpty(list) ? NULL : RTListNodeGetPrev(list, type, member))
+#define RTListNodeGetLast(pList, Type, Member) \
+    (!RTListIsEmpty(pList) ? RTListNodeGetPrev(pList, Type, Member) : NULL)
 
 RT_C_DECLS_END
 
