@@ -1160,7 +1160,7 @@ typedef R3R0PTRTYPE(struct RTPIPEINTERNAL *)        RTPIPE;
 typedef RTPIPE                                     *PRTPIPE;
 /** Nil pipe handle.
  * @remarks This is not 0 because of UNIX and OS/2 handle values. Take care! */
-#define NIL_RTPIPE                                 (~(RTPIPE)0)
+#define NIL_RTPIPE                                 ((RTPIPE)RTHCUINTPTR_MAX)
 
 /** @typedef RTPOLLSET
  * Poll set handle. */
