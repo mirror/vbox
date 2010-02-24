@@ -717,7 +717,8 @@ do
             DIR_CONF="/usr/kernel/drv"
             ;;
         *)
-            break
+            errorprint "Invalid operation: $1"
+            exit 1
             ;;
     esac
     shift
