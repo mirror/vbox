@@ -164,12 +164,12 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    CHECK_CONSOLE_DRV (mpDrv);
+
     if (uDevCaps & MOUSE_DEVCAP_ABSOLUTE)
         *absoluteSupported = TRUE;
     else
     {
-        CHECK_CONSOLE_DRV (mpDrv);
-
         uint32_t mouseCaps;
         int rc = getVMMDevMouseCaps(&mouseCaps);
         AssertComRCReturn(rc, rc);
@@ -233,8 +233,6 @@ static uint32_t mouseButtonsToPDM(LONG buttonState)
 int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                                     int32_t dw, uint32_t fButtons)
 {
-    CHECK_CONSOLE_DRV (mpDrv);
-
     if (dx || dy || dz || dw || fButtons != mLastButtons)
     {
         PPDMIMOUSEPORT pUpPort = mpDrv->pUpPort;
@@ -258,8 +256,6 @@ int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
 int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                                     int32_t dz, int32_t dw, uint32_t fButtons)
 {
-    CHECK_CONSOLE_DRV (mpDrv);
-
     if (   mouseXAbs != mLastAbsX
         || mouseYAbs != mLastAbsY
         || dz
@@ -407,6 +403,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     LogRel3(("%s: x=%d, y=%d, dz=%d, dw=%d, buttonState=0x%x\n",
              __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
+
+    CHECK_CONSOLE_DRV(mpDrv);
 
     uint32_t mouseXAbs;
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
