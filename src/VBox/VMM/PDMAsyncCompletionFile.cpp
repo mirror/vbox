@@ -24,7 +24,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_PDM_ASYNC_COMPLETION
-#define RT_STRICT
 //#define DEBUG
 #include "PDMInternal.h"
 #include <VBox/pdm.h>
