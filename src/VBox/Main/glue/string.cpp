@@ -3,7 +3,7 @@
 /** @file
  *
  * MS COM / XPCOM Abstraction Layer:
- * Smart string classes definition
+ * UTF-8 and UTF-16 string classes
  */
 
 /*
@@ -30,11 +30,28 @@
 namespace com
 {
 
+// BSTR representing a null wide char with 32 bits of length prefix (0);
+// this will work on Windows as well as other platforms where BSTR does
+// not use length prefixes
+const OLECHAR g_achEmptyBstr[3] = { 0, 0, 0 };
+const BSTR g_bstrEmpty = (BSTR)(&g_achEmptyBstr[2]);
+
 /* static */
 const Bstr Bstr::Null; /* default ctor is OK */
 
 /* static */
 const Utf8Str Utf8Str::Null; /* default ctor is OK */
+
+#if defined (VBOX_WITH_XPCOM)
+void Utf8Str::cloneTo(char **pstr) const
+{
+    size_t cb = length() + 1;
+    *pstr = (char*)nsMemory::Alloc(cb);
+    if (!*pstr)
+        throw std::bad_alloc();
+    memcpy(*pstr, c_str(), cb);
+}
+#endif
 
 Utf8Str& Utf8Str::toLower()
 {

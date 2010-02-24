@@ -693,7 +693,7 @@ STDMETHODIMP Session::AccessGuestProperty(IN_BSTR aName, IN_BSTR aValue, IN_BSTR
                         tr("Machine session is not open (session state: %s)."),
                         Global::stringifySessionState(mState));
     AssertReturn(mType == SessionType_Direct, VBOX_E_INVALID_OBJECT_STATE);
-    CheckComArgNotNull(aName);
+    CheckComArgStrNotEmptyOrNull(aName);
     if (!aIsSetter && !VALID_PTR(aRetValue))
         return E_POINTER;
     if (!aIsSetter && !VALID_PTR(aRetTimestamp))

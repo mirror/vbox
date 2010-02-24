@@ -44,6 +44,13 @@ namespace iprt
  * "MiniString" is a small C++ string class that does not depend on anything
  * else except IPRT memory management functions.  Semantics are like in
  * std::string, except it can do a lot less.
+ *
+ *
+ * Note that MiniString does not differentiate between NULL strings and
+ * empty strings. In other words, MiniString("") and MiniString(NULL)
+ * behave the same. In both cases, MiniString allocates no memory, reports
+ * a zero length and zero allocated bytes for both, and returns an empty
+ * C string from c_str().
  */
 #ifdef VBOX
  /** @remarks Much of the code in here used to be in com::Utf8Str so that
@@ -70,7 +77,7 @@ public:
     /**
      * Creates a copy of another MiniString.
      *
-     * This allocates s.length() + 1 bytes for the new instance.
+     * This allocates s.length() + 1 bytes for the new instance, unless s is empty.
      *
      * @param   s               The source string.
      *
@@ -82,9 +89,9 @@ public:
     }
 
     /**
-     * Creates a copy of another MiniString.
+     * Creates a copy of a C string.
      *
-     * This allocates strlen(pcsz) + 1 bytes for the new instance.
+     * This allocates strlen(pcsz) + 1 bytes for the new instance, unless s is empty.
      *
      * @param   pcsz            The source string.
      *
@@ -122,7 +129,7 @@ public:
      * The allocated buffer size (in bytes).
      *
      * Returns the number of bytes allocated in the internal string buffer, which is
-     * at least length() + 1 if length() > 0.
+     * at least length() + 1 if length() > 0; for an empty string, this returns 0.
      *
      * @returns m_cbAllocated.
      */
@@ -168,43 +175,6 @@ public:
     inline void setNull()
     {
         cleanup();
-    }
-
-    /**
-     * Returns a non-const raw pointer that allows to modify the string directly.
-     *
-     * @warning
-     *      -# Be sure not to modify data beyond the allocated memory! Call
-     *         capacity() to find out how large that buffer is.
-     *      -# After any operation that modifies the length of the string,
-     *         you _must_ call MiniString::jolt(), or subsequent copy operations
-     *         may go nowhere.  Better not use mutableRaw() at all.
-     */
-    char *mutableRaw()
-    {
-        return m_psz;
-    }
-
-    /**
-     * Clean up after using mutableRaw.
-     *
-     * Intended to be called after something has messed with the internal string
-     * buffer (e.g. after using mutableRaw() or Utf8Str::asOutParam()).  Resets the
-     * internal lengths correctly.  Otherwise subsequent copy operations may go
-     * nowhere.
-     */
-    void jolt()
-    {
-        if (m_psz)
-        {
-            m_cbLength = strlen(m_psz);
-            m_cbAllocated = m_cbLength + 1; /* (Required for the Utf8Str::asOutParam case) */
-        }
-        else
-        {
-            m_cbLength = 0;
-            m_cbAllocated = 0;
-        }
     }
 
     /**
@@ -288,12 +258,14 @@ public:
 
     /**
      * Returns the contained string as a C-style const char* pointer.
+     * This never returns NULL; if the string is empty, this returns a
+     * pointer to static null byte.
      *
      * @returns const pointer to C-style string.
      */
     inline const char *c_str() const
     {
-        return m_psz;
+        return (m_psz) ? m_psz : "";
     }
 
     /**
@@ -303,14 +275,53 @@ public:
      */
     inline const char *raw() const
     {
+        return (m_psz) ? m_psz : "";
+    }
+
+    /**
+     * Returns a non-const raw pointer that allows to modify the string directly.
+     * As opposed to c_str() and raw(), this DOES return NULL for an empty string
+     * because we cannot return a non-const pointer to a static "" global.
+     *
+     * @warning
+     *      -# Be sure not to modify data beyond the allocated memory! Call
+     *         capacity() to find out how large that buffer is.
+     *      -# After any operation that modifies the length of the string,
+     *         you _must_ call MiniString::jolt(), or subsequent copy operations
+     *         may go nowhere.  Better not use mutableRaw() at all.
+     */
+    char *mutableRaw()
+    {
         return m_psz;
     }
 
     /**
-     * Emptry string or not?
+     * Clean up after using mutableRaw.
      *
-     * Returns true if the member string has no length.  This states nothing about
-     * how much memory might be allocated.
+     * Intended to be called after something has messed with the internal string
+     * buffer (e.g. after using mutableRaw() or Utf8Str::asOutParam()).  Resets the
+     * internal lengths correctly.  Otherwise subsequent copy operations may go
+     * nowhere.
+     */
+    void jolt()
+    {
+        if (m_psz)
+        {
+            m_cbLength = strlen(m_psz);
+            m_cbAllocated = m_cbLength + 1; /* (Required for the Utf8Str::asOutParam case) */
+        }
+        else
+        {
+            m_cbLength = 0;
+            m_cbAllocated = 0;
+        }
+    }
+
+    /**
+     * Returns true if the member string has no length.
+     * This is true for instances created from both NULL and "" input strings.
+     *
+     * This states nothing about how much memory might be allocated.
      *
      * @returns true if empty, false if not.
      */
@@ -473,7 +484,7 @@ protected:
     /**
      * Hide operator bool() to force people to use isEmpty() explicitly.
      */
-    operator bool() const { return false; }
+    operator bool() const;
 
     /**
      * Destructor implementation, also used to clean up in operator=() before
@@ -491,8 +502,8 @@ protected:
     }
 
     /**
-     * Protected internal helper for copy a string that completely ignors the
-     * current object state.
+     * Protected internal helper to copy a string. This ignores the previous object
+     * state, so either call this from a constructor or call cleanup() first.
      *
      * copyFrom() unconditionally sets the members to a copy of the given other
      * strings and makes no assumptions about previous contents. Can therefore be
@@ -500,7 +511,7 @@ protected:
      * and in assignments after having called cleanup().
      *
      * This variant copies from another MiniString and is fast since
-     * the length of source string is known.
+     * the length of the source string is known.
      *
      * @param   s               The source string.
      *
@@ -532,8 +543,8 @@ protected:
     }
 
     /**
-     * Protected internal helper for copy a string that completely ignors the
-     * current object state.
+     * Protected internal helper to copy a string. This ignores the previous object
+     * state, so either call this from a constructor or call cleanup() first.
      *
      * See copyFrom() above.
      *
@@ -547,7 +558,7 @@ protected:
      */
     void copyFrom(const char *pcsz)
     {
-        if (pcsz)
+        if (pcsz && *pcsz)
         {
             m_cbLength = strlen(pcsz);
             m_cbAllocated = m_cbLength + 1;

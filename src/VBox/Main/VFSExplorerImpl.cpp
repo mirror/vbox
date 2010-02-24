@@ -560,7 +560,7 @@ STDMETHODIMP VFSExplorer::Update(IProgress **aProgress)
 
 STDMETHODIMP VFSExplorer::Cd(IN_BSTR aDir, IProgress **aProgress)
 {
-    CheckComArgNotNull(aDir);
+    CheckComArgStrNotEmptyOrNull(aDir);
     CheckComArgOutPointerValid(aProgress);
 
     return E_NOTIMPL;

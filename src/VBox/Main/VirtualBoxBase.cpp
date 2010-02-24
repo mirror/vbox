@@ -809,19 +809,23 @@ VirtualBoxSupportErrorInfoImplBase::MultiResult::~MultiResult()
  *  than an error.
  */
 /* static */
-HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
-    HRESULT aResultCode, const GUID &aIID,
-    const Bstr &aComponent, const Bstr &aText,
-    bool aWarning, bool aLogIt)
+HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal(HRESULT aResultCode,
+                                                             const GUID &aIID,
+                                                             const wchar_t *aComponent,
+                                                             const Bstr &aText,
+                                                             bool aWarning,
+                                                             bool aLogIt)
 {
     /* whether multi-error mode is turned on */
-    bool preserve = ((uintptr_t) RTTlsGet (MultiResult::sCounter)) > 0;
+    bool preserve = ((uintptr_t)RTTlsGet(MultiResult::sCounter)) > 0;
+
+    Bstr bstrComponent((CBSTR)aComponent);
 
     if (aLogIt)
-        LogRel (("ERROR [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%ls} aText={%ls} "
-                 "aWarning=%RTbool, preserve=%RTbool\n",
-                 aResultCode, aResultCode, &aIID, aComponent.raw(), aText.raw(), aWarning,
-                 preserve));
+        LogRel(("ERROR [COM]: aRC=%Rhrc (%#08x) aIID={%RTuuid} aComponent={%ls} aText={%ls} "
+                "aWarning=%RTbool, preserve=%RTbool\n",
+                aResultCode, aResultCode, &aIID, bstrComponent.raw(), aText.raw(), aWarning,
+                preserve));
 
     /* these are mandatory, others -- not */
     AssertReturn((!aWarning && FAILED(aResultCode)) ||
@@ -869,7 +873,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
         Assert(SUCCEEDED(rc) || curInfo.isNull());
 
         /* set the current error info and preserve the previous one if any */
-        rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
+        rc = info->init(aResultCode, aIID, bstrComponent, aText, curInfo);
         if (FAILED(rc)) break;
 
         ComPtr<IErrorInfo> err;
@@ -913,7 +917,7 @@ HRESULT VirtualBoxSupportErrorInfoImplBase::setErrorInternal (
             Assert(SUCCEEDED(rc) || curInfo.isNull());
 
             /* set the current error info and preserve the previous one if any */
-            rc = info->init (aResultCode, aIID, aComponent, aText, curInfo);
+            rc = info->init(aResultCode, aIID, bstrComponent, aText, curInfo);
             if (FAILED(rc)) break;
 
             ComPtr<nsIException> ex;

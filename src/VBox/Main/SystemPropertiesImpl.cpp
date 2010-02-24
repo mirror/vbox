@@ -827,7 +827,7 @@ ComObjPtr<MediumFormat> SystemProperties::mediumFormat (CBSTR aFormat)
     {
         /* MediumFormat is all const, no need to lock */
 
-        if ((*it)->id().compareIgnoreCase (aFormat) == 0)
+        if ((*it)->id().compare(aFormat, Bstr::CaseInsensitive) == 0)
         {
             format = *it;
             break;

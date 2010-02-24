@@ -902,7 +902,7 @@ Console::Teleport(IN_BSTR aHostname, ULONG aPort, IN_BSTR aPassword, ULONG aMaxD
      */
     CheckComArgOutPointerValid(aProgress);
     CheckComArgStrNotEmptyOrNull(aHostname);
-    CheckComArgNotNull(aHostname);
+    CheckComArgStrNotEmptyOrNull(aHostname);
     CheckComArgExprMsg(aPort, aPort > 0 && aPort <= 65535, ("is %u", aPort));
     CheckComArgExprMsg(aMaxDowntime, aMaxDowntime > 0, ("is %u", aMaxDowntime));
 

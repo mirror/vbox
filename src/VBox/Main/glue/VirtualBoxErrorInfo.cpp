@@ -201,7 +201,7 @@ NS_IMETHODIMP VirtualBoxErrorInfo::GetMessage (char **aMessage)
     if (!aMessage)
         return NS_ERROR_INVALID_POINTER;
 
-    Utf8Str (mText).cloneTo(aMessage);
+    Utf8Str(mText).cloneTo(aMessage);
     return S_OK;
 }
 

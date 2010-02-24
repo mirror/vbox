@@ -48,7 +48,6 @@
 #include "VBox/com/defs.h"
 #include "VBox/com/assert.h"
 
-#include <iprt/cpp/utils.h>
 #include <iprt/alloc.h>
 #include <iprt/cpp/ministring.h>
 
@@ -57,182 +56,234 @@ namespace com
 
 class Utf8Str;
 
+// global constant in glue/string.cpp that represents an empty BSTR
+extern const BSTR g_bstrEmpty;
+
 /**
- *  Helper class that represents the |BSTR| type and hides platform-specific
- *  implementation details.
+ *  String class used universally in Main for COM-style Utf-16 strings.
+ *  Unfortunately COM on Windows uses UTF-16 everywhere, requiring conversions
+ *  back and forth since most of VirtualBox and our libraries use UTF-8.
  *
- *  This class uses COM/XPCOM-provided memory management routines to allocate
- *  and free string buffers. This makes it possible to:
- *  - use it as a type of member variables of COM/XPCOM components and pass
- *    their values to callers through component methods' output parameters
- *    using the #cloneTo() operation;
- *  - adopt (take ownership of) string buffers returned in output parameters
- *    of COM methods using the #asOutParam() operation and correctly free them
- *    afterwards.
+ *  To make things more obscure, on Windows, a COM-style BSTR is not just a
+ *  pointer to a null-terminated wide character array, but the four bytes
+ *  (32 bits) BEFORE the memory that the pointer points to are a length
+ *  DWORD. One must therefore avoid pointer arithmetic and always use
+ *  SysAllocString and the like to deal with BSTR pointers, which manage
+ *  that DWORD correctly.
+ *
+ *  For platforms other than Windows, we provide our own versions of the
+ *  Sys* functions in Main/xpcom/helpers.cpp which do NOT use length
+ *  prefixes though to be compatible with how XPCOM allocates string
+ *  parameters to public functions.
+ *
+ *  The Bstr class hides all this handling behind a std::string-like interface
+ *  and also provides automatic conversions to MiniString and Utf8Str instances.
+ *
+ *  The one advantage of using the SysString* routines is that this makes it
+ *  possible to use it as a type of member variables of COM/XPCOM components
+ *  and pass their values to callers through component methods' output parameters
+ *  using the #cloneTo() operation. Also, the class can adopt (take ownership of)
+ *  string buffers returned in output parameters of COM methods using the
+ *  #asOutParam() operation and correctly free them afterwards.
+ *
+ *  Starting with VirtualBox 3.2, like Utf8Str, Bstr no longer differentiates
+ *  between NULL strings and empty strings. In other words, Bstr("") and
+ *  Bstr(NULL) behave the same. In both cases, Bstr allocates no memory,
+ *  reports a zero length and zero allocated bytes for both, and returns an
+ *  empty C wide string from raw().
  */
 class Bstr
 {
 public:
 
-    typedef BSTR String;
-    typedef CBSTR ConstString;
+    Bstr()
+        : m_bstr(NULL)
+    { }
 
-    Bstr() : bstr(NULL) {}
+    Bstr(const Bstr &that)
+    {
+        copyFrom((const OLECHAR *)that.m_bstr);
+    }
 
-    Bstr(const Bstr &that) : bstr(NULL) { raw_copy(bstr, that.bstr); }
-    Bstr(CBSTR that) : bstr(NULL) { raw_copy(bstr, that); }
+    Bstr(CBSTR that)
+    {
+        copyFrom((const OLECHAR *)that);
+    }
 
 #if defined (VBOX_WITH_XPCOM)
-    Bstr(const wchar_t *that) : bstr(NULL)
+    Bstr(const wchar_t *that)
     {
         AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
-        raw_copy(bstr, (CBSTR)that);
+        copyFrom((const OLECHAR *)that);
     }
 #endif
 
-    Bstr(const iprt::MiniString &that);
-    Bstr(const char *that);
-
-    /** Shortcut that calls #alloc(aSize) right after object creation. */
-    Bstr(size_t aSize) : bstr(NULL) { alloc(aSize); }
-
-    ~Bstr() { setNull(); }
-
-    Bstr &operator=(const Bstr &that) { safe_assign(that.bstr); return *this; }
-    Bstr &operator=(CBSTR that) { safe_assign(that); return *this; }
-
-    Bstr &operator=(const Utf8Str &that);
-    Bstr &operator=(const char *that);
-
-    Bstr &setNull()
+    Bstr(const iprt::MiniString &that)
     {
-        if (bstr)
-        {
-            ::SysFreeString(bstr);
-            bstr = NULL;
-        }
-        return *this;
+        copyFrom(that.raw());
     }
 
-    Bstr &setNullIfEmpty()
+    Bstr(const char *that)
     {
-        if (bstr && *bstr == 0)
-        {
-            ::SysFreeString(bstr);
-            bstr = NULL;
-        }
-        return *this;
+        copyFrom(that);
     }
 
-    /**
-     *  Allocates memory for a string capable to store \a aSize - 1 characters;
-     *  in other words, aSize includes the terminating zero character. If \a aSize
-     *  is zero, or if a memory allocation error occurs, this object will become null.
-     */
-    Bstr &alloc(size_t aSize)
+    ~Bstr()
     {
         setNull();
-        if (aSize)
-        {
-            unsigned int size = (unsigned int) aSize; Assert(size == aSize);
-            bstr = ::SysAllocStringLen(NULL, size - 1);
-            if (bstr)
-                bstr[0] = 0;
-        }
+    }
+
+    Bstr& operator=(const Bstr &that)
+    {
+        cleanup();
+        copyFrom((const OLECHAR *)that.m_bstr);
         return *this;
     }
 
-    int compare(CBSTR str) const
+    Bstr& operator=(CBSTR that)
     {
-        return ::RTUtf16Cmp((PRTUTF16) bstr, (PRTUTF16) str);
+        cleanup();
+        copyFrom((const OLECHAR *)that);
+        return *this;
+    }
+
+#if defined (VBOX_WITH_XPCOM)
+    Bstr& operator=(const wchar_t *that)
+    {
+        cleanup();
+        copyFrom((const OLECHAR *)that);
+        return *this;
+    }
+#endif
+
+    Bstr& setNull()
+    {
+        cleanup();
+        return *this;
+    }
+
+    /** Case sensitivity selector. */
+    enum CaseSensitivity
+    {
+        CaseSensitive,
+        CaseInsensitive
+    };
+
+    /**
+     * Compares the member string to str.
+     * @param str
+     * @param cs Whether comparison should be case-sensitive.
+     * @return
+     */
+    int compare(CBSTR str, CaseSensitivity cs = CaseSensitive) const
+    {
+        if (cs == CaseSensitive)
+            return ::RTUtf16Cmp((PRTUTF16)m_bstr, (PRTUTF16)str);
+        return ::RTUtf16LocaleICmp((PRTUTF16)m_bstr, (PRTUTF16)str);
     }
 
     int compare(BSTR str) const
     {
-        return ::RTUtf16Cmp((PRTUTF16) bstr, (PRTUTF16) str);
+        return compare((CBSTR)str);
     }
 
-    bool operator==(const Bstr &that) const { return !compare(that.bstr); }
-    bool operator!=(const Bstr &that) const { return !!compare(that.bstr); }
+    bool operator==(const Bstr &that) const { return !compare(that.m_bstr); }
+    bool operator!=(const Bstr &that) const { return !!compare(that.m_bstr); }
     bool operator==(CBSTR that) const { return !compare(that); }
     bool operator==(BSTR that) const { return !compare(that); }
 
-#if defined (VBOX_WITH_XPCOM)
-    bool operator!=(const wchar_t *that) const
-    {
-        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
-        return !!compare((CBSTR) that);
-    }
-    bool operator==(const wchar_t *that) const
-    {
-        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
-        return !compare((CBSTR) that);
-    }
-#endif
-
     bool operator!=(CBSTR that) const { return !!compare(that); }
     bool operator!=(BSTR that) const { return !!compare(that); }
-    bool operator<(const Bstr &that) const { return compare(that.bstr) < 0; }
+    bool operator<(const Bstr &that) const { return compare(that.m_bstr) < 0; }
     bool operator<(CBSTR that) const { return compare(that) < 0; }
     bool operator<(BSTR that) const { return compare(that) < 0; }
-#if defined (VBOX_WITH_XPCOM)
-    bool operator<(const wchar_t *that) const
-    {
-        AssertCompile(sizeof(wchar_t) == sizeof(OLECHAR));
-        return compare((CBSTR) that) < 0;
-    }
-#endif
-
-    int compareIgnoreCase(CBSTR str) const
-    {
-        return ::RTUtf16LocaleICmp(bstr, str);
-    }
-
-    bool isNull() const { return bstr == NULL; }
-    operator bool() const { return !isNull(); }
-
-    bool isEmpty() const { return isNull() || *bstr == 0; }
-
-    size_t length() const { return isNull() ? 0 : ::RTUtf16Len((PRTUTF16) bstr); }
-
-    /** Intended to to pass instances as |CBSTR| input parameters to methods. */
-    operator CBSTR() const { return bstr; }
 
     /**
-     * Intended to to pass instances as |BSTR| input parameters to methods.
-     * Note that we have to provide this mutable BSTR operator since in MS COM
-     * input BSTR parameters of interface methods are not const.
+     * Returns true if the member string has no length.
+     * This is true for instances created from both NULL and "" input strings.
+     *
+     * @note Always use this method to check if an instance is empty. Do not
+     * use length() because that may need to run through the entire string
+     * (Bstr does not cache string lengths). Also do not use operator bool();
+     * for one, MSVC is really annoying with its thinking that that is ambiguous,
+     * and even though operator bool() is protected with Bstr, at least gcc uses
+     * operator CBSTR() when a construct like "if (string)" is encountered, which
+     * is always true now since it raw() never returns an empty string. Again,
+     * always use isEmpty() even though if (string) may compile!
      */
-    operator BSTR() { return bstr; }
+    bool isEmpty() const { return m_bstr == NULL || *m_bstr == 0; }
+
+    size_t length() const { return isEmpty() ? 0 : ::RTUtf16Len((PRTUTF16)m_bstr); }
 
     /**
-     *  The same as operator CBSTR(), but for situations where the compiler
-     *  cannot typecast implicitly (for example, in printf() argument list).
+     * Returns true if the member string is not empty. I'd like to make this
+     * private but since we require operator BSTR() it's futile anyway because
+     * the compiler will then (wrongly) use that one instead. Also if this is
+     * private the odd WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP macro below
+     * will fail on Windows.
      */
-    CBSTR raw() const { return bstr; }
+    operator bool() const
+    {
+        return m_bstr != NULL;
+    }
+
+    /**
+     *  Returns a pointer to the raw member UTF-16 string. If the member string is empty,
+     *  returns a pointer to a global variable containing an empty BSTR with a proper zero
+     *  length prefix so that Windows is happy.
+     */
+    CBSTR raw() const
+    {
+        if (m_bstr)
+            return m_bstr;
+
+        return g_bstrEmpty;
+    }
+
+    /**
+     * Convenience operator so that Bstr's can be passed to CBSTR input parameters
+     * of COM methods.
+     */
+    operator CBSTR() const { return raw(); }
+
+    /**
+     * Convenience operator so that Bstr's can be passed to CBSTR input parameters
+     * of COM methods. Unfortunately this is required for Windows since with
+     * MSCOM, input BSTR parameters of interface methods are not const.
+     */
+    operator BSTR() { return (BSTR)raw(); }
 
     /**
      *  Returns a non-const raw pointer that allows to modify the string directly.
+     *  As opposed to raw(), this DOES return NULL if the member string is empty
+     *  because we cannot return a mutable pointer to the global variable with the
+     *  empty string.
+     *
      *  @warning
      *      Be sure not to modify data beyond the allocated memory! The
      *      guaranteed size of the allocated memory is at least #length()
      *      bytes after creation and after every assignment operation.
      */
-    BSTR mutableRaw() { return bstr; }
+    BSTR mutableRaw() { return m_bstr; }
 
     /**
      *  Intended to assign copies of instances to |BSTR| out parameters from
      *  within the interface method. Transfers the ownership of the duplicated
      *  string to the caller.
+     *
+     *  If the member string is empty, this allocates an empty BSTR in *pstr
+     *  (i.e. makes it point to a new buffer with a null byte).
      */
-    const Bstr &cloneTo(BSTR *pstr) const
+    void cloneTo(BSTR *pstr) const
     {
         if (pstr)
         {
-            *pstr = NULL;
-            raw_copy(*pstr, bstr);
+            *pstr = ::SysAllocString((const OLECHAR *)raw());       // raw() returns a pointer to "" if empty
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!*pstr)
+                throw std::bad_alloc();
+#endif
         }
-        return *this;
     }
 
     /**
@@ -242,26 +293,35 @@ public:
      *
      *  As opposed to cloneTo(), this method doesn't create a copy of the
      *  string.
+     *
+     *  If the member string is empty, this allocates an empty BSTR in *pstr
+     *  (i.e. makes it point to a new buffer with a null byte).
      */
-    Bstr &detachTo(BSTR *pstr)
+    void detachTo(BSTR *pstr)
     {
-        *pstr = bstr;
-        bstr = NULL;
-        return *this;
+        if (m_bstr)
+            *pstr = m_bstr;
+        else
+        {
+            // allocate null BSTR
+            *pstr = ::SysAllocString((const OLECHAR *)g_bstrEmpty);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!*pstr)
+                throw std::bad_alloc();
+#endif
+        }
+        m_bstr = NULL;
     }
-
-    /**
-     *  Intended to assign copies of instances to |char *| out parameters from
-     *  within the interface method. Transfers the ownership of the duplicated
-     *  string to the caller.
-     */
-    const Bstr &cloneTo(char **pstr) const;
 
     /**
      *  Intended to pass instances as |BSTR| out parameters to methods.
      *  Takes the ownership of the returned data.
      */
-    BSTR *asOutParam() { setNull(); return &bstr; }
+    BSTR* asOutParam()
+    {
+        cleanup();
+        return &m_bstr;
+    }
 
     /**
      *  Static immutable null object. May be used for comparison purposes.
@@ -270,33 +330,66 @@ public:
 
 protected:
 
-    void safe_assign(CBSTR str)
+    void cleanup()
     {
-        if (bstr != str)
+        if (m_bstr)
         {
-            setNull();
-            raw_copy(bstr, str);
+            ::SysFreeString(m_bstr);
+            m_bstr = NULL;
         }
     }
 
-    inline static void raw_copy(BSTR &ls, CBSTR rs)
+    /**
+     * Protected internal helper to copy a string. This ignores the previous object
+     * state, so either call this from a constructor or call cleanup() first.
+     *
+     * This variant copies from a zero-terminated UTF-16 string (which need not
+     * be a BSTR, i.e. need not have a length prefix).
+     *
+     * If the source is empty, this sets the member string to NULL.
+     * @param rs
+     */
+    void copyFrom(const OLECHAR *rs)
     {
-        if (rs)
-            ls = ::SysAllocString((const OLECHAR *) rs);
+        if (rs && *rs)
+        {
+            m_bstr = ::SysAllocString(rs);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!m_bstr)
+                throw std::bad_alloc();
+#endif
+        }
+        else
+            m_bstr = NULL;
     }
 
-    inline static void raw_copy(BSTR &ls, const char *rs)
+    /**
+     * Protected internal helper to copy a string. This ignores the previous object
+     * state, so either call this from a constructor or call cleanup() first.
+     *
+     * This variant copies and converts from a zero-terminated UTF-8 string.
+     *
+     * If the source is empty, this sets the member string to NULL.
+     * @param rs
+     */
+    void copyFrom(const char *rs)
     {
-        if (rs)
+        if (rs && *rs)
         {
             PRTUTF16 s = NULL;
             ::RTStrToUtf16(rs, &s);
-            raw_copy(ls, (BSTR)s);
+#ifdef RT_EXCEPTIONS_ENABLED
+            if (!s)
+                throw std::bad_alloc();
+#endif
+            copyFrom((const OLECHAR *)s);            // allocates BSTR from zero-terminated input string
             ::RTUtf16Free(s);
         }
+        else
+            m_bstr = NULL;
     }
 
-    BSTR bstr;
+    BSTR m_bstr;
 
     friend class Utf8Str; /* to access our raw_copy() */
 };
@@ -307,21 +400,23 @@ inline bool operator!=(CBSTR l, const Bstr &r) { return r.operator!=(l); }
 inline bool operator==(BSTR l, const Bstr &r) { return r.operator==(l); }
 inline bool operator!=(BSTR l, const Bstr &r) { return r.operator!=(l); }
 
+// work around error C2593 of the stupid MSVC 7.x ambiguity resolver
+WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Bstr)
+
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- *  Helper class that represents UTF8 (|char *|) strings. Useful in
- *  conjunction with Bstr to simplify conversions between UTF16 (|BSTR|)
- *  and UTF8.
+ *  String class used universally in Main for UTF-8 strings.
  *
- *  This class uses COM/XPCOM-provided memory management routines to allocate
- *  and free string buffers. This makes it possible to:
- *  - use it as a type of member variables of COM/XPCOM components and pass
- *    their values to callers through component methods' output parameters
- *    using the #cloneTo() operation;
- *  - adopt (take ownership of) string buffers returned in output parameters
- *    of COM methods using the #asOutParam() operation and correctly free them
- *    afterwards.
+ *  This is based on iprt::MiniString, to which some functionality has been
+ *  moved. Here we keep things that are specific to Main, such as conversions
+ *  with UTF-16 strings (Bstr).
+ *
+ *  Like iprt::MiniString, Utf8Str does not differentiate between NULL strings
+ *  and empty strings. In other words, Utf8Str("") and Utf8Str(NULL)
+ *  behave the same. In both cases, MiniString allocates no memory, reports
+ *  a zero length and zero allocated bytes for both, and returns an empty
+ *  C string from c_str().
  */
 class Utf8Str : public iprt::MiniString
 {
@@ -373,50 +468,32 @@ public:
         return *this;
     }
 
+#if defined (VBOX_WITH_XPCOM)
     /**
      * Intended to assign instances to |char *| out parameters from within the
      * interface method. Transfers the ownership of the duplicated string to the
      * caller.
      *
-     * @remarks The returned string must be freed by RTStrFree, not RTMemFree.
-     */
-    const Utf8Str& cloneTo(char **pstr) const
-    {
-        if (pstr) /** @todo r=bird: This needs to if m_psz is NULL. Shouldn't it also throw std::bad_alloc? */
-            *pstr = RTStrDup(m_psz);
-        return *this;
-    }
-
-    /**
-     *  Intended to assign instances to |char *| out parameters from within the
-     *  interface method. Transfers the ownership of the original string to the
-     *  caller and resets the instance to null.
+     * This allocates a single 0 byte in the target if the member string is empty.
      *
-     *  As opposed to cloneTo(), this method doesn't create a copy of the
-     *  string.
+     * This uses XPCOM memory allocation and thus only works on XPCOM. MSCOM doesn't
+     * like char* strings anyway.
      */
-    Utf8Str& detachTo(char **pstr)
-    {
-        *pstr = m_psz;
-        m_psz = NULL;
-        m_cbAllocated = 0;
-        m_cbLength = 0;
-        return *this;
-    }
+    void cloneTo(char **pstr) const;
+#endif
 
     /**
      *  Intended to assign instances to |BSTR| out parameters from within the
      *  interface method. Transfers the ownership of the duplicated string to the
      *  caller.
      */
-    const Utf8Str& cloneTo(BSTR *pstr) const
+    void cloneTo(BSTR *pstr) const
     {
         if (pstr)
         {
-            *pstr = NULL;
-            Bstr::raw_copy(*pstr, m_psz);
+            Bstr bstr(*this);
+            bstr.cloneTo(pstr);
         }
-        return *this;
     }
 
     /**
@@ -504,7 +581,7 @@ protected:
      */
     void copyFrom(CBSTR s)
     {
-        if (s)
+        if (s && *s)
         {
             RTUtf16ToUtf8((PRTUTF16)s, &m_psz); /** @todo r=bird: This isn't throwing std::bad_alloc / handling return codes.
                                                  * Also, this technically requires using RTStrFree, ministring::cleanup() uses RTMemFree. */
@@ -521,50 +598,6 @@ protected:
 
     friend class Bstr; /* to access our raw_copy() */
 };
-
-// work around error C2593 of the stupid MSVC 7.x ambiguity resolver
-WORKAROUND_MSVC7_ERROR_C2593_FOR_BOOL_OP(Bstr)
-
-////////////////////////////////////////////////////////////////////////////////
-
-// inlined Bstr members that depend on Utf8Str
-
-inline Bstr::Bstr(const iprt::MiniString &that)
-    : bstr(NULL)
-{
-    raw_copy(bstr, that.c_str());
-}
-
-inline Bstr::Bstr(const char *that)
-    : bstr(NULL)
-{
-    raw_copy(bstr, that);
-}
-
-inline Bstr &Bstr::operator=(const Utf8Str &that)
-{
-    setNull();
-    raw_copy(bstr, that.c_str());
-    return *this;
-}
-inline Bstr &Bstr::operator=(const char *that)
-{
-    setNull();
-    raw_copy(bstr, that);
-    return *this;
-}
-
-inline const Bstr& Bstr::cloneTo(char **pstr) const
-{
-    if (pstr)
-    {
-        Utf8Str ustr(*this);
-        ustr.detachTo(pstr);
-    }
-    return *this;
-}
-
-////////////////////////////////////////////////////////////////////////////////
 
 /**
  *  This class is a printf-like formatter for Utf8Str strings. Its purpose is
@@ -653,7 +686,7 @@ public:
     {
         va_list args;
         va_start(args, aFormat);
-        raw_copy(bstr, Utf8StrFmtVA(aFormat, args).c_str());
+        copyFrom(Utf8StrFmtVA(aFormat, args).c_str());
         va_end(args);
     }
 };
@@ -674,7 +707,7 @@ public:
      */
     BstrFmtVA(const char *aFormat, va_list aArgs)
     {
-        raw_copy(bstr, Utf8StrFmtVA(aFormat, aArgs).c_str());
+        copyFrom(Utf8StrFmtVA(aFormat, aArgs).c_str());
     }
 };
 
