@@ -355,6 +355,16 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
 }
 
 
+RTR3DECL(int)  RTFileOpenBitBucket(PRTFILE phFile, uint32_t fAccess)
+{
+    AssertReturn(   fAccess == RTFILE_O_READ
+                 || fAccess == RTFILE_O_WRITE
+                 || fAccess == RTFILE_O_READWRITE,
+                 VERR_INVALID_PARAMETER);
+    return RTFileOpen(phFile, "NUL", fAccess | RTFILE_O_DENY_NONE | RTFILE_O_OPEN);
+}
+
+
 RTR3DECL(int)  RTFileClose(RTFILE File)
 {
     if (CloseHandle((HANDLE)File))
