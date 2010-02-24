@@ -23,6 +23,9 @@
 #ifndef __UIMachineDefs_h__
 #define __UIMachineDefs_h__
 
+/* Global includes */
+#include <iprt/cdefs.h>
+
 /* Machine states enum: */
 enum UIVisualStateType
 {
@@ -34,34 +37,34 @@ enum UIVisualStateType
 /* Machine elements enum: */
 enum UIVisualElement
 {
-    UIVisualElement_WindowCaption         = 0x01,
-    UIVisualElement_MouseIntegrationStuff = 0x02,
-    UIVisualElement_PauseStuff            = 0x04,
-    UIVisualElement_HDStuff               = 0x08,
-    UIVisualElement_CDStuff               = 0x10,
-    UIVisualElement_FDStuff               = 0x20,
-    UIVisualElement_NetworkStuff          = 0x40,
-    UIVisualElement_USBStuff              = 0x80,
-    UIVisualElement_VRDPStuff             = 0x100,
-    UIVisualElement_SharedFolderStuff     = 0x200,
-    UIVisualElement_VirtualizationStuff   = 0x400,
+    UIVisualElement_WindowCaption         = RT_BIT(0),
+    UIVisualElement_MouseIntegrationStuff = RT_BIT(1),
+    UIVisualElement_PauseStuff            = RT_BIT(2),
+    UIVisualElement_HDStuff               = RT_BIT(3),
+    UIVisualElement_CDStuff               = RT_BIT(4),
+    UIVisualElement_FDStuff               = RT_BIT(5),
+    UIVisualElement_NetworkStuff          = RT_BIT(6),
+    UIVisualElement_USBStuff              = RT_BIT(7),
+    UIVisualElement_VRDPStuff             = RT_BIT(8),
+    UIVisualElement_SharedFolderStuff     = RT_BIT(9),
+    UIVisualElement_VirtualizationStuff   = RT_BIT(10),
     UIVisualElement_AllStuff              = 0xFFFF
 };
 
 /* Mouse states enum: */
 enum UIMouseStateType
 {
-    UIMouseStateType_MouseCaptured         = 0x01,
-    UIMouseStateType_MouseAbsolute         = 0x02,
-    UIMouseStateType_MouseAbsoluteDisabled = 0x04,
-    UIMouseStateType_MouseNeedsHostCursor  = 0x08
+    UIMouseStateType_MouseCaptured         = RT_BIT(0),
+    UIMouseStateType_MouseAbsolute         = RT_BIT(1),
+    UIMouseStateType_MouseAbsoluteDisabled = RT_BIT(2),
+    UIMouseStateType_MouseNeedsHostCursor  = RT_BIT(3)
 };
 
 /* Machine View states enum: */
 enum UIViewStateType
 {
-    UIViewStateType_KeyboardCaptured = 0x01,
-    UIViewStateType_HostKeyPressed   = 0x02
+    UIViewStateType_KeyboardCaptured = RT_BIT(0),
+    UIViewStateType_HostKeyPressed   = RT_BIT(1)
 };
 
 #endif // __UIMachineDefs_h__
