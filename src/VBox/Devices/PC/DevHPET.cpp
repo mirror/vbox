@@ -378,15 +378,15 @@ static void irqUpdate(struct HpetTimer *pTimer)
     /** @todo: is it correct? */
     if ((pTimer->u64Config & HPET_TN_ENABLE) &&
         (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_ENABLE))
-      {
+    {
         Log4(("HPET: raising IRQ %d\n", irq));
         if ((pTimer->u64Config & HPET_TIMER_TYPE_LEVEL) == 0)
         {
-            pTimer->CTX_SUFF(pHpet)->u64Isr |= (1 <<  pTimer->u8TimerNumber);
+            pTimer->CTX_SUFF(pHpet)->u64Isr |= (uint64_t)(1 << pTimer->u8TimerNumber);
             PDMDevHlpISASetIrq(pTimer->CTX_SUFF(pHpet)->CTX_SUFF(pDevIns),
                                irq, PDM_IRQ_LEVEL_FLIP_FLOP);
         }
-      }
+    }
 }
 
 static int timerRegRead32(HpetState* pThis,
