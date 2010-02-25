@@ -32,6 +32,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
+#include "UIFrameBufferQuartz2D.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
@@ -458,18 +459,16 @@ void UIMachineView::prepareFrameBuffer()
             break;
 #endif
 #endif
-#if 0 // TODO: Enable Quartz2D frame buffer!
 #if defined (VBOX_GUI_USE_QUARTZ2D)
         case VBoxDefs::Quartz2DMode:
             /* Indicate that we are doing all drawing stuff ourself: */
-            pViewport->setAttribute(Qt::WA_PaintOnScreen);
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
-# else
+//            pViewport->setAttribute(Qt::WA_PaintOnScreen);
+//# ifdef VBOX_WITH_VIDEOHWACCEL
+//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+//# else
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
-# endif
+//# endif
             break;
-#endif
 #endif
         default:
             AssertReleaseMsgFailed(("Render mode must be valid: %d\n", mode()));
@@ -719,7 +718,8 @@ void UIMachineView::cleanupCommon()
         mDarwinWindowOverlayHandlerRef = NULL;
     }
 # endif
-    delete mDockIconPreview;
+    // TODO_NEW_CORE
+//    delete mDockIconPreview;
     mDockIconPreview = NULL;
 #endif
 }
@@ -1010,7 +1010,8 @@ bool UIMachineView::event(QEvent *pEvent)
             viewport()->setCursor(cursor);
 
 #ifdef Q_WS_MAC
-            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
+            // TODO_NEW_CORE
+//            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
             /* This event appears in case of guest video was changed for somehow even without video resolution change.
@@ -2052,34 +2053,36 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
             m_pFrameBuffer->paintEvent(pPaintEvent);
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
-        if (isRunning())
-            updateDockIcon();
+            // TODO_NEW_CORE
+//        if (isRunning())
+//            updateDockIcon();
 #endif
         return;
     }
 
 #ifdef VBOX_GUI_USE_QUARTZ2D
-    if (mode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
-    {
-        m_pFrameBuffer->paintEvent(pPaintEvent);
-        updateDockIcon();
-    }
-    else
+            // TODO_NEW_CORE
+//    if (mode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
+//    {
+//        m_pFrameBuffer->paintEvent(pPaintEvent);
+//        updateDockIcon();
+//    }
+//    else
 #endif
-    {
-        /* We have a snapshot for the paused state: */
-        QRect r = pPaintEvent->rect().intersect (viewport()->rect());
-        /* We have to disable paint on screen if we are using the regular painter */
-        bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
-        QPainter pnt(viewport());
-        pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
-        /* Restore the attribute to its previous state */
-        viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
+//    {
+//        /* We have a snapshot for the paused state: */
+//        QRect r = pPaintEvent->rect().intersect (viewport()->rect());
+//        /* We have to disable paint on screen if we are using the regular painter */
+//        bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
+//        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
+//        QPainter pnt(viewport());
+//        pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
+//        /* Restore the attribute to its previous state */
+//        viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
-        updateDockIcon();
+//        updateDockIcon();
 #endif
-    }
+//    }
 }
 
 #if defined(Q_WS_WIN32)
@@ -3244,34 +3247,33 @@ void UIMachineView::dimImage(QImage &img)
 #if defined(Q_WS_MAC)
 void UIMachineView::updateDockIcon()
 {
-    if (mDockIconEnabled)
-    {
-        if (!m_pauseShot.isNull())
-        {
-            CGImageRef pauseImg = ::darwinToCGImageRef (&m_pauseShot);
-            /* Use the pause image as background */
-            mDockIconPreview->updateDockPreview (pauseImg);
-            CGImageRelease (pauseImg);
-        }
-        else
-        {
-# if defined (VBOX_GUI_USE_QUARTZ2D)
-                // TODO_NEW_CORE
+    // TODO_NEW_CORE
+//    if (mDockIconEnabled)
+//    {
+//        if (!m_pauseShot.isNull())
+//        {
+//            CGImageRef pauseImg = ::darwinToCGImageRef (&m_pauseShot);
+//            /* Use the pause image as background */
+//            mDockIconPreview->updateDockPreview (pauseImg);
+//            CGImageRelease (pauseImg);
+//        }
+//        else
+//        {
+//# if defined (VBOX_GUI_USE_QUARTZ2D)
 //            if (mode() == VBoxDefs::Quartz2DMode)
 //            {
-                /* If the render mode is Quartz2D we could use the CGImageRef
-                 * of the framebuffer for the dock icon creation. This saves
-                 * some conversion time. */
-//                mDockIconPreview->updateDockPreview (static_cast <VBoxQuartz2DFrameBuffer *> (m_pFrameBuffer)->imageRef());
+//                /* If the render mode is Quartz2D we could use the CGImageRef
+//                 * of the framebuffer for the dock icon creation. This saves
+//                 * some conversion time. */
+//                mDockIconPreview->updateDockPreview(static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef());
 //            }
 //            else
-# endif
-                /* In image mode we have to create the image ref out of the
-                 * framebuffer */
-                // TODO_NEW_CORE
-//                mDockIconPreview->updateDockPreview (m_pFrameBuffer);
-        }
-    }
+//# endif
+//                /* In image mode we have to create the image ref out of the
+//                 * framebuffer */
+//                mDockIconPreview->updateDockPreview(m_pFrameBuffer);
+//        }
+//    }
 }
 
 void UIMachineView::updateDockOverlay()
@@ -3279,18 +3281,19 @@ void UIMachineView::updateDockOverlay()
     /* Only to an update to the realtime preview if this is enabled by the user
      * & we are in an state where the framebuffer is likely valid. Otherwise to
      * the overlay stuff only. */
-    if (mDockIconEnabled &&
-        (machineState() == KMachineState_Running ||
-         machineState() == KMachineState_Paused ||
-         machineState() == KMachineState_Teleporting ||
-         machineState() == KMachineState_LiveSnapshotting ||
-         machineState() == KMachineState_Restoring ||
-         machineState() == KMachineState_TeleportingPausedVM ||
-         machineState() == KMachineState_TeleportingIn ||
-         machineState() == KMachineState_Saving))
-        updateDockIcon();
-    else
-        mDockIconPreview->updateDockOverlay();
+    // TODO_NEW_CORE
+//    if (mDockIconEnabled &&
+//        (machineState() == KMachineState_Running ||
+//         machineState() == KMachineState_Paused ||
+//         machineState() == KMachineState_Teleporting ||
+//         machineState() == KMachineState_LiveSnapshotting ||
+//         machineState() == KMachineState_Restoring ||
+//         machineState() == KMachineState_TeleportingPausedVM ||
+//         machineState() == KMachineState_TeleportingIn ||
+//         machineState() == KMachineState_Saving))
+//        updateDockIcon();
+//    else
+//        mDockIconPreview->updateDockOverlay();
 }
 
 void UIMachineView::setMouseCoalescingEnabled (bool aOn)
