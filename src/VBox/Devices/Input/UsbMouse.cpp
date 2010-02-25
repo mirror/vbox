@@ -365,8 +365,8 @@ static const VUSBDESCINTERFACEEX g_UsbHidTInterfaceDesc =
         /* .bAlternateSetting = */      0,
         /* .bNumEndpoints = */          1,
         /* .bInterfaceClass = */        3 /* HID */,
-        /* .bInterfaceSubClass = */     1 /* Boot Interface */,
-        /* .bInterfaceProtocol = */     2 /* Mouse */,
+        /* .bInterfaceSubClass = */     0 /* No subclass - no boot interface. */,
+        /* .bInterfaceProtocol = */     0 /* No protocol - no boot interface. */,
         /* .iInterface = */             0
     },
     /* .pvMore = */     NULL,
