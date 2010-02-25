@@ -48,8 +48,8 @@ public:
 
 public slots:
 
-    void setState (int aState);
-    void setState (bool aState) { setState ((int) aState); }
+    virtual void setState (int aState);
+    virtual void setState (bool aState) { setState ((int) aState); }
 
 signals:
 

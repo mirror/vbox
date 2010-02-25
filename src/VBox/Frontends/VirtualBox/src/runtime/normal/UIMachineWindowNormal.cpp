@@ -67,14 +67,14 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
     /* Prepare connections: */
     prepareConnections();
 
-    /* Prepare normal machine view: */
-    prepareMachineView();
-
     /* Load normal window settings: */
     loadWindowSettings();
 
     /* Retranslate normal window finally: */
     retranslateUi();
+
+    /* Prepare normal machine view: */
+    prepareMachineView();
 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
@@ -92,11 +92,6 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
     cleanupStatusBar();
 }
 
-void UIMachineWindowNormal::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
 void UIMachineWindowNormal::sltMachineStateChanged(KMachineState machineState)
 {
     UIMachineWindow::sltMachineStateChanged(machineState);
@@ -105,10 +100,12 @@ void UIMachineWindowNormal::sltMachineStateChanged(KMachineState machineState)
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
 {
     KDeviceType type = attachment.GetType();
-    Assert(type == KDeviceType_DVD || type == KDeviceType_Floppy);
-    updateAppearanceOf(type == KDeviceType_DVD ? UIVisualElement_CDStuff :
-                       type == KDeviceType_Floppy ? UIVisualElement_FDStuff :
-                       UIVisualElement_AllStuff);
+    if (type == KDeviceType_HardDisk)
+        updateAppearanceOf(UIVisualElement_HDStuff);
+    if (type == KDeviceType_DVD)
+        updateAppearanceOf(UIVisualElement_CDStuff);
+    if (type == KDeviceType_Floppy)
+        updateAppearanceOf(UIVisualElement_FDStuff);
 }
 
 void UIMachineWindowNormal::sltUSBControllerChange()
@@ -133,72 +130,25 @@ void UIMachineWindowNormal::sltSharedFolderChange()
 
 void UIMachineWindowNormal::sltPrepareMenuMachine()
 {
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu == machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu(),
-              ("This slot should only be called on 'Machine' menu hovering!\n"));
-
-    menu->clear();
-
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Seamless));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TypeCAD));
-#ifdef Q_WS_X11
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TypeCABS));
-#endif
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_InformationDialog));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Pause));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Reset));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Shutdown));
-#ifndef Q_WS_MAC
-    menu->addSeparator();
-#endif /* Q_WS_MAC */
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Close));
+    UIMachineWindow::sltPrepareMenuMachine();
 }
 
 void UIMachineWindowNormal::sltPrepareMenuDevices()
 {
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu == machineLogic()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu(),
-              ("This slot should only be called on 'Devices' menu hovering!\n"));
-
-    menu->clear();
-
-    /* Devices submenu */
-    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu());
-    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu());
-    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu());
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP));
-    menu->addSeparator();
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
+    UIMachineWindow::sltPrepareMenuDevices();
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineWindowNormal::sltPrepareMenuDebug()
 {
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu == machineLogic()->actionsPool()->action(UIActionIndex_Menu_Debug)->menu(),
-              ("This slot should only be called on 'Debug' menu hovering!\n"));
-
-    menu->clear();
-
-    /* Debug submenu */
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Statistics));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_CommandLine));
-    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Logging));
+    UIMachineWindow::sltPrepareMenuDebug();
 }
-#endif /* VBOX_WITH_DEBUGGER_GUI */
+#endif
+
+void UIMachineWindowNormal::sltTryClose()
+{
+    UIMachineWindow::sltTryClose();
+}
 
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
@@ -276,21 +226,6 @@ void UIMachineWindowNormal::sltProcessGlobalSettingChange(const char * /* aPubli
     m_pNameHostkey->setText(QIHotKeyEdit::keyName(vboxGlobal().settings().hostKey()));
 }
 
-void UIMachineWindowNormal::sltUpdateMouseState(int iState)
-{
-    if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
-        (iState & UIMouseStateType_MouseAbsolute) &&
-        !(iState & UIMouseStateType_MouseCaptured))
-    {
-        indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(4);
-    }
-    else
-    {
-        indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(
-            iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
-    }
-}
-
 void UIMachineWindowNormal::retranslateUi()
 {
     /* Translate parent class: */
@@ -321,21 +256,13 @@ void UIMachineWindowNormal::updateAppearanceOf(int iElement)
         indicatorsPool()->indicator(UIIndicatorIndex_HardDisks)->updateAppearance();
     if (iElement & UIVisualElement_CDStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_OpticalDisks)->updateAppearance();
-#if 0 /* TODO: Allow to setup status-bar! */
-    if (iElement & UIVisualElement_FDStuff)
-        indicatorsPool()->indicator(UIIndicatorIndex_FloppyDisks)->updateAppearance();
-#endif
-    if (    iElement & UIVisualElement_USBStuff
-        && !indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
-            indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
+    if (iElement & UIVisualElement_USBStuff &&
+        !indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->isHidden())
+        indicatorsPool()->indicator(UIIndicatorIndex_USBDevices)->updateAppearance();
     if (iElement & UIVisualElement_NetworkStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_NetworkAdapters)->updateAppearance();
     if (iElement & UIVisualElement_SharedFolderStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_SharedFolders)->updateAppearance();
-#if 0 /* TODO: Allow to setup status-bar! */
-    if (iElement & UIVisualElement_VRDPStuff)
-        indicatorsPool()->indicator(UIIndicatorIndex_VRDP)->updateAppearance();
-#endif
     if (iElement & UIVisualElement_VirtualizationStuff)
         indicatorsPool()->indicator(UIIndicatorIndex_Virtualization)->updateAppearance();
 }
@@ -346,8 +273,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
     {
         case QEvent::Resize:
         {
-            QResizeEvent *pResizeEvent = (QResizeEvent*)pEvent;
-
+            QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
             if (!isMaximized())
             {
                 m_normalGeometry.setSize(pResizeEvent->size());
@@ -405,17 +331,26 @@ void UIMachineWindowNormal::closeEvent(QCloseEvent *pEvent)
 
 void UIMachineWindowNormal::prepareConsoleConnections()
 {
-    /* Parent class connections: */
+    /* Base-class connections: */
     UIMachineWindow::prepareConsoleConnections();
-    /* Other console connections: */
+
+    /* Medium change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
             this, SLOT(sltMediumChange(const CMediumAttachment &)));
+
+    /* USB controller change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
             this, SLOT(sltUSBControllerChange()));
+
+    /* USB device state-change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
             this, SLOT(sltUSBDeviceStateChange()));
+
+    /* Network adapter change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
             this, SLOT(sltNetworkAdapterChange()));
+
+    /* Shared folder change updater: */
     connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
             this, SLOT(sltSharedFolderChange()));
 }
@@ -518,7 +453,7 @@ void UIMachineWindowNormal::prepareStatusBar()
 
 void UIMachineWindowNormal::prepareConnections()
 {
-    /* Setup global settings <-> indicators connections: */
+    /* Setup global settings change updater: */
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
 }
@@ -539,12 +474,21 @@ void UIMachineWindowNormal::prepareMachineView()
 #endif
                                            , machineLogic()->visualStateType());
 
-    //qobject_cast<QGridLayout*>(centralWidget()->layout())->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
     setCentralWidget(m_pMachineView);
 
-    /* Setup machine view <-> indicators connections: */
-    connect(machineView(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
-    connect(machineView(), SIGNAL(mouseStateChanged(int)), this, SLOT(sltUpdateMouseState(int)));
+    /* Setup machine view connections: */
+    if (machineView())
+    {
+        /* Keyboard state-change updater: */
+        connect(machineView(), SIGNAL(keyboardStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Hostkey), SLOT(setState(int)));
+
+        /* Mouse state-change updater: */
+        connect(machineView(), SIGNAL(mouseStateChanged(int)), indicatorsPool()->indicator(UIIndicatorIndex_Mouse), SLOT(setState(int)));
+
+        /* Early initialize required connections: */
+        indicatorsPool()->indicator(UIIndicatorIndex_Hostkey)->setState(machineView()->keyboardState());
+        indicatorsPool()->indicator(UIIndicatorIndex_Mouse)->setState(machineView()->mouseState());
+    }
 }
 
 void UIMachineWindowNormal::loadWindowSettings()

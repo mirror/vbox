@@ -54,10 +54,14 @@ public:
     UISession* uisession() { return m_pSession; }
     UIActionsPool* actionsPool() { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
-    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowContainer; }
+    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowWrapper; }
     KMachineState machineState() const { return m_machineState; }
-    bool isPaused() const { return m_machineState == KMachineState_Paused ||
-                            m_machineState == KMachineState_TeleportingPausedVM; }
+    bool isPaused() const { return machineState() == KMachineState_Paused ||
+                                   machineState() == KMachineState_TeleportingPausedVM; }
+    bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
+
+    /* Public setters: */
+    void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
 protected:
 
@@ -68,6 +72,17 @@ protected:
                    UIVisualStateType visualStateType);
     virtual ~UIMachineLogic();
 
+    /* Protected getters: */
+    CSession& session();
+    bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
+
+    /* Protected setters: */
+    void setMachineWindowWrapper(UIMachineWindow *pMachineWindowWrapper) { m_pMachineWindowWrapper = pMachineWindowWrapper; }
+
+    /* Console related routines: */
+    bool pause() { return pause(true); }
+    bool unpause() { return pause(false); }
+
     /* Prepare helpers: */
     virtual void prepareConsoleConnections();
     virtual void prepareActionGroups();
@@ -77,35 +92,26 @@ protected:
 
     /* Cleanup helpers: */
     virtual void saveLogicSettings();
-    //virtual void cleanupRequiredFeatures();
-    //virtual void cleanupActionConnections();
-    //virtual void cleanupActionGroups();
-    //virtual void cleanupConsoleConnections();
+    virtual void cleanupRequiredFeatures() {}
+    virtual void cleanupActionConnections() {}
+    virtual void cleanupActionGroups() {}
+    virtual void cleanupConsoleConnections() {}
 
-    /* Protected getters: */
-    CSession& session();
-    bool isFirstTimeStarted() const { return m_bIsFirstTimeStarted; }
-    bool isPreventAutoClose() const { return m_bIsPreventAutoClose; }
+    /* Update helpers: */
+    virtual void updateMachineState();
+    virtual void updateAdditionsState();
+    virtual void updateMouseCapability();
 
-    /* Pretected setters: */
-    void setMachineState(KMachineState state) { m_machineState = state; }
-    void setPreventAutoClose(bool bIsPreventAutoClose) { m_bIsPreventAutoClose = bIsPreventAutoClose; }
-    void setOpenViewFinished(bool bIsOpenViewFinished) { m_bIsOpenViewFinished = bIsOpenViewFinished; }
-
-    /* Console related routines: */
-    bool pause() { return pause(true); }
-    bool unpause() { return pause(false); }
-
-    /* Protected variables: */
-    UIMachineWindow *m_pMachineWindowContainer;
-
-private slots:
+protected slots:
 
     /* Console callback handlers: */
-    void sltMachineStateChanged(KMachineState newMachineState);
-    void sltAdditionsStateChanged();
-    void sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
-    void sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+    virtual void sltMachineStateChanged(KMachineState machineState);
+    virtual void sltAdditionsStateChanged();
+    virtual void sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fNeedsHostCursor);
+    virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
+    virtual void sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+
+private slots:
 
     /* "Machine" menu funtionality */
     void sltToggleGuestAutoresize(bool bEnabled);
@@ -139,9 +145,6 @@ private slots:
     void sltLoggingToggled(bool);
 #endif
 
-    /* Machine view handlers: */
-    void sltMouseStateChanged(int iState);
-
 private:
 
     /* Utility functions: */
@@ -156,19 +159,19 @@ private:
     UIActionsPool *m_pActionsPool;
     KMachineState m_machineState;
     UIVisualStateType m_visualStateType;
+    UIMachineWindow *m_pMachineWindowWrapper;
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
 
-    bool m_bIsFirstTimeStarted : 1;
-    bool m_bIsOpenViewFinished : 1;
-    bool m_bIsGraphicsSupported : 1;
-    bool m_bIsSeamlessSupported : 1;
-    bool m_bIsAutoSaveMedia : 1;
-    bool m_bIsPreventAutoClose : 1;
-
-    /* Friend classes: */
-    friend class UIMachineWindow;
+    bool m_fIsFirstTimeStarted : 1;
+    bool m_fIsIgnoringRutimeMediums : 1;
+    bool m_fIsAdditionsActive : 1;
+    bool m_fIsGuestSupportsGraphics : 1;
+    bool m_fIsGuestSupportsSeamless : 1;
+    bool m_fIsMouseSupportsAbsolute : 1;
+    bool m_fIsHostCursorNeeded : 1;
+    bool m_fIsPreventAutoClose : 1;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debugger functionality: */
@@ -180,6 +183,9 @@ private:
     /* The virtual method table for the debugger GUI: */
     PCDBGGUIVT m_dbgGuiVT;
 #endif
+
+    /* Friend classes: */
+    friend class UIMachineWindow;
 
 #if 0 // TODO: Where to move that?
 # ifdef Q_WS_MAC

@@ -242,7 +242,7 @@ private:
     CSession &m_session;
 };
 
-#if 0
+#if 0 // TODO: Rework additions downloader logic!
 class UIAdditionsDownloader : public VBoxDownloaderWgt
 {
     Q_OBJECT;
@@ -368,25 +368,22 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
                                UISession *pSession,
                                UIActionsPool *pActionsPool,
                                UIVisualStateType visualStateType)
-    /* Initialize parent class: */
     : QObject(pParent)
-    /* Initialize protected members: */
-    , m_pMachineWindowContainer(0)
-    /* Initialize private members: */
     , m_pSession(pSession)
     , m_pActionsPool(pActionsPool)
     , m_machineState(KMachineState_Null)
     , m_visualStateType(visualStateType)
-    /* Action groups: */
+    , m_pMachineWindowWrapper(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
-    /* Bool flags: */
-    , m_bIsFirstTimeStarted(false)
-    , m_bIsOpenViewFinished(false)
-    , m_bIsGraphicsSupported(false)
-    , m_bIsSeamlessSupported(false)
-    , m_bIsAutoSaveMedia(true)
-    , m_bIsPreventAutoClose(false)
+    , m_fIsFirstTimeStarted(false)
+    , m_fIsIgnoringRutimeMediums(false)
+    , m_fIsAdditionsActive(false)
+    , m_fIsGuestSupportsGraphics(false)
+    , m_fIsGuestSupportsSeamless(false)
+    , m_fIsMouseSupportsAbsolute(false)
+    , m_fIsHostCursorNeeded(false)
+    , m_fIsPreventAutoClose(false)
 {
 }
 
@@ -398,12 +395,27 @@ UIMachineLogic::~UIMachineLogic()
 #endif
 }
 
+CSession& UIMachineLogic::session()
+{
+    return m_pSession->session();
+}
+
 void UIMachineLogic::prepareConsoleConnections()
 {
+    /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigStateChange(KMachineState)), this, SLOT(sltMachineStateChanged(KMachineState)));
+
+    /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+
+    /* Mouse capability state-change updater: */
+    connect(uisession(), SIGNAL(sigMouseCapabilityChange(bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool)));
+
+    /* USB devices state-change updater: */
     connect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
             this, SLOT(sltUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)));
+
+    /* Runtime errors notifier: */
     connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
             this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
 }
@@ -422,9 +434,10 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions = new QActionGroup(this);
     m_pRunningOrPausedActions->setExclusive(false);
 
-    /* Move actions into first group: */
+    /* Move actions into running actions group: */
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCAD));
 #ifdef Q_WS_X11
@@ -438,8 +451,7 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Logging));
 #endif
 
-    /* Move actions into second group: */
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
+    /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
@@ -459,7 +471,7 @@ void UIMachineLogic::prepareActionGroups()
 
 void UIMachineLogic::prepareActionConnections()
 {
-    /* "Machine" actions connections */
+    /* "Machine" actions connections: */
     connect(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize), SIGNAL(toggled(bool)),
             this, SLOT(sltToggleGuestAutoresize(bool)));
     connect(actionsPool()->action(UIActionIndex_Simple_AdjustWindow), SIGNAL(triggered()),
@@ -485,7 +497,7 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionsPool()->action(UIActionIndex_Simple_Close), SIGNAL(triggered()),
             this, SLOT(sltClose()));
 
-    /* "Devices" actions connections */
+    /* "Devices" actions connections: */
     connect(actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareStorageMenu()));
     connect(actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu(), SIGNAL(aboutToShow()),
@@ -502,7 +514,7 @@ void UIMachineLogic::prepareActionConnections()
             this, SLOT(sltInstallGuestAdditions()));
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
-    /* "Debug" actions connections */
+    /* "Debug" actions connections: */
     connect(actionsPool()->action(UIActionIndex_Menu_Debug)->menu(), SIGNAL(aboutToShow()),
             this, SLOT(sltPrepareDebugMenu()));
     connect(actionsPool()->action(UIActionIndex_Simple_Statistics), SIGNAL(triggered()),
@@ -565,11 +577,11 @@ void UIMachineLogic::loadLogicSettings()
 
         strSettings = machine.GetExtraData(VBoxDefs::GUI_FirstRun);
         if (strSettings == "yes")
-            m_bIsFirstTimeStarted = true;
+            m_fIsFirstTimeStarted = true;
 
         strSettings = machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
         if (strSettings == "no")
-            m_bIsAutoSaveMedia = false;
+            m_fIsIgnoringRutimeMediums = true;
     }
 
     /* Initial settings: */
@@ -614,6 +626,24 @@ void UIMachineLogic::loadLogicSettings()
             actionsPool()->action(UIActionIndex_Toggle_VRDP)->setVisible(false);
         }
     }
+
+#if 0
+    /* Dynamical property settings: */
+    {
+        /* Load dynamical properties: */
+        m_machineState = uisession()->property("MachineLogic/MachineState").value<KMachineState>();
+        m_fIsAdditionsActive = uisession()->property("MachineLogic/IsAdditionsActive").toBool();
+        m_fIsGuestSupportsGraphics = uisession()->property("MachineLogic/IsGuestSupportsGraphics").toBool();
+        m_fIsGuestSupportsSeamless = uisession()->property("MachineLogic/IsGuestSupportsSeamless").toBool();
+        m_fIsMouseSupportsAbsolute = uisession()->property("MachineLogic/IsMouseSupportsAbsolute").toBool();
+        m_fIsHostCursorNeeded = uisession()->property("MachineLogic/IsHostCursorNeeded").toBool();
+
+        /* Update relative things: */
+        updateMachineState();
+        updateAdditionsState();
+        updateMouseCapability();
+    }
+#endif
 }
 
 void UIMachineLogic::saveLogicSettings()
@@ -631,159 +661,148 @@ void UIMachineLogic::saveLogicSettings()
         // TODO: Move to fullscreen/seamless logic:
         //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
     }
-}
 
-CSession& UIMachineLogic::session()
-{
-    return m_pSession->session();
-}
-
-void UIMachineLogic::sltMachineStateChanged(KMachineState newMachineState)
-{
-    if (m_machineState != newMachineState)
+#if 0
+    /* Dynamical property settings: */
     {
-        /* Variable flags: */
-        bool bIsRunning = newMachineState == KMachineState_Running ||
-                          newMachineState == KMachineState_Teleporting ||
-                          newMachineState == KMachineState_LiveSnapshotting;
-        bool bIsRunningOrPaused = bIsRunning ||
-                                  newMachineState == KMachineState_Paused;
-
-        /* Update action groups: */
-        m_pRunningActions->setEnabled(bIsRunning);
-        m_pRunningOrPausedActions->setEnabled(bIsRunningOrPaused);
-
-        /* Do we have GURU? */
-        bool bIsGuruMeditation = false;
-
-        switch (newMachineState)
-        {
-            case KMachineState_Stuck:
-            {
-                bIsGuruMeditation = true;
-                break;
-            }
-            case KMachineState_Paused:
-            {
-                /* Was paused from CMachine side? */
-                QAction *pPauseAction = actionsPool()->action(UIActionIndex_Toggle_Pause);
-                if (!pPauseAction->isChecked())
-                {
-                    pPauseAction->blockSignals(true);
-                    pPauseAction->setChecked(true);
-                    pPauseAction->blockSignals(false);
-                }
-                break;
-            }
-            case KMachineState_Running:
-            case KMachineState_Teleporting:
-            case KMachineState_LiveSnapshotting:
-            {
-                /* Was started from CMachine side? */
-                QAction *pPauseAction = actionsPool()->action(UIActionIndex_Toggle_Pause);
-                if (isPaused() && pPauseAction->isChecked())
-                {
-                    pPauseAction->blockSignals(true);
-                    pPauseAction->setChecked(false);
-                    pPauseAction->blockSignals(false);
-                }
-                break;
-            }
-#ifdef Q_WS_X11
-            case KMachineState_Starting:
-            case KMachineState_Restoring:
-            case KMachineState_TeleportingIn:
-            {
-                /* The keyboard handler may wish to do some release logging on startup.
-                 * Tell it that the logger is now active. */
-                doXKeyboardLogging(QX11Info::display());
-                break;
-            }
-#endif
-            default:
-                break;
-        }
-
-        /* Now storing new state: */
-        m_machineState = newMachineState;
-
-        /* Close VM if was closed someway: */
-        if (m_machineState == KMachineState_PoweredOff || m_machineState == KMachineState_Saved ||
-            m_machineState == KMachineState_Teleported || m_machineState == KMachineState_Aborted)
-        {
-            /* VM has been powered off or saved or aborted, no matter internally or externally.
-             * We must *safely* close the console window unless auto closure is disabled: */
-            if (!m_bIsPreventAutoClose)
-                machineWindowWrapper()->sltTryClose();
-        }
-
-        /* Process GURU: */
-        if (bIsGuruMeditation)
-        {
-            if (machineWindowWrapper()->machineView())
-                machineWindowWrapper()->machineView()->setIgnoreGuestResize(true);
-
-            CConsole console = session().GetConsole();
-            QString strLogFolder = console.GetMachine().GetLogFolder();
-
-            /* Take the screenshot for debugging purposes and save it */
-            QString strFileName = strLogFolder + "/VBox.png";
-            CDisplay display = console.GetDisplay();
-            QImage shot = QImage(display.GetWidth(), display.GetHeight(), QImage::Format_RGB32);
-            display.TakeScreenShot(shot.bits(), shot.width(), shot.height());
-            shot.save(QFile::encodeName(strFileName), "PNG");
-
-            /* Warn the user about GURU: */
-            if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
-            {
-                qApp->processEvents();
-                console.PowerDown();
-                if (!console.isOk())
-                    vboxProblem().cannotStopMachine(console);
-            }
-        }
-
-#ifdef Q_WS_MAC
-        /* Update Dock Overlay: */
-        if (   machineWindowWrapper()
-            && machineWindowWrapper()->machineView())
-            machineWindowWrapper()->machineView()->updateDockOverlay();
-#endif /* Q_WS_MAC */
+        /* Save dynamical properties: */
+        uisession()->setProperty("MachineLogic/MachineState", QVariant::fromValue(machineState()));
+        uisession()->setProperty("MachineLogic/IsAdditionsActive", m_fIsAdditionsActive);
+        uisession()->setProperty("MachineLogic/IsGuestSupportsGraphics", m_fIsGuestSupportsGraphics);
+        uisession()->setProperty("MachineLogic/IsGuestSupportsSeamless", m_fIsGuestSupportsSeamless);
+        uisession()->setProperty("MachineLogic/IsMouseSupportsAbsolute", m_fIsMouseSupportsAbsolute);
+        uisession()->setProperty("MachineLogic/IsHostCursorNeeded", m_fIsHostCursorNeeded);
     }
+#endif
 }
 
-void UIMachineLogic::sltAdditionsStateChanged()
+void UIMachineLogic::updateMachineState()
 {
-    /* Get console guest: */
-    CGuest guest = session().GetConsole().GetGuest();
-
-    /* Variable flags: */
-    bool bIsActive = guest.GetAdditionsActive();
-    bool bIsGraphicsSupported = guest.GetSupportsGraphics();
-    bool bIsSeamlessSupported = guest.GetSupportsSeamless();
+    /* State flags: */
+    bool fIsRunning = machineState() == KMachineState_Running ||
+                      machineState() == KMachineState_Teleporting ||
+                      machineState() == KMachineState_LiveSnapshotting;
+    bool fIsRunningOrPaused = fIsRunning ||
+                              machineState() == KMachineState_Paused;
 
     /* Update action groups: */
-    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setEnabled(bIsActive && bIsGraphicsSupported);
-    actionsPool()->action(UIActionIndex_Toggle_Seamless)->setEnabled(bIsActive && bIsGraphicsSupported && bIsSeamlessSupported);
+    m_pRunningActions->setEnabled(fIsRunning);
+    m_pRunningOrPausedActions->setEnabled(fIsRunningOrPaused);
 
-    /* Store new values: */
-    m_bIsSeamlessSupported = bIsSeamlessSupported;
-    m_bIsGraphicsSupported = bIsGraphicsSupported;
+    /* Do we have GURU? */
+    bool fIsGuruMeditation = false;
 
-#if 0 // TODO: Re-activate seamless if necessary!
-    /* If seamless mode should be enabled then check if it is enabled currently and re-enable it if open-view procedure is finished */
-    if ((m_bIsSeamlessSupported != bIsSeamlessSupported) || (m_bIsGraphicsSupported != bIsGraphicsSupported))
+    switch (machineState())
     {
-        if (actionsPool()->action(UIActionIndex_Toggle_Seamless)->isChecked() && m_bIsOpenViewFinished && bIsGraphicsSupported && bIsSeamlessSupported)
-            toggleFullscreenMode(true, true);
+        case KMachineState_Stuck:
+        {
+            /* We will handle GURU later: */
+            fIsGuruMeditation = true;
+            break;
+        }
+        case KMachineState_Paused:
+        {
+            QAction *pPauseAction = actionsPool()->action(UIActionIndex_Toggle_Pause);
+            if (!pPauseAction->isChecked())
+            {
+                /* Was paused from CSession side: */
+                pPauseAction->blockSignals(true);
+                pPauseAction->setChecked(true);
+                pPauseAction->blockSignals(false);
+            }
+            break;
+        }
+        case KMachineState_Running:
+        case KMachineState_Teleporting:
+        case KMachineState_LiveSnapshotting:
+        {
+            QAction *pPauseAction = actionsPool()->action(UIActionIndex_Toggle_Pause);
+            if (pPauseAction->isChecked())
+            {
+                /* Was resumed from CSession side: */
+                pPauseAction->blockSignals(true);
+                pPauseAction->setChecked(false);
+                pPauseAction->blockSignals(false);
+            }
+            break;
+        }
+#ifdef Q_WS_X11
+        case KMachineState_Starting:
+        case KMachineState_Restoring:
+        case KMachineState_TeleportingIn:
+        {
+            /* The keyboard handler may wish to do some release logging on startup.
+             * Tell it that the logger is now active. */
+            doXKeyboardLogging(QX11Info::display());
+            break;
+        }
+#endif
+        default:
+            break;
     }
+
+    /* Close VM if was closed someway: */
+    if (machineState() == KMachineState_PoweredOff || machineState() == KMachineState_Saved ||
+        machineState() == KMachineState_Teleported || machineState() == KMachineState_Aborted)
+    {
+        /* VM has been powered off or saved or aborted, no matter internally or externally.
+         * We must *safely* close the console window unless auto closure is disabled: */
+        sltClose();
+        return;
+    }
+
+    /* Process GURU: */
+    if (fIsGuruMeditation)
+    {
+        if (machineWindowWrapper()->machineView())
+            machineWindowWrapper()->machineView()->setIgnoreGuestResize(true);
+
+        CConsole console = session().GetConsole();
+        QString strLogFolder = console.GetMachine().GetLogFolder();
+
+        /* Take the screenshot for debugging purposes and save it */
+        QString strFileName = strLogFolder + "/VBox.png";
+        CDisplay display = console.GetDisplay();
+        QImage shot = QImage(display.GetWidth(), display.GetHeight(), QImage::Format_RGB32);
+        display.TakeScreenShot(shot.bits(), shot.width(), shot.height());
+        shot.save(QFile::encodeName(strFileName), "PNG");
+
+        /* Warn the user about GURU: */
+        if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
+        {
+            qApp->processEvents();
+            console.PowerDown();
+            if (!console.isOk())
+                vboxProblem().cannotStopMachine(console);
+        }
+    }
+
+#ifdef Q_WS_MAC
+    /* Update Dock Overlay: */
+    if (machineWindowWrapper() && machineWindowWrapper()->machineView())
+        machineWindowWrapper()->machineView()->updateDockOverlay();
+#endif /* Q_WS_MAC */
+}
+
+void UIMachineLogic::updateAdditionsState()
+{
+    /* Update action groups: */
+    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setEnabled(m_fIsAdditionsActive && m_fIsGuestSupportsGraphics);
+    actionsPool()->action(UIActionIndex_Toggle_Seamless)->setEnabled(m_fIsAdditionsActive && m_fIsGuestSupportsGraphics && m_fIsGuestSupportsSeamless);
+
+#if 0 // TODO: Enter seamless if necessary!
+    /* If seamless mode should be enabled then check if it is enabled currently and re-enable it if open-view procedure is finished */
+    if (actionsPool()->action(UIActionIndex_Toggle_Seamless)->isChecked() &&
+        m_fIsAdditionsActive && m_fIsGuestSupportsGraphics && m_fIsGuestSupportsSeamless)
+        toggleFullscreenMode(true, true);
 #endif
 
     /* Check the GA version only in case of additions are active: */
-    if (!bIsActive)
+    if (!m_fIsAdditionsActive)
         return;
 
     /* Check the Guest Additions version and warn the user about possible compatibility issues in case if the installed version is outdated. */
+    CGuest guest = session().GetConsole().GetGuest();
     QString strVersion = guest.GetAdditionsVersion();
     uint uVersion = strVersion.toUInt();
     /** @todo r=bird: This isn't want we want! We want the VirtualBox version of the additions, all three numbers. See @bugref{4084}.*/
@@ -800,6 +819,66 @@ void UIMachineLogic::sltAdditionsStateChanged()
     else if (uVersion > VMMDEV_VERSION)
     {
         vboxProblem().warnAboutNewAdditions(machineWindowWrapper()->machineWindow(), strRealVersion, strExpectedVersion);
+    }
+}
+
+void UIMachineLogic::updateMouseCapability()
+{
+    /* Update related things: */
+    QAction *pAction = actionsPool()->action(UIActionIndex_Toggle_MouseIntegration);
+    pAction->setEnabled(m_fIsMouseSupportsAbsolute && !m_fIsHostCursorNeeded);
+    pAction->setChecked(m_fIsHostCursorNeeded || pAction->isChecked());
+}
+
+void UIMachineLogic::sltMachineStateChanged(KMachineState state)
+{
+    /* Check if something had changed: */
+    if (m_machineState != state)
+    {
+        /* Store new data: */
+        m_machineState = state;
+
+        /* Update machine state: */
+        updateMachineState();
+    }
+}
+
+void UIMachineLogic::sltAdditionsStateChanged()
+{
+    /* Get our guest: */
+    CGuest guest = session().GetConsole().GetGuest();
+
+    /* Variable flags: */
+    bool fIsAdditionsActive = guest.GetAdditionsActive();
+    bool fIsGuestSupportsGraphics = guest.GetSupportsGraphics();
+    bool fIsGuestSupportsSeamless = guest.GetSupportsSeamless();
+
+    /* Check if something had changed: */
+    if (m_fIsAdditionsActive != fIsAdditionsActive ||
+        m_fIsGuestSupportsGraphics != fIsGuestSupportsGraphics ||
+        m_fIsGuestSupportsSeamless != fIsGuestSupportsSeamless)
+    {
+        /* Store new data: */
+        m_fIsAdditionsActive = fIsAdditionsActive;
+        m_fIsGuestSupportsGraphics = fIsGuestSupportsGraphics;
+        m_fIsGuestSupportsSeamless = fIsGuestSupportsSeamless;
+
+        /* Update additions state: */
+        updateAdditionsState();
+    }
+}
+
+void UIMachineLogic::sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fIsHostCursorNeeded)
+{
+    /* Check if something is changed: */
+    if (m_fIsMouseSupportsAbsolute != fIsSupportsAbsolute || m_fIsHostCursorNeeded != fIsHostCursorNeeded)
+    {
+        /* Store new data: */
+        m_fIsMouseSupportsAbsolute = fIsSupportsAbsolute;
+        m_fIsHostCursorNeeded = fIsHostCursorNeeded;
+
+        /* Update mouse capability: */
+        updateMouseCapability();
     }
 }
 
@@ -821,13 +900,13 @@ void UIMachineLogic::sltRuntimeError(bool bIsFatal, const QString &strErrorId, c
     vboxProblem().showRuntimeError(session().GetConsole(), bIsFatal, strErrorId, strMessage);
 }
 
-void UIMachineLogic::sltToggleGuestAutoresize(bool /* bEnabled */)
+void UIMachineLogic::sltToggleGuestAutoresize(bool bEnabled)
 {
     /* Do not process if window or view is missing! */
     if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
         return;
 
-    // TODO: Enable/Disable guest-autoresize for machine view! */
+    machineWindowWrapper()->machineView()->setGuestAutoresizeEnabled(bEnabled);
 }
 
 void UIMachineLogic::sltAdjustWindow()
@@ -886,7 +965,7 @@ void UIMachineLogic::sltTakeSnapshot()
         return;
 
     /* Remember the paused state. */
-    bool bWasPaused = m_machineState == KMachineState_Paused;
+    bool bWasPaused = machineState() == KMachineState_Paused;
     if (!bWasPaused)
     {
         /* Suspend the VM and ignore the close event if failed to do so.
@@ -977,7 +1056,7 @@ void UIMachineLogic::sltClose()
         return;
 
     /* Close machine window: */
-    machineWindowWrapper()->machineWindow()->close();
+    machineWindowWrapper()->sltTryClose();
 }
 
 void UIMachineLogic::sltPrepareStorageMenu()
@@ -1229,7 +1308,7 @@ void UIMachineLogic::sltMountStorageMedium()
     }
 
     /* Save medium mounted at runtime */
-    if (wasMounted && m_bIsAutoSaveMedia)
+    if (wasMounted && !m_fIsIgnoringRutimeMediums)
     {
         machine.SaveSettings();
         if (!machine.isOk())
@@ -1440,11 +1519,6 @@ void UIMachineLogic::sltLoggingToggled(bool bState)
 }
 #endif
 
-void UIMachineLogic::sltMouseStateChanged(int iState)
-{
-    actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setEnabled(iState & UIMouseStateType_MouseAbsolute);
-}
-
 bool UIMachineLogic::pause(bool bOn)
 {
     if (isPaused() == bOn)
@@ -1544,7 +1618,7 @@ void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
         }
 
         /* Save medium mounted at runtime */
-        if (isMounted && m_bIsAutoSaveMedia)
+        if (isMounted && !m_fIsIgnoringRutimeMediums)
         {
             machine.SaveSettings();
             if (!machine.isOk())
@@ -1752,7 +1826,7 @@ bool UIMachineLogic::toggleFullscreenMode (bool aOn, bool aSeamless)
     {
         mIsFullscreen = aOn;
         mVmAdjustWindowAction->setEnabled (!aOn);
-        mVmSeamlessAction->setEnabled (!aOn && m_bIsSeamlessSupported && m_bIsGraphicsSupported);
+        mVmSeamlessAction->setEnabled (!aOn && m_fIsGuestSupportsSeamless && m_fIsGuestSupportsGraphics);
     }
 
     bool wasHidden = isHidden();

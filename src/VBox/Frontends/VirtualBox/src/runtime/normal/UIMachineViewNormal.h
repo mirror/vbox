@@ -32,6 +32,7 @@ class UIMachineViewNormal : public UIMachineView
 
 protected:
 
+    /* Normal machine view constructor/destructor: */
     UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                         , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -40,27 +41,30 @@ protected:
     );
     virtual ~UIMachineViewNormal();
 
-    void normalizeGeometry(bool bAdjustPosition = false);
-
-    void maybeRestrictMinimumSize();
-
 private slots:
 
-    void doResizeHint(const QSize &aSize = QSize());
+    /* Console callback handlers: */
+    void sltAdditionsStateChanged();
 
-    void doResizeDesktop(int);
+    /* Slot to perform guest resize: */
+    void sltPerformGuestResize(const QSize &aSize = QSize());
 
-    void sltToggleGuestAutoresize(bool bOn);
-
-    void sltAdditionsStateChanged(const QString &strVersion, bool bIsActive,
-                                  bool bIsSeamlessSupported, bool bIsGraphicsSupported);
 private:
 
     /* Prepare routines: */
     void prepareFilters();
 
+    /* Private setters: */
+    void setGuestAutoresizeEnabled(bool bEnabled);
+
+    /* Private helpers: */
+    void normalizeGeometry(bool bAdjustPosition = false);
+    void maybeRestrictMinimumSize();
+
+    /* Private members: */
     bool m_bIsGuestAutoresizeEnabled : 1;
 
+    /* Friend classes: */
     friend class UIMachineView;
 };
 

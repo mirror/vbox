@@ -84,19 +84,19 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
-/** Menu activation event */
+/* Menu activation event */
 class ActivateMenuEvent : public QEvent
 {
 public:
 
-    ActivateMenuEvent (QAction *aData)
+    ActivateMenuEvent (QAction *pAction)
         : QEvent((QEvent::Type)VBoxDefs::ActivateMenuEventType)
-        , mAction(aData) {}
-    QAction *action() const { return mAction; }
+        , m_pAction(pAction) {}
+    QAction* action() const { return m_pAction; }
 
 private:
 
-    QAction *mAction;
+    QAction *m_pAction;
 };
 
 class VBoxViewport: public QWidget
@@ -105,7 +105,7 @@ public:
 
     VBoxViewport(QWidget *pParent) : QWidget(pParent)
     {
-        /* No need for background drawing */
+        /* No need for background drawing: */
         setAttribute(Qt::WA_OpaquePaintEvent);
     }
 
@@ -161,6 +161,19 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     return view;
 }
 
+int UIMachineView::keyboardState() const
+{
+    return (m_bIsKeyboardCaptured ? UIViewStateType_KeyboardCaptured : 0) |
+           (m_bIsHostkeyPressed ? UIViewStateType_HostKeyPressed : 0);
+}
+
+int UIMachineView::mouseState() const
+{
+    return (m_bIsMouseCaptured ? UIMouseStateType_MouseCaptured : 0) |
+           (m_bIsMouseAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
+           (m_bIsMouseIntegrated ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
+}
+
 void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
 {
     if (m_bIsMouseIntegrated == bEnabled)
@@ -199,7 +212,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 #endif
                             )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
-    /* Private members: */
     , m_pMachineWindow(pMachineWindow)
     , m_console(pMachineWindow->machineLogic()->uisession()->session().GetConsole())
     , m_mode(renderMode)
@@ -217,17 +229,18 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_bIsMouseCaptured(false)
     , m_bIsMouseAbsolute(false)
     , m_bIsMouseIntegrated(true)
+    , m_fIsHideHostPointer(true)
     , m_bIsHostkeyPressed(false)
     , m_bIsHostkeyAlone (false)
+    , m_bIsHostkeyInCapture(false)
     , m_bIsGuestSupportsGraphics(false)
     , m_bIsMachineWindowResizeIgnored(true)
     , m_bIsFrameBufferResizeIgnored(false)
     , m_bIsGuestResizeIgnored(false)
-    , m_numLock(false)
-    , m_scrollLock(false)
-    , m_capsLock(false)
-    , m_fPassCAD (false)
-    , m_fHideHostPointer(true)
+    , m_fNumLock(false)
+    , m_fCapsLock(false)
+    , m_fScrollLock(false)
+    , m_fPassCAD(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
 #endif
@@ -238,9 +251,9 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 # ifndef QT_MAC_USE_COCOA
     , m_darwinEventHandlerRef(NULL)
 # endif /* !QT_MAC_USE_COCOA */
-    , m_darwinKeyModifiers (0)
+    , m_darwinKeyModifiers(0)
     , m_fKeyboardGrabbed (false)
-    , mDockIconEnabled (true)
+    , mDockIconEnabled(true)
 #endif
     , m_desktopGeometryType(DesktopGeo_Invalid)
       /* Don't show a hardware pointer until we have one to show */
@@ -254,9 +267,8 @@ UIMachineView::~UIMachineView()
 QSize UIMachineView::sizeHint() const
 {
 #ifdef VBOX_WITH_DEBUGGER
-    /** @todo figure out a more proper fix. */
-    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done
-     *             by DevVGA if provoked before power on. */
+    // TODO: Fix all DEBUGGER stuff!
+    /* HACK ALERT! Really ugly workaround for the resizing to 9x1 done by DevVGA if provoked before power on. */
     QSize fb(m_pFrameBuffer->width(), m_pFrameBuffer->height());
     if ((fb.width() < 16 || fb.height() < 16) && (vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled()))
         fb = QSize(640, 480);
@@ -304,8 +316,8 @@ QRect UIMachineView::desktopGeometry() const
         case DesktopGeo_Fixed:
         case DesktopGeo_Automatic:
             geometry = QRect(0, 0,
-                            qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
-                            qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
+                             qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
+                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
             break;
         case DesktopGeo_Any:
             geometry = QRect(0, 0, 0, 0);
@@ -338,13 +350,13 @@ void UIMachineView::calculateDesktopGeometry()
          * This works because the difference between frame and window
          * (or at least its width and height) is a constant. */
         m_desktopGeometry = QRect(0, 0, desktop.width() - frame.width() + window.width(),
-                                       desktop.height() - frame.height() + window.height());
+                                        desktop.height() - frame.height() + window.height());
     }
 }
 
-void UIMachineView::setDesktopGeometry(DesktopGeo aGeo, int aWidth, int aHeight)
+void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
 {
-    switch (aGeo)
+    switch (geometry)
     {
         case DesktopGeo_Fixed:
             m_desktopGeometryType = DesktopGeo_Fixed;
@@ -364,7 +376,7 @@ void UIMachineView::setDesktopGeometry(DesktopGeo aGeo, int aWidth, int aHeight)
             m_desktopGeometry = QRect(0, 0, 0, 0);
             break;
         default:
-            AssertMsgFailed(("Invalid desktop geometry type %d\n", aGeo));
+            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
             m_desktopGeometryType = DesktopGeo_Invalid;
     }
 }
@@ -475,7 +487,7 @@ void UIMachineView::prepareFrameBuffer()
 void UIMachineView::prepareCommon()
 {
     /* Prepare view frame: */
-    setFrameStyle(QFrame::NoFrame);
+    //setFrameStyle(QFrame::NoFrame);
 
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
@@ -572,13 +584,24 @@ void UIMachineView::prepareFilters()
 
 void UIMachineView::prepareConsoleConnections()
 {
+    /* UISession notifier: */
     UISession *sender = machineWindowWrapper()->machineLogic()->uisession();
+
+    /* Machine state-change updater: */
+    connect(sender, SIGNAL(sigStateChange(KMachineState)), this, SLOT(sltMachineStateChanged(KMachineState)));
+
+    /* Guest additions state-change updater: */
+    connect(sender, SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+
+    /* Keyboard LEDs state-change updater: */
+    connect(sender, SIGNAL(sigKeyboardLedsChange(bool, bool, bool)), this, SLOT(sltKeyboardLedsChanged(bool, bool, bool)));
+
+    /* Mouse pointer shape state-change updater: */
     connect(sender, SIGNAL(sigMousePointerShapeChange(bool, bool, uint, uint, uint, uint, const uchar *)),
-            this, SLOT(sltMousePointerShapeChange(bool, bool, uint, uint, uint, uint, const uchar *)));
-    connect(sender, SIGNAL(sigMouseCapabilityChange(bool, bool)), this, SLOT(sltMouseCapabilityChange(bool, bool)));
-    connect(sender, SIGNAL(sigKeyboardLedsChange(bool, bool, bool)), this, SLOT(sltKeyboardLedsChange(bool, bool, bool)));
-    connect(sender, SIGNAL(sigStateChange(KMachineState)), this, SLOT(sltStateChange(KMachineState)));
-    connect(sender, SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChange()));
+            this, SLOT(sltMousePointerShapeChanged(bool, bool, uint, uint, uint, uint, const uchar *)));
+
+    /* Mouse capability state-change updater: */
+    connect(sender, SIGNAL(sigMouseCapabilityChange(bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool)));
 }
 
 void UIMachineView::loadMachineViewSettings()
@@ -598,7 +621,7 @@ void UIMachineView::loadMachineViewSettings()
             int height = desktopGeometry.section(',', 1, 1).toInt();
             setDesktopGeometry(DesktopGeo_Fixed, width, height);
         }
-        connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(doResizeDesktop(int)));
+        connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
 
 #ifdef Q_WS_X11
         /* Initialize the X keyboard subsystem: */
@@ -613,6 +636,63 @@ void UIMachineView::loadMachineViewSettings()
         if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
             m_fPassCAD = true;
     }
+
+#if 0
+    /* Dynamical property settings: */
+    {
+        /* Get loader: */
+        UISession *loader = machineWindowWrapper()->machineLogic()->uisession();
+
+        /* Load dynamical properties: */
+        m_machineState = loader->property("MachineView/MachineState").value<KMachineState>();
+        m_uNumLockAdaptionCnt = loader->property("MachineView/NumLockAdaptionCnt").toUInt();
+        m_uCapsLockAdaptionCnt = loader->property("MachineView/CapsLockAdaptionCnt").toUInt();
+        m_bIsAutoCaptureDisabled = loader->property("MachineView/IsAutoCaptureDisabled").toBool();
+        m_bIsKeyboardCaptured = loader->property("MachineView/IsKeyboardCaptured").toBool();
+        m_bIsMouseCaptured = loader->property("MachineView/IsMouseCaptured").toBool();
+        m_bIsMouseAbsolute = loader->property("MachineView/IsMouseAbsolute").toBool();
+        m_bIsMouseIntegrated = loader->property("MachineView/IsMouseIntegrated").toBool();
+        m_fIsHideHostPointer = loader->property("MachineView/IsHideHostPointer").toBool();
+        m_bIsHostkeyInCapture = loader->property("MachineView/IsHostkeyInCapture").toBool();
+        m_bIsGuestSupportsGraphics = loader->property("MachineView/IsGuestSupportsGraphics").toBool();
+        m_fNumLock = loader->property("MachineView/IsNumLock").toBool();
+        m_fCapsLock = loader->property("MachineView/IsCapsLock").toBool();
+        m_fScrollLock = loader->property("MachineView/IsScrollLock").toBool();
+
+        /* Update related things: */
+        updateMachineState();
+        updateAdditionsState();
+        updateMousePointerShape();
+        updateMouseCapability();
+    }
+#endif
+}
+
+void UIMachineView::saveMachineViewSettings()
+{
+#if 0
+    /* Dynamical property settings: */
+    {
+        /* Get saver: */
+        UISession *saver = machineWindowWrapper()->machineLogic()->uisession();
+
+        /* Save dynamical properties: */
+        saver->setProperty("MachineView/MachineState", QVariant::fromValue(machineState()));
+        saver->setProperty("MachineView/NumLockAdaptionCnt", m_uNumLockAdaptionCnt);
+        saver->setProperty("MachineView/CapsLockAdaptionCnt", m_uCapsLockAdaptionCnt);
+        saver->setProperty("MachineView/IsAutoCaptureDisabled", m_bIsAutoCaptureDisabled);
+        saver->setProperty("MachineView/IsKeyboardCaptured", m_bIsKeyboardCaptured);
+        saver->setProperty("MachineView/IsMouseCaptured", m_bIsMouseCaptured);
+        saver->setProperty("MachineView/IsMouseAbsolute", m_bIsMouseAbsolute);
+        saver->setProperty("MachineView/IsMouseIntegrated", m_bIsMouseIntegrated);
+        saver->setProperty("MachineView/IsHideHostPointer", m_fIsHideHostPointer);
+        saver->setProperty("MachineView/IsHostkeyInCapture", m_bIsHostkeyInCapture);
+        saver->setProperty("MachineView/IsGuestSupportsGraphics", m_bIsGuestSupportsGraphics);
+        saver->setProperty("MachineView/IsNumLock", m_fNumLock);
+        saver->setProperty("MachineView/IsCapsLock", m_fCapsLock);
+        saver->setProperty("MachineView/IsScrollLock", m_fScrollLock);
+    }
+#endif
 }
 
 void UIMachineView::cleanupCommon()
@@ -646,7 +726,6 @@ void UIMachineView::cleanupCommon()
 
 void UIMachineView::cleanupFrameBuffer()
 {
-    /* Cleanup: */
     if (m_pFrameBuffer)
     {
         /* Detach framebuffer from Display: */
@@ -658,68 +737,15 @@ void UIMachineView::cleanupFrameBuffer()
     }
 }
 
-void UIMachineView::sltMousePointerShapeChange(bool fIsVisible, bool fHasAlpha,
-                                               uint uXHot, uint uYHot, uint uWidth, uint uHeight,
-                                               const uchar *pShapeData)
+void UIMachineView::updateMachineState()
 {
-    if (m_bIsMouseAbsolute)
-    {
-        /* Do we have new shape data? */
-        if (pShapeData)
-            setPointerShape(pShapeData, fHasAlpha, uXHot, uYHot, uWidth, uHeight);
-
-        /* Should we hide/show pointer? */
-        if (fIsVisible)
-            viewport()->setCursor(m_lastCursor);
-        else
-            viewport()->setCursor(Qt::BlankCursor);
-    }
-    m_fHideHostPointer = !fIsVisible;
-}
-
-void UIMachineView::sltMouseCapabilityChange(bool bIsSupportsAbsolute, bool bNeedsHostCursor)
-{
-    if (m_bIsMouseAbsolute != bIsSupportsAbsolute)
-    {
-        m_bIsMouseAbsolute = bIsSupportsAbsolute;
-        /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
-        if (m_bIsMouseAbsolute)
-        {
-            CMouse mouse = m_console.GetMouse();
-            mouse.PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
-            captureMouse(false, false);
-        }
-        else
-            viewport()->unsetCursor();
-        emitMouseStateChanged();
-        vboxProblem().remindAboutMouseIntegration(m_bIsMouseAbsolute);
-    }
-    if (bNeedsHostCursor)
-        setMouseIntegrationLocked(false);
-    else
-        setMouseIntegrationLocked(true);
-}
-
-void UIMachineView::sltKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock)
-{
-    if (bNumLock != m_numLock)
-        m_uNumLockAdaptionCnt = 2;
-    if (bCapsLock != m_capsLock)
-        m_uCapsLockAdaptionCnt = 2;
-    m_numLock    = bNumLock;
-    m_capsLock   = bCapsLock;
-    m_scrollLock = bScrollLock;
-}
-
-void UIMachineView::sltStateChange(KMachineState state)
-{
-    switch (state)
+    switch (machineState())
     {
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
             if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (state != KMachineState_TeleportingPausedVM || m_machineState != KMachineState_Teleporting))
+                (machineState() != KMachineState_TeleportingPausedVM || machineState() != KMachineState_Teleporting))
             {
                 /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
                 QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
@@ -745,7 +771,7 @@ void UIMachineView::sltStateChange(KMachineState state)
         }
         case KMachineState_Running:
         {
-            if (m_machineState == KMachineState_Paused || m_machineState == KMachineState_TeleportingPausedVM)
+            if (machineState() == KMachineState_Paused || machineState() == KMachineState_TeleportingPausedVM)
             {
                 if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
@@ -765,28 +791,136 @@ void UIMachineView::sltStateChange(KMachineState state)
         default:
             break;
     }
-
-    m_machineState = state;
 }
 
-void UIMachineView::sltAdditionsStateChange()
+void UIMachineView::updateAdditionsState()
 {
-    CGuest guest = console().GetGuest();
-    bool fIsGuestSupportsGraphics = guest.GetSupportsGraphics();
+    /* Check if we should restrict minimum size: */
+    maybeRestrictMinimumSize();
 
 #if 0 // TODO: Do we need this?
     if (!mDoResize && !isGuestSupportsGraphics() && fIsGuestSupportsGraphics &&
         (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen()))
         mDoResize = true;
-#endif
-    m_bIsGuestSupportsGraphics = fIsGuestSupportsGraphics;
-
-    maybeRestrictMinimumSize();
-
-#if 0 // TODO: Do we need this?
     /* This will only be acted upon if mDoResize is true: */
-    doResizeHint();
+    sltPerformGuestResize();
 #endif
+}
+
+void UIMachineView::updateMousePointerShape()
+{
+    if (m_bIsMouseAbsolute)
+    {
+        /* Should we hide/show pointer? */
+        if (m_fIsHideHostPointer)
+            viewport()->setCursor(Qt::BlankCursor);
+        else
+            viewport()->setCursor(m_lastCursor);
+    }
+}
+
+void UIMachineView::updateMouseCapability()
+{
+    /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
+    if (m_bIsMouseAbsolute)
+    {
+        CMouse mouse = m_console.GetMouse();
+        mouse.PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
+        captureMouse(false, false);
+    }
+    else
+        viewport()->unsetCursor();
+
+    /* Notify user about mouse integration state: */
+    vboxProblem().remindAboutMouseIntegration(m_bIsMouseAbsolute);
+
+    /* Notify all watchers: */
+    emitMouseStateChanged();
+}
+
+void UIMachineView::sltMachineStateChanged(KMachineState state)
+{
+    /* Check if something had changed: */
+    if (m_machineState != state)
+    {
+        /* Set new data: */
+        m_machineState = state;
+
+        /* Update depending things: */
+        updateMachineState();
+    }
+}
+
+void UIMachineView::sltAdditionsStateChanged()
+{
+    /* Get new values: */
+    CGuest guest = console().GetGuest();
+    bool bIsGuestSupportsGraphics = guest.GetSupportsGraphics();
+
+    /* Check if something had changed: */
+    if (m_bIsGuestSupportsGraphics != bIsGuestSupportsGraphics)
+    {
+        /* Get new data: */
+        m_bIsGuestSupportsGraphics = bIsGuestSupportsGraphics;
+
+        /* Update depending things: */
+        updateAdditionsState();
+    }
+}
+
+void UIMachineView::sltKeyboardLedsChanged(bool bNumLock, bool bCapsLock, bool bScrollLock)
+{
+    /* Update num lock status: */
+    if (m_fNumLock != bNumLock)
+    {
+        m_fNumLock = bNumLock;
+        m_uNumLockAdaptionCnt = 2;
+    }
+
+    /* Update caps lock status: */
+    if (m_fCapsLock != bCapsLock)
+    {
+        m_fCapsLock = bCapsLock;
+        m_uCapsLockAdaptionCnt = 2;
+    }
+
+    /* Update scroll lock status: */
+    if (m_fScrollLock != bScrollLock)
+        m_fScrollLock = bScrollLock;
+}
+
+void UIMachineView::sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
+                                                uint uXHot, uint uYHot, uint uWidth, uint uHeight,
+                                                const uchar *pShapeData)
+{
+    /* Should we show cursor anyway? */
+    m_fIsHideHostPointer = !fIsVisible;
+
+    /* Should we cache shape data? */
+    if (pShapeData)
+        setPointerShape(pShapeData, fHasAlpha, uXHot, uYHot, uWidth, uHeight);
+
+    /* Perform cursor update: */
+    updateMousePointerShape();
+}
+
+void UIMachineView::sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool /* bNeedsHostCursor */)
+{
+    /* Check if something had changed: */
+    if (m_bIsMouseAbsolute != bIsSupportsAbsolute)
+    {
+        /* Get new data: */
+        m_bIsMouseAbsolute = bIsSupportsAbsolute;
+
+        /* Update depending things: */
+        updateMouseCapability();
+    }
+}
+
+/* If the desktop geometry is set automatically, this will update it: */
+void UIMachineView::sltDesktopResized()
+{
+    calculateDesktopGeometry();
 }
 
 #ifdef Q_WS_MAC
@@ -926,7 +1060,7 @@ bool UIMachineView::event(QEvent *pEvent)
              * but it is done every time to keep the code simpler. */
             calculateDesktopGeometry();
 
-            /* Enable frame-buffer resize watching only now: */
+            /* Enable frame-buffer resize watching: */
             if (m_bIsFrameBufferResizeIgnored)
                 m_bIsFrameBufferResizeIgnored = false;
 
@@ -1242,7 +1376,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                  * the autoresize property is "true": */
                 mDoResize = isGuestSupportsGraphics() || machineWindowWrapper()->isTrueFullscreen();
                 if (!m_bIsMachineWindowResizeIgnored && isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
-                    QTimer::singleShot(300, this, SLOT(doResizeHint()));
+                    QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
                 break;
             }
 #endif
@@ -1468,7 +1602,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
     else
     {
         /* Currently this is used in winLowKeyboardEvent() only: */
-        m_bHostkeyInCapture = m_bIsKeyboardCaptured;
+        m_bIsHostkeyInCapture = m_bIsKeyboardCaptured;
     }
 
     bool emitSignal = false;
@@ -1990,7 +2124,7 @@ bool UIMachineView::winLowKeyboardEvent(UINT msg, const KBDLLHOOKSTRUCT &event)
      * its key state table (to avoid the stuck key effect). */
     uint8_t what_pressed = (event.flags & 0x01) && (event.vkCode != VK_RSHIFT) ? IsExtKeyPressed : IsKeyPressed;
     if ((event.flags & 0x80) /* released */ &&
-        ((event.vkCode == m_globalSettings.hostKey() && !m_bHostkeyInCapture) ||
+        ((event.vkCode == m_globalSettings.hostKey() && !m_bIsHostkeyInCapture) ||
          (m_pressedKeys[event.scanCode] & (IsKbdCaptured | what_pressed)) == what_pressed))
         return false;
 
@@ -2490,13 +2624,13 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 
-    if (m_uNumLockAdaptionCnt && (m_numLock ^ !!(uMask & uKeyMaskNum)))
+    if (m_uNumLockAdaptionCnt && (m_fNumLock ^ !!(uMask & uKeyMaskNum)))
     {
         -- m_uNumLockAdaptionCnt;
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (m_uCapsLockAdaptionCnt && (m_capsLock ^ !!(uMask & uKeyMaskCaps)))
+    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(uMask & uKeyMaskCaps)))
     {
         m_uCapsLockAdaptionCnt--;
         piCodes[(*puCount)++] = 0x3a;
@@ -2504,7 +2638,7 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_capsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -2513,13 +2647,13 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 
 #elif defined(Q_WS_WIN32)
 
-    if (m_uNumLockAdaptionCnt && (m_numLock ^ !!(GetKeyState(VK_NUMLOCK))))
+    if (m_uNumLockAdaptionCnt && (m_fNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
     {
         m_uNumLockAdaptionCnt--;
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (m_uCapsLockAdaptionCnt && (m_capsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
     {
         m_uCapsLockAdaptionCnt--;
         piCodes[(*puCount)++] = 0x3a;
@@ -2527,7 +2661,7 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_capsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -2537,7 +2671,7 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 #elif defined(Q_WS_MAC)
 
     /* if (m_uNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (m_uCapsLockAdaptionCnt && (m_capsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
         m_uCapsLockAdaptionCnt--;
         piCodes[(*puCount)++] = 0x3a;
@@ -2545,7 +2679,7 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_capsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -2599,15 +2733,12 @@ void UIMachineView::scrollContentsBy(int dx, int dy)
 
 void UIMachineView::emitKeyboardStateChanged()
 {
-    emit keyboardStateChanged((m_bIsKeyboardCaptured ? UIViewStateType_KeyboardCaptured : 0) |
-                              (m_bIsHostkeyPressed ? UIViewStateType_HostKeyPressed : 0));
+    emit keyboardStateChanged(keyboardState());
 }
 
 void UIMachineView::emitMouseStateChanged()
 {
-    emit mouseStateChanged((m_bIsMouseCaptured ? UIMouseStateType_MouseCaptured : 0) |
-                           (m_bIsMouseAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
-                           (!m_bIsMouseIntegrated ? UIMouseStateType_MouseAbsoluteDisabled : 0));
+    emit mouseStateChanged(mouseState());
 }
 
 void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
@@ -3077,12 +3208,6 @@ void UIMachineView::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
         viewport()->unsetCursor();
 }
 
-void UIMachineView::setMouseIntegrationLocked(bool bDisabled)
-{
-    machineWindowWrapper()->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setChecked(false);
-    machineWindowWrapper()->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setEnabled(bDisabled);
-}
-
 void UIMachineView::dimImage(QImage &img)
 {
     for (int y = 0; y < img.height(); ++ y)
@@ -3155,14 +3280,14 @@ void UIMachineView::updateDockOverlay()
      * & we are in an state where the framebuffer is likely valid. Otherwise to
      * the overlay stuff only. */
     if (mDockIconEnabled &&
-        (m_machineState == KMachineState_Running ||
-         m_machineState == KMachineState_Paused ||
-         m_machineState == KMachineState_Teleporting ||
-         m_machineState == KMachineState_LiveSnapshotting ||
-         m_machineState == KMachineState_Restoring ||
-         m_machineState == KMachineState_TeleportingPausedVM ||
-         m_machineState == KMachineState_TeleportingIn ||
-         m_machineState == KMachineState_Saving))
+        (machineState() == KMachineState_Running ||
+         machineState() == KMachineState_Paused ||
+         machineState() == KMachineState_Teleporting ||
+         machineState() == KMachineState_LiveSnapshotting ||
+         machineState() == KMachineState_Restoring ||
+         machineState() == KMachineState_TeleportingPausedVM ||
+         machineState() == KMachineState_TeleportingIn ||
+         machineState() == KMachineState_Saving))
         updateDockIcon();
     else
         mDockIconPreview->updateDockOverlay();

@@ -53,15 +53,19 @@ public:
 
 protected:
 
-    /* Common machine window constructor: */
+    /* Machine window constructor/destructor: */
     UIMachineWindow(UIMachineLogic *pMachineLogic);
     virtual ~UIMachineWindow();
+
+    /* Protected getters: */
+    CSession session();
+    const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
 
     /* Translate routine: */
     virtual void retranslateUi();
 
-    /* Update routines: */
-    virtual void updateAppearanceOf(int iElement);
+    /* Common machine window event handlers: */
+    void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
     virtual void prepareWindowIcon();
@@ -69,19 +73,20 @@ protected:
     virtual void loadWindowSettings();
 
     /* Cleanup helpers: */
-    //virtual void saveWindowSettings();
-    //virtual void cleanupConsoleConnections();
-    //virtual void cleanupWindowIcon();
+    virtual void saveWindowSettings() {}
+    virtual void cleanupConsoleConnections() {}
+    virtual void cleanupWindowIcon() {}
 
-    /* Common machine window event handlers: */
-    void closeEvent(QCloseEvent *pEvent);
+    /* Update routines: */
+    virtual void updateAppearanceOf(int iElement);
 
-    /* Protected getters: */
-    CSession session();
-    const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
-
-    /* Protected signals: */
+    /* Protected slots: */
     void sltMachineStateChanged(KMachineState machineState);
+    void sltPrepareMenuMachine();
+    void sltPrepareMenuDevices();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    void sltPrepareMenuDebug();
+#endif
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;

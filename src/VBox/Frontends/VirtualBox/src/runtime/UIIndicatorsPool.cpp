@@ -25,6 +25,7 @@
 #include "UIIndicatorsPool.h"
 #include "VBoxGlobal.h"
 #include "COMDefs.h"
+#include "UIMachineDefs.h"
 #include "QIWithRetranslateUI.h"
 
 class UIIndicatorHardDisks : public QIWithRetranslateUI<QIStateIndicator>
@@ -548,6 +549,22 @@ public:
                       "<nobr><img src=:/mouse_can_seamless_16px.png/>&nbsp;&nbsp;MI is Off, pointer is captured</nobr><br>"
                       "<nobr><img src=:/mouse_can_seamless_uncaptured_16px.png/>&nbsp;&nbsp;MI is Off, pointer is not captured</nobr><br>"
                       "Note that the mouse integration feature requires Guest Additions to be installed in the guest OS."));
+    }
+
+public slots:
+
+    void setState(int iState)
+    {
+        if ((iState & UIMouseStateType_MouseAbsoluteDisabled) &&
+            (iState & UIMouseStateType_MouseAbsolute) &&
+            !(iState & UIMouseStateType_MouseCaptured))
+        {
+            QIStateIndicator::setState(4);
+        }
+        else
+        {
+            QIStateIndicator::setState(iState & (UIMouseStateType_MouseAbsolute | UIMouseStateType_MouseCaptured));
+        }
     }
 
 protected:
