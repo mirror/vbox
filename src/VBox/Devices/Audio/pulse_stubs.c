@@ -84,6 +84,9 @@ PROXY_STUB     (pa_stream_get_state, pa_stream_state_t,
 PROXY_STUB_VOID(pa_stream_set_state_callback,
                 (pa_stream *s, pa_stream_notify_cb_t cb, void *userdata),
                 (s, cb, userdata))
+PROXY_STUB     (pa_stream_flush, pa_operation*,
+                (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
+                (s, cb, userdata))
 PROXY_STUB     (pa_stream_drain, pa_operation*,
                 (pa_stream *s, pa_stream_success_cb_t cb, void *userdata),
                 (s, cb, userdata))
@@ -205,6 +208,7 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_stream_unref),
     ELEMENT(pa_stream_get_state),
     ELEMENT(pa_stream_set_state_callback),
+    ELEMENT(pa_stream_flush),
     ELEMENT(pa_stream_drain),
     ELEMENT(pa_stream_trigger),
     ELEMENT(pa_stream_new),

@@ -474,16 +474,25 @@ static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
     switch (cmd)
     {
         case VOICE_ENABLE:
+            /* Start audio output. */
             pa_threaded_mainloop_lock(g_pMainLoop);
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0,
+                                                    stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
         case VOICE_DISABLE:
+            /* Pause audio output. Note that we must return immediately from here
+             * so waiting until the buffers are flushed (trigger+drain) is not an
+             * option! It could be sufficient to cork the audio stream (we are
+             * called if the Pause bit of the AC97 x_CR register is set) but ALSA
+             * uses snd_pcm_drop() dropping all pending frames so we do the same
+             * here. */
             pa_threaded_mainloop_lock(g_pMainLoop);
-            pulse_wait_for_operation(pa_stream_trigger(pPulse->pStream, stream_success_callback, pPulse));
-            pulse_wait_for_operation(pa_stream_drain(pPulse->pStream, stream_success_callback, pPulse));
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_flush(pPulse->pStream,
+                                                     stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1,
+                                                    stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
@@ -643,7 +652,8 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
     {
         case VOICE_ENABLE:
             pa_threaded_mainloop_lock(g_pMainLoop);
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0,
+                                                    stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
@@ -654,7 +664,8 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
                 pa_stream_drop(pPulse->pStream);
                 pPulse->pu8PeekBuf = NULL;
             }
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1, stream_success_callback, pPulse));
+            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1,
+                                                    stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
