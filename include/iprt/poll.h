@@ -43,11 +43,13 @@ RT_C_DECLS_BEGIN
 /** @name Poll events
  * @{ */
 /** Readable without blocking. */
-#define RTPOLL_EVT_READ     RT_BIT_32(0)
+#define RTPOLL_EVT_READ         RT_BIT_32(0)
 /** Writable without blocking. */
-#define RTPOLL_EVT_WRITE    RT_BIT_32(1)
+#define RTPOLL_EVT_WRITE        RT_BIT_32(1)
 /** Error condition, hangup, exception or similar. */
-#define RTPOLL_EVT_ERROR    RT_BIT_32(2)
+#define RTPOLL_EVT_ERROR        RT_BIT_32(2)
+/** Mask of the valid bits. */
+#define RTPOLL_EVT_VALID_MASK   UINT32_C(0x00000007)
 /** @} */
 
 /**
@@ -57,6 +59,8 @@ RT_C_DECLS_BEGIN
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
  * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
  * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
  *          are no valid handles in the set.
@@ -70,6 +74,8 @@ RT_C_DECLS_BEGIN
  *                              handle when calling RTPollSetAdd.  Optional.
  *
  * @sa      RTPollNoResume
+ *
+ * @remarks The caller is responsible for ensuring
  */
 RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents, uint32_t *pid);
 
@@ -79,6 +85,8 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
  * @returns IPRT status code.
  * @retval  VINF_SUCCESS if an event occured on a handle.  Note that these
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
  * @retval  VERR_TIMEOUT if @a cMillies ellapsed without any events.
  * @retval  VERR_DEADLOCK if @a cMillies is set to RT_INDEFINITE_WAIT and there
  *          are no valid handles in the set.
@@ -101,7 +109,7 @@ RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *
  * @returns IPRT status code.
  * @param   phPollSet           Where to return the poll set handle.
  */
-RTDECL(int)  RTPollSetCreate(PRTPOLLSET hPollSet);
+RTDECL(int)  RTPollSetCreate(PRTPOLLSET phPollSet);
 
 /**
  * Destroys a poll set.
@@ -116,8 +124,16 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet);
  * Adds a generic handle to the poll set.
  *
  * @returns IPRT status code
+ * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
+ * @retval  VERR_POLL_HANDLE_NOT_POLLABLE if the specified handle is not
+ *          pollable.
+ * @retval  VERR_POLL_HANDLE_ID_EXISTS if the handle ID is already in use in the
+ *          set.
+ *
  * @param   hPollSet            The poll set to modify.
- * @param   pHandle             The handle to add.
+ * @param   pHandle             The handle to add.  NIL handles are quitely
+ *                              ignored.
  * @param   fEvents             Which events to poll for.
  * @param   id                  The handle ID.
  */
@@ -127,6 +143,12 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
  * Removes a generic handle from the poll set.
  *
  * @returns IPRT status code
+ * @retval  VERR_INVALID_HANDLE if @a hPollSet not valid.
+ * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
+ * @retval  VERR_POLL_HANDLE_ID_NOT_FOUND if @a id doesn't resolve to a valid
+ *          handle.
+ *
  * @param   hPollSet            The poll set to modify.
  * @param   id                  The handle ID of the handle that should be
  *                              removed.
@@ -139,8 +161,10 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id);
  *
  * @returns IPRT status code
  * @retval  VINF_SUCCESS if the handle was found.  @a *pHandle is set.
- * @retval  VERR_NOT_FOUND if there is no handle with that ID.
  * @retval  VERR_INVALID_HANDLE if @a hPollSet is invalid.
+ * @retval  VERR_WRONG_ORDER if another thread is already accessing the set. The
+ *          user is responsible for ensuring single threaded access.
+ * @retval  VERR_POLL_HANDLE_ID_NOT_FOUND if there is no handle with that ID.
  *
  * @param   hPollSet            The poll set to query.
  * @param   id                  The ID of the handle.
@@ -152,7 +176,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
  * Gets the number of handles in the set.
  *
  * @retval  The handle count.
- * @retval  UINT32_MAX if @a hPollSet is invalid.
+ * @retval  UINT32_MAX if @a hPollSet is invalid or there is concurrent access.
  *
  * @param   hPollSet            The poll set.
  */
@@ -161,7 +185,8 @@ RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet);
 /**
  * Adds a pipe handle to the set.
  *
- * @returns IPRT status code.
+ * @returns See RTPollSetAdd.
+ *
  * @param   hPollSet            The poll set.
  * @param   hPipe               The pipe handle.
  * @param   fEvents             Which events to poll for.
@@ -181,7 +206,8 @@ DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEve
 /**
  * Adds a socket handle to the set.
  *
- * @returns IPRT status code.
+ * @returns See RTPollSetAdd.
+ *
  * @param   hPollSet            The poll set.
  * @param   hSocket             The socket handle.
  * @param   fEvents             Which events to poll for.

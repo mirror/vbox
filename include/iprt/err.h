@@ -1212,34 +1212,44 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 
 /** @name RTS3 status codes
  * @{ */
-/** Access denied error */
+/** Access denied error. */
 #define VERR_S3_ACCESS_DENIED                   (-875)
-/** The bucket/key wasn't found */
+/** The bucket/key wasn't found. */
 #define VERR_S3_NOT_FOUND                       (-876)
 /** Bucket already exists. */
 #define VERR_S3_BUCKET_ALREADY_EXISTS           (-877)
 /** Can't delete bucket with keys. */
 #define VERR_S3_BUCKET_NOT_EMPTY                (-878)
-/** The current operation was canceled */
+/** The current operation was canceled. */
 #define VERR_S3_CANCELED                        (-879)
 /** @} */
 
 /** @name RTManifest status codes
  * @{ */
-/** A digest type used in the manifest file isn't supported */
+/** A digest type used in the manifest file isn't supported. */
 #define VERR_MANIFEST_UNSUPPORTED_DIGEST_TYPE   (-900)
-/** An entry in the manifest file couldn't be interpreted correctly */
+/** An entry in the manifest file couldn't be interpreted correctly. */
 #define VERR_MANIFEST_WRONG_FILE_FORMAT         (-901)
-/** A digest doesn't match the corresponding file */
+/** A digest doesn't match the corresponding file. */
 #define VERR_MANIFEST_DIGEST_MISMATCH           (-902)
-/** The file list doesn't match to the content of the manifest file */
+/** The file list doesn't match to the content of the manifest file. */
 #define VERR_MANIFEST_FILE_MISMATCH             (-903)
 /** @} */
 
 /** @name RTTar status codes
  * @{ */
-/** The checksum of a tar header record doesn't match */
+/** The checksum of a tar header record doesn't match. */
 #define VERR_TAR_CHKSUM_MISMATCH                (-925)
+/** @} */
+
+/** @name RTPoll status codes
+ * @{ */
+/** The handle is not pollable. */
+#define VERR_POLL_HANDLE_NOT_POLLABLE           (-950)
+/** The handle ID is already present in the poll set. */
+#define VERR_POLL_HANDLE_ID_EXISTS              (-951)
+/** The handle ID was not found in the set. */
+#define VERR_POLL_HANDLE_ID_NOT_FOUND           (-952)
 /** @} */
 
 /* SED-END */
