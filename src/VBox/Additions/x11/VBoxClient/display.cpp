@@ -124,7 +124,6 @@ static int x11ConnectionMonitor(RTTHREAD, void *)
 int runDisplay()
 {
     LogFlowFunc(("\n"));
-    uint32_t cx0 = 0, cy0 = 0, cBits0 = 0, iDisplay0 = 0;
     Display *pDisplay = XOpenDisplay(NULL);
     if (pDisplay == NULL)
         return VERR_NOT_FOUND;
@@ -134,7 +133,6 @@ int runDisplay()
                    RTTHREADTYPE_INFREQUENT_POLLER, 0, "X11 monitor");
     if (RT_FAILURE(rc))
         return rc;
-    VbglR3GetDisplayChangeRequest(&cx0, &cy0, &cBits0, &iDisplay0, false);
     while (true)
     {
         uint32_t fEvents = 0, cx = 0, cy = 0, cBits = 0, iDisplay = 0;
@@ -145,20 +143,12 @@ int runDisplay()
         {
             int rc2 = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits,
                                                     &iDisplay, true);
-            /* Ignore the request if it is stale */
-            if ((cx != cx0) || (cy != cy0) || RT_FAILURE(rc2))
-            {
-                /* If we are not stopping, sleep for a bit to avoid using up
-                    too much CPU while retrying. */
-                if (RT_FAILURE(rc2))
-                    RTThreadYield();
-                else
-                {
-                    system("VBoxRandR");
-                    cx0 = cx;
-                    cy0 = cy;
-                }
-            }
+            /* If we are not stopping, sleep for a bit to avoid using up
+                too much CPU while retrying. */
+            if (RT_FAILURE(rc2))
+                RTThreadYield();
+            else
+                system("VBoxRandR");
         }
         if (   RT_SUCCESS(rc)
             && (fEvents & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED))
