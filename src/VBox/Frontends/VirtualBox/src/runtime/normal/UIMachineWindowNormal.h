@@ -94,12 +94,12 @@ private:
     void prepareMachineView();
 
     /* Cleanup helpers: */
-    void cleanupMachineView() {}
+    //void cleanupMachineView() {}
     void saveWindowSettings();
-    void cleanupConnections() {}
+    //void cleanupConnections() {}
     void cleanupStatusBar();
-    void cleanupMenu() {}
-    void cleanupConsoleConnections() {}
+    //void cleanupMenu() {}
+    //void cleanupConsoleConnections() {}
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;

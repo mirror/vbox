@@ -78,9 +78,14 @@ protected:
     virtual void loadWindowSettings();
 
     /* Cleanup helpers: */
-    virtual void saveWindowSettings() {}
-    virtual void cleanupConsoleConnections() {}
-    virtual void cleanupWindowIcon() {}
+    //virtual void saveWindowSettings() {}
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    //virtual void prepareMenuDebug() {}
+#endif
+    //virtual void prepareMenuDevices() {}
+    //virtual void prepareMenuMachine() {}
+    //virtual void cleanupConsoleConnections() {}
+    //virtual void cleanupWindowIcon() {}
 
     /* Update routines: */
     virtual void updateAppearanceOf(int iElement);
