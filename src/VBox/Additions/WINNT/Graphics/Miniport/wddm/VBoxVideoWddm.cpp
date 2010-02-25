@@ -140,7 +140,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALL
 
         pView->u32ViewIndex     = pPrimaryInfo->VidPnSourceId;
         pView->u32ViewOffset    = offVram;
-        pView->u32ViewSize      = vboxWddmVramReportedSize(pDevExt)/pDevExt->u.primary.cDisplays;
+        pView->u32ViewSize      = vboxWddmVramReportedSize(pDevExt)/pDevExt->cSources;
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
@@ -811,8 +811,8 @@ NTSTATUS DxgkDdiStartDevice(
                 if ((pContext)->u.primary.bHGSMI)
                 {
                     drprintf(("VBoxVideoWddm: using HGSMI\n"));
-                    *NumberOfVideoPresentSources = pContext->u.primary.cDisplays;
-                    *NumberOfChildren = pContext->u.primary.cDisplays;
+                    *NumberOfVideoPresentSources = pContext->cSources;
+                    *NumberOfChildren = pContext->cSources;
                     dprintf(("VBoxVideoWddm: sources(%d), children(%d)\n", *NumberOfVideoPresentSources, *NumberOfChildren));
                 }
                 else
@@ -1021,7 +1021,8 @@ NTSTATUS DxgkDdiQueryChildRelations(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
-    for (int i = 0; i < pDevExt->u.primary.cDisplays; ++i)
+    Assert(ChildRelationsSize == (pDevExt->cSources + 1)*sizeof(DXGK_CHILD_DESCRIPTOR));
+    for (UINT i = 0; i < pDevExt->cSources; ++i)
     {
         ChildRelations[i].ChildDeviceType = TypeVideoOutput;
         ChildRelations[i].ChildCapabilities.Type.VideoOutput.InterfaceTechnology = D3DKMDT_VOT_HD15; /* VGA */
@@ -1835,7 +1836,7 @@ DxgkDdiIsSupportedVidPn(
             Status = vboxVidPnCheckTopology(pIsSupportedVidPnArg->hDesiredVidPn, hVidPnTopology, pVidPnTopologyInterface, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
             {
-                for (int id = 0; id < pContext->u.primary.cDisplays; id++)
+                for (UINT id = 0; id < pContext->cSources; ++id)
                 {
                     D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet;
                     const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface;
@@ -1866,7 +1867,7 @@ DxgkDdiIsSupportedVidPn(
 
                 if (Status == STATUS_SUCCESS && bSupported)
                 {
-                    for (int id = 0; id < pContext->u.primary.cDisplays; id++)
+                    for (UINT id = 0; id < pContext->cSources; ++id)
                     {
                         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet;
                         CONST DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface;
@@ -1910,7 +1911,7 @@ DxgkDdiIsSupportedVidPn(
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 NTSTATUS
@@ -2160,7 +2161,7 @@ DxgkDdiEnumVidPnCofuncModality(
 
     dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
-    return STATUS_NOT_IMPLEMENTED;
+    return Status;
 }
 
 NTSTATUS
@@ -2187,8 +2188,8 @@ DxgkDdiSetVidPnSourceAddress(
         Assert (pSetVidPnSourceAddress->Flags.Value < 2); /* i.e. 0 or 1 (ModeChange) */
         if (pSetVidPnSourceAddress->hAllocation)
         {
-            pSource->pAllocation = (PVBOXWDDM_ALLOCATION)pSetVidPnSourceAddress->hAllocation;
             pAllocation = (PVBOXWDDM_ALLOCATION)pSetVidPnSourceAddress->hAllocation;
+            vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, pSetVidPnSourceAddress->VidPnSourceId);
         }
         else
             pAllocation = pSource->pAllocation;
@@ -2284,8 +2285,64 @@ DxgkDdiCommitVidPn(
     CONST DXGKARG_COMMITVIDPN* CONST  pCommitVidPnArg
     )
 {
+    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    return STATUS_NOT_IMPLEMENTED;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+
+    const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+    NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+    if (Status == STATUS_SUCCESS)
+    {
+        if (pCommitVidPnArg->AffectedVidPnSourceId != D3DDDI_ID_ALL)
+        {
+            Status = vboxVidPnCommitSourceModeForSrcId(
+                    pDevExt,
+                    pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface,
+                    pCommitVidPnArg->AffectedVidPnSourceId, (PVBOXWDDM_ALLOCATION)pCommitVidPnArg->hPrimaryAllocation);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status != STATUS_SUCCESS)
+                drprintf((__FUNCTION__ ": vboxVidPnCommitSourceModeForSrcId failed Status(0x%x)\n", Status));
+        }
+        else
+        {
+            /* clear all current primaries */
+            for (UINT i = 0; i < pDevExt->cSources; ++i)
+            {
+                vboxWddmAssignPrimary(pDevExt, &pDevExt->aSources[i], NULL, i);
+            }
+
+            D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
+            const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
+            NTSTATUS Status = pVidPnInterface->pfnGetTopology(pCommitVidPnArg->hFunctionalVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                VBOXVIDPNCOMMIT CbContext = {0};
+                CbContext.pCommitVidPnArg = pCommitVidPnArg;
+                Status = vboxVidPnEnumPaths(pDevExt, pCommitVidPnArg->hFunctionalVidPn, pVidPnInterface,
+                            hVidPnTopology, pVidPnTopologyInterface,
+                            vboxVidPnCommitPathEnum, &CbContext);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                {
+                        Status = CbContext.Status;
+                        Assert(Status == STATUS_SUCCESS);
+                        if (Status != STATUS_SUCCESS)
+                            drprintf((__FUNCTION__ ": vboxVidPnAdjustSourcesTargetsCallback failed Status(0x%x)\n", Status));
+                }
+                else
+                    drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n", Status));
+            }
+            else
+                drprintf((__FUNCTION__ ": pfnGetTopology failed Status(0x%x)\n", Status));
+        }
+    }
+    else
+        drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
+
+    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+
+    return Status;
 }
 
 NTSTATUS

@@ -46,7 +46,13 @@ typedef struct VBOXVIDPNCOFUNCMODALITY
     VIDEO_MODE_INFORMATION *pModes;
     uint32_t cResolutions;
     D3DKMDT_2DREGION *pResolutions;
-}VBOXVIDPNCOFUNCMODALITY, *PVBOXVIDPNCOFUNCMODALITY;
+} VBOXVIDPNCOFUNCMODALITY, *PVBOXVIDPNCOFUNCMODALITY;
+
+typedef struct VBOXVIDPNCOMMIT
+{
+    NTSTATUS Status;
+    CONST DXGKARG_COMMITVIDPN* pCommitVidPnArg;
+} VBOXVIDPNCOMMIT, *PVBOXVIDPNCOMMIT;
 
 /* !!!NOTE: The callback is responsible for releasing the path */
 typedef DECLCALLBACK(BOOLEAN) FNVBOXVIDPNENUMPATHS(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
@@ -78,6 +84,12 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalitySourceModeEnum(struct _DEVICE_EXTEN
 DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityTargetModeEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
         const D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo, PVOID pContext);
+
+DECLCALLBACK(BOOLEAN) vboxVidPnCommitPathEnum(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
+        const D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo, PVOID pContext);
+
+NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, struct VBOXWDDM_ALLOCATION *pAllocation);
 
 NTSTATUS vboxVidPnEnumPaths(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
