@@ -70,6 +70,11 @@ protected:
     /* Prepare helpers: */
     virtual void prepareWindowIcon();
     virtual void prepareConsoleConnections();
+    virtual void prepareMenuMachine();
+    virtual void prepareMenuDevices();
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    virtual void prepareMenuDebug();
+#endif
     virtual void loadWindowSettings();
 
     /* Cleanup helpers: */
@@ -82,11 +87,6 @@ protected:
 
     /* Protected slots: */
     void sltMachineStateChanged(KMachineState machineState);
-    void sltPrepareMenuMachine();
-    void sltPrepareMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    void sltPrepareMenuDebug();
-#endif
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;

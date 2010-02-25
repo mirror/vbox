@@ -59,13 +59,6 @@ private slots:
     void sltNetworkAdapterChange();
     void sltSharedFolderChange();
 
-    /* Runtime menus: */
-    void sltPrepareMenuMachine();
-    void sltPrepareMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    void sltPrepareMenuDebug();
-#endif
-
     /* LED connections: */
     void sltUpdateIndicators();
     void sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent);
