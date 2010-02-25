@@ -46,8 +46,6 @@
 #define RTDIR_MAGIC                     UINT32_C(0x19291112)
 /** The value of RTDIR::u32Magic after RTDirClose().  */
 #define RTDIR_MAGIC_DEAD                UINT32_C(0x19950829)
-/** the value of RTPIPEINTERNAL::u32Magic. (Frank Schaetzing) */
-#define RTPIPE_MAGIC                    UINT32_C(0x19570528)
 /** The value of RTFILEAIOCTXINT::u32Magic. (Howard Phillips Lovecraft) */
 #define RTFILEAIOCTX_MAGIC              UINT32_C(0x18900820)
 /** The value of RTFILEAIOCTXINT::u32Magic after RTFileAioCtxDestroy(). */
@@ -96,8 +94,12 @@
 #define RTMEMPOOL_MAGIC                 UINT32_C(0x17751216)
 /** The magic value for RTMEMPOOL::u32Magic after RTMemPoolDestroy. */
 #define RTMEMPOOL_MAGIC_DEAD            UINT32_C(0x18170718)
-/** Magic number for heap blocks. (Edgar Allan Poe) */
+/** The magic value for heap blocks. (Edgar Allan Poe) */
 #define RTMEMHDR_MAGIC                  UINT32_C(0x18090119)
+/** The value of RTPIPEINTERNAL::u32Magic. (Frank Schaetzing) */
+#define RTPIPE_MAGIC                    UINT32_C(0x19570528)
+/** The value of RTPOLLSETINTERNAL::u32Magic. (Ai Yazawa) */
+#define RTPOLLSET_MAGIC                 UINT32_C(0x19670307)
 /** RTR0MEMOBJ::u32Magic. (Masakazu Katsura) */
 #define RTR0MEMOBJ_MAGIC                UINT32_C(0x19611210)
 /** RTRANDINT::u32Magic. (Alan Moore) */
