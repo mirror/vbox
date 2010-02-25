@@ -54,26 +54,26 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession
     /* Check the status of required features: */
     prepareRequiredFeatures();
 
-    /* Prepare normal machine window: */
-    prepareMachineWindow();
-
     /* Load common logic settings: */
     loadLogicSettings();
+
+    /* Prepare normal machine window: */
+    prepareMachineWindow();
 }
 
 UIMachineLogicNormal::~UIMachineLogicNormal()
 {
-    /* Save common logic settings: */
-    saveLogicSettings();
-
     /* Cleanup normal machine window: */
     cleanupMachineWindow();
+
+    /* Save common logic settings: */
+    saveLogicSettings();
 }
 
 void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
 {
     QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Network Adapters Menu show!\n"));
+    AssertMsg(menu, ("This slot should be called only on Network Adapters menu show!\n"));
     menu->clear();
     menu->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
 }
@@ -81,7 +81,7 @@ void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
 void UIMachineLogicNormal::sltPrepareSharedFoldersMenu()
 {
     QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Shared Folders Menu show!\n"));
+    AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
     menu->clear();
     menu->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
 }
@@ -96,7 +96,7 @@ void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
 
 void UIMachineLogicNormal::prepareActionConnections()
 {
-    /* Parent class connections: */
+    /* Base-class connections: */
     UIMachineLogic::prepareActionConnections();
 
     /* This class connections: */
@@ -121,10 +121,7 @@ void UIMachineLogicNormal::prepareMachineWindow()
 #endif /* Q_WS_MAC */
 
     /* Create machine window: */
-    m_pMachineWindowContainer = UIMachineWindow::create(this, visualStateType());
-
-    /* Get the correct initial machineState() value */
-    setMachineState(session().GetConsole().GetState());
+    setMachineWindowWrapper(UIMachineWindow::create(this, visualStateType()));
 
     bool bIsSaved = machineState() == KMachineState_Saved;
     bool bIsRunning = machineState() == KMachineState_Running ||
@@ -221,16 +218,6 @@ void UIMachineLogicNormal::prepareMachineWindow()
         vboxGlobal().showUpdateDialog(false /* aForce */);
 #endif
     }
-
-    /* Configure view connections: */
-    if (machineWindowWrapper()->machineView())
-    {
-        connect(machineWindowWrapper()->machineView(), SIGNAL(mouseStateChanged(int)),
-                this, SLOT(sltMouseStateChanged(int)));
-    }
-
-    /* Set what view opened: */
-    setOpenViewFinished(true);
 }
 
 void UIMachineLogicNormal::cleanupMachineWindow()
@@ -240,7 +227,7 @@ void UIMachineLogicNormal::cleanupMachineWindow()
         return;
 
     /* Cleanup machine window: */
-    UIMachineWindow::destroy(m_pMachineWindowContainer);
-    m_pMachineWindowContainer = 0;
+    UIMachineWindow::destroy(machineWindowWrapper());
+    setMachineWindowWrapper(0);
 }
 

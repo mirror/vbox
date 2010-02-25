@@ -53,12 +53,10 @@ private:
     /* Prepare helpers: */
     void prepareActionConnections();
     void prepareMachineWindow();
-    //void loadLogicSettings();
 
     /* Cleanup helpers: */
-    //void saveLogicSettings();
     void cleanupMachineWindow();
-    //void cleanupActionConnections();
+    void cleanupActionConnections() {}
 
     /* Friend classes: */
     friend class UIMachineLogic;

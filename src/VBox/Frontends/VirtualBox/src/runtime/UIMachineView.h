@@ -63,9 +63,14 @@ public:
     /* Public virtual members: */
     virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
 
+    /* Public getters: */
+    int keyboardState() const;
+    int mouseState() const;
+
     /* Public setters: */
     void setIgnoreGuestResize(bool bIgnore) { m_bIsGuestResizeIgnored = bIgnore; }
-    void setMouseIntegrationEnabled(bool bEnabled);
+    virtual void setGuestAutoresizeEnabled(bool bEnabled) = 0;
+    virtual void setMouseIntegrationEnabled(bool bEnabled);
     //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
 #if defined(Q_WS_MAC)
@@ -84,13 +89,9 @@ signals:
     /* Utility signals: */
     void resizeHintDone();
 
-protected slots:
-
-    /* Initiate resize request to guest: */
-    virtual void doResizeHint(const QSize &aSize = QSize()) = 0;
-
 protected:
 
+    /* Machine view constructor/destructor: */
     UIMachineView(  UIMachineWindow *pMachineWindow
                   , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -107,6 +108,7 @@ protected:
     CConsole &console() { return m_console; }
 
     /* Protected getters: */
+    KMachineState machineState() const { return m_machineState; }
     VBoxDefs::RenderMode mode() const { return m_mode; }
     QSize sizeHint() const;
     int contentsX() const;
@@ -135,21 +137,36 @@ protected:
     virtual void loadMachineViewSettings();
 
     /* Cleanup routines: */
-    //virtual void saveMachineViewSettings();
-    //virtual void cleanupConsoleConnections();
-    //virtual void cleanupFilters();
+    virtual void saveMachineViewSettings();
+    virtual void cleanupConsoleConnections() {}
+    virtual void cleanupFilters() {}
     virtual void cleanupCommon();
     virtual void cleanupFrameBuffer();
 
+    /* Update routines: */
+    virtual void updateMachineState();
+    virtual void updateAdditionsState();
+    virtual void updateMousePointerShape();
+    virtual void updateMouseCapability();
+
+protected slots:
+
+    /* Console callback handlers: */
+    virtual void sltMachineStateChanged(KMachineState state);
+    virtual void sltAdditionsStateChanged();
+    virtual void sltKeyboardLedsChanged(bool bNumLock, bool bCapsLock, bool bScrollLock);
+    virtual void sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
+                                             uint uXHot, uint uYHot, uint uWidth, uint uHeight,
+                                             const uchar *pShapeData);
+    virtual void sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
+
+    /* Initiate resize request to guest: */
+    virtual void sltPerformGuestResize(const QSize &aSize = QSize()) = 0;
+
 private slots:
 
-    void sltMousePointerShapeChange(bool fIsVisible, bool fHasAlpha,
-                                    uint uXHot, uint uYHot, uint uWidth, uint uHeight,
-                                    const uchar *pShapeData);
-    void sltMouseCapabilityChange(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
-    void sltKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock);
-    void sltStateChange(KMachineState state);
-    void sltAdditionsStateChange();
+    /* Watch dog for desktop resizes: */
+    void sltDesktopResized();
 
 #ifdef Q_WS_MAC
     /* Dock icon update handler */
@@ -212,11 +229,10 @@ private:
     void updateMouseClipping();
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha,
                          uint uXHot, uint uYHot, uint uWidth, uint uHeight);
-    void setMouseIntegrationLocked(bool fDisabled);
 
     /* Private getters: */
     bool isRunning() { return m_machineState == KMachineState_Running || m_machineState == KMachineState_Teleporting || m_machineState == KMachineState_LiveSnapshotting; }
-    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && m_fHideHostPointer); }
+    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && m_fIsHideHostPointer); }
 
     static void dimImage(QImage &img);
 
@@ -239,26 +255,26 @@ private:
     uint8_t m_pressedKeys[128];
     uint8_t m_pressedKeysCopy[128];
 
-    long m_uNumLockAdaptionCnt;
-    long m_uCapsLockAdaptionCnt;
+    uint m_uNumLockAdaptionCnt;
+    uint m_uCapsLockAdaptionCnt;
 
     bool m_bIsAutoCaptureDisabled : 1;
     bool m_bIsKeyboardCaptured : 1;
     bool m_bIsMouseCaptured : 1;
     bool m_bIsMouseAbsolute : 1;
     bool m_bIsMouseIntegrated : 1;
+    bool m_fIsHideHostPointer;
     bool m_bIsHostkeyPressed : 1;
     bool m_bIsHostkeyAlone : 1;
-    bool m_bHostkeyInCapture : 1;
+    bool m_bIsHostkeyInCapture : 1;
     bool m_bIsGuestSupportsGraphics : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
     bool m_bIsFrameBufferResizeIgnored : 1;
     bool m_bIsGuestResizeIgnored : 1;
-    bool m_numLock : 1;
-    bool m_scrollLock : 1;
-    bool m_capsLock : 1;
+    bool m_fNumLock : 1;
+    bool m_fCapsLock : 1;
+    bool m_fScrollLock : 1;
     bool m_fPassCAD;
-    bool m_fHideHostPointer;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo;
 #endif

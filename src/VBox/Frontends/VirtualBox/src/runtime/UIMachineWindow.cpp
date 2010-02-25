@@ -31,6 +31,7 @@
 #include "VBoxCloseVMDlg.h"
 
 #include "UISession.h"
+#include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
@@ -65,6 +66,10 @@ void UIMachineWindow::destroy(UIMachineWindow *pWhichWindow)
 
 void UIMachineWindow::sltTryClose()
 {
+    /* Do not try to close if restricted: */
+    if (machineLogic()->isPreventAutoClose())
+        return;
+
     /* First close any open modal & popup widgets.
      * Use a single shot with timeout 0 to allow the widgets to cleany close and test then again.
      * If all open widgets are closed destroy ourself: */
@@ -92,6 +97,11 @@ UIMachineWindow::~UIMachineWindow()
 {
 }
 
+CSession UIMachineWindow::session()
+{
+    return m_pMachineLogic->uisession()->session();
+}
+
 void UIMachineWindow::retranslateUi()
 {
 #ifdef VBOX_OSE
@@ -104,64 +114,6 @@ void UIMachineWindow::retranslateUi()
                               .arg(RTBldCfgVersion())
                               .arg(RTBldCfgRevisionStr())
                               .arg(VBOX_BLEEDING_EDGE);
-#endif
-}
-
-void UIMachineWindow::updateAppearanceOf(int iElement)
-{
-    CMachine machine = session().GetMachine();
-
-    if (iElement & UIVisualElement_WindowCaption)
-    {
-        QString strSnapshotName;
-        if (machine.GetSnapshotCount() > 0)
-        {
-            CSnapshot snapshot = machine.GetCurrentSnapshot();
-            strSnapshotName = " (" + snapshot.GetName() + ")";
-        }
-        QString strMachineName = machine.GetName() + strSnapshotName;
-        if (machineLogic()->machineState() != KMachineState_Null)
-            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
-        strMachineName += m_strWindowTitlePrefix;
-        machineWindow()->setWindowTitle(strMachineName);
-
-        // TODO: Move that to fullscreen/seamless update routine:
-        // mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
-    }
-}
-
-void UIMachineWindow::prepareWindowIcon()
-{
-#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
-    /* The default application icon (will be changed to VM-specific icon little bit later):
-     * 1. On Win32, it's built-in to the executable;
-     * 2. On Mac OS X the icon referenced in info.plist is used. */
-    machineWindow()->setWindowIcon(QIcon(":/VirtualBox_48px.png"));
-#endif
-
-#ifndef Q_WS_MAC
-    /* Set the VM-specific application icon except Mac OS X: */
-    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(session().GetMachine().GetOSTypeId()));
-#endif
-}
-
-void UIMachineWindow::prepareConsoleConnections()
-{
-    QObject::connect(machineLogic()->uisession(), SIGNAL(sigStateChange(KMachineState)),
-                     machineWindow(), SLOT(sltMachineStateChanged(KMachineState)));
-}
-
-void UIMachineWindow::loadWindowSettings()
-{
-#ifdef Q_WS_MAC
-    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value */
-    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
-    if (machineView())
-    {
-        machineView()->setDockIconEnabled(bIsDockIconEnabled);
-        machineView()->updateDockOverlay();
-    }
 #endif
 }
 
@@ -270,8 +222,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 {
                     /* Disable auto closure because we want to have a chance to show
                      * the error dialog on save state / power off failure. */
-                    // TODO: process for multiple windows!
-                    //m_bNoAutoClose = true;
+                    machineLogic()->setPreventAutoClose(true);
 
                     CConsole console = session().GetConsole();
 
@@ -376,8 +327,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 }
             }
 
-            // TODO: process for multiple windows!
-            //m_bNoAutoClose = false;
+            machineLogic()->setPreventAutoClose(false);
 
             if (machineLogic()->machineState() == KMachineState_PoweredOff ||
                 machineLogic()->machineState() == KMachineState_Saved ||
@@ -420,17 +370,134 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 
         /* Notify all the top-level dialogs about closing */
         // TODO: Notify about closing!
-        // emit closing();
+        //emit closing();
     }
 }
 
-CSession UIMachineWindow::session()
+void UIMachineWindow::prepareWindowIcon()
 {
-    return m_pMachineLogic->uisession()->session();
+#if !(defined (Q_WS_WIN) || defined (Q_WS_MAC))
+    /* The default application icon (will be changed to VM-specific icon little bit later):
+     * 1. On Win32, it's built-in to the executable;
+     * 2. On Mac OS X the icon referenced in info.plist is used. */
+    machineWindow()->setWindowIcon(QIcon(":/VirtualBox_48px.png"));
+#endif
+
+#ifndef Q_WS_MAC
+    /* Set the VM-specific application icon except Mac OS X: */
+    machineWindow()->setWindowIcon(vboxGlobal().vmGuestOSTypeIcon(session().GetMachine().GetOSTypeId()));
+#endif
+}
+
+void UIMachineWindow::prepareConsoleConnections()
+{
+    /* Machine state-change updater: */
+    QObject::connect(machineLogic()->uisession(), SIGNAL(sigStateChange(KMachineState)),
+                     machineWindow(), SLOT(sltMachineStateChanged(KMachineState)));
+}
+
+void UIMachineWindow::loadWindowSettings()
+{
+#ifdef Q_WS_MAC
+    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value */
+    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
+    if (machineView())
+    {
+        machineView()->setDockIconEnabled(bIsDockIconEnabled);
+        machineView()->updateDockOverlay();
+    }
+#endif
+}
+
+void UIMachineWindow::updateAppearanceOf(int iElement)
+{
+    CMachine machine = session().GetMachine();
+
+    if (iElement & UIVisualElement_WindowCaption)
+    {
+        QString strSnapshotName;
+        if (machine.GetSnapshotCount() > 0)
+        {
+            CSnapshot snapshot = machine.GetCurrentSnapshot();
+            strSnapshotName = " (" + snapshot.GetName() + ")";
+        }
+        QString strMachineName = machine.GetName() + strSnapshotName;
+        if (machineLogic()->machineState() != KMachineState_Null)
+            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
+        strMachineName += m_strWindowTitlePrefix;
+        machineWindow()->setWindowTitle(strMachineName);
+
+        // TODO: Move that to fullscreen/seamless update routine:
+        //mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
+    }
 }
 
 void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
 {
     updateAppearanceOf(UIVisualElement_WindowCaption);
 }
+
+void UIMachineWindow::sltPrepareMenuMachine()
+{
+    QMenu *menu = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
+
+    menu->clear();
+
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Seamless));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TypeCAD));
+#ifdef Q_WS_X11
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TypeCABS));
+#endif
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_InformationDialog));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Pause));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Reset));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Shutdown));
+#ifndef Q_WS_MAC
+    menu->addSeparator();
+#endif /* Q_WS_MAC */
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Close));
+}
+
+void UIMachineWindow::sltPrepareMenuDevices()
+{
+    QMenu *menu = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
+
+    menu->clear();
+
+    /* Devices submenu */
+    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices)->menu());
+    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices)->menu());
+    menu->addMenu(machineLogic()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->menu());
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_VRDP));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
+}
+
+#ifdef VBOX_WITH_DEBUGGER_GUI
+void UIMachineWindow::sltPrepareMenuDebug()
+{
+    QMenu *menu = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Debug)->menu();
+
+    menu->clear();
+
+    /* Debug submenu */
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Statistics));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_CommandLine));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Logging));
+}
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 

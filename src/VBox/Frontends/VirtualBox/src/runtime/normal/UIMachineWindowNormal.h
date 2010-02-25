@@ -45,13 +45,13 @@ class UIMachineWindowNormal : public QIWithRetranslateUI<QIMainDialog>, public U
 
 protected:
 
+    /* Normal machine window constructor/destructor: */
     UIMachineWindowNormal(UIMachineLogic *pMachineLogic);
     virtual ~UIMachineWindowNormal();
 
 private slots:
 
-    void sltTryClose();
-
+    /* Console callback handlers: */
     void sltMachineStateChanged(KMachineState machineState);
     void sltMediumChange(const CMediumAttachment &attachment);
     void sltUSBControllerChange();
@@ -59,18 +59,20 @@ private slots:
     void sltNetworkAdapterChange();
     void sltSharedFolderChange();
 
+    /* Runtime menus: */
     void sltPrepareMenuMachine();
     void sltPrepareMenuDevices();
 #ifdef VBOX_WITH_DEBUGGER_GUI
     void sltPrepareMenuDebug();
 #endif
 
+    /* LED connections: */
     void sltUpdateIndicators();
     void sltShowIndicatorsContextMenu(QIStateIndicator *pIndicator, QContextMenuEvent *pEvent);
-
     void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
 
-    void sltUpdateMouseState(int iState);
+    /* Close window reimplementation: */
+    void sltTryClose();
 
 private:
 
@@ -95,16 +97,16 @@ private:
     void prepareMenu();
     void prepareStatusBar();
     void prepareConnections();
-    void prepareMachineView();
     void loadWindowSettings();
+    void prepareMachineView();
 
     /* Cleanup helpers: */
+    void cleanupMachineView() {}
     void saveWindowSettings();
-    //void cleanupMachineView();
-    //void cleanupConnections();
+    void cleanupConnections() {}
     void cleanupStatusBar();
-    //void cleanupMenu();
-    void cleanupConsoleConnections();
+    void cleanupMenu() {}
+    void cleanupConsoleConnections() {}
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;
