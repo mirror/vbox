@@ -646,7 +646,6 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
             rc = pdmacFileCacheInit(pEpClassFile, pCfgNode);
             if (RT_FAILURE(rc))
             {
-                RTCritSectDelete(&pEpClassFile->CritSect);
                 pEpClassFile->fCacheEnabled = false;
                 LogRel(("AIOMgr: Failed to initialise the cache (rc=%Rrc), disabled caching\n"));
             }
