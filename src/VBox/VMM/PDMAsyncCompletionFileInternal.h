@@ -32,6 +32,7 @@
 #include <iprt/critsect.h>
 #include <iprt/avl.h>
 #include <iprt/list.h>
+#include <iprt/spinlock.h>
 
 #include "PDMAsyncCompletionInternal.h"
 
@@ -384,6 +385,8 @@ typedef struct PDMACFILEENDPOINTCACHE
     volatile uint32_t                    cWritesOutstanding;
     /** Handle of the flush request if one is active */
     volatile PPDMASYNCCOMPLETIONTASKFILE pTaskFlush;
+    /** Lock protecting the dirty entries list. */
+    RTSPINLOCK                           LockList;
     /** List of dirty but not committed entries for this endpoint. */
     RTLISTNODE                           ListDirtyNotCommitted;
     /** Node of the cache endpoint list. */

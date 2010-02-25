@@ -636,13 +636,22 @@ static void pdmacFileCacheEndpointCommit(PPDMACFILEENDPOINTCACHE pEndpointCache)
     uint32_t cbCommitted = 0;
     RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
-    if (!RTListIsEmpty(&pEndpointCache->ListDirtyNotCommitted))
+    /* The list is moved to a new header to reduce locking overhead. */
+    RTLISTNODE ListDirtyNotCommitted;
+    RTSPINLOCKTMP Tmp;
+
+    RTListInit(&ListDirtyNotCommitted);
+    RTSpinlockAcquire(pEndpointCache->LockList, &Tmp);
+    RTListMove(&ListDirtyNotCommitted, &pEndpointCache->ListDirtyNotCommitted);
+    RTSpinlockRelease(pEndpointCache->LockList, &Tmp);
+
+    if (!RTListIsEmpty(&ListDirtyNotCommitted))
     {
-        PPDMACFILECACHEENTRY pEntry = RTListNodeGetFirst(&pEndpointCache->ListDirtyNotCommitted,
+        PPDMACFILECACHEENTRY pEntry = RTListNodeGetFirst(&ListDirtyNotCommitted,
                                                          PDMACFILECACHEENTRY,
                                                          NodeNotCommitted);
 
-        while (!RTListNodeIsLast(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted))
+        while (!RTListNodeIsLast(&ListDirtyNotCommitted, &pEntry->NodeNotCommitted))
         {
             PPDMACFILECACHEENTRY pNext = RTListNodeGetNext(&pEntry->NodeNotCommitted, PDMACFILECACHEENTRY,
                                                            NodeNotCommitted);
@@ -653,10 +662,10 @@ static void pdmacFileCacheEndpointCommit(PPDMACFILEENDPOINTCACHE pEndpointCache)
         }
 
         /* Commit the last endpoint */
-        Assert(RTListNodeIsLast(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted));
+        Assert(RTListNodeIsLast(&ListDirtyNotCommitted, &pEntry->NodeNotCommitted));
         pdmacFileCacheEntryCommit(pEndpointCache, pEntry);
         RTListNodeRemove(&pEntry->NodeNotCommitted);
-        AssertMsg(RTListIsEmpty(&pEndpointCache->ListDirtyNotCommitted),
+        AssertMsg(RTListIsEmpty(&ListDirtyNotCommitted),
                   ("Committed all entries but list is not empty\n"));
     }
 
@@ -724,7 +733,12 @@ static bool pdmacFileCacheAddDirtyEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
     else if (!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY))
     {
         pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+
+        RTSPINLOCKTMP Tmp;
+        RTSpinlockAcquire(pEndpointCache->LockList, &Tmp);
         RTListAppend(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted);
+        RTSpinlockRelease(pEndpointCache->LockList, &Tmp);
+
         uint32_t cbDirty = ASMAtomicAddU32(&pCache->cbDirty, pEntry->cbData);
 
         fDirtyBytesExceeded = (cbDirty >= pCache->cbCommitDirtyThreshold);
@@ -1054,26 +1068,33 @@ int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
     pEndpointCache->pCache = &pClassFile->Cache;
     RTListInit(&pEndpointCache->ListDirtyNotCommitted);
+    int rc = RTSpinlockCreate(&pEndpointCache->LockList);
 
-    int rc = RTSemRWCreate(&pEndpointCache->SemRWEntries);
     if (RT_SUCCESS(rc))
     {
-        pEndpointCache->pTree  = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
-        if (pEndpointCache->pTree)
+        rc = RTSemRWCreate(&pEndpointCache->SemRWEntries);
+        if (RT_SUCCESS(rc))
         {
-            pClassFile->Cache.cRefs++;
-            RTListAppend(&pClassFile->Cache.ListEndpoints, &pEndpointCache->NodeCacheEndpoint);
+            pEndpointCache->pTree  = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
+            if (pEndpointCache->pTree)
+            {
+                pClassFile->Cache.cRefs++;
+                RTListAppend(&pClassFile->Cache.ListEndpoints, &pEndpointCache->NodeCacheEndpoint);
 
-            /* Arm the timer if this is the first endpoint. */
-            if (   pClassFile->Cache.cRefs == 1
-                && pClassFile->Cache.u32CommitTimeoutMs > 0)
-                rc = TMTimerSetMillies(pClassFile->Cache.pTimerCommit, pClassFile->Cache.u32CommitTimeoutMs);
+                /* Arm the timer if this is the first endpoint. */
+                if (   pClassFile->Cache.cRefs == 1
+                    && pClassFile->Cache.u32CommitTimeoutMs > 0)
+                    rc = TMTimerSetMillies(pClassFile->Cache.pTimerCommit, pClassFile->Cache.u32CommitTimeoutMs);
+            }
+            else
+                rc = VERR_NO_MEMORY;
+
+            if (RT_FAILURE(rc))
+                RTSemRWDestroy(pEndpointCache->SemRWEntries);
         }
-        else
-            rc = VERR_NO_MEMORY;
 
         if (RT_FAILURE(rc))
-            RTSemRWDestroy(pEndpointCache->SemRWEntries);
+            RTSpinlockDestroy(pEndpointCache->LockList);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -1143,6 +1164,8 @@ void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
     RTAvlrFileOffsetDestroy(pEndpointCache->pTree, pdmacFileEpCacheEntryDestroy, pCache);
     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+
+    RTSpinlockDestroy(pEndpointCache->LockList);
 
     pCache->cRefs--;
     RTListNodeRemove(&pEndpointCache->NodeCacheEndpoint);
