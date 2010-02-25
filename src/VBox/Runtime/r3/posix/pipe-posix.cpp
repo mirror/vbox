@@ -377,7 +377,7 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
     int rc = rtPipeTryBlocking(pThis);
     if (RT_SUCCESS(rc))
     {
-        do
+        while (cbToRead > 0)
         {
             ssize_t cbRead = read(pThis->fd, pvBuf, RT_MIN(cbToRead, SSIZE_MAX));
             if (cbRead < 0)
@@ -394,7 +394,7 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
             /* advance */
             pvBuf     = (char *)pvBuf + cbRead;
             cbToRead -= cbRead;
-        } while (cbToRead > 0);
+        }
 
         ASMAtomicDecU32(&pThis->u32State);
     }
@@ -414,16 +414,21 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
     int rc = rtPipeTryNonBlocking(pThis);
     if (RT_SUCCESS(rc))
     {
-        ssize_t cbWritten = write(pThis->fd, pvBuf, RT_MIN(cbToWrite, SSIZE_MAX));
-        if (cbWritten >= 0)
-            *pcbWritten = cbWritten;
-        else if (errno == EAGAIN)
+        if (cbToWrite)
         {
-            *pcbWritten = 0;;
-            rc = VINF_TRY_AGAIN;
+            ssize_t cbWritten = write(pThis->fd, pvBuf, RT_MIN(cbToWrite, SSIZE_MAX));
+            if (cbWritten >= 0)
+                *pcbWritten = cbWritten;
+            else if (errno == EAGAIN)
+            {
+                *pcbWritten = 0;;
+                rc = VINF_TRY_AGAIN;
+            }
+            else
+                rc = RTErrConvertFromErrno(errno);
         }
         else
-            rc = RTErrConvertFromErrno(errno);
+            *pcbWritten = 0;
 
         ASMAtomicDecU32(&pThis->u32State);
     }
@@ -470,7 +475,11 @@ RTDECL(int) RTPipeFlush(RTPIPE hPipe)
     AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
 
     if (fsync(pThis->fd))
+    {
+        if (errno == EINVAL || errno == ENOTSUP)
+            return VERR_NOT_SUPPORTED;
         return RTErrConvertFromErrno(errno);
+    }
     return VINF_SUCCESS;
 }
 

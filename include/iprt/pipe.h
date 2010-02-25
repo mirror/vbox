@@ -117,7 +117,8 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead);
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWriteBlocking.
- * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.  Does not
+ *          trigger when @a cbToWrite is 0.
  * @retval  VINF_TRY_AGAIN if no data was written.  @a *pcbWritten will be set
  *          to 0.
  * @retval  VERR_ACCESS_DENIED if it's a read pipe.
@@ -134,7 +135,8 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWrite.
- * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.  Does not
+ *          trigger when @a cbToWrite is 0.
  * @retval  VERR_ACCESS_DENIED if it's a read pipe.
  *
  * @param   hPipe           The IPRT pipe handle to write to.
