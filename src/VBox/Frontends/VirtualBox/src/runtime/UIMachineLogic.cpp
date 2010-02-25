@@ -1016,7 +1016,7 @@ void UIMachineLogic::sltShowInformationDialog()
         return;
 
     // TODO: Call for singleton information dialog for this machine!
-    //VBoxVMInformationDlg::createInformationDlg(session(), machineWindowWrapper()->machineWindow());
+//    VBoxVMInformationDlg::createInformationDlg(session(), machineWindowWrapper()->machineWindow());
 }
 
 void UIMachineLogic::sltReset()
