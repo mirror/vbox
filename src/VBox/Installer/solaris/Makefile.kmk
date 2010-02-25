@@ -542,8 +542,8 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(MKDIR) -p $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(wildcard $(SOLARIS_OUT_BIN_32)/VBoxPython*.so)   $(SOLARIS_VBOXINST_DIR)/,)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(wildcard $(SOLARIS_OUT_BIN_64)/VBoxPython*.so)   $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64)/,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_32)/bin/qtconfig                                $(SOLARIS_VBOXINST_DIR_32)/VBoxQtconfig,)
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_64)/bin/qtconfig                                $(SOLARIS_VBOXINST_DIR_64)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(if ($VBOX_WITH_QT4_SUN),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_32)/bin/qtconfig      $(SOLARIS_VBOXINST_DIR_32)/VBoxQtconfig,),)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(if $(VBOX_WITH_QT4_SUN),$(INSTALL) -m 0755 $(SOLARIS_PATH_QT_64)/bin/qtconfig      $(SOLARIS_VBOXINST_DIR_64)/VBoxQtconfig,),)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN_32)/VBoxISAExec                                                         $(SOLARIS_VBOXINST_DIR)/VBoxISAExec
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_32)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_64)/rdesktop-vrdp-keymaps,)
@@ -564,7 +564,7 @@ else
 	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64),)
 	$(QUIET)$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(wildcard $(SOLARIS_OUT_BIN)/VBoxPython*.so)                   $(SOLARIS_VBOXINST_DIR)/$(if $(SOL64_PKG),$(VBOX_SOL_PYTHON_DIR_64)/,)
  endif
-	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(INSTALL) -m 0755 $(VBOX_PATH_QT4)/bin/qtconfig                                     $(SOLARIS_VBOXINST_DIR_ISA)/VBoxQtconfig,)
+	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(if $(VBOX_WITH_QT4_SUN),$(INSTALL) -m 0755 $(VBOX_PATH_QT4)/bin/qtconfig           $(SOLARIS_VBOXINST_DIR_ISA)/VBoxQtconfig,),)
 	$(QUIET)$(INSTALL) -m 0755 $(SOLARIS_OUT_BIN)/VBoxISAExec                                                            $(SOLARIS_VBOXINST_DIR)/VBoxISAExec
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../rdesktop-vrdp-keymaps                                            $(SOLARIS_VBOXINST_DIR_ISA)/rdesktop-vrdp-keymaps,)
 	$(QUIET)$(if $(VBOX_WITH_QTGUI),$(LN_SYMLINK) -f ../additions                                                        $(SOLARIS_VBOXINST_DIR_ISA)/additions,)
