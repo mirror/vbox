@@ -186,10 +186,10 @@ typedef struct USBHIDM_REPORT
 
 typedef struct USBHIDT_REPORT
 {
+    uint8_t     btn;
+    int8_t      dz;
     uint16_t    cx;
     uint16_t    cy;
-    int8_t      dz;
-    uint8_t     btn;
 } USBHIDT_REPORT, *PUSBHIDT_REPORT;
 
 /*******************************************************************************
@@ -274,6 +274,12 @@ static const uint8_t g_UsbHidMReportDesc[] =
 };
 
 /* HID report descriptor (tablet). */
+/* NB: The layout is far from random. Having the buttons and Z axis grouped
+ * together avoids alignment issues. Also, if X/Y is reported first, followed
+ * by buttons/Z, Windows gets phantom Z movement. That is likely a bug in Windows
+ * as OS X shows no such problem. When X/Y is reported last, Windows behaves
+ * properly.
+ */
 static const uint8_t g_UsbHidTReportDesc[] =
 {
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
@@ -281,23 +287,6 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Collection */                0xA1, 0x01,     /* Application */
     /* Usage */                     0x09, 0x01,     /* Pointer */
     /* Collection */                0xA1, 0x00,     /* Physical */
-    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
-    /* Usage */                     0x09, 0x30,     /* X */
-    /* Usage */                     0x09, 0x31,     /* Y */
-    /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
-    /* Physical Minimum */          0x35, 0x00,     /* 0 */
-    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
-    /* Report Size */               0x75, 0x10,     /* 16 */
-    /* Report Count */              0x95, 0x02,     /* 2 */
-    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
-    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
-    /* Usage */                     0x09, 0x38,     /* Z (wheel) */
-    /* Logical Minimum */           0x15, 0x81,     /* -127 */
-    /* Logical Maximum */           0x25, 0x7F,     /* +127 */
-    /* Report Size */               0x75, 0x08,     /* 8 */
-    /* Report Count */              0x95, 0x01,     /* 1 */
-    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
     /* Usage Page */                0x05, 0x09,     /* Button */
     /* Usage Minimum */             0x19, 0x01,     /* Button 1 */
     /* Usage Maximum */             0x29, 0x03,     /* Button 3 */
@@ -309,6 +298,23 @@ static const uint8_t g_UsbHidTReportDesc[] =
     /* Report Count */              0x95, 0x01,     /* 1 */
     /* Report Size */               0x75, 0x05,     /* 5 (padding bits) */
     /* Input */                     0x81, 0x03,     /* Constant, Value, Absolute, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x38,     /* Z (wheel) */
+    /* Logical Minimum */           0x15, 0x81,     /* -127 */
+    /* Logical Maximum */           0x25, 0x7F,     /* +127 */
+    /* Report Size */               0x75, 0x08,     /* 8 */
+    /* Report Count */              0x95, 0x01,     /* 1 */
+    /* Input */                     0x81, 0x06,     /* Data, Value, Relative, Bit field */
+    /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
+    /* Usage */                     0x09, 0x30,     /* X */
+    /* Usage */                     0x09, 0x31,     /* Y */
+    /* Logical Minimum */           0x15, 0x00,     /* 0 */
+    /* Logical Maximum */           0x26, 0xFF,0x7F,/* 0x7fff */
+    /* Physical Minimum */          0x35, 0x00,     /* 0 */
+    /* Physical Maximum */          0x46, 0xFF,0x7F,/* 0x7fff */
+    /* Report Size */               0x75, 0x10,     /* 16 */
+    /* Report Count */              0x95, 0x02,     /* 2 */
+    /* Input */                     0x81, 0x02,     /* Data, Value, Absolute, Bit field */
     /* End Collection */            0xC0,
     /* End Collection */            0xC0,
 };
