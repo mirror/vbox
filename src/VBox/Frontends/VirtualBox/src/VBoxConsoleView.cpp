@@ -246,14 +246,17 @@ private:
 class MouseCapabilityEvent : public QEvent
 {
 public:
-    MouseCapabilityEvent (bool supportsAbsolute, bool needsHostCursor) :
+    MouseCapabilityEvent (bool supportsAbsolute, bool supportsRelative, bool needsHostCursor) :
         QEvent ((QEvent::Type) VBoxDefs::MouseCapabilityEventType),
         can_abs (supportsAbsolute),
+        can_rel (supportsRelative),
         needs_host_cursor (needsHostCursor) {}
     bool supportsAbsolute() const { return can_abs; }
+    bool supportsRelative() const { return can_rel; }
     bool needsHostCursor() const { return needs_host_cursor; }
 private:
     bool can_abs;
+    bool can_rel;
     bool needs_host_cursor;
 };
 
@@ -432,10 +435,11 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
+    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
     {
         QApplication::postEvent (mView,
                                  new MouseCapabilityEvent (supportsAbsolute,
+                                                           supportsRelative,
                                                            needsHostCursor));
         return S_OK;
     }
@@ -679,7 +683,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     , mAttached (false)
     , mKbdCaptured (false)
     , mMouseCaptured (false)
-    , mMouseAbsolute (false)
+    , mMouseCanAbsolute (false)
+    , mMouseCanRelative (true)
+    , mMouseNeedsHostCursor (false)
     , mMouseIntegration (true)
     , m_iLastMouseWheelDelta(0)
     , mDisableAutoCapture (false)
@@ -1125,7 +1131,7 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
     if (mMouseIntegration == enabled)
         return;
 
-    if (mMouseAbsolute)
+    if (mMouseCanAbsolute)
         captureMouse (!enabled, false);
 
     /* Hiding host cursor in case we are entering mouse integration
@@ -1370,7 +1376,7 @@ bool VBoxConsoleView::event (QEvent *e)
                 /* change cursor shape only when mouse integration is
                  * supported (change mouse shape type event may arrive after
                  * mouse capability change that disables integration */
-                if (mMouseAbsolute)
+                if (mMouseCanAbsolute)
                     setPointerShape (me);
                 else
                     /* Note: actually we should still remember the requested
@@ -1382,12 +1388,12 @@ bool VBoxConsoleView::event (QEvent *e)
             case VBoxDefs::MouseCapabilityEventType:
             {
                 MouseCapabilityEvent *me = (MouseCapabilityEvent *) e;
-                if (mMouseAbsolute != me->supportsAbsolute())
+                if (mMouseCanAbsolute != me->supportsAbsolute())
                 {
-                    mMouseAbsolute = me->supportsAbsolute();
+                    mMouseCanAbsolute = me->supportsAbsolute();
                     /* correct the mouse capture state and reset the cursor
                      * to the default shape if necessary */
-                    if (mMouseAbsolute)
+                    if (mMouseCanAbsolute)
                     {
                         CMouse mouse = mConsole.GetMouse();
                         mouse.PutMouseEventAbsolute (-1, -1, 0,
@@ -1398,9 +1404,11 @@ bool VBoxConsoleView::event (QEvent *e)
                     else
                         viewport()->unsetCursor();
                     emitMouseStateChanged();
-                    vboxProblem().remindAboutMouseIntegration (mMouseAbsolute);
+                    vboxProblem().remindAboutMouseIntegration (mMouseCanAbsolute);
                 }
-                if (me->needsHostCursor())
+                mMouseCanRelative = me->supportsRelative();
+                mMouseNeedsHostCursor = me->needsHostCursor();
+                if (!me->supportsRelative() || me->needsHostCursor())
                     mMainWnd->setMouseIntegrationLocked (false);
                 else
                     mMainWnd->setMouseIntegrationLocked (true);
@@ -2539,7 +2547,7 @@ void VBoxConsoleView::focusEvent (bool aHasFocus,
 //      properly support it, we need to know when *all* mouse buttons are
 //      released after we got focus, and grab the mouse only after then.
 //      btw, the similar would be good the for keyboard auto-capture, too.
-//            if (!(mMouseAbsolute && mMouseIntegration))
+//            if (!(mMouseCanAbsolute && mMouseIntegration))
 //                captureMouse (true);
         }
 
@@ -2809,7 +2817,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                 if (isRunning() && mKbdCaptured)
                 {
                     captureKbd (false);
-                    if (!(mMouseAbsolute && mMouseIntegration))
+                    if (!(mMouseCanAbsolute && mMouseIntegration))
                         captureMouse (false);
                 }
 
@@ -2919,7 +2927,7 @@ bool VBoxConsoleView::keyEvent (int aKey, uint8_t aScan, int aFlags,
                         if (ok)
                         {
                             captureKbd (!captured, false);
-                            if (!(mMouseAbsolute && mMouseIntegration))
+                            if (!(mMouseCanAbsolute && mMouseIntegration))
                             {
 #ifdef Q_WS_X11
                                 /* make sure that pending FocusOut events from the
@@ -3231,7 +3239,7 @@ bool VBoxConsoleView::mouseEvent (int aType, const QPoint &aPos, const QPoint &a
             }
         }
 
-        if (mMouseAbsolute && mMouseIntegration)
+        if (mMouseCanAbsolute && mMouseIntegration)
         {
             int cw = contentsWidth(), ch = contentsHeight();
             int vw = visibleWidth(), vh = visibleHeight();

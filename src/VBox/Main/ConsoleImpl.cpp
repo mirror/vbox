@@ -2996,6 +2996,7 @@ STDMETHODIMP Console::RegisterCallback(IConsoleCallback *aCallback)
                                              mCallbackData.mpsc.shape);
     if (mCallbackData.mcc.valid)
         aCallback->OnMouseCapabilityChange(mCallbackData.mcc.supportsAbsolute,
+                                           mCallbackData.mcc.supportsRelative,
                                            mCallbackData.mcc.needsHostCursor);
 
     aCallback->OnAdditionsStateChange();
@@ -4591,10 +4592,10 @@ void Console::onMousePointerShapeChange(bool fVisible, bool fAlpha,
 /**
  * @note Locks this object for writing.
  */
-void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCursor)
+void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
 {
-    LogFlowThisFunc(("supportsAbsolute=%d needsHostCursor=%d\n",
-                      supportsAbsolute, needsHostCursor));
+    LogFlowThisFunc(("supportsAbsolute=%d supportsRelative=%d needsHostCursor=%d\n",
+                      supportsAbsolute, supportsRelative, needsHostCursor));
 
     AutoCaller autoCaller(this);
     AssertComRCReturnVoid(autoCaller.rc());
@@ -4604,6 +4605,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCurso
 
     /* save the callback arguments */
     mCallbackData.mcc.supportsAbsolute = supportsAbsolute;
+    mCallbackData.mcc.supportsRelative = supportsRelative;
     mCallbackData.mcc.needsHostCursor = needsHostCursor;
     mCallbackData.mcc.valid = true;
 
@@ -4611,7 +4613,7 @@ void Console::onMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCurso
     while (it != mCallbacks.end())
     {
         Log2(("Console::onMouseCapabilityChange: calling %p\n", (void*)*it));
-        (*it++)->OnMouseCapabilityChange(supportsAbsolute, needsHostCursor);
+        (*it++)->OnMouseCapabilityChange(supportsAbsolute, supportsRelative, needsHostCursor);
     }
 }
 

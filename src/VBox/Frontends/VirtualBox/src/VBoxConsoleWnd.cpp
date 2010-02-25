@@ -3304,7 +3304,7 @@ void VBoxConsoleWnd::updateAppearanceOf (int aElement)
             || mMachineState == KMachineState_Teleporting
             || mMachineState == KMachineState_LiveSnapshotting
            )
-            mVmDisableMouseIntegrAction->setEnabled (mConsole->isMouseAbsolute());
+            mVmDisableMouseIntegrAction->setEnabled (mConsole->mouseCanAbsolute() && mConsole->mouseCanRelative() && !mConsole->mouseNeedsHostCursor());
         else
             mVmDisableMouseIntegrAction->setEnabled (false);
     }

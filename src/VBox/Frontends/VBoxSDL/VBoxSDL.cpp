@@ -184,6 +184,7 @@ static BOOL gfIgnoreNextResize = FALSE;
 static BOOL gfAllowFullscreenToggle = TRUE;
 static BOOL gfAbsoluteMouseHost = FALSE;
 static BOOL gfAbsoluteMouseGuest = FALSE;
+static BOOL gfRelativeMouseGuest = TRUE;
 static BOOL gfGuestNeedsHostCursor = FALSE;
 static BOOL gfOffCursorActive = FALSE;
 static BOOL gfGuestNumLockPressed = FALSE;
@@ -429,10 +430,12 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
+    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
     {
-        LogFlow(("OnMouseCapabilityChange: supportsAbsolute = %d\n", supportsAbsolute));
+        LogFlow(("OnMouseCapabilityChange: supportsAbsolute = %d, supportsRelative = %d, needsHostCursor = %d\n",
+                 supportsAbsolute, supportsRelative, needsHostCursor));
         gfAbsoluteMouseGuest   = supportsAbsolute;
+        gfRelativeMouseGuest   = supportsRelative;
         gfGuestNeedsHostCursor = needsHostCursor;
 
         SDL_Event event = {0};
@@ -3878,7 +3881,7 @@ static void InputGrabStart(void)
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(true);
 #endif
-    if (!gfGuestNeedsHostCursor)
+    if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
         SDL_ShowCursor(SDL_DISABLE);
     SDL_WM_GrabInput(SDL_GRAB_ON);
     // dummy read to avoid moving the mouse
@@ -3897,7 +3900,7 @@ static void InputGrabStart(void)
 static void InputGrabEnd(void)
 {
     SDL_WM_GrabInput(SDL_GRAB_OFF);
-    if (!gfGuestNeedsHostCursor)
+    if (!gfGuestNeedsHostCursor && gfRelativeMouseGuest)
         SDL_ShowCursor(SDL_ENABLE);
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(false);
@@ -3930,7 +3933,8 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
     /*
      * If supported and we're not in grabbed mode, we'll use the absolute mouse.
      * If we are in grabbed mode and the guest is not able to draw the mouse cursor
-     * itself, we have to use absolute coordinates, otherwise the host cursor and
+     * itself, or can't handle relative reporting, we have to use absolute
+     * coordinates, otherwise the host cursor and
      * the coordinates the guest thinks the mouse is at could get out-of-sync. From
      * the SDL mailing list:
      *
@@ -3938,7 +3942,9 @@ static void SendMouseEvent(VBoxSDLFB *fb, int dz, int down, int button)
      * SDL_GetMouseState is returning the immediate mouse state. So at the time you
      * call SDL_GetMouseState, the "button" is already up."
      */
-    abs = (UseAbsoluteMouse() && !gfGrabbed) || gfGuestNeedsHostCursor;
+    abs =    (UseAbsoluteMouse() && !gfGrabbed)
+          || gfGuestNeedsHostCursor
+          || !gfRelativeMouseGuest;
 
     /* only used if abs == TRUE */
     int  xOrigin = fb->getOriginX();

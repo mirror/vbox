@@ -54,6 +54,9 @@ DEFINE_EMPTY_CTOR_DTOR (Mouse)
 HRESULT Mouse::FinalConstruct()
 {
     mpDrv = NULL;
+    uDevCaps = MOUSE_DEVCAP_RELATIVE;
+    fVMMDevCanAbs = false;
+    fVMMDevNeedsHostCursor = false;
     mLastAbsX = 0x8000;
     mLastAbsY = 0x8000;
     mLastButtons = 0;
@@ -169,12 +172,32 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
     if (uDevCaps & MOUSE_DEVCAP_ABSOLUTE)
         *absoluteSupported = TRUE;
     else
-    {
-        uint32_t mouseCaps;
-        int rc = getVMMDevMouseCaps(&mouseCaps);
-        AssertComRCReturn(rc, rc);
-        *absoluteSupported = mouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE;
-    }
+        *absoluteSupported = fVMMDevCanAbs;
+
+    return S_OK;
+}
+
+/**
+ * Returns whether the current setup can accept relative mouse
+ * events.
+ *
+ * @returns COM status code
+ * @param relativeSupported address of result variable
+ */
+STDMETHODIMP Mouse::COMGETTER(RelativeSupported) (BOOL *relativeSupported)
+{
+    if (!relativeSupported)
+        return E_POINTER;
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    CHECK_CONSOLE_DRV (mpDrv);
+
+    if (uDevCaps & MOUSE_DEVCAP_RELATIVE)
+        *relativeSupported = TRUE;
 
     return S_OK;
 }
@@ -183,7 +206,7 @@ STDMETHODIMP Mouse::COMGETTER(AbsoluteSupported) (BOOL *absoluteSupported)
  * Returns whether the guest can currently draw the mouse cursor itself.
  *
  * @returns COM status code
- * @param absoluteSupported address of result variable
+ * @param pfNeedsHostCursor address of result variable
  */
 STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *pfNeedsHostCursor)
 {
@@ -197,11 +220,7 @@ STDMETHODIMP Mouse::COMGETTER(NeedsHostCursor) (BOOL *pfNeedsHostCursor)
 
     CHECK_CONSOLE_DRV (mpDrv);
 
-    uint32_t fMouseCaps;
-    int rc = getVMMDevMouseCaps(&fMouseCaps);
-    AssertComRCReturn(rc, rc);
-    *pfNeedsHostCursor = !!(  fMouseCaps
-                            & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+    *pfNeedsHostCursor = fVMMDevNeedsHostCursor;
     return S_OK;
 }
 
@@ -473,6 +492,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 /////////////////////////////////////////////////////////////////////////////
 
 
+void Mouse::sendMouseCapsCallback(void)
+{
+    bool fAbsSupported =   uDevCaps & MOUSE_DEVCAP_ABSOLUTE
+                         ? true : fVMMDevCanAbs;
+    mParent->onMouseCapabilityChange(fAbsSupported, uDevCaps & MOUSE_DEVCAP_RELATIVE, fVMMDevNeedsHostCursor);
+}
+
+
 /**
  * @interface_method_impl{PDMIMOUSECONNECTOR,pfnAbsModeChange}
  */
@@ -484,18 +511,7 @@ DECLCALLBACK(void) Mouse::mouseAbsModeChange(PPDMIMOUSECONNECTOR pInterface, boo
     else
         pDrv->pMouse->uDevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
 
-    /** @todo we have to hack around the fact that VMMDev may not be
-     * initialised too close to startup.  The real fix is to change the
-     * protocol for onMouseCapabilityChange so that we no longer need to
-     * query VMMDev, but that requires more changes that I want to do in
-     * the next commit, so it must be put off until the followup one. */
-    uint32_t fMouseCaps = 0;
-    int rc = S_OK;
-    if (   pDrv->pMouse->mParent->getVMMDev()
-        && pDrv->pMouse->mParent->getVMMDev()->mpDrv)
-        rc = pDrv->pMouse->getVMMDevMouseCaps(&fMouseCaps);
-    AssertComRCReturnVoid(rc);
-    pDrv->pMouse->getParent()->onMouseCapabilityChange(fEnabled, fMouseCaps & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
+    pDrv->pMouse->sendMouseCapsCallback();
 }
 
 

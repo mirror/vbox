@@ -47,7 +47,8 @@ typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
 
 enum
 {
-    MOUSE_DEVCAP_ABSOLUTE = 1
+    MOUSE_DEVCAP_RELATIVE = 1,
+    MOUSE_DEVCAP_ABSOLUTE = 2
 };
 
 class ATL_NO_VTABLE Mouse :
@@ -81,6 +82,7 @@ public:
 
     // IMouse properties
     STDMETHOD(COMGETTER(AbsoluteSupported)) (BOOL *absoluteSupported);
+    STDMETHOD(COMGETTER(RelativeSupported)) (BOOL *relativeSupported);
     STDMETHOD(COMGETTER(NeedsHostCursor)) (BOOL *needsHostCursor);
 
     // IMouse methods
@@ -99,6 +101,19 @@ public:
         return mParent;
     }
 
+    // for VMMDevInterface
+    void onVMMDevCanAbsChange(bool canAbs)
+    {
+        fVMMDevCanAbs = canAbs;
+        sendMouseCapsCallback();
+    }
+
+    void onVMMDevNeedsHostChange(bool needsHost)
+    {
+        fVMMDevNeedsHostCursor = needsHost;
+        sendMouseCapsCallback();
+    }
+
 private:
 
     static DECLCALLBACK(void *) drvQueryInterface(PPDMIBASE pInterface, const char *pszIID);
@@ -115,6 +130,8 @@ private:
     int reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
     int convertDisplayWidth(LONG x, uint32_t *pcX);
     int convertDisplayHeight(LONG y, uint32_t *pcY);
+    
+    void sendMouseCapsCallback(void);
 
     const ComObjPtr<Console, ComWeakRef> mParent;
     /** Pointer to the associated mouse driver. */
@@ -122,6 +139,8 @@ private:
 
     LONG uHostCaps;
     LONG uDevCaps;
+    bool fVMMDevCanAbs;
+    bool fVMMDevNeedsHostCursor;
     uint32_t mLastAbsX;
     uint32_t mLastAbsY;
     uint32_t mLastButtons;
