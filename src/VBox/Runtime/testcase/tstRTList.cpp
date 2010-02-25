@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2009 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -28,16 +28,21 @@
  * additional information or have any questions.
  */
 
+
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#include <iprt/list.h>
+
 #include <iprt/err.h>
-#include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
-#include <iprt/list.h>
 
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct LISTELEM
 {
     /** Test data */
@@ -46,7 +51,9 @@ typedef struct LISTELEM
     RTLISTNODE  Node;
 } LISTELEM, *PLISTELEM;
 
-static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements, unsigned idxStart, unsigned idxEnd, unsigned idxStep)
+
+static void tstRTListOrder(RTTEST hTest, PRTLISTNODE pList, unsigned cElements,
+                           unsigned idxStart, unsigned idxEnd, unsigned idxStep)
 {
     RTTEST_CHECK(hTest, RTListIsEmpty(pList) == false);
     RTTEST_CHECK(hTest, RTListNodeGetFirst(pList, LISTELEM, Node) != NULL);
