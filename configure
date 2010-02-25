@@ -94,6 +94,7 @@ BUILD_LIBXML2=
 BUILD_LIBXSLT=
 BUILD_LIBCURL=
 BUILD_LIBSSL=
+PASSIVE_MESA=0
 CC="gcc"
 CC32=""
 CC64=""
@@ -1340,6 +1341,7 @@ extern "C" int main(void)
 EOF
   [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
   if test_compile "$LIBX11 $MESA $I_INCX11" Mesa Mesa; then
+    [ $PASSIVE_MESA -eq 1 ] && unset DISPLAY
     test_execute
   fi
 }
@@ -2133,6 +2135,9 @@ for option in $*; do
       ;;
     --disable-qt4)
       [ $WITH_QT4 -eq 1 ] && WITH_QT4=0
+      ;;
+    --passive-mesa)
+      PASSIVE_MESA=1
       ;;
     --disable-alsa)
       [ $WITH_ALSA -eq 1 ] && WITH_ALSA=0
