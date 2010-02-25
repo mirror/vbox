@@ -489,6 +489,7 @@ VirtualBox_SOURCES += \
 	src/runtime/UIActionsPool.cpp \
 	src/runtime/UIIndicatorsPool.cpp \
 	src/runtime/UIFrameBuffer.cpp \
+	src/runtime/UIFrameBufferQGL.cpp \
 	src/runtime/UIFrameBufferQuartz2D.cpp \
 	src/runtime/UIMachine.cpp \
 	src/runtime/UIMachineLogic.cpp \

@@ -29,9 +29,6 @@
 //#include <QMutex>
 #include <QPaintEvent>
 //#include <QMoveEvent>
-//#if defined (VBOX_GUI_USE_QGL)
-//#include "VBoxFBOverlay.h"
-//#endif
 
 /* Local includes */
 #include "COMDefs.h"
@@ -292,43 +289,6 @@ private:
 #endif
 
 #if 0
-#if defined (VBOX_GUI_USE_QGL)
-class UIFrameBufferQGL : public UIFrameBuffer
-{
-public:
-
-    UIFrameBufferQGL(UIMachineView *pMachineView);
-
-    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
-#ifdef VBOXQGL_PROF_BASE
-    STDMETHOD(RequestResize) (ULONG uScreenId, ULONG uPixelFormat,
-                              BYTE *pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
-                              ULONG uWidth, ULONG uHeight, BOOL *pbFinished);
-#endif
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    STDMETHOD(ProcessVHWACommand)(BYTE *pbCommand);
-#endif
-
-    ulong pixelFormat() { return vboxWidget()->vboxPixelFormat(); }
-    bool usesGuestVRAM() { return vboxWidget()->vboxUsesGuestVRAM(); }
-
-    uchar *address() { return vboxWidget()->vboxAddress(); }
-    ulong bitsPerPixel() { return vboxWidget()->vboxBitsPerPixel(); }
-    ulong bytesPerLine() { return vboxWidget()->vboxBytesPerLine(); }
-
-    void paintEvent (QPaintEvent *pEvent);
-    void resizeEvent (UIResizeEvent *pEvent);
-    void doProcessVHWACommand(QEvent *pEvent);
-
-private:
-
-    class VBoxGLWidget* vboxWidget();
-
-    class VBoxVHWACommandElementProcessor m_cmdPipe;
-};
-#endif
-
 #if defined (VBOX_GUI_USE_SDL)
 class UIFrameBufferSDL : public UIFrameBuffer
 {

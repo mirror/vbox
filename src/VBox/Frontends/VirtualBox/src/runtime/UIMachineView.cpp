@@ -32,6 +32,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
+#include "UIFrameBufferQGL.h"
 #include "UIFrameBufferQuartz2D.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
@@ -401,15 +402,13 @@ void UIMachineView::prepareFrameBuffer()
             m_pFrameBuffer = new UIFrameBufferQImage(this);
             break;
 #endif
-#if 0 // TODO: Enable OpenGL frame buffer!
 #if defined (VBOX_GUI_USE_QGL)
         case VBoxDefs::QGLMode:
-            m_pFrameBuffer = new UIQGLFrameBuffer(this);
+            m_pFrameBuffer = new UIFrameBufferQGL(this);
             break;
-        case VBoxDefs::QGLOverlayMode:
-            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
-            break;
-#endif
+//        case VBoxDefs::QGLOverlayMode:
+//            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
+//            break;
 #endif
 #if 0 // TODO: Enable SDL frame buffer!
 #if defined (VBOX_GUI_USE_SDL)
@@ -1198,9 +1197,9 @@ bool UIMachineView::event(QEvent *pEvent)
                     keyboard.PutScancodes(combo);
                 }
 
-#if 0 // TODO: Divide tha code to specific parts and move it there:
                 if (pKeyEvent->key() == Qt::Key_Home)
                 {
+#if 0 // TODO: Divide tha code to specific parts and move it there:
                     /* Activate the main menu */
                     if (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen())
                         machineWindowWrapper()->popupMainMenu (m_bIsMouseCaptured);
@@ -1213,13 +1212,13 @@ bool UIMachineView::event(QEvent *pEvent)
                         QApplication::sendEvent(machineWindowWrapper()->menuBar(), &e1);
                         QApplication::sendEvent(machineWindowWrapper()->menuBar(), &e2);
                     }
+#endif
                 }
                 else
                 {
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
-                    processed = machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence (pKeyEvent->key()));
+                    machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence (pKeyEvent->key()));
                 }
-#endif
             }
             else if (!m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyRelease)
             {
