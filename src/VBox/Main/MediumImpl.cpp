@@ -5486,7 +5486,7 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
     ComObjPtr<Medium> &pTarget = task.d.target;
     ComObjPtr<Medium> &pParent = task.d.parentDisk;
 
-    bool fCreatingTarget; /** @todo warning: 'fCreatingTarget' might be used uninitialized in this function */
+    bool fCreatingTarget = false;
 
     uint64_t size = 0, logicalSize = 0;
     bool fGenerateUuid = false;
