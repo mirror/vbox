@@ -73,6 +73,9 @@ public:
     virtual void setMouseIntegrationEnabled(bool bEnabled);
     //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
+    int contentsX() const;
+    int contentsY() const;
+
 #if defined(Q_WS_MAC)
     void updateDockIcon();
     void updateDockOverlay();
@@ -111,8 +114,6 @@ protected:
     KMachineState machineState() const { return m_machineState; }
     VBoxDefs::RenderMode mode() const { return m_mode; }
     QSize sizeHint() const;
-    int contentsX() const;
-    int contentsY() const;
     int contentsWidth() const;
     int contentsHeight() const;
     int visibleWidth() const;

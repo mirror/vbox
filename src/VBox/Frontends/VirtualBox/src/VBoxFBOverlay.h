@@ -1384,7 +1384,7 @@ public:
 
     void vboxDoResize(void *re);
 
-    void vboxResizeEvent (class VBoxResizeEvent *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
+    void vboxResizeEvent (void *re) {vboxPerformGLOp(&VBoxGLWidget::vboxDoResize, re); }
 
     void vboxProcessVHWACommands(class VBoxVHWACommandElementProcessor * pPipe) {vboxPerformGLOp(&VBoxGLWidget::vboxDoProcessVHWACommands, pPipe);}
 
