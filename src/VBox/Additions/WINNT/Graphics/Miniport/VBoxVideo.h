@@ -166,9 +166,9 @@ typedef struct _DEVICE_EXTENSION
            ULONG ulVbvaEnabled;                /* Indicates that VBVA mode is enabled. */
 
            BOOLEAN bVBoxVideoSupported;        /* TRUE if VBoxVideo extensions, including DualView, are supported by the host. */
-
+#ifndef VBOXWDDM
            int cDisplays;                      /* Number of displays. */
-
+#endif
            ULONG cbVRAM;                       /* The VRAM size. */
 
            ULONG cbMiniportHeap;               /* The size of reserved VRAM for miniport driver heap.
@@ -578,6 +578,31 @@ DECLINLINE(ULONG) vboxWddmVramReportedSize(PDEVICE_EXTENSION pDevExt)
     /* page aligned */
     Assert(!(pDevExt->u.primary.Vdma.CmdHeap.area.offBase & 0xfff));
     return pDevExt->u.primary.Vdma.CmdHeap.area.offBase;
+}
+
+DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
+{
+    if (pSource->pAllocation == pAllocation)
+        return;
+
+    if (pSource->pAllocation)
+    {
+        PVBOXWDDM_ALLOCATION pOldAlloc = pSource->pAllocation;
+        PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pOldPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+        /* clear the visibility info fo the current primary */
+        pOldPrimaryInfo->bVisible = FALSE;
+        Assert(pOldPrimaryInfo->VidPnSourceId == srcId);
+        pOldPrimaryInfo->VidPnSourceId = ~0;
+    }
+
+    if (pAllocation)
+    {
+        PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+        pPrimaryInfo->bVisible = FALSE;
+        pPrimaryInfo->VidPnSourceId = srcId;
+    }
+
+    pSource->pAllocation = pAllocation;
 }
 
 #endif
