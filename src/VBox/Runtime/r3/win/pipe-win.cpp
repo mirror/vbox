@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Anonymouse Pipes, Windows Implementation.
+ * IPRT - Anonymous Pipes, Windows Implementation.
  */
 
 /*
