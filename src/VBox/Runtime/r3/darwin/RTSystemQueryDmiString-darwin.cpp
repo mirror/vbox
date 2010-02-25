@@ -39,7 +39,6 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#include <stdio.h>
 #include <mach/mach_port.h>
 #include <IOKit/IOKitLib.h>
 
