@@ -300,9 +300,10 @@ SOLARIS_EXTRAS = \
 # These extra Qt libs are purely for running VBoxQtconfig
 ifdef VBOX_WITH_QTGUI
  SOLARIS_QTLIBS = \
-	libQtXmlVBox.so.4 \
-	libQtSqlVBox.so.4 \
-	libQt3SupportVBox.so.4
+	$(if $(VBOX_WITH_QT4_SUN),\
+	  libQtXmlVBox.so.4 \
+	  libQtSqlVBox.so.4 \
+	  libQt3SupportVBox.so.4,)
 endif
 
 
