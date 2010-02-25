@@ -38,8 +38,8 @@ class GuestMonitor:
 
     def onMousePointerShapeChange(self, visible, alpha, xHot, yHot, width, height, shape):
         print  "%s: onMousePointerShapeChange: visible=%d" %(self.mach.name, visible)
-    def onMouseCapabilityChange(self, supportsAbsolute, needsHostCursor):
-        print  "%s: onMouseCapabilityChange: needsHostCursor=%d" %(self.mach.name, needsHostCursor)
+    def onMouseCapabilityChange(self, supportsAbsolute, supportsRelative, needsHostCursor):
+        print  "%s: onMouseCapabilityChange: supportsAbsolute = %d, supportsRelative = %d, needsHostCursor = %d" %(self.mach.name, supportsAbsolute, supportsRelative, needsHostCursor)
 
     def onKeyboardLedsChange(self, numLock, capsLock, scrollLock):
         print  "%s: onKeyboardLedsChange capsLock=%d"  %(self.mach.name, capsLock)

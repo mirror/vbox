@@ -174,12 +174,12 @@ STDMETHODIMP CallbackWrapper::OnMousePointerShapeChange(BOOL visible, BOOL alpha
 }
 
 
-STDMETHODIMP CallbackWrapper::OnMouseCapabilityChange(BOOL supportsAbsolute, BOOL needsHostCursor)
+STDMETHODIMP CallbackWrapper::OnMouseCapabilityChange(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
 {
     if (mConsoleCallback.isNull())
         return S_OK;
 
-    return mConsoleCallback->OnMouseCapabilityChange(supportsAbsolute, needsHostCursor);
+    return mConsoleCallback->OnMouseCapabilityChange(supportsAbsolute, supportsRelative, needsHostCursor);
 }
 
 STDMETHODIMP  CallbackWrapper::OnKeyboardLedsChange(BOOL fNumLock, BOOL fCapsLock, BOOL fScrollLock)

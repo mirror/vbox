@@ -308,7 +308,7 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL needsHostCursor)
+    STDMETHOD(OnMouseCapabilityChange)(BOOL supportsAbsolute, BOOL supportsRelative, BOOL needsHostCursor)
     {
         /* Emit absolute mouse event to actually enable the host mouse cursor. */
         if (supportsAbsolute && gConsole)

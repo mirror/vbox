@@ -6065,7 +6065,7 @@
 
   <interface
      name="IConsoleCallback" extends="$unknown"
-     uuid="d6239535-bda2-4ef7-83f4-f4722e4a3b2c"
+     uuid="60703f8d-81e4-4b45-a147-dcfd07692b19"
      wsmap="suppress"
      >
 
@@ -6158,6 +6158,7 @@
         guest have changed. The new capabilities are passed.
       </desc>
       <param name="supportsAbsolute" type="boolean" dir="in"/>
+      <param name="supportsRelative" type="boolean" dir="in"/>
       <param name="needsHostCursor" type="boolean" dir="in"/>
     </method>
 
@@ -10644,13 +10645,37 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         Whether the guest OS supports absolute mouse pointer positioning
         or not.
         <note>
-          VirtualBox Guest Tools need to be installed to the guest OS
-          in order to enable absolute mouse positioning support.
           You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
           callback to be instantly informed about changes of this attribute
           during virtual machine execution.
         </note>
         <see><link to="#putMouseEventAbsolute"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="relativeSupported" type="boolean" readonly="yes">
+      <desc>
+        Whether the guest OS supports relative mouse pointer positioning
+        or not.
+        <note>
+          You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
+          callback to be instantly informed about changes of this attribute
+          during virtual machine execution.
+        </note>
+        <see><link to="#putMouseEvent"/></see>
+      </desc>
+    </attribute>
+
+    <attribute name="needsHostCursor" type="boolean" readonly="yes">
+      <desc>
+        Whether the guest OS can currently switch to drawing it's own mouse
+        cursor on demand.
+        <note>
+          You can use the <link to="IConsoleCallback::onMouseCapabilityChange"/>
+          callback to be instantly informed about changes of this attribute
+          during virtual machine execution.
+        </note>
+        <see><link to="#putMouseEvent"/></see>
       </desc>
     </attribute>
 

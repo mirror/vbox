@@ -96,10 +96,12 @@ public:
 
     void setMouseIntegrationEnabled (bool enabled);
 
-    bool isMouseAbsolute() const { return mMouseAbsolute; }
+    bool mouseCanAbsolute() const { return mMouseCanAbsolute; }
+    bool mouseCanRelative() const { return mMouseCanRelative; }
+    bool mouseNeedsHostCursor() const { return mMouseNeedsHostCursor; }
 
     bool shouldHideHostPointer() const
-    { return mMouseCaptured || (mMouseAbsolute && mHideHostPointer); }
+    { return mMouseCaptured || (mMouseCanAbsolute && mHideHostPointer); }
 
     void setAutoresizeGuest (bool on);
 
@@ -209,7 +211,7 @@ private:
 
     void emitMouseStateChanged() {
         emit mouseStateChanged ((mMouseCaptured ? MouseCaptured : 0) |
-                                (mMouseAbsolute ? MouseAbsolute : 0) |
+                                (mMouseCanAbsolute ? MouseAbsolute : 0) |
                                 (!mMouseIntegration ? MouseAbsoluteDisabled : 0));
     }
 
@@ -274,7 +276,9 @@ private:
     bool mAttached : 1;
     bool mKbdCaptured : 1;
     bool mMouseCaptured : 1;
-    bool mMouseAbsolute : 1;
+    bool mMouseCanAbsolute : 1;
+    bool mMouseCanRelative : 1;
+    bool mMouseNeedsHostCursor : 1;
     bool mMouseIntegration : 1;
     QPoint mLastPos;
     QPoint mCapturedPos;

@@ -23,6 +23,7 @@
 #include "ConsoleImpl.h"
 #include "DisplayImpl.h"
 #include "GuestImpl.h"
+#include "MouseImpl.h"
 
 #include "Logging.h"
 
@@ -252,8 +253,12 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
      * Tell the console interface about the event
      * so that it can notify its consumers.
      */
-    pDrv->pVMMDev->getParent()->onMouseCapabilityChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE),
-                                                        BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
+    Mouse *pMouse = pDrv->pVMMDev->getParent()->getMouse();
+    if (pMouse)  /** @todo and if not?  Can that actually happen? */
+    {
+        pMouse->onVMMDevCanAbsChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE));
+        pMouse->onVMMDevNeedsHostChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
+    }
 }
 
 
