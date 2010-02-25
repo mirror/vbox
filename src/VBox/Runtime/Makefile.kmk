@@ -593,7 +593,6 @@ RuntimeR3_SOURCES.darwin = \
 	generic/RTDirSetTimes-generic.cpp \
 	generic/RTFileMove-generic.cpp \
 	generic/RTLogWriteDebugger-generic.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
 	generic/RTTimeLocalNow-generic.cpp \
 	generic/RTTimerCreate-generic.cpp \
 	generic/RTUuidCreate-generic.cpp \
@@ -608,6 +607,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/darwin/filelock-darwin.cpp \
 	r3/darwin/mp-darwin.cpp \
 	r3/darwin/rtProcInitExePath-darwin.cpp \
+	r3/darwin/RTSystemQueryDmiString-darwin.cpp \
 	r3/darwin/sched-darwin.cpp \
 	r3/darwin/time-darwin.cpp \
 	r3/posix/RTFileQueryFsSizes-posix.cpp \
@@ -1013,7 +1013,7 @@ VBoxRT_LIBS.solaris            = \
 VBoxRT_LIBS.win                = \
 	$(PATH_SDK_W2K3DDK_LIB)/vccomsup.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/wbemuuid.lib
-VBoxRT_LDFLAGS.darwin          = -framework IOKit -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
+VBoxRT_LDFLAGS.darwin          = -framework IOKit -framework CoreFoundation -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxRT.dylib
 ifdef VBOX_USE_VCC80
 VBoxRT_LDFLAGS.win             = /MANIFEST
 endif
