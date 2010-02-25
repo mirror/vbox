@@ -139,7 +139,7 @@ static void tstRTPipe1(void)
     hPipeW = NIL_RTPIPE;
     RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, RTPIPE_C_INHERIT_READ | RTPIPE_C_INHERIT_WRITE), VINF_SUCCESS);
     int rc = RTPipeFlush(hPipeW);
-    RTTESTI_CHECK(rc == VERR_NOT_SUPPORTED || rc == VINF_SUCCESS);
+    RTTESTI_CHECK_MSG(rc == VERR_NOT_SUPPORTED || rc == VINF_SUCCESS, ("%Rrc\n", rc));
     RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeR), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeW), VINF_SUCCESS);
 
@@ -222,8 +222,8 @@ static void tstRTPipe1(void)
     RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeR), VINF_SUCCESS);
     cbWritten = ~(size_t)2;
-    RTTESTI_CHECK_RC(RTPipeWrite(hPipeW, "", 0, &cbWritten), VERR_BROKEN_PIPE);
-    RTTESTI_CHECK(cbWritten == ~(size_t)2);
+    RTTESTI_CHECK_RC(RTPipeWrite(hPipeW, "", 0, &cbWritten), VINF_SUCCESS);
+    RTTESTI_CHECK(cbWritten == 0);
     cbWritten = ~(size_t)2;
     RTTESTI_CHECK_RC(RTPipeWrite(hPipeW, "4", 1, &cbWritten), VERR_BROKEN_PIPE);
     RTTESTI_CHECK(cbWritten == ~(size_t)2);
@@ -232,7 +232,7 @@ static void tstRTPipe1(void)
     RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeW), VINF_SUCCESS);
     cbRead = ~(size_t)0;
-    RTTESTI_CHECK_RC(RTPipeRead(hPipeR, abBuf, 0, &cbRead), VINF_SUCCESS);         // !?
+    RTTESTI_CHECK_RC(RTPipeRead(hPipeR, abBuf, 0, &cbRead), VINF_SUCCESS);
     RTTESTI_CHECK(cbRead == 0);
     cbRead = ~(size_t)3;
     RTTESTI_CHECK_RC(RTPipeRead(hPipeR, abBuf, sizeof(abBuf), &cbRead), VERR_BROKEN_PIPE);
@@ -283,7 +283,7 @@ static void tstRTPipe1(void)
     RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[2], 1), VINF_SUCCESS);
     RTTESTI_CHECK(!memcmp(abBuf, "42!", 3));
     RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "", 0), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "", 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42", 2), VERR_BROKEN_PIPE);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 }
