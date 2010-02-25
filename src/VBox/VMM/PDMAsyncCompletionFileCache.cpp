@@ -59,9 +59,26 @@ typedef struct PDMIOMEMCTX
     { \
      AssertMsg(RTCritSectIsOwner(&Cache->CritSect), \
                ("Thread does not own critical section\n"));\
-    } while(0);
+    } while(0)
+
+# define PDMACFILECACHE_EP_IS_SEMRW_WRITE_OWNER(pEpCache) \
+    do \
+    { \
+        AssertMsg(RTSemRWIsWriteOwner(pEpCache->SemRWEntries), \
+                  ("Thread is not exclusive owner of the per endpoint RW semaphore\n")); \
+    } while(0)
+
+# define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) \
+    do \
+    { \
+        AssertMsg(RTSemRWIsReadOwner(pEpCache->SemRWEntries), \
+                  ("Thread is not read owner of the per endpoint RW semaphore\n")); \
+    } while(0)
+
 #else
-# define PDMACFILECACHE_IS_CRITSECT_OWNER(Cache) do { } while(0);
+# define PDMACFILECACHE_IS_CRITSECT_OWNER(Cache) do { } while(0)
+# define PDMACFILECACHE_EP_IS_SEMRW_WRITE_OWNER(pEpCache) do { } while(0)
+# define PDMACFILECACHE_EP_IS_SEMRW_READ_OWNER(pEpCache) do { } while(0)
 #endif
 
 /*******************************************************************************
@@ -401,8 +418,8 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
 
         pEntry = pEntry->pPrev;
 
-        /* We can't evict pages which are currently in progress */
-        if (   !(pCurr->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
+        /* We can't evict pages which are currently in progress or dirty but not in progress */
+        if (   !(pCurr->fFlags & PDMACFILECACHE_NOT_EVICTABLE)
             && (ASMAtomicReadU32(&pCurr->cRefs) == 0))
         {
             /* Ok eviction candidate. Grab the endpoint semaphore and check again
@@ -410,7 +427,7 @@ static size_t pdmacFileCacheEvictPagesFrom(PPDMACFILECACHEGLOBAL pCache, size_t 
             PPDMACFILEENDPOINTCACHE pEndpointCache = &pCurr->pEndpoint->DataCache;
             RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
 
-            if (!(pCurr->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS)
+            if (!(pCurr->fFlags & PDMACFILECACHE_NOT_EVICTABLE)
                 && (ASMAtomicReadU32(&pCurr->cRefs) == 0))
             {
                 AssertMsg(!(pCurr->fFlags & PDMACFILECACHE_ENTRY_IS_DEPRECATED),
@@ -593,6 +610,131 @@ static void pdmacFileCacheWriteToEndpoint(PPDMACFILECACHEENTRY pEntry)
 }
 
 /**
+ * Commit a single dirty entry to the endpoint
+ *
+ * @returns nothing
+ * @param   pEntry    The entry to commit.
+ */
+static void pdmacFileCacheEntryCommit(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILECACHEENTRY pEntry)
+{
+    NOREF(pEndpointCache);
+    AssertMsg(   (pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY)
+              && !(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DEPRECATED)),
+              ("Invalid flags set for entry %#p\n", pEntry));
+
+    pdmacFileCacheWriteToEndpoint(pEntry);
+}
+
+/**
+ * Commit all dirty entries for a single endpoint.
+ *
+ * @returns nothing.
+ * @param   pEndpointCache    The endpoint cache to commit.
+ */
+static void pdmacFileCacheEndpointCommit(PPDMACFILEENDPOINTCACHE pEndpointCache)
+{
+    uint32_t cbCommitted = 0;
+    RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
+
+    if (!RTListIsEmpty(&pEndpointCache->ListDirtyNotCommitted))
+    {
+        PPDMACFILECACHEENTRY pEntry = RTListNodeGetFirst(&pEndpointCache->ListDirtyNotCommitted,
+                                                         PDMACFILECACHEENTRY,
+                                                         NodeNotCommitted);
+
+        while (!RTListNodeIsLast(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted))
+        {
+            PPDMACFILECACHEENTRY pNext = RTListNodeGetNext(&pEntry->NodeNotCommitted, PDMACFILECACHEENTRY,
+                                                           NodeNotCommitted);
+            pdmacFileCacheEntryCommit(pEndpointCache, pEntry);
+            cbCommitted += pEntry->cbData;
+            RTListNodeRemove(&pEntry->NodeNotCommitted);
+            pEntry = pNext;
+        }
+
+        /* Commit the last endpoint */
+        Assert(RTListNodeIsLast(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted));
+        pdmacFileCacheEntryCommit(pEndpointCache, pEntry);
+        RTListNodeRemove(&pEntry->NodeNotCommitted);
+        AssertMsg(RTListIsEmpty(&pEndpointCache->ListDirtyNotCommitted),
+                  ("Committed all entries but list is not empty\n"));
+    }
+
+    RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+    AssertMsg(pEndpointCache->pCache->cbDirty >= cbCommitted,
+              ("Number of committed bytes exceeds number of dirty bytes\n"));
+    ASMAtomicSubU32(&pEndpointCache->pCache->cbDirty, cbCommitted);
+}
+
+/**
+ * Commit all dirty entries in the cache.
+ *
+ * @returns nothing.
+ * @param   pCache    The global cache instance.
+ */
+static void pdmacFileCacheCommitDirtyEntries(PPDMACFILECACHEGLOBAL pCache)
+{
+    bool fCommitInProgress = ASMAtomicXchgBool(&pCache->fCommitInProgress, true);
+
+    if (!fCommitInProgress)
+    {
+        pdmacFileCacheLockEnter(pCache);
+        Assert(!RTListIsEmpty(&pCache->ListEndpoints));
+
+        PPDMACFILEENDPOINTCACHE pEndpointCache = RTListNodeGetFirst(&pCache->ListEndpoints,
+                                                                    PDMACFILEENDPOINTCACHE,
+                                                                    NodeCacheEndpoint);
+        AssertPtr(pEndpointCache);
+
+        while (!RTListNodeIsLast(&pCache->ListEndpoints, &pEndpointCache->NodeCacheEndpoint))
+        {
+            pdmacFileCacheEndpointCommit(pEndpointCache);
+
+            pEndpointCache = RTListNodeGetNext(&pEndpointCache->NodeCacheEndpoint, PDMACFILEENDPOINTCACHE,
+                                               NodeCacheEndpoint);
+        }
+
+        /* Commit the last endpoint */
+        Assert(RTListNodeIsLast(&pCache->ListEndpoints, &pEndpointCache->NodeCacheEndpoint));
+        pdmacFileCacheEndpointCommit(pEndpointCache);
+
+        pdmacFileCacheLockLeave(pCache);
+        ASMAtomicWriteBool(&pCache->fCommitInProgress, false);
+    }
+}
+
+/**
+ * Adds the given entry as a dirty to the cache.
+ *
+ * @returns Flag whether the amount of dirty bytes in the cache exceeds the threshold
+ * @param   pEndpointCache    The endpoint cache the entry belongs to.
+ * @param   pEntry            The entry to add.
+ */
+static bool pdmacFileCacheAddDirtyEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILECACHEENTRY pEntry)
+{
+    bool fDirtyBytesExceeded = false;
+    PPDMACFILECACHEGLOBAL pCache = pEndpointCache->pCache;
+
+    /* If the commit timer is disabled we commit right away. */
+    if (pCache->u32CommitTimeoutMs == 0)
+    {
+        pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+        pdmacFileCacheEntryCommit(pEndpointCache, pEntry);
+    }
+    else if (!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY))
+    {
+        pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+        RTListAppend(&pEndpointCache->ListDirtyNotCommitted, &pEntry->NodeNotCommitted);
+        uint32_t cbDirty = ASMAtomicAddU32(&pCache->cbDirty, pEntry->cbData);
+
+        fDirtyBytesExceeded = (cbDirty >= pCache->cbCommitDirtyThreshold);
+    }
+
+    return fDirtyBytesExceeded;
+}
+
+
+/**
  * Completes a task segment freeing all ressources and completes the task handle
  * if everything was transfered.
  *
@@ -637,6 +779,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IO_IN_PROGRESS;
 
     /* Process waiting segment list. The data in entry might have changed inbetween. */
+    bool fDirty = false;
     PPDMACFILETASKSEG pCurr = pEntry->pWaitingHead;
 
     AssertMsg((pCurr && pEntry->pWaitingTail) || (!pCurr && !pEntry->pWaitingTail),
@@ -649,6 +792,8 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
         AssertMsg(pEndpointCache->cWritesOutstanding > 0, ("Completed write request but outstanding task count is 0\n"));
         ASMAtomicDecU32(&pEndpointCache->cWritesOutstanding);
 
+        pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
+
         if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DEPRECATED)
         {
             AssertMsg(!pCurr, ("The entry is deprecated but has waiting write segments attached\n"));
@@ -660,14 +805,12 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
         }
         else
         {
-            pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
-
             while (pCurr)
             {
                 AssertMsg(pCurr->fWrite, ("Completed write entries should never have read tasks attached\n"));
 
                 memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
-                pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+                fDirty = true;
 
                 pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr);
             }
@@ -676,14 +819,15 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     else
     {
         AssertMsg(pTask->enmTransferType == PDMACTASKFILETRANSFER_READ, ("Invalid transfer type\n"));
-        AssertMsg(!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY),("Invalid flags set\n"));
+        AssertMsg(!(pEntry->fFlags & (PDMACFILECACHE_ENTRY_IS_DIRTY | PDMACFILECACHE_ENTRY_IS_DEPRECATED)),
+                  ("Invalid flags set\n"));
 
         while (pCurr)
         {
             if (pCurr->fWrite)
             {
                 memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
-                pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
+                fDirty = true;
             }
             else
                 memcpy(pCurr->pvBuf, pEntry->pbData + pCurr->uBufOffset, pCurr->cbTransfer);
@@ -692,8 +836,9 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
         }
     }
 
-    if (pEntry->fFlags & PDMACFILECACHE_ENTRY_IS_DIRTY)
-        pdmacFileCacheWriteToEndpoint(pEntry);
+    bool fCommit = false;
+    if (fDirty)
+        fCommit = pdmacFileCacheAddDirtyEntry(pEndpointCache, pEntry);
 
     /* Complete a pending flush if all writes have completed */
     if (!ASMAtomicReadU32(&pEndpointCache->cWritesOutstanding))
@@ -707,6 +852,26 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
 
     /* Dereference so that it isn't protected anymore except we issued anyother write for it. */
     pdmacFileEpCacheEntryRelease(pEntry);
+
+    if (fCommit)
+        pdmacFileCacheCommitDirtyEntries(pCache);
+}
+
+/**
+ * Commit timer callback.
+ */
+static void pdmacFileCacheCommitTimerCallback(PVM pVM, PTMTIMER pTimer, void *pvUser)
+{
+    PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pvUser;
+    PPDMACFILECACHEGLOBAL          pCache = &pClassFile->Cache;
+
+    LogFlowFunc(("Commit interval expired, commiting dirty entries\n"));
+
+    if (ASMAtomicReadU32(&pCache->cbDirty) > 0)
+        pdmacFileCacheCommitDirtyEntries(pCache);
+
+    TMTimerSetMillies(pTimer, pCache->u32CommitTimeoutMs);
+    LogFlowFunc(("Entries committed, going to sleep\n"));
 }
 
 /**
@@ -724,7 +889,10 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     rc = CFGMR3QueryU32Def(pCfgNode, "CacheSize", &pCache->cbMax, 5 * _1M);
     AssertLogRelRCReturn(rc, rc);
 
+    RTListInit(&pCache->ListEndpoints);
+    pCache->cRefs = 0;
     pCache->cbCached  = 0;
+    pCache->fCommitInProgress = 0;
     LogFlowFunc((": Maximum number of bytes cached %u\n", pCache->cbMax));
 
     /* Initialize members */
@@ -743,6 +911,19 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     pCache->cbRecentlyUsedInMax  = (pCache->cbMax / 100) * 25; /* 25% of the buffer size */
     pCache->cbRecentlyUsedOutMax = (pCache->cbMax / 100) * 50; /* 50% of the buffer size */
     LogFlowFunc((": cbRecentlyUsedInMax=%u cbRecentlyUsedOutMax=%u\n", pCache->cbRecentlyUsedInMax, pCache->cbRecentlyUsedOutMax));
+
+    /** @todo r=aeichner: Experiment to find optimal default values */
+    rc = CFGMR3QueryU32Def(pCfgNode, "CacheCommitIntervalMs", &pCache->u32CommitTimeoutMs, 10000 /* 10sec */);
+    AssertLogRelRCReturn(rc, rc);
+    rc = CFGMR3QueryU32(pCfgNode, "CacheCommitThreshold", &pCache->cbCommitDirtyThreshold);
+    if (   rc == VERR_CFGM_VALUE_NOT_FOUND
+        || rc == VERR_CFGM_NO_PARENT)
+    {
+        /* Start committing after 50% of the cache are dirty */
+        pCache->cbCommitDirtyThreshold = pCache->cbMax / 2;
+    }
+    else
+        return rc;
 
     STAMR3Register(pClassFile->Core.pVM, &pCache->cbMax,
                    STAMTYPE_U32, STAMVISIBILITY_ALWAYS,
@@ -813,7 +994,25 @@ int pdmacFileCacheInit(PPDMASYNCCOMPLETIONEPCLASSFILE pClassFile, PCFGMNODE pCfg
     rc = RTCritSectInit(&pCache->CritSect);
 
     if (RT_SUCCESS(rc))
-        LogRel(("AIOMgr: Cache successfully initialised. Cache size is %u bytes\n", pCache->cbMax));
+    {
+        /* Create the commit timer */
+        if (pCache->u32CommitTimeoutMs > 0)
+            rc = TMR3TimerCreateInternal(pClassFile->Core.pVM, TMCLOCK_REAL,
+                                         pdmacFileCacheCommitTimerCallback,
+                                         pClassFile,
+                                         "Cache-Commit",
+                                         &pClassFile->Cache.pTimerCommit);
+
+        if (RT_SUCCESS(rc))
+        {
+            LogRel(("AIOMgr: Cache successfully initialised. Cache size is %u bytes\n", pCache->cbMax));
+            LogRel(("AIOMgr: Cache commit interval is %u ms\n", pCache->u32CommitTimeoutMs));
+            LogRel(("AIOMgr: Cache commit threshold is %u bytes\n", pCache->cbCommitDirtyThreshold));
+            return VINF_SUCCESS;
+        }
+
+        RTCritSectDelete(&pCache->CritSect);
+    }
 
     return rc;
 }
@@ -854,16 +1053,27 @@ int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
     PPDMACFILEENDPOINTCACHE pEndpointCache = &pEndpoint->DataCache;
 
     pEndpointCache->pCache = &pClassFile->Cache;
+    RTListInit(&pEndpointCache->ListDirtyNotCommitted);
 
     int rc = RTSemRWCreate(&pEndpointCache->SemRWEntries);
     if (RT_SUCCESS(rc))
     {
         pEndpointCache->pTree  = (PAVLRFOFFTREE)RTMemAllocZ(sizeof(AVLRFOFFTREE));
-        if (!pEndpointCache->pTree)
+        if (pEndpointCache->pTree)
         {
-            rc = VERR_NO_MEMORY;
-            RTSemRWDestroy(pEndpointCache->SemRWEntries);
+            pClassFile->Cache.cRefs++;
+            RTListAppend(&pClassFile->Cache.ListEndpoints, &pEndpointCache->NodeCacheEndpoint);
+
+            /* Arm the timer if this is the first endpoint. */
+            if (   pClassFile->Cache.cRefs == 1
+                && pClassFile->Cache.u32CommitTimeoutMs > 0)
+                rc = TMTimerSetMillies(pClassFile->Cache.pTimerCommit, pClassFile->Cache.u32CommitTimeoutMs);
         }
+        else
+            rc = VERR_NO_MEMORY;
+
+        if (RT_FAILURE(rc))
+            RTSemRWDestroy(pEndpointCache->SemRWEntries);
     }
 
 #ifdef VBOX_WITH_STATISTICS
@@ -876,6 +1086,7 @@ int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
     }
 #endif
 
+    LogFlowFunc(("Leave rc=%Rrc\n", rc));
     return rc;
 }
 
@@ -932,6 +1143,14 @@ void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
     RTSemRWRequestWrite(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
     RTAvlrFileOffsetDestroy(pEndpointCache->pTree, pdmacFileEpCacheEntryDestroy, pCache);
     RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
+
+    pCache->cRefs--;
+    RTListNodeRemove(&pEndpointCache->NodeCacheEndpoint);
+
+    if (   !pCache->cRefs
+        && pCache->u32CommitTimeoutMs > 0)
+        TMTimerStop(pCache->pTimerCommit);
+
     pdmacFileCacheLockLeave(pCache);
 
     RTSemRWDestroy(pEndpointCache->SemRWEntries);
@@ -1591,54 +1810,61 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                 }
                 else /* Deprecated flag not set */
                 {
-                    /* If the entry is dirty it must be also in progress now and we have to defer updating it again. */
+                    /* Check if the entry is dirty. */
                     if(pdmacFileEpCacheEntryFlagIsSetClearAcquireLock(pEndpointCache, pEntry,
                                                                       PDMACFILECACHE_ENTRY_IS_DIRTY,
                                                                       0))
                     {
-                        AssertMsg(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS,
-                                    ("Entry is dirty but not in progress\n"));
-                        Assert(!pEntry->pbDataReplace);
-
-                        /* Deprecate the current buffer. */
-                        if (!pEntry->pWaitingHead)
-                            pEntry->pbDataReplace = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
-
-                        /* If we are out of memory or have waiting segments
-                         * defer the write. */
-                        if (!pEntry->pbDataReplace || pEntry->pWaitingHead)
+                        /* If it is dirty but not in progrss just update the data. */
+                        if (!(pEntry->fFlags & PDMACFILECACHE_ENTRY_IO_IN_PROGRESS))
                         {
-                            /* The data isn't written to the file yet */
-                            pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
-                                                            &IoMemCtx,
-                                                            OffDiff, cbToWrite,
-                                                            true /* fWrite */);
-                            STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
-                        }
-                        else /* Deprecate buffer */
-                        {
-                            LogFlow(("Deprecating buffer for entry %#p\n", pEntry));
-                            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DEPRECATED;
-
-                            /* Copy the data before the update. */
-                            if (OffDiff)
-                                memcpy(pEntry->pbDataReplace, pEntry->pbData, OffDiff);
-
-                            /* Copy data behind the update. */
-                            if ((pEntry->cbData - OffDiff - cbToWrite) > 0)
-                                memcpy(pEntry->pbDataReplace + OffDiff + cbToWrite,
-                                       pEntry->pbData + OffDiff + cbToWrite,
-                                       (pEntry->cbData - OffDiff - cbToWrite));
-
-                            /* Update the data from the write. */
                             pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
-                                                             pEntry->pbDataReplace + OffDiff,
+                                                             pEntry->pbData + OffDiff,
                                                              cbToWrite);
-                            ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
+                        }
+                        else
+                        {
+                            Assert(!pEntry->pbDataReplace);
 
-                            /* We are done here. A new write is initiated if the current request completes. */
+                            /* Deprecate the current buffer. */
+                            if (!pEntry->pWaitingHead)
+                                pEntry->pbDataReplace = (uint8_t *)RTMemPageAlloc(pEntry->cbData);
+
+                            /* If we are out of memory or have waiting segments
+                             * defer the write. */
+                            if (!pEntry->pbDataReplace || pEntry->pWaitingHead)
+                            {
+                                /* The data isn't written to the file yet */
+                                pdmacFileEpCacheEntryWaitersAdd(pEntry, pTask,
+                                                                &IoMemCtx,
+                                                                OffDiff, cbToWrite,
+                                                                true /* fWrite */);
+                                STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
+                            }
+                            else /* Deprecate buffer */
+                            {
+                                LogFlow(("Deprecating buffer for entry %#p\n", pEntry));
+                                pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DEPRECATED;
+
+                                /* Copy the data before the update. */
+                                if (OffDiff)
+                                    memcpy(pEntry->pbDataReplace, pEntry->pbData, OffDiff);
+
+                                /* Copy data behind the update. */
+                                if ((pEntry->cbData - OffDiff - cbToWrite) > 0)
+                                    memcpy(pEntry->pbDataReplace + OffDiff + cbToWrite,
+                                           pEntry->pbData + OffDiff + cbToWrite,
+                                           (pEntry->cbData - OffDiff - cbToWrite));
+
+                                /* Update the data from the write. */
+                                pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
+                                                                 pEntry->pbDataReplace + OffDiff,
+                                                                 cbToWrite);
+                                /* We are done here. A new write is initiated if the current request completes. */
+                            }
                         }
 
+                        ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
                         RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                     }
                     else /* Dirty bit not set */
@@ -1658,7 +1884,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                             STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
                             RTSemRWReleaseWrite(pEndpointCache->SemRWEntries);
                         }
-                        else /* I/O in progres flag not set */
+                        else /* I/O in progress flag not set */
                         {
                             /* Write as much as we can into the entry and update the file. */
                             pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
@@ -1666,8 +1892,9 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                                                              cbToWrite);
                             ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
 
-                            pEntry->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
-                            pdmacFileCacheWriteToEndpoint(pEntry);
+                            bool fCommit = pdmacFileCacheAddDirtyEntry(pEndpointCache, pEntry);
+                            if (fCommit)
+                                pdmacFileCacheCommitDirtyEntries(pCache);
                         }
                     } /* Dirty bit not set */
 
@@ -1786,9 +2013,10 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                                                  cbToWrite);
                 ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
 
-                pEntryNew->fFlags |= PDMACFILECACHE_ENTRY_IS_DIRTY;
-                pdmacFileCacheWriteToEndpoint(pEntryNew);
-                pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
+                bool fCommit = pdmacFileCacheAddDirtyEntry(pEndpointCache, pEntryNew);
+                if (fCommit)
+                    pdmacFileCacheCommitDirtyEntries(pCache);
+                pdmacFileEpCacheEntryRelease(pEntryNew);
                 STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
             }
             else
@@ -1834,6 +2062,8 @@ int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
         rc = VERR_RESOURCE_BUSY;
     else
     {
+        /* Check for dirty entries in the cache. */
+        pdmacFileCacheEndpointCommit(&pEndpoint->DataCache);
         if (ASMAtomicReadU32(&pEndpoint->DataCache.cWritesOutstanding) > 0)
         {
             ASMAtomicWritePtr((void * volatile *)&pEndpoint->DataCache.pTaskFlush, pTask);

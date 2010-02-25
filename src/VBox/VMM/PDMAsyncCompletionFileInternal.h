@@ -31,6 +31,7 @@
 #include <iprt/semaphore.h>
 #include <iprt/critsect.h>
 #include <iprt/avl.h>
+#include <iprt/list.h>
 
 #include "PDMAsyncCompletionInternal.h"
 
@@ -281,6 +282,8 @@ typedef struct PDMACFILECACHEENTRY
     PPDMACFILETASKSEG               pWaitingHead;
     /** Tail of list of tasks waiting for this one to finish. */
     PPDMACFILETASKSEG               pWaitingTail;
+    /** Node for dirty but not yet committed entries list per endpoint. */
+    RTLISTNODE                      NodeNotCommitted;
 } PDMACFILECACHEENTRY, *PPDMACFILECACHEENTRY;
 /** I/O is still in progress for this entry. This entry is not evictable. */
 #define PDMACFILECACHE_ENTRY_IO_IN_PROGRESS RT_BIT(0)
@@ -294,7 +297,7 @@ typedef struct PDMACFILECACHEENTRY
  */
 #define PDMACFILECACHE_ENTRY_IS_DEPRECATED  RT_BIT(3)
 /** Entry is not evictable. */
-#define PDMACFILECACHE_NOT_EVICTABLE  (PDMACFILECACHE_ENTRY_LOCKED | PDMACFILECACHE_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DEPRECATED)
+#define PDMACFILECACHE_NOT_EVICTABLE  (PDMACFILECACHE_ENTRY_LOCKED | PDMACFILECACHE_ENTRY_IO_IN_PROGRESS | PDMACFILECACHE_ENTRY_IS_DIRTY)
 
 /**
  * LRU list data
@@ -320,11 +323,30 @@ typedef struct PDMACFILECACHEGLOBAL
     uint32_t         cbCached;
     /** Critical section protecting the cache. */
     RTCRITSECT       CritSect;
+    /** Maximum number of bytes cached. */
     uint32_t         cbRecentlyUsedInMax;
+    /** Maximum number of bytes in the paged out list .*/
     uint32_t         cbRecentlyUsedOutMax;
+    /** Recently used cache entries list */
     PDMACFILELRULIST LruRecentlyUsedIn;
+    /** Scorecard cache entry list. */
     PDMACFILELRULIST LruRecentlyUsedOut;
+    /** List of frequently used cache entries */
     PDMACFILELRULIST LruFrequentlyUsed;
+    /** Commit timeout in milli seconds */
+    uint32_t         u32CommitTimeoutMs;
+    /** Number of dirty bytes needed to start a commit of the data to the disk. */
+    uint32_t         cbCommitDirtyThreshold;
+    /** Current number of dirty bytes in the cache. */
+    volatile uint32_t cbDirty;
+    /** Flag whether a commit is currently in progress. */
+    volatile bool     fCommitInProgress;
+    /** Commit interval timer */
+    PTMTIMERR3        pTimerCommit;
+    /** Number of endpoints using the cache. */
+    uint32_t          cRefs;
+    /** List of all endpoints using this cache. */
+    RTLISTNODE        ListEndpoints;
 #ifdef VBOX_WITH_STATISTICS
     /** Hit counter. */
     STAMCOUNTER      cHits;
@@ -362,6 +384,10 @@ typedef struct PDMACFILEENDPOINTCACHE
     volatile uint32_t                    cWritesOutstanding;
     /** Handle of the flush request if one is active */
     volatile PPDMASYNCCOMPLETIONTASKFILE pTaskFlush;
+    /** List of dirty but not committed entries for this endpoint. */
+    RTLISTNODE                           ListDirtyNotCommitted;
+    /** Node of the cache endpoint list. */
+    RTLISTNODE                           NodeCacheEndpoint;
 #ifdef VBOX_WITH_STATISTICS
     /** Number of times a write was deferred because the cache entry was still in progress */
     STAMCOUNTER                          StatWriteDeferred;
