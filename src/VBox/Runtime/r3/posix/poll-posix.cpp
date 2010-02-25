@@ -473,7 +473,7 @@ RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet)
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), UINT32_MAX);
     uint32_t cHandles = pThis->cHandles;
     ASMAtomicWriteBool(&pThis->fBusy, false);
 
