@@ -87,6 +87,7 @@ PROGRAMS += \
 	tstNoCrt-1 \
 	tstOnce \
 	tstRTPath \
+	tstRTPipe \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
@@ -358,6 +359,9 @@ tstOnce_SOURCES = tstOnce.cpp
 
 tstRTPath_TEMPLATE = VBOXR3TSTEXE
 tstRTPath_SOURCES = tstRTPath.cpp
+
+tstRTPipe_TEMPLATE = VBOXR3TSTEXE
+tstRTPipe_SOURCES = tstRTPipe.cpp
 
 tstPrfRT_SOURCES = tstPrfRT.cpp
 

@@ -35,61 +35,471 @@
 #include <iprt/pipe.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
+#include <iprt/mem.h>
+#include <iprt/string.h>
+#include <iprt/thread.h>
+#include "internal/magics.h"
+
+#include <errno.h>
+#include <fcntl.h>
+#include <limits.h>
+#include <unistd.h>
+#include <sys/poll.h>
+#include <signal.h>
+
+
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
+typedef struct RTPIPEINTERNAL
+{
+    /** Magic value (RTPIPE_MAGIC). */
+    uint32_t            u32Magic;
+    /** The file descriptor. */
+    int                 fd;
+    /** Set if this is the read end, clear if it's the write end. */
+    bool                fRead;
+    /** Atomically operated state variable.
+     *
+     *  - Bits 0 thru 29 - Users of the new mode.
+     *  - Bit 30 - The pipe mode, set indicates blocking.
+     *  - Bit 31 - Set when we're switching the mode.
+     */
+    uint32_t volatile   u32State;
+} RTPIPEINTERNAL;
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** @name RTPIPEINTERNAL::u32State defines
+ * @{ */
+#define RTPIPE_POSIX_BLOCKING           UINT32_C(0x40000000)
+#define RTPIPE_POSIX_SWITCHING          UINT32_C(0x80000000)
+#define RTPIPE_POSIX_SWITCHING_BIT      31
+#define RTPIPE_POSIX_USERS_MASK         UINT32_C(0x3fffffff)
+/** @} */
 
 
 RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFlags)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phPipeRead, VERR_INVALID_POINTER);
+    AssertPtrReturn(phPipeWrite, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTPIPE_C_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    /*
+     * Create the pipe and set the close-on-exec flag if requested.
+     */
+    int aFds[2] = {-1, -1};
+    if (pipe(aFds))
+        return RTErrConvertFromErrno(errno);
+
+    int rc = VINF_SUCCESS;
+    if (!(fFlags & RTPIPE_C_INHERIT_READ))
+    {
+        if (fcntl(aFds[0], F_SETFD, FD_CLOEXEC))
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+    if (!(fFlags & RTPIPE_C_INHERIT_WRITE))
+    {
+        if (fcntl(aFds[1], F_SETFD, FD_CLOEXEC))
+            rc = RTErrConvertFromErrno(errno);
+    }
+
+    if (RT_SUCCESS(rc))
+    {
+       /*
+        * Create the two handles.
+        */
+       RTPIPEINTERNAL *pThisR = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
+       if (pThisR)
+       {
+           RTPIPEINTERNAL *pThisW = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
+           if (pThisW)
+           {
+               pThisR->u32Magic = RTPIPE_MAGIC;
+               pThisW->u32Magic = RTPIPE_MAGIC;
+               pThisR->fd       = aFds[0];
+               pThisW->fd       = aFds[1];
+               pThisR->fRead    = true;
+               pThisW->fRead    = false;
+               pThisR->u32State = RTPIPE_POSIX_BLOCKING;
+               pThisW->u32State = RTPIPE_POSIX_BLOCKING;
+
+               *phPipeRead  = pThisR;
+               *phPipeWrite = pThisW;
+
+               /*
+                * Before we leave, make sure to shut up SIGPIPE.
+                */
+               signal(SIGPIPE, SIG_IGN);
+               return VINF_SUCCESS;
+           }
+
+           RTMemFree(pThisR);
+       }
+    }
+
+    close(aFds[0]);
+    close(aFds[1]);
+    return rc;
 }
 
 
 RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    if (pThis == NIL_RTPIPE)
+        return VINF_SUCCESS;
+    AssertPtrReturn(pThis, VERR_INVALID_PARAMETER);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+
+    /*
+     * Do the cleanup.
+     */
+    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTPIPE_MAGIC, RTPIPE_MAGIC), VERR_INVALID_HANDLE);
+
+    int fd = pThis->fd;
+    pThis->fd = -1;
+    close(fd);
+
+    if (ASMAtomicReadU32(&pThis->u32State) & RTPIPE_POSIX_USERS_MASK)
+    {
+        AssertFailed();
+        RTThreadSleep(1);
+    }
+
+    RTMemFree(pThis);
+
+    return VINF_SUCCESS;
 }
 
 
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
 {
-    return (RTHCINTPTR)(unsigned int)-1;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, (RTHCINTPTR)(unsigned int)-1);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, (RTHCINTPTR)(unsigned int)-1);
+
+    return pThis->fd;
+}
+
+
+/**
+ * Prepare blocking mode.
+ *
+ * @returns VINF_SUCCESS
+ * @retval  VERR_WRONG_ORDER
+ * @retval  VERR_INTERNAL_ERROR_4
+ *
+ * @param   pThis               The pipe handle.
+ */
+static int rtPipeTryBlocking(RTPIPEINTERNAL *pThis)
+{
+    /*
+     * Update the state.
+     */
+    for (;;)
+    {
+        uint32_t        u32State    = ASMAtomicReadU32(&pThis->u32State);
+        uint32_t const  u32StateOld = u32State;
+        uint32_t const  cUsers      = (u32State & RTPIPE_POSIX_USERS_MASK);
+
+        if (u32State & RTPIPE_POSIX_BLOCKING)
+        {
+            AssertReturn(cUsers < RTPIPE_POSIX_USERS_MASK / 2, VERR_INTERNAL_ERROR_4);
+            u32State &= ~RTPIPE_POSIX_USERS_MASK;
+            u32State |= cUsers + 1;
+            if (ASMAtomicCmpXchgU32(&pThis->u32State, u32State, u32StateOld))
+            {
+                if (u32State & RTPIPE_POSIX_SWITCHING)
+                    break;
+                return VINF_SUCCESS;
+            }
+        }
+        else if (cUsers == 0)
+        {
+            u32State = 1 | RTPIPE_POSIX_SWITCHING | RTPIPE_POSIX_BLOCKING;
+            if (ASMAtomicCmpXchgU32(&pThis->u32State, u32State, u32StateOld))
+                break;
+        }
+        else
+            return VERR_WRONG_ORDER;
+        ASMNopPause();
+    }
+
+    /*
+     * Do the switching.
+     */
+    int fFlags = fcntl(pThis->fd, F_GETFL, 0);
+    if (fFlags != -1)
+    {
+        if (    !(fFlags & O_NONBLOCK)
+            ||  fcntl(pThis->fd, F_SETFL, fFlags & ~O_NONBLOCK) != -1)
+        {
+            ASMAtomicBitClear(&pThis->u32State, RTPIPE_POSIX_SWITCHING_BIT);
+            return VINF_SUCCESS;
+        }
+    }
+
+    ASMAtomicDecU32(&pThis->u32State);
+    return RTErrConvertFromErrno(errno);
+}
+
+
+/**
+ * Prepare non-blocking mode.
+ *
+ * @returns VINF_SUCCESS
+ * @retval  VERR_WRONG_ORDER
+ * @retval  VERR_INTERNAL_ERROR_4
+ *
+ * @param   pThis               The pipe handle.
+ */
+static int rtPipeTryNonBlocking(RTPIPEINTERNAL *pThis)
+{
+    /*
+     * Update the state.
+     */
+    for (;;)
+    {
+        uint32_t        u32State    = ASMAtomicReadU32(&pThis->u32State);
+        uint32_t const  u32StateOld = u32State;
+        uint32_t const  cUsers      = (u32State & RTPIPE_POSIX_USERS_MASK);
+
+        if (!(u32State & RTPIPE_POSIX_BLOCKING))
+        {
+            AssertReturn(cUsers < RTPIPE_POSIX_USERS_MASK / 2, VERR_INTERNAL_ERROR_4);
+            u32State &= ~RTPIPE_POSIX_USERS_MASK;
+            u32State |= cUsers + 1;
+            if (ASMAtomicCmpXchgU32(&pThis->u32State, u32State, u32StateOld))
+            {
+                if (u32State & RTPIPE_POSIX_SWITCHING)
+                    break;
+                return VINF_SUCCESS;
+            }
+        }
+        else if (cUsers == 0)
+        {
+            u32State = 1 | RTPIPE_POSIX_SWITCHING;
+            if (ASMAtomicCmpXchgU32(&pThis->u32State, u32State, u32StateOld))
+                break;
+        }
+        else
+            return VERR_WRONG_ORDER;
+        ASMNopPause();
+    }
+
+    /*
+     * Do the switching.
+     */
+    int fFlags = fcntl(pThis->fd, F_GETFL, 0);
+    if (fFlags != -1)
+    {
+        if (    (fFlags & O_NONBLOCK)
+            ||  fcntl(pThis->fd, F_SETFL, fFlags | O_NONBLOCK) != -1)
+        {
+            ASMAtomicBitClear(&pThis->u32State, RTPIPE_POSIX_SWITCHING_BIT);
+            return VINF_SUCCESS;
+        }
+    }
+
+    ASMAtomicDecU32(&pThis->u32State);
+    return RTErrConvertFromErrno(errno);
+}
+
+
+/**
+ * Checks if the read pipe has a HUP condition.
+ *
+ * @returns true if HUP, false if no.
+ * @param   pThis               The pipe handle (read).
+ */
+static bool rtPipePosixHasHup(RTPIPEINTERNAL *pThis)
+{
+    Assert(pThis->fRead);
+
+    struct pollfd PollFd;
+    RT_ZERO(PollFd);
+    PollFd.fd      = pThis->fd;
+    PollFd.events  = POLLHUP;
+    return poll(&PollFd, 1, 0) >= 1
+       && (PollFd.revents & POLLHUP);
 }
 
 
 RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fRead, VERR_ACCESS_DENIED);
+    AssertPtr(pcbRead);
+    AssertPtr(pvBuf);
+
+    int rc = rtPipeTryNonBlocking(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        ssize_t cbRead = read(pThis->fd, pvBuf, RT_MIN(cbToRead, SSIZE_MAX));
+        if (cbRead >= 0)
+        {
+            if (cbRead || !cbToRead || !rtPipePosixHasHup(pThis))
+                *pcbRead = cbRead;
+            else
+                rc = VERR_BROKEN_PIPE;
+        }
+        else if (errno == EAGAIN)
+        {
+            *pcbRead = 0;
+            rc = VINF_TRY_AGAIN;
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+
+        ASMAtomicDecU32(&pThis->u32State);
+    }
+    return rc;
 }
 
 
 RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->fRead, VERR_ACCESS_DENIED);
+    AssertPtr(pvBuf);
+
+    int rc = rtPipeTryBlocking(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        do
+        {
+            ssize_t cbRead = read(pThis->fd, pvBuf, RT_MIN(cbToRead, SSIZE_MAX));
+            if (cbRead < 0)
+            {
+                rc = RTErrConvertFromErrno(errno);
+                break;
+            }
+            if (!cbRead && cbToRead > 0 && rtPipePosixHasHup(pThis))
+            {
+                rc = VERR_BROKEN_PIPE;
+                break;
+            }
+
+            /* advance */
+            pvBuf     = (char *)pvBuf + cbRead;
+            cbToRead -= cbRead;
+        } while (cbToRead > 0);
+
+        ASMAtomicDecU32(&pThis->u32State);
+    }
+    return rc;
 }
 
 
 RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
+    AssertPtr(pcbWritten);
+    AssertPtr(pvBuf);
+
+    int rc = rtPipeTryNonBlocking(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        ssize_t cbWritten = write(pThis->fd, pvBuf, RT_MIN(cbToWrite, SSIZE_MAX));
+        if (cbWritten >= 0)
+            *pcbWritten = cbWritten;
+        else if (errno == EAGAIN)
+        {
+            *pcbWritten = 0;;
+            rc = VINF_TRY_AGAIN;
+        }
+        else
+            rc = RTErrConvertFromErrno(errno);
+
+        ASMAtomicDecU32(&pThis->u32State);
+    }
+    return rc;
 }
 
 
 RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
+    AssertPtr(pvBuf);
+
+    int rc = rtPipeTryBlocking(pThis);
+    if (RT_SUCCESS(rc))
+    {
+        do
+        {
+            ssize_t cbWritten = write(pThis->fd, pvBuf, RT_MIN(cbToWrite, SSIZE_MAX));
+            if (cbWritten < 0)
+            {
+                rc = RTErrConvertFromErrno(errno);
+                break;
+            }
+
+            /* advance */
+            pvBuf      = (char const *)pvBuf + cbWritten;
+            cbToWrite -= cbWritten;
+        } while (cbToWrite > 0);
+
+        ASMAtomicDecU32(&pThis->u32State);
+    }
+    return rc;
 }
 
 
 RTDECL(int) RTPipeFlush(RTPIPE hPipe)
 {
-    return VERR_NOT_IMPLEMENTED;
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
+
+    if (fsync(pThis->fd))
+        return RTErrConvertFromErrno(errno);
+    return VINF_SUCCESS;
 }
 
 
 RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
 {
-    return VERR_NOT_IMPLEMENTED;
-}
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
 
+    struct pollfd PollFd;
+    RT_ZERO(PollFd);
+    PollFd.fd      = pThis->fd;
+    PollFd.events  = POLLHUP | POLLERR;
+    if (pThis->fRead)
+        PollFd.events |= POLLIN | POLLPRI;
+    else
+        PollFd.events |= POLLOUT;
+
+    int timeout;
+    if (   cMillies == RT_INDEFINITE_WAIT
+        || cMillies >= INT_MAX /* lazy bird */)
+        timeout = -1;
+    else
+        timeout = cMillies;
+
+    int rc = poll(&PollFd, 1, 0);
+    if (rc == -1)
+        return RTErrConvertFromErrno(errno);
+    return rc > 0 ? VINF_SUCCESS : VERR_TIMEOUT;
+}
 
