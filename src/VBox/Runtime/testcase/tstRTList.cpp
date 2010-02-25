@@ -112,13 +112,25 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
 
     tstRTListOrder(hTest, &ListHead, cElements, 0, cElements-1, 1);
 
+    /* Move the list to a new one. */
+    RTLISTNODE ListHeadNew;
+
+    RTListInit(&ListHeadNew);
+    RTListMove(&ListHeadNew, &ListHead);
+
+    RTTEST_CHECK(hTest, RTListIsEmpty(&ListHead) == true);
+    RTTEST_CHECK(hTest, RTListNodeGetFirst(&ListHead, LISTELEM, Node) == NULL);
+    RTTEST_CHECK(hTest, RTListNodeGetLast(&ListHead, LISTELEM, Node) == NULL);
+
+    tstRTListOrder(hTest, &ListHeadNew, cElements, 0, cElements-1, 1);
+
     /* Remove elements now  */
     if (cElements > 1)
     {
         /* Remove every second */
         RTTestISub("Remove every second node");
 
-        PLISTELEM pNode = RTListNodeGetFirst(&ListHead, LISTELEM, Node);
+        PLISTELEM pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
         for (unsigned i = 0; i < cElements; i++)
         {
             PLISTELEM pNext = RTListNodeGetNext(&pNode->Node, LISTELEM, Node);
@@ -136,12 +148,12 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
         unsigned idxEnd = fElementsEven ? cElements - 1 : cElements - 2;
 
         cElements /= 2;
-        tstRTListOrder(hTest, &ListHead, cElements, 1, idxEnd, 2);
+        tstRTListOrder(hTest, &ListHeadNew, cElements, 1, idxEnd, 2);
     }
 
     /* Remove the rest now. */
     RTTestISub("Remove all nodes");
-    PLISTELEM pNode = RTListNodeGetFirst(&ListHead, LISTELEM, Node);
+    PLISTELEM pNode = RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node);
     for (unsigned i = 0; i < cElements; i++)
     {
         PLISTELEM pNext = RTListNodeGetNext(&pNode->Node, LISTELEM, Node);
@@ -152,9 +164,9 @@ static void tstRTListCreate(RTTEST hTest, unsigned cElements)
     }
 
     /* List should be empty again */
-    RTTEST_CHECK(hTest, RTListIsEmpty(&ListHead) == true);
-    RTTEST_CHECK(hTest, RTListNodeGetFirst(&ListHead, LISTELEM, Node) == NULL);
-    RTTEST_CHECK(hTest, RTListNodeGetLast(&ListHead, LISTELEM, Node) == NULL);
+    RTTEST_CHECK(hTest, RTListIsEmpty(&ListHeadNew) == true);
+    RTTEST_CHECK(hTest, RTListNodeGetFirst(&ListHeadNew, LISTELEM, Node) == NULL);
+    RTTEST_CHECK(hTest, RTListNodeGetLast(&ListHeadNew, LISTELEM, Node) == NULL);
 }
 
 int main()

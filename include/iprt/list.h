@@ -199,6 +199,28 @@ DECLINLINE(void) RTListNodeRemove(PRTLISTNODE pNode)
 #define RTListNodeGetLast(pList, Type, Member) \
     (!RTListIsEmpty(pList) ? RTListNodeGetPrev(pList, Type, Member) : NULL)
 
+/**
+ * Move the given list to a new list header.
+ *
+ * @param   pListDst            The new list.
+ * @param   pListSrc            The list to move.
+ */
+DECLINLINE(void) RTListMove(PRTLISTNODE pListDst, PRTLISTNODE pListSrc)
+{
+    if (!RTListIsEmpty(pListSrc))
+    {
+        pListDst->pNext = pListSrc->pNext;
+        pListDst->pPrev = pListSrc->pPrev;
+
+        /* Adjust the first and last element links */
+        pListDst->pNext->pPrev = pListDst;
+        pListDst->pPrev->pNext = pListDst;
+
+        /* Finally remove the elements from the source list */
+        RTListInit(pListSrc);
+    }
+}
+
 RT_C_DECLS_END
 
 /** @} */
