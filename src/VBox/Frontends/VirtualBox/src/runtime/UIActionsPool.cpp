@@ -25,6 +25,21 @@
 #include "UIActionsPool.h"
 #include "VBoxGlobal.h"
 
+/* Action activation event */
+class ActivateActionEvent : public QEvent
+{
+public:
+
+    ActivateActionEvent(QAction *pAction)
+        : QEvent((QEvent::Type)VBoxDefs::ActivateActionEventType)
+        , m_pAction(pAction) {}
+    QAction* action() const { return m_pAction; }
+
+private:
+
+    QAction *m_pAction;
+};
+
 UIAction::UIAction(QObject *pParent, UIActionType type)
     : QIWithRetranslateUI3<QAction>(pParent)
     , m_type(type)
@@ -846,6 +861,62 @@ UIActionsPool::~UIActionsPool()
 UIAction* UIActionsPool::action(UIActionIndex index) const
 {
     return m_actionsPool.at(index);
+}
+
+bool UIActionsPool::processHotKey(const QKeySequence &key)
+{
+    for (int i = 0; i < m_actionsPool.size(); ++i)
+    {
+        UIAction *pAction = m_actionsPool.at(i);
+        /* Skip menus/separators */
+        if (pAction->type() == UIActionType_Menu || pAction->type() == UIActionType_Separator)
+            continue;
+        QString hotkey = VBoxGlobal::extractKeyFromActionText(pAction->text());
+        if (pAction->isEnabled() && !hotkey.isEmpty())
+        {
+            if (key.matches(QKeySequence(hotkey)) == QKeySequence::ExactMatch)
+            {
+                /* We asynchronously post a special event instead of calling
+                 * pAction->trigger() directly, to let key presses and
+                 * releases be processed correctly by Qt first.
+                 * Note: we assume that nobody will delete the menu item
+                 * corresponding to the key sequence, so that the pointer to
+                 * menu data posted along with the event will remain valid in
+                 * the event handler, at least until the main window is closed. */
+                QApplication::postEvent(this, new ActivateActionEvent(pAction));
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool UIActionsPool::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case VBoxDefs::ActivateActionEventType:
+        {
+            ActivateActionEvent *pActionEvent = static_cast<ActivateActionEvent*>(pEvent);
+            pActionEvent->action()->trigger();
+
+            // TODO_NEW_CORE
+            /* The main window and its children can be destroyed at this point (if, for example, the activated menu
+             * item closes the main window). Detect this situation to prevent calls to destroyed widgets: */
+//            QWidgetList list = QApplication::topLevelWidgets();
+//            bool destroyed = list.indexOf(machineWindowWrapper()->machineWindow()) < 0;
+//            if (!destroyed && machineWindowWrapper()->machineWindow()->statusBar())
+//                machineWindowWrapper()->machineWindow()->statusBar()->clearMessage();
+
+            pEvent->accept();
+            return true;
+        }
+        default:
+            break;
+    }
+
+    return QObject::event(pEvent);
 }
 
 #include "UIActionsPool.moc"

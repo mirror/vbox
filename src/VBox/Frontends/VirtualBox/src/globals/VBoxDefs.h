@@ -115,7 +115,8 @@ struct VBoxDefs
 #if defined (Q_WS_WIN)
         , ShellExecuteEventType
 #endif
-        , ActivateMenuEventType
+        , ActivateMenuEventType /* remove when new core is active */
+        , ActivateActionEventType /* New name for new core */
 #if defined (Q_WS_MAC)
         , ShowWindowEventType
 #endif
