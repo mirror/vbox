@@ -447,6 +447,7 @@ RuntimeR3_SOURCES.win = \
 	r3/win/mp-win.cpp \
 	r3/win/path-win.cpp \
 	r3/win/pipe-win.cpp \
+	r3/win/poll-win.cpp \
 	r3/win/process-win.cpp \
 	r3/win/RTLogWriteDebugger-win.cpp \
 	r3/win/rtProcInitExePath-win.cpp \
@@ -499,6 +500,7 @@ RuntimeR3_SOURCES.linux = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pipe-posix.cpp \
+	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
@@ -560,6 +562,7 @@ RuntimeR3_SOURCES.os2   = \
 	r3/os2/filelock-os2.cpp \
 	r3/os2/mp-os2.cpp \
 	r3/os2/pipe-os2.cpp \
+	r3/os2/poll-os2.cpp \
 	r3/os2/rtProcInitExePath-os2.cpp \
 	r3/os2/sched-os2.cpp \
 	r3/os2/sems-os2.cpp \
@@ -617,6 +620,7 @@ RuntimeR3_SOURCES.darwin = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pipe-posix.cpp \
+	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/semevent-posix.cpp \
@@ -665,6 +669,7 @@ RuntimeR3_SOURCES.freebsd = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pipe-posix.cpp \
+	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTMpGetCount-posix.cpp \
@@ -705,6 +710,7 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/ldrNative-posix.cpp \
 	r3/posix/path-posix.cpp \
 	r3/posix/pipe-posix.cpp \
+	r3/posix/poll-posix.cpp \
 	r3/posix/process-posix.cpp \
 	r3/posix/rand-posix.cpp \
 	r3/posix/RTTimeNow-posix.cpp \
