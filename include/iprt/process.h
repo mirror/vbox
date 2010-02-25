@@ -150,11 +150,17 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  *                      process.
  * @param   fFlags      Flags, one of the RTPROC_FLAGS_* defines.
  * @param   phStdIn     The standard in handle to assign the new process. Pass
- *                      NULL to use the same as the current process.
+ *                      NULL to use the same as the current process.  If the
+ *                      handle is NIL, we'll close the standard input of the
+ *                      guest.
  * @param   phStdOut    The standard out handle to assign the new process.  Pass
- *                      NULL to use the same as the current process.
+ *                      NULL to use the same as the current process.  If the
+ *                      handle is NIL, we'll close the standard output of the
+ *                      guest.
  * @param   phStdErr    The standard error handle to assign the new process.  Pass
- *                      NULL to use the same as the current process.
+ *                      NULL to use the same as the current process.  If the
+ *                      handle is NIL, we'll close the standard error of the
+ *                      guest.
  * @param   pszAsUser   User to run the process as.  Pass NULL to use the same
  *                      user as the current process.
  * @param   phProcess   Where to store the process handle on successful return.
