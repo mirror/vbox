@@ -46,6 +46,8 @@
 #define RTDIR_MAGIC                     UINT32_C(0x19291112)
 /** The value of RTDIR::u32Magic after RTDirClose().  */
 #define RTDIR_MAGIC_DEAD                UINT32_C(0x19950829)
+/** the value of RTPIPEINTERNAL::u32Magic. (Frank Schaetzing) */
+#define RTPIPE_MAGIC                    UINT32_C(0x19570528)
 /** The value of RTFILEAIOCTXINT::u32Magic. (Howard Phillips Lovecraft) */
 #define RTFILEAIOCTX_MAGIC              UINT32_C(0x18900820)
 /** The value of RTFILEAIOCTXINT::u32Magic after RTFileAioCtxDestroy(). */

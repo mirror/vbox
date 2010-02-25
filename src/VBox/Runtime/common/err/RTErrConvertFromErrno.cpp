@@ -442,7 +442,15 @@ RTDECL(int)  RTErrConvertFromErrno(unsigned uNativeCode)
 #ifdef EDOOFUS
         case EDOOFUS:           return VERR_INTERNAL_ERROR;
 #endif
-
+#ifdef ENOTSUP
+# ifndef EOPNOTSUPP
+        case ENOTSUP:           return VERR_NOT_SUPPORTED;
+# else
+#  if ENOTSUP != EOPNOTSUPP
+        case ENOTSUP:           return VERR_NOT_SUPPORTED;
+#  endif
+# endif
+#endif
         default:
             AssertMsgFailed(("Unhandled error code %d\n", uNativeCode));
             return VERR_UNRESOLVED_ERROR;

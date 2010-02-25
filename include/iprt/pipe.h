@@ -56,6 +56,8 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
 #define RTPIPE_C_INHERIT_READ       RT_BIT(0)
 /** Mark the write end as inheritable. */
 #define RTPIPE_C_INHERIT_WRITE      RT_BIT(1)
+/** Mask of valid flags. */
+#define RTPIPE_C_VALID_MASK         UINT32_C(0x00000003)
 /** @} */
 
 /**
@@ -79,6 +81,11 @@ RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeReadBlocking.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected and we've read
+ *          all the buffered data.
+ * @retval  VINF_TRY_AGAIN if no data was available.  @a *pcbRead will be set to
+ *          0.
+ * @retval  VERR_ACCESS_DENIED if it's a write pipe.
  *
  * @param   hPipe           The IPRT pipe handle to read from.
  * @param   pvBuf           Where to put the bytes we read.
@@ -95,6 +102,9 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeRead.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected and we've read
+ *          all the buffered data.
+ * @retval  VERR_ACCESS_DENIED if it's a write pipe.
  *
  * @param   hPipe           The IPRT pipe handle to read from.
  * @param   pvBuf           Where to put the bytes we read.
@@ -107,11 +117,15 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead);
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWriteBlocking.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.
+ * @retval  VINF_TRY_AGAIN if no data was written.  @a *pcbWritten will be set
+ *          to 0.
+ * @retval  VERR_ACCESS_DENIED if it's a read pipe.
  *
  * @param   hPipe           The IPRT pipe handle to write to.
  * @param   pvBuf           What to write.
  * @param   cbToWrite       How much to write.
- * @param   pcbWritten      How many bytes we wrote.
+ * @param   pcbWritten      How many bytes we wrote.  This can be 0.
  */
 RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
@@ -120,6 +134,8 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
  *
  * @returns IPRT status code.
  * @retval  VERR_WRONG_ORDER if racing a call to RTPipeWrite.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.
+ * @retval  VERR_ACCESS_DENIED if it's a read pipe.
  *
  * @param   hPipe           The IPRT pipe handle to write to.
  * @param   pvBuf           What to write.
@@ -132,17 +148,24 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
  * reads them.
  *
  * @returns IPRT status code.
- * @retval  VERR_NOT_SUPPORTED if not supported by the OS?
+ * @retval  VERR_NOT_SUPPORTED if not supported by the OS.
+ * @retval  VERR_BROKEN_PIPE if the remote party has disconnected.
+ * @retval  VERR_ACCESS_DENIED if it's a read pipe.
  *
  * @param   hPipe           The IPRT pipe handle to flush.
  */
 RTDECL(int) RTPipeFlush(RTPIPE hPipe);
 
 /**
- * Checks if the pipe is ready for reading.
+ * Checks if the pipe is ready for reading or writing (depending on the pipe
+ * end).
  *
  * @returns IPRT status code.
- * @param   hPipe           The IPRT read pipe handle to select on.
+ * @retval  VERR_TIMEOUT if the timoue was reached before the pipe because ready
+ *          for reading/writing.
+ * @retval  VERR_NOT_SUPPORTED if not supported by the OS?
+ *
+ * @param   hPipe           The IPRT pipe handle to select on.
  * @param   cMillies        Number of milliseconds to wait.  Use
  *                          RT_INDEFINITE_WAIT to wait for ever.
  */
