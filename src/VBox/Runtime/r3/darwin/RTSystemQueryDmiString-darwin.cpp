@@ -42,10 +42,6 @@
 #include <stdio.h>
 #include <mach/mach_port.h>
 #include <IOKit/IOKitLib.h>
-#include <IOKit/network/IOEthernetInterface.h> 
-#include <IOKit/network/IONetworkInterface.h> 
-#include <IOKit/network/IOEthernetController.h> 
-
 
 #define IOCLASS_PLATFORMEXPERTDEVICE         "IOPlatformExpertDevice"
 #define PROP_PRODUCT_NAME                    "product-name"
