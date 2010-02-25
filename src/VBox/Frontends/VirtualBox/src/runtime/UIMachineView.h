@@ -120,7 +120,7 @@ protected:
     QRect desktopGeometry() const;
     bool isGuestSupportsGraphics() const { return m_bIsGuestSupportsGraphics; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    //bool isMouseAbsolute() const { return m_bIsMouseAbsolute; }
+    //bool isMouseAbsolute() const { return m_fIsMouseSupportsAbsolute; }
 
     /* Protected members: */
     void calculateDesktopGeometry();
@@ -158,7 +158,7 @@ protected slots:
     virtual void sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
                                              uint uXHot, uint uYHot, uint uWidth, uint uHeight,
                                              const uchar *pShapeData);
-    virtual void sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
+    virtual void sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool bIsSupportsRelative, bool bNeedsHostCursor);
 
     /* Initiate resize request to guest: */
     virtual void sltPerformGuestResize(const QSize &aSize = QSize()) = 0;
@@ -231,7 +231,7 @@ private:
 
     /* Private getters: */
     bool isRunning() { return m_machineState == KMachineState_Running || m_machineState == KMachineState_Teleporting || m_machineState == KMachineState_LiveSnapshotting; }
-    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_bIsMouseAbsolute && m_fIsHideHostPointer); }
+    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_fIsMouseSupportsAbsolute && m_fIsHideHostPointer); }
 
     static void dimImage(QImage &img);
 
@@ -260,7 +260,8 @@ private:
     bool m_bIsAutoCaptureDisabled : 1;
     bool m_bIsKeyboardCaptured : 1;
     bool m_bIsMouseCaptured : 1;
-    bool m_bIsMouseAbsolute : 1;
+    bool m_fIsMouseSupportsAbsolute : 1;
+    bool m_fIsMouseSupportsRelative : 1;
     bool m_bIsMouseIntegrated : 1;
     bool m_fIsHideHostPointer;
     bool m_bIsHostkeyPressed : 1;
