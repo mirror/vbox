@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * IPRT - Anonymouse Pipes, POSIX Implementation.
+ * IPRT - Anonymous Pipes, POSIX Implementation.
  */
 
 /*
