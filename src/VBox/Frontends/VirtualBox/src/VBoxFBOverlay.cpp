@@ -4778,16 +4778,15 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
 }
 
 
-VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(VBoxConsoleView *aView) :
+VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pParent) :
     mpFirstEvent (NULL),
     mpLastEvent (NULL),
+    m_pParent(pParent),
     mbNewEvent (false),
     mbProcessingList (false)
 {
     int rc = RTCritSectInit(&mCritSect);
     AssertRC(rc);
-
-    mView = aView;
 
     for(int i = RT_ELEMENTS(mElementsBuffer) - 1; i >= 0; i--)
     {
@@ -4873,7 +4872,7 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     /* 9. unlock */
     RTCritSectLeave(&mCritSect);
     /* 10. post event */
-    QApplication::postEvent (mView, pCurrentEvent);
+    QApplication::postEvent (m_pParent, pCurrentEvent);
 }
 
 VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)

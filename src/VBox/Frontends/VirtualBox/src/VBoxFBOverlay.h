@@ -1304,7 +1304,7 @@ private:
 class VBoxVHWACommandElementProcessor
 {
 public:
-    VBoxVHWACommandElementProcessor(class VBoxConsoleView *aView);
+    VBoxVHWACommandElementProcessor(QObject *pParent);
     ~VBoxVHWACommandElementProcessor();
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
     void completeCurrentEvent();
@@ -1314,7 +1314,7 @@ private:
     RTCRITSECT mCritSect;
     class VBoxVHWACommandProcessEvent *mpFirstEvent;
     class VBoxVHWACommandProcessEvent *mpLastEvent;
-    class VBoxConsoleView *mView;
+    QObject *m_pParent;
     bool mbNewEvent;
     bool mbProcessingList;
     VBoxVHWACommandElementStack mFreeElements;
