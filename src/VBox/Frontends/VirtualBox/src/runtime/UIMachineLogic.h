@@ -107,7 +107,7 @@ protected slots:
     /* Console callback handlers: */
     virtual void sltMachineStateChanged(KMachineState machineState);
     virtual void sltAdditionsStateChanged();
-    virtual void sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fNeedsHostCursor);
+    virtual void sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fIsSupportsRelative, bool fNeedsHostCursor);
     virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     virtual void sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
@@ -170,6 +170,7 @@ private:
     bool m_fIsGuestSupportsGraphics : 1;
     bool m_fIsGuestSupportsSeamless : 1;
     bool m_fIsMouseSupportsAbsolute : 1;
+    bool m_fIsMouseSupportsRelative : 1;
     bool m_fIsHostCursorNeeded : 1;
     bool m_fIsPreventAutoClose : 1;
 

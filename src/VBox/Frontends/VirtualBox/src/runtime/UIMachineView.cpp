@@ -156,7 +156,7 @@ int UIMachineView::keyboardState() const
 int UIMachineView::mouseState() const
 {
     return (m_bIsMouseCaptured ? UIMouseStateType_MouseCaptured : 0) |
-           (m_bIsMouseAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
+           (m_fIsMouseSupportsAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
            (m_bIsMouseIntegrated ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
 
@@ -165,7 +165,7 @@ void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
     if (m_bIsMouseIntegrated == bEnabled)
         return;
 
-    if (m_bIsMouseAbsolute)
+    if (m_fIsMouseSupportsAbsolute)
         captureMouse(!bEnabled, false);
 
     /* Hiding host cursor in case we are entering mouse integration
@@ -213,7 +213,8 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_bIsAutoCaptureDisabled(false)
     , m_bIsKeyboardCaptured(false)
     , m_bIsMouseCaptured(false)
-    , m_bIsMouseAbsolute(false)
+    , m_fIsMouseSupportsAbsolute(false)
+    , m_fIsMouseSupportsRelative(false)
     , m_bIsMouseIntegrated(true)
     , m_fIsHideHostPointer(true)
     , m_bIsHostkeyPressed(false)
@@ -585,7 +586,7 @@ void UIMachineView::prepareConsoleConnections()
             this, SLOT(sltMousePointerShapeChanged(bool, bool, uint, uint, uint, uint, const uchar *)));
 
     /* Mouse capability state-change updater: */
-    connect(sender, SIGNAL(sigMouseCapabilityChange(bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool)));
+    connect(sender, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool, bool)));
 }
 
 void UIMachineView::loadMachineViewSettings()
@@ -634,7 +635,8 @@ void UIMachineView::loadMachineViewSettings()
         m_bIsAutoCaptureDisabled = loader->property("MachineView/IsAutoCaptureDisabled").toBool();
         m_bIsKeyboardCaptured = loader->property("MachineView/IsKeyboardCaptured").toBool();
         m_bIsMouseCaptured = loader->property("MachineView/IsMouseCaptured").toBool();
-        m_bIsMouseAbsolute = loader->property("MachineView/IsMouseAbsolute").toBool();
+        m_fIsMouseSupportsAbsolute = loader->property("MachineView/IsMouseSupportsAbsolute").toBool();
+        m_fIsMouseSupportsRelative = loader->property("MachineView/IsMouseSupportsRelative").toBool();
         m_bIsMouseIntegrated = loader->property("MachineView/IsMouseIntegrated").toBool();
         m_fIsHideHostPointer = loader->property("MachineView/IsHideHostPointer").toBool();
         m_bIsHostkeyInCapture = loader->property("MachineView/IsHostkeyInCapture").toBool();
@@ -667,7 +669,8 @@ void UIMachineView::saveMachineViewSettings()
         saver->setProperty("MachineView/IsAutoCaptureDisabled", m_bIsAutoCaptureDisabled);
         saver->setProperty("MachineView/IsKeyboardCaptured", m_bIsKeyboardCaptured);
         saver->setProperty("MachineView/IsMouseCaptured", m_bIsMouseCaptured);
-        saver->setProperty("MachineView/IsMouseAbsolute", m_bIsMouseAbsolute);
+        saver->setProperty("MachineView/IsMouseSupportsAbsolute", m_fIsMouseSupportsAbsolute);
+        saver->setProperty("MachineView/IsMouseSupportsRelative", m_fIsMouseSupportsRelative);
         saver->setProperty("MachineView/IsMouseIntegrated", m_bIsMouseIntegrated);
         saver->setProperty("MachineView/IsHideHostPointer", m_fIsHideHostPointer);
         saver->setProperty("MachineView/IsHostkeyInCapture", m_bIsHostkeyInCapture);
@@ -794,7 +797,7 @@ void UIMachineView::updateAdditionsState()
 
 void UIMachineView::updateMousePointerShape()
 {
-    if (m_bIsMouseAbsolute)
+    if (m_fIsMouseSupportsAbsolute)
     {
         /* Should we hide/show pointer? */
         if (m_fIsHideHostPointer)
@@ -807,7 +810,7 @@ void UIMachineView::updateMousePointerShape()
 void UIMachineView::updateMouseCapability()
 {
     /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
-    if (m_bIsMouseAbsolute)
+    if (m_fIsMouseSupportsAbsolute)
     {
         CMouse mouse = m_console.GetMouse();
         mouse.PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
@@ -817,7 +820,7 @@ void UIMachineView::updateMouseCapability()
         viewport()->unsetCursor();
 
     /* Notify user about mouse integration state: */
-    vboxProblem().remindAboutMouseIntegration(m_bIsMouseAbsolute);
+    vboxProblem().remindAboutMouseIntegration(m_fIsMouseSupportsAbsolute);
 
     /* Notify all watchers: */
     emitMouseStateChanged();
@@ -889,13 +892,14 @@ void UIMachineView::sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
     updateMousePointerShape();
 }
 
-void UIMachineView::sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool /* bNeedsHostCursor */)
+void UIMachineView::sltMouseCapabilityChanged(bool fIsMouseSupportsAbsolute, bool fIsMouseSupportsRelative, bool /* fIsMouseNeedsHostCursor */)
 {
     /* Check if something had changed: */
-    if (m_bIsMouseAbsolute != bIsSupportsAbsolute)
+    if (m_fIsMouseSupportsAbsolute != fIsMouseSupportsAbsolute || m_fIsMouseSupportsRelative != fIsMouseSupportsRelative)
     {
         /* Get new data: */
-        m_bIsMouseAbsolute = bIsSupportsAbsolute;
+        m_fIsMouseSupportsAbsolute = fIsMouseSupportsAbsolute;
+        m_fIsMouseSupportsRelative = fIsMouseSupportsRelative;
 
         /* Update depending things: */
         updateMouseCapability();
@@ -1532,7 +1536,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                 if (isRunning() && m_bIsKeyboardCaptured)
                 {
                     captureKbd (false);
-                    if (!(m_bIsMouseAbsolute && m_bIsMouseIntegrated))
+                    if (!(m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated))
                         captureMouse (false);
                 }
 
@@ -1640,7 +1644,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                         if (ok)
                         {
                             captureKbd (!captured, false);
-                            if (!(m_bIsMouseAbsolute && m_bIsMouseIntegrated))
+                            if (!(m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated))
                             {
 #ifdef Q_WS_X11
                                 /* make sure that pending FocusOut events from the
@@ -1924,7 +1928,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
         }
 #endif
 
-        if (m_bIsMouseAbsolute && m_bIsMouseIntegrated)
+        if (m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated)
         {
             int cw = contentsWidth(), ch = contentsHeight();
             int vw = visibleWidth(), vh = visibleHeight();

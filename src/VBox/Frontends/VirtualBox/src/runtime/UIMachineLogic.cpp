@@ -382,6 +382,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_fIsGuestSupportsGraphics(false)
     , m_fIsGuestSupportsSeamless(false)
     , m_fIsMouseSupportsAbsolute(false)
+    , m_fIsMouseSupportsRelative(false)
     , m_fIsHostCursorNeeded(false)
     , m_fIsPreventAutoClose(false)
 {
@@ -409,7 +410,7 @@ void UIMachineLogic::prepareConsoleConnections()
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 
     /* Mouse capability state-change updater: */
-    connect(uisession(), SIGNAL(sigMouseCapabilityChange(bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool)));
+    connect(uisession(), SIGNAL(sigMouseCapabilityChange(bool, bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool, bool)));
 
     /* USB devices state-change updater: */
     connect(uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
@@ -636,6 +637,7 @@ void UIMachineLogic::loadLogicSettings()
         m_fIsGuestSupportsGraphics = uisession()->property("MachineLogic/IsGuestSupportsGraphics").toBool();
         m_fIsGuestSupportsSeamless = uisession()->property("MachineLogic/IsGuestSupportsSeamless").toBool();
         m_fIsMouseSupportsAbsolute = uisession()->property("MachineLogic/IsMouseSupportsAbsolute").toBool();
+        m_fIsMouseSupportsRelative = uisession()->property("MachineLogic/IsMouseSupportsRelative").toBool();
         m_fIsHostCursorNeeded = uisession()->property("MachineLogic/IsHostCursorNeeded").toBool();
 
         /* Update relative things: */
@@ -671,6 +673,7 @@ void UIMachineLogic::saveLogicSettings()
         uisession()->setProperty("MachineLogic/IsGuestSupportsGraphics", m_fIsGuestSupportsGraphics);
         uisession()->setProperty("MachineLogic/IsGuestSupportsSeamless", m_fIsGuestSupportsSeamless);
         uisession()->setProperty("MachineLogic/IsMouseSupportsAbsolute", m_fIsMouseSupportsAbsolute);
+        uisession()->setProperty("MachineLogic/IsMouseSupportsRelative", m_fIsMouseSupportsRelative);
         uisession()->setProperty("MachineLogic/IsHostCursorNeeded", m_fIsHostCursorNeeded);
     }
 #endif
@@ -826,7 +829,7 @@ void UIMachineLogic::updateMouseCapability()
 {
     /* Update related things: */
     QAction *pAction = actionsPool()->action(UIActionIndex_Toggle_MouseIntegration);
-    pAction->setEnabled(m_fIsMouseSupportsAbsolute && !m_fIsHostCursorNeeded);
+    pAction->setEnabled(m_fIsMouseSupportsAbsolute && m_fIsMouseSupportsRelative && !m_fIsHostCursorNeeded);
     pAction->setChecked(m_fIsHostCursorNeeded || pAction->isChecked());
 }
 
@@ -868,13 +871,16 @@ void UIMachineLogic::sltAdditionsStateChanged()
     }
 }
 
-void UIMachineLogic::sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fIsHostCursorNeeded)
+void UIMachineLogic::sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fIsSupportsRelative, bool fIsHostCursorNeeded)
 {
     /* Check if something is changed: */
-    if (m_fIsMouseSupportsAbsolute != fIsSupportsAbsolute || m_fIsHostCursorNeeded != fIsHostCursorNeeded)
+    if (m_fIsMouseSupportsAbsolute != fIsSupportsAbsolute ||
+        m_fIsMouseSupportsRelative != fIsSupportsRelative ||
+        m_fIsHostCursorNeeded != fIsHostCursorNeeded)
     {
         /* Store new data: */
         m_fIsMouseSupportsAbsolute = fIsSupportsAbsolute;
+        m_fIsMouseSupportsRelative = fIsSupportsRelative;
         m_fIsHostCursorNeeded = fIsHostCursorNeeded;
 
         /* Update mouse capability: */

@@ -75,7 +75,7 @@ signals:
 
     /* Console signals: */
     void sigMousePointerShapeChange(bool bIsVisible, bool bHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight, const uchar *pShapeData);
-    void sigMouseCapabilityChange(bool bIsSupportsAbsolute, bool bNeedsHostCursor);
+    void sigMouseCapabilityChange(bool bIsSupportsAbsolute, bool bIsSupportsRelative, bool bNeedsHostCursor);
     void sigKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock);
     void sigStateChange(KMachineState machineState);
     void sigAdditionsStateChange();

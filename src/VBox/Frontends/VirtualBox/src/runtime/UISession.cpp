@@ -76,16 +76,18 @@ class UIMouseCapabilityChangeEvent : public QEvent
 {
 public:
 
-    UIMouseCapabilityChangeEvent(bool bSupportsAbsolute, bool bNeedsHostCursor)
+    UIMouseCapabilityChangeEvent(bool bSupportsAbsolute, bool bSupportsRelative, bool bNeedsHostCursor)
         : QEvent((QEvent::Type)UIConsoleEventType_MouseCapabilityChange)
-        , m_bSupportsAbsolute(bSupportsAbsolute), m_bNeedsHostCursor(bNeedsHostCursor) {}
+        , m_bSupportsAbsolute(bSupportsAbsolute), m_bSupportsRelative(bSupportsRelative), m_bNeedsHostCursor(bNeedsHostCursor) {}
 
     bool supportsAbsolute() const { return m_bSupportsAbsolute; }
+    bool supportsRelative() const { return m_bSupportsRelative; }
     bool needsHostCursor() const { return m_bNeedsHostCursor; }
 
 private:
 
     bool m_bSupportsAbsolute;
+    bool m_bSupportsRelative;
     bool m_bNeedsHostCursor;
 };
 
@@ -358,9 +360,9 @@ public:
         return S_OK;
     }
 
-    STDMETHOD(OnMouseCapabilityChange)(BOOL bSupportsAbsolute, BOOL bNeedHostCursor)
+    STDMETHOD(OnMouseCapabilityChange)(BOOL bSupportsAbsolute, BOOL bSupportsRelative, BOOL bNeedHostCursor)
     {
-        QApplication::postEvent(m_pEventHandler, new UIMouseCapabilityChangeEvent(bSupportsAbsolute, bNeedHostCursor));
+        QApplication::postEvent(m_pEventHandler, new UIMouseCapabilityChangeEvent(bSupportsAbsolute, bSupportsRelative, bNeedHostCursor));
         return S_OK;
     }
 
@@ -547,7 +549,7 @@ bool UISession::event(QEvent *pEvent)
         case UIConsoleEventType_MouseCapabilityChange:
         {
             UIMouseCapabilityChangeEvent *pConsoleEvent = static_cast<UIMouseCapabilityChangeEvent*>(pEvent);
-            emit sigMouseCapabilityChange(pConsoleEvent->supportsAbsolute(), pConsoleEvent->needsHostCursor());
+            emit sigMouseCapabilityChange(pConsoleEvent->supportsAbsolute(), pConsoleEvent->supportsRelative(), pConsoleEvent->needsHostCursor());
             return true;
         }
 
