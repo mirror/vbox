@@ -509,6 +509,7 @@ $(PATH_BIN)/$(PKG_FILENAME).tar.gz: \
 		$(addprefix $(PATH_BIN)/,$(filter-out $(SOLARIS_EXTRAS) $(SOLARIS_QTLIBS),$(SOLARIS_ARCH_FILES))) \
 		VBoxISAExec \
 		$(SOLARIS_ARCH_DEPFILES)
+	$(QUIET)$(RM) -f $(wildcard $(PATH_BIN)/VirtualBox-*-r*.tar.gz
 	$(call MSG_L1,Installing binaries $(SOLARIS_VBOXINST_DIR))
 ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_ADDITIONS_PACKING),$(INSTALL) -m 0644 $(SOLARIS_OUT_BIN_32)/additions/VBoxGuestAdditions.iso            $(SOLARIS_VBOXINST_DIR)/additions/)
