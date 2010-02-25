@@ -396,48 +396,6 @@ void UIMachineWindow::prepareConsoleConnections()
                      machineWindow(), SLOT(sltMachineStateChanged(KMachineState)));
 }
 
-void UIMachineWindow::loadWindowSettings()
-{
-#ifdef Q_WS_MAC
-    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value */
-    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
-    if (machineView())
-    {
-        machineView()->setDockIconEnabled(bIsDockIconEnabled);
-        machineView()->updateDockOverlay();
-    }
-#endif
-}
-
-void UIMachineWindow::updateAppearanceOf(int iElement)
-{
-    CMachine machine = session().GetMachine();
-
-    if (iElement & UIVisualElement_WindowCaption)
-    {
-        QString strSnapshotName;
-        if (machine.GetSnapshotCount() > 0)
-        {
-            CSnapshot snapshot = machine.GetCurrentSnapshot();
-            strSnapshotName = " (" + snapshot.GetName() + ")";
-        }
-        QString strMachineName = machine.GetName() + strSnapshotName;
-        if (machineLogic()->machineState() != KMachineState_Null)
-            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
-        strMachineName += m_strWindowTitlePrefix;
-        machineWindow()->setWindowTitle(strMachineName);
-
-        // TODO: Move that to fullscreen/seamless update routine:
-        //mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
-    }
-}
-
-void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
-{
-    updateAppearanceOf(UIVisualElement_WindowCaption);
-}
-
 void UIMachineWindow::prepareMenuMachine()
 {
     QMenu *menu = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
@@ -500,4 +458,46 @@ void UIMachineWindow::prepareMenuDebug()
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Toggle_Logging));
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
+
+void UIMachineWindow::loadWindowSettings()
+{
+#ifdef Q_WS_MAC
+    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value */
+    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
+    if (machineView())
+    {
+        machineView()->setDockIconEnabled(bIsDockIconEnabled);
+        machineView()->updateDockOverlay();
+    }
+#endif
+}
+
+void UIMachineWindow::updateAppearanceOf(int iElement)
+{
+    CMachine machine = session().GetMachine();
+
+    if (iElement & UIVisualElement_WindowCaption)
+    {
+        QString strSnapshotName;
+        if (machine.GetSnapshotCount() > 0)
+        {
+            CSnapshot snapshot = machine.GetCurrentSnapshot();
+            strSnapshotName = " (" + snapshot.GetName() + ")";
+        }
+        QString strMachineName = machine.GetName() + strSnapshotName;
+        if (machineLogic()->machineState() != KMachineState_Null)
+            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
+        strMachineName += m_strWindowTitlePrefix;
+        machineWindow()->setWindowTitle(strMachineName);
+
+        // TODO: Move that to fullscreen/seamless update routine:
+        //mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
+    }
+}
+
+void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
+{
+    updateAppearanceOf(UIVisualElement_WindowCaption);
+}
 

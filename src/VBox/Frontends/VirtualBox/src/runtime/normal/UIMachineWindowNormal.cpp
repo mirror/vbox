@@ -342,19 +342,19 @@ void UIMachineWindowNormal::prepareMenu()
 {
     /* Machine submenu: */
     QMenu *pMenuMachine = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
-    UIMachineWindow::prepareMenuMachine();
+    prepareMenuMachine();
     menuBar()->addMenu(pMenuMachine);
 
     /* Devices submenu: */
     QMenu *pMenuDevices = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
-    UIMachineWindow::prepareMenuDevices();
+    prepareMenuDevices();
     menuBar()->addMenu(pMenuDevices);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     if (vboxGlobal().isDebuggerEnabled())
     {
         QMenu *pMenuDebug = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Debug)->menu();
-        UIMachineWindow::prepareMenuDebug();
+        prepareMenuDebug();
         menuBar()->addMenu(pMenuDebug);
     }
 #endif
