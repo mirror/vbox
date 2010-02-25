@@ -1337,7 +1337,7 @@ private:
 class VBoxGLWidget : public QGLWidget
 {
 public:
-    VBoxGLWidget (class VBoxConsoleView *aView, QWidget *aParent, VBoxVHWASettings *aSettings);
+    VBoxGLWidget (CConsole &console, QWidget *aParent, VBoxVHWASettings *aSettings);
     ~VBoxGLWidget();
 
     ulong vboxPixelFormat() { return mPixelFormat; }
@@ -1534,7 +1534,7 @@ private:
 
     QRect mViewport;
 
-    class VBoxConsoleView *mView;
+    CConsole &m_console;
 
     VBoxVHWASurfList *mConstructingList;
     int32_t mcRemaining2Contruct;

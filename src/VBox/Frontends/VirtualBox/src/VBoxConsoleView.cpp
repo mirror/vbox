@@ -760,7 +760,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     switch (mode)
     {
         case VBoxDefs::QGLMode:
-            pViewport = new VBoxGLWidget (this, this, NULL);
+            pViewport = new VBoxGLWidget (mConsole, this, NULL);
             break;
         default:
             pViewport = new VBoxViewport (this);

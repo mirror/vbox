@@ -1916,7 +1916,7 @@ private:
     bool mAllowDoneCurrent;
 };
 
-VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent, VBoxVHWASettings *aSettings)
+VBoxGLWidget::VBoxGLWidget (CConsole& console, QWidget *aParent, VBoxVHWASettings *aSettings)
     : QGLWidget (new VBoxGLContext(VBoxGLWidget::vboxGLFormat()), aParent),
     mSurfHandleTable(128), /* 128 should be enough */
     mpfnOp(NULL),
@@ -1925,7 +1925,7 @@ VBoxGLWidget::VBoxGLWidget (VBoxConsoleView *aView, QWidget *aParent, VBoxVHWASe
     mUsesGuestVRAM(false),
     mRepaintNeeded(false),
 //    mbVGASurfCreated(false),
-    mView(aView),
+    m_console(console),
     mConstructingList(NULL),
     mcRemaining2Contruct(0),
     mSettings(aSettings)
@@ -2119,7 +2119,7 @@ void VBoxGLWidget::vboxDoVHWACmd(void *cmd)
 {
     vboxDoVHWACmdExec(cmd);
 
-    CDisplay display = mView->console().GetDisplay();
+    CDisplay display = m_console.GetDisplay();
     Assert (!display.isNull());
 
     display.CompleteVHWACommand((BYTE*)cmd);
@@ -4141,7 +4141,7 @@ void VBoxQGLOverlay::initGl()
     if(mpOverlayWidget)
         return;
 
-    mpOverlayWidget = new VBoxGLWidget (mView, mView->viewport(), &mSettings);
+    mpOverlayWidget = new VBoxGLWidget (mView->console(), mView->viewport(), &mSettings);
 
     VBoxGLContext *pc = (VBoxGLContext*)mpOverlayWidget->context();
     pc->allowDoneCurrent (false);
