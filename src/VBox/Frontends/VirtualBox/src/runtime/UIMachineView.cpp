@@ -85,21 +85,6 @@ const int XKeyRelease = KeyRelease;
 # include <VBox/err.h>
 #endif /* defined (Q_WS_MAC) */
 
-/* Menu activation event */
-class ActivateMenuEvent : public QEvent
-{
-public:
-
-    ActivateMenuEvent (QAction *pAction)
-        : QEvent((QEvent::Type)VBoxDefs::ActivateMenuEventType)
-        , m_pAction(pAction) {}
-    QAction* action() const { return m_pAction; }
-
-private:
-
-    QAction *m_pAction;
-};
-
 class VBoxViewport: public QWidget
 {
 public:
@@ -1101,23 +1086,6 @@ bool UIMachineView::event(QEvent *pEvent)
         }
 #endif
 
-#if 0 // TODO: Move that to specific event handler!
-        case VBoxDefs::ActivateMenuEventType:
-        {
-            ActivateMenuEvent *pMenuEvent = static_cast<ActivateMenuEvent*>(pEvent);
-            pMenuEvent->action()->trigger();
-
-            /* The main window and its children can be destroyed at this point (if, for example, the activated menu
-             * item closes the main window). Detect this situation to prevent calls to destroyed widgets: */
-            QWidgetList list = QApplication::topLevelWidgets();
-            bool destroyed = list.indexOf(machineWindowWrapper()->machineWindow()) < 0;
-            if (!destroyed && machineWindowWrapper()->machineWindow()->statusBar())
-                machineWindowWrapper()->machineWindow()->statusBar()->clearMessage();
-
-            return true;
-        }
-#endif
-
         case QEvent::KeyPress:
         case QEvent::KeyRelease:
         {
@@ -1245,7 +1213,7 @@ bool UIMachineView::event(QEvent *pEvent)
                 else
                 {
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
-                    processHotKey(QKeySequence (pKeyEvent->key()), machineWindowWrapper()->menuBar()->actions());
+                    processed = machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence (pKeyEvent->key()));
                 }
 #endif
             }
@@ -1722,8 +1690,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
             if (!ToUnicodeEx(hotkey, 0, keys, &ch, 1, 0, list[i]) == 1)
                 ch = 0;
             if (ch)
-                processed = processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(ch).toUpper().unicode()),
-                                          machineWindowWrapper()->menuBar()->actions());
+                processed = machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence((Qt::UNICODE_ACCEL + QChar(ch).toUpper().unicode())));
         }
         delete[] list;
 #elif defined (Q_WS_X11)
@@ -1742,9 +1709,8 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
         }
 #elif defined (Q_WS_MAC)
         // TODO_NEW_CORE
-//        if (pUniKey && pUniKey [0] && !pUniKey [1])
-//            processed = processHotKey(QKeySequence (Qt::UNICODE_ACCEL + QChar(pUniKey[0]).toUpper().unicode()),
-//                                      machineWindowWrapper()->menuBar()->actions());
+        if (pUniKey && pUniKey[0] && !pUniKey[1])
+            processed = machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pUniKey[0]).toUpper().unicode()));
 
         /* Don't consider the hot key as pressed since the guest never saw
          * it. (probably a generic thing) */
@@ -2832,41 +2798,6 @@ void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
 void UIMachineView::saveKeyStates()
 {
     ::memcpy(m_pressedKeysCopy, m_pressedKeys, sizeof(m_pressedKeys));
-}
-
-bool UIMachineView::processHotKey(const QKeySequence &key, const QList<QAction*> &actions)
-{
-    // TODO: Make it work for all modes:
-    foreach (QAction *pAction, actions)
-    {
-        if (QMenu *menu = pAction->menu())
-        {
-            /* Process recursively for each sub-menu */
-            if (processHotKey(key, menu->actions()))
-                return true;
-        }
-        else
-        {
-            QString hotkey = VBoxGlobal::extractKeyFromActionText(pAction->text());
-            if (pAction->isEnabled() && !hotkey.isEmpty())
-            {
-                if (key.matches(QKeySequence (hotkey)) == QKeySequence::ExactMatch)
-                {
-                    /* We asynchronously post a special event instead of calling
-                     * pAction->trigger() directly, to let key presses and
-                     * releases be processed correctly by Qt first.
-                     * Note: we assume that nobody will delete the menu item
-                     * corresponding to the key sequence, so that the pointer to
-                     * menu data posted along with the event will remain valid in
-                     * the event handler, at least until the main window is closed. */
-                    QApplication::postEvent(this, new ActivateMenuEvent(pAction));
-                    return true;
-                }
-            }
-        }
-    }
-
-    return false;
 }
 
 void UIMachineView::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)

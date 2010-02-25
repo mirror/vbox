@@ -110,6 +110,12 @@ public:
 
     UIAction* action(UIActionIndex index) const;
 
+    bool processHotKey(const QKeySequence &key);
+
+protected:
+
+    bool event(QEvent *pEvent);
+
 private:
 
     QVector<UIAction*> m_actionsPool;

@@ -223,7 +223,6 @@ private:
     void captureKbd(bool fCapture, bool fEmitSignal = true);
     void captureMouse(bool fCapture, bool fEmitSignal = true);
     void saveKeyStates();
-    bool processHotKey(const QKeySequence &key, const QList<QAction*> &data);
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
     void updateMouseClipping();
