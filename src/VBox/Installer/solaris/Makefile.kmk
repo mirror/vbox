@@ -534,8 +534,10 @@ endif
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_VBOXINST_DIR)/LICENSE)
 	$(QUIET)$(if $(VBOX_OSE),,$(INSTALL) -m 0644 $(PATH_BIN)/LICENSE                                        $(SOLARIS_BASEINST_DIR)/vbox.copyright)
 ifdef VBOX_WITH_COMBINED_PACKAGE
+ ifndef VBOX_OSE
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.x86/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2     $(SOLARIS_VBOXINST_DIR_32)/libSDL-1.2.so.0,)
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS)/solaris.amd64/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2   $(SOLARIS_VBOXINST_DIR_64)/libSDL-1.2.so.0,)
+ endif
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
 	$(QUIET)$(MKDIR) -p $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64)
 	$(QUIET)$(if $(VBOX_WITH_PYTHON),$(INSTALL) -m 0644 $(if $(VBOX_DO_STRIP),-s) $(wildcard $(SOLARIS_OUT_BIN_32)/VBoxPython*.so)   $(SOLARIS_VBOXINST_DIR)/,)
@@ -554,7 +556,9 @@ ifdef VBOX_WITH_COMBINED_PACKAGE
 	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_64)/VBoxEFI64.fd,)
 	$(QUIET)$(if $(VBOX_WITH_EFIFW_PACKING),$(LN_SYMLINK) -f ../VBoxEFI64.fd                                             $(SOLARIS_VBOXINST_DIR_32)/VBoxEFI64.fd,)
 else
+ ifndef VBOX_OSE
 	$(QUIET)$(if $(VBOX_WITH_VBOXSDL),$(INSTALL) -m 0644 $(PATH_DEVTOOLS_TRG)/libSDL/v1.2.13/lib/libSDL-1.2.so.0.11.2    $(SOLARIS_VBOXINST_DIR_ISA)/libSDL-1.2.so.0,)
+ endif
 	@# @todo -XXX- how to get rid of this manual MKDIR ?
  ifdef VBOX_WITH_PYTHON
 	$(QUIET)$(if $(SOL64_PKG),$(MKDIR) -p $(SOLARIS_VBOXINST_DIR)/$(VBOX_SOL_PYTHON_DIR_64),)
