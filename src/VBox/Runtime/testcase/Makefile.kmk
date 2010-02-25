@@ -75,6 +75,7 @@ PROGRAMS += \
 	tstLdr-3 \
 	tstLdr-4 \
 	tstLdrLoad \
+	tstRTList \
 	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
@@ -117,8 +118,7 @@ PROGRAMS += \
 	tstRTTimeSpec \
 	tstTSC \
 	tstUtf8 \
-	tstRTUuid \
-	tstRTList
+	tstRTUuid
 # tstSems
 PROGRAMS.win += \
 	tstRTProcWait \
@@ -308,6 +308,9 @@ tstLdr-4_LIBS = \
 
 tstLdrLoad_SOURCES = tstLdrLoad.cpp
 
+tstRTList_TEMPLATE = VBOXR3TSTEXE
+tstRTList_SOURCES = tstRTList.cpp
+
 tstRTLockValidator_TEMPLATE = VBOXR3TSTEXE
 tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 
@@ -444,8 +447,6 @@ tstRTUuid_TEMPLATE = VBOXR3TSTEXE
 tstRTUuid_SOURCES = tstRTUuid.cpp
 
 tstUtf8_SOURCES = tstUtf8.cpp
-
-tstRTList_SOURCES = tstRTList.cpp
 
 #
 # odds and  ends
