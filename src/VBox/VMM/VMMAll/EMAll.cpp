@@ -78,7 +78,7 @@ typedef struct
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize);
+DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType = EMCODETYPE_SUPERVISOR);
 
 
 
@@ -359,6 +359,7 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @param   pRegFrame   The register frame. EIP is *NOT* changed!
  * @param   pvFault     The fault address (CR2).
  * @param   pcbSize     Size of the write (if applicable).
+ * @param   enmCodeType Code type (user/supervisor)
  *
  * @remark  Invalid opcode exceptions have a higher priority than GP (see Intel
  *          Architecture System Developers Manual, Vol 3, 5.5) so we don't need
@@ -367,10 +368,10 @@ VMMDECL(int) EMInterpretInstruction(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFram
  * @todo    At this time we do NOT check if the instruction overwrites vital information.
  *          Make sure this can't happen!! (will add some assertions/checks later)
  */
-VMMDECL(int) EMInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretInstructionCPUEx(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType)
 {
     STAM_PROFILE_START(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
-    int rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize);
+    int rc = emInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, pcbSize, enmCodeType);
     STAM_PROFILE_STOP(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,Emulate), a);
     if (RT_SUCCESS(rc))
         STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,InterpretSucceeded));
@@ -3149,24 +3150,30 @@ static int emInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
  * Internal worker.
  * @copydoc EMInterpretInstructionCPU
  */
-DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize, EMCODETYPE enmCodeType)
 {
+    Assert(enmCodeType == EMCODETYPE_SUPERVISOR || enmCodeType == EMCODETYPE_ALL);
     Assert(pcbSize);
     *pcbSize = 0;
 
-    /*
-     * Only supervisor guest code!!
-     * And no complicated prefixes.
-     */
-    /* Get the current privilege level. */
-    uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
-    if (    cpl != 0
-        &&  pDis->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+    if (enmCodeType == EMCODETYPE_SUPERVISOR)
     {
-        Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
-        STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
-        return VERR_EM_INTERPRETER;
+        /*
+         * Only supervisor guest code!!
+         * And no complicated prefixes.
+         */
+        /* Get the current privilege level. */
+        uint32_t cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
+        if (    cpl != 0
+            &&  pDis->pCurInstr->opcode != OP_RDTSC)    /* rdtsc requires emulation in ring 3 as well */
+        {
+            Log(("WARNING: refusing instruction emulation for user-mode code!!\n"));
+            STAM_COUNTER_INC(&pVCpu->em.s.CTX_SUFF(pStats)->CTX_MID_Z(Stat,FailedUserMode));
+            return VERR_EM_INTERPRETER;
+        }
     }
+    else 
+        Log2(("emInterpretInstructionCPU allowed to interpret user-level code!!\n"));
 
 #ifdef IN_RC
     if (    (pDis->prefix & (PREFIX_REPNE | PREFIX_REP))
