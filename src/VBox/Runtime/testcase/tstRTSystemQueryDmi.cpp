@@ -49,7 +49,7 @@ int main()
     /*
      * Simple stuff.
      */
-    char szInfo[256];
+    char szInfo[_4K];
 
     rc = RTSystemQueryDmiString(RTSYSDMISTR_PRODUCT_NAME, szInfo, sizeof(szInfo));
     RTTestIPrintf(RTTESTLVL_ALWAYS, "PRODUCT_NAME: \"%s\", rc=%Rrc\n", szInfo, rc);
@@ -70,12 +70,12 @@ int main()
     {
         memset(szInfo, ' ', sizeof(szInfo));
         rc = RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, sizeof(szInfo));
-        if (    rc == VERR_NOT_SUPPORTED
+        if (    (rc == VERR_NOT_SUPPORTED || rc == VERR_ACCESS_DENIED)
             &&  szInfo[0] != '\0')
             RTTestIFailed("level=%d; unterminated buffer on VERR_NOT_SUPPORTED\n", i);
-        else if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW || rc == VERR_ACCESS_DENIED)
+        else if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
             RTTESTI_CHECK(memchr(szInfo, '\0', sizeof(szInfo)) != NULL);
-        else if (rc != VERR_NOT_SUPPORTED)
+        else if (rc != VERR_NOT_SUPPORTED && rc != VERR_ACCESS_DENIED)
             RTTestIFailed("level=%d unexpected rc=%Rrc\n", i, rc);
     }
 
@@ -86,11 +86,19 @@ int main()
     RTAssertSetMayPanic(false);
     for (int i = RTSYSDMISTR_INVALID + 1; i < RTSYSDMISTR_END; i++)
     {
-        rc = VERR_BUFFER_OVERFLOW;
-        for (size_t cch = 0; cch < sizeof(szInfo) && rc == VERR_BUFFER_OVERFLOW; cch++)
+        RTTESTI_CHECK_RC(RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, 0), VERR_INVALID_PARAMETER);
+
+        /* Get the length of the info and check that we get overflow errors for
+           everything less that it.  */
+        rc = RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, sizeof(szInfo));
+        if (RT_FAILURE(rc))
+            continue;
+        size_t const cchInfo = strlen(szInfo);
+
+        for (size_t cch = 1; cch < sizeof(szInfo) && cch < cchInfo; cch++)
         {
             memset(szInfo, 0x7f, sizeof(szInfo));
-            rc = RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, cch);
+            RTTESTI_CHECK_RC(RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, cch), VERR_BUFFER_OVERFLOW);
 
             /* check the padding. */
             for (size_t off = cch; off < sizeof(szInfo); off++)
@@ -101,13 +109,14 @@ int main()
                 }
 
             /* check for zero terminator. */
-            if (    (   rc == VERR_BUFFER_OVERFLOW
-                     || rc == VERR_NOT_SUPPORTED
-                     || RT_SUCCESS(rc))
-                &&  cch > 0
-                &&  !memchr(szInfo, '\0', cch))
+            if (!memchr(szInfo, '\0', cch))
                 RTTestIFailed("level=%d, rc=%Rrc, cch=%zu: Buffer not terminated!\n", i, rc, cch);
         }
+
+        /* Check that the exact length works. */
+        rc = RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, cchInfo + 1);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("level=%d: rc=%Rrc when specifying exactly right buffer length (%zu)\n", i, rc, cchInfo + 1);
     }
 
     return RTTestSummaryAndDestroy(hTest);
