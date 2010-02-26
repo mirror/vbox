@@ -23,6 +23,8 @@
 #ifndef ____H_CONSOLEIMPL
 #define ____H_CONSOLEIMPL
 
+#include <VBox/types.h>
+
 /*
  * Host key handling.
  *
@@ -98,6 +100,23 @@ typedef enum _CONEVENT
 
     CONEVENT_NONE
 } CONEVENT;
+
+/**
+ *  Checks the availability of the underlying VM device driver corresponding
+ *  to the COM interface (IKeyboard, IMouse, IDisplay, etc.). When the driver is
+ *  not available (NULL), sets error info and returns returns E_ACCESSDENIED.
+ *  The translatable error message is defined in null context.
+ *
+ *  Intended to used only within Console children (i.e. Keyboard, Mouse,
+ *  Display, etc.).
+ *
+ *  @param drv  driver pointer to check (compare it with NULL)
+ */
+#define CHECK_CONSOLE_DRV(drv) \
+    do { \
+        if (!(drv)) \
+            return setError(E_ACCESSDENIED, tr("The console is not powered up")); \
+    } while (0)
 
 class Console
 {

@@ -134,6 +134,16 @@ SDLConsole::SDLConsole() : Console()
      * Enable keyboard repeats
      */
     SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY, SDL_DEFAULT_REPEAT_INTERVAL);
+
+    /*
+     * Initialise "children" (so far only Mouse)
+     */
+    if (FAILED(gMouse->init(this)))
+    {
+        RTPrintf("VBoxBFE: failed to initialise the mouse device\n");
+        return;
+    }
+
     mfInitialized = true;
 }
 
@@ -141,6 +151,12 @@ SDLConsole::~SDLConsole()
 {
     if (mfInputGrab)
         inputGrabEnd();
+
+    /*
+     * Uninitialise "children" (so far only Mouse)
+     */
+    gMouse->uninit();
+
     if (mWMIcon)
     {
         SDL_FreeSurface(mWMIcon);
@@ -276,7 +292,9 @@ CONEVENT SDLConsole::eventWait()
          */
         case SDL_MOUSEMOTION:
         {
-            if (mfInputGrab || gMouse->getAbsoluteCoordinates())
+            bool fMouseAbsolute;
+            gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
+            if (mfInputGrab || fMouseAbsolute)
                 mouseSendEvent(0);
             break;
         }
@@ -287,8 +305,10 @@ CONEVENT SDLConsole::eventWait()
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
         {
+            bool fMouseAbsolute;
+            gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
             SDL_MouseButtonEvent *bev = &ev->button;
-            if (!mfInputGrab && !gMouse->getAbsoluteCoordinates())
+            if (!mfInputGrab && !fMouseAbsolute)
             {
                 if (ev->type == SDL_MOUSEBUTTONDOWN && (bev->state & SDL_BUTTON_LMASK))
                 {
@@ -1136,10 +1156,12 @@ static void DisableGlobalHotKeys(bool fDisable)
  */
 void SDLConsole::inputGrabStart()
 {
+    bool fNeedsHostCursor;
+    gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(true);
 #endif
-    if (!gMouse->getNeedsHostCursor())
+    if (!fNeedsHostCursor)
         SDL_ShowCursor(SDL_DISABLE);
     SDL_WM_GrabInput(SDL_GRAB_ON);
     // dummy read to avoid moving the mouse
@@ -1153,8 +1175,10 @@ void SDLConsole::inputGrabStart()
  */
 void SDLConsole::inputGrabEnd()
 {
+    bool fNeedsHostCursor;
+    gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
     SDL_WM_GrabInput(SDL_GRAB_OFF);
-    if (!gMouse->getNeedsHostCursor())
+    if (!fNeedsHostCursor)
         SDL_ShowCursor(SDL_ENABLE);
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(false);
@@ -1176,8 +1200,12 @@ void SDLConsole::mouseSendEvent(int dz)
 {
     int x, y, state, buttons;
     bool abs;
+    bool fMouseAbsolute;
+    bool fNeedsHostCursor;
 
-    abs = (gMouse->getAbsoluteCoordinates() && !mfInputGrab) || gMouse->getNeedsHostCursor();
+    gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
+    gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
+    abs = (fMouseAbsolute && !mfInputGrab) || fNeedsHostCursor;
 
     state = abs ? SDL_GetMouseState(&x, &y) : SDL_GetRelativeMouseState(&x, &y);
 
@@ -1201,11 +1229,11 @@ void SDLConsole::mouseSendEvent(int dz)
          */
         /* only send if outside the extra offset area */
         if (y >= gFramebuffer->getYOffset())
-            gMouse->PutMouseEventAbsolute(x + 1, y + 1 - gFramebuffer->getYOffset(), dz, buttons);
+            gMouse->PutMouseEventAbsolute(x + 1, y + 1 - gFramebuffer->getYOffset(), dz, 0, buttons);
     }
     else
     {
-        gMouse->PutMouseEvent(x, y, dz, buttons);
+        gMouse->PutMouseEvent(x, y, dz, 0, buttons);
     }
 }
 
@@ -1324,7 +1352,9 @@ void SDLConsole::setPointerShape (const PointerShapeChangeData *data)
     /*
      * don't do anything if there are no guest additions loaded (anymore)
      */
-    if (!gMouse->getAbsoluteCoordinates())
+    bool fMouseAbsolute;
+    gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
+    if (!fMouseAbsolute)
         return;
 
     if (data->shape)
