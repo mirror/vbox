@@ -201,13 +201,23 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     pFileActions = &FileActions;
                     for (int i = 0; i < 3; i++)
                     {
-                        if (aStdFds[i] == -2)
+                        int fd = aStdFds[i];
+                        if (fd == -2)
                             rc = posix_spawn_file_actions_addclose(&FileActions, i);
-                        else if (aStdFds[i] >= 0 && aStdFds[i] != i)
+                        else if (fd >= 0 && fd != i)
                         {
-                            rc = posix_spawn_file_actions_adddup2(&FileActions, aStdFds[i], i);
+                            rc = posix_spawn_file_actions_adddup2(&FileActions, fd, i);
                             if (!rc)
-                                rc = posix_spawn_file_actions_addclose(&FileActions, aStdFds[i]);
+                            {
+                                for (int j = i + 1; j < 3; j++)
+                                    if (aStdFds[j] == fd)
+                                    {
+                                        fd = -1;
+                                        break;
+                                    }
+                                if (fd >= 0)
+                                    rc = posix_spawn_file_actions_addclose(&FileActions, fd);
+                            }
                         }
                         if (rc)
                             break;
@@ -251,13 +261,13 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             if (gid != ~(gid_t)0)
             {
                 if (setgid(gid))
-                    exit(127);
+                    exit(126);
             }
 
             if (uid != ~(uid_t)0)
             {
                 if (setuid(uid))
-                    exit(127);
+                    exit(126);
             }
 #endif
 
@@ -266,13 +276,22 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
              */
             for (int i = 0; i < 3; i++)
             {
-                if (aStdFds[i] == -2)
-                    close(aStdFds[i]);
-                else if (aStdFds[i] >= 0)
+                int fd = aStdFds[i];
+                if (fd == -2)
+                    close(i);
+                else if (fd >= 0)
                 {
-                    if (dup2(aStdFds[i], i) != i)
-                        exit(127);
-                    close(aStdFds[i]);
+                    int rc2 = dup2(fd, i);
+                    if (rc2 != i)
+                        exit(125);
+                    for (int j = i + 1; j < 3; j++)
+                        if (aStdFds[j] == fd)
+                        {
+                            fd = -1;
+                            break;
+                        }
+                    if (fd >= 0)
+                        close(fd);
                 }
             }
 

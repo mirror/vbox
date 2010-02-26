@@ -109,8 +109,10 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
  * @param   hPipe           The IPRT pipe handle to read from.
  * @param   pvBuf           Where to put the bytes we read.
  * @param   cbToRead        How much to read.
+ * @param   pcbRead         Where to return the number of bytes that has been
+ *                          read. Optional.
  */
-RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead);
+RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRead);
 
 /**
  * Write bytes to a pipe, non-blocking.
@@ -126,7 +128,8 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead);
  * @param   hPipe           The IPRT pipe handle to write to.
  * @param   pvBuf           What to write.
  * @param   cbToWrite       How much to write.
- * @param   pcbWritten      How many bytes we wrote.  This can be 0.
+ * @param   pcbWritten      How many bytes we wrote, mandatory.  The return can
+ *                          be 0.
  */
 RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
@@ -142,8 +145,10 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
  * @param   hPipe           The IPRT pipe handle to write to.
  * @param   pvBuf           What to write.
  * @param   cbToWrite       How much to write.
+ * @param   pcbWritten      How many bytes we wrote, optional.  If NULL then all
+ *                          bytes will be written.
  */
-RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite);
+RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten);
 
 /**
  * Flushes the buffers for the specified pipe and making sure the other party

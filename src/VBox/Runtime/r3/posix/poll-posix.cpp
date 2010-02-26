@@ -40,6 +40,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/pipe.h>
+#include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
 #include "internal/magics.h"
@@ -233,7 +234,7 @@ RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *
 
 RTDECL(int)  RTPollSetCreate(PRTPOLLSET phPollSet)
 {
-    AssertPtr(phPollSet);
+    AssertPtrReturn(phPollSet, VERR_INVALID_POINTER);
     RTPOLLSETINTERNAL *pThis = (RTPOLLSETINTERNAL *)RTMemAlloc(sizeof(RTPOLLSETINTERNAL));
     if (!pThis)
         return VERR_NO_MEMORY;
@@ -278,7 +279,7 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
     RTPOLLSETINTERNAL *pThis = hPollSet;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPOLLSET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(!(fEvents & (RTPOLL_EVT_VALID_MASK)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & ~RTPOLL_EVT_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(fEvents, VERR_INVALID_PARAMETER);
     AssertReturn(id != UINT32_MAX, VERR_INVALID_PARAMETER);
 
@@ -412,10 +413,11 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
         if (pThis->paHandles[i].id == id)
         {
             pThis->cHandles--;
-            if (i != pThis->cHandles)
+            size_t const cToMove = pThis->cHandles - i;
+            if (cToMove)
             {
-                pThis->paHandles[i] = pThis->paHandles[pThis->cHandles];
-                pThis->paPollFds[i] = pThis->paPollFds[pThis->cHandles];
+                memmove(&pThis->paHandles[i], &pThis->paHandles[i + 1], cToMove * sizeof(pThis->paHandles[i]));
+                memmove(&pThis->paPollFds[i], &pThis->paPollFds[i + 1], cToMove * sizeof(pThis->paPollFds[i]));
             }
             rc = VINF_SUCCESS;
             break;
@@ -435,7 +437,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPOLLSET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(id != UINT32_MAX, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(pHandle, VERR_INVALID_POINTER);
+    AssertPtrNullReturn(pHandle, VERR_INVALID_POINTER);
 
     /*
      * Set the busy flag and do the job.
