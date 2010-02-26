@@ -96,7 +96,9 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
             {
                 size_t cbData = CFDataGetLength(DataRef);
                 const uint8_t *pu8Data = CFDataGetBytePtr(DataRef);
-                rc = RTStrCopy(pszBuf, RT_MIN(cbData, cbBuf), (const char*)pu8Data);
+                memcpy(pszBuf, pu8Data, RT_MIN(cbData, cbBuf));
+                pszBuf[RT_MIN(cbData + 1, cbBuf)] = '\0';
+                rc = VINF_SUCCESS;
                 break;
             }
         }
