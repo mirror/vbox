@@ -28,6 +28,9 @@
 #include "VBoxConsoleWnd.h"
 #include "../runtime/UIMachine.h"
 #include "VBoxProgressDialog.h"
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+#include "UIMachine.h"
+#endif
 
 #include "VBoxAboutDlg.h"
 
