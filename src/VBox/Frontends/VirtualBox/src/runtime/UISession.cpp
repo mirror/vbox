@@ -529,6 +529,9 @@ UISession::UISession(UIMachine *pMachine, const CSession &session)
     , m_callback(CConsoleCallback(m_pCallback))
     /* Common varibles: */
     , m_machineState(KMachineState_Null)
+#if defined(Q_WS_WIN)
+    , m_alphaCursor(0)
+#endif
     /* Common flags: */
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRutimeMediumsChanging(false)
