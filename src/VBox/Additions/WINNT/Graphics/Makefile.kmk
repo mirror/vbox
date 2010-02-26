@@ -67,6 +67,60 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 		$(PATH_TARGET)/VBoxVideoCat.dir/VBoxDisp.dll
 	$(call MSG_TOOL,Inf2Cat,VBoxVideo-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+	
+ifdef VBOXWDDM
+#
+# Install the inf & cat.
+# This has to be done here since it depends on both the
+# miniport driver and the display dll.
+#
+INSTALLS += VBoxVideoWddm-inf
+VBoxVideoWddm-inf_INST = $(INST_ADDITIONS)
+VBoxVideoWddm-inf_MODE = a+r,u+w
+VBoxVideoWddm-inf_SOURCES = \
+    $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf
+ifdef VBOX_SIGN_ADDITIONS
+VBoxVideoWddm-inf_SOURCES += \
+    $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys \
+    $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat
+
+ifdef VBOXWDDM_WITH_D3DUM
+VBoxVideoWddm-inf_SOURCES += \
+ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll
+VBoxVideoWddm-inf_SOURCES.amd64 += \
+ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll
+endif
+    
+endif # signing
+VBoxVideoWddm-inf_CLEAN = $(VBoxVideoWddm-inf_SOURCES)
+VBoxVideoWddm-inf_BLDDIRS = \
+    $(PATH_TARGET)/VBoxVideoWddmCat.dir
+
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf: $(PATH_SUB_CURRENT)/Miniport/wddm/VBoxVideoWddm.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
+	$(call MSG_GENERATE,VBoxVideoWddm-inf,$@,$<)
+	$(call VBOX_EDIT_INF_FN,$<,$@)
+
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys: $$(TARGET_VBoxVideoWddm) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+ifdef VBOXWDDM_WITH_D3DUM
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll: $$(TARGET_VBoxDispD3D) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+
+ ifeq ($(KBUILD_TARGET_ARCH), amd64)
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll: $$(TARGET_VBoxDispD3D64) | $$(call DIRDEP,$$(@D))
+	$(INSTALL) -m 644 $< $(@D)
+ endif
+endif
+
+$(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat: \
+        $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf \
+        $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys \
+        $(if $(VBOXWDDM_WITH_D3DUM), $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll, ) \
+        $(if $(VBOXWDDM_WITH_D3DUM), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll, ), )
+	$(call MSG_TOOL,Inf2Cat,VBoxVideoWddm-inf,$@,$<)
+	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
+endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
