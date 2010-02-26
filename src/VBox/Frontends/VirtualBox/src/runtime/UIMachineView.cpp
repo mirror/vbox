@@ -147,6 +147,11 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
     return view;
 }
 
+void UIMachineView::destroy(UIMachineView *pWhichView)
+{
+    delete pWhichView;
+}
+
 int UIMachineView::keyboardState() const
 {
     return (m_bIsKeyboardCaptured ? UIViewStateType_KeyboardCaptured : 0) |
@@ -196,14 +201,11 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_bIsHostkeyPressed(false)
     , m_bIsHostkeyAlone (false)
     , m_bIsHostkeyInCapture(false)
-    , m_bIsMachineWindowResizeIgnored(true)
+    , m_bIsMachineWindowResizeIgnored(false)
     , m_bIsFrameBufferResizeIgnored(false)
     , m_fPassCAD(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
-#endif
-#if 0 // TODO: Do we need this?
-    , mDoResize(false)
 #endif
 #if defined(Q_WS_MAC)
 # ifndef QT_MAC_USE_COCOA
@@ -213,8 +215,6 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_fKeyboardGrabbed (false)
     , mDockIconEnabled(true)
 #endif
-    , m_desktopGeometryType(DesktopGeo_Invalid)
-      /* Don't show a hardware pointer until we have one to show */
 {
 }
 
@@ -276,90 +276,43 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
-QRect UIMachineView::desktopGeometry() const
+void UIMachineView::updateMouseClipping()
 {
-    QRect geometry;
-    switch (m_desktopGeometryType)
+    if (uisession()->isMouseCaptured())
     {
-        case DesktopGeo_Fixed:
-        case DesktopGeo_Automatic:
-            geometry = QRect(0, 0,
-                             qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
-                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
-            break;
-        case DesktopGeo_Any:
-            geometry = QRect(0, 0, 0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Bad geometry type %d!\n", m_desktopGeometryType));
+        viewport()->setCursor(QCursor(Qt::BlankCursor));
+#ifdef Q_WS_WIN32
+        QRect r = viewport()->rect();
+        r.moveTopLeft(viewport()->mapToGlobal(QPoint (0, 0)));
+        RECT rect = { r.left(), r.top(), r.right() + 1, r.bottom() + 1 };
+        ::ClipCursor(&rect);
+#endif
     }
-    return geometry;
-}
-
-void UIMachineView::calculateDesktopGeometry()
-{
-    /* This method should not get called until we have initially set up the m_desktopGeometryType: */
-    Assert((m_desktopGeometryType != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (DesktopGeo_Automatic == m_desktopGeometryType)
+    else
     {
-        /* Available geometry of the desktop.  If the desktop is a single
-         * screen, this will exclude space taken up by desktop taskbars
-         * and things, but this is unfortunately not true for the more
-         * complex case of a desktop spanning multiple screens: */
-        QRect desktop = availableGeometry();
-        /* The area taken up by the machine window on the desktop,
-         * including window frame, title and menu bar and whatnot: */
-        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
-        /* The area taken up by the machine view, so excluding all decorations: */
-        QRect window = geometry();
-        /* To work out how big we can make the console window while still
-         * fitting on the desktop, we calculate desktop - frame + window.
-         * This works because the difference between frame and window
-         * (or at least its width and height) is a constant. */
-        m_desktopGeometry = QRect(0, 0, desktop.width() - frame.width() + window.width(),
-                                        desktop.height() - frame.height() + window.height());
+#ifdef Q_WS_WIN32
+        ::ClipCursor(NULL);
+#endif
+        /* return the cursor to where it was when we captured it and show it */
+        QCursor::setPos(m_capturedMousePos);
+        viewport()->unsetCursor();
     }
 }
 
-void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
+void UIMachineView::updateSliders()
 {
-    switch (geometry)
-    {
-        case DesktopGeo_Fixed:
-            m_desktopGeometryType = DesktopGeo_Fixed;
-            if (aWidth != 0 && aHeight != 0)
-                m_desktopGeometry = QRect(0, 0, aWidth, aHeight);
-            else
-                m_desktopGeometry = QRect(0, 0, 0, 0);
-            storeConsoleSize(0, 0);
-            break;
-        case DesktopGeo_Automatic:
-            m_desktopGeometryType = DesktopGeo_Automatic;
-            m_desktopGeometry = QRect(0, 0, 0, 0);
-            storeConsoleSize(0, 0);
-            break;
-        case DesktopGeo_Any:
-            m_desktopGeometryType = DesktopGeo_Any;
-            m_desktopGeometry = QRect(0, 0, 0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
-            m_desktopGeometryType = DesktopGeo_Invalid;
-    }
-}
+    QSize p = viewport()->size();
+    QSize m = maximumViewportSize();
 
-void UIMachineView::storeConsoleSize(int aWidth, int aHeight)
-{
-    LogFlowThisFunc(("aWidth=%d, aHeight=%d\n", aWidth, aHeight));
-    m_storedConsoleSize = QRect(0, 0, aWidth, aHeight);
-}
+    QSize v = QSize(m_pFrameBuffer->width(), m_pFrameBuffer->height());
+    /* no scroll bars needed */
+    if (m.expandedTo(v) == m)
+        p = m;
 
-QRect UIMachineView::availableGeometry()
-{
-    return machineWindowWrapper()->machineWindow()->isFullScreen() ?
-           QApplication::desktop()->screenGeometry(this) :
-           QApplication::desktop()->availableGeometry(this);
+    horizontalScrollBar()->setRange(0, v.width() - p.width());
+    verticalScrollBar()->setRange(0, v.height() - p.height());
+    horizontalScrollBar()->setPageStep(p.width());
+    verticalScrollBar()->setPageStep(p.height());
 }
 
 void UIMachineView::prepareFrameBuffer()
@@ -542,41 +495,20 @@ void UIMachineView::prepareFilters()
 
 void UIMachineView::prepareConsoleConnections()
 {
-    /* UISession notifier: */
-    UISession *sender = machineWindowWrapper()->machineLogic()->uisession();
-
     /* Machine state-change updater: */
-    connect(sender, SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
-
-    /* Guest additions state-change updater: */
-    connect(sender, SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+    connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 
     /* Mouse pointer shape state-change updater: */
-    connect(sender, SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
+    connect(uisession(), SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
 
     /* Mouse capability state-change updater: */
-    connect(sender, SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
+    connect(uisession(), SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
 }
 
 void UIMachineView::loadMachineViewSettings()
 {
     /* Global settings: */
     {
-        /* Remember the desktop geometry and register for geometry
-         * change events for telling the guest about video modes we like: */
-        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
-        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
-            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
-        else if (desktopGeometry == "any")
-            setDesktopGeometry(DesktopGeo_Any, 0, 0);
-        else
-        {
-            int width = desktopGeometry.section(',', 0, 0).toInt();
-            int height = desktopGeometry.section(',', 1, 1).toInt();
-            setDesktopGeometry(DesktopGeo_Fixed, width, height);
-        }
-        connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
-
 #ifdef Q_WS_X11
         /* Initialize the X keyboard subsystem: */
         initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
@@ -643,156 +575,6 @@ void UIMachineView::cleanupFrameBuffer()
     }
 }
 
-void UIMachineView::sltMachineStateChanged()
-{
-    /* Get machine state: */
-    KMachineState state = uisession()->machineState();
-    switch (state)
-    {
-        case KMachineState_Paused:
-        case KMachineState_TeleportingPausedVM:
-        {
-            if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
-            {
-                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                CDisplay dsp = session().GetConsole().GetDisplay();
-                dsp.TakeScreenShot(shot.bits(), shot.width(), shot.height());
-                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-                 * after the machine execution was resumed. It's not fatal: */
-                if (dsp.isOk())
-                {
-                    dimImage(shot);
-                    m_pauseShot = QPixmap::fromImage(shot);
-                    /* Fully repaint to pick up m_pauseShot: */
-                    repaint();
-                }
-            }
-        }
-        case KMachineState_Stuck:
-        {
-            /* Reuse the focus event handler to uncapture everything: */
-            if (hasFocus())
-                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
-            break;
-        }
-        case KMachineState_Running:
-        {
-            if (m_previousState == KMachineState_Paused || m_previousState == KMachineState_TeleportingPausedVM)
-            {
-                if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
-                {
-                    /* Reset the pixmap to free memory: */
-                    m_pauseShot = QPixmap();
-                    /* Ask for full guest display update (it will also update
-                     * the viewport through IFramebuffer::NotifyUpdate): */
-                    CDisplay dsp = session().GetConsole().GetDisplay();
-                    dsp.InvalidateAndUpdate();
-                }
-            }
-            /* Reuse the focus event handler to capture input: */
-            if (hasFocus())
-                focusEvent(true /* aHasFocus */);
-            break;
-        }
-        default:
-            break;
-    }
-
-#ifdef Q_WS_MAC
-    /* Update Dock Overlay: */
-    updateDockOverlay();
-#endif /* Q_WS_MAC */
-
-    m_previousState = state;
-}
-
-void UIMachineView::sltAdditionsStateChanged()
-{
-    /* Check if we should restrict minimum size: */
-    maybeRestrictMinimumSize();
-
-#if 0 // TODO: Do we need this?
-    if (!mDoResize && !isGuestSupportsGraphics() && fIsGuestSupportsGraphics &&
-        (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen()))
-        mDoResize = true;
-    /* This will only be acted upon if mDoResize is true: */
-    sltPerformGuestResize();
-#endif
-}
-
-void UIMachineView::sltMousePointerShapeChanged()
-{
-    if (uisession()->isMouseSupportsAbsolute())
-    {
-        /* Should we hide/show pointer? */
-        if (uisession()->isHidingHostPointer())
-            viewport()->setCursor(Qt::BlankCursor);
-        else
-            viewport()->setCursor(uisession()->cursor());
-    }
-}
-
-void UIMachineView::sltMouseCapabilityChanged()
-{
-    /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
-    if (uisession()->isMouseSupportsAbsolute())
-    {
-        CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
-        captureMouse(false, false);
-    }
-    else
-        viewport()->unsetCursor();
-
-    /* Notify user about mouse integration state: */
-    vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
-
-    /* Notify all listeners: */
-    emitMouseStateChanged();
-}
-
-/* If the desktop geometry is set automatically, this will update it: */
-void UIMachineView::sltDesktopResized()
-{
-    calculateDesktopGeometry();
-}
-
-#ifdef Q_WS_MAC
-void UIMachineView::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
-{
-    setDockIconEnabled(event.mChanged);
-    updateDockOverlay();
-}
-
-# ifdef QT_MAC_USE_COCOA
-void UIMachineView::sltChangePresentationMode(const VBoxChangePresentationModeEvent &event)
-{
-    // TODO_NEW_CORE
-    // this is full screen related
-#if 0
-    if (mIsFullscreen)
-    {
-        /* First check if we are on the primary screen, only than the presentation mode have to be changed. */
-        QDesktopWidget* pDesktop = QApplication::desktop();
-        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
-        {
-            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
-            /* Default to false if it is an empty value */
-            if (testStr.isEmpty() || testStr == "false")
-                SetSystemUIMode(kUIModeAllHidden, 0);
-            else
-                SetSystemUIMode(kUIModeAllSuppressed, 0);
-        }
-    }
-    else
-        SetSystemUIMode(kUIModeNormal, 0);
-#endif
-}
-# endif /* QT_MAC_USE_COCOA */
-#endif
-
 bool UIMachineView::event(QEvent *pEvent)
 {
     switch (pEvent->type())
@@ -817,94 +599,6 @@ bool UIMachineView::event(QEvent *pEvent)
             break;
         }
 
-        case VBoxDefs::ResizeEventType:
-        {
-            /* Some situations require initial VGA Resize Request
-             * to be ignored at all, leaving previous framebuffer,
-             * machine view and machine window sizes preserved: */
-            if (uisession()->isGuestResizeIgnored())
-                return true;
-
-            bool oldIgnoreMainwndResize = m_bIsMachineWindowResizeIgnored;
-            m_bIsMachineWindowResizeIgnored = true;
-
-            UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
-
-            /* Store the new size to prevent unwanted resize hints being sent back. */
-            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
-
-            /* Unfortunately restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen widgets are present.
-             * This is the case on linux with SDL. As workaround we save/restore the arrow cursor manually.
-             * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry for details.
-             * Moreover the current cursor, which could be set by the guest, should be restored after resize: */
-            QCursor cursor;
-            if (uisession()->isHidingHostPointer())
-                cursor = QCursor(Qt::BlankCursor);
-            else
-                cursor = viewport()->cursor();
-            m_pFrameBuffer->resizeEvent(pResizeEvent);
-            viewport()->setCursor(cursor);
-
-#ifdef Q_WS_MAC
-            // TODO_NEW_CORE
-//            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-            /* This event appears in case of guest video was changed for somehow even without video resolution change.
-             * In this last case the host VM window will not be resized according this event and the host mouse cursor
-             * which was unset to default here will not be hidden in capture state. So it is necessary to perform
-             * updateMouseClipping() for the guest resize event if the mouse cursor was captured: */
-            if (uisession()->isMouseCaptured())
-                updateMouseClipping();
-
-            /* Apply maximum size restriction: */
-            setMaximumSize(sizeHint());
-
-            /* May be we have to restrict minimum size? */
-            maybeRestrictMinimumSize();
-
-            /* Resize the guest canvas: */
-            if (!m_bIsFrameBufferResizeIgnored)
-                resize(pResizeEvent->width(), pResizeEvent->height());
-            updateSliders();
-
-            /* Let our toplevel widget calculate its sizeHint properly. */
-#ifdef Q_WS_X11
-            /* We use processEvents rather than sendPostedEvents & set the time out value to max cause on X11 otherwise
-             * the layout isn't calculated correctly. Dosn't find the bug in Qt, but this could be triggered through
-             * the async nature of the X11 window event system. */
-            QCoreApplication::processEvents(QEventLoop::AllEvents, INT_MAX);
-#else /* Q_WS_X11 */
-            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-#endif /* Q_WS_X11 */
-
-            if (!m_bIsFrameBufferResizeIgnored)
-                normalizeGeometry(true /* adjustPosition */);
-
-            /* Report to the VM thread that we finished resizing */
-            session().GetConsole().GetDisplay().ResizeCompleted(0);
-
-            m_bIsMachineWindowResizeIgnored = oldIgnoreMainwndResize;
-
-            /* Make sure that all posted signals are processed: */
-            qApp->processEvents();
-
-            /* Emit a signal about guest was resized: */
-            emit resizeHintDone();
-
-            /* We also recalculate the desktop geometry if this is determined
-             * automatically.  In fact, we only need this on the first resize,
-             * but it is done every time to keep the code simpler. */
-            calculateDesktopGeometry();
-
-            /* Enable frame-buffer resize watching: */
-            if (m_bIsFrameBufferResizeIgnored)
-                m_bIsFrameBufferResizeIgnored = false;
-
-            return true;
-        }
-
-        /* See VBox[QImage|SDL]FrameBuffer::NotifyUpdate(): */
         case VBoxDefs::RepaintEventType:
         {
             UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
@@ -1020,6 +714,7 @@ bool UIMachineView::event(QEvent *pEvent)
 
             if (m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyPress)
             {
+                /* Passing F1-F12 keys to the guest: */
                 if (pKeyEvent->key() >= Qt::Key_F1 && pKeyEvent->key() <= Qt::Key_F12)
                 {
                     QVector <LONG> combo(6);
@@ -1047,19 +742,10 @@ bool UIMachineView::event(QEvent *pEvent)
 
                 if (pKeyEvent->key() == Qt::Key_Home)
                 {
-#if 0 // TODO: Divide tha code to specific parts and move it there:
+#if 0 // TODO: Divide tha code to specific parts of fullscreen & seamless and move it there:
                     /* Activate the main menu */
                     if (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen())
                         machineWindowWrapper()->popupMainMenu (uisession()->isMouseCaptured());
-                    else
-                    {
-                        /* In Qt4 it is not enough to just set the focus to menu-bar.
-                         * So to get the menu-bar we have to send Qt::Key_Alt press/release events directly: */
-                        QKeyEvent e1(QEvent::KeyPress, Qt::Key_Alt, Qt::NoModifier);
-                        QKeyEvent e2(QEvent::KeyRelease, Qt::Key_Alt, Qt::NoModifier);
-                        QApplication::sendEvent(machineWindowWrapper()->menuBar(), &e1);
-                        QApplication::sendEvent(machineWindowWrapper()->menuBar(), &e2);
-                    }
 #endif
                 }
                 else
@@ -1189,21 +875,10 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
     {
         switch (pEvent->type())
         {
-#if 0 // TODO Move to normal specific event handler:
-            case QEvent::Resize:
-            {
-                /* Set the "guest needs to resize" hint. This hint is acted upon when (and only when)
-                 * the autoresize property is "true": */
-                mDoResize = isGuestSupportsGraphics() || machineWindowWrapper()->isTrueFullscreen();
-                if (!m_bIsMachineWindowResizeIgnored && isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
-                    QTimer::singleShot(300, this, SLOT(sltPerformGuestResize()));
-                break;
-            }
-#endif
             case QEvent::WindowStateChange:
             {
-                /* During minimizing and state restoring machineWindowWrapper() gets the focus
-                 * which belongs to console view window, so returning it properly. */
+                /* During minimizing and state restoring machineWindowWrapper() gets
+                 * the focus which belongs to console view window, so returning it properly. */
                 QWindowStateChangeEvent *pWindowEvent = static_cast<QWindowStateChangeEvent*>(pEvent);
                 if (pWindowEvent->oldState() & Qt::WindowMinimized)
                 {
@@ -1217,16 +892,6 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
             }
 #if defined (Q_WS_WIN32)
-#if defined (VBOX_GUI_USE_DDRAW)
-            case QEvent::Move:
-            {
-                /* Notification from our parent that it has moved. We need this in order
-                 * to possibly adjust the direct screen blitting: */
-                if (m_pFrameBuffer)
-                    m_pFrameBuffer->moveEvent(static_cast<QMoveEvent*>(pEvent));
-                break;
-            }
-#endif
             /* Install/uninstall low-level kbd hook on every activation/deactivation to:
              * a) avoid excess hook calls when we're not active and
              * b) be always in front of any other possible hooks */
@@ -1259,36 +924,139 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-#if 0 // TODO Move to normal specific event handler:
-    else if (pWatched == machineWindowWrapper()->menuBar())
-    {
-        /* Sometimes when we press ESC in the menu it brings the focus away (Qt bug?)
-         * causing no widget to have a focus, or holds the focus itself, instead of
-         * returning the focus to the console window. Here we fix this: */
-        switch (pEvent->type())
-        {
-            case QEvent::FocusOut:
-            {
-                if (qApp->focusWidget() == 0)
-                    setFocus();
-                break;
-            }
-            case QEvent::KeyPress:
-            {
-                QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-                if (pKeyEvent->key() == Qt::Key_Escape && (pKeyEvent->modifiers() == Qt::NoModifier))
-                    if (machineWindowWrapper()->menuBar()->hasFocus())
-                        setFocus();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-#endif
 
     return QAbstractScrollArea::eventFilter (pWatched, pEvent);
 }
+
+void UIMachineView::sltMachineStateChanged()
+{
+    /* Get machine state: */
+    KMachineState state = uisession()->machineState();
+    switch (state)
+    {
+        case KMachineState_Paused:
+        case KMachineState_TeleportingPausedVM:
+        {
+            if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
+                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
+            {
+                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                CDisplay dsp = session().GetConsole().GetDisplay();
+                dsp.TakeScreenShot(shot.bits(), shot.width(), shot.height());
+                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
+                 * after the machine execution was resumed. It's not fatal: */
+                if (dsp.isOk())
+                {
+                    dimImage(shot);
+                    m_pauseShot = QPixmap::fromImage(shot);
+                    /* Fully repaint to pick up m_pauseShot: */
+                    repaint();
+                }
+            }
+        }
+        case KMachineState_Stuck:
+        {
+            /* Reuse the focus event handler to uncapture everything: */
+            if (hasFocus())
+                focusEvent(false /* aHasFocus*/, false /* aReleaseHostKey */);
+            break;
+        }
+        case KMachineState_Running:
+        {
+            if (m_previousState == KMachineState_Paused || m_previousState == KMachineState_TeleportingPausedVM)
+            {
+                if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
+                {
+                    /* Reset the pixmap to free memory: */
+                    m_pauseShot = QPixmap();
+                    /* Ask for full guest display update (it will also update
+                     * the viewport through IFramebuffer::NotifyUpdate): */
+                    CDisplay dsp = session().GetConsole().GetDisplay();
+                    dsp.InvalidateAndUpdate();
+                }
+            }
+            /* Reuse the focus event handler to capture input: */
+            if (hasFocus())
+                focusEvent(true /* aHasFocus */);
+            break;
+        }
+        default:
+            break;
+    }
+
+#ifdef Q_WS_MAC
+    /* Update Dock Overlay: */
+    updateDockOverlay();
+#endif /* Q_WS_MAC */
+
+    m_previousState = state;
+}
+
+void UIMachineView::sltMousePointerShapeChanged()
+{
+    if (uisession()->isMouseSupportsAbsolute())
+    {
+        /* Should we hide/show pointer? */
+        if (uisession()->isHidingHostPointer())
+            viewport()->setCursor(Qt::BlankCursor);
+        else
+            viewport()->setCursor(uisession()->cursor());
+    }
+}
+
+void UIMachineView::sltMouseCapabilityChanged()
+{
+    /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
+    if (uisession()->isMouseSupportsAbsolute())
+    {
+        CMouse mouse = session().GetConsole().GetMouse();
+        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
+        captureMouse(false, false);
+    }
+    else
+        viewport()->unsetCursor();
+
+    /* Notify user about mouse integration state: */
+    vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+
+    /* Notify all listeners: */
+    emitMouseStateChanged();
+}
+
+#ifdef Q_WS_MAC
+void UIMachineView::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
+{
+    setDockIconEnabled(event.mChanged);
+    updateDockOverlay();
+}
+
+# ifdef QT_MAC_USE_COCOA
+void UIMachineView::sltChangePresentationMode(const VBoxChangePresentationModeEvent &event)
+{
+    // TODO_NEW_CORE
+    // this is full screen related
+#if 0
+    if (mIsFullscreen)
+    {
+        /* First check if we are on the primary screen, only than the presentation mode have to be changed. */
+        QDesktopWidget* pDesktop = QApplication::desktop();
+        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
+        {
+            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
+            /* Default to false if it is an empty value */
+            if (testStr.isEmpty() || testStr == "false")
+                SetSystemUIMode(kUIModeAllHidden, 0);
+            else
+                SetSystemUIMode(kUIModeAllSuppressed, 0);
+        }
+    }
+    else
+        SetSystemUIMode(kUIModeNormal, 0);
+#endif
+}
+# endif /* QT_MAC_USE_COCOA */
+#endif
 
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
 {
@@ -1598,25 +1366,9 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
 }
 
 bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlobalPos,
-                               Qt::MouseButtons aButtons, Qt::KeyboardModifiers aModifiers,
+                               Qt::MouseButtons aButtons, Qt::KeyboardModifiers /* aModifiers */,
                                int aWheelDelta, Qt::Orientation aWheelDir)
 {
-#if 0
-    LogRel3(("%s: type=%03d x=%03d y=%03d btns=%08X wdelta=%03d wdir=%s\n",
-             __PRETTY_FUNCTION__ , aType, aPos.x(), aPos.y(),
-               (aButtons & Qt::LeftButton ? 1 : 0)
-             | (aButtons & Qt::RightButton ? 2 : 0)
-             | (aButtons & Qt::MidButton ? 4 : 0)
-             | (aButtons & Qt::XButton1 ? 8 : 0)
-             | (aButtons & Qt::XButton2 ? 16 : 0),
-             aWheelDelta,
-               aWheelDir == Qt::Horizontal ? "Horizontal"
-             : aWheelDir == Qt::Vertical ? "Vertical" : "Unknown"));
-    Q_UNUSED (aModifiers);
-#else
-    Q_UNUSED (aModifiers);
-#endif
-
     int state = 0;
     if (aButtons & Qt::LeftButton)
         state |= KMouseButtonState_LeftButton;
@@ -1630,8 +1382,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
         state |= KMouseButtonState_XButton2;
 
 #ifdef Q_WS_MAC
-    /* Simulate the right click on
-     * Host+Left Mouse */
+    /* Simulate the right click on Host+Left Mouse: */
     if (m_bIsHostkeyPressed &&
         m_bIsHostkeyAlone &&
         state == KMouseButtonState_LeftButton)
@@ -1654,7 +1405,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
     {
 #ifdef Q_WS_WIN32
         /* send pending WM_PAINT events */
-        ::UpdateWindow (viewport()->winId());
+        ::UpdateWindow(viewport()->winId());
 #endif
 
         CMouse mouse = session().GetConsole().GetMouse();
@@ -2518,22 +2269,6 @@ QPoint UIMachineView::viewportToContents(const QPoint &vp) const
     return QPoint (vp.x() + contentsX(), vp.y() + contentsY());
 }
 
-void UIMachineView::updateSliders()
-{
-    QSize p = viewport()->size();
-    QSize m = maximumViewportSize();
-
-    QSize v = QSize(m_pFrameBuffer->width(), m_pFrameBuffer->height());
-    /* no scroll bars needed */
-    if (m.expandedTo(v) == m)
-        p = m;
-
-    horizontalScrollBar()->setRange(0, v.width() - p.width());
-    verticalScrollBar()->setRange(0, v.height() - p.height());
-    horizontalScrollBar()->setPageStep(p.width());
-    verticalScrollBar()->setPageStep(p.height());
-}
-
 void UIMachineView::scrollBy(int dx, int dy)
 {
     horizontalScrollBar()->setValue(horizontalScrollBar()->value() + dx);
@@ -2576,9 +2311,9 @@ void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
     /**/
 #elif defined(Q_WS_X11)
         if (fCapture)
-                XGrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId(), False, GrabModeAsync, GrabModeAsync);
+            XGrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId(), False, GrabModeAsync, GrabModeAsync);
         else
-                XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId());
+            XUngrabKey(QX11Info::display(), AnyKey, AnyModifier, window()->winId());
 #elif defined(Q_WS_MAC)
     if (fCapture)
     {
@@ -2635,7 +2370,7 @@ void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
 #endif
         /* Release mouse buttons: */
         CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent (0, 0, 0, 0 /* Horizontal wheel */, 0);
+        mouse.PutMouseEvent(0, 0, 0, 0 /* Horizontal wheel */, 0);
     }
 
     uisession()->setMouseCaptured(fCapture);
@@ -2723,29 +2458,6 @@ void UIMachineView::sendChangedKeyStates()
                 codes[1] |= 0x80;
             keyboard.PutScancodes(codes);
         }
-    }
-}
-
-void UIMachineView::updateMouseClipping()
-{
-    if (uisession()->isMouseCaptured())
-    {
-        viewport()->setCursor(QCursor(Qt::BlankCursor));
-#ifdef Q_WS_WIN32
-        QRect r = viewport()->rect();
-        r.moveTopLeft(viewport()->mapToGlobal(QPoint (0, 0)));
-        RECT rect = { r.left(), r.top(), r.right() + 1, r.bottom() + 1 };
-        ::ClipCursor(&rect);
-#endif
-    }
-    else
-    {
-#ifdef Q_WS_WIN32
-        ::ClipCursor(NULL);
-#endif
-        /* return the cursor to where it was when we captured it and show it */
-        QCursor::setPos(m_capturedMousePos);
-        viewport()->unsetCursor();
     }
 }
 

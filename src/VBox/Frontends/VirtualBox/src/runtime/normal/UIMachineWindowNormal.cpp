@@ -68,6 +68,9 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
     /* Retranslate normal window finally: */
     retranslateUi();
 
+    /* Prepare normal machine view container: */
+    prepareMachineViewContainer();
+
     /* Prepare normal machine view: */
     prepareMachineView();
 
@@ -85,6 +88,9 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
 {
     /* Save normal window settings: */
     saveWindowSettings();
+
+    /* Cleanup normal machine view: */
+    cleanupMachineView();
 
     /* Cleanup status-bar: */
     cleanupStatusBar();
@@ -453,6 +459,12 @@ void UIMachineWindowNormal::prepareMachineView()
     bool bAccelerate2DVideo = machine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
 #endif
 
+    /* Set central widget: */
+    setCentralWidget(new QWidget);
+
+    /* Set central widget layout: */
+    centralWidget()->setLayout(m_pMachineViewContainer);
+
     m_pMachineView = UIMachineView::create(  this
                                            , vboxGlobal().vmRenderMode()
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -460,7 +472,8 @@ void UIMachineWindowNormal::prepareMachineView()
 #endif
                                            , machineLogic()->visualStateType());
 
-    setCentralWidget(m_pMachineView);
+    /* Add machine view into layout: */
+    m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);
 
     /* Setup machine view connections: */
     if (machineView())
@@ -565,6 +578,16 @@ void UIMachineWindowNormal::saveWindowSettings()
             strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowPosition_Max);
         machine.SetExtraData(VBoxDefs::GUI_LastWindowPosition, strWindowPosition);
     }
+}
+
+void UIMachineWindowNormal::cleanupMachineView()
+{
+    /* Do not cleanup machine view if it is not present: */
+    if (!machineView())
+        return;
+
+    UIMachineView::destroy(m_pMachineView);
+    m_pMachineView = 0;
 }
 
 void UIMachineWindowNormal::cleanupStatusBar()

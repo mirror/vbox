@@ -28,6 +28,8 @@
 
 /* Global forwards */
 class QWidget;
+class QGridLayout;
+class QSpacerItem;
 class QCloseEvent;
 
 /* Local forwards */
@@ -80,10 +82,13 @@ protected:
     virtual void prepareMenuDebug();
 #endif
     virtual void prepareMenuHelp();
+    virtual void prepareMachineViewContainer();
     //virtual void loadWindowSettings() {}
 
     /* Cleanup helpers: */
     //virtual void saveWindowSettings() {}
+    //virtual void cleanupMachineViewContainer() {}
+    //virtual void cleanupMenuHelp() {}
 #ifdef VBOX_WITH_DEBUGGER_GUI
     //virtual void prepareMenuDebug() {}
 #endif
@@ -101,6 +106,13 @@ protected:
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;
     QWidget *m_pMachineWindow;
+
+    QGridLayout *m_pMachineViewContainer;
+    QSpacerItem *m_pTopSpacer;
+    QSpacerItem *m_pBottomSpacer;
+    QSpacerItem *m_pLeftSpacer;
+    QSpacerItem *m_pRightSpacer;
+
     UIMachineView *m_pMachineView;
     QString m_strWindowTitlePrefix;
 

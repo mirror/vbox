@@ -58,6 +58,7 @@ public:
                                  , bool bAccelerate2DVideo
 #endif
                                  , UIVisualStateType visualStateType);
+    static void destroy(UIMachineView *pWhichView);
 
     /* Public getters: */
     int keyboardState() const;
@@ -66,7 +67,6 @@ public:
     /* Public setters: */
     virtual void setGuestAutoresizeEnabled(bool bEnabled) = 0;
     virtual void setMouseIntegrationEnabled(bool bEnabled);
-    //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
 
     /* Public members: */
     virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
@@ -84,9 +84,6 @@ signals:
     void keyboardStateChanged(int iState);
     void mouseStateChanged(int iState);
 
-    /* Utility signals: */
-    void resizeHintDone();
-
 protected:
 
     /* Machine view constructor/destructor: */
@@ -98,14 +95,9 @@ protected:
     );
     virtual ~UIMachineView();
 
-    /* Desktop geometry types: */
-    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
-
     /* Protected getters: */
     UISession* uisession() const;
     CSession& session();
-    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
-    VBoxDefs::RenderMode mode() const { return m_mode; }
     QSize sizeHint() const;
     int contentsX() const;
     int contentsY() const;
@@ -113,15 +105,22 @@ protected:
     int contentsHeight() const;
     int visibleWidth() const;
     int visibleHeight() const;
-    QRect desktopGeometry() const;
+    VBoxDefs::RenderMode mode() const { return m_mode; }
+    UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
+    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
+    bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
+    bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
+    bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
+    virtual QSize desktopGeometry() const = 0;
 
-    /* Protected members: */
-    void calculateDesktopGeometry();
-    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
-    void storeConsoleSize(int iWidth, int iHeight);
-    QRect availableGeometry();
-    virtual void maybeRestrictMinimumSize() = 0;
+    /* Protected setters: */
+    void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
+    void setFrameBufferResizeIgnored(bool fIgnore = true) { m_bIsFrameBufferResizeIgnored = fIgnore; }
+
+    /* Protected helpers: */
+    void updateMouseClipping();
+    void updateSliders();
 
     /* Prepare routines: */
     virtual void prepareFrameBuffer();
@@ -137,21 +136,18 @@ protected:
     virtual void cleanupCommon();
     virtual void cleanupFrameBuffer();
 
+    /* Cross-platforms event processors: */
+    bool event(QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
 protected slots:
 
     /* Console callback handlers: */
     virtual void sltMachineStateChanged();
-    virtual void sltAdditionsStateChanged();
     virtual void sltMousePointerShapeChanged();
     virtual void sltMouseCapabilityChanged();
 
-    /* Initiate resize request to guest: */
-    virtual void sltPerformGuestResize(const QSize &aSize = QSize()) = 0;
-
 private slots:
-
-    /* Watch dog for desktop resizes: */
-    void sltDesktopResized();
 
 #ifdef Q_WS_MAC
     /* Dock icon update handler */
@@ -165,8 +161,6 @@ private slots:
 private:
 
     /* Cross-platforms event processors: */
-    bool event(QEvent *pEvent);
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
     void focusEvent(bool aHasFocus, bool aReleaseHostKey = true);
     bool keyEvent(int aKey, uint8_t aScan, int aFlags, wchar_t *aUniKey = NULL);
     bool mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlobalPos,
@@ -198,7 +192,6 @@ private:
     /* Private helpers: */
     void fixModifierState(int *piCodes, uint *puCount);
     QPoint viewportToContents(const QPoint &vp) const;
-    void updateSliders();
     void scrollBy(int dx, int dy);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     void scrollContentsBy(int dx, int dy);
@@ -210,7 +203,6 @@ private:
     void saveKeyStates();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
-    void updateMouseClipping();
 
     static void dimImage(QImage &img);
 
@@ -239,9 +231,6 @@ private:
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo;
 #endif
-#if 0 // TODO: Do we need this flag?
-    bool mDoResize : 1;
-#endif
 
 #if defined(Q_WS_MAC)
 # ifndef QT_MAC_USE_COCOA
@@ -262,9 +251,6 @@ private:
     VBoxDockIconPreview *mDockIconPreview;
     bool mDockIconEnabled;
 #endif
-    DesktopGeo m_desktopGeometryType;
-    QRect m_desktopGeometry;
-    QRect m_storedConsoleSize;
 
     /* Friend classes: */
     friend class UIFrameBuffer;

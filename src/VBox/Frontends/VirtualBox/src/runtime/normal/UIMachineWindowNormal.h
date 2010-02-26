@@ -91,12 +91,12 @@ private:
     void prepareMenu();
     void prepareStatusBar();
     void prepareConnections();
-    void loadWindowSettings();
     void prepareMachineView();
+    void loadWindowSettings();
 
     /* Cleanup helpers: */
-    //void cleanupMachineView() {}
     void saveWindowSettings();
+    void cleanupMachineView();
     //void cleanupConnections() {}
     void cleanupStatusBar();
     //void cleanupMenu() {}
