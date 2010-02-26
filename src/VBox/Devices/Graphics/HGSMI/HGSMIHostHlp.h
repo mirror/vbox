@@ -41,5 +41,21 @@ typedef struct _HGSMILIST
 void hgsmiListAppend (HGSMILIST *pList, HGSMILISTENTRY *pEntry);
 void hgsmiListRemove (HGSMILIST *pList, HGSMILISTENTRY *pEntry, HGSMILISTENTRY *pPrev);
 
+DECLINLINE(HGSMILISTENTRY*) hgsmiListRemoveHead (HGSMILIST *pList)
+{
+    HGSMILISTENTRY *pHead = pList->pHead;
+    if (pHead)
+        hgsmiListRemove (pList, pHead, NULL);
+    return pHead;
+}
+
+DECLINLINE(void) hgsmiListInit (HGSMILIST *pList)
+{
+    pList->pHead = NULL;
+    pList->pTail = NULL;
+}
+
+HGSMILISTENTRY * hgsmiListRemoveAll (HGSMILIST *pList, HGSMILISTENTRY ** ppTail /* optional */);
+
 
 #endif /* !__HGSMIHostHlp_h__*/

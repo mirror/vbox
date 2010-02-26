@@ -71,3 +71,15 @@ void hgsmiListRemove (HGSMILIST *pList, HGSMILISTENTRY *pEntry, HGSMILISTENTRY *
     pEntry->pNext = NULL;
 }
 
+HGSMILISTENTRY * hgsmiListRemoveAll (HGSMILIST *pList, HGSMILISTENTRY ** ppTail /* optional */)
+{
+    HGSMILISTENTRY * pHead = pList->pHead;
+    if (ppTail)
+        *ppTail = pList->pTail;
+
+    hgsmiListInit (pList);
+
+    return pHead;
+}
+
+
