@@ -112,6 +112,13 @@ typedef struct USBHIDK_REPORT
     uint8_t     aKeys[6];       /* Normal keys */
 } USBHIDK_REPORT, *PUSBHIDK_REPORT;
 
+/* Scancode translator state.  */
+typedef enum {
+    SS_IDLE,    /* Starting state. */
+    SS_EXT,     /* E0 byte was received. */
+    SS_EXT1,    /* E1 byte was received. */
+} scan_state_t;
+
 /**
  * The USB HID instance data.
  */
@@ -132,6 +139,9 @@ typedef struct USBHID
     USBHIDEP            aEps[2];
     /** The state of the HID (state machine).*/
     USBHIDREQSTATE      enmState;
+
+    /** State of the scancode translation. */
+    scan_state_t        XlatState;
 
     /** HID report reflecting the current keyboard state. */
     USBHIDK_REPORT      Report;
@@ -168,7 +178,6 @@ typedef struct USBHID
         /** The keyboard interface of the attached keyboard driver. */
         R3PTRTYPE(PPDMIKEYBOARDCONNECTOR)   pDrv;
     } Lun0;
-
 } USBHID;
 /** Pointer to the USB HID instance data. */
 typedef USBHID *PUSBHID;
@@ -321,6 +330,98 @@ static const PDMUSBDESCCACHE g_UsbHidDescCache =
     /* .fUseCachedStringsDescriptors = */ true
 };
 
+
+/*
+ * Because of historical reasons and poor design, VirtualBox internally uses BIOS
+ * PC/XT style scan codes to represent keyboard events. Each key press and release is
+ * represented as a stream of bytes, typically only one byte but up to four-byte
+ * sequences are possible. In the typical case, the GUI front end generates the stream
+ * of scan codes which we need to translate back to a single up/down event.
+ *
+ * This function could possibly live somewhere else.
+ */
+
+/* Lookup table for converting PC/XT scan codes to USB HID usage codes. */
+static uint8_t aScancode2Hid[] =
+{
+    0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23,
+    0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b,
+    0x14, 0x1a, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c,
+    0x12, 0x13, 0x2f, 0x30, 0x28, 0xe0, 0x04, 0x16,
+    0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33,
+    0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19,
+    0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5, 0x55,
+    0xe2, 0x2c, 0x32, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e,
+    0x3f, 0x40, 0x41, 0x42, 0x43, 0x53, 0x47, 0x5f,
+    0x60, 0x61, 0x56, 0x5c, 0x5d, 0x5e, 0x57, 0x59,
+    0x5a, 0x5b, 0x62, 0x63, 0x00, 0x00, 0x00, 0x44,
+    0x45, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
+    0xe8, 0xe9, 0x71, 0x72, 0x73, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x85, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65
+};
+
+/* Lookup table for extended scancodes (arrow keys etc.). */
+static uint8_t aExtScan2Hid[] =
+{
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x58, 0xe4, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x54, 0x00, 0x46,
+    0xe6, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x48, 0x00, 0x4a,
+    0x52, 0x4b, 0x00, 0x50, 0x00, 0x4f, 0x00, 0x4d,
+    0x51, 0x4e, 0x49, 0x4c, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
+};
+
+/** 
+ * Convert a PC scan code to a USB HID usage byte.
+ * 
+ * @param state         Current state of the translator (scan_state_t).
+ * @param scanCode      Incoming scan code.
+ * @param pUsage        Pointer to usage; high bit set for key up events. The
+ *                      contents are only valid if returned state is SS_IDLE.
+ * 
+ * @return scan_state_t New state of the translator.
+ */
+static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uint32_t *pUsage)
+{
+    uint32_t    keyUp;
+    uint8_t     usage;
+
+    Assert(pUsage);
+
+    /* Isolate the scan code and key break flag. */
+    keyUp = (scanCode & 0x80) << 24;
+
+    switch (state) {
+    case SS_IDLE:
+        if (scanCode == 0xE0) {
+            state = SS_EXT;
+        } else if (scanCode == 0xE1) {
+            state = SS_EXT1;
+        } else {
+            usage = aScancode2Hid[scanCode & 0x7F];
+            *pUsage = usage | keyUp;
+        }
+        break;
+    case SS_EXT:
+        usage = aExtScan2Hid[scanCode & 0x7F];
+        *pUsage = usage | keyUp;
+        state = SS_IDLE;
+        break;
+    }
+    return state;
+}
 
 /*******************************************************************************
 *   Internal Functions                                                         *
@@ -548,35 +649,6 @@ static DECLCALLBACK(void *) usbHidKeyboardQueryInterface(PPDMIBASE pInterface, c
     return NULL;
 }
 
-static int8_t clamp_i8(int32_t val)
-{
-    if (val > 127)
-        val = 127;
-    else if (val < -127)
-        val = -127;
-    return val;
-}
-
-static uint8_t aKeycode2Hid[] =
-{
-    0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23,
-    0x24, 0x25, 0x26, 0x27, 0x2d, 0x2e, 0x2a, 0x2b,
-    0x14, 0x1a, 0x08, 0x15, 0x17, 0x1c, 0x18, 0x0c,
-    0x12, 0x13, 0x2f, 0x30, 0x28, 0xe0, 0x04, 0x16,
-    0x07, 0x09, 0x0a, 0x0b, 0x0d, 0x0e, 0x0f, 0x33,
-    0x34, 0x35, 0xe1, 0x31, 0x1d, 0x1b, 0x06, 0x19,
-    0x05, 0x11, 0x10, 0x36, 0x37, 0x38, 0xe5, 0x55,
-    0xe2, 0x2c, 0x32, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e,
-    0x3f, 0x40, 0x41, 0x42, 0x43, 0x53, 0x47, 0x5f,
-    0x60, 0x61, 0x56, 0x5c, 0x5d, 0x5e, 0x57, 0x59,
-    0x5a, 0x5b, 0x62, 0x63, 0x00, 0x00, 0x00, 0x44,
-    0x45, 0x68, 0x69, 0x6a, 0x6b, 0x6c, 0x6d, 0x6e,
-    0xe8, 0xe9, 0x71, 0x72, 0x73, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x85, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x00, 0xe3, 0xe7, 0x65,
-};
-
 /**
  * Keyboard event handler.
  *
@@ -588,53 +660,59 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
 {
     PUSBHID pThis = RT_FROM_MEMBER(pInterface, USBHID, Lun0.IPort);
     PUSBHIDK_REPORT pReport = &pThis->Report;
-    uint8_t u8HidCode;
-    int fKeyDown;
-    unsigned i;
+    uint32_t    u32Usage;
+    uint8_t     u8HidCode;
+    int         fKeyDown;
+    unsigned    i;
 
 //    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 //    AssertReleaseRC(rc);
 
-    /* Extract the key event. */
-    u8HidCode = aKeycode2Hid[u8KeyCode & 0x7f];
-    fKeyDown = !(u8KeyCode & 0x80);
+    pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
 
-    if (fKeyDown)
+    if (pThis->XlatState == SS_IDLE)
     {
-        for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
+        /* The usage code is valid. */
+        fKeyDown = !(u32Usage & 0x80000000);
+        u8HidCode = u32Usage & 0xFF;
+
+        if (fKeyDown)
         {
-            if (pReport->aKeys[i] == u8HidCode)
-                break;                              /* Skip repeat events. */
-            if (pReport->aKeys[i] == 0)
+            for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
             {
-                pReport->aKeys[i] = u8HidCode;      /* Report key down. */
-                break;
+                if (pReport->aKeys[i] == u8HidCode)
+                    break;                              /* Skip repeat events. */
+                if (pReport->aKeys[i] == 0)
+                {
+                    pReport->aKeys[i] = u8HidCode;      /* Report key down. */
+                    break;
+                }
+            }
+            if (i == RT_ELEMENTS(pReport->aKeys))
+            {
+                /* We ran out of room. Report error. */
+                // @todo!!
             }
         }
-        if (i == RT_ELEMENTS(pReport->aKeys))
+        else
         {
-            /* We ran out of room. Report error. */
-            // @todo!!
-        }
-    }
-    else
-    {
-        for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
-        {
-            if (pReport->aKeys[i] == u8HidCode)
+            for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
             {
-                pReport->aKeys[i] = 0;
-                break;                              /* Remove key down. */
+                if (pReport->aKeys[i] == u8HidCode)
+                {
+                    pReport->aKeys[i] = 0;
+                    break;                              /* Remove key down. */
+                }
+            }
+            if (i == RT_ELEMENTS(pReport->aKeys))
+            {
+    //            AssertMsgFailed(("Key is up but was never down!?"));
             }
         }
-        if (i == RT_ELEMENTS(pReport->aKeys))
-        {
-//            AssertMsgFailed(("Key is up but was never down!?"));
-        }
-    }
 
-    /* Send a report if the host is already waiting for it. */
-    usbHidSendReport(pThis);
+        /* Send a report if the host is already waiting for it. */
+        usbHidSendReport(pThis);
+    }
 
 //    PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
@@ -1021,6 +1099,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
      */
     pThis->pUsbIns                                  = pUsbIns;
     pThis->hEvtDoneQueue                            = NIL_RTSEMEVENT;
+    pThis->XlatState                                = SS_IDLE;
     usbHidQueueInit(&pThis->ToHostQueue);
     usbHidQueueInit(&pThis->DoneQueue);
 
