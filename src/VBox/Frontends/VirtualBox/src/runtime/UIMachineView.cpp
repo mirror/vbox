@@ -369,11 +369,9 @@ void UIMachineView::prepareFrameBuffer()
     QWidget *pViewport;
     switch (mode())
     {
-#if 0 // TODO: Create Open GL viewport!
         case VBoxDefs::QGLMode:
-            pViewport = new VBoxGLWidget(this, this, NULL);
+            pViewport = new VBoxGLWidget(session().GetConsole(), this, NULL);
             break;
-#endif
         default:
             pViewport = new VBoxViewport(this);
     }
