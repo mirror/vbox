@@ -238,6 +238,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(AdapterType) (NetworkAdapterType_T aAdapt
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Changing the network adapter type during runtime is not allowed,
+         * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -296,6 +298,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(Enabled) (BOOL aEnabled)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Disabling the network adapter during runtime is not allowed
+         * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -407,7 +411,11 @@ STDMETHODIMP NetworkAdapter::COMSETTER(MACAddress)(IN_BSTR aMACAddress)
     // we have left the lock in any case at this point
 
     if (emitChangeEvent)
+    {
+        /* Changing the MAC via the Main API during runtime is not allowed,
+         * therefore no immediate change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
+    }
 
     return rc;
 }
@@ -469,7 +477,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(HostInterface)(IN_BSTR aHostInterface)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        mParent->onNetworkAdapterChange(this, FALSE);
+        /* When changing the host adapter, adapt the CFGM logic to make this
+         * change immediately effect and to notifiy the guest that the network
+         * might have changed, therefore changeAdapter=TRUE. */
+        mParent->onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -522,7 +533,10 @@ STDMETHODIMP NetworkAdapter::COMSETTER(InternalNetwork) (IN_BSTR aInternalNetwor
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
-        mParent->onNetworkAdapterChange(this, FALSE);
+        /* When changing the internal network, adapt the CFGM logic to make this
+         * change immediately effect and to notifiy the guest that the network
+         * might have changed, therefore changeAdapter=TRUE. */
+        mParent->onNetworkAdapterChange(this, TRUE);
     }
 
     return S_OK;
@@ -570,6 +584,8 @@ STDMETHODIMP NetworkAdapter::COMSETTER(NATNetwork) (IN_BSTR aNATNetwork)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Changing the NAT network isn't allowed during runtime, therefore
+         * no immediate replug in CFGM logic => changeAdapter=FALSE */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -614,6 +630,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(CableConnected) (BOOL aConnected)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* No change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -658,6 +675,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(LineSpeed) (ULONG aSpeed)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* No change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -701,6 +719,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceEnabled) (BOOL aEnabled)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Adapt the CFGM logic changeAdapter=TRUE */
         mParent->onNetworkAdapterChange(this, TRUE);
     }
 
@@ -745,6 +764,7 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* No change in CFGM logic => changeAdapter=FALSE. */
         mParent->onNetworkAdapterChange(this, FALSE);
     }
 
@@ -783,6 +803,7 @@ STDMETHODIMP NetworkAdapter::AttachToNAT()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
         HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
         if (FAILED(rc))
         {
@@ -830,13 +851,13 @@ STDMETHODIMP NetworkAdapter::AttachToBridgedInterface()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
         HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
         if (FAILED(rc))
         {
-            /* If changing the attachment failed then we can't assume
-             * that the previous attachment will attach correctly
-             * and thus return error along with dettaching all
-             * attachments.
+            /* If changing the attachment failed then we can't assume that the
+             * previous attachment will attach correctly and thus return error
+             * along with dettaching all attachments.
              */
             Detach();
             return rc;
@@ -885,6 +906,7 @@ STDMETHODIMP NetworkAdapter::AttachToInternalNetwork()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
         HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
         if (FAILED(rc))
         {
@@ -932,6 +954,7 @@ STDMETHODIMP NetworkAdapter::AttachToHostOnlyInterface()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* Adapt the CFGM logic and notify the guest => changeAdpater=TRUE. */
         HRESULT rc = mParent->onNetworkAdapterChange(this, TRUE);
         if (FAILED(rc))
         {
@@ -973,6 +996,7 @@ STDMETHODIMP NetworkAdapter::Detach()
         mParent->setModified(Machine::IsModified_NetworkAdapters);
         mlock.release();
 
+        /* adapt the CFGM logic and notify the guest => changeAdapter=TRUE. */
         mParent->onNetworkAdapterChange(this, TRUE);
     }
 
