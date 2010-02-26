@@ -30,7 +30,15 @@ class UIMachineViewNormal : public UIMachineView
 {
     Q_OBJECT;
 
+signals:
+
+    /* Utility signals: */
+    void resizeHintDone();
+
 protected:
+
+    /* Desktop geometry types: */
+    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
 
     /* Normal machine view constructor/destructor: */
     UIMachineViewNormal(  UIMachineWindow *pMachineWindow
@@ -47,22 +55,47 @@ private slots:
     void sltAdditionsStateChanged();
 
     /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &aSize = QSize());
+    void sltPerformGuestResize(const QSize &size = QSize());
+
+    /* Watch dog for desktop resizes: */
+    void sltDesktopResized();
 
 private:
 
-    /* Prepare routines: */
+    /* Prepare helpers: */
     void prepareFilters();
+    void prepareConsoleConnections();
+    void loadMachineViewSettings();
 
-    /* Private setters: */
+    /* Cleanup helpers: */
+    //void saveMachineViewSettings() {}
+    //void cleanupConsoleConnections() {}
+    //cleanupFilters() {}
+
+    /* Hidden setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);
 
+    /* Hidden getters: */
+    QSize desktopGeometry() const;
+
     /* Private helpers: */
-    void normalizeGeometry(bool bAdjustPosition = false);
+    void normalizeGeometry(bool fAdjustPosition);
+    void calculateDesktopGeometry();
+    QRect availableGeometry();
+    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
+    void storeConsoleSize(int iWidth, int iHeight);
     void maybeRestrictMinimumSize();
 
+    /* Event handlers: */
+    bool event(QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
     /* Private members: */
+    DesktopGeo m_desktopGeometryType;
+    QSize m_desktopGeometry;
+    QSize m_storedConsoleSize;
     bool m_bIsGuestAutoresizeEnabled : 1;
+    bool m_fShouldWeDoResize : 1;
 
     /* Friend classes: */
     friend class UIMachineView;

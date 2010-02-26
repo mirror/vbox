@@ -90,6 +90,11 @@ void UIMachineWindow::sltTryClose()
 UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic)
     : m_pMachineLogic(pMachineLogic)
     , m_pMachineWindow(0)
+    , m_pMachineViewContainer(0)
+    , m_pTopSpacer(0)
+    , m_pBottomSpacer(0)
+    , m_pLeftSpacer(0)
+    , m_pRightSpacer(0)
     , m_pMachineView(0)
 {
 }
@@ -487,6 +492,28 @@ void UIMachineWindow::prepareMenuHelp()
     menu->addSeparator();
 #endif /* Q_WS_MAC */
     menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_About));
+}
+
+void UIMachineWindow::prepareMachineViewContainer()
+{
+    /* Create view container.
+     * After it will be passed to parent widget of some mode,
+     * there will be no need to delete it, so no need to cleanup: */
+    m_pMachineViewContainer = new QGridLayout();
+    m_pMachineViewContainer->setMargin(0);
+    m_pMachineViewContainer->setSpacing(0);
+
+    /* Create and add shifting spacers.
+     * After they will be inserted into layout, it will get the parentness
+     * of those spacers, so there will be no need to cleanup them. */
+    m_pTopSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
+    m_pBottomSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
+    m_pLeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_pRightSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
+    m_pMachineViewContainer->addItem(m_pTopSpacer, 0, 1);
+    m_pMachineViewContainer->addItem(m_pBottomSpacer, 2, 1);
+    m_pMachineViewContainer->addItem(m_pLeftSpacer, 1, 0);
+    m_pMachineViewContainer->addItem(m_pRightSpacer, 1, 2);
 }
 
 void UIMachineWindow::updateAppearanceOf(int iElement)
