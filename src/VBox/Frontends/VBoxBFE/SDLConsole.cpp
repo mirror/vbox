@@ -292,7 +292,7 @@ CONEVENT SDLConsole::eventWait()
          */
         case SDL_MOUSEMOTION:
         {
-            bool fMouseAbsolute;
+            BOOL fMouseAbsolute;
             gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
             if (mfInputGrab || fMouseAbsolute)
                 mouseSendEvent(0);
@@ -305,7 +305,7 @@ CONEVENT SDLConsole::eventWait()
         case SDL_MOUSEBUTTONDOWN:
         case SDL_MOUSEBUTTONUP:
         {
-            bool fMouseAbsolute;
+            BOOL fMouseAbsolute;
             gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
             SDL_MouseButtonEvent *bev = &ev->button;
             if (!mfInputGrab && !fMouseAbsolute)
@@ -1156,7 +1156,7 @@ static void DisableGlobalHotKeys(bool fDisable)
  */
 void SDLConsole::inputGrabStart()
 {
-    bool fNeedsHostCursor;
+    BOOL fNeedsHostCursor;
     gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
 #ifdef RT_OS_DARWIN
     DisableGlobalHotKeys(true);
@@ -1175,7 +1175,7 @@ void SDLConsole::inputGrabStart()
  */
 void SDLConsole::inputGrabEnd()
 {
-    bool fNeedsHostCursor;
+    BOOL fNeedsHostCursor;
     gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
     SDL_WM_GrabInput(SDL_GRAB_OFF);
     if (!fNeedsHostCursor)
@@ -1200,8 +1200,8 @@ void SDLConsole::mouseSendEvent(int dz)
 {
     int x, y, state, buttons;
     bool abs;
-    bool fMouseAbsolute;
-    bool fNeedsHostCursor;
+    BOOL fMouseAbsolute;
+    BOOL fNeedsHostCursor;
 
     gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
     gMouse->COMGETTER(NeedsHostCursor)(&fNeedsHostCursor);
@@ -1352,7 +1352,7 @@ void SDLConsole::setPointerShape (const PointerShapeChangeData *data)
     /*
      * don't do anything if there are no guest additions loaded (anymore)
      */
-    bool fMouseAbsolute;
+    BOOL fMouseAbsolute;
     gMouse->COMGETTER(AbsoluteSupported)(&fMouseAbsolute);
     if (!fMouseAbsolute)
         return;
