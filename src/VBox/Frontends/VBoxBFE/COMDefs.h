@@ -60,6 +60,8 @@
 # define E_FAIL         ((unsigned long) 0x80004005L)
 # define E_UNEXPECTED   ((unsigned long) 0x8000ffffL)
 # define E_INVALIDARG   ((unsigned long) 0x80070057L)
+#define E_ACCESSDENIED  ((unsigned long) 0x80070005L)
+#define VBOX_E_IPRT_ERROR ((unsigned long) 0x80BB0005L)
 
 # if ! defined(FALSE)
 #  define FALSE false

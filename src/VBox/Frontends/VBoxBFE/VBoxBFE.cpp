@@ -789,6 +789,8 @@ extern "C" DECLEXPORT(int) TrustedMain (int argc, char **argv, char **envp)
     gStatus = new VMStatus();
     gKeyboard = new Keyboard();
     gMouse = new Mouse();
+    if (FAILED(gMouse->FinalConstruct()))
+        goto leave;
     gVMMDev = new VMMDev();
     gDisplay = new VMDisplay();
 #if defined(USE_SDL)
@@ -978,6 +980,7 @@ leave:
     delete gConsole;
     delete gDisplay;
     delete gKeyboard;
+    gMouse->FinalRelease();
     delete gMouse;
     delete gStatus;
     delete gMachineDebugger;
@@ -1256,13 +1259,6 @@ DECLCALLBACK(int) VMPowerUpThread(RTTHREAD Thread, void *pvUser)
         gHostUSB->init(gpVM);
     }
 #endif /* VBOXBFE_WITH_USB */
-
-#ifdef RT_OS_L4
-    /* L4 console cannot draw a host cursor */
-    gMouse->setHostCursor(false);
-#else
-    gMouse->setHostCursor(true);
-#endif
 
     /*
      * Power on the VM (i.e. start executing).
