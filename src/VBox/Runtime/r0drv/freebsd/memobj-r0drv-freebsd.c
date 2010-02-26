@@ -743,6 +743,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
             vm_offset_t pb = (vm_offset_t)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
             return vtophys(pb);
         }
+
         case RTR0MEMOBJTYPE_MAPPING:
         {
             vm_offset_t pb = (vm_offset_t)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
@@ -755,8 +756,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 
                 return pmap_extract(pPhysicalMap, pb);
             }
-            else
-                return vtophys(pb);
+            return vtophys(pb);
         }
 
         case RTR0MEMOBJTYPE_CONT:
