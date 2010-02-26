@@ -525,8 +525,7 @@ UISession::UISession(UIMachine *pMachine, const CSession &session)
     /* Base variables: */
     , m_pMachine(pMachine)
     , m_session(session)
-    , m_pCallback(new UIConsoleCallback(this))
-    , m_callback(CConsoleCallback(m_pCallback))
+    , m_callback(CConsoleCallback(new UIConsoleCallback(this)))
     /* Common varibles: */
     , m_machineState(KMachineState_Null)
 #if defined(Q_WS_WIN)

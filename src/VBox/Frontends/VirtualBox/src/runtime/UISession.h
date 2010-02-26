@@ -163,8 +163,7 @@ private:
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession m_session;
-    UIConsoleCallback *m_pCallback;
-    const CConsoleCallback &m_callback;
+    const CConsoleCallback m_callback;
 
     /* Common variables: */
     KMachineState m_machineState;
