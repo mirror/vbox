@@ -33,6 +33,7 @@
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQGL.h"
+#include "UIFrameBufferQImage.h"
 #include "UIFrameBufferQuartz2D.h"
 #include "UIFrameBufferSDL.h"
 #include "UISession.h"

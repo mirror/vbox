@@ -24,29 +24,12 @@
 #define ___UIFrameBuffer_h___
 
 /* Global includes */
-//#include <QImage>
-#include <QPixmap>
-//#include <QMutex>
+#include <QRegion>
 #include <QPaintEvent>
-//#include <QMoveEvent>
 
 /* Local includes */
 #include "COMDefs.h"
 #include <iprt/critsect.h>
-
-//#if defined (VBOX_GUI_USE_SDL)
-//#include <SDL.h>
-//#include <signal.h>
-//#endif
-
-//#if defined (Q_WS_WIN) && defined (VBOX_GUI_USE_DDRAW)
-// VBox/cdefs.h defines these:
-//#undef LOWORD
-//#undef HIWORD
-//#undef LOBYTE
-//#undef HIBYTE
-//#include <ddraw.h>
-//#endif
 
 class UIMachineView;
 
@@ -259,86 +242,6 @@ private:
     long m_iRefCnt;
 #endif
 };
-
-#if defined (VBOX_GUI_USE_QIMAGE)
-class UIFrameBufferQImage : public UIFrameBuffer
-{
-public:
-
-    UIFrameBufferQImage(UIMachineView *pMachineView);
-
-    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
-
-    ulong pixelFormat() { return m_uPixelFormat; }
-    bool usesGuestVRAM() { return m_bUsesGuestVRAM; }
-
-    uchar *address() { return m_img.bits(); }
-    ulong bitsPerPixel() { return m_img.depth(); }
-    ulong bytesPerLine() { return m_img.bytesPerLine(); }
-
-    void paintEvent (QPaintEvent *pEvent);
-    void resizeEvent (UIResizeEvent *pEvent);
-
-private:
-
-    QPixmap m_PM;
-    QImage m_img;
-    ulong m_uPixelFormat;
-    bool m_bUsesGuestVRAM;
-};
-#endif
-
-#if 0
-#if defined (VBOX_GUI_USE_DDRAW)
-class UIFrameBufferDDRAW : public UIFrameBuffer
-{
-public:
-
-    UIFrameBufferDDRAW(UIMachineView *pMachineView);
-    virtual ~UIFrameBufferDDRAW();
-
-    STDMETHOD(NotifyUpdate) (ULONG uX, ULONG uY, ULONG uW, ULONG uH);
-
-    uchar* address() { return (uchar*) m_surfaceDesc.lpSurface; }
-    ulong bitsPerPixel() { return m_surfaceDesc.ddpfPixelFormat.dwRGBBitCount; }
-    ulong bytesPerLine() { return (ulong) m_surfaceDesc.lPitch; }
-
-    ulong pixelFormat() { return m_uPixelFormat; };
-
-    bool usesGuestVRAM() { return m_bUsesGuestVRAM; }
-
-    void paintEvent(QPaintEvent *pEvent);
-    void resizeEvent(UIResizeEvent *pEvent);
-    void moveEvent(QMoveEvent *pEvent);
-
-private:
-
-    void releaseObjects();
-
-    bool createSurface(ULONG uPixelFormat, uchar *pvVRAM,
-                       ULONG uBitsPerPixel, ULONG uBytesPerLine,
-                       ULONG uWidth, ULONG uHeight);
-    void deleteSurface();
-    void drawRect(ULONG uX, ULONG uY, ULONG uW, ULONG uH);
-    void getWindowPosition(void);
-
-    LPDIRECTDRAW7        m_DDRAW;
-    LPDIRECTDRAWCLIPPER  m_clipper;
-    LPDIRECTDRAWSURFACE7 m_surface;
-    DDSURFACEDESC2       m_surfaceDesc;
-    LPDIRECTDRAWSURFACE7 m_primarySurface;
-
-    ulong m_uPixelFormat;
-
-    bool m_bUsesGuestVRAM;
-
-    int m_iWndX;
-    int m_iWndY;
-
-    bool m_bSynchronousUpdates;
-};
-#endif
-#endif
 
 #endif // !___UIFrameBuffer_h___
 
