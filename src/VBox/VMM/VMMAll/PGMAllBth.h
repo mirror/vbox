@@ -2954,7 +2954,10 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if (PGM_SHW_TYPE == PGM_TYPE_EPT) && (HC_ARCH_BITS == 64) && defined(RT_OS_WINDOWS)
+# if (HC_ARCH_BITS == 64) && (PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE)
+#  if  (PGM_SHW_TYPE != PGM_TYPE_EPT)   /* PGM_TYPE_EPT implies nested paging */
+    if (HWACCMIsNestedPagingActive(pVM))
+#  endif 
     {
         PPGMPAGE pPage;
 
@@ -2990,10 +2993,12 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 PdeDst.u |= HCPhys;
                 PdeDst.n.u1Present   = 1;
                 PdeDst.n.u1Write     = 1;
-                PdeDst.n.u1Execute   = 1;
                 PdeDst.b.u1Size      = 1;
+#  if  PGM_SHW_TYPE == PGM_TYPE_EPT
+                PdeDst.n.u1Execute   = 1;
                 PdeDst.b.u1IgnorePAT = 1;
                 PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
+#  endif
                 ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 
                 STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
@@ -3001,7 +3006,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
             }
         }
     }
-# endif
+# endif /* HC_ARCH_BITS == 64 */
 
     GSTPDE PdeSrc;
     PdeSrc.au32[0]      = 0; /* faked so we don't have to #ifdef everything */
