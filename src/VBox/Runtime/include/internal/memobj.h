@@ -353,7 +353,8 @@ int rtR0MemObjNativeLockUser(PPRTR0MEMOBJINTERNAL ppMem, RTR3PTR R3Ptr, size_t c
 int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, uint32_t fAccess);
 
 /**
- * Allocates contiguous page aligned physical memory without (necessarily) any kernel mapping.
+ * Allocates contiguous page aligned physical memory without (necessarily) any
+ * kernel mapping.
  *
  * @returns IPRT status code.
  * @param   ppMem           Where to store the ring-0 memory object handle.
@@ -361,7 +362,7 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
  * @param   PhysHighest     The highest permittable address (inclusive).
  *                          NIL_RTHCPHYS if any address is acceptable.
  * @param   uAlignment      The alignment of the reserved memory.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
+ *                          Supported values are PAGE_SIZE, _2M, _4M and _1G.
  */
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment);
 

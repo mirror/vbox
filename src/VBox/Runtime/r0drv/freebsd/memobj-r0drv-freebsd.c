@@ -330,9 +330,8 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 {
     /** @todo check if there is a more appropriate API somewhere.. */
 
-    /** @todo */
-    if (    uAlignment != 0
-        &&  uAlignment != PAGE_SIZE)
+    /** @todo alignment */
+    if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
     /* create the object. */
