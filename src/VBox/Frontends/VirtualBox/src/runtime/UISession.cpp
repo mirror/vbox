@@ -570,8 +570,6 @@ UISession::~UISession()
 
     /* Unregister console callback: */
     m_session.GetConsole().UnregisterCallback(m_callback);
-    delete m_pCallback;
-    m_pCallback = 0;
 }
 
 bool UISession::setPause(bool fOn)
