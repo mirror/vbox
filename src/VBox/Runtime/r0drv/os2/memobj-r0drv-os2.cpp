@@ -198,9 +198,8 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 {
     AssertMsgReturn(PhysHighest >= 16 *_1M, ("PhysHigest=%RHp\n", PhysHighest), VERR_NOT_IMPLEMENTED);
 
-    /** @todo */
-    if (    uAlignment != 0
-        &&  uAlignment != PAGE_SIZE)
+    /** @todo alignment  */
+    if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
     /* create the object. */
@@ -227,7 +226,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
     /** @todo rtR0MemObjNativeAllocPhys / darwin. */
-    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest);
+    return rtR0MemObjNativeAllocPhys(ppMem, cb, PhysHighest, PAGE_SIZE);
 }
 
 

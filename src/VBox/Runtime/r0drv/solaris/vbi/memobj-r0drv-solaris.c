@@ -195,9 +195,8 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 {
     AssertMsgReturn(PhysHighest >= 16 *_1M, ("PhysHigest=%RHp\n", PhysHighest), VERR_NOT_IMPLEMENTED);
 
-    /** @todo */
-    if (    uAlignment != 0
-        &&  uAlignment != PAGE_SIZE)
+    /** @todo alignment */
+    if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
     return rtR0MemObjNativeAllocCont(ppMem, cb, false);

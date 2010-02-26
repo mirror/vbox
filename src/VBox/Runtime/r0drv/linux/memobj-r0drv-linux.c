@@ -701,9 +701,8 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
-    /* @todo */
-    if (    uAlignment != 0
-        &&  uAlignment != PAGE_SIZE)
+    /** @todo alignment */
+    if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
     return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest);
