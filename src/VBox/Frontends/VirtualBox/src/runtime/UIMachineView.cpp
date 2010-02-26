@@ -441,7 +441,7 @@ void UIMachineView::prepareFrameBuffer()
 #ifdef VBOX_GUI_USE_QUARTZ2D
         case VBoxDefs::Quartz2DMode:
             /* Indicate that we are doing all drawing stuff ourself: */
-//            pViewport->setAttribute(Qt::WA_PaintOnScreen);
+            viewport()->setAttribute(Qt::WA_PaintOnScreen);
 //# ifdef VBOX_WITH_VIDEOHWACCEL
 //            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
 //# else
