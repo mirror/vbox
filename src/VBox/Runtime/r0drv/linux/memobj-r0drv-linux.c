@@ -701,8 +701,12 @@ static int rtR0MemObjLinuxAllocPhysSub(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJTYP
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
-    /** @todo alignment */
-    if (uAlignment != PAGE_SIZE)
+    /*
+     * Contiguous physical memory: Check for the alignment of the physical address.
+     * Use the knowledge that we are using alloc_pages(flags, order) for allocating
+     * contiguous physical memory which is always aligned at 2^(PAGE_SHIFT+order).
+     */
+    if (uAlignment > cb)
         return VERR_NOT_SUPPORTED;
 
     return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest);
@@ -711,6 +715,9 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
+    /*
+     * Non-contiguous memory.
+     */
     return rtR0MemObjLinuxAllocPhysSub(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest);
 }
 
