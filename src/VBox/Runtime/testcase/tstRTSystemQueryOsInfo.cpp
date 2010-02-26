@@ -32,6 +32,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/system.h>
+
+#include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
 
@@ -53,7 +55,7 @@ int main()
     /*
      * Simple stuff.
      */
-    char szInfo[256];
+    char szInfo[_4K];
 
     rc = RTSystemQueryOSInfo(RTSYSOSINFO_PRODUCT, szInfo, sizeof(szInfo));
     RTTestIPrintf(RTTESTLVL_ALWAYS, "PRODUCT: \"%s\", rc=%Rrc\n", szInfo, rc);
@@ -86,13 +88,23 @@ int main()
     /*
      * Check buffer overflow
      */
-    for (int i = RTSYSOSINFO_INVALID + 1; i < RTSYSOSINFO_END; i++)
+    RTAssertSetQuiet(true);
+    RTAssertSetMayPanic(false);
+    for (int i = RTSYSDMISTR_INVALID + 1; i < RTSYSDMISTR_END; i++)
     {
-        rc = VERR_BUFFER_OVERFLOW;
-        for (size_t cch = 0; cch < sizeof(szInfo) && rc == VERR_BUFFER_OVERFLOW; cch++)
+        RTTESTI_CHECK_RC(RTSystemQueryDmiString((RTSYSDMISTR)i, szInfo, 0), VERR_INVALID_PARAMETER);
+
+        /* Get the length of the info and check that we get overflow errors for
+           everything less that it.  */
+        rc = RTSystemQueryOSInfo((RTSYSOSINFO)i, szInfo, sizeof(szInfo));
+        if (RT_FAILURE(rc))
+            continue;
+        size_t const cchInfo = strlen(szInfo);
+
+        for (size_t cch = 1; cch < sizeof(szInfo) && cch < cchInfo; cch++)
         {
             memset(szInfo, 0x7f, sizeof(szInfo));
-            rc = RTSystemQueryOSInfo((RTSYSOSINFO)i, szInfo, cch);
+            RTTESTI_CHECK_RC(RTSystemQueryOSInfo((RTSYSOSINFO)i, szInfo, cch), VERR_BUFFER_OVERFLOW);
 
             /* check the padding. */
             for (size_t off = cch; off < sizeof(szInfo); off++)
@@ -103,17 +115,14 @@ int main()
                 }
 
             /* check for zero terminator. */
-            if (    (   rc == VERR_BUFFER_OVERFLOW
-                     || rc == VERR_NOT_SUPPORTED
-                     || RT_SUCCESS(rc))
-                &&  cch > 0
-                &&  !memchr(szInfo, '\0', cch))
-            {
-
+            if (!memchr(szInfo, '\0', cch))
                 RTTestIFailed("level=%d, rc=%Rrc, cch=%zu: Buffer not terminated!\n", i, rc, cch);
-                g_cErrors++;
-            }
         }
+
+        /* Check that the exact length works. */
+        rc = RTSystemQueryOSInfo((RTSYSOSINFO)i, szInfo, cchInfo + 1);
+        if (rc != VINF_SUCCESS)
+            RTTestIFailed("level=%d: rc=%Rrc when specifying exactly right buffer length (%zu)\n", i, rc, cchInfo + 1);
     }
 
     return RTTestSummaryAndDestroy(hTest);
