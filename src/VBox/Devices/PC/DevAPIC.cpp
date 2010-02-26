@@ -974,7 +974,7 @@ PDMBOTHCBDECL(int) apicLocalInterrupt(PPDMDEVINS pDevIns, uint8_t u8Pin, uint8_t
     APICState       *s = getLapicById(dev, 0);
 
     Assert(PDMCritSectIsOwner(dev->CTX_SUFF(pCritSect)));
-    LogFlow(("apicLocalInterrupt: pDevIns=%p u8Pin=%x\n", pDevIns, u8Pin));
+    LogFlow(("apicLocalInterrupt: pDevIns=%p u8Pin=%x u8Level=%x\n", pDevIns, u8Pin, u8Level));
 
     /* If LAPIC is disabled, go straight to the CPU. */
     if (!(s->spurious_vec & APIC_SV_ENABLE))
