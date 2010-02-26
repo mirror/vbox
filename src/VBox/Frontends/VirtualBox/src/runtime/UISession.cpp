@@ -27,12 +27,22 @@
 
 /* Local includes */
 #include "UISession.h"
-
 #include "UIMachine.h"
+#include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
+#include "VBoxProblemReporter.h"
 
-#include "VBoxUtils.h"
+#ifdef Q_WS_X11
+# include <QX11Info>
+# ifndef VBOX_WITHOUT_XCURSOR
+#  include <X11/Xcursor/Xcursor.h>
+# endif
+#endif
+
+#if defined (Q_WS_MAC)
+# include "VBoxUtils.h"
+#endif
 
 /* Guest mouse pointer shape change event: */
 class UIMousePointerShapeChangeEvent : public QEvent
@@ -512,24 +522,77 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIConsoleCallback, IConsoleCallback)
 
 UISession::UISession(UIMachine *pMachine, const CSession &session)
     : QObject(pMachine)
+    /* Base variables: */
     , m_pMachine(pMachine)
     , m_session(session)
     , m_pCallback(new UIConsoleCallback(this))
     , m_callback(CConsoleCallback(m_pCallback))
+    /* Common varibles: */
+    , m_machineState(KMachineState_Null)
+    /* Common flags: */
+    , m_fIsFirstTimeStarted(false)
+    , m_fIsIgnoreRutimeMediumsChanging(false)
+    /* Guest additions flags: */
+    , m_fIsGuestAdditionsActive(false)
+    , m_fIsGuestSupportsGraphics(false)
+    , m_fIsGuestSupportsSeamless(false)
+    /* Mouse flags: */
+    , m_fNumLock(false)
+    , m_fCapsLock(false)
+    , m_fScrollLock(false)
+    , m_uNumLockAdaptionCnt(2)
+    , m_uCapsLockAdaptionCnt(2)
+    /* Mouse flags: */
+    , m_fIsMouseSupportsAbsolute(false)
+    , m_fIsMouseSupportsRelative(false)
+    , m_fIsMouseHostCursorNeeded(false)
+    , m_fIsMouseCaptured(false)
+    , m_fIsMouseIntegrated(true)
+    , m_fIsHideHostPointer(true)
 {
     /* Check CSession object */
-    AssertMsg(!m_session.isNull(), ("CSession is not set!\n"));
+    AssertMsg(!m_session.isNull(), ("CSession should not be NULL!\n"));
 
     /* Register console callback: */
     m_session.GetConsole().RegisterCallback(m_callback);
+
+    /* Load session settings: */
+    loadSessionSettings();
 }
 
 UISession::~UISession()
 {
+    /* Save session settings: */
+    saveSessionSettings();
+
     /* Unregister console callback: */
     m_session.GetConsole().UnregisterCallback(m_callback);
     delete m_pCallback;
     m_pCallback = 0;
+}
+
+bool UISession::setPause(bool fOn)
+{
+    if (isPaused() == fOn)
+        return true;
+
+    CConsole console = session().GetConsole();
+
+    if (fOn)
+        console.Pause();
+    else
+        console.Resume();
+
+    bool ok = console.isOk();
+    if (!ok)
+    {
+        if (fOn)
+            vboxProblem().cannotPauseMachine(console);
+        else
+            vboxProblem().cannotResumeMachine(console);
+    }
+
+    return ok;
 }
 
 bool UISession::event(QEvent *pEvent)
@@ -538,38 +601,135 @@ bool UISession::event(QEvent *pEvent)
     {
         case UIConsoleEventType_MousePointerShapeChange:
         {
+            /* Convert to mouse shape change event: */
             UIMousePointerShapeChangeEvent *pConsoleEvent = static_cast<UIMousePointerShapeChangeEvent*>(pEvent);
-            emit sigMousePointerShapeChange(pConsoleEvent->isVisible(), pConsoleEvent->hasAlpha(),
-                                            pConsoleEvent->xHot(), pConsoleEvent->yHot(),
-                                            pConsoleEvent->width(), pConsoleEvent->height(),
-                                            pConsoleEvent->shapeData());
+
+            /* Remember if we should show cursor: */
+            m_fIsHideHostPointer = !pConsoleEvent->isVisible();
+
+            /* Cache shape dataif present: */
+            if (pConsoleEvent->shapeData())
+                setPointerShape(pConsoleEvent->shapeData(), pConsoleEvent->hasAlpha(),
+                                pConsoleEvent->xHot(), pConsoleEvent->yHot(),
+                                pConsoleEvent->width(), pConsoleEvent->height());
+
+            /* Notify listeners about mouse capability changed: */
+            emit sigMousePointerShapeChange();
+
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 
         case UIConsoleEventType_MouseCapabilityChange:
         {
+            /* Convert to mouse capability event: */
             UIMouseCapabilityChangeEvent *pConsoleEvent = static_cast<UIMouseCapabilityChangeEvent*>(pEvent);
-            emit sigMouseCapabilityChange(pConsoleEvent->supportsAbsolute(), pConsoleEvent->supportsRelative(), pConsoleEvent->needsHostCursor());
+
+            /* Check if something had changed: */
+            if (m_fIsMouseSupportsAbsolute != pConsoleEvent->supportsAbsolute() ||
+                m_fIsMouseSupportsRelative != pConsoleEvent->supportsRelative() ||
+                m_fIsMouseHostCursorNeeded != pConsoleEvent->needsHostCursor())
+            {
+                /* Store new data: */
+                m_fIsMouseSupportsAbsolute = pConsoleEvent->supportsAbsolute();
+                m_fIsMouseSupportsRelative = pConsoleEvent->supportsRelative();
+                m_fIsMouseHostCursorNeeded = pConsoleEvent->needsHostCursor();
+
+                /* Notify listeners about mouse capability changed: */
+                emit sigMouseCapabilityChange();
+            }
+
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 
         case UIConsoleEventType_KeyboardLedsChange:
         {
+            /* Convert to keyboard LEDs change event: */
             UIKeyboardLedsChangeEvent *pConsoleEvent = static_cast<UIKeyboardLedsChangeEvent*>(pEvent);
-            emit sigKeyboardLedsChange(pConsoleEvent->numLock(), pConsoleEvent->capsLock(), pConsoleEvent->scrollLock());
+
+            /* Check if something had changed: */
+            if (m_fNumLock != pConsoleEvent->numLock() ||
+                m_fCapsLock != pConsoleEvent->capsLock() ||
+                m_fScrollLock != pConsoleEvent->scrollLock())
+            {
+                /* Store new num lock data: */
+                if (m_fNumLock != pConsoleEvent->numLock())
+                {
+                    m_fNumLock = pConsoleEvent->numLock();
+                    m_uNumLockAdaptionCnt = 2;
+                }
+
+                /* Store new caps lock data: */
+                if (m_fCapsLock != pConsoleEvent->capsLock())
+                {
+                    m_fCapsLock = pConsoleEvent->capsLock();
+                    m_uCapsLockAdaptionCnt = 2;
+                }
+
+                /* Store new scroll lock data: */
+                if (m_fScrollLock != pConsoleEvent->scrollLock())
+                {
+                    m_fScrollLock = pConsoleEvent->scrollLock();
+                }
+
+                /* Notify listeners about mouse capability changed: */
+                emit sigKeyboardLedsChange();
+            }
+
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 
         case UIConsoleEventType_StateChange:
         {
+            /* Convert to machine state event: */
             UIStateChangeEvent *pConsoleEvent = static_cast<UIStateChangeEvent*>(pEvent);
-            emit sigStateChange(pConsoleEvent->machineState());
+
+            /* Check if something had changed: */
+            if (m_machineState != pConsoleEvent->machineState())
+            {
+                /* Store new data: */
+                m_machineState = pConsoleEvent->machineState();
+
+                /* Notify listeners about machine state changed: */
+                emit sigMachineStateChange();
+            }
+
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 
         case UIConsoleEventType_AdditionsStateChange:
         {
-            emit sigAdditionsStateChange();
+            /* Get our guest: */
+            CGuest guest = session().GetConsole().GetGuest();
+
+            /* Variable flags: */
+            bool fIsGuestAdditionsActive = guest.GetAdditionsActive();
+            bool fIsGuestSupportsGraphics = guest.GetSupportsGraphics();
+            bool fIsGuestSupportsSeamless = guest.GetSupportsSeamless();
+
+            /* Check if something had changed: */
+            if (m_fIsGuestAdditionsActive != fIsGuestAdditionsActive ||
+                m_fIsGuestSupportsGraphics != fIsGuestSupportsGraphics ||
+                m_fIsGuestSupportsSeamless != fIsGuestSupportsSeamless)
+            {
+                /* Store new data: */
+                m_fIsGuestAdditionsActive = fIsGuestAdditionsActive;
+                m_fIsGuestSupportsGraphics = fIsGuestSupportsGraphics;
+                m_fIsGuestSupportsSeamless = fIsGuestSupportsSeamless;
+
+                /* Notify listeners about guest additions state changed: */
+                emit sigAdditionsStateChange();
+            }
+
+            /* Accept event: */
+            pEvent->accept();
             return true;
         }
 
@@ -678,8 +838,333 @@ bool UISession::event(QEvent *pEvent)
     return QObject::event(pEvent);
 }
 
+void UISession::loadSessionSettings()
+{
+    /* Get machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Availability settings: */
+    {
+        /* USB Stuff: */
+        CUSBController usbController = machine.GetUSBController();
+        if (usbController.isNull())
+        {
+            /* Hide USB menu if controller is NULL: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
+        }
+        else
+        {
+            /* Enable/Disable USB menu depending on USB controller: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
+        }
+
+        /* VRDP Stuff: */
+        CVRDPServer vrdpServer = machine.GetVRDPServer();
+        if (vrdpServer.isNull())
+        {
+            /* Hide VRDP Action: */
+            uimachine()->actionsPool()->action(UIActionIndex_Toggle_VRDP)->setVisible(false);
+        }
+    }
+
+    /* Prepare some initial settings: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++ iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++ iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
+        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
+
+    /* Load extra-data settings: */
+    {
+        /* Temporary: */
+        QString strSettings;
+
+        /* Is there shoul be First RUN Wizard? */
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_FirstRun);
+        if (strSettings == "yes")
+            m_fIsFirstTimeStarted = true;
+
+        /* Ignore mediums mounted at runtime? */
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_SaveMountedAtRuntime);
+        if (strSettings == "no")
+            m_fIsIgnoreRutimeMediumsChanging = true;
+
+        /* Should guest autoresize? */
+        strSettings = machine.GetExtraData(VBoxDefs::GUI_AutoresizeGuest);
+        QAction *pGuestAutoresizeSwitch = uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize);
+        pGuestAutoresizeSwitch->blockSignals(true);
+        pGuestAutoresizeSwitch->setChecked(strSettings != "off");
+        pGuestAutoresizeSwitch->blockSignals(false);
+    }
+}
+
+void UISession::saveSessionSettings()
+{
+    /* Get session machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Save extra-data settings: */
+    {
+        /* Disable First RUN Wizard for the since now: */
+        machine.SetExtraData(VBoxDefs::GUI_FirstRun, QString());
+
+        /* Remember if guest should autoresize: */
+        machine.SetExtraData(VBoxDefs::GUI_AutoresizeGuest,
+                             uimachine()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked() ?
+                             QString() : "off");
+
+        // TODO: Move to fullscreen/seamless logic:
+        //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
+    }
+}
+
 qulonglong UISession::winId() const
 {
-    return machine()->machineLogic()->machineWindowWrapper()->machineWindow()->winId();
+    return uimachine()->machineLogic()->machineWindowWrapper()->machineWindow()->winId();
+}
+
+void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
+                                uint uXHot, uint uYHot, uint uWidth, uint uHeight)
+{
+    AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
+
+    const uchar *srcAndMaskPtr = pShapeData;
+    uint andMaskSize = (uWidth + 7) / 8 * uHeight;
+    const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
+    uint srcShapePtrScan = uWidth * 4;
+
+#if defined (Q_WS_WIN)
+
+    BITMAPV5HEADER bi;
+    HBITMAP hBitmap;
+    void *lpBits;
+
+    ::ZeroMemory(&bi, sizeof (BITMAPV5HEADER));
+    bi.bV5Size = sizeof(BITMAPV5HEADER);
+    bi.bV5Width = uWidth;
+    bi.bV5Height = - (LONG)uHeight;
+    bi.bV5Planes = 1;
+    bi.bV5BitCount = 32;
+    bi.bV5Compression = BI_BITFIELDS;
+    bi.bV5RedMask   = 0x00FF0000;
+    bi.bV5GreenMask = 0x0000FF00;
+    bi.bV5BlueMask  = 0x000000FF;
+    if (fHasAlpha)
+        bi.bV5AlphaMask = 0xFF000000;
+    else
+        bi.bV5AlphaMask = 0;
+
+    HDC hdc = GetDC(NULL);
+
+    /* Create the DIB section with an alpha channel: */
+    hBitmap = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, (void **)&lpBits, NULL, (DWORD) 0);
+
+    ReleaseDC(NULL, hdc);
+
+    HBITMAP hMonoBitmap = NULL;
+    if (fHasAlpha)
+    {
+        /* Create an empty mask bitmap: */
+        hMonoBitmap = CreateBitmap(uWidth, uHeight, 1, 1, NULL);
+    }
+    else
+    {
+        /* Word aligned AND mask. Will be allocated and created if necessary. */
+        uint8_t *pu8AndMaskWordAligned = NULL;
+
+        /* Width in bytes of the original AND mask scan line. */
+        uint32_t cbAndMaskScan = (uWidth + 7) / 8;
+
+        if (cbAndMaskScan & 1)
+        {
+            /* Original AND mask is not word aligned. */
+
+            /* Allocate memory for aligned AND mask. */
+            pu8AndMaskWordAligned = (uint8_t *)RTMemTmpAllocZ((cbAndMaskScan + 1) * uHeight);
+
+            Assert(pu8AndMaskWordAligned);
+
+            if (pu8AndMaskWordAligned)
+            {
+                /* According to MSDN the padding bits must be 0.
+                 * Compute the bit mask to set padding bits to 0 in the last byte of original AND mask. */
+                uint32_t u32PaddingBits = cbAndMaskScan * 8  - uWidth;
+                Assert(u32PaddingBits < 8);
+                uint8_t u8LastBytesPaddingMask = (uint8_t)(0xFF << u32PaddingBits);
+
+                Log(("u8LastBytesPaddingMask = %02X, aligned w = %d, width = %d, cbAndMaskScan = %d\n",
+                      u8LastBytesPaddingMask, (cbAndMaskScan + 1) * 8, uWidth, cbAndMaskScan));
+
+                uint8_t *src = (uint8_t *)srcAndMaskPtr;
+                uint8_t *dst = pu8AndMaskWordAligned;
+
+                unsigned i;
+                for (i = 0; i < uHeight; i++)
+                {
+                    memcpy(dst, src, cbAndMaskScan);
+
+                    dst[cbAndMaskScan - 1] &= u8LastBytesPaddingMask;
+
+                    src += cbAndMaskScan;
+                    dst += cbAndMaskScan + 1;
+                }
+            }
+        }
+
+        /* Create the AND mask bitmap: */
+        hMonoBitmap = ::CreateBitmap(uWidth, uHeight, 1, 1,
+                                     pu8AndMaskWordAligned? pu8AndMaskWordAligned: srcAndMaskPtr);
+
+        if (pu8AndMaskWordAligned)
+        {
+            RTMemTmpFree(pu8AndMaskWordAligned);
+        }
+    }
+
+    Assert(hBitmap);
+    Assert(hMonoBitmap);
+    if (hBitmap && hMonoBitmap)
+    {
+        DWORD *dstShapePtr = (DWORD *) lpBits;
+
+        for (uint y = 0; y < uHeight; y ++)
+        {
+            memcpy(dstShapePtr, srcShapePtr, srcShapePtrScan);
+            srcShapePtr += srcShapePtrScan;
+            dstShapePtr += uWidth;
+        }
+
+        ICONINFO ii;
+        ii.fIcon = FALSE;
+        ii.xHotspot = uXHot;
+        ii.yHotspot = uYHot;
+        ii.hbmMask = hMonoBitmap;
+        ii.hbmColor = hBitmap;
+
+        HCURSOR hAlphaCursor = CreateIconIndirect(&ii);
+        Assert(hAlphaCursor);
+        if (hAlphaCursor)
+        {
+            /* Set the new cursor: */
+            m_cursor = QCursor(hAlphaCursor);
+            if (m_alphaCursor)
+                DestroyIcon(m_alphaCursor);
+            m_alphaCursor = hAlphaCursor;
+        }
+    }
+
+    if (hMonoBitmap)
+        DeleteObject(hMonoBitmap);
+    if (hBitmap)
+        DeleteObject(hBitmap);
+
+#elif defined (Q_WS_X11) && !defined (VBOX_WITHOUT_XCURSOR)
+
+    XcursorImage *img = XcursorImageCreate(uWidth, uHeight);
+    Assert(img);
+    if (img)
+    {
+        img->xhot = uXHot;
+        img->yhot = uYHot;
+
+        XcursorPixel *dstShapePtr = img->pixels;
+
+        for (uint y = 0; y < uHeight; y ++)
+        {
+            memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
+
+            if (!fHasAlpha)
+            {
+                /* Convert AND mask to the alpha channel: */
+                uchar byte = 0;
+                for (uint x = 0; x < uWidth; x ++)
+                {
+                    if (!(x % 8))
+                        byte = *(srcAndMaskPtr ++);
+                    else
+                        byte <<= 1;
+
+                    if (byte & 0x80)
+                    {
+                        /* Linux doesn't support inverted pixels (XOR ops,
+                         * to be exact) in cursor shapes, so we detect such
+                         * pixels and always replace them with black ones to
+                         * make them visible at least over light colors */
+                        if (dstShapePtr [x] & 0x00FFFFFF)
+                            dstShapePtr [x] = 0xFF000000;
+                        else
+                            dstShapePtr [x] = 0x00000000;
+                    }
+                    else
+                        dstShapePtr [x] |= 0xFF000000;
+                }
+            }
+
+            srcShapePtr += srcShapePtrScan;
+            dstShapePtr += uWidth;
+        }
+
+        /* Set the new cursor: */
+        m_cursor = QCursor(XcursorImageLoadCursor(QX11Info::display(), img));
+
+        XcursorImageDestroy(img);
+    }
+
+#elif defined(Q_WS_MAC)
+
+    /* Create a ARGB image out of the shape data. */
+    QImage image  (uWidth, uHeight, QImage::Format_ARGB32);
+    const uint8_t* pbSrcMask = static_cast<const uint8_t*> (srcAndMaskPtr);
+    unsigned cbSrcMaskLine = RT_ALIGN (uWidth, 8) / 8;
+    for (unsigned int y = 0; y < uHeight; ++y)
+    {
+        for (unsigned int x = 0; x < uWidth; ++x)
+        {
+           unsigned int color = ((unsigned int*)srcShapePtr)[y*uWidth+x];
+           /* If the alpha channel isn't in the shape data, we have to
+            * create them from the and-mask. This is a bit field where 1
+            * represent transparency & 0 opaque respectively. */
+           if (!fHasAlpha)
+           {
+               if (!(pbSrcMask[x / 8] & (1 << (7 - (x % 8)))))
+                   color  |= 0xff000000;
+               else
+               {
+                   /* This isn't quite right, but it's the best we can do I think... */
+                   if (color & 0x00ffffff)
+                       color = 0xff000000;
+                   else
+                       color = 0x00000000;
+               }
+           }
+           image.setPixel (x, y, color);
+        }
+        /* Move one scanline forward. */
+        pbSrcMask += cbSrcMaskLine;
+    }
+
+    /* Set the new cursor: */
+    m_cursor = cursor(QPixmap::fromImage(image), uXHot, uYHot);
+    NOREF(srcShapePtrScan);
+
+#else
+
+# warning "port me"
+
+#endif
 }
 

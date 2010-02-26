@@ -23,8 +23,10 @@
 #ifndef __UIMachineLogic_h__
 #define __UIMachineLogic_h__
 
+/* Global includes */
+#include <QObject>
+
 /* Local includes */
-#include "COMDefs.h"
 #include "UIMachineDefs.h"
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
@@ -34,6 +36,11 @@
 class QActionGroup;
 
 /* Local forwards */
+class CSession;
+class CMachine;
+class CSnapshot;
+class CUSBDevice;
+class CVirtualBoxErrorInfo;
 class UISession;
 class UIActionsPool;
 class UIMachineWindow;
@@ -50,17 +57,14 @@ public:
                                   UIActionsPool *pActionsPool,
                                   UIVisualStateType visualStateType);
 
-    /* Public getters: */
+    /* Main getters/setters: */
     UISession* uisession() { return m_pSession; }
     UIActionsPool* actionsPool() { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowWrapper; }
-    KMachineState machineState() const { return m_machineState; }
-    bool isPaused() const { return machineState() == KMachineState_Paused ||
-                                   machineState() == KMachineState_TeleportingPausedVM; }
-    bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
 
-    /* Public setters: */
+    /* Maintenance getters/setters: */
+    bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
 protected:
@@ -72,51 +76,39 @@ protected:
                    UIVisualStateType visualStateType);
     virtual ~UIMachineLogic();
 
-    /* Protected getters: */
+    /* Protected wrappers: */
     CSession& session();
-    bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
 
     /* Protected setters: */
     void setMachineWindowWrapper(UIMachineWindow *pMachineWindowWrapper) { m_pMachineWindowWrapper = pMachineWindowWrapper; }
-
-    /* Console related routines: */
-    bool pause() { return pause(true); }
-    bool unpause() { return pause(false); }
 
     /* Prepare helpers: */
     virtual void prepareConsoleConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
     virtual void prepareRequiredFeatures();
-    virtual void loadLogicSettings();
 
     /* Cleanup helpers: */
-    virtual void saveLogicSettings();
-    virtual void cleanupRequiredFeatures() {}
-    virtual void cleanupActionConnections() {}
-    virtual void cleanupActionGroups() {}
-    virtual void cleanupConsoleConnections() {}
-
-    /* Update helpers: */
-    virtual void updateMachineState();
-    virtual void updateAdditionsState();
-    virtual void updateMouseCapability();
+    //virtual void cleanupRequiredFeatures() {}
+    //virtual void cleanupActionConnections() {}
+    //virtual void cleanupActionGroups() {}
+    //virtual void cleanupConsoleConnections() {}
 
 protected slots:
 
     /* Console callback handlers: */
-    virtual void sltMachineStateChanged(KMachineState machineState);
+    virtual void sltMachineStateChanged();
     virtual void sltAdditionsStateChanged();
-    virtual void sltMouseCapabilityChanged(bool fIsSupportsAbsolute, bool fIsSupportsRelative, bool fNeedsHostCursor);
-    virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
-    virtual void sltRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+    virtual void sltMouseCapabilityChanged();
+    virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsAttached, const CVirtualBoxErrorInfo &error);
+    virtual void sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage);
 
 private slots:
 
     /* "Machine" menu funtionality */
-    void sltToggleGuestAutoresize(bool bEnabled);
+    void sltToggleGuestAutoresize(bool fEnabled);
     void sltAdjustWindow();
-    void sltToggleMouseIntegration(bool bDisabled);
+    void sltToggleMouseIntegration(bool fDisabled);
     void sltTypeCAD();
 #ifdef Q_WS_X11
     void sltTypeCABS();
@@ -124,7 +116,7 @@ private slots:
     void sltTakeSnapshot();
     void sltShowInformationDialog();
     void sltReset();
-    void sltPause(bool aOn);
+    void sltPause(bool fOn);
     void sltACPIShutdown();
     void sltClose();
 
@@ -135,7 +127,7 @@ private slots:
     void sltAttachUSBDevice();
     void sltOpenNetworkAdaptersDialog();
     void sltOpenSharedFoldersDialog();
-    void sltSwitchVrdp(bool bOn);
+    void sltSwitchVrdp(bool fOn);
     void sltInstallGuestAdditions();
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -148,7 +140,6 @@ private slots:
 private:
 
     /* Utility functions: */
-    bool pause(bool bPaused);
     void installGuestAdditionsFrom(const QString &strSource);
     static int searchMaxSnapshotIndex(const CMachine &machine,
                                       const CSnapshot &snapshot,
@@ -157,21 +148,12 @@ private:
     /* Private variables: */
     UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
-    KMachineState m_machineState;
     UIVisualStateType m_visualStateType;
     UIMachineWindow *m_pMachineWindowWrapper;
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
 
-    bool m_fIsFirstTimeStarted : 1;
-    bool m_fIsIgnoringRutimeMediums : 1;
-    bool m_fIsAdditionsActive : 1;
-    bool m_fIsGuestSupportsGraphics : 1;
-    bool m_fIsGuestSupportsSeamless : 1;
-    bool m_fIsMouseSupportsAbsolute : 1;
-    bool m_fIsMouseSupportsRelative : 1;
-    bool m_fIsHostCursorNeeded : 1;
     bool m_fIsPreventAutoClose : 1;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI

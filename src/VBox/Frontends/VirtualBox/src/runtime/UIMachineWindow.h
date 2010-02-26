@@ -24,7 +24,6 @@
 #define __UIMachineWindow_h__
 
 /* Local includes */
-#include "COMDefs.h"
 #include "UIMachineDefs.h"
 
 /* Global forwards */
@@ -32,6 +31,8 @@ class QWidget;
 class QCloseEvent;
 
 /* Local forwards */
+class CSession;
+class UISession;
 class UIMachineLogic;
 class UIMachineView;
 
@@ -57,8 +58,11 @@ protected:
     UIMachineWindow(UIMachineLogic *pMachineLogic);
     virtual ~UIMachineWindow();
 
+    /* Protected wrappers: */
+    UISession* uisession();
+    CSession& session();
+
     /* Protected getters: */
-    CSession session();
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
 
     /* Translate routine: */
@@ -75,7 +79,7 @@ protected:
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void prepareMenuDebug();
 #endif
-    virtual void loadWindowSettings();
+    //virtual void loadWindowSettings() {}
 
     /* Cleanup helpers: */
     //virtual void saveWindowSettings() {}
@@ -91,7 +95,7 @@ protected:
     virtual void updateAppearanceOf(int iElement);
 
     /* Protected slots: */
-    void sltMachineStateChanged(KMachineState machineState);
+    virtual void sltMachineStateChanged();
 
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;

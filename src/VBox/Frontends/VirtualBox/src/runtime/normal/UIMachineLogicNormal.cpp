@@ -26,6 +26,7 @@
 #include <QTimer>
 
 /* Local includes */
+#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
@@ -54,20 +55,19 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession
     /* Check the status of required features: */
     prepareRequiredFeatures();
 
-    /* Load common logic settings: */
-    loadLogicSettings();
-
     /* Prepare normal machine window: */
     prepareMachineWindow();
+
+    /* Initialization: */
+    sltMachineStateChanged();
+    sltAdditionsStateChanged();
+    sltMouseCapabilityChanged();
 }
 
 UIMachineLogicNormal::~UIMachineLogicNormal()
 {
     /* Cleanup normal machine window: */
     cleanupMachineWindow();
-
-    /* Save common logic settings: */
-    saveLogicSettings();
 }
 
 void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
@@ -96,7 +96,7 @@ void UIMachineLogicNormal::sltPrepareMouseIntegrationMenu()
 
 void UIMachineLogicNormal::prepareActionConnections()
 {
-    /* Base-class connections: */
+    /* Base class connections: */
     UIMachineLogic::prepareActionConnections();
 
     /* This class connections: */
@@ -123,15 +123,8 @@ void UIMachineLogicNormal::prepareMachineWindow()
     /* Create machine window: */
     setMachineWindowWrapper(UIMachineWindow::create(this, visualStateType()));
 
-    bool bIsSaved = machineState() == KMachineState_Saved;
-    bool bIsRunning = machineState() == KMachineState_Running ||
-                      machineState() == KMachineState_Teleporting ||
-                      machineState() == KMachineState_LiveSnapshotting;
-    bool bIsRunningOrPaused = bIsRunning ||
-                              machineState() == KMachineState_Paused;
-
     /* If we are not started yet: */
-    if (!bIsRunningOrPaused)
+    if (!uisession()->isRunning() && !uisession()->isPaused())
     {
         /* Get current machine/console: */
         CMachine machine = session().GetMachine();
@@ -142,7 +135,7 @@ void UIMachineLogicNormal::prepareMachineWindow()
             vboxProblem().remindAboutAutoCapture();
 
         /* Shows first run wizard if necessary: */
-        if (isFirstTimeStarted())
+        if (uisession()->isFirstTimeStarted())
         {
             UIFirstRunWzd wzd(machineWindowWrapper()->machineWindow(), machine);
             wzd.exec();
@@ -159,11 +152,11 @@ void UIMachineLogicNormal::prepareMachineWindow()
             return;
         }
 
-        /* Disable auto closure because we want to have a chance to show the error dialog on startup failure: */
+        /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
         setPreventAutoClose(true);
 
         /* Show "Starting/Restoring" progress dialog: */
-        if (bIsSaved)
+        if (uisession()->isSaved())
             vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow(), 0);
         else
             vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow());
@@ -179,12 +172,11 @@ void UIMachineLogicNormal::prepareMachineWindow()
         /* Process pending events: */
         qApp->processEvents();
 
-        /* Enable auto closure again: */
+        /* Enable auto-closure again: */
         setPreventAutoClose(false);
 
         /* Check if we missed a really quick termination after successful startup, and process it if we did: */
-        if (machineState() == KMachineState_PoweredOff || machineState() == KMachineState_Saved ||
-            machineState() == KMachineState_Teleported || machineState() == KMachineState_Aborted)
+        if (uisession()->isTurnedOff())
         {
             machineWindowWrapper()->machineWindow()->close();
             return;
@@ -215,7 +207,7 @@ void UIMachineLogicNormal::prepareMachineWindow()
 
 #ifdef VBOX_WITH_UPDATE_REQUEST
         /* Check for updates if necessary: */
-        vboxGlobal().showUpdateDialog(false /* aForce */);
+        vboxGlobal().showUpdateDialog(false /* force request? */);
 #endif
     }
 }
@@ -226,7 +218,7 @@ void UIMachineLogicNormal::cleanupMachineWindow()
     if (!machineWindowWrapper())
         return;
 
-    /* Cleanup machine window: */
+    /* Cleanup normal machine window: */
     UIMachineWindow::destroy(machineWindowWrapper());
     setMachineWindowWrapper(0);
 }

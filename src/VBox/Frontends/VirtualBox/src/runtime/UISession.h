@@ -25,6 +25,7 @@
 
 /* Global includes */
 #include <QObject>
+#include <QCursor>
 
 /* Local includes */
 #include "COMDefs.h"
@@ -68,16 +69,65 @@ public:
     UISession(UIMachine *pMachine, const CSession &session);
     virtual ~UISession();
 
-    /* Public getters: */
+    /* Common getters: */
     CSession& session() { return m_session; }
+    KMachineState machineState() const { return m_machineState; }
+    bool isSaved() const { return machineState() == KMachineState_Saved; }
+    bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
+                                      machineState() == KMachineState_Saved ||
+                                      machineState() == KMachineState_Teleported ||
+                                      machineState() == KMachineState_Aborted; }
+    bool isPaused() const { return machineState() == KMachineState_Paused ||
+                                   machineState() == KMachineState_TeleportingPausedVM; }
+    bool isRunning() const { return machineState() == KMachineState_Running ||
+                                    machineState() == KMachineState_Teleporting ||
+                                    machineState() == KMachineState_LiveSnapshotting; }
+    bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
+    bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRutimeMediumsChanging; }
+    bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
+    QCursor cursor() const { return m_cursor; }
+
+    /* Guest additions state getters: */
+    bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
+    bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
+    bool isGuestSupportsSeamless() const { return m_fIsGuestSupportsSeamless; }
+
+    /* Keyboard getters: */
+    bool isNumLock() const { return m_fNumLock; }
+    bool isCapsLock() const { return m_fCapsLock; }
+    bool isScrollLock() const { return m_fScrollLock; }
+    uint numLockAdaptionCnt() const { return m_uNumLockAdaptionCnt; }
+    uint capsLockAdaptionCnt() const { return m_uCapsLockAdaptionCnt; }
+
+    /* Mouse getters: */
+    bool isMouseSupportsAbsolute() const { return m_fIsMouseSupportsAbsolute; }
+    bool isMouseSupportsRelative() const { return m_fIsMouseSupportsRelative; }
+    bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
+    bool isMouseCaptured() const { return m_fIsMouseCaptured; }
+    bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
+    bool isHidingHostPointer() const { return m_fIsMouseCaptured || (m_fIsMouseSupportsAbsolute && m_fIsHideHostPointer); }
+
+    /* Common setters: */
+    bool pause() { return setPause(true); }
+    bool unpause() { return setPause(false); }
+    bool setPause(bool fOn);
+    void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
+
+    /* Keyboard setters: */
+    void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
+    void setCapsLockAdaptionCnt(uint uCapsLockAdaptionCnt) { m_uCapsLockAdaptionCnt = uCapsLockAdaptionCnt; }
+
+    /* Mouse setters: */
+    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
+    void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
 signals:
 
-    /* Console signals: */
-    void sigMousePointerShapeChange(bool bIsVisible, bool bHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight, const uchar *pShapeData);
-    void sigMouseCapabilityChange(bool bIsSupportsAbsolute, bool bIsSupportsRelative, bool bNeedsHostCursor);
-    void sigKeyboardLedsChange(bool bNumLock, bool bCapsLock, bool bScrollLock);
-    void sigStateChange(KMachineState machineState);
+    /* Console callback signals: */
+    void sigMousePointerShapeChange();
+    void sigMouseCapabilityChange();
+    void sigKeyboardLedsChange();
+    void sigMachineStateChange();
     void sigAdditionsStateChange();
     void sigNetworkAdapterChange(const CNetworkAdapter &networkAdapter);
     void sigSerialPortChange(const CSerialPort &serialPort);
@@ -95,19 +145,58 @@ signals:
 private:
 
     /* Private getters: */
-    UIMachine* machine() const { return m_pMachine; }
+    UIMachine* uimachine() const { return m_pMachine; }
 
     /* Event handlers: */
     bool event(QEvent *pEvent);
 
-    /* Helper routines: */
+    /* Prepare helpers: */
+    void loadSessionSettings();
+
+    /* Cleanup helpers: */
+    void saveSessionSettings();
+
+    /* Common helpers: */
     qulonglong winId() const;
+    void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
 
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession m_session;
     UIConsoleCallback *m_pCallback;
     const CConsoleCallback &m_callback;
+
+    /* Common variables: */
+    KMachineState m_machineState;
+    QCursor m_cursor;
+#if defined(Q_WS_WIN)
+    HCURSOR m_alphaCursor;
+#endif
+
+    /* Common flags: */
+    bool m_fIsFirstTimeStarted : 1;
+    bool m_fIsIgnoreRutimeMediumsChanging : 1;
+    bool m_fIsGuestResizeIgnored : 1;
+
+    /* Guest additions flags: */
+    bool m_fIsGuestAdditionsActive : 1;
+    bool m_fIsGuestSupportsGraphics : 1;
+    bool m_fIsGuestSupportsSeamless : 1;
+
+    /* Keyboard flags: */
+    bool m_fNumLock : 1;
+    bool m_fCapsLock : 1;
+    bool m_fScrollLock : 1;
+    uint m_uNumLockAdaptionCnt;
+    uint m_uCapsLockAdaptionCnt;
+
+    /* Mouse flags: */
+    bool m_fIsMouseSupportsAbsolute : 1;
+    bool m_fIsMouseSupportsRelative : 1;
+    bool m_fIsMouseHostCursorNeeded : 1;
+    bool m_fIsMouseCaptured : 1;
+    bool m_fIsMouseIntegrated : 1;
+    bool m_fIsHideHostPointer : 1;
 
     /* Friend classes: */
     friend class UIConsoleCallback;

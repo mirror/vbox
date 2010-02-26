@@ -26,6 +26,7 @@
 #include <QTimer>
 
 /* Local includes */
+#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "VBoxCloseVMDlg.h"
@@ -97,9 +98,14 @@ UIMachineWindow::~UIMachineWindow()
 {
 }
 
-CSession UIMachineWindow::session()
+UISession* UIMachineWindow::uisession()
 {
-    return m_pMachineLogic->uisession()->session();
+    return machineLogic()->uisession();
+}
+
+CSession& UIMachineWindow::session()
+{
+    return uisession()->session();
 }
 
 void UIMachineWindow::retranslateUi()
@@ -130,7 +136,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         return;
     }
 
-    switch (machineLogic()->machineState())
+    /* Get machine state: */
+    KMachineState state = uisession()->machineState();
+
+    switch (state)
     {
         case KMachineState_PoweredOff:
         case KMachineState_Saved:
@@ -160,14 +169,12 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 
             bool success = true;
 
-            bool wasPaused = machineLogic()->machineState() == KMachineState_Paused ||
-                             machineLogic()->machineState() == KMachineState_Stuck ||
-                             machineLogic()->machineState() == KMachineState_TeleportingPausedVM;
+            bool wasPaused = uisession()->isPaused() || state == KMachineState_Stuck;
             if (!wasPaused)
             {
                 /* Suspend the VM and ignore the close event if failed to do so.
                  * pause() will show the error message to the user. */
-                success = machineLogic()->pause();
+                success = uisession()->pause();
             }
 
             if (success)
@@ -184,7 +191,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 if (!machine.GetCurrentSnapshot().isNull())
                     dlg.mCbDiscardCurState->setText(dlg.mCbDiscardCurState->text().arg(machine.GetCurrentSnapshot().GetName()));
 
-                if (machineLogic()->machineState() != KMachineState_Stuck)
+                if (state != KMachineState_Stuck)
                 {
                     /* Read the last user's choice for the given VM */
                     QStringList lastAction = machine.GetExtraData(VBoxDefs::GUI_LastCloseAction).split(',');
@@ -245,7 +252,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                     else if (dlg.mRbShutdown->isChecked())
                     {
                         /* Unpause the VM to let it grab the ACPI shutdown event */
-                        machineLogic()->unpause();
+                        uisession()->unpause();
                         /* Prevent the subsequent unpause request */
                         wasPaused = true;
                         /* Signal ACPI shutdown (if there is no ACPI device, the
@@ -329,10 +336,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 
             machineLogic()->setPreventAutoClose(false);
 
-            if (machineLogic()->machineState() == KMachineState_PoweredOff ||
-                machineLogic()->machineState() == KMachineState_Saved ||
-                machineLogic()->machineState() == KMachineState_Teleported ||
-                machineLogic()->machineState() == KMachineState_Aborted)
+            if (state == KMachineState_PoweredOff ||
+                state == KMachineState_Saved ||
+                state == KMachineState_Teleported ||
+                state == KMachineState_Aborted)
             {
                 /* The machine has been stopped while showing the Close or the Pause
                  * failure dialog -- accept the close event immediately. */
@@ -343,8 +350,8 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 if (!success)
                 {
                     /* Restore the running state if needed */
-                    if (!wasPaused && machineLogic()->machineState() == KMachineState_Paused)
-                        machineLogic()->unpause();
+                    if (!wasPaused && state == KMachineState_Paused)
+                        uisession()->unpause();
                 }
             }
             break;
@@ -392,8 +399,7 @@ void UIMachineWindow::prepareWindowIcon()
 void UIMachineWindow::prepareConsoleConnections()
 {
     /* Machine state-change updater: */
-    QObject::connect(machineLogic()->uisession(), SIGNAL(sigStateChange(KMachineState)),
-                     machineWindow(), SLOT(sltMachineStateChanged(KMachineState)));
+    QObject::connect(uisession(), SIGNAL(sigMachineStateChange()), machineWindow(), SLOT(sltMachineStateChanged()));
 }
 
 void UIMachineWindow::prepareMenuMachine()
@@ -459,26 +465,15 @@ void UIMachineWindow::prepareMenuDebug()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
-void UIMachineWindow::loadWindowSettings()
-{
-#ifdef Q_WS_MAC
-    QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value */
-    bool bIsDockIconEnabled = testStr.isEmpty() || testStr == "true";
-    if (machineView())
-    {
-        machineView()->setDockIconEnabled(bIsDockIconEnabled);
-        machineView()->updateDockOverlay();
-    }
-#endif
-}
-
 void UIMachineWindow::updateAppearanceOf(int iElement)
 {
     CMachine machine = session().GetMachine();
 
     if (iElement & UIVisualElement_WindowCaption)
     {
+        /* Get machine state: */
+        KMachineState state = uisession()->machineState();
+        /* Prepare full name: */
         QString strSnapshotName;
         if (machine.GetSnapshotCount() > 0)
         {
@@ -486,8 +481,8 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
             strSnapshotName = " (" + snapshot.GetName() + ")";
         }
         QString strMachineName = machine.GetName() + strSnapshotName;
-        if (machineLogic()->machineState() != KMachineState_Null)
-            strMachineName += " [" + vboxGlobal().toString(machineLogic()->machineState()) + "] - ";
+        if (state != KMachineState_Null)
+            strMachineName += " [" + vboxGlobal().toString(state) + "] - ";
         strMachineName += m_strWindowTitlePrefix;
         machineWindow()->setWindowTitle(strMachineName);
 
@@ -496,7 +491,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
     }
 }
 
-void UIMachineWindow::sltMachineStateChanged(KMachineState /* machineState */)
+void UIMachineWindow::sltMachineStateChanged()
 {
     updateAppearanceOf(UIVisualElement_WindowCaption);
 }

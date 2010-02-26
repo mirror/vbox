@@ -57,10 +57,11 @@ private:
 
     /* Private getters: */
     UIMachineLogic* machineLogic() const;
+    UIActionsPool* actionsPool() const { return m_pActionsPool; }
 
     /* Private variables: */
-    UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
+    UISession *m_pSession;
     UIVisualState *m_pVisualState;
 
     /* Friend classes: */

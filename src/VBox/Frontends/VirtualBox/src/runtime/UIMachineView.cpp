@@ -29,6 +29,7 @@
 #include <VBox/VBoxVideo.h>
 
 /* Local includes */
+#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
@@ -70,9 +71,6 @@ const int XKeyRelease = KeyRelease;
 #  undef FocusIn
 # endif
 # include "XKeyboard.h"
-# ifndef VBOX_WITHOUT_XCURSOR
-#  include <X11/Xcursor/Xcursor.h>
-# endif
 #endif
 
 #if defined (Q_WS_MAC)
@@ -156,38 +154,25 @@ int UIMachineView::keyboardState() const
 
 int UIMachineView::mouseState() const
 {
-    return (m_bIsMouseCaptured ? UIMouseStateType_MouseCaptured : 0) |
-           (m_fIsMouseSupportsAbsolute ? UIMouseStateType_MouseAbsolute : 0) |
-           (m_bIsMouseIntegrated ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
+    return (uisession()->isMouseCaptured() ? UIMouseStateType_MouseCaptured : 0) |
+           (uisession()->isMouseSupportsAbsolute() ? UIMouseStateType_MouseAbsolute : 0) |
+           (uisession()->isMouseIntegrated() ? 0 : UIMouseStateType_MouseAbsoluteDisabled);
 }
 
 void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
 {
-    if (m_bIsMouseIntegrated == bEnabled)
+    if (uisession()->isMouseIntegrated() == bEnabled)
         return;
 
-    if (m_fIsMouseSupportsAbsolute)
+    if (uisession()->isMouseSupportsAbsolute())
         captureMouse(!bEnabled, false);
 
     /* Hiding host cursor in case we are entering mouse integration
-     * mode until it's shape is set to the guest cursor shape in
-     * OnMousePointerShapeChange event handler.
-     *
-     * This is necessary to avoid double-cursor issues where both the
-     * guest and the host cursors are displayed in one place, one above the
-     * other.
-     *
-     * This is a workaround because the correct decision would be to notify
-     * the Guest Additions about we are entering the mouse integration
-     * mode. The GuestOS should hide it's cursor to allow using of
-     * host cursor for the guest's manipulation.
-     *
-     * This notification is not always possible though, as not all guests
-     * support switching to a hardware pointer on demand. */
+     * mode until it's shape is set to the guest cursor shape. */
     if (bEnabled)
         viewport()->setCursor(QCursor(Qt::BlankCursor));
 
-    m_bIsMouseIntegrated = bEnabled;
+    uisession()->setMouseIntegrated(bEnabled);
 
     emitMouseStateChanged();
 }
@@ -200,34 +185,20 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                             )
     : QAbstractScrollArea(pMachineWindow->machineWindow())
     , m_pMachineWindow(pMachineWindow)
-    , m_console(pMachineWindow->machineLogic()->uisession()->session().GetConsole())
     , m_mode(renderMode)
     , m_globalSettings(vboxGlobal().settings())
-    , m_machineState(KMachineState_Null)
     , m_pFrameBuffer(0)
 #if defined(Q_WS_WIN)
     , m_alphaCursor(0)
 #endif
     , m_iLastMouseWheelDelta(0)
-    , m_uNumLockAdaptionCnt(2)
-    , m_uCapsLockAdaptionCnt(2)
     , m_bIsAutoCaptureDisabled(false)
     , m_bIsKeyboardCaptured(false)
-    , m_bIsMouseCaptured(false)
-    , m_fIsMouseSupportsAbsolute(false)
-    , m_fIsMouseSupportsRelative(false)
-    , m_bIsMouseIntegrated(true)
-    , m_fIsHideHostPointer(true)
     , m_bIsHostkeyPressed(false)
     , m_bIsHostkeyAlone (false)
     , m_bIsHostkeyInCapture(false)
-    , m_bIsGuestSupportsGraphics(false)
     , m_bIsMachineWindowResizeIgnored(true)
     , m_bIsFrameBufferResizeIgnored(false)
-    , m_bIsGuestResizeIgnored(false)
-    , m_fNumLock(false)
-    , m_fCapsLock(false)
-    , m_fScrollLock(false)
     , m_fPassCAD(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
@@ -250,6 +221,16 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 
 UIMachineView::~UIMachineView()
 {
+}
+
+UISession* UIMachineView::uisession() const
+{
+    return machineWindowWrapper()->machineLogic()->uisession();
+}
+
+CSession& UIMachineView::session()
+{
+    return uisession()->session();
 }
 
 QSize UIMachineView::sizeHint() const
@@ -384,7 +365,7 @@ QRect UIMachineView::availableGeometry()
 
 void UIMachineView::prepareFrameBuffer()
 {
-    CDisplay display = m_console.GetDisplay();
+    CDisplay display = session().GetConsole().GetDisplay();
     Assert(!display.isNull());
     m_pFrameBuffer = NULL;
 
@@ -526,7 +507,7 @@ void UIMachineView::prepareCommon()
 
     /* Overlay logo for the dock icon */
     //mVirtualBoxLogo = ::darwinToCGImageRef("VirtualBox_cube_42px.png");
-    QString osTypeId = m_console.GetGuest().GetOSTypeId();
+    QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
 
     // TODO_NEW_CORE
 //    mDockIconPreview = new VBoxDockIconPreview(machineWindowWrapper(), vboxGlobal().vmGuestOSTypeIcon (osTypeId));
@@ -572,20 +553,16 @@ void UIMachineView::prepareConsoleConnections()
     UISession *sender = machineWindowWrapper()->machineLogic()->uisession();
 
     /* Machine state-change updater: */
-    connect(sender, SIGNAL(sigStateChange(KMachineState)), this, SLOT(sltMachineStateChanged(KMachineState)));
+    connect(sender, SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 
     /* Guest additions state-change updater: */
     connect(sender, SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 
-    /* Keyboard LEDs state-change updater: */
-    connect(sender, SIGNAL(sigKeyboardLedsChange(bool, bool, bool)), this, SLOT(sltKeyboardLedsChanged(bool, bool, bool)));
-
     /* Mouse pointer shape state-change updater: */
-    connect(sender, SIGNAL(sigMousePointerShapeChange(bool, bool, uint, uint, uint, uint, const uchar *)),
-            this, SLOT(sltMousePointerShapeChanged(bool, bool, uint, uint, uint, uint, const uchar *)));
+    connect(sender, SIGNAL(sigMousePointerShapeChange()), this, SLOT(sltMousePointerShapeChanged()));
 
     /* Mouse capability state-change updater: */
-    connect(sender, SIGNAL(sigMouseCapabilityChange(bool, bool, bool)), this, SLOT(sltMouseCapabilityChanged(bool, bool, bool)));
+    connect(sender, SIGNAL(sigMouseCapabilityChange()), this, SLOT(sltMouseCapabilityChanged()));
 }
 
 void UIMachineView::loadMachineViewSettings()
@@ -616,68 +593,17 @@ void UIMachineView::loadMachineViewSettings()
     /* Exatra data settings: */
     {
         /* CAD settings: */
-        QString passCAD = m_console.GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
+        QString passCAD = session().GetConsole().GetMachine().GetExtraData(VBoxDefs::GUI_PassCAD);
         if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
             m_fPassCAD = true;
     }
 
-#if 0
-    /* Dynamical property settings: */
-    {
-        /* Get loader: */
-        UISession *loader = machineWindowWrapper()->machineLogic()->uisession();
-
-        /* Load dynamical properties: */
-        m_machineState = loader->property("MachineView/MachineState").value<KMachineState>();
-        m_uNumLockAdaptionCnt = loader->property("MachineView/NumLockAdaptionCnt").toUInt();
-        m_uCapsLockAdaptionCnt = loader->property("MachineView/CapsLockAdaptionCnt").toUInt();
-        m_bIsAutoCaptureDisabled = loader->property("MachineView/IsAutoCaptureDisabled").toBool();
-        m_bIsKeyboardCaptured = loader->property("MachineView/IsKeyboardCaptured").toBool();
-        m_bIsMouseCaptured = loader->property("MachineView/IsMouseCaptured").toBool();
-        m_fIsMouseSupportsAbsolute = loader->property("MachineView/IsMouseSupportsAbsolute").toBool();
-        m_fIsMouseSupportsRelative = loader->property("MachineView/IsMouseSupportsRelative").toBool();
-        m_bIsMouseIntegrated = loader->property("MachineView/IsMouseIntegrated").toBool();
-        m_fIsHideHostPointer = loader->property("MachineView/IsHideHostPointer").toBool();
-        m_bIsHostkeyInCapture = loader->property("MachineView/IsHostkeyInCapture").toBool();
-        m_bIsGuestSupportsGraphics = loader->property("MachineView/IsGuestSupportsGraphics").toBool();
-        m_fNumLock = loader->property("MachineView/IsNumLock").toBool();
-        m_fCapsLock = loader->property("MachineView/IsCapsLock").toBool();
-        m_fScrollLock = loader->property("MachineView/IsScrollLock").toBool();
-
-        /* Update related things: */
-        updateMachineState();
-        updateAdditionsState();
-        updateMousePointerShape();
-        updateMouseCapability();
-    }
-#endif
-}
-
-void UIMachineView::saveMachineViewSettings()
-{
-#if 0
-    /* Dynamical property settings: */
-    {
-        /* Get saver: */
-        UISession *saver = machineWindowWrapper()->machineLogic()->uisession();
-
-        /* Save dynamical properties: */
-        saver->setProperty("MachineView/MachineState", QVariant::fromValue(machineState()));
-        saver->setProperty("MachineView/NumLockAdaptionCnt", m_uNumLockAdaptionCnt);
-        saver->setProperty("MachineView/CapsLockAdaptionCnt", m_uCapsLockAdaptionCnt);
-        saver->setProperty("MachineView/IsAutoCaptureDisabled", m_bIsAutoCaptureDisabled);
-        saver->setProperty("MachineView/IsKeyboardCaptured", m_bIsKeyboardCaptured);
-        saver->setProperty("MachineView/IsMouseCaptured", m_bIsMouseCaptured);
-        saver->setProperty("MachineView/IsMouseSupportsAbsolute", m_fIsMouseSupportsAbsolute);
-        saver->setProperty("MachineView/IsMouseSupportsRelative", m_fIsMouseSupportsRelative);
-        saver->setProperty("MachineView/IsMouseIntegrated", m_bIsMouseIntegrated);
-        saver->setProperty("MachineView/IsHideHostPointer", m_fIsHideHostPointer);
-        saver->setProperty("MachineView/IsHostkeyInCapture", m_bIsHostkeyInCapture);
-        saver->setProperty("MachineView/IsGuestSupportsGraphics", m_bIsGuestSupportsGraphics);
-        saver->setProperty("MachineView/IsNumLock", m_fNumLock);
-        saver->setProperty("MachineView/IsCapsLock", m_fCapsLock);
-        saver->setProperty("MachineView/IsScrollLock", m_fScrollLock);
-    }
+#ifdef Q_WS_MAC
+    QString strSettings = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value: */
+    bool fIsDockIconEnabled = strSettings.isEmpty() || strSettings == "true";
+    setDockIconEnabled(fIsDockIconEnabled);
+    updateDockOverlay();
 #endif
 }
 
@@ -716,7 +642,7 @@ void UIMachineView::cleanupFrameBuffer()
     if (m_pFrameBuffer)
     {
         /* Detach framebuffer from Display: */
-        CDisplay display = console().GetDisplay();
+        CDisplay display = session().GetConsole().GetDisplay();
         display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
         /* Release the reference: */
         m_pFrameBuffer->Release();
@@ -724,19 +650,21 @@ void UIMachineView::cleanupFrameBuffer()
     }
 }
 
-void UIMachineView::updateMachineState()
+void UIMachineView::sltMachineStateChanged()
 {
-    switch (machineState())
+    /* Get machine state: */
+    KMachineState state = uisession()->machineState();
+    switch (state)
     {
         case KMachineState_Paused:
         case KMachineState_TeleportingPausedVM:
         {
             if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (machineState() != KMachineState_TeleportingPausedVM || machineState() != KMachineState_Teleporting))
+                (state != KMachineState_TeleportingPausedVM || state != KMachineState_Teleporting))
             {
                 /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
                 QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                CDisplay dsp = m_console.GetDisplay();
+                CDisplay dsp = session().GetConsole().GetDisplay();
                 dsp.TakeScreenShot(shot.bits(), shot.width(), shot.height());
                 /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
                  * after the machine execution was resumed. It's not fatal: */
@@ -758,7 +686,7 @@ void UIMachineView::updateMachineState()
         }
         case KMachineState_Running:
         {
-            if (machineState() == KMachineState_Paused || machineState() == KMachineState_TeleportingPausedVM)
+            if (state == KMachineState_Paused || state == KMachineState_TeleportingPausedVM)
             {
                 if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
@@ -766,7 +694,7 @@ void UIMachineView::updateMachineState()
                     m_pauseShot = QPixmap();
                     /* Ask for full guest display update (it will also update
                      * the viewport through IFramebuffer::NotifyUpdate): */
-                    CDisplay dsp = m_console.GetDisplay();
+                    CDisplay dsp = session().GetConsole().GetDisplay();
                     dsp.InvalidateAndUpdate();
                 }
             }
@@ -778,9 +706,14 @@ void UIMachineView::updateMachineState()
         default:
             break;
     }
+
+#ifdef Q_WS_MAC
+    /* Update Dock Overlay: */
+    updateDockOverlay();
+#endif /* Q_WS_MAC */
 }
 
-void UIMachineView::updateAdditionsState()
+void UIMachineView::sltAdditionsStateChanged()
 {
     /* Check if we should restrict minimum size: */
     maybeRestrictMinimumSize();
@@ -794,115 +727,35 @@ void UIMachineView::updateAdditionsState()
 #endif
 }
 
-void UIMachineView::updateMousePointerShape()
+void UIMachineView::sltMousePointerShapeChanged()
 {
-    if (m_fIsMouseSupportsAbsolute)
+    if (uisession()->isMouseSupportsAbsolute())
     {
         /* Should we hide/show pointer? */
-        if (m_fIsHideHostPointer)
+        if (uisession()->isHidingHostPointer())
             viewport()->setCursor(Qt::BlankCursor);
         else
-            viewport()->setCursor(m_lastCursor);
+            viewport()->setCursor(uisession()->cursor());
     }
 }
 
-void UIMachineView::updateMouseCapability()
+void UIMachineView::sltMouseCapabilityChanged()
 {
     /* Correct the mouse capture state and reset the cursor to the default shape if necessary: */
-    if (m_fIsMouseSupportsAbsolute)
+    if (uisession()->isMouseSupportsAbsolute())
     {
-        CMouse mouse = m_console.GetMouse();
-        mouse.PutMouseEventAbsolute(-1, -1, 0, 0 /* Horizontal wheel */, 0);
+        CMouse mouse = session().GetConsole().GetMouse();
+        mouse.PutMouseEventAbsolute(-1, -1, 0, 0, 0);
         captureMouse(false, false);
     }
     else
         viewport()->unsetCursor();
 
     /* Notify user about mouse integration state: */
-    vboxProblem().remindAboutMouseIntegration(m_fIsMouseSupportsAbsolute);
+    vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
 
-    /* Notify all watchers: */
+    /* Notify all listeners: */
     emitMouseStateChanged();
-}
-
-void UIMachineView::sltMachineStateChanged(KMachineState state)
-{
-    /* Check if something had changed: */
-    if (m_machineState != state)
-    {
-        /* Set new data: */
-        m_machineState = state;
-
-        /* Update depending things: */
-        updateMachineState();
-    }
-}
-
-void UIMachineView::sltAdditionsStateChanged()
-{
-    /* Get new values: */
-    CGuest guest = console().GetGuest();
-    bool bIsGuestSupportsGraphics = guest.GetSupportsGraphics();
-
-    /* Check if something had changed: */
-    if (m_bIsGuestSupportsGraphics != bIsGuestSupportsGraphics)
-    {
-        /* Get new data: */
-        m_bIsGuestSupportsGraphics = bIsGuestSupportsGraphics;
-
-        /* Update depending things: */
-        updateAdditionsState();
-    }
-}
-
-void UIMachineView::sltKeyboardLedsChanged(bool bNumLock, bool bCapsLock, bool bScrollLock)
-{
-    /* Update num lock status: */
-    if (m_fNumLock != bNumLock)
-    {
-        m_fNumLock = bNumLock;
-        m_uNumLockAdaptionCnt = 2;
-    }
-
-    /* Update caps lock status: */
-    if (m_fCapsLock != bCapsLock)
-    {
-        m_fCapsLock = bCapsLock;
-        m_uCapsLockAdaptionCnt = 2;
-    }
-
-    /* Update scroll lock status: */
-    if (m_fScrollLock != bScrollLock)
-        m_fScrollLock = bScrollLock;
-}
-
-void UIMachineView::sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
-                                                uint uXHot, uint uYHot, uint uWidth, uint uHeight,
-                                                const uchar *pShapeData)
-{
-    /* Should we show cursor anyway? */
-    m_fIsHideHostPointer = !fIsVisible;
-
-    /* Should we cache shape data? */
-    if (pShapeData)
-        setPointerShape(pShapeData, fHasAlpha, uXHot, uYHot, uWidth, uHeight);
-
-    /* Perform cursor update: */
-    updateMousePointerShape();
-}
-
-void UIMachineView::sltMouseCapabilityChanged(bool fIsMouseSupportsAbsolute, bool fIsMouseSupportsRelative, bool /* fIsMouseNeedsHostCursor */)
-{
-    /* Check if something had changed: */
-    if (m_fIsMouseSupportsAbsolute != fIsMouseSupportsAbsolute || m_fIsMouseSupportsRelative != fIsMouseSupportsRelative)
-    {
-        /* Get new data: */
-        m_fIsMouseSupportsAbsolute = fIsMouseSupportsAbsolute;
-        m_fIsMouseSupportsRelative = fIsMouseSupportsRelative;
-
-        /* Update depending things: */
-        updateMouseCapability();
-    }
 }
 
 /* If the desktop geometry is set automatically, this will update it: */
@@ -951,13 +804,13 @@ bool UIMachineView::event(QEvent *pEvent)
     {
         case QEvent::FocusIn:
         {
-            if (isRunning())
+            if (uisession()->isRunning())
                 focusEvent(true);
             break;
         }
         case QEvent::FocusOut:
         {
-            if (isRunning())
+            if (uisession()->isRunning())
                 focusEvent(false);
             else
             {
@@ -974,7 +827,7 @@ bool UIMachineView::event(QEvent *pEvent)
             /* Some situations require initial VGA Resize Request
              * to be ignored at all, leaving previous framebuffer,
              * machine view and machine window sizes preserved: */
-            if (m_bIsGuestResizeIgnored)
+            if (uisession()->isGuestResizeIgnored())
                 return true;
 
             bool oldIgnoreMainwndResize = m_bIsMachineWindowResizeIgnored;
@@ -990,7 +843,7 @@ bool UIMachineView::event(QEvent *pEvent)
              * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry for details.
              * Moreover the current cursor, which could be set by the guest, should be restored after resize: */
             QCursor cursor;
-            if (shouldHideHostPointer())
+            if (uisession()->isHidingHostPointer())
                 cursor = QCursor(Qt::BlankCursor);
             else
                 cursor = viewport()->cursor();
@@ -1006,7 +859,7 @@ bool UIMachineView::event(QEvent *pEvent)
              * In this last case the host VM window will not be resized according this event and the host mouse cursor
              * which was unset to default here will not be hidden in capture state. So it is necessary to perform
              * updateMouseClipping() for the guest resize event if the mouse cursor was captured: */
-            if (m_bIsMouseCaptured)
+            if (uisession()->isMouseCaptured())
                 updateMouseClipping();
 
             /* Apply maximum size restriction: */
@@ -1034,7 +887,7 @@ bool UIMachineView::event(QEvent *pEvent)
                 normalizeGeometry(true /* adjustPosition */);
 
             /* Report to the VM thread that we finished resizing */
-            m_console.GetDisplay().ResizeCompleted(0);
+            session().GetConsole().GetDisplay().ResizeCompleted(0);
 
             m_bIsMachineWindowResizeIgnored = oldIgnoreMainwndResize;
 
@@ -1062,7 +915,7 @@ bool UIMachineView::event(QEvent *pEvent)
             UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
             viewport()->repaint(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
                                 pPaintEvent->width(), pPaintEvent->height());
-            /* m_console.GetDisplay().UpdateCompleted(); - the event was acked already */
+            /* session().GetConsole().GetDisplay().UpdateCompleted(); - the event was acked already */
             return true;
         }
 
@@ -1102,7 +955,7 @@ bool UIMachineView::event(QEvent *pEvent)
             if (m_bIsHostkeyPressed)
             {
                 bool pressed = pEvent->type() == QEvent::KeyPress;
-                CKeyboard keyboard = m_console.GetKeyboard();
+                CKeyboard keyboard = session().GetConsole().GetKeyboard();
 
                 /* Whether the host key is Shift so that it will modify the hot key values?
                  * Note that we don't distinguish between left and right shift here (too much hassle): */
@@ -1193,7 +1046,7 @@ bool UIMachineView::event(QEvent *pEvent)
                     else
                         Assert(0);
 
-                    CKeyboard keyboard = m_console.GetKeyboard();
+                    CKeyboard keyboard = session().GetConsole().GetKeyboard();
                     keyboard.PutScancodes(combo);
                 }
 
@@ -1202,7 +1055,7 @@ bool UIMachineView::event(QEvent *pEvent)
 #if 0 // TODO: Divide tha code to specific parts and move it there:
                     /* Activate the main menu */
                     if (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen())
-                        machineWindowWrapper()->popupMainMenu (m_bIsMouseCaptured);
+                        machineWindowWrapper()->popupMainMenu (uisession()->isMouseCaptured());
                     else
                     {
                         /* In Qt4 it is not enough to just set the focus to menu-bar.
@@ -1223,7 +1076,7 @@ bool UIMachineView::event(QEvent *pEvent)
             else if (!m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyRelease)
             {
                 /* Show a possible warning on key release which seems to be more expected by the end user: */
-                if (machineWindowWrapper()->machineLogic()->isPaused())
+                if (uisession()->isPaused())
                 {
                     /* Iif the reminder is disabled we pass the event to Qt to enable normal
                      * keyboard functionality (for example, menu access with Alt+Letter): */
@@ -1323,7 +1176,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
 #endif /* Q_WS_MAC */
             case QEvent::Resize:
             {
-                if (m_bIsMouseCaptured)
+                if (uisession()->isMouseCaptured())
                     updateMouseClipping();
 #ifdef VBOX_WITH_VIDEOHWACCEL
                 if (m_pFrameBuffer)
@@ -1532,10 +1385,10 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                  * be preferrable to completely ignore C-A-D in guests, but
                  * that's not possible because we cannot predict what other
                  * keys will be pressed next when one of C, A, D is held. */
-                if (isRunning() && m_bIsKeyboardCaptured)
+                if (uisession()->isRunning() && m_bIsKeyboardCaptured)
                 {
                     captureKbd (false);
-                    if (!(m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated))
+                    if (!(uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated()))
                         captureMouse (false);
                 }
 
@@ -1588,7 +1441,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
             if (!m_bIsHostkeyPressed)
             {
                 m_bIsHostkeyPressed = m_bIsHostkeyAlone = true;
-                if (isRunning())
+                if (uisession()->isRunning())
                     saveKeyStates();
                 emitSignal = true;
             }
@@ -1615,11 +1468,11 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
 
                 if (m_bIsHostkeyAlone)
                 {
-                    if (machineWindowWrapper()->machineLogic()->isPaused())
+                    if (uisession()->isPaused())
                     {
                         vboxProblem().remindAboutPausedVMInput();
                     }
-                    else if (isRunning())
+                    else if (uisession()->isRunning())
                     {
                         bool captured = m_bIsKeyboardCaptured;
                         bool ok = true;
@@ -1643,7 +1496,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                         if (ok)
                         {
                             captureKbd (!captured, false);
-                            if (!(m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated))
+                            if (!(uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated()))
                             {
 #ifdef Q_WS_X11
                                 /* make sure that pending FocusOut events from the
@@ -1657,7 +1510,7 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                     }
                 }
 
-                if (isRunning())
+                if (uisession()->isRunning())
                     sendChangedKeyStates();
 
                 emitSignal = true;
@@ -1727,14 +1580,14 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
     }
 
     /* No more to do, if the host key is in action or the VM is paused: */
-    if (m_bIsHostkeyPressed || isHostKey || machineWindowWrapper()->machineLogic()->isPaused())
+    if (m_bIsHostkeyPressed || isHostKey || uisession()->isPaused())
     {
         /* Grab the key from Qt and from VM if it's a host key,
          * otherwise just pass it to Qt */
         return isHostKey;
     }
 
-    CKeyboard keyboard = m_console.GetKeyboard();
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
     Assert(!keyboard.isNull());
 
 #if defined (Q_WS_WIN32)
@@ -1802,14 +1655,14 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
     else if (aWheelDir == Qt::Horizontal)
         wheelHorizontal = aWheelDelta / 120;
 
-    if (m_bIsMouseCaptured)
+    if (uisession()->isMouseCaptured())
     {
 #ifdef Q_WS_WIN32
         /* send pending WM_PAINT events */
         ::UpdateWindow (viewport()->winId());
 #endif
 
-        CMouse mouse = m_console.GetMouse();
+        CMouse mouse = session().GetConsole().GetMouse();
         mouse.PutMouseEvent(aGlobalPos.x() - m_lastMousePos.x(),
                             aGlobalPos.y() - m_lastMousePos.y(),
                             wheelVertical, wheelHorizontal, state);
@@ -1902,7 +1755,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
 #endif /* !Q_WS_MAC */
         return true; /* stop further event handling */
     }
-    else /* !m_bIsMouseCaptured */
+    else /* !uisession()->isMouseCaptured() */
     {
 #if 0 // TODO: Move that to fullscreen event-hjadler:
         if (mode() != VBoxDefs::SDLMode)
@@ -1927,7 +1780,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
         }
 #endif
 
-        if (m_fIsMouseSupportsAbsolute && m_bIsMouseIntegrated)
+        if (uisession()->isMouseSupportsAbsolute() && uisession()->isMouseIntegrated())
         {
             int cw = contentsWidth(), ch = contentsHeight();
             int vw = visibleWidth(), vh = visibleHeight();
@@ -1952,7 +1805,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
             if (cpnt.y() < 0) cpnt.setY (0);
             else if (cpnt.y() > ch) cpnt.setY (ch);
 
-            CMouse mouse = m_console.GetMouse();
+            CMouse mouse = session().GetConsole().GetMouse();
             mouse.PutMouseEventAbsolute (cpnt.x(), cpnt.y(), wheelVertical,
                                          wheelHorizontal, state);
             return true;
@@ -1961,11 +1814,11 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
         {
             if (hasFocus() && (aType == QEvent::MouseButtonRelease && aButtons == Qt::NoButton))
             {
-                if (machineWindowWrapper()->machineLogic()->isPaused())
+                if (uisession()->isPaused())
                 {
                     vboxProblem().remindAboutPausedVMInput();
                 }
-                else if (isRunning())
+                else if (uisession()->isRunning())
                 {
                     /* Temporarily disable auto capture that will take place after this dialog is dismissed because
                      * the capture state is to be defined by the dialog result itself: */
@@ -2023,7 +1876,7 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
             // TODO_NEW_CORE
-//        if (isRunning())
+//        if (uisession()->isRunning())
 //            updateDockIcon();
 #endif
         return;
@@ -2315,7 +2168,7 @@ bool UIMachineView::x11Event(XEvent *pEvent)
          * releasing the keyboard before the screen saver gets active. */
         case XFocusOut:
         case XFocusIn:
-            if (isRunning())
+            if (uisession()->isRunning())
                 focusEvent(pEvent->type == XFocusIn);
             return false;
         case XKeyPress:
@@ -2568,7 +2421,7 @@ pascal OSStatus UIMachineView::darwinEventHandlerProc(EventHandlerCallRef inHand
 
 #endif
 
-void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
+void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
 {
     /* Synchronize the views of the host and the guest to the modifier keys.
      * This function will add up to 6 additional keycodes to codes. */
@@ -2596,21 +2449,21 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
                   &iDummy3, &iDummy4, &iDummy5, &iDummy6, &uMask);
     XFreeModifiermap(map);
 
-    if (m_uNumLockAdaptionCnt && (m_fNumLock ^ !!(uMask & uKeyMaskNum)))
+    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(uMask & uKeyMaskNum)))
     {
-        -- m_uNumLockAdaptionCnt;
+        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(uMask & uKeyMaskCaps)))
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(uMask & uKeyMaskCaps)))
     {
-        m_uCapsLockAdaptionCnt--;
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -2619,15 +2472,15 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 
 #elif defined(Q_WS_WIN32)
 
-    if (m_uNumLockAdaptionCnt && (m_fNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
+    if (uisession()->numLockAdaptionCnt() && (m_fNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
     {
-        m_uNumLockAdaptionCnt--;
+        uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    if (uisession()->capsLockAdaptionCnt() && (m_fCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
     {
-        m_uCapsLockAdaptionCnt--;
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
@@ -2642,10 +2495,10 @@ void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 
 #elif defined(Q_WS_MAC)
 
-    /* if (m_uNumLockAdaptionCnt) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (m_uCapsLockAdaptionCnt && (m_fCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
+    if (uisession()->capsLockAdaptionCnt() && (m_fCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
-        m_uCapsLockAdaptionCnt--;
+        uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
         piCodes[(*puCount)++] = 0x3a | 0x80;
         /* Some keyboard layouts require shift to be pressed to break
@@ -2757,7 +2610,7 @@ void UIMachineView::captureKbd(bool fCapture, bool fEmitSignal /* = true */)
 
 void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
 {
-    if (m_bIsMouseCaptured == fCapture)
+    if (uisession()->isMouseCaptured() == fCapture)
         return;
 
     if (fCapture)
@@ -2786,11 +2639,11 @@ void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
         viewport()->releaseMouse();
 #endif
         /* Release mouse buttons: */
-        CMouse mouse = m_console.GetMouse();
+        CMouse mouse = session().GetConsole().GetMouse();
         mouse.PutMouseEvent (0, 0, 0, 0 /* Horizontal wheel */, 0);
     }
 
-    m_bIsMouseCaptured = fCapture;
+    uisession()->setMouseCaptured(fCapture);
 
     updateMouseClipping();
 
@@ -2805,7 +2658,7 @@ void UIMachineView::saveKeyStates()
 
 void UIMachineView::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
 {
-    CKeyboard keyboard = m_console.GetKeyboard();
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
     bool fSentRESEND = false;
 
     /* Send a dummy scan code (RESEND) to prevent the guest OS from recognizing
@@ -2855,7 +2708,7 @@ void UIMachineView::releaseAllPressedKeys(bool aReleaseHostKey /* = true */)
 void UIMachineView::sendChangedKeyStates()
 {
     QVector <LONG> codes(2);
-    CKeyboard keyboard = m_console.GetKeyboard();
+    CKeyboard keyboard = session().GetConsole().GetKeyboard();
     for (uint i = 0; i < SIZEOF_ARRAY(m_pressedKeys); ++ i)
     {
         uint8_t os = m_pressedKeysCopy[i];
@@ -2880,7 +2733,7 @@ void UIMachineView::sendChangedKeyStates()
 
 void UIMachineView::updateMouseClipping()
 {
-    if (m_bIsMouseCaptured)
+    if (uisession()->isMouseCaptured())
     {
         viewport()->setCursor(QCursor(Qt::BlankCursor));
 #ifdef Q_WS_WIN32
@@ -2899,250 +2752,6 @@ void UIMachineView::updateMouseClipping()
         QCursor::setPos(m_capturedMousePos);
         viewport()->unsetCursor();
     }
-}
-
-void UIMachineView::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
-                                    uint uXHot, uint uYHot, uint uWidth, uint uHeight)
-{
-    AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
-
-    bool ok = false;
-
-    const uchar *srcAndMaskPtr = pShapeData;
-    uint andMaskSize = (uWidth + 7) / 8 * uHeight;
-    const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
-    uint srcShapePtrScan = uWidth * 4;
-
-#if defined (Q_WS_WIN)
-
-    BITMAPV5HEADER bi;
-    HBITMAP hBitmap;
-    void *lpBits;
-
-    ::ZeroMemory(&bi, sizeof (BITMAPV5HEADER));
-    bi.bV5Size = sizeof(BITMAPV5HEADER);
-    bi.bV5Width = uWidth;
-    bi.bV5Height = - (LONG)uHeight;
-    bi.bV5Planes = 1;
-    bi.bV5BitCount = 32;
-    bi.bV5Compression = BI_BITFIELDS;
-    bi.bV5RedMask   = 0x00FF0000;
-    bi.bV5GreenMask = 0x0000FF00;
-    bi.bV5BlueMask  = 0x000000FF;
-    if (fHasAlpha)
-        bi.bV5AlphaMask = 0xFF000000;
-    else
-        bi.bV5AlphaMask = 0;
-
-    HDC hdc = GetDC(NULL);
-
-    /* Create the DIB section with an alpha channel: */
-    hBitmap = CreateDIBSection(hdc, (BITMAPINFO *)&bi, DIB_RGB_COLORS, (void **)&lpBits, NULL, (DWORD) 0);
-
-    ReleaseDC(NULL, hdc);
-
-    HBITMAP hMonoBitmap = NULL;
-    if (fHasAlpha)
-    {
-        /* Create an empty mask bitmap: */
-        hMonoBitmap = CreateBitmap(uWidth, uHeight, 1, 1, NULL);
-    }
-    else
-    {
-        /* Word aligned AND mask. Will be allocated and created if necessary. */
-        uint8_t *pu8AndMaskWordAligned = NULL;
-
-        /* Width in bytes of the original AND mask scan line. */
-        uint32_t cbAndMaskScan = (uWidth + 7) / 8;
-
-        if (cbAndMaskScan & 1)
-        {
-            /* Original AND mask is not word aligned. */
-
-            /* Allocate memory for aligned AND mask. */
-            pu8AndMaskWordAligned = (uint8_t *)RTMemTmpAllocZ((cbAndMaskScan + 1) * uHeight);
-
-            Assert(pu8AndMaskWordAligned);
-
-            if (pu8AndMaskWordAligned)
-            {
-                /* According to MSDN the padding bits must be 0.
-                 * Compute the bit mask to set padding bits to 0 in the last byte of original AND mask. */
-                uint32_t u32PaddingBits = cbAndMaskScan * 8  - uWidth;
-                Assert(u32PaddingBits < 8);
-                uint8_t u8LastBytesPaddingMask = (uint8_t)(0xFF << u32PaddingBits);
-
-                Log(("u8LastBytesPaddingMask = %02X, aligned w = %d, width = %d, cbAndMaskScan = %d\n",
-                      u8LastBytesPaddingMask, (cbAndMaskScan + 1) * 8, uWidth, cbAndMaskScan));
-
-                uint8_t *src = (uint8_t *)srcAndMaskPtr;
-                uint8_t *dst = pu8AndMaskWordAligned;
-
-                unsigned i;
-                for (i = 0; i < uHeight; i++)
-                {
-                    memcpy(dst, src, cbAndMaskScan);
-
-                    dst[cbAndMaskScan - 1] &= u8LastBytesPaddingMask;
-
-                    src += cbAndMaskScan;
-                    dst += cbAndMaskScan + 1;
-                }
-            }
-        }
-
-        /* Create the AND mask bitmap: */
-        hMonoBitmap = ::CreateBitmap(uWidth, uHeight, 1, 1,
-                                     pu8AndMaskWordAligned? pu8AndMaskWordAligned: srcAndMaskPtr);
-
-        if (pu8AndMaskWordAligned)
-        {
-            RTMemTmpFree(pu8AndMaskWordAligned);
-        }
-    }
-
-    Assert(hBitmap);
-    Assert(hMonoBitmap);
-    if (hBitmap && hMonoBitmap)
-    {
-        DWORD *dstShapePtr = (DWORD *) lpBits;
-
-        for (uint y = 0; y < uHeight; y ++)
-        {
-            memcpy(dstShapePtr, srcShapePtr, srcShapePtrScan);
-            srcShapePtr += srcShapePtrScan;
-            dstShapePtr += uWidth;
-        }
-
-        ICONINFO ii;
-        ii.fIcon = FALSE;
-        ii.xHotspot = uXHot;
-        ii.yHotspot = uYHot;
-        ii.hbmMask = hMonoBitmap;
-        ii.hbmColor = hBitmap;
-
-        HCURSOR hAlphaCursor = CreateIconIndirect(&ii);
-        Assert(hAlphaCursor);
-        if (hAlphaCursor)
-        {
-            viewport()->setCursor(QCursor(hAlphaCursor));
-            ok = true;
-            if (m_alphaCursor)
-                DestroyIcon(m_alphaCursor);
-            m_alphaCursor = hAlphaCursor;
-        }
-    }
-
-    if (hMonoBitmap)
-        DeleteObject(hMonoBitmap);
-    if (hBitmap)
-        DeleteObject(hBitmap);
-
-#elif defined (Q_WS_X11) && !defined (VBOX_WITHOUT_XCURSOR)
-
-    XcursorImage *img = XcursorImageCreate(uWidth, uHeight);
-    Assert(img);
-    if (img)
-    {
-        img->xhot = uXHot;
-        img->yhot = uYHot;
-
-        XcursorPixel *dstShapePtr = img->pixels;
-
-        for (uint y = 0; y < uHeight; y ++)
-        {
-            memcpy (dstShapePtr, srcShapePtr, srcShapePtrScan);
-
-            if (!fHasAlpha)
-            {
-                /* Convert AND mask to the alpha channel: */
-                uchar byte = 0;
-                for (uint x = 0; x < uWidth; x ++)
-                {
-                    if (!(x % 8))
-                        byte = *(srcAndMaskPtr ++);
-                    else
-                        byte <<= 1;
-
-                    if (byte & 0x80)
-                    {
-                        /* Linux doesn't support inverted pixels (XOR ops,
-                         * to be exact) in cursor shapes, so we detect such
-                         * pixels and always replace them with black ones to
-                         * make them visible at least over light colors */
-                        if (dstShapePtr [x] & 0x00FFFFFF)
-                            dstShapePtr [x] = 0xFF000000;
-                        else
-                            dstShapePtr [x] = 0x00000000;
-                    }
-                    else
-                        dstShapePtr [x] |= 0xFF000000;
-                }
-            }
-
-            srcShapePtr += srcShapePtrScan;
-            dstShapePtr += uWidth;
-        }
-
-        Cursor cur = XcursorImageLoadCursor(QX11Info::display(), img);
-        Assert (cur);
-        if (cur)
-        {
-            viewport()->setCursor(QCursor(cur));
-            ok = true;
-        }
-
-        XcursorImageDestroy(img);
-    }
-
-#elif defined(Q_WS_MAC)
-
-    /* Create a ARGB image out of the shape data. */
-    QImage image  (uWidth, uHeight, QImage::Format_ARGB32);
-    const uint8_t* pbSrcMask = static_cast<const uint8_t*> (srcAndMaskPtr);
-    unsigned cbSrcMaskLine = RT_ALIGN (uWidth, 8) / 8;
-    for (unsigned int y = 0; y < uHeight; ++y)
-    {
-        for (unsigned int x = 0; x < uWidth; ++x)
-        {
-           unsigned int color = ((unsigned int*)srcShapePtr)[y*uWidth+x];
-           /* If the alpha channel isn't in the shape data, we have to
-            * create them from the and-mask. This is a bit field where 1
-            * represent transparency & 0 opaque respectively. */
-           if (!fHasAlpha)
-           {
-               if (!(pbSrcMask[x / 8] & (1 << (7 - (x % 8)))))
-                   color  |= 0xff000000;
-               else
-               {
-                   /* This isn't quite right, but it's the best we can do I think... */
-                   if (color & 0x00ffffff)
-                       color = 0xff000000;
-                   else
-                       color = 0x00000000;
-               }
-           }
-           image.setPixel (x, y, color);
-        }
-        /* Move one scanline forward. */
-        pbSrcMask += cbSrcMaskLine;
-    }
-    /* Set the new cursor: */
-    QCursor cursor(QPixmap::fromImage(image), uXHot, uYHot);
-    viewport()->setCursor(cursor);
-    ok = true;
-    NOREF(srcShapePtrScan);
-
-#else
-
-# warning "port me"
-
-#endif
-
-    if (ok)
-        m_lastCursor = viewport()->cursor();
-    else
-        viewport()->unsetCursor();
 }
 
 void UIMachineView::dimImage(QImage &img)
