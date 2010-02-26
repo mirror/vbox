@@ -350,12 +350,17 @@ load_module()
 # !! failure is always fatal
 install_drivers()
 {
-    if test -n "_HARDENED_"; then
-        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0600 root sys'"
+    if test -f "$DIR_CONF/vboxdrv.conf"; then
+        if test -n "_HARDENED_"; then
+            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0600 root sys'"
+        else
+            add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
+        fi
+        load_module "drv/$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP"
     else
-        add_driver "$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP" "not-$NULLOP" "'* 0666 root sys'"
+        errorprint "Extreme error! Missing $DIR_CONF/vboxdrv.conf, aborting."
+        return 1
     fi
-    load_module "drv/$MOD_VBOXDRV" "$DESC_VBOXDRV" "$FATALOP"
 
     # Add vboxdrv to devlink.tab
     sed -e '/name=vboxdrv/d' /etc/devlink.tab > /etc/devlink.vbox
@@ -717,8 +722,7 @@ do
             DIR_CONF="/usr/kernel/drv"
             ;;
         *)
-            errorprint "Invalid operation: $1"
-            exit 1
+            break
             ;;
     esac
     shift
