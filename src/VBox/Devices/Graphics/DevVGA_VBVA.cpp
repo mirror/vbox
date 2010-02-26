@@ -1015,7 +1015,7 @@ static VBOXVHWACMD* vbvaVHWAHHCommandCreate (PVGASTATE pVGAState, VBOXVHWACMD_TY
     {
         memset(pHdr, 0, VBOXVHWACMD_HEADSIZE());
         pHdr->cRefs = 1;
-        pHdr->rc = VERR_GENERAL_FAILURE;
+        pHdr->rc = VERR_NOT_IMPLEMENTED;
         pHdr->enmCmd = enmCmd;
         pHdr->Flags = VBOXVHWACMD_FLAG_HH_CMD;
     }
@@ -1041,8 +1041,10 @@ static unsigned vbvaVHWAHandleCommand (PVGASTATE pVGAState, VBVACONTEXT *pCtx, P
 {
     if (pVGAState->pDrv->pfnVHWACommandProcess)
         pVGAState->pDrv->pfnVHWACommandProcess(pVGAState->pDrv, pCmd);
+#ifdef DEBUG_misha
     else
         AssertFailed();
+#endif
     return 0;
 }
 

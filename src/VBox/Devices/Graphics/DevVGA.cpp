@@ -5745,7 +5745,8 @@ static DECLCALLBACK(int)  vgaAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t 
                     if(rc == VINF_SUCCESS)
                     {
                         rc = vbvaVHWAConstruct(pThis);
-                        AssertRC(rc);
+                        if (rc != VERR_NOT_IMPLEMENTED)
+                            AssertRC(rc);
                     }
 #endif
                 }
