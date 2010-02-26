@@ -2328,7 +2328,7 @@ DxgkDdiCommitVidPn(
                         Status = CbContext.Status;
                         Assert(Status == STATUS_SUCCESS);
                         if (Status != STATUS_SUCCESS)
-                            drprintf((__FUNCTION__ ": vboxVidPnAdjustSourcesTargetsCallback failed Status(0x%x)\n", Status));
+                            drprintf((__FUNCTION__ ": vboxVidPnCommitPathEnum failed Status(0x%x)\n", Status));
                 }
                 else
                     drprintf((__FUNCTION__ ": vboxVidPnEnumPaths failed Status(0x%x)\n", Status));

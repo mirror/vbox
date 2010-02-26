@@ -1272,7 +1272,7 @@ int vbvaVHWACommandCompleteAsynch(PPDMIDISPLAYVBVACALLBACKS pInterface, PVBOXVHW
 
 static DECLCALLBACK(void) vbvaNotifyGuest (void *pvCallback)
 {
-#if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
+#if defined(VBOX_WITH_HGSMI) && (defined(VBOX_WITH_VIDEOHWACCEL) || defined(VBOXVDMA))
     PVGASTATE pVGAState = (PVGASTATE)pvCallback;
     PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
     PDMCritSectEnter(&pVGAState->lock, VERR_SEM_BUSY);
@@ -1299,6 +1299,12 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
 
     switch (u16ChannelInfo)
     {
+#ifdef VBOXVDMA
+        case VBVA_VDMA_CMD:
+        case VBVA_VDMA_CTL:
+            rc = VINF_SUCCESS;
+            break;
+#endif
         case VBVA_QUERY_CONF32:
         {
             if (cbBuffer < sizeof (VBVACONF32))
