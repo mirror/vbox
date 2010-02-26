@@ -1154,10 +1154,9 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
          * Check for FD_CLOSE events.
          * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
          */
-        if (    CHECK_FD_SET(so, NetworkEvents, closefds)
-            ||  (so->so_close == 1))
+        if (   CHECK_FD_SET(so, NetworkEvents, closefds)
+            || (so->so_close == 1))
         {
-            so->so_close = 1; /* mark it */
             /*
              * drain the socket
              */
@@ -1166,9 +1165,11 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 ret = soread(pData, so);
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
-                else
+                else 
                     break;
             }
+            /* mark the socket for termination _after_ it was drained */
+            so->so_close = 1;
             CONTINUE(tcp);
         }
 #endif
