@@ -240,7 +240,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         if (console.isOk())
                         {
                             /* Show the "VM saving" progress dialog */
-                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindow(), 0);
+                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0, 0);
                             if (progress.GetResultCode() != 0)
                                 vboxProblem().cannotSaveMachineState(progress);
                             else
@@ -272,7 +272,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         if (console.isOk())
                         {
                             /* Show the power down progress dialog */
-                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindow());
+                            vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0);
                             if (progress.GetResultCode() != 0)
                                 vboxProblem().cannotStopMachine(progress);
                             else
@@ -295,7 +295,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                                 if (console.isOk())
                                 {
                                     /* Show the progress dialog */
-                                    vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindow());
+                                    vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0);
                                     if (progress.GetResultCode() != 0)
                                         vboxProblem().cannotRestoreSnapshot(progress, snapshot.GetName());
                                 }
@@ -360,7 +360,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
     if (pEvent->isAccepted())
     {
 #ifndef VBOX_GUI_SEPARATE_VM_PROCESS
-        vboxGlobal().selectorWnd().show();
+        //vboxGlobal().selectorWnd().show();
 #endif
 
         /* Hide console window */
