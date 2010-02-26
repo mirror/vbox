@@ -82,7 +82,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
 }
 
 
-RTDECL(uint32_t) RTPollGetCount(RTPOLLSET hPollSet)
+RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet)
 {
     return UINT32_MAX;
 }
