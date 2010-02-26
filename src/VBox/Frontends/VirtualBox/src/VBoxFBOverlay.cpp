@@ -1916,7 +1916,7 @@ private:
     bool mAllowDoneCurrent;
 };
 
-VBoxGLWidget::VBoxGLWidget (CConsole& console, QWidget *aParent, VBoxVHWASettings *aSettings)
+VBoxGLWidget::VBoxGLWidget (CConsole console, QWidget *aParent, VBoxVHWASettings *aSettings)
     : QGLWidget (new VBoxGLContext(VBoxGLWidget::vboxGLFormat()), aParent),
     mSurfHandleTable(128), /* 128 should be enough */
     mpfnOp(NULL),
