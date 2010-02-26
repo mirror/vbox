@@ -534,6 +534,7 @@ UISession::UISession(UIMachine *pMachine, const CSession &session)
     /* Common flags: */
     , m_fIsFirstTimeStarted(false)
     , m_fIsIgnoreRutimeMediumsChanging(false)
+    , m_fIsGuestResizeIgnored(false)
     /* Guest additions flags: */
     , m_fIsGuestAdditionsActive(false)
     , m_fIsGuestSupportsGraphics(false)
