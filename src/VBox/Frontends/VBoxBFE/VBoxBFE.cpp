@@ -1904,7 +1904,7 @@ static DECLCALLBACK(int) vboxbfeConfigConstructor(PVM pVM, void *pvUser)
 
     /* the VMM device's Main driver */
     rc = CFGMR3InsertNode(pInst,    "LUN#0",          &pLunL0);                     UPDATE_RC();
-    rc = CFGMR3InsertString(pLunL0, "Driver",        "MainVMMDev");                 UPDATE_RC();
+    rc = CFGMR3InsertString(pLunL0, "Driver",        "HGCM");                 UPDATE_RC();
     rc = CFGMR3InsertNode(pLunL0,   "Config",        &pCfg);                        UPDATE_RC();
     rc = CFGMR3InsertInteger(pCfg,  "Object",        (uintptr_t)gVMMDev);           UPDATE_RC();
 
