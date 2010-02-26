@@ -885,7 +885,7 @@ static int pgmPoolAccessHandlerFlush(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool, PPGM
      * Emulate the instruction (xp/w2k problem, requires pc/cr2/sp detection). Must do this in raw mode (!); XP boot will fail otherwise
      */
     uint32_t cbWritten;
-    int rc2 = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten);
+    int rc2 = EMInterpretInstructionCPUEx(pVM, pVCpu, pDis, pRegFrame, pvFault, &cbWritten, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc2))
         pRegFrame->rip += pDis->opsize;
     else if (rc2 == VERR_EM_INTERPRETER)
@@ -1022,7 +1022,7 @@ DECLINLINE(int) pgmPoolAccessHandlerSimple(PVM pVM, PVMCPU pVCpu, PPGMPOOL pPool
      * Interpret the instruction.
      */
     uint32_t cb;
-    int rc = EMInterpretInstructionCPU(pVM, pVCpu, pDis, pRegFrame, pvFault, &cb);
+    int rc = EMInterpretInstructionCPUEx(pVM, pVCpu, pDis, pRegFrame, pvFault, &cb, EMCODETYPE_ALL);
     if (RT_SUCCESS(rc))
         pRegFrame->rip += pDis->opsize;
     else if (rc == VERR_EM_INTERPRETER)
