@@ -465,6 +465,30 @@ void UIMachineWindow::prepareMenuDebug()
 }
 #endif /* VBOX_WITH_DEBUGGER_GUI */
 
+void UIMachineWindow::prepareMenuHelp()
+{
+    QMenu *menu = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Help)->menu();
+
+    menu->clear();
+
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Help));
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Web));
+    menu->addSeparator();
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_ResetWarnings));
+    menu->addSeparator();
+
+#ifdef VBOX_WITH_REGISTRATION
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Register));
+#endif
+
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_Update));
+
+#ifndef Q_WS_MAC
+    menu->addSeparator();
+#endif /* Q_WS_MAC */
+    menu->addAction(machineLogic()->actionsPool()->action(UIActionIndex_Simple_About));
+}
+
 void UIMachineWindow::updateAppearanceOf(int iElement)
 {
     CMachine machine = session().GetMachine();

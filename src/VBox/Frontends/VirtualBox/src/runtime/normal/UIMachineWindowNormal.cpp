@@ -356,6 +356,11 @@ void UIMachineWindowNormal::prepareMenu()
         menuBar()->addMenu(pMenuDebug);
     }
 #endif
+
+    /* Help submenu: */
+    QMenu *pMenuHelp = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Help)->menu();
+    prepareMenuHelp();
+    menuBar()->addMenu(pMenuHelp);
 }
 
 void UIMachineWindowNormal::prepareStatusBar()

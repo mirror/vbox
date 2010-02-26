@@ -79,6 +79,7 @@ protected:
 #ifdef VBOX_WITH_DEBUGGER_GUI
     virtual void prepareMenuDebug();
 #endif
+    virtual void prepareMenuHelp();
     //virtual void loadWindowSettings() {}
 
     /* Cleanup helpers: */

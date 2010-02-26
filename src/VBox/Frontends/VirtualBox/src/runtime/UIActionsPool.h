@@ -96,6 +96,15 @@ enum UIActionIndex
     UIActionIndex_Toggle_Logging,
 #endif
 
+    /* "Help" menu actions: */
+    UIActionIndex_Menu_Help,
+    UIActionIndex_Simple_Help,
+    UIActionIndex_Simple_Web,
+    UIActionIndex_Simple_ResetWarnings,
+    UIActionIndex_Simple_Register,
+    UIActionIndex_Simple_Update,
+    UIActionIndex_Simple_About,
+
     UIActionIndex_End
 };
 

@@ -170,7 +170,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("&Machine"));
+        menu()->setTitle(UIActionsPool::tr("&Machine"));
     }
 };
 
@@ -192,8 +192,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Fullscreen Mode"), "F"));
-        setStatusTip(tr("Switch to fullscreen mode"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Fullscreen Mode"), "F"));
+        setStatusTip(UIActionsPool::tr("Switch to fullscreen mode"));
     }
 };
 
@@ -215,8 +215,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("Seam&less Mode"), "L"));
-        setStatusTip(tr("Switch to seamless desktop integration mode"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Seam&less Mode"), "L"));
+        setStatusTip(UIActionsPool::tr("Switch to seamless desktop integration mode"));
     }
 };
 
@@ -238,8 +238,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("Auto-resize &Guest Display"), "G"));
-        setStatusTip(tr("Automatically resize the guest display when the window is resized (requires Guest Additions)"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Auto-resize &Guest Display"), "G"));
+        setStatusTip(UIActionsPool::tr("Automatically resize the guest display when the window is resized (requires Guest Additions)"));
     }
 };
 
@@ -260,8 +260,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Adjust Window Size"), "A"));
-        setStatusTip(tr("Adjust window size and position to best fit the guest display"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Adjust Window Size"), "A"));
+        setStatusTip(UIActionsPool::tr("Adjust window size and position to best fit the guest display"));
     }
 };
 
@@ -304,13 +304,13 @@ protected:
     {
         if (!isChecked())
         {
-            setText(VBoxGlobal::insertKeyToActionText(tr("Disable &Mouse Integration"), "I"));
-            setStatusTip(tr("Temporarily disable host mouse pointer integration"));
+            setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Disable &Mouse Integration"), "I"));
+            setStatusTip(UIActionsPool::tr("Temporarily disable host mouse pointer integration"));
         }
         else
         {
-            setText(VBoxGlobal::insertKeyToActionText(tr("Enable &Mouse Integration"), "I"));
-            setStatusTip(tr("Enable temporarily disabled host mouse pointer integration"));
+            setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Enable &Mouse Integration"), "I"));
+            setStatusTip(UIActionsPool::tr("Enable temporarily disabled host mouse pointer integration"));
         }
     }
 };
@@ -332,8 +332,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Insert Ctrl-Alt-Del"), "Del"));
-        setStatusTip(tr("Send the Ctrl-Alt-Del sequence to the virtual machine"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Insert Ctrl-Alt-Del"), "Del"));
+        setStatusTip(UIActionsPool::tr("Send the Ctrl-Alt-Del sequence to the virtual machine"));
     }
 };
 
@@ -355,8 +355,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Insert Ctrl-Alt-Backspace"), "Backspace"));
-        setStatusTip(tr("Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Insert Ctrl-Alt-Backspace"), "Backspace"));
+        setStatusTip(UIActionsPool::tr("Send the Ctrl-Alt-Backspace sequence to the virtual machine"));
     }
 };
 #endif
@@ -378,8 +378,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("Take &Snapshot..."), "S"));
-        setStatusTip(tr("Take a snapshot of the virtual machine"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Take &Snapshot..."), "S"));
+        setStatusTip(UIActionsPool::tr("Take a snapshot of the virtual machine"));
     }
 };
 
@@ -400,8 +400,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("Session I&nformation Dialog"), "N"));
-        setStatusTip(tr("Show Session Information Dialog"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("Session I&nformation Dialog"), "N"));
+        setStatusTip(UIActionsPool::tr("Show Session Information Dialog"));
     }
 };
 
@@ -424,13 +424,13 @@ protected:
     {
         if (!isChecked())
         {
-            setText(VBoxGlobal::insertKeyToActionText(tr ("&Pause"), "P"));
-            setStatusTip(tr("Suspend the execution of the virtual machine"));
+            setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Pause"), "P"));
+            setStatusTip(UIActionsPool::tr("Suspend the execution of the virtual machine"));
         }
         else
         {
-            setText(VBoxGlobal::insertKeyToActionText(tr ("R&esume"), "P"));
-            setStatusTip(tr("Resume the execution of the virtual machine"));
+            setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("R&esume"), "P"));
+            setStatusTip(UIActionsPool::tr("Resume the execution of the virtual machine"));
         }
     }
 };
@@ -452,8 +452,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr ("&Reset"), "R"));
-        setStatusTip(tr("Reset the virtual machine"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Reset"), "R"));
+        setStatusTip(UIActionsPool::tr("Reset the virtual machine"));
     }
 };
 
@@ -476,11 +476,11 @@ protected:
     {
 #ifdef Q_WS_MAC
         /* Host+H is Hide on the mac */
-        setText(VBoxGlobal::insertKeyToActionText(tr ("ACPI Sh&utdown"), "U"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("ACPI Sh&utdown"), "U"));
 #else /* Q_WS_MAC */
-        setText(VBoxGlobal::insertKeyToActionText(tr ("ACPI S&hutdown"), "H"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("ACPI S&hutdown"), "H"));
 #endif /* !Q_WS_MAC */
-        setStatusTip(tr("Send the ACPI Power Button press event to the virtual machine"));
+        setStatusTip(UIActionsPool::tr("Send the ACPI Power Button press event to the virtual machine"));
     }
 };
 
@@ -502,8 +502,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Close..." ), "Q"));
-        setStatusTip(tr("Close the virtual machine"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Close..." ), "Q"));
+        setStatusTip(UIActionsPool::tr("Close the virtual machine"));
     }
 };
 
@@ -523,7 +523,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("&Devices"));
+        menu()->setTitle(UIActionsPool::tr("&Devices"));
     }
 };
 
@@ -544,7 +544,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("&CD/DVD Devices"));
+        menu()->setTitle(UIActionsPool::tr("&CD/DVD Devices"));
     }
 };
 
@@ -565,7 +565,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("&Floppy Devices"));
+        menu()->setTitle(UIActionsPool::tr("&Floppy Devices"));
     }
 };
 
@@ -586,7 +586,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("&USB Devices"));
+        menu()->setTitle(UIActionsPool::tr("&USB Devices"));
     }
 };
 
@@ -626,8 +626,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Network Adapters..."));
-        setStatusTip(tr("Change the settings of network adapters"));
+        setText(UIActionsPool::tr("&Network Adapters..."));
+        setStatusTip(UIActionsPool::tr("Change the settings of network adapters"));
     }
 };
 
@@ -667,8 +667,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Shared Folders..."));
-        setStatusTip(tr("Create or modify shared folders"));
+        setText(UIActionsPool::tr("&Shared Folders..."));
+        setStatusTip(UIActionsPool::tr("Create or modify shared folders"));
     }
 };
 
@@ -690,8 +690,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Remote Display"));
-        setStatusTip(tr("Enable or disable remote desktop (RDP) connections to this machine"));
+        setText(UIActionsPool::tr("&Remote Display"));
+        setStatusTip(UIActionsPool::tr("Enable or disable remote desktop (RDP) connections to this machine"));
     }
 };
 
@@ -712,8 +712,8 @@ protected:
 
     void retranslateUi()
     {
-        setText(VBoxGlobal::insertKeyToActionText(tr("&Install Guest Additions..."), "D"));
-        setStatusTip(tr("Mount the Guest Additions installation image"));
+        setText(VBoxGlobal::insertKeyToActionText(UIActionsPool::tr("&Install Guest Additions..."), "D"));
+        setStatusTip(UIActionsPool::tr("Mount the Guest Additions installation image"));
     }
 };
 
@@ -734,7 +734,7 @@ protected:
 
     void retranslateUi()
     {
-        menu()->setTitle(tr("De&bug"));
+        menu()->setTitle(UIActionsPool::tr("De&bug"));
     }
 };
 
@@ -754,7 +754,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Statistics...", "debug action"));
+        setText(UIActionsPool::tr("&Statistics...", "debug action"));
     }
 };
 
@@ -774,7 +774,7 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Command Line...", "debug action"));
+        setText(UIActionsPool::tr("&Command Line...", "debug action"));
     }
 };
 
@@ -794,10 +794,168 @@ protected:
 
     void retranslateUi()
     {
-        setText(tr("&Logging...", "debug action"));
+        setText(UIActionsPool::tr("&Logging...", "debug action"));
     }
 };
 #endif
+
+class MenuHelpAction : public UIMenuAction
+{
+    Q_OBJECT;
+
+public:
+
+    MenuHelpAction(QObject *pParent)
+        : UIMenuAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("&Help"));
+    }
+};
+
+class ShowHelpAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ShowHelpAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/help_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setShortcut(QKeySequence::HelpContents);
+        setText(UIActionsPool::tr("&Contents..."));
+        setStatusTip(UIActionsPool::tr("Show the online help contents"));
+    }
+};
+
+class ShowWebAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ShowWebAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/site_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("&VirtualBox Web Site..."));
+        setStatusTip(UIActionsPool::tr("Open the browser and go to the VirtualBox product web site"));
+    }
+};
+
+class PerformResetWarningsAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    PerformResetWarningsAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/reset_16px.png")
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("&Reset All Warnings"));
+        setStatusTip(UIActionsPool::tr("Go back to showing all suppressed warnings and messages"));
+    }
+};
+
+class PerformRegisterAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    PerformRegisterAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/register_16px.png", ":/register_disabled_16px.png")
+    {
+        setEnabled(vboxGlobal().virtualBox().
+                   GetExtraData(VBoxDefs::GUI_RegistrationDlgWinID).isEmpty());
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("R&egister VirtualBox..."));
+        setStatusTip(UIActionsPool::tr("Open VirtualBox registration form"));
+    }
+};
+
+class PerformUpdateAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    PerformUpdateAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/refresh_16px.png", ":/refresh_disabled_16px.png")
+    {
+        setMenuRole(QAction::ApplicationSpecificRole);
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("C&heck for Updates..."));
+        setStatusTip(UIActionsPool::tr("Check for a new VirtualBox version"));
+    }
+};
+
+class ShowAboutAction : public UISimpleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ShowAboutAction(QObject *pParent)
+        : UISimpleAction(pParent,
+                         ":/about_16px.png")
+    {
+        setMenuRole(QAction::AboutRole);
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("&About VirtualBox..."));
+        setStatusTip(UIActionsPool::tr("Show a dialog with product information"));
+    }
+};
+
 
 UIActionsPool::UIActionsPool(QObject *pParent)
     : QObject(pParent)
@@ -844,6 +1002,15 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Simple_CommandLine] = new ShowCommandLineAction(this);
     m_actionsPool[UIActionIndex_Toggle_Logging] = new ToggleLoggingAction(this);
 #endif
+
+    /* "Help" menu actions: */
+    m_actionsPool[UIActionIndex_Menu_Help] = new MenuHelpAction(this);
+    m_actionsPool[UIActionIndex_Simple_Help] = new ShowHelpAction(this);
+    m_actionsPool[UIActionIndex_Simple_Web] = new ShowWebAction(this);
+    m_actionsPool[UIActionIndex_Simple_ResetWarnings] = new PerformResetWarningsAction(this);
+    m_actionsPool[UIActionIndex_Simple_Register] = new PerformRegisterAction(this);
+    m_actionsPool[UIActionIndex_Simple_Update] = new PerformUpdateAction(this);
+    m_actionsPool[UIActionIndex_Simple_About] = new ShowAboutAction(this);
 
     /* Test all actions were initialized */
     for (int i = 0; i < m_actionsPool.size(); ++i)
