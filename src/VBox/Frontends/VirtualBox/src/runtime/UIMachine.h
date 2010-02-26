@@ -44,6 +44,7 @@ public:
 
     /* Virtual Machine constructor: */
     UIMachine(UIMachine **ppSelf, const CSession &session);
+    virtual ~UIMachine();
 
 private slots:
 
