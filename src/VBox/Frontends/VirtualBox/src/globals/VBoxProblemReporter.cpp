@@ -26,7 +26,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
-#include "UIMachine.h"
+#include "../runtime/UIMachine.h"
 #include "VBoxProgressDialog.h"
 
 #include "VBoxAboutDlg.h"
