@@ -307,7 +307,7 @@ public:
     VBoxSelectorWnd &selectorWnd();
     VBoxConsoleWnd &consoleWnd();
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
-    UIMachine &virtualMachine(const CSession &session = CSession());
+    UIMachine* virtualMachine(const CSession &session = CSession());
 #endif
 
     /* main window handle storage */

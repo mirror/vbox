@@ -142,7 +142,8 @@ public:
     bool showModalProgressDialog (CProgress &aProgress, const QString &aTitle,
                                   QWidget *aParent, int aMinDuration = 2000);
 
-    QWidget *mainWindowShown() const;
+    QWidget* mainWindowShown() const;
+    QWidget* mainMachineWindowShown() const;
 
     /* Generic problem handlers */
     bool askForOverridingFile (const QString& aPath, QWidget *aParent  = NULL) const;

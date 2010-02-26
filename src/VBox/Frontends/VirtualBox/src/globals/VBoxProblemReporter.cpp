@@ -26,6 +26,7 @@
 #include "VBoxGlobal.h"
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
+#include "UIMachine.h"
 #include "VBoxProgressDialog.h"
 
 #include "VBoxAboutDlg.h"
@@ -250,7 +251,7 @@ bool VBoxProblemReporter::showModalProgressDialog (
     CProgress &aProgress, const QString &aTitle, QWidget *aParent,
     int aMinDuration)
 {
-    VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration, aParent);
+    VBoxProgressDialog progressDlg (aProgress, aTitle, aMinDuration, aParent ? aParent : mainWindowShown());
 
     /* run the dialog with the 100 ms refresh interval */
     progressDlg.run (350);
@@ -259,34 +260,88 @@ bool VBoxProblemReporter::showModalProgressDialog (
 }
 
 /**
- *  Returns what main window (selector or console) is now shown, or
- *  zero if none of them. The selector window takes precedence.
+ *  Returns what main window (VM selector or main VM window) is now shown, or
+ *  zero if none of them. Main VM window takes precedence.
  */
-QWidget *VBoxProblemReporter::mainWindowShown() const
+QWidget* VBoxProblemReporter::mainWindowShown() const
 {
     /* It may happen that this method is called during VBoxGlobal
      * initialization or even after it failed (for example, to show some
-     * error message). Return no main window in this case. */
+     * error message). Return no main window in this case: */
     if (!vboxGlobal().isValid())
         return 0;
 
-#if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+
+# if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
     if (vboxGlobal().isVMConsoleProcess())
     {
-        if (vboxGlobal().consoleWnd().isVisible())
-            return &vboxGlobal().consoleWnd();
+        if (vboxGlobal().virtualMachine() /* VM is present */ &&
+            vboxGlobal().virtualMachine()->mainWindow() /* VM has at least one window */ &&
+            vboxGlobal().virtualMachine()->mainWindow()->isVisible() /* that window is visible */)
+            return vboxGlobal().virtualMachine()->mainWindow(); /* return that window */
     }
     else
     {
-        if (vboxGlobal().selectorWnd().isVisible())
-            return &vboxGlobal().selectorWnd();
+        if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+            return &vboxGlobal().selectorWnd(); /* return that window */
     }
+# else
+    if (vboxGlobal().virtualMachine() /* VM is present */ &&
+        vboxGlobal().virtualMachine()->mainWindow() /* VM has at least one window */ &&
+        vboxGlobal().virtualMachine()->mainWindow()->isVisible() /* that window is visible */)
+        return vboxGlobal().virtualMachine()->mainWindow(); /* return that window */
+
+    if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+        return &vboxGlobal().selectorWnd(); /* return that window */
+# endif
+
 #else
-    if (vboxGlobal().consoleWnd().isVisible())
-        return &vboxGlobal().consoleWnd();
-    if (vboxGlobal().selectorWnd().isVisible())
-        return &vboxGlobal().selectorWnd();
+
+# if defined (VBOX_GUI_SEPARATE_VM_PROCESS)
+    if (vboxGlobal().isVMConsoleProcess())
+    {
+        if (vboxGlobal().consoleWnd().isVisible()) /* VM window is visible */
+            return &vboxGlobal().consoleWnd(); /* return that window */
+    }
+    else
+    {
+        if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+            return &vboxGlobal().selectorWnd(); /* return that window */
+    }
+# else
+    if (vboxGlobal().consoleWnd().isVisible()) /* VM window is visible */
+        return &vboxGlobal().consoleWnd(); /* return that window */
+    if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+        return &vboxGlobal().selectorWnd(); /* return that window */
+# endif
+
 #endif
+
+    return 0;
+}
+
+/**
+ *  Returns main machine window is now shown, or zero if none of them.
+ */
+QWidget* VBoxProblemReporter::mainMachineWindowShown() const
+{
+    /* It may happen that this method is called during VBoxGlobal
+     * initialization or even after it failed (for example, to show some
+     * error message). Return no main window in this case: */
+    if (!vboxGlobal().isValid())
+        return 0;
+
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    if (vboxGlobal().virtualMachine() /* VM is present */ &&
+        vboxGlobal().virtualMachine()->mainWindow() /* VM has at least one window */ &&
+        vboxGlobal().virtualMachine()->mainWindow()->isVisible() /* that window is visible */)
+        return vboxGlobal().virtualMachine()->mainWindow(); /* return that window */
+#else
+    if (vboxGlobal().consoleWnd().isVisible()) /* VM window is visible */
+        return &vboxGlobal().consoleWnd(); /* return that window */
+#endif
+
     return 0;
 }
 
@@ -931,7 +986,7 @@ void VBoxProblemReporter::cannotEnterSeamlessMode (ULONG /* aWidth */,
                                                    ULONG /* aBpp */,
                                                    ULONG64 aMinVRAM)
 {
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
              tr ("<p>Could not enter seamless mode due to insufficient guest "
                   "video memory.</p>"
                   "<p>You should configure the virtual machine to have at "
@@ -944,7 +999,7 @@ int VBoxProblemReporter::cannotEnterFullscreenMode (ULONG /* aWidth */,
                                                     ULONG /* aBpp */,
                                                     ULONG64 aMinVRAM)
 {
-    return message (&vboxGlobal().consoleWnd(), Warning,
+    return message (mainMachineWindowShown(), Warning,
              tr ("<p>Could not switch the guest display to fullscreen mode due "
                  "to insufficient guest video memory.</p>"
                  "<p>You should configure the virtual machine to have at "
@@ -1234,7 +1289,7 @@ int VBoxProblemReporter::cannotRemountMedium (QWidget *aParent, const CMachine &
     }
     if (aRetry)
     {
-        return messageOkCancel (aParent, Question, text
+        return messageOkCancel (aParent ? aParent : mainWindowShown(), Question, text
             .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
             .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
             .arg (CMachine (aMachine).GetName()),
@@ -1244,7 +1299,7 @@ int VBoxProblemReporter::cannotRemountMedium (QWidget *aParent, const CMachine &
     }
     else
     {
-        return message (aParent, Error, text
+        return message (aParent ? aParent : mainWindowShown(), Error, text
             .arg (mediumToAccusative (aMedium.type(), aMedium.isHostDrive()))
             .arg (aMedium.isHostDrive() ? aMedium.name() : aMedium.location())
             .arg (CMachine (aMachine).GetName()),
@@ -1258,7 +1313,7 @@ void VBoxProblemReporter::cannotOpenMedium (
 {
     /** @todo (translation-related): the gender of "the" in translations
      * will depend on the gender of aMedium.type(). */
-    message (aParent, Error,
+    message (aParent ? aParent : mainWindowShown(), Error,
         tr ("Failed to open the %1 <nobr><b>%2</b></nobr>.")
             .arg (mediumToAccusative (aType))
             .arg (aLocation),
@@ -1383,7 +1438,7 @@ void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
     /* preserve the current error info before calling the object again */
     COMResult res (console);
 
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
         tr ("Failed to attach the USB device <b>%1</b> "
             "to the virtual machine <b>%2</b>.")
             .arg (device)
@@ -1395,7 +1450,7 @@ void VBoxProblemReporter::cannotAttachUSBDevice (const CConsole &console,
                                                  const QString &device,
                                                  const CVirtualBoxErrorInfo &error)
 {
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
         tr ("Failed to attach the USB device <b>%1</b> "
             "to the virtual machine <b>%2</b>.")
             .arg (device)
@@ -1409,7 +1464,7 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
     /* preserve the current error info before calling the object again */
     COMResult res (console);
 
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
         tr ("Failed to detach the USB device <b>%1</b> "
             "from the virtual machine <b>%2</b>.")
             .arg (device)
@@ -1421,7 +1476,7 @@ void VBoxProblemReporter::cannotDetachUSBDevice (const CConsole &console,
                                                  const QString &device,
                                                  const CVirtualBoxErrorInfo &error)
 {
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
         tr ("Failed to detach the USB device <b>%1</b> "
             "from the virtual machine <b>%2</b>.")
             .arg (device)
@@ -1506,7 +1561,7 @@ void VBoxProblemReporter::cannotRemoveSharedFolder (QWidget        *aParent,
 int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
                                                    const QString &aSrc2)
 {
-    return message (&vboxGlobal().consoleWnd(), Question,
+    return message (mainMachineWindowShown(), Question,
                     tr ("<p>Could not find the VirtualBox Guest Additions "
                         "CD image file <nobr><b>%1</b></nobr> or "
                         "<nobr><b>%2</b>.</nobr></p><p>Do you wish to "
@@ -1520,7 +1575,7 @@ int VBoxProblemReporter::cannotFindGuestAdditions (const QString &aSrc1,
 void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
                                                         const QString &aReason)
 {
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
              tr ("<p>Failed to download the VirtualBox Guest Additions CD "
                  "image from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
                  .arg (aURL).arg (aURL).arg (aReason));
@@ -1528,7 +1583,7 @@ void VBoxProblemReporter::cannotDownloadGuestAdditions (const QString &aURL,
 
 void VBoxProblemReporter::cannotMountGuestAdditions (const QString &aMachineName)
 {
-    message (&vboxGlobal().consoleWnd(), Error,
+    message (mainMachineWindowShown(), Error,
              tr ("<p>Could not insert the VirtualBox Guest Additions "
                  "installer CD image into the virtual machine <b>%1</b>, as the machine "
                  "has no CD/DVD-ROM drives. Please add a drive using the "
@@ -1539,7 +1594,7 @@ void VBoxProblemReporter::cannotMountGuestAdditions (const QString &aMachineName
 bool VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
                                                     ulong aSize)
 {
-    return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
+    return messageOkCancel (mainMachineWindowShown(), Question,
         tr ("<p>Are you sure you want to download the VirtualBox "
             "Guest Additions CD image from "
             "<nobr><a href=\"%1\">%2</a></nobr> "
@@ -1551,7 +1606,7 @@ bool VBoxProblemReporter::confirmDownloadAdditions (const QString &aURL,
 bool VBoxProblemReporter::confirmMountAdditions (const QString &aURL,
                                                 const QString &aSrc)
 {
-    return messageOkCancel (&vboxGlobal().consoleWnd(), Question,
+    return messageOkCancel (mainMachineWindowShown(), Question,
         tr ("<p>The VirtualBox Guest Additions CD image has been "
             "successfully downloaded from "
             "<nobr><a href=\"%1\">%2</a></nobr> "
@@ -1567,7 +1622,7 @@ void VBoxProblemReporter::warnAboutTooOldAdditions (QWidget *aParent,
                                                     const QString &aInstalledVer,
                                                     const QString &aExpectedVer)
 {
-    message (aParent, VBoxProblemReporter::Error,
+    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Error,
         tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are too "
             "old: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
@@ -1584,7 +1639,7 @@ void VBoxProblemReporter::warnAboutOldAdditions (QWidget *aParent,
                                                  const QString &aInstalledVer,
                                                  const QString &aExpectedVer)
 {
-    message (aParent, VBoxProblemReporter::Warning,
+    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Warning,
         tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
             "outdated: the installed version is %1, the expected version is %2. "
             "Some features that require Guest Additions (mouse integration, "
@@ -1600,7 +1655,7 @@ void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
                                                  const QString &aInstalledVer,
                                                  const QString &aExpectedVer)
 {
-    message (aParent, VBoxProblemReporter::Error,
+    message (aParent ? aParent : mainMachineWindowShown(), VBoxProblemReporter::Error,
         tr ("<p>The VirtualBox Guest Additions installed in the Guest OS are "
             "too recent for this version of VirtualBox: the installed version "
             "is %1, the expected version is %2.</p>"
@@ -1686,7 +1741,7 @@ void VBoxProblemReporter::showUpdateNotFound (QWidget *aParent)
  */
 bool VBoxProblemReporter::confirmInputCapture (bool *aAutoConfirmed /* = NULL */)
 {
-    int rc = message (&vboxGlobal().consoleWnd(), Info,
+    int rc = message (mainMachineWindowShown(), Info,
         tr ("<p>You have <b>clicked the mouse</b> inside the Virtual Machine display "
             "or pressed the <b>host key</b>. This will cause the Virtual Machine to "
             "<b>capture</b> the host mouse pointer (only if the mouse pointer "
@@ -1719,7 +1774,7 @@ bool VBoxProblemReporter::confirmInputCapture (bool *aAutoConfirmed /* = NULL */
 
 void VBoxProblemReporter::remindAboutAutoCapture()
 {
-    message (&vboxGlobal().consoleWnd(), Info,
+    message (mainMachineWindowShown(), Info,
         tr ("<p>You have the <b>Auto capture keyboard</b> option turned on. "
             "This will cause the Virtual Machine to automatically <b>capture</b> "
             "the keyboard every time the VM window is activated and make it "
@@ -1761,7 +1816,7 @@ void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
 
     if (aSupportsAbsolute)
     {
-        message (&vboxGlobal().consoleWnd(), Info,
+        message (mainMachineWindowShown(), Info,
             tr ("<p>The Virtual Machine reports that the guest OS supports "
                 "<b>mouse pointer integration</b>. This means that you do not "
                 "need to <i>capture</i> the mouse pointer to be able to use it "
@@ -1785,7 +1840,7 @@ void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
     }
     else
     {
-        message (&vboxGlobal().consoleWnd(), Info,
+        message (mainMachineWindowShown(), Info,
             tr ("<p>The Virtual Machine reports that the guest OS does not "
                 "support <b>mouse pointer integration</b> in the current video "
                 "mode. You need to capture the mouse (by clicking over the VM "
@@ -1802,7 +1857,7 @@ void VBoxProblemReporter::remindAboutMouseIntegration (bool aSupportsAbsolute)
 bool VBoxProblemReporter::remindAboutPausedVMInput()
 {
     int rc = message (
-        &vboxGlobal().consoleWnd(),
+        mainMachineWindowShown(),
         Info,
         tr (
             "<p>The Virtual Machine is currently in the <b>Paused</b> state and "
@@ -1892,7 +1947,7 @@ int VBoxProblemReporter::warnAboutSettingsAutoConversion (const QString &aFileLi
  */
 bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
 {
-    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
+    return messageOkCancel (mainMachineWindowShown(), Info,
         tr ("<p>The virtual machine window will be now switched to "
             "<b>fullscreen</b> mode. "
             "You can go back to windowed mode at any time by pressing "
@@ -1914,7 +1969,7 @@ bool VBoxProblemReporter::confirmGoingFullscreen (const QString &aHotKey)
  */
 bool VBoxProblemReporter::confirmGoingSeamless (const QString &aHotKey)
 {
-    return messageOkCancel (&vboxGlobal().consoleWnd(), Info,
+    return messageOkCancel (mainMachineWindowShown(), Info,
         tr ("<p>The virtual machine window will be now switched to "
             "<b>Seamless</b> mode. "
             "You can go back to windowed mode at any time by pressing "
@@ -1941,7 +1996,7 @@ void VBoxProblemReporter::remindAboutWrongColorDepth (ulong aRealBPP,
             outdated->close();
     }
 
-    int rc = message (&vboxGlobal().consoleWnd(), Info,
+    int rc = message (mainMachineWindowShown(), Info,
         tr ("<p>The virtual machine window is optimized to work in "
             "<b>%1&nbsp;bit</b> color mode but the "
             "virtual display is currently set to <b>%2&nbsp;bit</b>.</p>"
@@ -1967,7 +2022,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
 {
     Q_UNUSED (aConsole);
 
-    int rc = message (&vboxGlobal().consoleWnd(), GuruMeditation,
+    int rc = message (mainMachineWindowShown(), GuruMeditation,
         tr ("<p>A critical error has occurred while running the virtual "
             "machine and the machine execution has been stopped.</p>"
             ""
@@ -2000,7 +2055,7 @@ bool VBoxProblemReporter::remindAboutGuruMeditation (const CConsole &aConsole,
  */
 bool VBoxProblemReporter::confirmVMReset (QWidget *aParent)
 {
-    return messageOkCancel (aParent, Question,
+    return messageOkCancel (aParent ? aParent : mainMachineWindowShown(), Question,
         tr ("<p>Do you really want to reset the virtual machine?</p>"
             "<p>This will cause any unsaved data in applications running inside "
             "it to be lost.</p>"),
@@ -2206,7 +2261,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
 
     if (type == Critical)
     {
-        rc = message (&vboxGlobal().consoleWnd(), type,
+        rc = message (mainMachineWindowShown(), type,
             tr ("<p>A fatal error has occurred during virtual machine execution! "
                 "The virtual machine will be powered off. Please copy the "
                 "following error message using the clipboard to help diagnose "
@@ -2218,7 +2273,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     }
     else if (type == Error)
     {
-        rc = message (&vboxGlobal().consoleWnd(), type,
+        rc = message (mainMachineWindowShown(), type,
             tr ("<p>An error has occurred during virtual machine execution! "
                 "The error details are shown below. You may try to correct "
                 "the error and resume the virtual machine "
@@ -2227,7 +2282,7 @@ void VBoxProblemReporter::showRuntimeError (const CConsole &aConsole, bool fatal
     }
     else
     {
-        rc = message (&vboxGlobal().consoleWnd(), type,
+        rc = message (mainMachineWindowShown(), type,
             tr ("<p>The virtual machine execution may run into an error "
                 "condition as described below. "
                 "We suggest that you take "

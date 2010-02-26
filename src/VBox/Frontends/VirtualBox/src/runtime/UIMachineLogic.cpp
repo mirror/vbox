@@ -691,15 +691,15 @@ void UIMachineLogic::sltAdditionsStateChanged()
     QString strExpectedVersion = QString("%1.%2").arg(VMMDEV_VERSION_MAJOR).arg(VMMDEV_VERSION_MINOR);
     if (RT_HIWORD(uVersion) < VMMDEV_VERSION_MAJOR)
     {
-        vboxProblem().warnAboutTooOldAdditions(machineWindowWrapper()->machineWindow(), strRealVersion, strExpectedVersion);
+        vboxProblem().warnAboutTooOldAdditions(0, strRealVersion, strExpectedVersion);
     }
     else if (RT_HIWORD(uVersion) == VMMDEV_VERSION_MAJOR && RT_LOWORD(uVersion) <  VMMDEV_VERSION_MINOR)
     {
-        vboxProblem().warnAboutOldAdditions(machineWindowWrapper()->machineWindow(), strRealVersion, strExpectedVersion);
+        vboxProblem().warnAboutOldAdditions(0, strRealVersion, strExpectedVersion);
     }
     else if (uVersion > VMMDEV_VERSION)
     {
-        vboxProblem().warnAboutNewAdditions(machineWindowWrapper()->machineWindow(), strRealVersion, strExpectedVersion);
+        vboxProblem().warnAboutNewAdditions(0, strRealVersion, strExpectedVersion);
     }
 }
 
@@ -829,7 +829,7 @@ void UIMachineLogic::sltTakeSnapshot()
         if (console.isOk())
         {
             /* Show the "Taking Snapshot" progress dialog */
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow(), 0);
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), 0, 0);
 
             if (progress.GetResultCode() != 0)
                 vboxProblem().cannotTakeSnapshot(progress);
@@ -855,12 +855,8 @@ void UIMachineLogic::sltShowInformationDialog()
 
 void UIMachineLogic::sltReset()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
-        return;
-
     /* Confirm/Reset current console: */
-    if (vboxProblem().confirmVMReset(machineWindowWrapper()->machineWindow()))
+    if (vboxProblem().confirmVMReset(0))
         session().GetConsole().Reset();
 }
 
@@ -1131,14 +1127,14 @@ void UIMachineLogic::sltMountStorageMedium()
     else
     {
         /* Ask for force remounting: */
-        if (vboxProblem().cannotRemountMedium(machineWindowWrapper()->machineWindow(), machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, true /* retry? */) == QIMessageBox::Ok)
+        if (vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, true /* retry? */) == QIMessageBox::Ok)
         {
             /* Force remount medium to the predefined port/device: */
             machine.MountMedium(target.name, target.port, target.device, newId, true /* force */);
             if (machine.isOk())
                 fWasMounted = true;
             else
-                vboxProblem().cannotRemountMedium(machineWindowWrapper()->machineWindow(), machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, false /* retry? */);
+                vboxProblem().cannotRemountMedium(0, machine, vboxGlobal().findMedium (fMount ? newId : currentId), fMount, false /* retry? */);
         }
     }
 
@@ -1372,7 +1368,7 @@ void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
 
     if (!vbox.isOk())
     {
-        vboxProblem().cannotOpenMedium(machineWindowWrapper()->machineWindow(), vbox, VBoxDefs::MediumType_DVD, strSource);
+        vboxProblem().cannotOpenMedium(0, vbox, VBoxDefs::MediumType_DVD, strSource);
         return;
     }
 
@@ -1415,7 +1411,7 @@ void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
         else
         {
             /* Ask for force mounting */
-            if (vboxProblem().cannotRemountMedium(machineWindowWrapper()->machineWindow(), machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
+            if (vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
                                                   true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
             {
                 /* Force mount medium to the predefined port/device */
@@ -1423,7 +1419,7 @@ void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
                 if (machine.isOk())
                     fIsMounted = true;
                 else
-                    vboxProblem().cannotRemountMedium(machineWindowWrapper()->machineWindow(), machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
+                    vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
                                                       true /* mount? */, false /* retry? */);
             }
         }

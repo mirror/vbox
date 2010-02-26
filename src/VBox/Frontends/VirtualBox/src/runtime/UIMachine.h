@@ -29,6 +29,9 @@
 /* Local includes */
 #include "UIMachineDefs.h"
 
+/* Global forwards: */
+class QWidget;
+
 /* Local forwards */
 class UISession;
 class UIActionsPool;
@@ -42,9 +45,12 @@ class UIMachine : public QObject
 
 public:
 
-    /* Virtual Machine constructor: */
+    /* Virtual Machine constructor/destructor: */
     UIMachine(UIMachine **ppSelf, const CSession &session);
     virtual ~UIMachine();
+
+    /* Public getters: */
+    QWidget* mainWindow() const;
 
 private slots:
 

@@ -27,6 +27,7 @@
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
 
 class UIVisualState : public QObject
 {
@@ -185,9 +186,22 @@ UIMachine::~UIMachine()
     m_pActionsPool = 0;
 }
 
+QWidget* UIMachine::mainWindow() const
+{
+    if (machineLogic() &&
+        machineLogic()->machineWindowWrapper() &&
+        machineLogic()->machineWindowWrapper()->machineWindow())
+        return machineLogic()->machineWindowWrapper()->machineWindow();
+    else
+        return 0;
+}
+
 UIMachineLogic* UIMachine::machineLogic() const
 {
-    return m_pVisualState->m_pMachineLogic;
+    if (m_pVisualState && m_pVisualState->m_pMachineLogic)
+        return m_pVisualState->m_pMachineLogic;
+    else
+        return 0;
 }
 
 void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
