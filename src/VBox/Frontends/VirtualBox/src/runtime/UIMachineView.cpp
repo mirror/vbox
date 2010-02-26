@@ -2471,13 +2471,13 @@ void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
 
 #elif defined(Q_WS_WIN32)
 
-    if (uisession()->numLockAdaptionCnt() && (m_fNumLock ^ !!(GetKeyState(VK_NUMLOCK))))
+    if (uisession()->numLockAdaptionCnt() && (uisession()->isNumLock() ^ !!(GetKeyState(VK_NUMLOCK))))
     {
         uisession()->setNumLockAdaptionCnt(uisession()->numLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x45;
         piCodes[(*puCount)++] = 0x45 | 0x80;
     }
-    if (uisession()->capsLockAdaptionCnt() && (m_fCapsLock ^ !!(GetKeyState(VK_CAPITAL))))
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(GetKeyState(VK_CAPITAL))))
     {
         uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
@@ -2485,7 +2485,7 @@ void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
@@ -2495,7 +2495,7 @@ void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
 #elif defined(Q_WS_MAC)
 
     /* if (uisession()->numLockAdaptionCnt()) ... - NumLock isn't implemented by Mac OS X so ignore it. */
-    if (uisession()->capsLockAdaptionCnt() && (m_fCapsLock ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
+    if (uisession()->capsLockAdaptionCnt() && (uisession()->isCapsLock() ^ !!(::GetCurrentEventKeyModifiers() & alphaLock)))
     {
         uisession()->setCapsLockAdaptionCnt(uisession()->capsLockAdaptionCnt() - 1);
         piCodes[(*puCount)++] = 0x3a;
@@ -2503,7 +2503,7 @@ void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
         /* Some keyboard layouts require shift to be pressed to break
          * capslock.  For simplicity, only do this if shift is not
          * already held down. */
-        if (m_fCapsLock && !(m_pressedKeys[0x2a] & IsKeyPressed))
+        if (uisession()->isCapsLock() && !(m_pressedKeys[0x2a] & IsKeyPressed))
         {
             piCodes[(*puCount)++] = 0x2a;
             piCodes[(*puCount)++] = 0x2a | 0x80;
