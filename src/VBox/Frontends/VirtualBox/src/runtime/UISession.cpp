@@ -1161,7 +1161,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
     }
 
     /* Set the new cursor: */
-    m_cursor = cursor(QPixmap::fromImage(image), uXHot, uYHot);
+    m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
     NOREF(srcShapePtrScan);
 
 #else
