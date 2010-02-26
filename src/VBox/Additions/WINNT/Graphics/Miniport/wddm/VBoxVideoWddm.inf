@@ -1,0 +1,128 @@
+;
+; VirtualBox Video Wddm driver
+;
+; Copyright (C) 2010 Sun Microsystems, Inc.
+;
+; This file is part of VirtualBox Open Source Edition (OSE), as
+; available from http://www.virtualbox.org. This file is free software;
+; you can redistribute it and/or modify it under the terms of the GNU
+; General Public License (GPL) as published by the Free Software
+; Foundation, in version 2 as it comes in the "COPYING" file of the
+; VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+; hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+;
+; Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+; Clara, CA 95054 USA or visit http://www.sun.com if you need
+; additional information or have any questions.
+;
+
+[Version]
+Signature="$WINDOWS NT$"
+Provider=%SUN%
+ClassGUID={4D36E968-E325-11CE-BFC1-08002BE10318}
+Class=Display
+;edit-DriverVer=02/26/2010,1.00.0000
+;cat CatalogFile = VBoxVideoWddm.cat
+
+[DestinationDirs]
+DefaultDestDir=11
+VBoxVideo.Miniport = 12 ; drivers
+VBoxVideo.Display  = 11 ; system32
+VBoxVideo.Display_x86  = 11 ; system32
+VBoxVideo.Display_amd64  = 11 ; system32
+VBoxVideo.Display_wow64  = 10,SysWow64 ; SysWow64
+
+[Manufacturer]
+%SUN%=Model, NTx86.6.0, NTamd64.6.0
+
+[Model.NTamd64.6.0]
+%VBoxVideo.SvcDesc% = VBoxVideo_amd64, PCI\VEN_80EE&DEV_BEEF
+
+[Model.NTx86.6.0]
+%VBoxVideo.SvcDesc% = VBoxVideo_x86, PCI\VEN_80EE&DEV_BEEF
+
+[VBoxVideo_x86]
+FeatureScore = F8
+Include = msdv.inf
+CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display_x86
+AddReg = VBoxVideo_SoftwareDeviceSettings_x86
+DelReg = VBoxVideo_RemoveDeviceSettings
+;uncomment RegisterDlls = VBoxVideo_RegisterDlls_x86  
+
+[VBoxVideo_amd64]
+FeatureScore = F8
+Include = msdv.inf
+CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display_amd64, VBoxVideo.Display_wow64 
+AddReg = VBoxVideo_SoftwareDeviceSettings_amd64
+DelReg = VBoxVideo_RemoveDeviceSettings
+;uncomment RegisterDlls = VBoxVideo_RegisterDlls_amd64  
+
+[VBoxVideo.Miniport]
+VBoxVideoWddm.sys
+
+[VBoxVideo.Display_x86]
+;uncomment VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+
+[VBoxVideo.Display_amd64]
+;uncomment VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+
+[VBoxVideo.Display_wow64]
+;uncomment VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+
+[VBoxVideo_SoftwareDeviceSettings_x86]
+;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
+;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+HKR,, VgaCompatible, %REG_DWORD%, 0
+HKR,, CapabilityOverride,    %REG_DWORD%, 0x8
+
+[VBoxVideo_SoftwareDeviceSettings_amd64]
+;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
+;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
+;uncomment HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+HKR,, VgaCompatible, %REG_DWORD%, 0
+HKR,, CapabilityOverride,    %REG_DWORD%, 0x8
+
+;uncomment [VBoxVideo_RegisterDlls_x86]
+;uncomment 11,,VBoxVideoD3D.dll,1
+
+;uncomment [VBoxVideo_RegisterDlls_amd64]
+;uncomment 11,,VBoxVideoD3D.dll,1
+;uncomment 11,,VBoxVideoD3D64.dll,1
+
+[VBoxVideo.Services]
+AddService=VBoxVideoWddm, 0x00000002, VBoxVideo_Service_Inst, VBoxVideo_EventLog_Inst
+
+[VBoxVideo_Service_Inst]
+ServiceType=1                   ; SERVICE_KERNEL_DRIVER
+StartType=3                     ; SERVICE_DEMAND_START
+ErrorControl=0                  ; SERVICE_ERROR_IGNORE
+LoadOrderGroup=Video
+ServiceBinary=%12%\VBoxVideoWddm.sys
+
+[VBoxVideo_EventLog_Inst]
+AddReg = VBoxVideo_EventLog_AddReg
+
+[VBoxVideo_EventLog_AddReg]
+HKR,,EventMessageFile,0x00020000,"%SystemRoot%\System32\IoLogMsg.dll;%SystemRoot%\System32\drivers\VBoxVideoWddm.sys"
+HKR,,TypesSupported,0x00010001,7
+
+; [VBoxVideo.OpenGLSoftwareSettings]
+
+[SourceDisksNames]
+1 = %VBoxVideo.Disk%,,,""
+
+[SourceDisksFiles]
+VBoxVideoWddm.sys = 1
+;amd64 VBoxDispD3D64.dll = 1
+VBoxDispD3D.dll = 1
+
+[Strings]
+REG_SZ = 0x00000000
+REG_MULTI_SZ = 0x00010000
+REG_EXPAND_SZ = 0x00020000
+REG_BINARY = 0x00000001
+REG_DWORD = 0x00010001
+
+SUN = "Sun Microsystems, Inc."
+VBoxVideo.Disk = "VirtualBox Video Driver Disk"
+VBoxVideo.SvcDesc = "VirtualBox Graphics Adapter (Microsoft Corporation - WDDM)"
