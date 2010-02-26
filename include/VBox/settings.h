@@ -288,7 +288,7 @@ struct BIOSSettings
         : fACPIEnabled(true),
           fIOAPICEnabled(false),
           fLogoFadeIn(true),
-          fLogoFadeOut(false),
+          fLogoFadeOut(true),
           ulLogoDisplayTime(0),
           biosBootMenuMode(BIOSBootMenuMode_MessageAndMenu),
           fPXEDebugEnabled(false),
