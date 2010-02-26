@@ -161,8 +161,8 @@ private slots:
 
 UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     : QObject(0)
-    , m_pSession(new UISession(this, session))
     , m_pActionsPool(new UIActionsPool(this))
+    , m_pSession(new UISession(this, session))
     , m_pVisualState(0)
 {
     /* Cache IMedium data: */

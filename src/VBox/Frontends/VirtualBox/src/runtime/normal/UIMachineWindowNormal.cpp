@@ -30,8 +30,6 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 
-#include "VBoxVMInformationDlg.h"
-
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIIndicatorsPool.h"
@@ -67,14 +65,14 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
     /* Prepare connections: */
     prepareConnections();
 
-    /* Load normal window settings: */
-    loadWindowSettings();
-
     /* Retranslate normal window finally: */
     retranslateUi();
 
     /* Prepare normal machine view: */
     prepareMachineView();
+
+    /* Load normal window settings: */
+    loadWindowSettings();
 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
@@ -92,9 +90,9 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
     cleanupStatusBar();
 }
 
-void UIMachineWindowNormal::sltMachineStateChanged(KMachineState machineState)
+void UIMachineWindowNormal::sltMachineStateChanged()
 {
-    UIMachineWindow::sltMachineStateChanged(machineState);
+    UIMachineWindow::sltMachineStateChanged();
 }
 
 void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
@@ -476,13 +474,10 @@ void UIMachineWindowNormal::prepareMachineView()
 
 void UIMachineWindowNormal::loadWindowSettings()
 {
-    /* Load parent class settings: */
-    UIMachineWindow::loadWindowSettings();
-
-    /* Load this class settings: */
+    /* Load normal window settings: */
     CMachine machine = session().GetMachine();
 
-    /* Extra-data settings */
+    /* Load extra-data settings: */
     {
         QString strPositionSettings = machine.GetExtraData(VBoxDefs::GUI_LastWindowPosition);
 
@@ -510,7 +505,7 @@ void UIMachineWindowNormal::loadWindowSettings()
             if (machineView())
                 machineView()->normalizeGeometry(true /* adjust position? */);
 
-            /* Maximize if needed */
+            /* Maximize if needed: */
             if (max)
                 setWindowState(windowState() | Qt::WindowMaximized);
         }
@@ -527,7 +522,7 @@ void UIMachineWindowNormal::loadWindowSettings()
         }
     }
 
-    /* Availability settings */
+    /* Load availability settings: */
     {
         /* USB Stuff: */
         CUSBController usbController = machine.GetUSBController();
@@ -544,7 +539,7 @@ void UIMachineWindowNormal::loadWindowSettings()
         }
     }
 
-    /* Global settings */
+    /* Load global settings: */
     {
         VBoxGlobalSettings settings = vboxGlobal().settings();
         menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
@@ -556,7 +551,7 @@ void UIMachineWindowNormal::saveWindowSettings()
 {
     CMachine machine = session().GetMachine();
 
-    /* Extra-data settings */
+    /* Save extra-data settings: */
     {
         QString strWindowPosition = QString("%1,%2,%3,%4")
                                     .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())

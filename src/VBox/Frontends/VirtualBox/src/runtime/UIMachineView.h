@@ -23,16 +23,11 @@
 #ifndef ___UIMachineView_h___
 #define ___UIMachineView_h___
 
-/* Local forwards */
-class UIFrameBuffer;
-class UIMachineWindow;
-class VBoxGlobalSettings;
-
 /* Global includes */
 #include <QAbstractScrollArea>
 
 /* Local includes */
-#include "COMDefs.h"
+#include "VBoxDefs.h"
 #include "UIMachineDefs.h"
 
 #ifdef Q_WS_MAC
@@ -40,6 +35,11 @@ class VBoxGlobalSettings;
 #endif /* Q_WS_MAC */
 
 /* Local forwards */
+class CSession;
+class UISession;
+class UIFrameBuffer;
+class UIMachineWindow;
+class VBoxGlobalSettings;
 #ifdef Q_WS_MAC
 class VBoxChangeDockIconUpdateEvent;
 class VBoxChangePresentationModeEvent;
@@ -60,18 +60,17 @@ public:
 #endif
                                  , UIVisualStateType visualStateType);
 
-    /* Public virtual members: */
-    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
-
     /* Public getters: */
     int keyboardState() const;
     int mouseState() const;
 
     /* Public setters: */
-    void setIgnoreGuestResize(bool bIgnore) { m_bIsGuestResizeIgnored = bIgnore; }
     virtual void setGuestAutoresizeEnabled(bool bEnabled) = 0;
     virtual void setMouseIntegrationEnabled(bool bEnabled);
     //void setMachineViewFinalized(bool fTrue = true) { m_bIsMachineWindowResizeIgnored = !fTrue; }
+
+    /* Public members: */
+    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
 
 #if defined(Q_WS_MAC)
     void updateDockIcon();
@@ -104,11 +103,9 @@ protected:
     enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
 
     /* Protected getters: */
-    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindow; }
-    CConsole &console() { return m_console; }
-
-    /* Protected getters: */
-    KMachineState machineState() const { return m_machineState; }
+    UISession* uisession() const;
+    CSession& session();
+    UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
     VBoxDefs::RenderMode mode() const { return m_mode; }
     QSize sizeHint() const;
     int contentsX() const;
@@ -118,9 +115,7 @@ protected:
     int visibleWidth() const;
     int visibleHeight() const;
     QRect desktopGeometry() const;
-    bool isGuestSupportsGraphics() const { return m_bIsGuestSupportsGraphics; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    //bool isMouseAbsolute() const { return m_fIsMouseSupportsAbsolute; }
 
     /* Protected members: */
     void calculateDesktopGeometry();
@@ -137,28 +132,19 @@ protected:
     virtual void loadMachineViewSettings();
 
     /* Cleanup routines: */
-    virtual void saveMachineViewSettings();
-    virtual void cleanupConsoleConnections() {}
-    virtual void cleanupFilters() {}
+    //virtual void saveMachineViewSettings() {}
+    //virtual void cleanupConsoleConnections() {}
+    //virtual void cleanupFilters() {}
     virtual void cleanupCommon();
     virtual void cleanupFrameBuffer();
-
-    /* Update routines: */
-    virtual void updateMachineState();
-    virtual void updateAdditionsState();
-    virtual void updateMousePointerShape();
-    virtual void updateMouseCapability();
 
 protected slots:
 
     /* Console callback handlers: */
-    virtual void sltMachineStateChanged(KMachineState state);
+    virtual void sltMachineStateChanged();
     virtual void sltAdditionsStateChanged();
-    virtual void sltKeyboardLedsChanged(bool bNumLock, bool bCapsLock, bool bScrollLock);
-    virtual void sltMousePointerShapeChanged(bool fIsVisible, bool fHasAlpha,
-                                             uint uXHot, uint uYHot, uint uWidth, uint uHeight,
-                                             const uchar *pShapeData);
-    virtual void sltMouseCapabilityChanged(bool bIsSupportsAbsolute, bool bIsSupportsRelative, bool bNeedsHostCursor);
+    virtual void sltMousePointerShapeChanged();
+    virtual void sltMouseCapabilityChanged();
 
     /* Initiate resize request to guest: */
     virtual void sltPerformGuestResize(const QSize &aSize = QSize()) = 0;
@@ -211,7 +197,7 @@ private:
 #endif
 
     /* Private helpers: */
-    void fixModifierState(LONG *piCodes, uint *puCount);
+    void fixModifierState(int *piCodes, uint *puCount);
     QPoint viewportToContents(const QPoint &vp) const;
     void updateSliders();
     void scrollBy(int dx, int dy);
@@ -226,27 +212,15 @@ private:
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
     void updateMouseClipping();
-    void setPointerShape(const uchar *pShapeData, bool fHasAlpha,
-                         uint uXHot, uint uYHot, uint uWidth, uint uHeight);
-
-    /* Private getters: */
-    bool isRunning() { return m_machineState == KMachineState_Running || m_machineState == KMachineState_Teleporting || m_machineState == KMachineState_LiveSnapshotting; }
-    bool shouldHideHostPointer() const { return m_bIsMouseCaptured || (m_fIsMouseSupportsAbsolute && m_fIsHideHostPointer); }
 
     static void dimImage(QImage &img);
 
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
-    CConsole m_console;
     VBoxDefs::RenderMode m_mode;
     const VBoxGlobalSettings &m_globalSettings;
-    KMachineState m_machineState;
     UIFrameBuffer *m_pFrameBuffer;
 
-    QCursor m_lastCursor;
-#if defined(Q_WS_WIN)
-    HCURSOR m_alphaCursor;
-#endif
     QPoint m_lastMousePos;
     QPoint m_capturedMousePos;
     int m_iLastMouseWheelDelta;
@@ -254,26 +228,13 @@ private:
     uint8_t m_pressedKeys[128];
     uint8_t m_pressedKeysCopy[128];
 
-    uint m_uNumLockAdaptionCnt;
-    uint m_uCapsLockAdaptionCnt;
-
     bool m_bIsAutoCaptureDisabled : 1;
     bool m_bIsKeyboardCaptured : 1;
-    bool m_bIsMouseCaptured : 1;
-    bool m_fIsMouseSupportsAbsolute : 1;
-    bool m_fIsMouseSupportsRelative : 1;
-    bool m_bIsMouseIntegrated : 1;
-    bool m_fIsHideHostPointer;
     bool m_bIsHostkeyPressed : 1;
     bool m_bIsHostkeyAlone : 1;
     bool m_bIsHostkeyInCapture : 1;
-    bool m_bIsGuestSupportsGraphics : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
     bool m_bIsFrameBufferResizeIgnored : 1;
-    bool m_bIsGuestResizeIgnored : 1;
-    bool m_fNumLock : 1;
-    bool m_fCapsLock : 1;
-    bool m_fScrollLock : 1;
     bool m_fPassCAD;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo;
