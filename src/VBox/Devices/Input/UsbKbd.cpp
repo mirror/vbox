@@ -116,7 +116,7 @@ typedef struct USBHIDK_REPORT
 typedef enum {
     SS_IDLE,    /* Starting state. */
     SS_EXT,     /* E0 byte was received. */
-    SS_EXT1,    /* E1 byte was received. */
+    SS_EXT1     /* E1 byte was received. */
 } scan_state_t;
 
 /**
