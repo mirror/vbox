@@ -158,6 +158,15 @@ RTR3DECL(int) RTProcCreate(const char *pszExec, const char * const *papszArgs, R
 }
 
 
+RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
+                               PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
+                               PRTPROCESS phProcess)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
+
 RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProcStatus)
 {
     AssertReturn(!(fFlags & ~(RTPROCWAIT_FLAGS_BLOCK | RTPROCWAIT_FLAGS_NOBLOCK)), VERR_INVALID_PARAMETER);

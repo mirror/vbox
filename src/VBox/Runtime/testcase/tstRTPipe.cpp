@@ -105,15 +105,15 @@ static void tstRTPipe2(void)
     RTTESTI_CHECK_RC(RTPipeRead(hPipeW, abBuf, 0, &cbRead), VERR_ACCESS_DENIED);
     RTTESTI_CHECK_RC(RTPipeRead(hPipeW, abBuf, 1, &cbRead), VERR_ACCESS_DENIED);
     RTTESTI_CHECK(cbRead == ~(size_t)3);
-    RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeW, abBuf, 0), VERR_ACCESS_DENIED);
-    RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeW, abBuf, 1), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeW, abBuf, 0, NULL), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeW, abBuf, 1, NULL), VERR_ACCESS_DENIED);
 
     size_t cbWrite = ~(size_t)5;
     RTTESTI_CHECK_RC(RTPipeWrite(hPipeR, "asdf", 0, &cbWrite), VERR_ACCESS_DENIED);
     RTTESTI_CHECK_RC(RTPipeWrite(hPipeR, "asdf", 4, &cbWrite), VERR_ACCESS_DENIED);
     RTTESTI_CHECK(cbWrite == ~(size_t)5);
-    RTTESTI_CHECK_RC(RTPipeWriteBlocking(hPipeR, "asdf", 0), VERR_ACCESS_DENIED);
-    RTTESTI_CHECK_RC(RTPipeWriteBlocking(hPipeR, "asdf", 4), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTPipeWriteBlocking(hPipeR, "asdf", 0, NULL), VERR_ACCESS_DENIED);
+    RTTESTI_CHECK_RC(RTPipeWriteBlocking(hPipeR, "asdf", 4, NULL), VERR_ACCESS_DENIED);
 
     RTTESTI_CHECK_RC(RTPipeFlush(hPipeR), VERR_ACCESS_DENIED);
 
@@ -266,25 +266,37 @@ static void tstRTPipe1(void)
     RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
     RTTESTI_CHECK_RC_RETV(RTPipeWrite(hPipeW, "42!", 3, &cbWritten), VINF_SUCCESS);
     RTTESTI_CHECK(cbWritten == 3);
-    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, abBuf, 3), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, abBuf, 3, NULL), VINF_SUCCESS);
     RTTESTI_CHECK(!memcmp(abBuf, "42!", 3));
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 0), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 1), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 0, NULL), VINF_SUCCESS);
+    cbRead = ~(size_t)42;
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 0, &cbRead), VINF_SUCCESS);
+    RTTESTI_CHECK(cbRead == 0);
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 1, NULL), VERR_BROKEN_PIPE);
+    cbRead = ~(size_t)42;
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[0], 1, &cbRead), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK(cbRead == 0);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
 
     RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, 0), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42!", 3), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42!", 3, NULL), VINF_SUCCESS);
     RTTESTI_CHECK(cbWritten == 3);
     cbRead = ~(size_t)0;
     RTTESTI_CHECK_RC_RETV(RTPipeRead(hPipeR, &abBuf[0], 1, &cbRead), VINF_SUCCESS);
     RTTESTI_CHECK(cbRead == 1);
-    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[1], 1), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[2], 1), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[1], 1, NULL), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeReadBlocking(hPipeR, &abBuf[2], 1, NULL), VINF_SUCCESS);
     RTTESTI_CHECK(!memcmp(abBuf, "42!", 3));
     RTTESTI_CHECK_RC(RTPipeClose(hPipeR), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "", 0), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42", 2), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "", 0, NULL), VINF_SUCCESS);
+    cbWritten = ~(size_t)9;
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "", 0, &cbWritten), VINF_SUCCESS);
+    RTTESTI_CHECK(cbWritten == 0);
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42", 2, NULL), VERR_BROKEN_PIPE);
+    cbWritten = ~(size_t)9;
+    RTTESTI_CHECK_RC_RETV(RTPipeWriteBlocking(hPipeW, "42", 2, &cbWritten), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK(cbWritten == 0);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 }
 

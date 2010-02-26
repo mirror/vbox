@@ -88,6 +88,8 @@ PROGRAMS += \
 	tstOnce \
 	tstRTPath \
 	tstRTPipe \
+	tstRTPoll \
+	tstRTProcCreateEx \
 	tstPrfRT \
 	tstRand \
 	tstRTFsQueries \
@@ -363,6 +365,9 @@ tstRTPath_SOURCES = tstRTPath.cpp
 tstRTPipe_TEMPLATE = VBOXR3TSTEXE
 tstRTPipe_SOURCES = tstRTPipe.cpp
 
+tstRTPoll_TEMPLATE = VBOXR3TSTEXE
+tstRTPoll_SOURCES  = tstRTPoll.cpp
+
 tstPrfRT_SOURCES = tstPrfRT.cpp
 
 tstRand_SOURCES = tstRand.cpp
@@ -380,6 +385,9 @@ endif
 tstR0ThreadPreemptionDriver_SOURCES = tstR0ThreadPreemptionDriver.cpp
 
 tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
+
+tstRTProcCreateEx_TEMPLATE = VBOXR3TSTEXE
+tstRTProcCreateEx_SOURCES = tstRTProcCreateEx.cpp
 
 tstRTProcWait_SOURCES = tstRTProcWait.cpp
 

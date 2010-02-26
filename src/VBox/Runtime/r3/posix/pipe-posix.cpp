@@ -366,7 +366,7 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
 }
 
 
-RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
+RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRead)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -377,6 +377,7 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
     int rc = rtPipeTryBlocking(pThis);
     if (RT_SUCCESS(rc))
     {
+        size_t cbTotalRead = 0;;
         while (cbToRead > 0)
         {
             ssize_t cbRead = read(pThis->fd, pvBuf, RT_MIN(cbToRead, SSIZE_MAX));
@@ -392,8 +393,18 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead)
             }
 
             /* advance */
-            pvBuf     = (char *)pvBuf + cbRead;
-            cbToRead -= cbRead;
+            pvBuf        = (char *)pvBuf + cbRead;
+            cbTotalRead += cbRead;
+            cbToRead    -= cbRead;
+        }
+
+        if (pcbRead)
+        {
+            *pcbRead = cbTotalRead;
+            if (   RT_FAILURE(rc)
+                && cbTotalRead
+                && rc != VERR_INVALID_POINTER)
+                rc = VINF_SUCCESS;
         }
 
         ASMAtomicDecU32(&pThis->u32State);
@@ -436,18 +447,20 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
 }
 
 
-RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite)
+RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_t *pcbWritten)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
     AssertPtr(pvBuf);
+    AssertPtrNull(pcbWritten);
 
     int rc = rtPipeTryBlocking(pThis);
     if (RT_SUCCESS(rc))
     {
-        do
+        size_t cbTotalWritten = 0;
+        while (cbToWrite > 0)
         {
             ssize_t cbWritten = write(pThis->fd, pvBuf, RT_MIN(cbToWrite, SSIZE_MAX));
             if (cbWritten < 0)
@@ -457,9 +470,19 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
             }
 
             /* advance */
-            pvBuf      = (char const *)pvBuf + cbWritten;
-            cbToWrite -= cbWritten;
-        } while (cbToWrite > 0);
+            pvBuf           = (char const *)pvBuf + cbWritten;
+            cbTotalWritten += cbWritten;
+            cbToWrite      -= cbWritten;
+        }
+
+        if (pcbWritten)
+        {
+            *pcbWritten = cbTotalWritten;
+            if (   RT_FAILURE(rc)
+                && cbTotalWritten
+                && rc != VERR_INVALID_POINTER)
+                rc = VINF_SUCCESS;
+        }
 
         ASMAtomicDecU32(&pThis->u32State);
     }
