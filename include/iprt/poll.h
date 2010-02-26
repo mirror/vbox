@@ -180,7 +180,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
  *
  * @param   hPollSet            The poll set.
  */
-RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet);
+RTDECL(uint32_t) RTPollGetCount(RTPOLLSET hPollSet);
 
 /**
  * Adds a pipe handle to the set.
