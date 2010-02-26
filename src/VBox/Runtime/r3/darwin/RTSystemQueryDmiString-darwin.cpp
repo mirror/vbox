@@ -35,18 +35,24 @@
 #include <iprt/system.h>
 #include "internal/iprt.h"
 
-#include <iprt/err.h>
 #include <iprt/assert.h>
+#include <iprt/err.h>
+#include <iprt/mem.h>
 #include <iprt/string.h>
 
 #include <mach/mach_port.h>
 #include <IOKit/IOKitLib.h>
 
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
 #define IOCLASS_PLATFORMEXPERTDEVICE         "IOPlatformExpertDevice"
 #define PROP_PRODUCT_NAME                    "product-name"
 #define PROP_PRODUCT_VERSION                 "version"
 #define PROP_PRODUCT_SERIAL                  "IOPlatformSerialNumber"
 #define PROP_PRODUCT_UUID                    "IOPlatformUUID"
+
 
 RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t cbBuf)
 {
@@ -79,6 +85,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     if (!ClassToMatch)
         return VERR_NOT_SUPPORTED;
 
+    /* IOServiceGetMatchingServices will always consume ClassToMatch. */
     io_iterator_t Iterator;
     kr = IOServiceGetMatchingServices(MasterPort, ClassToMatch, &Iterator);
     if (kr != kIOReturnSuccess)
@@ -91,24 +98,49 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         if (   enmString == RTSYSDMISTR_PRODUCT_NAME
             || enmString == RTSYSDMISTR_PRODUCT_VERSION)
         {
-            CFDataRef DataRef = (CFDataRef)IORegistryEntryCreateCFProperty(ServiceObject, PropStringRef, kCFAllocatorDefault, kNilOptions);
+            CFDataRef DataRef = (CFDataRef)IORegistryEntryCreateCFProperty(ServiceObject, PropStringRef,
+                                                                           kCFAllocatorDefault, kNilOptions);
             if (DataRef)
             {
-                size_t cbData = CFDataGetLength(DataRef);
-                const uint8_t *pu8Data = CFDataGetBytePtr(DataRef);
-                memcpy(pszBuf, pu8Data, RT_MIN(cbData, cbBuf));
-                pszBuf[RT_MIN(cbData + 1, cbBuf)] = '\0';
-                rc = VINF_SUCCESS;
+                size_t         cbData  = CFDataGetLength(DataRef);
+                const char    *pchData = (const char *)CFDataGetBytePtr(DataRef);
+                rc = RTStrCopyEx(pszBuf, cbBuf, pchData, cbData);
+                CFRelease(DataRef);
                 break;
             }
         }
         else
         {
-            CFStringRef StringRef = (CFStringRef)IORegistryEntryCreateCFProperty(ServiceObject, PropStringRef, kCFAllocatorDefault, kNilOptions);
+            CFStringRef StringRef = (CFStringRef)IORegistryEntryCreateCFProperty(ServiceObject, PropStringRef,
+                                                                                 kCFAllocatorDefault, kNilOptions);
             if (StringRef)
             {
-                Boolean res = CFStringGetCString(StringRef, pszBuf, cbBuf, kCFStringEncodingASCII);
-                rc = res == TRUE ? VINF_SUCCESS : VERR_NOT_SUPPORTED;
+                Boolean fRc = CFStringGetCString(StringRef, pszBuf, cbBuf, kCFStringEncodingUTF8);
+                if (fRc)
+                    rc = VINF_SUCCESS;
+                else
+                {
+                    CFIndex cwc    = CFStringGetLength(StringRef);
+                    size_t  cbTmp  = cwc + 1;
+                    char   *pszTmp = (char *)RTMemTmpAlloc(cbTmp);
+                    int     cTries = 1;
+                    while (   pszTmp
+                           && (fRc = CFStringGetCString(StringRef, pszTmp, cbTmp, kCFStringEncodingUTF8)) == FALSE
+                           && cTries++ < 4)
+                    {
+                        RTMemTmpFree(pszTmp);
+                        cbTmp *= 2;
+                        pszTmp = (char *)RTMemTmpAlloc(cbTmp);
+                    }
+                    if (fRc)
+                        rc = RTStrCopy(pszBuf, cbBuf, pszTmp);
+                    else if (!pszTmp)
+                        rc = VERR_NO_TMP_MEMORY;
+                    else
+                        rc = VERR_ACCESS_DENIED;
+                    RTMemFree(pszTmp);
+                }
+                CFRelease(StringRef);
                 break;
             }
         }
@@ -118,3 +150,4 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     IOObjectRelease(Iterator);
     return rc;
 }
+
