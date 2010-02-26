@@ -139,8 +139,9 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
             {
                 /* Clipboard was updated by another application. */
                 /* WM_DRAWCLIPBOARD always expects a return code of 0, so don't change "rc" here. */
-                if (RT_FAILURE(vboxClipboardChanged(pCtx))
-                    Log(("vboxClipboardProcessMsg: vboxClipboardChanged failed, rc = %Rrc\n", rc));
+                int vboxrc = vboxClipboardChanged(pCtx);
+                if (RT_FAILURE(vboxrc))
+                    Log(("vboxClipboardProcessMsg: vboxClipboardChanged failed, rc = %Rrc\n", vboxrc));
             }
 
             /* Pass the message to next windows in the clipboard chain. */
@@ -344,7 +345,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
 
             if (FALSE == OpenClipboard(hwnd))
             {
-                Log(("vboxClipboardProcessMsg: WM_USER: Failed to open clipboard! Last error = %ld\n", GetLastErrors()));
+                Log(("vboxClipboardProcessMsg: WM_USER: Failed to open clipboard! Last error = %ld\n", GetLastError()));
             }
             else
             {
@@ -387,7 +388,7 @@ static LRESULT vboxClipboardProcessMsg(VBOXCLIPBOARDCONTEXT *pCtx, HWND hwnd, UI
 
             if (FALSE == OpenClipboard(hwnd))
             {
-                Log(("vboxClipboardProcessMsg: WM_USER: Failed to open clipboard! Last error = %ld\n", GetLastErrors()));
+                Log(("vboxClipboardProcessMsg: WM_USER: Failed to open clipboard! Last error = %ld\n", GetLastError()));
             }
             else
             {
