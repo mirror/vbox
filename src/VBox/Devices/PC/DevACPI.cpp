@@ -1625,6 +1625,9 @@ PDMBOTHCBDECL(int) acpiPM1aEnWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT Po
         case 2:
             acpiPM1aEnWritew((ACPIState*)pvUser, Port, u32);
             break;
+        case 4:
+            acpiPM1aEnWritew((ACPIState*)pvUser, Port, u32 & 0xffff);
+            break;
         default:
             AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
             break;
@@ -1655,6 +1658,8 @@ PDMBOTHCBDECL(int) acpiPM1aCtlWrite(PPDMDEVINS pDevIns, void *pvUser, RTIOPORT P
     {
         case 2:
             return acpiPM1aCtlWritew((ACPIState*)pvUser, Port, u32);
+        case 4:
+            return acpiPM1aCtlWritew((ACPIState*)pvUser, Port, u32 & 0xffff);
         default:
             AssertMsgFailed(("Port=%#x cb=%d u32=%#x\n", Port, cb, u32));
             break;
