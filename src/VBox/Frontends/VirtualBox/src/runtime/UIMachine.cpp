@@ -176,6 +176,15 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     enterBaseVisualState();
 }
 
+UIMachine::~UIMachine()
+{
+    /* Delete uisession child before actions-pool child: */
+    delete m_pSession;
+    m_pSession = 0;
+    delete m_pActionsPool;
+    m_pActionsPool = 0;
+}
+
 UIMachineLogic* UIMachine::machineLogic() const
 {
     return m_pVisualState->m_pMachineLogic;
