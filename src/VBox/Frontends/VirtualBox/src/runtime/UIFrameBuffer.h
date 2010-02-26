@@ -289,56 +289,6 @@ private:
 #endif
 
 #if 0
-#if defined (VBOX_GUI_USE_SDL)
-class UIFrameBufferSDL : public UIFrameBuffer
-{
-public:
-
-    UIFrameBufferSDL (VBoxConsoleView *pMachineView);
-    virtual ~UIFrameBufferSDL();
-
-    STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY, ULONG aW, ULONG aH);
-
-    uchar* address()
-    {
-        SDL_Surface *surf = m_pSurfVRAM ? m_pSurfVRAM : m_pScreen;
-        return surf ? (uchar*) (uintptr_t) surf->pixels : 0;
-    }
-
-    ulong bitsPerPixel()
-    {
-        SDL_Surface *surf = m_pSurfVRAM ? m_pSurfVRAM : m_pScreen;
-        return surf ? surf->format->BitsPerPixel : 0;
-    }
-
-    ulong bytesPerLine()
-    {
-        SDL_Surface *surf = m_pSurfVRAM ? m_pSurfVRAM : m_pScreen;
-        return surf ? surf->pitch : 0;
-    }
-
-    ulong pixelFormat()
-    {
-        return m_uPixelFormat;
-    }
-
-    bool usesGuestVRAM()
-    {
-        return m_pSurfVRAM != NULL;
-    }
-
-    void paintEvent(QPaintEvent *pEvent);
-    void resizeEvent(UIResizeEvent *pEvent);
-
-private:
-
-    SDL_Surface *m_pScreen;
-    SDL_Surface *m_pSurfVRAM;
-
-    ulong m_uPixelFormat;
-};
-#endif
-
 #if defined (VBOX_GUI_USE_DDRAW)
 class UIFrameBufferDDRAW : public UIFrameBuffer
 {
@@ -388,7 +338,6 @@ private:
     bool m_bSynchronousUpdates;
 };
 #endif
-
 #endif
 
 #endif // !___UIFrameBuffer_h___

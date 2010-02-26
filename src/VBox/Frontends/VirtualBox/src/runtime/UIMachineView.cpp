@@ -34,6 +34,7 @@
 #include "UIFrameBuffer.h"
 #include "UIFrameBufferQGL.h"
 #include "UIFrameBufferQuartz2D.h"
+#include "UIFrameBufferSDL.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
@@ -368,48 +369,44 @@ void UIMachineView::prepareFrameBuffer()
 
     switch (mode())
     {
-#if defined (VBOX_GUI_USE_QIMAGE)
+#ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
-#if 0 // TODO: Enable QImage + Video Acceleration!
-# ifdef VBOX_WITH_VIDEOHWACCEL
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQImage(this);
-# else
+//# ifdef VBOX_WITH_VIDEOHWACCEL
+//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQImage(this);
+//# else
             m_pFrameBuffer = new UIFrameBufferQImage(this);
-# endif
-#endif
-            m_pFrameBuffer = new UIFrameBufferQImage(this);
+//# endif
             break;
-#endif
-#if defined (VBOX_GUI_USE_QGL)
+#endif /* VBOX_GUI_USE_QIMAGE */
+#ifdef VBOX_GUI_USE_QGL
         case VBoxDefs::QGLMode:
             m_pFrameBuffer = new UIFrameBufferQGL(this);
             break;
 //        case VBoxDefs::QGLOverlayMode:
 //            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
 //            break;
-#endif
-#if 0 // TODO: Enable SDL frame buffer!
-#if defined (VBOX_GUI_USE_SDL)
+#endif /* VBOX_GUI_USE_QGL */
+#ifdef VBOX_GUI_USE_SDL
         case VBoxDefs::SDLMode:
             /* Indicate that we are doing all drawing stuff ourself: */
-            pViewport->setAttribute(Qt::WA_PaintOnScreen);
+            // TODO_NEW_CORE
+            viewport()->setAttribute(Qt::WA_PaintOnScreen);
 # ifdef Q_WS_X11
             /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
             XFlush(QX11Info::display());
 # endif
-# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UISDLFrameBuffer> (this, &machineWindowWrapper()->session()) : new UISDLFrameBuffer(this);
-# else
-            m_pFrameBuffer = new UISDLFrameBuffer(this);
-# endif
+//# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UISDLFrameBuffer> (this, &machineWindowWrapper()->session()) : new UISDLFrameBuffer(this);
+//# else
+            m_pFrameBuffer = new UIFrameBufferSDL(this);
+//# endif
             /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
             horizontalScrollBar()->setEnabled(false);
             verticalScrollBar()->setEnabled(false);
             break;
-#endif
-#endif
+#endif /* VBOX_GUI_USE_SDL */
 #if 0 // TODO: Enable DDraw frame buffer!
-#if defined (VBOX_GUI_USE_DDRAW)
+#ifdef VBOX_GUI_USE_DDRAW
         case VBoxDefs::DDRAWMode:
             m_pFrameBuffer = new UIDDRAWFrameBuffer(this);
             if (!m_pFrameBuffer || m_pFrameBuffer->address() == NULL)
@@ -420,9 +417,9 @@ void UIMachineView::prepareFrameBuffer()
                 m_pFrameBuffer = new UIFrameBufferQImage(this);
             }
             break;
+#endif /* VBOX_GUI_USE_DDRAW */
 #endif
-#endif
-#if defined (VBOX_GUI_USE_QUARTZ2D)
+#ifdef VBOX_GUI_USE_QUARTZ2D
         case VBoxDefs::Quartz2DMode:
             /* Indicate that we are doing all drawing stuff ourself: */
 //            pViewport->setAttribute(Qt::WA_PaintOnScreen);
@@ -432,7 +429,7 @@ void UIMachineView::prepareFrameBuffer()
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
 //# endif
             break;
-#endif
+#endif /* VBOX_GUI_USE_QUARTZ2D */
         default:
             AssertReleaseMsgFailed(("Render mode must be valid: %d\n", mode()));
             LogRel(("Invalid render mode: %d\n", mode()));
