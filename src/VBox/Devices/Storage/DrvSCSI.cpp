@@ -216,7 +216,9 @@ DECLINLINE(int) drvscsiCmdError(PPDMSCSIREQUEST pRequest, uint8_t uSCSISenseKey,
  */
 DECLINLINE(int) drvscsiCmdOk(PPDMSCSIREQUEST pRequest)
 {
-    AssertMsgReturn(pRequest->cbSenseBuffer >= 18, ("Sense buffer is not big enough\n"), SCSI_STATUS_OK);
+    if (pRequest->cbSenseBuffer == 0)
+        return SCSI_STATUS_OK;
+
     AssertMsgReturn(pRequest->pbSenseBuffer, ("Sense buffer pointer is NULL\n"), SCSI_STATUS_OK);
     memset(pRequest->pbSenseBuffer, 0, pRequest->cbSenseBuffer);
     /*
