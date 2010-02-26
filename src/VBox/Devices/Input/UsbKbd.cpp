@@ -412,11 +412,17 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
         } else {
             usage = aScancode2Hid[scanCode & 0x7F];
             *pUsage = usage | keyUp;
+            /* Remain in SS_IDLE state. */
         }
         break;
     case SS_EXT:
         usage = aExtScan2Hid[scanCode & 0x7F];
         *pUsage = usage | keyUp;
+        state = SS_IDLE;
+        break;
+    case SS_EXT1:
+        Assert(0);  //@todo - sort out the Pause key
+        *pUsage = 0;
         state = SS_IDLE;
         break;
     }
