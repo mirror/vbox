@@ -66,15 +66,20 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         fd = RTLinuxSysFsOpen("class/dmi/%s", pszSysFsName);
     if (fd >= 0)
     {
-        /* Note! This will return VERR_BUFFER_OVERFLOW even if there is a
-                 trailing newline that we don't care about. */
         size_t cbRead;
-        rc = RTLinuxSysFsReadFile(fd, pszBuf, cbBuf - 1, &cbRead);
+        rc = RTLinuxSysFsReadFile(fd, pszBuf, cbBuf, &cbRead);
         if (RT_SUCCESS(rc) || rc == VERR_BUFFER_OVERFLOW)
         {
-            pszBuf[cbRead] = '\0';
-            while (cbRead > 0 && pszBuf[cbRead - 1] == '\n')
-                pszBuf[--cbRead] = '\0';
+            /* The file we're reading may end with a newline, remove it. */
+            if (cbRead == cbBuf)
+                pszBuf[cbRead - 1] = '\0';
+            else
+            {
+                AssertRC(rc);
+                pszBuf[cbRead] = '\0';
+                if (cbRead > 0 && pszBuf[cbRead - 1] == '\n')
+                    pszBuf[cbRead - 1] = '\0';
+            }
         }
         RTLinuxSysFsClose(fd);
     }
