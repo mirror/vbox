@@ -27,7 +27,7 @@
 #include <QAbstractScrollArea>
 
 /* Local includes */
-#include "VBoxDefs.h"
+#include "COMDefs.h"
 #include "UIMachineDefs.h"
 
 #ifdef Q_WS_MAC
@@ -35,7 +35,6 @@
 #endif /* Q_WS_MAC */
 
 /* Local forwards */
-class CSession;
 class UISession;
 class UIFrameBuffer;
 class UIMachineWindow;
@@ -220,6 +219,7 @@ private:
     VBoxDefs::RenderMode m_mode;
     const VBoxGlobalSettings &m_globalSettings;
     UIFrameBuffer *m_pFrameBuffer;
+    KMachineState m_previousState;
 
     QPoint m_lastMousePos;
     QPoint m_capturedMousePos;

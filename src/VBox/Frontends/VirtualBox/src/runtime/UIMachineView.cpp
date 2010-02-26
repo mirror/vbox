@@ -29,7 +29,6 @@
 #include <VBox/VBoxVideo.h>
 
 /* Local includes */
-#include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 #include "UIFrameBuffer.h"
@@ -188,9 +187,7 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_mode(renderMode)
     , m_globalSettings(vboxGlobal().settings())
     , m_pFrameBuffer(0)
-#if defined(Q_WS_WIN)
-    , m_alphaCursor(0)
-#endif
+    , m_previousState(KMachineState_Null)
     , m_iLastMouseWheelDelta(0)
     , m_bIsAutoCaptureDisabled(false)
     , m_bIsKeyboardCaptured(false)
@@ -660,7 +657,7 @@ void UIMachineView::sltMachineStateChanged()
         case KMachineState_TeleportingPausedVM:
         {
             if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
-                (state != KMachineState_TeleportingPausedVM || state != KMachineState_Teleporting))
+                (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
             {
                 /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
                 QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
@@ -686,7 +683,7 @@ void UIMachineView::sltMachineStateChanged()
         }
         case KMachineState_Running:
         {
-            if (state == KMachineState_Paused || state == KMachineState_TeleportingPausedVM)
+            if (m_previousState == KMachineState_Paused || m_previousState == KMachineState_TeleportingPausedVM)
             {
                 if (mode() != VBoxDefs::TimerMode && m_pFrameBuffer)
                 {
@@ -711,6 +708,8 @@ void UIMachineView::sltMachineStateChanged()
     /* Update Dock Overlay: */
     updateDockOverlay();
 #endif /* Q_WS_MAC */
+
+    m_previousState = state;
 }
 
 void UIMachineView::sltAdditionsStateChanged()
