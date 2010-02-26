@@ -201,200 +201,6 @@ NTSTATUS vboxWddmGhDisplaySetInfo(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pS
     return Status;
 }
 
-#if 0
-
-NTSTATUS vboxWddmGhInitPrimary(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, D3DKMDT_VIDPN_SOURCE_MODE *pVidPnSourceModeInfo)
-{
-    NTSTATUS Status;
-    PVBOXWDDM_SOURCE pSourceInfo = &pDevExt->aSources[srcId];
-    memset(pSourceInfo, 0, sizeof (VBOXWDDM_SOURCE));
-    pSourceInfo->VisScreenWidth = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx;
-    pSourceInfo->VisScreenHeight = pVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy;
-    pSourceInfo->BitsPerPlane = vboxWddmCalcBitsPerPixel(pVidPnSourceModeInfo->Format.Graphics.PixelFormat);
-    Assert(pSourceInfo->BitsPerPlane);
-    if (pSourceInfo->BitsPerPlane)
-    {
-        /*
-         * Set the current mode into the hardware.
-         */
-        if (VBoxVideoSetCurrentMode(pDevExt, srcId, pSourceInfo))
-        {
-
-
-        }
-        else
-        {
-            AssertBreakpoint();
-
-        }
-    }
-    else
-    {
-        drprintf((__FUNCTION__":ERROR: failed to caltulate bpp from pixel format (%d)\n",
-                pVidPnSourceModeInfo->Format.Graphics.PixelFormat));
-        return STATUS_INVALID_PARAMETER;
-    }
-
-    return Status;
-
-
-
-//    DWORD returnedDataLength;
-//    DWORD MaxWidth, MaxHeight;
-//    VIDEO_MEMORY videoMemory;
-//    VIDEO_MEMORY_INFORMATION videoMemoryInformation;
-//    ULONG RemappingNeeded = 0;
-
-
-    /*
-     * don't need to map anything here, we use one common HGSMI heap for all sources
-     */
-
-    // If this is the first time we enable the surface we need to map in the
-    // memory also.
-    //
-
-    if (bFirst || RemappingNeeded)
-    {
-//        videoMemory.RequestedVirtualAddress = NULL;
-//
-//        if (EngDeviceIoControl(ppdev->hDriver,
-//                               IOCTL_VIDEO_MAP_VIDEO_MEMORY,
-//                               &videoMemory,
-//                               sizeof(VIDEO_MEMORY),
-//                               &videoMemoryInformation,
-//                               sizeof(VIDEO_MEMORY_INFORMATION),
-//                               &returnedDataLength))
-//        {
-//            DISPDBG((1, "DISP bInitSURF failed IOCTL_VIDEO_MAP\n"));
-//            return(FALSE);
-//        }
-//
-//        ppdev->pjScreen = (PBYTE)(videoMemoryInformation.FrameBufferBase);
-//
-//        if (videoMemoryInformation.FrameBufferBase !=
-//            videoMemoryInformation.VideoRamBase)
-//        {
-//            DISPDBG((0, "VideoRamBase does not correspond to FrameBufferBase\n"));
-//        }
-//
-//        //
-//        // Make sure we can access this video memory
-//        //
-//
-//        *(PULONG)(ppdev->pjScreen) = 0xaa55aa55;
-//
-//        if (*(PULONG)(ppdev->pjScreen) != 0xaa55aa55) {
-//
-//            DISPDBG((1, "Frame buffer memory is not accessible.\n"));
-//            return(FALSE);
-//        }
-//
-//        /* Clear VRAM to avoid distortions during the video mode change. */
-//        RtlZeroMemory(ppdev->pjScreen,
-//                      ppdev->cyScreen * (ppdev->lDeltaScreen > 0? ppdev->lDeltaScreen: -ppdev->lDeltaScreen));
-//
-//        //
-//        // Initialize the head of the offscreen list to NULL.
-//        //
-//
-//        ppdev->pOffscreenList = NULL;
-//
-//        // It's a hardware pointer; set up pointer attributes.
-//
-//        MaxHeight = ppdev->PointerCapabilities.MaxHeight;
-//
-//        // Allocate space for two DIBs (data/mask) for the pointer. If this
-//        // device supports a color Pointer, we will allocate a larger bitmap.
-//        // If this is a color bitmap we allocate for the largest possible
-//        // bitmap because we have no idea of what the pixel depth might be.
-//
-//        // Width rounded up to nearest byte multiple
-//
-//        if (!(ppdev->PointerCapabilities.Flags & VIDEO_MODE_COLOR_POINTER))
-//        {
-//            MaxWidth = (ppdev->PointerCapabilities.MaxWidth + 7) / 8;
-//        }
-//        else
-//        {
-//            MaxWidth = ppdev->PointerCapabilities.MaxWidth * sizeof(DWORD);
-//        }
-//
-//        ppdev->cjPointerAttributes =
-//                sizeof(VIDEO_POINTER_ATTRIBUTES) +
-//                ((sizeof(UCHAR) * MaxWidth * MaxHeight) * 2);
-//
-//        ppdev->pPointerAttributes = (PVIDEO_POINTER_ATTRIBUTES)
-//                EngAllocMem(0, ppdev->cjPointerAttributes, ALLOC_TAG);
-//
-//        if (ppdev->pPointerAttributes == NULL) {
-//
-//            DISPDBG((0, "bInitPointer EngAllocMem failed\n"));
-//            return(FALSE);
-//        }
-//
-//        ppdev->pPointerAttributes->Flags = ppdev->PointerCapabilities.Flags;
-//        ppdev->pPointerAttributes->WidthInBytes = MaxWidth;
-//        ppdev->pPointerAttributes->Width = ppdev->PointerCapabilities.MaxWidth;
-//        ppdev->pPointerAttributes->Height = MaxHeight;
-//        ppdev->pPointerAttributes->Column = 0;
-//        ppdev->pPointerAttributes->Row = 0;
-//        ppdev->pPointerAttributes->Enable = 0;
-
-        vboxInitVBoxVideo (ppdev, &videoMemoryInformation);
-
-#ifndef VBOX_WITH_HGSMI
-        if (ppdev->bVBoxVideoSupported)
-        {
-            /* Setup the display information. */
-            vboxSetupDisplayInfo (ppdev, &videoMemoryInformation);
-        }
-#endif /* !VBOX_WITH_HGSMI */
-    }
-
-
-    DISPDBG((1, "DISP bInitSURF: ppdev->ulBitCount %d\n", ppdev->ulBitCount));
-
-    if (   ppdev->ulBitCount == 16
-        || ppdev->ulBitCount == 24
-        || ppdev->ulBitCount == 32)
-    {
-#ifndef VBOX_WITH_HGSMI
-        if (ppdev->pInfo) /* Do not use VBVA on old hosts. */
-        {
-            /* Enable VBVA for this video mode. */
-            vboxVbvaEnable (ppdev);
-        }
-#else
-        if (ppdev->bHGSMISupported)
-        {
-            /* Enable VBVA for this video mode. */
-            ppdev->bHGSMISupported = vboxVbvaEnable (ppdev);
-            LogRel(("VBoxDisp[%d]: VBVA %senabled\n", ppdev->iDevice, ppdev->bHGSMISupported? "": "not "));
-        }
-#endif /* VBOX_WITH_HGSMI */
-    }
-
-    DISPDBG((1, "DISP bInitSURF success\n"));
-
-#ifndef VBOX_WITH_HGSMI
-    /* Update the display information. */
-    vboxUpdateDisplayInfo (ppdev);
-#else
-    /* Inform the host about this screen layout. */
-    DISPDBG((1, "bInitSURF: %d,%d\n", ppdev->ptlDevOrg.x, ppdev->ptlDevOrg.y));
-    VBoxProcessDisplayInfo (ppdev);
-#endif /* VBOX_WITH_HGSMI */
-
-#ifdef VBOX_WITH_VIDEOHWACCEL
-    /* tells we can process host commands */
-    vboxVHWAEnable(ppdev);
-#endif
-
-    return(TRUE);
-}
-#endif
-
 HGSMIHEAP* vboxWddmHgsmiGetHeapFromCmdOffset(PDEVICE_EXTENSION pDevExt, HGSMIOFFSET offCmd)
 {
     if(HGSMIAreaContainsOffset(&pDevExt->u.primary.Vdma.CmdHeap.area, offCmd))
@@ -848,14 +654,33 @@ NTSTATUS DxgkDdiStopDevice(
     IN CONST PVOID MiniportDeviceContext
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* The DxgkDdiStopDevice function should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS DxgkDdiRemoveDevice(
     IN CONST PVOID MiniportDeviceContext
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiRemoveDevice should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+
+    vboxWddmMemFree(MiniportDeviceContext);
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS DxgkDdiDispatchIoRequest(
@@ -864,7 +689,72 @@ NTSTATUS DxgkDdiDispatchIoRequest(
     IN PVIDEO_REQUEST_PACKET VideoRequestPacket
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", context(0x%p), ctl(0x%x)\n", MiniportDeviceContext, VideoRequestPacket->IoControlCode));
+
+    AssertBreakpoint();
+#if 0
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
+
+    switch (VideoRequestPacket->IoControlCode)
+    {
+        case IOCTL_VIDEO_QUERY_COLOR_CAPABILITIES:
+        {
+            if (VideoRequestPacket->OutputBufferLength < sizeof(VIDEO_COLOR_CAPABILITIES))
+            {
+                AssertBreakpoint();
+                VideoRequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return TRUE;
+            }
+            VIDEO_COLOR_CAPABILITIES *pCaps = (VIDEO_COLOR_CAPABILITIES*)VideoRequestPacket->OutputBuffer;
+
+            pCaps->Length = sizeof (VIDEO_COLOR_CAPABILITIES);
+            pCaps->AttributeFlags = VIDEO_DEVICE_COLOR;
+            pCaps->RedPhosphoreDecay = 0;
+            pCaps->GreenPhosphoreDecay = 0;
+            pCaps->BluePhosphoreDecay = 0;
+            pCaps->WhiteChromaticity_x = 3127;
+            pCaps->WhiteChromaticity_y = 3290;
+            pCaps->WhiteChromaticity_Y = 0;
+            pCaps->RedChromaticity_x = 6700;
+            pCaps->RedChromaticity_y = 3300;
+            pCaps->GreenChromaticity_x = 2100;
+            pCaps->GreenChromaticity_y = 7100;
+            pCaps->BlueChromaticity_x = 1400;
+            pCaps->BlueChromaticity_y = 800;
+            pCaps->WhiteGamma = 0;
+            pCaps->RedGamma = 20000;
+            pCaps->GreenGamma = 20000;
+            pCaps->BlueGamma = 20000;
+
+            VideoRequestPacket->StatusBlock->Status = NO_ERROR;
+            VideoRequestPacket->StatusBlock->Information = sizeof (VIDEO_COLOR_CAPABILITIES);
+            break;
+        }
+#if 0
+        case IOCTL_VIDEO_HANDLE_VIDEOPARAMETERS:
+        {
+            if (VideoRequestPacket->OutputBufferLength < sizeof(VIDEOPARAMETERS)
+                    || VideoRequestPacket->InputBufferLength < sizeof(VIDEOPARAMETERS))
+            {
+                AssertBreakpoint();
+                VideoRequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return TRUE;
+            }
+
+            Result = VBoxVideoResetDevice((PDEVICE_EXTENSION)HwDeviceExtension,
+                                          RequestPacket->StatusBlock);
+            break;
+        }
+#endif
+        default:
+            AssertBreakpoint();
+            VideoRequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+            VideoRequestPacket->StatusBlock->Information = 0;
+    }
+#endif
+    dfprintf(("<== "__FUNCTION__ ", context(0x%p), ctl(0x%x)\n", MiniportDeviceContext, VideoRequestPacket->IoControlCode));
+
+    return STATUS_SUCCESS;
 }
 
 BOOLEAN DxgkDdiInterruptRoutine(
@@ -1113,7 +1003,13 @@ NTSTATUS DxgkDdiNotifyAcpiEvent(
     OUT PULONG  AcpiFlags
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
+
+    return STATUS_SUCCESS;
 }
 
 VOID DxgkDdiResetDevice(
@@ -1132,6 +1028,9 @@ VOID DxgkDdiUnload(
     /* DxgkDdiUnload should be made pageable. */
     PAGED_CODE();
     dfprintf(("==> "__FUNCTION__ "\n"));
+
+    AssertBreakpoint();
+
     dfprintf(("<== "__FUNCTION__ "\n"));
 }
 
@@ -1140,7 +1039,13 @@ NTSTATUS DxgkDdiQueryInterface(
     IN PQUERY_INTERFACE QueryInterface
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
+
+    return STATUS_NOT_SUPPORTED;
 }
 
 VOID DxgkDdiControlEtwLogging(
@@ -1149,7 +1054,11 @@ VOID DxgkDdiControlEtwLogging(
     IN UCHAR  Level
     )
 {
+    dfprintf(("==> "__FUNCTION__ "\n"));
 
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ "\n"));
 }
 
 /**
@@ -1481,7 +1390,14 @@ DxgkDdiDescribeAllocation(
     CONST HANDLE  hAdapter,
     DXGKARG_DESCRIBEALLOCATION*  pDescribeAllocation)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 /**
@@ -1601,7 +1517,13 @@ DxgkDdiAcquireSwizzlingRange(
     CONST HANDLE  hAdapter,
     DXGKARG_ACQUIRESWIZZLINGRANGE*  pAcquireSwizzlingRange)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1610,7 +1532,13 @@ DxgkDdiReleaseSwizzlingRange(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_RELEASESWIZZLINGRANGE*  pReleaseSwizzlingRange)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1704,7 +1632,14 @@ DxgkDdiPreemptCommand(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_PREEMPTCOMMAND*  pPreemptCommand)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1751,7 +1686,14 @@ DxgkDdiSetPalette(
     CONST DXGKARG_SETPALETTE*  pSetPalette
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1760,7 +1702,14 @@ DxgkDdiSetPointerPosition(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_SETPOINTERPOSITION*  pSetPointerPosition)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1769,7 +1718,14 @@ DxgkDdiSetPointerShape(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_SETPOINTERSHAPE*  pSetPointerShape)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1777,7 +1733,14 @@ APIENTRY CALLBACK
 DxgkDdiResetFromTimeout(
     CONST HANDLE  hAdapter)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1787,6 +1750,12 @@ DxgkDdiEscape(
     CONST DXGKARG_ESCAPE*  pEscape)
 {
     PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_INVALID_PARAMETER;
 }
@@ -1798,7 +1767,13 @@ DxgkDdiCollectDbgInfo(
     CONST DXGKARG_COLLECTDBGINFO*  pCollectDbgInfo
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -1807,7 +1782,14 @@ DxgkDdiQueryCurrentFence(
     CONST HANDLE  hAdapter,
     DXGKARG_QUERYCURRENTFENCE*  pCurrentFence)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+    /* @todo: fixme: implement */
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2352,7 +2334,13 @@ DxgkDdiUpdateActiveVidPnPresentPath(
     CONST DXGKARG_UPDATEACTIVEVIDPNPRESENTPATH* CONST  pUpdateActiveVidPnPresentPathArg
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2362,7 +2350,13 @@ DxgkDdiRecommendMonitorModes(
     CONST DXGKARG_RECOMMENDMONITORMODES* CONST  pRecommendMonitorModesArg
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2372,7 +2366,13 @@ DxgkDdiRecommendVidPnTopology(
     CONST DXGKARG_RECOMMENDVIDPNTOPOLOGY* CONST  pRecommendVidPnTopologyArg
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_GRAPHICS_NO_RECOMMENDED_VIDPN_TOPOLOGY;
 }
 
 NTSTATUS
@@ -2381,7 +2381,16 @@ DxgkDdiGetScanLine(
     CONST HANDLE  hAdapter,
     DXGKARG_GETSCANLINE*  pGetScanLine)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    pGetScanLine->InVerticalBlank = FALSE;
+    pGetScanLine->ScanLine = 0;
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2390,7 +2399,13 @@ DxgkDdiStopCapture(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_STOPCAPTURE*  pStopCapture)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2401,7 +2416,14 @@ DxgkDdiControlInterrupt(
     BOOLEAN Enable
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    /* @todo: STATUS_NOT_IMPLEMENTED ?? */
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2410,6 +2432,12 @@ DxgkDdiCreateOverlay(
     CONST HANDLE  hAdapter,
     DXGKARG_CREATEOVERLAY  *pCreateOverlay)
 {
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
+
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2427,7 +2455,7 @@ DxgkDdiDestroyDevice(
 
     dfprintf(("<== "__FUNCTION__ ", \n"));
 
-    return STATUS_UNSUCCESSFUL;
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2439,6 +2467,8 @@ DxgkDdiOpenAllocation(
     /* DxgkDdiOpenAllocation should be made pageable. */
     PAGED_CODE();
 
+    dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     for (UINT i = 0; i < pOpenAllocation->NumAllocations; ++i)
@@ -2449,6 +2479,8 @@ DxgkDdiOpenAllocation(
         pInfo->hDeviceSpecificAllocation = pOa;
     }
 
+    dfprintf(("<== "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
     return Status;
 }
 
@@ -2458,7 +2490,19 @@ DxgkDdiCloseAllocation(
     CONST HANDLE  hDevice,
     CONST DXGKARG_CLOSEALLOCATION*  pCloseAllocation)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    /* DxgkDdiCloseAllocation should be made pageable. */
+    PAGED_CODE();
+
+    dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
+    for (UINT i = 0; i < pCloseAllocation->NumAllocations; ++i)
+    {
+        vboxWddmMemFree(pCloseAllocation->pOpenHandleList[i]);
+    }
+
+    dfprintf(("<== "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2674,6 +2718,9 @@ DxgkDdiUpdateOverlay(
     CONST HANDLE  hOverlay,
     CONST DXGKARG_UPDATEOVERLAY  *pUpdateOverlay)
 {
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
+    AssertBreakpoint();
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2683,6 +2730,9 @@ DxgkDdiFlipOverlay(
     CONST HANDLE  hOverlay,
     CONST DXGKARG_FLIPOVERLAY  *pFlipOverlay)
 {
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
+    AssertBreakpoint();
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2691,6 +2741,9 @@ APIENTRY
 DxgkDdiDestroyOverlay(
     CONST HANDLE  hOverlay)
 {
+    dfprintf(("==> "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
+    AssertBreakpoint();
+    dfprintf(("<== "__FUNCTION__ ", hOverlay(0x%x)\n", hOverlay));
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2744,7 +2797,10 @@ APIENTRY
 DxgkDdiDestroyContext(
     CONST HANDLE  hContext)
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+    vboxWddmMemFree(hContext);
+    dfprintf(("<== "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2755,6 +2811,9 @@ DxgkDdiLinkDevice(
     __inout PLINKED_DEVICE  LinkedDevice
     )
 {
+    drprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
+    AssertBreakpoint();
+    drprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
     return STATUS_NOT_IMPLEMENTED;
 }
 
@@ -2765,7 +2824,10 @@ DxgkDdiSetDisplayPrivateDriverFormat(
     /*CONST*/ DXGKARG_SETDISPLAYPRIVATEDRIVERFORMAT*  pSetDisplayPrivateDriverFormat
     )
 {
-    return STATUS_NOT_IMPLEMENTED;
+    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    AssertBreakpoint();
+    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+    return STATUS_SUCCESS;
 }
 
 NTSTATUS
@@ -2776,7 +2838,7 @@ DriverEntry(
 {
     PAGED_CODE();
 
-    dprintf(("VBoxVideoWddm::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
+    drprintf(("VBoxVideoWddm::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
 
     DRIVER_INITIALIZATION_DATA DriverInitializationData = {'\0'};
 
@@ -2869,7 +2931,8 @@ DriverEntry(
     DriverInitializationData.DxgkDdiCreateContext  = DxgkDdiCreateContext;
     DriverInitializationData.DxgkDdiDestroyContext  = DxgkDdiDestroyContext;
 
-    DriverInitializationData.DxgkDdiLinkDevice  = DxgkDdiLinkDevice;
+//    DriverInitializationData.DxgkDdiLinkDevice  = DxgkDdiLinkDevice;
+    DriverInitializationData.DxgkDdiLinkDevice  = NULL; /* not needed */
     DriverInitializationData.DxgkDdiSetDisplayPrivateDriverFormat  = DxgkDdiSetDisplayPrivateDriverFormat;
 
 //#if (DXGKDDI_INTERFACE_VERSION >= DXGKDDI_INTERFACE_VERSION_WIN7)
