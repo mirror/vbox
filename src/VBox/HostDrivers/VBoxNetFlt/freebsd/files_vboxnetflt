@@ -77,5 +77,6 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/src/VBox/HostDrivers/Support/freebsd/SUPR0IdcClient-freebsd.c=>SUPR0IdcClient-freebsd.c \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/the-freebsd-kernel.h=>r0drv/freebsd/the-freebsd-kernel.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 

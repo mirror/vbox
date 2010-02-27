@@ -72,5 +72,6 @@ VBOX_VBOXNETADP_SOURCES=" \
     ${PATH_ROOT}/src/VBox/HostDrivers/VBoxNetAdp/VBoxNetAdpInternal.h=>VBoxNetAdpInternal.h \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/freebsd/the-freebsd-kernel.h=>r0drv/freebsd/the-freebsd-kernel.h \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 
