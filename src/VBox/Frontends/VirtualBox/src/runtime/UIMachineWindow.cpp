@@ -141,10 +141,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         return;
     }
 
-    /* Get machine state: */
-    KMachineState state = uisession()->machineState();
-
-    switch (state)
+    switch (uisession()->machineState())
     {
         case KMachineState_PoweredOff:
         case KMachineState_Saved:
@@ -174,7 +171,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 
             bool success = true;
 
-            bool wasPaused = uisession()->isPaused() || state == KMachineState_Stuck;
+            bool wasPaused = uisession()->isPaused() || uisession()->machineState() == KMachineState_Stuck;
             if (!wasPaused)
             {
                 /* Suspend the VM and ignore the close event if failed to do so.
@@ -196,7 +193,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 if (!machine.GetCurrentSnapshot().isNull())
                     dlg.mCbDiscardCurState->setText(dlg.mCbDiscardCurState->text().arg(machine.GetCurrentSnapshot().GetName()));
 
-                if (state != KMachineState_Stuck)
+                if (uisession()->machineState() != KMachineState_Stuck)
                 {
                     /* Read the last user's choice for the given VM */
                     QStringList lastAction = machine.GetExtraData(VBoxDefs::GUI_LastCloseAction).split(',');
@@ -341,10 +338,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 
             machineLogic()->setPreventAutoClose(false);
 
-            if (state == KMachineState_PoweredOff ||
-                state == KMachineState_Saved ||
-                state == KMachineState_Teleported ||
-                state == KMachineState_Aborted)
+            if (uisession()->machineState() == KMachineState_PoweredOff ||
+                uisession()->machineState() == KMachineState_Saved ||
+                uisession()->machineState() == KMachineState_Teleported ||
+                uisession()->machineState() == KMachineState_Aborted)
             {
                 /* The machine has been stopped while showing the Close or the Pause
                  * failure dialog -- accept the close event immediately. */
@@ -355,7 +352,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 if (!success)
                 {
                     /* Restore the running state if needed */
-                    if (!wasPaused && state == KMachineState_Paused)
+                    if (!wasPaused && uisession()->machineState() == KMachineState_Paused)
                         uisession()->unpause();
                 }
             }
