@@ -28,6 +28,7 @@
 
 FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/include/iprt/alloc.h=>include/iprt/alloc.h \
+    ${PATH_ROOT}/include/iprt/alloca.h=>include/iprt/alloca.h \
     ${PATH_ROOT}/include/iprt/asm.h=>include/iprt/asm.h \
     ${PATH_ROOT}/include/iprt/assert.h=>include/iprt/assert.h \
     ${PATH_ROOT}/include/iprt/avl.h=>include/iprt/avl.h \
@@ -109,7 +110,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strprintf.cpp=>common/string/strprintf.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/strtonum.cpp=>common/string/strtonum.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/string/memchr.cpp=>common/string/memchr.c \
-    ${PATH_ROOT}/src/VBox/Runtime/common/string/string.cpp=>common/string/string.c \
+    ${PATH_ROOT}/src/VBox/Runtime/common/string/stringalloc.cpp=>common/string/stringalloc.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/rand/rand.cpp=>common/rand/rand.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/rand/randadv.cpp=>common/rand/randadv.c \
     ${PATH_ROOT}/src/VBox/Runtime/common/rand/randparkmiller.cpp=>common/rand/randparkmiller.c \
@@ -172,6 +173,7 @@ FILES_VBOXDRV_NOBIN=" \
     ${PATH_ROOT}/src/VBox/Runtime/r0drv/memobj-r0drv.cpp=>r0drv/memobj-r0drv.c \
     ${PATH_ROOT}/src/VBox/Runtime/VBox/log-vbox.cpp=>VBox/log-vbox.c \
     ${PATH_OUT}/version-generated.h=>version-generated.h \
+    ${PATH_OUT}/product-generated.h=>product-generated.h \
 "
 
 FILES_VBOXDRV_BIN=" \

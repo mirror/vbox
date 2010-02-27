@@ -93,7 +93,7 @@ SRCS += \
 	strprintf.c \
 	strtonum.c \
 	memchr.c \
-	string.c
+	stringalloc.c
 
 .PATH:	${.CURDIR}/common/rand
 SRCS += \
