@@ -730,13 +730,23 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
     switch (pMemFreeBSD->Core.enmType)
     {
         case RTR0MEMOBJTYPE_LOCK:
+        {
             if (    pMemFreeBSD->Core.u.Lock.R0Process != NIL_RTR0PROCESS
                 &&  pMemFreeBSD->Core.u.Lock.R0Process != (RTR0PROCESS)curproc)
             {
                 /* later */
                 return NIL_RTHCPHYS;
             }
-            /* fall thru*/
+
+            vm_offset_t pb = (vm_offset_t)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
+
+            struct proc    *pProc     = (struct proc *)pMemFreeBSD->Core.u.Lock.R0Process;
+            struct vm_map  *pProcMap  = &pProc->p_vmspace->vm_map;
+            pmap_t pPhysicalMap       = pProcMap->pmap;
+
+            return pmap_extract(pPhysicalMap, pb);
+        }
+
         case RTR0MEMOBJTYPE_PAGE:
         {
             vm_offset_t pb = (vm_offset_t)pMemFreeBSD->Core.pv + (iPage << PAGE_SHIFT);
