@@ -28,66 +28,46 @@ Class=Display
 DefaultDestDir=11
 VBoxVideo.Miniport = 12 ; drivers
 VBoxVideo.Display  = 11 ; system32
-VBoxVideo.Display_x86  = 11 ; system32
-VBoxVideo.Display_amd64  = 11 ; system32
-VBoxVideo.Display_wow64  = 10,SysWow64 ; SysWow64
+;amd64 VBoxVideo.Display_wow64  = 10,SysWow64 ; SysWow64
 
 [Manufacturer]
-%SUN%=Model, NTx86.6.0, NTamd64.6.0
+;x86   %SUN%=Model, NTx86.6.0
+;amd64 %SUN%=Model, NTamd64.6.0
 
-[Model.NTamd64.6.0]
-%VBoxVideo.SvcDesc% = VBoxVideo_amd64, PCI\VEN_80EE&DEV_BEEF
+;amd64 [Model.NTamd64.6.0]
+;x86   [Model.NTx86.6.0]
+%VBoxVideo.SvcDesc% = VBoxVideo, PCI\VEN_80EE&DEV_BEEF
 
-[Model.NTx86.6.0]
-%VBoxVideo.SvcDesc% = VBoxVideo_x86, PCI\VEN_80EE&DEV_BEEF
-
-[VBoxVideo_x86]
+[VBoxVideo]
 FeatureScore = F8
 Include = msdv.inf
-CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display_x86
-AddReg = VBoxVideo_SoftwareDeviceSettings_x86
-DelReg = VBoxVideo_RemoveDeviceSettings
-;uncomment RegisterDlls = VBoxVideo_RegisterDlls_x86  
-
-[VBoxVideo_amd64]
-FeatureScore = F8
-Include = msdv.inf
-CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display_amd64, VBoxVideo.Display_wow64 
-AddReg = VBoxVideo_SoftwareDeviceSettings_amd64
-DelReg = VBoxVideo_RemoveDeviceSettings
-;uncomment RegisterDlls = VBoxVideo_RegisterDlls_amd64  
+;x86   CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display
+;amd64 CopyFiles = VBoxVideo.Miniport, VBoxVideo.Display, VBoxVideo.Display_wow64 
+AddReg = VBoxVideo_SoftwareDeviceSettings
+;todo: clear XPDM driver settings: DelReg = VBoxVideo_RemoveDeviceSettings
+RegisterDlls = VBoxVideo_RegisterDlls  
 
 [VBoxVideo.Miniport]
 VBoxVideoWddm.sys
 
-[VBoxVideo.Display_x86]
+;x86   [VBoxVideo.Display]
+;amd64 [VBoxVideo.Display_wow64]
 ;uncomment VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo.Display_amd64]
-;uncomment VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 [VBoxVideo.Display]
+;amd64 ;uncomment VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
-[VBoxVideo.Display_wow64]
-;uncomment VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
-
-[VBoxVideo_SoftwareDeviceSettings_x86]
-;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
-;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+[VBoxVideo_SoftwareDeviceSettings]
+;x86   ;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
+;x86   ;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+;amd64 ;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
+;amd64 ;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
+;amd64 ;uncomment HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
 HKR,, VgaCompatible, %REG_DWORD%, 0
-HKR,, CapabilityOverride,    %REG_DWORD%, 0x8
 
-[VBoxVideo_SoftwareDeviceSettings_amd64]
-;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
-;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
-;uncomment HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
-HKR,, VgaCompatible, %REG_DWORD%, 0
-HKR,, CapabilityOverride,    %REG_DWORD%, 0x8
-
-;uncomment [VBoxVideo_RegisterDlls_x86]
+[VBoxVideo_RegisterDlls]
 ;uncomment 11,,VBoxVideoD3D.dll,1
-
-;uncomment [VBoxVideo_RegisterDlls_amd64]
-;uncomment 11,,VBoxVideoD3D.dll,1
-;uncomment 11,,VBoxVideoD3D64.dll,1
+;amd64 ;uncomment 11,,VBoxVideoD3D64.dll,1
 
 [VBoxVideo.Services]
 AddService=VBoxVideoWddm, 0x00000002, VBoxVideo_Service_Inst, VBoxVideo_EventLog_Inst
