@@ -475,6 +475,18 @@ struct ACPITBLIOAPIC
 };
 AssertCompileSize(ACPITBLIOAPIC, 12);
 
+/** Interrupt Source Override Structure */
+struct ACPITBLISO
+{
+    uint8_t             u8Type;                 /**< 2 ==  Interrupt Source Override*/
+    uint8_t             u8Length;               /**< 10 */
+    uint8_t             u8Bus;                  /**< Bus */
+    uint8_t             u8Source;               /**< Bus-relative interrupt source (IRQ) */
+    uint32_t            u32GSI;                 /**< Global System Interrupt */
+    uint16_t            u16Flags;               /**< MPS INTI flags Global */
+};
+AssertCompileSize(ACPITBLISO, 10);
+#define NUMBER_OF_IRQ_SOURCE_OVERRIDES 1
 
 /** HPET Descriptor Structure */
 struct ACPITBLHPET
@@ -518,6 +530,11 @@ class AcpiTableMADT
      */
     uint32_t            m_cCpus;
 
+    /**
+     * Number of interrupt overrides.
+     */
+     uint32_t            m_cIsos;
+
 public:
     /**
      * Address of ACPI header
@@ -545,11 +562,19 @@ public:
     }
 
     /**
+     * Address of ISO description
+     */
+    inline ACPITBLISO *ISO_addr(void) const
+    {
+        return (ACPITBLISO *)(u32Flags_addr() + 1);
+    }
+
+    /**
      * Address of per-CPU LAPIC descriptions
      */
     inline ACPITBLLAPIC *LApics_addr(void) const
     {
-        return (ACPITBLLAPIC *)(u32Flags_addr() + 1);
+        return (ACPITBLLAPIC *)(ISO_addr() + m_cIsos);
     }
 
     /**
@@ -580,17 +605,18 @@ public:
     /**
      * Size of MADT for given ACPI config, useful to compute layout.
      */
-    static uint32_t sizeFor(ACPIState *s)
+    static uint32_t sizeFor(ACPIState *s, uint32_t cIsos)
     {
-        return AcpiTableMADT(s->cCpus).size();
+        return AcpiTableMADT(s->cCpus, cIsos).size();
     }
 
     /*
      * Constructor, only works in Ring 3, doesn't look like a big deal.
      */
-    AcpiTableMADT(uint32_t cCpus)
+    AcpiTableMADT(uint32_t cCpus, uint32_t cIsos)
     {
         m_cCpus  = cCpus;
+        m_cIsos  = cIsos;
         m_pbData = NULL;                /* size() uses this and gcc will complain if not initilized. */
         uint32_t cb = size();
         m_pbData = (uint8_t *)RTMemAllocZ(cb);
@@ -874,33 +900,45 @@ static void acpiSetupRSDP(ACPITBLRSDP *rsdp, RTGCPHYS32 GCPhysRsdt, RTGCPHYS GCP
 static void acpiSetupMADT(ACPIState *s, RTGCPHYS32 addr)
 {
     uint16_t cpus = s->cCpus;
-    AcpiTableMADT madt(cpus);
+    AcpiTableMADT madt(cpus, 1 /* one source override */ );
 
     acpiPrepareHeader(madt.header_addr(), "APIC", madt.size(), 2);
 
     *madt.u32LAPIC_addr()          = RT_H2LE_U32(0xfee00000);
     *madt.u32Flags_addr()          = RT_H2LE_U32(PCAT_COMPAT);
 
+    /* LAPICs records */
     ACPITBLLAPIC* lapic = madt.LApics_addr();
     for (uint16_t i = 0; i < cpus; i++)
     {
         lapic->u8Type      = 0;
         lapic->u8Length    = sizeof(ACPITBLLAPIC);
         lapic->u8ProcId    = i;
+        /** Must match numbering convention in MPTABLES */
         lapic->u8ApicId    = i;
         lapic->u32Flags    = VMCPUSET_IS_PRESENT(&s->CpuSetAttached, i) ? RT_H2LE_U32(LAPIC_ENABLED) : 0;
         lapic++;
     }
 
+    /* IO-APIC record */
     ACPITBLIOAPIC* ioapic = madt.IOApic_addr();
-
     ioapic->u8Type     = 1;
     ioapic->u8Length   = sizeof(ACPITBLIOAPIC);
-    /** @todo is this the right id? */
+    /** Must match MP tables ID */
     ioapic->u8IOApicId = cpus;
     ioapic->u8Reserved = 0;
     ioapic->u32Address = RT_H2LE_U32(0xfec00000);
     ioapic->u32GSIB    = RT_H2LE_U32(0);
+
+    /* Interrupt Source Overrides */
+    ACPITBLISO* isos = madt.ISO_addr();
+    isos[0].u8Type     = 2;
+    isos[0].u8Length   = sizeof(ACPITBLISO);
+    isos[0].u8Bus      = 0; /* Must be 0 */
+    isos[0].u8Source   = 0; /* IRQ0 */
+    isos[0].u32GSI     = 2; /* connected to pin 2 */
+    isos[0].u16Flags   = 0; /* conform to the bus */
+    Assert(NUMBER_OF_IRQ_SOURCE_OVERRIDES == 1);
 
     madt.header_addr()->u8Checksum = acpiChecksum(madt.data(), madt.size());
     acpiPhyscpy(s, addr, madt.data(), madt.size());
@@ -2043,7 +2081,7 @@ static int acpiPlantTables(ACPIState *s)
     if (s->u8UseIOApic)
     {
         GCPhysApic = GCPhysCur;
-        GCPhysCur = RT_ALIGN_32(GCPhysCur + AcpiTableMADT::sizeFor(s), 16);
+        GCPhysCur = RT_ALIGN_32(GCPhysCur + AcpiTableMADT::sizeFor(s, NUMBER_OF_IRQ_SOURCE_OVERRIDES), 16);
     }
     if (s->fUseHpet)
     {
