@@ -485,12 +485,23 @@ static const REMPARMDESC g_aArgsIsPageAccessHandled[] =
     { REMPARMDESC_FLAGS_GCPHYS,     sizeof(RTGCPHYS),           NULL }
 };
 
-
 /* VMM args */
 static const REMPARMDESC g_aArgsCPUMGetGuestCpl[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
+};
+
+/* EMInterpretInstructionCPUEx args */
+static const REMPARMDESC g_aArgsEMInterpretInstructionCPUEx[] =
+{
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PVMCPU),             NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PDISCPUSTATE),       NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(PCPUMCTXCORE),       NULL },
+    { REMPARMDESC_FLAGS_GCPTR,      sizeof(RTGCPTR),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint32_t *),         NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(EMCODETYPE),         NULL }
 };
 
 /* CPUMGetGuestMsr args */
@@ -1253,6 +1264,7 @@ static REMFNDESC g_aVMMImports[] =
     { "VMR3ReqFree",                            (void *)(uintptr_t)&VMR3ReqFree,                    &g_aArgsVMR3ReqFree[0],                     RT_ELEMENTS(g_aArgsVMR3ReqFree),                       REMFNDESC_FLAGS_RET_INT | REMFNDESC_FLAGS_ELLIPSIS, sizeof(int), NULL },
     { "VMR3GetVMCPUId",                         (void *)(uintptr_t)&VMR3GetVMCPUId,                 &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
     { "VMR3GetVMCPUNativeThread",               (void *)(uintptr_t)&VMR3GetVMCPUNativeThread,       &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(void *),     NULL },
+    { "EMInterpretInstructionCPUEx",            (void *)(uintptr_t)&EMInterpretInstructionCPUEx,    &g_aArgsEMInterpretInstructionCPUEx[0],     RT_ELEMENTS(g_aArgsEMInterpretInstructionCPUEx),       REMFNDESC_FLAGS_RET_INT,    sizeof(int),        NULL },
 //    { "",                        (void *)(uintptr_t)&,                &g_aArgsVM[0],                              RT_ELEMENTS(g_aArgsVM),                                REMFNDESC_FLAGS_RET_INT,    sizeof(int),   NULL },
 };
 
@@ -2378,4 +2390,3 @@ REMR3DECL(void) REMR3NotifyFF(PVM pVM)
         pfnREMR3NotifyFF(pVM);
 #endif
 }
-
