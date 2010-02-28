@@ -1114,8 +1114,8 @@ void UIMachineView::sltMouseCapabilityChanged()
     else
         viewport()->unsetCursor();
 
-    /* Notify user about mouse integration state: */
-    vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
+    /* Notify user about mouse integration state if method was called by signal: */
+    if (sender()) vboxProblem().remindAboutMouseIntegration(uisession()->isMouseSupportsAbsolute());
 
     /* Notify all listeners: */
     emitMouseStateChanged();
