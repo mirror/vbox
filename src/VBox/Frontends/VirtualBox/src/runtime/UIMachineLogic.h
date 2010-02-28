@@ -64,7 +64,9 @@ public:
     UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowWrapper; }
 
     /* Maintenance getters/setters: */
+    bool isPreventAutoStart() const { return m_fIsPreventAutoStart; }
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
+    void setPreventAutoStart(bool fIsPreventAutoStart) { m_fIsPreventAutoStart = fIsPreventAutoStart; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
 protected:
@@ -154,6 +156,7 @@ private:
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
 
+    bool m_fIsPreventAutoStart : 1;
     bool m_fIsPreventAutoClose : 1;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
