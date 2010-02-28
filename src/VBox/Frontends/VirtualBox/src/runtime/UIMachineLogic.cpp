@@ -644,7 +644,7 @@ void UIMachineLogic::sltMachineStateChanged()
     {
         /* VM has been powered off or saved or aborted, no matter internally or externally.
          * We must *safely* close the console window unless auto closure is disabled: */
-        sltClose();
+        QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
         return;
     }
 
