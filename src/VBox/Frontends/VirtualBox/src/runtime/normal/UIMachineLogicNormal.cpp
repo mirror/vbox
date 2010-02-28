@@ -23,7 +23,6 @@
 
 /* Global includes */
 #include <QMenu>
-#include <QTimer>
 
 /* Local includes */
 #include "COMDefs.h"
