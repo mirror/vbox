@@ -648,7 +648,7 @@ void UIMachineLogic::sltMachineStateChanged()
         return;
     }
 
-    /* Postprocess GURU: */
+#if 0 // TODO: Postprocess GURU!
     if (fIsGuruMeditation)
     {
         uisession()->setGuestResizeIgnored(true);
@@ -672,6 +672,7 @@ void UIMachineLogic::sltMachineStateChanged()
                 vboxProblem().cannotStopMachine(console);
         }
     }
+#endif
 }
 
 void UIMachineLogic::sltAdditionsStateChanged()
