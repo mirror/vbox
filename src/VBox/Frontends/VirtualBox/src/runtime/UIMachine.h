@@ -27,6 +27,7 @@
 #include <QObject>
 
 /* Local includes */
+#include "COMDefs.h"
 #include "UIMachineDefs.h"
 
 /* Global forwards: */
@@ -37,7 +38,6 @@ class UISession;
 class UIActionsPool;
 class UIVisualState;
 class UIMachineLogic;
-class CSession;
 
 class UIMachine : public QObject
 {
@@ -51,6 +51,9 @@ public:
 
     /* Public getters: */
     QWidget* mainWindow() const;
+
+    /* Close VM handler: */
+    void closeVirtualMachine();
 
 private slots:
 
@@ -67,6 +70,8 @@ private:
     UIActionsPool* actionsPool() const { return m_pActionsPool; }
 
     /* Private variables: */
+    UIMachine **m_ppThis;
+    CSession m_session;
     UIActionsPool *m_pActionsPool;
     UISession *m_pSession;
     UIVisualState *m_pVisualState;

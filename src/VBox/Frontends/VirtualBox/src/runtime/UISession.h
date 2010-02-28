@@ -65,8 +65,8 @@ class UISession : public QObject
 
 public:
 
-    /* Machine session constructor/destructor: */
-    UISession(UIMachine *pMachine, const CSession &session);
+    /* Machine uisession constructor/destructor: */
+    UISession(UIMachine *pMachine, CSession &session);
     virtual ~UISession();
 
     /* Common getters: */
@@ -142,6 +142,11 @@ signals:
     void sigSharedFolderChange();
     void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
+private slots:
+
+    /* Close uisession handler: */
+    void sltCloseVirtualSession();
+
 private:
 
     /* Private getters: */
@@ -162,7 +167,7 @@ private:
 
     /* Private variables: */
     UIMachine *m_pMachine;
-    CSession m_session;
+    CSession &m_session;
     const CConsoleCallback m_callback;
 
     /* Common variables: */

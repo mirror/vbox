@@ -42,17 +42,18 @@ public:
         connect(this, SIGNAL(sigChangeVisualState(UIVisualStateType)), parent(), SLOT(sltChangeVisualState(UIVisualStateType)));
     }
 
+    /* Public getters: */
+    UIMachineLogic* machineLogic() const  { return m_pMachineLogic; }
+
 signals:
 
+    /* Signal to change-state: */
     void sigChangeVisualState(UIVisualStateType visualStateType);
 
 protected:
 
     /* Protected members: */
     UIMachineLogic *m_pMachineLogic;
-
-    /* Friend classes: */
-    friend class UIMachine;
 };
 
 class UIVisualStateNormal : public UIVisualState
@@ -162,16 +163,21 @@ private slots:
 
 UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     : QObject(0)
+    , m_ppThis(ppSelf)
+    , m_session(session)
     , m_pActionsPool(new UIActionsPool(this))
-    , m_pSession(new UISession(this, session))
+    , m_pSession(new UISession(this, m_session))
     , m_pVisualState(0)
 {
+    /* Preventing application from closing in case of window(s) closed: */
+    qApp->setQuitOnLastWindowClosed(false);
+
     /* Cache IMedium data: */
     vboxGlobal().startEnumeratingMedia();
 
-    /* Storing self */
-    if (ppSelf)
-        *ppSelf = this;
+    /* Storing self: */
+    if (m_ppThis)
+        *m_ppThis = this;
 
     /* Enter default (normal) state */
     enterBaseVisualState();
@@ -179,11 +185,18 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
 
 UIMachine::~UIMachine()
 {
-    /* Delete uisession child before actions-pool child: */
+    /* Erase itself pointer: */
+    *m_ppThis = 0;
+    /* Delete uisession children in backward direction: */
+    delete m_pVisualState;
+    m_pVisualState = 0;
     delete m_pSession;
     m_pSession = 0;
     delete m_pActionsPool;
     m_pActionsPool = 0;
+    m_session.Close();
+    m_session.detach();
+    QApplication::quit();
 }
 
 QWidget* UIMachine::mainWindow() const
@@ -196,10 +209,15 @@ QWidget* UIMachine::mainWindow() const
         return 0;
 }
 
+void UIMachine::closeVirtualMachine()
+{
+    delete this;
+}
+
 UIMachineLogic* UIMachine::machineLogic() const
 {
-    if (m_pVisualState && m_pVisualState->m_pMachineLogic)
-        return m_pVisualState->m_pMachineLogic;
+    if (m_pVisualState && m_pVisualState->machineLogic())
+        return m_pVisualState->machineLogic();
     else
         return 0;
 }
