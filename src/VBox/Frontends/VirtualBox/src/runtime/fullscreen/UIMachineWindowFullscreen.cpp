@@ -356,7 +356,9 @@ void UIMachineWindowFullscreen::saveWindowSettings()
     {
     }
 
+#ifdef Q_WS_MAC
     setPresentationModeEnabled(false);
+#endif/* Q_WS_MAC */
 }
 
 void UIMachineWindowFullscreen::cleanupMachineView()
