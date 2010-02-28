@@ -520,11 +520,11 @@ NS_DECL_CLASSINFO(UIConsoleCallback)
 NS_IMPL_THREADSAFE_ISUPPORTS1_CI(UIConsoleCallback, IConsoleCallback)
 #endif
 
-UISession::UISession(UIMachine *pMachine, const CSession &session)
+UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     : QObject(pMachine)
     /* Base variables: */
     , m_pMachine(pMachine)
-    , m_session(session)
+    , m_session(sessionReference)
     , m_callback(CConsoleCallback(new UIConsoleCallback(this)))
     /* Common varibles: */
     , m_machineState(KMachineState_Null)
@@ -553,23 +553,20 @@ UISession::UISession(UIMachine *pMachine, const CSession &session)
     , m_fIsMouseIntegrated(true)
     , m_fIsHideHostPointer(true)
 {
-    /* Check CSession object */
-    AssertMsg(!m_session.isNull(), ("CSession should not be NULL!\n"));
-
     /* Register console callback: */
-    m_session.GetConsole().RegisterCallback(m_callback);
+    session().GetConsole().RegisterCallback(m_callback);
 
-    /* Load session settings: */
+    /* Load uisession settings: */
     loadSessionSettings();
 }
 
 UISession::~UISession()
 {
-    /* Save session settings: */
+    /* Save uisession settings: */
     saveSessionSettings();
 
     /* Unregister console callback: */
-    m_session.GetConsole().UnregisterCallback(m_callback);
+    session().GetConsole().UnregisterCallback(m_callback);
 }
 
 bool UISession::setPause(bool fOn)
@@ -594,6 +591,11 @@ bool UISession::setPause(bool fOn)
     }
 
     return ok;
+}
+
+void UISession::sltCloseVirtualSession()
+{
+    m_pMachine->closeVirtualMachine();
 }
 
 bool UISession::event(QEvent *pEvent)
@@ -841,7 +843,7 @@ bool UISession::event(QEvent *pEvent)
 
 void UISession::loadSessionSettings()
 {
-    /* Get machine: */
+    /* Get uisession machine: */
     CMachine machine = session().GetConsole().GetMachine();
 
     /* Availability settings: */
@@ -915,7 +917,7 @@ void UISession::loadSessionSettings()
 
 void UISession::saveSessionSettings()
 {
-    /* Get session machine: */
+    /* Get uisession machine: */
     CMachine machine = session().GetConsole().GetMachine();
 
     /* Save extra-data settings: */

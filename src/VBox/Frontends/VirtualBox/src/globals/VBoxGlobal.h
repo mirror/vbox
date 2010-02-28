@@ -307,7 +307,8 @@ public:
     VBoxSelectorWnd &selectorWnd();
     VBoxConsoleWnd &consoleWnd();
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
-    UIMachine* virtualMachine(const CSession &session = CSession());
+    bool createVirtualMachine(const CSession &session);
+    UIMachine* virtualMachine();
 #endif
 
     /* main window handle storage */
@@ -681,7 +682,7 @@ public:
     /** Shortcut to openSession (aId, true). */
     CSession openExistingSession (const QString &aId) { return openSession (aId, true); }
 
-    bool startMachine (const QString &id);
+    bool startMachine(const QString &strId);
 
     void startEnumeratingMedia();
 
