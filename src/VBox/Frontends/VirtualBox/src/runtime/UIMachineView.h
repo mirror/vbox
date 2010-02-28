@@ -51,6 +51,9 @@ class UIMachineView : public QAbstractScrollArea
 
 public:
 
+    /* Desktop geometry types: */
+    enum DesktopGeo { DesktopGeo_Invalid = 0, DesktopGeo_Fixed, DesktopGeo_Automatic, DesktopGeo_Any };
+
     /* Factory function to create required view sub-child: */
     static UIMachineView* create(  UIMachineWindow *pMachineWindow
                                  , VBoxDefs::RenderMode renderMode
@@ -112,7 +115,10 @@ protected:
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    virtual QSize desktopGeometry() const = 0;
+    void calculateDesktopGeometry();
+    virtual QSize desktopGeometry() const;
+    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
+    void storeConsoleSize(int iWidth, int iHeight);
 
     /* Protected setters: */
     void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
@@ -157,6 +163,11 @@ private slots:
     void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
 # endif
 #endif
+protected:
+
+    DesktopGeo m_desktopGeometryType;
+    QSize m_desktopGeometry;
+    QSize m_storedConsoleSize;
 
 private:
 
@@ -203,6 +214,8 @@ private:
     void saveKeyStates();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
+
+    virtual QRect availableGeometry() = 0;
 
     static void dimImage(QImage &img);
 
@@ -253,6 +266,7 @@ private:
 #endif
 
     /* Friend classes: */
+    friend class UIMachineWindowFullscreen;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
     friend class UIFrameBufferQuartz2D;

@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineViewNormal class declaration
+ * UIMachineViewFullscreen class declaration
  */
 
 /*
@@ -20,13 +20,13 @@
  * additional information or have any questions.
  */
 
-#ifndef ___UIMachineViewNormal_h___
-#define ___UIMachineViewNormal_h___
+#ifndef ___UIMachineViewFullscreen_h___
+#define ___UIMachineViewFullscreen_h___
 
 /* Local includes */
 #include "UIMachineView.h"
 
-class UIMachineViewNormal : public UIMachineView
+class UIMachineViewFullscreen : public UIMachineView
 {
     Q_OBJECT;
 
@@ -38,13 +38,13 @@ signals:
 protected:
 
     /* Normal machine view constructor/destructor: */
-    UIMachineViewNormal(  UIMachineWindow *pMachineWindow
+    UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
                         , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                         , bool bAccelerate2DVideo
 #endif
     );
-    virtual ~UIMachineViewNormal();
+    virtual ~UIMachineViewFullscreen();
 
 private slots:
 
@@ -52,32 +52,27 @@ private slots:
     void sltAdditionsStateChanged();
 
     /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &size = QSize());
+    void sltPerformGuestResize(const QSize &aSize = QSize());
 
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 
 private:
 
-    /* Prepare helpers: */
+    /* Prepare routines: */
+    void prepareCommon();
     void prepareFilters();
     void prepareConsoleConnections();
     void loadMachineViewSettings();
 
-    /* Cleanup helpers: */
-    //void saveMachineViewSettings() {}
-    //void cleanupConsoleConnections() {}
-    //cleanupFilters() {}
-
-    /* Hidden setters: */
+    /* Private setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);
 
     /* Private helpers: */
-    void normalizeGeometry(bool fAdjustPosition);
+    void normalizeGeometry(bool bAdjustPosition = false);
     QRect availableGeometry();
     void maybeRestrictMinimumSize();
 
-    /* Event handlers: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
@@ -89,5 +84,5 @@ private:
     friend class UIMachineView;
 };
 
-#endif // !___UIMachineViewNormal_h___
+#endif // !___UIMachineViewFullscreen_h___
 

@@ -42,6 +42,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIMachineViewNormal.h"
+#include "UIMachineViewFullscreen.h"
 
 #ifdef Q_WS_PM
 # include "QIHotKeyEdit.h"
@@ -126,12 +127,12 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                           );
             break;
         case UIVisualStateType_Fullscreen:
-            view = new UIMachineViewNormal(  pMachineWindow
-                                           , renderMode
+            view = new UIMachineViewFullscreen(  pMachineWindow
+                                               , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo
+                                               , bAccelerate2DVideo
 #endif
-                                          );
+                                              );
             break;
         case UIVisualStateType_Seamless:
             view = new UIMachineViewNormal(  pMachineWindow
@@ -183,13 +184,17 @@ void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
     emitMouseStateChanged();
 }
 
+#include <QMainWindow>
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
 #endif
                             )
+// TODO_NEW_CORE: really think of if this is right
+//    : QAbstractScrollArea(((QMainWindow*)pMachineWindow->machineWindow())->centralWidget())
     : QAbstractScrollArea(pMachineWindow->machineWindow())
+    , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_pMachineWindow(pMachineWindow)
     , m_mode(renderMode)
     , m_globalSettings(vboxGlobal().settings())
@@ -416,7 +421,7 @@ void UIMachineView::prepareFrameBuffer()
 void UIMachineView::prepareCommon()
 {
     /* Prepare view frame: */
-    //setFrameStyle(QFrame::NoFrame);
+    setFrameStyle(QFrame::NoFrame);
 
     /* Pressed keys: */
     ::memset(m_pressedKeys, 0, sizeof(m_pressedKeys));
@@ -513,6 +518,20 @@ void UIMachineView::loadMachineViewSettings()
         /* Initialize the X keyboard subsystem: */
         initMappedX11Keyboard(QX11Info::display(), vboxGlobal().settings().publicProperty("GUI/RemapScancodes"));
 #endif
+
+        /* Remember the desktop geometry and register for geometry
+         * change events for telling the guest about video modes we like: */
+        QString desktopGeometry = vboxGlobal().settings().publicProperty("GUI/MaxGuestResolution");
+        if ((desktopGeometry == QString::null) || (desktopGeometry == "auto"))
+            setDesktopGeometry(DesktopGeo_Automatic, 0, 0);
+        else if (desktopGeometry == "any")
+            setDesktopGeometry(DesktopGeo_Any, 0, 0);
+        else
+        {
+            int width = desktopGeometry.section(',', 0, 0).toInt();
+            int height = desktopGeometry.section(',', 1, 1).toInt();
+            setDesktopGeometry(DesktopGeo_Fixed, width, height);
+        }
     }
 
     /* Exatra data settings: */
@@ -531,6 +550,84 @@ void UIMachineView::loadMachineViewSettings()
     updateDockOverlay();
 #endif
 }
+
+QSize UIMachineView::desktopGeometry() const
+{
+    QSize geometry;
+    switch (m_desktopGeometryType)
+    {
+        case DesktopGeo_Fixed:
+        case DesktopGeo_Automatic:
+            geometry = QSize(qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
+                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
+            break;
+        case DesktopGeo_Any:
+            geometry = QSize(0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Bad geometry type %d!\n", m_desktopGeometryType));
+    }
+    return geometry;
+}
+
+void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
+{
+    switch (geometry)
+    {
+        case DesktopGeo_Fixed:
+            m_desktopGeometryType = DesktopGeo_Fixed;
+            if (aWidth != 0 && aHeight != 0)
+                m_desktopGeometry = QSize(aWidth, aHeight);
+            else
+                m_desktopGeometry = QSize(0, 0);
+            storeConsoleSize(0, 0);
+            break;
+        case DesktopGeo_Automatic:
+            m_desktopGeometryType = DesktopGeo_Automatic;
+            m_desktopGeometry = QSize(0, 0);
+            storeConsoleSize(0, 0);
+            break;
+        case DesktopGeo_Any:
+            m_desktopGeometryType = DesktopGeo_Any;
+            m_desktopGeometry = QSize(0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
+            m_desktopGeometryType = DesktopGeo_Invalid;
+    }
+}
+
+void UIMachineView::calculateDesktopGeometry()
+{
+    /* This method should not get called until we have initially set up the m_desktopGeometryType: */
+    Assert((m_desktopGeometryType != DesktopGeo_Invalid));
+    /* If we are not doing automatic geometry calculation then there is nothing to do: */
+    if (DesktopGeo_Automatic == m_desktopGeometryType)
+    {
+        /* Available geometry of the desktop.  If the desktop is a single
+         * screen, this will exclude space taken up by desktop taskbars
+         * and things, but this is unfortunately not true for the more
+         * complex case of a desktop spanning multiple screens: */
+        QRect desktop = availableGeometry();
+        /* The area taken up by the machine window on the desktop,
+         * including window frame, title and menu bar and whatnot: */
+        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
+        /* The area taken up by the machine view, so excluding all decorations: */
+        QRect window = geometry();
+        /* To work out how big we can make the console window while still
+         * fitting on the desktop, we calculate desktop - frame + window.
+         * This works because the difference between frame and window
+         * (or at least its width and height) is a constant. */
+        m_desktopGeometry = QSize(desktop.width() - frame.width() + window.width(),
+                                  desktop.height() - frame.height() + window.height());
+    }
+}
+
+void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
+{
+    m_storedConsoleSize = QSize(iWidth, iHeight);
+}
+
 
 void UIMachineView::cleanupCommon()
 {
