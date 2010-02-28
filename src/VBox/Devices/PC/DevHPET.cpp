@@ -407,27 +407,27 @@ static int timerRegRead32(HpetState* pThis,
     switch (iTimerReg)
     {
         case HPET_TN_CFG:
-            Log(("HPET_TN_CFG on %d\n", pTimer->u8TimerNumber));
+            Log(("read HPET_TN_CFG on %d\n", pTimer->u8TimerNumber));
             *pValue = (uint32_t)(pTimer->u64Config);
             break;
         case HPET_TN_CFG + 4:
-            Log(("HPET_TN_CFG+4 on %d\n", pTimer->u8TimerNumber));
+            Log(("read HPET_TN_CFG+4 on %d\n", pTimer->u8TimerNumber));
             *pValue = (uint32_t)(pTimer->u64Config >> 32);
             break;
         case HPET_TN_CMP:
-            Log(("HPET_TN_CMP on %d\n", pTimer->u8TimerNumber));
+            Log(("read HPET_TN_CMP on %d, cmp=%llx\n", pTimer->u8TimerNumber, pTimer->u64Cmp));
             *pValue = (uint32_t)(pTimer->u64Cmp);
             break;
         case HPET_TN_CMP + 4:
-            Log(("HPET_TN_CMP+4 on %d\n", pTimer->u8TimerNumber));
+            Log(("read HPET_TN_CMP+4 on %d, cmp=%llx\n", pTimer->u8TimerNumber, pTimer->u64Cmp));
             *pValue = (uint32_t)(pTimer->u64Cmp >> 32);
             break;
         case HPET_TN_ROUTE:
-            Log(("HPET_TN_ROUTE on %d\n", pTimer->u8TimerNumber));
+            Log(("read HPET_TN_ROUTE on %d\n", pTimer->u8TimerNumber));
             *pValue = (uint32_t)(pTimer->u64Fsb >> 32);
             break;
         default:
-            LogRel(("invalid HPET register %d on %d\n", iTimerReg, pTimer->u8TimerNumber));
+            LogRel(("invalid HPET register read %d on %d\n", iTimerReg, pTimer->u8TimerNumber));
             break;
         }
 
@@ -506,7 +506,7 @@ static int timerRegWrite32(HpetState* pThis,
     {
         case HPET_TN_CFG:
         {
-            Log(("write HPET_TN_CFG\n"));
+            Log(("write HPET_TN_CFG: %d\n", iTimerNo));
             /** We only care about lower 32-bits so far */
             pTimer->u64Config =
                     updateMasked(iNewValue, iOldValue, HPET_TN_CFG_WRITE_MASK);
@@ -529,45 +529,51 @@ static int timerRegWrite32(HpetState* pThis,
         }
         case HPET_TN_CMP: /* lower bits of comparator register */
         {
-            Log(("write HPET_TN_CMP\n"));
+            Log(("write HPET_TN_CMP on %d: %x\n", iTimerNo, iNewValue));
             if (pTimer->u64Config & HPET_TN_32BIT)
                 iNewValue = (uint32_t)iNewValue;
 
-            if (!(pTimer->u64Config & HPET_TN_PERIODIC) ||
-                (pTimer->u64Config & HPET_TN_SETVAL))
+            if (pTimer->u64Config & HPET_TN_SETVAL)
             {
-                pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffff00000000ULL)
-                        | iNewValue;
-            }
-            else
+                /* HPET_TN_SETVAL allows to adjust comparator w/o updating period, and it's cleared on access */
+                if (pTimer->u64Config & HPET_TN_32BIT)
+                    pTimer->u64Config &= ~HPET_TN_SETVAL;
+            } else if (pTimer->u64Config & HPET_TN_PERIODIC)
             {
-                iNewValue &= (pTimer->u64Config & HPET_TN_32BIT ? ~0u : ~0ull) >> 1;
+                iNewValue &= (pTimer->u64Config & HPET_TN_32BIT ? ~0U : ~0ULL) >> 1;
                 pTimer->u64Period = (pTimer->u64Period & 0xffffffff00000000ULL)
                         | iNewValue;
             }
-            pTimer->u64Config &= ~HPET_TN_SETVAL;
+
+            pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffff00000000ULL)
+                    | iNewValue;
+
+            Log2(("after HPET_TN_CMP cmp=%llx per=%llx\n", pTimer->u64Cmp, pTimer->u64Period));
 
             if (pThis->u64Config & HPET_CFG_ENABLE)
                 hpetProgramTimer(pTimer);
             break;
         }
-        case HPET_TN_CMP + 4: /* upper bits of comparator */
+        case HPET_TN_CMP + 4: /* upper bits of comparator register */
         {
-            Log(("write HPET_TN_CMP + 4\n"));
-            if (!(pTimer->u64Config & HPET_TN_PERIODIC) ||
-                (pTimer->u64Config & HPET_TN_SETVAL))
+            Log(("write HPET_TN_CMP + 4 on %d: %x\n", iTimerNo, iNewValue));
+            if (pTimer->u64Config & HPET_TN_32BIT)
+                break;
+
+            if (pTimer->u64Config & HPET_TN_SETVAL)
             {
-                pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffffULL)
-                        | ((uint64_t)iNewValue << 32);
-            }
-            else
+                /* HPET_TN_SETVAL allows to adjust comparator w/o updating period, and it's cleared on access */
+                pTimer->u64Config &= ~HPET_TN_SETVAL;
+            } else if (pTimer->u64Config & HPET_TN_PERIODIC)
             {
-                iNewValue &= (pTimer->u64Config & HPET_TN_32BIT ? ~0u : ~0ull) >> 1;
-                pTimer->u64Period = (pTimer->u64Period & 0xffffffffULL)
-                        | ((uint64_t)iNewValue << 32);
+                 pTimer->u64Period = (pTimer->u64Period & 0xffffffffULL)
+                         | ((uint64_t)iNewValue << 32);
             }
 
-            pTimer->u64Config &= ~HPET_TN_SETVAL;
+            pTimer->u64Cmp = (pTimer->u64Cmp & 0xffffffffULL)
+                    | ((uint64_t)iNewValue << 32);
+
+            Log2(("after HPET_TN_CMP+4 cmp=%llx per=%llx\n", pTimer->u64Cmp, pTimer->u64Period));
 
             if (pThis->u64Config & HPET_CFG_ENABLE)
                 hpetProgramTimer(pTimer);
@@ -725,8 +731,8 @@ PDMBOTHCBDECL(int)  hpetMMIORead(PPDMDEVINS pDevIns,
     {
         case 1:
         case 2:
-            /** @todo: error? */
             Log(("Narrow read: %d\n", cb));
+            rc = VERR_INTERNAL_ERROR;
             break;
         case 4:
         {
@@ -804,8 +810,8 @@ PDMBOTHCBDECL(int) hpetMMIOWrite(PPDMDEVINS pDevIns,
     {
         case 1:
         case 2:
-             /** @todo: error? */
             Log(("Narrow write: %d\n", cb));
+            rc = VERR_INTERNAL_ERROR;
             break;
         case 4:
         {
