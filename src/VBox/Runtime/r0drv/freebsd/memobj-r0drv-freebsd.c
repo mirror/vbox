@@ -57,18 +57,18 @@ typedef struct RTR0MEMOBJFREEBSD
     /** Type dependent data */
     union
     {
-        /** Everything not physical */
+        /** Non physical memory allocations */
         struct
         {
             /** The VM object associated with the allocation. */
             vm_object_t         pObject;
         } NonPhys;
-        /** Physical contiguous/non-contiguous memory */
+        /** Physical memory allocations */
         struct
         {
-            /** Number of allocated pages */
+            /** Number of pages */
             uint32_t            cPages;
-            /** Array of allocated pages. */
+            /** Array of pages - variable */
             vm_page_t           apPages[1];
         } Phys;
     } u;
@@ -161,14 +161,8 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS:
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
-            vm_page_lock_queues();
             for (uint32_t iPage = 0; iPage < pMemFreeBSD->u.Phys.cPages; iPage++)
-            {
-                vm_page_t pPage = pMemFreeBSD->u.Phys.apPages[iPage];
-                pPage->wire_count--;
-                vm_page_free_toq(pPage);
-            }
-            vm_page_unlock_queues();
+                vm_page_free_toq(pMemFreeBSD->u.Phys.apPages[iPage]);
             break;
         }
 
@@ -210,69 +204,89 @@ int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecu
                          FALSE);                        /* cow (copy-on-write) */
         if (rc == KERN_SUCCESS)
         {
-            vm_offset_t AddressDst = MapAddress;
-
             rc = VINF_SUCCESS;
 
             VM_OBJECT_LOCK(pMemFreeBSD->u.NonPhys.pObject);
             for (size_t iPage = 0; iPage < cPages; iPage++)
             {
-                vm_pindex_t PageIndex = OFF_TO_IDX(AddressDst);
                 vm_page_t   pPage;
 
-                pPage = vm_page_alloc(pMemFreeBSD->u.NonPhys.pObject, PageIndex,
+                pPage = vm_page_alloc(pMemFreeBSD->u.NonPhys.pObject, iPage,
                                       VM_ALLOC_NOBUSY | VM_ALLOC_SYSTEM |
                                       VM_ALLOC_WIRED);
 
-#if __FreeBSD_version >= 800000 /** @todo Find exact version number */
-                /* Fixes crashes during VM termination on FreeBSD8-CURRENT amd64
-                 * with kernel debugging enabled. */
-                vm_page_set_valid(pPage, 0, PAGE_SIZE);
-#endif
-
-                if (pPage)
-                {
-                    vm_page_lock_queues();
-                    vm_page_wire(pPage);
-                    vm_page_unlock_queues();
-                    /* Put the page into the page table now. */
-#if __FreeBSD_version >= 701105
-                    pmap_enter(kernel_map->pmap, AddressDst, VM_PROT_NONE, pPage,
-                               fExecutable
-                               ? VM_PROT_ALL
-                               : VM_PROT_RW,
-                               TRUE);
-#else
-                    pmap_enter(kernel_map->pmap, AddressDst, pPage,
-                               fExecutable
-                               ? VM_PROT_ALL
-                               : VM_PROT_RW,
-                               TRUE);
-#endif
-                }
-                else
+                if (!pPage)
                 {
                     /*
-                     * Allocation failed. vm_map_remove will remove any
-                     * page already alocated.
+                     * Out of pages
+                     * Remove already allocated pages
                      */
+                    while (iPage-- > 0)
+                    {
+                        vm_map_lock(kernel_map);
+                        pPage = vm_page_lookup(pMemFreeBSD->u.NonPhys.pObject, iPage);
+                        vm_page_lock_queues();
+                        vm_page_unwire(pPage, 0);
+                        vm_page_free(pPage);
+                        vm_page_unlock_queues();
+                    }
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                AddressDst += PAGE_SIZE;
+
+                pPage->valid = VM_PAGE_BITS_ALL;
             }
             VM_OBJECT_UNLOCK(pMemFreeBSD->u.NonPhys.pObject);
 
             if (rc == VINF_SUCCESS)
             {
-                pMemFreeBSD->Core.pv = (void *)MapAddress;
-                *ppMem = &pMemFreeBSD->Core;
-                return VINF_SUCCESS;
-            }
+                vm_map_entry_t pMapEntry;
+                boolean_t fEntryFound;
 
-            vm_map_remove(kernel_map,
-                          MapAddress,
-                          MapAddress + cb);
+                fEntryFound = vm_map_lookup_entry(kernel_map, MapAddress, &pMapEntry);
+                if (fEntryFound)
+                {
+                    pMapEntry->wired_count = 1;
+                    vm_map_simplify_entry(kernel_map, pMapEntry);
+
+                    /* Put the page into the page table now. */
+                    VM_OBJECT_LOCK(pMemFreeBSD->u.NonPhys.pObject);
+                    vm_offset_t AddressDst = MapAddress;
+
+                    for (size_t iPage = 0; iPage < cPages; iPage++)
+                    {
+                        vm_page_t pPage;
+
+                        pPage = vm_page_lookup(pMemFreeBSD->u.NonPhys.pObject, iPage);
+
+#if __FreeBSD_version >= 701105
+                        pmap_enter(kernel_map->pmap, AddressDst, VM_PROT_NONE, pPage,
+                                   fExecutable
+                                   ? VM_PROT_ALL
+                                   : VM_PROT_RW,
+                                   TRUE);
+#else
+                        pmap_enter(kernel_map->pmap, AddressDst, pPage,
+                                   fExecutable
+                                   ? VM_PROT_ALL
+                                   : VM_PROT_RW,
+                                   TRUE);
+#endif
+
+                        AddressDst += PAGE_SIZE;
+                    }
+                    VM_OBJECT_UNLOCK(pMemFreeBSD->u.NonPhys.pObject);
+
+                    /* Store start address */
+                    pMemFreeBSD->Core.pv = (void *)MapAddress;
+                    *ppMem = &pMemFreeBSD->Core;
+                    return VINF_SUCCESS;
+                }
+                else
+                {
+                    AssertFailed();
+                }
+            }
         }
         rc = VERR_NO_MEMORY; /** @todo fix translation (borrow from darwin) */
     }
@@ -347,41 +361,25 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
     vm_paddr_t VmPhysAddrHigh;
 
     /* create the object. */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJFREEBSD, u.Phys.apPages[cPages]), enmType, NULL, cb);
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJFREEBSD, u.Phys.apPages[cPages]),
+                                                                       enmType, NULL, cb);
     if (!pMemFreeBSD)
         return VERR_NO_MEMORY;
 
     pMemFreeBSD->u.Phys.cPages = cPages;
 
-    /*
-     * For now allocate contiguous pages
-     * if there is an upper limit or
-     * the alignment is not on a page boundary.
-     */
     if (PhysHighest != NIL_RTHCPHYS)
-    {
         VmPhysAddrHigh = PhysHighest;
-        fContiguous = true;
-    }
     else
         VmPhysAddrHigh = ~(vm_paddr_t)0;
 
-    if (uAlignment != PAGE_SIZE)
-        fContiguous = true;
-
-    mtx_lock(&vm_page_queue_free_mtx);
     if (fContiguous)
     {
         vm_page_t pPage = vm_phys_alloc_contig(cPages, 0, VmPhysAddrHigh, uAlignment, 0);
 
         if (pPage)
             for (uint32_t iPage = 0; iPage < cPages; iPage++)
-            {
-                pPage[iPage].flags     &= ~PG_FREE;
-                pPage[iPage].wire_count = 1;
-                atomic_add_int(&cnt.v_wire_count, 1);
                 pMemFreeBSD->u.Phys.apPages[iPage] = &pPage[iPage];
-            }
         else
             rc = VERR_NO_MEMORY;
     }
@@ -390,30 +388,19 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
         /* Allocate page by page */
         for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
-            vm_page_t pPage = vm_phys_alloc_pages(VM_FREEPOOL_DEFAULT, 0);
+            vm_page_t pPage = vm_phys_alloc_contig(1, 0, VmPhysAddrHigh, uAlignment, 0);
 
             if (!pPage)
             {
-                vm_page_lock_queues();
+                /* Free all allocated pages */
                 while (iPage-- > 0)
-                {
-                    pMemFreeBSD->u.Phys.apPages[iPage]->wire_count--;
                     vm_page_free_toq(pMemFreeBSD->u.Phys.apPages[iPage]);
-                }
-                vm_page_unlock_queues();
-
                 rc = VERR_NO_MEMORY;
                 break;
             }
-
-            pPage->flags     &= ~PG_FREE;
-            pPage->valid      = VM_PAGE_BITS_ALL;
-            pPage->wire_count = 1;
-            atomic_add_int(&cnt.v_wire_count, 1);
             pMemFreeBSD->u.Phys.apPages[iPage] = pPage;
         }
     }
-    mtx_unlock(&vm_page_queue_free_mtx);
 
     if (RT_FAILURE(rc))
         rtR0MemObjDelete(&pMemFreeBSD->Core);
@@ -433,13 +420,42 @@ static int rtR0MemObjFreeBSDAllocPhysPages(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOB
 
 int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest, size_t uAlignment)
 {
+#if 0
     return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS, cb, PhysHighest, uAlignment, true);
+#else
+    /* create the object. */
+    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(sizeof(*pMemFreeBSD), RTR0MEMOBJTYPE_CONT, NULL, cb);
+    if (!pMemFreeBSD)
+        return VERR_NO_MEMORY;
+
+    /* do the allocation. */
+    pMemFreeBSD->Core.pv = contigmalloc(cb,                   /* size */
+                                        M_IPRTMOBJ,           /* type */
+                                        M_NOWAIT | M_ZERO,    /* flags */
+                                        0,                    /* lowest physical address*/
+                                        _4G-1,                /* highest physical address */
+                                        uAlignment,           /* alignment. */
+                                        0);                   /* boundrary */
+    if (pMemFreeBSD->Core.pv)
+    {
+        pMemFreeBSD->Core.u.Cont.Phys = vtophys(pMemFreeBSD->Core.pv);
+        *ppMem = &pMemFreeBSD->Core;
+        return VINF_SUCCESS;
+    }
+
+    rtR0MemObjDelete(&pMemFreeBSD->Core);
+    return VERR_NO_MEMORY;
+#endif
 }
 
 
 int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS PhysHighest)
 {
+#if 0
     return rtR0MemObjFreeBSDAllocPhysPages(ppMem, RTR0MEMOBJTYPE_PHYS_NC, cb, PhysHighest, PAGE_SIZE, false);
+#else
+    return VERR_NOT_SUPPORTED;
+#endif
 }
 
 
@@ -616,74 +632,9 @@ int rtR0MemObjNativeMapKernel(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, 
     if (uAlignment > PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
-
-
 /* Phys: see pmap_mapdev in i386/i386/pmap.c (http://fxr.watson.org/fxr/source/i386/i386/pmap.c?v=RELENG62#L2860) */
-
-#if 0
 /** @todo finish the implementation. */
 
-    int rc;
-    void *pvR0 = NULL;
-    PRTR0MEMOBJFREEBSD pMemToMapOs2 = (PRTR0MEMOBJFREEBSD)pMemToMap;
-    switch (pMemToMapOs2->Core.enmType)
-    {
-        /*
-         * These has kernel mappings.
-         */
-        case RTR0MEMOBJTYPE_PAGE:
-        case RTR0MEMOBJTYPE_LOW:
-        case RTR0MEMOBJTYPE_CONT:
-            pvR0 = pMemToMapOs2->Core.pv;
-            break;
-
-        case RTR0MEMOBJTYPE_PHYS_NC:
-        case RTR0MEMOBJTYPE_PHYS:
-            pvR0 = pMemToMapOs2->Core.pv;
-            if (!pvR0)
-            {
-                /* no ring-0 mapping, so allocate a mapping in the process. */
-                AssertMsgReturn(uAlignment == PAGE_SIZE, ("%#zx\n", uAlignment), VERR_NOT_SUPPORTED);
-                AssertMsgReturn(fProt & RTMEM_PROT_WRITE, ("%#x\n", fProt), VERR_NOT_SUPPORTED);
-                Assert(!pMemToMapOs2->Core.u.Phys.fAllocated);
-                ULONG ulPhys = pMemToMapOs2->Core.u.Phys.PhysBase;
-                rc = KernVMAlloc(pMemToMapOs2->Core.cb, VMDHA_PHYS, &pvR0, (PPVOID)&ulPhys, NULL);
-                if (rc)
-                    return RTErrConvertFromOS2(rc);
-                pMemToMapOs2->Core.pv = pvR0;
-            }
-            break;
-
-        case RTR0MEMOBJTYPE_LOCK:
-            if (pMemToMapOs2->Core.u.Lock.R0Process != NIL_RTR0PROCESS)
-                return VERR_NOT_SUPPORTED; /** @todo implement this... */
-            pvR0 = pMemToMapOs2->Core.pv;
-            break;
-
-        case RTR0MEMOBJTYPE_RES_VIRT:
-        case RTR0MEMOBJTYPE_MAPPING:
-        default:
-            AssertMsgFailed(("enmType=%d\n", pMemToMapOs2->Core.enmType));
-            return VERR_INTERNAL_ERROR;
-    }
-
-    /*
-     * Create a dummy mapping object for it.
-     *
-     * All mappings are read/write/execute in OS/2 and there isn't
-     * any cache options, so sharing is ok. And the main memory object
-     * isn't actually freed until all the mappings have been freed up
-     * (reference counting).
-     */
-    PRTR0MEMOBJFREEBSD pMemFreeBSD = (PRTR0MEMOBJFREEBSD)rtR0MemObjNew(RT_OFFSETOF(RTR0MEMOBJOS2, Lock), RTR0MEMOBJTYPE_MAPPING, pvR0, pMemToMapOs2->Core.cb);
-    if (pMemFreeBSD)
-    {
-        pMemFreeBSD->Core.u.Mapping.R0Process = NIL_RTR0PROCESS;
-        *ppMem = &pMemFreeBSD->Core;
-        return VINF_SUCCESS;
-    }
-    return VERR_NO_MEMORY;
-#endif
     return VERR_NOT_IMPLEMENTED;
 }
 
@@ -720,7 +671,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     vm_offset_t AddrR3 = round_page((vm_offset_t)pProc->p_vmspace->vm_daddr + lim_max(pProc, RLIMIT_DATA));
     PROC_UNLOCK(pProc);
 
-    vm_object_t pObjectNew = vm_object_allocate(OBJT_PHYS, pMemToMap->cb >> PAGE_SHIFT);
+    vm_object_t pObjectNew = vm_object_allocate(OBJT_DEFAULT, pMemToMap->cb >> PAGE_SHIFT);
     if (!RT_UNLIKELY(pObjectNew))
         return VERR_NO_MEMORY;
 
@@ -738,43 +689,69 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
     /* Map the memory page by page into the destination map. */
     if (rc == KERN_SUCCESS)
     {
-        size_t         cPages;
-        vm_offset_t    AddrToMap    = (vm_offset_t)pMemToMap->pv;
+        size_t         cPages       = pMemToMap->cb >> PAGE_SHIFT;;
         pmap_t         pPhysicalMap = pProcMap->pmap;
         vm_offset_t    AddrR3Dst    = AddrR3;
 
         if (   pMemToMap->enmType == RTR0MEMOBJTYPE_PHYS
             || pMemToMap->enmType == RTR0MEMOBJTYPE_PHYS_NC)
-            cPages = pMemToMapFreeBSD->u.Phys.cPages;
-        else
-            cPages = pMemToMap->cb >> PAGE_SHIFT;
-
-        /* Insert the memory page by page into the mapping. */
-        for (uint32_t iPage = 0; iPage < cPages; iPage++)
         {
-            vm_page_t pPage;
+            /* Mapping physical allocations */
+            Assert(cPages == pMemToMap->u.Phys.cPages);
 
-            if (   pMemToMap->enmType == RTR0MEMOBJTYPE_PHYS
-                || pMemToMap->enmType == RTR0MEMOBJTYPE_PHYS_NC)
-                pPage = pMemToMapFreeBSD->u.Phys.apPages[iPage];
-            else
+            /* Insert the memory page by page into the mapping. */
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
             {
-                pPage = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
-                AddrToMap += PAGE_SIZE;
-            }
+                vm_page_t pPage = pMemToMapFreeBSD->u.Phys.apPages[iPage];
 
 #if __FreeBSD_version >= 701105
-            pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, pPage, ProtectionFlags, TRUE);
+                pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, pPage, ProtectionFlags, TRUE);
 #else
-            pmap_enter(pPhysicalMap, AddrR3Dst, pPage, ProtectionFlags, TRUE);
+                pmap_enter(pPhysicalMap, AddrR3Dst, pPage, ProtectionFlags, TRUE);
 #endif
-            AddrR3Dst += PAGE_SIZE;
+                AddrR3Dst += PAGE_SIZE;
+            }
+        }
+        else if (pMemToMapFreeBSD->u.NonPhys.pObject)
+        {
+            /* Mapping page memory object */
+            VM_OBJECT_LOCK(pMemToMapFreeBSD->u.NonPhys.pObject);
+
+            /* Insert the memory page by page into the mapping. */
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
+            {
+                vm_page_t pPage = vm_page_lookup(pMemToMapFreeBSD->u.NonPhys.pObject, iPage);
+
+#if __FreeBSD_version >= 701105
+                pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, pPage, ProtectionFlags, TRUE);
+#else
+                pmap_enter(pPhysicalMap, AddrR3Dst, pPage, ProtectionFlags, TRUE);
+#endif
+                AddrR3Dst += PAGE_SIZE;
+            }
+            VM_OBJECT_UNLOCK(pMemToMapFreeBSD->u.NonPhys.pObject);
+        }
+        else
+        {
+            /* Mapping cont or low memory types */
+            vm_offset_t AddrToMap = (vm_offset_t)pMemToMap->pv;
+
+            for (uint32_t iPage = 0; iPage < cPages; iPage++)
+            {
+                vm_page_t pPage = PHYS_TO_VM_PAGE(vtophys(AddrToMap));
+
+#if __FreeBSD_version >= 701105
+                pmap_enter(pPhysicalMap, AddrR3Dst, VM_PROT_NONE, pPage, ProtectionFlags, TRUE);
+#else
+                pmap_enter(pPhysicalMap, AddrR3Dst, pPage, ProtectionFlags, TRUE);
+#endif
+                AddrR3Dst += PAGE_SIZE;
+                AddrToMap += PAGE_SIZE;
+            }
         }
     }
-    else
-        vm_object_deallocate(pObjectNew);
 
-    if (rc == KERN_SUCCESS)
+    if (RT_SUCCESS(rc))
     {
         /*
          * Create a mapping object for it.
@@ -786,6 +763,7 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
         if (pMemFreeBSD)
         {
             Assert((vm_offset_t)pMemFreeBSD->Core.pv == AddrR3);
+            pMemFreeBSD->u.NonPhys.pObject = pObjectNew;
             pMemFreeBSD->Core.u.Mapping.R0Process = R0Process;
             *ppMem = &pMemFreeBSD->Core;
             return VINF_SUCCESS;
@@ -794,6 +772,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, RTR0MEMOBJ pMemToMap, RT
         rc = vm_map_remove(pProcMap, ((vm_offset_t)AddrR3), ((vm_offset_t)AddrR3) + pMemToMap->cb);
         AssertMsg(rc == KERN_SUCCESS, ("Deleting mapping failed\n"));
     }
+
+    if (RT_FAILURE(rc))
+        vm_object_deallocate(pObjectNew);
 
     return VERR_NO_MEMORY;
 }
@@ -862,13 +843,9 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
 
         case RTR0MEMOBJTYPE_PHYS_NC:
         {
-            RTHCPHYS PhysAddr = NIL_RTHCPHYS;
-
-            if (iPage < pMemFreeBSD->u.Phys.cPages)
-                PhysAddr = VM_PAGE_TO_PHYS(pMemFreeBSD->u.Phys.apPages[iPage]);
-
-            return PhysAddr;
+            return VM_PAGE_TO_PHYS(pMemFreeBSD->u.Phys.apPages[iPage]);
         }
+
         case RTR0MEMOBJTYPE_RES_VIRT:
         case RTR0MEMOBJTYPE_LOW:
         default:
