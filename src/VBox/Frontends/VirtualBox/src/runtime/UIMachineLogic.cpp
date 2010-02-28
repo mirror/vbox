@@ -25,6 +25,7 @@
 #include <QDir>
 #include <QFileInfo>
 #include <QDesktopWidget>
+#include <QTimer>
 
 /* Local includes */
 #include "COMDefs.h"
@@ -372,6 +373,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pMachineWindowWrapper(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
+    , m_fIsPreventAutoStart(false)
     , m_fIsPreventAutoClose(false)
 {
 }
@@ -539,35 +541,40 @@ void UIMachineLogic::prepareRequiredFeatures()
     /* Get current console: */
     CConsole console = session().GetConsole();
 
-    /* Check if the virtualization feature is required. */
-    bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
-    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
-    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool fIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !fIsVirtEnabled)
+    /* Check if the required virtualization features are ready: */
+    if (!isPreventAutoStart())
     {
-        bool fResult;
+        bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
+        bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
+        AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
+        bool fIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
+        if (fRecommendVirtEx && !fIsVirtEnabled)
+        {
+            bool fShouldWeClose;
 
-        uisession()->pause();
+            bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
 
-        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+            if (fIs64BitsGuest)
+                fShouldWeClose = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
+            else
+                fShouldWeClose = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
 
-        if (fIs64BitsGuest)
-            fResult = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
-        else
-            fResult = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
-
-        if (fResult == true)
-            sltClose();
-        else
-            uisession()->unpause();
+            if (fShouldWeClose == true)
+                setPreventAutoStart(true);
+        }
     }
 
 #ifdef Q_WS_MAC
 # ifdef VBOX_WITH_ICHAT_THEATER
-    initSharedAVManager();
+    /* Init shared AV manager: */
+    if (!isPreventAutoStart())
+        initSharedAVManager();
 # endif
 #endif
+
+    /* Close request in case of features are not ready and user wish to close: */
+    if (isPreventAutoStart())
+        QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
 }
 
 void UIMachineLogic::sltMachineStateChanged()
