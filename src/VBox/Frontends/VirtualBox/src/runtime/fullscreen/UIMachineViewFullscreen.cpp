@@ -2,7 +2,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineViewNormal class implementation
+ * UIMachineViewFullscreen class implementation
  */
 
 /*
@@ -34,10 +34,10 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIFrameBuffer.h"
-#include "UIMachineViewNormal.h"
+#include "UIMachineViewFullscreen.h"
 #include "QIMainDialog.h"
 
-UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
+UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
                                          , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                          , bool bAccelerate2DVideo
@@ -74,7 +74,7 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     sltMouseCapabilityChanged();
 }
 
-UIMachineViewNormal::~UIMachineViewNormal()
+UIMachineViewFullscreen::~UIMachineViewFullscreen()
 {
     /* Cleanup common things: */
     cleanupCommon();
@@ -83,13 +83,13 @@ UIMachineViewNormal::~UIMachineViewNormal()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewNormal::sltAdditionsStateChanged()
+void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
     /* Check if we should restrict minimum size: */
     maybeRestrictMinimumSize();
 }
 
-void UIMachineViewNormal::sltPerformGuestResize(const QSize &toSize)
+void UIMachineViewFullscreen::sltPerformGuestResize(const QSize &toSize)
 {
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
@@ -133,21 +133,34 @@ void UIMachineViewNormal::sltPerformGuestResize(const QSize &toSize)
 }
 
 /* If the desktop geometry is set automatically, this will update it: */
-void UIMachineViewNormal::sltDesktopResized()
+void UIMachineViewFullscreen::sltDesktopResized()
 {
     calculateDesktopGeometry();
 }
 
-void UIMachineViewNormal::prepareFilters()
+void UIMachineViewFullscreen::prepareCommon()
 {
-    /* Base class filters: */
+    UIMachineView::prepareCommon();
+
+    /* Maximum size of the screen */
+    setMaximumSize(availableGeometry().size());
+    /* Minimum size is ignored too */
+    setMinimumSize(0, 0);
+    /* No scrollbars */
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+}
+
+void UIMachineViewFullscreen::prepareFilters()
+{
+    /* Base-class filters: */
     UIMachineView::prepareFilters();
 
-    /* Menu bar filters: */
+    /* Normal window filters: */
     qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 }
 
-void UIMachineViewNormal::prepareConsoleConnections()
+void UIMachineViewFullscreen::prepareConsoleConnections()
 {
     /* Base class connections: */
     UIMachineView::prepareConsoleConnections();
@@ -156,7 +169,7 @@ void UIMachineViewNormal::prepareConsoleConnections()
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
-void UIMachineViewNormal::loadMachineViewSettings()
+void UIMachineViewFullscreen::loadMachineViewSettings()
 {
     /* Base class settings: */
     UIMachineView::loadMachineViewSettings();
@@ -167,7 +180,7 @@ void UIMachineViewNormal::loadMachineViewSettings()
     }
 }
 
-void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
+void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 {
     if (m_bIsGuestAutoresizeEnabled != fEnabled)
     {
@@ -175,12 +188,12 @@ void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
 
         maybeRestrictMinimumSize();
 
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        if (uisession()->isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
             sltPerformGuestResize();
     }
 }
 
-void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
+void UIMachineViewFullscreen::normalizeGeometry(bool bAdjustPosition /* = false */)
 {
     QWidget *pTopLevelWidget = window();
 
@@ -216,7 +229,7 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
             /* Get just a simple available rectangle */
             availableGeo = dwt->availableGeometry(pTopLevelWidget->pos());
 
-        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, mode() != VBoxDefs::SDLMode /* can resize? */);
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, mode() != VBoxDefs::SDLMode /* canResize */);
     }
 
 #if 0
@@ -228,12 +241,12 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
     pTopLevelWidget->setGeometry(frameGeo.left() + dl, frameGeo.top() + dt, frameGeo.width() - dl - dr, frameGeo.height() - dt - db);
 }
 
-QRect UIMachineViewNormal::availableGeometry()
+QRect UIMachineViewFullscreen::availableGeometry()
 {
-    return QApplication::desktop()->availableGeometry(this);
+    return QApplication::desktop()->screenGeometry(this);
 }
 
-void UIMachineViewNormal::maybeRestrictMinimumSize()
+void UIMachineViewFullscreen::maybeRestrictMinimumSize()
 {
     /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
      * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
@@ -248,7 +261,7 @@ void UIMachineViewNormal::maybeRestrictMinimumSize()
     }
 }
 
-bool UIMachineViewNormal::event(QEvent *pEvent)
+bool UIMachineViewFullscreen::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
@@ -321,6 +334,9 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 
             setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
 
+            /* Update geometry after entering fullscreen */
+            updateGeometry();
+
             /* Make sure that all posted signals are processed: */
             qApp->processEvents();
 
@@ -332,9 +348,10 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
              * but it is done every time to keep the code simpler. */
             calculateDesktopGeometry();
 
+            // TODO_NEW_CORE: try to understand this, cause this is bullshit in fullscreen
             /* Enable frame-buffer resize watching: */
-            if (isFrameBufferResizeIgnored())
-                setFrameBufferResizeIgnored(false);
+//            if (isFrameBufferResizeIgnored())
+//                setFrameBufferResizeIgnored(false);
 
             return true;
         }
@@ -367,7 +384,7 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
     return UIMachineView::event(pEvent);
 }
 
-bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
+bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Who are we watchin? */
     QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?

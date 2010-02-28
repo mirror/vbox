@@ -37,7 +37,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowNormal.h"
-//#include "UIMachineWindowFullscreen.h"
+#include "UIMachineWindowFullscreen.h"
 //#include "UIMachineWindowSeamless.h"
 
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType)
@@ -49,8 +49,7 @@ UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisual
             window = new UIMachineWindowNormal(pMachineLogic);
             break;
         case UIVisualStateType_Fullscreen:
-            // window = new UIMachineWindowFullscreen(pMachineLogic);
-            window = new UIMachineWindowNormal(pMachineLogic);
+            window = new UIMachineWindowFullscreen(pMachineLogic);
             break;
         case UIVisualStateType_Seamless:
             // window = new UIMachineWindowSeamless(pMachineLogic);
@@ -507,6 +506,7 @@ void UIMachineWindow::prepareMachineViewContainer()
     m_pBottomSpacer = new QSpacerItem(0, 0, QSizePolicy::Fixed, QSizePolicy::Expanding);
     m_pLeftSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
     m_pRightSpacer = new QSpacerItem(0, 0, QSizePolicy::Expanding, QSizePolicy::Fixed);
+
     m_pMachineViewContainer->addItem(m_pTopSpacer, 0, 1);
     m_pMachineViewContainer->addItem(m_pBottomSpacer, 2, 1);
     m_pMachineViewContainer->addItem(m_pLeftSpacer, 1, 0);
