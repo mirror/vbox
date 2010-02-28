@@ -586,15 +586,31 @@ void UIMachineLogic::sltMachineStateChanged()
     m_pRunningActions->setEnabled(uisession()->isRunning());
     m_pRunningOrPausedActions->setEnabled(uisession()->isRunning() || uisession()->isPaused());
 
-    /* Do we have GURU? */
-    bool fIsGuruMeditation = false;
-
     switch (state)
     {
-        case KMachineState_Stuck:
+        case KMachineState_Stuck: // TODO: Test it!
         {
-            /* We will process GURU later: */
-            fIsGuruMeditation = true;
+            /* Prevent machine view from resizing: */
+            uisession()->setGuestResizeIgnored(true);
+
+            /* Get console: */
+            CConsole console = session().GetConsole();
+
+            /* Take the screenshot for debugging purposes and save it */
+            QString strLogFolder = console.GetMachine().GetLogFolder();
+            QString strFileName = strLogFolder + "/VBox.png";
+            CDisplay display = console.GetDisplay();
+            QImage shot = QImage(display.GetWidth(), display.GetHeight(), QImage::Format_RGB32);
+            display.TakeScreenShot(shot.bits(), shot.width(), shot.height());
+            shot.save(QFile::encodeName(strFileName), "PNG");
+
+            /* Warn the user about GURU: */
+            if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
+            {
+                console.PowerDown();
+                if (!console.isOk())
+                    vboxProblem().cannotStopMachine(console);
+            }
             break;
         }
         case KMachineState_Paused:
@@ -624,6 +640,20 @@ void UIMachineLogic::sltMachineStateChanged()
             }
             break;
         }
+        case KMachineState_PoweredOff:
+        case KMachineState_Saved:
+        case KMachineState_Teleported:
+        case KMachineState_Aborted:
+        {
+            /* Close VM if it was turned off and closure allowed: */
+            if (!isPreventAutoClose())
+            {
+                /* VM has been powered off, saved or aborted, no matter
+                 * internally or externally. We must *safely* close VM window(s): */
+                QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
+            }
+            break;
+        }
 #ifdef Q_WS_X11
         case KMachineState_Starting:
         case KMachineState_Restoring:
@@ -638,41 +668,6 @@ void UIMachineLogic::sltMachineStateChanged()
         default:
             break;
     }
-
-    /* Close VM if was closed someway: */
-    if (uisession()->isTurnedOff())
-    {
-        /* VM has been powered off or saved or aborted, no matter internally or externally.
-         * We must *safely* close the console window unless auto closure is disabled: */
-        QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
-        return;
-    }
-
-#if 0 // TODO: Postprocess GURU!
-    if (fIsGuruMeditation)
-    {
-        uisession()->setGuestResizeIgnored(true);
-
-        CConsole console = session().GetConsole();
-        QString strLogFolder = console.GetMachine().GetLogFolder();
-
-        /* Take the screenshot for debugging purposes and save it */
-        QString strFileName = strLogFolder + "/VBox.png";
-        CDisplay display = console.GetDisplay();
-        QImage shot = QImage(display.GetWidth(), display.GetHeight(), QImage::Format_RGB32);
-        display.TakeScreenShot(shot.bits(), shot.width(), shot.height());
-        shot.save(QFile::encodeName(strFileName), "PNG");
-
-        /* Warn the user about GURU: */
-        if (vboxProblem().remindAboutGuruMeditation(console, QDir::toNativeSeparators(strLogFolder)))
-        {
-            qApp->processEvents();
-            console.PowerDown();
-            if (!console.isOk())
-                vboxProblem().cannotStopMachine(console);
-        }
-    }
-#endif
 }
 
 void UIMachineLogic::sltAdditionsStateChanged()

@@ -129,6 +129,12 @@ void UIMachineWindow::retranslateUi()
 
 void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
 {
+    /* Always ignore close event: */
+    pEvent->ignore();
+
+    /* Should we close application? */
+    bool fCloseApplication = false;
+
     switch (uisession()->machineState())
     {
         case KMachineState_Running:
@@ -138,10 +144,10 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
         case KMachineState_Teleporting: // TODO: Test this!
         case KMachineState_TeleportingPausedVM: // TODO: Test this!
         {
-            /* Ignoring close event initially: */
-            pEvent->ignore();
-
             bool success = true;
+
+            /* Get the ACPI status early before pausing VM: */
+            bool isACPIEnabled = session().GetConsole().GetGuestEnteredACPIMode();
 
             bool fWasPaused = uisession()->isPaused() || uisession()->machineState() == KMachineState_Stuck;
             if (!fWasPaused)
@@ -155,11 +161,11 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             {
                 success = false;
 
+                /* Preventing closure right after we had paused: */
+                machineLogic()->setPreventAutoClose(true);
+
                 /* Get the machine: */
                 CMachine machine = session().GetMachine();
-
-                /* Get the ACPI status: */
-                bool isACPIEnabled = session().GetConsole().GetGuestEnteredACPIMode();
 
                 /* Prepare close dialog: */
                 VBoxCloseVMDlg dlg(machineWindow());
@@ -171,7 +177,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                 if (!machine.GetCurrentSnapshot().isNull())
                     dlg.mCbDiscardCurState->setText(dlg.mCbDiscardCurState->text().arg(machine.GetCurrentSnapshot().GetName()));
 
-                /* Close choice string tags: */
+                /* Choice string tags for close-dialog: */
                 QString strSave("save");
                 QString strShutdown("shutdown");
                 QString strPowerOff("powerOff");
@@ -283,12 +289,6 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         }
                     }
 
-                    if (success)
-                    {
-                        /* Accept the close action on success: */
-                        pEvent->accept();
-                    }
-
                     if (success || fWasShutdown)
                     {
                         /* Read the last user's choice for the given VM: */
@@ -309,72 +309,30 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
                         machine.SetExtraData (VBoxDefs::GUI_LastCloseAction, lastAction);
                         AssertWrapperOk(machine);
                     }
+
+                    fCloseApplication = success;
                 }
             }
 
-            if (uisession()->machineState() == KMachineState_PoweredOff ||
-                uisession()->machineState() == KMachineState_Saved ||
-                uisession()->machineState() == KMachineState_Teleported ||
-                uisession()->machineState() == KMachineState_Aborted)
+            if (!success)
             {
-                /* The machine has been stopped while showing the Close or the Pause
-                 * failure dialog - accept the close event immediately: */
-                pEvent->accept();
-            }
-            else
-            {
-                if (!success)
-                {
-                    /* Restore the running state if needed: */
-                    if (!fWasPaused && uisession()->machineState() == KMachineState_Paused)
-                        uisession()->unpause();
-                }
+                /* Restore the running state if needed: */
+                if (!fWasPaused && uisession()->machineState() == KMachineState_Paused)
+                    uisession()->unpause();
             }
             break;
         }
-
-#if 0 // TODO: Check if all those states processing is really needed:
-        case KMachineState_PoweredOff:
-        case KMachineState_Saved:
-        case KMachineState_Teleported:
-        case KMachineState_Aborted:
-        {
-            /* The machine has been already powered off or saved or aborted - close the window immediately: */
-            pEvent->accept();
-            break;
-        }
-#endif
 
         default:
-        {
-            /* The machine is in some temporary state like Saving or Stopping.
-             * Ignore the close event. It will be processed later if something will be failed: */
-            pEvent->ignore();
             break;
-        }
     }
 
-    /* Postprocess event if accepted: */
-    if (pEvent->isAccepted())
+    /* Allowing closure: */
+    machineLogic()->setPreventAutoClose(false);
+
+    if (fCloseApplication)
     {
-#ifndef VBOX_GUI_SEPARATE_VM_PROCESS
-        vboxGlobal().selectorWnd().show();
-#endif
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-        /* Close & destroy the debugger GUI */
-        // TODO: Check that logic!
-        //dbgDestroy();
-#endif
-
-        /* Notify all the top-level child dialogs about closing: */
-        // TODO: Notify about closing!
-        //emit closing();
-
-        /* Reject that event finally as uimachine will close window iteself: */
-        pEvent->ignore();
-
-        /* Request uisession closing: */
+        /* VM has been powered off or saved. We must *safely* close the VM window(s): */
         QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
     }
 }
