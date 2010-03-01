@@ -119,7 +119,9 @@ public:
 
     UIAction* action(UIActionIndex index) const;
 
+    void createMenus();
     bool processHotKey(const QKeySequence &key);
+
 
 protected:
 

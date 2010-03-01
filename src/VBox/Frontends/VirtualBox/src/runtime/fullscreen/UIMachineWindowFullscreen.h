@@ -35,6 +35,10 @@
 # include <X11/Xlib.h>
 #endif
 
+#ifdef Q_WS_MAC
+# include <ApplicationServices/ApplicationServices.h>
+#endif /* Q_WS_MAC */
+
 /* Local forwards */
 class CMediumAttachment;
 
@@ -97,6 +101,7 @@ private:
 # ifdef QT_MAC_USE_COCOA
     void setPresentationModeEnabled(bool fEnabled);
 # endif /* QT_MAC_USE_COCOA */
+    CGDisplayFadeReservationToken mFadeToken;
 #endif /* Q_WS_MAC */
 
     /* Other members: */

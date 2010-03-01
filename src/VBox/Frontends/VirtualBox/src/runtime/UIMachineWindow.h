@@ -76,24 +76,12 @@ protected:
     /* Prepare helpers: */
     virtual void prepareWindowIcon();
     virtual void prepareConsoleConnections();
-    virtual void prepareMenuMachine();
-    virtual void prepareMenuDevices();
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    virtual void prepareMenuDebug();
-#endif
-    virtual void prepareMenuHelp();
     virtual void prepareMachineViewContainer();
     //virtual void loadWindowSettings() {}
 
     /* Cleanup helpers: */
     //virtual void saveWindowSettings() {}
     //virtual void cleanupMachineViewContainer() {}
-    //virtual void cleanupMenuHelp() {}
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    //virtual void prepareMenuDebug() {}
-#endif
-    //virtual void prepareMenuDevices() {}
-    //virtual void prepareMenuMachine() {}
     //virtual void cleanupConsoleConnections() {}
     //virtual void cleanupWindowIcon() {}
 

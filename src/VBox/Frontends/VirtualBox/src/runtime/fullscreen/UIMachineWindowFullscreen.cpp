@@ -183,6 +183,15 @@ bool UIMachineWindowFullscreen::event(QEvent *pEvent)
             }
             break;
         }
+#ifdef Q_WS_MAC
+        case QEvent::Polish:
+        {
+            /* Fade back to the normal gamma */
+//            CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
+//            CGReleaseDisplayFadeReservation (mFadeToken);
+            break;
+        }
+#endif /* Q_WS_MAC */
         default:
             break;
     }
@@ -244,29 +253,8 @@ void UIMachineWindowFullscreen::prepareConsoleConnections()
 
 void UIMachineWindowFullscreen::prepareMenu()
 {
-    /* Machine submenu: */
-    QMenu *pMenuMachine = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
-    prepareMenuMachine();
-    menuBar()->addMenu(pMenuMachine);
-
-    /* Devices submenu: */
-    QMenu *pMenuDevices = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
-    prepareMenuDevices();
-    menuBar()->addMenu(pMenuDevices);
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    if (vboxGlobal().isDebuggerEnabled())
-    {
-        QMenu *pMenuDebug = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Debug)->menu();
-        prepareMenuDebug();
-        menuBar()->addMenu(pMenuDebug);
-    }
-#endif
-
-    /* Help submenu: */
-    QMenu *pMenuHelp = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Help)->menu();
-    prepareMenuHelp();
-    menuBar()->addMenu(pMenuHelp);
+    setMenuBar(uisession()->newMenuBar());
+    menuBar()->hide();
 }
 
 void UIMachineWindowFullscreen::prepareConnections()
@@ -278,11 +266,9 @@ void UIMachineWindowFullscreen::prepareConnections()
 
 void UIMachineWindowFullscreen::prepareMachineView()
 {
-    CMachine machine = session().GetMachine();
-
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* Need to force the QGL framebuffer in case 2D Video Acceleration is supported & enabled: */
-    bool bAccelerate2DVideo = machine.GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
+    bool bAccelerate2DVideo = session().GetMachine().GetAccelerate2DVideoEnabled() && VBoxGlobal::isAcceleration2DVideoAvailable();
 #endif
 
     /* Set central widget: */
@@ -317,6 +303,13 @@ void UIMachineWindowFullscreen::loadWindowSettings()
     centralWidget()->setPalette (palette);
     centralWidget()->setAutoFillBackground (true);
     setAutoFillBackground (true);
+
+#ifdef Q_WS_MAC
+    /* Fade to black */
+//    CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
+//    CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
+#endif
+
 
     /* We have to show the window early, or the position will be wrong on the
        Mac */

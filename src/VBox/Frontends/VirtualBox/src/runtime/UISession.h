@@ -32,7 +32,11 @@
 
 /* Local forwards */
 class UIMachine;
+class UIActionsPool;
 class UIConsoleCallback;
+class UIMachineMenuBar;
+
+class QMenuBar;
 
 /* CConsole callback event types: */
 enum UIConsoleEventType
@@ -72,6 +76,9 @@ public:
     /* Common getters: */
     CSession& session() { return m_session; }
     KMachineState machineState() const { return m_machineState; }
+    UIActionsPool* actionsPool() const;
+    QMenuBar* newMenuBar();
+
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
                                       machineState() == KMachineState_Saved ||
@@ -169,6 +176,8 @@ private:
     UIMachine *m_pMachine;
     CSession &m_session;
     const CConsoleCallback m_callback;
+
+    UIMachineMenuBar *m_pMenuBar;
 
     /* Common variables: */
     KMachineState m_machineState;
