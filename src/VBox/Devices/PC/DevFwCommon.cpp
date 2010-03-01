@@ -231,7 +231,7 @@ typedef struct MPSCFGTBLHEADER
     uint16_t        u16EntryCount;
     uint32_t        u32AddrLocalApic;
     uint16_t        u16ExtTableLength;
-    uint8_t         u8ExtTableChecksum;
+    uint8_t         u8ExtTableChecksxum;
     uint8_t         u8Reserved;
 } *PMPSCFGTBLHEADER;
 AssertCompileSize(MPSCFGTBLHEADER, 0x2c);
@@ -732,13 +732,11 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     pCfgTab->u16OemTableSize       =  0;
     pCfgTab->u16EntryCount         =  cCpus /* Processors */
                                    +  1 /* ISA Bus */
-                                   +  1 /* PCI Bus */
                                    +  1 /* I/O-APIC */
-                                   + 16 /* Interrupts */
-                                   +  1 /* Local interrupts */;
+                                   + 16 /* Interrupts */;
     pCfgTab->u32AddrLocalApic      = 0xfee00000;
     pCfgTab->u16ExtTableLength     =  0;
-    pCfgTab->u8ExtTableChecksum    =  0;
+    pCfgTab->u8ExtTableChecksxum   =  0;
     pCfgTab->u8Reserved            =  0;
 
     uint32_t u32Eax, u32Ebx, u32Ecx, u32Edx;
@@ -758,8 +756,8 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     for (int i = 0; i < cCpus; i++)
     {
         pProcEntry->u8EntryType        = 0; /* processor entry */
-        pProcEntry->u8LocalApicId      = i + 1;
-        pProcEntry->u8LocalApicVersion = 0x14;
+        pProcEntry->u8LocalApicId      = i;
+        pProcEntry->u8LocalApicVersion = 0x11;
         pProcEntry->u8CPUFlags         = (i == 0 ? 2 /* bootstrap processor */ : 0 /* application processor */) | 1 /* enabled */;
         pProcEntry->u32CPUSignature    = u32CPUSignature;
         pProcEntry->u32CPUFeatureFlags = u32FeatureFlags;
@@ -768,62 +766,37 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
         pProcEntry++;
     }
 
-    uint32_t iBusIdPci0 = 0;
-    uint32_t iBusIdIsa  = 1;
-
     /* ISA bus */
     PMPSBUSENTRY pBusEntry         = (PMPSBUSENTRY)pProcEntry;
     pBusEntry->u8EntryType         = 1; /* bus entry */
-    pBusEntry->u8BusId             = iBusIdIsa; /* this ID is referenced by the interrupt entries */
+    pBusEntry->u8BusId             = 0; /* this ID is referenced by the interrupt entries */
     memcpy(pBusEntry->au8BusTypeStr, "ISA   ", 6);
-    pBusEntry++;
 
-    /* PCI bus */
-    pBusEntry->u8EntryType         = 1; /* bus entry */
-    pBusEntry->u8BusId             = iBusIdPci0; /* this ID can be referenced by the interrupt entries */
-    memcpy(pBusEntry->au8BusTypeStr, "PCI   ", 6);
-
+    /* PCI bus? */
 
     /* I/O-APIC.
      * MP spec: "The configuration table contains one or more entries for I/O APICs.
      *           ... At least one I/O APIC must be enabled." */
     PMPSIOAPICENTRY pIOAPICEntry   = (PMPSIOAPICENTRY)(pBusEntry+1);
-    uint16_t iApicId = 0;
+    uint16_t apicId = cCpus;
     pIOAPICEntry->u8EntryType      = 2; /* I/O-APIC entry */
-    pIOAPICEntry->u8Id             = iApicId; /* this ID is referenced by the interrupt entries */
+    pIOAPICEntry->u8Id             = apicId; /* this ID is referenced by the interrupt entries */
     pIOAPICEntry->u8Version        = 0x11;
     pIOAPICEntry->u8Flags          = 1 /* enable */;
     pIOAPICEntry->u32Addr          = 0xfec00000;
 
-    /* Interrupt tables */
-    /* Bus vectors */
     PMPSIOIRQENTRY pIrqEntry       = (PMPSIOIRQENTRY)(pIOAPICEntry+1);
-    for (int iPin = 0; iPin < 16; iPin++, pIrqEntry++)
+    for (int i = 0; i < 16; i++, pIrqEntry++)
     {
         pIrqEntry->u8EntryType     = 3; /* I/O interrupt entry */
-        /*
-         * 0 - INT, vectored interrupt,
-         * 3 - ExtINT, vectored interrupt provided by PIC
-         * As we emulate system with both APIC and PIC, it's needed for their coexistence.
-         */
-        pIrqEntry->u8Type          = (iPin == 0) ? 3 : 0;
-        pIrqEntry->u16Flags        = 0;              /* polarity of APIC I/O input signal = conforms to bus,
-                                                        trigger mode = conforms to bus */
-        pIrqEntry->u8SrcBusId      = iBusIdIsa;      /* ISA bus */
-        /* IRQ0 mapped to pin 2, other are identity mapped */
-        pIrqEntry->u8SrcBusIrq     = (iPin == 2) ? 0 : iPin; /* IRQ on the bus */
-        pIrqEntry->u8DstIOAPICId   = iApicId;        /* destintion IO-APIC */
-        pIrqEntry->u8DstIOAPICInt  = iPin;           /* pin on destination IO-APIC */
+        pIrqEntry->u8Type          = 0; /* INT, vectored interrupt */
+        pIrqEntry->u16Flags        = 0; /* polarity of APIC I/O input signal = conforms to bus,
+                                           trigger mode = conforms to bus */
+        pIrqEntry->u8SrcBusId      = 0; /* ISA bus */
+        pIrqEntry->u8SrcBusIrq     = i;
+        pIrqEntry->u8DstIOAPICId   = apicId;
+        pIrqEntry->u8DstIOAPICInt  = i;
     }
-    /* Local delivery */
-    pIrqEntry->u8EntryType     = 4; /* Local interrupt entry */
-    pIrqEntry->u8Type          = 3; /* ExtINT */
-    pIrqEntry->u16Flags        = (1 << 2) | 1; /* active-high, edge-triggered */
-    pIrqEntry->u8SrcBusId      = iBusIdIsa;
-    pIrqEntry->u8SrcBusIrq     = 0;
-    pIrqEntry->u8DstIOAPICId   = 0xff;
-    pIrqEntry->u8DstIOAPICInt  = 0;
-    pIrqEntry++;
 
     pCfgTab->u16Length             = (uint8_t*)pIrqEntry - pTable;
     pCfgTab->u8Checksum            = fwCommonChecksum(pTable, pCfgTab->u16Length);
