@@ -95,7 +95,6 @@ HRESULT Mouse::init (Console *parent)
 #else
     uHostCaps = 0;
 #endif
-    uDevCaps = 0;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
