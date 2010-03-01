@@ -364,7 +364,6 @@ int VBoxServiceStopServices(void)
         {
             if (g_aServices[j].Thread != NIL_RTTHREAD)
             {
-                int rc;
                 VBoxServiceVerbose(2, "Waiting for service '%s' to stop ...\n", g_aServices[j].pDesc->pszName);
                 for (int i = 0; i < 30; i++) /* Wait 30 seconds in total */
                 {
