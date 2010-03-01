@@ -502,6 +502,7 @@ VirtualBox_SOURCES += \
 	src/runtime/UIMachineLogic.cpp \
 	src/runtime/UIMachineWindow.cpp \
 	src/runtime/UIMachineView.cpp \
+	src/runtime/UIMachineMenuBar.cpp \
 	src/runtime/normal/UIMachineLogicNormal.cpp \
 	src/runtime/normal/UIMachineWindowNormal.cpp \
 	src/runtime/normal/UIMachineViewNormal.cpp \
