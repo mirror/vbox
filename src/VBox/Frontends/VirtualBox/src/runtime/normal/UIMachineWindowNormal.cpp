@@ -41,9 +41,9 @@
 #include "QIStateIndicator.h"
 #include "QIHotKeyEdit.h"
 
-UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic)
+UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI<QIMainDialog>(0)
-    , UIMachineWindow(pMachineLogic)
+    , UIMachineWindow(pMachineLogic, uScreenId)
     , m_pIndicatorsPool(new UIIndicatorsPool(pMachineLogic->uisession()->session(), this))
     , m_pIdleTimer(0)
 {
@@ -446,7 +446,8 @@ void UIMachineWindowNormal::prepareMachineView()
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                           , machineLogic()->visualStateType());
+                                           , machineLogic()->visualStateType()
+                                           , m_uScreenId);
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);

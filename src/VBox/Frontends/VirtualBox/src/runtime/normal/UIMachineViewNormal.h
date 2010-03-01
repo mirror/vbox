@@ -43,7 +43,7 @@ protected:
 #ifdef VBOX_WITH_VIDEOHWACCEL
                         , bool bAccelerate2DVideo
 #endif
-    );
+                        , ulong uMonitor);
     virtual ~UIMachineViewNormal();
 
 private slots:

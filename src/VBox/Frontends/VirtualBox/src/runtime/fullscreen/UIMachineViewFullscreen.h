@@ -39,11 +39,11 @@ protected:
 
     /* Normal machine view constructor/destructor: */
     UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
-                        , VBoxDefs::RenderMode renderMode
+                            , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                        , bool bAccelerate2DVideo
+                            , bool bAccelerate2DVideo
 #endif
-    );
+                            , ulong uMonitor);
     virtual ~UIMachineViewFullscreen();
 
 private slots:

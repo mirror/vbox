@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -56,6 +56,8 @@ private slots:
 
     void valueChangedVRAM (int aVal);
     void textChangedVRAM (const QString &aText);
+    void valueChangedMonitors (int aVal);
+    void textChangedMonitors (const QString &aText);
 
 private:
 

@@ -61,7 +61,8 @@ public:
     UISession* uisession() { return m_pSession; }
     UIActionsPool* actionsPool() { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
-    UIMachineWindow* machineWindowWrapper() { return m_pMachineWindowWrapper; }
+    QList<UIMachineWindow*>& machineWindows() { return m_machineWindowsList; }
+    UIMachineWindow* mainMachineWindow() { return machineWindows().size() > 0 ? machineWindows()[0] : 0; }
 
     /* Maintenance getters/setters: */
     bool isPreventAutoStart() const { return m_fIsPreventAutoStart; }
@@ -78,11 +79,15 @@ protected:
                    UIVisualStateType visualStateType);
     virtual ~UIMachineLogic();
 
+    /* Protected getters/setters: */
+    bool machineWindowsCreated() const { return m_fIsWindowsCreated; }
+    void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
+
     /* Protected wrappers: */
     CSession& session();
 
-    /* Protected setters: */
-    void setMachineWindowWrapper(UIMachineWindow *pMachineWindowWrapper) { m_pMachineWindowWrapper = pMachineWindowWrapper; }
+    /* Protected members: */
+    void addMachineWindow(UIMachineWindow *pMachineWindow);
 
     /* Prepare helpers: */
     virtual void prepareConsoleConnections();
@@ -151,11 +156,12 @@ private:
     UISession *m_pSession;
     UIActionsPool *m_pActionsPool;
     UIVisualStateType m_visualStateType;
-    UIMachineWindow *m_pMachineWindowWrapper;
+    QList<UIMachineWindow*> m_machineWindowsList;
 
     QActionGroup *m_pRunningActions;
     QActionGroup *m_pRunningOrPausedActions;
 
+    bool m_fIsWindowsCreated : 1;
     bool m_fIsPreventAutoStart : 1;
     bool m_fIsPreventAutoClose : 1;
 

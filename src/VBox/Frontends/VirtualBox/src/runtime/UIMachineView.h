@@ -60,7 +60,8 @@ public:
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                  , bool bAccelerate2DVideo
 #endif
-                                 , UIVisualStateType visualStateType);
+                                 , UIVisualStateType visualStateType
+                                 , ulong uScreenId);
     static void destroy(UIMachineView *pWhichView);
 
     /* Public getters: */
@@ -95,7 +96,7 @@ protected:
 #ifdef VBOX_WITH_VIDEOHWACCEL
                   , bool bAccelerate2DVideo
 #endif
-    );
+                  , ulong uScreenId);
     virtual ~UIMachineView();
 
     /* Protected getters: */
@@ -109,6 +110,7 @@ protected:
     int visibleWidth() const;
     int visibleHeight() const;
     VBoxDefs::RenderMode mode() const { return m_mode; }
+    ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
     bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
@@ -222,6 +224,7 @@ private:
     /* Private members: */
     UIMachineWindow *m_pMachineWindow;
     VBoxDefs::RenderMode m_mode;
+    ulong m_uScreenId;
     const VBoxGlobalSettings &m_globalSettings;
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;

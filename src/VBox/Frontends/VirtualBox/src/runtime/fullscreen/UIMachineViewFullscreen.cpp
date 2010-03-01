@@ -38,17 +38,17 @@
 #include "QIMainDialog.h"
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
-                                         , VBoxDefs::RenderMode renderMode
+                                                 , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                         , bool bAccelerate2DVideo
+                                                 , bool bAccelerate2DVideo
 #endif
-                                        )
+                                                 , ulong uMonitor)
     : UIMachineView(  pMachineWindow
                     , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     , bAccelerate2DVideo
 #endif
-                   )
+                    , uMonitor)
     , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
 {

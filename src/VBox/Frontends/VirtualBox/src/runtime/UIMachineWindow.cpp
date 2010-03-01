@@ -40,20 +40,20 @@
 #include "UIMachineWindowFullscreen.h"
 //#include "UIMachineWindowSeamless.h"
 
-UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType)
+UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType, ulong uScreenId)
 {
     UIMachineWindow *window = 0;
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
-            window = new UIMachineWindowNormal(pMachineLogic);
+            window = new UIMachineWindowNormal(pMachineLogic, uScreenId);
             break;
         case UIVisualStateType_Fullscreen:
-            window = new UIMachineWindowFullscreen(pMachineLogic);
+            window = new UIMachineWindowFullscreen(pMachineLogic, uScreenId);
             break;
         case UIVisualStateType_Seamless:
-            // window = new UIMachineWindowSeamless(pMachineLogic);
-            window = new UIMachineWindowNormal(pMachineLogic);
+            // window = new UIMachineWindowSeamless(pMachineLogic, uScreenId);
+            window = new UIMachineWindowNormal(pMachineLogic, uScreenId);
             break;
     }
     return window;
@@ -86,9 +86,10 @@ void UIMachineWindow::sltTryClose()
         machineWindow()->close();
 }
 
-UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic)
+UIMachineWindow::UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : m_pMachineLogic(pMachineLogic)
     , m_pMachineWindow(0)
+    , m_uScreenId(uScreenId)
     , m_pMachineViewContainer(0)
     , m_pTopSpacer(0)
     , m_pBottomSpacer(0)

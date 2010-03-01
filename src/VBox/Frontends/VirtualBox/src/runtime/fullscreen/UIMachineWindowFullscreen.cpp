@@ -42,9 +42,9 @@
 # endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
 
-UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic)
+UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI<QIMainDialog>(0)
-    , UIMachineWindow(pMachineLogic)
+    , UIMachineWindow(pMachineLogic, uScreenId)
 {
     /* "This" is machine window: */
     m_pMachineWindow = this;
@@ -282,7 +282,8 @@ void UIMachineWindowFullscreen::prepareMachineView()
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                           , machineLogic()->visualStateType());
+                                           , machineLogic()->visualStateType()
+                                           , 0 /* Pass a primary screen id (0) for now! */);
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);

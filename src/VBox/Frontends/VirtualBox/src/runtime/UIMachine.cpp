@@ -202,9 +202,9 @@ UIMachine::~UIMachine()
 QWidget* UIMachine::mainWindow() const
 {
     if (machineLogic() &&
-        machineLogic()->machineWindowWrapper() &&
-        machineLogic()->machineWindowWrapper()->machineWindow())
-        return machineLogic()->machineWindowWrapper()->machineWindow();
+        machineLogic()->mainMachineWindow() &&
+        machineLogic()->mainMachineWindow()->machineWindow())
+        return machineLogic()->mainMachineWindow()->machineWindow();
     else
         return 0;
 }

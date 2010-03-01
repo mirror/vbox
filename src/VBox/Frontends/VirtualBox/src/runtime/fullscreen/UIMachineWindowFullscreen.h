@@ -49,7 +49,7 @@ class UIMachineWindowFullscreen : public QIWithRetranslateUI<QIMainDialog>, publ
 protected:
 
     /* Normal machine window constructor/destructor: */
-    UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic);
+    UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindowFullscreen();
 
 private slots:

@@ -42,13 +42,13 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                          , bool bAccelerate2DVideo
 #endif
-                                        )
+                                         , ulong uMonitor)
     : UIMachineView(  pMachineWindow
                     , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     , bAccelerate2DVideo
 #endif
-                   )
+                    , uMonitor)
     , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
 {
@@ -125,7 +125,7 @@ void UIMachineViewNormal::sltPerformGuestResize(const QSize &toSize)
             m_storedConsoleSize = newSize;
 
             /* Send new size-hint to the guest: */
-            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, 0);
+            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
         }
         /* We had requested resize now, rejecting accident requests: */
         m_fShouldWeDoResize = false;
@@ -317,7 +317,7 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
                 normalizeGeometry(true /* adjustPosition */);
 
             /* Report to the VM thread that we finished resizing */
-            session().GetConsole().GetDisplay().ResizeCompleted(0);
+            session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
             setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
 

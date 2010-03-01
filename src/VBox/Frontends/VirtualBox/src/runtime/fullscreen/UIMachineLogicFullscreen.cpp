@@ -138,7 +138,7 @@ void UIMachineLogicFullscreen::prepareRequiredFeatures()
 void UIMachineLogicFullscreen::prepareMachineWindow()
 {
     /* Do not prepare window if its ready: */
-    if (machineWindowWrapper())
+    if (mainMachineWindow())
         return;
 
 #ifdef Q_WS_MAC
@@ -148,7 +148,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
 #endif /* Q_WS_MAC */
 
     /* Create machine window: */
-    setMachineWindowWrapper(UIMachineWindow::create(this, visualStateType()));
+    addMachineWindow(UIMachineWindow::create(this, visualStateType()));
 
     /* If we are not started yet: */
     if (!uisession()->isRunning() && !uisession()->isPaused())
@@ -164,7 +164,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
         /* Shows first run wizard if necessary: */
         if (uisession()->isFirstTimeStarted())
         {
-            UIFirstRunWzd wzd(machineWindowWrapper()->machineWindow(), machine);
+            UIFirstRunWzd wzd(mainMachineWindow()->machineWindow(), machine);
             wzd.exec();
         }
 
@@ -175,7 +175,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
         if (!console.isOk())
         {
             vboxProblem().cannotStartMachine(console);
-            machineWindowWrapper()->machineWindow()->close();
+            mainMachineWindow()->machineWindow()->close();
             return;
         }
 
@@ -184,15 +184,15 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
 
         /* Show "Starting/Restoring" progress dialog: */
         if (uisession()->isSaved())
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow(), 0);
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow(), 0);
         else
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), machineWindowWrapper()->machineWindow());
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow());
 
         /* Check for an progress failure */
         if (progress.GetResultCode() != 0)
         {
             vboxProblem().cannotStartMachine(progress);
-            machineWindowWrapper()->machineWindow()->close();
+            mainMachineWindow()->machineWindow()->close();
             return;
         }
 
@@ -205,7 +205,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
         /* Check if we missed a really quick termination after successful startup, and process it if we did: */
         if (uisession()->isTurnedOff())
         {
-            machineWindowWrapper()->machineWindow()->close();
+            mainMachineWindow()->machineWindow()->close();
             return;
         }
 
@@ -227,7 +227,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
                 sltShowDebugCommandLine();
 
             if (!vboxGlobal().isStartPausedEnabled())
-                machineWindowWrapper()->machineView()->pause (false);
+                mainMachineWindow()->machineView()->pause (false);
         }
 # endif
 #endif
@@ -242,11 +242,10 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
 void UIMachineLogicFullscreen::cleanupMachineWindow()
 {
     /* Do not cleanup machine window if it is not present: */
-    if (!machineWindowWrapper())
+    if (!mainMachineWindow())
         return;
 
     /* Cleanup machine window: */
-    UIMachineWindow::destroy(machineWindowWrapper());
-    setMachineWindowWrapper(0);
+    UIMachineWindow::destroy(mainMachineWindow());
 }
 
