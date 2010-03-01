@@ -2173,8 +2173,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     SafeArray<BSTR> aGlobalExtraDataKeys;
     SafeArray<BSTR> aMachineExtraDataKeys;
     /*
-        * Get the next key
-        */
+     * Get the next key
+     */
     if (FAILED(hrc = virtualBox->GetExtraDataKeys(ComSafeArrayAsOutParam(aGlobalExtraDataKeys))))
         AssertMsgFailed(("VirtualBox::GetExtraDataKeys failed with %Rrc\n", hrc));
 
@@ -2186,12 +2186,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     // build a combined list from global keys...
     std::list<Utf8Str> llExtraDataKeys;
-    size_t i = 0;
 
-    for (i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+    for (size_t i = 0; i < aGlobalExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aGlobalExtraDataKeys[i]));
     // ... and machine keys
-    for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
+    for (size_t i = 0; i < aMachineExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
 
     i = 0;
