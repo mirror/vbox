@@ -2186,11 +2186,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     // build a combined list from global keys...
     std::list<Utf8Str> llExtraDataKeys;
+    size_t i;
 
-    for (size_t i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+    for (i = 0; i < aGlobalExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aGlobalExtraDataKeys[i]));
     // ... and machine keys
-    for (size_t i = 0; i < aMachineExtraDataKeys.size(); ++i)
+    for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
 
     i = 0;
