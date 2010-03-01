@@ -576,8 +576,6 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     if (RT_FAILURE(rc))
         return rc;
 
-    vmmdevInitRequest(&req->header, VMMDevReq_ChangeMemBalloon);
-
     if (u32BalloonSize > pDevExt->MemBalloon.cBalloons)
     {
         /* inflate */
@@ -737,7 +735,6 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
     dprintf(("VBoxGuestQueryMemoryBalloon\n"));
 
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
-    vmmdevInitRequest(&req->header, VMMDevReq_GetMemBalloonChangeRequest);
     req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
 
     if (RT_SUCCESS(rc))
