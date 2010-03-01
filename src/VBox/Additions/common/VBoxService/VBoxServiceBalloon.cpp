@@ -70,7 +70,9 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
     else
         VBoxServiceVerbose(3, "VBoxMemBalloonInit: VbglR3MemBalloonRefresh failed with %d\n", rc);
 
-    return rc;
+    /* We shouldn't fail here if ballooning isn't available. This can have several reasons,
+     * for instance, host too old  (which is not that fatal). */
+    return VINF_SUCCESS;
 }
 
 
