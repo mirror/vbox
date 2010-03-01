@@ -1872,7 +1872,8 @@ void VBoxConsoleWnd::finalizeOpenView()
     /* Check for an immediate failure */
     if (!console.isOk())
     {
-        vboxProblem().cannotStartMachine (console);
+        if (vboxGlobal().showStartVMErrors())
+            vboxProblem().cannotStartMachine (console);
         /* close this window (this will call closeView()) */
         close();
 
@@ -1885,7 +1886,8 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     /* Disable auto closure because we want to have a chance to show the
      * error dialog on startup failure */
-    mNoAutoClose = true;
+    if (vboxGlobal().showStartVMErrors())
+        mNoAutoClose = true;
 
     /* show the "VM starting / restoring" progress dialog */
 
@@ -1896,7 +1898,8 @@ void VBoxConsoleWnd::finalizeOpenView()
 
     if (progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotStartMachine (progress);
+        if (vboxGlobal().showStartVMErrors())
+            vboxProblem().cannotStartMachine (progress);
         /* close this window (this will call closeView()) */
         close();
 
@@ -1905,7 +1908,8 @@ void VBoxConsoleWnd::finalizeOpenView()
         return;
     }
 
-    mNoAutoClose = false;
+    if (vboxGlobal().showStartVMErrors())
+        mNoAutoClose = false;
 
     /* Check if we missed a really quick termination after successful
      * startup, and process it if we did. */
