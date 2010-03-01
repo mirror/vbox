@@ -3,7 +3,7 @@
  <comment>
  VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
-     Copyright (C) 2008-2009 Sun Microsystems, Inc.
+     Copyright (C) 2008-2010 Sun Microsystems, Inc.
 
      This file is part of VirtualBox Open Source Edition (OSE), as
      available from http://www.virtualbox.org. This file is free software;
@@ -151,6 +151,102 @@
            </layout>
           </item>
           <item row="2" column="0">
+           <widget class="QLabel" name="mLbMonitors">
+            <property name="text">
+             <string>Mo&amp;nitor Count:</string>
+            </property>
+            <property name="alignment">
+             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            </property>
+            <property name="buddy">
+             <cstring>mLeMonitors</cstring>
+            </property>
+           </widget>
+          </item>
+          <item row="2" column="1" rowspan="2">
+           <layout class="QVBoxLayout" name="mLtMonitorsSlider">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QIAdvancedSlider" name="mSlMonitors">
+              <property name="whatsThis">
+               <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
+              </property>
+              <property name="orientation">
+               <enum>Qt::Horizontal</enum>
+              </property>
+              <property name="tickPosition">
+               <enum>QSlider::TicksBelow</enum>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <layout class="QHBoxLayout" name="mLtMonitorsLegend">
+              <item>
+               <widget class="QLabel" name="mLbMonitorsMin">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <spacer name="mSpHor2">
+                <property name="orientation">
+                 <enum>Qt::Horizontal</enum>
+                </property>
+                <property name="sizeHint" stdset="0">
+                 <size>
+                  <width>0</width>
+                  <height>0</height>
+                 </size>
+                </property>
+               </spacer>
+              </item>
+              <item>
+               <widget class="QLabel" name="mLbMonitorsMax">
+                <property name="sizePolicy">
+                 <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                  <horstretch>0</horstretch>
+                  <verstretch>0</verstretch>
+                 </sizepolicy>
+                </property>
+                <property name="alignment">
+                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                </property>
+               </widget>
+              </item>
+             </layout>
+            </item>
+           </layout>
+          </item>
+          <item row="2" column="2">
+           <layout class="QHBoxLayout" name="mLtMonitorsSize">
+            <property name="spacing">
+             <number>4</number>
+            </property>
+            <item>
+             <widget class="QILineEdit" name="mLeMonitors">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="whatsThis">
+               <string>Controls the amount of virtual monitors provided to the virtual machine.</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QLabel" name="mLbMonitorsUnit"/>
+            </item>
+           </layout>
+          </item>
+		  <item row="4" column="0">
            <widget class="QLabel" name="mLbOptions">
             <property name="text">
              <string>Extended Features:</string>
@@ -160,7 +256,7 @@
             </property>
            </widget>
           </item>
-          <item row="2" column="1" colspan="2">
+          <item row="4" column="1" colspan="2">
            <widget class="QCheckBox" name="mCb3D">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -176,7 +272,7 @@
             </property>
            </widget>
           </item>
-          <item row="3" column="1" colspan="2">
+          <item row="5" column="1" colspan="2">
            <widget class="QCheckBox" name="mCb2DVideo">
             <property name="sizePolicy">
              <sizepolicy hsizetype="MinimumExpanding" vsizetype="Fixed">
@@ -256,7 +352,7 @@
               <number>0</number>
              </property>
              <item row="1" column="0" rowspan="3">
-              <spacer name="mSpHor2">
+              <spacer name="mSpHor3">
                <property name="orientation">
                 <enum>Qt::Horizontal</enum>
                </property>

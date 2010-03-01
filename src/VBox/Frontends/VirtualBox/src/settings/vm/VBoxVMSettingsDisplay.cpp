@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -55,22 +55,28 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     const uint MinVRAM = sys.GetMinGuestVRAM();
     const uint MaxVRAM = sys.GetMaxGuestVRAM();
+    const uint MinMonitors = 1;
+    const uint MaxMonitors = sys.GetMaxGuestMonitors();
 
     /* Setup validators */
     mLeMemory->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
+    mLeMonitors->setValidator (new QIntValidator (MinMonitors, MaxMonitors, this));
     mLeVRDPPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
     mLeVRDPTimeout->setValidator (new QIntValidator (this));
 
     /* Setup connections */
-    connect (mSlMemory, SIGNAL (valueChanged (int)),
-             this, SLOT (valueChangedVRAM (int)));
-    connect (mLeMemory, SIGNAL (textChanged (const QString&)),
-             this, SLOT (textChangedVRAM (const QString&)));
+    connect (mSlMemory, SIGNAL (valueChanged (int)), this, SLOT (valueChangedVRAM (int)));
+    connect (mLeMemory, SIGNAL (textChanged (const QString&)), this, SLOT (textChangedVRAM (const QString&)));
+    connect (mSlMonitors, SIGNAL (valueChanged (int)), this, SLOT (valueChangedMonitors (int)));
+    connect (mLeMonitors, SIGNAL (textChanged (const QString&)), this, SLOT (textChangedMonitors (const QString&)));
 
     /* Setup initial values */
     mSlMemory->setPageStep (calcPageStep (MaxVRAM));
     mSlMemory->setSingleStep (mSlMemory->pageStep() / 4);
     mSlMemory->setTickInterval (mSlMemory->pageStep());
+    mSlMonitors->setPageStep (1);
+    mSlMonitors->setSingleStep (1);
+    mSlMonitors->setTickInterval (1);
     /* Setup the scale so that ticks are at page step boundaries */
     mSlMemory->setMinimum ((MinVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
     mSlMemory->setMaximum (MaxVRAM);
@@ -79,10 +85,15 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     mSlMemory->setErrorHint (0, 1);
     mSlMemory->setWarningHint (1, needMBytes);
     mSlMemory->setOptimalHint (needMBytes, MaxVRAM);
+    mSlMonitors->setMinimum (MinMonitors);
+    mSlMonitors->setMaximum (MaxMonitors);
+    mSlMonitors->setSnappingEnabled (true);
     /* Limit min/max. size of QLineEdit */
     mLeMemory->setFixedWidthByText (QString().fill ('8', 4));
-    /* Ensure mLeMemory value and validation is updated */
+    mLeMonitors->setFixedWidthByText (QString().fill ('8', 4));
+    /* Ensure value and validation is updated */
     valueChangedVRAM (mSlMemory->value());
+    valueChangedMonitors (mSlMonitors->value());
     /* Setup VRDP widget */
     mCbVRDPMethod->insertItem (0, ""); /* KVRDPAuthType_Null */
     mCbVRDPMethod->insertItem (1, ""); /* KVRDPAuthType_External */
@@ -113,6 +124,9 @@ void VBoxVMSettingsDisplay::getFrom (const CMachine &aMachine)
 
     /* Memory Size */
     mSlMemory->setValue (mMachine.GetVRAMSize());
+
+    /* Monitors Count */
+    mSlMonitors->setValue (mMachine.GetMonitorCount());
 
     /* 3D Acceleration */
     bool isAccelerationSupported = vboxGlobal().virtualBox().GetHost()
@@ -146,6 +160,9 @@ void VBoxVMSettingsDisplay::putBackTo()
 {
     /* Memory Size */
     mMachine.SetVRAMSize (mSlMemory->value());
+
+    /* Monitors Count */
+    mMachine.SetMonitorCount (mSlMonitors->value());
 
     /* 3D Acceleration */
     mMachine.SetAccelerate3DEnabled (mCb3D->isChecked());
@@ -222,7 +239,9 @@ void VBoxVMSettingsDisplay::setOrderAfter (QWidget *aWidget)
     setTabOrder (aWidget, mTwDisplay->focusProxy());
     setTabOrder (mTwDisplay->focusProxy(), mSlMemory);
     setTabOrder (mSlMemory, mLeMemory);
-    setTabOrder (mLeMemory, mCb3D);
+    setTabOrder (mLeMemory, mSlMonitors);
+    setTabOrder (mSlMonitors, mLeMonitors);
+    setTabOrder (mLeMonitors, mCb3D);
 #ifdef VBOX_WITH_VIDEOHWACCEL
     setTabOrder (mCb3D, mCb2DVideo);
     setTabOrder (mCb2DVideo, mCbVRDP);
@@ -242,6 +261,8 @@ void VBoxVMSettingsDisplay::retranslateUi()
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
     mLbMemoryMin->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMinGuestVRAM()));
     mLbMemoryMax->setText (tr ("<qt>%1&nbsp;MB</qt>").arg (sys.GetMaxGuestVRAM()));
+    mLbMonitorsMin->setText (tr ("<qt>%1</qt>").arg (1));
+    mLbMonitorsMax->setText (tr ("<qt>%1</qt>").arg (sys.GetMaxGuestMonitors()));
 
     mCbVRDPMethod->setItemText (0,
         vboxGlobal().toString (KVRDPAuthType_Null));
@@ -261,3 +282,12 @@ void VBoxVMSettingsDisplay::textChangedVRAM (const QString &aText)
     mSlMemory->setValue (aText.toInt());
 }
 
+void VBoxVMSettingsDisplay::valueChangedMonitors (int aVal)
+{
+    mLeMonitors->setText (QString().setNum (aVal));
+}
+
+void VBoxVMSettingsDisplay::textChangedMonitors (const QString &aText)
+{
+    mSlMonitors->setValue (aText.toInt());
+}

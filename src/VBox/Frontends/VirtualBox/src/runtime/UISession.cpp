@@ -964,7 +964,7 @@ void UISession::saveSessionSettings()
 
 qulonglong UISession::winId() const
 {
-    return uimachine()->machineLogic()->machineWindowWrapper()->machineWindow()->winId();
+    return uimachine()->machineLogic()->mainMachineWindow()->machineWindow()->winId();
 }
 
 void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,

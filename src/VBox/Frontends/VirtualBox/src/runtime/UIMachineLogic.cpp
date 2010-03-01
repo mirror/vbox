@@ -370,9 +370,9 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pSession(pSession)
     , m_pActionsPool(pActionsPool)
     , m_visualStateType(visualStateType)
-    , m_pMachineWindowWrapper(0)
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
+    , m_fIsWindowsCreated(false)
     , m_fIsPreventAutoStart(false)
     , m_fIsPreventAutoClose(false)
 {
@@ -389,6 +389,11 @@ UIMachineLogic::~UIMachineLogic()
 CSession& UIMachineLogic::session()
 {
     return uisession()->session();
+}
+
+void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
+{
+    m_machineWindowsList << pMachineWindow;
 }
 
 void UIMachineLogic::prepareConsoleConnections()
@@ -726,35 +731,42 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
 
 void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
 {
-    /* Do not process if window or view is missing! */
-    if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
-    machineWindowWrapper()->machineView()->setGuestAutoresizeEnabled(fEnabled);
+    /* Toggle guest-autoresize feature for all view(s)! */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->machineView()->setGuestAutoresizeEnabled(fEnabled);
 }
 
 void UIMachineLogic::sltAdjustWindow()
 {
-    /* Do not process if window or view is missing! */
-    if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
-    /* Exit maximized window state if actual: */
-    if (machineWindowWrapper()->machineWindow()->isMaximized())
-        machineWindowWrapper()->machineWindow()->showNormal();
+    /* Adjust all window(s)! */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+    {
+        /* Exit maximized window state if actual: */
+        if (pMachineWindow->machineWindow()->isMaximized())
+            pMachineWindow->machineWindow()->showNormal();
 
-    /* Normalize view's geometry: */
-    machineWindowWrapper()->machineView()->normalizeGeometry(true);
+        /* Normalize view's geometry: */
+        pMachineWindow->machineView()->normalizeGeometry(true);
+    }
 }
 
 void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
 {
-    /* Do not process if window or view is missing! */
-    if (!machineWindowWrapper() || !machineWindowWrapper()->machineView())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
-    /* Disable/Enable mouse-integration for view: */
-    machineWindowWrapper()->machineView()->setMouseIntegrationEnabled(!fOff);
+    /* Disable/Enable mouse-integration for all view(s): */
+    foreach(UIMachineWindow *pMachineWindow, machineWindows())
+        pMachineWindow->machineView()->setMouseIntegrationEnabled(!fOff);
 }
 
 void UIMachineLogic::sltTypeCAD()
@@ -784,8 +796,8 @@ void UIMachineLogic::sltTypeCABS()
 
 void UIMachineLogic::sltTakeSnapshot()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     /* Remember the paused state. */
@@ -800,7 +812,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     CMachine machine = session().GetMachine();
 
-    VBoxTakeSnapshotDlg dlg(machineWindowWrapper()->machineWindow(), machine);
+    VBoxTakeSnapshotDlg dlg(mainMachineWindow()->machineWindow(), machine);
 
     QString strTypeId = machine.GetOSTypeId();
     dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
@@ -835,12 +847,12 @@ void UIMachineLogic::sltTakeSnapshot()
 
 void UIMachineLogic::sltShowInformationDialog()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     // TODO: Call for singleton information dialog for this machine!
-    //VBoxVMInformationDlg::createInformationDlg(session(), machineWindowWrapper()->machineWindow());
+    //VBoxVMInformationDlg::createInformationDlg(session(), mainMachineWindow()->machineWindow());
 }
 
 void UIMachineLogic::sltReset()
@@ -872,12 +884,12 @@ void UIMachineLogic::sltACPIShutdown()
 
 void UIMachineLogic::sltClose()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     /* Close machine window: */
-    machineWindowWrapper()->sltTryClose();
+    mainMachineWindow()->sltTryClose();
 }
 
 void UIMachineLogic::sltPrepareStorageMenu()
@@ -1097,7 +1109,7 @@ void UIMachineLogic::sltMountStorageMedium()
                 usedImages << medium.GetId();
         }
         /* Open VMM Dialog: */
-        VBoxMediaManagerDlg dlg(machineWindowWrapper()->machineWindow());
+        VBoxMediaManagerDlg dlg(mainMachineWindow()->machineWindow());
         dlg.setup(target.type, true /* select? */, true /* refresh? */, machine, currentId, true, usedImages);
         if (dlg.exec() == QDialog::Accepted)
             newId = dlg.selectedId();
@@ -1217,23 +1229,23 @@ void UIMachineLogic::sltAttachUSBDevice()
 
 void UIMachineLogic::sltOpenNetworkAdaptersDialog()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     /* Show network settings dialog: */
-    UINetworkAdaptersDialog dlg(machineWindowWrapper()->machineWindow(), session());
+    UINetworkAdaptersDialog dlg(mainMachineWindow()->machineWindow(), session());
     dlg.exec();
 }
 
 void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     /* Show shared folders settings dialog: */
-    UISharedFoldersDialog dlg(machineWindowWrapper()->machineWindow(), session());
+    UISharedFoldersDialog dlg(mainMachineWindow()->machineWindow(), session());
     dlg.exec();
 }
 
@@ -1247,8 +1259,8 @@ void UIMachineLogic::sltSwitchVrdp(bool fOn)
 
 void UIMachineLogic::sltInstallGuestAdditions()
 {
-    /* Do not process if window is missing! */
-    if (!machineWindowWrapper())
+    /* Do not process if window(s) missed! */
+    if (!machineWindowsCreated())
         return;
 
     char strAppPrivPath[RTPATH_MAX];
@@ -1452,30 +1464,30 @@ bool UIMachineLogic::dbgCreated()
         return false;
 
     PFNDBGGUICREATE pfnGuiCreate;
-    int rc = RTLdrGetSymbol (hLdrMod, "DBGGuiCreate", (void**) &pfnGuiCreate);
-    if (RT_SUCCESS (rc))
+    int rc = RTLdrGetSymbol(hLdrMod, "DBGGuiCreate", (void**)&pfnGuiCreate);
+    if (RT_SUCCESS(rc))
     {
         ISession *pISession = session().raw();
-        rc = pfnGuiCreate (pISession, &m_dbgGui, &m_dbgGuiVT);
-        if (RT_SUCCESS (rc))
+        rc = pfnGuiCreate(pISession, &m_dbgGui, &m_dbgGuiVT);
+        if (RT_SUCCESS(rc))
         {
-            if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE (m_dbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
+            if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_dbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
                 m_dbgGuiVT->u32EndVersion == m_dbgGuiVT->u32Version)
             {
-                m_dbgGuiVT->pfnSetParent (m_dbgGui, (QWidget*) machineWindowWrapper());
-                m_dbgGuiVT->pfnSetMenu (m_dbgGui, (QMenu*) actionsPool()->action(UIActionIndex_Menu_Debug));
+                m_dbgGuiVT->pfnSetParent(m_dbgGui, (QWidget*)mainMachineWindow());
+                m_dbgGuiVT->pfnSetMenu(m_dbgGui, (QMenu*)actionsPool()->action(UIActionIndex_Menu_Debug));
                 dbgAdjustRelativePos();
                 return true;
             }
 
-            LogRel (("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
-                     m_dbgGuiVT->u32Version, m_dbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
+            LogRel(("DBGGuiCreate failed, incompatible versions (loaded %#x/%#x, expected %#x)\n",
+                    m_dbgGuiVT->u32Version, m_dbgGuiVT->u32EndVersion, DBGGUIVT_VERSION));
         }
         else
-            LogRel (("DBGGuiCreate failed, rc=%Rrc\n", rc));
+            LogRel(("DBGGuiCreate failed, rc=%Rrc\n", rc));
     }
     else
-        LogRel (("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
+        LogRel(("RTLdrGetSymbol(,\"DBGGuiCreate\",) -> %Rrc\n", rc));
 
     m_dbgGui = 0;
     m_dbgGuiVT = 0;
@@ -1496,7 +1508,7 @@ void UIMachineLogic::dbgAdjustRelativePos()
 {
     if (m_dbgGui)
     {
-        QRect rct = machineWindowWrapper()->machineWindow()->frameGeometry();
+        QRect rct = mainMachineWindow()->machineWindow()->frameGeometry();
         m_dbgGuiVT->pfnAdjustRelativePos(m_dbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }

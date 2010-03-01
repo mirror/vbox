@@ -47,7 +47,7 @@ class UIMachineWindowNormal : public QIWithRetranslateUI<QIMainDialog>, public U
 protected:
 
     /* Normal machine window constructor/destructor: */
-    UIMachineWindowNormal(UIMachineLogic *pMachineLogic);
+    UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindowNormal();
 
 private slots:

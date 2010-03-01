@@ -113,7 +113,8 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                      , bool bAccelerate2DVideo
 #endif
-                                     , UIVisualStateType visualStateType)
+                                     , UIVisualStateType visualStateType
+                                     , ulong uScreenId)
 {
     UIMachineView *view = 0;
     switch (visualStateType)
@@ -124,7 +125,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                          );
+                                           , uScreenId);
             break;
         case UIVisualStateType_Fullscreen:
             view = new UIMachineViewFullscreen(  pMachineWindow
@@ -132,7 +133,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                                , bAccelerate2DVideo
 #endif
-                                              );
+                                               , uScreenId);
             break;
         case UIVisualStateType_Seamless:
             view = new UIMachineViewNormal(  pMachineWindow
@@ -140,7 +141,7 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
 #ifdef VBOX_WITH_VIDEOHWACCEL
                                            , bAccelerate2DVideo
 #endif
-                                          );
+                                           , uScreenId);
             break;
         default:
             break;
@@ -184,19 +185,19 @@ void UIMachineView::setMouseIntegrationEnabled(bool bEnabled)
     emitMouseStateChanged();
 }
 
-#include <QMainWindow>
 UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
                              , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
                              , bool bAccelerate2DVideo
 #endif
-                            )
+                             , ulong uScreenId)
 // TODO_NEW_CORE: really think of if this is right
 //    : QAbstractScrollArea(((QMainWindow*)pMachineWindow->machineWindow())->centralWidget())
     : QAbstractScrollArea(pMachineWindow->machineWindow())
     , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_pMachineWindow(pMachineWindow)
     , m_mode(renderMode)
+    , m_uScreenId(uScreenId)
     , m_globalSettings(vboxGlobal().settings())
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
@@ -414,7 +415,7 @@ void UIMachineView::prepareFrameBuffer()
     if (m_pFrameBuffer)
     {
         m_pFrameBuffer->AddRef();
-        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(m_pFrameBuffer));
+        display.SetFramebuffer(m_uScreenId, CFramebuffer(m_pFrameBuffer));
     }
 }
 

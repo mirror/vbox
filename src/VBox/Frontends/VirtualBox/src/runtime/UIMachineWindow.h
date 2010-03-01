@@ -43,7 +43,7 @@ class UIMachineWindow
 public:
 
     /* Factory function to create required machine window child: */
-    static UIMachineWindow* create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType);
+    static UIMachineWindow* create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType, ulong uScreenId = 0);
     static void destroy(UIMachineWindow *pWhichWindow);
 
     /* Abstract slot to close machine window: */
@@ -57,7 +57,7 @@ public:
 protected:
 
     /* Machine window constructor/destructor: */
-    UIMachineWindow(UIMachineLogic *pMachineLogic);
+    UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindow();
 
     /* Protected wrappers: */
@@ -94,6 +94,9 @@ protected:
     /* Protected variables: */
     UIMachineLogic *m_pMachineLogic;
     QWidget *m_pMachineWindow;
+
+    /* Virtual screen number: */
+    ulong m_uScreenId;
 
     QGridLayout *m_pMachineViewContainer;
     QSpacerItem *m_pTopSpacer;
