@@ -1356,10 +1356,10 @@ Return Value:
 
             vboxRC = VbglGRPerform (&req->header);
 
-            if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
+            if (RT_FAILURE(vboxRC))
             {
-                dprintf(("i8042prt::DriverEntry: ERROR communicating new mouse capabilities to VMMDev."
-                         "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
+                dprintf(("i8042prt::DriverEntry: ERROR communicating new mouse capabilities to VMMDev. "
+                         "rc = %Rrc\n", vboxRC));
             }
             else
             {

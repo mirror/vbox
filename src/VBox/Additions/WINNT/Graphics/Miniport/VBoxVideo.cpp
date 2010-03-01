@@ -2207,13 +2207,14 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
 
                 rc = VbglGRPerform (&req->header);
 
-                if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+                if (RT_SUCCESS(rc))
                 {
                     Result = TRUE;
                     break;
                 }
             }
-            dprintf(("VBoxVideo::VBoxVideoStartIO: Failed with rc=%x (hdr.rc=%x)\n", rc, (req) ? req->header.rc : -1));
+
+            dprintf(("VBoxVideo::VBoxVideoStartIO: Failed with rc=%x\n", rc));
             RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
             return FALSE;
         }
@@ -2453,10 +2454,8 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
         req->u32NotMask = isEnabled ? 0 : VMMDEV_GUEST_SUPPORTS_GRAPHICS;
 
         rc = VbglGRPerform (&req->header);
-        if (!RT_SUCCESS(rc) || !RT_SUCCESS(req->header.rc))
-            dprintf(("VBoxVideoSetGraphicsCap: request failed, rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
-        if (RT_SUCCESS(rc))
-            rc = req->header.rc;
+        if (RT_FAILURE)
+            dprintf(("VBoxVideoSetGraphicsCap: request failed, rc = %Rrc\n", rc));
     }
     if (req != NULL)
         VbglGRFree (&req->header);
@@ -2765,9 +2764,9 @@ static DECLCALLBACK(void) vboxVbvaFlush (void *pvFlush)
         {
             int rc = VbglGRPerform (&req->header);
 
-            if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
+            if (RT_FAILURE(rc))
             {
-                dprintf(("VBoxVideo::vbvaFlush: rc = %Rrc, VMMDev rc = %Rrc!!!\n", rc, req->header.rc));
+                dprintf(("VBoxVideo::vbvaFlush: rc = %Rrc!\n", rc));
             }
         }
     }
@@ -2859,7 +2858,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
 
             rc = VbglGRPerform (&req->header);
 
-            if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+            if (RT_SUCCESS(rc))
             {
                 if (req->fu32Status & VBVA_F_STATUS_ACCEPTED)
                 {
@@ -2896,7 +2895,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
             }
             else
             {
-                dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Rrc, VMMDev rc = %Rrc!!!\n", rc, req->header.rc));
+                dprintf(("VBoxVideo::vboxVbvaEnable: rc = %Rrc!\n", rc));
 
                 if (RT_SUCCESS(rc))
                 {
@@ -2908,7 +2907,7 @@ int vboxVbvaEnable (PDEVICE_EXTENSION pDevExt, ULONG ulEnable, VBVAENABLERESULT 
         }
         else
         {
-            dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc rc = %Rrc!!!\n", rc));
+            dprintf(("VBoxVideo::vboxVbvaEnable: VbglGRAlloc rc = %Rrc!\n", rc));
         }
 
         pDevExt->pPrimary->u.primary.ulVbvaEnabled = ulEnabled;
