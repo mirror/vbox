@@ -735,10 +735,10 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
     dprintf(("VBoxGuestQueryMemoryBalloon\n"));
 
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&req, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
-    req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
 
     if (RT_SUCCESS(rc))
     {
+        req->eventAck = VMMDEV_EVENT_BALLOON_CHANGE_REQUEST;
         rc = VbglGRPerform(&req->header);
 
         if (RT_FAILURE(rc) || RT_FAILURE(req->header.rc))
