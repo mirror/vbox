@@ -506,8 +506,8 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
             {
                 rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
                 if  (   RT_FAILURE(rc)
-                     || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM
-                     || PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
+                     || PGM_PAGE_GET_TYPE(pPage)  != PGMPAGETYPE_RAM        /* Anything other than ram implies monitoring. */
+                     || PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ZERO)   /* allocated, monitored or shared means we can't use a large page here */
                 {
                     LogFlow(("Found page %RGp with wrong attributes (type=%d; state=%d); cancel check. rc=%d\n", GCPhys, PGM_PAGE_GET_TYPE(pPage), PGM_PAGE_GET_STATE(pPage), rc));
                     break;
