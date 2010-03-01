@@ -561,6 +561,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
 {
     VMMDevChangeMemBalloon *req = NULL;
     int rc = VINF_SUCCESS;
+    uint32_t i;
 
     if (u32BalloonSize > pDevExt->MemBalloon.cMaxBalloons)
     {
@@ -579,7 +580,7 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     if (u32BalloonSize > pDevExt->MemBalloon.cBalloons)
     {
         /* inflate */
-        for (uint32_t i=pDevExt->MemBalloon.cBalloons;i<u32BalloonSize;i++)
+        for (i = pDevExt->MemBalloon.cBalloons; i < u32BalloonSize; i++)
         {
 #ifndef TARGET_NT4
             /*
@@ -674,9 +675,9 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     else
     {
         /* deflate */
-        for (uint32_t _i = pDevExt->MemBalloon.cBalloons - 1; _i > u32BalloonSize; _i--)
+        for (i = pDevExt->MemBalloon.cBalloons; i > u32BalloonSize; i--)
         {
-            uint32_t index = _i - 1;
+            uint32_t index = i - 1;
             PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[index];
 
             Assert(pMdl);
