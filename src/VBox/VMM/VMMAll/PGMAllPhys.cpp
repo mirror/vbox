@@ -367,6 +367,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
+# if HC_ARCH_BITS == 64
     if (    PGMIsUsingLargePages(pVM)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
@@ -376,6 +377,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 
         /* fall back to 4kb pages. */
     }
+# endif
 
     /*
      * Flush any shadow page table mappings of the page.
