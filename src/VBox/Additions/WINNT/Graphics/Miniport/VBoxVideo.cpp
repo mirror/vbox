@@ -2454,7 +2454,7 @@ BOOLEAN FASTCALL VBoxVideoSetGraphicsCap(BOOLEAN isEnabled)
         req->u32NotMask = isEnabled ? 0 : VMMDEV_GUEST_SUPPORTS_GRAPHICS;
 
         rc = VbglGRPerform (&req->header);
-        if (RT_FAILURE)
+        if (RT_FAILURE(rc))
             dprintf(("VBoxVideoSetGraphicsCap: request failed, rc = %Rrc\n", rc));
     }
     if (req != NULL)
