@@ -56,7 +56,7 @@
 
 #include "../Builtins.h"
 
-#define PCKBD_SAVED_STATE_VERSION 4
+#define PCKBD_SAVED_STATE_VERSION 5
 
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -166,24 +166,13 @@ enum
 {
     MOUSE_PROT_PS2 = 0,
     MOUSE_PROT_IMPS2 = 3,
-    MOUSE_PROT_IMEX = 4,
-    MOUSE_PROT_LIFEBOOK = 5
+    MOUSE_PROT_IMEX = 4
 };
 
-/** Mouse flags */
+/** @name Mouse flags */
+/** @{ */
+/** IMEX horizontal scroll-wheel mode is active */
 # define MOUSE_REPORT_HORIZONTAL  0x01
-
-/** @name Extended mouse button values for Lifebook mode
- * @{ */
-/** Downwards scrollwheel movement of one step.  Doesn't affect the mouse
- * buttons */
-# define MOUSE_EXT_VSCROLL_DN   4
-/** Upwards scrollwheel movement of one step. */
-# define MOUSE_EXT_VSCROLL_UP   5
-/** Leftwards scrollwheel movement of one step. */
-# define MOUSE_EXT_HSCROLL_BW   6
-/** Rightwards scrollwheel movement of one step. */
-# define MOUSE_EXT_HSCROLL_FW   7
 /** @} */
 
 typedef struct {
@@ -224,18 +213,15 @@ typedef struct KBDState {
     uint8_t mouse_resolution;
     uint8_t mouse_sample_rate;
     uint8_t mouse_wrap;
-    uint8_t mouse_type; /* 0 = PS2, 3 = IMPS/2, 4 = IMEX */
+    uint8_t mouse_type; /* MOUSE_PROT_PS2, *_IMPS/2, *_IMEX */
     uint8_t mouse_detect_state;
     int32_t mouse_dx; /* current values, needed for 'poll' mode */
     int32_t mouse_dy;
     int32_t mouse_dz;
     int32_t mouse_dw;
     int32_t mouse_flags;
-    uint32_t mouse_cx; /** @todo r=bird: cx/cy? aren't these absolute coordinates? 'c' usually means 'count of'. mouse_abs_x or just mouse_x would probably be clearer. */
-    uint32_t mouse_cy;
     uint8_t mouse_buttons;
     uint8_t mouse_buttons_reported;
-    uint8_t mouse_last_button;
 
     /** Pointer to the device instance - RC. */
     PPDMDEVINSRC                pDevInsRC;
@@ -678,35 +664,6 @@ static void kbd_mouse_set_reported_buttons(KBDState *s, unsigned fButtons, unsig
     s->mouse_buttons_reported &= (fButtons | ~fButtonMask);
 }
 
-static bool kbd_mouse_test_set_button(KBDState *s, unsigned cIndex)
-{
-    unsigned fButtonMask = 1 << (cIndex - 1);
-
-    AssertReturn(3 <= cIndex && cIndex <= 5, false);
-    if (   (s->mouse_buttons & fButtonMask)
-        && !(s->mouse_buttons_reported & fButtonMask))
-    {
-        s->mouse_last_button = cIndex;
-        kbd_mouse_set_reported_buttons(s, fButtonMask, 0x1c);
-        return true;
-    }
-    return false;
-}
-
-static bool kbd_mouse_test_clear_last_button(KBDState *s)
-{
-    unsigned fButtonMask = 1 << (s->mouse_last_button - 1);
-
-    if (   s->mouse_last_button != 0
-        && !(s->mouse_buttons & fButtonMask))
-    {
-        s->mouse_last_button = 0;
-        kbd_mouse_set_reported_buttons(s, 0, fButtonMask);
-        return true;
-    }
-    return false;
-}
-
 /**
  * Send a single relative packet in 3-byte PS/2 format, optionally with our
  * packed button protocol extension, to the PS/2 controller.
@@ -722,58 +679,18 @@ static bool kbd_mouse_test_clear_last_button(KBDState *s)
 static void kbd_mouse_send_rel3_packet(KBDState *s, bool fToCmdQueue)
 {
     int aux = fToCmdQueue ? 1 : 2;
-    int dx1 =   s->mouse_dx < 0 ? RT_MAX(s->mouse_dx, -256)
-              : s->mouse_dx > 0 ? RT_MIN(s->mouse_dx, 255) : 0;
-    int dy1 =   s->mouse_dy < 0 ? RT_MAX(s->mouse_dy, -256)
-              : s->mouse_dy > 0 ? RT_MIN(s->mouse_dy, 255) : 0;
+    int dx1 = s->mouse_dx < 0 ? RT_MAX(s->mouse_dx, -256)
+                              : RT_MIN(s->mouse_dx, 255);
+    int dy1 = s->mouse_dy < 0 ? RT_MAX(s->mouse_dy, -256)
+                              : RT_MIN(s->mouse_dy, 255);
     unsigned int b;
     unsigned fButtonsPacked;
     unsigned fButtonsLow = s->mouse_buttons & 0x03;
     s->mouse_dx -= dx1;
     s->mouse_dy -= dy1;
     kbd_mouse_set_reported_buttons(s, fButtonsLow, 0x03);
-    /* When we are not in lifebook mode, we just set the third bit
-     * in the first packet byte if the middle button is pressed,
-     * as per the PS/2 protocol. */
-    if (s->mouse_type != MOUSE_PROT_LIFEBOOK)
-    {
-        fButtonsPacked = (s->mouse_buttons & 0x04 ? 0x04 : 0);
-        kbd_mouse_set_reported_buttons(s, s->mouse_buttons, 0x04);
-    }
-    else
-    {
-        if (kbd_mouse_test_set_button(s, 3))
-            fButtonsPacked = 1;
-        else if (kbd_mouse_test_set_button(s, 4))
-            fButtonsPacked = 2;
-        else if (kbd_mouse_test_set_button(s, 5))
-            fButtonsPacked = 3;
-        /* Release event for buttons in the range 3-5. */
-        else if (kbd_mouse_test_clear_last_button(s))
-            fButtonsPacked = 0;
-        else if (s->mouse_dz < 0)
-        {
-            ++s->mouse_dz;
-            fButtonsPacked = MOUSE_EXT_VSCROLL_DN;
-        }
-        else if (s->mouse_dz > 0)
-        {
-            --s->mouse_dz;
-            fButtonsPacked = MOUSE_EXT_VSCROLL_UP;
-        }
-        else if (s->mouse_dw < 0)
-        {
-            ++s->mouse_dw;
-            fButtonsPacked = MOUSE_EXT_HSCROLL_BW;
-        }
-        else if (s->mouse_dw > 0)
-        {
-            --s->mouse_dw;
-            fButtonsPacked = MOUSE_EXT_HSCROLL_FW;
-        }
-        else
-            fButtonsPacked = s->mouse_last_button;
-    }
+    fButtonsPacked = (s->mouse_buttons & 0x04 ? 0x04 : 0);
+    kbd_mouse_set_reported_buttons(s, s->mouse_buttons, 0x04);
     LogRel3(("%s: dx1=%d, dy1=%d, fButtonsLow=0x%x, fButtonsPacked=0x%x\n",
              __PRETTY_FUNCTION__, dx1, dy1, fButtonsLow, fButtonsPacked));
     b = 0x08 | ((dx1 < 0) << 4) | ((dy1 < 0) << 5) | fButtonsLow
@@ -787,8 +704,8 @@ static void kbd_mouse_send_imps2_byte4(KBDState *s, bool fToCmdQueue)
 {
     int aux = fToCmdQueue ? 1 : 2;
 
-    int dz1 =   s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -127)
-              : s->mouse_dz > 0 ? RT_MIN(s->mouse_dz, 127) : 0;
+    int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -127)
+                              : RT_MIN(s->mouse_dz, 127);
     s->mouse_dz -= dz1;
     kbd_queue(s, dz1 & 0xff, aux);
 }
@@ -799,22 +716,22 @@ static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
 
     if (s->mouse_dw)
     {
-        int dw1 =   s->mouse_dw < 0 ? RT_MAX(s->mouse_dw, -32)
-                  : s->mouse_dw > 0 ? RT_MIN(s->mouse_dw, 32) : 0;
+        int dw1 = s->mouse_dw < 0 ? RT_MAX(s->mouse_dw, -31)
+                                  : RT_MIN(s->mouse_dw, 32);
         s->mouse_dw -= dw1;
         kbd_queue(s, 0x40 | (dw1 & 0x3f), aux);
     }
     else if (s->mouse_flags & MOUSE_REPORT_HORIZONTAL && s->mouse_dz)
     {
-        int dz1 =   s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -32)
-                  : s->mouse_dz > 0 ? RT_MIN(s->mouse_dz, 32) : 0;
+        int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -31)
+                                  : RT_MIN(s->mouse_dz, 32);
         s->mouse_dz -= dz1;
         kbd_queue(s, 0x80 | (dz1 & 0x3f), aux);
     }
     else
     {
-        int dz1 =   s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -8)
-                  : s->mouse_dz > 0 ? RT_MIN(s->mouse_dz, 8) : 0;
+        int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -7)
+                                  : RT_MIN(s->mouse_dz, 8);
         s->mouse_dz -= dz1;
         kbd_mouse_set_reported_buttons(s, s->mouse_buttons, 0x18);
         kbd_queue(s, (dz1 & 0x0f) | ((s->mouse_buttons & 0x18) << 1), aux);
@@ -828,7 +745,7 @@ static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
  * @param  fToCmdQueue  should this packet go to the command queue (or the
  *                      event queue)?
  */
-static void kbd_mouse_send_rel_packet(KBDState *s, bool fToCmdQueue)
+static void kbd_mouse_send_packet(KBDState *s, bool fToCmdQueue)
 {
     kbd_mouse_send_rel3_packet(s, fToCmdQueue);
     if (s->mouse_type == MOUSE_PROT_IMPS2)
@@ -837,63 +754,13 @@ static void kbd_mouse_send_rel_packet(KBDState *s, bool fToCmdQueue)
         kbd_mouse_send_imex_byte4(s, fToCmdQueue);
 }
 
-/**
- * Send a single absolute packet in 6-byte lifebook format to the PS/2
- * controller.
- * @param  s            keyboard state object
- * @param  fToCmdQueue  Which queue.
- */
-static void kbd_mouse_send_abs_packet(KBDState *s, bool fToCmdQueue)
-{
-    int aux = fToCmdQueue ? 1 : 2;
-    unsigned cx1 = s->mouse_cx * 4095 / 0xffff;
-    unsigned cy1 = 4095 - (s->mouse_cy * 4095 / 0xffff);
-    unsigned fButtons = s->mouse_buttons & 0x03;
-    unsigned int b[6];
-
-    LogRel3(("%s: cx1=%d, cy1=%d, fButtons=0x%x\n", __PRETTY_FUNCTION__,
-             cx1, cy1, fButtons));
-    b[0] = fButtons;
-    Assert((b[0] & 0xf8) == 0);
-    kbd_queue(s, b[0], aux);
-    b[1] = ((cy1 << 2) & 0xc0) | (cx1 >> 6);
-    kbd_queue(s, b[1], aux);
-    b[2] = ((cx1 << 2) & 0xc0) | (cx1 & 0x3f);
-    Assert(((b[2] & 0x30) << 2) == (b[2] & 0xc0));
-    kbd_queue(s, b[2], aux);
-    b[3] = 0xc0;
-    kbd_queue(s, b[3], aux);  /* This byte is really wasted in the protocol */
-    b[4] = ((cx1 << 2) & 0xc0) | (cy1 >> 6);
-    Assert((b[4] & 0xc0) == (b[2] & 0xc0));
-    kbd_queue(s, b[4], aux);
-    b[5] = ((cy1 << 2) & 0xc0) | (cy1 & 0x3f);
-    Assert(   (((b[5] & 0x30) << 2) == (b[1] & 0xc0))
-           && ((b[5] & 0xc0) == (b[1] & 0xc0)));
-    kbd_queue(s, b[5], aux);
-}
-
-static bool kbd_mouse_rel_unreported(KBDState *s)
+static bool kbd_mouse_unreported(KBDState *s)
 {
    return    s->mouse_dx
           || s->mouse_dy
           || s->mouse_dz
           || s->mouse_dw
           || s->mouse_buttons != s->mouse_buttons_reported;
-}
-
-/**
- * Send a single packet in (IM)PS/2, IMEX or Lifebook format to the PS/2
- * controller.
- * @param  s            keyboard state object
- * @param  fToCmdQueue  is this the result of a poll on the mouse controller?
- */
-static void kbd_mouse_send_packet(KBDState *s, bool fToCmdQueue)
-{
-    if (   kbd_mouse_rel_unreported(s)
-        || (s->mouse_type != MOUSE_PROT_LIFEBOOK))
-        kbd_mouse_send_rel_packet(s, fToCmdQueue);
-    else
-        kbd_mouse_send_abs_packet(s, fToCmdQueue);
 }
 
 #ifdef IN_RING3
@@ -919,36 +786,15 @@ static void pc_kbd_mouse_event(void *opaque, int dx, int dy, int dz, int dw,
     s->mouse_dy -= dy;
     s->mouse_dz += dz;
     if (   (   (s->mouse_type == MOUSE_PROT_IMEX)
-            && s->mouse_flags & MOUSE_REPORT_HORIZONTAL)
-        || (s->mouse_type == MOUSE_PROT_LIFEBOOK))
+            && s->mouse_flags & MOUSE_REPORT_HORIZONTAL))
         s->mouse_dw += dw;
     s->mouse_buttons = buttons_state;
     if (!(s->mouse_status & MOUSE_STATUS_REMOTE))
         /* if not remote, send event. Multiple events are sent if
            too big deltas */
-        while (   kbd_mouse_rel_unreported(s)
+        while (   kbd_mouse_unreported(s)
                && kbd_mouse_event_queue_free(s) > 4)
-            kbd_mouse_send_rel_packet(s, false);
-}
-
-static void pc_kbd_mouse_event_abs(void *opaque, unsigned cx, unsigned cy)
-{
-    LogRel3(("%s: cx=%d, cy=%d\n", __PRETTY_FUNCTION__, cx, cy));
-    KBDState *s = (KBDState*)opaque;
-
-    if (!(s->mouse_status & MOUSE_STATUS_ENABLED))
-        return;
-
-    if (s->mouse_type != MOUSE_PROT_LIFEBOOK)
-        return;
-
-    s->mouse_cx = cx;
-    s->mouse_cy = cy;
-
-    if (!(s->mouse_status & MOUSE_STATUS_REMOTE) &&
-        (s->mouse_event_queue.count < (MOUSE_EVENT_QUEUE_SIZE - 4)))
-        /* if not remote, send event */
-        kbd_mouse_send_abs_packet(s, false);
+            kbd_mouse_send_packet(s, false);
 }
 #endif /* IN_RING3 */
 
@@ -1123,28 +969,6 @@ static int kbd_write_mouse(KBDState *s, int val)
             s->mouse_resolution = val;
             kbd_queue(s, AUX_ACK, 1);
         }
-        else if (val == 6)  /* Lifebook off magic knock */
-        {
-#ifdef IN_RING3
-            LogRelFlowFunc(("switching mouse device to basic PS/2 mode\n"));
-            s->mouse_type = MOUSE_PROT_PS2;
-            s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, false);
-#else
-            return VINF_IOM_HC_IOPORT_WRITE;
-#endif
-            kbd_queue(s, AUX_NACK, 1);
-        }
-        else if (val == 8)  /* Lifebook on magic knock */
-        {
-#ifdef IN_RING3
-            LogRelFlowFunc(("switching mouse device to touch screen mode\n"));
-            s->mouse_type = MOUSE_PROT_LIFEBOOK;
-            s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, true);
-#else
-            return VINF_IOM_HC_IOPORT_WRITE;
-#endif
-            kbd_queue(s, AUX_NACK, 1);
-        }
         else
             kbd_queue(s, AUX_NACK, 1);
         s->mouse_write_cmd = -1;
@@ -1227,19 +1051,14 @@ static void kbd_reset(void *opaque)
     s->mouse_sample_rate = 0;
     s->mouse_wrap = 0;
     s->mouse_type = MOUSE_PROT_PS2;
-    if (s->Mouse.pDrv)
-        s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, false);
     s->mouse_detect_state = 0;
     s->mouse_dx = 0;
     s->mouse_dy = 0;
     s->mouse_dz = 0;
     s->mouse_dw = 0;
     s->mouse_flags = 0;
-    s->mouse_cx = 0x8000;
-    s->mouse_cy = 0x8000;
     s->mouse_buttons = 0;
     s->mouse_buttons_reported = 0;
-    s->mouse_last_button = 0;
     q = &s->queue;
     q->rptr = 0;
     q->wptr = 0;
@@ -1277,11 +1096,8 @@ static void kbd_save(QEMUFile* f, void* opaque)
     qemu_put_be32s(f, &s->mouse_dz);
     qemu_put_be32s(f, &s->mouse_dw);
     qemu_put_be32s(f, &s->mouse_flags);
-    qemu_put_be32s(f, &s->mouse_cx);
-    qemu_put_be32s(f, &s->mouse_cy);
     qemu_put_8s(f, &s->mouse_buttons);
     qemu_put_8s(f, &s->mouse_buttons_reported);
-    qemu_put_8s(f, &s->mouse_last_button);
 
     /* XXX: s->scancode_set isn't being saved, but we only really support set 2,
      * so no real harm done.
@@ -1315,9 +1131,17 @@ static void kbd_save(QEMUFile* f, void* opaque)
 static int kbd_load(QEMUFile* f, void* opaque, int version_id)
 {
     uint32_t    u32, i;
+    uint8_t u8Dummy;
+    uint32_t u32Dummy;
     int         rc;
     KBDState *s = (KBDState*)opaque;
 
+#if 0
+    /** @todo enable this and remove the "if (version_id == 4)" code at some
+     * later time */
+    /* Version 4 was never created by any publicly released version of VBox */
+    AssertReturn(version_id != 4, VERR_NOT_SUPPORTED);
+#endif
     if (version_id < 2 || version_id > PCKBD_SAVED_STATE_VERSION)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
     qemu_get_8s(f, &s->write_cmd);
@@ -1331,8 +1155,6 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
     qemu_get_8s(f, &s->mouse_sample_rate);
     qemu_get_8s(f, &s->mouse_wrap);
     qemu_get_8s(f, &s->mouse_type);
-    if (s->mouse_type == MOUSE_PROT_LIFEBOOK && s->Mouse.pDrv)
-        s->Mouse.pDrv->pfnAbsModeChange(s->Mouse.pDrv, true);
     qemu_get_8s(f, &s->mouse_detect_state);
     qemu_get_be32s(f, (uint32_t *)&s->mouse_dx);
     qemu_get_be32s(f, (uint32_t *)&s->mouse_dy);
@@ -1343,13 +1165,15 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
         SSMR3GetS32(f, &s->mouse_flags);
     }
     qemu_get_8s(f, &s->mouse_buttons);
-    if (version_id > 3)
+    if (version_id == 4)
     {
-        SSMR3GetU32(f, &s->mouse_cx);
-        SSMR3GetU32(f, &s->mouse_cy);
-        SSMR3GetU8(f, &s->mouse_buttons_reported);
-        SSMR3GetU8(f, &s->mouse_last_button);
+        SSMR3GetU32(f, &u32Dummy);
+        SSMR3GetU32(f, &u32Dummy);
     }
+    if (version_id > 3)
+        SSMR3GetU8(f, &s->mouse_buttons_reported);
+    if (version_id == 4)
+        SSMR3GetU8(f, &u8Dummy);
     s->queue.count = 0;
     s->queue.rptr = 0;
     s->queue.wptr = 0;
@@ -1677,17 +1501,7 @@ static DECLCALLBACK(int) kbdMousePutEvent(PPDMIMOUSEPORT pInterface, int32_t iDe
  */
 static DECLCALLBACK(int) kbdMousePutEventAbs(PPDMIMOUSEPORT pInterface, uint32_t uX, uint32_t uY, int32_t iDeltaZ, int32_t iDeltaW, uint32_t fButtons)
 {
-    KBDState *pThis = RT_FROM_MEMBER(pInterface, KBDState, Mouse.IPort);
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
-
-    if (uX != pThis->mouse_cx || uY != pThis->mouse_cy)
-        pc_kbd_mouse_event_abs(pThis, uX, uY);
-    if (iDeltaZ || iDeltaW || fButtons != pThis->mouse_buttons)
-        pc_kbd_mouse_event(pThis, 0, 0, iDeltaZ, iDeltaW, fButtons);
-
-    PDMCritSectLeave(&pThis->CritSect);
-    return VINF_SUCCESS;
+    AssertFailedReturn(VERR_NOT_SUPPORTED);
 }
 
 
