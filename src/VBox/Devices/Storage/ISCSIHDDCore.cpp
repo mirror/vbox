@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -329,7 +329,7 @@ typedef struct ISCSIIMAGE
     uint32_t            cbSector;
     /** Size of volume in sectors. */
     uint64_t            cVolume;
-    /** Total volume size in bytes. Easiert that multiplying the above values all the time. */
+    /** Total volume size in bytes. Easier that multiplying the above values all the time. */
     uint64_t            cbSize;
 
     /** Negotiated maximum data length when sending to target. */
@@ -370,6 +370,8 @@ typedef struct ISCSIIMAGE
     RTSOCKET            Socket;
     /** Timeout for read operations on the TCP connection (in milliseconds). */
     uint32_t            uReadTimeout;
+    /** Flag whether to automatically generate the initiator name. */
+    bool                fAutomaticInitiatorName;
     /** Flag whether to use the host IP stack or DevINIP. */
     bool                fHostIP;
 } ISCSIIMAGE, *PISCSIIMAGE;
@@ -449,14 +451,11 @@ typedef ISCSIRES const *PCISCSIRES;
 *   Static Variables                                                           *
 *******************************************************************************/
 
-/** Counter for getting unique instance IDs. */
-static uint32_t s_u32iscsiID = 0;
+/** Default initiator basename. */
+static const char *s_iscsiDefaultInitiatorBasename = "iqn.2009-08.com.sun.virtualbox.initiator";
 
 /** Default LUN. */
 static const char *s_iscsiConfigDefaultLUN = "0";
-
-/** Default initiator name. */
-static const char *s_iscsiConfigDefaultInitiatorName = "iqn.2009-08.com.sun.virtualbox.initiator";
 
 /** Default timeout, 10 seconds. */
 static const char *s_iscsiConfigDefaultTimeout = "10000";
@@ -474,7 +473,7 @@ static const VDCONFIGINFO s_iscsiConfigInfo[] =
     /* LUN is defined of string type to handle the "enc" prefix. */
     { "LUN",                s_iscsiConfigDefaultLUN,            VDCFGVALUETYPE_STRING,  VD_CFGKEY_MANDATORY },
     { "TargetAddress",      NULL,                               VDCFGVALUETYPE_STRING,  VD_CFGKEY_MANDATORY },
-    { "InitiatorName",      s_iscsiConfigDefaultInitiatorName,  VDCFGVALUETYPE_STRING,  0 },
+    { "InitiatorName",      NULL,                               VDCFGVALUETYPE_STRING,  0 },
     { "InitiatorUsername",  NULL,                               VDCFGVALUETYPE_STRING,  0 },
     { "InitiatorSecret",    NULL,                               VDCFGVALUETYPE_BYTES,   0 },
     { "TargetUsername",     NULL,                               VDCFGVALUETYPE_STRING,  VD_CFGKEY_EXPERT },
@@ -532,6 +531,50 @@ DECLINLINE(int) iscsiError(PISCSIIMAGE pImage, int rc, RT_SRC_POS_DECL,
 }
 
 
+static int iscsiTransportConnect(PISCSIIMAGE pImage)
+{
+    int rc;
+    if (!pImage->pszHostname)
+        return VERR_NET_DEST_ADDRESS_REQUIRED;
+
+    rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->pszHostname, pImage->uPort, &pImage->Socket);
+    if (RT_UNLIKELY(   RT_FAILURE(rc)
+                    && (   rc == VERR_NET_CONNECTION_REFUSED
+                        || rc == VERR_NET_CONNECTION_RESET
+                        || rc == VERR_NET_UNREACHABLE
+                        || rc == VERR_NET_HOST_UNREACHABLE
+                        || rc == VERR_NET_CONNECTION_TIMED_OUT)))
+    {
+        /* Standardize return value for no connection. */
+        return VERR_NET_CONNECTION_REFUSED;
+    }
+
+    /* Make initiator name and ISID unique on this host. */
+    RTNETADDR LocalAddr;
+    rc = pImage->pInterfaceNetCallbacks->pfnGetLocalAddress(pImage->Socket,
+                                                            &LocalAddr);
+    if (RT_FAILURE(rc))
+        return rc;
+    if (   LocalAddr.uPort == RTNETADDR_PORT_NA
+        || LocalAddr.uPort > 65535)
+        return VERR_NET_ADDRESS_FAMILY_NOT_SUPPORTED;
+    pImage->ISID &= ~65535ULL;
+    pImage->ISID |= LocalAddr.uPort;
+    /* Eliminate the port so that it isn't included below. */
+    LocalAddr.uPort = RTNETADDR_PORT_NA;
+    if (pImage->fAutomaticInitiatorName)
+    {
+        if (pImage->pszInitiatorName)
+            RTStrFree(pImage->pszInitiatorName);
+        RTStrAPrintf(&pImage->pszInitiatorName, "%s:01:%RTnaddr",
+                     s_iscsiDefaultInitiatorBasename, &LocalAddr);
+        if (!pImage->pszInitiatorName)
+            return VERR_NO_MEMORY;
+    }
+    return VINF_SUCCESS;
+}
+
+
 static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned int cnResponse)
 {
     int rc = VINF_SUCCESS;
@@ -542,21 +585,9 @@ static int iscsiTransportRead(PISCSIIMAGE pImage, PISCSIRES paResponse, unsigned
     LogFlowFunc(("cnResponse=%d (%s:%d)\n", cnResponse, pImage->pszHostname, pImage->uPort));
     if (pImage->Socket == NIL_RTSOCKET)
     {
-        /* Attempt to reconnect if the connection was previously broken. */
-        if (pImage->pszHostname != NULL)
-        {
-            rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->pszHostname, pImage->uPort, &pImage->Socket);
-            if (RT_UNLIKELY(   RT_FAILURE(rc)
-                            && (   rc == VERR_NET_CONNECTION_REFUSED
-                                || rc == VERR_NET_CONNECTION_RESET
-                                || rc == VERR_NET_UNREACHABLE
-                                || rc == VERR_NET_HOST_UNREACHABLE
-                                || rc == VERR_NET_CONNECTION_TIMED_OUT)))
-            {
-                /* Standardize return value for no connection. */
-                rc = VERR_NET_CONNECTION_REFUSED;
-            }
-        }
+        /* Reconnecting makes no sense in this case, as there will be nothing
+         * to receive. We would just run into a timeout. */
+        rc = VERR_BROKEN_PIPE;
     }
 
     if (RT_SUCCESS(rc) && paResponse[0].cbSeg >= 48)
@@ -678,20 +709,7 @@ static int iscsiTransportWrite(PISCSIIMAGE pImage, PISCSIREQ paRequest, unsigned
     if (pImage->Socket == NIL_RTSOCKET)
     {
         /* Attempt to reconnect if the connection was previously broken. */
-        if (pImage->pszHostname != NULL)
-        {
-            rc = pImage->pInterfaceNetCallbacks->pfnClientConnect(pImage->pszHostname, pImage->uPort, &pImage->Socket);
-            if (RT_UNLIKELY(   RT_FAILURE(rc)
-                            && (   rc == VERR_NET_CONNECTION_REFUSED
-                                || rc == VERR_NET_CONNECTION_RESET
-                                || rc == VERR_NET_UNREACHABLE
-                                || rc == VERR_NET_HOST_UNREACHABLE
-                                || rc == VERR_NET_CONNECTION_TIMED_OUT)))
-            {
-                /* Standardize return value for no connection. */
-                rc = VERR_NET_CONNECTION_REFUSED;
-            }
-        }
+        rc = iscsiTransportConnect(pImage);
     }
 
     if (RT_SUCCESS(rc))
@@ -821,7 +839,12 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
         }
     }
 
-    if (RT_FAILURE(rc))
+    if (RT_SUCCESS(rc))
+    {
+        if (pImage->Socket == NIL_RTSOCKET)
+            rc = iscsiTransportConnect(pImage);
+    }
+    else
     {
         if (pImage->pszHostname)
         {
@@ -831,8 +854,6 @@ static int iscsiTransportOpen(PISCSIIMAGE pImage)
         pImage->uPort = 0;
     }
 
-    /* Note that in this implementation the actual connection establishment is
-     * delayed until a PDU is read or written. */
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -916,6 +937,9 @@ static int iscsiAttach(PISCSIIMAGE pImage)
     iscsiTransportClose(pImage);
 
 restart:
+    if (pImage->Socket == NIL_RTSOCKET)
+        rc = iscsiTransportOpen(pImage);
+
     pImage->state = ISCSISTATE_IN_LOGIN;
     pImage->ITT = 1;
     pImage->FirstRecvPDU = true;
@@ -2229,7 +2253,10 @@ static void iscsiFreeImage(PISCSIIMAGE pImage, bool fDelete)
     }
     if (pImage->pszInitiatorName)
     {
-        RTMemFree(pImage->pszInitiatorName);
+        if (pImage->fAutomaticInitiatorName)
+            RTStrFree(pImage->pszInitiatorName);
+        else
+            RTMemFree(pImage->pszInitiatorName);
         pImage->pszInitiatorName = NULL;
     }
     if (pImage->pszInitiatorUsername)
@@ -2308,7 +2335,8 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         goto out;
     }
 
-    pImage->ISID            = 0x800000000000ULL | 0x001234560000ULL | (0x00000000cba0ULL + ASMAtomicIncU32(&s_u32iscsiID));
+    /* This ISID will be adjusted later to make it unique on this host. */
+    pImage->ISID            = 0x800000000000ULL | 0x001234560000ULL;
     pImage->cISCSIRetries   = 10;
     pImage->state           = ISCSISTATE_FREE;
     pImage->pvRecvPDUBuf    = RTMemAlloc(ISCSI_RECV_PDU_BUFFER_SIZE);
@@ -2341,10 +2369,14 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
         rc = iscsiError(pImage, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read TargetName as string"));
         goto out;
     }
-    rc = VDCFGQueryStringAllocDef(pImage->pInterfaceConfigCallbacks,
-                                  pImage->pInterfaceConfig->pvUser,
-                                  "InitiatorName", &pImage->pszInitiatorName,
-                                  s_iscsiConfigDefaultInitiatorName);
+    rc = VDCFGQueryStringAlloc(pImage->pInterfaceConfigCallbacks,
+                               pImage->pInterfaceConfig->pvUser,
+                               "InitiatorName", &pImage->pszInitiatorName);
+    if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+    {
+        pImage->fAutomaticInitiatorName = true;
+        rc = VINF_SUCCESS;
+    }
     if (RT_FAILURE(rc))
     {
         rc = iscsiError(pImage, rc, RT_SRC_POS, N_("iSCSI: configuration error: failed to read InitiatorName as string"));
@@ -2490,11 +2522,10 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     }
 
     /*
-     * Establish the iSCSI transport connection.
+     * Attach to the iSCSI target. This implicitly establishes the iSCSI
+     * transport connection.
      */
-    rc = iscsiTransportOpen(pImage);
-    if (RT_SUCCESS(rc))
-        rc = iscsiAttach(pImage);
+    rc = iscsiAttach(pImage);
 
     if (RT_FAILURE(rc))
     {
