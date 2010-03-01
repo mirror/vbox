@@ -362,6 +362,38 @@ UIMachineLogic* UIMachineLogic::create(QObject *pParent,
     return logic;
 }
 
+UIMachineWindow* UIMachineLogic::mainMachineWindow()
+{
+    /* Return null if windows are not created yet: */
+    if (!isMachineWindowsCreated())
+        return 0;
+
+    return machineWindows()[0];
+}
+
+UIMachineWindow* UIMachineLogic::defaultMachineWindow()
+{
+    /* Return null if windows are not created yet: */
+    if (!isMachineWindowsCreated())
+        return 0;
+
+    /* Select main machine window by default: */
+    UIMachineWindow *pWindowToPropose = mainMachineWindow();
+
+    /* Check if there is active window present: */
+    foreach (UIMachineWindow *pWindowToCheck, machineWindows())
+    {
+        if (pWindowToCheck->machineWindow()->isActiveWindow())
+        {
+            pWindowToPropose = pWindowToCheck;
+            break;
+        }
+    }
+
+    /* Return default machine window: */
+    return pWindowToPropose;
+}
+
 UIMachineLogic::UIMachineLogic(QObject *pParent,
                                UISession *pSession,
                                UIActionsPool *pActionsPool,
@@ -702,12 +734,12 @@ void UIMachineLogic::sltMouseCapabilityChanged()
 {
     /* Variable falgs: */
     bool fIsMouseSupportsAbsolute = uisession()->isMouseSupportsAbsolute();
-    /* bool fIsMouseSupportsRelative = uisession()->isMouseSupportsRelative(); */
+    bool fIsMouseSupportsRelative = uisession()->isMouseSupportsRelative();
     bool fIsMouseHostCursorNeeded = uisession()->isMouseHostCursorNeeded();
 
     /* Update action state: */
     QAction *pAction = actionsPool()->action(UIActionIndex_Toggle_MouseIntegration);
-    pAction->setEnabled(fIsMouseSupportsAbsolute /* && fIsMouseSupportsRelative */ && !fIsMouseHostCursorNeeded);
+    pAction->setEnabled(fIsMouseSupportsAbsolute && fIsMouseSupportsRelative && !fIsMouseHostCursorNeeded);
     pAction->setChecked(fIsMouseHostCursorNeeded || pAction->isChecked());
 }
 
@@ -732,7 +764,7 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
 void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Toggle guest-autoresize feature for all view(s)! */
@@ -743,7 +775,7 @@ void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)
 void UIMachineLogic::sltAdjustWindow()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Adjust all window(s)! */
@@ -761,7 +793,7 @@ void UIMachineLogic::sltAdjustWindow()
 void UIMachineLogic::sltToggleMouseIntegration(bool fOff)
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Disable/Enable mouse-integration for all view(s): */
@@ -797,7 +829,7 @@ void UIMachineLogic::sltTypeCABS()
 void UIMachineLogic::sltTakeSnapshot()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Remember the paused state. */
@@ -812,7 +844,7 @@ void UIMachineLogic::sltTakeSnapshot()
 
     CMachine machine = session().GetMachine();
 
-    VBoxTakeSnapshotDlg dlg(mainMachineWindow()->machineWindow(), machine);
+    VBoxTakeSnapshotDlg dlg(defaultMachineWindow()->machineWindow(), machine);
 
     QString strTypeId = machine.GetOSTypeId();
     dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
@@ -847,12 +879,8 @@ void UIMachineLogic::sltTakeSnapshot()
 
 void UIMachineLogic::sltShowInformationDialog()
 {
-    /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
-        return;
-
     // TODO: Call for singleton information dialog for this machine!
-    //VBoxVMInformationDlg::createInformationDlg(session(), mainMachineWindow()->machineWindow());
+    //VBoxVMInformationDlg::createInformationDlg(session());
 }
 
 void UIMachineLogic::sltReset()
@@ -885,11 +913,11 @@ void UIMachineLogic::sltACPIShutdown()
 void UIMachineLogic::sltClose()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
-    /* Close machine window: */
-    mainMachineWindow()->sltTryClose();
+    /* Propose to close default machine window: */
+    defaultMachineWindow()->sltTryClose();
 }
 
 void UIMachineLogic::sltPrepareStorageMenu()
@@ -1109,7 +1137,7 @@ void UIMachineLogic::sltMountStorageMedium()
                 usedImages << medium.GetId();
         }
         /* Open VMM Dialog: */
-        VBoxMediaManagerDlg dlg(mainMachineWindow()->machineWindow());
+        VBoxMediaManagerDlg dlg(defaultMachineWindow()->machineWindow());
         dlg.setup(target.type, true /* select? */, true /* refresh? */, machine, currentId, true, usedImages);
         if (dlg.exec() == QDialog::Accepted)
             newId = dlg.selectedId();
@@ -1230,22 +1258,22 @@ void UIMachineLogic::sltAttachUSBDevice()
 void UIMachineLogic::sltOpenNetworkAdaptersDialog()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Show network settings dialog: */
-    UINetworkAdaptersDialog dlg(mainMachineWindow()->machineWindow(), session());
+    UINetworkAdaptersDialog dlg(defaultMachineWindow()->machineWindow(), session());
     dlg.exec();
 }
 
 void UIMachineLogic::sltOpenSharedFoldersDialog()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Show shared folders settings dialog: */
-    UISharedFoldersDialog dlg(mainMachineWindow()->machineWindow(), session());
+    UISharedFoldersDialog dlg(defaultMachineWindow()->machineWindow(), session());
     dlg.exec();
 }
 
@@ -1260,7 +1288,7 @@ void UIMachineLogic::sltSwitchVrdp(bool fOn)
 void UIMachineLogic::sltInstallGuestAdditions()
 {
     /* Do not process if window(s) missed! */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     char strAppPrivPath[RTPATH_MAX];
@@ -1474,7 +1502,7 @@ bool UIMachineLogic::dbgCreated()
             if (DBGGUIVT_ARE_VERSIONS_COMPATIBLE(m_dbgGuiVT->u32Version, DBGGUIVT_VERSION) ||
                 m_dbgGuiVT->u32EndVersion == m_dbgGuiVT->u32Version)
             {
-                m_dbgGuiVT->pfnSetParent(m_dbgGui, (QWidget*)mainMachineWindow());
+                m_dbgGuiVT->pfnSetParent(m_dbgGui, (QWidget*)defaultMachineWindow());
                 m_dbgGuiVT->pfnSetMenu(m_dbgGui, (QMenu*)actionsPool()->action(UIActionIndex_Menu_Debug));
                 dbgAdjustRelativePos();
                 return true;
@@ -1508,7 +1536,7 @@ void UIMachineLogic::dbgAdjustRelativePos()
 {
     if (m_dbgGui)
     {
-        QRect rct = mainMachineWindow()->machineWindow()->frameGeometry();
+        QRect rct = defaultMachineWindow()->machineWindow()->frameGeometry();
         m_dbgGuiVT->pfnAdjustRelativePos(m_dbgGui, rct.x(), rct.y(), rct.width(), rct.height());
     }
 }

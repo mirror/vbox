@@ -132,6 +132,9 @@ void UIMachineLogicNormal::prepareMachineWindows()
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
+    /* Order machine window(s): */
+    for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
+        machineWindows()[uScreenId - 1]->machineWindow()->raise();
 
     /* Notify others about machine window(s) created: */
     setMachineWindowsCreated(true);
@@ -150,7 +153,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
         /* Shows first run wizard if necessary: */
         if (uisession()->isFirstTimeStarted())
         {
-            UIFirstRunWzd wzd(mainMachineWindow()->machineWindow(), machine);
+            UIFirstRunWzd wzd(defaultMachineWindow()->machineWindow(), machine);
             wzd.exec();
         }
 
@@ -173,9 +176,9 @@ void UIMachineLogicNormal::prepareMachineWindows()
 
         /* Show "Starting/Restoring" progress dialog: */
         if (uisession()->isSaved())
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow(), 0);
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow(), 0);
         else
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow());
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow());
 
 #if 0 // TODO: Check immediate failure!
         /* Check for an progress failure */
@@ -230,7 +233,7 @@ void UIMachineLogicNormal::prepareMachineWindows()
 void UIMachineLogicNormal::cleanupMachineWindow()
 {
     /* Do not cleanup machine window if it is not present: */
-    if (!machineWindowsCreated())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Cleanup normal machine window: */
