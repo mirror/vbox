@@ -33,6 +33,7 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 #include <iprt/mem.h>
+#include <iprt/net.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
@@ -1009,6 +1010,24 @@ ion.
      * @param   Sock        Socket descriptor.
      */
     DECLR3CALLBACKMEMBER(int, pfnFlush, (RTSOCKET Sock));
+
+    /**
+     * Gets the address of the local side.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pAddr       Where to store the local address on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetLocalAddress, (RTSOCKET Sock, PRTNETADDR pAddr));
+
+    /**
+     * Gets the address of the other party.
+     *
+     * @return  iprt status code.
+     * @param   Sock        Socket descriptor.
+     * @param   pAddr       Where to store the peer address on success.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnGetPeerAddress, (RTSOCKET Sock, PRTNETADDR pAddr));
 
 } VDINTERFACETCPNET, *PVDINTERFACETCPNET;
 
