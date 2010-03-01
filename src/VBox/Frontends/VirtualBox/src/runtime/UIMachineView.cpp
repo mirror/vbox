@@ -645,18 +645,22 @@ void UIMachineView::cleanupCommon()
         DestroyIcon(m_alphaCursor);
 #endif
 
-#if defined (Q_WS_MAC)
-# if !defined (QT_MAC_USE_COCOA)
+#ifdef Q_WS_MAC
+    /* We have to make sure the callback for the keyboard events is released
+     * when closing this view. */
+    if (m_fKeyboardGrabbed)
+        darwinGrabKeyboardEvents (false);
+# ifndef QT_MAC_USE_COCOA
     if (mDarwinWindowOverlayHandlerRef)
     {
         ::RemoveEventHandler(mDarwinWindowOverlayHandlerRef);
         mDarwinWindowOverlayHandlerRef = NULL;
     }
-# endif
+# endif /* !QT_MAC_USE_COCOA */
     // TODO_NEW_CORE
 //    delete mDockIconPreview;
     mDockIconPreview = NULL;
-#endif
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineView::cleanupFrameBuffer()
@@ -668,6 +672,7 @@ void UIMachineView::cleanupFrameBuffer()
         display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
         /* Release the reference: */
         m_pFrameBuffer->Release();
+//        delete m_pFrameBuffer; // TODO_NEW_CORE: possibly necessary to really cleanup
         m_pFrameBuffer = NULL;
     }
 }
