@@ -23,9 +23,11 @@
 #define _WIN32_WINNT 0x501
 #endif
 
-#include <windows.h>
-#include <psapi.h>
-#include <winternl.h>
+#ifdef RT_OS_WINDOWS
+# include <windows.h>
+# include <psapi.h>
+# include <winternl.h>
+#endif
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
