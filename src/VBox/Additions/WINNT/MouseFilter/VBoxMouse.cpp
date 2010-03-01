@@ -277,10 +277,10 @@ static void vboxDeviceRemoved (PDEVICE_EXTENSION devExt)
 
             vboxRC = VbglGRPerform (&req->header);
 
-            if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
+            if (RT_FAILURE(vboxRC))
             {
                 dprintf(("VBoxMouse::vboxDeviceRemoved: ERROR communicating new mouse capabilities to VMMDev.\n"
-                         "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
+                         "rc = %Rrc\n", vboxRC));
             }
 
             VbglGRFree (&req->header);
@@ -337,10 +337,10 @@ static void vboxInformHost (PDEVICE_EXTENSION devExt)
 
                 vboxRC = VbglGRPerform (&req->header);
 
-                if (RT_FAILURE(vboxRC) || RT_FAILURE(req->header.rc))
+                if (RT_FAILURE(vboxRC))
                 {
-                    dprintf(("VBoxMouse::vboxInformHost: ERROR communicating new mouse capabilities to VMMDev."
-                              "rc = %d, VMMDev rc = %Rrc\n", vboxRC, req->header.rc));
+                    dprintf(("VBoxMouse::vboxInformHost: ERROR communicating new mouse capabilities to VMMDev. "
+                             "rc = %Rrc\n", vboxRC));
                 }
                 else
                 {
@@ -1115,7 +1115,7 @@ Return Value:
     {
         int rc = VbglGRPerform (&req->header);
 
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
             {
@@ -1132,8 +1132,8 @@ Return Value:
         }
         else
         {
-            dprintf(("VBoxMouse::VBoxMouse_ServiceCallback: ERROR querying mouse capabilities from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+            dprintf(("VBoxMouse::VBoxMouse_ServiceCallback: ERROR querying mouse capabilities from VMMDev. "
+                     "rc = %Rrc\n", rc));
         }
     }
 // VBOX end

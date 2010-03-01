@@ -539,7 +539,7 @@ Return Value:
                 {
                     int rc = VbglGRPerform (&req->header);
 
-                    if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+                    if (RT_SUCCESS(rc))
                     {
                         if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
                         {
@@ -551,8 +551,8 @@ Return Value:
                     }
                     else
                     {
-                        dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev."
-                                 "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+                        dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev. "
+                                 "rc = %Rrc\n", rc));
                     }
                 }
                 } // close scope
@@ -605,7 +605,7 @@ Return Value:
                 {
                     int rc = VbglGRPerform (&req->header);
 
-                    if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+                    if (RT_SUCCESS(rc))
                     {
                         if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
                         {
@@ -617,8 +617,8 @@ Return Value:
                     }
                     else
                     {
-                        dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev."
-                                 "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+                        dprintf(("i8042prt: ERROR querying mouse capabilities from VMMDev. "
+                                 "rc = %Rrc\n", rc));
                     }
                 }
                 } // close scope

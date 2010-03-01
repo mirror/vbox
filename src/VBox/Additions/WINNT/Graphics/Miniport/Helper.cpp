@@ -83,7 +83,7 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
 
         rc = VbglGRPerform (&req->header);
 
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             if (xres)
                 *xres = req->xres;
@@ -97,8 +97,8 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
         }
         else
         {
-            dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR querying display request from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+            dprintf(("VBoxVideo::vboxQueryDisplayRequest: ERROR querying display request from VMMDev. "
+                     "rc = %Rrc\n", rc));
         }
 
         VbglGRFree (&req->header);
@@ -128,14 +128,14 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
         req->height = height;
         req->bpp    = bpp;
         rc = VbglGRPerform(&req->header);
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             bRC = req->fSupported;
         }
         else
         {
             dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR querying video mode supported status from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+                     "rc = %Rrc\n", rc));
         }
         VbglGRFree(&req->header);
     }
@@ -160,14 +160,14 @@ ULONG vboxGetHeightReduction()
     else
     {
         rc = VbglGRPerform(&req->header);
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             retHeight = (ULONG)req->heightReduction;
         }
         else
         {
-            dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR querying height reduction value from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+            dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR querying height reduction value from VMMDev. "
+                     "rc = %Rrc\n", rc));
         }
         VbglGRFree(&req->header);
     }
@@ -195,7 +195,7 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
     {
         rc = VbglGRPerform (&req->header);
 
-        if (RT_SUCCESS(rc) && RT_SUCCESS(req->header.rc))
+        if (RT_SUCCESS(rc))
         {
             if (req->mouseFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
             {
@@ -214,8 +214,8 @@ static BOOLEAN vboxQueryPointerPosInternal (uint16_t *pointerXPos, uint16_t *poi
         }
         else
         {
-            dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR querying mouse capabilities from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+            dprintf(("VBoxVideo::vboxQueryPointerPosInternal: ERROR querying mouse capabilities from VMMDev. "
+                     "rc = %Rrc\n", rc));
         }
 
         VbglGRFree (&req->header);
@@ -358,8 +358,8 @@ BOOLEAN vboxUpdatePointerShape(PVIDEO_POINTER_ATTRIBUTES pointerAttr, uint32_t c
         }
         else
         {
-            dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR querying mouse capabilities from VMMDev."
-                     "rc = %Rrc, VMMDev rc = %Rrc\n", rc, req->header.rc));
+            dprintf(("VBoxVideo::vboxUpdatePointerShape: ERROR querying mouse capabilities from VMMDev. "
+                     "rc = %Rrc\n", rc));
         }
 
         dprintf(("VBoxVideo::vboxUpdatePointerShape: req->u32Version = %08X\n", req->header.version));
