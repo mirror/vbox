@@ -31,11 +31,6 @@
 #include "cr_environment.h"
 #include "stub.h"
 
-typedef struct {
-    WindowInfo *window;
-    GLboolean   windowInUse;
-} CtxCheckCurrentDrawableParams_t;
-
 /**
  * This function should be called from MakeCurrent().  It'll detect if
  * we're in a multi-thread situation, and do the right thing for dispatch.
