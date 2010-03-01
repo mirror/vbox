@@ -62,7 +62,8 @@ public:
     UIActionsPool* actionsPool() { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     QList<UIMachineWindow*>& machineWindows() { return m_machineWindowsList; }
-    UIMachineWindow* mainMachineWindow() { return machineWindows().size() > 0 ? machineWindows()[0] : 0; }
+    UIMachineWindow* mainMachineWindow();
+    UIMachineWindow* defaultMachineWindow();
 
     /* Maintenance getters/setters: */
     bool isPreventAutoStart() const { return m_fIsPreventAutoStart; }
@@ -80,7 +81,7 @@ protected:
     virtual ~UIMachineLogic();
 
     /* Protected getters/setters: */
-    bool machineWindowsCreated() const { return m_fIsWindowsCreated; }
+    bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
     void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
 
     /* Protected wrappers: */
