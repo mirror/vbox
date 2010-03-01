@@ -965,12 +965,10 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Separator] = new SeparatorAction(this);
 
     /* "Machine" menu actions: */
-    m_actionsPool[UIActionIndex_Menu_Machine] = new MenuMachineAction(this);
     m_actionsPool[UIActionIndex_Toggle_Fullscreen] = new ToggleFullscreenModeAction(this);
     m_actionsPool[UIActionIndex_Toggle_Seamless] = new ToggleSeamlessModeAction(this);
     m_actionsPool[UIActionIndex_Toggle_GuestAutoresize] = new ToggleGuestAutoresizeAction(this);
     m_actionsPool[UIActionIndex_Simple_AdjustWindow] = new PerformWindowAdjustAction(this);
-    m_actionsPool[UIActionIndex_Menu_MouseIntegration] = new MenuMouseIntegrationAction(this);
     m_actionsPool[UIActionIndex_Toggle_MouseIntegration] = new ToggleMouseIntegrationAction(this);
     m_actionsPool[UIActionIndex_Simple_TypeCAD] = new PerformTypeCADAction(this);
 #ifdef Q_WS_X11
@@ -984,33 +982,28 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Simple_Close] = new PerformCloseAction(this);
 
     /* "Devices" menu actions: */
-    m_actionsPool[UIActionIndex_Menu_Devices] = new MenuDevicesAction(this);
-    m_actionsPool[UIActionIndex_Menu_OpticalDevices] = new MenuOpticalDevicesAction(this);
-    m_actionsPool[UIActionIndex_Menu_FloppyDevices] = new MenuFloppyDevicesAction(this);
-    m_actionsPool[UIActionIndex_Menu_USBDevices] = new MenuUSBDevicesAction(this);
-    m_actionsPool[UIActionIndex_Menu_NetworkAdapters] = new MenuNetworkAdaptersAction(this);
     m_actionsPool[UIActionIndex_Simple_NetworkAdaptersDialog] = new ShowNetworkAdaptersDialogAction(this);
-    m_actionsPool[UIActionIndex_Menu_SharedFolders] = new MenuSharedFoldersAction(this);
     m_actionsPool[UIActionIndex_Simple_SharedFoldersDialog] = new ShowSharedFoldersDialogAction(this);
     m_actionsPool[UIActionIndex_Toggle_VRDP] = new ToggleVRDPAction(this);
     m_actionsPool[UIActionIndex_Simple_InstallGuestTools] = new PerformInstallGuestToolsAction(this);
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* "Debugger" menu actions: */
-    m_actionsPool[UIActionIndex_Menu_Debug] = new MenuDebugAction(this);
     m_actionsPool[UIActionIndex_Simple_Statistics] = new ShowStatisticsAction(this);
     m_actionsPool[UIActionIndex_Simple_CommandLine] = new ShowCommandLineAction(this);
     m_actionsPool[UIActionIndex_Toggle_Logging] = new ToggleLoggingAction(this);
 #endif
 
     /* "Help" menu actions: */
-    m_actionsPool[UIActionIndex_Menu_Help] = new MenuHelpAction(this);
     m_actionsPool[UIActionIndex_Simple_Help] = new ShowHelpAction(this);
     m_actionsPool[UIActionIndex_Simple_Web] = new ShowWebAction(this);
     m_actionsPool[UIActionIndex_Simple_ResetWarnings] = new PerformResetWarningsAction(this);
     m_actionsPool[UIActionIndex_Simple_Register] = new PerformRegisterAction(this);
     m_actionsPool[UIActionIndex_Simple_Update] = new PerformUpdateAction(this);
     m_actionsPool[UIActionIndex_Simple_About] = new ShowAboutAction(this);
+
+    /* Create all menus */
+    createMenus();
 
     /* Test all actions were initialized */
     for (int i = 0; i < m_actionsPool.size(); ++i)
@@ -1028,6 +1021,48 @@ UIActionsPool::~UIActionsPool()
 UIAction* UIActionsPool::action(UIActionIndex index) const
 {
     return m_actionsPool.at(index);
+}
+
+void UIActionsPool::createMenus()
+{
+    /* On Mac OS X, all QMenu's are consumed by Qt after they are added to
+     * another QMenu or a QMenuBar. This means we have to recreate all QMenus
+     * when creating a new QMenuBar. For simplicity we doing this on all
+     * platforms right now. */
+    if (m_actionsPool[UIActionIndex_Menu_Machine])
+        delete m_actionsPool[UIActionIndex_Menu_Machine];
+    m_actionsPool[UIActionIndex_Menu_Machine] = new MenuMachineAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_MouseIntegration])
+        delete m_actionsPool[UIActionIndex_Menu_MouseIntegration];
+    m_actionsPool[UIActionIndex_Menu_MouseIntegration] = new MenuMouseIntegrationAction(this);
+
+    if (m_actionsPool[UIActionIndex_Menu_Devices])
+        delete m_actionsPool[UIActionIndex_Menu_Devices];
+    m_actionsPool[UIActionIndex_Menu_Devices] = new MenuDevicesAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_OpticalDevices])
+        delete m_actionsPool[UIActionIndex_Menu_OpticalDevices];
+    m_actionsPool[UIActionIndex_Menu_OpticalDevices] = new MenuOpticalDevicesAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_FloppyDevices])
+        delete m_actionsPool[UIActionIndex_Menu_FloppyDevices];
+    m_actionsPool[UIActionIndex_Menu_FloppyDevices] = new MenuFloppyDevicesAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_USBDevices])
+        delete m_actionsPool[UIActionIndex_Menu_USBDevices];
+    m_actionsPool[UIActionIndex_Menu_USBDevices] = new MenuUSBDevicesAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_NetworkAdapters])
+        delete m_actionsPool[UIActionIndex_Menu_NetworkAdapters];
+    m_actionsPool[UIActionIndex_Menu_NetworkAdapters] = new MenuNetworkAdaptersAction(this);
+
+    if (m_actionsPool[UIActionIndex_Menu_SharedFolders])
+        delete m_actionsPool[UIActionIndex_Menu_SharedFolders];
+    m_actionsPool[UIActionIndex_Menu_SharedFolders] = new MenuSharedFoldersAction(this);
+
+    if (m_actionsPool[UIActionIndex_Menu_Debug])
+        delete m_actionsPool[UIActionIndex_Menu_Debug];
+    m_actionsPool[UIActionIndex_Menu_Debug] = new MenuDebugAction(this);
+
+    if (m_actionsPool[UIActionIndex_Menu_Help])
+        delete m_actionsPool[UIActionIndex_Menu_Help];
+    m_actionsPool[UIActionIndex_Menu_Help] = new MenuHelpAction(this);
 }
 
 bool UIActionsPool::processHotKey(const QKeySequence &key)

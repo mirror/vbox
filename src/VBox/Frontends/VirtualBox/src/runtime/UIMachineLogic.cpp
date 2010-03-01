@@ -413,6 +413,13 @@ void UIMachineLogic::prepareConsoleConnections()
 
 void UIMachineLogic::prepareActionGroups()
 {
+#ifdef Q_WS_MAC
+    /* On Mac OS X, all QMenu's are consumed by Qt after they are added to
+     * another QMenu or a QMenuBar. This means we have to recreate all QMenus
+     * when creating a new QMenuBar. */
+    uisession()->actionsPool()->createMenus();
+#endif /* Q_WS_MAC */
+
     /* Create group for all actions that are enabled only when the VM is running.
      * Note that only actions whose enabled state depends exclusively on the
      * execution state of the VM are added to this group. */
@@ -515,25 +522,6 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionsPool()->action(UIActionIndex_Toggle_Logging), SIGNAL(toggled(bool)),
             this, SLOT(sltLoggingToggled(bool)));
 #endif
-
-    /* "Help" actions connections: */
-    connect(actionsPool()->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
-            &vboxProblem(), SLOT(showHelpHelpDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
-            &vboxProblem(), SLOT(showHelpWebDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-            &vboxProblem(), SLOT(resetSuppressedMessages()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
-            &vboxGlobal(), SLOT(showRegistrationDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
-            &vboxGlobal(), SLOT(showUpdateDialog()));
-    connect(actionsPool()->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-            &vboxProblem(), SLOT(showHelpAboutDialog()));
-
-    connect(&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
-            actionsPool()->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
-    connect(&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
-            actionsPool()->action(UIActionIndex_Simple_Update), SLOT(setEnabled(bool)));
 }
 
 void UIMachineLogic::prepareRequiredFeatures()

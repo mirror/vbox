@@ -31,6 +31,7 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
+#include "UIMachineMenuBar.h"
 #include "VBoxProblemReporter.h"
 
 #ifdef Q_WS_X11
@@ -526,7 +527,8 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_pMachine(pMachine)
     , m_session(sessionReference)
     , m_callback(CConsoleCallback(new UIConsoleCallback(this)))
-    /* Common varibles: */
+    /* Common variables: */
+    , m_pMenuBar(0)
     , m_machineState(KMachineState_Null)
 #if defined(Q_WS_WIN)
     , m_alphaCursor(0)
@@ -567,6 +569,59 @@ UISession::~UISession()
 
     /* Unregister console callback: */
     session().GetConsole().UnregisterCallback(m_callback);
+}
+
+UIActionsPool* UISession::actionsPool() const
+{
+    return m_pMachine->actionsPool();
+}
+
+QMenuBar* UISession::newMenuBar()
+{
+    /* */
+    QMenuBar *pMenuBar = m_pMenuBar->createMenuBar(this);
+
+    /* Get uisession machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Availability settings: */
+    {
+        /* USB Stuff: */
+        CUSBController usbController = machine.GetUSBController();
+        if (usbController.isNull())
+        {
+            /* Hide USB menu if controller is NULL: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
+        }
+        else
+        {
+            /* Enable/Disable USB menu depending on USB controller: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
+        }
+    }
+
+    /* Prepare some initial settings: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++ iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++ iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
+        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
+
+    return pMenuBar;
 }
 
 bool UISession::setPause(bool fOn)
@@ -843,24 +898,13 @@ bool UISession::event(QEvent *pEvent)
 
 void UISession::loadSessionSettings()
 {
+    m_pMenuBar = new UIMachineMenuBar;
+
     /* Get uisession machine: */
     CMachine machine = session().GetConsole().GetMachine();
 
     /* Availability settings: */
     {
-        /* USB Stuff: */
-        CUSBController usbController = machine.GetUSBController();
-        if (usbController.isNull())
-        {
-            /* Hide USB menu if controller is NULL: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
-        }
-        else
-        {
-            /* Enable/Disable USB menu depending on USB controller: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
-        }
-
         /* VRDP Stuff: */
         CVRDPServer vrdpServer = machine.GetVRDPServer();
         if (vrdpServer.isNull())
@@ -870,26 +914,6 @@ void UISession::loadSessionSettings()
         }
     }
 
-    /* Prepare some initial settings: */
-    {
-        /* Initialize CD/FD menus: */
-        int iDevicesCountCD = 0;
-        int iDevicesCountFD = 0;
-        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            if (attachment.GetType() == KDeviceType_DVD)
-                ++ iDevicesCountCD;
-            if (attachment.GetType() == KDeviceType_Floppy)
-                ++ iDevicesCountFD;
-        }
-        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
-        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
-        pOpticalDevicesMenu->setData(iDevicesCountCD);
-        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
-        pFloppyDevicesMenu->setData(iDevicesCountFD);
-        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
-    }
 
     /* Load extra-data settings: */
     {
@@ -933,6 +957,9 @@ void UISession::saveSessionSettings()
         // TODO: Move to fullscreen/seamless logic:
         //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
     }
+
+    delete m_pMenuBar;
+    m_pMenuBar = 0;
 }
 
 qulonglong UISession::winId() const

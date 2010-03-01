@@ -344,29 +344,7 @@ void UIMachineWindowNormal::prepareConsoleConnections()
 
 void UIMachineWindowNormal::prepareMenu()
 {
-    /* Machine submenu: */
-    QMenu *pMenuMachine = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
-    prepareMenuMachine();
-    menuBar()->addMenu(pMenuMachine);
-
-    /* Devices submenu: */
-    QMenu *pMenuDevices = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
-    prepareMenuDevices();
-    menuBar()->addMenu(pMenuDevices);
-
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    if (vboxGlobal().isDebuggerEnabled())
-    {
-        QMenu *pMenuDebug = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Debug)->menu();
-        prepareMenuDebug();
-        menuBar()->addMenu(pMenuDebug);
-    }
-#endif
-
-    /* Help submenu: */
-    QMenu *pMenuHelp = machineLogic()->actionsPool()->action(UIActionIndex_Menu_Help)->menu();
-    prepareMenuHelp();
-    menuBar()->addMenu(pMenuHelp);
+    setMenuBar(uisession()->newMenuBar());
 }
 
 void UIMachineWindowNormal::prepareStatusBar()
