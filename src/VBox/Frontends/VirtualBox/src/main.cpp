@@ -270,6 +270,7 @@ static void showHelp()
             "  --no-debug                 disable the GUI debug menu and debug windows\n"
             "  --start-paused             start the VM in the paused state\n"
             "  --start-running            start the VM running (for overriding --debug*)\n"
+            "  --no-startvm-errormsgbox   do not show a message box for VM start errors\n"
             "\n"
             "The following environment variables are evaluated:\n"
             "  VBOX_GUI_DBG_ENABLED       enable the GUI debug menu if set\n"

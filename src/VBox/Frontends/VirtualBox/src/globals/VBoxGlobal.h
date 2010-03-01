@@ -320,6 +320,7 @@ public:
     QString brandingGetKey (QString aKey);
 
     bool isVMConsoleProcess() const { return !vmUuid.isNull(); }
+    bool showStartVMErrors() const { return mShowStartVMErrors; }
 #ifdef VBOX_GUI_WITH_SYSTRAY
     bool isTrayMenu() const;
     void setTrayMenu(bool aIsTrayMenu);
@@ -921,6 +922,9 @@ private:
     bool mIsTrayMenu : 1; /*< Tray icon active/desired? */
     bool mIncreasedWindowCounter : 1;
 #endif
+
+    /** Whether to show error message boxes for VM start errors. */
+    bool mShowStartVMErrors;
 
     QThread *mMediaEnumThread;
     VBoxMediaList mMediaList;

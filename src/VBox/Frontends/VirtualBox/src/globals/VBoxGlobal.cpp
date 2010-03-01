@@ -4838,6 +4838,10 @@ void VBoxGlobal::init()
     mStartPaused = false;
 #endif
 
+    mShowStartVMErrors = true;
+    bool startVM = false;
+    QString vmNameOrUuid;
+
     int argc = qApp->argc();
     int i = 1;
     while (i < argc)
@@ -4851,22 +4855,8 @@ void VBoxGlobal::init()
         {
             if (++i < argc)
             {
-                QString param = QString (qApp->argv() [i]);
-                QUuid uuid = QUuid(param);
-                if (!uuid.isNull())
-                {
-                    vmUuid = param;
-                }
-                else
-                {
-                    CMachine m = mVBox.FindMachine (param);
-                    if (m.isNull())
-                    {
-                        vboxProblem().cannotFindMachineByName (mVBox, param);
-                        return;
-                    }
-                    vmUuid = m.GetId();
-                }
+                vmNameOrUuid = QString (qApp->argv() [i]);
+                startVM = true;
             }
         }
         else if (!::strcmp(arg, "-seamless") || !::strcmp(arg, "--seamless"))
@@ -4927,9 +4917,33 @@ void VBoxGlobal::init()
         {
             mStartPaused = false;
         }
+        else if (!::strcmp (arg, "--no-startvm-errormsgbox"))
+        {
+            mShowStartVMErrors = false;
+        }
 #endif
         /** @todo add an else { msgbox(syntax error); exit(1); } here, pretty please... */
         i++;
+    }
+
+    if (startVM)
+    {
+        QUuid uuid = QUuid(vmNameOrUuid);
+        if (!uuid.isNull())
+        {
+            vmUuid = vmNameOrUuid;
+        }
+        else
+        {
+            CMachine m = mVBox.FindMachine (vmNameOrUuid);
+            if (m.isNull())
+            {
+                if (showStartVMErrors())
+                    vboxProblem().cannotFindMachineByName (mVBox, vmNameOrUuid);
+                return;
+            }
+            vmUuid = m.GetId();
+        }
     }
 
     if (bForceSeamless && !vmUuid.isEmpty())
