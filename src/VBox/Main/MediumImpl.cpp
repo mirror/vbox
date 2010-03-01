@@ -839,6 +839,8 @@ HRESULT Medium::FinalConstruct()
     m->vdIfCallsTcpNet.pfnRead = RTTcpRead;
     m->vdIfCallsTcpNet.pfnWrite = RTTcpWrite;
     m->vdIfCallsTcpNet.pfnFlush = RTTcpFlush;
+    m->vdIfCallsTcpNet.pfnGetLocalAddress = RTTcpGetLocalAddress;
+    m->vdIfCallsTcpNet.pfnGetPeerAddress = RTTcpGetPeerAddress;
 
     /* Initialize the per-disk interface chain */
     int vrc;
