@@ -219,6 +219,7 @@ stubGetWindowInfo( Display *dpy, GLXDrawable drawable )
     winInfo->type = UNDECIDED;
     winInfo->spuWindow = -1;
     winInfo->mapped = -1; /* don't know */
+    winInfo->pOwner = NULL;
 #ifndef WINDOWS
     crHashtableAdd(stub.windowTable, (unsigned int) drawable, winInfo);
 #else
@@ -270,7 +271,6 @@ stubNewContext( const char *dpyName, GLint visBits, ContextType type,
     context->spuContext = spuContext;
     context->visBits = visBits;
     context->currentDrawable = NULL;
-    context->pOwnWindow = NULL;
     crStrncpy(context->dpyName, dpyName, MAX_DPY_NAME);
     context->dpyName[MAX_DPY_NAME-1] = 0;
 
@@ -789,14 +789,22 @@ stubCheckUseChromium( WindowInfo *window )
     return GL_TRUE;  /* use Chromium! */
 }
 
-static void stubCtxCheckCurrentDrawableCB(unsigned long key, void *data1, void *data2)
+static void stubWindowCheckOwnerCB(unsigned long key, void *data1, void *data2)
 {
-    ContextInfo *pCtx = (ContextInfo *) data1;
-    CtxCheckCurrentDrawableParams_t *pParams = (CtxCheckCurrentDrawableParams_t *) data2;
+    WindowInfo *pWindow = (WindowInfo *) data1;
+    ContextInfo *pCtx = (ContextInfo *) data2;
 
-    if (pCtx->currentDrawable == pParams->window)
+    if (pWindow->pOwner == pCtx)
     {
-        pParams->windowInUse = GL_TRUE;
+#ifdef WINDOWS
+            /* Note: can't use WindowFromDC(context->pOwnWindow->drawable) here
+               because GL context is already released from DC and actual guest window
+               could be destroyed.
+             */
+            crWindowDestroy((GLint)pWindow->hWnd);
+#else
+            crWindowDestroy((GLint)pWindow->drawable);
+#endif
     }
 }
 
@@ -850,8 +858,6 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             {
                 /*crDebug("(1)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
-                CRASSERT(!context->pOwnWindow);
-                context->pOwnWindow = window;
             }
         }
         else {
@@ -895,8 +901,8 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
         CRASSERT(context->type == CHROMIUM);
         CRASSERT(context->spuContext >= 0);
 
-        if (context->currentDrawable && context->currentDrawable != window)
-            crWarning("Rebinding context %p to a different window", context);
+        /*if (context->currentDrawable && context->currentDrawable != window)
+            crDebug("Rebinding context %p to a different window", context);*/
 
         if (window->type == NATIVE) {
             crWarning("Can't rebind a chromium context to a native window\n");
@@ -907,29 +913,26 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
             {
                 /*crDebug("(2)stubMakeCurrent ctx=%p(%i) window=%p(%i)", context, context->spuContext, window, window->spuWindow);*/
                 window->spuWindow = stub.spu->dispatch_table.WindowCreate( window->dpyName, context->visBits );
-                if (context->pOwnWindow)
+                if (context->currentDrawable && context->currentDrawable->type==CHROMIUM 
+                    && context->currentDrawable->pOwner==context)
                 {
-                    WindowInfo *pOwnWindow = context->pOwnWindow;
-                    CtxCheckCurrentDrawableParams_t params;
-
-                    context->pOwnWindow = NULL;
-                    context->currentDrawable=NULL;
-
-                    params.window = pOwnWindow;
-                    params.windowInUse = GL_FALSE;
-
-                    crHashtableWalk(stub.contextTable, stubCtxCheckCurrentDrawableCB, &params);
-
-                    if (!params.windowInUse)
-                    {
 #ifdef WINDOWS
-                        crWindowDestroy((GLint)pOwnWindow->hWnd);
+                        if (!WindowFromDC(context->currentDrawable->drawable))
+                        {
+                            crWindowDestroy((GLint)context->currentDrawable->hWnd);
+                        }
 #else
-                        crWindowDestroy((GLint)pOwnWindow->drawable);
+                        Window root;
+                        int x, y;
+                        unsigned int border, depth, w, h;
+
+                        if (!XGetGeometry(context->currentDrawable->dpy, context->currentDrawable->drawable, &root, &x, &y, &w, &h, &border, &depth))
+                        {
+                            crWindowDestroy((GLint)context->currentDrawable->drawable);
+                        }
 #endif
-                    }
+                    
                 }
-                context->pOwnWindow = window;
             }
 
             if (window->spuWindow != (GLint)window->drawable)
@@ -942,6 +945,7 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
     }
 
     window->type = context->type;
+    window->pOwner = context;
     context->currentDrawable = window;
     stub.currentContext = context;
 
@@ -1001,8 +1005,6 @@ stubMakeCurrent( WindowInfo *window, ContextInfo *context )
     return retVal;
 }
 
-
-
 void
 stubDestroyContext( unsigned long contextId )
 {
@@ -1028,18 +1030,7 @@ stubDestroyContext( unsigned long contextId )
         /* Have pack SPU or tilesort SPU, etc. destroy the context */
         CRASSERT(context->spuContext >= 0);
         stub.spu->dispatch_table.DestroyContext( context->spuContext );
-        if (context->pOwnWindow)
-        {
-            /* Note: can't use WindowFromDC(context->pOwnWindow->drawable) here
-               because GL context is already released from DC and actual guest window
-               could be destroyed.
-             */
-#ifdef WINDOWS
-            crWindowDestroy((GLint)context->pOwnWindow->hWnd);
-#else
-            crWindowDestroy((GLint)context->pOwnWindow->drawable);
-#endif
-        }
+        crHashtableWalk(stub.windowTable, stubWindowCheckOwnerCB, context);
     }
 
     if (stub.currentContext == context) {

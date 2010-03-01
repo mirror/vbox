@@ -79,17 +79,9 @@ static SwapBuffersFunc_t origSwapBuffers;
 static DrawBufferFunc_t origDrawBuffer;
 static ScissorFunc_t origScissor;
 
-static void stubCheckWindowState(void)
+static void stubCheckWindowState(WindowInfo *window)
 {
-    WindowInfo *window;
     bool bForceUpdate = false;
-
-    CRASSERT(stub.trackWindowSize || stub.trackWindowPos);
-
-    if (!stub.currentContext)
-        return;
-
-    window = stub.currentContext->currentDrawable;
 
 #ifdef WINDOWS
     /* @todo install hook and track for WM_DISPLAYCHANGE */
@@ -128,6 +120,64 @@ static void stubCheckWindowState(void)
     }
 }
 
+static bool stubSystemWindowExist(WindowInfo *pWindow)
+{
+#ifdef WINDOWS
+    if (!WindowFromDC(pWindow->drawable))
+    {
+        return false;
+    }
+#else
+    Window root;
+    int x, y;
+    unsigned int border, depth, w, h;
+
+    if (!XGetGeometry(pWindow->dpy, pWindow->drawable, &root, &x, &y, &w, &h, &border, &depth))
+    {
+        return false;
+    }
+#endif
+
+    return true;
+}
+
+static void stubCheckWindowsCB(unsigned long key, void *data1, void *data2)
+{
+    WindowInfo *pWindow = (WindowInfo *) data1;
+    ContextInfo *pCtx = (ContextInfo *) data2;
+
+    if (pWindow == pCtx->currentDrawable
+        || pWindow->type!=CHROMIUM
+        || pWindow->pOwner!=pCtx)
+    {
+        return;
+    }
+
+    if (!stubSystemWindowExist(pWindow))
+    {
+#ifdef WINDOWS
+        crWindowDestroy((GLint)pWindow->hWnd);
+#else
+        crWindowDestroy((GLint)pWindow->drawable);
+#endif
+        return;
+    }
+
+    stubCheckWindowState(pWindow);
+}
+
+static void stubCheckWindowsState(void)
+{
+    CRASSERT(stub.trackWindowSize || stub.trackWindowPos);
+
+    if (!stub.currentContext)
+        return;
+
+    stubCheckWindowState(stub.currentContext->currentDrawable);
+
+    crHashtableWalk(stub.windowTable, stubCheckWindowsCB, stub.currentContext);
+}
+
 
 /**
  * Override the head SPU's glClear function.
@@ -136,7 +186,7 @@ static void stubCheckWindowState(void)
  */
 static void SPU_APIENTRY trapClear(GLbitfield mask)
 {
-    stubCheckWindowState();
+    stubCheckWindowsState();
     /* call the original SPU glClear function */
     origClear(mask);
 }
@@ -147,7 +197,7 @@ static void SPU_APIENTRY trapClear(GLbitfield mask)
  */
 static void SPU_APIENTRY trapViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 {
-    stubCheckWindowState();
+    stubCheckWindowsState();
     /* call the original SPU glViewport function */
     if (!stub.viewportHack)
     {
@@ -166,13 +216,13 @@ static void SPU_APIENTRY trapViewport(GLint x, GLint y, GLsizei w, GLsizei h)
 
 static void SPU_APIENTRY trapSwapBuffers(GLint window, GLint flags)
 {
-    stubCheckWindowState();
+    stubCheckWindowsState();
     origSwapBuffers(window, flags);
 }
 
 static void SPU_APIENTRY trapDrawBuffer(GLenum buf)
 {
-    stubCheckWindowState();
+    stubCheckWindowsState();
     origDrawBuffer(buf);
 }
 
