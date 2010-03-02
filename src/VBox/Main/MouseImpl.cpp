@@ -500,12 +500,16 @@ void Mouse::sendMouseCapsCallback(void)
 
 
 /**
- * @interface_method_impl{PDMIMOUSECONNECTOR,pfnAbsModeChange}
+ * @interface_method_impl{PDMIMOUSECONNECTOR,pfnReportModes}
  */
-DECLCALLBACK(void) Mouse::mouseAbsModeChange(PPDMIMOUSECONNECTOR pInterface, bool fEnabled)
+DECLCALLBACK(void) Mouse::mouseReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs)
 {
     PDRVMAINMOUSE pDrv = RT_FROM_MEMBER(pInterface, DRVMAINMOUSE, IConnector);
-    if (fEnabled)
+    if (fRel)
+        pDrv->pMouse->uDevCaps |= MOUSE_DEVCAP_RELATIVE;
+    else
+        pDrv->pMouse->uDevCaps &= ~MOUSE_DEVCAP_RELATIVE;
+    if (fAbs)
         pDrv->pMouse->uDevCaps |= MOUSE_DEVCAP_ABSOLUTE;
     else
         pDrv->pMouse->uDevCaps &= ~MOUSE_DEVCAP_ABSOLUTE;
@@ -573,7 +577,7 @@ DECLCALLBACK(int) Mouse::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32
      */
     pDrvIns->IBase.pfnQueryInterface        = Mouse::drvQueryInterface;
 
-    pData->IConnector.pfnAbsModeChange      = Mouse::mouseAbsModeChange;
+    pData->IConnector.pfnReportModes        = Mouse::mouseReportModes;
 
     /*
      * Get the IMousePort interface of the above driver/device.

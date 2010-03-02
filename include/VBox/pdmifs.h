@@ -343,17 +343,18 @@ typedef struct PDMIMOUSECONNECTOR *PPDMIMOUSECONNECTOR;
 typedef struct PDMIMOUSECONNECTOR
 {
     /**
-     * Notifies the the downstream driver when the guest switches the device into or
-     * out of absolute mode.
+     * Notifies the the downstream driver of changes to the reporting modes
+     * supported by the driver
      *
      * @param   pInterface      Pointer to the this interface.
-     * @param   fEnabled        Whether absolute mode is currently enabled.
+     * @param   fRelative       Whether relative mode is currently supported.
+     * @param   fAbsolute       Whether absolute mode is currently supported.
      */
-    DECLR3CALLBACKMEMBER(void, pfnAbsModeChange,(PPDMIMOUSECONNECTOR pInterface, bool fEnabled));
+    DECLR3CALLBACKMEMBER(void, pfnReportModes,(PPDMIMOUSECONNECTOR pInterface, bool fRelative, bool fAbsolute));
 
 } PDMIMOUSECONNECTOR;
 /** PDMIMOUSECONNECTOR interface ID.  */
-#define PDMIMOUSECONNECTOR_IID                  "6b7be703-c1de-40a2-a977-0ef68d8760ca"
+#define PDMIMOUSECONNECTOR_IID                  "ce64d7bd-fa8f-41d1-a6fb-d102a2d6bffe"
 
 
 /** Pointer to a keyboard port interface. */
