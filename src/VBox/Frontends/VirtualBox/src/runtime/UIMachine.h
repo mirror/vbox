@@ -52,15 +52,15 @@ public:
     /* Public getters: */
     QWidget* mainWindow() const;
 
-    /* Close VM handler: */
-    void closeVirtualMachine();
-
 private slots:
 
     /* Visual state-change handler: */
     void sltChangeVisualState(UIVisualStateType visualStateType);
 
 private:
+
+    /* Close VM handler: */
+    void closeVirtualMachine();
 
     /* Move VM to default (normal) state: */
     void enterBaseVisualState();
