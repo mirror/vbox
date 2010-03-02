@@ -941,7 +941,7 @@ restart:
     {
         rc = iscsiTransportOpen(pImage);
         if (RT_FAILURE(rc))
-        goto out;
+            goto out;
     }
 
     pImage->state = ISCSISTATE_IN_LOGIN;
