@@ -117,16 +117,16 @@ protected:
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
-    void calculateDesktopGeometry();
     virtual QSize desktopGeometry() const;
-    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
-    void storeConsoleSize(int iWidth, int iHeight);
 
     /* Protected setters: */
+    void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
+    void storeConsoleSize(int iWidth, int iHeight);
     void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
     void setFrameBufferResizeIgnored(bool fIgnore = true) { m_bIsFrameBufferResizeIgnored = fIgnore; }
 
     /* Protected helpers: */
+    void calculateDesktopGeometry();
     void updateMouseClipping();
     void updateSliders();
 

@@ -282,6 +282,83 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
+QSize UIMachineView::desktopGeometry() const
+{
+    QSize geometry;
+    switch (m_desktopGeometryType)
+    {
+        case DesktopGeo_Fixed:
+        case DesktopGeo_Automatic:
+            geometry = QSize(qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
+                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
+            break;
+        case DesktopGeo_Any:
+            geometry = QSize(0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Bad geometry type %d!\n", m_desktopGeometryType));
+    }
+    return geometry;
+}
+
+void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
+{
+    switch (geometry)
+    {
+        case DesktopGeo_Fixed:
+            m_desktopGeometryType = DesktopGeo_Fixed;
+            if (aWidth != 0 && aHeight != 0)
+                m_desktopGeometry = QSize(aWidth, aHeight);
+            else
+                m_desktopGeometry = QSize(0, 0);
+            storeConsoleSize(0, 0);
+            break;
+        case DesktopGeo_Automatic:
+            m_desktopGeometryType = DesktopGeo_Automatic;
+            m_desktopGeometry = QSize(0, 0);
+            storeConsoleSize(0, 0);
+            break;
+        case DesktopGeo_Any:
+            m_desktopGeometryType = DesktopGeo_Any;
+            m_desktopGeometry = QSize(0, 0);
+            break;
+        default:
+            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
+            m_desktopGeometryType = DesktopGeo_Invalid;
+    }
+}
+
+void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
+{
+    m_storedConsoleSize = QSize(iWidth, iHeight);
+}
+
+void UIMachineView::calculateDesktopGeometry()
+{
+    /* This method should not get called until we have initially set up the m_desktopGeometryType: */
+    Assert((m_desktopGeometryType != DesktopGeo_Invalid));
+    /* If we are not doing automatic geometry calculation then there is nothing to do: */
+    if (DesktopGeo_Automatic == m_desktopGeometryType)
+    {
+        /* Available geometry of the desktop.  If the desktop is a single
+         * screen, this will exclude space taken up by desktop taskbars
+         * and things, but this is unfortunately not true for the more
+         * complex case of a desktop spanning multiple screens: */
+        QRect desktop = availableGeometry();
+        /* The area taken up by the machine window on the desktop,
+         * including window frame, title and menu bar and whatnot: */
+        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
+        /* The area taken up by the machine view, so excluding all decorations: */
+        QRect window = geometry();
+        /* To work out how big we can make the console window while still
+         * fitting on the desktop, we calculate desktop - frame + window.
+         * This works because the difference between frame and window
+         * (or at least its width and height) is a constant. */
+        m_desktopGeometry = QSize(desktop.width() - frame.width() + window.width(),
+                                  desktop.height() - frame.height() + window.height());
+    }
+}
+
 void UIMachineView::updateMouseClipping()
 {
     if (uisession()->isMouseCaptured())
@@ -311,7 +388,7 @@ void UIMachineView::updateSliders()
     QSize m = maximumViewportSize();
 
     QSize v = QSize(m_pFrameBuffer->width(), m_pFrameBuffer->height());
-    /* no scroll bars needed */
+    /* No scroll bars needed: */
     if (m.expandedTo(v) == m)
         p = m;
 
@@ -552,84 +629,6 @@ void UIMachineView::loadMachineViewSettings()
 #endif
 }
 
-QSize UIMachineView::desktopGeometry() const
-{
-    QSize geometry;
-    switch (m_desktopGeometryType)
-    {
-        case DesktopGeo_Fixed:
-        case DesktopGeo_Automatic:
-            geometry = QSize(qMax(m_desktopGeometry.width(), m_storedConsoleSize.width()),
-                             qMax(m_desktopGeometry.height(), m_storedConsoleSize.height()));
-            break;
-        case DesktopGeo_Any:
-            geometry = QSize(0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Bad geometry type %d!\n", m_desktopGeometryType));
-    }
-    return geometry;
-}
-
-void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
-{
-    switch (geometry)
-    {
-        case DesktopGeo_Fixed:
-            m_desktopGeometryType = DesktopGeo_Fixed;
-            if (aWidth != 0 && aHeight != 0)
-                m_desktopGeometry = QSize(aWidth, aHeight);
-            else
-                m_desktopGeometry = QSize(0, 0);
-            storeConsoleSize(0, 0);
-            break;
-        case DesktopGeo_Automatic:
-            m_desktopGeometryType = DesktopGeo_Automatic;
-            m_desktopGeometry = QSize(0, 0);
-            storeConsoleSize(0, 0);
-            break;
-        case DesktopGeo_Any:
-            m_desktopGeometryType = DesktopGeo_Any;
-            m_desktopGeometry = QSize(0, 0);
-            break;
-        default:
-            AssertMsgFailed(("Invalid desktop geometry type %d\n", geometry));
-            m_desktopGeometryType = DesktopGeo_Invalid;
-    }
-}
-
-void UIMachineView::calculateDesktopGeometry()
-{
-    /* This method should not get called until we have initially set up the m_desktopGeometryType: */
-    Assert((m_desktopGeometryType != DesktopGeo_Invalid));
-    /* If we are not doing automatic geometry calculation then there is nothing to do: */
-    if (DesktopGeo_Automatic == m_desktopGeometryType)
-    {
-        /* Available geometry of the desktop.  If the desktop is a single
-         * screen, this will exclude space taken up by desktop taskbars
-         * and things, but this is unfortunately not true for the more
-         * complex case of a desktop spanning multiple screens: */
-        QRect desktop = availableGeometry();
-        /* The area taken up by the machine window on the desktop,
-         * including window frame, title and menu bar and whatnot: */
-        QRect frame = machineWindowWrapper()->machineWindow()->frameGeometry();
-        /* The area taken up by the machine view, so excluding all decorations: */
-        QRect window = geometry();
-        /* To work out how big we can make the console window while still
-         * fitting on the desktop, we calculate desktop - frame + window.
-         * This works because the difference between frame and window
-         * (or at least its width and height) is a constant. */
-        m_desktopGeometry = QSize(desktop.width() - frame.width() + window.width(),
-                                  desktop.height() - frame.height() + window.height());
-    }
-}
-
-void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
-{
-    m_storedConsoleSize = QSize(iWidth, iHeight);
-}
-
-
 void UIMachineView::cleanupCommon()
 {
 #if defined (Q_WS_PM)
@@ -670,7 +669,7 @@ void UIMachineView::cleanupFrameBuffer()
     {
         /* Detach framebuffer from Display: */
         CDisplay display = session().GetConsole().GetDisplay();
-        display.SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, CFramebuffer(NULL));
+        display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
         /* Release the reference: */
         m_pFrameBuffer->Release();
 //        delete m_pFrameBuffer; // TODO_NEW_CORE: possibly necessary to really cleanup
@@ -694,10 +693,11 @@ bool UIMachineView::event(QEvent *pEvent)
                 focusEvent(false);
             else
             {
-                /* Release the host key and all other pressed keys too even when paused (otherwise, we will get stuck
-                 * keys in the guest when doing sendChangedKeyStates() on resume because key presses were already
-                 * recorded in m_pressedKeys but key releases will most likely not reach us but the new focus window instead): */
-                releaseAllPressedKeys(true /* fReleaseHostKey */);
+                /* Release the host key and all other pressed keys too even when paused
+                 * (otherwise, we will get stuck keys in the guest when doing sendChangedKeyStates() on resume
+                 * because key presses were already recorded in m_pressedKeys but key releases will most likely
+                 * not reach us but the new focus window instead): */
+                releaseAllPressedKeys(true /* including host key? */);
             }
             break;
         }
@@ -707,7 +707,6 @@ bool UIMachineView::event(QEvent *pEvent)
             UIRepaintEvent *pPaintEvent = static_cast<UIRepaintEvent*>(pEvent);
             viewport()->repaint(pPaintEvent->x() - contentsX(), pPaintEvent->y() - contentsY(),
                                 pPaintEvent->width(), pPaintEvent->height());
-            /* session().GetConsole().GetDisplay().UpdateCompleted(); - the event was acked already */
             return true;
         }
 
@@ -854,7 +853,7 @@ bool UIMachineView::event(QEvent *pEvent)
                 else
                 {
                     /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
-                    machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence (pKeyEvent->key()));
+                    machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence(pKeyEvent->key()));
                 }
             }
             else if (!m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyRelease)
@@ -954,7 +953,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 /* Disable mouse event compression if we enter the VM view. So all mouse events are
                  * registered in the VM. Only do this if the keyboard/mouse is grabbed (this is when
                  * we have a valid event handler): */
-                setMouseCoalescingEnabled (false);
+                setMouseCoalescingEnabled(false);
                 break;
             }
 #endif /* Q_WS_MAC */
@@ -1496,9 +1495,9 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
     int wheelHorizontal = 0;
     if (aWheelDir == Qt::Vertical)
     {
-        /* the absolute value of wheel delta is 120 units per every wheel
-         * move; positive deltas correspond to counterclockwize rotations
-         * (usually up), negative -- to clockwize (usually down). */
+        /* The absolute value of wheel delta is 120 units per every wheel move;
+         * positive deltas correspond to counterclockwize rotations (usually up),
+         * negative deltas correspond to clockwize (usually down). */
         wheelVertical = - (aWheelDelta / 120);
     }
     else if (aWheelDir == Qt::Horizontal)
@@ -1507,7 +1506,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
     if (uisession()->isMouseCaptured())
     {
 #ifdef Q_WS_WIN32
-        /* send pending WM_PAINT events */
+        /* Send pending WM_PAINT events: */
         ::UpdateWindow(viewport()->winId());
 #endif
 
@@ -1638,7 +1637,6 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
             {
                 /* Try to automatically scroll the guest canvas if the
                  * mouse goes outside its visible part: */
-
                 int dx = 0;
                 if (aPos.x() > vw) dx = aPos.x() - vw;
                 else if (aPos.x() < 0) dx = aPos.x();
@@ -1648,15 +1646,23 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
                 if (dx != 0 || dy != 0) scrollBy (dx, dy);
             }
 
-            QPoint cpnt = viewportToContents (aPos);
-            if (cpnt.x() < 0) cpnt.setX (0);
-            else if (cpnt.x() > cw) cpnt.setX (cw);
-            if (cpnt.y() < 0) cpnt.setY (0);
-            else if (cpnt.y() > ch) cpnt.setY (ch);
+            QPoint cpnt = viewportToContents(aPos);
+            if (cpnt.x() < 0) cpnt.setX(0);
+            else if (cpnt.x() > cw) cpnt.setX(cw);
+            if (cpnt.y() < 0) cpnt.setY(0);
+            else if (cpnt.y() > ch) cpnt.setY(ch);
+
+            // TODO: Where to put that actually?
+            /* Get & Setup absolute-event shift: */
+            CFramebuffer framebuffer;
+            LONG xShift = 0, yShift = 0;
+            session().GetConsole().GetDisplay().GetFramebuffer(screenId(), framebuffer, xShift, yShift);
+            cpnt.setX(cpnt.x() + xShift);
+            cpnt.setY(cpnt.y() + yShift);
 
             CMouse mouse = session().GetConsole().GetMouse();
-            mouse.PutMouseEventAbsolute (cpnt.x(), cpnt.y(), wheelVertical,
-                                         wheelHorizontal, state);
+            // AssertMsgFailed(("x=%d, y=%d", cpnt.x(), cpnt.y())); // this shows what absolute coordinates are correct!
+            mouse.PutMouseEventAbsolute(cpnt.x(), cpnt.y(), wheelVertical, wheelHorizontal, state);
             return true;
         }
         else
@@ -1673,7 +1679,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
                      * the capture state is to be defined by the dialog result itself: */
                     m_bIsAutoCaptureDisabled = true;
                     bool autoConfirmed = false;
-                    bool ok = vboxProblem().confirmInputCapture (&autoConfirmed);
+                    bool ok = vboxProblem().confirmInputCapture(&autoConfirmed);
                     if (autoConfirmed)
                         m_bIsAutoCaptureDisabled = false;
                     /* Otherwise, the disable flag will be reset in the next console view's foucs in event (since
@@ -1741,15 +1747,17 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 //    else
 #endif
 //    {
-//        /* We have a snapshot for the paused state: */
-//        QRect r = pPaintEvent->rect().intersect (viewport()->rect());
-//        /* We have to disable paint on screen if we are using the regular painter */
-//        bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
-//        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
-//        QPainter pnt(viewport());
-//        pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
-//        /* Restore the attribute to its previous state */
-//        viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
+#if 0 // TODO: Paint pause-shot on screen during pause!
+        /* We have a snapshot for the paused state: */
+        QRect r = pPaintEvent->rect().intersect(viewport()->rect());
+        /* We have to disable paint on screen if we are using the regular painter: */
+        bool paintOnScreen = viewport()->testAttribute(Qt::WA_PaintOnScreen);
+        viewport()->setAttribute(Qt::WA_PaintOnScreen, false);
+        QPainter pnt(viewport());
+        pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
+        /* Restore the attribute to its previous state: */
+        viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
+#endif
 #ifdef Q_WS_MAC
 //        updateDockIcon();
 #endif
@@ -2369,7 +2377,7 @@ void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
 
 QPoint UIMachineView::viewportToContents(const QPoint &vp) const
 {
-    return QPoint (vp.x() + contentsX(), vp.y() + contentsY());
+    return QPoint(vp.x() + contentsX(), vp.y() + contentsY());
 }
 
 void UIMachineView::scrollBy(int dx, int dy)
@@ -2451,14 +2459,14 @@ void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
         /* Memorize the host position where the cursor was captured: */
         m_capturedMousePos = QCursor::pos();
 #ifdef Q_WS_WIN32
-        viewport()->setCursor (QCursor (Qt::BlankCursor));
+        viewport()->setCursor(QCursor(Qt::BlankCursor));
         /* Move the mouse to the center of the visible area: */
-        QCursor::setPos (mapToGlobal (visibleRegion().boundingRect().center()));
+        QCursor::setPos(mapToGlobal(visibleRegion().boundingRect().center()));
         m_lastMousePos = QCursor::pos();
 #elif defined (Q_WS_MAC)
         /* Move the mouse to the center of the visible area: */
         m_lastMousePos = mapToGlobal (visibleRegion().boundingRect().center());
-        QCursor::setPos (m_lastMousePos);
+        QCursor::setPos(m_lastMousePos);
         /* Grab all mouse events: */
         viewport()->grabMouse();
 #else
@@ -2473,7 +2481,7 @@ void UIMachineView::captureMouse(bool fCapture, bool fEmitSignal /* = true */)
 #endif
         /* Release mouse buttons: */
         CMouse mouse = session().GetConsole().GetMouse();
-        mouse.PutMouseEvent(0, 0, 0, 0 /* Horizontal wheel */, 0);
+        mouse.PutMouseEvent(0, 0, 0, 0, 0);
     }
 
     uisession()->setMouseCaptured(fCapture);
