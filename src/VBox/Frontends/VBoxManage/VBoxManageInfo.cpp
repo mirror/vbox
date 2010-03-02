@@ -1292,83 +1292,85 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         else
             RTPrintf("USB:             %s\n", fEnabled ? "enabled" : "disabled");
 
+        SafeIfaceArray <IUSBDeviceFilter> Coll;
+        rc = USBCtl->COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll));
+        if (SUCCEEDED(rc))
+        {
         if (details != VMINFO_MACHINEREADABLE)
             RTPrintf("\nUSB Device Filters:\n\n");
 
-        SafeIfaceArray <IUSBDeviceFilter> Coll;
-        CHECK_ERROR_RET (USBCtl, COMGETTER(DeviceFilters)(ComSafeArrayAsOutParam(Coll)), rc);
-
-        if (Coll.size() == 0)
-        {
-            if (details != VMINFO_MACHINEREADABLE)
-                RTPrintf("<none>\n\n");
-        }
-        else
-        {
-            for (size_t index = 0; index < Coll.size(); ++index)
+            if (Coll.size() == 0)
             {
-                ComPtr<IUSBDeviceFilter> DevPtr = Coll[index];
-
-                /* Query info. */
-
                 if (details != VMINFO_MACHINEREADABLE)
-                    RTPrintf("Index:            %zu\n", index);
-
-                BOOL bActive = FALSE;
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Active) (&bActive), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterActive%zu=\"%s\"\n", index + 1, bActive ? "on" : "off");
-                else
-                    RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
-
-                Bstr bstr;
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Name) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterName%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Name:             %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (VendorId) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterVendorId%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("VendorId:         %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (ProductId) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterProductId%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("ProductId:        %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Revision) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterRevision%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Revision:         %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Manufacturer) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterManufacturer%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Manufacturer:     %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Product) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterProduct%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Product:          %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (Remote) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterRemote%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Remote:           %lS\n", bstr.raw());
-                CHECK_ERROR_RET (DevPtr, COMGETTER (SerialNumber) (bstr.asOutParam()), rc);
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("USBFilterSerialNumber%zu=\"%lS\"\n", index + 1, bstr.raw());
-                else
-                    RTPrintf("Serial Number:    %lS\n", bstr.raw());
-                if (details != VMINFO_MACHINEREADABLE)
+                    RTPrintf("<none>\n\n");
+            }
+            else
+            {
+                for (size_t index = 0; index < Coll.size(); ++index)
                 {
-                    ULONG fMaskedIfs;
-                    CHECK_ERROR_RET (DevPtr, COMGETTER (MaskedInterfaces) (&fMaskedIfs), rc);
-                    if (fMaskedIfs)
-                        RTPrintf("Masked Interfaces: 0x%08x\n", fMaskedIfs);
-                    RTPrintf("\n");
+                    ComPtr<IUSBDeviceFilter> DevPtr = Coll[index];
+
+                    /* Query info. */
+
+                    if (details != VMINFO_MACHINEREADABLE)
+                        RTPrintf("Index:            %zu\n", index);
+
+                    BOOL bActive = FALSE;
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Active) (&bActive), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterActive%zu=\"%s\"\n", index + 1, bActive ? "on" : "off");
+                    else
+                        RTPrintf("Active:           %s\n", bActive ? "yes" : "no");
+
+                    Bstr bstr;
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Name) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterName%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Name:             %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (VendorId) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterVendorId%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("VendorId:         %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (ProductId) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterProductId%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("ProductId:        %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Revision) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterRevision%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Revision:         %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Manufacturer) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterManufacturer%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Manufacturer:     %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Product) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterProduct%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Product:          %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (Remote) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterRemote%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Remote:           %lS\n", bstr.raw());
+                    CHECK_ERROR_RET (DevPtr, COMGETTER (SerialNumber) (bstr.asOutParam()), rc);
+                    if (details == VMINFO_MACHINEREADABLE)
+                        RTPrintf("USBFilterSerialNumber%zu=\"%lS\"\n", index + 1, bstr.raw());
+                    else
+                        RTPrintf("Serial Number:    %lS\n", bstr.raw());
+                    if (details != VMINFO_MACHINEREADABLE)
+                    {
+                        ULONG fMaskedIfs;
+                        CHECK_ERROR_RET (DevPtr, COMGETTER (MaskedInterfaces) (&fMaskedIfs), rc);
+                        if (fMaskedIfs)
+                            RTPrintf("Masked Interfaces: 0x%08x\n", fMaskedIfs);
+                        RTPrintf("\n");
+                    }
                 }
             }
         }
