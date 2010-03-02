@@ -108,7 +108,6 @@ bool UIMachineLogicFullscreen::checkAvailability()
         }
     }
 
-
     return true;
 }
 
