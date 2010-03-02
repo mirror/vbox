@@ -95,6 +95,7 @@ protected:
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
     virtual void prepareRequiredFeatures();
+    virtual void prepareConsolePowerUp();
 
     /* Cleanup helpers: */
     //virtual void cleanupRequiredFeatures() {}
