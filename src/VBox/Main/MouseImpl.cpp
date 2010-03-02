@@ -427,14 +427,16 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     uint32_t mouseXAbs;
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
     ComAssertComRCRet(rc, rc);
-    if (mouseXAbs > 0xffff)
-        mouseXAbs = mLastAbsX;
+    /// TODO: Remove those strings?
+    //if (mouseXAbs > 0xffff)
+    //    mouseXAbs = mLastAbsX;
 
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
     ComAssertComRCRet(rc, rc);
-    if (mouseYAbs > 0xffff)
-        mouseYAbs = mLastAbsY;
+    /// TODO: Remove those strings?
+    //if (mouseYAbs > 0xffff)
+    //    mouseYAbs = mLastAbsY;
 
     uint32_t fButtons = mouseButtonsToPDM(buttonState);
 

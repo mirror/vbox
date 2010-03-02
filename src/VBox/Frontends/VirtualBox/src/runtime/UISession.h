@@ -113,6 +113,7 @@ public:
     bool isMouseHostCursorNeeded() const { return m_fIsMouseHostCursorNeeded; }
     bool isMouseCaptured() const { return m_fIsMouseCaptured; }
     bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
+    bool isValidPointerShapePresent() const { return m_fIsValidPointerShapePresent; }
     bool isHidingHostPointer() const { return m_fIsMouseCaptured || (m_fIsMouseSupportsAbsolute && m_fIsHideHostPointer); }
 
     /* Common setters: */
@@ -210,6 +211,7 @@ private:
     bool m_fIsMouseHostCursorNeeded : 1;
     bool m_fIsMouseCaptured : 1;
     bool m_fIsMouseIntegrated : 1;
+    bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHideHostPointer : 1;
 
     /* Friend classes: */

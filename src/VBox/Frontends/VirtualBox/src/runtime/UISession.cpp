@@ -553,6 +553,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsMouseHostCursorNeeded(false)
     , m_fIsMouseCaptured(false)
     , m_fIsMouseIntegrated(true)
+    , m_fIsValidPointerShapePresent(false)
     , m_fIsHideHostPointer(true)
 {
     /* Register console callback: */
@@ -972,6 +973,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 {
     AssertMsg(pShapeData, ("Shape data must not be NULL!\n"));
 
+    m_fIsValidPointerShapePresent = false;
     const uchar *srcAndMaskPtr = pShapeData;
     uint andMaskSize = (uWidth + 7) / 8 * uHeight;
     const uchar *srcShapePtr = pShapeData + ((andMaskSize + 3) & ~3);
@@ -1094,6 +1096,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
             if (m_alphaCursor)
                 DestroyIcon(m_alphaCursor);
             m_alphaCursor = hAlphaCursor;
+            m_fIsValidPointerShapePresent = true;
         }
     }
 
@@ -1150,6 +1153,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
         /* Set the new cursor: */
         m_cursor = QCursor(XcursorImageLoadCursor(QX11Info::display(), img));
+        m_fIsValidPointerShapePresent = true;
 
         XcursorImageDestroy(img);
     }
@@ -1189,6 +1193,7 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 
     /* Set the new cursor: */
     m_cursor = QCursor(QPixmap::fromImage(image), uXHot, uYHot);
+    m_fIsValidPointerShapePresent = true;
     NOREF(srcShapePtrScan);
 
 #else
