@@ -125,7 +125,7 @@ void UIMachineViewFullscreen::sltPerformGuestResize(const QSize &toSize)
             m_storedConsoleSize = newSize;
 
             /* Send new size-hint to the guest: */
-            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, 0);
+            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
         }
         /* We had requested resize now, rejecting accident requests: */
         m_fShouldWeDoResize = false;
@@ -330,7 +330,7 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
                 normalizeGeometry(true /* adjustPosition */);
 
             /* Report to the VM thread that we finished resizing */
-            session().GetConsole().GetDisplay().ResizeCompleted(0);
+            session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
             setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
 
