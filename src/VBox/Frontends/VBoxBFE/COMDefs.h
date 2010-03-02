@@ -41,6 +41,15 @@
 #define NS_FAILED(_nsresult)    (NS_UNLIKELY((_nsresult) & 0x80000000))
 
 #define ATL_NO_VTABLE
+#define DECLARE_CLASSFACTORY(a)
+#define DECLARE_CLASSFACTORY_SINGLETON(a)
+#define DECLARE_REGISTRY_RESOURCEID(a)
+#define DECLARE_NOT_AGGREGATABLE(a)
+#define DECLARE_PROTECT_FINAL_CONSTRUCT()
+#define BEGIN_COM_MAP(a)
+#define COM_INTERFACE_ENTRY(a)
+#define COM_INTERFACE_ENTRY2(a,b)
+#define END_COM_MAP()
 
 #ifndef RT_OS_WINDOWS
   typedef unsigned long  HRESULT;
@@ -61,7 +70,6 @@
 # define E_UNEXPECTED   ((unsigned long) 0x8000ffffL)
 # define E_INVALIDARG   ((unsigned long) 0x80070057L)
 #define E_ACCESSDENIED  ((unsigned long) 0x80070005L)
-#define VBOX_E_IPRT_ERROR ((unsigned long) 0x80BB0005L)
 
 # if ! defined(FALSE)
 #  define FALSE false
@@ -101,4 +109,6 @@ namespace com
         T *raw() { return &t; }
     };
 }
+
+#define unconst(val) val
 #endif

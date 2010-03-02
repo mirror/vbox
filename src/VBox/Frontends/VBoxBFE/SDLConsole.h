@@ -26,7 +26,9 @@
 /* include this first so Windows.h get's in before our stuff. */
 #include <SDL.h>
 #ifndef RT_OS_DARWIN
+# define Display Display_  /* Xlib defines "Display" and so do we... */
 # include <SDL_syswm.h>
+# undef Display
 #endif
 #if defined(RT_OS_WINDOWS) /// @todo someone please explain why this is necessary. This breaks darwin solid.
 // damn SDL redefines main!
@@ -114,6 +116,8 @@ public:
     virtual void     eventQuit();
     virtual void     resetCursor();
     virtual void     resetKeys(void);
+    virtual VMMDev  *getVMMDev();
+    virtual Display *getDisplay();
 
 private:
 

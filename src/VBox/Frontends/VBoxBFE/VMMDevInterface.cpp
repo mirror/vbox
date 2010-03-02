@@ -37,7 +37,7 @@
 #include <iprt/uuid.h>
 
 #include "VBoxBFE.h"
-#include "VMMDevInterface.h"
+#include "VMMDev.h"
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
 #include "ConsoleImpl.h"

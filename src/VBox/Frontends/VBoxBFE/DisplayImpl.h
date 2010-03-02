@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  * VBox frontends: Basic Frontend (BFE):
- * Declaration of VMDisplay class
+ * Declaration of Display class
  */
 
 /*
@@ -29,13 +29,13 @@
 #include "Framebuffer.h"
 struct VBVACMDHDR;
 
-class VMDisplay
+class Display
 {
 
 public:
 
-    VMDisplay();
-    ~VMDisplay();
+    Display();
+    ~Display();
 
     // public methods only for internal purposes
     int handleDisplayResize (int w, int h);
@@ -57,6 +57,8 @@ public:
     STDMETHODIMP SetFramebuffer(unsigned iScreenID, Framebuffer *Framebuffer);
     STDMETHODIMP InvalidateAndUpdate();
     STDMETHODIMP ResizeCompleted();
+    STDMETHODIMP COMGETTER(Width)(ULONG *pWidth);
+    STDMETHODIMP COMGETTER(Height)(ULONG *pHeight);
 
     void resetFramebuffer();
 
@@ -110,6 +112,6 @@ private:
     };
 };
 
-extern VMDisplay *gDisplay;
+extern Display *gDisplay;
 
 #endif // !____H_DISPLAYIMPL
