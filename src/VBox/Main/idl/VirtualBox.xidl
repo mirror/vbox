@@ -2167,8 +2167,8 @@
         This method tries to guess the storage format of the specified medium
         by reading medium data at the specified location.
 
-        If @a write is ReadWrite (which it should be), the image is opened for
-        read/write access and must have according permissions, as VirtualBox
+        If @a accessMode is ReadWrite (which it should be), the image is opened
+        for read/write access and must have according permissions, as VirtualBox
         may actually write status information into the disk's metadata sections.
 
         Note that write access is required for all typical image usage in VirtualBox,
@@ -4483,8 +4483,8 @@
     </attribute>
 
     <attribute name="hpetEnabled" type="boolean">
-      <desc>This attribute controls if High Precision Event Timer (HPET) is 
-        enabled in this VM. Use this property if you want to provide guests 
+      <desc>This attribute controls if High Precision Event Timer (HPET) is
+        enabled in this VM. Use this property if you want to provide guests
         with additional time source, or if guest requires HPET to function correctly.
         Default is false.</desc>
     </attribute>
