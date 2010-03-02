@@ -1845,14 +1845,17 @@ STDMETHODIMP Machine::COMGETTER(AudioAdapter)(IAudioAdapter **audioAdapter)
 
 STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
 {
-#ifdef VBOX_WITH_USB
+#ifdef VBOX_WITH_VUSB
     CheckComArgOutPointerValid(aUSBController);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
+    MultiResult rc (S_OK);
 
-    MultiResult rc = mParent->host()->checkUSBProxyService();
+# ifdef VBOX_WITH_USB
+    rc = mParent->host()->checkUSBProxyService();
     if (FAILED(rc)) return rc;
+# endif
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
@@ -1863,7 +1866,7 @@ STDMETHODIMP Machine::COMGETTER(USBController)(IUSBController **aUSBController)
      * (w/o treting it as a failure), for example, as in OSE */
     NOREF(aUSBController);
     ReturnComNotImplemented();
-#endif
+#endif /* VBOX_WITH_VUSB */
 }
 
 STDMETHODIMP Machine::COMGETTER(SettingsFilePath)(BSTR *aFilePath)

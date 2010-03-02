@@ -301,8 +301,10 @@ VBOX_WITH_PDM_LOCK = 1
 VBOX_WITH_HGCM = 1
 ## Build the bugcheck detection code.
 #VBOX_WITH_GUEST_BUGCHECK_DETECTION =
-# Enable the USB feature.
+# Enable the USB feature. This incluses VBOX_WITH_VUSB!
 VBOX_WITH_USB = 1
+# Enable the USB 1.1 controller plus virtual USB HID devices.
+VBOX_WITH_VUSB = 1
 # Enable the USB 2.0 controller.
 VBOX_WITH_EHCI = 1
 # Enable the ISCSI feature.
@@ -361,7 +363,10 @@ VBOX_WITH_PDM_ASYNC_COMPLETION = 1
 VBOX_WITH_NEW_USB_CODE_ON_DARWIN=1
 # Enable USB code that relies on USBA driver election callback & our own USB client driver on Solaris.
 ifdef VBOX_WITH_USB
-VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
+ VBOX_WITH_NEW_USB_CODE_ON_SOLARIS=1
+endif
+ifdef VBOX_WITH_USB
+ VBOX_WITH_VUSB = 1
 endif
 # Enable the hal/sysfs USB code on Linux.  This depends on VBOX_WITH_DBUS.
 ifdef VBOX_WITH_DBUS

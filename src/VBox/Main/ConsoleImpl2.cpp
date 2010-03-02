@@ -1822,13 +1822,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->COMGETTER(USBController)(USBCtlPtr.asOutParam());
     if (USBCtlPtr)
     {
-        BOOL fEnabled;
-        hrc = USBCtlPtr->COMGETTER(Enabled)(&fEnabled);                             H();
-        if (fEnabled)
+        BOOL fOhciEnabled;
+        hrc = USBCtlPtr->COMGETTER(Enabled)(&fOhciEnabled);                             H();
+        if (fOhciEnabled)
         {
-            rc = CFGMR3InsertNode(pDevices, "usb-ohci", &pDev);                     RC_CHECK();
-            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertNode(pDevices, "usb-ohci", &pDev);                         RC_CHECK();
+            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
             rc = CFGMR3InsertInteger(pInst, "Trusted",              1); /* boolean */   RC_CHECK();
             rc = CFGMR3InsertInteger(pInst, "PCIDeviceNo",          6);                 RC_CHECK();
             Assert(!afPciDeviceNo[6]);
@@ -1849,10 +1849,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertInteger(pCfg,  "First",    0);                             RC_CHECK();
             rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                             RC_CHECK();
 
-            PCFGMNODE pUsbDevices = NULL;
 #ifdef VBOX_WITH_EHCI
-            hrc = USBCtlPtr->COMGETTER(EnabledEhci)(&fEnabled);                         H();
-            if (fEnabled)
+            BOOL fEhciEnabled;
+            hrc = USBCtlPtr->COMGETTER(EnabledEhci)(&fEhciEnabled);                     H();
+            if (fEhciEnabled)
             {
                 rc = CFGMR3InsertNode(pDevices, "usb-ehci", &pDev);                     RC_CHECK();
                 rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
@@ -1877,14 +1877,20 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertInteger(pCfg,  "First",    0);                         RC_CHECK();
                 rc = CFGMR3InsertInteger(pCfg,  "Last",     0);                         RC_CHECK();
             }
-            else
 #endif
+
+            /*
+             * Virtual USB Devices.
+             */
+            PCFGMNODE pUsbDevices = NULL;
+            rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                          RC_CHECK();
+
+#ifdef VBOX_WITH_USB
             {
                 /*
                  * Global USB options, currently unused as we'll apply the 2.0 -> 1.1 morphing
                  * on a per device level now.
                  */
-                rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                      RC_CHECK();
                 rc = CFGMR3InsertNode(pUsbDevices, "USBProxy", &pCfg);                  RC_CHECK();
                 rc = CFGMR3InsertNode(pCfg, "GlobalConfig", &pCfg);                     RC_CHECK();
                 // This globally enables the 2.0 -> 1.1 device morphing of proxied devies to keep windows quiet.
@@ -1894,86 +1900,80 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 //      VBoxManage setextradata "myvm" "VBoxInternal/USB/USBProxy/GlobalConfig/Force11PacketSize" 1
                 //rc = CFGMR3InsertInteger(pCfg, "Force11PacketSize", true);            RC_CHECK();
             }
-
-#if 1 /* Enable+edit this to play with the virtual USB devices). */
-            if (!pUsbDevices)
-            {
-                rc = CFGMR3InsertNode(pRoot, "USB", &pUsbDevices);                  RC_CHECK();
-            }
+#endif
 
 # if 0  /* Virtual MSD*/
 
-            rc = CFGMR3InsertNode(pUsbDevices, "Msd", &pDev);                       RC_CHECK();
-            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
-            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
+            rc = CFGMR3InsertNode(pUsbDevices, "Msd", &pDev);                           RC_CHECK();
+            rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
 
-            rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");                      RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertString(pLunL0, "Driver", "SCSI");                          RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
 
-            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);             RC_CHECK();
-            rc = CFGMR3InsertString(pLunL1, "Driver", "Block");                     RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                       RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Type", "HardDisk");                    RC_CHECK();
-            rc = CFGMR3InsertInteger(pCfg,  "Mountable", 0);                        RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL1, "Driver", "Block");                         RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Type", "HardDisk");                        RC_CHECK();
+            rc = CFGMR3InsertInteger(pCfg,  "Mountable", 0);                            RC_CHECK();
 
-            rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);             RC_CHECK();
-            rc = CFGMR3InsertString(pLunL2, "Driver", "VD");                        RC_CHECK();
-            rc = CFGMR3InsertNode(pLunL2,   "Config", &pCfg);                       RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL1,   "AttachedDriver", &pLunL2);                 RC_CHECK();
+            rc = CFGMR3InsertString(pLunL2, "Driver", "VD");                            RC_CHECK();
+            rc = CFGMR3InsertNode(pLunL2,   "Config", &pCfg);                           RC_CHECK();
             rc = CFGMR3InsertString(pCfg,   "Path", "/Volumes/DataHFS/bird/VDIs/linux.vdi"); RC_CHECK();
-            rc = CFGMR3InsertString(pCfg,   "Format", "VDI");                       RC_CHECK();
+            rc = CFGMR3InsertString(pCfg,   "Format", "VDI");                           RC_CHECK();
 # endif
 
             /* Virtual USB Mouse/Tablet */
             PointingHidType_T aPointingHid;
-            hrc = pMachine->COMGETTER(PointingHidType)(&aPointingHid);               H();
+            hrc = pMachine->COMGETTER(PointingHidType)(&aPointingHid);                  H();
             if (aPointingHid == PointingHidType_USBMouse || aPointingHid == PointingHidType_USBTablet)
             {
-                rc = CFGMR3InsertNode(pUsbDevices, "HidMouse", &pDev);               RC_CHECK();
-                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
-                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                    RC_CHECK();
+                rc = CFGMR3InsertNode(pUsbDevices, "HidMouse", &pDev);                  RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
 
                 if (aPointingHid == PointingHidType_USBTablet)
                 {
-                    rc = CFGMR3InsertInteger(pCfg, "Absolute", 1);                   RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "Absolute", 1);                      RC_CHECK();
                 }
                 else
                 {
-                    rc = CFGMR3InsertInteger(pCfg, "Absolute", 0);                   RC_CHECK();
+                    rc = CFGMR3InsertInteger(pCfg, "Absolute", 0);                      RC_CHECK();
                 }
-                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                   RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",        "MouseQueue");      RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                    RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);        RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",        "MouseQueue");         RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            128);           RC_CHECK();
 
-                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);          RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1, "Driver",        "MainMouse");       RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                    RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);             RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",        "MainMouse");          RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                       RC_CHECK();
                 pMouse = pConsole->mMouse;
-                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);    RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pMouse);       RC_CHECK();
             }
 
             /* Virtual USB Keyboard */
             KeyboardHidType_T aKbdHid;
-            hrc = pMachine->COMGETTER(KeyboardHidType)(&aKbdHid);                           H();
+            hrc = pMachine->COMGETTER(KeyboardHidType)(&aKbdHid);                       H();
             if (aKbdHid == KeyboardHidType_USBKeyboard)
             {
-                rc = CFGMR3InsertNode(pUsbDevices, "HidKeyboard", &pDev);                   RC_CHECK();
-                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                               RC_CHECK();
-                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertNode(pUsbDevices, "HidKeyboard", &pDev);               RC_CHECK();
+                rc = CFGMR3InsertNode(pDev,     "0", &pInst);                           RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "Config", &pCfg);                       RC_CHECK();
 
-                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                          RC_CHECK();
-                rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue");   RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                           RC_CHECK();
-                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);                RC_CHECK();
+                rc = CFGMR3InsertNode(pInst,    "LUN#0", &pLunL0);                      RC_CHECK();
+                rc = CFGMR3InsertString(pLunL0, "Driver",               "KeyboardQueue"); RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "Config", &pCfg);                       RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "QueueSize",            64);            RC_CHECK();
 
-                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);                 RC_CHECK();
-                rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard");    RC_CHECK();
-                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                           RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL0,   "AttachedDriver", &pLunL1);             RC_CHECK();
+                rc = CFGMR3InsertString(pLunL1, "Driver",               "MainKeyboard"); RC_CHECK();
+                rc = CFGMR3InsertNode(pLunL1,   "Config", &pCfg);                       RC_CHECK();
                 pKeyboard = pConsole->mKeyboard;
-                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);        RC_CHECK();
+                rc = CFGMR3InsertInteger(pCfg,  "Object",     (uintptr_t)pKeyboard);    RC_CHECK();
             }
-#endif
         }
     }
 
