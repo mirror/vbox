@@ -1036,18 +1036,31 @@ typedef struct VBOXSHGSMIHEADER
 /* guest expects this command to be completed synchronously */
 #define VBOXSHGSMI_FLAG_GH_SYNCH                0x00000040
 
+DECLINLINE(uint8_t *) VBoxSHGSMIBufferData (const PVBOXSHGSMIHEADER pHeader)
+{
+    return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
+}
+
+DECLINLINE(PVBOXSHGSMIHEADER) VBoxSHGSMIBufferHeader (const void *pvData)
+{
+    return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
+}
+
 /* VDMA - Video DMA */
 
 /* VDMA Control API */
 /* VBOXVDMA_CTL::u32Flags */
-#define VBOXVDMA_CTL_NONE    0x00000000
-#define VBOXVDMA_CTL_ENABLE  0x00000001
-#define VBOXVDMA_CTL_DISABLE 0x00000002
-#define VBOXVDMA_CTL_FLUSH   0x00000004
+typedef enum
+{
+    VBOXVDMA_CTL_TYPE_NONE = 0,
+    VBOXVDMA_CTL_TYPE_ENABLE,
+    VBOXVDMA_CTL_TYPE_DISABLE,
+    VBOXVDMA_CTL_TYPE_FLUSH
+} VBOXVDMA_CTL_TYPE;
 
 typedef struct VBOXVDMA_CTL
 {
-    uint32_t u32Flags;
+    VBOXVDMA_CTL_TYPE enmCtl;
     uint32_t u32Offset;
     int32_t  i32Result;
 } VBOXVDMA_CTL, *PVBOXVDMA_CTL;

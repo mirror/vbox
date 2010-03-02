@@ -1676,12 +1676,13 @@ static int hgsmiGuestCommandComplete (HGSMIINSTANCE *pIns, HGSMIOFFSET offMem)
     HGSMIGUESTCOMPLENTRY *pEntry;
 
     int rc = hgsmiGuestCompletionFIFOAlloc (pIns, &pEntry);
-
+    AssertRC(rc);
     if (RT_SUCCESS (rc))
     {
         pEntry->offBuffer = offMem;
 
         rc = hgsmiFIFOLock(pIns);
+        AssertRC(rc);
         if (RT_SUCCESS (rc))
         {
             hgsmiListAppend (&pIns->guestCmdCompleted, &pEntry->entry);

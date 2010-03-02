@@ -49,6 +49,11 @@ DECLINLINE(HGSMILISTENTRY*) hgsmiListRemoveHead (HGSMILIST *pList)
     return pHead;
 }
 
+DECLINLINE(bool) hgsmiListIsEmpty (HGSMILIST *pList)
+{
+    return !pList->pHead;
+}
+
 DECLINLINE(void) hgsmiListInit (HGSMILIST *pList)
 {
     pList->pHead = NULL;

@@ -43,6 +43,14 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#ifdef VBOX
+/** The default amount of VRAM. */
+# define VGA_VRAM_DEFAULT    (_4M)
+/** The maximum amount of VRAM. */
+# define VGA_VRAM_MAX        (128 * _1M)
+/** The minimum amount of VRAM. */
+# define VGA_VRAM_MIN        (_1M)
+#endif
 
 #ifdef VBOX_WITH_HGSMI
 # include "HGSMI/HGSMIHost.h"
@@ -251,6 +259,10 @@ typedef void FNCURSORDRAWLINE(struct VGAState *s, uint8_t *d, int y);
 
 #endif /* VBOX */
 
+#ifdef VBOXVDMA
+typedef struct VBOXVDMAHOST *PVBOXVDMAHOST;
+#endif
+
 typedef struct VGAState {
     VGA_STATE_COMMON
 #ifdef VBOX
@@ -281,6 +293,9 @@ typedef struct VGAState {
 #ifdef VBOX_WITH_HGSMI
     R3PTRTYPE(PHGSMIINSTANCE)   pHGSMI;
 #endif /* VBOX_WITH_HGSMI */
+#ifdef VBOXVDMA
+    R3PTRTYPE(PVBOXVDMAHOST)    pVdma;
+#endif
 
     /** Current refresh timer interval. */
     uint32_t                    Padding2;
@@ -474,6 +489,13 @@ int vboxVBVASaveStatePrep (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 int vboxVBVASaveStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
 int vboxVBVALoadStateExec (PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32_t u32Version);
 int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM);
+
+# ifdef VBOXVDMA
+int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST *pVdma);
+int vboxVDMADestruct(PVGASTATE pVGAState, struct VBOXVDMAHOST *pVdma);
+void vboxVDMAControl(PVGASTATE pVGAState, struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd);
+void vboxVDMACommand(PVGASTATE pVGAState, struct VBOXVDMAHOST *pVdma, PVBOXVDMACBUF_DR pCmd);
+# endif /* VBOXVDMA */
 
 #endif /* VBOX_WITH_HGSMI */
 
