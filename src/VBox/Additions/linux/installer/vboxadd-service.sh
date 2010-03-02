@@ -257,7 +257,7 @@ start() {
             exit 1
         }
         testbinary
-        daemon $binary
+        daemon $binary > /dev/null
         RETVAL=$?
         test $RETVAL -eq 0 && echo `pidof VBoxService` > $PIDFILE
         succ_msg
