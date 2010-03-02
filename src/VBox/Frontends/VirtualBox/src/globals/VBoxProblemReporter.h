@@ -226,6 +226,8 @@ public:
     int cannotEnterFullscreenMode (ULONG aWidth, ULONG aHeight,
                                    ULONG aBpp, ULONG64 aMinVRAM);
 
+    int cannotEnterFullscreenMode();
+
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
 

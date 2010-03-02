@@ -47,31 +47,54 @@
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Fullscreen)
 {
-    /* Prepare console connections: */
-    prepareConsoleConnections();
-
-    /* Prepare action groups: */
-    prepareActionGroups();
-
-    /* Prepare action connections: */
-    prepareActionConnections();
-
-    /* Check the status of required features: */
-    prepareRequiredFeatures();
-
-    /* Prepare machine window: */
-    prepareMachineWindows();
-
-    /* Initialization: */
-    sltMachineStateChanged();
-    sltAdditionsStateChanged();
-    sltMouseCapabilityChanged();
 }
 
 UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 {
     /* Cleanup machine window: */
     cleanupMachineWindow();
+}
+
+bool UIMachineLogicFullscreen::checkAvailability()
+{
+    int cHostScreens = QApplication::desktop()->screenCount();
+    int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
+    /* Check that there are enough physical screens are connected */
+    if (cHostScreens < cGuestScreens)
+    {
+        vboxProblem().cannotEnterFullscreenMode();
+        setPreventAutoStart(true);
+        return false;
+    }
+
+    return true;
+}
+
+void UIMachineLogicFullscreen::initialize()
+{
+    /* Check the status of required features: */
+    prepareRequiredFeatures();
+
+    /* If required features are ready: */
+    if (!isPreventAutoStart())
+    {
+        /* Prepare console connections: */
+        prepareConsoleConnections();
+
+        /* Prepare action groups: */
+        prepareActionGroups();
+
+        /* Prepare action connections: */
+        prepareActionConnections();
+
+        /* Prepare machine window: */
+        prepareMachineWindows();
+
+        /* Initialization: */
+        sltMachineStateChanged();
+        sltAdditionsStateChanged();
+        sltMouseCapabilityChanged();
+    }
 }
 
 void UIMachineLogicFullscreen::sltPrepareNetworkAdaptersMenu()
@@ -116,27 +139,33 @@ void UIMachineLogicFullscreen::prepareRequiredFeatures()
 {
     // TODO_NEW_CORE
 //    if (session().GetConsole().isAutoresizeGuestActive())
-    {
-//        QRect screen = QApplication::desktop()->screenGeometry(this);
-//        ULONG64 availBits = session().GetMachine().GetVRAMSize() /* vram */
-//                          * _1M /* mb to bytes */
-//                          * 8; /* to bits */
-//        ULONG guestBpp = mConsole->console().GetDisplay().GetBitsPerPixel();
-//        ULONG64 usedBits = (screen.width() /* display width */
-//                         * screen.height() /* display height */
-//                         * guestBpp
-//                         + _1M * 8) /* current cache per screen - may be changed in future */
-//                         * session().GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
-//                         + 4096 * 8; /* adapter info */
+//    {
+//        ULONG64 availBits = session().GetMachine().GetVRAMSize() /* VRAM */
+//            * _1M /* MB to bytes */
+//            * 8; /* to bits */
+//        for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
+//        {
+//            QRect screen = QApplication::desktop()->screenGeometry(this);
+//            ULONG guestBpp = mConsole->console().GetDisplay().GetBitsPerPixel();
+//            ULONG64 usedBits = (screen.width() /* display width */
+//                                * screen.height() /* display height */
+//                                * guestBpp
+//                                + _1M * 8) /* current cache per screen - may be changed in future */
+//                * session().GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
+//                + 4096 * 8; /* adapter info */
+//        }
+//
 //        if (availBits < usedBits)
 //        {
 //            int result = vboxProblem().cannotEnterFullscreenMode(
-//                   screen.width(), screen.height(), guestBpp,
-//                   (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+//                                                                 screen.width(), screen.height(), guestBpp,
+//                                                                 (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
 //            if (result == QIMessageBox::Cancel)
 //                sltClose();
 //        }
-    }
+//    }
+//
+    UIMachineLogic::prepareRequiredFeatures();
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()

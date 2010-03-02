@@ -41,6 +41,8 @@ protected:
                          UIActionsPool *pActionsPool);
     virtual ~UIMachineLogicNormal();
 
+    void initialize();
+
 private slots:
 
     /* Windowed mode funtionality: */

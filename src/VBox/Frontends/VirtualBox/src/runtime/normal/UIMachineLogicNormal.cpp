@@ -40,6 +40,16 @@
 UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Normal)
 {
+}
+
+UIMachineLogicNormal::~UIMachineLogicNormal()
+{
+    /* Cleanup normal machine window: */
+    cleanupMachineWindow();
+}
+
+void UIMachineLogicNormal::initialize()
+{
     /* Check the status of required features: */
     prepareRequiredFeatures();
 
@@ -63,12 +73,6 @@ UIMachineLogicNormal::UIMachineLogicNormal(QObject *pParent, UISession *pSession
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
     }
-}
-
-UIMachineLogicNormal::~UIMachineLogicNormal()
-{
-    /* Cleanup normal machine window: */
-    cleanupMachineWindow();
 }
 
 void UIMachineLogicNormal::sltPrepareNetworkAdaptersMenu()
