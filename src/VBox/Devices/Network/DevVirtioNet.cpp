@@ -182,17 +182,13 @@ struct VNetState_st
     /** Bit array of VLAN filter, one bit per VLAN ID. */
     uint8_t                 aVlanFilter[VNET_MAX_VID / sizeof(uint8_t)];
 
-#if HC_ARCH_BITS != 64
-    uint32_t    padding3;
-#endif
-
     R3PTRTYPE(PVQUEUE)      pRxQueue;
     R3PTRTYPE(PVQUEUE)      pTxQueue;
     R3PTRTYPE(PVQUEUE)      pCtlQueue;
     /* Receive-blocking-related fields ***************************************/
 
     /** EMT: Gets signalled when more RX descriptors become available. */
-    RTSEMEVENT  hEventMoreRxDescAvail;
+    RTSEMEVENT              hEventMoreRxDescAvail;
 
     /* Statistic fields ******************************************************/
 
