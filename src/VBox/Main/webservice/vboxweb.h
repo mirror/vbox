@@ -290,6 +290,8 @@ WSDLT_ID createOrFindRefFromComPtr(const WSDLT_ID &idParent,
             return pRef->toWSDL();
     }
 
-    return 0;
+    // session has expired, return an empty MOR instead of allocating a
+    // new reference which couldn't be used anyway.
+    return "";
 }
 
