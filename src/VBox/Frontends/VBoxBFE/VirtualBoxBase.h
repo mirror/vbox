@@ -25,6 +25,7 @@
 
 #ifdef VBOXBFE_WITHOUT_COM
 # include "COMDefs.h"  // Our wrapper for COM definitions left in the code
+# include <iprt/uuid.h>
 #else
 # include <VBox/com/defs.h>
 #endif
@@ -278,6 +279,8 @@ static inline int setError(int iNum, const char *pszFormat, ...)
  */
 #define DEFINE_EMPTY_CTOR_DTOR(cls) \
     cls::cls () {}; cls::~cls () {};
+
+#define VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT(cls)
 
 ////////////////////////////////////////////////////////////////////////////////
 

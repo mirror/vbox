@@ -21,50 +21,9 @@
 
 #include "MouseImpl.h"
 #include "DisplayImpl.h"
-#ifdef VBOXBFE_WITHOUT_COM
-# include "VMMDevInterface.h"
-# include <iprt/uuid.h>
-class AutoInitSpan
-{
-public:
-    AutoInitSpan(VirtualBoxBase *) {}
-    bool isOk() { return true; }
-    void setSucceeded() {}
-};
+#include "VMMDev.h"
 
-class AutoUninitSpan
-{
-public:
-    AutoUninitSpan(VirtualBoxBase *) {}
-    bool uninitDone() { return false; }
-};
-
-class AutoCaller
-{
-public:
-    AutoCaller(VirtualBoxBase *) {}
-    int rc() { return S_OK; }
-};
-
-class AutoWriteLock
-{
-public:
-    AutoWriteLock(VirtualBoxBase *) {}
-};
-#define COMMA_LOCKVAL_SRC_POS
-enum
-{
-    MouseButtonState_LeftButton = 1,
-    MouseButtonState_RightButton = 2,
-    MouseButtonState_MiddleButton = 4,
-    MouseButtonState_XButton1 = 8,
-    MouseButtonState_XButton2 = 16,
-};
-#else
-# include "VMMDev.h"
-
-# include "AutoCaller.h"
-#endif
+#include "AutoCaller.h"
 #include "Logging.h"
 
 #include <VBox/pdmdrv.h>
@@ -128,11 +87,7 @@ HRESULT Mouse::init (Console *parent)
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-#ifdef VBOXBFE_WITHOUT_COM
-    mParent = parent;
-#else
     unconst(mParent) = parent;
-#endif
 
 #ifdef RT_OS_L4
     /* L4 console has no own mouse cursor */
@@ -140,7 +95,6 @@ HRESULT Mouse::init (Console *parent)
 #else
     uHostCaps = 0;
 #endif
-    uDevCaps = 0;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -176,19 +130,6 @@ void Mouse::uninit()
 // IMouse properties
 /////////////////////////////////////////////////////////////////////////////
 
-#ifdef VBOXBFE_WITHOUT_COM
-int Mouse::getVMMDevMouseCaps(uint32_t *pfCaps)
-{
-    gVMMDev->QueryMouseCapabilities(pfCaps);
-    return S_OK;
-}
-
-int Mouse::setVMMDevMouseCaps(uint32_t fCaps)
-{
-    gVMMDev->SetMouseCapabilities(fCaps);
-    return S_OK;
-}
-#else
 int Mouse::getVMMDevMouseCaps(uint32_t *pfCaps)
 {
     AssertPtrReturn(pfCaps, E_POINTER);
@@ -211,7 +152,6 @@ int Mouse::setVMMDevMouseCaps(uint32_t fCaps)
     int rc = pVMMDevPort->pfnSetMouseCapabilities(pVMMDevPort, fCaps);
     return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
-#endif /* !VBOXBFE_WITHOUT_COM */
 
 /**
  * Returns whether the current setup can accept absolute mouse
@@ -363,11 +303,7 @@ int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
  */
 int Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
 {
-#ifdef VBOXBFE_WITHOUT_COM
-    VMMDev *pVMMDev = gVMMDev;
-#else
     VMMDev *pVMMDev = mParent->getVMMDev();
-#endif
     ComAssertRet(pVMMDev, E_FAIL);
     PPDMIVMMDEVPORT pVMMDevPort = pVMMDev->getVMMDevPort();
     ComAssertRet(pVMMDevPort, E_FAIL);
@@ -438,18 +374,11 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 int Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
 {
     AssertPtrReturn(pcX, E_POINTER);
-#ifndef VBOXBFE_WITHOUT_COM
     Display *pDisplay = mParent->getDisplay();
     ComAssertRet(pDisplay, E_FAIL);
-#endif
 
     ULONG displayWidth;
-#ifdef VBOXBFE_WITHOUT_COM
     displayWidth = gDisplay->getWidth();
-#else
-    int rc = pDisplay->COMGETTER(Width)(&displayWidth);
-    ComAssertComRCRet(rc, rc);
-#endif
 
     *pcX = displayWidth ? (x * 0xFFFF) / displayWidth: 0;
     return S_OK;
@@ -463,18 +392,12 @@ int Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
 int Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
 {
     AssertPtrReturn(pcY, E_POINTER);
-#ifndef VBOXBFE_WITHOUT_COM
     Display *pDisplay = mParent->getDisplay();
     ComAssertRet(pDisplay, E_FAIL);
-#endif
 
     ULONG displayHeight;
-#ifdef VBOXBFE_WITHOUT_COM
-    displayHeight = gDisplay->getHeight();
-#else
     int rc = pDisplay->COMGETTER(Height)(&displayHeight);
     ComAssertComRCRet(rc, rc);
-#endif
 
     *pcY = displayHeight ? (y * 0xFFFF) / displayHeight: 0;
     return S_OK;
@@ -507,14 +430,14 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     uint32_t mouseXAbs;
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
     ComAssertComRCRet(rc, rc);
-    if (mouseXAbs > 0xffff)
-        mouseXAbs = mLastAbsX;
+    /* if (mouseXAbs > 0xffff)
+        mouseXAbs = mLastAbsX; */
 
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
     ComAssertComRCRet(rc, rc);
-    if (mouseYAbs > 0xffff)
-        mouseYAbs = mLastAbsY;
+    /* if (mouseYAbs > 0xffff)
+        mouseYAbs = mLastAbsY; */
 
     uint32_t fButtons = mouseButtonsToPDM(buttonState);
 
@@ -575,9 +498,7 @@ void Mouse::sendMouseCapsCallback(void)
 {
     bool fAbsSupported =   uDevCaps & MOUSE_DEVCAP_ABSOLUTE
                          ? true : fVMMDevCanAbs;
-#ifndef VBOXBFE_WITHOUT_COM
     mParent->onMouseCapabilityChange(fAbsSupported, uDevCaps & MOUSE_DEVCAP_RELATIVE, fVMMDevNeedsHostCursor);
-#endif
 }
 
 

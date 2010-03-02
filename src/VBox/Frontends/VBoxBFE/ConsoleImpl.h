@@ -118,6 +118,9 @@ typedef enum _CONEVENT
             return setError(E_ACCESSDENIED, tr("The console is not powered up")); \
     } while (0)
 
+class VMMDev;
+class Display;
+
 class Console
 {
 public:
@@ -142,12 +145,16 @@ public:
                                                bool fAlpha, uint32_t xHot,
                                                uint32_t yHot, uint32_t width,
                                                uint32_t height, void *pShape) = 0;
+    virtual void     onMouseCapabilityChange(bool fAbs, bool fRel,
+                                             bool fNeedsHostCursor) {}
 
     virtual CONEVENT eventWait() = 0;
     virtual void     eventQuit() = 0;
             bool     initialized() { return mfInitialized; }
     virtual void     progressInfo(PVM pVM, unsigned uPercent, void *pvUser) = 0;
     virtual void     resetKeys(void) = 0;
+    virtual VMMDev  *getVMMDev() = 0;
+    virtual Display *getDisplay() = 0;
 
 protected:
     HKEYSTATE enmHKeyState;

@@ -66,7 +66,7 @@
 #include "DisplayImpl.h"
 #include "MouseImpl.h"
 #include "KeyboardImpl.h"
-#include "VMMDevInterface.h"
+#include "VMMDev.h"
 #include "Framebuffer.h"
 #include "MachineDebuggerImpl.h"
 #include "VMControl.h"
@@ -926,6 +926,16 @@ void SDLConsole::resetKeys(void)
     }
 }
 
+VMMDev *SDLConsole::getVMMDev()
+{
+    return gVMMDev;
+}
+
+Display *SDLConsole::getDisplay()
+{
+    return gDisplay;
+}
+
 /**
  * Keyboard event handler.
  *
@@ -1217,6 +1227,14 @@ void SDLConsole::mouseSendEvent(int dz)
         buttons |= PDMIMOUSEPORT_BUTTON_RIGHT;
     if (state & SDL_BUTTON(SDL_BUTTON_MIDDLE))
         buttons |= PDMIMOUSEPORT_BUTTON_MIDDLE;
+#ifdef SDL_BUTTON_X1
+    if (state & SDL_BUTTON(SDL_BUTTON_X1))
+        buttons |= PDMIMOUSEPORT_BUTTON_X1;
+#endif
+#ifdef SDL_BUTTON_X2
+    if (state & SDL_BUTTON(SDL_BUTTON_X2))
+        buttons |= PDMIMOUSEPORT_BUTTON_X2;
+#endif
 
     // now send the mouse event
     if (abs)

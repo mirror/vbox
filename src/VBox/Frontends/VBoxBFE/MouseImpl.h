@@ -66,7 +66,6 @@ class ATL_NO_VTABLE Mouse :
 {
 public:
 
-#ifndef VBOXBFE_WITHOUT_COM
     VIRTUALBOXBASE_ADD_ERRORINFO_SUPPORT (Mouse)
 
     DECLARE_NOT_AGGREGATABLE(Mouse)
@@ -78,7 +77,6 @@ public:
         COM_INTERFACE_ENTRY  (IMouse)
         COM_INTERFACE_ENTRY2 (IDispatch, IMouse)
     END_COM_MAP()
-#endif
 
     DECLARE_EMPTY_CTOR_DTOR (Mouse)
 
@@ -105,12 +103,10 @@ public:
 
     static const PDMDRVREG  DrvReg;
 
-#ifndef VBOXBFE_WITHOUT_COM
     Console *getParent() const
     {
         return mParent;
     }
-#endif
 
     // for VMMDevInterface
     void onVMMDevCanAbsChange(bool canAbs)
@@ -163,6 +159,15 @@ private:
 
 #ifdef VBOXBFE_WITHOUT_COM
 extern Mouse *gMouse;
+
+enum
+{
+    MouseButtonState_LeftButton = 1,
+    MouseButtonState_RightButton = 2,
+    MouseButtonState_MiddleButton = 4,
+    MouseButtonState_XButton1 = 8,
+    MouseButtonState_XButton2 = 16,
+};
 #endif
 
 #endif // !____H_MOUSEIMPL
