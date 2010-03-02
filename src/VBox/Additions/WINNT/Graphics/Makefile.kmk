@@ -69,6 +69,8 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 	
 ifdef VBOXWDDM
+# VBOXWDDM_WITH_DISPD3D = 1
+
 #
 # Install the inf & cat.
 # This has to be done here since it depends on both the
@@ -84,7 +86,7 @@ VBoxVideoWddm-inf_SOURCES += \
     $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys \
     $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat
 
-ifdef VBOXWDDM_WITH_D3DUM
+ifdef VBOXWDDM_WITH_DISPD3D
 VBoxVideoWddm-inf_SOURCES += \
  $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll
 VBoxVideoWddm-inf_SOURCES.amd64 += \
@@ -103,7 +105,7 @@ $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf: $(PATH_SUB_CURRENT)/Minip
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys: $$(TARGET_VBoxVideoWddm) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
-ifdef VBOXWDDM_WITH_D3DUM
+ifdef VBOXWDDM_WITH_DISPD3D
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll: $$(TARGET_VBoxDispD3D) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
 
@@ -116,8 +118,8 @@ endif
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.cat: \
         $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf \
         $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys \
-        $(if $(VBOXWDDM_WITH_D3DUM), $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll, ) \
-        $(if $(VBOXWDDM_WITH_D3DUM), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll, ), )
+        $(if $(VBOXWDDM_WITH_DISPD3D), $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D.dll, ) \
+        $(if $(VBOXWDDM_WITH_DISPD3D), $(if-expr "$(KBUILD_TARGET_ARCH)" == "amd64", $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxDispD3D64.dll, ), )
 	$(call MSG_TOOL,Inf2Cat,VBoxVideoWddm-inf,$@,$<)
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 endif
