@@ -840,6 +840,8 @@ typedef PPGMPAGE *PPPGMPAGE;
 #define PGM_PAGE_PDE_TYPE_PT                   1
 /** Can use a page directory entry to map the continous range. */
 #define PGM_PAGE_PDE_TYPE_PDE                  2
+/** Can use a page directory entry to map the continous range - temporarily disabled (by page monitoring). */
+#define PGM_PAGE_PDE_TYPE_PDE_DISABLED         3
 /** @} */
 
 /**

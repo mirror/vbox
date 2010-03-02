@@ -838,6 +838,27 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCP
 }
 
 /**
+ * Frees a range of ram pages, replacing them with ZERO pages; helper for PGMR3PhysFreeRamPages
+ *
+ * @returns VBox status code.
+ * @param   pVM         The VM handle.
+ * @param   cPages      Number of pages to free
+ * @param   paPhysPage  Array of guest physical addresses
+ */
+static DECLCALLBACK(void) pgmR3PhysFreeRamPagesHelper(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+{
+    uintptr_t paUser[2];
+
+    paUser[0] = cPages;
+    paUser[1] = (uintptr_t)paPhysPage;
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
+    AssertRC(rc);
+
+    /* Made a copy in PGMR3PhysFreeRamPages; free it here. */
+    RTMemFree(paPhysPage);
+}
+
+/**
  * Frees a range of ram pages, replacing them with ZERO pages
  *
  * @returns VBox status code.
@@ -847,14 +868,33 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCP
  */
 VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
 {
-    uintptr_t paUser[2];
+    int rc;
 
-    paUser[0] = cPages;
-    paUser[1] = (uintptr_t)paPhysPage;
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
-    AssertRC(rc);
+    /* Currently only used by the VMM device in responds to a balloon request. */
+    if (pVM->cCpus > 1)
+    {
+        unsigned cbPhysPage = cPages * sizeof(paPhysPage[0]);
+        RTGCPHYS *paPhysPageCopy = (RTGCPHYS *)RTMemAlloc(cbPhysPage);
+        AssertReturn(paPhysPageCopy, VERR_NO_MEMORY);
+
+        memcpy(paPhysPageCopy, paPhysPage, cbPhysPage);
+
+        /* We own the IOM lock here and could cause a deadlock by waiting for another VCPU that is blocking on the IOM lock. */
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysFreeRamPagesHelper, 3, pVM, cPages, paPhysPageCopy);
+        AssertRC(rc);
+    }
+    else
+    {
+        uintptr_t paUser[2];
+
+        paUser[0] = cPages;
+        paUser[1] = (uintptr_t)paPhysPage;
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
+        AssertRC(rc);
+    }
     return rc;
 }
+
 
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.
