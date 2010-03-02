@@ -74,8 +74,7 @@ typedef enum TMCLOCK
 
 /** @defgroup grp_tm_timer_flags Timer flags.
  * @{ */
-/** Use the default critical section for the class of timers.
- * Only devices have one at the moment. */
+/** Use the default critical section for the class of timers. */
 #define TMTIMER_FLAGS_DEFAULT_CRIT_SECT 0
 /** No critical section needed or a custom one is set using
  *  TMR3TimerSetCritSect(). */

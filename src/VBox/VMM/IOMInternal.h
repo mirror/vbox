@@ -248,23 +248,23 @@ typedef struct IOMIOPORTSTATS
     /** Number of INs to this port from R3. */
     STAMCOUNTER                 InR3;
     /** Profiling IN handler overhead in R3. */
-    STAMPROFILEADV              ProfInR3;
+    STAMPROFILE                 ProfInR3;
     /** Number of OUTs to this port from R3. */
     STAMCOUNTER                 OutR3;
     /** Profiling OUT handler overhead in R3. */
-    STAMPROFILEADV              ProfOutR3;
+    STAMPROFILE                 ProfOutR3;
 
     /** Number of INs to this port from R0/RC. */
     STAMCOUNTER                 InRZ;
     /** Profiling IN handler overhead in R0/RC. */
-    STAMPROFILEADV              ProfInRZ;
+    STAMPROFILE                 ProfInRZ;
     /** Number of INs to this port from R0/RC which was serviced in R3. */
     STAMCOUNTER                 InRZToR3;
 
     /** Number of OUTs to this port from R0/RC. */
     STAMCOUNTER                 OutRZ;
     /** Profiling OUT handler overhead in R0/RC. */
-    STAMPROFILEADV              ProfOutRZ;
+    STAMPROFILE                 ProfOutRZ;
     /** Number of OUTs to this port from R0/RC which was serviced in R3. */
     STAMCOUNTER                 OutRZToR3;
 } IOMIOPORTSTATS;

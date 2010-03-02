@@ -3445,16 +3445,36 @@ typedef struct PDMDEVINS
     PCPDMDEVHLPRC               pHlpRC;
     /** Pointer to device instance data. */
     RTRCPTR                     pvInstanceDataRC;
+    /** The critical section for the device, see pCritSectR3.
+     * This is automatically resolved by PDM when pCritSectR3 is set by the
+     * constructor. */
+    RCPTRTYPE(PPDMCRITSECT)     pCritSectRC;
+    /** Alignment padding.  */
+    RTRCPTR                     pAlignmentRC;
 
     /** Pointer the R0 PDM Device API. */
     PCPDMDEVHLPR0               pHlpR0;
     /** Pointer to device instance data (R0). */
     RTR0PTR                     pvInstanceDataR0;
+    /** The critical section for the device, see pCritSectR3.
+    * This is automatically resolved by PDM when pCritSectR3 is set by the
+    * constructor. */
+    R0PTRTYPE(PPDMCRITSECT)     pCritSectR0;
 
     /** Pointer the HC PDM Device API. */
     PCPDMDEVHLPR3               pHlpR3;
     /** Pointer to device instance data. */
     RTR3PTR                     pvInstanceDataR3;
+    /** The critical section for the device. (Optional)
+     *
+     * The device constructor initializes this if it has a critical section for
+     * the device and desires it to be taken automatically by MMIO, I/O port
+     * and timer callbacks to the device.  The advantages using this locking
+     * approach is both less code and avoiding the global IOM lock.
+     *
+     * @remarks Will not yet be taken by SSM.
+     */
+    R3PTRTYPE(PPDMCRITSECT)     pCritSectR3;
 
     /** Pointer to device registration structure.  */
     R3PTRTYPE(PCPDMDEVREG)      pReg;
@@ -3462,6 +3482,7 @@ typedef struct PDMDEVINS
     R3PTRTYPE(PCFGMNODE)        pCfg;
 
     /** The base interface of the device.
+     *
      * The device constructor initializes this if it has any
      * device level interfaces to export. To obtain this interface
      * call PDMR3QueryDevice(). */
@@ -3475,7 +3496,7 @@ typedef struct PDMDEVINS
 #ifdef PDMDEVINSINT_DECLARED
         PDMDEVINSINT            s;
 #endif
-        uint8_t                 padding[HC_ARCH_BITS == 32 ? 64 + 16 : 112];
+        uint8_t                 padding[HC_ARCH_BITS == 32 ? 64 + 0 : 112 + 0x28];
     } Internal;
 
     /** Device instance data. The size of this area is defined
@@ -3484,7 +3505,7 @@ typedef struct PDMDEVINS
 } PDMDEVINS;
 
 /** Current PDMDEVINS version number. */
-#define PDM_DEVINS_VERSION                      PDM_VERSION_MAKE(0xffe4, 1, 0)
+#define PDM_DEVINS_VERSION                      PDM_VERSION_MAKE(0xffe4, 2, 0)
 
 /** Converts a pointer to the PDMDEVINS::IBase to a pointer to PDMDEVINS. */
 #define PDMIBASE_2_PDMDEV(pInterface) ( (PPDMDEVINS)((char *)(pInterface) - RT_OFFSETOF(PDMDEVINS, IBase)) )

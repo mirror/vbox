@@ -465,11 +465,13 @@ VMMR3DECL(void) PDMR3Relocate(PVM pVM, RTGCINTPTR offDelta)
     {
         if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
         {
-            pDevIns->pHlpRC = pDevHlpRC;
-            pDevIns->pvInstanceDataRC = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
-            pDevIns->Internal.s.pVMRC = pVM->pVMRC;
+            pDevIns->pHlpRC             = pDevHlpRC;
+            pDevIns->pvInstanceDataRC   = MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3);
+            if (pDevIns->pCritSectR3)
+                pDevIns->pCritSectRC    = MMHyperR3ToRC(pVM, pDevIns->pCritSectR3);
+            pDevIns->Internal.s.pVMRC   = pVM->pVMRC;
             if (pDevIns->Internal.s.pPciBusR3)
-                pDevIns->Internal.s.pPciBusRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
+                pDevIns->Internal.s.pPciBusRC    = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciBusR3);
             if (pDevIns->Internal.s.pPciDeviceR3)
                 pDevIns->Internal.s.pPciDeviceRC = MMHyperR3ToRC(pVM, pDevIns->Internal.s.pPciDeviceR3);
             if (pDevIns->pReg->pfnRelocate)

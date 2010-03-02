@@ -335,6 +335,9 @@ int pdmR3DevInit(PVM pVM)
                                                 ? MMHyperR3ToRC(pVM, pDevIns->pvInstanceDataR3) : NIL_RTRCPTR;
         pDevIns->pvInstanceDataR0               = pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0
                                                 ? MMHyperR3ToR0(pVM, pDevIns->pvInstanceDataR3) : NIL_RTR0PTR;
+        //pDevIns->pCritSectR3                    = NULL;
+        //pDevIns->pCritSectR0                    = NIL_RTR0PTR;
+        //pDevIns->pCritSectRC                    = NIL_RTRCPTR;
 
         /*
          * Link it into all the lists.
@@ -367,6 +370,35 @@ int pdmR3DevInit(PVM pVM)
         paDevs[i].pDev->cInstances++;
         Log(("PDM: Constructing device '%s' instance %d...\n", pDevIns->pReg->szName, pDevIns->iInstance));
         rc = pDevIns->pReg->pfnConstruct(pDevIns, pDevIns->iInstance, pDevIns->pCfg);
+        if (RT_SUCCESS(rc))
+        {
+            /*
+             * Per-device critsect fun.
+             */
+            if (pDevIns->pCritSectR3)
+            {
+                AssertStmt(PDMCritSectIsInitialized(pDevIns->pCritSectR3), rc = VERR_INTERNAL_ERROR_4);
+                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_R0)
+                {
+                    pDevIns->pCritSectR0 = MMHyperCCToR0(pVM, pDevIns->pCritSectR3);
+                    AssertStmt(pDevIns->pCritSectR0 != NIL_RTR0PTR, rc = VERR_INTERNAL_ERROR_3);
+                }
+                else
+                    AssertStmt(pDevIns->pCritSectR0 == NIL_RTRCPTR, rc = VERR_INTERNAL_ERROR_2);
+
+                if (pDevIns->pReg->fFlags & PDM_DEVREG_FLAGS_RC)
+                {
+                    pDevIns->pCritSectRC = MMHyperCCToRC(pVM, pDevIns->pCritSectR3);
+                    AssertStmt(pDevIns->pCritSectRC != NIL_RTRCPTR, rc = VERR_INTERNAL_ERROR_3);
+                }
+                else
+                    AssertStmt(pDevIns->pCritSectRC == NIL_RTRCPTR, rc = VERR_INTERNAL_ERROR_2);
+            }
+            else
+                AssertStmt(   pDevIns->pCritSectRC == NIL_RTRCPTR
+                           && pDevIns->pCritSectR0 == NIL_RTR0PTR,
+                           rc = VERR_INTERNAL_ERROR_5);
+        }
         if (RT_FAILURE(rc))
         {
             LogRel(("PDM: Failed to construct '%s'/%d! %Rra\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
