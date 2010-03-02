@@ -4121,7 +4121,7 @@ uint64_t cpu_get_tsc(CPUX86State *env)
 
 void cpu_set_ferr(CPUX86State *env)
 {
-    int rc = PDMIsaSetIrq(env->pVM, 13, 1);
+    int rc = PDMIsaSetIrq(env->pVM, 13, 1, true);
     LogFlow(("cpu_set_ferr: rc=%d\n", rc)); NOREF(rc);
 }
 

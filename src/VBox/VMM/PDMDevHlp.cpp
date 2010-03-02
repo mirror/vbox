@@ -1305,7 +1305,7 @@ static DECLCALLBACK(void) pdmR3DevHlp_ISASetIrq(PPDMDEVINS pDevIns, int iIrq, in
     /** @todo iIrq and iLevel checks. */
 
     PVM pVM = pDevIns->Internal.s.pVMR3;
-    PDMIsaSetIrq(pVM, iIrq, iLevel);    /* (The API takes the lock.) */
+    PDMIsaSetIrq(pVM, iIrq, iLevel, true);    /* (The API takes the lock.) */
 
     LogFlow(("pdmR3DevHlp_ISASetIrq: caller='%s'/%d: returns void\n", pDevIns->pReg->szName, pDevIns->iInstance));
 }
@@ -3166,7 +3166,7 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
     switch (pTask->enmOp)
     {
         case PDMDEVHLPTASKOP_ISA_SET_IRQ:
-            PDMIsaSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel);
+            PDMIsaSetIrq(pVM, pTask->u.SetIRQ.iIrq, pTask->u.SetIRQ.iLevel, true /* ISA source */);
             break;
 
         case PDMDEVHLPTASKOP_PCI_SET_IRQ:
@@ -3185,4 +3185,3 @@ DECLCALLBACK(bool) pdmR3DevHlpQueueConsumer(PVM pVM, PPDMQUEUEITEMCORE pItem)
 }
 
 /** @} */
-

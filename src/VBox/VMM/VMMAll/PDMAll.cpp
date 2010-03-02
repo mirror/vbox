@@ -92,14 +92,14 @@ VMMDECL(int) PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt)
 
 
 /**
- * Sets the pending interrupt.
+ * Sets the pending interrupt coming from ISA source or HPET.
  *
  * @returns VBox status code.
  * @param   pVM             VM handle.
  * @param   u8Irq           The IRQ line.
  * @param   u8Level         The new level.
  */
-VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
+VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, bool fIsaSource)
 {
     pdmLock(pVM);
 
@@ -114,6 +114,21 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level)
     if (pVM->pdm.s.IoApic.CTX_SUFF(pDevIns))
     {
         Assert(pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq));
+
+        /**
+         * Apply Interrupt Source Override rules.
+         * See ACPI 4.0 specification 5.2.12.4 and 5.2.12.5 for details on 
+         * interrupt source override.
+         * Shortly, ISA IRQ0 is electically connected to pin 2 on IO-APIC, and some OSes,
+         * notably recent OS X rely upon this configuration.
+         * If changing, also update override rules in MADT and MPS.
+         */
+        if (fIsaSource)
+        {
+            /* ISA IRQ0 routed to pin 2, all others ISA sources are identity mapped */
+            if (u8Irq == 0)
+                u8Irq = 2;
+        }
         pVM->pdm.s.IoApic.CTX_SUFF(pfnSetIrq)(pVM->pdm.s.IoApic.CTX_SUFF(pDevIns), u8Irq, u8Level);
         rc = VINF_SUCCESS;
     }
