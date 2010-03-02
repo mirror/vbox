@@ -765,8 +765,7 @@ int handleControlVM(HandlerArg *a)
             CHECK_ERROR(machine, MountMedium(Bstr("Floppy Controller"), 0, 0, uuid, FALSE /* aForce */));
         }
 #endif /* obsolete dvdattach/floppyattach */
-        else if (   !strcmp(a->argv[1], "--guestmemoryballoon")
-                 || !strcmp(a->argv[1], "-guestmemoryballoon"))
+        else if (!strcmp(a->argv[1], "guestmemoryballoon"))
         {
             if (a->argc != 3)
             {
@@ -818,8 +817,7 @@ int handleControlVM(HandlerArg *a)
                 CHECK_ERROR(guest, COMSETTER(StatisticsUpdateInterval)(uVal));
         }
         /* Undocumented show guest statistics testcase. */
-        else if (   !strcmp(a->argv[1], "--showgueststats")
-                 || !strcmp(a->argv[1], "-showgueststats"))
+        else if (!strcmp(a->argv[1], "showgueststats"))
         {
             /* guest is running; update IGuest */
             ComPtr <IGuest> guest;
