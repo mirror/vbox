@@ -30,9 +30,7 @@
 #include "UIMachineWindow.h"
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-#  include <Carbon/Carbon.h>
-# endif /* QT_MAC_USE_COCOA */
+# include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
 class UIVisualState : public QObject
