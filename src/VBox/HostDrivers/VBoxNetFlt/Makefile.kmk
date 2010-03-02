@@ -201,6 +201,9 @@ NetAdpUninstall_LIBS     = $(TARGET_WinNetConfig) \
 # VBoxNetFltNotify
 #
 DLLS.win += VBoxNetFltNotify
+if defined(VBOX_SIGNING_MODE)
+VBoxNetFltNotify_NOINST = true
+endif
 VBoxNetFltNotify_TEMPLATE   = VBOXR3STATIC
 VBoxNetFltNotify_SDKS       = WINPSDK W2K3DDK VBOX_NTDLL
 VBoxNetFltNotify_DEFS       = _WIN32_WINNT=0x0500 WIN32 _ATL_STATIC_REGISTRY
