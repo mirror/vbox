@@ -87,7 +87,7 @@ DECLINLINE(void) vboxSHGSMICommandSubmitAsynch (struct _HGSMIHEAP * pHeap, PVBOX
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pHeader->fFlags) & VBOXSHGSMI_FLAG_HG_ASYNCH))
     {
         PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = (PFNVBOXSHGSMICMDCOMPLETION)pHeader->u64Info1;
-        pfnCompletion(pHeap, vboxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info1);
+        pfnCompletion(pHeap, vboxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
     }
 
     vboxSHGSMICommandRelease(pHeap, pHeader);
