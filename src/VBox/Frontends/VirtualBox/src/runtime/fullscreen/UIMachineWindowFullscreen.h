@@ -97,10 +97,6 @@ private:
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
 
-#ifdef Q_WS_MAC
-    CGDisplayFadeReservationToken mFadeToken;
-#endif /* Q_WS_MAC */
-
     /* Other members: */
     QRect m_normalGeometry;
 

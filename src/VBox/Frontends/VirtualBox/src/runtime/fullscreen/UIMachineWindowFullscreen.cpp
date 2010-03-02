@@ -177,15 +177,6 @@ bool UIMachineWindowFullscreen::event(QEvent *pEvent)
             }
             break;
         }
-#ifdef Q_WS_MAC
-        case QEvent::Polish:
-        {
-            /* Fade back to the normal gamma */
-//            CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
-//            CGReleaseDisplayFadeReservation (mFadeToken);
-            break;
-        }
-#endif /* Q_WS_MAC */
         default:
             break;
     }
@@ -298,12 +289,6 @@ void UIMachineWindowFullscreen::loadWindowSettings()
     centralWidget()->setPalette (palette);
     centralWidget()->setAutoFillBackground (true);
     setAutoFillBackground (true);
-
-#ifdef Q_WS_MAC
-    /* Fade to black */
-//    CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
-//    CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-#endif
 
     /* We have to show the window early, or the position will be wrong on the
        Mac */
