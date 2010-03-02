@@ -762,6 +762,8 @@ BOOLEAN DxgkDdiInterruptRoutine(
     IN ULONG MessageNumber
     )
 {
+    dfprintf(("==> "__FUNCTION__ ", context(0x%p), msg(0x%x)\n", MiniportDeviceContext, MessageNumber));
+
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     BOOLEAN bOur = FALSE;
     if (pDevExt->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
@@ -837,6 +839,8 @@ BOOLEAN DxgkDdiInterruptRoutine(
             HGSMIClearIrq (pDevExt);
     }
 
+    dfprintf(("<== "__FUNCTION__ ", context(0x%p), bOur(0x%x)\n", MiniportDeviceContext, (ULONG)bOur));
+
     return bOur;
 }
 
@@ -869,6 +873,8 @@ VOID DxgkDdiDpcRoutine(
     IN CONST PVOID  MiniportDeviceContext
     )
 {
+    dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
     VBOXWDDM_DPCDATA dpcData = {0};
@@ -897,6 +903,8 @@ VOID DxgkDdiDpcRoutine(
 
     if (dpcData.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+
+    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 }
 
 NTSTATUS DxgkDdiQueryChildRelations(

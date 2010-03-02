@@ -69,7 +69,7 @@ $(PATH_TARGET)/VBoxVideoCat.dir/VBoxVideo.cat: \
 	$(call VBOX_MAKE_CAT_FN, $(@D),$@)
 	
 ifdef VBOXWDDM
-# VBOXWDDM_WITH_DISPD3D = 1
+VBOXWDDM_WITH_DISPD3D = 1
 
 #
 # Install the inf & cat.
@@ -98,9 +98,11 @@ VBoxVideoWddm-inf_CLEAN = $(VBoxVideoWddm-inf_SOURCES)
 VBoxVideoWddm-inf_BLDDIRS = \
     $(PATH_TARGET)/VBoxVideoWddmCat.dir
 
+VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG = $(if $(VBOXWDDM_WITH_DISPD3D),-e 's/^;dispd3d  *//', -e '/^;dispd3d /d')
+
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.inf: $(PATH_SUB_CURRENT)/Miniport/wddm/VBoxVideoWddm.inf $(MAKEFILE_CURRENT) | $$(call DIRDEP,$$(@D))
 	$(call MSG_GENERATE,VBoxVideoWddm-inf,$@,$<)
-	$(call VBOX_EDIT_INF_FN,$<,$@)
+	$(call VBOX_EDIT_INF_FN,$<,$@ $(VBOXWDDM_EDIT_INF_DISPD3D_FN_ARG))
 
 $(PATH_TARGET)/VBoxVideoWddmCat.dir/VBoxVideoWddm.sys: $$(TARGET_VBoxVideoWddm) | $$(call DIRDEP,$$(@D))
 	$(INSTALL) -m 644 $< $(@D)
