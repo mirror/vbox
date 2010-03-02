@@ -758,7 +758,7 @@ void FwCommonPlantMpsTable(PPDMDEVINS pDevIns, uint8_t *pTable, unsigned cbMax, 
     for (int i = 0; i < cCpus; i++)
     {
         pProcEntry->u8EntryType        = 0; /* processor entry */
-        pProcEntry->u8LocalApicId      = i + 1;
+        pProcEntry->u8LocalApicId      = i;
         pProcEntry->u8LocalApicVersion = 0x14;
         pProcEntry->u8CPUFlags         = (i == 0 ? 2 /* bootstrap processor */ : 0 /* application processor */) | 1 /* enabled */;
         pProcEntry->u32CPUSignature    = u32CPUSignature;
