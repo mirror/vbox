@@ -1004,18 +1004,19 @@ bool VBoxConsoleWnd::openView (const CSession &aSession)
 
     /* initialize usb stuff */
     CUSBController usbctl = machine.GetUSBController();
-    if (usbctl.isNull())
+    if (   usbctl.isNull()
+        || !usbctl.GetEnabled()
+        || !usbctl.GetProxyAvailable())
     {
         /* hide usb_menu & usb_separator & usb_status_led */
-        mDevicesUSBMenu->setVisible (false);
+        mDevicesUSBMenu->menuAction()->setVisible (false);
         mUSBLed->setHidden (true);
     }
     else
     {
-        bool isUSBEnabled = usbctl.GetEnabled();
-        mDevicesUSBMenu->setEnabled (isUSBEnabled);
+        mDevicesUSBMenu->setEnabled (true);
         mDevicesUSBMenu->setConsole (console);
-        mUSBLed->setState (isUSBEnabled ? KDeviceActivity_Idle : KDeviceActivity_Null);
+        mUSBLed->setState (true);
     }
 
     /* initialize vrdp stuff */
