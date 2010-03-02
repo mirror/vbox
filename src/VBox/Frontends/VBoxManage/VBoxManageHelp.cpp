@@ -208,6 +208,8 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--intnet<1-N> <network name>]\n"
                  "                            [--natnet<1-N> <network>|default]\n"
                  "                            [--macaddress<1-N> auto|<mac>]\n"
+                 "                            [--mouse ps2|usb|usbtablet\n"
+                 "                            [--keyboard ps2|usb\n"
                  "                            [--uart<1-N> off|<I/O base> <IRQ>]\n"
                  "                            [--uartmode<1-N> disconnected|\n"
                  "                                             server <pipe>|\n"

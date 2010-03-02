@@ -114,6 +114,8 @@ enum
     MODIFYVM_INTNET,
     MODIFYVM_NATNET,
     MODIFYVM_MACADDRESS,
+    MODIFYVM_HIDPTR,
+    MODIFYVM_HIDKBD,
     MODIFYVM_UARTMODE,
     MODIFYVM_UART,
     MODIFYVM_GUESTSTATISTICSINTERVAL,
@@ -202,6 +204,8 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--macaddress",               MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--mouse",                    MODIFYVM_HIDPTR,                    RTGETOPT_REQ_STRING },
+    { "--keyboard",                 MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING },
     { "--uartmode",                 MODIFYVM_UARTMODE,                  RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--uart",                     MODIFYVM_UART,                      RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--gueststatisticsinterval",  MODIFYVM_GUESTSTATISTICSINTERVAL,   RTGETOPT_REQ_UINT32 },
@@ -1209,6 +1213,46 @@ int handleModifyVM(HandlerArg *a)
                 else
                 {
                     CHECK_ERROR(nic, COMSETTER(MACAddress)(Bstr(ValueUnion.psz)));
+                }
+                break;
+            }
+
+            case MODIFYVM_HIDPTR:
+            {
+                if (!strcmp(ValueUnion.psz, "ps2"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_PS2Mouse));
+                }
+                else if (!strcmp(ValueUnion.psz, "usb"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_USBMouse));
+                }
+                else if (!strcmp(ValueUnion.psz, "usbtablet"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_USBTablet));
+                }
+                else
+                {
+                    errorArgument("Invalid type '%s' specfied for pointing device", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_HIDKBD:
+            {
+                if (!strcmp(ValueUnion.psz, "ps2"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(KeyboardHidType)(KeyboardHidType_PS2Keyboard));
+                }
+                else if (!strcmp(ValueUnion.psz, "usb"))
+                {
+                    CHECK_ERROR(machine, COMSETTER(KeyboardHidType)(KeyboardHidType_USBKeyboard));
+                }
+                else
+                {
+                    errorArgument("Invalid type '%s' specfied for keyboard", ValueUnion.psz);
+                    rc = E_FAIL;
                 }
                 break;
             }
