@@ -36,7 +36,11 @@ class UIVisualState : public QObject
 public:
 
     /* Visual state holder constructor: */
-    UIVisualState(QObject *pParent) : QObject(pParent), m_pMachineLogic(0)
+    UIVisualState(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
+        : QObject(pParent)
+        , m_pSession(pSession)
+        , m_pActionsPool(pActionsPool)
+        , m_pMachineLogic(0)
     {
         /* Connect state-change handler: */
         connect(this, SIGNAL(sigChangeVisualState(UIVisualStateType)), parent(), SLOT(sltChangeVisualState(UIVisualStateType)));
@@ -44,7 +48,16 @@ public:
 
     /* Public getters: */
     UIMachineLogic* machineLogic() const  { return m_pMachineLogic; }
+    virtual UIVisualStateType visualStateType() const = 0;
 
+    virtual bool prepareChange()
+    {
+        m_pMachineLogic = UIMachineLogic::create(this, m_pSession, m_pActionsPool, visualStateType());
+        return m_pMachineLogic->checkAvailability();
+    }
+
+    virtual void change() = 0;
+    virtual void finishChange() {}
 signals:
 
     /* Signal to change-state: */
@@ -53,6 +66,8 @@ signals:
 protected:
 
     /* Protected members: */
+    UISession *m_pSession;
+    UIActionsPool *m_pActionsPool;
     UIMachineLogic *m_pMachineLogic;
 };
 
@@ -64,16 +79,21 @@ public:
 
     /* Normal visual state holder constructor: */
     UIVisualStateNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent)
+        : UIVisualState(pParent, pSession, pActionsPool)
+    {}
+
+    UIVisualStateType visualStateType() const { return UIVisualStateType_Normal; }
+
+    void change()
     {
         /* Connect action handlers: */
-        connect(pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()));
-        connect(pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()));
 
-        /* Create state logic: */
-        m_pMachineLogic = UIMachineLogic::create(this, pSession, pActionsPool, UIVisualStateType_Normal);
+        /* Initialize the logic object */
+        m_pMachineLogic->initialize();
     }
 
 private slots:
@@ -99,16 +119,21 @@ public:
 
     /* Fullscreen visual state holder constructor: */
     UIVisualStateFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent)
+        : UIVisualState(pParent, pSession, pActionsPool)
+    {}
+
+    UIVisualStateType visualStateType() const { return UIVisualStateType_Fullscreen; }
+
+    void change()
     {
         /* Connect action handlers: */
-        connect(pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()));
-        connect(pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()));
 
-        /* Create state logic: */
-        m_pMachineLogic = UIMachineLogic::create(this, pSession, pActionsPool, UIVisualStateType_Fullscreen);
+        /* Initialize the logic object */
+        m_pMachineLogic->initialize();
     }
 
 private slots:
@@ -134,16 +159,21 @@ public:
 
     /* Seamless visual state holder constructor: */
     UIVisualStateSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent)
+        : UIVisualState(pParent, pSession, pActionsPool)
+    {}
+
+    UIVisualStateType visualStateType() const { return UIVisualStateType_Seamless; }
+
+    void change()
     {
         /* Connect action handlers */
-        connect(pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()));
-        connect(pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
+        connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()));
 
-        /* Create state logic */
-        m_pMachineLogic = UIMachineLogic::create(this, pSession, pActionsPool, UIVisualStateType_Seamless);
+        /* Initialize the logic object */
+        m_pMachineLogic->initialize();
     }
 
 private slots:
@@ -224,34 +254,48 @@ UIMachineLogic* UIMachine::machineLogic() const
 
 void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
 {
-    /* Delete previous state: */
-    delete m_pVisualState;
-    m_pVisualState = 0;
-
+    UIVisualState *pNewVisualState = 0;
     /* Create new state: */
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
         {
             /* Create normal visual state: */
-            m_pVisualState = new UIVisualStateNormal(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateNormal(this, m_pSession, m_pActionsPool);
             break;
         }
         case UIVisualStateType_Fullscreen:
         {
             /* Create fullscreen visual state: */
-            m_pVisualState = new UIVisualStateFullscreen(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateFullscreen(this, m_pSession, m_pActionsPool);
             break;
         }
         case UIVisualStateType_Seamless:
         {
             /* Create seamless visual state: */
-            m_pVisualState = new UIVisualStateSeamless(this, m_pSession, m_pActionsPool);
+            pNewVisualState = new UIVisualStateSeamless(this, m_pSession, m_pActionsPool);
             break;
         }
         default:
             break;
     }
+
+    /* First we have to check if the selected mode is available at all. Only
+     * then we delete the old mode and switch to the new mode. */
+    if (pNewVisualState->prepareChange())
+    {
+        /* Delete previous state: */
+        delete m_pVisualState;
+
+        /* Set the new mode as current mode. */
+        m_pVisualState = pNewVisualState;
+        m_pVisualState->change();
+        /* Finish any setup. */
+        m_pVisualState->finishChange();
+    }
+    else
+        /* Discard the temporary create new state */
+        delete pNewVisualState;
 }
 
 void UIMachine::enterBaseVisualState()

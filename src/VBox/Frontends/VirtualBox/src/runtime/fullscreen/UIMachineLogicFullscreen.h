@@ -41,6 +41,9 @@ protected:
                              UIActionsPool *pActionsPool);
     virtual ~UIMachineLogicFullscreen();
 
+    bool checkAvailability();
+    void initialize();
+
 private slots:
 
     /* Windowed mode funtionality: */

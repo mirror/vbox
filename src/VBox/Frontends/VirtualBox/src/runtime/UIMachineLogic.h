@@ -57,6 +57,12 @@ public:
                                   UIActionsPool *pActionsPool,
                                   UIVisualStateType visualStateType);
 
+    /* Check if this mode is available */
+    virtual bool checkAvailability() { return true; }
+
+    /* Do the real initialization of the object */
+    virtual void initialize() {}
+
     /* Main getters/setters: */
     UISession* uisession() { return m_pSession; }
     UIActionsPool* actionsPool() { return m_pActionsPool; }
