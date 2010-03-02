@@ -305,11 +305,11 @@ void UIMachineWindowFullscreen::loadWindowSettings()
 //    CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
 #endif
 
-
     /* We have to show the window early, or the position will be wrong on the
        Mac */
+#ifdef Q_WS_MAC
     show();
-    move(0,0);
+#endif /* Q_WS_MAC */
 
 #ifdef Q_WS_MAC
 # ifndef QT_MAC_USE_COCOA
@@ -327,6 +327,10 @@ void UIMachineWindowFullscreen::loadWindowSettings()
 #else /* Q_WS_MAC */
     setWindowState(windowState() ^ Qt::WindowFullScreen);
 #endif/* !Q_WS_MAC */
+
+#ifndef Q_WS_MAC
+    show();
+#endif /* !Q_WS_MAC */
 
 //    m_pMachineView->normalizeGeometry(true);
 //    ((UIMachineViewFullscreen*)m_pMachineView)->sltPerformGuestResize(maximumSize());
