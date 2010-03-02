@@ -1219,6 +1219,7 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_HIDPTR:
             {
+                bool fEnableUsb = false;
                 if (!strcmp(ValueUnion.psz, "ps2"))
                 {
                     CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_PS2Mouse));
@@ -1226,21 +1227,41 @@ int handleModifyVM(HandlerArg *a)
                 else if (!strcmp(ValueUnion.psz, "usb"))
                 {
                     CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_USBMouse));
+                    if (SUCCEEDED(rc))
+                        fEnableUsb = true;
                 }
                 else if (!strcmp(ValueUnion.psz, "usbtablet"))
                 {
                     CHECK_ERROR(machine, COMSETTER(PointingHidType)(PointingHidType_USBTablet));
+                    if (SUCCEEDED(rc))
+                        fEnableUsb = true;
                 }
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for pointing device", ValueUnion.psz);
                     rc = E_FAIL;
                 }
+                if (fEnableUsb)
+                {
+                    /* Make sure the OHCI controller is enabled. */
+                    ComPtr<IUSBController> UsbCtl;
+                    rc = machine->COMGETTER(USBController)(UsbCtl.asOutParam());
+                    if (SUCCEEDED(rc))
+                    {
+                        BOOL fEnabled;
+                        rc = UsbCtl->COMGETTER(Enabled)(&fEnabled);
+                        if (FAILED(rc))
+                            fEnabled = false;
+                        if (!fEnabled)
+                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
+                    }
+                }
                 break;
             }
 
             case MODIFYVM_HIDKBD:
             {
+                bool fEnableUsb = false;
                 if (!strcmp(ValueUnion.psz, "ps2"))
                 {
                     CHECK_ERROR(machine, COMSETTER(KeyboardHidType)(KeyboardHidType_PS2Keyboard));
@@ -1248,11 +1269,28 @@ int handleModifyVM(HandlerArg *a)
                 else if (!strcmp(ValueUnion.psz, "usb"))
                 {
                     CHECK_ERROR(machine, COMSETTER(KeyboardHidType)(KeyboardHidType_USBKeyboard));
+                    if (SUCCEEDED(rc))
+                        fEnableUsb = true;
                 }
                 else
                 {
                     errorArgument("Invalid type '%s' specfied for keyboard", ValueUnion.psz);
                     rc = E_FAIL;
+                }
+                if (fEnableUsb)
+                {
+                    /* Make sure the OHCI controller is enabled. */
+                    ComPtr<IUSBController> UsbCtl;
+                    rc = machine->COMGETTER(USBController)(UsbCtl.asOutParam());
+                    if (SUCCEEDED(rc))
+                    {
+                        BOOL fEnabled;
+                        rc = UsbCtl->COMGETTER(Enabled)(&fEnabled);
+                        if (FAILED(rc))
+                            fEnabled = false;
+                        if (!fEnabled)
+                            CHECK_ERROR(UsbCtl, COMSETTER(Enabled)(true));
+                    }
                 }
                 break;
             }
