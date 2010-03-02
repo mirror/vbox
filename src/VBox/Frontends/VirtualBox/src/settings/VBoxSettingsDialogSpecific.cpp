@@ -596,7 +596,8 @@ bool VBoxVMSettingsDlg::isAvailable (VMSettingsPageIds aId)
                 vboxProblem().cannotAccessUSB (mMachine);
 
             /* Check if USB is implemented */
-            if (ctl.isNull())
+            if (   ctl.isNull()
+                || !ctl.GetProxyAvailable())
                 return false;
 
             /* Break to common result */

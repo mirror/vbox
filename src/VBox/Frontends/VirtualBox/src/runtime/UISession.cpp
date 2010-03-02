@@ -589,9 +589,10 @@ QMenuBar* UISession::newMenuBar()
     {
         /* USB Stuff: */
         CUSBController usbController = machine.GetUSBController();
-        if (usbController.isNull())
+        if (   usbController.isNull()
+            || !usbController.GetProxyAvailable())
         {
-            /* Hide USB menu if controller is NULL: */
+            /* Hide USB menu if controller is NULL or no USB proxy available: */
             uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
         }
         else
