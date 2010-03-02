@@ -58,6 +58,7 @@ public:
 
     virtual void change() = 0;
     virtual void finishChange() {}
+
 signals:
 
     /* Signal to change-state: */
@@ -79,8 +80,7 @@ public:
 
     /* Normal visual state holder constructor: */
     UIVisualStateNormal(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
-    {}
+        : UIVisualState(pParent, pSession, pActionsPool) {}
 
     UIVisualStateType visualStateType() const { return UIVisualStateType_Normal; }
 
@@ -92,7 +92,7 @@ public:
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()));
 
-        /* Initialize the logic object */
+        /* Initialize the logic object: */
         m_pMachineLogic->initialize();
     }
 
@@ -119,8 +119,7 @@ public:
 
     /* Fullscreen visual state holder constructor: */
     UIVisualStateFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
-    {}
+        : UIVisualState(pParent, pSession, pActionsPool) {}
 
     UIVisualStateType visualStateType() const { return UIVisualStateType_Fullscreen; }
 
@@ -132,7 +131,7 @@ public:
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToSeamlessMode()));
 
-        /* Initialize the logic object */
+        /* Initialize the logic object: */
         m_pMachineLogic->initialize();
     }
 
@@ -159,20 +158,19 @@ public:
 
     /* Seamless visual state holder constructor: */
     UIVisualStateSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool)
-    {}
+        : UIVisualState(pParent, pSession, pActionsPool) {}
 
     UIVisualStateType visualStateType() const { return UIVisualStateType_Seamless; }
 
     void change()
     {
-        /* Connect action handlers */
+        /* Connect action handlers: */
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToFullscreenMode()));
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
                 this, SLOT(sltGoToNormalMode()));
 
-        /* Initialize the logic object */
+        /* Initialize the logic object: */
         m_pMachineLogic->initialize();
     }
 
@@ -239,11 +237,6 @@ QWidget* UIMachine::mainWindow() const
         return 0;
 }
 
-void UIMachine::closeVirtualMachine()
-{
-    delete this;
-}
-
 UIMachineLogic* UIMachine::machineLogic() const
 {
     if (m_pVisualState && m_pVisualState->machineLogic())
@@ -254,8 +247,8 @@ UIMachineLogic* UIMachine::machineLogic() const
 
 void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
 {
-    UIVisualState *pNewVisualState = 0;
     /* Create new state: */
+    UIVisualState *pNewVisualState = 0;
     switch (visualStateType)
     {
         case UIVisualStateType_Normal:
@@ -280,22 +273,28 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
             break;
     }
 
-    /* First we have to check if the selected mode is available at all. Only
-     * then we delete the old mode and switch to the new mode. */
+    /* First we have to check if the selected mode is available at all.
+     * Only then we delete the old mode and switch to the new mode. */
     if (pNewVisualState->prepareChange())
     {
         /* Delete previous state: */
         delete m_pVisualState;
 
-        /* Set the new mode as current mode. */
+        /* Set the new mode as current mode: */
         m_pVisualState = pNewVisualState;
         m_pVisualState->change();
-        /* Finish any setup. */
+
+        /* Finish any setup: */
         m_pVisualState->finishChange();
     }
     else
-        /* Discard the temporary create new state */
+        /* Discard the temporary create new state: */
         delete pNewVisualState;
+}
+
+void UIMachine::closeVirtualMachine()
+{
+    delete this;
 }
 
 void UIMachine::enterBaseVisualState()

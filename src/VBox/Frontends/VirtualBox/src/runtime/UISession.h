@@ -30,13 +30,14 @@
 /* Local includes */
 #include "COMDefs.h"
 
+/* Global forwards */
+class QMenuBar;
+
 /* Local forwards */
 class UIMachine;
 class UIActionsPool;
 class UIConsoleCallback;
 class UIMachineMenuBar;
-
-class QMenuBar;
 
 /* CConsole callback event types: */
 enum UIConsoleEventType
