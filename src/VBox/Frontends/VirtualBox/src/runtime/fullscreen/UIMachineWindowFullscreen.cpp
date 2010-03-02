@@ -36,12 +36,6 @@
 #include "UIMachineView.h"
 #include "UIMachineWindowFullscreen.h"
 
-#ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-#  include <Carbon/Carbon.h>
-# endif /* QT_MAC_USE_COCOA */
-#endif /* Q_WS_MAC */
-
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI<QIMainDialog>(0)
     , UIMachineWindow(pMachineLogic, uScreenId)
@@ -315,6 +309,7 @@ void UIMachineWindowFullscreen::loadWindowSettings()
     /* We have to show the window early, or the position will be wrong on the
        Mac */
     show();
+    move(0,0);
 
 #ifdef Q_WS_MAC
 # ifndef QT_MAC_USE_COCOA
@@ -324,7 +319,6 @@ void UIMachineWindowFullscreen::loadWindowSettings()
 # endif  /* !QT_MAC_USE_COCOA */
     /* Here we are going really fullscreen */
     setWindowState(windowState() ^ Qt::WindowFullScreen);
-    setPresentationModeEnabled(true);
 
 # ifndef QT_MAC_USE_COCOA
     /* Reassign the correct window group. */
@@ -353,10 +347,6 @@ void UIMachineWindowFullscreen::saveWindowSettings()
     /* Save extra-data settings: */
     {
     }
-
-#ifdef Q_WS_MAC
-    setPresentationModeEnabled(false);
-#endif/* Q_WS_MAC */
 }
 
 void UIMachineWindowFullscreen::cleanupMachineView()
@@ -369,26 +359,3 @@ void UIMachineWindowFullscreen::cleanupMachineView()
     m_pMachineView = 0;
 }
 
-#ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-void UIMachineWindowFullscreen::setPresentationModeEnabled(bool fEnabled)
-{
-    if (fEnabled)
-    {
-        /* First check if we are on the primary screen, only than the presentation mode have to be changed. */
-        QDesktopWidget* pDesktop = QApplication::desktop();
-        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
-        {
-            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
-            /* Default to false if it is an empty value */
-            if (testStr.isEmpty() || testStr == "false")
-                SetSystemUIMode(kUIModeAllHidden, 0);
-            else
-                SetSystemUIMode(kUIModeAllSuppressed, 0);
-        }
-    }
-    else
-        SetSystemUIMode(kUIModeNormal, 0);
-}
-# endif /* QT_MAC_USE_COCOA */
-#endif /* Q_WS_MAC */

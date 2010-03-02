@@ -98,9 +98,6 @@ private:
     //void cleanupConsoleConnections() {}
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-    void setPresentationModeEnabled(bool fEnabled);
-# endif /* QT_MAC_USE_COCOA */
     CGDisplayFadeReservationToken mFadeToken;
 #endif /* Q_WS_MAC */
 

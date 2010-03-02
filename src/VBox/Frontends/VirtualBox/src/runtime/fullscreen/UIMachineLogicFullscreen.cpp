@@ -40,6 +40,12 @@
 
 #include "VBoxUtils.h"
 
+#ifdef Q_WS_MAC
+# ifdef QT_MAC_USE_COCOA
+#  include <Carbon/Carbon.h>
+# endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
+
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Fullscreen)
 {
@@ -151,6 +157,7 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     /* We have to make sure that we are getting the front most process.
      * This is necessary for Qt versions > 4.3.3: */
     ::darwinSetFrontMostProcess();
+    setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
 
     /* Create machine window(s): */
@@ -263,5 +270,36 @@ void UIMachineLogicFullscreen::cleanupMachineWindow()
     /* Cleanup machine window: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+
+#ifdef Q_WS_MAC
+    setPresentationModeEnabled(false);
+#endif/* Q_WS_MAC */
 }
 
+#ifdef Q_WS_MAC
+# ifdef QT_MAC_USE_COCOA
+void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
+{
+    if (fEnabled)
+    {
+        /* First check if we are on the primary screen, only than the
+         * presentation mode have to be changed. */
+        // TODO_NEW_CORE: we need some algorithm to decide which virtual screen
+        // is on which physical host display. Than we can decide on the
+        // presentation mode as well. */
+//        QDesktopWidget* pDesktop = QApplication::desktop();
+//        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
+        {
+            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
+            /* Default to false if it is an empty value */
+            if (testStr.isEmpty() || testStr == "false")
+                SetSystemUIMode(kUIModeAllHidden, 0);
+            else
+                SetSystemUIMode(kUIModeAllSuppressed, 0);
+        }
+    }
+    else
+        SetSystemUIMode(kUIModeNormal, 0);
+}
+# endif /* QT_MAC_USE_COCOA */
+#endif /* Q_WS_MAC */
