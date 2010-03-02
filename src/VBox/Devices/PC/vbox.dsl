@@ -675,6 +675,8 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                             0x00,               // Alignment
                             0x02,               // Length
                             )
+                        // because in APIC configs PIC connected to pin 0,
+                        // and ISA IRQ0 rerouted to pin 2
                         IRQNoFlags ()
                             {2}
                     })

@@ -458,7 +458,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
-    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel);
+    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel,  /* ISA source */ true);
 }
 
 
@@ -563,6 +563,15 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
     return 0;
 }
 
+/** @interface_method_impl{PDMHPETHLPR3,pfnSetIrq} */
+static DECLCALLBACK(int) pdmR3HpetHlp_SetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
+{
+    PDMDEV_ASSERT_DEVINS(pDevIns);
+    LogFlow(("pdmR3HpetHlp_SetIrq: caller='%s'/%d: iIrq=%d iLevel=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, iIrq, iLevel));
+    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel, false /* Non-ISA source */);
+    return 0;
+}
+
 /** @interface_method_impl{PDMHPETHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns)
 {
@@ -599,9 +608,10 @@ static DECLCALLBACK(PCPDMHPETHLPR0) pdmR3HpetHlp_GetR0Helpers(PPDMDEVINS pDevIns
 const PDMHPETHLPR3 g_pdmR3DevHpetHlp =
 {
     PDM_HPETHLPR3_VERSION,
-    pdmR3HpetHlp_SetLegacyMode,
     pdmR3HpetHlp_GetRCHelpers,
     pdmR3HpetHlp_GetR0Helpers,
+    pdmR3HpetHlp_SetLegacyMode,
+    pdmR3HpetHlp_SetIrq,
     PDM_HPETHLPR3_VERSION, /* the end */
 };
 

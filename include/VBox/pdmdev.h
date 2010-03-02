@@ -1683,16 +1683,6 @@ typedef struct PDMHPETHLPR3
     uint32_t                u32Version;
 
     /**
-     * Set the interrupt force action flag.
-     *
-     * @returns VINF_SUCCESS on success.
-     * @returns rc if we failed to set legacy mode.
-     * @param   pDevIns         Device instance of the HPET.
-     * @param   fActivate       Activate or deactivate legacy mode.
-     */
-    DECLR3CALLBACKMEMBER(int, pfnSetLegacyMode,(PPDMDEVINS pDevIns, bool fActivate));
-
-    /**
      * Gets the address of the RC HPET helpers.
      *
      * This should be called at both construction and relocation time
@@ -1714,6 +1704,27 @@ typedef struct PDMHPETHLPR3
      */
     DECLR3CALLBACKMEMBER(PCPDMHPETHLPR0, pfnGetR0Helpers,(PPDMDEVINS pDevIns));
 
+    /**
+     * Set legacy mode on PIT and RTC.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to set legacy mode.
+     * @param   pDevIns         Device instance of the HPET.
+     * @param   fActivate       Activate or deactivate legacy mode.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetLegacyMode,(PPDMDEVINS pDevIns, bool fActivate));
+
+
+    /**
+     * Set IRQ, bypassing ISA bus override rules.
+     *
+     * @returns VINF_SUCCESS on success.
+     * @returns rc if we failed to set legacy mode.
+     * @param   pDevIns         Device instance of the HPET.
+     * @param   fActivate       Activate or deactivate legacy mode.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnSetIrq,(PPDMDEVINS pDevIns, int iIrq, int iLevel));
+
     /** Just a safety precaution. */
     uint32_t                u32TheEnd;
 } PDMHPETHLPR3;
@@ -1724,7 +1735,7 @@ typedef R3PTRTYPE(PDMHPETHLPR3 *) PPDMHPETHLPR3;
 typedef R3PTRTYPE(const PDMHPETHLPR3 *) PCPDMHPETHLPR3;
 
 /** Current PDMHPETHLPR3 version number. */
-#define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 1, 0)
+#define PDM_HPETHLPR3_VERSION                   PDM_VERSION_MAKE(0xffec, 2, 0)
 
 
 

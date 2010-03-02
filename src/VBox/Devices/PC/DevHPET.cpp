@@ -366,27 +366,9 @@ static uint32_t getTimerIrq(struct HpetTimer *pTimer)
      */
     if ((pTimer->u8TimerNumber <= 1) &&
         (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_LEGACY))
-        return (pTimer->u8TimerNumber == 0) ? 0 : 8;
+        return (pTimer->u8TimerNumber == 0) ? 2 : 8;
     else
         return (pTimer->u64Config & HPET_TN_INT_ROUTE_MASK) >> HPET_TN_INT_ROUTE_SHIFT;
-}
-
-static void irqUpdate(struct HpetTimer *pTimer)
-{
-    uint32_t irq = getTimerIrq(pTimer);
-
-    /** @todo: is it correct? */
-    if ((pTimer->u64Config & HPET_TN_ENABLE) &&
-        (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_ENABLE))
-    {
-        Log4(("HPET: raising IRQ %d\n", irq));
-        if ((pTimer->u64Config & HPET_TIMER_TYPE_LEVEL) == 0)
-        {
-            pTimer->CTX_SUFF(pHpet)->u64Isr |= (uint64_t)(1 << pTimer->u8TimerNumber);
-            PDMDevHlpISASetIrq(pTimer->CTX_SUFF(pHpet)->CTX_SUFF(pDevIns),
-                               irq, PDM_IRQ_LEVEL_FLIP_FLOP);
-        }
-    }
 }
 
 static int timerRegRead32(HpetState* pThis,
@@ -607,6 +589,7 @@ static int hpetLegacyMode(HpetState* pThis,
     /* Don't do anything complicated outside of R3 */
     rc =  VINF_IOM_HC_MMIO_WRITE;
 #else /* IN_RING3 */
+    LogRel(("HPET: cannot update PIT/RTC in legacy mode yet"));
     if (pThis->pHpetHlpR3)
         rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pThis->pDevInsR3, fActivate);
 #endif
@@ -653,15 +636,11 @@ static int configRegWrite32(HpetState* pThis,
             }
             /** @todo: implement i8254 and RTC interaction */
             if (isBitJustSet(iNewValue, iOldValue, HPET_CFG_LEGACY))
-            {
-                LogRel(("HPET: cannot activate legacy mode yet"));
-                /* Need to disable PIT and RTC here */
+            {                
                 rc = hpetLegacyMode(pThis, true);
             }
             else if (isBitJustCleared(iOldValue, iNewValue, HPET_CFG_LEGACY))
             {
-                LogRel(("HPET: cannot deactivate legacy mode yet"));
-                /* Need to enable PIT and RTC here */
                 rc = hpetLegacyMode(pThis, false);
             }
             break;
@@ -990,6 +969,24 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns,
     return VINF_SUCCESS;
 }
 
+static void irqUpdate(struct HpetTimer *pTimer)
+{
+    uint32_t irq     = getTimerIrq(pTimer);
+    HpetState* pThis = pTimer->CTX_SUFF(pHpet);
+
+    /** @todo: is it correct? */
+    if ((pTimer->u64Config & HPET_TN_ENABLE) &&
+        (pThis->u64Config & HPET_CFG_ENABLE))
+    {
+        Log4(("HPET: raising IRQ %d\n", irq));
+        if ((pTimer->u64Config & HPET_TIMER_TYPE_LEVEL) == 0)
+        {
+            pThis->u64Isr |= (uint64_t)(1 << pTimer->u8TimerNumber);
+            pThis->pHpetHlpR3->pfnSetIrq(pThis->CTX_SUFF(pDevIns), irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        }
+    }
+}
+
 /**
  * Device timer callback function.
  *
@@ -1155,11 +1152,26 @@ static int hpetInit(PPDMDEVINS pDevIns)
 static DECLCALLBACK(void) hpetInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const char *pszArgs)
 {
     HpetState   *pThis = PDMINS_2_DATA(pDevIns, HpetState *);
+    int i;
 
     pHlp->pfnPrintf(pHlp,
-                    "HPET status:\n",
-                    " offset = %016RX64 counter = %016RX6 isr = %016RX6\n",
-                    pThis->u64HpetOffset, pThis->u64HpetCounter, pThis->u64Isr);
+                    "HPET status:\n"
+                    " config = %016RX64\n"
+                    " offset = %016RX64 counter = %016RX64 isr = %016RX64\n"
+                    " legacy mode is %s\n",
+                    pThis->u64Config,
+                    pThis->u64HpetOffset, pThis->u64HpetCounter, pThis->u64Isr,
+                    (pThis->u64Config & HPET_CFG_LEGACY) ? "on" : "off");
+    pHlp->pfnPrintf(pHlp,
+                    "Timers:\n");
+    for (i = 0; i < HPET_NUM_TIMERS; i++)
+    {
+        pHlp->pfnPrintf(pHlp, " %d: comparator=%016RX64 period(hidden)=%016RX64 cfg=%016RX64\n",
+                        pThis->aTimers[i].u8TimerNumber,
+                        pThis->aTimers[i].u64Cmp,
+                        pThis->aTimers[i].u64Period,
+                        pThis->aTimers[i].u64Config);
+    }
 }
 
 

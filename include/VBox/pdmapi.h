@@ -43,7 +43,7 @@ RT_C_DECLS_BEGIN
  */
 
 VMMDECL(int)    PDMGetInterrupt(PVMCPU pVCpu, uint8_t *pu8Interrupt);
-VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
+VMMDECL(int)    PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, bool fIsaSource);
 VMMDECL(int)    PDMIoApicSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level);
 VMMDECL(bool)   PDMHasIoApic(PVM pVM);
 VMMDECL(int)    PDMApicHasPendingIrq(PVM pVM, bool *pfPending);
@@ -144,4 +144,3 @@ RT_C_DECLS_END
 /** @} */
 
 #endif
-

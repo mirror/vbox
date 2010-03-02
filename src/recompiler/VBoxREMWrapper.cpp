@@ -731,7 +731,8 @@ static const REMPARMDESC g_aArgsPDMIsaSetIrq[] =
 {
     { REMPARMDESC_FLAGS_INT,        sizeof(PVM),                NULL },
     { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL },
-    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL }
+    { REMPARMDESC_FLAGS_INT,        sizeof(uint8_t),            NULL },
+    { REMPARMDESC_FLAGS_INT,        sizeof(bool),               NULL }
 };
 static const REMPARMDESC g_aArgsPDMR3CritSectInit[] =
 {
