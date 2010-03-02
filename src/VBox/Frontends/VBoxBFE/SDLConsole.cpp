@@ -53,10 +53,12 @@
 #include <iprt/alloca.h>
 
 #ifdef VBOXBFE_WITH_X11
+# define Display Display_
 # include <X11/Xlib.h>
 # ifndef VBOXBFE_WITHOUT_XCURSOR
 #  include <X11/Xcursor/Xcursor.h>
 # endif
+# undef Display
 #endif
 
 #include "VBoxBFE.h"
