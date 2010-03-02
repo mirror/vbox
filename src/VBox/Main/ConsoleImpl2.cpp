@@ -49,10 +49,12 @@
 
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
+#include <VBox/param.h>
+#include <VBox/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
 #include <VBox/version.h>
 #include <VBox/HostServices/VBoxClipboardSvc.h>
 #ifdef VBOX_WITH_CROGL
-#include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
 #endif
 #ifdef VBOX_WITH_GUEST_PROPS
 # include <VBox/HostServices/GuestPropertySvc.h>
@@ -68,44 +70,38 @@
 #include <VBox/com/string.h>
 #include <VBox/com/array.h>
 
-#if defined(RT_OS_SOLARIS) && defined(VBOX_WITH_NETFLT)
-# include <zone.h>
-#endif
-
-#if defined(RT_OS_LINUX) && defined(VBOX_WITH_NETFLT)
-# include <unistd.h>
-# include <sys/ioctl.h>
-# include <sys/socket.h>
-# include <linux/types.h>
-# include <linux/if.h>
-# include <linux/wireless.h>
-#endif
-
-#if defined(RT_OS_FREEBSD) && defined(VBOX_WITH_NETFLT)
-# include <unistd.h>
-# include <sys/types.h>
-# include <sys/ioctl.h>
-# include <sys/socket.h>
-# include <net/if.h>
-# include <net80211/ieee80211_ioctl.h>
-#endif
-
-#if defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <VBox/WinNetConfig.h>
-# include <Ntddndis.h>
-# include <devguid.h>
-#endif
-
-#if !defined(RT_OS_WINDOWS) && defined(VBOX_WITH_NETFLT)
-# include <HostNetworkInterfaceImpl.h>
-# include <netif.h>
-# include <stdlib.h>
-#endif
+#ifdef VBOX_WITH_NETFLT
+# ifdef RT_OS_SOLARIS
+#  include <zone.h>
+# endif
+# ifdef RT_OS_LINUX
+#  include <unistd.h>
+#  include <sys/ioctl.h>
+#  include <sys/socket.h>
+#  include <linux/types.h>
+#  include <linux/if.h>
+#  include <linux/wireless.h>
+# endif
+# ifdef RT_OS_FREEBSD
+#  include <unistd.h>
+#  include <sys/types.h>
+#  include <sys/ioctl.h>
+#  include <sys/socket.h>
+#  include <net/if.h>
+#  include <net80211/ieee80211_ioctl.h>
+# endif
+# ifdef RT_OS_WINDOWS
+#  include <VBox/WinNetConfig.h>
+#  include <Ntddndis.h>
+#  include <devguid.h>
+# else
+#  include <HostNetworkInterfaceImpl.h>
+#  include <netif.h>
+#  include <stdlib.h>
+# endif
+#endif /* VBOX_WITH_NETFLT */
 
 #include "DHCPServerRunner.h"
-
-#include <VBox/param.h>
-#include <VBox/pdmapi.h> /* For PDMR3DriverAttach/PDMR3DriverDetach */
 
 #if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
 
