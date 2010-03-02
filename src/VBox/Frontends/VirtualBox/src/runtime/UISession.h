@@ -127,7 +127,7 @@ public:
     void setCapsLockAdaptionCnt(uint uCapsLockAdaptionCnt) { m_uCapsLockAdaptionCnt = uCapsLockAdaptionCnt; }
 
     /* Mouse setters: */
-    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; }
+    void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; emit sigMouseCapturedStatusChanged(); }
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
 signals:
@@ -150,6 +150,9 @@ signals:
     void sigUSBDeviceStateChange(const CUSBDevice &device, bool bIsAttached, const CVirtualBoxErrorInfo &error);
     void sigSharedFolderChange();
     void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
+
+    /* Session signals: */
+    void sigMouseCapturedStatusChanged();
 
 private slots:
 

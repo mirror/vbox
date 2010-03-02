@@ -155,6 +155,9 @@ protected slots:
     virtual void sltMousePointerShapeChanged();
     virtual void sltMouseCapabilityChanged();
 
+    /* Session callback handlers: */
+    virtual void sltMouseCapturedStatusChanged();
+
 private slots:
 
 #ifdef Q_WS_MAC
