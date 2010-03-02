@@ -68,5 +68,44 @@ VBoxDisp_LIBS         += \
 VBoxDisp_DEFS += VBOX_WITH_HGSMI
 endif
 
+ifdef VBOXWDDM
+
+ ifeq ($(KBUILD_TARGET_ARCH), amd64)
+  $(warning VBoxVideoD3D: make it 32bit for 64bit builds)
+ endif
+
+DLLS += VBoxDispD3D
+ if defined(VBOX_SIGNING_MODE)
+VBoxDispD3D_NOINST = true
+ endif
+VBoxDispD3D_TEMPLATE = VBOXGUESTR3DLL
+VBoxDispD3D_DEFS     = UNICODE _UNICODE
+VBoxDispD3D_SOURCES  = \
+	wddm/VBoxDispD3D.cpp \
+	wddm/VBoxDispD3D.def \
+	wddm/VBoxDispD3D.rc
+VBoxDispD3D_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3)
+VBoxDispD3D_SDKS     = WINDDKWLH
+
+ ifeq ($(KBUILD_TARGET_ARCH), amd64)
+DLLS += VBoxDispD3D64
+ if defined(VBOX_SIGNING_MODE)
+VBoxDispD3D64_NOINST = true
+ endif
+VBoxDispD3D64_TEMPLATE = VBOXGUESTR3DLL
+VBoxDispD3D64_DEFS     = UNICODE _UNICODE
+VBoxDispD3D64_SOURCES  = \
+	wddm/VBoxDispD3D.cpp \
+	wddm/VBoxDispD3D64.def \
+	wddm/VBoxDispD3D.rc
+VBoxDispD3D64_LIBS     = \
+	$(VBOX_LIB_IPRT_GUEST_R3) \
+	$(VBOX_LIB_VBGL_R3)
+VBoxDispD3D64_SDKS     = WINDDKWLH
+ endif
+endif
+
 include	$(KBUILD_PATH)/subfooter.kmk
 

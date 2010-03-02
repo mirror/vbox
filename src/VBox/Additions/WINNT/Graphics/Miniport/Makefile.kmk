@@ -80,12 +80,13 @@ ifdef VBOXWDDM
  endif
 
  VBoxVideoWddm_SDKS=WINDDKWLH
- VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR VBOX_WITH_8BPP_MODES
+ VBoxVideoWddm_DEFS       += VBOX_WITH_8BPP_MODES
  VBoxVideoWddm_DEFS       += VBOX_WITH_HGSMI VBOXWDDM VBOXVDMA
  ifdef VBOX_WITH_VIDEOHWACCEL
   VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
  endif
- #VBoxVideoWddm_DEFS       += LOG_ENABLED
+ VBoxVideoWddm_DEFS       += LOG_ENABLED
+ #VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR 
  VBoxVideoWddm_INCS       += ../../include
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry
@@ -97,12 +98,11 @@ ifdef VBOXWDDM
 	wddm/VBoxVideoVidPn.cpp \
 	wddm/VBoxVideoVdma.cpp \
 	wddm/VBoxVideoShgsmi.cpp \
- 	wddm/VBoxVideoWddm.def \
  	wddm/VBoxVideoWddm.rc
+ VBoxVideoWddm_LIBS.x86   = \
+ 	$(PATH_SDK_WINDDKWLH_LIB)/bufferoverflowk.lib
  #VBoxVideoWddm_LIBS.x86   += \
  #	$(PATH_SDK_WINDDKWLH_LIB)/exsup.lib
- VBoxVideoWddm_LIBS.x86   += \
- 	$(PATH_SDK_WINDDKWLH_LIB)/bufferoverflowu.lib
  VBoxVideoWddm_LIBS        = \
  	$(PATH_SDK_WINDDKWLH_LIB)/ntoskrnl.lib \
  	$(PATH_SDK_WINDDKWLH_LIB)/hal.lib \

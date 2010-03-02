@@ -52,22 +52,22 @@ VBoxVideoWddm.sys
 
 ;x86   [VBoxVideo.Display]
 ;amd64 [VBoxVideo.Display_wow64]
-;uncomment VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;dispd3d VBoxDispD3D.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
 ;amd64 [VBoxVideo.Display]
-;amd64 ;uncomment VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
+;amd64 ;dispd3d VBoxDispD3D64.dll,,,0x00004000  ; COPYFLG_IN_USE_TRY_RENAME
 
 [VBoxVideo_SoftwareDeviceSettings]
-;x86   ;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
-;x86   ;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
-;amd64 ;uncomment HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
-;amd64 ;uncomment HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
-;amd64 ;uncomment HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+;x86   ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D
+;x86   ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D.dll
+;amd64 ;dispd3d HKR,, InstalledDisplayDrivers, %REG_MULTI_SZ%, VBoxDispD3D64 VBoxDispD3D
+;amd64 ;dispd3d HKR,, UserModeDriverName,    %REG_MULTI_SZ%, VBoxDispD3D64.dll
+;amd64 ;dispd3d HKR,, UserModeDriverNameWow,    %REG_MULTI_SZ%, VBoxDispD3D.dll
 HKR,, VgaCompatible, %REG_DWORD%, 0
 
 [VBoxVideo_RegisterDlls]
-;uncomment 11,,VBoxVideoD3D.dll,1
-;amd64 ;uncomment 11,,VBoxVideoD3D64.dll,1
+;dispd3d 11,,VBoxDispD3D.dll,1
+;amd64 ;dispd3d 11,,VBoxDispD3D64.dll,1
 
 [VBoxVideo.Services]
 AddService=VBoxVideoWddm, 0x00000002, VBoxVideo_Service_Inst, VBoxVideo_EventLog_Inst

@@ -549,7 +549,7 @@ NTSTATUS DxgkDdiAddDevice(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", pdo(0x%x)\n", PhysicalDeviceObject));
-    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    NTSTATUS Status = STATUS_SUCCESS;
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)vboxWddmMemAllocZero(sizeof (DEVICE_EXTENSION));
     if (pContext)
@@ -2837,6 +2837,8 @@ DriverEntry(
     )
 {
     PAGED_CODE();
+
+    AssertBreakpoint();
 
     drprintf(("VBoxVideoWddm::DriverEntry. Built %s %s\n", __DATE__, __TIME__));
 
