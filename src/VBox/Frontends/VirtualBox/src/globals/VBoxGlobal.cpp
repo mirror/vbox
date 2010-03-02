@@ -1997,7 +1997,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString item;
 
         CUSBController ctl = aMachine.GetUSBController();
-        if (!ctl.isNull())
+        if (   !ctl.isNull()
+            && ctl.GetProxyAvailable())
         {
             /* the USB controller may be unavailable (i.e. in VirtualBox OSE) */
 

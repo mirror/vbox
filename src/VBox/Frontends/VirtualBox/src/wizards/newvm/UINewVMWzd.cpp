@@ -661,7 +661,8 @@ bool UINewVMWzdPage5::constructMachine()
 
     /* Enable the OHCI and EHCI controller by default for new VMs. (new in 2.2) */
     CUSBController usbController = m_Machine.GetUSBController();
-    if (!usbController.isNull())
+    if (   !usbController.isNull()
+        && usbController.GetProxyAvailable())
     {
         usbController.SetEnabled(true);
         usbController.SetEnabledEhci(true);
@@ -691,6 +692,8 @@ bool UINewVMWzdPage5::constructMachine()
     {
         m_Machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
         m_Machine.SetPointingHidType(KPointingHidType_USBMouse);
+        if (!usbController.isNull())
+            usbController.SetEnabled(true);
     }
 
     // Set HPET flag
