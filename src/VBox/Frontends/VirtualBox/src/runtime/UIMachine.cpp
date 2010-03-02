@@ -288,7 +288,7 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
         m_pVisualState->finishChange();
     }
     else
-        /* Discard the temporary create new state: */
+        /* Discard the temporary created new state: */
         delete pNewVisualState;
 }
 

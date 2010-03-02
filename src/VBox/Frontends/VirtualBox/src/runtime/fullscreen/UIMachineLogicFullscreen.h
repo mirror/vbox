@@ -56,7 +56,6 @@ private:
     /* Prepare helpers: */
     void prepareActionConnections();
     void prepareMachineWindows();
-    void prepareRequiredFeatures();
 
     /* Cleanup helpers: */
     void cleanupMachineWindow();
