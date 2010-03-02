@@ -1107,7 +1107,8 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
     /* 
      * Set received event type to absolute or relative.
      */
-    pThis->Lun0.pDrv->pfnAbsModeChange(pThis->Lun0.pDrv, pThis->isAbsolute);
+    pThis->Lun0.pDrv->pfnReportModes(pThis->Lun0.pDrv, !pThis->isAbsolute,
+                                     pThis->isAbsolute);
 
     RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;

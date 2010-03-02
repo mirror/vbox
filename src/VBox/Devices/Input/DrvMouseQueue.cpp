@@ -167,10 +167,10 @@ static DECLCALLBACK(int) drvMouseQueuePutEventAbs(PPDMIMOUSEPORT pInterface, uin
  * @param   pInterface  Pointer to the mouse connector interface structure.
  * @param   fAbs        The new absolute mode state.
  */
-static DECLCALLBACK(void) drvMousePassThruAbsMode(PPDMIMOUSECONNECTOR pInterface, bool fAbs)
+static DECLCALLBACK(void) drvMousePassThruReportModes(PPDMIMOUSECONNECTOR pInterface, bool fRel, bool fAbs)
 {
     PDRVMOUSEQUEUE pDrv = PPDMIMOUSECONNECTOR_2_DRVMOUSEQUEUE(pInterface);
-    pDrv->pDownConnector->pfnAbsModeChange(pDrv->pDownConnector, fAbs);
+    pDrv->pDownConnector->pfnReportModes(pDrv->pDownConnector, fRel, fAbs);
 }
 
 
@@ -288,7 +288,7 @@ static DECLCALLBACK(int) drvMouseQueueConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase. */
     pDrvIns->IBase.pfnQueryInterface        = drvMouseQueueQueryInterface;
     /* IMouseConnector. */
-    pDrv->IConnector.pfnAbsModeChange       = drvMousePassThruAbsMode;
+    pDrv->IConnector.pfnReportModes         = drvMousePassThruReportModes;
     /* IMousePort. */
     pDrv->IPort.pfnPutEvent                 = drvMouseQueuePutEvent;
     pDrv->IPort.pfnPutEventAbs              = drvMouseQueuePutEventAbs;
