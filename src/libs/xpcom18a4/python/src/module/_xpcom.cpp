@@ -244,6 +244,8 @@ PyXPCOMMethod_XPTC_InvokeByIndex(PyObject *self, PyObject *args)
 	nsresult r;
 	Py_BEGIN_ALLOW_THREADS;
 	r = XPTC_InvokeByIndex(pis, index, arg_helper.m_num_array, arg_helper.m_var_array);
+/** @todo bird: Maybe we could processing pending XPCOM events here to make
+ *        life a bit simpler inside python? */
 	Py_END_ALLOW_THREADS;
 	if ( NS_FAILED(r) )
 		return PyXPCOM_BuildPyException(r);
