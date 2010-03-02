@@ -210,9 +210,6 @@
 #include <iprt/asm.h>
 #include <iprt/uuid.h>
 #include "VUSBInternal.h"
-#ifdef VBOX_WITH_USB
-# include "USBProxyDevice.h"
-#endif
 #include "Builtins.h"
 
 
