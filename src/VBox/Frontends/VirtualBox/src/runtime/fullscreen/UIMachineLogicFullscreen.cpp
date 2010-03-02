@@ -57,7 +57,7 @@ UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 
 bool UIMachineLogicFullscreen::checkAvailability()
 {
-    int cHostScreens = QApplication::desktop()->screenCount();
+    int cHostScreens = QApplication::desktop()->numScreens();
     int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
     /* Check that there are enough physical screens are connected */
     if (cHostScreens < cGuestScreens)
