@@ -242,10 +242,10 @@ static const uint8_t g_UsbHidReportDesc[] =
     /* Report Count */              0x95, 0x06,     /* 6 */
     /* Report Size */               0x75, 0x08,     /* 8 */
     /* Logical Minimum */           0x15, 0x00,     /* 0 */
-    /* Logical Maximum */           0x26, 0xFF,0x00,/* 255 */
+    /* Logical Maximum */           0x25, 0xFF,     /* 255 */
     /* Usage Page */                0x05, 0x07,     /* Keyboard */
     /* Usage Minimum */             0x19, 0x00,     /* 0 */
-    /* Usage Maximum */             0x29, 0xFF,0x00,/* 255 */
+    /* Usage Maximum */             0x29, 0xFF,     /* 255 */
     /* Input */                     0x81, 0x00,     /* Data, Array, Absolute, Bit field */
     /* End Collection */            0xC0,
 };
