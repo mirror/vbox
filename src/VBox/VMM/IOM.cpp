@@ -1418,6 +1418,8 @@ VMMR3DECL(int)  IOMR3MMIORegisterR3(PVM pVM, PPDMDEVINS pDevIns, RTGCPHYS GCPhys
         AssertMsgFailed(("Wrapped! %RGp %#x bytes\n", GCPhysStart, cbRange));
         return VERR_IOM_INVALID_MMIO_RANGE;
     }
+    /** @todo implement per-device locks for MMIO access. */
+    AssertReturn(!pDevIns->pCritSectR3, VERR_INTERNAL_ERROR_2);
 
     /*
      * Resolve the GC/R0 handler addresses lazily because of init order.

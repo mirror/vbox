@@ -31,6 +31,7 @@
 #include <VBox/vmm.h>
 #include <VBox/selm.h>
 #include <VBox/trpm.h>
+#include <VBox/pdmdev.h>
 #include <VBox/pgm.h>
 #include <VBox/cpum.h>
 #include <VBox/err.h>
@@ -296,33 +297,65 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
     if (pRange)
     {
         /*
-         * Found a range.
+         * Found a range, get the data in case we leave the IOM lock.
          */
+        PFNIOMIOPORTIN  pfnInCallback = pRange->pfnInCallback;
 #ifndef IN_RING3
-        if (!pRange->pfnInCallback)
+        if (!pfnInCallback)
         {
-# ifdef VBOX_WITH_STATISTICS
-            if (pStats)
-                STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
-# endif
+            STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
             iomUnlock(pVM);
             return VINF_IOM_HC_IOPORT_READ;
         }
 #endif
-        /* call the device. */
+        void           *pvUser    = pRange->pvUser;
+        PPDMDEVINS      pDevIns   = pRange->pDevIns;
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+
+        /*
+         * Call the device - 4 variations.
+         */
+        VBOXSTRICTRC    rcStrict;
+        if (pCritSect)
+        {
+            iomUnlock(pVM);
+            rcStrict = PDMCritSectEnter(pCritSect, VINF_IOM_HC_IOPORT_READ);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
+                return rcStrict;
+            }
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfIn), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
+                rcStrict = pfnInCallback(pDevIns, pvUser, Port, pu32Value, (unsigned)cbValue);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            }
+            else
 #endif
-        VBOXSTRICTRC rcStrict = pRange->pfnInCallback(pRange->pDevIns, pRange->pvUser, Port, pu32Value, (unsigned)cbValue);
+                rcStrict = pfnInCallback(pDevIns, pvUser, Port, pu32Value, (unsigned)cbValue);
+            PDMCritSectLeave(pCritSect);
+        }
+        else
+        {
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
+                rcStrict = pfnInCallback(pDevIns, pvUser, Port, pu32Value, (unsigned)cbValue);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            }
+            else
+#endif
+                rcStrict = pfnInCallback(pDevIns, pvUser, Port, pu32Value, (unsigned)cbValue);
+        }
+#ifdef VBOX_WITH_STATISTICS
         if (rcStrict == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # ifndef IN_RING3
         else if (rcStrict == VINF_IOM_HC_IOPORT_READ && pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
+            STAM_COUNTER_INC(&pStats->InRZToR3);
 # endif
 #endif
         if (rcStrict == VERR_IOM_IOPORT_UNUSED)
@@ -336,12 +369,14 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
                 case 4: *(uint32_t *)pu32Value = UINT32_C(0xffffffff); break;
                 default:
                     AssertMsgFailed(("Invalid I/O port size %d. Port=%d\n", cbValue, Port));
-                    iomUnlock(pVM);
+                    if (!pCritSect)
+                        iomUnlock(pVM);
                     return VERR_IOM_INVALID_IOPORT_SIZE;
             }
         }
         Log3(("IOMIOPortRead: Port=%RTiop *pu32=%08RX32 cb=%d rc=%Rrc\n", Port, *pu32Value, cbValue, VBOXSTRICTRC_VAL(rcStrict)));
-        iomUnlock(pVM);
+        if (!pCritSect)
+            iomUnlock(pVM);
         return rcStrict;
     }
 
@@ -354,7 +389,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortRead(PVM pVM, RTIOPORT Port, uint32_t *pu32Value,
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
+            STAM_COUNTER_INC(&pStats->InRZToR3);
 # endif
         iomUnlock(pVM);
         return VINF_IOM_HC_IOPORT_READ;
@@ -457,37 +492,70 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
         /*
          * Found a range.
          */
+        PFNIOMIOPORTINSTRING pfnInStrCallback = pRange->pfnInStrCallback;
 #ifndef IN_RING3
-        if (!pRange->pfnInStrCallback)
+        if (!pfnInStrCallback)
         {
-# ifdef VBOX_WITH_STATISTICS
-            if (pStats)
-                STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
-# endif
+            STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
             iomUnlock(pVM);
             return VINF_IOM_HC_IOPORT_READ;
         }
 #endif
-        /* call the device. */
-#ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfIn), a);
-#endif
+        void           *pvUser    = pRange->pvUser;
+        PPDMDEVINS      pDevIns   = pRange->pDevIns;
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
 
-        VBOXSTRICTRC rcStrict = pRange->pfnInStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrDst, pcTransfers, cb);
+        /*
+         * Call the device - 4 variations.
+         */
+        VBOXSTRICTRC    rcStrict;
+        if (pCritSect)
+        {
+            iomUnlock(pVM);
+            rcStrict = PDMCritSectEnter(pCritSect, VINF_IOM_HC_IOPORT_READ);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->InRZToR3); });
+                return rcStrict;
+            }
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
+                rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            }
+            else
+#endif
+                rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+            PDMCritSectLeave(pCritSect);
+        }
+        else
+        {
+#ifdef VBOX_WITH_STATISTICS
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfIn), a);
+                rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfIn), a);
+            }
+            else
+#endif
+                rcStrict = pfnInStrCallback(pDevIns, pvUser, Port, pGCPtrDst, pcTransfers, cb);
+        }
+
+#ifdef VBOX_WITH_STATISTICS
         if (rcStrict == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(In));
 # ifndef IN_RING3
         else if (rcStrict == VINF_IOM_HC_IOPORT_READ && pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In, ToR3));
+            STAM_COUNTER_INC(&pStats->InRZToR3);
 # endif
 #endif
         Log3(("IOMIOPortReadStr: Port=%RTiop pGCPtrDst=%p pcTransfer=%p:{%#x->%#x} cb=%d rc=%Rrc\n",
               Port, pGCPtrDst, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
-        iomUnlock(pVM);
+        if (!pCritSect)
+            iomUnlock(pVM);
         return rcStrict;
     }
 
@@ -500,7 +568,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortReadString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCPt
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(In,ToR3));
+            STAM_COUNTER_INC(&pStats->InRZToR3);
 # endif
         iomUnlock(pVM);
         return VINF_IOM_HC_IOPORT_READ;
@@ -591,36 +659,69 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
         /*
          * Found a range.
          */
+        PFNIOMIOPORTOUT pfnOutCallback = pRange->pfnOutCallback;
 #ifndef IN_RING3
-        if (!pRange->pfnOutCallback)
+        if (!pfnOutCallback)
         {
-# ifdef VBOX_WITH_STATISTICS
-            if (pStats)
-                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
-# endif
+            STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
             iomUnlock(pVM);
             return VINF_IOM_HC_IOPORT_WRITE;
         }
 #endif
-        /* call the device. */
+        void           *pvUser    =  pRange->pvUser;
+        PPDMDEVINS      pDevIns   = pRange->pDevIns;
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+
+        /*
+         * Call the device - 4 variations.
+         */
+        VBOXSTRICTRC    rcStrict;
+        if (pCritSect)
+        {
+            iomUnlock(pVM);
+            rcStrict = PDMCritSectEnter(pCritSect, VINF_IOM_HC_IOPORT_WRITE);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
+                return rcStrict;
+            }
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+                rcStrict = pfnOutCallback(pDevIns, pvUser, Port, u32Value, (unsigned)cbValue);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
+            }
+            else
 #endif
-        VBOXSTRICTRC rcStrict = pRange->pfnOutCallback(pRange->pDevIns, pRange->pvUser, Port, u32Value, (unsigned)cbValue);
+                rcStrict = pfnOutCallback(pDevIns, pvUser, Port, u32Value, (unsigned)cbValue);
+            PDMCritSectLeave(pCritSect);
+        }
+        else
+        {
+#ifdef VBOX_WITH_STATISTICS
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+                rcStrict = pfnOutCallback(pDevIns, pvUser, Port, u32Value, (unsigned)cbValue);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
+            }
+            else
+#endif
+                rcStrict = pfnOutCallback(pDevIns, pvUser, Port, u32Value, (unsigned)cbValue);
+        }
 
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
         if (rcStrict == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # ifndef IN_RING3
         else if (rcStrict == VINF_IOM_HC_IOPORT_WRITE && pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
+            STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
 #endif
         Log3(("IOMIOPortWrite: Port=%RTiop u32=%08RX32 cb=%d rc=%Rrc\n", Port, u32Value, cbValue, VBOXSTRICTRC_VAL(rcStrict)));
-        iomUnlock(pVM);
+        if (!pCritSect)
+            iomUnlock(pVM);
         return rcStrict;
     }
 
@@ -633,7 +734,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWrite(PVM pVM, RTIOPORT Port, uint32_t u32Value, 
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
+            STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
         iomUnlock(pVM);
         return VINF_IOM_HC_IOPORT_WRITE;
@@ -725,36 +826,70 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
         /*
          * Found a range.
          */
+        PFNIOMIOPORTOUTSTRING   pfnOutStrCallback = pRange->pfnOutStrCallback;
 #ifndef IN_RING3
-        if (!pRange->pfnOutStrCallback)
+        if (!pfnOutStrCallback)
         {
-# ifdef VBOX_WITH_STATISTICS
-            if (pStats)
-                STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
-# endif
+            STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
             iomUnlock(pVM);
             return VINF_IOM_HC_IOPORT_WRITE;
         }
 #endif
-        /* call the device. */
+        void           *pvUser    = pRange->pvUser;
+        PPDMDEVINS      pDevIns   = pRange->pDevIns;
+        PPDMCRITSECT    pCritSect = pDevIns->CTX_SUFF(pCritSect);
+
+        /*
+         * Call the device - 4 variations.
+         */
+        VBOXSTRICTRC    rcStrict;
+        if (pCritSect)
+        {
+            iomUnlock(pVM);
+            rcStrict = PDMCritSectEnter(pCritSect, VINF_IOM_HC_IOPORT_WRITE);
+            if (rcStrict != VINF_SUCCESS)
+            {
+                STAM_STATS({ if (pStats) STAM_COUNTER_INC(&pStats->OutRZToR3); });
+                return rcStrict;
+            }
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+                rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
+            }
+            else
 #endif
-        VBOXSTRICTRC rcStrict = pRange->pfnOutStrCallback(pRange->pDevIns, pRange->pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+                rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+            PDMCritSectLeave(pCritSect);
+        }
+        else
+        {
 #ifdef VBOX_WITH_STATISTICS
-        if (pStats)
-            STAM_PROFILE_ADV_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
+            if (pStats)
+            {
+                STAM_PROFILE_START(&pStats->CTX_SUFF_Z(ProfOut), a);
+                rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+                STAM_PROFILE_STOP(&pStats->CTX_SUFF_Z(ProfOut), a);
+            }
+            else
+#endif
+                rcStrict = pfnOutStrCallback(pDevIns, pvUser, Port, pGCPtrSrc, pcTransfers, cb);
+        }
+
+#ifdef VBOX_WITH_STATISTICS
         if (rcStrict == VINF_SUCCESS && pStats)
             STAM_COUNTER_INC(&pStats->CTX_SUFF_Z(Out));
 # ifndef IN_RING3
         else if (rcStrict == VINF_IOM_HC_IOPORT_WRITE && pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out, ToR3));
+            STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
 #endif
         Log3(("IOMIOPortWriteStr: Port=%RTiop pGCPtrSrc=%p pcTransfer=%p:{%#x->%#x} cb=%d rcStrict=%Rrc\n",
               Port, pGCPtrSrc, pcTransfers, cTransfers, *pcTransfers, cb, VBOXSTRICTRC_VAL(rcStrict)));
-        iomUnlock(pVM);
+        if (!pCritSect)
+            iomUnlock(pVM);
         return rcStrict;
     }
 
@@ -767,7 +902,7 @@ VMMDECL(VBOXSTRICTRC) IOMIOPortWriteString(PVM pVM, RTIOPORT Port, PRTGCPTR pGCP
     {
 # ifdef VBOX_WITH_STATISTICS
         if (pStats)
-            STAM_COUNTER_INC(&pStats->CTX_MID_Z(Out,ToR3));
+            STAM_COUNTER_INC(&pStats->OutRZToR3);
 # endif
         iomUnlock(pVM);
         return VINF_IOM_HC_IOPORT_WRITE;
