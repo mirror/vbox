@@ -140,11 +140,13 @@ void vusbDevMapEndpoint(PVUSBDEV pDev, PCVUSBDESCENDPOINTEX pEndPtDesc)
         Log(("vusb: map input pipe on address %u\n", i8Addr));
         pPipe->in = pEndPtDesc;
 
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
         /*
          * For high-speed isochronous input endpoints, spin off a read-ahead buffering thread.
          */
         if ((pEndPtDesc->Core.bmAttributes & 0x03) == 1)
             vusbReadAheadStart(pDev, pPipe);
+#endif
     }
     else
     {
