@@ -52,7 +52,7 @@ private:
 
     /* Prepare helpers: */
     void prepareActionConnections();
-    void prepareMachineWindow();
+    void prepareMachineWindows();
     void prepareRequiredFeatures();
 
     /* Cleanup helpers: */

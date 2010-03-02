@@ -56,7 +56,7 @@ UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *
     prepareRequiredFeatures();
 
     /* Prepare machine window: */
-    prepareMachineWindow();
+    prepareMachineWindows();
 
     /* Initialization: */
     sltMachineStateChanged();
@@ -135,11 +135,17 @@ void UIMachineLogicFullscreen::prepareRequiredFeatures()
     }
 }
 
-void UIMachineLogicFullscreen::prepareMachineWindow()
+void UIMachineLogicFullscreen::prepareMachineWindows()
 {
-    /* Do not prepare window if its ready: */
-    if (mainMachineWindow())
+    /* Get monitor count: */
+    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+
+    /* Do not create window(s) if created already: */
+    if ((ulong)machineWindows().size() == uMonitorCount)
         return;
+
+    /* List should not be filled partially: */
+    AssertMsg(machineWindows().size() == 0, ("Windows list is filled partially, something broken!\n"));
 
 #ifdef Q_WS_MAC
     /* We have to make sure that we are getting the front most process.
@@ -147,8 +153,15 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
-    /* Create machine window: */
-    addMachineWindow(UIMachineWindow::create(this, visualStateType()));
+    /* Create machine window(s): */
+    for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
+        addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
+    /* Order machine window(s): */
+    for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
+        machineWindows()[uScreenId - 1]->machineWindow()->raise();
+
+    /* Notify others about machine window(s) created: */
+    setMachineWindowsCreated(true);
 
     /* If we are not started yet: */
     if (!uisession()->isRunning() && !uisession()->isPaused())
@@ -164,40 +177,41 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
         /* Shows first run wizard if necessary: */
         if (uisession()->isFirstTimeStarted())
         {
-            UIFirstRunWzd wzd(mainMachineWindow()->machineWindow(), machine);
+            UIFirstRunWzd wzd(defaultMachineWindow()->machineWindow(), machine);
             wzd.exec();
         }
 
         /* Start VM: */
         CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
                              console.PowerUpPaused() : console.PowerUp();
-        /* Check for an immediate failure */
+
+#if 0 // TODO: Check immediate failure!
+        /* Check for an immediate failure: */
         if (!console.isOk())
         {
             vboxProblem().cannotStartMachine(console);
-            mainMachineWindow()->machineWindow()->close();
+            machineWindowWrapper()->machineWindow()->close();
             return;
         }
 
         /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
         setPreventAutoClose(true);
+#endif
 
         /* Show "Starting/Restoring" progress dialog: */
         if (uisession()->isSaved())
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow(), 0);
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow(), 0);
         else
-            vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow()->machineWindow());
+            vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow());
 
+#if 0 // TODO: Check immediate failure!
         /* Check for an progress failure */
         if (progress.GetResultCode() != 0)
         {
             vboxProblem().cannotStartMachine(progress);
-            mainMachineWindow()->machineWindow()->close();
+            machineWindowWrapper()->machineWindow()->close();
             return;
         }
-
-        /* Process pending events: */
-        qApp->processEvents();
 
         /* Enable auto-closure again: */
         setPreventAutoClose(false);
@@ -205,9 +219,10 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
         /* Check if we missed a really quick termination after successful startup, and process it if we did: */
         if (uisession()->isTurnedOff())
         {
-            mainMachineWindow()->machineWindow()->close();
+            machineWindowWrapper()->machineWindow()->close();
             return;
         }
+#endif
 
 #if 0 // TODO: Rework debugger logic!
 # ifdef VBOX_WITH_DEBUGGER_GUI
@@ -227,7 +242,7 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
                 sltShowDebugCommandLine();
 
             if (!vboxGlobal().isStartPausedEnabled())
-                mainMachineWindow()->machineView()->pause (false);
+                machineWindowWrapper()->machineView()->pause (false);
         }
 # endif
 #endif
@@ -242,10 +257,11 @@ void UIMachineLogicFullscreen::prepareMachineWindow()
 void UIMachineLogicFullscreen::cleanupMachineWindow()
 {
     /* Do not cleanup machine window if it is not present: */
-    if (!mainMachineWindow())
+    if (!isMachineWindowsCreated())
         return;
 
     /* Cleanup machine window: */
-    UIMachineWindow::destroy(mainMachineWindow());
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        UIMachineWindow::destroy(pMachineWindow);
 }
 

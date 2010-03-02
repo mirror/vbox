@@ -283,7 +283,7 @@ void UIMachineWindowFullscreen::prepareMachineView()
                                            , bAccelerate2DVideo
 #endif
                                            , machineLogic()->visualStateType()
-                                           , 0 /* Pass a primary screen id (0) for now! */);
+                                           , m_uScreenId);
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
@@ -333,6 +333,10 @@ void UIMachineWindowFullscreen::loadWindowSettings()
 #else /* Q_WS_MAC */
     setWindowState(windowState() ^ Qt::WindowFullScreen);
 #endif/* !Q_WS_MAC */
+
+//    m_pMachineView->normalizeGeometry(true);
+//    ((UIMachineViewFullscreen*)m_pMachineView)->sltPerformGuestResize(maximumSize());
+//    show();
 
     QRect r = geometry();
     /* Load global settings: */
