@@ -11898,7 +11898,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
      name="IUSBController" extends="$unknown"
-     uuid="238540fa-4b73-435a-a38e-4e1d9eab5c17"
+     uuid="6fdcccc5-abd3-4fec-9387-2ad3914fc4a8"
      wsmap="managed"
      >
     <attribute name="enabled" type="boolean">
@@ -11916,6 +11916,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         guest system. If disabled, the virtual guest hardware will
         not contain a USB EHCI controller. Can only be changed when
         the VM is powered off.
+      </desc>
+    </attribute>
+
+    <attribute name="proxyAvailable" type="boolean" readonly="yes">
+      <desc>
+        Flag whether there is an USB proxy available.
       </desc>
     </attribute>
 

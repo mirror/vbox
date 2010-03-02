@@ -69,6 +69,7 @@ public:
     STDMETHOD(COMSETTER(Enabled)) (BOOL aEnabled);
     STDMETHOD(COMGETTER(EnabledEhci)) (BOOL *aEnabled);
     STDMETHOD(COMSETTER(EnabledEhci)) (BOOL aEnabled);
+    STDMETHOD(COMGETTER(ProxyAvailable)) (BOOL *aEnabled);
     STDMETHOD(COMGETTER(USBStandard)) (USHORT *aUSBStandard);
     STDMETHOD(COMGETTER(DeviceFilters)) (ComSafeArrayOut (IUSBDeviceFilter *, aDevicesFilters));
 
