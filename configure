@@ -2043,7 +2043,7 @@ EOF
 #
 
 # test if we are OSE
-if [ $OSE -eq 1 -a -d "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB" ]; then
+if [ $OSE -eq 1 -a -r "`cd \`dirname $0\`; pwd`/src/VBox/Devices/USB/USBProxyDevice.cpp" ]; then
   OSE=0
   # Set this as a reminder to print a log message once we know the path of the
   # log file
