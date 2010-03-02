@@ -329,7 +329,7 @@ typedef struct ISCSIIMAGE
     uint32_t            cbSector;
     /** Size of volume in sectors. */
     uint64_t            cVolume;
-    /** Total volume size in bytes. Easier that multiplying the above values all the time. */
+    /** Total volume size in bytes. Easier than multiplying the above values all the time. */
     uint64_t            cbSize;
 
     /** Negotiated maximum data length when sending to target. */
@@ -881,7 +881,7 @@ static int iscsiTransportClose(PISCSIIMAGE pImage)
  * Full Feature Phase.
  *
  * @returns VBox status.
- * @param   pImage  The iSCSI connection state to be used.
+ * @param   pImage      The iSCSI connection state to be used.
  */
 static int iscsiAttach(PISCSIIMAGE pImage)
 {
@@ -938,7 +938,11 @@ static int iscsiAttach(PISCSIIMAGE pImage)
 
 restart:
     if (pImage->Socket == NIL_RTSOCKET)
+    {
         rc = iscsiTransportOpen(pImage);
+        if (RT_FAILURE(rc))
+        goto out;
+    }
 
     pImage->state = ISCSISTATE_IN_LOGIN;
     pImage->ITT = 1;
@@ -1316,7 +1320,7 @@ out:
  * Detach from an iSCSI target.
  *
  * @returns VBox status.
- * @param   pImage  The iSCSI connection state to be used.
+ * @param   pImage      The iSCSI connection state to be used.
  */
 static int iscsiDetach(PISCSIIMAGE pImage)
 {
@@ -1404,11 +1408,11 @@ static int iscsiDetach(PISCSIIMAGE pImage)
  * Full Feature Phase.
  *
  * @returns VBOX status.
- * @param   pImage  The iSCSI connection state to be used.
- * @param   pRequest        Command descriptor. Contains all information about
- *                          the command, its transfer directions and pointers
- *                          to the buffer(s) used for transferring data and
- *                          status information.
+ * @param   pImage      The iSCSI connection state to be used.
+ * @param   pRequest    Command descriptor. Contains all information about
+ *                      the command, its transfer directions and pointers
+ *                      to the buffer(s) used for transferring data and
+ *                      status information.
  */
 static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
 {
@@ -1626,7 +1630,7 @@ out:
  * Generate a new Initiator Task Tag.
  *
  * @returns Initiator Task Tag.
- * @param   pImage  The iSCSI connection state to be used.
+ * @param   pImage      The iSCSI connection state to be used.
  */
 static uint32_t iscsiNewITT(PISCSIIMAGE pImage)
 {
@@ -1644,14 +1648,13 @@ static uint32_t iscsiNewITT(PISCSIIMAGE pImage)
  * are padded to 4 byte boundaries and concatenated.
  *
  * @returns VBOX status
- * @param   pImage  The iSCSI connection state to be used.
- * @param   paReq      Pointer to array of iSCSI request sections.
- * @param   cnReq      Number of valid iSCSI request sections in the array.
+ * @param   pImage      The iSCSI connection state to be used.
+ * @param   paReq       Pointer to array of iSCSI request sections.
+ * @param   cnReq       Number of valid iSCSI request sections in the array.
  */
 static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq)
 {
     int rc = VINF_SUCCESS;
-    uint32_t i;
     /** @todo return VERR_VD_ISCSI_INVALID_STATE in the appropriate situations,
      * needs cleaning up of timeout/disconnect handling a bit, as otherwise
      * too many incorrect errors are signalled. */
@@ -1659,7 +1662,7 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq)
     Assert(cnReq >= 1);
     Assert(paReq[0].cbSeg >= ISCSI_BHS_SIZE);
 
-    for (i = 0; i < pImage->cISCSIRetries; i++)
+    for (uint32_t i = 0; i < pImage->cISCSIRetries; i++)
     {
         rc = iscsiTransportWrite(pImage, paReq, cnReq);
         if (RT_SUCCESS(rc))
@@ -1690,17 +1693,16 @@ static int iscsiSendPDU(PISCSIIMAGE pImage, PISCSIREQ paReq, uint32_t cnReq)
  * sure that all parts are collected and processed appropriately by the caller.
  *
  * @returns VBOX status
- * @param   pImage  The iSCSI connection state to be used.
- * @param   paRes      Pointer to array of iSCSI response sections.
- * @param   cnRes      Number of valid iSCSI response sections in the array.
+ * @param   pImage      The iSCSI connection state to be used.
+ * @param   paRes       Pointer to array of iSCSI response sections.
+ * @param   cnRes       Number of valid iSCSI response sections in the array.
  */
 static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint32_t cnRes)
 {
     int rc = VINF_SUCCESS;
-    uint32_t i;
     ISCSIRES aResBuf;
 
-    for (i = 0; i < pImage->cISCSIRetries; i++)
+    for (uint32_t i = 0; i < pImage->cISCSIRetries; i++)
     {
         aResBuf.pvSeg = pImage->pvRecvPDUBuf;
         aResBuf.cbSeg = pImage->cbRecvPDUBuf;
@@ -1800,7 +1802,7 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
                 {
                     if (cbSeg > paRes[j].cbSeg)
                     {
-                        memcpy(paRes[j].pvSeg, pSrc, paRes[i].cbSeg);
+                        memcpy(paRes[j].pvSeg, pSrc, paRes[j].cbSeg);
                         pSrc += paRes[j].cbSeg;
                         cbSeg -= paRes[j].cbSeg;
                     }
@@ -1858,8 +1860,8 @@ static int iscsiRecvPDU(PISCSIIMAGE pImage, uint32_t itt, PISCSIRES paRes, uint3
  * Check the static (not dependent on the connection/session state) validity of an iSCSI response PDU.
  *
  * @returns VBOX status
- * @param   paRes      Pointer to array of iSCSI response sections.
- * @param   cnRes      Number of valid iSCSI response sections in the array.
+ * @param   paRes       Pointer to array of iSCSI response sections.
+ * @param   cnRes       Number of valid iSCSI response sections in the array.
  */
 static int drvISCSIValidatePDU(PISCSIRES paRes, uint32_t cnRes)
 {
@@ -2015,10 +2017,10 @@ static int iscsiTextAddKeyValue(uint8_t *pbBuf, size_t cbBuf, size_t *pcbBufCurr
  * Retrieve the value for a given key from the key=value buffer.
  *
  * @returns VBOX status.
- * @param   pbBuf      Buffer containing key=value pairs.
- * @param   cbBuf      Length of buffer with key=value pairs.
- * @param   pszKey     Pointer to key for which to retrieve the value.
- * @param   ppszValue  Pointer to value string pointer.
+ * @param   pbBuf       Buffer containing key=value pairs.
+ * @param   cbBuf       Length of buffer with key=value pairs.
+ * @param   pszKey      Pointer to key for which to retrieve the value.
+ * @param   ppszValue   Pointer to value string pointer.
  */
 static int iscsiTextGetKeyValue(const uint8_t *pbBuf, size_t cbBuf, const char *pcszKey, const char **ppcszValue)
 {
@@ -2147,9 +2149,9 @@ static int iscsiStrToBinary(const char *pcszValue, uint8_t *pbValue, size_t *pcb
  * Retrieve the relevant parameter values and update the initiator state.
  *
  * @returns VBOX status.
- * @param   pImage     Current iSCSI initiator state.
- * @param   pbBuf      Buffer containing key=value pairs.
- * @param   cbBuf      Length of buffer with key=value pairs.
+ * @param   pImage      Current iSCSI initiator state.
+ * @param   pbBuf       Buffer containing key=value pairs.
+ * @param   cbBuf       Length of buffer with key=value pairs.
  */
 static int iscsiUpdateParameters(PISCSIIMAGE pImage, const uint8_t *pbBuf, size_t cbBuf)
 {
