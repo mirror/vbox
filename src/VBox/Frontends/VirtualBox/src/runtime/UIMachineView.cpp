@@ -1099,11 +1099,12 @@ void UIMachineView::sltMousePointerShapeChanged()
 {
     if (uisession()->isMouseSupportsAbsolute())
     {
-        /* Should we hide/show pointer? */
-        if (uisession()->isHidingHostPointer())
-            viewport()->setCursor(Qt::BlankCursor);
-        else
+        /* Should we use guest pointer shape? */
+        if (uisession()->isValidPointerShapePresent())
             viewport()->setCursor(uisession()->cursor());
+        /* Should we hide pointer at all? */
+        else if (uisession()->isHidingHostPointer())
+            viewport()->setCursor(Qt::BlankCursor);
     }
 }
 
