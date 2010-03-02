@@ -989,6 +989,63 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                 break;
             }
 
+            case VUSB_REQ_GET_STATUS:
+            {
+                uint16_t    wRet = 0;
+    
+                if (pSetup->wLength != 2) 
+                {
+                    Log(("usbHid: Bad GET_STATUS req: wLength=%#x\n", pSetup->wLength));
+                    break;
+                }
+                Assert(pSetup->wValue == 0);
+                switch (pSetup->bmRequestType)
+                {
+                    case VUSB_TO_DEVICE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
+                    {
+                        Assert(pSetup->wIndex == 0);
+                        Log(("usbHid: GET_STATUS (device)\n"));
+                        wRet = 0;   /* Not self-powered, no remote wakeup. */
+                        memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
+                        return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                    }
+    
+                    case VUSB_TO_INTERFACE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
+                    {
+                        if (pSetup->wIndex == 0)
+                        {
+                            memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
+                            return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                        }
+                        else
+                        {
+                            Log(("usbHid: GET_STATUS (interface) invalid, wIndex=%#x\n", pSetup->wIndex));
+                        }
+                        break;
+                    }
+    
+                    case VUSB_TO_ENDPOINT | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
+                    {
+                        if (pSetup->wIndex < RT_ELEMENTS(pThis->aEps))
+                        {
+                            wRet = pThis->aEps[pSetup->wIndex].fHalted ? 1 : 0;
+                            memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
+                            return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
+                        }
+                        else
+                        {
+                            Log(("usbHid: GET_STATUS (endpoint) invalid, wIndex=%#x\n", pSetup->wIndex));
+                        }
+                        break;
+                    }
+    
+                    default:
+                        Log(("usbHid: Bad GET_STATUS req: bmRequestType=%#x\n", pSetup->bmRequestType));
+                        return usbHidCompleteStall(pThis, pEp, pUrb, "Bad GET_STATUS");
+                }
+                break;
+            }
+    
             case VUSB_REQ_CLEAR_FEATURE:
                 break;
         }
