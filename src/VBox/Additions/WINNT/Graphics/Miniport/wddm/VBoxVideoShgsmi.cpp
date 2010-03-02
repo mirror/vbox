@@ -27,17 +27,6 @@
 
 
 /* SHGSMI */
-
-DECLINLINE(uint8_t *) vboxSHGSMIBufferData (const PVBOXSHGSMIHEADER pHeader)
-{
-    return (uint8_t *)pHeader + sizeof (VBOXSHGSMIHEADER);
-}
-
-DECLINLINE(PVBOXSHGSMIHEADER) vboxSHGSMIBufferHeader (const void *pvData)
-{
-    return (PVBOXSHGSMIHEADER)((uint8_t *)pvData - sizeof (VBOXSHGSMIHEADER));
-}
-
 DECLINLINE(void) vboxSHGSMICommandRetain (PVBOXSHGSMIHEADER pCmd)
 {
     ASMAtomicIncU32(&pCmd->cRefs);
@@ -63,7 +52,7 @@ DECLCALLBACK(void) vboxSHGSMICompletionSetEvent(struct _HGSMIHEAP * pHeap, void 
 
 DECLCALLBACK(void) vboxSHGSMICompletionCommandRelease(struct _HGSMIHEAP * pHeap, void *pvCmd, void *pvContext)
 {
-    vboxSHGSMICommandRelease (pHeap, vboxSHGSMIBufferHeader(pvCmd));
+    vboxSHGSMICommandRelease (pHeap, VBoxSHGSMIBufferHeader(pvCmd));
 }
 
 
@@ -87,7 +76,7 @@ DECLINLINE(void) vboxSHGSMICommandSubmitAsynch (struct _HGSMIHEAP * pHeap, PVBOX
     if(!(ASMAtomicReadU32((volatile uint32_t *)&pHeader->fFlags) & VBOXSHGSMI_FLAG_HG_ASYNCH))
     {
         PFNVBOXSHGSMICMDCOMPLETION pfnCompletion = (PFNVBOXSHGSMICMDCOMPLETION)pHeader->u64Info1;
-        pfnCompletion(pHeap, vboxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
+        pfnCompletion(pHeap, VBoxSHGSMIBufferData (pHeader), (PVOID)pHeader->u64Info2);
     }
 
     vboxSHGSMICommandRelease(pHeap, pHeader);
@@ -96,7 +85,7 @@ DECLINLINE(void) vboxSHGSMICommandSubmitAsynch (struct _HGSMIHEAP * pHeap, PVBOX
 
 void VBoxSHGSMICommandSubmitAsynchEvent (struct _HGSMIHEAP * pHeap, PVOID pvBuff, RTSEMEVENT hEventSem)
 {
-    PVBOXSHGSMIHEADER pHeader = vboxSHGSMIBufferHeader (pvBuff);
+    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
     pHeader->u64Info1 = (uint64_t)vboxSHGSMICompletionSetEvent;
     pHeader->u64Info2 = (uint64_t)hEventSem;
     pHeader->fFlags   = VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
@@ -124,7 +113,7 @@ int VBoxSHGSMICommandSubmitSynch (struct _HGSMIHEAP * pHeap, PVOID pCmd)
 void VBoxSHGSMICommandSubmitAsynch (struct _HGSMIHEAP * pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION pfnCompletion, PVOID pvCompletion, uint32_t fFlags)
 {
     fFlags &= ~VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ;
-    PVBOXSHGSMIHEADER pHeader = vboxSHGSMIBufferHeader (pvBuff);
+    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
     pHeader->u64Info1 = (uint64_t)pfnCompletion;
     pHeader->u64Info2 = (uint64_t)pvCompletion;
     pHeader->fFlags = fFlags;
@@ -135,9 +124,10 @@ void VBoxSHGSMICommandSubmitAsynch (struct _HGSMIHEAP * pHeap, PVOID pvBuff, PFN
 void VBoxSHGSMICommandSubmitAsynchIrq (struct _HGSMIHEAP * pHeap, PVOID pvBuff, PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCompletion, PVOID pvCompletion, uint32_t fFlags)
 {
     fFlags |= VBOXSHGSMI_FLAG_GH_ASYNCH_CALLBACK_IRQ | VBOXSHGSMI_FLAG_GH_ASYNCH_IRQ;
-    PVBOXSHGSMIHEADER pHeader = vboxSHGSMIBufferHeader (pvBuff);
+    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader (pvBuff);
     pHeader->u64Info1 = (uint64_t)pfnCompletion;
     pHeader->u64Info2 = (uint64_t)pvCompletion;
+    /* we must assign rather than or because flags field does not get zeroed on command creation */
     pHeader->fFlags = fFlags;
 
     vboxSHGSMICommandSubmitAsynch (pHeap, pHeader);
@@ -149,13 +139,16 @@ void* VBoxSHGSMICommandAlloc (struct _HGSMIHEAP * pHeap, HGSMISIZE cbData, uint8
     PVBOXSHGSMIHEADER pHeader = (PVBOXSHGSMIHEADER)HGSMIHeapAlloc (pHeap, cbData + sizeof (VBOXSHGSMIHEADER), u8Channel, u16ChannelInfo);
     Assert(pHeader);
     if (pHeader)
-        return vboxSHGSMIBufferData(pHeader);
+    {
+        pHeader->cRefs = 1;
+        return VBoxSHGSMIBufferData(pHeader);
+    }
     return NULL;
 }
 
 void VBoxSHGSMICommandFree (struct _HGSMIHEAP * pHeap, void *pvBuffer)
 {
-    PVBOXSHGSMIHEADER pHeader = vboxSHGSMIBufferHeader(pvBuffer);
+    PVBOXSHGSMIHEADER pHeader = VBoxSHGSMIBufferHeader(pvBuffer);
     vboxSHGSMICommandRelease (pHeap, pHeader);
 }
 
@@ -203,7 +196,7 @@ int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, HGSMIOFFSET o
                 PFNVBOXSHGSMICMDCOMPLETION_IRQ pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION_IRQ)pCur->u64Info1;
                 void *pvCallback = (void*)pCur->u64Info2;
 
-                pfnCallback(pHeap, vboxSHGSMIBufferData(pCur), pvCallback, &pfnCompletion, &pvCompletion);
+                pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback, &pfnCompletion, &pvCompletion);
                 if (pfnCompletion)
                 {
                     pCur->u64Info1 = (uint64_t)pfnCompletion;
@@ -221,7 +214,7 @@ int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, HGSMIOFFSET o
             {
                 PFNVBOXSHGSMICMDCOMPLETION pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION)pCur->u64Info1;
                 void *pvCallback = (void*)pCur->u64Info2;
-                pfnCallback(pHeap, vboxSHGSMIBufferData(pCur), pvCallback);
+                pfnCallback(pHeap, VBoxSHGSMIBufferData(pCur), pvCallback);
             }
             else
                 vboxSHGSMIListPut(pPostProcessList, VBOXSHGSMI_CMD2LISTENTRY(pCur), VBOXSHGSMI_CMD2LISTENTRY(pCur));

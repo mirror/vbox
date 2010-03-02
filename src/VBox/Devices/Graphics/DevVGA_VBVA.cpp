@@ -34,13 +34,6 @@
 #include <iprt/semaphore.h>
 #endif
 
-/** The default amount of VRAM. */
-#define VGA_VRAM_DEFAULT    (_4M)
-/** The maximum amount of VRAM. */
-#define VGA_VRAM_MAX        (128 * _1M)
-/** The minimum amount of VRAM. */
-#define VGA_VRAM_MIN        (_1M)
-
 #include "DevVGA.h"
 
 /* A very detailed logging. */
@@ -1303,9 +1296,19 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
     {
 #ifdef VBOXVDMA
         case VBVA_VDMA_CMD:
-        case VBVA_VDMA_CTL:
+        {
+            PVBOXVDMACBUF_DR pCmd = (PVBOXVDMACBUF_DR)VBoxSHGSMIBufferData ((PVBOXSHGSMIHEADER)pvBuffer);
+            vboxVDMACommand(pVGAState, pVGAState->pVdma, pCmd);
             rc = VINF_SUCCESS;
             break;
+        }
+        case VBVA_VDMA_CTL:
+        {
+            PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMIBufferData ((PVBOXSHGSMIHEADER)pvBuffer);
+            vboxVDMAControl(pVGAState, pVGAState->pVdma, pCmd);
+            rc = VINF_SUCCESS;
+            break;
+        }
 #endif
         case VBVA_QUERY_CONF32:
         {

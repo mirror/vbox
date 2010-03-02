@@ -347,6 +347,9 @@ ifdef VBOX_WITH_HGSMI
 endif
 ifdef VBOXVDMA
  DevicesR3_DEFS        += VBOXVDMA
+ DevicesR3_SOURCES      += \
+	Graphics/HGSMI/SHGSMIHost.cpp \
+    Graphics/DevVGA_VDMA.cpp
 endif
 
 ifdef VBOX_WITH_VIDEOHWACCEL

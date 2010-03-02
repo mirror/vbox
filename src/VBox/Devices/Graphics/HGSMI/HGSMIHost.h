@@ -135,11 +135,8 @@ int HGSMIHostLoadStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM, uint32_t u32Ve
 
 int HGSMIHostSaveStateExec (PHGSMIINSTANCE pIns, PSSMHANDLE pSSM);
 
-#if 0
-/* Submit this buffer to the guest asynchronously. */
-int HGSMIHostBufferProcessAsync (PHGSMIINSTANCE pIns,
-                                 void *pvMem,
-                                 PFNHGSMIBUFFERPROCESSED);
+#ifdef VBOXVDMA
+int HGSMICompleteGuestCommand(PHGSMIINSTANCE pIns, void *pvMem, bool bDoIrq);
 #endif
 
 #endif /* !___HGSMIHost_h*/

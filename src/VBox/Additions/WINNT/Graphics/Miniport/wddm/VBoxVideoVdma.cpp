@@ -29,14 +29,14 @@
  */
 
 
-static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, uint32_t fFlags)
+static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, VBOXVDMA_CTL_TYPE enmCtl)
 {
     int rc = VINF_SUCCESS;
 
     PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMICommandAlloc (&pDevExt->u.primary.hgsmiAdapterHeap, sizeof (VBOXVDMA_CTL), HGSMI_CH_VBVA, VBVA_VDMA_CTL);
     if (pCmd)
     {
-        pCmd->u32Flags = fFlags;
+        pCmd->enmCtl = enmCtl;
         pCmd->u32Offset = pInfo->CmdHeap.area.offBase;
         pCmd->i32Result = VERR_NOT_SUPPORTED;
 
@@ -50,7 +50,7 @@ static int vboxVdmaInformHost (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, u
     else
     {
         drprintf((__FUNCTION__": HGSMIHeapAlloc failed\n"));
-        rc = VERR_GENERAL_FAILURE;
+        rc = VERR_OUT_OF_RESOURCES;
     }
 
     return rc;
@@ -114,7 +114,7 @@ int vboxVdmaDisable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     /* ensure nothing else is submitted */
     pInfo->fEnabled        = FALSE;
 
-    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_DISABLE);
+    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_DISABLE);
     AssertRC(rc);
     return rc;
 }
@@ -127,7 +127,7 @@ int vboxVdmaEnable (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     if (pInfo->fEnabled)
         return VINF_ALREADY_INITIALIZED;
 
-    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_ENABLE);
+    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_ENABLE);
     Assert(RT_SUCCESS(rc));
     if (RT_SUCCESS(rc))
         pInfo->fEnabled        = TRUE;
@@ -143,7 +143,7 @@ int vboxVdmaFlush (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo)
     if (!pInfo->fEnabled)
         return VINF_ALREADY_INITIALIZED;
 
-    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_FLUSH);
+    int rc = vboxVdmaInformHost (pDevExt, pInfo, VBOXVDMA_CTL_TYPE_FLUSH);
     Assert(RT_SUCCESS(rc));
 
     return rc;

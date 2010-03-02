@@ -48,12 +48,16 @@
 /*******************************************************************************
 *   Defined Constants And Macros                                               *
 *******************************************************************************/
+#ifndef VBOX
 /** The default amount of VRAM. */
 #define VGA_VRAM_DEFAULT    (_4M)
 /** The maximum amount of VRAM. */
 #define VGA_VRAM_MAX        (128 * _1M)
 /** The minimum amount of VRAM. */
 #define VGA_VRAM_MIN        (_1M)
+#else
+/* moved to DevVGA.h */
+#endif
 
 /** The size of the VGA GC mapping.
  * This is supposed to be all the VGA memory accessible to the guest.
