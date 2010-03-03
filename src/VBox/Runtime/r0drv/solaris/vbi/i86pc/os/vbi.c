@@ -313,7 +313,7 @@ static ddi_dma_attr_t base_attr = {
 };
 
 static void *
-vbi_internal_alloc(uint64_t *phys, size_t size, int contig)
+vbi_internal_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
 {
 	ddi_dma_attr_t attr;
 	pfn_t pfn;
@@ -322,12 +322,13 @@ vbi_internal_alloc(uint64_t *phys, size_t size, int contig)
 
 	if ((size & PAGEOFFSET) != 0)
 		return (NULL);
-	npages = size >> PAGESHIFT;
+	npages = (size + PAGESIZE - 1) >> PAGESHIFT;
 	if (npages == 0)
 		return (NULL);
 
 	attr = base_attr;
 	attr.dma_attr_addr_hi = *phys;
+    attr.dma_attr_align   = alignment;
 	if (!contig)
 		attr.dma_attr_sgllen = npages;
 	ptr = contig_alloc(size, &attr, PAGESIZE, 1);
@@ -347,12 +348,14 @@ vbi_internal_alloc(uint64_t *phys, size_t size, int contig)
 void *
 vbi_contig_alloc(uint64_t *phys, size_t size)
 {
-	return (vbi_internal_alloc(phys, size, 1));
+    /* Obsolete */
+	return (vbi_internal_alloc(phys, size, PAGESIZE /* alignment */, 1 /* contiguous */));
 }
 
 void
 vbi_contig_free(void *va, size_t size)
 {
+    /* Obsolete */
 	p_contig_free(va, size);
 }
 
@@ -745,7 +748,7 @@ segvbi_create(struct seg *seg, void *args)
 	 * now load locked mappings to the pages
 	 */
 	va = seg->s_base;
-	pgcnt = seg->s_size >> PAGESHIFT;
+	pgcnt = (seg->s_size + PAGESIZE - 1) >> PAGESHIFT;
 	for (p = 0; p < pgcnt; ++p, va += PAGESIZE) {
 		hat_devload(as->a_hat, va,
 		    PAGESIZE, a->palist[p] >> PAGESHIFT,
@@ -864,6 +867,7 @@ segvbi_getprot(struct seg *seg, caddr_t addr, size_t len, uint_t *protv)
 static u_offset_t
 segvbi_getoffset(struct seg *seg, caddr_t addr)
 {
+    cmn_err(CE_NOTE, "segvbi_getoffset\n");
 	return ((uintptr_t)addr - (uintptr_t)seg->s_base);
 }
 
@@ -967,7 +971,9 @@ vbi_user_map(caddr_t *va, uint_t prot, uint64_t *palist, size_t len)
 	as_rangelock(as);
 	map_addr(va, len, 0, 0, MAP_SHARED);
 	if (*va != NULL)
+	{
 		error = as_map(as, *va, len, segvbi_create, &args);
+	}
 	else
 		error = ENOMEM;
 	if (error)
@@ -1202,12 +1208,12 @@ vbi_poke_cpu(int c)
  * they should go after this point in the file and the revision level
  * increased. Also change vbi_modlmisc at the top of the file.
  */
-uint_t vbi_revision_level = 6;
+uint_t vbi_revision_level = 7;
 
 void *
 vbi_lowmem_alloc(uint64_t phys, size_t size)
 {
-	return (vbi_internal_alloc(&phys, size, 0));
+	return (vbi_internal_alloc(&phys, size, PAGESIZE /* alignment */, 0 /* non-contiguous */));
 }
 
 void
@@ -1228,3 +1234,18 @@ vbi_is_preempt_pending(void)
 	return crr != 0 || krr != 0;
 }
 
+/*
+ * This is revision 7 of the interface.
+ */
+
+void *
+vbi_phys_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
+{
+	return (vbi_internal_alloc(phys, size, alignment, contig));
+}
+
+void
+vbi_phys_free(void *va, size_t size)
+{
+	p_contig_free(va, size);
+}

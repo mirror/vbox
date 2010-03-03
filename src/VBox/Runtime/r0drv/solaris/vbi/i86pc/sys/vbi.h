@@ -335,6 +335,21 @@ extern int vbi_is_preempt_pending(void);
 
 /* end of interfaces defined for version 6 */
 
+/* begin interfaces defined for version 7 */
+/*
+ * Allocate and free physically limited, aligned as specified continuous or non-continuous memory. 
+ *
+ * return value is a) NULL if memory below "phys" not available or
+ * b) virtual address of memory in kernel heap
+ *
+ * phys on input is set to the upper boundary of acceptable memory
+ *
+ * size is the amount to allocate and must be a multiple of PAGESIZE
+ */
+extern void *vbi_phys_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig);
+extern void vbi_phys_free(void *va, size_t size);
+/* end of interfaces defined for version 7 */
+
 #ifdef	__cplusplus
 }
 #endif
