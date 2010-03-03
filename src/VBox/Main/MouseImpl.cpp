@@ -119,7 +119,11 @@ void Mouse::uninit()
         mpDrv->pMouse = NULL;
     mpDrv = NULL;
 
+#ifdef VBOXBFE_WITHOUT_COM
+    mParent = NULL;
+#else
     unconst(mParent).setNull();
+#endif
 }
 
 
@@ -427,16 +431,18 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
     uint32_t mouseXAbs;
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
     ComAssertComRCRet(rc, rc);
-    /// TODO: Remove those strings?
-    //if (mouseXAbs > 0xffff)
-    //    mouseXAbs = mLastAbsX;
+    /**
+     * @todo multi-monitor Windows guests expect this to be unbounded.
+     * Fix for the rest.
+     */
+    /* if (mouseXAbs > 0xffff)
+        mouseXAbs = mLastAbsX; */
 
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
     ComAssertComRCRet(rc, rc);
-    /// TODO: Remove those strings?
-    //if (mouseYAbs > 0xffff)
-    //    mouseYAbs = mLastAbsY;
+    /* if (mouseYAbs > 0xffff)
+        mouseYAbs = mLastAbsY; */
 
     uint32_t fButtons = mouseButtonsToPDM(buttonState);
 

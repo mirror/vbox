@@ -24,6 +24,12 @@ include $(KBUILD_PATH)/subheader.kmk
 if !defined(VBOX_WITH_HARDENING) || "$(KBUILD_TARGET)" != "darwin"  # No hardened VBoxBFE on darwin (.m).
 
 #
+# Files from Main needed for building VBoxBFE
+#
+VBOXBFE_MAIN_CPP = MouseImpl.cpp
+VBOXBFE_MAIN_H   = MouseImpl.h ConsoleEvents.h
+
+#
 # Targets.
 #
 ifdef VBOX_WITH_HARDENING
@@ -69,7 +75,7 @@ VBoxBFE_SOURCES = \
 	VBoxBFE.cpp \
 	VMMDevInterface.cpp \
 	DisplayImpl.cpp \
-	MouseImpl.cpp \
+	$(PATH_VBoxBFE)/MouseImpl.cpp \
 	KeyboardImpl.cpp \
 	StatusImpl.cpp \
 	MachineDebuggerImpl.cpp \
@@ -116,7 +122,8 @@ endif
 
 VBoxBFE_INCS = \
 	$(PATH_VBoxBFE) \
-	$(VBOX_PATH_SDK)/include
+	$(VBOX_PATH_SDK)/include \
+	$(PATH_ROOT)/src/VBox/Frontends/VBoxBFE
 ifneq ($(filter-out win os2 l4 darwin,$(KBUILD_TARGET)),) # X11
 VBoxBFE_INCS += \
 	$(VBOX_XCURSOR_INCS)
@@ -164,6 +171,20 @@ VBoxBFE_SDLConsole.cpp_DEPS = $(PATH_VBoxBFE)/Ico64x01.h
 $$(PATH_VBoxBFE)/Ico64x01.h: $(PATH_ROOT)/src/VBox/Frontends/VBoxBFE/ico64x01.pnm $(VBOX_BIN2C) | $$(dir $$@)
 	$(call MSG_TOOL,bin2c,VBoxBFE,$<,$@)
 	$(QUIET)$(VBOX_BIN2C) Ico64x01 $< $@
+
+VBoxBFE_DEPS += $(addprefix $(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP) $(VBOXBFE_MAIN_H))
+
+# Pattern rules for copying needed files from Main
+$(addprefix $$(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_CPP)): \
+		$$(PATH_VBoxBFE)/% : $(PATH_ROOT)/src/VBox/Main/% | $$(dir $$@)
+	$(call MSG_INST_FILE,$<,$@)
+	$(QUIET)$(CP_EXT) $< $@
+
+$(addprefix $$(PATH_VBoxBFE)/,$(VBOXBFE_MAIN_H)): \
+		$$(PATH_VBoxBFE)/% : $(PATH_ROOT)/src/VBox/Main/include/% | $$(dir $$@)
+	$(call MSG_INST_FILE,$<,$@)
+	$(QUIET)$(CP_EXT) $< $@
+
 
 
 endif # !VBOX_WITH_HARDENING || !darwin

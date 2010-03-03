@@ -52,10 +52,13 @@ enum
 };
 
 class ATL_NO_VTABLE Mouse :
-    public VirtualBoxBase,
+    public VirtualBoxBase
+#ifndef VBOXBFE_WITHOUT_COM
+    ,
     public VirtualBoxSupportErrorInfoImpl<Mouse, IMouse>,
     public VirtualBoxSupportTranslation<Mouse>,
     VBOX_SCRIPTABLE_IMPL(IMouse)
+#endif
 {
 public:
 
@@ -133,7 +136,11 @@ private:
     
     void sendMouseCapsCallback(void);
 
+#ifdef VBOXBFE_WITHOUT_COM
+    Console *mParent;
+#else
     const ComObjPtr<Console, ComWeakRef> mParent;
+#endif
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv;
 
@@ -145,6 +152,21 @@ private:
     uint32_t mLastAbsY;
     uint32_t mLastButtons;
 };
+
+#ifdef VBOXBFE_WITHOUT_COM
+/** @todo make this a member of Console */
+extern Mouse *gMouse;
+
+/** @todo can we get these from the API somehow? */
+enum
+{
+    MouseButtonState_LeftButton = 1,
+    MouseButtonState_RightButton = 2,
+    MouseButtonState_MiddleButton = 4,
+    MouseButtonState_XButton1 = 8,
+    MouseButtonState_XButton2 = 16,
+};
+#endif
 
 #endif // !____H_MOUSEIMPL
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
