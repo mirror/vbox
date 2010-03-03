@@ -827,6 +827,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** BIOS update signature (microcode). */
 #define MSR_IA32_BIOS_SIGN_ID               0x8B
 
+/* Nehalem power control */
+#define MSR_IA32_PLATFORM_INFO              0xCE
+
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
 
@@ -860,6 +863,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Performance counter MSRs. (Intel only) */
 #define MSR_IA32_PERFEVTSEL0                0x186
 #define MSR_IA32_PERFEVTSEL1                0x187
+#define MSR_IA32_FLEX_RATIO                 0x194
 #define MSR_IA32_PERF_STATUS                0x198
 #define MSR_IA32_PERF_CTL                   0x199
 

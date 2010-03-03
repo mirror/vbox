@@ -2842,6 +2842,8 @@ static const char *emMSRtoString(uint32_t uMsr)
         return "Unsupported MSR_IA32_PERFEVTSEL1";
     case MSR_IA32_PERF_STATUS:
         return "MSR_IA32_PERF_STATUS";
+    case MSR_IA32_PLATFORM_INFO:
+        return "MSR_IA32_PLATFORM_INFO";
     case MSR_IA32_PERF_CTL:
         return "Unsupported MSR_IA32_PERF_CTL";
     case MSR_K7_PERFCTR0:
@@ -2951,7 +2953,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
         break;
 
     case MSR_IA32_PERF_STATUS:
-        val = CPUMGetGuestMsr(pVCpu, MSR_IA32_PERF_STATUS);
+    case MSR_IA32_PLATFORM_INFO:
+        val = CPUMGetGuestMsr(pVCpu, pRegFrame->ecx);
         break;
 
 #if 0 /*def IN_RING0 */

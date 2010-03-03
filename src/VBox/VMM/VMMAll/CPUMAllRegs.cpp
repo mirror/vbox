@@ -735,6 +735,7 @@ VMMDECL(void) CPUMSetGuestEFER(PVMCPU pVCpu, uint64_t val)
 VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
 {
     uint64_t u64 = 0;
+    uint8_t  u8Multiplier = 4;
 
     switch (idMsr)
     {
@@ -789,8 +790,13 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
         case MSR_IA32_PERF_STATUS:
             /** @todo: could really be not exactly correct, maybe use host's values */
             /* Keep consistent with helper_rdmsr() in REM */
-            u64 =     (1000ULL                /* TSC increment by tick */)
-                    | (((uint64_t)4ULL) << 40 /* CPU multiplier */       );
+            u64 =     (1000ULL                      /* TSC increment by tick */)
+                    | ((uint64_t)u8Multiplier << 40 /* CPU multiplier */       );
+            break;
+
+        case MSR_IA32_PLATFORM_INFO:
+            u64 =     ((u8Multiplier)<<8              /* Flex ratio max */)
+                    | ((uint64_t)u8Multiplier << 40   /* Flex ratio min */ );
             break;
 
         /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
