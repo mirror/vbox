@@ -111,7 +111,7 @@ typedef struct RTR0MEMOBJINTERNAL **PPRTR0MEMOBJINTERNAL;
  */
 typedef struct RTR0MEMOBJINTERNAL
 {
-    /** Magic number (RTR0MEM_MAGIC). */
+    /** Magic number (RTR0MEMOBJ_MAGIC). */
     uint32_t        u32Magic;
     /** The size of this structure. */
     uint32_t        cbSelf;
