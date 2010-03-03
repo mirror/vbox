@@ -168,7 +168,7 @@
 
 /* APIC destination mode */
 #define APIC_DESTMODE_FLAT      0xf
-#define APIC_DESTMODE_CLUSTER   1
+#define APIC_DESTMODE_CLUSTER   0x0
 
 #define APIC_TRIGGER_EDGE  0
 #define APIC_TRIGGER_LEVEL 1
@@ -1224,12 +1224,12 @@ static uint32_t apic_get_delivery_bitmask(APICDeviceInfo *dev, uint8_t dest, uin
         /* XXX: cluster mode */
         for(i = 0; i < dev->cCpus; i++)
         {
-            if (apic->dest_mode == 0xf)
+            if (apic->dest_mode == APIC_DESTMODE_FLAT)
             {
                 if (dest & apic->log_dest)
                     mask |= (1 << apic->id);
             }
-            else if (apic->dest_mode == 0x0)
+            else if (apic->dest_mode == APIC_DESTMODE_CLUSTER)
             {
                 if ((dest & 0xf0) == (apic->log_dest & 0xf0)
                     &&
