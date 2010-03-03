@@ -567,7 +567,8 @@ static int cpumR3CpuIdInit(PVM pVM)
     {
         /* If CPUID Fn0000_0001_EDX[HTT] = 1 then LogicalProcessorCount is the number of threads per CPU core times the number of CPU cores per processor */
         pCPUM->aGuestCpuIdStd[1].ebx |= (pVM->cCpus << 16);
-        pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
+        if (pVM->cCpus > 1)
+            pCPUM->aGuestCpuIdStd[1].edx |= X86_CPUID_FEATURE_EDX_HTT;  /* necessary for hyper-threading *or* multi-core CPUs */
     }
 #endif
 
