@@ -497,7 +497,7 @@ RT_EXPORT_SYMBOL(RTR0MemObjAllocCont);
  *                          nearest page boundrary.
  * @param   fAccess         The desired access, a combination of RTMEM_PROT_READ
  *                          and RTMEM_PROT_WRITE.
- * @param   R0Process       The process to lock pages in. NIL_R0PROCESS is an
+ * @param   R0Process       The process to lock pages in. NIL_RTR0PROCESS is an
  *                          alias for the current one.
  *
  * @remarks RTR0MemGetAddressR3() and RTR0MemGetAddress() will return therounded
@@ -723,7 +723,7 @@ RT_EXPORT_SYMBOL(RTR0MemObjReserveKernel);
  * @param   cb              The number of bytes to reserve. This is rounded up to nearest PAGE_SIZE.
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
- * @param   R0Process       The process to reserve the memory in. NIL_R0PROCESS is an alias for the current one.
+ * @param   R0Process       The process to reserve the memory in. NIL_RTR0PROCESS is an alias for the current one.
  */
 RTR0DECL(int) RTR0MemObjReserveUser(PRTR0MEMOBJ pMemObj, RTR3PTR R3PtrFixed, size_t cb, size_t uAlignment, RTR0PROCESS R0Process)
 {
@@ -858,7 +858,7 @@ RT_EXPORT_SYMBOL(RTR0MemObjMapKernelEx);
  * @param   uAlignment      The alignment of the reserved memory.
  *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M and _4M.
  * @param   fProt           Combination of RTMEM_PROT_* flags (except RTMEM_PROT_NONE).
- * @param   R0Process       The process to map the memory into. NIL_R0PROCESS is an alias for the current one.
+ * @param   R0Process       The process to map the memory into. NIL_RTR0PROCESS is an alias for the current one.
  */
 RTR0DECL(int) RTR0MemObjMapUser(PRTR0MEMOBJ pMemObj, RTR0MEMOBJ MemObjToMap, RTR3PTR R3PtrFixed, size_t uAlignment, unsigned fProt, RTR0PROCESS R0Process)
 {
