@@ -501,7 +501,7 @@ public:
         }
 #else
         /* Return the ID of the top-level console window. */
-        *puWinId = m_pEventHandler->winId();
+        *puWinId = (ULONG64)m_pEventHandler->winId();
 #endif
 
         return S_OK;
