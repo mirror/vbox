@@ -53,6 +53,16 @@ static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
     RTPrintf("\n");
 }
 
+static int tstVDMessage(void *pvUser, const char *pszFormat, ...)
+{
+    va_list va;
+
+    RTPrintf("tstVD: ");
+    va_start(va, pszFormat);
+    RTPrintfV(pszFormat, va);
+    va_end(va);
+    return VINF_SUCCESS;
+}
 
 static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
                              uint64_t cbSize, unsigned uFlags, bool fDelete)
@@ -80,6 +90,7 @@ static int tstVDCreateDelete(const char *pszBackend, const char *pszFilename,
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
@@ -137,6 +148,7 @@ static int tstVDOpenDelete(const char *pszBackend, const char *pszFilename)
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
@@ -524,6 +536,7 @@ static int tstVDOpenCreateWriteMerge(const char *pszBackend,
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
@@ -624,7 +637,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     uint64_t u64DiskSize  = 1000 * _1M;
     uint32_t u32SectorSize = 512;
-    PVDINTERFACE     pVDIfs;
+    PVDINTERFACE     pVDIfs = NULL;
     VDINTERFACE      VDIError;
     VDINTERFACEERROR VDIErrorCallbacks;
 
@@ -647,6 +660,7 @@ static int tstVDCreateWriteOpenRead(const char *pszBackend,
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
@@ -721,6 +735,7 @@ static int tstVmdkRename(const char *src, const char *dst)
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
@@ -770,6 +785,7 @@ static int tstVmdkCreateRenameOpen(const char *src, const char *dst,
     VDIErrorCallbacks.cbSize = sizeof(VDINTERFACEERROR);
     VDIErrorCallbacks.enmInterface = VDINTERFACETYPE_ERROR;
     VDIErrorCallbacks.pfnError = tstVDError;
+    VDIErrorCallbacks.pfnMessage = tstVDMessage;
 
     rc = VDInterfaceAdd(&VDIError, "tstVD_Error", VDINTERFACETYPE_ERROR, &VDIErrorCallbacks,
                         NULL, &pVDIfs);
