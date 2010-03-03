@@ -964,7 +964,7 @@ void UISession::saveSessionSettings()
     m_pMenuBar = 0;
 }
 
-qulonglong UISession::winId() const
+WId UISession::winId() const
 {
     return uimachine()->machineLogic()->mainMachineWindow()->machineWindow()->winId();
 }

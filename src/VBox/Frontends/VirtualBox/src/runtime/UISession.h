@@ -174,7 +174,7 @@ private:
     void saveSessionSettings();
 
     /* Common helpers: */
-    qulonglong winId() const;
+    WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
 
     /* Private variables: */
