@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -147,12 +147,6 @@ RWLockHandle *VirtualBoxBase::lockHandle() const
  * until the AutoInitSpan destructor signals that it has finished
  * initialization.
  *
- * Also, addCaller() will block if the object is probing uninitialization on
- * another thread with AutoMayUninitSpan (i.e. the object state is MayUninit).
- * And again, the block will last until the AutoMayUninitSpan destructor signals
- * that it has finished probing and the object is either ready again or will
- * uninitialize shortly (so that addCaller() will fail).
- *
  * When this method returns a failure, the caller must not use the object
  * and should return the failed result code to its own caller.
  *
@@ -184,31 +178,25 @@ HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
         rc = S_OK;
     }
     else
-    if (mState == InInit || mState == MayUninit || mState == InUninit)
+    if (mState == InInit || mState == InUninit)
     {
         if (mStateChangeThread == RTThreadSelf())
         {
             /* Called from the same thread that is doing AutoInitSpan or
-             * AutoUninitSpan or AutoMayUninitSpan, just succeed */
+             * AutoUninitSpan, just succeed */
             rc = S_OK;
         }
-        else if (mState == InInit || mState == MayUninit)
+        else if (mState == InInit)
         {
-            /* One of the two:
+            /* addCaller() is called by a "child" thread while the "parent"
+             * thread is still doing AutoInitSpan/AutoReinitSpan, so wait for
+             * the state to become either Ready/Limited or InitFailed (in
+             * case of init failure).
              *
-             * 1) addCaller() is called by a "child" thread while the "parent"
-             *    thread is still doing AutoInitSpan/AutoReinitSpan, so wait for
-             *    the state to become either Ready/Limited or InitFailed (in
-             *    case of init failure).
-             *
-             * 2) addCaller() is called while another thread is in
-             *    AutoMayUninitSpan, so wait for the state to become either
-             *    Ready or WillUninit.
-             *
-             * Note that in either case we increase the number of callers anyway
-             * -- to prevent AutoUninitSpan from early completion if we are
-             * still not scheduled to pick up the posted semaphore when uninit()
-             * is called.
+             * Note that we increase the number of callers anyway -- to
+             * prevent AutoUninitSpan from early completion if we are
+             * still not scheduled to pick up the posted semaphore when
+             * uninit() is called.
              */
             ++ mCallers;
 
@@ -221,10 +209,7 @@ HRESULT VirtualBoxBase::addCaller(State *aState /* = NULL */,
 
             ++ mInitUninitWaiters;
 
-            LogFlowThisFunc((mState == InInit ?
-                              "Waiting for AutoInitSpan/AutoReinitSpan to "
-                              "finish...\n" :
-                              "Waiting for AutoMayUninitSpan to finish...\n"));
+            LogFlowThisFunc(("Waiting for AutoInitSpan/AutoReinitSpan to finish...\n"));
 
             stateLock.leave();
             RTSemEventMultiWait (mInitUninitSem, RT_INDEFINITE_WAIT);
@@ -277,19 +262,18 @@ void VirtualBoxBase::releaseCaller()
         return;
     }
 
-    if (mState == InInit || mState == MayUninit || mState == InUninit)
+    if (mState == InInit || mState == InUninit)
     {
         if (mStateChangeThread == RTThreadSelf())
         {
-            /* Called from the same thread that is doing AutoInitSpan,
-             * AutoMayUninitSpan or AutoUninitSpan: just succeed */
+            /* Called from the same thread that is doing AutoInitSpan or
+             * AutoUninitSpan: just succeed */
             return;
         }
 
-        if (mState == MayUninit || mState == InUninit)
+        if (mState == InUninit)
         {
-            /* the caller is being released after AutoUninitSpan or
-             * AutoMayUninitSpan has begun */
+            /* the caller is being released after AutoUninitSpan has begun */
             AssertMsgReturn(mCallers != 0, ("mCallers is ZERO!"), (void) 0);
             --mCallers;
 
@@ -554,114 +538,6 @@ AutoUninitSpan::~AutoUninitSpan()
     Assert(mObj->mState == VirtualBoxBase::InUninit);
 
     mObj->setState(VirtualBoxBase::NotReady);
-}
-
-// AutoMayUninitSpan methods
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- * Creates a smart initialization span object that places the object to
- * MayUninit state.
- *
- * Please see the AutoMayUninitSpan class description for more info.
- *
- * @param aObj      |this| pointer of the managed VirtualBoxBase object whose
- *                  uninit() method to be probably called.
- */
-AutoMayUninitSpan::AutoMayUninitSpan(VirtualBoxBase *aObj)
-    : mObj(aObj),
-      mRC(E_FAIL),
-      mAlreadyInProgress(false),
-      mAcceptUninit (false)
-{
-    Assert(aObj);
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    AssertReturnVoid(    mObj->mState != VirtualBoxBase::InInit
-                      && mObj->mState != VirtualBoxBase::InUninit);
-
-    switch (mObj->mState)
-    {
-        case VirtualBoxBase::Ready:
-            break;
-        case VirtualBoxBase::MayUninit:
-            /* Nothing to be done if already in MayUninit. */
-            mAlreadyInProgress = true;
-            mRC = S_OK;
-            return;
-        default:
-            /* Abuse mObj->addCaller() to get the extended error info possibly
-             * set by reimplementations of addCaller() and return it to the
-             * caller. Note that this abuse is supposed to be safe because we
-             * should've filtered out all states where addCaller() would do
-             * something else but set error info. */
-            mRC = mObj->addCaller();
-            Assert(FAILED(mRC));
-            return;
-    }
-
-    /* go to MayUninit to cause new callers to wait until we finish */
-    mObj->setState(VirtualBoxBase::MayUninit);
-    mRC = S_OK;
-
-    /* wait for already existing callers to drop to zero */
-    if (mObj->mCallers > 0)
-    {
-        /* lazy creation */
-        Assert(mObj->mZeroCallersSem == NIL_RTSEMEVENT);
-        RTSemEventCreate(&mObj->mZeroCallersSem);
-
-        /* wait until remaining callers release the object */
-        LogFlowFunc(("{%p}: Waiting for callers (%d) to drop to zero...\n",
-                     mObj, mObj->mCallers));
-
-        stateLock.leave();
-        RTSemEventWait(mObj->mZeroCallersSem, RT_INDEFINITE_WAIT);
-    }
-}
-
-/**
- * Places the managed VirtualBoxBase object back to Ready state if
- * #acceptUninit() was not called, or places it to WillUninit state and calls
- * the object's uninit() method.
- *
- * Please see the AutoMayUninitSpan class description for more info.
- */
-AutoMayUninitSpan::~AutoMayUninitSpan()
-{
-    /* if we did nothing in the constructor, do nothing here */
-    if (mAlreadyInProgress || FAILED(mRC))
-        return;
-
-    AutoWriteLock stateLock(mObj->mStateLock COMMA_LOCKVAL_SRC_POS);
-
-    Assert(mObj->mState == VirtualBoxBase::MayUninit);
-
-    if (mObj->mCallers > 0)
-    {
-        Assert(mObj->mInitUninitWaiters > 0);
-
-        /* We have some pending addCaller() calls on other threads made after
-         * going to during MayUnit, signal that MayUnit is finished and they may
-         * go on. */
-        RTSemEventMultiSignal(mObj->mInitUninitSem);
-    }
-
-    if (!mAcceptUninit)
-    {
-        mObj->setState(VirtualBoxBase::Ready);
-    }
-    else
-    {
-        mObj->setState(VirtualBoxBase::WillUninit);
-        /* leave the lock to prevent nesting when uninit() is called */
-        stateLock.leave();
-        /* call uninit() to let the object uninit itself */
-        mObj->uninit();
-        /* Note: the object may no longer exist here (for example, it can call
-         * the destructor in uninit()) */
-    }
 }
 
 ////////////////////////////////////////////////////////////////////////////////

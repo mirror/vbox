@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -481,11 +481,11 @@ enum VBoxClsID
  *              |              ^                              |         |
  *              v              |                              v         |
  *  [*] ---> NotReady ----> (InInit) -----> Ready -----> (InUninit) ----+
- *                     ^       |      ^       |               ^
- *                     |       v      |       v               |
- *                     |    Limited   |  (MayUninit) --> (WillUninit)
- *                     |       |      |       |
- *                     +-------+      +-------+
+ *                     ^       |
+ *                     |       v
+ *                     |    Limited
+ *                     |       |
+ *                     +-------+
  *
  * The object is fully operational only when its state is Ready. The Limited
  * state means that only some vital part of the object is operational, and it
@@ -503,12 +503,8 @@ enum VBoxClsID
  * Limited->InInit->InitFailed transition is done by the AutoReinitSpan smart
  * class.
  *
- * The Ready->InUninit->NotReady, InitFailed->InUninit->NotReady and
- * WillUninit->InUninit->NotReady transitions are done by the AutoUninitSpan
- * smart class.
- *
- * The Ready->MayUninit->Ready and Ready->MayUninit->WillUninit transitions are
- * done by the AutoMayUninitSpan smart class.
+ * The Ready->InUninit->NotReady and InitFailed->InUninit->NotReady
+ * transitions are done by the AutoUninitSpan smart class.
  *
  * In order to maintain the primary state integrity and declared functionality
  * all subclasses must:
@@ -528,8 +524,7 @@ class ATL_NO_VTABLE VirtualBoxBase
       public CComObjectRootEx<CComMultiThreadModel>
 {
 public:
-    enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited,
-                 MayUninit, WillUninit };
+    enum State { NotReady, Ready, InInit, InUninit, InitFailed, Limited };
 
     VirtualBoxBase();
     virtual ~VirtualBoxBase();
@@ -629,7 +624,6 @@ private:
     friend class AutoInitSpan;
     friend class AutoReinitSpan;
     friend class AutoUninitSpan;
-    friend class AutoMayUninitSpan;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
