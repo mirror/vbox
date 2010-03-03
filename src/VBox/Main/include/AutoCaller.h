@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -384,8 +384,8 @@ private:
 };
 
 /**
- * Smart class to enclose the state transition Ready->InUnnit->NotReady,
- * InitFailed->InUnnit->NotReady or WillUninit->InUnnit->NotReady.
+ * Smart class to enclose the state transition Ready->InUninit->NotReady,
+ * InitFailed->InUninit->NotReady.
  *
  * The purpose of this span is to protect object uninitialization.
  *
@@ -443,93 +443,6 @@ private:
     VirtualBoxBase *mObj;
     bool mInitFailed : 1;
     bool mUninitDone : 1;
-};
-
-/**
- * Smart class to enclose the state transition Ready->MayUninit->NotReady or
- * Ready->MayUninit->WillUninit.
- *
- * The purpose of this span is to safely check if unintialization is
- * possible at the given moment and seamlessly perform it if so.
- *
- * Instances must be created as a stack-based variable taking |this| pointer
- * as the argument at the beginning of methods of VirtualBoxBase
- * subclasses that want to uninitialize the object if a necessary set of
- * criteria is met and leave it Ready otherwise.
- *
- * When this variable is created it automatically places the object to the
- * MayUninit state if it is Ready, does nothing but returns |true| in
- * response to #alreadyInProgress() if it is already in MayUninit, or
- * returns a failure in response to #rc() in any other case. The example
- * below shows how the user must react in latter two cases.
- *
- * When this variable goes out of scope (i.e. gets destroyed), it places the
- * object back to Ready state unless #acceptUninit() is called in which case
- * the object is placed to WillUninit state and uninit() is immediately
- * called after that.
- *
- * A typical usage pattern is:
- * <code>
- * void Component::uninit()
- * {
- *     AutoMayUninitSpan mayUninitSpan (this);
- *     if (FAILED(mayUninitSpan.rc())) return mayUninitSpan.rc();
- *     if (mayUninitSpan.alreadyInProgress())
- *          return S_OK;
- *     ...
- *     if (FAILED(rc))
- *         return rc; // will go back to Ready
- *     ...
- *     if (SUCCEEDED(rc))
- *         mayUninitSpan.acceptUninit(); // will call uninit()
- *     return rc;
- * }
- * </code>
- *
- * @note The constructor of this class blocks the current thread execution
- *       until the number of callers added to the object using #addCaller()
- *       or AutoCaller drops to zero. For this reason, it is forbidden to
- *       create instances of this class (or call uninit()) within the
- *       AutoCaller or #addCaller() scope because it is a guaranteed
- *       deadlock.
- */
-class AutoMayUninitSpan
-{
-public:
-
-    AutoMayUninitSpan(VirtualBoxBase *aObj);
-    ~AutoMayUninitSpan();
-
-    /**
-     * Returns a failure if the AutoMayUninitSpan variable was constructed
-     * at an improper time. If there is a failure, do nothing but return
-     * it to the caller.
-     */
-    HRESULT rc() { return mRC; }
-
-    /**
-     * Returns |true| if AutoMayUninitSpan is already in progress on some
-     * other thread. If it's the case, do nothing but return S_OK to
-     * the caller.
-     */
-    bool alreadyInProgress() { return mAlreadyInProgress; }
-
-    /*
-     * Accepts uninitialization and causes the destructor to go to
-     * WillUninit state and call uninit() afterwards.
-     */
-    void acceptUninit() { mAcceptUninit = true; }
-
-private:
-
-    DECLARE_CLS_COPY_CTOR_ASSIGN_NOOP(AutoMayUninitSpan)
-    DECLARE_CLS_NEW_DELETE_NOOP(AutoMayUninitSpan)
-
-    VirtualBoxBase *mObj;
-
-    HRESULT mRC;
-    bool mAlreadyInProgress : 1;
-    bool mAcceptUninit : 1;
 };
 
 #endif // !____H_AUTOCALLER

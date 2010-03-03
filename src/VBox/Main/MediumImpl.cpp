@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -2022,12 +2022,6 @@ STDMETHODIMP Medium::UnlockWrite(MediumState_T *aState)
 
 STDMETHODIMP Medium::Close()
 {
-    AutoMayUninitSpan mayUninitSpan(this);
-    if (FAILED(mayUninitSpan.rc())) return mayUninitSpan.rc();
-
-    if (mayUninitSpan.alreadyInProgress())
-        return S_OK;
-
     // we're accessing parent/child and backrefs, so lock the tree first, then ourselves
     AutoMultiWriteLock2 multilock(&m->pVirtualBox->getMediaTreeLockHandle(),
                                   this->lockHandle()
@@ -2066,6 +2060,10 @@ STDMETHODIMP Medium::Close()
         if (FAILED(rc)) return rc;
     }
 
+    /* Keep the locks held until after uninit, as otherwise the consistency
+     * of the medium tree cannot be guaranteed. */
+    uninit();
+
     multilock.release();
 
     if (fNeedsSaveSettings)
@@ -2073,9 +2071,6 @@ STDMETHODIMP Medium::Close()
         AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
         m->pVirtualBox->saveSettings();
     }
-
-    /* cause uninit() to happen on success */
-    mayUninitSpan.acceptUninit();
 
     return S_OK;
 }
@@ -4644,9 +4639,6 @@ HRESULT Medium::setFormat(CBSTR aFormat)
 }
 
 /**
- * @note Called from this object's AutoMayUninitSpan and from under mVirtualBox
- *       write lock.
- *
  * @note Also reused by Medium::Reset().
  *
  * @note Caller must hold the media tree write lock!
@@ -4669,9 +4661,6 @@ HRESULT Medium::canClose()
  *
  * @param pfNeedsSaveSettings Optional pointer to a bool that must have been initialized to false and that will be set to true
  *                by this function if the caller should invoke VirtualBox::saveSettings() because the global settings have changed.
- *
- * @note Called from within this object's AutoMayUninitSpan (or AutoCaller) and
- *       from under mVirtualBox write lock.
  *
  * @note Caller must have locked the media tree lock for writing!
  */
