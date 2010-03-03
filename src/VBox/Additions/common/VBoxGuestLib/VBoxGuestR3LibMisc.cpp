@@ -239,7 +239,19 @@ VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
  */
 VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pu32Size)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK, pu32Size, sizeof(*pu32Size));
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, pu32Size, sizeof(*pu32Size));
+}
+
+
+/**
+ *
+ */
+VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
+{
+    VBoxGuestChangeBalloonInfo Info;
+    Info.u64ChunkAddr = (uint64_t)pv;
+    Info.fInflate = fInflate;
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHANGE_BALLOON, &Info, sizeof(Info));
 }
 
 

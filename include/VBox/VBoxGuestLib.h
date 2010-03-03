@@ -467,6 +467,7 @@ VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq);
 /** @name Memory ballooning
  * @{ */
 VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pu32Size);
+VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS

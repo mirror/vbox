@@ -269,8 +269,28 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 #pragma pack()
 
 
-/** IOCTL to VBoxGuest to check memory ballooning. */
-#define VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK      VBOXGUEST_IOCTL_CODE_(7, 100)
+/** IOCTL to VBoxGuest to check memory ballooning.
+ * The guest kernel module / device driver will ask the host for the current size of
+ * the balloon and adjust the size or return with VERR_NO_PHYS_MEMORY. In the latter
+ * case the user-level application is responsible for allocating memory in userland
+ * and call the kernel module again doing VBOXGUEST_IOCTL_CHANGE_BALLOON */
+#define VBOXGUEST_IOCTL_CHECK_BALLOON               VBOXGUEST_IOCTL_CODE_(7, 100)
+
+
+/** IOCTL to VBoxGuest to supply or revoke one chunk for ballooning. The guest kernel
+ * module / device driver will lock down supplied memory or unlock reclaimed memory
+ * and then forward the physical addresses of the changed balloon chunk to the host. */
+#define VBOXGUEST_IOCTL_CHANGE_BALLOON              VBOXGUEST_IOCTL_CODE_(8, sizeof(VBoxGuestChangeBalloonInfo))
+
+/** Information about a memory chunk used to inflate or deflate the balloon. */
+typedef struct VBoxGuestChangeBalloonInfo
+{
+    /** Address of  */
+    uint64_t u64ChunkAddr;
+    /** true = inflate, false = deflate */
+    bool     fInflate;
+} VBoxGuestChangeBalloonInfo;
+AssertCompileSize(VBoxGuestChangeBalloonInfo, 12);
 
 
 /** IOCTL to VBoxGuest to perform backdoor logging.
