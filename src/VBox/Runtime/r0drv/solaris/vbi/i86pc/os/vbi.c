@@ -867,7 +867,6 @@ segvbi_getprot(struct seg *seg, caddr_t addr, size_t len, uint_t *protv)
 static u_offset_t
 segvbi_getoffset(struct seg *seg, caddr_t addr)
 {
-    cmn_err(CE_NOTE, "segvbi_getoffset\n");
 	return ((uintptr_t)addr - (uintptr_t)seg->s_base);
 }
 
