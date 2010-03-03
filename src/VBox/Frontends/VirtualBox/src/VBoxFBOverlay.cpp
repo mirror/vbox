@@ -102,7 +102,7 @@ void VBoxVHWADbgTimer::frame()
 //#define VBOXQGLOVERLAY_STATE_VERSION 1
 
 #ifdef DEBUG_misha
-# define VBOXQGL_STATE_DEBUG
+//# define VBOXQGL_STATE_DEBUG
 #endif
 
 #ifdef VBOXQGL_STATE_DEBUG

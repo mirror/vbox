@@ -84,7 +84,7 @@
 #endif /* !DEBUG_sunlover */
 
 #ifdef DEBUG_misha
-# define VBOXHGSMI_STATE_DEBUG
+//# define VBOXHGSMI_STATE_DEBUG
 #endif
 
 #ifdef VBOXHGSMI_STATE_DEBUG
