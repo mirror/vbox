@@ -862,6 +862,7 @@ struct E1kState_st
     PTMTIMERR3              pTIDTimerR3;  /**< Tranmsit Interrupt Delay Timer - R3. */
     PTMTIMERR3              pTADTimerR3;   /**< Tranmsit Absolute Delay Timer - R3. */
     PTMTIMERR3              pIntTimerR3;            /**< Late Interrupt Timer - R3. */
+    PTMTIMERR3              pLUTimerR3;               /**< Link Up(/Restore) Timer. */
 
     PPDMDEVINSR0            pDevInsR0;                   /**< Device instance - R0. */
     R0PTRTYPE(PPDMQUEUE)    pTxQueueR0;                   /**< Transmit queue - R0. */
@@ -871,6 +872,7 @@ struct E1kState_st
     PTMTIMERR0              pTIDTimerR0;  /**< Tranmsit Interrupt Delay Timer - R0. */
     PTMTIMERR0              pTADTimerR0;   /**< Tranmsit Absolute Delay Timer - R0. */
     PTMTIMERR0              pIntTimerR0;            /**< Late Interrupt Timer - R0. */
+    PTMTIMERR0              pLUTimerR0;          /**< Link Up(/Restore) Timer - R0. */
 
     PPDMDEVINSRC            pDevInsRC;                   /**< Device instance - RC. */
     RCPTRTYPE(PPDMQUEUE)    pTxQueueRC;                   /**< Transmit queue - RC. */
@@ -880,8 +882,12 @@ struct E1kState_st
     PTMTIMERRC              pTIDTimerRC;  /**< Tranmsit Interrupt Delay Timer - RC. */
     PTMTIMERRC              pTADTimerRC;   /**< Tranmsit Absolute Delay Timer - RC. */
     PTMTIMERRC              pIntTimerRC;            /**< Late Interrupt Timer - RC. */
+    PTMTIMERRC              pLUTimerRC;          /**< Link Up(/Restore) Timer - RC. */
 
-    PTMTIMERR3  pLUTimer;                             /**< Link Up(/Restore) Timer. */
+#if HC_ARCH_BITS != 32
+    uint32_t                u32Padding2;
+#endif
+
     PPDMTHREAD  pTxThread;                                    /**< Transmit thread. */
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
 #ifndef E1K_GLOBAL_MUTEX
@@ -2107,11 +2113,8 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
             && !(STATUS & STATUS_LU))
         {
             /* The driver indicates that we should bring up the link */
-            STATUS |= STATUS_LU;
-#ifdef E1K_LSC_ON_SLU
-            Phy::setLinkStatus(&pState->phy, true);
-            e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
-#endif /* E1K_LSC_ON_SLU */
+            /* Do so in 5 seconds. */
+            e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), 5000000);
         }
         if (value & CTRL_VME)
         {
@@ -4458,7 +4461,7 @@ static DECLCALLBACK(int) e1kSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWO
             Phy::setLinkStatus(&pState->phy, false);
             e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
             /* Restore the link back in 5 second. */
-            e1kArmTimer(pState, pState->pLUTimer, 5000000);
+            e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
         }
         else
         {
@@ -4733,7 +4736,7 @@ static DECLCALLBACK(int) e1kLoadDone(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         /* Restore the link back in five seconds. */
-        e1kArmTimer(pState, pState->pLUTimer, 5000000);
+        e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
     }
     e1kMutexRelease(pState);
     return VINF_SUCCESS;
@@ -4831,7 +4834,7 @@ static DECLCALLBACK(int) e1kAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t f
         Phy::setLinkStatus(&pState->phy, false);
         e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_LSC);
         /* Restore the link back in 5 second. */
-        e1kArmTimer(pState, pState->pLUTimer, 5000000);
+        e1kArmTimer(pState, pState->pLUTimerR3, 5000000);
     }
 
     PDMCritSectLeave(&pState->cs);
@@ -4892,6 +4895,7 @@ static DECLCALLBACK(void) e1kRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
 # endif /* E1K_NO_TAD */
 #endif /* E1K_USE_TX_TIMERS */
     pState->pIntTimerRC   = TMTimerRCPtr(pState->pIntTimerR3);
+    pState->pLUTimerRC    = TMTimerRCPtr(pState->pLUTimerR3);
 }
 
 /**
@@ -5248,9 +5252,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
     /* Create Link Up Timer */
     rc = PDMDevHlpTMTimerCreate(pDevIns, TMCLOCK_VIRTUAL, e1kLinkUpTimer, pState,
                                 TMTIMER_FLAGS_DEFAULT_CRIT_SECT, /** @todo check locking here. */
-                                "E1000 Link Up Timer", &pState->pLUTimer);
+                                "E1000 Link Up Timer", &pState->pLUTimerR3);
     if (RT_FAILURE(rc))
         return rc;
+    pState->pLUTimerR0 = TMTimerR0Ptr(pState->pLUTimerR3);
+    pState->pLUTimerRC = TMTimerRCPtr(pState->pLUTimerR3);
 
     /* Status driver */
     PPDMIBASE pBase;
