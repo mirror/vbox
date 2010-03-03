@@ -285,12 +285,14 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 /** Information about a memory chunk used to inflate or deflate the balloon. */
 typedef struct VBoxGuestChangeBalloonInfo
 {
-    /** Address of  */
+    /** Address of the chunk */
     uint64_t u64ChunkAddr;
     /** true = inflate, false = deflate */
     uint32_t fInflate;
+    /** alignment */
+    uint32_t u32Align;
 } VBoxGuestChangeBalloonInfo;
-AssertCompileSize(VBoxGuestChangeBalloonInfo, 12);
+AssertCompileSize(VBoxGuestChangeBalloonInfo, 16);
 
 
 /** IOCTL to VBoxGuest to perform backdoor logging.
