@@ -40,112 +40,7 @@
 #include <iprt/param.h>
 
 #include <VBox/VBoxHDD-Plugin.h>
-
-
-#define VBOXHDDDISK_SIGNATURE 0x6f0e2a7d
-
-/** Buffer size used for merging images. */
-#define VD_MERGE_BUFFER_SIZE    (16 * _1M)
-
-/**
- * VD async I/O interface storage descriptor.
- */
-typedef struct VDIASYNCIOSTORAGE
-{
-    /** File handle. */
-    RTFILE         File;
-    /** Completion callback. */
-    PFNVDCOMPLETED pfnCompleted;
-    /** Thread for async access. */
-    RTTHREAD       ThreadAsync;
-} VDIASYNCIOSTORAGE, *PVDIASYNCIOSTORAGE;
-
-/**
- * VBox HDD Container image descriptor.
- */
-typedef struct VDIMAGE
-{
-    /** Link to parent image descriptor, if any. */
-    struct VDIMAGE  *pPrev;
-    /** Link to child image descriptor, if any. */
-    struct VDIMAGE  *pNext;
-    /** Container base filename. (UTF-8) */
-    char            *pszFilename;
-    /** Data managed by the backend which keeps the actual info. */
-    void            *pvBackendData;
-    /** Cached sanitized image flags. */
-    unsigned        uImageFlags;
-    /** Image open flags (only those handled generically in this code and which
-     * the backends will never ever see). */
-    unsigned        uOpenFlags;
-
-    /** Function pointers for the various backend methods. */
-    PCVBOXHDDBACKEND    Backend;
-
-    /** Pointer to list of VD interfaces, per-image. */
-    PVDINTERFACE        pVDIfsImage;
-} VDIMAGE, *PVDIMAGE;
-
-/**
- * uModified bit flags.
- */
-#define VD_IMAGE_MODIFIED_FLAG                  RT_BIT(0)
-#define VD_IMAGE_MODIFIED_FIRST                 RT_BIT(1)
-#define VD_IMAGE_MODIFIED_DISABLE_UUID_UPDATE   RT_BIT(2)
-
-
-/**
- * VBox HDD Container main structure, private part.
- */
-struct VBOXHDD
-{
-    /** Structure signature (VBOXHDDDISK_SIGNATURE). */
-    uint32_t            u32Signature;
-
-    /** Number of opened images. */
-    unsigned            cImages;
-
-    /** Base image. */
-    PVDIMAGE            pBase;
-
-    /** Last opened image in the chain.
-     * The same as pBase if only one image is used. */
-    PVDIMAGE            pLast;
-
-    /** Flags representing the modification state. */
-    unsigned            uModified;
-
-    /** Cached size of this disk. */
-    uint64_t            cbSize;
-    /** Cached PCHS geometry for this disk. */
-    PDMMEDIAGEOMETRY    PCHSGeometry;
-    /** Cached LCHS geometry for this disk. */
-    PDMMEDIAGEOMETRY    LCHSGeometry;
-
-    /** Pointer to list of VD interfaces, per-disk. */
-    PVDINTERFACE        pVDIfsDisk;
-    /** Pointer to the common interface structure for error reporting. */
-    PVDINTERFACE        pInterfaceError;
-    /** Pointer to the error interface we use if available. */
-    PVDINTERFACEERROR   pInterfaceErrorCallbacks;
-
-    /** Fallback async interface. */
-    VDINTERFACE         VDIAsyncIO;
-    /** Fallback async I/O interface callback table. */
-    VDINTERFACEASYNCIO  VDIAsyncIOCallbacks;
-};
-
-
-/**
- * VBox parent read descriptor, used internally for compaction.
- */
-typedef struct VDPARENTSTATEDESC
-{
-    /** Pointer to disk descriptor. */
-    PVBOXHDD pDisk;
-    /** Pointer to image descriptor. */
-    PVDIMAGE pImage;
-} VDPARENTSTATEDESC, *PVDPARENTSTATEDESC;
+#include "VBoxHDDInternal.h"
 
 
 extern VBOXHDDBACKEND g_RawBackend;
@@ -282,7 +177,7 @@ static void vdRemoveImageFromList(PVBOXHDD pDisk, PVDIMAGE pImage)
 /**
  * internal: find image by index into the images list.
  */
-static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
+PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
 {
     PVDIMAGE pImage = pDisk->pBase;
     if (nImage == VD_LAST_IMAGE)
@@ -372,7 +267,7 @@ static void vdResetModifiedFlag(PVBOXHDD pDisk)
 /**
  * internal: mark the disk as modified.
  */
-static void vdSetModifiedFlag(PVBOXHDD pDisk)
+void vdSetModifiedFlag(PVBOXHDD pDisk)
 {
     pDisk->uModified |= VD_IMAGE_MODIFIED_FLAG;
     if (pDisk->uModified & VD_IMAGE_MODIFIED_FIRST)
@@ -869,6 +764,15 @@ int vdLogMessage(void *pvUser, const char *pszFormat, ...)
     return VINF_SUCCESS;
 }
 
+/**
+ * internal: send output to the log (unconditionally).
+ */
+void vdLogError(void *pvUser, int rc, RT_SRC_POS_DECL, const char *pszFormat, va_list va)
+{
+    NOREF(pvUser);
+    RTLogPrintf("Error occurred: %Rrc\n", rc);
+    RTLogPrintf(pszFormat, va);
+}
 
 /**
  * Initializes HDD backends.
@@ -1043,6 +947,17 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
             pDisk->pInterfaceError = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ERROR);
             if (pDisk->pInterfaceError)
                 pDisk->pInterfaceErrorCallbacks = VDGetInterfaceError(pDisk->pInterfaceError);
+            else
+            {
+                /* Provide our own interface */
+                pDisk->VDIErrorCallbacks.cbSize        = sizeof(VDINTERFACEERROR);
+                pDisk->VDIErrorCallbacks.enmInterface  = VDINTERFACETYPE_ERROR;
+                pDisk->VDIErrorCallbacks.pfnMessage    = vdLogMessage;
+                pDisk->VDIErrorCallbacks.pfnError      = vdLogError;
+                rc = VDInterfaceAdd(&pDisk->VDIError, "VD_Error", VDINTERFACETYPE_ERROR,
+                                    &pDisk->VDIErrorCallbacks, pDisk, &pDisk->pVDIfsDisk);
+                AssertRC(rc);
+            }
 
             /* Use the fallback async I/O interface if the caller doesn't provide one. */
             PVDINTERFACE pVDIfAsyncIO = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
@@ -3722,172 +3637,6 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
             pImage->Backend->pfnDump(pImage->pvBackendData);
         }
     } while (0);
-}
-
-/**
- * Query if asynchronous operations are supported for this disk.
- *
- * @returns VBox status code.
- * @returns VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
- * @param   pDisk           Pointer to the HDD container.
- * @param   nImage          Image number, counts from 0. 0 is always base image of container.
- * @param   pfAIOSupported  Where to store if async IO is supported.
- */
-VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, bool *pfAIOSupported)
-{
-    int rc = VINF_SUCCESS;
-
-    LogFlowFunc(("pDisk=%#p nImage=%u pfAIOSupported=%#p\n", pDisk, nImage, pfAIOSupported));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(VALID_PTR(pfAIOSupported),
-                           ("pfAIOSupported=%#p\n", pfAIOSupported),
-                           rc = VERR_INVALID_PARAMETER);
-
-        PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
-
-        if (pImage->Backend->uBackendCaps & VD_CAP_ASYNC)
-            *pfAIOSupported = pImage->Backend->pfnIsAsyncIOSupported(pImage->pvBackendData);
-        else
-            *pfAIOSupported = false;
-    } while (0);
-
-    LogFlowFunc(("returns %Rrc, fAIOSupported=%u\n", rc, *pfAIOSupported));
-    return rc;
-}
-
-/**
- * Start a asynchronous read request.
- *
- * @returns VBox status code.
- * @param   pDisk           Pointer to the HDD container.
- * @param   uOffset         The offset of the virtual disk to read from.
- * @param   cbRead          How many bytes to read.
- * @param   paSeg           Pointer to an array of segments.
- * @param   cSeg            Number of segments in the array.
- * @param   pvUser          User data which is passed on completion
- */
-VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
-                              PPDMDATASEG paSeg, unsigned cSeg,
-                              void *pvUser)
-{
-    int rc = VERR_VD_BLOCK_FREE;
-
-    LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbRead=%zu\n",
-                 pDisk, uOffset, paSeg, cSeg, cbRead));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(cbRead,
-                           ("cbRead=%zu\n", cbRead),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
-                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
-                            uOffset, cbRead, pDisk->cbSize),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(paSeg),
-                           ("paSeg=%#p\n", paSeg),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cSeg,
-                           ("cSeg=%zu\n", cSeg),
-                           rc = VERR_INVALID_PARAMETER);
-
-
-        PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
-
-        /* @todo: This does not work for images which do not have all meta data in memory. */
-        for (PVDIMAGE pCurrImage = pImage;
-             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
-             pCurrImage = pCurrImage->pPrev)
-        {
-            rc = pCurrImage->Backend->pfnAsyncRead(pCurrImage->pvBackendData,
-                                                   uOffset, cbRead, paSeg, cSeg,
-                                                   pvUser);
-        }
-
-        /* No image in the chain contains the data for the block. */
-        if (rc == VERR_VD_BLOCK_FREE)
-        {
-            for (unsigned i = 0; i < cSeg && (cbRead > 0); i++)
-            {
-                memset(paSeg[i].pvSeg, '\0', paSeg[i].cbSeg);
-                cbRead -= paSeg[i].cbSeg;
-            }
-            /* Request finished without the need to enqueue a async I/O request. Tell caller. */
-            rc = VINF_VD_ASYNC_IO_FINISHED;
-        }
-
-    } while (0);
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-}
-
-
-/**
- * Start a asynchronous write request.
- *
- * @returns VBox status code.
- * @param   pDisk           Pointer to the HDD container.
- * @param   uOffset         The offset of the virtual disk to write to.
- * @param   cbWrtie         How many bytes to write.
- * @param   paSeg           Pointer to an array of segments.
- * @param   cSeg            Number of segments in the array.
- * @param   pvUser          User data which is passed on completion.
- */
-VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
-                               PPDMDATASEG paSeg, unsigned cSeg,
-                               void *pvUser)
-{
-    int rc;
-
-    LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbWrite=%zu\n",
-                 pDisk, uOffset, paSeg, cSeg, cbWrite));
-    do
-    {
-        /* sanity check */
-        AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
-        AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
-
-        /* Check arguments. */
-        AssertMsgBreakStmt(cbWrite,
-                           ("cbWrite=%zu\n", cbWrite),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
-                           ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
-                            uOffset, cbWrite, pDisk->cbSize),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(VALID_PTR(paSeg),
-                           ("paSeg=%#p\n", paSeg),
-                           rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(cSeg,
-                           ("cSeg=%zu\n", cSeg),
-                           rc = VERR_INVALID_PARAMETER);
-
-
-        PVDIMAGE pImage = pDisk->pLast;
-        AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
-
-        vdSetModifiedFlag(pDisk);
-        rc = pImage->Backend->pfnAsyncWrite(pImage->pvBackendData,
-                                            uOffset, cbWrite,
-                                            paSeg, cSeg, pvUser);
-    } while (0);
-
-    LogFlowFunc(("returns %Rrc\n", rc));
-    return rc;
-
 }
 
 #if 0
