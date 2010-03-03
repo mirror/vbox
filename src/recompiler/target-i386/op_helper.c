@@ -3825,7 +3825,6 @@ void helper_wrmsr(void)
 void helper_rdmsr(void)
 {
     uint64_t val;
-
     helper_svm_check_intercept_param(SVM_EXIT_MSR, 0);
 
     switch((uint32_t)ECX) {
@@ -3853,12 +3852,19 @@ void helper_rdmsr(void)
     case MSR_VM_HSAVE_PA:
         val = env->vm_hsave;
         break;
+#ifdef VBOX
+    case MSR_IA32_PERF_STATUS:
+    case MSR_IA32_PLATFORM_INFO:
+        val = CPUMGetGuestMsr(env->pVCpu, (uint32_t)ECX);
+        break;
+#else
     case MSR_IA32_PERF_STATUS:
         /* tsc_increment_by_tick */
         val = 1000ULL;
         /* CPU multiplier */
-        val |= (((uint64_t)4ULL) << 40);
+        val |= ((uint64_t)4ULL << 40);
         break;
+#endif
 #ifdef TARGET_X86_64
     case MSR_LSTAR:
         val = env->lstar;
