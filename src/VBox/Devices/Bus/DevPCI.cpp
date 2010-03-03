@@ -652,6 +652,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
     PPCIBUS     pBus =     &pGlobals->PciBus;
     uint8_t    *pbCfg = pGlobals->PIIX3State.dev.config;
     const bool  fIsAcpiDevice = pPciDev->config[2] == 0x13 && pPciDev->config[3] == 0x71;
+    /* These two configuration space bytes enable a backdoor to trigger the irq directly on the io-apic; e.g. 64 bit Linux guests use it. */
     const bool  fIsApicEnabled = pGlobals->fUseIoApic && pbCfg[0xde] == 0xbe && pbCfg[0xad] == 0xef;
     int pic_irq, pic_level;
 
