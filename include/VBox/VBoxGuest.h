@@ -288,7 +288,7 @@ typedef struct VBoxGuestChangeBalloonInfo
     /** Address of  */
     uint64_t u64ChunkAddr;
     /** true = inflate, false = deflate */
-    bool     fInflate;
+    uint32_t fInflate;
 } VBoxGuestChangeBalloonInfo;
 AssertCompileSize(VBoxGuestChangeBalloonInfo, 12);
 
