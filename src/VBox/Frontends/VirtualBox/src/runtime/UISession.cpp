@@ -570,6 +570,12 @@ UISession::~UISession()
 
     /* Unregister console callback: */
     session().GetConsole().UnregisterCallback(m_callback);
+
+#if defined(Q_WS_WIN)
+    /* Destroy alpha cursor: */
+    if (m_alphaCursor)
+        DestroyIcon(m_alphaCursor);
+#endif
 }
 
 UIActionsPool* UISession::actionsPool() const

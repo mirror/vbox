@@ -206,7 +206,7 @@ private:
 #endif
 
     /* Private helpers: */
-    void fixModifierState(int *piCodes, uint *puCount);
+    void fixModifierState(LONG *piCodes, uint *puCount);
     QPoint viewportToContents(const QPoint &vp) const;
     void scrollBy(int dx, int dy);
 #ifdef VBOX_WITH_VIDEOHWACCEL

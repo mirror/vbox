@@ -46,7 +46,7 @@
 
 #ifdef Q_WS_PM
 # include "QIHotKeyEdit.h"
-#endif
+#endif /* defined (Q_WS_PM) */
 
 #ifdef Q_WS_WIN
 #undef LOWORD
@@ -54,7 +54,9 @@
 #undef LOBYTE
 #undef HIBYTE
 #include <windows.h>
-#endif
+static UIMachineView *gView = 0;
+static HHOOK gKbdHook = 0;
+#endif /* defined (Q_WS_WIN) */
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -73,9 +75,9 @@ const int XKeyRelease = KeyRelease;
 #  undef FocusIn
 # endif
 # include "XKeyboard.h"
-#endif
+#endif /* defined (Q_WS_X11) */
 
-#if defined (Q_WS_MAC)
+#ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
 # ifdef QT_MAC_USE_COCOA
@@ -644,8 +646,6 @@ void UIMachineView::cleanupCommon()
     if (gKbdHook)
         UnhookWindowsHookEx(gKbdHook);
     gView = 0;
-    if (m_alphaCursor)
-        DestroyIcon(m_alphaCursor);
 #endif
 
 #ifdef Q_WS_MAC
@@ -1783,8 +1783,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 
 #if defined(Q_WS_WIN32)
 
-static HHOOK gKbdHook = NULL;
-static UIMachineView *gView = 0;
 LRESULT CALLBACK UIMachineView::lowLevelKeyboardProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
     Assert(gView);
@@ -2295,7 +2293,7 @@ pascal OSStatus UIMachineView::darwinEventHandlerProc(EventHandlerCallRef inHand
 
 #endif
 
-void UIMachineView::fixModifierState(int *piCodes, uint *puCount)
+void UIMachineView::fixModifierState(LONG *piCodes, uint *puCount)
 {
     /* Synchronize the views of the host and the guest to the modifier keys.
      * This function will add up to 6 additional keycodes to codes. */
