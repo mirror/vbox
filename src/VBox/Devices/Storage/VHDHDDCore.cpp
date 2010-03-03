@@ -732,7 +732,11 @@ static int vhdLoadDynamicDisk(PVHDIMAGE pImage, uint64_t uDynamicDiskHeaderOffse
      */
     pImage->cbDataBlockBitmap = pImage->cSectorsPerDataBlock / 8;
     pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / VHD_SECTOR_SIZE;
+    /* Round up to full sector size */
+    if (pImage->cbDataBlockBitmap % VHD_SECTOR_SIZE > 0)
+        pImage->cDataBlockBitmapSectors++;
     LogFlowFunc(("cbDataBlockBitmap=%u\n", pImage->cbDataBlockBitmap));
+    LogFlowFunc(("cDataBlockBitmapSectors=%u\n", pImage->cDataBlockBitmapSectors));
 
     pImage->pu8Bitmap = vhdBlockBitmapAllocate(pImage);
     if (!pImage->pu8Bitmap)
@@ -1280,7 +1284,7 @@ static int vhdWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf, siz
                 return VERR_VD_BLOCK_FREE;
             }
 
-            size_t  cbNewBlock = (pImage->cbDataBlock + pImage->cbDataBlockBitmap) * sizeof(uint8_t);
+            size_t  cbNewBlock = pImage->cbDataBlock + (pImage->cDataBlockBitmapSectors * VHD_SECTOR_SIZE);
             uint8_t *pNewBlock = (uint8_t *)RTMemAllocZ(cbNewBlock);
 
             if (!pNewBlock)
@@ -1729,6 +1733,9 @@ static int vhdCreateDynamicImage(PVHDIMAGE pImage, uint64_t cbSize)
     pImage->cSectorsPerDataBlock    = pImage->cbDataBlock / VHD_SECTOR_SIZE;
     pImage->cbDataBlockBitmap       = pImage->cSectorsPerDataBlock / 8;
     pImage->cDataBlockBitmapSectors = pImage->cbDataBlockBitmap / VHD_SECTOR_SIZE;
+    /* Align to sector boundary */
+    if (pImage->cbDataBlockBitmap % VHD_SECTOR_SIZE > 0)
+        pImage->cDataBlockBitmapSectors++;
     pImage->pu8Bitmap               = vhdBlockBitmapAllocate(pImage);
     if (!pImage->pu8Bitmap)
         return vhdError(pImage, VERR_NO_MEMORY, RT_SRC_POS, N_("VHD: cannot allocate memory for bitmap storage"));
