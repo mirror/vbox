@@ -744,7 +744,7 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
 
         if (RT_FAILURE(rc))
         {
-            dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_CTL_CHECK_BALLOON: error issuing request to VMMDev! "
+            dprintf(("VBoxGuest::VBoxGuestDeviceControl VBOXGUEST_IOCTL_CHECK_BALLOON: error issuing request to VMMDev! "
                      "rc = %Rrc\n", rc));
         }
         else
@@ -1379,7 +1379,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #endif
 
 #ifdef VBOX_WITH_MANAGEMENT
-        case VBOXGUEST_IOCTL_CTL_CHECK_BALLOON_MASK:
+        case VBOXGUEST_IOCTL_CHECK_BALLOON:
         {
             ULONG *pMemBalloonSize = (ULONG *) pBuf;
 
@@ -1394,7 +1394,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             int rc = VBoxGuestQueryMemoryBalloon(pDevExt, pMemBalloonSize);
             if (RT_FAILURE(rc))
             {
-                dprintf(("VBOXGUEST_IOCTL_CTL_CHECK_BALLOON: vbox rc = %Rrc\n", rc));
+                dprintf(("VBOXGUEST_IOCTL_CHECK_BALLOON: vbox rc = %Rrc\n", rc));
                 Status = STATUS_UNSUCCESSFUL;
             }
             else

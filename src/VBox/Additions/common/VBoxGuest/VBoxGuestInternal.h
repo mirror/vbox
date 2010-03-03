@@ -139,7 +139,7 @@ typedef struct VBOXGUESTDEVEXT
      * For implementing the VBOXGUEST_IOCTL_CLIPBOARD_CONNECT interface. */
     uint32_t                    u32ClipboardClientId;
 
-    /* Memory balloon information. */
+    /* Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
 
 } VBOXGUESTDEVEXT;
@@ -182,6 +182,9 @@ typedef struct VBOXGUESTSESSION
     /** The last consumed VMMDEV_EVENT_MOUSE_POSITION_CHANGED sequence number.
      * Used to implement polling.  */
     uint32_t volatile           u32MousePosChangedSeq;
+
+    /* Memory ballooning information if userland provides the balloon memory. */
+    VBOXGUESTMEMBALLOON         MemBalloon;
 } VBOXGUESTSESSION;
 
 RT_C_DECLS_BEGIN
