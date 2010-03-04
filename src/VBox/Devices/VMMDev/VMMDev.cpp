@@ -1387,9 +1387,15 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             else
             {
                 if (memBalloonChange->fInflate)
+                {
                     pRequestHeader->rc = PGMR3PhysFreeRamPages(PDMDevHlpGetVM(pDevIns), memBalloonChange->cPages, memBalloonChange->aPhysPage);
+                    STAM_REL_U32_INC(&pThis->StatMemBalloonChunks);
+                }
                 else
+                {
                     pRequestHeader->rc = VINF_SUCCESS;      /* deflating the balloon doesn't require any action; when the reacquired memory is touched, it will be paged back in. */
+                    STAM_REL_U32_DEC(&pThis->StatMemBalloonChunks);
+                }
             }
             break;
         }
@@ -2358,7 +2364,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
         pThis->pDrv->pfnUpdateMouseCapabilities(pThis->pDrv, pThis->mouseCapabilities);
         if (uVersion >= 10)
             pThis->pDrv->pfnUpdatePointerShape(pThis->pDrv,
-                                               /*fVisible=*/pThis->fHostCursorRequested,
+                                               /*fVisible=*/!!pThis->fHostCursorRequested,
                                                /*fAlpha=*/false,
                                                /*xHot=*/0, /*yHot=*/0,
                                                /*cx=*/0, /*cy=*/0,
@@ -2726,6 +2732,8 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
 #endif /* VBOX_WITH_HGCM */
     /* The GUI checks whether this changes in this version of VirtualBox. */
     pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR;
+
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMemBalloonChunks, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES, "Memory balloon size", "/Devices/VMMDev/BalloonChunks");
 
     return rc;
 }
