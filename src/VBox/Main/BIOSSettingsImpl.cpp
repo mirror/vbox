@@ -210,7 +210,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeIn)(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fLogoFadeIn = enable;
+    m->bd->fLogoFadeIn = !!enable;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -246,7 +246,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(LogoFadeOut)(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fLogoFadeOut = enable;
+    m->bd->fLogoFadeOut = !!enable;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -392,7 +392,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(ACPIEnabled)(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fACPIEnabled = enable;
+    m->bd->fACPIEnabled = !!enable;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -428,7 +428,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(IOAPICEnabled)(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fIOAPICEnabled = enable;
+    m->bd->fIOAPICEnabled = !!enable;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking
@@ -464,7 +464,7 @@ STDMETHODIMP BIOSSettings::COMSETTER(PXEDebugEnabled)(BOOL enable)
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     m->bd.backup();
-    m->bd->fPXEDebugEnabled = enable;
+    m->bd->fPXEDebugEnabled = !!enable;
 
     alock.release();
     AutoWriteLock mlock(m->pMachine COMMA_LOCKVAL_SRC_POS);  // mParent is const, needs no locking

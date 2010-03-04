@@ -225,10 +225,10 @@ STDMETHODIMP SerialPort::COMSETTER(Enabled) (BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->fEnabled != aEnabled)
+    if (m->bd->fEnabled != !!aEnabled)
     {
         m->bd.backup();
-        m->bd->fEnabled = aEnabled;
+        m->bd->fEnabled = !!aEnabled;
 
         m->fModified = true;
         // leave the lock before informing callbacks
@@ -510,10 +510,10 @@ STDMETHODIMP SerialPort::COMSETTER(Server) (BOOL aServer)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->fServer != aServer)
+    if (m->bd->fServer != !!aServer)
     {
         m->bd.backup();
-        m->bd->fServer = aServer;
+        m->bd->fServer = !!aServer;
 
         m->fModified = true;
         // leave the lock before informing callbacks
