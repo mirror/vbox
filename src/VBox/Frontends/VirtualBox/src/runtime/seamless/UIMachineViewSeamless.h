@@ -76,7 +76,6 @@ private:
     QRect availableGeometry();
 
     /* Private variables: */
-    bool m_fIsInitialResizeEventProcessed : 1;
     bool m_fShouldWeDoResize : 1;
     QRegion m_lastVisibleRegion;
     QSize m_normalSize;
