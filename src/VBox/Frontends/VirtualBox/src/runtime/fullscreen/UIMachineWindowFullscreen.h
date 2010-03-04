@@ -39,6 +39,9 @@
 # include <ApplicationServices/ApplicationServices.h>
 #endif /* Q_WS_MAC */
 
+/* Local forwards */
+class CMediumAttachment;
+
 class UIMachineWindowFullscreen : public QIWithRetranslateUI<QIMainDialog>, public UIMachineWindow
 {
     Q_OBJECT;
@@ -49,10 +52,29 @@ protected:
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindowFullscreen();
 
+private slots:
+
+    /* Console callback handlers: */
+    void sltMachineStateChanged();
+    void sltMediumChange(const CMediumAttachment &attachment);
+    void sltUSBControllerChange();
+    void sltUSBDeviceStateChange();
+    void sltNetworkAdapterChange();
+    void sltSharedFolderChange();
+
+    /* LED connections: */
+    void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
+
+    /* Close window reimplementation: */
+    void sltTryClose();
+
 private:
 
     /* Translate routine: */
     void retranslateUi();
+
+    /* Update routines: */
+    void updateAppearanceOf(int aElement);
 
     /* Event handlers: */
     bool event(QEvent *pEvent);
@@ -62,7 +84,7 @@ private:
     void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
-//    void prepareConsoleConnections();
+    void prepareConsoleConnections();
     void prepareMenu();
     void prepareConnections();
     void prepareMachineView();
@@ -74,6 +96,9 @@ private:
     //void cleanupConnections() {}
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
+
+    /* Other members: */
+    QRect m_normalGeometry;
 
     /* Factory support: */
     friend class UIMachineWindow;
