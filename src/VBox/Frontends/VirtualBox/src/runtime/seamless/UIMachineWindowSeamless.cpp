@@ -179,6 +179,10 @@ void UIMachineWindowSeamless::prepareMachineView()
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);
+
+    /* This might be required to correctly mask: */
+    centralWidget()->setAutoFillBackground(true);
+    setAutoFillBackground(true);
 }
 
 #ifdef Q_WS_MAC
