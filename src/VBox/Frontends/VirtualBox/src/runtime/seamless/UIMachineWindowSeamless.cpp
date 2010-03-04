@@ -131,6 +131,24 @@ bool UIMachineWindowSeamless::x11Event(XEvent *pEvent)
 }
 #endif
 
+#ifdef Q_WS_MAC
+bool UIMachineWindowSeamless::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::Paint:
+        {
+            /* Clear the background */
+            CGContextClearRect(::darwinToCGContextRef(this), ::darwinToCGRect(frameGeometry()));
+            break;
+        }
+        default:
+            break;
+    }
+    return QIMainDialog::event(pEvent);
+}
+#endif /* Q_WS_MAC */
+
 void UIMachineWindowSeamless::closeEvent(QCloseEvent *pEvent)
 {
     return UIMachineWindow::closeEvent(pEvent);
@@ -145,8 +163,18 @@ void UIMachineWindowSeamless::prepareSeamless()
 #endif
     move(geometry.topLeft());
     resize(geometry.size());
+
+#ifdef Q_WS_MAC
+    /* Please note: All the stuff below has to be done after the window has
+     * switched to fullscreen. Qt changes the winId on the fullscreen
+     * switch and make this stuff useless with the old winId. So please be
+     * careful on rearrangement of the method calls. */
+    ::darwinSetShowsWindowTransparent(this, true);
+#endif
+
     /* Perform these events: */
     qApp->processEvents();
+
 }
 
 #ifdef Q_WS_MAC

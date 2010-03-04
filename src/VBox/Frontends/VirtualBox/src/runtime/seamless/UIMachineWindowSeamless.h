@@ -57,27 +57,30 @@ private:
     /* Event handlers: */
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
-#endif
+#endif /* Q_WS_X11 */
     void closeEvent(QCloseEvent *pEvent);
+#ifdef Q_WS_MAC
+    bool event(QEvent *pEvent);
+#endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
     void prepareSeamless();
 #ifdef Q_WS_MAC
     void prepareMenu();
-#endif
+#endif /* Q_WS_MAC */
     void prepareMachineView();
 #ifdef Q_WS_MAC
     void loadWindowSettings();
-#endif
+#endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
 #ifdef Q_WS_MAC
     //void saveWindowSettings() {}
-#endif
+#endif /* Q_WS_MAC */
     void cleanupMachineView();
 #ifdef Q_WS_MAC
     //void cleanupMenu() {}
-#endif
+#endif /* Q_WS_MAC */
     //void cleanupSeamless() {}
 
     /* Other members: */
@@ -87,7 +90,7 @@ private:
     /* Private variables: */
 #ifdef Q_WS_WIN
     QRegion m_prevRegion;
-#endif
+#endif /* Q_WS_WIN */
 
     /* Factory support: */
     friend class UIMachineWindow;
