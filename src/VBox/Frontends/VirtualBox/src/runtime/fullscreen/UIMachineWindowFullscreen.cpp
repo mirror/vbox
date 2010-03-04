@@ -83,51 +83,6 @@ UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
     cleanupMachineView();
 }
 
-void UIMachineWindowFullscreen::sltMachineStateChanged()
-{
-    UIMachineWindow::sltMachineStateChanged();
-}
-
-void UIMachineWindowFullscreen::sltMediumChange(const CMediumAttachment &attachment)
-{
-    KDeviceType type = attachment.GetType();
-    if (type == KDeviceType_HardDisk)
-        updateAppearanceOf(UIVisualElement_HDStuff);
-    if (type == KDeviceType_DVD)
-        updateAppearanceOf(UIVisualElement_CDStuff);
-    if (type == KDeviceType_Floppy)
-        updateAppearanceOf(UIVisualElement_FDStuff);
-}
-
-void UIMachineWindowFullscreen::sltUSBControllerChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowFullscreen::sltUSBDeviceStateChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowFullscreen::sltNetworkAdapterChange()
-{
-    updateAppearanceOf(UIVisualElement_NetworkStuff);
-}
-
-void UIMachineWindowFullscreen::sltSharedFolderChange()
-{
-    updateAppearanceOf(UIVisualElement_SharedFolderStuff);
-}
-
-void UIMachineWindowFullscreen::sltTryClose()
-{
-    UIMachineWindow::sltTryClose();
-}
-
-void UIMachineWindowFullscreen::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
-{
-}
-
 void UIMachineWindowFullscreen::retranslateUi()
 {
     /* Translate parent class: */
@@ -141,15 +96,11 @@ void UIMachineWindowFullscreen::retranslateUi()
 #endif /* Q_WS_MAC */
 }
 
-void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
-{
-    /* Update parent-class window: */
-    UIMachineWindow::updateAppearanceOf(iElement);
-}
-
 bool UIMachineWindowFullscreen::event(QEvent *pEvent)
 {
     return QIWithRetranslateUI<QIMainDialog>::event(pEvent);
+
+    // TODO_NEW_CORE
     switch (pEvent->type())
     {
         case QEvent::Resize:
@@ -157,7 +108,7 @@ bool UIMachineWindowFullscreen::event(QEvent *pEvent)
             QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
             if (!isMaximized())
             {
-                m_normalGeometry.setSize(pResizeEvent->size());
+//                m_normalGeometry.setSize(pResizeEvent->size());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 // TODO: Update debugger window size!
                 //dbgAdjustRelativePos();
@@ -169,7 +120,7 @@ bool UIMachineWindowFullscreen::event(QEvent *pEvent)
         {
             if (!isMaximized())
             {
-                m_normalGeometry.moveTo(geometry().x(), geometry().y());
+//                m_normalGeometry.moveTo(geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
                 // TODO: Update debugger window position!
                 //dbgAdjustRelativePos();
@@ -210,35 +161,10 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
     return UIMachineWindow::closeEvent(pEvent);
 }
 
-void UIMachineWindowFullscreen::prepareConsoleConnections()
-{
-    /* Base-class connections: */
-    UIMachineWindow::prepareConsoleConnections();
-
-    /* Medium change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
-            this, SLOT(sltMediumChange(const CMediumAttachment &)));
-
-    /* USB controller change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
-            this, SLOT(sltUSBControllerChange()));
-
-    /* USB device state-change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-            this, SLOT(sltUSBDeviceStateChange()));
-
-    /* Network adapter change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
-            this, SLOT(sltNetworkAdapterChange()));
-
-    /* Shared folder change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
-            this, SLOT(sltSharedFolderChange()));
-}
-
 void UIMachineWindowFullscreen::prepareMenu()
 {
     setMenuBar(uisession()->newMenuBar());
+    /* Menubar is always hidden in fullscreen */
     menuBar()->hide();
 }
 
@@ -274,13 +200,11 @@ void UIMachineWindowFullscreen::prepareMachineView()
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 }
 
+//#include "UIMachineViewFullscreen.h"
 void UIMachineWindowFullscreen::loadWindowSettings()
 {
-    /* Load normal window settings: */
-    CMachine machine = session().GetMachine();
-
     /* Toggle console to manual resize mode. */
-    m_pMachineView->setMachineWindowResizeIgnored(true);
+//    m_pMachineView->setMachineWindowResizeIgnored(true);
     m_pMachineView->setFrameBufferResizeIgnored(true);
 
     /* The background has to go black */
@@ -290,48 +214,21 @@ void UIMachineWindowFullscreen::loadWindowSettings()
     centralWidget()->setAutoFillBackground (true);
     setAutoFillBackground (true);
 
-    /* We have to show the window early, or the position will be wrong on the
-       Mac */
-#ifdef Q_WS_MAC
-    show();
-#endif /* Q_WS_MAC */
-
-#ifdef Q_WS_MAC
-# ifndef QT_MAC_USE_COCOA
-    /* setWindowState removes the window group connection somehow. So save it
-     * temporary. */
-    WindowGroupRef g = GetWindowGroup(::darwinToNativeWindow(this));
-# endif  /* !QT_MAC_USE_COCOA */
     /* Here we are going really fullscreen */
-    setWindowState(windowState() ^ Qt::WindowFullScreen);
+    setWindowState(windowState() | Qt::WindowFullScreen);
 
-# ifndef QT_MAC_USE_COCOA
-    /* Reassign the correct window group. */
-    SetWindowGroup(::darwinToNativeWindow (this), g);
-# endif /* !QT_MAC_USE_COCOA */
-#else /* Q_WS_MAC */
-    setWindowState(windowState() ^ Qt::WindowFullScreen);
-#endif/* !Q_WS_MAC */
-
-#ifndef Q_WS_MAC
+    /* Show the window */
     show();
-#endif /* !Q_WS_MAC */
+    /* Make sure it is really on the right place (especially on the Mac) */
+    move(0, 0);
 
-//    m_pMachineView->normalizeGeometry(true);
 //    ((UIMachineViewFullscreen*)m_pMachineView)->sltPerformGuestResize(maximumSize());
-//    show();
-
-    QRect r = geometry();
-    /* Load global settings: */
-    {
-//        VBoxGlobalSettings settings = vboxGlobal().settings();
-//        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
-    }
+//    m_pMachineView->setGuestAutoresizeEnabled();
 }
 
 void UIMachineWindowFullscreen::saveWindowSettings()
 {
-    CMachine machine = session().GetMachine();
+//    CMachine machine = session().GetMachine();
 
     /* Save extra-data settings: */
     {
