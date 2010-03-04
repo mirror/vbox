@@ -104,9 +104,8 @@ public:
     }
 
     // for VMMDevInterface
-    void onVMMDevCanAbsChange(bool canAbs)
+    void onVMMDevCanAbsChange(bool)
     {
-        fVMMDevCanAbs = canAbs;
         sendMouseCapsNotifications();
     }
 
