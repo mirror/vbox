@@ -43,6 +43,9 @@ protected:
 
 private slots:
 
+    /* Slot to perform guest resize: */
+    void sltPerformGuestResize();
+
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
@@ -56,7 +59,7 @@ private:
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
     /* Prepare helpers: */
-    void prepareBackup();
+    void prepareCommon();
     void prepareFilters();
     void prepareConnections();
     void prepareConsoleConnections();
@@ -67,12 +70,14 @@ private:
     //void cleanupConsoleConnections() {}
     //void prepareConnections() {}
     //void cleanupFilters() {}
-    //void prepareBackup() {}
+    //void cleanupCommon();
 
     /* Private helpers: */
     QRect availableGeometry();
 
     /* Private variables: */
+    bool m_fIsInitialResizeEventProcessed : 1;
+    bool m_fShouldWeDoResize : 1;
     QRegion m_lastVisibleRegion;
     QSize m_normalSize;
 
