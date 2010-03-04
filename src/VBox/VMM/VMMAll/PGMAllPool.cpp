@@ -3295,15 +3295,18 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
 
         Log(("pgmPoolTrackUpdateGCPhys: update large page PDE for %RGp (%RGp)\n", GCPhysBase, GCPhysPage));
 
-        /* Mark the large page as disabled as we need to break it up to change a single page in the 2 MB range. */
-        PGM_PAGE_SET_PDE_TYPE(pPhysBase, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+        if (PGM_PAGE_GET_PDE_TYPE(pPhysBase) == PGM_PAGE_PDE_TYPE_PDE)
+        {
+            /* Mark the large page as disabled as we need to break it up to change a single page in the 2 MB range. */
+            PGM_PAGE_SET_PDE_TYPE(pPhysBase, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
 
-        /* Update the base as that *only* that one has a reference and there's only one PDE to clear. */
-        rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pPhysBase, fFlushPTEs, pfFlushTLBs);
+            /* Update the base as that *only* that one has a reference and there's only one PDE to clear. */
+            rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pPhysBase, fFlushPTEs, pfFlushTLBs);
 
-        *pfFlushTLBs = true;
-        pgmUnlock(pVM);
-        return rc;
+            *pfFlushTLBs = true;
+            pgmUnlock(pVM);
+            return rc;
+        }
     }
 #else
     NOREF(GCPhysPage);

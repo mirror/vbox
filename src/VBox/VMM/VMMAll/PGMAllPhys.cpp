@@ -550,6 +550,65 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
     }
     return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
 }
+
+/**
+ * Recheck the entire 2 MB range to see if we can use it again as a large page.
+ *
+ * @returns The following VBox status codes.
+ * @retval  VINF_SUCCESS on success, the large page can be used again
+ * @retval  VERR_PGM_INVALID_LARGE_PAGE_RANGE if it can't be reused
+ *
+ * @param   pVM         The VM address.
+ * @param   GCPhys      The address of the page.
+ * @param   pLargePage  Page structure of the base page
+ */
+int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
+{
+    unsigned i;
+
+    STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageRecheck);
+
+    GCPhys &= X86_PDE2M_PAE_PG_MASK;
+
+    /* Check the base page. */
+    Assert(PGM_PAGE_GET_PDE_TYPE(pLargePage) == PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+    if (    PGM_PAGE_GET_STATE(pLargePage) != PGM_PAGE_STATE_ALLOCATED
+        ||  PGM_PAGE_GET_TYPE(pLargePage) != PGMPAGETYPE_RAM
+        ||  PGM_PAGE_GET_HNDL_PHYS_STATE(pLargePage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
+    {
+        LogFlow(("pgmPhysIsValidLargePage: checks failed for base page %x %x %x\n", PGM_PAGE_GET_STATE(pLargePage), PGM_PAGE_GET_TYPE(pLargePage), PGM_PAGE_GET_HNDL_PHYS_STATE(pLargePage)));
+        return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
+    }
+
+    /* Check all remaining pages in the 2 MB range. */
+    GCPhys += PAGE_SIZE;
+    for (i = 1; i < _2M/PAGE_SIZE; i++)
+    {
+        PPGMPAGE pPage;
+        int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
+        AssertRCBreak(rc);
+
+        if (    PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED
+            ||  PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE
+            ||  PGM_PAGE_GET_TYPE(pPage) != PGMPAGETYPE_RAM
+            ||  PGM_PAGE_GET_HNDL_PHYS_STATE(pPage) != PGM_PAGE_HNDL_PHYS_STATE_NONE)
+        {
+            LogFlow(("pgmPhysIsValidLargePage: checks failed for page %d; %x %x %x\n", i, PGM_PAGE_GET_STATE(pPage), PGM_PAGE_GET_TYPE(pPage), PGM_PAGE_GET_HNDL_PHYS_STATE(pPage)));
+            break;
+        }
+
+        GCPhys += PAGE_SIZE;
+    }
+    if (i == _2M/PAGE_SIZE)
+    {
+        PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE);
+        Log(("pgmPhysIsValidLargePage: page %RGp can be reused!\n", GCPhys));
+        return VINF_SUCCESS;
+    }
+
+    return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
+}
+
 #endif /* PGM_WITH_LARGE_PAGES */
 
 /**
