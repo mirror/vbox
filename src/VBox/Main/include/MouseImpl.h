@@ -27,6 +27,11 @@
 #include "ConsoleImpl.h"
 #include <VBox/pdmdrv.h>
 
+/** Maximum number of devices supported */
+enum { MOUSE_MAX_DEVICES = 3 };
+/** Mouse driver instance data. */
+typedef struct DRVMAINMOUSE DRVMAINMOUSE, *PDRVMAINMOUSE;
+
 /** Simple mouse event class. */
 class MouseEvent
 {
@@ -44,12 +49,6 @@ public:
 };
 // template instantiation
 typedef ConsoleEventBuffer<MouseEvent> MouseEventBuffer;
-
-enum
-{
-    MOUSE_DEVCAP_RELATIVE = 1,
-    MOUSE_DEVCAP_ABSOLUTE = 2
-};
 
 class ATL_NO_VTABLE Mouse :
     public VirtualBoxBase
@@ -108,13 +107,13 @@ public:
     void onVMMDevCanAbsChange(bool canAbs)
     {
         fVMMDevCanAbs = canAbs;
-        sendMouseCapsCallback();
+        sendMouseCapsNotifications();
     }
 
     void onVMMDevNeedsHostChange(bool needsHost)
     {
         fVMMDevNeedsHostCursor = needsHost;
-        sendMouseCapsCallback();
+        sendMouseCapsNotifications();
     }
 
 private:
@@ -134,7 +133,7 @@ private:
     int convertDisplayWidth(LONG x, uint32_t *pcX);
     int convertDisplayHeight(LONG y, uint32_t *pcY);
     
-    void sendMouseCapsCallback(void);
+    void sendMouseCapsNotifications(void);
 
 #ifdef VBOXBFE_WITHOUT_COM
     Console *mParent;
@@ -142,10 +141,9 @@ private:
     const ComObjPtr<Console, ComWeakRef> mParent;
 #endif
     /** Pointer to the associated mouse driver. */
-    struct DRVMAINMOUSE    *mpDrv;
+    struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];
 
     LONG uHostCaps;
-    LONG uDevCaps;
     bool fVMMDevCanAbs;
     bool fVMMDevNeedsHostCursor;
     uint32_t mLastAbsX;

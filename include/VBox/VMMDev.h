@@ -263,8 +263,11 @@ AssertCompileSize(VMMDevReqMouseStatus, 24+12);
 /** If the guest changes the status of the
  * VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR bit, the host will honour this */
 #define VMMDEV_MOUSE_HOST_RECHECKS_NEEDS_HOST_CURSOR        RT_BIT(5)
+/** The host supplies an absolute pointing device.  The Guest Additions may
+ * wish to use this to decide whether to install their own driver */
+#define VMMDEV_MOUSE_HOST_HAS_ABS_DEV                       RT_BIT(6)
 /** The mask of all VMMDEV_MOUSE_* flags */
-#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x0000003f)
+#define VMMDEV_MOUSE_MASK                                   UINT32_C(0x0000007f)
 /** The mask of guest capability changes for which notification events should
  * be sent */
 #define VMMDEV_MOUSE_NOTIFY_HOST_MASK \
