@@ -38,7 +38,7 @@
 #include "UIMachineView.h"
 #include "UIMachineWindowNormal.h"
 #include "UIMachineWindowFullscreen.h"
-//#include "UIMachineWindowSeamless.h"
+#include "UIMachineWindowSeamless.h"
 
 UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisualStateType visualStateType, ulong uScreenId)
 {
@@ -52,8 +52,7 @@ UIMachineWindow* UIMachineWindow::create(UIMachineLogic *pMachineLogic, UIVisual
             window = new UIMachineWindowFullscreen(pMachineLogic, uScreenId);
             break;
         case UIVisualStateType_Seamless:
-            // window = new UIMachineWindowSeamless(pMachineLogic, uScreenId);
-            window = new UIMachineWindowNormal(pMachineLogic, uScreenId);
+            window = new UIMachineWindowSeamless(pMachineLogic, uScreenId);
             break;
     }
     return window;

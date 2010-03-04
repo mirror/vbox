@@ -43,6 +43,7 @@
 #include "UIMachineView.h"
 #include "UIMachineViewNormal.h"
 #include "UIMachineViewFullscreen.h"
+#include "UIMachineViewSeamless.h"
 
 #ifdef Q_WS_PM
 # include "QIHotKeyEdit.h"
@@ -138,12 +139,12 @@ UIMachineView* UIMachineView::create(  UIMachineWindow *pMachineWindow
                                                , uScreenId);
             break;
         case UIVisualStateType_Seamless:
-            view = new UIMachineViewNormal(  pMachineWindow
-                                           , renderMode
+            view = new UIMachineViewSeamless(  pMachineWindow
+                                             , renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                                           , bAccelerate2DVideo
+                                             , bAccelerate2DVideo
 #endif
-                                           , uScreenId);
+                                             , uScreenId);
             break;
         default:
             break;
@@ -196,13 +197,13 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
 // TODO_NEW_CORE: really think of if this is right
 //    : QAbstractScrollArea(((QMainWindow*)pMachineWindow->machineWindow())->centralWidget())
     : QAbstractScrollArea(pMachineWindow->machineWindow())
-    , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_pMachineWindow(pMachineWindow)
     , m_mode(renderMode)
     , m_uScreenId(uScreenId)
     , m_globalSettings(vboxGlobal().settings())
     , m_pFrameBuffer(0)
     , m_previousState(KMachineState_Null)
+    , m_desktopGeometryType(DesktopGeo_Invalid)
     , m_iLastMouseWheelDelta(0)
     , m_bIsAutoCaptureDisabled(false)
     , m_bIsKeyboardCaptured(false)
@@ -717,21 +718,6 @@ bool UIMachineView::event(QEvent *pEvent)
         case VBoxDefs::VHWACommandProcessType:
         {
             m_pFrameBuffer->doProcessVHWACommand(pEvent);
-            return true;
-        }
-#endif
-
-#if 0 // TODO: Move that to seamless mode event hadler!
-        case VBoxDefs::SetRegionEventType:
-        {
-            VBoxSetRegionEvent *sre = (VBoxSetRegionEvent*) pEvent;
-            if (machineWindowWrapper()->isTrueSeamless() && sre->region() != mLastVisibleRegion)
-            {
-                mLastVisibleRegion = sre->region();
-                machineWindowWrapper()->setMask (sre->region());
-            }
-            else if (!mLastVisibleRegion.isEmpty() && !machineWindowWrapper()->isTrueSeamless())
-                mLastVisibleRegion = QRegion();
             return true;
         }
 #endif

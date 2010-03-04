@@ -30,11 +30,6 @@ class UIMachineViewFullscreen : public UIMachineView
 {
     Q_OBJECT;
 
-signals:
-
-    /* Utility signals: */
-    void resizeHintDone();
-
 protected:
 
     /* Normal machine view constructor/destructor: */

@@ -69,11 +69,11 @@ public:
     int mouseState() const;
 
     /* Public setters: */
-    virtual void setGuestAutoresizeEnabled(bool bEnabled) = 0;
-    virtual void setMouseIntegrationEnabled(bool bEnabled);
+    virtual void setGuestAutoresizeEnabled(bool /* fEnabled */) {}
+    virtual void setMouseIntegrationEnabled(bool fEnabled);
 
     /* Public members: */
-    virtual void normalizeGeometry(bool bAdjustPosition = false) = 0;
+    virtual void normalizeGeometry(bool /* bAdjustPosition = false */) {}
 
 #if defined(Q_WS_MAC)
     void updateDockIcon();
@@ -87,6 +87,9 @@ signals:
     /* Mouse/Keyboard state-change signals: */
     void keyboardStateChanged(int iState);
     void mouseStateChanged(int iState);
+
+    /* Utility signals: */
+    void resizeHintDone();
 
 protected:
 
@@ -117,6 +120,7 @@ protected:
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
+    QSize storedConsoleSize() const { return m_storedConsoleSize; }
     virtual QSize desktopGeometry() const;
 
     /* Protected setters: */
@@ -168,11 +172,6 @@ private slots:
     void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
 # endif
 #endif
-protected:
-
-    DesktopGeo m_desktopGeometryType;
-    QSize m_desktopGeometry;
-    QSize m_storedConsoleSize;
 
 private:
 
@@ -231,6 +230,10 @@ private:
     const VBoxGlobalSettings &m_globalSettings;
     UIFrameBuffer *m_pFrameBuffer;
     KMachineState m_previousState;
+
+    DesktopGeo m_desktopGeometryType;
+    QSize m_desktopGeometry;
+    QSize m_storedConsoleSize;
 
     QPoint m_lastMousePos;
     QPoint m_capturedMousePos;
