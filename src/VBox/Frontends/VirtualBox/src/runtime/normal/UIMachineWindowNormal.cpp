@@ -42,7 +42,7 @@
 #include "QIHotKeyEdit.h"
 
 UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI<QIMainDialog>(0)
+    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Window)
     , UIMachineWindow(pMachineLogic, uScreenId)
     , m_pIndicatorsPool(new UIIndicatorsPool(pMachineLogic->uisession()->session(), this))
     , m_pIdleTimer(0)
@@ -286,7 +286,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         default:
             break;
     }
-    return QIWithRetranslateUI<QIMainDialog>::event(pEvent);
+    return QIWithRetranslateUI2<QIMainDialog>::event(pEvent);
 }
 
 #ifdef Q_WS_X11
