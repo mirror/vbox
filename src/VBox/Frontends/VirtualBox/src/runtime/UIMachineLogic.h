@@ -64,8 +64,8 @@ public:
     virtual void initialize() {}
 
     /* Main getters/setters: */
-    UISession* uisession() { return m_pSession; }
-    UIActionsPool* actionsPool() { return m_pActionsPool; }
+    UISession* uisession() const { return m_pSession; }
+    UIActionsPool* actionsPool() const { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     QList<UIMachineWindow*>& machineWindows() { return m_machineWindowsList; }
     UIMachineWindow* mainMachineWindow();

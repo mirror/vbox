@@ -894,8 +894,11 @@ void UIMachineLogic::sltTakeSnapshot()
 
 void UIMachineLogic::sltShowInformationDialog()
 {
-    // TODO: Call for singleton information dialog for this machine!
-    //VBoxVMInformationDlg::createInformationDlg(session());
+    /* Do not process if window(s) missed! */
+    if (!isMachineWindowsCreated())
+        return;
+
+    VBoxVMInformationDlg::createInformationDlg(mainMachineWindow());
 }
 
 void UIMachineLogic::sltReset()

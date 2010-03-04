@@ -102,12 +102,12 @@ UIMachineWindow::~UIMachineWindow()
 {
 }
 
-UISession* UIMachineWindow::uisession()
+UISession* UIMachineWindow::uisession() const
 {
     return machineLogic()->uisession();
 }
 
-CSession& UIMachineWindow::session()
+CSession& UIMachineWindow::session() const
 {
     return uisession()->session();
 }
