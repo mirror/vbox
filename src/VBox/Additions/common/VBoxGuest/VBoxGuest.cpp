@@ -275,6 +275,7 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
     return rc;
 }
 
+
 /**
  * Inflate the balloon by one chunk represented by an R0 memory object.
  *
@@ -303,8 +304,12 @@ static int vboxGuestBalloonInflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
     pReq->header.size = cbChangeMemBalloonReq;
     pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
 
-    return VbglGRPerform(&pReq->header);
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        LogRel(("vboxGuestBalloonInflate: VbglGRPerform failed. rc=%d\n", rc));
+    return rc;
 }
+
 
 /**
  * Deflate the balloon by one chunk represented by an R0 memory object.
@@ -331,7 +336,10 @@ static int vboxGuestBalloonDeflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
 
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
+    {
+        LogRel(("vboxGuestBalloonDeflate: VbglGRPerform failed. rc=%d\n", rc));
         return rc;
+    }
 
     rc = RTR0MemObjFree(*pMemObj, true);
     if (RT_FAILURE(rc))
@@ -394,6 +402,7 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
                 {
                     /* not supported -- fall back to the R3-allocated memory */
                     pDevExt->MemBalloon.fUseKernelAPI = false;
+                    Log(("VBoxGuestSetBalloonSizeKernel: PhysNC allocs not supported, falling back to R3 allocs.\n"));
                     break;
                 }
                 if (RT_UNLIKELY(rc == VERR_NO_MEMORY))
@@ -589,7 +598,7 @@ static void vboxGuestInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
 {
     pDevExt->MemBalloon.cChunks = 0;
     pDevExt->MemBalloon.cMaxChunks = 0;
-#ifdef RT_OS_LINUX
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     pDevExt->MemBalloon.fUseKernelAPI = true;
 #else
     pDevExt->MemBalloon.fUseKernelAPI = false;
@@ -1834,6 +1843,7 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
     rc = VbglGRPerform(&pReq->header);
     if (RT_FAILURE(rc))
     {
+        LogRel(("VBoxGuestCommonIOCtl: QUERYMEMORYBALLOON: VbglGRPerform failed. rc=%d\n", rc));
         VbglGRFree(&pReq->header);
         return rc;
     }
@@ -1857,6 +1867,7 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
     if (pcbDataReturned)
         *pcbDataReturned = sizeof(VBoxGuestCheckBalloonInfo);
 
+    Log(("VBoxGuestCommonIOCtl: QUERYMEMORYBALLOON returns %d\n", rc));
     return rc;
 }
 
