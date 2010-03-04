@@ -77,7 +77,7 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     updateAppearanceOf(UIVisualElement_AllStuff);
 
     /* Show window: */
-    showMaximized();
+    showSeamless();
 }
 
 UIMachineWindowSeamless::~UIMachineWindowSeamless()
@@ -223,6 +223,15 @@ void UIMachineWindowSeamless::cleanupMachineView()
 
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindowSeamless::showSeamless()
+{
+    /* Show manually maximized window: */
+    QRect geometry = QApplication::desktop()->availableGeometry();
+    move(geometry.topLeft());
+    resize(geometry.size());
+    show();
 }
 
 void UIMachineWindowSeamless::setMask(const QRegion &constRegion)

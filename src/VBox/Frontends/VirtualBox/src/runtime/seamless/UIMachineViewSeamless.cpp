@@ -51,7 +51,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     , uMonitor)
-    , m_fIsInitialResizeEventProcessed(false)
     , m_fShouldWeDoResize(false)
 {
     /* Prepare frame buffer: */
@@ -260,13 +259,6 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
-                /* Ignore initial resize event: */
-                if (!m_fIsInitialResizeEventProcessed)
-                {
-                    m_fIsInitialResizeEventProcessed = true;
-                    break;
-                }
-
                 /* Set the "guest needs to resize" hint.
                  * This hint is acted upon when (and only when) the autoresize property is "true": */
                 m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();

@@ -84,6 +84,7 @@ private:
     //void cleanupSeamless() {}
 
     /* Other members: */
+    void showSeamless();
     void setMask(const QRegion &region);
     void clearMask();
 
