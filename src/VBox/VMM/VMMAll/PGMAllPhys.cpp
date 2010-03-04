@@ -602,7 +602,7 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
     if (i == _2M/PAGE_SIZE)
     {
         PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE);
-        Log(("pgmPhysIsValidLargePage: page %RGp can be reused!\n", GCPhys));
+        Log(("pgmPhysIsValidLargePage: page %RGp can be reused!\n", GCPhys - _2M));
         return VINF_SUCCESS;
     }
 
