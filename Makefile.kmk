@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -26,12 +26,12 @@ include $(KBUILD_PATH)/subheader.kmk
 # Sub-makefiles / Sub-directories.
 #
 ifdef VBOX_SINGLE_MAKEFILE
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS)
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE)
   include $(PATH_SUB_CURRENT)/doc/manual/Makefile.kmk
  endif
  include $(PATH_SUB_CURRENT)/src/Makefile.kmk
 else
- if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS)
+ if defined(VBOX_WITH_DOCS) && !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE)
   SUBDIRS = doc/manual
  endif
  SUBDIRS += src
@@ -53,8 +53,7 @@ OTHER_CLEAN += \
 	$(PATH_OUT)/GCCConfig.kmk
 
 
-ifndef VBOX_ONLY_DOCS
-ifndef VBOX_ONLY_ADDITIONS
+if !defined(VBOX_ONLY_ADDITIONS) && !defined(VBOX_ONLY_TESTSUITE) && !defined(VBOX_ONLY_DOCS) # -> line 400
 
 ifndef VBOX_OSE
  #
@@ -410,8 +409,7 @@ ifn1of ($(KBUILD_TARGET), l4 linux win)
 
 endif
 
-endif # !VBOX_ONLY_ADDITIONS
-endif # !VBOX_ONLY_DOCS
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
 
 
 ifdef VBOX_ONLY_DOCS
@@ -669,6 +667,11 @@ $(PATH_TARGET)/docs.Core: $(PATH_TARGET)/Doxyfile.Core $$(VBOX_CORE_DOXYFILE_INP
 	$(APPEND) $(PATH_TARGET)/docs.Core
 
 
+#
+# Alias for kmk_time.  Used by both the additions and testsuite build setups.
+#
+VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
+
 
 #
 # Build the additions, all of them.
@@ -715,8 +718,6 @@ VBOX_ADDITIONS_BUILD.x86 = VBOX_ONLY_ADDITIONS=1 VBOX_WITHOUT_ADDITIONS_ISO=1 \
 # Automatically determine the additions build subdir name. Used for figuring
 # out directory names inside the additions building VMs.
 VBOX_ADDITIONS_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
-
-VBOX_KMK_TIME = $(KBUILD_BIN_PATH)/kmk_time
 
 # When building in parallel on a Windows host, make sure we finish the host
 # bit before kicking off any UNIX guest or we'll run into file sharing issues.
@@ -826,6 +827,155 @@ additions-packing:
 	additions-build-linux.amd64 \
 	additions-build-linux.x86 \
 	additions-packing
+
+
+#
+# Build the test suite, all of it.
+#
+# This is currently tailored (hardcoded) for the additions build box just like
+# the additions build above, which it in fact is a copy of.
+#
+testsuite-fetch:
+	+ $(KMK) -C tools fetch
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=linux   BUILD_TARGET_ARCH=amd64 BUILD_TARGET=linux
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=linux   BUILD_TARGET_ARCH=x86   BUILD_TARGET=linux
+#	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=os2     BUILD_TARGET_ARCH=x86   BUILD_TARGET=os2
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=solaris BUILD_TARGET_ARCH=amd64 BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=solaris BUILD_TARGET_ARCH=x86   BUILD_TARGET=solaris
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=amd64 KBUILD_TARGET=win     BUILD_TARGET_ARCH=amd64 BUILD_TARGET=win
+	+ $(KMK) -C tools fetch KBUILD_TARGET_ARCH=x86   KBUILD_TARGET=win     BUILD_TARGET_ARCH=x86   BUILD_TARGET=win
+
+
+testsuite-build: \
+	testsuite-build-solaris.amd64 \
+	testsuite-build-solaris.x86 \
+	testsuite-build-win.x86 \
+	testsuite-build-win.amd64 \
+	testsuite-build-os2.x86 \
+	testsuite-build-linux.amd64 \
+	testsuite-build-linux.x86
+
+VBOX_TESTSUITE_BUILD.amd64 = VBOX_ONLY_TESTSUITE=1 VBOX_WITHOUT_TESTSUITE_ISO=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
+	KBUILD_TARGET_ARCH=amd64 BUILD_TARGET_ARCH=amd64 \
+	VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+VBOX_TESTSUITE_BUILD.x86 = VBOX_ONLY_TESTSUITE=1 VBOX_WITHOUT_TESTSUITE_ISO=1 \
+	KBUILD_TYPE=$(KBUILD_TYPE) BUILD_TYPE=$(KBUILD_TYPE) \
+	KBUILD_TARGET_ARCH=x86 BUILD_TARGET_ARCH=x86 \
+	VBOX_SVN_REV=$(VBOX_SVN_REV)
+
+# Automatically determine the testsuite build subdir name. Used for figuring
+# out directory names inside the test suite building VMs.
+VBOX_TESTSUITE_BUILD_SUBDIRNAME := $(lastword $(subst /, ,$(PATH_ROOT)))
+
+# When building in parallel on a Windows host, make sure we finish the host
+# bit before kicking off any UNIX guest or we'll run into file sharing issues.
+ifeq ($(KBUILD_TARGET),win)
+VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST = testsuite-build-win.x86 testsuite-build-win.amd64
+else
+VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST =
+endif
+
+# ASSUMES the 32-bit edition has been built already. Also for serializing VM access.
+testsuite-build-win.amd64: testsuite-build-win.x86
+ifeq ($(KBUILD_TARGET),win)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) packing
+else
+	$(call MSG_L1,Building Windows/amd64 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.amd64) all packing "
+endif
+
+testsuite-build-win.x86:
+ifeq ($(KBUILD_TARGET),win)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) packing
+else
+	$(call MSG_L1,Building Windows/x86 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.5 " echo $@ && cd e:/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh kmk $(VBOX_TESTSUITE_BUILD.x86) all packing"
+endif
+
+# ASSUMES the 64-bit edition are built first. This also serializes VM access.
+ifeq ($(KBUILD_TARGET),solaris)
+testsuite-build-solaris.amd64:
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) packing
+
+testsuite-build-solaris.x86: testsuite-build-solaris.amd64
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1 packing
+
+else
+testsuite-build-solaris.rsync-into-vm: $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+	$(VBOX_KMK_TIME) rsync -a --delete --delete-excluded --exclude .svn --exclude FetchDir --exclude tinderclient.log --exclude win.amd64 --exclude win.x86 . 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)
+
+testsuite-build-solaris.build-it: testsuite-build-solaris.rsync-into-vm
+	$(call MSG_L1,Building Solaris/amd64 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/amd64 && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all packing"
+	$(call MSG_L1,Building Solaris/x86 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.4 " echo $@/x86   && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all packing VBOX_WITH_COMBINED_SOLARIS_GUEST_PACKAGE=1"
+
+testsuite-build-solaris.rsync-out-of-vm: testsuite-build-solaris.build-it
+	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.x86 out/
+	$(VBOX_KMK_TIME) rsync -a --delete 192.168.27.4:/mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME)/out/solaris.amd64 out/
+
+.NOTPARALLEL: testsuite-build-solaris.rsync-out-of-vm testsuite-build-solaris.rsync-into-vm
+.PHONY:       testsuite-build-solaris.rsync-out-of-vm testsuite-build-solaris.rsync-into-vm testsuite-build-solaris.build-it
+
+testsuite-build-solaris.amd64: testsuite-build-solaris.rsync-out-of-vm
+testsuite-build-solaris.x86: testsuite-build-solaris.rsync-out-of-vm
+endif
+
+testsuite-build-os2.x86:
+#ifeq ($(KBUILD_TARGET),os2)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+#	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) packing
+#else
+#	$(VBOX_KMK_TIME) ssh vbox@192.168.27.3 " cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) "
+#endif
+
+testsuite-build-linux.amd64:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.amd64)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.amd64) packing
+else
+	$(call MSG_L1,Building Linux/amd64 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.12 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.amd64) all packing"
+endif
+
+testsuite-build-linux.x86:   $(VBOX_TESTSUITE_BUILD_WIN_HOST_FIRST)
+ifeq ($(KBUILD_TARGET).$(KBUILD_TARGET_ARCH),linux.x86)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) all $(VBOX_TESTSUITE_HOST_BUILD_TWEAK)
+	+ $(VBOX_KMK_TIME) $(KMK) $(VBOX_TESTSUITE_BUILD.x86) packing
+else
+	$(call MSG_L1,Building Linux/x86 testsuite)
+	$(VBOX_KMK_TIME) ssh vbox@192.168.27.2 " echo $@ && cd /mnt/tinderbox/$(VBOX_TESTSUITE_BUILD_SUBDIRNAME) && tools/env.sh --no-wine kmk $(VBOX_TESTSUITE_BUILD.x86) all packing"
+endif
+
+
+testsuite-packing:
+	+ $(KMK) VBOX_ONLY_TESTSUITE=1 \
+		VBOX_WITH_TESTSUITE_ISO.freebsd.amd64= \
+		VBOX_WITH_TESTSUITE_ISO.freebsd.x86= \
+		VBOX_WITH_TESTSUITE_ISO.linux.amd64=1 \
+		VBOX_WITH_TESTSUITE_ISO.linux.x86=1 \
+		VBOX_WITH_TESTSUITE_ISO.solaris.amd64=1 \
+		VBOX_WITH_TESTSUITE_ISO.solaris.x86=1 \
+		VBOX_WITH_TESTSUITE_ISO.win.amd64=1 \
+		VBOX_WITH_TESTSUITE_ISO.win.x86=1 \
+		-C src/tests/testsuite \
+		$(VBOX_PATH_TESTSUITE)/VBoxTestSuite.iso
+
+.PHONY: \
+	testsuite-build-win.x86 \
+	testsuite-build-win.amd64 \
+	testsuite-build-solaris.amd64 \
+	testsuite-build-solaris.x86 \
+	testsuite-build-os2.x86 \
+	testsuite-build-linux.amd64 \
+	testsuite-build-linux.x86 \
+	testsuite-packing
 
 
 #

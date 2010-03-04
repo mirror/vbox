@@ -25,7 +25,7 @@ include $(KBUILD_PATH)/subheader.kmk
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/Support/Makefile.kmk
 
-ifndef VBOX_ONLY_DOCS
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
  ifdef VBOX_WITH_USB
   include $(PATH_SUB_CURRENT)/VBoxUSB/Makefile.kmk
  endif
@@ -60,7 +60,7 @@ ifndef VBOX_ONLY_DOCS
   HostDrivers-sh_MODE    = a+rx,u+w
   HostDrivers-sh_SOURCES.freebsd = freebsd/export_modules
  endif
-endif # !VBOX_ONLY_DOCS
+endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 
 # Let kBuild generate the rules.
 include $(KBUILD_PATH)/subfooter.kmk

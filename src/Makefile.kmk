@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -24,15 +24,19 @@ include $(KBUILD_PATH)/subheader.kmk
 
 ifdef VBOX_SINGLE_MAKEFILE
 
-ifdef VBOX_ONLY_ADDITIONS
+if defined(VBOX_ONLY_ADDITIONS)
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+
+else if defined(VBOX_ONLY_TESTSUITE)
+ include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
+ include $(PATH_SUB_CURRENT)/tests/Makefile.kmk
 
 else if defined(VBOX_ONLY_DOCS) || defined(VBOX_ONLY_SDK)
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
 
-else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
+else  # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
  include $(PATH_SUB_CURRENT)/bldprogs/Makefile.kmk
  include $(PATH_SUB_CURRENT)/VBox/Makefile.kmk
  include $(PATH_SUB_CURRENT)/libs/Makefile.kmk
@@ -46,7 +50,7 @@ else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
  ifdef VBOX_WITH_TESTCASES
   include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
  endif
-endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
+endif # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS && !VBOX_ONLY_SDK
 
 else  # !VBOX_SINGLE_MAKEFILE
 DEPTH  = ..
