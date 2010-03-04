@@ -244,7 +244,7 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
     /* Set the current visible region and clean the previous */
     SetWindowRgn(winId(), newReg, FALSE);
     RedrawWindow(0, 0, diffReg, RDW_INVALIDATE | RDW_UPDATENOW | RDW_ALLCHILDREN);
-    RedrawWindow(mConsole->viewport()->winId(), 0, 0, RDW_INVALIDATE);
+    RedrawWindow(machineView()->viewport()->winId(), 0, 0, RDW_INVALIDATE);
 
     m_prevRegion = region;
 #elif defined (Q_WS_MAC)
