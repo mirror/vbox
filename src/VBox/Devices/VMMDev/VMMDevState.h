@@ -206,6 +206,8 @@ typedef struct VMMDevState
     uint32_t             idCpuCore;
     /** Package id of the CPU to changhe */
     uint32_t             idCpuPackage;
+
+    uint32_t             StatMemBalloonChunks;
 } VMMDevState;
 AssertCompileMemberAlignment(VMMDevState, CritSect, 8);
 
