@@ -132,6 +132,10 @@ static DECLCALLBACK(int) VBoxServiceCpuHotPlugPreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceCpuHotPlugOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
     return VINF_SUCCESS;
 }
 

@@ -35,36 +35,42 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
-static uint32_t g_MemBalloonSize = 0;
+static uint32_t g_cMemBalloonChunks = 0;
 
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
 
+/** The array holding the R3 pointers of the balloon */
 static void **g_pavBalloon = NULL;
 
 
-static void VBoxServiceBalloonSetUser(uint32_t OldSize, uint32_t NewSize)
+/**
+ * Adapt the R0 memory balloon by granting/reclaiming 1MB chunks to/from R0.
+ *
+ * returns IPRT status code.
+ * @param   cNewChunks     the number of 1MB chunks in the balloon
+ */
+static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
 {
-    if (NewSize == OldSize)
-        return;
+    if (cNewChunks == g_cMemBalloonChunks)
+        return VINF_SUCCESS;
 
     int rc = VINF_SUCCESS;
-    if (NewSize > OldSize)
+    if (cNewChunks > g_cMemBalloonChunks)
     {
         /* inflate */
         uint32_t i;
-        g_pavBalloon = (void**)RTMemRealloc(g_pavBalloon, NewSize * sizeof(void*));
-        RTPrintf("allocated %d bytes\n", g_pavBalloon, NewSize * sizeof(void*));
-        for (i = OldSize; i < NewSize; i++)
+        g_pavBalloon = (void**)RTMemRealloc(g_pavBalloon, cNewChunks * sizeof(void*));
+        for (i = g_cMemBalloonChunks; i < cNewChunks; i++)
         {
-            void *pv = RTMemAlloc(VMMDEV_MEMORY_BALLOON_CHUNK_PAGES * PAGE_SIZE);
-            VBoxServiceVerbose(3, "Alloc %p\n", pv);
+            void *pv = RTMemPageAlloc(VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
             rc = VbglR3MemBalloonChange(pv, /* inflate=*/ true);
             if (RT_SUCCESS(rc))
             {
-                VBoxServiceVerbose(3, " => %Rrc\n", rc);
                 g_pavBalloon[i] = pv;
-                OldSize++;
+                /* protect against access by dangling pointers */
+                RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
+                g_cMemBalloonChunks++;
             }
             else
                 break;
@@ -74,24 +80,24 @@ static void VBoxServiceBalloonSetUser(uint32_t OldSize, uint32_t NewSize)
     {
         /* deflate */
         uint32_t i;
-        for (i = OldSize; i > NewSize; i--)
+        for (i = g_cMemBalloonChunks; i-- > cNewChunks;)
         {
-            void *pv = g_pavBalloon[i-1];
+            void *pv = g_pavBalloon[i];
             rc = VbglR3MemBalloonChange(pv, /* inflate=*/ false);
             if (RT_SUCCESS(rc))
             {
-                VBoxServiceVerbose(3, "Free %p\n", g_pavBalloon[i-1]);
-                RTMemFree(g_pavBalloon[i-1]);
-                g_pavBalloon[i-1] = NULL;
-                OldSize--;
+                /* unprotect */
+                RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+                RTMemPageFree(g_pavBalloon[i]);
+                g_pavBalloon[i] = NULL;
+                g_cMemBalloonChunks--;
             }
             else
                 break;
         }
     }
 
-    if (RT_FAILURE(rc))
-        g_MemBalloonSize = OldSize;
+    return VINF_SUCCESS;
 }
 
 
@@ -105,6 +111,10 @@ static DECLCALLBACK(int) VBoxServiceBalloonPreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceBalloonOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
     return VINF_SUCCESS;
 }
 
@@ -117,16 +127,23 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
     int rc = RTSemEventMultiCreate(&g_MemBalloonEvent);
     AssertRCReturn(rc, rc);
 
-    g_MemBalloonSize = 0;
+    g_cMemBalloonChunks = 0;
+    uint32_t cNewChunks = 0;
+    bool fHandleInR3;
 
     /* Check balloon size */
-    rc = VbglR3MemBalloonRefresh(&g_MemBalloonSize);
+    rc = VbglR3MemBalloonRefresh(&cNewChunks, &fHandleInR3);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "VBoxMemBalloonInit: new balloon size %d MB\n", g_MemBalloonSize);
-    else if (rc == VERR_NO_PHYS_MEMORY)
-        VBoxServiceBalloonSetUser(0, g_MemBalloonSize);
+    {
+        VBoxServiceVerbose(3, "VBoxMemBalloonInit: new balloon size %d MB (%s memory)\n",
+                           cNewChunks, fHandleInR3 ? "R3" : "R0");
+        if (fHandleInR3)
+            rc = VBoxServiceBalloonSetUser(cNewChunks);
+        else
+            g_cMemBalloonChunks = cNewChunks;
+    }
     else
-        VBoxServiceVerbose(3, "VBoxMemBalloonInit: VbglR3MemBalloonRefresh failed with %d\n", rc);
+        VBoxServiceVerbose(3, "VBoxMemBalloonInit: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
 
     /* We shouldn't fail here if ballooning isn't available. This can have several reasons,
      * for instance, host too old  (which is not that fatal). */
@@ -134,9 +151,9 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
 }
 
 
-uint32_t VBoxServiceBalloonQuerySize()
+uint32_t VBoxServiceBalloonQueryChunks()
 {
-    return g_MemBalloonSize;
+    return g_cMemBalloonChunks;
 }
 
 /** @copydoc VBOXSERVICE::pfnWorker */
@@ -148,7 +165,7 @@ DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
     rc = VbglR3CtlFilterMask(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
-        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %d\n", rc);
+        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %Rrc\n", rc);
         return rc;
     }
 
@@ -170,14 +187,20 @@ DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
         if (    RT_SUCCESS(rc)
             &&  (fEvents & VMMDEV_EVENT_BALLOON_CHANGE_REQUEST))
         {
-            uint32_t OldMemBalloonSize = g_MemBalloonSize;
-            rc = VbglR3MemBalloonRefresh(&g_MemBalloonSize);
+            uint32_t cNewChunks;
+            bool fHandleInR3;
+            rc = VbglR3MemBalloonRefresh(&cNewChunks, &fHandleInR3);
             if (RT_SUCCESS(rc))
-                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: new balloon size %d MB\n", g_MemBalloonSize);
-            else if (rc == VERR_NO_PHYS_MEMORY)
-                VBoxServiceBalloonSetUser(OldMemBalloonSize, g_MemBalloonSize);
+            {
+                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: new balloon size %d MB (%s memory)\n",
+                                   cNewChunks, fHandleInR3 ? "R3" : "R0");
+                if (fHandleInR3)
+                    rc = VBoxServiceBalloonSetUser(cNewChunks);
+                else
+                    g_cMemBalloonChunks = cNewChunks;
+            }
             else
-                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3MemBalloonRefresh failed with %d\n", rc);
+                VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3MemBalloonRefresh failed with %Rrc\n", rc);
         }
 
         /*
@@ -202,7 +225,7 @@ DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
     /* Cancel monitoring of the memory balloon change event. */
     rc = VbglR3CtlFilterMask(0, VMMDEV_EVENT_BALLOON_CHANGE_REQUEST);
     if (RT_FAILURE(rc))
-        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %d\n", rc);
+        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %Rrc\n", rc);
 
     RTSemEventMultiDestroy(g_MemBalloonEvent);
     g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;

@@ -47,6 +47,7 @@
 static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
 
+const size_t cbChangeMemBalloonReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
 
 
 /**
@@ -258,7 +259,8 @@ static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
 static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
 {
     VMMDevReportGuestInfo *pReq;
-    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
+    int rc;
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
     if (RT_SUCCESS(rc))
     {
         pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
@@ -273,47 +275,124 @@ static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enm
     return rc;
 }
 
+/**
+ * Inflate the balloon by one chunk represented by an R0 memory object.
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj     Pointer to the R0 memory object.
+ * @param   pReq        The pre-allocated request for performing the VMMDev call.
+ */
+static int vboxGuestBalloonInflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *pReq)
+{
+    uint32_t iPage;
+    int rc;
+
+    for (iPage = 0; iPage < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; iPage++)
+    {
+        RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(*pMemObj, iPage);
+        pReq->aPhysPage[iPage] = phys;
+    }
+
+    /* Protect this memory from being accessed. Doesn't work on every platform and probably
+     * doesn't work for R3-provided memory, therefore ignore the return value. Unprotect
+     * done when object is freed. */
+    rc = RTR0MemObjProtect(*pMemObj, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
+    NOREF(rc);
+
+    pReq->fInflate = true;
+    pReq->header.size = cbChangeMemBalloonReq;
+    pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+
+    return VbglGRPerform(&pReq->header);
+}
+
+/**
+ * Deflate the balloon by one chunk represented by an R0 memory object.
+ *
+ * @returns IPRT status code.
+ * @param   pMemObj     Pointer to the R0 memory object.
+ *                      The memory object will be freed afterwards.
+ * @param   pReq        The pre-allocated request for performing the VMMDev call.
+ */
+static int vboxGuestBalloonDeflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *pReq)
+{
+    uint32_t iPage;
+    int rc;
+
+    for (iPage = 0; iPage < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; iPage++)
+    {
+        RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(*pMemObj, iPage);
+        pReq->aPhysPage[iPage] = phys;
+    }
+
+    pReq->fInflate = false;
+    pReq->header.size = cbChangeMemBalloonReq;
+    pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
+
+    rc = VbglGRPerform(&pReq->header);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = RTR0MemObjFree(*pMemObj, true);
+    if (RT_FAILURE(rc))
+        return rc;
+
+    *pMemObj = NIL_RTR0MEMOBJ;
+    return VINF_SUCCESS;
+}
+
 
 /**
  * Inflate/deflate the memory balloon and notify the host.
  *
  * @returns VBox status code.
- * @param   pDevExt     The device extension
- * @param   u32BalloonSize The new size of the balloon in chunks of 1MB.
+ * @param   pDevExt         The device extension
+ * @param   cBalloonChunks  The new size of the balloon in chunks of 1MB.
  */
-static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t u32BalloonSize)
+static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBalloonChunks)
 {
     int rc = VINF_SUCCESS;
 
     if (pDevExt->MemBalloon.fUseKernelAPI)
     {
         VMMDevChangeMemBalloon *pReq;
-        uint32_t i, j;
-        const size_t cbReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+        uint32_t i;
 
-        if (u32BalloonSize > pDevExt->MemBalloon.cMaxChunks)
+        if (cBalloonChunks > pDevExt->MemBalloon.cMaxChunks)
         {
             AssertMsgFailed(("vboxGuestSetBalloonSize illegal balloon size %d (max=%d)\n",
-                             u32BalloonSize, pDevExt->MemBalloon.cMaxChunks));
+                             cBalloonChunks, pDevExt->MemBalloon.cMaxChunks));
             return VERR_INVALID_PARAMETER;
         }
 
-        if (u32BalloonSize == pDevExt->MemBalloon.cMaxChunks)
+        if (cBalloonChunks == pDevExt->MemBalloon.cMaxChunks)
             return VINF_SUCCESS;   /* nothing to do */
 
-        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbReq, VMMDevReq_ChangeMemBalloon);
+        if (   cBalloonChunks > pDevExt->MemBalloon.cChunks
+            && !pDevExt->MemBalloon.paMemObj)
+        {
+            pDevExt->MemBalloon.paMemObj = (RTR0MEMOBJ*)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
+            if (!pDevExt->MemBalloon.paMemObj)
+            {
+                LogRel(("VBoxGuestSetBalloonSizeKernel: no memory for paMemObj!\n"));
+                return VERR_NO_MEMORY;
+            }
+        }
+
+        rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbChangeMemBalloonReq, VMMDevReq_ChangeMemBalloon);
         if (RT_FAILURE(rc))
             return rc;
 
-        if (u32BalloonSize > pDevExt->MemBalloon.cChunks)
+        if (cBalloonChunks > pDevExt->MemBalloon.cChunks)
         {
             /* inflate */
-            for (i = pDevExt->MemBalloon.cChunks; i < u32BalloonSize; i++)
+            for (i = pDevExt->MemBalloon.cChunks; i < cBalloonChunks; i++)
             {
                 rc = RTR0MemObjAllocPhysNC(&pDevExt->MemBalloon.paMemObj[i],
-                                           VMMDEV_MEMORY_BALLOON_CHUNK_PAGES * PAGE_SIZE, NIL_RTHCPHYS);
+                                           VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, NIL_RTHCPHYS);
                 if (RT_UNLIKELY(rc == VERR_NOT_SUPPORTED))
                 {
+                    /* not supported -- fall back to the R3-allocated memory */
                     pDevExt->MemBalloon.fUseKernelAPI = false;
                     break;
                 }
@@ -328,21 +407,10 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t u32B
                     break;
                 }
 
-                RTR0MEMOBJ MemObj = pDevExt->MemBalloon.paMemObj[i];
-                for (j = 0; j < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; j++)
-                {
-                    RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(MemObj, j);
-                    pReq->aPhysPage[j] = phys;
-                }
-
-                pReq->header.size = cbReq;
-                pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-                pReq->fInflate = true;
-
-                rc = VbglGRPerform(&pReq->header);
+                rc = vboxGuestBalloonInflate(&pDevExt->MemBalloon.paMemObj[i], pReq);
                 if (RT_FAILURE(rc))
                 {
-                    Log(("vboxGuestSetBalloonSize(inflate): VbglGRPerform failed, rc=%Rrc!\n", rc));
+                    Log(("vboxGuestSetBalloonSize(inflate): failed, rc=%Rrc!\n", rc));
                     break;
                 }
                 pDevExt->MemBalloon.cChunks++;
@@ -351,33 +419,14 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t u32B
         else
         {
             /* deflate */
-            for (i = pDevExt->MemBalloon.cChunks; i > u32BalloonSize; i--)
+            for (i = pDevExt->MemBalloon.cChunks; i-- > cBalloonChunks;)
             {
-                RTR0MEMOBJ MemObj = pDevExt->MemBalloon.paMemObj[i];
-                for (j = 0; j < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; j++)
-                {
-                    RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(MemObj, j);
-                    pReq->aPhysPage[j] = phys;
-                }
-
-                pReq->header.size = cbReq;
-                pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-                pReq->fInflate = false;
-
-                rc = VbglGRPerform(&pReq->header);
+                rc = vboxGuestBalloonDeflate(&pDevExt->MemBalloon.paMemObj[i], pReq);
                 if (RT_FAILURE(rc))
                 {
-                    Log(("vboxGuestSetBalloonSize(deflate): VbglGRPerform failed, rc=%Rrc!\n", rc));
+                    Log(("vboxGuestSetBalloonSize(deflate): failed, rc=%Rrc!\n", rc));
                     break;
                 }
-
-                rc = RTR0MemObjFree(pDevExt->MemBalloon.paMemObj[i], true);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("vboxGuestSetBalloonSize(deflate): RTR0MemObjFree() failed, rc=%Rrc!\n", rc));
-                    break;
-                }
-                pDevExt->MemBalloon.paMemObj[i] = NIL_RTR0MEMOBJ;
                 pDevExt->MemBalloon.cChunks--;
             }
         }
@@ -404,32 +453,47 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 {
     VMMDevChangeMemBalloon *pReq;
     int rc = VINF_SUCCESS;
-    uint32_t i, j;
-    const size_t cbReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+    uint32_t i;
     PRTR0MEMOBJ pMemObj = NULL;
 
-    if (   fInflate
-        && pSession->MemBalloon.cChunks > pSession->MemBalloon.cMaxChunks - 1)
+    if (fInflate)
     {
-        AssertMsgFailed(("vboxGuestSetBalloonSize: cannot inflate balloon, already have (max=%d)\n",
-                         pSession->MemBalloon.cChunks, pSession->MemBalloon.cMaxChunks));
-        return VERR_INVALID_PARAMETER;
+        if (pSession->MemBalloon.cChunks > pDevExt->MemBalloon.cMaxChunks - 1)
+        {
+            AssertMsgFailed(("vboxGuestSetBalloonSize: cannot inflate balloon, already have (max=%d)\n",
+                             pSession->MemBalloon.cChunks, pDevExt->MemBalloon.cMaxChunks));
+            return VERR_INVALID_PARAMETER;
+        }
+
+        if (!pSession->MemBalloon.paMemObj)
+        {
+            pSession->MemBalloon.paMemObj = (RTR0MEMOBJ*)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
+            if (!pSession->MemBalloon.paMemObj)
+            {
+                LogRel(("VBoxGuestSetBalloonSizeFromUser: no memory for paMemObj!\n"));
+                return VERR_NO_MEMORY;
+            }
+            for (i = 0; i < pDevExt->MemBalloon.cMaxChunks; i++)
+                pSession->MemBalloon.paMemObj[i] = NIL_RTR0MEMOBJ;
+        }
     }
-    else if (   !fInflate
-             && pSession->MemBalloon.cChunks == 0)
+    else
     {
-        AssertMsgFailed(("vboxGuestSetBalloonSize: cannot decrease balloon, already at size 0\n"));
-        return VERR_INVALID_PARAMETER;
+        if (pSession->MemBalloon.cChunks == 0)
+        {
+            AssertMsgFailed(("vboxGuestSetBalloonSize: cannot decrease balloon, already at size 0\n"));
+            return VERR_INVALID_PARAMETER;
+        }
     }
 
     /*
      * Enumerate all memory objects and check if the object is already registered.
      */
-    for (i = 0; i < pSession->MemBalloon.cMaxChunks; i++)
+    for (i = 0; i < pDevExt->MemBalloon.cMaxChunks; i++)
     {
         if (   fInflate
-            && !pSession->MemBalloon.paMemObj[i] == NIL_RTR0MEMOBJ
-            && !pMemObj)
+            && !pMemObj
+            && pSession->MemBalloon.paMemObj[i] == NIL_RTR0MEMOBJ)
             pMemObj = &pSession->MemBalloon.paMemObj[i]; /* found free object pointer */
         if (RTR0MemObjAddressR3(pSession->MemBalloon.paMemObj[i]) == u64ChunkAddr)
         {
@@ -447,7 +511,7 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
             return VERR_NOT_FOUND; /* cannot free this memory as it wasn't provided before */
     }
 
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbReq, VMMDevReq_ChangeMemBalloon);
+    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbChangeMemBalloonReq, VMMDevReq_ChangeMemBalloon);
     if (RT_FAILURE(rc))
         return rc;
 
@@ -455,25 +519,14 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     {
         if (fInflate)
         {
-            rc = RTR0MemObjLockUser(pMemObj, u64ChunkAddr, VMMDEV_MEMORY_BALLOON_CHUNK_PAGES * PAGE_SIZE,
+            rc = RTR0MemObjLockUser(pMemObj, u64ChunkAddr, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE,
                                     RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
             if (RT_SUCCESS(rc))
             {
-                RTR0MEMOBJ MemObj = pDevExt->MemBalloon.paMemObj[i];
-                for (j = 0; j < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; j++)
-                {
-                    RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(MemObj, j);
-                    pReq->aPhysPage[j] = phys;
-                }
-
-                pReq->header.size = cbReq;
-                pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-                pReq->fInflate = true;
-
-                rc = VbglGRPerform(&pReq->header);
+                rc = vboxGuestBalloonInflate(pMemObj, pReq);
                 if (RT_FAILURE(rc))
                 {
-                    Log(("vboxGuestSetBalloonSize(inflate): VbglGRPerform failed, rc=%Rrc!\n", rc));
+                    Log(("vboxGuestSetBalloonSize(inflate): failed, rc=%Rrc!\n", rc));
                     break;
                 }
                 pSession->MemBalloon.cChunks++;
@@ -481,37 +534,49 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
         }
         else
         {
-            /* deflate */
-            for (j = 0; j < VMMDEV_MEMORY_BALLOON_CHUNK_PAGES; j++)
-            {
-                RTHCPHYS phys = RTR0MemObjGetPagePhysAddr(*pMemObj, j);
-                pReq->aPhysPage[j] = phys;
-            }
-
-            pReq->header.size = cbReq;
-            pReq->cPages = VMMDEV_MEMORY_BALLOON_CHUNK_PAGES;
-            pReq->fInflate = false;
-
-            rc = VbglGRPerform(&pReq->header);
+            rc = vboxGuestBalloonDeflate(pMemObj, pReq);
             if (RT_FAILURE(rc))
             {
-                Log(("vboxGuestSetBalloonSize(deflate): VbglGRPerform failed, rc=%Rrc!\n", rc));
+                Log(("vboxGuestSetBalloonSize(deflate): failed, rc=%Rrc!\n", rc));
                 break;
             }
-
-            rc = RTR0MemObjFree(*pMemObj, true);
-            if (RT_FAILURE(rc))
-            {
-                Log(("vboxGuestSetBalloonSize(deflate): RTR0MemObjFree() failed, rc=%Rrc!\n", rc));
-                break;
-            }
-            *pMemObj = NIL_RTR0MEMOBJ;
             pSession->MemBalloon.cChunks--;
         }
     } while (0);
 
     VbglGRFree(&pReq->header);
     return rc;
+}
+
+
+/**
+ * Cleanup the memory balloon of a session.
+ */
+static void vboxGuestCloseSessionMemBalloon(PVBOXGUESTSESSION pSession)
+{
+    if (pSession->MemBalloon.paMemObj)
+    {
+        VMMDevChangeMemBalloon *pReq;
+        int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbChangeMemBalloonReq, VMMDevReq_ChangeMemBalloon);
+        if (RT_SUCCESS(rc))
+        {
+            uint32_t i;
+            for (i = pSession->MemBalloon.cChunks; i-- > 0;)
+            {
+                rc = vboxGuestBalloonDeflate(&pSession->MemBalloon.paMemObj[i], pReq);
+                if (RT_FAILURE(rc))
+                {
+                    Log(("vboxGuestSetBalloonSize(deflate): failed, rc=%Rrc!\n", rc));
+                    break;
+                }
+                pSession->MemBalloon.paMemObj[i] = NIL_RTR0MEMOBJ;
+                pSession->MemBalloon.cChunks--;
+            }
+            VbglGRFree(&pReq->header);
+        }
+        RTMemFree(pSession->MemBalloon.paMemObj);
+        pSession->MemBalloon.paMemObj = NULL;
+    }
 }
 
 
@@ -524,11 +589,11 @@ static void vboxGuestInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
 {
     pDevExt->MemBalloon.cChunks = 0;
     pDevExt->MemBalloon.cMaxChunks = 0;
-//#ifdef RT_OS_LINUX
-//    pDevExt->MemBalloon.fUseKernelAPI = true;
-//#else
+#ifdef RT_OS_LINUX
+    pDevExt->MemBalloon.fUseKernelAPI = true;
+#else
     pDevExt->MemBalloon.fUseKernelAPI = false;
-//#endif
+#endif
     pDevExt->MemBalloon.paMemObj = NULL;
 }
 
@@ -774,7 +839,6 @@ void VBoxGuestDeleteDevExt(PVBOXGUESTDEVEXT pDevExt)
  */
 int VBoxGuestCreateUserSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION *ppSession)
 {
-    unsigned i;
     PVBOXGUESTSESSION pSession = (PVBOXGUESTSESSION)RTMemAllocZ(sizeof(*pSession));
     if (RT_UNLIKELY(!pSession))
     {
@@ -855,6 +919,7 @@ void VBoxGuestCloseSession(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession)
     pSession->pDevExt = NULL;
     pSession->Process = NIL_RTPROCESS;
     pSession->R0Process = NIL_RTR0PROCESS;
+    vboxGuestCloseSessionMemBalloon(pSession);
     RTMemFree(pSession);
 }
 
@@ -1046,11 +1111,21 @@ int  VBoxGuestCommonIOCtlFast(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBO
 {
     Log(("VBoxGuestCommonIOCtlFast: iFunction=%#x pDevExt=%p pSession=%p\n", iFunction, pDevExt, pSession));
 
+    NOREF(iFunction);
+    NOREF(pDevExt);
+    NOREF(pSession);
     return VERR_NOT_SUPPORTED;
 }
 
 
-
+/**
+ * Return the VMM device port.
+ *
+ * returns IPRT status code.
+ * @param   pDevExt         The device extension.
+ * @param   pInfo           The request info.
+ * @param   pcbDataReturned (out) contains the number of bytes to return.
+ */
 static int VBoxGuestCommonIOCtl_GetVMMDevPort(PVBOXGUESTDEVEXT pDevExt, VBoxGuestPortInfo *pInfo, size_t *pcbDataReturned)
 {
     Log(("VBoxGuestCommonIOCtl: GETVMMDEVPORT\n"));
@@ -1745,7 +1820,7 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
  * @returns VBox status code.
  */
 static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
-                                                   uint32_t *memBalloonSize, size_t *pcbDataReturned)
+                                                   VBoxGuestCheckBalloonInfo *pInfo, size_t *pcbDataReturned)
 {
     VMMDevGetMemBalloonChangeRequest *pReq;
     Log(("VBoxGuestCommonIOCtl: QUERYMEMORYBALLOON\n"));
@@ -1763,22 +1838,24 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
         return rc;
     }
 
-    if (   pReq->u32BalloonSize != 0
-        && !pDevExt->MemBalloon.paMemObj)
-    {
-        pDevExt->MemBalloon.cMaxChunks = pReq->u32PhysMemSize;
-        pDevExt->MemBalloon.paMemObj = (RTR0MEMOBJ*)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pReq->u32PhysMemSize);
-    }
+    pDevExt->MemBalloon.cMaxChunks = pReq->cPhysMemChunks;
 
-    rc = vboxGuestSetBalloonSizeKernel(pDevExt, pReq->u32BalloonSize);
-    /* ignore out of memory failures */
+    rc = vboxGuestSetBalloonSizeKernel(pDevExt, pReq->cBalloonChunks);
+    /* Ignore out of memory failures */
     if (rc == VERR_NO_MEMORY)
         rc = VINF_SUCCESS;
 
-    /* Balloon size in MB */
-    *memBalloonSize = pReq->u32BalloonSize;
+    /* Return values */
+    pInfo->cBalloonChunks = pReq->cBalloonChunks;
+    pInfo->fHandleInR3 = false;
+    if (rc == VERR_NO_PHYS_MEMORY)
+    {
+        pInfo->fHandleInR3 = true;
+        rc = VINF_SUCCESS;
+    }
+
     if (pcbDataReturned)
-        *pcbDataReturned = sizeof(*memBalloonSize);
+        *pcbDataReturned = sizeof(VBoxGuestCheckBalloonInfo);
 
     return rc;
 }
@@ -1808,6 +1885,8 @@ static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PV
  */
 static int VBoxGuestCommonIOCtl_Log(const char *pch, size_t cbData, size_t *pcbDataReturned)
 {
+    NOREF(pch);
+    NOREF(cbData);
     Log(("%.*s", cbData, pch));
     if (pcbDataReturned)
         *pcbDataReturned = 0;
@@ -1976,8 +2055,8 @@ int VBoxGuestCommonIOCtl(unsigned iFunction, PVBOXGUESTDEVEXT pDevExt, PVBOXGUES
 #endif /* VBOX_WITH_HGCM */
 
             case VBOXGUEST_IOCTL_CHECK_BALLOON:
-                CHECKRET_MIN_SIZE("CHECK_MEMORY_BALLOON", sizeof(uint32_t));
-                rc = VBoxGuestCommonIOCtl_QueryMemoryBalloon(pDevExt, (uint32_t *)pvData, pcbDataReturned);
+                CHECKRET_MIN_SIZE("CHECK_MEMORY_BALLOON", sizeof(VBoxGuestCheckBalloonInfo));
+                rc = VBoxGuestCommonIOCtl_QueryMemoryBalloon(pDevExt, (VBoxGuestCheckBalloonInfo *)pvData, pcbDataReturned);
                 break;
 
             case VBOXGUEST_IOCTL_CHANGE_BALLOON:

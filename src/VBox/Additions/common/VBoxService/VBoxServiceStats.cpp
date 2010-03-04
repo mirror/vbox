@@ -74,6 +74,10 @@ static DECLCALLBACK(int) VBoxServiceVMStatsPreInit(void)
 /** @copydoc VBOXSERVICE::pfnOption */
 static DECLCALLBACK(int) VBoxServiceVMStatsOption(const char **ppszShort, int argc, char **argv, int *pi)
 {
+    NOREF(ppszShort);
+    NOREF(argc);
+    NOREF(argv);
+    NOREF(pi);
     return VINF_SUCCESS;
 }
 
@@ -168,7 +172,7 @@ static void VBoxServiceVMStatsReport()
     /* The current size of the committed memory limit, in bytes. This is physical memory plus the size of the page file, minus a small overhead. */
     req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize) - req.guestStats.u32PhysMemTotal;
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQuerySize() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
+    req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQueryChunks() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
     req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
 
     if (gCtx.pfnGetPerformanceInfo)
