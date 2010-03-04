@@ -182,7 +182,7 @@ void UIMachineWindowSeamless::prepareMenu()
 {
     setMenuBar(uisession()->newMenuBar());
 }
-#endif
+#endif /* Q_WS_MAC */
 
 void UIMachineWindowSeamless::prepareMachineView()
 {
