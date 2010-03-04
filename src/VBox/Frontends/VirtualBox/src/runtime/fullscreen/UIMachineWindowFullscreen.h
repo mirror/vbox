@@ -56,14 +56,6 @@ private slots:
 
     /* Console callback handlers: */
     void sltMachineStateChanged();
-    void sltMediumChange(const CMediumAttachment &attachment);
-    void sltUSBControllerChange();
-    void sltUSBDeviceStateChange();
-    void sltNetworkAdapterChange();
-    void sltSharedFolderChange();
-
-    /* LED connections: */
-    void sltProcessGlobalSettingChange(const char *aPublicName, const char *aName);
 
     /* Close window reimplementation: */
     void sltTryClose();
@@ -73,27 +65,20 @@ private:
     /* Translate routine: */
     void retranslateUi();
 
-    /* Update routines: */
-    void updateAppearanceOf(int aElement);
-
     /* Event handlers: */
-    bool event(QEvent *pEvent);
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
 #endif
     void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
-    void prepareConsoleConnections();
     void prepareMenu();
-    void prepareConnections();
     void prepareMachineView();
     void loadWindowSettings();
 
     /* Cleanup helpers: */
     void saveWindowSettings();
     void cleanupMachineView();
-    //void cleanupConnections() {}
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
 
