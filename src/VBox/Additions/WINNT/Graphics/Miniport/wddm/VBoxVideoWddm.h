@@ -101,6 +101,7 @@ typedef enum
 typedef struct VBOXWDDM_DEVICE
 {
     struct _DEVICE_EXTENSION * pAdapter; /* Adapder info */
+    HANDLE hDevice; /* handle passed to CreateDevice */
     VBOXWDDM_DEVICE_TYPE enmType; /* device creation flags passed to DxgkDdiCreateDevice, not sure we need it */
 } VBOXWDDM_DEVICE, *PVBOXWDDM_DEVICE;
 
