@@ -670,10 +670,12 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     }
     else
     {
-        if (rc != VERR_INTERRUPTED)
-            LogRel((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
-        else
-            Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
+        /*
+         * We Log() instead of LogRel() here because VBOXGUEST_IOCTL_WAITEVENT can return VERR_TIMEOUT,
+         * VBOXGUEST_IOCTL_CANCEL_ALL_EVENTS can return VERR_INTERRUPTED and possibly more in the future;
+         * which are not really failures that require logging.
+         */
+        Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
         rc = RTErrConvertToErrno(rc);
     }
     *pVal = rc;
