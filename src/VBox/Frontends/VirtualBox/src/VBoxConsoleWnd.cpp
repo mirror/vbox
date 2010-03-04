@@ -2146,7 +2146,9 @@ void VBoxConsoleWnd::vmTakeSnapshot()
 
 void VBoxConsoleWnd::vmShowInfoDialog()
 {
+#ifndef VBOX_WITH_NEW_RUNTIME_CORE
     VBoxVMInformationDlg::createInformationDlg (mSession, mConsole);
+#endif
 }
 
 void VBoxConsoleWnd::vmReset()
