@@ -34,7 +34,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Targets
 #
-LIBRARIES += SUPR3 SUPR3HardenedStatic
+LIBRARIES += SUPR3 SUPR3Static SUPR3HardenedStatic
 if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT)),)
   LIBRARIES += SUPR0
@@ -92,6 +92,11 @@ SUPR3_SOURCES       = \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
 
+#
+# Static version of SUPR3.
+#
+SUPR3Static_TEMPLATE = VBOXR3STATIC
+SUPR3Static_EXTENDS = SUPR3
 
 #
 # The static part of the hardened support library (ring-3).
