@@ -671,7 +671,7 @@ static int VBoxGuestSolarisIOCtl(dev_t Dev, int Cmd, intptr_t pArg, int Mode, cr
     else
     {
         if (rc != VERR_INTERRUPTED)
-            LogRel((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
+            LogRel((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. Cmd=%#x rc=%d\n", Cmd, rc));
         else
             Log((DEVICE_NAME "::IOCtl: VBoxGuestCommonIOCtl failed. rc=%d\n", rc));
         rc = RTErrConvertToErrno(rc);
