@@ -796,6 +796,14 @@ static void pc_kbd_mouse_event(void *opaque, int dx, int dy, int dz, int dw,
                && kbd_mouse_event_queue_free(s) > 4)
             kbd_mouse_send_packet(s, false);
 }
+
+/* Report a change in status down the driver chain */
+static void kbd_mouse_update_downstream_status(KBDState *pThis)
+{
+    PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
+    bool fEnabled = pThis->mouse_status & MOUSE_STATUS_ENABLED;
+    pDrv->pfnReportModes(pDrv, fEnabled, false);
+}
 #endif /* IN_RING3 */
 
 static int kbd_write_mouse(KBDState *s, int val)
@@ -803,6 +811,7 @@ static int kbd_write_mouse(KBDState *s, int val)
 #ifdef DEBUG_MOUSE
     LogRelFlowFunc(("kbd: write mouse 0x%02x\n", val));
 #endif
+    int rc = VINF_SUCCESS;
     /* Flush the mouse command response queue. */
     s->mouse_command_queue.count = 0;
     s->mouse_command_queue.rptr = 0;
@@ -862,24 +871,42 @@ static int kbd_write_mouse(KBDState *s, int val)
             kbd_mouse_send_packet(s, true);
             break;
         case AUX_ENABLE_DEV:
+#ifdef IN_RING3
+            LogRelFlowFunc(("Enabling mouse device\n"));
             s->mouse_status |= MOUSE_STATUS_ENABLED;
             kbd_queue(s, AUX_ACK, 1);
+            kbd_mouse_update_downstream_status(s);
+#else
+            LogRelFlowFunc(("Enabling mouse device, R0 stub\n"));
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
         case AUX_DISABLE_DEV:
+#ifdef IN_RING3
             s->mouse_status &= ~MOUSE_STATUS_ENABLED;
             kbd_queue(s, AUX_ACK, 1);
             /* Flush the mouse events queue. */
             s->mouse_event_queue.count = 0;
             s->mouse_event_queue.rptr = 0;
             s->mouse_event_queue.wptr = 0;
+            kbd_mouse_update_downstream_status(s);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
         case AUX_SET_DEFAULT:
+#ifdef IN_RING3
             s->mouse_sample_rate = 100;
             s->mouse_resolution = 2;
             s->mouse_status = 0;
             kbd_queue(s, AUX_ACK, 1);
+            kbd_mouse_update_downstream_status(s);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
         case AUX_RESET:
+#ifdef IN_RING3
             s->mouse_sample_rate = 100;
             s->mouse_resolution = 2;
             s->mouse_status = 0;
@@ -891,6 +918,10 @@ static int kbd_write_mouse(KBDState *s, int val)
             s->mouse_event_queue.count = 0;
             s->mouse_event_queue.rptr = 0;
             s->mouse_event_queue.wptr = 0;
+            kbd_mouse_update_downstream_status(s);
+#else
+            rc = VINF_IOM_HC_IOPORT_WRITE;
+#endif
             break;
         default:
             /* NACK all commands we don't know.
@@ -974,7 +1005,7 @@ static int kbd_write_mouse(KBDState *s, int val)
         s->mouse_write_cmd = -1;
         break;
     }
-    return VINF_SUCCESS;
+    return rc;
 }
 
 static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
@@ -1024,7 +1055,10 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
     default:
         break;
     }
-    s->write_cmd = 0;
+    /** @todo this was unconditional before.  That looks wrong to me, but I
+     * just can't believe that no one would have noticed before... */
+    if (rc != VINF_IOM_HC_IOPORT_WRITE)
+        s->write_cmd = 0;
     return rc;
 }
 
@@ -1046,7 +1080,11 @@ static void kbd_reset(void *opaque)
     s->scan_enabled = 0;
     s->translate = 0;
     s->scancode_set = 2;
-    s->mouse_status = 0;
+    if (s->mouse_status)
+    {
+        s->mouse_status = 0;
+        kbd_mouse_update_downstream_status(s);
+    }
     s->mouse_resolution = 0;
     s->mouse_sample_rate = 0;
     s->mouse_wrap = 0;
