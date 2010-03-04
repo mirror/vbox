@@ -222,7 +222,7 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
         {
             PGM_PAGE_SET_HNDL_PHYS_STATE(pPage, uState);
 
-            int rc2 = pgmPoolTrackUpdateGCPhys(pVM, pPage, false /* allow updates of PTEs (instead of flushing) */, &fFlushTLBs);
+            int rc2 = pgmPoolTrackUpdateGCPhys(pVM, pRam->GCPhys + (i << PAGE_SHIFT), pPage, false /* allow updates of PTEs (instead of flushing) */, &fFlushTLBs);
             if (rc2 != VINF_SUCCESS && rc == VINF_SUCCESS)
                 rc = rc2;
         }
@@ -410,7 +410,7 @@ void pgmHandlerPhysicalResetAliasedPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys
      * Flush any shadow page table references *first*.
      */
     bool fFlushTLBs = false;
-    int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
+    int rc = pgmPoolTrackFlushGCPhys(pVM, GCPhysPage, pPage, &fFlushTLBs);
     AssertLogRelRCReturnVoid(rc);
 # ifdef IN_RC
     if (fFlushTLBs && rc != VINF_PGM_SYNC_CR3)
