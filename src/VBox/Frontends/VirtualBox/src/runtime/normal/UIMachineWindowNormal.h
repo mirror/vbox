@@ -40,7 +40,7 @@ class CMediumAttachment;
 class UIIndicatorsPool;
 class QIStateIndicator;
 
-class UIMachineWindowNormal : public QIWithRetranslateUI<QIMainDialog>, public UIMachineWindow
+class UIMachineWindowNormal : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
 {
     Q_OBJECT;
 
