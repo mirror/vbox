@@ -37,6 +37,7 @@
 #include <iprt/mem.h>
 
 #include <iprt/assert.h>
+#include <iprt/log.h>
 #include <iprt/param.h>
 #include <iprt/thread.h>
 #include "r0drv/alloc-r0drv.h"
@@ -70,7 +71,7 @@ PRTMEMHDR rtMemAlloc(size_t cb, uint32_t fFlags)
         pHdr->cbReq     = cb;
     }
     else
-        cmn_err(CE_NOTE, "rtMemAlloc(%ld, %x) failed\n", cb + sizeof(*pHdr), fFlags);
+        LogRel(("rtMemAlloc(%u, %#x) failed\n", (unsigned)cb + sizeof(*pHdr), fFlags));
     return pHdr;
 }
 
@@ -92,24 +93,21 @@ void rtMemFree(PRTMEMHDR pHdr)
 
 RTR0DECL(void *) RTMemContAlloc(PRTCCPHYS pPhys, size_t cb)
 {
-    AssertPtr(pPhys);
-    Assert(cb > 0);
+    AssertPtrReturn(pPhys, NULL);
+    AssertReturn(cb > 0, NULL);
     RT_ASSERT_PREEMPTIBLE();
 
-    /* Allocate physically contiguous page-aligned memory. */
-    caddr_t virtAddr;
-    uint64_t phys = (unsigned)0xffffffff;       /* insist on below 4Gig */
-
-    virtAddr = vbi_contig_alloc(&phys, cb);
+    /* Allocate physically contiguous (< 4GB) page-aligned memory. */
+    uint64_t physAddr = _4G -1;
+    caddr_t virtAddr  = vbi_contig_alloc(&physAddr, cb);
     if (virtAddr == NULL)
     {
-        cmn_err(CE_NOTE, "vbi_contig_alloc for %u failed\n", cb);
+        LogRel(("vbi_contig_alloc failed to allocate %u bytes\n", cb));
         return NULL;
     }
 
-    Assert(phys < (uint64_t)1 << 32);
-
-    *pPhys = phys;
+    Assert(physAddr < _4G);
+    *pPhys = physAddr;
     return virtAddr;
 }
 
