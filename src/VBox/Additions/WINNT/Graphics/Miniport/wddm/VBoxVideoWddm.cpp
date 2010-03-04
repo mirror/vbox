@@ -1083,6 +1083,8 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
+    AssertBreakpoint();
+
     switch (pQueryAdapterInfo->Type)
     {
         case DXGKQAITYPE_DRIVERCAPS:
@@ -1185,6 +1187,8 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
+    AssertBreakpoint();
+
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)vboxWddmMemAllocZero(sizeof (VBOXWDDM_DEVICE));
     pCreateDevice->hDevice = pDevice;
     if (pCreateDevice->Flags.SystemDevice)
@@ -1196,6 +1200,7 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     }
 
     pDevice->pAdapter = pContext;
+    pDevice->hDevice = pCreateDevice->hDevice;
 
     pCreateDevice->hDevice = pDevice;
     pCreateDevice->pInfo = NULL;
@@ -1237,7 +1242,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                         {
                             pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE;
                             pAllocation->u.SurfInfo = pAllocInfo->u.SurfInfo;
-                            PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocInfo, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+                            PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
                             PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE pAllocI = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
                             pAlloc->RefreshRate = pAllocI->RefreshRate;
                             pAlloc->VidPnSourceId = pAllocI->VidPnSourceId;
@@ -1286,7 +1291,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                 Assert(pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_HEADSIZE());
                 if (pAllocationInfo->PrivateDriverDataSize >= VBOXWDDM_ALLOCINFO_HEADSIZE())
                 {
-                    PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(VBOXWDDM_ALLOCINFO_HEADSIZE());
+                    PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)vboxWddmMemAllocZero(VBOXWDDM_ALLOCATION_HEADSIZE());
                     Assert(pAllocation);
                     if (pAllocation)
                     {
@@ -1347,6 +1352,8 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
+    AssertBreakpoint();
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     for (UINT i = 0; i < pCreateAllocation->NumAllocations; ++i)
@@ -1391,7 +1398,9 @@ DxgkDdiDestroyAllocation(
     return Status;
 }
 
-
+/**
+ * DxgkDdiDescribeAllocation
+ */
 NTSTATUS
 APIENTRY
 DxgkDdiDescribeAllocation(
@@ -1401,7 +1410,14 @@ DxgkDdiDescribeAllocation(
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     AssertBreakpoint();
-    /* @todo: fixme: implement */
+    PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDescribeAllocation->hAllocation;
+    pDescribeAllocation->Width = pAllocation->u.SurfInfo.width;
+    pDescribeAllocation->Height = pAllocation->u.SurfInfo.height;
+    pDescribeAllocation->Format = pAllocation->u.SurfInfo.format;
+    memset (&pDescribeAllocation->MultisampleMethod, 0, sizeof (pDescribeAllocation->MultisampleMethod));
+    pDescribeAllocation->RefreshRate.Numerator = 60000;
+    pDescribeAllocation->RefreshRate.Denominator = 1000;
+    pDescribeAllocation->PrivateDriverFormatAttribute = 0;
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
@@ -1421,6 +1437,8 @@ DxgkDdiGetStandardAllocationDriverData(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCINFO pAllocInfo = NULL;
@@ -1659,6 +1677,8 @@ DxgkDdiBuildPagingBuffer(
     /* DxgkDdiBuildPagingBuffer should be made pageable. */
     PAGED_CODE();
 
+    AssertBreakpoint();
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
@@ -1811,6 +1831,8 @@ DxgkDdiIsSupportedVidPn(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    AssertBreakpoint();
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
     BOOLEAN bSupported = TRUE;
@@ -2477,6 +2499,8 @@ DxgkDdiOpenAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
+    AssertBreakpoint();
+
     NTSTATUS Status = STATUS_SUCCESS;
 
     for (UINT i = 0; i < pOpenAllocation->NumAllocations; ++i)
@@ -2768,6 +2792,8 @@ DxgkDdiCreateContext(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
+
+    AssertBreakpoint();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)hDevice;
