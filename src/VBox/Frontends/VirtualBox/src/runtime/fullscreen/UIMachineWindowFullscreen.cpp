@@ -23,21 +23,22 @@
 
 /* Global includes */
 #include <QDesktopWidget>
-#include <QMenuBar>
-#include <QTimer>
-#include <QContextMenuEvent>
+#ifdef Q_WS_MAC
+# include <QMenuBar>
+#endif /* Q_WS_MAC */
 
 /* Local includes */
 #include "VBoxGlobal.h"
 
+#ifdef Q_WS_MAC
 #include "UISession.h"
-#include "UIActionsPool.h"
+#endif /* Q_WS_MAC */
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowFullscreen.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI<QIMainDialog>(0)
+    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Window)
     , UIMachineWindow(pMachineLogic, uScreenId)
 {
     /* "This" is machine window: */
@@ -63,21 +64,20 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare normal machine view: */
     prepareMachineView();
 
+#ifdef Q_WS_MAC
     /* Load normal window settings: */
     loadWindowSettings();
+#endif /* Q_WS_MAC */
 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
     /* Show window: */
-//    show();
+    showFullScreen();
 }
 
 UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
 {
-    /* Save normal window settings: */
-    saveWindowSettings();
-
     /* Cleanup normal machine view: */
     cleanupMachineView();
 }
@@ -147,7 +147,7 @@ void UIMachineWindowFullscreen::prepareMachineView()
 #endif
 
     /* Set central widget: */
-    setCentralWidget(new QWidget(this));
+    setCentralWidget(new QWidget);
 
     /* Set central widget layout: */
     centralWidget()->setLayout(m_pMachineViewContainer);
@@ -162,32 +162,25 @@ void UIMachineWindowFullscreen::prepareMachineView()
 
     /* Add machine view into layout: */
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
-}
 
-void UIMachineWindowFullscreen::loadWindowSettings()
-{
-    /* Toggle console to manual resize mode. */
-    m_pMachineView->setFrameBufferResizeIgnored(true);
-
-    /* The background has to go black */
+    /* The background has to go black: */
     QPalette palette(centralWidget()->palette());
     palette.setColor(centralWidget()->backgroundRole(), Qt::black);
     centralWidget()->setPalette(palette);
     centralWidget()->setAutoFillBackground(true);
     setAutoFillBackground(true);
-
-    /* Here we are going really fullscreen */
-    setWindowState(windowState() | Qt::WindowFullScreen);
-
-    /* Show the window */
-    show();
-    /* Make sure it is really on the right place (especially on the Mac) */
-    move(0, 0);
 }
 
-void UIMachineWindowFullscreen::saveWindowSettings()
+#ifdef Q_WS_MAC
+void UIMachineWindowFullscreen::loadWindowSettings()
 {
+    /* Load global settings: */
+    {
+        VBoxGlobalSettings settings = vboxGlobal().settings();
+        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
+    }
 }
+#endif
 
 void UIMachineWindowFullscreen::cleanupMachineView()
 {
