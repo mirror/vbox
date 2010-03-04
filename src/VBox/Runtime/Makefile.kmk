@@ -47,6 +47,7 @@ else ifdef VBOX_ONLY_TESTSUITE
  # Only build the testsuite.
  #
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0
+ LIBRARIES.win += RuntimeR0Stub
 
 else ifdef VBOX_ONLY_DOCS
  #
