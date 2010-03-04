@@ -41,15 +41,18 @@ protected:
                            UIActionsPool *pActionsPool);
     virtual ~UIMachineLogicSeamless();
 
+    bool checkAvailability();
     void initialize();
 
 private:
 
     /* Prepare helpers: */
+    void prepareActionGroups();
     void prepareMachineWindows();
 
     /* Cleanup helpers: */
     void cleanupMachineWindows();
+    void cleanupActionGroups();
 
     /* Friend classes: */
     friend class UIMachineLogic;

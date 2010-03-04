@@ -32,7 +32,7 @@ class UIMachineViewSeamless : public UIMachineView
 
 protected:
 
-    /* Normal machine view constructor/destructor: */
+    /* Seamless machine view constructor/destructor: */
     UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                           , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL

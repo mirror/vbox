@@ -44,23 +44,14 @@ protected:
     bool checkAvailability();
     void initialize();
 
-private slots:
-
-    /* Windowed mode funtionality: */
-    void sltPrepareNetworkAdaptersMenu();
-    void sltPrepareSharedFoldersMenu();
-    void sltPrepareMouseIntegrationMenu();
-
 private:
 
     /* Prepare helpers: */
     void prepareActionGroups();
-    void prepareActionConnections();
     void prepareMachineWindows();
 
     /* Cleanup helpers: */
-    void cleanupMachineWindow();
-    void cleanupActionConnections() {}
+    void cleanupMachineWindows();
     void cleanupActionGroups();
 
 #ifdef Q_WS_MAC

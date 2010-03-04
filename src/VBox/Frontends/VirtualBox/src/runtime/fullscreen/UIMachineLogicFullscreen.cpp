@@ -22,7 +22,6 @@
  */
 
 /* Global includes */
-#include <QMenu>
 #include <QDesktopWidget>
 
 /* Local includes */
@@ -34,7 +33,6 @@
 #include "UIActionsPool.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindow.h"
-#include "UIMachineView.h"
 
 #include "VBoxUtils.h"
 
@@ -52,7 +50,7 @@ UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *
 UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 {
     /* Cleanup machine window: */
-    cleanupMachineWindow();
+    cleanupMachineWindows();
 
     /* Cleanup action related stuff */
     cleanupActionGroups();
@@ -88,7 +86,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
                           * 8; /* to bits */
         ULONG guestBpp = console.GetDisplay().GetBitsPerPixel();
         ULONG64 usedBits = 0;
-        for (int i = 0; i < cGuestScreens; ++i)
+        for (int i = 0; i < cGuestScreens; ++ i)
         {
             // TODO_NEW_CORE: really take the screen geometry into account the
             // different fb will be displayed. */
@@ -152,50 +150,13 @@ void UIMachineLogicFullscreen::initialize()
     }
 }
 
-void UIMachineLogicFullscreen::sltPrepareNetworkAdaptersMenu()
-{
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Network Adapters menu show!\n"));
-    menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
-}
-
-void UIMachineLogicFullscreen::sltPrepareSharedFoldersMenu()
-{
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Shared Folders menu show!\n"));
-    menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
-}
-
-void UIMachineLogicFullscreen::sltPrepareMouseIntegrationMenu()
-{
-    QMenu *menu = qobject_cast<QMenu*>(sender());
-    AssertMsg(menu, ("This slot should be called only on Mouse Integration Menu show!\n"));
-    menu->clear();
-    menu->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
-}
-
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
+    /* Base class action groups: */
     UIMachineLogic::prepareActionGroups();
 
     /* Adjust window isn't allowed in fullscreen */
     actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(false);
-}
-
-void UIMachineLogicFullscreen::prepareActionConnections()
-{
-    /* Base class connections: */
-    UIMachineLogic::prepareActionConnections();
-
-    /* This class connections: */
-    connect(actionsPool()->action(UIActionIndex_Menu_NetworkAdapters)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareNetworkAdaptersMenu()));
-    connect(actionsPool()->action(UIActionIndex_Menu_SharedFolders)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareSharedFoldersMenu()));
-    connect(actionsPool()->action(UIActionIndex_Menu_MouseIntegration)->menu(), SIGNAL(aboutToShow()),
-            this, SLOT(sltPrepareMouseIntegrationMenu()));
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
@@ -217,12 +178,17 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
 
+#if 0 // TODO: Add seamless multi-monitor support!
     /* Create machine window(s): */
     for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
         addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
     /* Order machine window(s): */
     for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
         machineWindows()[uScreenId - 1]->machineWindow()->raise();
+#else
+    /* Create primary machine window: */
+    addMachineWindow(UIMachineWindow::create(this, visualStateType(), 0 /* primary only */));
+#endif
 
     /* Notify others about machine window(s) created: */
     setMachineWindowsCreated(true);
@@ -309,15 +275,20 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     }
 }
 
-void UIMachineLogicFullscreen::cleanupMachineWindow()
+void UIMachineLogicFullscreen::cleanupMachineWindows()
 {
     /* Do not cleanup machine window if it is not present: */
     if (!isMachineWindowsCreated())
         return;
 
-    /* Cleanup machine window: */
+#if 0 // TODO: Add seamless multi-monitor support!
+    /* Cleanup normal machine window: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
+#else
+    /* Create machine window(s): */
+    UIMachineWindow::destroy(machineWindows()[0] /* primary only */);
+#endif
 
 #ifdef Q_WS_MAC
     setPresentationModeEnabled(false);
