@@ -31,6 +31,9 @@
 
 #include <Carbon/Carbon.h>
 
+/* Local forward declarations */
+class UIMachineLogic;
+
 class UIFrameBufferQuartz2D : public UIFrameBuffer
 {
 public:
@@ -52,14 +55,11 @@ public:
     void paintEvent(QPaintEvent *pEvent);
     void resizeEvent(UIResizeEvent *pEvent);
 
-#ifndef QT_MAC_USE_COCOA
-    void testAndSetSNCarbonFix();
-#endif /* QT_MAC_USE_COCOA */
-
 private:
 
     void clean();
 
+    UIMachineLogic *m_pMachineLogic;
     uchar *m_pDataAddress;
     void *m_pBitmapData;
     ulong m_uPixelFormat;
@@ -88,10 +88,6 @@ private:
      * This is operated with atomic cmpxchg and atomic xchg. */
     RegionRects volatile *mRegionUnused;
 
-#ifndef QT_MAC_USE_COCOA
-    bool mSnowLeoCarbonFix;
-    EventHandlerRef mDarwinSNWindowHandlerRef;
-#endif /* QT_MAC_USE_COCOA */
 };
 #endif /* Q_WS_MAC && VBOX_GUI_USE_QUARTZ2D */
 

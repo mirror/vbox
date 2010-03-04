@@ -34,11 +34,8 @@
 /* Local includes */
 #include "UIFrameBufferQuartz2D.h"
 #include "UIMachineView.h"
+#include "UIMachineLogic.h"
 #include "VBoxUtils.h"
-
-///* Needed for checking against seamless mode */
-//#include "VBoxConsoleWnd.h"
-//#include "VBoxIChatTheaterWrapper.h"
 
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
@@ -51,58 +48,17 @@
  *  interface and uses Apples Quartz2D to store and render VM display data.
  */
 
-#ifndef QT_MAC_USE_COCOA
-static OSStatus darwinSNWindowHandler (EventHandlerCallRef aInHandlerCallRef, EventRef aInEvent, void *aInUserData)
-{
-    if (     aInUserData
-        && ::GetEventClass (aInEvent) == kEventClassWindow
-        && ::GetEventKind (aInEvent) == kEventWindowBoundsChanged)
-        static_cast<UIFrameBufferQuartz2D *> (aInUserData)->testAndSetSNCarbonFix();
-
-    return ::CallNextEventHandler (aInHandlerCallRef, aInEvent);
-}
-#endif /* QT_MAC_USE_COCOA */
-
 UIFrameBufferQuartz2D::UIFrameBufferQuartz2D(UIMachineView *pMachineView)
     : UIFrameBuffer(pMachineView)
+    , m_pMachineLogic(pMachineView->machineLogic())
     , m_pDataAddress(NULL)
     , m_pBitmapData(NULL)
     , m_uPixelFormat(FramebufferPixelFormat_FOURCC_RGB)
     , m_image(NULL)
-    , mRegion (NULL)
-    , mRegionUnused (NULL)
-#ifndef QT_MAC_USE_COCOA
-    , mSnowLeoCarbonFix (false)
-    , mDarwinSNWindowHandlerRef (NULL)
-#endif /* QT_MAC_USE_COCOA */
+    , mRegion(NULL)
+    , mRegionUnused(NULL)
 {
     Log (("Quartz2D: Creating\n"));
-
-#ifndef QT_MAC_USE_COCOA
-    /* There seems to be a big bug on Snow Leopard regarding hardware
-     * accelerated image handling in Carbon. If our VM image is used on a
-     * second monitor it seems not really to be valid. (maybe the OpenGL
-     * texture is not properly shared between the two contexts). As a
-     * workaround we make a deep copy on every paint event. This workaround
-     * should only be in place if we are firstly on Snow Leopard and secondly
-     * on any screen beside the primary one. To track the current screen, we
-     * install a event handler for the window move event. Whenever the user
-     * drag the window around we recheck the current screen of the window. */
-    char szInfo[64];
-    int rc = RTSystemQueryOSInfo (RTSYSOSINFO_RELEASE, szInfo, sizeof(szInfo));
-    if (RT_SUCCESS (rc) &&
-        szInfo[0] == '1') /* higher than 1x.x.x */
-    {
-        EventTypeSpec eventTypes[] =
-        {
-            { kEventClassWindow, kEventWindowBoundsChanged }
-        };
-        ::InstallWindowEventHandler (::darwinToNativeWindow (m_pMachineView->viewport()), darwinSNWindowHandler, RT_ELEMENTS (eventTypes), &eventTypes[0],
-                                     this, &mDarwinSNWindowHandlerRef);
-        /* Initialize it now */
-        testAndSetSNCarbonFix();
-    }
-#endif /* QT_MAC_USE_COCOA */
 
     UIResizeEvent event(FramebufferPixelFormat_Opaque,
                         NULL, 0, 0, 640, 480);
@@ -113,27 +69,20 @@ UIFrameBufferQuartz2D::~UIFrameBufferQuartz2D()
 {
     Log (("Quartz2D: Deleting\n"));
     clean();
-#ifndef QT_MAC_USE_COCOA
-    if (mDarwinSNWindowHandlerRef)
-    {
-       ::RemoveEventHandler (mDarwinSNWindowHandlerRef);
-       mDarwinSNWindowHandlerRef = NULL;
-    }
-#endif /* QT_MAC_USE_COCOA */
 }
 
 /** @note This method is called on EMT from under this object's lock */
-STDMETHODIMP UIFrameBufferQuartz2D::NotifyUpdate (ULONG aX, ULONG aY,
+STDMETHODIMP UIFrameBufferQuartz2D::NotifyUpdate(ULONG aX, ULONG aY,
                                                  ULONG aW, ULONG aH)
 {
 /*    Log (("Quartz2D: NotifyUpdate %d,%d %dx%d\n", aX, aY, aW, aH));*/
 
-    QApplication::postEvent (m_pMachineView,
-                             new UIRepaintEvent (aX, aY, aW, aH));
+    QApplication::postEvent(m_pMachineView,
+                            new UIRepaintEvent (aX, aY, aW, aH));
     return S_OK;
 }
 
-STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion (BYTE *aRectangles, ULONG aCount)
+STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion(BYTE *aRectangles, ULONG aCount)
 {
     PRTRECT rects = (PRTRECT)aRectangles;
 
@@ -146,7 +95,7 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion (BYTE *aRectangles, ULONG a
      * execution waiting for a lock is out of the question. A quick solution using
      * ASMAtomic(Cmp)XchgPtr and a struct { cAllocated; cRects; aRects[1]; }
      * *mRegion, *mUnusedRegion; should suffice (and permit you to reuse allocations). */
-    RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegionUnused, NULL);
+    RegionRects *rgnRcts = (RegionRects *)ASMAtomicXchgPtr((void * volatile *) &mRegionUnused, NULL);
     if (rgnRcts && rgnRcts->allocated < aCount)
     {
         RTMemFree (rgnRcts);
@@ -154,9 +103,9 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion (BYTE *aRectangles, ULONG a
     }
     if (!rgnRcts)
     {
-        ULONG allocated = RT_ALIGN_32 (aCount + 1, 32);
+        ULONG allocated = RT_ALIGN_32(aCount + 1, 32);
         allocated = RT_MAX (128, allocated);
-        rgnRcts = (RegionRects *) RTMemAlloc (RT_OFFSETOF (RegionRects, rcts[allocated]));
+        rgnRcts = (RegionRects *)RTMemAlloc(RT_OFFSETOF(RegionRects, rcts[allocated]));
         if (!rgnRcts)
             return E_OUTOFMEMORY;
         rgnRcts->allocated = allocated;
@@ -169,14 +118,14 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion (BYTE *aRectangles, ULONG a
     for (ULONG ind = 0; ind < aCount; ++ ind)
     {
         QRect rect;
-        rect.setLeft (rects->xLeft);
-        rect.setTop (rects->yTop);
+        rect.setLeft(rects->xLeft);
+        rect.setTop(rects->yTop);
         /* QRect are inclusive */
-        rect.setRight (rects->xRight - 1);
-        rect.setBottom (rects->yBottom - 1);
+        rect.setRight(rects->xRight - 1);
+        rect.setBottom(rects->yBottom - 1);
 
         /* The rect should intersect with the vm screen. */
-        rect = vmScreenRect.intersect (rect);
+        rect = vmScreenRect.intersect(rect);
         ++ rects;
         /* Make sure only valid rects are distributed */
         /* todo: Test if the other framebuffer implementation have the same
@@ -197,17 +146,17 @@ STDMETHODIMP UIFrameBufferQuartz2D::SetVisibleRegion (BYTE *aRectangles, ULONG a
     }
 //    printf ("..................................\n");
 
-    void *pvOld = ASMAtomicXchgPtr ((void * volatile *) &mRegion, rgnRcts);
+    void *pvOld = ASMAtomicXchgPtr((void * volatile *)&mRegion, rgnRcts);
     if (    pvOld
-        &&  !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegionUnused, pvOld, NULL))
+        &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, pvOld, NULL))
         RTMemFree (pvOld);
 
-    QApplication::postEvent (m_pMachineView, new UISetRegionEvent (reg));
+    QApplication::postEvent(m_pMachineView, new UISetRegionEvent (reg));
 
     return S_OK;
 }
 
-void UIFrameBufferQuartz2D::paintEvent (QPaintEvent *aEvent)
+void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
 {
     /* For debugging /Developer/Applications/Performance Tools/Quartz
      * Debug.app is a nice tool to see which parts of the screen are
@@ -218,20 +167,19 @@ void UIFrameBufferQuartz2D::paintEvent (QPaintEvent *aEvent)
 //    VBoxConsoleWnd *main = qobject_cast <VBoxConsoleWnd *> (vboxGlobal().mainWindow());
 //    Assert (VALID_PTR (main));
     QWidget* viewport = m_pMachineView->viewport();
-    Assert (VALID_PTR (viewport));
+    Assert(VALID_PTR (viewport));
     /* Get the dimensions of the viewport */
-    CGRect viewRect = ::darwinToCGRect (viewport->geometry());
+    CGRect viewRect = ::darwinToCGRect(viewport->geometry());
     /* Get the context of this window from Qt */
-    CGContextRef ctx = ::darwinToCGContextRef (viewport);
-    Assert (VALID_PTR (ctx));
+    CGContextRef ctx = ::darwinToCGContextRef(viewport);
+    Assert(VALID_PTR (ctx));
 
     /* Flip the context */
     CGContextTranslateCTM (ctx, 0, viewRect.size.height);
     CGContextScaleCTM (ctx, 1.0, -1.0);
 
     /* We handle the seamless mode as a special case. */
-//    if (main->isTrueSeamless())
-    if (0)
+    if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
     {
         /* Here we paint the windows without any wallpaper.
          * So the background would be set transparently. */
@@ -246,19 +194,7 @@ void UIFrameBufferQuartz2D::paintEvent (QPaintEvent *aEvent)
             CGImageRelease (pauseImg);
         }
         else
-        {
-
-#ifndef QT_MAC_USE_COCOA
-            /* For the reason of this see the constructor. */
-            if (mSnowLeoCarbonFix)
-            {
-                CGImageRef copy = CGImageCreateCopy (m_image);
-                subImage = CGImageCreateWithImageInRect (copy, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-                CGImageRelease (copy);
-            }else
-#endif /* QT_MAC_USE_COCOA */
-                subImage = CGImageCreateWithImageInRect (m_image, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-        }
+            subImage = CGImageCreateWithImageInRect (m_image, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
         Assert (VALID_PTR (subImage));
         /* Clear the background (Make the rect fully transparent) */
         CGContextClearRect (ctx, viewRect);
@@ -325,18 +261,7 @@ void UIFrameBufferQuartz2D::paintEvent (QPaintEvent *aEvent)
             CGImageRelease (pauseImg);
         }
         else
-        {
-#ifndef QT_MAC_USE_COCOA
-            /* For the reason of this see the constructor. */
-            if (mSnowLeoCarbonFix)
-            {
-                CGImageRef copy = CGImageCreateCopy (m_image);
-                subImage = CGImageCreateWithImageInRect (copy, ::darwinToCGRect (is));
-                CGImageRelease (copy);
-            }else
-#endif /* QT_MAC_USE_COCOA */
-                subImage = CGImageCreateWithImageInRect (m_image, ::darwinToCGRect (is));
-        }
+            subImage = CGImageCreateWithImageInRect (m_image, ::darwinToCGRect (is));
         Assert (VALID_PTR (subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
@@ -457,16 +382,6 @@ void UIFrameBufferQuartz2D::clean()
         mRegionUnused = NULL;
     }
 }
-
-#ifndef QT_MAC_USE_COCOA
-void UIFrameBufferQuartz2D::testAndSetSNCarbonFix()
-{
-    QWidget* viewport = m_pMachineView->viewport();
-    Assert (VALID_PTR (viewport));
-    QDesktopWidget dw;
-    mSnowLeoCarbonFix = dw.primaryScreen() != dw.screenNumber (viewport);
-}
-#endif /* QT_MAC_USE_COCOA */
 
 #endif /* defined (VBOX_GUI_USE_QUARTZ2D) */
 

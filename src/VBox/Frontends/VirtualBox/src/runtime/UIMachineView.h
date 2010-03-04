@@ -38,6 +38,7 @@
 class UISession;
 class UIFrameBuffer;
 class UIMachineWindow;
+class UIMachineLogic;
 class VBoxGlobalSettings;
 #ifdef Q_WS_MAC
 class VBoxChangeDockIconUpdateEvent;
@@ -116,6 +117,7 @@ protected:
     ulong screenId() const { return m_uScreenId; }
     UIFrameBuffer* frameBuffer() const { return m_pFrameBuffer; }
     UIMachineWindow* machineWindowWrapper() const { return m_pMachineWindow; }
+    UIMachineLogic* machineLogic() const;
     bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }

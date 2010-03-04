@@ -285,6 +285,11 @@ int UIMachineView::visibleHeight() const
     return verticalScrollBar()->pageStep();
 }
 
+UIMachineLogic* UIMachineView::machineLogic() const
+{
+    return machineWindowWrapper()->machineLogic();
+}
+
 QSize UIMachineView::desktopGeometry() const
 {
     QSize geometry;
