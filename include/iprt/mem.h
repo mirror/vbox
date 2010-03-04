@@ -215,7 +215,7 @@ RTDECL(void) RTMemPageFree(void *pv) RT_NO_THROW;
 /** Page level protection flags for RTMemProtect().
  * @{
  */
-/** Read access. */
+/** No access at all. */
 #define RTMEM_PROT_NONE   0
 /** Read access. */
 #define RTMEM_PROT_READ   1
