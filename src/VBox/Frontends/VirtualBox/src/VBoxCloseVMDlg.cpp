@@ -34,10 +34,22 @@
 #include <QPushButton>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+# include "UIMachineWindowNormal.h"
+#endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
+
 VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
     : QIWithRetranslateUI<QIDialog> (aParent)
 {
 #ifdef Q_WS_MAC
+
+# ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    /* No sheets in another mode than normal for now. Firstly it looks ugly and
+     * secondly in some cases it is broken. */
+    UIMachineWindowNormal *pWnd = qobject_cast<UIMachineWindowNormal*>(aParent);
+    if (pWnd)
+        setWindowFlags (Qt::Sheet);
+# else /* VBOX_WITH_NEW_RUNTIME_CORE */
     /* Sheets are broken if the window is in fullscreen mode. So make it a
      * normal window in that case. */
     VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
@@ -45,6 +57,7 @@ VBoxCloseVMDlg::VBoxCloseVMDlg (QWidget *aParent)
         (!cwnd->isTrueFullscreen() &&
          !cwnd->isTrueSeamless()))
         setWindowFlags (Qt::Sheet);
+# endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
 #endif /* Q_WS_MAC */
 
     /* Apply UI decorations */
