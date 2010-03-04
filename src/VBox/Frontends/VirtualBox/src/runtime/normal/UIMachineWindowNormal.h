@@ -36,6 +36,7 @@
 #endif
 
 /* Local forwards */
+class CMediumAttachment;
 class UIIndicatorsPool;
 class QIStateIndicator;
 
@@ -50,6 +51,14 @@ protected:
     virtual ~UIMachineWindowNormal();
 
 private slots:
+
+    /* Console callback handlers: */
+    void sltMachineStateChanged();
+    void sltMediumChange(const CMediumAttachment &attachment);
+    void sltUSBControllerChange();
+    void sltUSBDeviceStateChange();
+    void sltNetworkAdapterChange();
+    void sltSharedFolderChange();
 
     /* LED connections: */
     void sltUpdateIndicators();
