@@ -2788,6 +2788,7 @@ typedef struct PGM
     STAMCOUNTER                     StatLargePageAlloc;                 /**< The number of large pages we've allocated.*/
     STAMCOUNTER                     StatLargePageReused;                /**< The number of large pages we've reused.*/
     STAMCOUNTER                     StatLargePageRefused;               /**< The number of times we couldn't use a large page.*/
+    STAMCOUNTER                     StatLargePageRecheck;               /**< The number of times we rechecked a disabled large page.*/
     /** @} */
 
 #ifdef VBOX_WITH_STATISTICS /** @todo move this chunk to the heap.  */
@@ -3331,6 +3332,7 @@ int             pgmR3InitSavedState(PVM pVM, uint64_t cbRam);
 
 int             pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys);
+int             pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage);
 int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
