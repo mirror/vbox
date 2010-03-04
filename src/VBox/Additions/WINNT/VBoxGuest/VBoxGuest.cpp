@@ -1383,10 +1383,10 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
         {
             VBoxGuestCheckBalloonInfo *pInfo = (VBoxGuestCheckBalloonInfo *)pBuf;
 
-            if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(ULONG))
+            if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(VBoxGuestCheckBalloonInfo))
             {
                 dprintf(("VBoxGuest::VBoxGuestDeviceControl: OutputBufferLength %d != sizeof(ULONG) %d\n",
-                         pStack->Parameters.DeviceIoControl.OutputBufferLength, sizeof(ULONG)));
+                         pStack->Parameters.DeviceIoControl.OutputBufferLength, sizeof(VBoxGuestCheckBalloonInfo)));
                 Status = STATUS_INVALID_PARAMETER;
                 break;
             }
