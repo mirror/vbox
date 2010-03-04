@@ -1298,9 +1298,15 @@ int pgmR3PhysRamReset(PVM pVM)
                 switch (PGM_PAGE_GET_TYPE(pPage))
                 {
                     case PGMPAGETYPE_RAM:
-                        /* @todo deal with large pages. */
-                        Assert(PGM_PAGE_GET_PDE_TYPE(pPage) != PGM_PAGE_PDE_TYPE_PDE);
-
+                        /* Do not replace pages part of a 2 MB continuous range with zero pages, but zero them instead. */
+                        if (PGM_PAGE_GET_PDE_TYPE(pPage) == PGM_PAGE_PDE_TYPE_PDE)
+                        {
+                            void *pvPage;
+                            rc = pgmPhysPageMap(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT), &pvPage);
+                            AssertLogRelRCReturn(rc, rc);
+                            ASMMemZeroPage(pvPage);
+                        }
+                        else
                         if (!PGM_PAGE_IS_ZERO(pPage))
                         {
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
