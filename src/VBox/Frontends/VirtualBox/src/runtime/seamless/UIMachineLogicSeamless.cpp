@@ -99,6 +99,17 @@ bool UIMachineLogicSeamless::checkAvailability()
         }
     }
 
+    /* Take the toggle hot key from the menu item. Since
+     * VBoxGlobal::extractKeyFromActionText gets exactly the
+     * linked key without the 'Host+' part we are adding it here. */
+    QString hotKey = QString ("Host+%1")
+        .arg (VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Seamless)->text()));
+    Assert (!hotKey.isEmpty());
+
+    /* Show the info message. */
+    if (!vboxProblem().confirmGoingSeamless(hotKey))
+        return false;
+
     return true;
 }
 
