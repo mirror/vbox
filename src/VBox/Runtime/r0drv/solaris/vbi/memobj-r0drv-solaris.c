@@ -311,21 +311,21 @@ int rtR0MemObjNativeLockKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pv, size_t cb, 
 int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, size_t cb, size_t uAlignment)
 {
     PRTR0MEMOBJSOLARIS  pMemSolaris;
-    void               *pv;
-
-    /* Create the object. */
-    pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
-    if (!pMemSolaris)
-        return VERR_NO_MEMORY;
 
     /*
      * Use xalloc.
      */
-    pv = vmem_xalloc(heap_arena, cb, uAlignment, 0 /*phase*/, 0 /*nocross*/,
+    void *pv = vmem_xalloc(heap_arena, cb, uAlignment, 0 /*phase*/, 0 /*nocross*/,
                      NULL /*minaddr*/, NULL /*maxaddr*/, VM_SLEEP);
     if (RT_UNLIKELY(!pv))
+        return VERR_NO_MEMORY;
+
+    /* Create the object. */
+    pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
+    if (!pMemSolaris)
     {
-        rtR0MemObjDelete(&pMemSolaris->Core);
+        LogRel(("rtR0MemObjNativeReserveKernel failed to alloc memory object.\n"));
+        vmem_xfree(heap_arena, pv, cb);
         return VERR_NO_MEMORY;
     }
 
@@ -356,38 +356,35 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         return VERR_NOT_SUPPORTED;
 
     PRTR0MEMOBJSOLARIS pMemToMapSolaris = (PRTR0MEMOBJSOLARIS)pMemToMap;
-    size_t size = pMemToMapSolaris->Core.cb;
-    void *pv = pMemToMapSolaris->Core.pv;
-    pgcnt_t cPages = (size + PAGE_SIZE - 1) >> PAGE_SHIFT;
-    pgcnt_t iPage;
-    uint64_t *paddrs;
-    caddr_t addr;
-    int rc;
+    size_t cb        = pMemToMapSolaris->Core.cb;
+    void *pv         = pMemToMapSolaris->Core.pv;
+    pgcnt_t cPages   = (cb + PAGE_SIZE - 1) >> PAGE_SHIFT;
 
     /* Create the mapping object */
-    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, size);
+    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    paddrs = kmem_zalloc(sizeof(uint64_t) * cPages, KM_SLEEP);
-    for (iPage = 0; iPage < cPages; iPage++)
+    uint64_t *paPhysAddrs = kmem_zalloc(sizeof(uint64_t) * cPages, KM_SLEEP);
+    for (pgcnt_t iPage = 0; iPage < cPages; iPage++)
     {
-        paddrs[iPage] = vbi_va_to_pa(pv);
-        if (paddrs[iPage] == -(uint64_t)1)
+        paPhysAddrs[iPage] = vbi_va_to_pa(pv);
+        if (RT_UNLIKELY(paPhysAddrs[iPage] == -(uint64_t)1))
         {
             LogRel(("rtR0MemObjNativeMapUser: no page to map.\n"));
-            kmem_free(paddrs, sizeof(uint64_t) * cPages);
+            kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
             rtR0MemObjDelete(&pMemSolaris->Core);
             return VERR_MAP_FAILED;
         }
         pv = (void *)((uintptr_t)pv + PAGE_SIZE);
     }
 
-    rc = vbi_user_map(&addr, fProt, paddrs, size);
+    caddr_t virtAddr = NULL;
+    int rc = vbi_user_map(&virtAddr, fProt, paPhysAddrs, cb);
     if (rc != 0)
     {
         LogRel(("rtR0MemObjNativeMapUser: vbi mapping failure.\n"));
-        kmem_free(paddrs, sizeof(uint64_t) * cPages);
+        kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_MAP_FAILED;
     }
@@ -395,9 +392,9 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
         rc = VINF_SUCCESS;
 
     pMemSolaris->Core.u.Mapping.R0Process = (RTR0PROCESS)vbi_proc();
-    pMemSolaris->Core.pv = addr;
+    pMemSolaris->Core.pv = virtAddr;
     *ppMem = &pMemSolaris->Core;
-    kmem_free(paddrs, sizeof(uint64_t) * cPages);
+    kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
     return rc;
 }
 
