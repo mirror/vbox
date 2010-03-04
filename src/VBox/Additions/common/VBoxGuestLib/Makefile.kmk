@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -34,7 +34,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 #
 # Target config.
 #
-ifdef VBOX_WITH_ADDITION_DRIVERS
+if defined(VBOX_WITH_ADDITION_DRIVERS) && !defined(VBOX_ONLY_TESTSUITE)
  LIBRARIES += \
  	VBoxGuestR0Lib \
  	VBoxGuestR0LibBase
@@ -42,9 +42,11 @@ endif
 LIBRARIES += \
 	VBoxGuestR3Lib \
 	VBoxGuestR3LibShared
-if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
- LIBRARIES += \
- 	VBoxGuestR3LibXFree86
+ifndef VBOX_ONLY_TESTSUITE
+ if1of ($(KBUILD_TARGET), freebsd linux netbsd openbsd)
+  LIBRARIES += \
+  	VBoxGuestR3LibXFree86
+ endif
 endif
 
 

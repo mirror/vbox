@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -35,7 +35,7 @@ include	$(KBUILD_PATH)/subheader.kmk
 # Targets
 #
 LIBRARIES += SUPR3 SUPR3HardenedStatic
-ifndef VBOX_ONLY_DOCS
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
  ifeq ($(filter-out pe lx,$(VBOX_LDR_FMT)),)
   LIBRARIES += SUPR0
  endif
@@ -67,7 +67,7 @@ ifndef VBOX_ONLY_DOCS
  ifeq ($(KBUILD_TARGET),freebsd)
   include $(PATH_SUB_CURRENT)/freebsd/files_vboxdrv
  endif
-endif # !VBOX_ONLY_DOCS
+endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 
 
 #
@@ -107,7 +107,7 @@ SUPR3HardenedStatic_SOURCES  = \
 	SUPR3HardenedVerify.cpp \
 	$(KBUILD_TARGET)/SUPLib-$(KBUILD_TARGET).cpp
 
-ifndef VBOX_ONLY_DOCS
+if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 
 #
 # VBoxSupSvc - The system wide service/daemon.
@@ -476,6 +476,6 @@ endif # solaris
 SUPDrv.c_DEFS += VBOX_SVN_REV=$(VBOX_SVN_REV)
 
 
-endif # !VBOX_ONLY_DOCS
+endif # !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
 include $(KBUILD_PATH)/subfooter.kmk
 

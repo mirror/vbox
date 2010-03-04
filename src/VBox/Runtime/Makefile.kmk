@@ -38,9 +38,15 @@ ifdef VBOX_ONLY_ADDITIONS
  LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeGuestR3Mini
  ifdef VBOX_WITH_ADDITION_DRIVERS
   LIBRARIES += RuntimeGuestR0
+  #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
+  LIBRARIES.win.x86 += RuntimeGuestR0NT4
  endif
- #LIBRARIES.os2 += RuntimeGuestR0OS2Warp3
- LIBRARIES.win.x86 += RuntimeGuestR0NT4
+
+else ifdef VBOX_ONLY_TESTSUITE
+ #
+ # Only build the testsuite.
+ #
+ LIBRARIES += RuntimeGuestR3 RuntimeGuestR3Shared RuntimeR3 RuntimeR0
 
 else ifdef VBOX_ONLY_DOCS
  #
@@ -49,7 +55,7 @@ else ifdef VBOX_ONLY_DOCS
  LIBRARIES += RuntimeR3
  DLLS += VBoxRT
 
-else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_DOCS
+else # !VBOX_ONLY_ADDITIONS && !VBOX_ONLY_TESTSUITE && !VBOX_ONLY_DOCS
 
  #
  # Normal build.

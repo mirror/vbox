@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2007 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -51,31 +51,33 @@ VBOX_WITH_ADDITIONS_ISO.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = 1
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/common/Makefile.kmk
 
-ifdef VBOX_WITH_X11_ADDITIONS
- include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
-endif
+ifndef VBOX_ONLY_TESTSUITE
+ ifdef VBOX_WITH_X11_ADDITIONS
+  include $(PATH_SUB_CURRENT)/x11/Makefile.kmk
+ endif
 
-ifeq ($(KBUILD_TARGET),freebsd)
- include $(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
-endif
-ifeq ($(KBUILD_TARGET),linux)
- include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
-endif
-#ifeq ($(KBUILD_TARGET),os2)
-# include $(PATH_SUB_CURRENT)/os2/Makefile.kmk
-#endif
-ifeq ($(KBUILD_TARGET),solaris)
- include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
-endif
-ifeq ($(KBUILD_TARGET),win)
- include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
-endif
+ ifeq ($(KBUILD_TARGET),freebsd)
+  include $(PATH_SUB_CURRENT)/freebsd/Makefile.kmk
+ endif
+ ifeq ($(KBUILD_TARGET),linux)
+  include $(PATH_SUB_CURRENT)/linux/Makefile.kmk
+ endif
+ #ifeq ($(KBUILD_TARGET),os2)
+ # include $(PATH_SUB_CURRENT)/os2/Makefile.kmk
+ #endif
+ ifeq ($(KBUILD_TARGET),solaris)
+  include $(PATH_SUB_CURRENT)/solaris/Makefile.kmk
+ endif
+ ifeq ($(KBUILD_TARGET),win)
+  include $(PATH_SUB_CURRENT)/WINNT/Makefile.kmk
+ endif
 
-# The packing target rule, but only if we're on the local build box.
-# (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
-ifndef VBOX_WITHOUT_ADDITIONS_ISO
- PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
-endif
+ # The packing target rule, but only if we're on the local build box.
+ # (VBOX_WITHOUT_ADDITIONS_ISO is used by the additions build box, see the root makefile.)
+ ifndef VBOX_WITHOUT_ADDITIONS_ISO
+  PACKING += $(PATH_BIN)/additions/VBoxGuestAdditions.iso
+ endif
+endif # !VBOX_ONLY_TESTSUITE
 
 include	$(KBUILD_PATH)/subfooter.kmk
 
