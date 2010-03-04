@@ -236,20 +236,30 @@ VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
  *
  * @returns IPRT status code
  * @param   pu32Size    Memory balloon size in MBs (out)
+ * @param   pfHandleInR3 Allocating of memory in R3 required (out)
  */
-VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pu32Size)
+VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
 {
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, pu32Size, sizeof(*pu32Size));
+    VBoxGuestCheckBalloonInfo Info;
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, &Info, sizeof(Info));
+    *pcChunks = Info.cBalloonChunks;
+    *pfHandleInR3 = Info.fHandleInR3;
+    return rc;
 }
 
 
 /**
+ * Change the memory by granting/reclaiming memory to/from R0.
  *
+ * @returns IPRT status code
+ * @param   pv          Memory chunk (1MB)
+ * @param   fInflate    true = inflate balloon (grant memory)
+ *                      false = deflate balloon (reclaim memory)
  */
 VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
 {
     VBoxGuestChangeBalloonInfo Info;
-    Info.u64ChunkAddr = (uint64_t)pv;
+    Info.u64ChunkAddr = (uint64_t)((uintptr_t)pv);
     Info.fInflate = fInflate;
     return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHANGE_BALLOON, &Info, sizeof(Info));
 }

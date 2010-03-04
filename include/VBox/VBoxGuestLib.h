@@ -466,7 +466,7 @@ VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq);
 
 /** @name Memory ballooning
  * @{ */
-VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pu32Size);
+VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3);
 VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate);
 /** @}  */
 

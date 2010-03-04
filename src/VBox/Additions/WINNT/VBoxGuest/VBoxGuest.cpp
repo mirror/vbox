@@ -557,19 +557,19 @@ static bool CtlGuestFilterMask (uint32_t u32OrMask, uint32_t u32NotMask)
 }
 
 #ifdef VBOX_WITH_MANAGEMENT
-static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32BalloonSize)
+static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t cBalloonChunks)
 {
     VMMDevChangeMemBalloon *req = NULL;
     int rc = VINF_SUCCESS;
     uint32_t i;
 
-    if (u32BalloonSize > pDevExt->MemBalloon.cMaxBalloons)
+    if (cBalloonChunks > pDevExt->MemBalloon.cMaxBalloonChunks)
     {
-        AssertMsgFailed(("VBoxGuestSetBalloonSize illegal balloon size %d (max=%d)\n", u32BalloonSize, pDevExt->MemBalloon.cMaxBalloons));
+        AssertMsgFailed(("VBoxGuestSetBalloonSize illegal balloon size %d (max=%d)\n", cBalloonChunks, pDevExt->MemBalloon.cMaxBalloonChunks));
         return VERR_INVALID_PARAMETER;
     }
 
-    if (u32BalloonSize == pDevExt->MemBalloon.cBalloons)
+    if (cBalloonChunks == pDevExt->MemBalloon.cBalloonChunks)
         return VINF_SUCCESS;    /* nothing to do */
 
     /* Allocate request packet */
@@ -577,10 +577,10 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
     if (RT_FAILURE(rc))
         return rc;
 
-    if (u32BalloonSize > pDevExt->MemBalloon.cBalloons)
+    if (cBalloonChunks > pDevExt->MemBalloon.cBalloonChunks)
     {
         /* inflate */
-        for (i = pDevExt->MemBalloon.cBalloons; i < u32BalloonSize; i++)
+        for (i = pDevExt->MemBalloon.cBalloonChunks; i < cBalloonChunks; i++)
         {
 #ifndef TARGET_NT4
             /*
@@ -668,14 +668,14 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
                 dprintf(("VBoxGuest::VBoxGuestSetBalloonSize %d MB added chunk at %x\n", i, pvBalloon));
 #endif
                 pDevExt->MemBalloon.paMdlMemBalloon[i] = pMdl;
-                pDevExt->MemBalloon.cBalloons++;
+                pDevExt->MemBalloon.cBalloonChunks++;
             }
         }
     }
     else
     {
         /* deflate */
-        for (i = pDevExt->MemBalloon.cBalloons; i > u32BalloonSize; i--)
+        for (i = pDevExt->MemBalloon.cBalloonChunks; i > cBalloonChunks; i--)
         {
             uint32_t index = i - 1;
             PMDL  pMdl = pDevExt->MemBalloon.paMdlMemBalloon[index];
@@ -717,11 +717,11 @@ static int VBoxGuestSetBalloonSize(PVBOXGUESTDEVEXT pDevExt, uint32_t u32Balloon
 #endif
 
                 pDevExt->MemBalloon.paMdlMemBalloon[index] = NULL;
-                pDevExt->MemBalloon.cBalloons--;
+                pDevExt->MemBalloon.cBalloonChunks--;
             }
         }
     }
-    Assert(pDevExt->MemBalloon.cBalloons <= pDevExt->MemBalloon.cMaxBalloons);
+    Assert(pDevExt->MemBalloon.cBalloonChunks <= pDevExt->MemBalloon.cMaxBalloonChunks);
 
 end:
     VbglGRFree(&req->header);
@@ -751,21 +751,21 @@ static int VBoxGuestQueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, ULONG *pMemBall
         {
             if (!pDevExt->MemBalloon.paMdlMemBalloon)
             {
-                pDevExt->MemBalloon.cMaxBalloons = req->u32PhysMemSize;
-                pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePool(PagedPool, req->u32PhysMemSize * sizeof(PMDL));
+                pDevExt->MemBalloon.cMaxBalloonChunks = req->cPhysMemChunks;
+                pDevExt->MemBalloon.paMdlMemBalloon = (PMDL *)ExAllocatePool(PagedPool, req->cPhysMemChunks * sizeof(PMDL));
                 Assert(pDevExt->MemBalloon.paMdlMemBalloon);
                 if (!pDevExt->MemBalloon.paMdlMemBalloon)
                     return VERR_NO_MEMORY;
             }
-            Assert(pDevExt->MemBalloon.cMaxBalloons == req->u32PhysMemSize);
+            Assert(pDevExt->MemBalloon.cMaxBalloonChunks == req->cPhysMemChunks);
 
-            rc = VBoxGuestSetBalloonSize(pDevExt, req->u32BalloonSize);
+            rc = VBoxGuestSetBalloonSize(pDevExt, req->cBalloonChunks);
             /* ignore out of memory failures */
             if (rc == VERR_NO_MEMORY)
                 rc = VINF_SUCCESS;
 
             if (pMemBalloonSize)
-                *pMemBalloonSize = pDevExt->MemBalloon.cBalloons;
+                *pMemBalloonSize = pDevExt->MemBalloon.cBalloonChunks;
         }
 
         VbglGRFree(&req->header);
@@ -779,8 +779,8 @@ void VBoxInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
 #ifdef VBOX_WITH_MANAGEMENT
     ULONG dummy;
 
-    pDevExt->MemBalloon.cBalloons       = 0;
-    pDevExt->MemBalloon.cMaxBalloons    = 0;
+    pDevExt->MemBalloon.cBalloonChunks = 0;
+    pDevExt->MemBalloon.cMaxBalloonChunks = 0;
     pDevExt->MemBalloon.paMdlMemBalloon = NULL;
 
     VBoxGuestQueryMemoryBalloon(pDevExt, &dummy);
@@ -797,7 +797,7 @@ void VBoxCleanupMemBalloon(PVBOXGUESTDEVEXT pDevExt)
         ExFreePool(pDevExt->MemBalloon.paMdlMemBalloon);
         pDevExt->MemBalloon.paMdlMemBalloon = NULL;
     }
-    Assert(pDevExt->MemBalloon.cBalloons == 0);
+    Assert(pDevExt->MemBalloon.cBalloonChunks == 0);
 #endif
 }
 
@@ -1381,7 +1381,7 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
 #ifdef VBOX_WITH_MANAGEMENT
         case VBOXGUEST_IOCTL_CHECK_BALLOON:
         {
-            ULONG *pMemBalloonSize = (ULONG *) pBuf;
+            VBoxGuestCheckBalloonInfo *pInfo = (VBoxGuestCheckBalloonInfo *)pBuf;
 
             if (pStack->Parameters.DeviceIoControl.OutputBufferLength != sizeof(ULONG))
             {
@@ -1391,7 +1391,8 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
                 break;
             }
 
-            int rc = VBoxGuestQueryMemoryBalloon(pDevExt, pMemBalloonSize);
+            ULONG cMemoryBalloonChunks;
+            int rc = VBoxGuestQueryMemoryBalloon(pDevExt, &cMemoryBalloonChunks);
             if (RT_FAILURE(rc))
             {
                 dprintf(("VBOXGUEST_IOCTL_CHECK_BALLOON: vbox rc = %Rrc\n", rc));
@@ -1400,6 +1401,8 @@ NTSTATUS VBoxGuestDeviceControl(PDEVICE_OBJECT pDevObj, PIRP pIrp)
             else
             {
                 cbOut = pStack->Parameters.DeviceIoControl.OutputBufferLength;
+                pInfo->cBalloonChunks = cMemoryBalloonChunks;
+                pInfo->fHandleInR3 = false;
             }
             break;
         }

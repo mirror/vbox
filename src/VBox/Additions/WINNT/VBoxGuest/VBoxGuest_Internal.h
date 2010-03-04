@@ -215,8 +215,8 @@ typedef struct VBOXGUESTDEVEXT
 
     struct
     {
-        uint32_t     cBalloons;
-        uint32_t     cMaxBalloons;
+        uint32_t     cBalloonChunks;
+        uint32_t     cMaxBalloonChunks;
         PMDL        *paMdlMemBalloon;
     } MemBalloon;
 

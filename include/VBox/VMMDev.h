@@ -688,9 +688,9 @@ typedef struct
     /** Header. */
     VMMDevRequestHeader header;
     /** Balloon size in megabytes. */
-    uint32_t            u32BalloonSize;
+    uint32_t            cBalloonChunks;
     /** Guest ram size in megabytes. */
-    uint32_t            u32PhysMemSize;
+    uint32_t            cPhysMemChunks;
     /** Setting this to VMMDEV_EVENT_BALLOON_CHANGE_REQUEST indicates that the
      * request is a response to that event.
      * (Don't confuse this with VMMDevReq_AcknowledgeEvents.) */

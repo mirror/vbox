@@ -271,10 +271,19 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
 
 /** IOCTL to VBoxGuest to check memory ballooning.
  * The guest kernel module / device driver will ask the host for the current size of
- * the balloon and adjust the size or return with VERR_NO_PHYS_MEMORY. In the latter
- * case the user-level application is responsible for allocating memory in userland
- * and call the kernel module again doing VBOXGUEST_IOCTL_CHANGE_BALLOON */
+ * the balloon and adjust the size. Or it will set fHandledInR0 = false and R3 is
+ * responsible for allocating memory and calling R0 (VBOXGUEST_IOCTL_CHANGE_BALLOON). */
 #define VBOXGUEST_IOCTL_CHECK_BALLOON               VBOXGUEST_IOCTL_CODE_(7, 100)
+
+typedef struct VBoxGuestCheckBalloonInfo
+{
+    /** the size of the balloon in chunks of 1MB */
+    uint32_t cBalloonChunks;
+    /** false = handled in R0, no further action required.
+     *   true = allocate balloon memory in R3. */
+    uint32_t fHandleInR3;
+} VBoxGuestCheckBalloonInfo;
+AssertCompileSize(VBoxGuestCheckBalloonInfo, 8);
 
 
 /** IOCTL to VBoxGuest to supply or revoke one chunk for ballooning. The guest kernel
