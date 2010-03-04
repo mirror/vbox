@@ -21,12 +21,16 @@
  * additional information or have any questions.
  */
 
+/* Global includes */
+#include <QDesktopWidget>
+
 /* Local includes */
 #include "COMDefs.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
 #include "UISession.h"
+#include "UIActionsPool.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindow.h"
 
@@ -41,6 +45,61 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
 {
     /* Cleanup normal machine window: */
     cleanupMachineWindows();
+}
+
+bool UIMachineLogicSeamless::checkAvailability()
+{
+    /* Temporary get a machine object */
+    const CMachine &machine = uisession()->session().GetMachine();
+    const CConsole &console = uisession()->session().GetConsole();
+
+#if (QT_VERSION >= 0x040600)
+    int cHostScreens = QApplication::desktop()->screenCount();
+#else /* (QT_VERSION >= 0x040600) */
+    int cHostScreens = QApplication::desktop()->numScreens();
+#endif /* !(QT_VERSION >= 0x040600) */
+
+    int cGuestScreens = machine.GetMonitorCount();
+    /* Check that there are enough physical screens are connected */
+    if (cHostScreens < cGuestScreens)
+    {
+        vboxProblem().cannotEnterSeamlessMode();
+        return false;
+    }
+
+    // TODO_NEW_CORE: this is how it looked in the old version
+    // bool VBoxConsoleView::isAutoresizeGuestActive() { return mGuestSupportsGraphics && mAutoresizeGuest; }
+//    if (uisession()->session().GetConsole().isAutoresizeGuestActive())
+    if (uisession()->isGuestAdditionsActive())
+    {
+        ULONG64 availBits = machine.GetVRAMSize() /* VRAM */
+                          * _1M /* MB to bytes */
+                          * 8; /* to bits */
+        ULONG guestBpp = console.GetDisplay().GetBitsPerPixel();
+        ULONG64 usedBits = 0;
+        for (int i = 0; i < cGuestScreens; ++ i)
+        {
+            // TODO_NEW_CORE: really take the screen geometry into account the
+            // different fb will be displayed. */
+            QRect screen = QApplication::desktop()->availableGeometry(i);
+            usedBits += screen.width() /* display width */
+                      * screen.height() /* display height */
+                      * guestBpp
+                      + _1M * 8; /* current cache per screen - may be changed in future */
+        }
+        usedBits += 4096 * 8; /* adapter info */
+
+        if (availBits < usedBits)
+        {
+//          vboxProblem().cannotEnterSeamlessMode(screen.width(), screen.height(), guestBpp,
+//                                                (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+            vboxProblem().cannotEnterSeamlessMode(0, 0, guestBpp,
+                                                  (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+            return false;
+        }
+    }
+
+    return true;
 }
 
 void UIMachineLogicSeamless::initialize()
@@ -68,6 +127,15 @@ void UIMachineLogicSeamless::initialize()
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
     }
+}
+
+void UIMachineLogicSeamless::prepareActionGroups()
+{
+    /* Base class action groups: */
+    UIMachineLogic::prepareActionGroups();
+
+    /* Adjust window isn't allowed in seamless */
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(false);
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -200,5 +268,11 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     /* Create machine window(s): */
     UIMachineWindow::destroy(machineWindows()[0] /* primary only */);
 #endif
+}
+
+void UIMachineLogicSeamless::cleanupActionGroups()
+{
+    /* Reenable adjust window */
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(true);
 }
 

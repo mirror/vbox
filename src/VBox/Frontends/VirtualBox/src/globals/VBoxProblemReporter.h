@@ -227,6 +227,7 @@ public:
                                    ULONG aBpp, ULONG64 aMinVRAM);
 
     int cannotEnterFullscreenMode();
+    int cannotEnterSeamlessMode();
 
     bool confirmMachineDeletion (const CMachine &machine);
     bool confirmDiscardSavedState (const CMachine &machine);
