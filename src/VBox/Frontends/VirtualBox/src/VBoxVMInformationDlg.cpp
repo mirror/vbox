@@ -33,16 +33,36 @@
 #include <VBoxConsoleView.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+#include "UIMachineLogic.h"
+#include "UIMachineWindow.h"
+#include "UIMachineView.h"
+#include "UISession.h"
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+
 VBoxVMInformationDlg::InfoDlgMap VBoxVMInformationDlg::mSelfArray = InfoDlgMap();
 
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+void VBoxVMInformationDlg::createInformationDlg(UIMachineWindow *pMachineWindow)
+#else /* VBOX_WITH_NEW_RUNTIME_CORE */
 void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole)
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
 {
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    CMachine machine = pMachineWindow->machineLogic()->uisession()->session().GetMachine();
+#else /* VBOX_WITH_NEW_RUNTIME_CORE */
     CMachine machine = aSession.GetMachine();
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
     if (mSelfArray.find (machine.GetName()) == mSelfArray.end())
     {
         /* Creating new information dialog if there is no one existing */
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+        VBoxVMInformationDlg *id = new VBoxVMInformationDlg(pMachineWindow, Qt::Window);
+        id->centerAccording (pMachineWindow->machineWindow());
+#else /* VBOX_WITH_NEW_RUNTIME_CORE */
         VBoxVMInformationDlg *id = new VBoxVMInformationDlg (aConsole, aSession, Qt::Window);
         id->centerAccording (aConsole);
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
         connect (vboxGlobal().mainWindow(), SIGNAL (closing()), id, SLOT (close()));
         id->setAttribute (Qt::WA_DeleteOnClose);
         mSelfArray [machine.GetName()] = id;
@@ -55,15 +75,27 @@ void VBoxVMInformationDlg::createInformationDlg (const CSession &aSession, VBoxC
     info->activateWindow();
 }
 
-VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags)
-#ifdef Q_WS_MAC
-    : QIWithRetranslateUI2 <QIMainDialog> (aConsole, aFlags)
-#else /* Q_WS_MAC */
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+VBoxVMInformationDlg::VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags)
+# ifdef Q_WS_MAC
+    : QIWithRetranslateUI2 <QIMainDialog> (pMachineWindow->machineWindow(), aFlags)
+# else /* Q_WS_MAC */
     : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
-#endif /* Q_WS_MAC */
-    , mIsPolished (false)
+# endif /* Q_WS_MAC */
+    , mSession (pMachineWindow->session())
+#else /* VBOX_WITH_NEW_RUNTIME_CORE */
+VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags)
+# ifdef Q_WS_MAC
+    : QIWithRetranslateUI2 <QIMainDialog> (aConsole, aFlags)
+# else /* Q_WS_MAC */
+    : QIWithRetranslateUI2 <QIMainDialog> (0, aFlags)
+# endif /* Q_WS_MAC */
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+#ifndef VBOX_WITH_NEW_RUNTIME_CORE
     , mConsole (aConsole)
     , mSession (aSession)
+#endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
+    , mIsPolished (false)
     , mStatTimer (new QTimer (this))
 {
     /* Apply UI decorations */
@@ -94,12 +126,21 @@ VBoxVMInformationDlg::VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSe
     mStatisticText->setViewportMargins (5, 5, 5, 5);
 
     /* Setup handlers */
-    connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
-    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+    connect (pMachineWindow->uisession(), SIGNAL (sigMediumChange(const CMediumAttachment&)), this, SLOT (updateDetails()));
+    connect (pMachineWindow->uisession(), SIGNAL (sigSharedFolderChange()), this, SLOT (updateDetails()));
+    /* TODO_NEW_CORE: this is ofc not really right in the mm sense. There are
+     * more than one screens. */
+    connect (pMachineWindow->machineView(), SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
+#else /* VBOX_WITH_NEW_RUNTIME_CORE */
+    /* Setup handlers */
     connect (mConsole, SIGNAL (mediaDriveChanged (VBoxDefs::MediumType)), this, SLOT (updateDetails()));
     connect (mConsole, SIGNAL (sharedFoldersChanged()), this, SLOT (updateDetails()));
-    connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
     connect (mConsole, SIGNAL (resizeHintDone()), this, SLOT (processStatistics()));
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+    connect (mInfoStack, SIGNAL (currentChanged (int)), this, SLOT (onPageChanged (int)));
+    connect (&vboxGlobal(), SIGNAL (mediumEnumFinished (const VBoxMediaList &)), this, SLOT (updateDetails()));
+    connect (mStatTimer, SIGNAL (timeout()), this, SLOT (processStatistics()));
 
     /* Loading language constants */
     retranslateUi();

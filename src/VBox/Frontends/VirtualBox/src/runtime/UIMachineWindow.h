@@ -50,19 +50,17 @@ public:
     virtual void sltTryClose();
 
     /* Public getters: */
-    virtual UIMachineLogic* machineLogic() { return m_pMachineLogic; }
-    virtual QWidget* machineWindow() { return m_pMachineWindow; }
-    virtual UIMachineView* machineView() { return m_pMachineView; }
+    virtual UIMachineLogic* machineLogic() const { return m_pMachineLogic; }
+    virtual QWidget* machineWindow() const { return m_pMachineWindow; }
+    virtual UIMachineView* machineView() const { return m_pMachineView; }
+    UISession* uisession() const;
+    CSession& session() const;
 
 protected:
 
     /* Machine window constructor/destructor: */
     UIMachineWindow(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindow();
-
-    /* Protected wrappers: */
-    UISession* uisession();
-    CSession& session();
 
     /* Protected getters: */
     const QString& defaultWindowTitle() const { return m_strWindowTitlePrefix; }
