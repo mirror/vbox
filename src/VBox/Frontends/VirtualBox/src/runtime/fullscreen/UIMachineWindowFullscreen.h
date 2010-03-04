@@ -72,7 +72,9 @@ private:
     void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
+#ifdef Q_WS_MAC
     void prepareMenu();
+#endif /* Q_WS_MAC */
     void prepareMachineView();
     void loadWindowSettings();
 

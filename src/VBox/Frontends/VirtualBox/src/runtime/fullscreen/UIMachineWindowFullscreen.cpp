@@ -49,8 +49,10 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare console connections: */
     prepareConsoleConnections();
 
+#ifdef Q_WS_MAC
     /* Prepare menu: */
     prepareMenu();
+#endif /* Q_WS_MAC */
 
     /* Retranslate normal window finally: */
     retranslateUi();
@@ -130,12 +132,12 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
     return UIMachineWindow::closeEvent(pEvent);
 }
 
+#ifdef Q_WS_MAC
 void UIMachineWindowFullscreen::prepareMenu()
 {
     setMenuBar(uisession()->newMenuBar());
-    /* Menubar is always hidden in fullscreen */
-    menuBar()->hide();
 }
+#endif /* Q_WS_MAC */
 
 void UIMachineWindowFullscreen::prepareMachineView()
 {
