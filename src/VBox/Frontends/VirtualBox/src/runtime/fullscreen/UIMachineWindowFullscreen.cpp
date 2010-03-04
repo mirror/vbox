@@ -52,9 +52,6 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare menu: */
     prepareMenu();
 
-    /* Prepare connections: */
-    prepareConnections();
-
     /* Retranslate normal window finally: */
     retranslateUi();
 
@@ -88,44 +85,9 @@ void UIMachineWindowFullscreen::sltMachineStateChanged()
     UIMachineWindow::sltMachineStateChanged();
 }
 
-void UIMachineWindowFullscreen::sltMediumChange(const CMediumAttachment &attachment)
-{
-    KDeviceType type = attachment.GetType();
-    if (type == KDeviceType_HardDisk)
-        updateAppearanceOf(UIVisualElement_HDStuff);
-    if (type == KDeviceType_DVD)
-        updateAppearanceOf(UIVisualElement_CDStuff);
-    if (type == KDeviceType_Floppy)
-        updateAppearanceOf(UIVisualElement_FDStuff);
-}
-
-void UIMachineWindowFullscreen::sltUSBControllerChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowFullscreen::sltUSBDeviceStateChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowFullscreen::sltNetworkAdapterChange()
-{
-    updateAppearanceOf(UIVisualElement_NetworkStuff);
-}
-
-void UIMachineWindowFullscreen::sltSharedFolderChange()
-{
-    updateAppearanceOf(UIVisualElement_SharedFolderStuff);
-}
-
 void UIMachineWindowFullscreen::sltTryClose()
 {
     UIMachineWindow::sltTryClose();
-}
-
-void UIMachineWindowFullscreen::sltProcessGlobalSettingChange(const char * /* aPublicName */, const char * /* aName */)
-{
 }
 
 void UIMachineWindowFullscreen::retranslateUi()
@@ -139,49 +101,6 @@ void UIMachineWindowFullscreen::retranslateUi()
 //    m_pDockDisablePreview->setText(tr("Show Application Icon"));
 //    m_pDockEnablePreviewMonitor->setText(tr("Show Monitor Preview"));
 #endif /* Q_WS_MAC */
-}
-
-void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
-{
-    /* Update parent-class window: */
-    UIMachineWindow::updateAppearanceOf(iElement);
-}
-
-bool UIMachineWindowFullscreen::event(QEvent *pEvent)
-{
-    return QIWithRetranslateUI<QIMainDialog>::event(pEvent);
-    // TODO_NEW_CORE
-    switch (pEvent->type())
-    {
-        case QEvent::Resize:
-        {
-            QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-            if (!isMaximized())
-            {
-                m_normalGeometry.setSize(pResizeEvent->size());
-#ifdef VBOX_WITH_DEBUGGER_GUI
-                // TODO: Update debugger window size!
-                //dbgAdjustRelativePos();
-#endif
-            }
-            break;
-        }
-        case QEvent::Move:
-        {
-            if (!isMaximized())
-            {
-                m_normalGeometry.moveTo(geometry().x(), geometry().y());
-#ifdef VBOX_WITH_DEBUGGER_GUI
-                // TODO: Update debugger window position!
-                //dbgAdjustRelativePos();
-#endif
-            }
-            break;
-        }
-        default:
-            break;
-    }
-    return QIWithRetranslateUI<QIMainDialog>::event(pEvent);
 }
 
 #ifdef Q_WS_X11
@@ -211,44 +130,11 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
     return UIMachineWindow::closeEvent(pEvent);
 }
 
-void UIMachineWindowFullscreen::prepareConsoleConnections()
-{
-    /* Base-class connections: */
-    UIMachineWindow::prepareConsoleConnections();
-
-    /* Medium change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
-            this, SLOT(sltMediumChange(const CMediumAttachment &)));
-
-    /* USB controller change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
-            this, SLOT(sltUSBControllerChange()));
-
-    /* USB device state-change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-            this, SLOT(sltUSBDeviceStateChange()));
-
-    /* Network adapter change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
-            this, SLOT(sltNetworkAdapterChange()));
-
-    /* Shared folder change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
-            this, SLOT(sltSharedFolderChange()));
-}
-
 void UIMachineWindowFullscreen::prepareMenu()
 {
     setMenuBar(uisession()->newMenuBar());
     /* Menubar is always hidden in fullscreen */
     menuBar()->hide();
-}
-
-void UIMachineWindowFullscreen::prepareConnections()
-{
-    /* Setup global settings change updater: */
-    connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
-            this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
 }
 
 void UIMachineWindowFullscreen::prepareMachineView()
