@@ -38,7 +38,7 @@
 #include "UIMachineWindowFullscreen.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::Window)
+    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
 {
     /* "This" is machine window: */
