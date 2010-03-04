@@ -225,7 +225,8 @@ ifdef VBOX_WITH_NEW_RUNTIME_CORE
 VBOX_GUI_INC_DIRS += \
     ./src/runtime \
 	./src/runtime/normal \
-	./src/runtime/fullscreen
+	./src/runtime/fullscreen \
+	./src/runtime/seamless
 endif
 
 VirtualBox_INCS = \
@@ -375,7 +376,10 @@ VirtualBox_QT_MOCHDRS += \
 	src/runtime/normal/UIMachineViewNormal.h \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.h \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.h \
-	src/runtime/fullscreen/UIMachineViewFullscreen.h
+	src/runtime/fullscreen/UIMachineViewFullscreen.h \
+	src/runtime/seamless/UIMachineLogicSeamless.h \
+	src/runtime/seamless/UIMachineWindowSeamless.h \
+	src/runtime/seamless/UIMachineViewSeamless.h
 endif
 
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
@@ -508,7 +512,10 @@ VirtualBox_SOURCES += \
 	src/runtime/normal/UIMachineViewNormal.cpp \
 	src/runtime/fullscreen/UIMachineLogicFullscreen.cpp \
 	src/runtime/fullscreen/UIMachineWindowFullscreen.cpp \
-	src/runtime/fullscreen/UIMachineViewFullscreen.cpp
+	src/runtime/fullscreen/UIMachineViewFullscreen.cpp \
+	src/runtime/seamless/UIMachineLogicSeamless.cpp \
+	src/runtime/seamless/UIMachineWindowSeamless.cpp \
+	src/runtime/seamless/UIMachineViewSeamless.cpp
 endif
 
 ifeq ($(filter-out freebsd linux netbsd openbsd solaris,$(KBUILD_TARGET)),) # X11

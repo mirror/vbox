@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * UIMachineViewNormal class declaration
+ * UIMachineViewSeamless class declaration
  */
 
 /*
@@ -20,69 +20,65 @@
  * additional information or have any questions.
  */
 
-#ifndef ___UIMachineViewNormal_h___
-#define ___UIMachineViewNormal_h___
+#ifndef ___UIMachineViewSeamless_h___
+#define ___UIMachineViewSeamless_h___
 
 /* Local includes */
 #include "UIMachineView.h"
 
-class UIMachineViewNormal : public UIMachineView
+class UIMachineViewSeamless : public UIMachineView
 {
     Q_OBJECT;
 
 protected:
 
     /* Normal machine view constructor/destructor: */
-    UIMachineViewNormal(  UIMachineWindow *pMachineWindow
-                        , VBoxDefs::RenderMode renderMode
+    UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
+                          , VBoxDefs::RenderMode renderMode
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                        , bool bAccelerate2DVideo
+                          , bool bAccelerate2DVideo
 #endif
-                        , ulong uMonitor);
-    virtual ~UIMachineViewNormal();
+                          , ulong uMonitor);
+    virtual ~UIMachineViewSeamless();
 
 private slots:
 
     /* Console callback handlers: */
     void sltAdditionsStateChanged();
 
-    /* Slot to perform guest resize: */
-    void sltPerformGuestResize(const QSize &size = QSize());
-
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 
 private:
 
-    /* Prepare helpers: */
-    void prepareFilters();
-    void prepareConsoleConnections();
-    void loadMachineViewSettings();
-
-    /* Cleanup helpers: */
-    //void saveMachineViewSettings() {}
-    //void cleanupConsoleConnections() {}
-    //cleanupFilters() {}
-
-    /* Hidden setters: */
-    void setGuestAutoresizeEnabled(bool bEnabled);
-
-    /* Private helpers: */
-    void normalizeGeometry(bool fAdjustPosition);
-    QRect availableGeometry();
-    void maybeRestrictMinimumSize();
-
     /* Event handlers: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
 
-    /* Private members: */
-    bool m_bIsGuestAutoresizeEnabled : 1;
-    bool m_fShouldWeDoResize : 1;
+    /* Prepare helpers: */
+    void prepareBackup();
+    void prepareFilters();
+    void prepareConnections();
+    void prepareConsoleConnections();
+    void prepareSeamless();
+
+    /* Cleanup helpers: */
+    void cleanupSeamless();
+    //void cleanupConsoleConnections() {}
+    //void prepareConnections() {}
+    //void cleanupFilters() {}
+    //void prepareBackup() {}
+
+    /* Private helpers: */
+    QRect availableGeometry();
+
+    /* Private variables: */
+    QRegion m_lastVisibleRegion;
+    QSize m_normalSize;
 
     /* Friend classes: */
     friend class UIMachineView;
 };
 
-#endif // !___UIMachineViewNormal_h___
+#endif // !___UIMachineViewSeamless_h___
 
