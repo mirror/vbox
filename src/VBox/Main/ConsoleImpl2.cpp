@@ -2965,7 +2965,6 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
             Utf8Str HifNameUtf8(HifName);
             const char *pszHifName = HifNameUtf8.raw();
-            LogRel(("NetworkAttachmentType_HostOnly: COMGETTER(HostInterface): %s\n", pszHifName));
             ComPtr<IHostNetworkInterface> hostInterface;
             rc = host->FindHostNetworkInterfaceByName(HifName, hostInterface.asOutParam());
             if (!SUCCEEDED(rc))
