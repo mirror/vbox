@@ -23,11 +23,7 @@
 #ifndef __UIMachineWindowFullscreen_h__
 #define __UIMachineWindowFullscreen_h__
 
-/* Global includes */
-#include <QLabel>
-
 /* Local includes */
-#include "VBoxDefs.h"
 #include "QIWithRetranslateUI.h"
 #include "QIMainDialog.h"
 #include "UIMachineWindow.h"
@@ -35,20 +31,13 @@
 # include <X11/Xlib.h>
 #endif
 
-#ifdef Q_WS_MAC
-# include <ApplicationServices/ApplicationServices.h>
-#endif /* Q_WS_MAC */
-
-/* Local forwards */
-class CMediumAttachment;
-
-class UIMachineWindowFullscreen : public QIWithRetranslateUI<QIMainDialog>, public UIMachineWindow
+class UIMachineWindowFullscreen : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
 {
     Q_OBJECT;
 
 protected:
 
-    /* Normal machine window constructor/destructor: */
+    /* Fullscreen machine window constructor/destructor: */
     UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId);
     virtual ~UIMachineWindowFullscreen();
 
@@ -68,7 +57,7 @@ private:
     /* Event handlers: */
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
-#endif
+#endif /* Q_WS_X11 */
     void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
@@ -76,16 +65,18 @@ private:
     void prepareMenu();
 #endif /* Q_WS_MAC */
     void prepareMachineView();
+#ifdef Q_WS_MAC
     void loadWindowSettings();
+#endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
-    void saveWindowSettings();
+#ifdef Q_WS_MAC
+    //void saveWindowSettings() {}
+#endif /* Q_WS_MAC */
     void cleanupMachineView();
+#ifdef Q_WS_MAC
     //void cleanupMenu() {}
-    //void cleanupConsoleConnections() {}
-
-    /* Other members: */
-    QRect m_normalGeometry;
+#endif /* Q_WS_MAC */
 
     /* Factory support: */
     friend class UIMachineWindow;

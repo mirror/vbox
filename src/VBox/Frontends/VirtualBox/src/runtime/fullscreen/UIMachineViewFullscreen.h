@@ -43,37 +43,45 @@ protected:
 
 private slots:
 
-    /* Console callback handlers: */
-    void sltAdditionsStateChanged();
-
     /* Slot to perform guest resize: */
     void sltPerformGuestResize(const QSize &aSize = QSize());
+
+    /* Console callback handlers: */
+    void sltAdditionsStateChanged();
 
     /* Watch dog for desktop resizes: */
     void sltDesktopResized();
 
 private:
 
+    /* Event handlers: */
+    bool event(QEvent *pEvent);
+    bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
     /* Prepare routines: */
     void prepareCommon();
     void prepareFilters();
+    void prepareConnections();
     void prepareConsoleConnections();
-    void loadMachineViewSettings();
+
+    /* Cleanup routines: */
+    //void cleanupConsoleConnections() {}
+    //void cleanupConnections() {}
+    //void cleanupFilters() {}
+    //void cleanupCommon() {}
 
     /* Private setters: */
     void setGuestAutoresizeEnabled(bool bEnabled);
 
     /* Private helpers: */
-    void normalizeGeometry(bool bAdjustPosition = false);
     QRect availableGeometry();
     void maybeRestrictMinimumSize();
 
-    bool event(QEvent *pEvent);
-    bool eventFilter(QObject *pWatched, QEvent *pEvent);
-
     /* Private members: */
+    bool m_fIsInitialResizeEventProcessed : 1;
     bool m_bIsGuestAutoresizeEnabled : 1;
     bool m_fShouldWeDoResize : 1;
+    QSize m_normalSize;
 
     /* Friend classes: */
     friend class UIMachineView;
