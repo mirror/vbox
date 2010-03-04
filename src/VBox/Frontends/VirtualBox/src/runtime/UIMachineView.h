@@ -158,6 +158,7 @@ protected slots:
     virtual void sltMachineStateChanged();
     virtual void sltMousePointerShapeChanged();
     virtual void sltMouseCapabilityChanged();
+    virtual void sltPerformGuestResize(const QSize & /* toSize */) {};
 
     /* Session callback handlers: */
     virtual void sltMouseCapturedStatusChanged();
