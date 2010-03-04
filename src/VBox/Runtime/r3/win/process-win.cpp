@@ -228,6 +228,13 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
 }
 
 
+RTR3DECL(int) RTProcWaitNoResume(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProcStatus)
+{
+    /** @todo this isn't quite right. */
+    return RTProcWait(Process, fFlags, pProcStatus);
+}
+
+
 RTR3DECL(int) RTProcTerminate(RTPROCESS Process)
 {
     HANDLE hProcess = OpenProcess(PROCESS_TERMINATE, FALSE, Process);
