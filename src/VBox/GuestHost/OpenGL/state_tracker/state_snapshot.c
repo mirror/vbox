@@ -889,7 +889,7 @@ static int32_t crStateLoadClientPointer(CRVertexArrays *pArrays, int32_t index, 
 #ifdef CR_EXT_compiled_vertex_array
     if (cp->locked)
     {
-        rc = crStateAllocAndSSMR3GetMem(pSSM, &cp->p, cp->stride*(pArrays->lockFirst+pArrays->lockCount));
+        rc = crStateAllocAndSSMR3GetMem(pSSM, (void**)&cp->p, cp->stride*(pArrays->lockFirst+pArrays->lockCount));
         AssertRCReturn(rc, rc);
     }
 #endif
