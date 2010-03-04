@@ -3109,6 +3109,68 @@ static bool pgmPoolTrackFlushGCPhysPTInt(PVM pVM, PCPGMPAGE pPhysPage, bool fFlu
             break;
         }
 
+#ifdef PGM_WITH_LARGE_PAGES
+        /* Large page case only. */
+        case PGMPOOLKIND_EPT_PD_FOR_PHYS:
+        {
+            Assert(HWACCMIsNestedPagingActive(pVM));
+            Assert(cRefs == 1);
+
+            const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
+            PEPTPD          pPD = (PEPTPD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
+            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPD->a); i++)
+                if ((pPD->a[i].u & (EPT_PDE2M_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+                {
+                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", i, pPD->a[i], cRefs));
+                    STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
+                    pPD->a[i].u = 0;
+                    cRefs--;
+                    if (!cRefs)
+                        return bRet;
+                }
+# ifdef LOG_ENABLED
+            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+                if ((pPD->a[i].u & (EPT_PDE2M_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+                {
+                    Log(("i=%d cRefs=%d\n", i, cRefs--));
+                }
+# endif
+            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            break;
+        }
+
+        /* AMD-V nested paging - @todo merge with EPT as we only check the parts that are identical. */
+        case PGMPOOLKIND_PAE_PD_PHYS:
+        {
+            Assert(HWACCMIsNestedPagingActive(pVM));
+            Assert(cRefs == 1);
+
+            const uint64_t  u64 = PGM_PAGE_GET_HCPHYS(pPhysPage) | X86_PDE4M_P | X86_PDE4M_PS;
+            PX86PD          pPD = (PX86PD)PGMPOOL_PAGE_2_PTR(pVM, pPage);
+            for (unsigned i = pPage->iFirstPresent; i < RT_ELEMENTS(pPD->a); i++)
+                if ((pPD->a[i].u & (X86_PDE2M_PAE_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+                {
+                    Log4(("pgmPoolTrackFlushGCPhysPTs: i=%d pde=%RX64 cRefs=%#x\n", i, pPD->a[i], cRefs));
+                    STAM_COUNTER_INC(&pPool->StatTrackFlushEntry);
+                    pPD->a[i].u = 0;
+                    cRefs--;
+                    if (!cRefs)
+                        return bRet;
+                }
+# ifdef LOG_ENABLED
+            Log(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            for (unsigned i = 0; i < RT_ELEMENTS(pPD->a); i++)
+                if ((pPD->a[i].u & (X86_PDE2M_PAE_PG_MASK | X86_PDE4M_P | X86_PDE4M_PS)) == u64)
+                {
+                    Log(("i=%d cRefs=%d\n", i, cRefs--));
+                }
+# endif
+            AssertFatalMsgFailed(("cRefs=%d iFirstPresent=%d cPresent=%d\n", cRefs, pPage->iFirstPresent, pPage->cPresent));
+            break;
+        }
+#endif /* PGM_WITH_LARGE_PAGES */
+
         default:
             AssertFatalMsgFailed(("enmKind=%d iShw=%d\n", pPage->enmKind, iShw));
     }
@@ -3200,17 +3262,53 @@ static void pgmPoolTrackFlushGCPhysPTs(PVM pVM, PPGMPAGE pPhysPage, bool fFlushP
  *          pool cleaning. FF and sync flags are set.
  *
  * @param   pVM         The VM handle.
+ * @param   GCPhysPage  GC physical address of the page in question
  * @param   pPhysPage   The guest page in question.
  * @param   fFlushPTEs  Flush PTEs or allow them to be updated (e.g. in case of an RW bit change)
  * @param   pfFlushTLBs This is set to @a true if the shadow TLBs should be
  *                      flushed, it is NOT touched if this isn't necessary.
  *                      The caller MUST initialized this to @a false.
  */
-int pgmPoolTrackUpdateGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs)
+int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs)
 {
     PVMCPU pVCpu = VMMGetCpu(pVM);
     pgmLock(pVM);
     int rc = VINF_SUCCESS;
+
+#ifdef PGM_WITH_LARGE_PAGES
+    /* Is this page part of a large page? */
+    if (PGM_PAGE_GET_PDE_TYPE(pPhysPage) == PGM_PAGE_PDE_TYPE_PDE)
+    {
+        PPGMPAGE pPhysBase;
+        RTGCPHYS GCPhysBase = GCPhysPage & X86_PDE2M_PAE_PG_MASK;
+
+        GCPhysPage &= X86_PDE_PAE_PG_MASK;
+
+        /* Fetch the large page base. */
+        if (GCPhysBase != GCPhysPage)
+        {
+            pPhysBase = pgmPhysGetPage(&pVM->pgm.s, GCPhysBase);
+            AssertFatal(pPhysBase);
+        }
+        else
+            pPhysBase = pPhysPage;
+
+        Log(("pgmPoolTrackUpdateGCPhys: update large page PDE for %RGp (%RGp)\n", GCPhysBase, GCPhysPage));
+
+        /* Mark the large page as disabled as we need to break it up to change a single page in the 2 MB range. */
+        PGM_PAGE_SET_PDE_TYPE(pPhysBase, PGM_PAGE_PDE_TYPE_PDE_DISABLED);
+
+        /* Update the base as that *only* that one has a reference and there's only one PDE to clear. */
+        rc = pgmPoolTrackUpdateGCPhys(pVM, GCPhysBase, pPhysBase, fFlushPTEs, pfFlushTLBs);
+
+        *pfFlushTLBs = true;
+        pgmUnlock(pVM);
+        return rc;
+    }
+#else
+    NOREF(GCPhysPage);
+#endif /* PGM_WITH_LARGE_PAGES */
+
     const uint16_t u16 = PGM_PAGE_GET_TRACKING(pPhysPage);
     if (u16)
     {

@@ -367,7 +367,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     AssertMsg(PGM_PAGE_IS_ZERO(pPage) || PGM_PAGE_IS_SHARED(pPage), ("%R[pgmpage] %RGp\n", pPage, GCPhys));
     Assert(!PGM_PAGE_IS_MMIO(pPage));
 
-# if HC_ARCH_BITS == 64
+# ifdef PGM_WITH_LARGE_PAGES
     if (    PGMIsUsingLargePages(pVM)
         &&  PGM_PAGE_GET_TYPE(pPage) == PGMPAGETYPE_RAM)
     {
@@ -384,7 +384,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
      * When VBOX_WITH_NEW_LAZY_PAGE_ALLOC isn't defined, there shouldn't be any.
      */
     bool fFlushTLBs = false;
-    int rc = pgmPoolTrackFlushGCPhys(pVM, pPage, &fFlushTLBs);
+    int rc = pgmPoolTrackFlushGCPhys(pVM, GCPhys, pPage, &fFlushTLBs);
     AssertMsgReturn(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3, ("%Rrc\n", rc), RT_FAILURE(rc) ? rc : VERR_IPE_UNEXPECTED_STATUS);
 
     /*
@@ -455,6 +455,7 @@ int pgmPhysAllocPage(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
     return rc;
 }
 
+#ifdef PGM_WITH_LARGE_PAGES
 /**
  * Replace a 2 MB range of zero pages with new pages that we can write to.
  *
@@ -528,11 +529,11 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
             }
             else
             {
-#ifdef IN_RING3
+# ifdef IN_RING3
                 rc = PGMR3PhysAllocateLargeHandyPage(pVM, GCPhysBase);
-#else
+# else
                 rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
-#endif
+# endif
                 if (RT_SUCCESS(rc))
                 {   
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
@@ -549,6 +550,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
     }
     return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
 }
+#endif /* PGM_WITH_LARGE_PAGES */
 
 /**
  * Deal with a write monitored page.

@@ -2954,7 +2954,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
     Assert(!(PdeDst.u & PGM_PDFLAGS_MAPPING));
     Assert(!PdeDst.n.u1Present); /* We're only supposed to call SyncPT on PDE!P and conflicts.*/
 
-# if (HC_ARCH_BITS == 64) && (PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE)
+# if defined(PGM_WITH_LARGE_PAGES) && (PGM_SHW_TYPE != PGM_TYPE_32BIT && PGM_SHW_TYPE != PGM_TYPE_PAE)
 #  if  (PGM_SHW_TYPE != PGM_TYPE_EPT)   /* PGM_TYPE_EPT implies nested paging */
     if (HWACCMIsNestedPagingActive(pVM))
 #  endif
@@ -3000,6 +3000,9 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
 #  endif
                 ASMAtomicWriteSize(pPdeDst, PdeDst.u);
+
+                /* Add a reference to the first page only. */
+                PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPde, PGM_PAGE_GET_TRACKING(pPage), pPage, iPDDst);
 
                 STAM_PROFILE_STOP(&pVCpu->pgm.s.CTX_MID_Z(Stat,SyncPT), a);
                 return VINF_SUCCESS;

@@ -84,6 +84,13 @@
 //#endif
 
 /**
+ * Large page support enabled only on 64 bits hosts; applies to nested paging only.
+ */
+#if (HC_ARCH_BITS == 64) && !defined(IN_RC)
+# define PGM_WITH_LARGE_PAGES
+#endif
+
+/**
  * Sync N pages instead of a whole page table
  */
 #define PGM_SYNC_N_PAGES
@@ -3368,11 +3375,11 @@ void            pgmPoolFlushPageByGCPhys(PVM pVM, RTGCPHYS GCPhys);
 PPGMPOOLPAGE    pgmPoolGetPage(PPGMPOOL pPool, RTHCPHYS HCPhys);
 int             pgmPoolSyncCR3(PVMCPU pVCpu);
 bool            pgmPoolIsDirtyPage(PVM pVM, RTGCPHYS GCPhys);
-int             pgmPoolTrackUpdateGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
+int             pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool fFlushPTEs, bool *pfFlushTLBs);
 void            pgmPoolInvalidateDirtyPage(PVM pVM, RTGCPHYS GCPhysPT);
-DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
+DECLINLINE(int) pgmPoolTrackFlushGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, bool *pfFlushTLBs)
 {
-    return pgmPoolTrackUpdateGCPhys(pVM, pPhysPage, true /* flush PTEs */, pfFlushTLBs);
+    return pgmPoolTrackUpdateGCPhys(pVM, GCPhysPage, pPhysPage, true /* flush PTEs */, pfFlushTLBs);
 }
 
 uint16_t        pgmPoolTrackPhysExtAddref(PVM pVM, uint16_t u16, uint16_t iShwPT);

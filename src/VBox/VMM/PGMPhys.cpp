@@ -2861,7 +2861,7 @@ VMMR3DECL(int) PGMR3PhysRomProtect(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cb, PGMROM
 
                     /* flush references to the page. */
                     PPGMPAGE pRamPage = pgmPhysGetPage(&pVM->pgm.s, pRom->GCPhys + (iPage << PAGE_SHIFT));
-                    int rc2 = pgmPoolTrackFlushGCPhys(pVM, pRamPage, &fFlushTLB);
+                    int rc2 = pgmPoolTrackFlushGCPhys(pVM, pRom->GCPhys + (iPage << PAGE_SHIFT), pRamPage, &fFlushTLB);
                     if (rc2 != VINF_SUCCESS && (rc == VINF_SUCCESS || RT_FAILURE(rc2)))
                         rc = rc2;
 
