@@ -24,6 +24,7 @@
 /* Global includes */
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QTimer>
 #ifdef Q_WS_MAC
 #include <QMenuBar>
 #endif
@@ -50,12 +51,11 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                     , bAccelerate2DVideo
 #endif
                     , uMonitor)
+    , m_fIsInitialResizeEventProcessed(false)
+    , m_fShouldWeDoResize(false)
 {
     /* Prepare frame buffer: */
     prepareFrameBuffer();
-
-    /* Prepare backup inforrmation: */
-    prepareBackup();
 
     /* Prepare common things: */
     prepareCommon();
@@ -72,7 +72,7 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
     /* Load machine view settings: */
     loadMachineViewSettings();
 
-    /* Prepare seamless mode: */
+    /* Prepare seamless view: */
     prepareSeamless();
 
     /* Initialization: */
@@ -94,15 +94,46 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
     cleanupFrameBuffer();
 }
 
+void UIMachineViewSeamless::sltPerformGuestResize()
+{
+    /* Get machine window: */
+    QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+
+    /* Get the available size for the guest display. We assume here that the centralWidget()
+     * contains only this machine view and gives it all available space: */
+    QSize newSize(pMainDialog ? pMainDialog->centralWidget()->size() : QSize());
+    AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
+
+    /* Do not send the same hints as we already have: */
+    if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
+        return;
+
+    /* If we awaiting resize: */
+    if (m_fShouldWeDoResize)
+    {
+        /* Remember the new size: */
+        storeConsoleSize(newSize.width(), newSize.height());
+
+        /* Send new size-hint to the guest: */
+        session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
+    }
+
+    /* We had requested resize now, rejecting other accident requests: */
+    m_fShouldWeDoResize = false;
+}
+
 void UIMachineViewSeamless::sltAdditionsStateChanged()
 {
     // TODO: Exit seamless if additions doesn't support it!
 }
 
-/* If the desktop geometry is set automatically, this will update it: */
 void UIMachineViewSeamless::sltDesktopResized()
 {
     // TODO: Try to resize framebuffer according new desktop size, exit seamless if resize is failed!
+
+    /* If the desktop geometry is set automatically, this will update it: */
+    calculateDesktopGeometry();
 }
 
 bool UIMachineViewSeamless::event(QEvent *pEvent)
@@ -116,6 +147,10 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
+            /* We are starting to perform machine view resize: */
+            bool oldIgnoreMainwndResize = isMachineWindowResizeIgnored();
+            setMachineWindowResizeIgnored(true);
+
             /* Get guest resize-event: */
             UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
 
@@ -124,6 +159,9 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 
             /* Reapply maximum size restriction for machine view: */
             setMaximumSize(sizeHint());
+
+            /* Store the new size to prevent unwanted resize hints being sent back: */
+            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
 
             /* Perform machine view resize: */
             resize(pResizeEvent->width(), pResizeEvent->height());
@@ -143,9 +181,6 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             //mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
 #endif /* Q_WS_MAC */
 
-            /* Update machine view sliders: */
-            updateSliders();
-
             /* Unfortunately restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen widgets are present.
              * This is the case on linux with SDL. As workaround we save/restore the arrow cursor manually.
              * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry for details.
@@ -164,8 +199,16 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             /* Report to the VM thread that we finished resizing: */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
+            /* We are finishing to perform machine view resize: */
+            setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
+
             /* Make sure that all posted signals are processed: */
             qApp->processEvents();
+
+            /* We also recalculate the desktop geometry if this is determined automatically.
+             * In fact, we only need this on the first resize,
+             * but it is done every time to keep the code simpler. */
+            calculateDesktopGeometry();
 
             /* Emit a signal about guest was resized: */
             emit resizeHintDone();
@@ -209,6 +252,32 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 
 bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
+    QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+        qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+    if (pWatched != 0 && pWatched == pMainDialog)
+    {
+        switch (pEvent->type())
+        {
+            case QEvent::Resize:
+            {
+                /* Ignore initial resize event: */
+                if (!m_fIsInitialResizeEventProcessed)
+                {
+                    m_fIsInitialResizeEventProcessed = true;
+                    break;
+                }
+
+                /* Set the "guest needs to resize" hint.
+                 * This hint is acted upon when (and only when) the autoresize property is "true": */
+                m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
+                if (!isMachineWindowResizeIgnored() && uisession()->isGuestSupportsGraphics())
+                    QTimer::singleShot(0, this, SLOT(sltPerformGuestResize()));
+                break;
+            }
+            default:
+                break;
+        }
+    }
 #ifdef Q_WS_MAC // TODO: Is it really needed?
     QMenuBar *pMenuBar = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                          qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
@@ -241,10 +310,19 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
     return UIMachineView::eventFilter(pWatched, pEvent);
 }
 
-void UIMachineViewSeamless::prepareBackup()
+void UIMachineViewSeamless::prepareCommon()
 {
+    /* Base class common settings: */
+    UIMachineView::prepareCommon();
+
     /* Store old machine view size before bramebuffer resized: */
     m_normalSize = QSize(frameBuffer()->width(), frameBuffer()->height());
+
+    /* Minimum size is ignored: */
+    setMinimumSize(0, 0);
+    /* No scrollbars: */
+    setHorizontalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+    setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
 }
 
 void UIMachineViewSeamless::prepareFilters()
@@ -253,7 +331,7 @@ void UIMachineViewSeamless::prepareFilters()
     UIMachineView::prepareFilters();
 
 #ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewSeamless::eventFilter(...);
-    /* Menu bar filters: */
+    /* Menu bar filter: */
     qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 #endif
 }
@@ -274,16 +352,14 @@ void UIMachineViewSeamless::prepareConsoleConnections()
 
 void UIMachineViewSeamless::prepareSeamless()
 {
+    /* Set seamless feature flag to the guest: */
     session().GetConsole().GetDisplay().SetSeamlessMode(true);
-    session().GetConsole().GetDisplay().SetVideoModeHint(machineWindowWrapper()->machineWindow()->width(),
-                                                         machineWindowWrapper()->machineWindow()->height(), 0, screenId());
 }
 
 void UIMachineViewSeamless::cleanupSeamless()
 {
-    /* Send normal size-hint to the guest: */
+    /* Reset seamless feature flag of the guest: */
     session().GetConsole().GetDisplay().SetSeamlessMode(false);
-    session().GetConsole().GetDisplay().SetVideoModeHint(m_normalSize.width(), m_normalSize.height(), 0, screenId());
 }
 
 QRect UIMachineViewSeamless::availableGeometry()
