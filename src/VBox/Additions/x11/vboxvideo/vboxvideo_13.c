@@ -419,8 +419,8 @@ vbox_output_get_modes (xf86OutputPtr output)
     TRACE_ENTRY();
     if (vbox_device_available(pVBox))
     {
-        uint32_t x, y, bpp, display;
-        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &display);
+        uint32_t x, y, bpp, iScreen;
+        rc = vboxGetDisplayChangeRequest(pScrn, &x, &y, &bpp, &iScreen);
         /* @todo - check the display number once we support multiple displays. */
         /* If we don't find a display request, see if we have a saved hint
          * from a previous session. */
