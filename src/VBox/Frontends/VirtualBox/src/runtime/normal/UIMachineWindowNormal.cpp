@@ -96,42 +96,6 @@ UIMachineWindowNormal::~UIMachineWindowNormal()
     cleanupStatusBar();
 }
 
-void UIMachineWindowNormal::sltMachineStateChanged()
-{
-    UIMachineWindow::sltMachineStateChanged();
-}
-
-void UIMachineWindowNormal::sltMediumChange(const CMediumAttachment &attachment)
-{
-    KDeviceType type = attachment.GetType();
-    if (type == KDeviceType_HardDisk)
-        updateAppearanceOf(UIVisualElement_HDStuff);
-    if (type == KDeviceType_DVD)
-        updateAppearanceOf(UIVisualElement_CDStuff);
-    if (type == KDeviceType_Floppy)
-        updateAppearanceOf(UIVisualElement_FDStuff);
-}
-
-void UIMachineWindowNormal::sltUSBControllerChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowNormal::sltUSBDeviceStateChange()
-{
-    updateAppearanceOf(UIVisualElement_USBStuff);
-}
-
-void UIMachineWindowNormal::sltNetworkAdapterChange()
-{
-    updateAppearanceOf(UIVisualElement_NetworkStuff);
-}
-
-void UIMachineWindowNormal::sltSharedFolderChange()
-{
-    updateAppearanceOf(UIVisualElement_SharedFolderStuff);
-}
-
 void UIMachineWindowNormal::sltTryClose()
 {
     UIMachineWindow::sltTryClose();
@@ -320,26 +284,6 @@ void UIMachineWindowNormal::prepareConsoleConnections()
 {
     /* Base-class connections: */
     UIMachineWindow::prepareConsoleConnections();
-
-    /* Medium change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigMediumChange(const CMediumAttachment &)),
-            this, SLOT(sltMediumChange(const CMediumAttachment &)));
-
-    /* USB controller change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBControllerChange()),
-            this, SLOT(sltUSBControllerChange()));
-
-    /* USB device state-change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigUSBDeviceStateChange(const CUSBDevice &, bool, const CVirtualBoxErrorInfo &)),
-            this, SLOT(sltUSBDeviceStateChange()));
-
-    /* Network adapter change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigNetworkAdapterChange(const CNetworkAdapter &)),
-            this, SLOT(sltNetworkAdapterChange()));
-
-    /* Shared folder change updater: */
-    connect(machineLogic()->uisession(), SIGNAL(sigSharedFolderChange()),
-            this, SLOT(sltSharedFolderChange()));
 }
 
 void UIMachineWindowNormal::prepareMenu()

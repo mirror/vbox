@@ -34,6 +34,7 @@ class QCloseEvent;
 
 /* Local forwards */
 class CSession;
+class CMediumAttachment;
 class UISession;
 class UIMachineLogic;
 class UIMachineView;
@@ -53,6 +54,15 @@ public:
     virtual UIMachineLogic* machineLogic() { return m_pMachineLogic; }
     virtual QWidget* machineWindow() { return m_pMachineWindow; }
     virtual UIMachineView* machineView() { return m_pMachineView; }
+
+protected slots:
+
+    /* Console callback handlers: */
+    virtual void sltMediumChange(const CMediumAttachment &attachment);
+    virtual void sltUSBControllerChange();
+    virtual void sltUSBDeviceStateChange();
+    virtual void sltNetworkAdapterChange();
+    virtual void sltSharedFolderChange();
 
 protected:
 
