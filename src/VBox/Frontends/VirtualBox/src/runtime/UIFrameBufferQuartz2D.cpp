@@ -162,12 +162,10 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
      * Debug.app is a nice tool to see which parts of the screen are
      * updated.*/
 
-    Assert (m_image);
+    Assert(m_image);
 
-//    VBoxConsoleWnd *main = qobject_cast <VBoxConsoleWnd *> (vboxGlobal().mainWindow());
-//    Assert (VALID_PTR (main));
     QWidget* viewport = m_pMachineView->viewport();
-    Assert(VALID_PTR (viewport));
+    Assert(VALID_PTR(viewport));
     /* Get the dimensions of the viewport */
     CGRect viewRect = ::darwinToCGRect(viewport->geometry());
     /* Get the context of this window from Qt */
@@ -175,8 +173,8 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
     Assert(VALID_PTR (ctx));
 
     /* Flip the context */
-    CGContextTranslateCTM (ctx, 0, viewRect.size.height);
-    CGContextScaleCTM (ctx, 1.0, -1.0);
+    CGContextTranslateCTM(ctx, 0, viewRect.size.height);
+    CGContextScaleCTM(ctx, 1.0, -1.0);
 
     /* We handle the seamless mode as a special case. */
     if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
@@ -189,60 +187,60 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         CGImageRef subImage;
         if (!m_pMachineView->pauseShot().isNull())
         {
-            CGImageRef pauseImg = ::darwinToCGImageRef (&m_pMachineView->pauseShot());
-            subImage = CGImageCreateWithImageInRect (pauseImg, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-            CGImageRelease (pauseImg);
+            CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
+            subImage = CGImageCreateWithImageInRect(pauseImg, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+            CGImageRelease(pauseImg);
         }
         else
-            subImage = CGImageCreateWithImageInRect (m_image, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
-        Assert (VALID_PTR (subImage));
+            subImage = CGImageCreateWithImageInRect(m_image, CGRectMake (m_pMachineView->contentsX(), m_pMachineView->contentsY(), m_pMachineView->visibleWidth(), m_pMachineView->visibleHeight()));
+        Assert(VALID_PTR(subImage));
         /* Clear the background (Make the rect fully transparent) */
-        CGContextClearRect (ctx, viewRect);
+        CGContextClearRect(ctx, viewRect);
 #ifdef OVERLAY_CLIPRECTS
-        CGContextSetRGBFillColor (ctx, 0.0, 0.0, 5.0, 0.7);
-        CGContextFillRect (ctx, viewRect);
+        CGContextSetRGBFillColor(ctx, 0.0, 0.0, 5.0, 0.7);
+        CGContextFillRect(ctx, viewRect);
 #endif
 #ifdef COMP_WITH_SHADOW
         /* Enable shadows */
-        CGContextSetShadow (ctx, CGSizeMake (10, -10), 10);
-        CGContextBeginTransparencyLayer (ctx, NULL);
+        CGContextSetShadow(ctx, CGSizeMake (10, -10), 10);
+        CGContextBeginTransparencyLayer(ctx, NULL);
 #endif
         /* Grab the current visible region. */
-        RegionRects *rgnRcts = (RegionRects *) ASMAtomicXchgPtr ((void * volatile *) &mRegion, NULL);
+        RegionRects *rgnRcts = (RegionRects *)ASMAtomicXchgPtr((void * volatile *)&mRegion, NULL);
         if (rgnRcts)
         {
             if (rgnRcts->used > 0)
             {
                 /* Add the clipping rects all at once. They are defined in
                  * SetVisibleRegion. */
-                CGContextBeginPath (ctx);
-                CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
+                CGContextBeginPath(ctx);
+                CGContextAddRects(ctx, rgnRcts->rcts, rgnRcts->used);
                 /* Now convert the path to a clipping path. */
-                CGContextClip (ctx);
+                CGContextClip(ctx);
             }
             /* Put back the visible region, free if we cannot (2+ SetVisibleRegion calls). */
-            if (    !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegion, rgnRcts, NULL)
-                &&  !ASMAtomicCmpXchgPtr ((void * volatile *) &mRegionUnused, rgnRcts, NULL))
-                RTMemFree (rgnRcts);
+            if (    !ASMAtomicCmpXchgPtr((void * volatile *)&mRegion, rgnRcts, NULL)
+                &&  !ASMAtomicCmpXchgPtr((void * volatile *)&mRegionUnused, rgnRcts, NULL))
+                RTMemFree(rgnRcts);
         }
         /* In any case clip the drawing to the view window */
-        CGContextClipToRect (ctx, viewRect);
+        CGContextClipToRect(ctx, viewRect);
         /* At this point draw the real vm image */
-        CGContextDrawImage (ctx, ::darwinFlipCGRect (viewRect, viewRect.size.height), subImage);
+        CGContextDrawImage(ctx, ::darwinFlipCGRect (viewRect, viewRect.size.height), subImage);
 #ifdef COMP_WITH_SHADOW
-        CGContextEndTransparencyLayer (ctx);
+        CGContextEndTransparencyLayer(ctx);
 #endif
-        CGImageRelease (subImage);
+        CGImageRelease(subImage);
 #ifdef OVERLAY_CLIPRECTS
         if (rgnRcts && rgnRcts->used > 0)
         {
-            CGContextBeginPath (ctx);
-            CGContextAddRects (ctx, rgnRcts->rcts, rgnRcts->used);
-            CGContextSetRGBStrokeColor (ctx, 1.0, 0.0, 0.0, 0.7);
-            CGContextDrawPath (ctx, kCGPathStroke);
+            CGContextBeginPath(ctx);
+            CGContextAddRects(ctx, rgnRcts->rcts, rgnRcts->used);
+            CGContextSetRGBStrokeColor(ctx, 1.0, 0.0, 0.0, 0.7);
+            CGContextDrawPath(ctx, kCGPathStroke);
         }
-        CGContextSetRGBStrokeColor (ctx, 0.0, 1.0, 0.0, 0.7);
-        CGContextStrokeRect (ctx, viewRect);
+        CGContextSetRGBStrokeColor(ctx, 0.0, 1.0, 0.0, 0.7);
+        CGContextStrokeRect(ctx, viewRect);
 #endif
     }
     else
@@ -256,13 +254,13 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
         CGImageRef subImage;
         if (!m_pMachineView->pauseShot().isNull())
         {
-            CGImageRef pauseImg = ::darwinToCGImageRef (&m_pMachineView->pauseShot());
-            subImage = CGImageCreateWithImageInRect (pauseImg, ::darwinToCGRect (is));
-            CGImageRelease (pauseImg);
+            CGImageRef pauseImg = ::darwinToCGImageRef(&m_pMachineView->pauseShot());
+            subImage = CGImageCreateWithImageInRect(pauseImg, ::darwinToCGRect(is));
+            CGImageRelease(pauseImg);
         }
         else
-            subImage = CGImageCreateWithImageInRect (m_image, ::darwinToCGRect (is));
-        Assert (VALID_PTR (subImage));
+            subImage = CGImageCreateWithImageInRect(m_image, ::darwinToCGRect(is));
+        Assert(VALID_PTR(subImage));
         /* Ok, for more performance we set a clipping path of the
          * regions given by this paint event. */
         QVector<QRect> a = aEvent->region().rects();
@@ -271,21 +269,21 @@ void UIFrameBufferQuartz2D::paintEvent(QPaintEvent *aEvent)
             CGContextBeginPath (ctx);
             /* Add all region rects to the current context as path components */
             for (int i = 0; i < a.size(); ++i)
-                CGContextAddRect (ctx, ::darwinFlipCGRect (::darwinToCGRect (a[i]), viewRect.size.height));
+                CGContextAddRect(ctx, ::darwinFlipCGRect(::darwinToCGRect(a[i]), viewRect.size.height));
             /* Now convert the path to a clipping path. */
-            CGContextClip (ctx);
+            CGContextClip(ctx);
         }
 
         /* In any case clip the drawing to the view window */
-        CGContextClipToRect (ctx, viewRect);
+        CGContextClipToRect(ctx, viewRect);
         /* At this point draw the real vm image */
-        CGContextDrawImage (ctx, ::darwinFlipCGRect (::darwinToCGRect (ir), viewRect.size.height), subImage);
+        CGContextDrawImage(ctx, ::darwinFlipCGRect(::darwinToCGRect (ir), viewRect.size.height), subImage);
 
-        CGImageRelease (subImage);
+        CGImageRelease(subImage);
     }
 }
 
-void UIFrameBufferQuartz2D::resizeEvent (UIResizeEvent *aEvent)
+void UIFrameBufferQuartz2D::resizeEvent(UIResizeEvent *aEvent)
 {
 #if 0
     printf ("fmt=%lu, vram=%X, bpp=%lu, bpl=%lu, width=%lu, height=%lu\n",
@@ -312,8 +310,8 @@ void UIFrameBufferQuartz2D::resizeEvent (UIResizeEvent *aEvent)
     {
 //        printf ("VRAM\n");
         /* Create the image copy of the framebuffer */
-        CGDataProviderRef dp = CGDataProviderCreateWithData (NULL, aEvent->VRAM(), aEvent->bitsPerPixel() / 8 * m_width * m_height, NULL);
-        m_image = CGImageCreate (m_width, m_height, 8, aEvent->bitsPerPixel(), aEvent->bytesPerLine(), cs,
+        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, aEvent->VRAM(), aEvent->bitsPerPixel() / 8 * m_width * m_height, NULL);
+        m_image = CGImageCreate(m_width, m_height, 8, aEvent->bitsPerPixel(), aEvent->bytesPerLine(), cs,
                                 kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
                                 kCGRenderingIntentDefault);
         m_pDataAddress = aEvent->VRAM();
@@ -329,17 +327,17 @@ void UIFrameBufferQuartz2D::resizeEvent (UIResizeEvent *aEvent)
 //        int bitmapBytesPerRow = RT_ALIGN (m_width * 4, 16);
         int bitmapBytesPerRow = m_width * 4;
         int bitmapByteCount = (bitmapBytesPerRow * m_height);
-        m_pBitmapData = RTMemAlloc (bitmapByteCount);
-        CGDataProviderRef dp = CGDataProviderCreateWithData (NULL, m_pBitmapData, bitmapByteCount, NULL);
-        m_image = CGImageCreate (m_width, m_height, 8, 32, bitmapBytesPerRow, cs,
-                               kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
-                               kCGRenderingIntentDefault);
-        m_pDataAddress = static_cast <uchar*> (m_pBitmapData);
-        CGDataProviderRelease (dp);
+        m_pBitmapData = RTMemAlloc(bitmapByteCount);
+        CGDataProviderRef dp = CGDataProviderCreateWithData(NULL, m_pBitmapData, bitmapByteCount, NULL);
+        m_image = CGImageCreate(m_width, m_height, 8, 32, bitmapBytesPerRow, cs,
+                                kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Little, dp, 0, false,
+                                kCGRenderingIntentDefault);
+        m_pDataAddress = static_cast<uchar*>(m_pBitmapData);
+        CGDataProviderRelease(dp);
     }
-    CGColorSpaceRelease (cs);
+    CGColorSpaceRelease(cs);
 #ifdef VBOX_WITH_ICHAT_THEATER
-    setImageRef (m_image);
+    setImageRef(m_image);
 #endif
 
 //    if (remind)
@@ -363,22 +361,22 @@ void UIFrameBufferQuartz2D::clean()
 {
     if (m_image)
     {
-        CGImageRelease (m_image);
+        CGImageRelease(m_image);
         m_image = NULL;
     }
     if (m_pBitmapData)
     {
-        RTMemFree (m_pBitmapData);
+        RTMemFree(m_pBitmapData);
         m_pBitmapData = NULL;
     }
     if (mRegion)
     {
-        RTMemFree ((void *) mRegion);
+        RTMemFree((void *)mRegion);
         mRegion = NULL;
     }
     if (mRegionUnused)
     {
-        RTMemFree ((void *) mRegionUnused);
+        RTMemFree((void *)mRegionUnused);
         mRegionUnused = NULL;
     }
 }
