@@ -965,7 +965,7 @@ testsuite-packing:
 		VBOX_WITH_TESTSUITE_ISO.win.amd64=1 \
 		VBOX_WITH_TESTSUITE_ISO.win.x86=1 \
 		-C src/tests/testsuite \
-		$(VBOX_PATH_TESTSUITE)/VBoxTestSuite.iso
+		$(PATH_OUT)/VBoxTestSuite.zip
 
 .PHONY: \
 	testsuite-build-win.x86 \
