@@ -192,9 +192,9 @@ static int off_t_preempt        = -1;
 int
 _init(void)
 {
-    int err = vbi_init();
-    if (!err)
-        err = mod_install(&vbi_modlinkage);
+	int err = vbi_init();
+	if (!err)
+		err = mod_install(&vbi_modlinkage);
 	return (err);
 }
 #endif
@@ -226,7 +226,7 @@ vbi_init(void)
 	 */
 	if (p_contig_free == NULL) {
 		p_contig_free = (void (*)(void *, size_t))
-		    kobj_getsymvalue("contig_free", 1);
+			kobj_getsymvalue("contig_free", 1);
 		if (p_contig_free == NULL) {
 			cmn_err(CE_NOTE, " contig_free() not found in kernel");
 			return (EINVAL);
@@ -328,7 +328,7 @@ vbi_internal_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
 
 	attr = base_attr;
 	attr.dma_attr_addr_hi = *phys;
-    attr.dma_attr_align   = alignment;
+	attr.dma_attr_align   = alignment;
 	if (!contig)
 		attr.dma_attr_sgllen = npages;
 	ptr = contig_alloc(size, &attr, PAGESIZE, 1);
@@ -348,14 +348,14 @@ vbi_internal_alloc(uint64_t *phys, size_t size, uint64_t alignment, int contig)
 void *
 vbi_contig_alloc(uint64_t *phys, size_t size)
 {
-    /* Obsolete */
+	/* Obsolete */
 	return (vbi_internal_alloc(phys, size, PAGESIZE /* alignment */, 1 /* contiguous */));
 }
 
 void
 vbi_contig_free(void *va, size_t size)
 {
-    /* Obsolete */
+	/* Obsolete */
 	p_contig_free(va, size);
 }
 
@@ -372,7 +372,7 @@ vbi_kernel_map(uint64_t pa, size_t size, uint_t prot)
 	va = vmem_alloc(heap_arena, size, VM_SLEEP);
 
 	hat_devload(kas.a_hat, va, size, (pfn_t)(pa >> PAGESHIFT),
-	    prot, HAT_LOAD | HAT_LOAD_LOCK | HAT_UNORDERED_OK);
+		prot, HAT_LOAD | HAT_LOAD_LOCK | HAT_UNORDERED_OK);
 
 	return (va);
 }
@@ -534,7 +534,7 @@ vbi_thread_create(void *func, void *arg, size_t len, int priority)
 	kthread_t *t;
 
 	t = thread_create(NULL, NULL, (void (*)())func, arg, len,
-	    VBIPROC(), TS_RUN, priority);
+		VBIPROC(), TS_RUN, priority);
 	return (t);
 }
 
@@ -614,10 +614,10 @@ vbi_execute_on_all(void *func, void *arg)
 	if (use_old) {
 		if (use_old_with_ulong) {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set.words[0], (xc_func_t)func);
+				set.words[0], (xc_func_t)func);
 		} else {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set, (xc_func_t)func);
+				set, (xc_func_t)func);
 		}
 	} else {
 		xc_call((xc_arg_t)arg, 0, 0, &set.words[0], (xc_func_t)func);
@@ -636,10 +636,10 @@ vbi_execute_on_others(void *func, void *arg)
 	if (use_old) {
 		if (use_old_with_ulong) {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set.words[0], (xc_func_t)func);
+				set.words[0], (xc_func_t)func);
 		} else {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set, (xc_func_t)func);
+				set, (xc_func_t)func);
 		}
 	} else {
 		xc_call((xc_arg_t)arg, 0, 0, &set.words[0], (xc_func_t)func);
@@ -658,10 +658,10 @@ vbi_execute_on_one(void *func, void *arg, int c)
 	if (use_old) {
 		if (use_old_with_ulong) {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set.words[0], (xc_func_t)func);
+				set.words[0], (xc_func_t)func);
 		} else {
 			p_xc_call((xc_arg_t)arg, 0, 0, X_CALL_HIPRI,
-			    set, (xc_func_t)func);
+				set, (xc_func_t)func);
 		}
 	} else {
 		xc_call((xc_arg_t)arg, 0, 0, &set.words[0], (xc_func_t)func);
@@ -679,7 +679,7 @@ vbi_lock_va(void *addr, size_t len, int access, void **handle)
 	*handle = NULL;
 	if (!IS_KERNEL(addr)) {
 		err = as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
-		    (caddr_t)addr, len, F_SOFTLOCK, access);
+			(caddr_t)addr, len, F_SOFTLOCK, access);
 		if (err != 0) {
 			VBI_VERBOSE("vbi_lock_va() failed to lock");
 			return (-1);
@@ -694,7 +694,7 @@ vbi_unlock_va(void *addr, size_t len, int access, void *handle)
 {
 	if (!IS_KERNEL(addr))
 		as_fault(VBIPROC()->p_as->a_hat, VBIPROC()->p_as,
-		    (caddr_t)addr, len, F_SOFTUNLOCK, access);
+			(caddr_t)addr, len, F_SOFTUNLOCK, access);
 }
 
 uint64_t
@@ -751,8 +751,8 @@ segvbi_create(struct seg *seg, void *args)
 	pgcnt = (seg->s_size + PAGESIZE - 1) >> PAGESHIFT;
 	for (p = 0; p < pgcnt; ++p, va += PAGESIZE) {
 		hat_devload(as->a_hat, va,
-		    PAGESIZE, a->palist[p] >> PAGESHIFT,
-		    data->prot | HAT_UNORDERED_OK, HAT_LOAD | HAT_LOAD_LOCK);
+			PAGESIZE, a->palist[p] >> PAGESHIFT,
+			data->prot | HAT_UNORDERED_OK, HAT_LOAD | HAT_LOAD_LOCK);
 	}
 
 	return (error);
@@ -779,14 +779,14 @@ static int
 segvbi_unmap(struct seg *seg, caddr_t addr, size_t len)
 {
 	if (addr < seg->s_base || addr + len > seg->s_base + seg->s_size ||
-	    (len & PAGEOFFSET) || ((uintptr_t)addr & PAGEOFFSET))
+		(len & PAGEOFFSET) || ((uintptr_t)addr & PAGEOFFSET))
 		panic("segvbi_unmap");
 
 	if (addr != seg->s_base || len != seg->s_size)
 		return (ENOTSUP);
 
 	hat_unload(seg->s_as->a_hat, addr, len,
-	    HAT_UNLOAD_UNMAP | HAT_UNLOAD_UNLOCK);
+		HAT_UNLOAD_UNMAP | HAT_UNLOAD_UNLOCK);
 
 	seg_free(seg);
 	return (0);
@@ -804,7 +804,7 @@ segvbi_free(struct seg *seg)
  */
 static int
 segvbi_fault(struct hat *hat, struct seg *seg, caddr_t addr, size_t len,
-    enum fault_type type, enum seg_rw rw)
+	enum fault_type type, enum seg_rw rw)
 {
 	return (FC_MAKE_ERR(EFAULT));
 }
@@ -845,14 +845,14 @@ segvbi_incore(struct seg *seg, caddr_t addr, size_t len, char *vec)
 	size_t v;
 
 	for (v = 0, len = (len + PAGEOFFSET) & PAGEMASK; len;
-	    len -= PAGESIZE, v += PAGESIZE)
+		len -= PAGESIZE, v += PAGESIZE)
 		*vec++ = 1;
 	return (v);
 }
 
 static int
 segvbi_lockop(struct seg *seg, caddr_t addr,
-    size_t len, int attr, int op, ulong_t *lockmap, size_t pos)
+	size_t len, int attr, int op, ulong_t *lockmap, size_t pos)
 {
 	return (0);
 }
@@ -897,7 +897,7 @@ segvbi_dump(struct seg *seg)
 
 static int
 segvbi_pagelock(struct seg *seg, caddr_t addr, size_t len,
-    struct page ***ppp, enum lock_type type, enum seg_rw rw)
+	struct page ***ppp, enum lock_type type, enum seg_rw rw)
 {
 	return (ENOTSUP);
 }
@@ -1248,3 +1248,4 @@ vbi_phys_free(void *va, size_t size)
 {
 	p_contig_free(va, size);
 }
+
