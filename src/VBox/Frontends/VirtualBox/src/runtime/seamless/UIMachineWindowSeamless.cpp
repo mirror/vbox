@@ -174,7 +174,6 @@ void UIMachineWindowSeamless::prepareSeamless()
 
     /* Perform these events: */
     qApp->processEvents();
-
 }
 
 #ifdef Q_WS_MAC
@@ -206,7 +205,7 @@ void UIMachineWindowSeamless::prepareMachineView()
                                            , m_uScreenId);
 
     /* Add machine view into layout: */
-    m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1);
+    m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 
     /* This might be required to correctly mask: */
     centralWidget()->setAutoFillBackground(false);
