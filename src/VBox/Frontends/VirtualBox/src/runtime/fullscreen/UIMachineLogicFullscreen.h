@@ -54,12 +54,14 @@ private slots:
 private:
 
     /* Prepare helpers: */
+    void prepareActionGroups();
     void prepareActionConnections();
     void prepareMachineWindows();
 
     /* Cleanup helpers: */
     void cleanupMachineWindow();
     void cleanupActionConnections() {}
+    void cleanupActionGroups();
 
 #ifdef Q_WS_MAC
 # ifdef QT_MAC_USE_COCOA

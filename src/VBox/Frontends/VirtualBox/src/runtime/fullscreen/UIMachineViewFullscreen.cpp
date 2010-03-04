@@ -49,7 +49,7 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
                     , bAccelerate2DVideo
 #endif
                     , uMonitor)
-    , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
+, m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
 {
     /* Prepare frame buffer: */
@@ -188,8 +188,7 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
         maybeRestrictMinimumSize();
 
-        if (uisession()->isGuestSupportsGraphics() && m_bIsGuestAutoresizeEnabled)
-            sltPerformGuestResize();
+        sltPerformGuestResize();
     }
 }
 

@@ -276,22 +276,17 @@ void UIMachineWindowFullscreen::prepareMachineView()
     m_pMachineViewContainer->addWidget(m_pMachineView, 1, 1, Qt::AlignVCenter | Qt::AlignHCenter);
 }
 
-//#include "UIMachineViewFullscreen.h"
 void UIMachineWindowFullscreen::loadWindowSettings()
 {
-    /* Load normal window settings: */
-//    CMachine machine = session().GetMachine();
-
     /* Toggle console to manual resize mode. */
-//    m_pMachineView->setMachineWindowResizeIgnored(true);
     m_pMachineView->setFrameBufferResizeIgnored(true);
 
     /* The background has to go black */
     QPalette palette(centralWidget()->palette());
     palette.setColor(centralWidget()->backgroundRole(), Qt::black);
-    centralWidget()->setPalette (palette);
-    centralWidget()->setAutoFillBackground (true);
-    setAutoFillBackground (true);
+    centralWidget()->setPalette(palette);
+    centralWidget()->setAutoFillBackground(true);
+    setAutoFillBackground(true);
 
     /* Here we are going really fullscreen */
     setWindowState(windowState() | Qt::WindowFullScreen);
@@ -300,25 +295,10 @@ void UIMachineWindowFullscreen::loadWindowSettings()
     show();
     /* Make sure it is really on the right place (especially on the Mac) */
     move(0, 0);
-
-//    m_pMachineView->normalizeGeometry(true);
-//    ((UIMachineViewFullscreen*)m_pMachineView)->sltPerformGuestResize(maximumSize());
-
-//    QRect r = geometry();
-    /* Load global settings: */
-    {
-//        VBoxGlobalSettings settings = vboxGlobal().settings();
-//        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
-    }
 }
 
 void UIMachineWindowFullscreen::saveWindowSettings()
 {
-//    CMachine machine = session().GetMachine();
-
-    /* Save extra-data settings: */
-    {
-    }
 }
 
 void UIMachineWindowFullscreen::cleanupMachineView()
