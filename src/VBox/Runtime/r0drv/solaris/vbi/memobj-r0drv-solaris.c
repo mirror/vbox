@@ -44,7 +44,6 @@
 #include <iprt/process.h>
 #include "internal/memobj.h"
 
-
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
@@ -116,7 +115,7 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
 int rtR0MemObjNativeAllocPage(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
-    /* Create the object */
+    /* Create the object. */
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PAGE, NULL, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
@@ -145,9 +144,8 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
         return VERR_NO_MEMORY;
 
     /* Allocate physically low page-aligned memory. */
-    caddr_t virtAddr;
-    uint64_t phys = (unsigned)0xffffffff;
-    virtAddr = vbi_lowmem_alloc(phys, cb);
+    uint64_t physAddr = _4G - 1;
+    caddr_t virtAddr  = vbi_lowmem_alloc(physAddr, cb);
     if (virtAddr == NULL)
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
@@ -163,7 +161,7 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
 int rtR0MemObjNativeAllocCont(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable)
 {
     NOREF(fExecutable);
-    return rtR0MemObjNativeAllocPhys(ppMem, cb, (uint64_t)0xffffffff /* highest address */, PAGE_SIZE /* alignment */);
+    return rtR0MemObjNativeAllocPhys(ppMem, cb, NIL_RTHCPHYS, PAGE_SIZE /* alignment */);
 }
 
 
@@ -175,20 +173,19 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
         return VERR_NO_MEMORY;
 
     if (PhysHighest == NIL_RTHCPHYS)
-        PhysHighest = (uint64_t)0xffffffff;
+        PhysHighest = UINT64_MAX - 1;
 
     /* Allocate physically non-contiguous page-aligned memory. */
-    caddr_t virtAddr;
-    uint64_t phys = PhysHighest;
-    virtAddr = vbi_phys_alloc(&phys, cb, PAGE_SIZE, 0 /* non-contiguous */);
-    if (virtAddr == NULL)
+    uint64_t physAddr = PhysHighest;
+    caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
+    if (RT_UNLIKELY(virtAddr == NULL))
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_MEMORY;
     }
-    Assert(phys < (uint64_t)1 << 32);
+    Assert(physAddr < UINT64_MAX);
     pMemSolaris->Core.pv = virtAddr;
-    pMemSolaris->Core.u.Phys.PhysBase = phys;
+    pMemSolaris->Core.u.Phys.PhysBase = physAddr;
     pMemSolaris->Core.u.Phys.fAllocated = true;
     pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
@@ -208,25 +205,24 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
     if (uAlignment != PAGE_SIZE)
         return VERR_NOT_SUPPORTED;
 
-    if (PhysHighest == NIL_RTHCPHYS)
-        PhysHighest = (uint64_t)0xffffffff;
-
      PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_CONT, NULL, cb);
      if (!pMemSolaris)
          return VERR_NO_MEMORY;
 
+    if (PhysHighest == NIL_RTHCPHYS)
+        PhysHighest = UINT64_MAX - 1;
+
      /* Allocate physically contiguous memory aligned as specified. */
-     caddr_t virtAddr;
-     uint64_t phys = PhysHighest;
-     virtAddr = vbi_phys_alloc(&phys, cb, uAlignment, 1 /* contiguous */);
-     if (virtAddr == NULL)
+     uint64_t physAddr = PhysHighest;
+     caddr_t  virtAddr = vbi_phys_alloc(&physAddr, cb, uAlignment, 1 /* contiguous */);
+     if (RT_UNLIKELY(virtAddr == NULL))
      {
          rtR0MemObjDelete(&pMemSolaris->Core);
          return VERR_NO_CONT_MEMORY;
      }
-     Assert(phys < (uint64_t)1 << 32);
+     Assert(physAddr < UINT64_MAX);
      pMemSolaris->Core.pv = virtAddr;
-     pMemSolaris->Core.u.Cont.Phys = phys;
+     pMemSolaris->Core.u.Cont.Phys = physAddr;
      pMemSolaris->pvHandle = NULL;
      *ppMem = &pMemSolaris->Core;
      return VINF_SUCCESS;
@@ -235,12 +231,12 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 
 int rtR0MemObjNativeEnterPhys(PPRTR0MEMOBJINTERNAL ppMem, RTHCPHYS Phys, size_t cb)
 {
-    /* Create the object */
+    /* Create the object. */
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PHYS, NULL, cb);
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    /* There is no allocation here, it needs to be mapped somewhere first */
+    /* There is no allocation here, it needs to be mapped somewhere first. */
     pMemSolaris->Core.u.Phys.fAllocated = false;
     pMemSolaris->Core.u.Phys.PhysBase = Phys;
     *ppMem = &pMemSolaris->Core;
@@ -317,17 +313,19 @@ int rtR0MemObjNativeReserveKernel(PPRTR0MEMOBJINTERNAL ppMem, void *pvFixed, siz
     PRTR0MEMOBJSOLARIS  pMemSolaris;
     void               *pv;
 
+    /* Create the object. */
+    pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
+    if (!pMemSolaris)
+        return VERR_NO_MEMORY;
+
     /*
      * Use xalloc.
      */
     pv = vmem_xalloc(heap_arena, cb, uAlignment, 0 /*phase*/, 0 /*nocross*/,
                      NULL /*minaddr*/, NULL /*maxaddr*/, VM_SLEEP);
-    if (!pv)
-        return VERR_NO_MEMORY;
-    pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_RES_VIRT, pv, cb);
-    if (!pMemSolaris)
+    if (RT_UNLIKELY(!pv))
     {
-        vmem_xfree(heap_arena, pv, cb);
+        rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_MEMORY;
     }
 
