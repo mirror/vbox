@@ -483,7 +483,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         setVMMDevMouseCaps(uHostCaps);
     }
 
-    if (mouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+    if (fVMMDevCanAbs)
     {
         /*
          * Send the absolute mouse position to the VMM device.
@@ -522,6 +522,7 @@ void Mouse::sendMouseCapsNotifications(void)
 {
     bool fAbsDev = false;
     bool fRelDev = false;
+    uint32_t u32MouseCaps;
     for (unsigned i = 0; i < MOUSE_MAX_DEVICES; ++i)
         if (mpDrv[i])
         {
@@ -530,6 +531,11 @@ void Mouse::sendMouseCapsNotifications(void)
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                fRelDev = true;
         }
+    if (RT_SUCCESS(getVMMDevMouseCaps(&u32MouseCaps)))
+        fVMMDevCanAbs =    (u32MouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+                        && fRelDev;
+    else
+        fVMMDevCanAbs = false;
     mParent->onMouseCapabilityChange(fAbsDev || fVMMDevCanAbs, fRelDev,
                                      fVMMDevNeedsHostCursor);
     /** @todo if this gets called during device initialisation we get an
