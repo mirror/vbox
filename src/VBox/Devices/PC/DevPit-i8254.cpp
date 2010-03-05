@@ -54,6 +54,12 @@
 #include <iprt/assert.h>
 #include <iprt/asm.h>
 
+#ifdef IN_RING3
+# include <iprt/alloc.h>
+# include <iprt/string.h>
+# include <iprt/uuid.h>
+#endif /* IN_RING3 */
+
 #include "../Builtins.h"
 
 
@@ -69,7 +75,10 @@
 #define RW_STATE_WORD1 4
 
 /** The current saved state version. */
-#define PIT_SAVED_STATE_VERSION             3
+#define PIT_SAVED_STATE_VERSION             4
+/** The saved state version used by VirtualBox 3.1 and earlier.
+ * This did not include disable by HPET flag. */
+#define PIT_SAVED_STATE_VERSION_VBOX_31     3
 /** The saved state version used by VirtualBox 3.0 and earlier.
  * This did not include the config part. */
 #define PIT_SAVED_STATE_VERSION_VBOX_30     2
@@ -146,7 +155,12 @@ typedef struct PITState
     RTIOPORT                IOPortBaseCfg;
     /** Config: Speaker enabled. */
     bool                    fSpeakerCfg;
-    bool                    afAlignment0[HC_ARCH_BITS == 32 ? 1 : 5];
+    uint8_t                 fDisabledByHpet;
+#if HC_ARCH_BITS == 64
+    bool                    afAlignment0[4];
+#endif
+    /** PIT port interface. */
+    PDMIPITPORT             IPITPort;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
     /** Number of IRQs that's been raised. */
@@ -413,9 +427,18 @@ static void pit_irq_timer_update(PITChannelState *s, uint64_t current_time, uint
 
     /* We just flip-flop the irq level to save that extra timer call, which isn't generally required (we haven't served it for months). */
     pDevIns = s->CTX_SUFF(pPit)->pDevIns;
-    PDMDevHlpISASetIrq(pDevIns, s->irq, irq_level);
-    if (irq_level)
-        PDMDevHlpISASetIrq(pDevIns, s->irq, 0);
+
+    /* If PIT disabled by HPET - just disconnect ticks from interrupt controllers, and not modify
+     * other moments of device functioning.
+     * @todo: is it correct?
+     */
+    if (!s->pPitR3->fDisabledByHpet)
+    {
+        PDMDevHlpISASetIrq(pDevIns, s->irq, irq_level);
+        if (irq_level)
+            PDMDevHlpISASetIrq(pDevIns, s->irq, 0);
+    }
+
     if (irq_level)
     {
         s->u64ReloadTS = now;
@@ -762,11 +785,17 @@ static DECLCALLBACK(int) pitSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     }
 
     SSMR3PutS32(pSSM, pThis->speaker_data_on);
+
+
 #ifdef FAKE_REFRESH_CLOCK
-    return SSMR3PutS32(pSSM, pThis->dummy_refresh_clock);
+    SSMR3PutS32(pSSM, pThis->dummy_refresh_clock);
 #else
-    return SSMR3PutS32(pSSM, 0);
+    SSMR3PutS32(pSSM, 0);
 #endif
+
+    SSMR3PutU8(pSSM, pThis->fDisabledByHpet);
+
+    return 0;
 }
 
 
@@ -779,7 +808,8 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     int         rc;
 
     if (    uVersion != PIT_SAVED_STATE_VERSION
-        &&  uVersion != PIT_SAVED_STATE_VERSION_VBOX_30)
+        &&  uVersion != PIT_SAVED_STATE_VERSION_VBOX_30
+        &&  uVersion != PIT_SAVED_STATE_VERSION_VBOX_31)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
     /* The config. */
@@ -838,11 +868,16 @@ static DECLCALLBACK(int) pitLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     SSMR3GetS32(pSSM, &pThis->speaker_data_on);
 #ifdef FAKE_REFRESH_CLOCK
-    return SSMR3GetS32(pSSM, &pThis->dummy_refresh_clock);
+    SSMR3GetS32(pSSM, &pThis->dummy_refresh_clock);
 #else
     int32_t u32Dummy;
-    return SSMR3GetS32(pSSM, &u32Dummy);
+    SSMR3GetS32(pSSM, &u32Dummy);
 #endif
+
+    if (uVersion > PIT_SAVED_STATE_VERSION_VBOX_31)
+        SSMR3GetU8(pSSM, &pThis->fDisabledByHpet);
+
+    return 0;
 }
 
 
@@ -899,6 +934,8 @@ static DECLCALLBACK(void) pitReset(PPDMDEVINS pDevIns)
     PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
     unsigned i;
     LogFlow(("pitReset: \n"));
+
+    pThis->fDisabledByHpet = false;
 
     for (i = 0; i < RT_ELEMENTS(pThis->channels); i++)
     {
@@ -962,8 +999,34 @@ static DECLCALLBACK(void) pitInfo(PPDMDEVINS pDevIns, PCDBGFINFOHLP pHlp, const 
 #else
     pHlp->pfnPrintf(pHlp, "speaker_data_on=%#x\n", pThis->speaker_data_on);
 #endif
+    if (pThis->fDisabledByHpet)
+        pHlp->pfnPrintf(pHlp, "Disabled by HPET\n");
 }
 
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) pitQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPDMDEVINS pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
+    PITState *pThis = PDMINS_2_DATA(pDevIns, PITState *);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,    &pDevIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIPITPORT, &pThis->IPITPort);
+    return NULL;
+}
+
+/**
+ * @interface_method_impl{PDMIPITPORT,pfnNotifyHpetLegacy}
+ *
+ * @returns VBox status code
+ * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+ */
+static DECLCALLBACK(int) pitNotifyHpetLegacy(PPDMIPITPORT pInterface, bool fActivate)
+{
+    PITState *pThis = RT_FROM_MEMBER(pInterface, PITState, IPITPort);
+    pThis->fDisabledByHpet = fActivate;
+    return VINF_SUCCESS;
+}
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -1070,6 +1133,14 @@ static DECLCALLBACK(int)  pitConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     /*
+     * Interfaces
+     */
+    /* IBase */
+    pDevIns->IBase.pfnQueryInterface            = pitQueryInterface;
+    /* IPITPort */
+    pThis->IPITPort.pfnNotifyHpetLegacy         = pitNotifyHpetLegacy;
+
+    /*
      * Initialize the device state.
      */
     pitReset(pDevIns);
@@ -1129,7 +1200,7 @@ const PDMDEVREG g_DeviceI8254 =
     NULL,
     /* pfnDetach */
     NULL,
-    /* pfnQueryInterface. */
+    /* pfnQueryInterface */
     NULL,
     /* pfnInitComplete */
     NULL,

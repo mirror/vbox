@@ -54,6 +54,11 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
+#ifdef IN_RING3
+# include <iprt/alloc.h>
+# include <iprt/uuid.h>
+#endif /* IN_RING3 */
+
 #include "../Builtins.h"
 
 struct RTCState;
@@ -111,7 +116,10 @@ RT_C_DECLS_END
 
 
 /** The saved state version. */
-#define RTC_SAVED_STATE_VERSION             2
+#define RTC_SAVED_STATE_VERSION             3
+/** The saved state version used by VirtualBox 3.1 and earlier.
+ * This does not include disabled by HPET state.  */
+#define RTC_SAVED_STATE_VERSION_VBOX_31     2
 /** The saved state version used by VirtualBox 3.0 and earlier.
  * This does not include the configuration.  */
 #define RTC_SAVED_STATE_VERSION_VBOX_30     1
@@ -137,7 +145,8 @@ struct my_tm
 struct RTCState {
     uint8_t cmos_data[128];
     uint8_t cmos_index;
-    uint8_t Alignment0[7];
+    uint8_t fDisabledByHpet;
+    uint8_t Alignment0[6];
     struct my_tm current_tm;
     /** The configured IRQ. */
     int32_t irq;
@@ -149,6 +158,9 @@ struct RTCState {
     int64_t next_periodic_time;
     /* second update */
     int64_t next_second_time;
+
+    /** RTC port interface. */
+    PDMIRTCPORT  IRTCPort;
 
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3 pDevInsR3;
@@ -225,13 +237,21 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
     }
 }
 
+
+static void rtc_raise_irq(RTCState* pThis, uint32_t iLevel)
+{
+    if (!pThis->fDisabledByHpet)
+        PDMDevHlpISASetIrq(pThis->CTX_SUFF(pDevIns), pThis->irq, iLevel);
+}
+
 static void rtc_periodic_timer(void *opaque)
 {
     RTCState *s = (RTCState*)opaque;
 
     rtc_timer_update(s, s->next_periodic_time);
     s->cmos_data[RTC_REG_C] |= 0xc0;
-    PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), s->irq, 1);
+
+    rtc_raise_irq(s, 1);
 }
 
 static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
@@ -445,14 +465,14 @@ static void rtc_update_second2(void *opaque)
              from_bcd(s, s->cmos_data[RTC_HOURS_ALARM]) == s->current_tm.tm_hour)) {
 
             s->cmos_data[RTC_REG_C] |= 0xa0;
-            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), s->irq, 1);
+            rtc_raise_irq(s, 1);
         }
     }
 
     /* update ended interrupt */
     if (s->cmos_data[RTC_REG_B] & REG_B_UIE) {
         s->cmos_data[RTC_REG_C] |= 0x90;
-        PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), s->irq, 1);
+        rtc_raise_irq(s, 1);
     }
 
     /* clear update in progress bit */
@@ -485,7 +505,7 @@ static uint32_t cmos_ioport_read(void *opaque, uint32_t addr)
             break;
         case RTC_REG_C:
             ret = s->cmos_data[s->cmos_index];
-            PDMDevHlpISASetIrq(s->CTX_SUFF(pDevIns), s->irq, 0);
+            rtc_raise_irq(s, 0);
             s->cmos_data[RTC_REG_C] = 0x00;
             break;
         default:
@@ -642,6 +662,8 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer), pSSM);
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
+    SSMR3PutU8(pSSM, pThis->fDisabledByHpet);
+
     return VINF_SUCCESS;
 }
 
@@ -655,6 +677,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     int         rc;
 
     if (    uVersion != RTC_SAVED_STATE_VERSION
+        &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_31
         &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
 
@@ -713,6 +736,11 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         pThis->CurPeriod = 0;
     }
     pThis->cRelLogEntries = 0;
+
+
+    if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_31)
+         SSMR3GetU8(pSSM, &pThis->fDisabledByHpet);
+
     return VINF_SUCCESS;
 }
 
@@ -845,6 +873,27 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pThis->pSecondTimer2RC  = TMTimerRCPtr(pThis->pSecondTimer2R3);
 }
 
+/**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) rtcQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPDMDEVINS pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
+    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,    &pDevIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIRTCPORT, &pThis->IRTCPort);
+    return NULL;
+}
+
+/**
+ * @interface_method_impl{PDMIRTCPORT,pfnNotifyHpetLegacy}
+ */
+static DECLCALLBACK(int) rtcNotifyHpetLegacy(PPDMIRTCPORT pInterface, bool fActivate)
+{
+    RTCState *pThis = RT_FROM_MEMBER(pInterface, RTCState, IRTCPort);
+    pThis->fDisabledByHpet = fActivate;
+    return VINF_SUCCESS;
+}
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -912,6 +961,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->RtcReg.u32Version    = PDM_RTCREG_VERSION;
     pThis->RtcReg.pfnRead       = rtcCMOSRead;
     pThis->RtcReg.pfnWrite      = rtcCMOSWrite;
+    pThis->fDisabledByHpet      = false;
 
     /*
      * Create timers, arm them, register I/O Ports and save state.
@@ -969,7 +1019,16 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     /*
+     * Interfaces
+     */
+    /* IBase */
+    pDevIns->IBase.pfnQueryInterface            = rtcQueryInterface;
+    /* IRTCPort */
+    pThis->IRTCPort.pfnNotifyHpetLegacy         = rtcNotifyHpetLegacy;
+
+    /*
      * Register ourselves as the RTC/CMOS with PDM.
+     * @todo: maybe use generic iface above?
      */
     rc = PDMDevHlpRTCRegister(pDevIns, &pThis->RtcReg, &pThis->pRtcHlpR3);
     if (RT_FAILURE(rc))
@@ -1036,4 +1095,3 @@ const PDMDEVREG g_DeviceMC146818 =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
-

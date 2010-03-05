@@ -35,8 +35,6 @@
  * Current limitations:
  *   - not entirely correct time of interrupt, i.e. never
  *     schedule interrupt earlier than in 1ms
- *   - interaction with RTC and PIT in legacy mode not yet fully implemented
- *     (HPET part OK, PDM and PIT/RTC to be done)
  *   - statistics not implemented
  */
 /*
@@ -589,7 +587,6 @@ static int hpetLegacyMode(HpetState* pThis,
     /* Don't do anything complicated outside of R3 */
     rc =  VINF_IOM_HC_MMIO_WRITE;
 #else /* IN_RING3 */
-    LogRel(("HPET: cannot update PIT/RTC in legacy mode yet"));
     if (pThis->pHpetHlpR3)
         rc = pThis->pHpetHlpR3->pfnSetLegacyMode(pThis->pDevInsR3, fActivate);
 #endif
@@ -617,6 +614,22 @@ static int configRegWrite32(HpetState* pThis,
             Log(("write HPET_CFG: %x\n", iNewValue));
 
             iOldValue = (uint32_t)(pThis->u64Config);
+
+            /**
+             * This check must be here, before actual update, as hpetLegacyMode
+             * may request retry in R3 - so we must keep state intact.
+             */
+            if (isBitJustSet(iOldValue, iNewValue, HPET_CFG_LEGACY))
+            {
+                rc = hpetLegacyMode(pThis, true);
+            }
+            else if (isBitJustCleared(iOldValue, iNewValue, HPET_CFG_LEGACY))
+            {
+                rc = hpetLegacyMode(pThis, false);
+            }
+            if (rc != VINF_SUCCESS)
+                return rc;
+
             pThis->u64Config = updateMasked(iNewValue, iOldValue, HPET_CFG_WRITE_MASK);
             if (isBitJustSet(iOldValue, iNewValue, HPET_CFG_ENABLE))
             {
@@ -633,15 +646,6 @@ static int configRegWrite32(HpetState* pThis,
                 pThis->u64HpetCounter = hpetGetTicks(pThis);
                 for (i = 0; i < HPET_NUM_TIMERS; i++)
                     TMTimerStop(pThis->aTimers[i].CTX_SUFF(pTimer));
-            }
-            /** @todo: implement i8254 and RTC interaction */
-            if (isBitJustSet(iNewValue, iOldValue, HPET_CFG_LEGACY))
-            {                
-                rc = hpetLegacyMode(pThis, true);
-            }
-            else if (isBitJustCleared(iOldValue, iNewValue, HPET_CFG_LEGACY))
-            {
-                rc = hpetLegacyMode(pThis, false);
             }
             break;
         }
@@ -1076,6 +1080,8 @@ static DECLCALLBACK(void) hpetReset(PPDMDEVINS pDevIns)
     unsigned i;
 
     LogFlow(("hpetReset:\n"));
+
+    pThis->u64Config = 0;
     for (i = 0; i < HPET_NUM_TIMERS; i++)
     {
         HpetTimer *pTimer = &pThis->aTimers[i];

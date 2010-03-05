@@ -560,7 +560,37 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3HpetHlp_SetLegacyMode: caller='%s'/%d: fActivate=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, fActivate));
-    return 0;
+
+    PPDMIBASE pBase;
+    int rc;
+
+    rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "i8254", 0, &pBase);
+    /* No PIT - no problems too */
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pBase);
+        PPDMIPITPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIPITPORT);
+
+        rc = pPort ? pPort->pfnNotifyHpetLegacy(pPort, fActivate) : VINF_SUCCESS;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    if (RT_FAILURE(rc))
+        return rc;
+
+    rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "mc146818", 0, &pBase);
+    /* No RTC - no problems too */
+    if (RT_SUCCESS(rc))
+    {
+        Assert(pBase);
+        PPDMIRTCPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIRTCPORT);
+        rc = pPort ? pPort->pfnNotifyHpetLegacy(pPort, fActivate) : VINF_SUCCESS;
+    }
+    else
+        rc = VINF_SUCCESS;
+
+    return rc;
 }
 
 /** @interface_method_impl{PDMHPETHLPR3,pfnSetIrq} */

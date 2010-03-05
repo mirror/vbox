@@ -1936,6 +1936,45 @@ typedef struct PDMIVMMDEVPORT
 /** PDMIVMMDEVPORT interface ID. */
 #define PDMIVMMDEVPORT_IID                      "d7e52035-3b6c-422e-9215-2a75646a945d"
 
+/** Pointer to a PIT port interface. */
+typedef struct PDMIPITPORT *PPDMIPITPORT;
+/**
+ * PIT port interface.
+ */
+typedef struct PDMIPITPORT
+{
+    /**
+     * Notify PIT about change of HPET legacy mode.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fActivate       If HPET legacy mode activated or deactivated.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyHpetLegacy,(PPDMIPITPORT pInterface, bool fActivate));
+} PDMIPITPORT;
+/** PDMIPITPORT interface ID. */
+#define PDMIPITPORT_IID                        "06127207-3182-4394-b16e-0ecfeb5cbb27"
+
+/** Pointer to a RTC port interface. */
+typedef struct PDMIRTCPORT *PPDMIRTCPORT;
+/**
+ * RTC port interface.
+ */
+typedef struct PDMIRTCPORT
+{
+    /**
+     * Notify RTC about change of HPET legacy mode.
+     *
+     * @returns VBox status code
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fActivate       If HPET legacy mode activated or deactivated.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyHpetLegacy,(PPDMIRTCPORT pInterface, bool fActivate));
+} PDMIRTCPORT;
+/** PDMIRTCPORT interface ID. */
+#define PDMIRTCPORT_IID                        "b6af0d7c-56c7-4064-85aa-ba78b43a26e7"
+
+
 /** @name Flags for PDMIVMMDEVPORT::pfnSetCredentials.
  * @{ */
 /** The guest should perform a logon with the credentials. */
