@@ -51,6 +51,8 @@ public:
     void setDefaultButton (QPushButton *aButton);
     QPushButton* defaultButton () const;
 
+    void setAutoCenteringEnabled(bool fIsAutoCentering);
+
 public slots:
 
     virtual void setVisible (bool aVisible);
@@ -88,6 +90,7 @@ private:
     QPointer<QPushButton> mDefaultButton;
 
     bool mPolished;
+    bool mIsAutoCentering;
     QWidget *mCenterWidget;
 };
 

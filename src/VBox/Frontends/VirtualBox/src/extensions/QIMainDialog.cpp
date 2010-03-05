@@ -44,6 +44,7 @@ QIMainDialog::QIMainDialog (QWidget *aParent /* = 0 */,
     : QMainWindow (aParent, aFlags)
     , mRescode (QDialog::Rejected)
     , mPolished (false)
+    , mIsAutoCentering (true)
     , mCenterWidget (aParent)
 {
     qApp->installEventFilter (this);
@@ -125,6 +126,10 @@ QPushButton* QIMainDialog::defaultButton() const
     return mDefaultButton;
 }
 
+void QIMainDialog::setAutoCenteringEnabled(bool fIsAutoCentering)
+{
+    mIsAutoCentering = fIsAutoCentering;
+}
 
 void QIMainDialog::setVisible (bool aVisible)
 {
@@ -226,7 +231,8 @@ void QIMainDialog::showEvent (QShowEvent *aEvent)
 
     /* Explicit widget centering relatively to it's centering
      * widget if any or desktop if centering widget is missed. */
-    VBoxGlobal::centerWidget (this, mCenterWidget, false);
+    if (mIsAutoCentering)
+        VBoxGlobal::centerWidget (this, mCenterWidget, false);
 }
 
 void QIMainDialog::resizeEvent (QResizeEvent *aEvent)
