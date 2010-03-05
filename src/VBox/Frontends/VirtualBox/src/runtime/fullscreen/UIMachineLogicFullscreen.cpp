@@ -150,6 +150,18 @@ void UIMachineLogicFullscreen::initialize()
     }
 }
 
+#ifdef Q_WS_MAC
+void UIMachineLogicFullscreen::prepareConsoleConnections()
+{
+    /* Base class connections: */
+    UIMachineLogic::prepareConsoleConnections();
+
+    /* Presentation mode connection */
+    connect (&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
+             this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
+}
+#endif /* Q_WS_MAC */
+
 void UIMachineLogicFullscreen::prepareActionGroups()
 {
     /* Base class action groups: */
@@ -302,7 +314,11 @@ void UIMachineLogicFullscreen::cleanupActionGroups()
 }
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
+void UIMachineLogicFullscreen::sltChangePresentationMode(const VBoxChangePresentationModeEvent & /* event */)
+{
+    setPresentationModeEnabled(true);
+}
+
 void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
 {
     if (fEnabled)
@@ -326,5 +342,4 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
     else
         SetSystemUIMode(kUIModeNormal, 0);
 }
-# endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */

@@ -28,6 +28,7 @@
 
 /* Local forwards */
 class UIActionsPool;
+class VBoxChangePresentationModeEvent;
 
 class UIMachineLogicFullscreen : public UIMachineLogic
 {
@@ -44,9 +45,18 @@ protected:
     bool checkAvailability();
     void initialize();
 
+private slots:
+
+#ifdef Q_WS_MAC
+    void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
+#endif /* Q_WS_MAC */
+
 private:
 
     /* Prepare helpers: */
+#ifdef Q_WS_MAC
+    void prepareConsoleConnections();
+#endif /* Q_WS_MAC */
     void prepareActionGroups();
     void prepareMachineWindows();
 
@@ -55,9 +65,7 @@ private:
     void cleanupActionGroups();
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
     void setPresentationModeEnabled(bool fEnabled);
-# endif /* QT_MAC_USE_COCOA */
 #endif /* Q_WS_MAC */
 
     /* Friend classes: */

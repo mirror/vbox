@@ -42,7 +42,6 @@ class UIMachineLogic;
 class VBoxGlobalSettings;
 #ifdef Q_WS_MAC
 class VBoxChangeDockIconUpdateEvent;
-class VBoxChangePresentationModeEvent;
 class VBoxDockIconPreview;
 #endif /* Q_WS_MAC */
 
@@ -79,7 +78,7 @@ public:
 #if defined(Q_WS_MAC)
     void updateDockIcon();
     void updateDockOverlay();
-    void setMouseCoalescingEnabled(bool aOn);
+    void setMouseCoalescingEnabled(bool fOn);
     void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
 #endif
 
@@ -170,10 +169,6 @@ private slots:
 #ifdef Q_WS_MAC
     /* Dock icon update handler */
     void sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event);
-# ifdef QT_MAC_USE_COCOA
-    /* Presentation mode handler */
-    void sltChangePresentationMode(const VBoxChangePresentationModeEvent &event);
-# endif
 #endif
 
 private:
