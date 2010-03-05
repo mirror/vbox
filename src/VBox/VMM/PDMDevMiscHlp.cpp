@@ -575,7 +575,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
         if (RT_SUCCESS(rc))
         {
             PPDMIHPETLEGACYNOTIFY pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIHPETLEGACYNOTIFY);
-            AssertLogRelMsgBreakStmt(pPort, ("%s\n", s_apszDevsToNotify[i]), rc == VERR_INTERNAL_ERROR_3);
+            AssertLogRelMsgBreakStmt(pPort, ("%s\n", s_apszDevsToNotify[i]), rc = VERR_INTERNAL_ERROR_3);
             pPort->pfnModeChanged(pPort, fActivated);
         }
         else if (   rc == VERR_PDM_DEVICE_NOT_FOUND
@@ -591,6 +591,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fAc
     return rc;
 }
 
+
 /** @interface_method_impl{PDMHPETHLPR3,pfnSetIrq} */
 static DECLCALLBACK(int) pdmR3HpetHlp_SetIrq(PPDMDEVINS pDevIns, int iIrq, int iLevel)
 {
@@ -599,6 +600,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetIrq(PPDMDEVINS pDevIns, int iIrq, int i
     PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel, false /* Non-ISA source */);
     return 0;
 }
+
 
 /** @interface_method_impl{PDMHPETHLPR3,pfnGetRCHelpers} */
 static DECLCALLBACK(PCPDMHPETHLPRC) pdmR3HpetHlp_GetRCHelpers(PPDMDEVINS pDevIns)
