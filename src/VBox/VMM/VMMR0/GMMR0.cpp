@@ -1078,7 +1078,7 @@ static DECLCALLBACK(int) gmmR0CleanupVMScanChunk(PAVLU32NODECORE pNode, void *pv
 /**
  * The initial resource reservations.
  *
- * This will make memory reservations according to policy and priority. If there isn't
+ * This will make memory reservations according to policy and priority. If there aren't
  * sufficient resources available to sustain the VM this function will fail and all
  * future allocations requests will fail as well.
  *
@@ -1812,7 +1812,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
     switch (enmAccount)
     {
         case GMMACCOUNT_BASE:
-            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+            if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
             {
                 Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
                      pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
@@ -2323,7 +2323,7 @@ GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, 
         PGMMCHUNK      pChunk;
         GMMPAGEDESC    PageDesc;
 
-        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + cPages > pGVM->gmm.s.Reserved.cBasePages))
+        if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
         {
             Log(("GMMR0AllocateLargePage: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
                  pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
@@ -2840,27 +2840,20 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  * by the GMM it is important that this function is called even if no pages was
  * ballooned.
  *
- * Since the whole purpose of ballooning is to free up guest RAM pages, this API
- * may also be given a set of related pages to be freed. These pages are assumed
- * to be on the base account.
- *
  * @returns VBox status code:
  * @retval  xxx
  *
  * @param   pVM                 Pointer to the shared VM structure.
  * @param   idCpu               VCPU id
+ * @param   fInflate            Inflate or deflate the balloon
  * @param   cBalloonedPages     The number of pages that was ballooned.
- * @param   cPagesToFree        The number of pages to be freed.
- * @param   paPages             Pointer to the page descriptors for the pages that's to be freed.
- * @param   fCompleted          Indicates whether the ballooning request was completed (true) or
- *                              if there is more pages to come (false). If the ballooning was not
- *                              not triggered by the GMM, don't set this.
+ *
  * @thread  EMT.
  */
-GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted)
+GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, bool fInflate, uint32_t cBalloonedPages)
 {
-    LogFlow(("GMMR0BalloonedPages: pVM=%p cBalloonedPages=%#x cPagestoFree=%#x paPages=%p enmAccount=%d fCompleted=%RTbool\n",
-             pVM, cBalloonedPages, cPagesToFree, paPages, fCompleted));
+    LogFlow(("GMMR0BalloonedPages: pVM=%p fInflate=%RTBool cBalloonedPages=%#x\n",
+             pVM, fInflate, cBalloonedPages));
 
     /*
      * Validate input and get the basics.
@@ -2872,14 +2865,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPa
     if (RT_FAILURE(rc))
         return rc;
 
-    AssertPtrReturn(paPages, VERR_INVALID_PARAMETER);
     AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
-    AssertMsgReturn(cPagesToFree <= cBalloonedPages, ("%#x\n", cPagesToFree), VERR_INVALID_PARAMETER);
-
-    for (unsigned iPage = 0; iPage < cPagesToFree; iPage++)
-        AssertMsgReturn(    paPages[iPage].idPage <= GMM_PAGEID_LAST
-                        /*||  paPages[iPage].idPage == NIL_GMM_PAGEID*/,
-                        ("#%#x: %#x\n", iPage, paPages[iPage].idPage), VERR_INVALID_PARAMETER);
 
     /*
      * Take the sempahore and do some more validations.
@@ -2888,46 +2874,51 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPa
     AssertRC(rc);
     if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
     {
-
-        if (pGVM->gmm.s.Allocated.cBasePages >= cPagesToFree)
+        if (fInflate)
         {
-            /*
-             * Record the ballooned memory.
-             */
-            pGMM->cBalloonedPages += cBalloonedPages;
-            if (pGVM->gmm.s.cReqBalloonedPages)
+            if (pGVM->gmm.s.Allocated.cBasePages >= cBalloonedPages)
             {
-                pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
-                pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
-                if (fCompleted)
+                /*
+                 * Record the ballooned memory.
+                 */
+                pGMM->cBalloonedPages += cBalloonedPages;
+                if (pGVM->gmm.s.cReqBalloonedPages)
                 {
-                    Log(("GMMR0BalloonedPages: +%#x - Global=%#llx;  / VM: Total=%#llx Req=%#llx Actual=%#llx (completed)\n", cBalloonedPages,
-                         pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+                    /* Codepath never taken. Might be interesting in the future to request ballooned memory from guests in low memory conditions.. */
+                    AssertFailed();
 
-                    /*
-                     * Anything we need to do here now when the request has been completed?
-                     */
-                    pGVM->gmm.s.cReqBalloonedPages = 0;
-                }
-                else
+                    pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+                    pGVM->gmm.s.cReqActuallyBalloonedPages += cBalloonedPages;
                     Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx Req=%#llx Actual=%#llx (pending)\n", cBalloonedPages,
                          pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqBalloonedPages, pGVM->gmm.s.cReqActuallyBalloonedPages));
+                }
+                else
+                {
+                    pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
+                    Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
+                         cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+                }
             }
             else
-            {
-                pGVM->gmm.s.cBalloonedPages += cBalloonedPages;
-                Log(("GMMR0BalloonedPages: +%#x - Global=%#llx / VM: Total=%#llx (user)\n",
-                     cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
-            }
-
-            /*
-             * Any pages to free?
-             */
-            if (cPagesToFree)
-                rc = gmmR0FreePages(pGMM, pGVM, cPagesToFree, paPages, GMMACCOUNT_BASE);
+                rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
         }
         else
-            rc = VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH;
+        {
+            /* Deflate. */
+            if (pGVM->gmm.s.cBalloonedPages >= cBalloonedPages)
+            {
+                /*
+                 * Record the ballooned memory.
+                 */
+                Assert(pGMM->cBalloonedPages >= cBalloonedPages);
+                pGMM->cBalloonedPages       -= cBalloonedPages;
+                pGVM->gmm.s.cBalloonedPages -= cBalloonedPages;
+                Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx (user)\n",
+                     cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+            }
+            else
+                rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
+        }
         GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
     }
     else
@@ -2953,14 +2944,11 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGES
      */
     AssertPtrReturn(pVM, VERR_INVALID_POINTER);
     AssertPtrReturn(pReq, VERR_INVALID_POINTER);
-    AssertMsgReturn(pReq->Hdr.cbReq >= RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[0]),
-                    ("%#x < %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[0])),
-                    VERR_INVALID_PARAMETER);
-    AssertMsgReturn(pReq->Hdr.cbReq == RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[pReq->cPagesToFree]),
-                    ("%#x != %#x\n", pReq->Hdr.cbReq, RT_UOFFSETOF(GMMBALLOONEDPAGESREQ, aPages[pReq->cPagesToFree])),
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMBALLOONEDPAGESREQ),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMBALLOONEDPAGESREQ)),
                     VERR_INVALID_PARAMETER);
 
-    return GMMR0BalloonedPages(pVM, idCpu, pReq->cBalloonedPages, pReq->cPagesToFree, &pReq->aPages[0], pReq->fCompleted);
+    return GMMR0BalloonedPages(pVM, idCpu, pReq->fInflate, pReq->cBalloonedPages);
 }
 
 

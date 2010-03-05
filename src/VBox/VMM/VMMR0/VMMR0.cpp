@@ -914,11 +914,6 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
             return GMMR0BalloonedPagesReq(pVM, idCpu, (PGMMBALLOONEDPAGESREQ)pReqHdr);
 
-        case VMMR0_DO_GMM_DEFLATED_BALLOON:
-            if (pReqHdr)
-                return VERR_INVALID_PARAMETER;
-            return GMMR0DeflatedBalloon(pVM, idCpu, (uint32_t)u64Arg);
-
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
@@ -1115,7 +1110,6 @@ VMMR0DECL(int) VMMR0EntryEx(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperation,
             case VMMR0_DO_GMM_ALLOCATE_PAGES:
             case VMMR0_DO_GMM_FREE_PAGES:
             case VMMR0_DO_GMM_BALLOONED_PAGES:
-            case VMMR0_DO_GMM_DEFLATED_BALLOON:
             /* On the mac we might not have a valid jmp buf, so check these as well. */
             case VMMR0_DO_VMMR0_INIT:
             case VMMR0_DO_VMMR0_TERM:

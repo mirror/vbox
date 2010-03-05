@@ -275,24 +275,18 @@ GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAll
 }
 
 
-#if 0 /* impractical */
-GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted)
+/**
+ * @see GMMR0BalloonedPages
+ */
+GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, bool fInflate, uint32_t cBalloonedPages)
 {
     GMMBALLOONEDPAGESREQ Req;
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
+    Req.fInflate = fInflate;
+    Req.cBalloonedPages = cBalloonedPages;
 
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
-}
-#endif
-
-
-/**
- * @see GMMR0DeflatedBalloon
- */
-GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages)
-{
-    return VMMR3CallR0(pVM, VMMR0_DO_GMM_DEFLATED_BALLOON, cPages, NULL);
 }
 
 
