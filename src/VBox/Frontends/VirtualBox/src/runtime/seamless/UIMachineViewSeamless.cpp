@@ -259,6 +259,11 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
         {
             case QEvent::Resize:
             {
+                /* Send guest-resize hint only if top window resizing to required dimension: */
+                QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
+                if (pResizeEvent->size() != availableGeometry().size())
+                    break;
+
                 /* Set the "guest needs to resize" hint.
                  * This hint is acted upon when (and only when) the autoresize property is "true": */
                 m_fShouldWeDoResize = uisession()->isGuestSupportsGraphics();
