@@ -79,6 +79,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 
 UIMachineViewNormal::~UIMachineViewNormal()
 {
+    /* Save machine view settings: */
+    saveMachineViewSettings();
+
     /* Cleanup common things: */
     cleanupCommon();
 
@@ -338,6 +341,12 @@ void UIMachineViewNormal::prepareConsoleConnections()
 
     /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+}
+
+void UIMachineViewNormal::saveMachineViewSettings()
+{
+    /* Store guest size hint: */
+    uisession()->setGuestSizeHint(screenId(), QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)

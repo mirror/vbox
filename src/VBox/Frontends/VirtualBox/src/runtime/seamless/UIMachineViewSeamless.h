@@ -44,7 +44,7 @@ protected:
 private slots:
 
     /* Slot to perform guest resize: */
-    void sltPerformGuestResize();
+    void sltPerformGuestResize(const QSize &aSize = QSize());
 
     /* Console callback handlers: */
     void sltAdditionsStateChanged();

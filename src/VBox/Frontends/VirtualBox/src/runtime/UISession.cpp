@@ -632,6 +632,11 @@ QMenuBar* UISession::newMenuBar()
     return pMenuBar;
 }
 
+QSize UISession::guestSizeHint(ulong uScreenId) const
+{
+    return (int)uScreenId < m_guestSizeHints.size() ? m_guestSizeHints[uScreenId] : QSize();
+}
+
 bool UISession::setPause(bool fOn)
 {
     if (isPaused() == fOn)
@@ -654,6 +659,12 @@ bool UISession::setPause(bool fOn)
     }
 
     return ok;
+}
+
+void UISession::setGuestSizeHint(ulong uScreenId, QSize size)
+{
+    if ((int)uScreenId < m_guestSizeHints.size())
+        m_guestSizeHints[uScreenId] = size;
 }
 
 void UISession::sltCloseVirtualSession()
@@ -922,7 +933,6 @@ void UISession::loadSessionSettings()
         }
     }
 
-
     /* Load extra-data settings: */
     {
         /* Temporary: */
@@ -944,6 +954,14 @@ void UISession::loadSessionSettings()
         pGuestAutoresizeSwitch->blockSignals(true);
         pGuestAutoresizeSwitch->setChecked(strSettings != "off");
         pGuestAutoresizeSwitch->blockSignals(false);
+    }
+
+    /* Some initialization: */
+    {
+        /* Initial guest size hints: */
+        m_guestSizeHints.clear();
+        for (ulong i = 0; i < machine.GetMonitorCount(); ++ i)
+            m_guestSizeHints << QSize(640, 480);
     }
 }
 

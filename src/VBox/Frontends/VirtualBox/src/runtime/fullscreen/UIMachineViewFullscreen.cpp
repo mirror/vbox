@@ -79,6 +79,9 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 
 UIMachineViewFullscreen::~UIMachineViewFullscreen()
 {
+    /* Cleanup fullscreen: */
+    cleanupFullscreen();
+
     /* Cleanup common things: */
     cleanupCommon();
 
@@ -339,6 +342,15 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
 
     /* Guest additions state-change updater: */
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+}
+
+void UIMachineViewFullscreen::cleanupFullscreen()
+{
+    /* Rollback fullscreen frame-buffer size to normal: */
+    machineWindowWrapper()->machineWindow()->hide();
+    UIMachineViewBlocker blocker(this);
+    sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+    blocker.exec();
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)

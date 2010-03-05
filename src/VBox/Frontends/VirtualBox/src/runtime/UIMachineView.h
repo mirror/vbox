@@ -25,6 +25,7 @@
 
 /* Global includes */
 #include <QAbstractScrollArea>
+#include <QEventLoop>
 
 /* Local includes */
 #include "COMDefs.h"
@@ -278,6 +279,67 @@ private:
     friend class UIFrameBufferQImage;
     friend class UIFrameBufferQuartz2D;
     friend class UIFrameBufferQGL;
+};
+
+/* This maintenance class is a part of future roll-back mechanism.
+ * It allows to block main GUI thread until specific event received.
+ * Later it will become more abstract but now its just used to help
+ * fullscreen & seamless modes to restore normal guest size hint. */
+class UIMachineViewBlocker : public QEventLoop
+{
+    Q_OBJECT;
+
+public:
+
+    UIMachineViewBlocker(QObject *pWatchedObject)
+        : QEventLoop(0)
+        , m_iTimerId(0)
+    {
+        /* Install object event watcher: */
+        pWatchedObject->installEventFilter(this);
+
+        /* Also start timer to unlock pool in case of
+         * required condition doesn't happens by some reason: */
+        m_iTimerId = startTimer(3000);
+    }
+
+    virtual ~UIMachineViewBlocker()
+    {
+        /* Kill the timer: */
+        killTimer(m_iTimerId);
+    }
+
+protected:
+
+    bool eventFilter(QObject *pWatched, QEvent *pEvent)
+    {
+        switch (pEvent->type())
+        {
+            case VBoxDefs::ResizeEventType:
+            {
+                /* Its a specific part related to fullscreen/seamless modes.
+                 * Here we are waiting for guest resize event to be sure what
+                 * non-normal modes successfully restored previous guest size hint.
+                 * And we just unlocking the 'this' blocker afterwards: */
+                exit();
+                return false;
+            }
+            default:
+                break;
+        }
+        return QEventLoop::eventFilter(pWatched, pEvent);
+    }
+
+    void timerEvent(QTimerEvent *pEvent)
+    {
+        /* If that timer event occurs => it seems
+         * guest resize event doesn't comes in time,
+         * shame on it, but we just unlocking 'this': */
+        QEventLoop::timerEvent(pEvent);
+        exit();
+    }
+
+    int m_iTimerId;
 };
 
 #endif // !___UIMachineViewNormal_h___

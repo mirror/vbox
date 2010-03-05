@@ -93,33 +93,40 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
     cleanupFrameBuffer();
 }
 
-void UIMachineViewSeamless::sltPerformGuestResize()
+void UIMachineViewSeamless::sltPerformGuestResize(const QSize &toSize)
 {
-    /* Get machine window: */
-    QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
-
-    /* Get the available size for the guest display. We assume here that
-     * centralWidget() contains only this machine view and gives it all available space: */
-    QSize newSize(pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
-    AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
-
-    /* Do not send the same hints as we already have: */
-    if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
-        return;
-
-    /* If we awaiting resize: */
-    if (m_fShouldWeDoResize)
+    if (uisession()->isGuestSupportsGraphics())
     {
-        /* Remember the new size: */
-        storeConsoleSize(newSize.width(), newSize.height());
+        /* Get machine window: */
+        QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                       qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
 
-        /* Send new size-hint to the guest: */
-        session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
+        /* If this slot is invoked directly then use the passed size otherwise get
+         * the available size for the guest display. We assume here that centralWidget()
+         * contains this view only and gives it all available space: */
+        QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
+        AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
+
+        /* Do not send the same hints as we already have: */
+        if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
+            return;
+
+        /* We only actually send the hint if either an explicit new size was given
+         * (e.g. if the request was triggered directly by a console resize event) or
+         * if no explicit size was specified but a resize is flagged as being needed
+         * (e.g. the autoresize was just enabled and the console was resized while it was disabled). */
+        if (toSize.isValid() || m_fShouldWeDoResize)
+        {
+            /* Remember the new size: */
+            storeConsoleSize(newSize.width(), newSize.height());
+
+            /* Send new size-hint to the guest: */
+            session().GetConsole().GetDisplay().SetVideoModeHint(newSize.width(), newSize.height(), 0, screenId());
+        }
+
+        /* We had requested resize now, rejecting other accident requests: */
+        m_fShouldWeDoResize = false;
     }
-
-    /* We had requested resize now, rejecting other accident requests: */
-    m_fShouldWeDoResize = false;
 }
 
 void UIMachineViewSeamless::sltAdditionsStateChanged()
@@ -354,6 +361,12 @@ void UIMachineViewSeamless::cleanupSeamless()
 {
     /* Reset seamless feature flag of the guest: */
     session().GetConsole().GetDisplay().SetSeamlessMode(false);
+
+    /* Rollback seamless frame-buffer size to normal: */
+    machineWindowWrapper()->machineWindow()->hide();
+    UIMachineViewBlocker blocker(this);
+    sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+    blocker.exec();
 }
 
 QRect UIMachineViewSeamless::availableGeometry()
