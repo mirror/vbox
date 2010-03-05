@@ -89,6 +89,8 @@ typedef struct VBOXGUESTMEMBALLOON
     /** This is true if we are using RTR0MemObjAllocPhysNC() / RTR0MemObjGetPagePhysAddr()
      * and false otherwise. */
     bool                        fUseKernelAPI;
+    /** The owner of the balloon which is the first process using the balloon API. */
+    PVBOXGUESTSESSION volatile  pOwner;
     /** The pointer to the array of memory objects holding the chunks of the
      *  balloon.  This array is cMaxChunks in size when present. */
     PRTR0MEMOBJ                 paMemObj;
@@ -185,8 +187,6 @@ typedef struct VBOXGUESTSESSION
      * Used to implement polling.  */
     uint32_t volatile           u32MousePosChangedSeq;
 
-    /* Memory ballooning information if userland provides the balloon memory. */
-    VBOXGUESTMEMBALLOON         MemBalloon;
 } VBOXGUESTSESSION;
 
 RT_C_DECLS_BEGIN
