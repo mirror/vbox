@@ -111,7 +111,12 @@ typedef int64_t ssize_t;
 
 /* stdarg.h */
 typedef __builtin_va_list   va_list;
-#define va_start(va, arg)   __builtin_va_start(va, arg)
+#if __GNUC__       == 3 \
+ && __GNUC_MINOR__ == 2
+# define va_start(va, arg)  __builtin_stdarg_start(va, arg)
+#else
+# define va_start(va, arg)  __builtin_va_start(va, arg)
+#endif
 #define va_end(va)          __builtin_va_end(va)
 #define va_arg(va, type)    __builtin_va_arg(va, type)
 #define va_copy(dst, src)   __builtin_va_copy(dst, src)
