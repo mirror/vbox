@@ -238,6 +238,9 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     , m_pSession(new UISession(this, m_session))
     , m_pVisualState(0)
 {
+#ifdef DEBUG_poetzsch
+    printf("New code path\n");
+#endif /* DEBUG_poetzsch */
     /* Preventing application from closing in case of window(s) closed: */
     qApp->setQuitOnLastWindowClosed(false);
 

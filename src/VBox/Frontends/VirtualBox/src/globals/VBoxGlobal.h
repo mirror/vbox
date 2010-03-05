@@ -305,6 +305,9 @@ public:
     bool setSettings (const VBoxGlobalSettings &gs);
 
     VBoxSelectorWnd &selectorWnd();
+
+    QWidget *vmWindow();
+
     VBoxConsoleWnd &consoleWnd();
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
     bool createVirtualMachine(const CSession &session);
