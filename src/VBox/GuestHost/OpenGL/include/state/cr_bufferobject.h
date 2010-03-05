@@ -18,6 +18,8 @@ typedef struct {
 	CRbitvalue	dirty[CR_MAX_BITARRAY];
 	CRbitvalue	arrayBinding[CR_MAX_BITARRAY];
 	CRbitvalue	elementsBinding[CR_MAX_BITARRAY];
+    CRbitvalue  packBinding[CR_MAX_BITARRAY];
+    CRbitvalue  unpackBinding[CR_MAX_BITARRAY];
 } CRBufferObjectBits;
 
 
@@ -33,6 +35,8 @@ typedef struct {
 	GLuint size;      /* buffer size in bytes */
 	GLvoid *pointer;  /* only valid while buffer is mapped */
 	GLvoid *data;     /* the buffer data, if retainBufferData is true */
+    GLboolean bResyncOnRead; /* buffer data could be changed on server side, 
+                                so we need to resync every time guest wants to read from it*/
 	CRbitvalue dirty[CR_MAX_BITARRAY];  /* dirty data or state */
 	GLintptrARB dirtyStart, dirtyLength; /* dirty region */
 } CRBufferObject;
@@ -41,6 +45,8 @@ typedef struct {
 	GLboolean retainBufferData;  /* should state tracker retain buffer data? */
 	CRBufferObject *arrayBuffer;
 	CRBufferObject *elementsBuffer;
+    CRBufferObject *packBuffer;
+    CRBufferObject *unpackBuffer;
 
 	CRBufferObject *nullBuffer;  /* name = 0 */
 
@@ -49,6 +55,8 @@ typedef struct {
     GLboolean   bResyncNeeded;
 } CRBufferObjectState;
 
+DECLEXPORT(CRBufferObject *) crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *b);
+DECLEXPORT(GLboolean) crStateIsBufferBound(GLenum target);
 
 #ifdef __cplusplus
 }

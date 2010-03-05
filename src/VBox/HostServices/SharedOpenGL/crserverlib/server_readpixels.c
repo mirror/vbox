@@ -16,8 +16,8 @@
 
 
 void SERVER_DISPATCH_APIENTRY
-crServerDispatchReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
-                                                        GLenum format, GLenum type, GLvoid *pixels)
+crServerDispatchReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+                           GLenum format, GLenum type, GLvoid *pixels)
 {
     CRMessageReadPixels *rp;
     const GLint stride = READ_DATA( 24, GLint );
@@ -30,30 +30,48 @@ crServerDispatchReadPixels( GLint x, GLint y, GLsizei width, GLsizei height,
 
     CRASSERT(bytes_per_row > 0);
 
-    rp = (CRMessageReadPixels *) crAlloc( msg_len );
+#ifdef CR_ARB_pixel_buffer_object
+    if (crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+    {
+        GLvoid *pbo_offset;
 
-    /* Note: the ReadPixels data gets densely packed into the buffer
-     * (no skip pixels, skip rows, etc.  It's up to the receiver (pack spu,
-     * tilesort spu, etc) to apply the real PixelStore packing parameters.
-     */
-    cr_server.head_spu->dispatch_table.ReadPixels(x, y, width, height,
-                                                  format, type, rp + 1);
+        /*pixels are actualy a pointer to location of 8byte network pointer in hgcm buffer
+          regarless of guest/host bitness we're using only 4lower bytes as there're no
+          pbo>4gb (yet?)
+         */
+        pbo_offset = (GLvoid*) ((uintptr_t) *((GLvoid**)pixels));
 
-    rp->header.type = CR_MESSAGE_READ_PIXELS;
-    rp->width = width;
-    rp->height = height;
-    rp->bytes_per_row = bytes_per_row;
-    rp->stride = stride;
-    rp->format = format;
-    rp->type = type;
-    rp->alignment = alignment;
-    rp->skipRows = skipRows;
-    rp->skipPixels = skipPixels;
-    rp->rowLength = rowLength;
+        cr_server.head_spu->dispatch_table.ReadPixels(x, y, width, height,
+                                                      format, type, pbo_offset);
+    }
+    else
+#endif
+    {
+        rp = (CRMessageReadPixels *) crAlloc( msg_len );
 
-    /* <pixels> points to the 8-byte network pointer */
-    crMemcpy( &rp->pixels, pixels, sizeof(rp->pixels) );
+        /* Note: the ReadPixels data gets densely packed into the buffer
+         * (no skip pixels, skip rows, etc.  It's up to the receiver (pack spu,
+         * tilesort spu, etc) to apply the real PixelStore packing parameters.
+        */
+        cr_server.head_spu->dispatch_table.ReadPixels(x, y, width, height,
+                                                      format, type, rp + 1);
+
+        rp->header.type = CR_MESSAGE_READ_PIXELS;
+        rp->width = width;
+        rp->height = height;
+        rp->bytes_per_row = bytes_per_row;
+        rp->stride = stride;
+        rp->format = format;
+        rp->type = type;
+        rp->alignment = alignment;
+        rp->skipRows = skipRows;
+        rp->skipPixels = skipPixels;
+        rp->rowLength = rowLength;
+
+        /* <pixels> points to the 8-byte network pointer */
+        crMemcpy( &rp->pixels, pixels, sizeof(rp->pixels) );
     
-    crNetSend( cr_server.curClient->conn, NULL, rp, msg_len );
-    crFree( rp );
+        crNetSend( cr_server.curClient->conn, NULL, rp, msg_len );
+        crFree( rp );
+    }
 }

@@ -13,7 +13,13 @@ void crUnpackDrawPixels( void )
     GLsizei height = READ_DATA( sizeof( int ) + 4, GLsizei );
     GLenum format  = READ_DATA( sizeof( int ) + 8, GLenum );
     GLenum type    = READ_DATA( sizeof( int ) + 12, GLenum );
-    GLvoid *pixels = DATA_POINTER( sizeof( int ) + 16, GLvoid );
+    GLint noimagedata = READ_DATA( sizeof( int ) + 16, GLint );
+    GLvoid *pixels;
+
+    if (noimagedata)
+        pixels = (void*) READ_DATA( sizeof( int ) + 20, uintptr_t);
+    else
+        pixels = DATA_POINTER( sizeof( int ) + 24, GLvoid );
 
     cr_unpackDispatch.PixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
     cr_unpackDispatch.PixelStorei( GL_UNPACK_SKIP_PIXELS, 0 );
@@ -33,13 +39,13 @@ void crUnpackBitmap( void )
     GLfloat yorig   = READ_DATA( sizeof( int ) + 12, GLfloat );
     GLfloat xmove   = READ_DATA( sizeof( int ) + 16, GLfloat );
     GLfloat ymove   = READ_DATA( sizeof( int ) + 20, GLfloat );
-    GLuint  is_null = READ_DATA( sizeof( int ) + 24, GLuint );
-    GLubyte *bitmap = NULL;
+    GLuint noimagedata = READ_DATA( sizeof( int ) + 24, GLuint );
+    GLubyte *bitmap;
 
-    if ( !is_null )
-    {
-        bitmap = DATA_POINTER( sizeof(int) + 28, GLubyte );
-    }
+    if (noimagedata)
+        bitmap = (void*) READ_DATA(sizeof(int) + 28, uintptr_t);
+    else
+        bitmap = DATA_POINTER( sizeof(int) + 32, GLubyte );
 
     cr_unpackDispatch.PixelStorei( GL_UNPACK_ROW_LENGTH, 0 );
     cr_unpackDispatch.PixelStorei( GL_UNPACK_SKIP_PIXELS, 0 );

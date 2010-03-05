@@ -611,7 +611,8 @@ __lengths = {
 	'GLintptrARB': 4,   # XXX or 8 bytes?
 	'GLsizeiptrARB': 4, # XXX or 8 bytes?
 	'GLhandleARB': 4,
-	'GLcharARB': 1
+	'GLcharARB': 1,
+    'uintptr_t': 4
 }
 
 def sizeof(type):

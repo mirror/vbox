@@ -168,3 +168,9 @@ DeleteRenderbuffersEXT
 LockArraysEXT
 UnlockArraysEXT
 GetUniformsLocations
+GetTexImage
+GetCompressedTexImageARB
+GetPolygonStipple
+GetPixelMapfv
+GetPixelMapuiv
+GetPixelMapusv

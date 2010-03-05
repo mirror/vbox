@@ -178,14 +178,18 @@ void STATE_APIENTRY crStatePolygonStipple (const GLubyte *p)
 
     FLUSH();
 
-    if (!p)
+    if (!p && !crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
     {
         crStateError(__LINE__, __FILE__, GL_NO_ERROR,
                 "Void pointer passed to PolygonStipple");
         return;
     }
 
-    crMemcpy((char*)poly->stipple, (char*)p, 128);
+    /*@todo track mask if buffer is bound?*/
+    if (!crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        crMemcpy((char*)poly->stipple, (char*)p, 128);
+    }
 
     DIRTY(pb->dirty, g->neg_bitid);
     DIRTY(pb->stipple, g->neg_bitid);

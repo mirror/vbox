@@ -6,18 +6,33 @@
 
 #include "packer.h"
 #include "cr_mem.h"
+#include "cr_glstate.h"
 
 static unsigned char * __gl_HandlePixelMapData(GLenum map, GLsizei mapsize, int size_of_value, const GLvoid *values)
 {
+    int nodata = (values == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     int packet_length = 
         sizeof( map ) + 
-        sizeof( mapsize ) + 
-        mapsize*size_of_value;
-    unsigned char *data_ptr = (unsigned char *) crPackAlloc( packet_length );
+        sizeof( mapsize ) + sizeof(int) + sizeof(uintptr_t);
+    unsigned char *data_ptr;
+
+    if (!nodata)
+    {
+        packet_length += mapsize*size_of_value;
+    }
+
+    data_ptr = (unsigned char *) crPackAlloc( packet_length );
 
     WRITE_DATA( 0, GLenum, map );
     WRITE_DATA( 4, GLsizei, mapsize );
-    crMemcpy( data_ptr + 8, values, mapsize*size_of_value );
+    WRITE_DATA( 8, int, nodata);
+    WRITE_DATA( 12, uintptr_t, (uintptr_t)values);
+
+    if (!nodata)
+    {
+        crMemcpy( data_ptr + 16, values, mapsize*size_of_value );
+    }
+
     return data_ptr;
 }
 

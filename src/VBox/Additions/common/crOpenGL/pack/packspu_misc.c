@@ -239,3 +239,99 @@ packspu_AreProgramsResidentNV( GLsizei n, const GLuint * ids,
 
     return return_val;
 }
+
+void PACKSPU_APIENTRY packspu_GetPolygonStipple( GLubyte * mask )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+    {
+        crPackGetPolygonStippleSWAP( mask, &writeback );
+    }
+    else
+    {
+        crPackGetPolygonStipple( mask, &writeback );
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback)
+            crNetRecv();
+    }
+}
+
+void PACKSPU_APIENTRY packspu_GetPixelMapfv( GLenum map, GLfloat * values )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+    {
+        crPackGetPixelMapfvSWAP( map, values, &writeback );
+    }
+    else
+    {
+        crPackGetPixelMapfv( map, values, &writeback );
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback)
+            crNetRecv();
+    }
+}
+
+void PACKSPU_APIENTRY packspu_GetPixelMapuiv( GLenum map, GLuint * values )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+    {
+        crPackGetPixelMapuivSWAP( map, values, &writeback );
+    }
+    else
+    {
+        crPackGetPixelMapuiv( map, values, &writeback );
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback)
+            crNetRecv();
+    }
+}
+
+void PACKSPU_APIENTRY packspu_GetPixelMapusv( GLenum map, GLushort * values )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+    {
+        crPackGetPixelMapusvSWAP( map, values, &writeback );
+    }
+    else
+    {
+        crPackGetPixelMapusv( map, values, &writeback );
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback)
+            crNetRecv();
+    }
+}

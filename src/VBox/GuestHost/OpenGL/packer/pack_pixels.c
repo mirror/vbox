@@ -11,63 +11,57 @@
 #include "cr_version.h"
 
 
-void PACK_APIENTRY crPackDrawPixels( GLsizei width, GLsizei height, 
-                                                                         GLenum format, GLenum type,
-                                                                         const GLvoid *pixels,
-                                                                         const CRPixelPackState *unpackstate )
+void PACK_APIENTRY crPackDrawPixels(GLsizei width, GLsizei height, 
+                                    GLenum format, GLenum type,
+                                    const GLvoid *pixels,
+                                    const CRPixelPackState *unpackstate )
 {
     unsigned char *data_ptr;
     int packet_length, imagesize;
-
-    if (pixels == NULL)
-    {
-        return;
-    }
-
-#if 0
-    /* WHAT IS THIS FOR?  Disabled by Brian on 3 Dec 2003 */
-    if (type == GL_BITMAP)
-    {
-        crPackBitmap( width, height, 0, 0, 0, 0,
-                                    (const GLubyte *) pixels, unpackstate );
-    }
-#endif
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     packet_length = 
         sizeof( width ) +
         sizeof( height ) +
         sizeof( format ) +
-        sizeof( type );
+        sizeof( type ) + sizeof(int) + sizeof(uintptr_t);
 
-    imagesize = crImageSize( format, type, width, height );
-
-    if (imagesize<=0)
+    if (!noimagedata)
     {
-        crDebug("crPackDrawPixels: 0 image size, ignoring");
-        return;
-    }
+        imagesize = crImageSize( format, type, width, height );
 
-    packet_length += imagesize;
+        if (imagesize<=0)
+        {
+            crDebug("crPackDrawPixels: 0 image size, ignoring");
+            return;
+        }
+        packet_length += imagesize;
+    }
 
     data_ptr = (unsigned char *) crPackAlloc( packet_length );
     WRITE_DATA( 0, GLsizei, width );
     WRITE_DATA( 4, GLsizei, height );
     WRITE_DATA( 8, GLenum, format );
     WRITE_DATA( 12, GLenum, type );
+    WRITE_DATA( 16, GLint, noimagedata );
+    WRITE_DATA( 20, uintptr_t, (uintptr_t) pixels );
 
-    crPixelCopy2D( width, height,
-                                 (void *) (data_ptr + 16), format, type, NULL, /* dst */
-                                 pixels, format, type, unpackstate );  /* src */
+    if (!noimagedata)
+    {
+        crPixelCopy2D(width, height,
+                      (void *) (data_ptr + 24), format, type, NULL, /* dst */
+                      pixels, format, type, unpackstate);  /* src */
+    }
 
     crHugePacket( CR_DRAWPIXELS_OPCODE, data_ptr );
     crPackFree( data_ptr );
 }
 
-void PACK_APIENTRY crPackReadPixels( GLint x, GLint y, GLsizei width, 
-                                                                         GLsizei height, GLenum format,
-                                                                         GLenum type, GLvoid *pixels,
-                                                                         const CRPixelPackState *packstate,
-                                                                         int *writeback)
+void PACK_APIENTRY crPackReadPixels(GLint x, GLint y, GLsizei width, 
+                                    GLsizei height, GLenum format,
+                                    GLenum type, GLvoid *pixels,
+                                    const CRPixelPackState *packstate,
+                                    int *writeback)
 {
     GET_PACKER_CONTEXT(pc);
     unsigned char *data_ptr;
@@ -114,11 +108,11 @@ void PACK_APIENTRY crPackReadPixels( GLint x, GLint y, GLsizei width,
 /* Round N up to the next multiple of 8 */
 #define CEIL8(N)  (((N) + 7) & ~0x7)
 
-void PACK_APIENTRY crPackBitmap( GLsizei width, GLsizei height, 
-        GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove,
-        const GLubyte *bitmap, const CRPixelPackState *unpack )
+void PACK_APIENTRY crPackBitmap(GLsizei width, GLsizei height, 
+                                GLfloat xorig, GLfloat yorig, GLfloat xmove, GLfloat ymove,
+                                const GLubyte *bitmap, const CRPixelPackState *unpack )
 {
-    const int isnull = (bitmap == NULL);
+    const int noimagedata = (bitmap == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     unsigned char *data_ptr;
     int data_length = 0;
     GLubyte *destBitmap = NULL;
@@ -129,24 +123,15 @@ void PACK_APIENTRY crPackBitmap( GLsizei width, GLsizei height,
         sizeof( yorig ) + 
         sizeof( xmove ) + 
         sizeof( ymove ) +
-        sizeof( GLuint );
+        sizeof( GLuint ) + sizeof(uintptr_t);
 
-    if ( bitmap )
+    if (!noimagedata)
     {
         data_length = CEIL8(width) * height / 8;
         packet_length += data_length;
-
-        data_ptr = (unsigned char *) crPackAlloc( packet_length );
-        destBitmap = data_ptr + 28;
-
-        crBitmapCopy(width, height, destBitmap, bitmap, unpack);
-        /*
-        crMemcpy(destBitmap, bitmap, data_length);
-        */
     }
-    else {
-        data_ptr = (unsigned char *) crPackAlloc( packet_length );
-    }
+
+    data_ptr = (unsigned char *) crPackAlloc( packet_length );
 
     WRITE_DATA( 0, GLsizei, width );
     WRITE_DATA( 4, GLsizei, height );
@@ -154,7 +139,10 @@ void PACK_APIENTRY crPackBitmap( GLsizei width, GLsizei height,
     WRITE_DATA( 12, GLfloat, yorig );
     WRITE_DATA( 16, GLfloat, xmove );
     WRITE_DATA( 20, GLfloat, ymove );
-    WRITE_DATA( 24, GLuint, isnull );
+    WRITE_DATA( 24, GLuint, noimagedata );
+    WRITE_DATA( 28, uintptr_t, (uintptr_t) bitmap);
+
+    crBitmapCopy(width, height, (GLubyte *)(data_ptr + 32), bitmap, unpack);
 
     crHugePacket( CR_BITMAP_OPCODE, data_ptr );
     crPackFree( data_ptr );

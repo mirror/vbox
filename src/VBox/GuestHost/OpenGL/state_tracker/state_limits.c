@@ -300,6 +300,9 @@ void crStateExtensionsInit( CRLimitsState *limits, CRExtensionState *extensions 
 	if (hasExtension((const char*)limits->extensions, "GL_ARB_vertex_buffer_object"))
 		extensions->ARB_vertex_buffer_object = GL_TRUE;
 
+	if (hasExtension((const char*)limits->extensions, "GL_ARB_pixel_buffer_object"))
+		extensions->ARB_pixel_buffer_object = GL_TRUE;
+
 	if (hasExtension((const char*)limits->extensions, "GL_ARB_vertex_program"))
 		extensions->ARB_vertex_program = GL_TRUE;
 

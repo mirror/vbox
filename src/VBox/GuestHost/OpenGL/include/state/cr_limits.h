@@ -227,6 +227,7 @@ typedef struct {
 	GLboolean ARB_texture_non_power_of_two; /* standard in 1.5 */
 	GLboolean ARB_transpose_matrix;
 	GLboolean ARB_vertex_buffer_object;
+    GLboolean ARB_pixel_buffer_object;
 	GLboolean ARB_vertex_program;
 	GLboolean ARB_window_pos;
 	GLboolean EXT_blend_color;
