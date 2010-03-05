@@ -78,7 +78,6 @@ private:
     void maybeRestrictMinimumSize();
 
     /* Private members: */
-    bool m_fIsInitialResizeEventProcessed : 1;
     bool m_bIsGuestAutoresizeEnabled : 1;
     bool m_fShouldWeDoResize : 1;
     QSize m_normalSize;
