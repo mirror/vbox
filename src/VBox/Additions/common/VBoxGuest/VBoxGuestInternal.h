@@ -81,17 +81,19 @@ typedef VBOXGUESTWAITLIST *PVBOXGUESTWAITLIST;
  */
 typedef struct VBOXGUESTMEMBALLOON
 {
-    /** The current number of chunks in the balloon */
+    /** The current number of chunks in the balloon. */
     uint32_t                    cChunks;
     /** The maximum number of chunks in the balloon (typically the amount of guest
-     * memory / chunksize) */
+     * memory / chunksize). */
     uint32_t                    cMaxChunks;
     /** This is true if we are using RTR0MemObjAllocPhysNC() / RTR0MemObjGetPagePhysAddr()
-     * and false otherwise */
+     * and false otherwise. */
     bool                        fUseKernelAPI;
-    /* The pointer to the array of memory objects holding the chunks of the balloon */
-    RTR0MEMOBJ                 *paMemObj;
+    /** The pointer to the array of memory objects holding the chunks of the
+     *  balloon.  This array is cMaxChunks in size when present. */
+    PRTR0MEMOBJ                 paMemObj;
 } VBOXGUESTMEMBALLOON;
+/** Pointer to a memory balloon. */
 typedef VBOXGUESTMEMBALLOON *PVBOXGUESTMEMBALLOON;
 
 
@@ -139,7 +141,7 @@ typedef struct VBOXGUESTDEVEXT
      * For implementing the VBOXGUEST_IOCTL_CLIPBOARD_CONNECT interface. */
     uint32_t                    u32ClipboardClientId;
 
-    /* Memory balloon information for RTR0MemObjAllocPhysNC(). */
+    /** Memory balloon information for RTR0MemObjAllocPhysNC(). */
     VBOXGUESTMEMBALLOON         MemBalloon;
 
 } VBOXGUESTDEVEXT;

@@ -47,7 +47,12 @@
 static DECLCALLBACK(int) VBoxGuestHGCMAsyncWaitCallback(VMMDevHGCMRequestHeader *pHdrNonVolatile, void *pvUser, uint32_t u32User);
 #endif
 
-const size_t cbChangeMemBalloonReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static const size_t cbChangeMemBalloonReq = RT_OFFSETOF(VMMDevChangeMemBalloon, aPhysPage[VMMDEV_MEMORY_BALLOON_CHUNK_PAGES]);
+
 
 
 /**
@@ -259,8 +264,7 @@ static int vboxGuestSetFilterMask(PVBOXGUESTDEVEXT pDevExt, uint32_t fMask)
 static int vboxGuestInitReportGuestInfo(PVBOXGUESTDEVEXT pDevExt, VBOXOSTYPE enmOSType)
 {
     VMMDevReportGuestInfo *pReq;
-    int rc;
-    rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
+    int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(*pReq), VMMDevReq_ReportGuestInfo);
     if (RT_SUCCESS(rc))
     {
         pReq->guestInfo.additionsVersion = VMMDEV_VERSION;
@@ -297,8 +301,7 @@ static int vboxGuestBalloonInflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
     /* Protect this memory from being accessed. Doesn't work on every platform and probably
      * doesn't work for R3-provided memory, therefore ignore the return value. Unprotect
      * done when object is freed. */
-    rc = RTR0MemObjProtect(*pMemObj, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
-    NOREF(rc);
+    RTR0MemObjProtect(*pMemObj, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
 
     pReq->fInflate = true;
     pReq->header.size = cbChangeMemBalloonReq;
@@ -312,7 +315,7 @@ static int vboxGuestBalloonInflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
 
 
 /**
- * Deflate the balloon by one chunk represented by an R0 memory object.
+ * Deflate the balloon by one chunk - info the host and free the memory object.
  *
  * @returns IPRT status code.
  * @param   pMemObj     Pointer to the R0 memory object.
@@ -341,9 +344,16 @@ static int vboxGuestBalloonDeflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
         return rc;
     }
 
+    /* undo previous protec call, ignore rc for reasons stated there. */
+    RTR0MemObjProtect(*pMemObj, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    /*RTR0MemObjProtect(*pMemObj, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE | RTMEM_PROT_EXEC); - probably not safe... */
+
     rc = RTR0MemObjFree(*pMemObj, true);
     if (RT_FAILURE(rc))
+    {
+        LogRel(("vboxGuestBalloonDeflate: RTR0MemObjFree(%p,true) -> %Rrc; this is *BAD*!\n", *pMemObj, rc));
         return rc;
+    }
 
     *pMemObj = NIL_RTR0MEMOBJ;
     return VINF_SUCCESS;
@@ -354,7 +364,7 @@ static int vboxGuestBalloonDeflate(PRTR0MEMOBJ pMemObj, VMMDevChangeMemBalloon *
  * Inflate/deflate the memory balloon and notify the host.
  *
  * @returns VBox status code.
- * @param   pDevExt         The device extension
+ * @param   pDevExt         The device extension.
  * @param   cBalloonChunks  The new size of the balloon in chunks of 1MB.
  */
 static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBalloonChunks)
@@ -368,8 +378,8 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
 
         if (cBalloonChunks > pDevExt->MemBalloon.cMaxChunks)
         {
-            AssertMsgFailed(("vboxGuestSetBalloonSize illegal balloon size %d (max=%d)\n",
-                             cBalloonChunks, pDevExt->MemBalloon.cMaxChunks));
+            LogRel(("vboxGuestSetBalloonSizeKernel: illegal balloon size %u (max=%u)\n",
+                    cBalloonChunks, pDevExt->MemBalloon.cMaxChunks));
             return VERR_INVALID_PARAMETER;
         }
 
@@ -379,7 +389,7 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
         if (   cBalloonChunks > pDevExt->MemBalloon.cChunks
             && !pDevExt->MemBalloon.paMemObj)
         {
-            pDevExt->MemBalloon.paMemObj = (RTR0MEMOBJ*)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
+            pDevExt->MemBalloon.paMemObj = (PRTR0MEMOBJ)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
             if (!pDevExt->MemBalloon.paMemObj)
             {
                 LogRel(("VBoxGuestSetBalloonSizeKernel: no memory for paMemObj!\n"));
@@ -398,21 +408,17 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
             {
                 rc = RTR0MemObjAllocPhysNC(&pDevExt->MemBalloon.paMemObj[i],
                                            VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, NIL_RTHCPHYS);
-                if (RT_UNLIKELY(rc == VERR_NOT_SUPPORTED))
-                {
-                    /* not supported -- fall back to the R3-allocated memory */
-                    pDevExt->MemBalloon.fUseKernelAPI = false;
-                    Log(("VBoxGuestSetBalloonSizeKernel: PhysNC allocs not supported, falling back to R3 allocs.\n"));
-                    break;
-                }
-                if (RT_UNLIKELY(rc == VERR_NO_MEMORY))
-                {
-                    /* cannot allocate more memory => don't try further, just stop here */
-                    break;
-                }
                 if (RT_FAILURE(rc))
                 {
-                    /* XXX what else can fail? */
+                    if (rc == VERR_NOT_SUPPORTED)
+                    {
+                        /* not supported -- fall back to the R3-allocated memory */
+                        pDevExt->MemBalloon.fUseKernelAPI = false;
+                        Assert(pDevExt->MemBalloon.cChunks == 0);
+                        Log(("VBoxGuestSetBalloonSizeKernel: PhysNC allocs not supported, falling back to R3 allocs.\n"));
+                    }
+                    /* else if (rc == VERR_NO_MEMORY): cannot allocate more memory => don't try further, just stop here */
+                    /* else: XXX what else can fail?  VERR_MEMOBJ_INIT_FAILED for instance.   just stop. */
                     break;
                 }
 
@@ -420,6 +426,8 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
                 if (RT_FAILURE(rc))
                 {
                     Log(("vboxGuestSetBalloonSize(inflate): failed, rc=%Rrc!\n", rc));
+                    RTR0MemObjFree(pDevExt->MemBalloon.paMemObj[i], true);
+                    pDevExt->MemBalloon.paMemObj[i] = NIL_RTR0MEMOBJ;
                     break;
                 }
                 pDevExt->MemBalloon.cChunks++;
@@ -456,6 +464,13 @@ static int vboxGuestSetBalloonSizeKernel(PVBOXGUESTDEVEXT pDevExt, uint32_t cBal
 
 /**
  * Inflate/deflate the balloon by one chunk.
+ *
+ * @returns VBox status code.
+ * @param   pDevExt         The device extension.
+ * @param   pSession        The session.
+ * @param   u64ChunkAddr    The address of the chunk to add to / remove from the
+ *                          balloon.
+ * @param   fInflate        Inflate if true, deflate if false.
  */
 static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                            uint64_t u64ChunkAddr, bool fInflate)
@@ -467,16 +482,17 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
 
     if (fInflate)
     {
-        if (pSession->MemBalloon.cChunks > pDevExt->MemBalloon.cMaxChunks - 1)
+        if (   pSession->MemBalloon.cChunks > pDevExt->MemBalloon.cMaxChunks - 1
+            || pDevExt->MemBalloon.cMaxChunks == 0 /* If called without first querying. */)
         {
-            AssertMsgFailed(("vboxGuestSetBalloonSize: cannot inflate balloon, already have (max=%d)\n",
-                             pSession->MemBalloon.cChunks, pDevExt->MemBalloon.cMaxChunks));
+            LogRel(("vboxGuestSetBalloonSize: cannot inflate balloon, already have %u chunks (max=%u)\n",
+                    pSession->MemBalloon.cChunks, pDevExt->MemBalloon.cMaxChunks));
             return VERR_INVALID_PARAMETER;
         }
 
         if (!pSession->MemBalloon.paMemObj)
         {
-            pSession->MemBalloon.paMemObj = (RTR0MEMOBJ*)RTMemAllocZ(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
+            pSession->MemBalloon.paMemObj = (PRTR0MEMOBJ)RTMemAlloc(sizeof(RTR0MEMOBJ) * pDevExt->MemBalloon.cMaxChunks);
             if (!pSession->MemBalloon.paMemObj)
             {
                 LogRel(("VBoxGuestSetBalloonSizeFromUser: no memory for paMemObj!\n"));
@@ -516,42 +532,38 @@ static int vboxGuestSetBalloonSizeFromUser(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTS
     {
         if (fInflate)
             return VERR_NO_MEMORY; /* no free object pointer found -- should not happen */
-        else
-            return VERR_NOT_FOUND; /* cannot free this memory as it wasn't provided before */
+        return VERR_NOT_FOUND; /* cannot free this memory as it wasn't provided before */
     }
 
     rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, cbChangeMemBalloonReq, VMMDevReq_ChangeMemBalloon);
     if (RT_FAILURE(rc))
         return rc;
 
-    do
+    if (fInflate)
     {
-        if (fInflate)
+        rc = RTR0MemObjLockUser(pMemObj, u64ChunkAddr, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE,
+                                RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+        if (RT_SUCCESS(rc))
         {
-            rc = RTR0MemObjLockUser(pMemObj, u64ChunkAddr, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE,
-                                    RTMEM_PROT_READ | RTMEM_PROT_WRITE, NIL_RTR0PROCESS);
+            rc = vboxGuestBalloonInflate(pMemObj, pReq);
             if (RT_SUCCESS(rc))
-            {
-                rc = vboxGuestBalloonInflate(pMemObj, pReq);
-                if (RT_FAILURE(rc))
-                {
-                    Log(("vboxGuestSetBalloonSize(inflate): failed, rc=%Rrc!\n", rc));
-                    break;
-                }
                 pSession->MemBalloon.cChunks++;
-            }
-        }
-        else
-        {
-            rc = vboxGuestBalloonDeflate(pMemObj, pReq);
-            if (RT_FAILURE(rc))
+            else
             {
-                Log(("vboxGuestSetBalloonSize(deflate): failed, rc=%Rrc!\n", rc));
-                break;
+                Log(("vboxGuestSetBalloonSize(inflate): failed, rc=%Rrc!\n", rc));
+                RTR0MemObjFree(*pMemObj, true);
+                *pMemObj = NIL_RTR0MEMOBJ;
             }
-            pSession->MemBalloon.cChunks--;
         }
-    } while (0);
+    }
+    else
+    {
+        rc = vboxGuestBalloonDeflate(pMemObj, pReq);
+        if (RT_SUCCESS(rc))
+            pSession->MemBalloon.cChunks--;
+        else
+            Log(("vboxGuestSetBalloonSize(deflate): failed, rc=%Rrc!\n", rc));
+    }
 
     VbglGRFree(&pReq->header);
     return rc;
@@ -598,11 +610,7 @@ static void vboxGuestInitMemBalloon(PVBOXGUESTDEVEXT pDevExt)
 {
     pDevExt->MemBalloon.cChunks = 0;
     pDevExt->MemBalloon.cMaxChunks = 0;
-#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
     pDevExt->MemBalloon.fUseKernelAPI = true;
-#else
-    pDevExt->MemBalloon.fUseKernelAPI = false;
-#endif
     pDevExt->MemBalloon.paMemObj = NULL;
 }
 
@@ -1759,6 +1767,11 @@ static int VBoxGuestCommonIOCtl_HGCMCall(PVBOXGUESTDEVEXT pDevExt,
 /**
  * @returns VBox status code. Unlike the other HGCM IOCtls this will combine
  *          the VbglHGCMConnect/Disconnect return code with the Info.result.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pu32ClientId        The client id.
+ * @param   pcbDataReturned     Where to store the amount of returned data. Can
+ *                              be NULL.
  */
 static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt, uint32_t *pu32ClientId, size_t *pcbDataReturned)
 {
@@ -1822,11 +1835,18 @@ static int VBoxGuestCommonIOCtl_HGCMClipboardReConnect(PVBOXGUESTDEVEXT pDevExt,
 #endif /* VBOX_WITH_HGCM */
 
 /**
- * Handle VBOXGUEST_IOCTL_CHECK_BALLOON from R3. Ask the host for the size
- * of the balloon and try to set it accordingly. If this fails, return with
- * VERR_NO_PHYS_MEMORY and userland has to provide the memory.
+ * Handle VBOXGUEST_IOCTL_CHECK_BALLOON from R3.
+ *
+ * Ask the host for the size of the balloon and try to set it accordingly. If
+ * this fails, return with VERR_NO_PHYS_MEMORY and userland has to provide the
+ * memory.
  *
  * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extension.
+ * @param   pInfo               The output buffer.
+ * @param   pcbDataReturned     Where to store the amount of returned data. Can
+ *                              be NULL.
  */
 static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
                                                    VBoxGuestCheckBalloonInfo *pInfo, size_t *pcbDataReturned)
@@ -1836,6 +1856,9 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
     int rc = VbglGRAlloc((VMMDevRequestHeader **)&pReq, sizeof(VMMDevGetMemBalloonChangeRequest), VMMDevReq_GetMemBalloonChangeRequest);
     if (RT_FAILURE(rc))
         return rc;
+
+/** @todo r=bird: The following needs to be serialized as there is no one
+ *        saying mr. evil user cannot start more than one VBoxService. */
 
     /* This is a response to that event. Setting this bit means that we request the value
      * from the host and change the guest memory balloon according to this value. */
@@ -1848,6 +1871,7 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
         return rc;
     }
 
+    Assert(pDevExt->MemBalloon.cMaxChunks == pReq->cPhysMemChunks || pDevExt->MemBalloon.cMaxChunks == 0);
     pDevExt->MemBalloon.cMaxChunks = pReq->cPhysMemChunks;
 
     rc = vboxGuestSetBalloonSizeKernel(pDevExt, pReq->cBalloonChunks);
@@ -1873,11 +1897,28 @@ static int VBoxGuestCommonIOCtl_QueryMemoryBalloon(PVBOXGUESTDEVEXT pDevExt,
 
 
 /**
+ * Handle a request for changing the memory balloon.
  *
+ * @returns VBox status code.
+ *
+ * @param   pDevExt             The device extention.
+ * @param   pSession            The session.
+ * @param   pInfo               The change request structure (input).
+ * @param   pcbDataReturned     Where to store the amount of returned data. Can
+ *                              be NULL.
  */
 static int VBoxGuestCommonIOCtl_ChangeMemoryBalloon(PVBOXGUESTDEVEXT pDevExt, PVBOXGUESTSESSION pSession,
                                                     VBoxGuestChangeBalloonInfo *pInfo, size_t *pcbDataReturned)
 {
+/** @todo r=bird: Don't allow this if fUseKernelAPI is true.  */
+/** @todo r=bird: This needs to be serialized as there is no one saying mr. evil
+ *        user cannot start more than one VBoxService.
+ *
+ *        Actually, it would be good to drop the VBOXGUESTSESSION::MemBalloon
+ *        and instead add a VBOXGUESTDEVEXT::pMemBallonOwner
+ *        (PVBOXGUESTSESSION).  Assign balloon ownership on a first come
+ *        basis, releasing it when the session quits.  This could be done
+ *        regardless of the method use for memory allocation. */
     int rc = vboxGuestSetBalloonSizeFromUser(pDevExt, pSession, pInfo->u64ChunkAddr, pInfo->fInflate);
     if (pcbDataReturned)
         *pcbDataReturned = 0;
