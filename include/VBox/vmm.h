@@ -301,8 +301,6 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_FREE_LARGE_PAGE,
     /** Call GMMR0BalloonedPages(). */
     VMMR0_DO_GMM_BALLOONED_PAGES,
-    /** Call GMMR0DeflatedBalloon(). */
-    VMMR0_DO_GMM_DEFLATED_BALLOON,
     /** Call GMMR0MapUnmapChunk(). */
     VMMR0_DO_GMM_MAP_UNMAP_CHUNK,
     /** Call GMMR0SeedChunk(). */

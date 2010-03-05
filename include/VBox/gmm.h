@@ -370,12 +370,8 @@ typedef struct GMMBALLOONEDPAGESREQ
     SUPVMMR0REQHDR  Hdr;
     /** The number of ballooned pages. */
     uint32_t        cBalloonedPages;
-    /** The number of pages to free. */
-    uint32_t        cPagesToFree;
-    /** Whether the ballooning request is completed or more pages are still to come. */
-    bool            fCompleted;
-    /** Array of free page descriptors. */
-    GMMFREEPAGEDESC aPages[1];
+    /** Inflate or deflate the balloon. */
+    bool            fInflate;
 } GMMBALLOONEDPAGESREQ;
 /** Pointer to a GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES request buffer. */
 typedef GMMBALLOONEDPAGESREQ *PGMMBALLOONEDPAGESREQ;
@@ -439,9 +435,9 @@ GMMR3DECL(void) GMMR3FreePagesCleanup(PGMMFREEPAGESREQ pReq);
 GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAllocReq);
 GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage);
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
-GMMR3DECL(int)  GMMR3DeflatedBalloon(PVM pVM, uint32_t cPages);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
+GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, bool fInflate, uint32_t cBalloonedPages);
 /** @} */
 #endif /* IN_RING3 */
 
