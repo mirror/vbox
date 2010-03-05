@@ -40,22 +40,11 @@
 #include "internal/process.h"
 
 
-RTDECL(int)  RTMsgError(const char *pszFormat, ...)
-{
-    va_list va;
-    va_start(va, pszFormat);
-    int rc = RTMsgErrorV(pszFormat, va);
-    va_end(va);
-    return rc;
-}
-RT_EXPORT_SYMBOL(RTMsgError);
-
-
-RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
+static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFormat, va_list va)
 {
     if (   !*pszFormat
         || !strcmp(pszFormat, "\n"))
-        RTStrmPrintf(g_pStdErr, "\n");
+        RTStrmPrintf(pDst, "\n");
     else
     {
         char *pszMsg;
@@ -69,15 +58,15 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
                 char *pszEnd = strchr(psz, '\n');
                 if (!pszEnd)
                 {
-                    RTStrmPrintf(g_pStdErr, "%s: error: %s\n", &g_szrtProcExePath[g_offrtProcName], psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", pszPrefix, &g_szrtProcExePath[g_offrtProcName], psz);
                     break;
                 }
                 if (pszEnd == psz)
-                    RTStrmPrintf(g_pStdErr, "\n");
+                    RTStrmPrintf(pDst, "\n");
                 else
                 {
                     *pszEnd = '\0';
-                    RTStrmPrintf(g_pStdErr, "%s: error: %s\n", &g_szrtProcExePath[g_offrtProcName], psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", pszPrefix, &g_szrtProcExePath[g_offrtProcName], psz);
                 }
                 psz = pszEnd + 1;
             } while (*psz);
@@ -86,14 +75,30 @@ RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
         else
         {
             /* Simple fallback for handling out-of-memory conditions. */
-            RTStrmPrintf(g_pStdErr, "%s: error: ", &g_szrtProcExePath[g_offrtProcName]);
-            RTStrmPrintfV(g_pStdErr, pszFormat, va);
+            RTStrmPrintf(pDst, "%s: %s", pszPrefix, &g_szrtProcExePath[g_offrtProcName]);
+            RTStrmPrintfV(pDst, pszFormat, va);
             if (!strchr(pszFormat, '\n'))
-                RTStrmPrintf(g_pStdErr, "\n");
+                RTStrmPrintf(pDst, "\n");
         }
     }
 
     return VINF_SUCCESS;
+}
+
+RTDECL(int)  RTMsgError(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTMsgError);
+
+
+RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
+{
+    return rtMsgWorker(g_pStdErr, " error:", pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTMsgErrorV);
 
@@ -129,4 +134,40 @@ RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init)
     return RTEXITCODE_INIT;
 }
 RT_EXPORT_SYMBOL(RTMsgInitFailure);
+
+
+RTDECL(int)  RTMsgWarning(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTMsgWarningV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTMsgInfo);
+
+
+RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va)
+{
+    return rtMsgWorker(g_pStdErr, " warning:", pszFormat, va);
+}
+RT_EXPORT_SYMBOL(RTMsgWarningV);
+
+
+RTDECL(int)  RTMsgInfo(const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    int rc = RTMsgInfoV(pszFormat, va);
+    va_end(va);
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTMsgInfo);
+
+
+RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va)
+{
+    return rtMsgWorker(g_pStdOut, " info:", pszFormat, va);
+}
+RT_EXPORT_SYMBOL(RTMsgInfoV);
 

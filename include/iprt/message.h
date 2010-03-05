@@ -107,6 +107,62 @@ RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat
  */
 RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init);
 
+/**
+ * Print informational message to standard error.
+ *
+ * The message will be prefixed with the file name part of process image name
+ * (i.e. no path) and "warning: ".  If the message doesn't end with a new line,
+ * one will be added.  The caller should call this with an empty string if
+ * unsure whether the cursor is currently position at the start of a new line.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(int)  RTMsgWarning(const char *pszFormat, ...);
+
+/**
+ * Print informational message to standard error.
+ *
+ * The message will be prefixed with the file name part of process image name
+ * (i.e. no path) and "warning: ".  If the message doesn't end with a new line,
+ * one will be added.  The caller should call this with an empty string if
+ * unsure whether the cursor is currently position at the start of a new line.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat       The message format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va);
+
+/**
+ * Print informational message to standard output.
+ *
+ * The message will be prefixed with the file name part of process image name
+ * (i.e. no path) and "info: ".  If the message doesn't end with a new line,
+ * one will be added.  The caller should call this with an empty string if
+ * unsure whether the cursor is currently position at the start of a new line.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(int)  RTMsgInfo(const char *pszFormat, ...);
+
+/**
+ * Print informational message to standard output.
+ *
+ * The message will be prefixed with the file name part of process image name
+ * (i.e. no path) and "info: ".  If the message doesn't end with a new line,
+ * one will be added.  The caller should call this with an empty string if
+ * unsure whether the cursor is currently position at the start of a new line.
+ *
+ * @returns IPRT status code.
+ * @param   pszFormat       The message format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va);
+
 /** @} */
 
 RT_C_DECLS_END
