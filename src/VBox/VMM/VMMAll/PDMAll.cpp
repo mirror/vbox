@@ -117,7 +117,7 @@ VMMDECL(int) PDMIsaSetIrq(PVM pVM, uint8_t u8Irq, uint8_t u8Level, bool fIsaSour
 
         /**
          * Apply Interrupt Source Override rules.
-         * See ACPI 4.0 specification 5.2.12.4 and 5.2.12.5 for details on 
+         * See ACPI 4.0 specification 5.2.12.4 and 5.2.12.5 for details on
          * interrupt source override.
          * Shortly, ISA IRQ0 is electically connected to pin 2 on IO-APIC, and some OSes,
          * notably recent OS X rely upon this configuration.
