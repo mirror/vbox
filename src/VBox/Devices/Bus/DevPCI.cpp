@@ -652,7 +652,10 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
     PPCIBUS     pBus =     &pGlobals->PciBus;
     uint8_t    *pbCfg = pGlobals->PIIX3State.dev.config;
     const bool  fIsAcpiDevice = pPciDev->config[2] == 0x13 && pPciDev->config[3] == 0x71;
-    /* These two configuration space bytes enable a backdoor to trigger the irq directly on the io-apic; e.g. 64 bit Linux guests use it. */
+    /* If the two configuration space bytes at 0xde, 0xad are set to 0xbe, 0xef, a back door
+     * is opened to route PCI interrupts directly to the I/O APIC and bypass the PIC.
+     * See the \_SB_.PCI0._PRT method in vbox.dsl.
+     */
     const bool  fIsApicEnabled = pGlobals->fUseIoApic && pbCfg[0xde] == 0xbe && pbCfg[0xad] == 0xef;
     int pic_irq, pic_level;
 
@@ -661,7 +664,7 @@ static void pciSetIrqInternal(PPCIGLOBALS pGlobals, uint8_t uDevFn, PPCIDEVICE p
     {
         pPciDev->Int.s.uIrqPinState = (iLevel & PDM_IRQ_LEVEL_HIGH);
 
-        /* apic only */
+        /* Send interrupt to I/O APIC only. */
         if (fIsApicEnabled)
         {
             if (fIsAcpiDevice)
