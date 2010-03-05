@@ -2841,7 +2841,13 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  * ballooned.
  *
  * @returns VBox status code:
- * @retval  xxx
+ * @retval  VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH
+ * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH
+ * @retval  VERR_GMM_OVERCOMMITED_TRY_AGAIN_IN_A_BIT - reset condition
+ *          indicating that we won't neceessarily have sufficient RAM to boot
+ *          the VM again and that it should pause until this changes (we'll try
+ *          balloon some other VM).  (For standard deflate we have little choice
+ *          but to hope the VM won't use the memory that was returned to it.)
  *
  * @param   pVM                 Pointer to the shared VM structure.
  * @param   idCpu               VCPU id
@@ -2917,8 +2923,20 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
                     Assert(pGMM->cBalloonedPages >= cBalloonedPages);
                     pGMM->cBalloonedPages       -= cBalloonedPages;
                     pGVM->gmm.s.cBalloonedPages -= cBalloonedPages;
-                    Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx (user)\n",
-                         cBalloonedPages, pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
+                    if (pGVM->gmm.s.cReqDeflatePages)
+                    {
+                        AssertFailed(); /* This is path is for later. */
+                        Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n", cPages,
+                             pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
+
+                        /*
+                         * Anything we need to do here now when the request has been completed?
+                         */
+                        pGVM->gmm.s.cReqDeflatePages = 0;
+                    }
+                    else
+                        Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx (user)\n", cPages,
+                             pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
                 }
                 else
                     rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
@@ -2970,80 +2988,6 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGES
                     VERR_INVALID_PARAMETER);
 
     return GMMR0BalloonedPages(pVM, idCpu, pReq->enmAction, pReq->cBalloonedPages);
-}
-
-
-/**
- * Report balloon deflating.
- *
- * @returns VBox status code:
- * @retval  xxx
- *
- * @param   pVM                 Pointer to the shared VM structure.
- * @param   idCpu               VCPU id
- * @param   cPages              The number of pages that was let out of the balloon.
- * @thread  EMT.
- */
-GMMR0DECL(int) GMMR0DeflatedBalloon(PVM pVM, VMCPUID idCpu, uint32_t cPages)
-{
-    LogFlow(("GMMR0DeflatedBalloon: pVM=%p cPages=%#x\n", pVM, cPages));
-
-    /*
-     * Validate input and get the basics.
-     */
-    PGMM pGMM;
-    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
-    PGVM pGVM;
-    int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
-    if (RT_FAILURE(rc))
-        return rc;
-
-    AssertMsgReturn(cPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cPages), VERR_INVALID_PARAMETER);
-
-    /*
-     * Take the sempahore and do some more validations.
-     */
-    rc = RTSemFastMutexRequest(pGMM->Mtx);
-    AssertRC(rc);
-    if (GMM_CHECK_SANITY_UPON_ENTERING(pGMM))
-    {
-
-        if (pGVM->gmm.s.cBalloonedPages < cPages)
-        {
-            Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
-
-            /*
-             * Record it.
-             */
-            pGMM->cBalloonedPages -= cPages;
-            pGVM->gmm.s.cBalloonedPages -= cPages;
-            if (pGVM->gmm.s.cReqDeflatePages)
-            {
-                Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx Req=%#llx\n", cPages,
-                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages, pGVM->gmm.s.cReqDeflatePages));
-
-                /*
-                 * Anything we need to do here now when the request has been completed?
-                 */
-                pGVM->gmm.s.cReqDeflatePages = 0;
-            }
-            else
-                Log(("GMMR0BalloonedPages: -%#x - Global=%#llx / VM: Total=%#llx\n", cPages,
-                     pGMM->cBalloonedPages, pGVM->gmm.s.cBalloonedPages));
-        }
-        else
-        {
-            Log(("GMMR0DeflatedBalloon: cBalloonedPages=%#llx cPages=%#x\n", pGVM->gmm.s.cBalloonedPages, cPages));
-            rc = VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH;
-        }
-
-        GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
-    }
-    else
-        rc = VERR_INTERNAL_ERROR_5;
-    RTSemFastMutexRelease(pGMM->Mtx);
-    LogFlow(("GMMR0BalloonedPages: returns %Rrc\n", rc));
-    return rc;
 }
 
 

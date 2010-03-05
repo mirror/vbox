@@ -184,18 +184,26 @@ typedef enum GMMACCOUNT
     GMMACCOUNT_32BIT_HACK = 0x7fffffff
 } GMMACCOUNT;
 
+
 /**
- * Balloon action enum.
+ * Balloon actions.
  */
 typedef enum
 {
+    /** Invalid zero entry. */
     GMMBALLOONACTION_INVALID = 0,
-    GMMBALLOONACTION_INFLATE = 1,
-    GMMBALLOONACTION_DEFLATE = 2,
-    GMMBALLOONACTION_RESET   = 3,
+    /** Inflate the balloon. */
+    GMMBALLOONACTION_INFLATE,
+    /** Deflate the balloon. */
+    GMMBALLOONACTION_DEFLATE,
+    /** Puncture the balloon because of VM reset. */
+    GMMBALLOONACTION_RESET,
+    /** End of the valid actions. */
+    GMMBALLOONACTION_END,
     /** hack forcing the size of the enum to 32-bits. */
     GMMBALLOONACTION_MAKE_32BIT_HACK = 0x7fffffff
 } GMMBALLOONACTION;
+
 
 /**
  * A page descriptor for use when freeing pages.
