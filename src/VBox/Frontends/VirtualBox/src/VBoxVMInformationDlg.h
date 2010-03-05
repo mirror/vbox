@@ -45,17 +45,15 @@ public:
 
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
     static void createInformationDlg(UIMachineWindow *pMachineWindow);
-#else /* VBOX_WITH_NEW_RUNTIME_CORE */
-    static void createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole);
 #endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+    static void createInformationDlg (const CSession &aSession, VBoxConsoleView *aConsole);
 
 protected:
 
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
     VBoxVMInformationDlg (UIMachineWindow *pMachineWindow, Qt::WindowFlags aFlags);
-#else /* VBOX_WITH_NEW_RUNTIME_CORE */
-    VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags);
 #endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+    VBoxVMInformationDlg (VBoxConsoleView *aConsole, const CSession &aSession, Qt::WindowFlags aFlags);
    ~VBoxVMInformationDlg();
 
     void retranslateUi();
@@ -83,9 +81,7 @@ private:
 
     static InfoDlgMap  mSelfArray;
 
-#ifndef VBOX_WITH_NEW_RUNTIME_CORE
     VBoxConsoleView   *mConsole;
-#endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
     CSession           mSession;
     bool               mIsPolished;
     QTimer            *mStatTimer;
