@@ -65,14 +65,9 @@ private:
     void prepareMenu();
 #endif /* Q_WS_MAC */
     void prepareMachineView();
-#ifdef Q_WS_MAC
-    void loadWindowSettings();
-#endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
-#ifdef Q_WS_MAC
     //void saveWindowSettings() {}
-#endif /* Q_WS_MAC */
     void cleanupMachineView();
 #ifdef Q_WS_MAC
     //void cleanupMenu() {}
