@@ -109,6 +109,24 @@ void UIMachineWindowSeamless::retranslateUi()
 #endif /* Q_WS_MAC */
 }
 
+#ifdef Q_WS_MAC
+bool UIMachineWindowSeamless::event(QEvent *pEvent)
+{
+    switch (pEvent->type())
+    {
+        case QEvent::Paint:
+        {
+            /* Clear the background */
+            CGContextClearRect(::darwinToCGContextRef(this), ::darwinToCGRect(frameGeometry()));
+            break;
+        }
+        default:
+            break;
+    }
+    return QIMainDialog::event(pEvent);
+}
+#endif /* Q_WS_MAC */
+
 #ifdef Q_WS_X11
 bool UIMachineWindowSeamless::x11Event(XEvent *pEvent)
 {
@@ -130,24 +148,6 @@ bool UIMachineWindowSeamless::x11Event(XEvent *pEvent)
     return false;
 }
 #endif
-
-#ifdef Q_WS_MAC
-bool UIMachineWindowSeamless::event(QEvent *pEvent)
-{
-    switch (pEvent->type())
-    {
-        case QEvent::Paint:
-        {
-            /* Clear the background */
-            CGContextClearRect(::darwinToCGContextRef(this), ::darwinToCGRect(frameGeometry()));
-            break;
-        }
-        default:
-            break;
-    }
-    return QIMainDialog::event(pEvent);
-}
-#endif /* Q_WS_MAC */
 
 void UIMachineWindowSeamless::closeEvent(QCloseEvent *pEvent)
 {

@@ -55,13 +55,13 @@ private:
     void retranslateUi();
 
     /* Event handlers: */
+#ifdef Q_WS_MAC
+    bool event(QEvent *pEvent);
+#endif /* Q_WS_MAC */
 #ifdef Q_WS_X11
     bool x11Event(XEvent *pEvent);
 #endif /* Q_WS_X11 */
     void closeEvent(QCloseEvent *pEvent);
-#ifdef Q_WS_MAC
-    bool event(QEvent *pEvent);
-#endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
     void prepareSeamless();
