@@ -3010,6 +3010,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 PdeDst.n.u1Execute   = 1;
                 PdeDst.b.u1IgnorePAT = 1;
                 PdeDst.b.u3EMT       = VMX_EPT_MEMTYPE_WB;
+#  else
+                PdeDst.n.u1User      = 1;
 #  endif
                 ASMAtomicWriteSize(pPdeDst, PdeDst.u);
 
