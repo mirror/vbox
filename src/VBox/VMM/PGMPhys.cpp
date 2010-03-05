@@ -771,7 +771,7 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
 }
 
 /**
- * Rendezvous callback used by PGMR3PhysFreeRamPages that frees a range of guest physical pages
+ * Rendezvous callback used by PGMR3ChangeMemBalloon that changes the memory balloon size
  *
  * This is only called on one of the EMTs while the other ones are waiting for
  * it to complete this function.
@@ -781,59 +781,69 @@ static int pgmR3PhysFreePageRange(PVM pVM, PPGMRAMRANGE pRam, RTGCPHYS GCPhys, R
  * @param   pVCpu       The VMCPU for the EMT we're being called on. Unused.
  * @param   pvUser      User parameter
  */
-static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
+static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, PVMCPU pVCpu, void *pvUser)
 {
     uintptr_t          *paUser          = (uintptr_t *)pvUser;
-    unsigned            cPages          = paUser[0];
-    RTGCPHYS           *paPhysPage      = (RTGCPHYS *)paUser[1];
+    bool                fInflate        = !!paUser[0];
+    unsigned            cPages          = paUser[1];
+    RTGCPHYS           *paPhysPage      = (RTGCPHYS *)paUser[2];
     uint32_t            cPendingPages   = 0;
     PGMMFREEPAGESREQ    pReq;
+    int                 rc;
 
     pgmLock(pVM);
-    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
-    if (RT_FAILURE(rc))
-    {
-        pgmUnlock(pVM);
-        AssertLogRelRC(rc);
-        return rc;
-    }
 
-    /* Iterate the pages. */
-    for (unsigned i = 0; i < cPages; i++)
+    if (fInflate)
     {
-        PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
-        if (    pPage == NULL
-            ||  pPage->uTypeY != PGMPAGETYPE_RAM)
-        {
-            Log(("PGMR3PhysFreePageRange: invalid physical page %RGp pPage->u3Type=%d\n", paPhysPage[i], (pPage) ? pPage->uTypeY : 0));
-            break;
-        }
-
-        rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i]);
+        /* Replace pages with ZERO pages. */
+        rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
         if (RT_FAILURE(rc))
         {
             pgmUnlock(pVM);
             AssertLogRelRC(rc);
             return rc;
         }
-    }
 
-    if (cPendingPages)
-    {
-        rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
-        if (RT_FAILURE(rc))
+        /* Iterate the pages. */
+        for (unsigned i = 0; i < cPages; i++)
         {
-            pgmUnlock(pVM);
-            AssertLogRelRC(rc);
-            return rc;
+            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
+            if (    pPage == NULL
+                ||  pPage->uTypeY != PGMPAGETYPE_RAM)
+            {
+                Log(("PGMR3PhysFreePageRange: invalid physical page %RGp pPage->u3Type=%d\n", paPhysPage[i], (pPage) ? pPage->uTypeY : 0));
+                break;
+            }
+
+            rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i]);
+            if (RT_FAILURE(rc))
+            {
+                pgmUnlock(pVM);
+                AssertLogRelRC(rc);
+                return rc;
+            }
         }
+
+        if (cPendingPages)
+        {
+            rc = GMMR3FreePagesPerform(pVM, pReq, cPendingPages);
+            if (RT_FAILURE(rc))
+            {
+                pgmUnlock(pVM);
+                AssertLogRelRC(rc);
+                return rc;
+            }
+        }
+        GMMR3FreePagesCleanup(pReq);
+
+        /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
+        pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
     }
-    GMMR3FreePagesCleanup(pReq);
 
-    /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
-    pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
-
+    /* Notify GMM about the balloon change. */
+    rc = GMMR3BalloonedPages(pVM, fInflate, cPages);
     pgmUnlock(pVM);
+    AssertLogRelRC(rc);
     return rc;
 }
 
@@ -842,16 +852,18 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysFreeRamPagesRendezvous(PVM pVM, PVMCP
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   fInflate    Inflate or deflate memory balloon
  * @param   cPages      Number of pages to free
  * @param   paPhysPage  Array of guest physical addresses
  */
-static DECLCALLBACK(void) pgmR3PhysFreeRamPagesHelper(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+static DECLCALLBACK(void) pgmR3PhysChangeMemBalloonHelper(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
 {
-    uintptr_t paUser[2];
+    uintptr_t paUser[3];
 
-    paUser[0] = cPages;
-    paUser[1] = (uintptr_t)paPhysPage;
-    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
+    paUser[0] = fInflate;
+    paUser[1] = cPages;
+    paUser[2] = (uintptr_t)paPhysPage;
+    int rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
     AssertRC(rc);
 
     /* Made a copy in PGMR3PhysFreeRamPages; free it here. */
@@ -859,18 +871,17 @@ static DECLCALLBACK(void) pgmR3PhysFreeRamPagesHelper(PVM pVM, unsigned cPages, 
 }
 
 /**
- * Frees a range of ram pages, replacing them with ZERO pages
+ * Inflate or deflate a memory balloon
  *
  * @returns VBox status code.
  * @param   pVM         The VM handle.
+ * @param   fInflate    Inflate or deflate memory balloon
  * @param   cPages      Number of pages to free
  * @param   paPhysPage  Array of guest physical addresses
  */
-VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysPage)
+VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages, RTGCPHYS *paPhysPage)
 {
     int rc;
-
-    /* Currently only used by the VMM device in responds to a balloon request. */
 
     /* We own the IOM lock here and could cause a deadlock by waiting for another VCPU that is blocking on the IOM lock.
      * In the SMP case we post a request packet to postpone the job.
@@ -883,16 +894,17 @@ VMMR3DECL(int) PGMR3PhysFreeRamPages(PVM pVM, unsigned cPages, RTGCPHYS *paPhysP
 
         memcpy(paPhysPageCopy, paPhysPage, cbPhysPage);
 
-        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysFreeRamPagesHelper, 3, pVM, cPages, paPhysPageCopy);
+        rc = VMR3ReqCallNoWait(pVM, VMCPUID_ANY_QUEUE, (PFNRT)pgmR3PhysChangeMemBalloonHelper, 4, pVM, fInflate, cPages, paPhysPageCopy);
         AssertRC(rc);
     }
     else
     {
-        uintptr_t paUser[2];
+        uintptr_t paUser[3];
 
-        paUser[0] = cPages;
-        paUser[1] = (uintptr_t)paPhysPage;
-        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysFreeRamPagesRendezvous, (void *)paUser);
+        paUser[0] = fInflate;
+        paUser[1] = cPages;
+        paUser[2] = (uintptr_t)paPhysPage;
+        rc = VMMR3EmtRendezvous(pVM, VMMEMTRENDEZVOUS_FLAGS_TYPE_ONCE, pgmR3PhysChangeMemBalloonRendezvous, (void *)paUser);
         AssertRC(rc);
     }
     return rc;
