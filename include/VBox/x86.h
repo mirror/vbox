@@ -1131,7 +1131,7 @@ typedef struct X86PTEBITS
      * Indicates that the page have been read or written to. */
     unsigned    u1Accessed : 1;
     /** Dirty flag.
-     * Indicates that the page have been written to. */
+     * Indicates that the page has been written to. */
     unsigned    u1Dirty : 1;
     /** Reserved / If PAT enabled, bit 2 of the index.  */
     unsigned    u1PAT : 1;
@@ -1188,7 +1188,7 @@ typedef struct X86PTEPAEBITS
      * Indicates that the page have been read or written to. */
     uint32_t    u1Accessed : 1;
     /** Dirty flag.
-     * Indicates that the page have been written to. */
+     * Indicates that the page has been written to. */
     uint32_t    u1Dirty : 1;
     /** Reserved / If PAT enabled, bit 2 of the index.  */
     uint32_t    u1PAT : 1;
@@ -1323,7 +1323,7 @@ typedef struct X86PDEBITS
     /** Cache disabled flag. If PAT enabled, bit 1 of the index. */
     unsigned    u1CacheDisable : 1;
     /** Accessed flag.
-     * Indicates that the page have been read or written to. */
+     * Indicates that the page has been read or written to. */
     unsigned    u1Accessed : 1;
     /** Reserved / Ignored (dirty bit). */
     unsigned    u1Reserved0 : 1;
@@ -1358,7 +1358,7 @@ typedef struct X86PDEPAEBITS
     /** Cache disabled flag. If PAT enabled, bit 1 of the index. */
     uint32_t    u1CacheDisable : 1;
     /** Accessed flag.
-     * Indicates that the page have been read or written to. */
+     * Indicates that the page has been read or written to. */
     uint32_t    u1Accessed : 1;
     /** Reserved / Ignored (dirty bit). */
     uint32_t    u1Reserved0 : 1;
@@ -1444,7 +1444,7 @@ typedef struct X86PDE4MBITS
      * Indicates that the page have been read or written to. */
     unsigned    u1Accessed : 1;
     /** Dirty flag.
-     * Indicates that the page have been written to. */
+     * Indicates that the page has been written to. */
     unsigned    u1Dirty : 1;
     /** Page size flag - always 1 for 4MB entries. */
     unsigned    u1Size : 1;
@@ -1487,7 +1487,7 @@ typedef struct X86PDE2MPAEBITS
      * Indicates that the page have been read or written to. */
     uint32_t    u1Accessed : 1;
     /** Dirty flag.
-     * Indicates that the page have been written to. */
+     * Indicates that the page has been written to. */
     uint32_t    u1Dirty : 1;
     /** Page size flag - always 1 for 2MB entries. */
     uint32_t    u1Size : 1;
