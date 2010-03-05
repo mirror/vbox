@@ -273,11 +273,12 @@ AssertCompileSize(VBoxGuestFilterMaskInfo, 8);
  * The guest kernel module / device driver will ask the host for the current size of
  * the balloon and adjust the size. Or it will set fHandledInR0 = false and R3 is
  * responsible for allocating memory and calling R0 (VBOXGUEST_IOCTL_CHANGE_BALLOON). */
-#define VBOXGUEST_IOCTL_CHECK_BALLOON               VBOXGUEST_IOCTL_CODE_(7, 100)
+#define VBOXGUEST_IOCTL_CHECK_BALLOON               VBOXGUEST_IOCTL_CODE_(7, sizeof(VBoxGuestCheckBalloonInfo))
 
+/** Output buffer layout of the VBOXGUEST_IOCTL_CHECK_BALLOON. */
 typedef struct VBoxGuestCheckBalloonInfo
 {
-    /** the size of the balloon in chunks of 1MB */
+    /** The size of the balloon in chunks of 1MB. */
     uint32_t cBalloonChunks;
     /** false = handled in R0, no further action required.
      *   true = allocate balloon memory in R3. */
@@ -286,19 +287,21 @@ typedef struct VBoxGuestCheckBalloonInfo
 AssertCompileSize(VBoxGuestCheckBalloonInfo, 8);
 
 
-/** IOCTL to VBoxGuest to supply or revoke one chunk for ballooning. The guest kernel
- * module / device driver will lock down supplied memory or unlock reclaimed memory
- * and then forward the physical addresses of the changed balloon chunk to the host. */
+/** IOCTL to VBoxGuest to supply or revoke one chunk for ballooning.
+ * The guest kernel module / device driver will lock down supplied memory or
+ * unlock reclaimed memory and then forward the physical addresses of the
+ * changed balloon chunk to the host. */
 #define VBOXGUEST_IOCTL_CHANGE_BALLOON              VBOXGUEST_IOCTL_CODE_(8, sizeof(VBoxGuestChangeBalloonInfo))
 
-/** Information about a memory chunk used to inflate or deflate the balloon. */
+/** Input buffer layout of the VBOXGUEST_IOCTL_CHANGE_BALLOON request.
+ * Information about a memory chunk used to inflate or deflate the balloon. */
 typedef struct VBoxGuestChangeBalloonInfo
 {
-    /** Address of the chunk */
+    /** Address of the chunk. */
     uint64_t u64ChunkAddr;
-    /** true = inflate, false = deflate */
+    /** true = inflate, false = deflate. */
     uint32_t fInflate;
-    /** alignment */
+    /** Alignment padding. */
     uint32_t u32Align;
 } VBoxGuestChangeBalloonInfo;
 AssertCompileSize(VBoxGuestChangeBalloonInfo, 16);
