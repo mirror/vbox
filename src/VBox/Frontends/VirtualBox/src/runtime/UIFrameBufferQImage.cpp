@@ -49,7 +49,8 @@ UIFrameBufferQImage::UIFrameBufferQImage(UIMachineView *pMachineView)
     : UIFrameBuffer(pMachineView)
 {
     /* Initialize the framebuffer the first time */
-    resizeEvent(new UIResizeEvent(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480));
+    UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
+    resizeEvent(&event);
 }
 
 /** @note This method is called on EMT from under this object's lock */
