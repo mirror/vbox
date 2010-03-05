@@ -756,6 +756,21 @@ VBoxSelectorWnd &VBoxGlobal::selectorWnd()
     return *mSelectorWnd;
 }
 
+
+QWidget *VBoxGlobal::vmWindow()
+{
+    if (isVMConsoleProcess())
+    {
+#ifdef VBOX_WITH_NEW_RUNTIME_CORE
+        if (m_pVirtualMachine)
+            return m_pVirtualMachine->mainWindow();
+        else
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+            return &consoleWnd();
+    }
+    return NULL;
+}
+
 /**
  *  Returns a reference to the main VBox VM Console window.
  *  The reference is valid until application termination.
@@ -799,6 +814,7 @@ bool VBoxGlobal::createVirtualMachine(const CSession &session)
     }
     return false;
 }
+
 UIMachine* VBoxGlobal::virtualMachine()
 {
     return m_pVirtualMachine;
@@ -2277,10 +2293,15 @@ bool VBoxGlobal::startMachine(const QString &strId)
         return false;
 
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
-    return createVirtualMachine(session);
-#else
-    return consoleWnd().openView(session);
-#endif
+# ifndef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
+    if (session.GetMachine().GetMonitorCount() > 1)
+# endif /* VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS */
+        return createVirtualMachine(session);
+# ifndef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
+    else
+# endif /* VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS */
+#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
+        return consoleWnd().openView(session);
 }
 
 /**

@@ -41,6 +41,8 @@ VBOX_WITH_UPDATE_REQUEST := 1
 # Build new VirtualBox FE/Qt4 GUI runtime core.
 # Currently its not used, you can build it for developing purposes.
 #VBOX_WITH_NEW_RUNTIME_CORE := 1
+# Force the usage of the new runtime core for the single monitor case also.
+#VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS := 1
 
 #
 # The targets.
@@ -163,6 +165,9 @@ ifdef VBOX_WITH_ICHAT_THEATER
 endif
 ifdef VBOX_WITH_NEW_RUNTIME_CORE
  VirtualBox_DEFS += VBOX_WITH_NEW_RUNTIME_CORE
+ ifdef VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
+  VirtualBox_DEFS += VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS
+ endif
 endif
 ifneq ($(KBUILD_TYPE),release)
  # non-release builds has some extra features.
