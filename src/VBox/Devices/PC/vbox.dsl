@@ -514,7 +514,9 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             Name (_BBN, 0x00) // base bus adddress
             Name (_UID, 0x00)
 
-            // Method that returns routing table
+            // Method that returns routing table; also opens PCI to I/O APIC 
+            // interrupt routing backdoor by writing 0xdead 0xbeef signature
+            // to ISA bridge config space. See DevPCI.cpp/pciSetIrqInternal().
             Method (_PRT, 0, NotSerialized)
             {
                 if (LEqual (LAnd (PICM, UIOA), Zero)) {
