@@ -69,6 +69,7 @@ typedef struct PulseVoice
     const uint8_t  *pu8PeekBuf;
     size_t         cbPeekBuf;
     size_t         offPeekBuf;
+    pa_operation   *pDrainOp;
 } PulseVoice;
 
 /* The desired buffer length in milliseconds. Will be the target total stream
@@ -146,10 +147,44 @@ static int pulse_to_audfmt (pa_sample_format_t pulsefmt, audfmt_e *fmt, int *end
     return 0;
 }
 
-static void context_state_callback(pa_context *c, void *userdata)
+static void stream_success_callback(pa_stream *pStream, int fSuccess, void *userdata)
 {
     PulseVoice *pPulse = (PulseVoice *)userdata;
-    switch (pa_context_get_state(c))
+    pPulse->fOpSuccess = fSuccess;
+    if (!fSuccess)
+    {
+        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
+        {
+            int rc = pa_context_errno(g_pContext);
+            pPulse->cErrors++;
+            LogRel(("Pulse: Failed stream operation: %s\n", pa_strerror(rc)));
+        }
+    }
+    pa_threaded_mainloop_signal(g_pMainLoop, 0);
+}
+
+/**
+ * Synchronously wait until an operation completed.
+ */
+static int pulse_wait_for_operation (pa_operation *op)
+{
+    if (op)
+    {
+        while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
+            pa_threaded_mainloop_wait(g_pMainLoop);
+        pa_operation_unref(op);
+    }
+
+    return 1;
+}
+
+/**
+ * Context status changed.
+ */
+static void context_state_callback(pa_context *pContext, void *userdata)
+{
+    PulseVoice *pPulse = (PulseVoice *)userdata;
+    switch (pa_context_get_state(pContext))
     {
         case PA_CONTEXT_READY:
         case PA_CONTEXT_TERMINATED:
@@ -168,9 +203,12 @@ static void context_state_callback(pa_context *c, void *userdata)
     }
 }
 
-static void stream_state_callback(pa_stream *s, void *userdata)
+/**
+ * Stream status changed.
+ */
+static void stream_state_callback(pa_stream *pStream, void *userdata)
 {
-    switch (pa_stream_get_state(s))
+    switch (pa_stream_get_state(pStream))
     {
         case PA_STREAM_READY:
         case PA_STREAM_FAILED:
@@ -181,6 +219,29 @@ static void stream_state_callback(pa_stream *s, void *userdata)
         default:
             break;
     }
+}
+
+/**
+ * Callback called when our pa_stream_drain operation was completed.
+ */
+static void stream_drain_callback(pa_stream *pStream, int fSuccess, void *userdata)
+{
+    PulseVoice *pPulse = (PulseVoice *)userdata;
+    pPulse->fOpSuccess = fSuccess;
+    if (!fSuccess)
+    {
+        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
+        {
+            int rc = pa_context_errno(g_pContext);
+            pPulse->cErrors++;
+            LogRel(("Pulse: Failed stream operation: %s\n", pa_strerror(rc)));
+        }
+    }
+    else
+        pa_operation_unref(pa_stream_cork(pStream, 1, stream_success_callback, userdata));
+
+    pa_operation_unref(pPulse->pDrainOp);
+    pPulse->pDrainOp = NULL;
 }
 
 static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpec,
@@ -228,6 +289,9 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
     flags |= PA_STREAM_INTERPOLATE_TIMING | PA_STREAM_AUTO_TIMING_UPDATE;
 #endif
 
+    /* no input/output right away after the stream was started */
+    flags |= PA_STREAM_START_CORKED;
+
     if (fIn)
     {
         LogRel(("Pulse: Requested record buffer attributes: maxlength=%d fragsize=%d\n",
@@ -244,8 +308,6 @@ static int pulse_open (int fIn, pa_stream **ppStream, pa_sample_spec *pSampleSpe
     {
         LogRel(("Pulse: Requested playback buffer attributes: maxlength=%d tlength=%d prebuf=%d minreq=%d\n",
                 pBufAttr->maxlength, pBufAttr->tlength, pBufAttr->prebuf, pBufAttr->minreq));
-
-        flags |= PA_STREAM_START_CORKED;
 
         if (pa_stream_connect_playback(pStream, /*dev=*/NULL, pBufAttr, flags,
                                        /*cvolume=*/NULL, /*sync_stream=*/NULL) < 0)
@@ -309,6 +371,8 @@ static int pulse_init_out (HWVoiceOut *hw, audsettings_t *as)
     PulseVoice *pPulse = (PulseVoice *) hw;
     audsettings_t obt_as;
     int cbBuf;
+
+    pPulse->pDrainOp            = NULL;
 
     pPulse->SampleSpec.format   = aud_to_pulsefmt (as->fmt);
     pPulse->SampleSpec.rate     = as->freq;
@@ -439,34 +503,6 @@ static int pulse_write (SWVoiceOut *sw, void *buf, int len)
     return audio_pcm_sw_write (sw, buf, len);
 }
 
-static void stream_success_callback(pa_stream *pStream, int success, void *userdata)
-{
-    PulseVoice *pPulse = (PulseVoice *) userdata;
-    pPulse->fOpSuccess = success;
-    if (!success)
-    {
-        if (pPulse->cErrors < MAX_LOG_REL_ERRORS)
-        {
-            int rc = pa_context_errno(g_pContext);
-            pPulse->cErrors++;
-            LogRel(("Pulse: Failed stream operation: %s\n", pa_strerror(rc)));
-        }
-    }
-    pa_threaded_mainloop_signal(g_pMainLoop, 0);
-}
-
-static int pulse_wait_for_operation (pa_operation *op)
-{
-    if (op)
-    {
-        while (pa_operation_get_state(op) == PA_OPERATION_RUNNING)
-            pa_threaded_mainloop_wait(g_pMainLoop);
-        pa_operation_unref(op);
-    }
-
-    return 1;
-}
-
 static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
 {
     PulseVoice *pPulse = (PulseVoice *) hw;
@@ -476,23 +512,34 @@ static int pulse_ctl_out (HWVoiceOut *hw, int cmd, ...)
         case VOICE_ENABLE:
             /* Start audio output. */
             pa_threaded_mainloop_lock(g_pMainLoop);
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0,
-                                                    stream_success_callback, pPulse));
+            if (   pPulse->pDrainOp
+                && pa_operation_get_state(pPulse->pDrainOp) != PA_OPERATION_DONE)
+            {
+                pa_operation_cancel(pPulse->pDrainOp);
+                pa_operation_unref(pPulse->pDrainOp);
+                pPulse->pDrainOp = NULL;
+            }
+            else
+            {
+                /* should return immediately */
+                pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0,
+                                                        stream_success_callback, pPulse));
+            }
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
         case VOICE_DISABLE:
-            /* Pause audio output. Note that we must return immediately from here
-             * so waiting until the buffers are flushed (trigger+drain) is not an
-             * option! It could be sufficient to cork the audio stream (we are
-             * called if the Pause bit of the AC97 x_CR register is set) but ALSA
-             * uses snd_pcm_drop() dropping all pending frames so we do the same
-             * here. */
+            /* Pause audio output (the Pause bit of the AC97 x_CR register is set).
+             * Note that we must return immediately from here! */
             pa_threaded_mainloop_lock(g_pMainLoop);
-            pulse_wait_for_operation(pa_stream_flush(pPulse->pStream,
-                                                     stream_success_callback, pPulse));
-            pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1,
-                                                    stream_success_callback, pPulse));
+            if (!pPulse->pDrainOp)
+            {
+                /* should return immediately */
+                pulse_wait_for_operation(pa_stream_trigger(pPulse->pStream,
+                                                           stream_success_callback, pPulse));
+                pPulse->pDrainOp = pa_stream_drain(pPulse->pStream,
+                                                   stream_drain_callback, pPulse);
+            }
             pa_threaded_mainloop_unlock(g_pMainLoop);
             break;
 
@@ -652,6 +699,7 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
     {
         case VOICE_ENABLE:
             pa_threaded_mainloop_lock(g_pMainLoop);
+            /* should return immediately */
             pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 0,
                                                     stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);
@@ -664,6 +712,7 @@ static int pulse_ctl_in (HWVoiceIn *hw, int cmd, ...)
                 pa_stream_drop(pPulse->pStream);
                 pPulse->pu8PeekBuf = NULL;
             }
+            /* should return immediately */
             pulse_wait_for_operation(pa_stream_cork(pPulse->pStream, 1,
                                                     stream_success_callback, pPulse));
             pa_threaded_mainloop_unlock(g_pMainLoop);

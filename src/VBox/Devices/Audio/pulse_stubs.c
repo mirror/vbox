@@ -182,6 +182,9 @@ PROXY_STUB_VOID(pa_operation_unref,
 PROXY_STUB     (pa_operation_get_state, pa_operation_state_t,
                 (pa_operation *o),
                 (o))
+PROXY_STUB_VOID(pa_operation_cancel,
+                (pa_operation *o),
+                (o))
 PROXY_STUB     (pa_strerror, const char*,
                 (int error),
                 (error))
@@ -240,6 +243,7 @@ static SHARED_FUNC SharedFuncs[] =
     ELEMENT(pa_channel_map_init_auto),
     ELEMENT(pa_operation_unref),
     ELEMENT(pa_operation_get_state),
+    ELEMENT(pa_operation_cancel),
     ELEMENT(pa_strerror),
     ELEMENT(pa_stream_readable_size)
 };
