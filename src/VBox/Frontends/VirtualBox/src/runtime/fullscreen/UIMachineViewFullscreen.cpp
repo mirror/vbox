@@ -73,7 +73,6 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 
     /* Initialization: */
     sltMachineStateChanged();
-    sltAdditionsStateChanged();
     sltMousePointerShapeChanged();
     sltMouseCapabilityChanged();
 }
@@ -128,6 +127,12 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
 {
     /* Check if we should restrict minimum size: */
     maybeRestrictMinimumSize();
+
+    /* Check if we should resize guest to fullscreen, all the
+     * required features will be tested in sltPerformGuestResize(...): */
+    if ((int)frameBuffer()->width() != availableGeometry().size().width() ||
+        (int)frameBuffer()->height() != availableGeometry().size().height())
+        sltPerformGuestResize(availableGeometry().size());
 }
 
 void UIMachineViewFullscreen::sltDesktopResized()
