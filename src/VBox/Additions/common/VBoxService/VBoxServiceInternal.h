@@ -167,7 +167,7 @@ extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 #endif /* RT_OS_WINDOWS */
 
 #ifdef VBOXSERVICE_MANAGEMENT
-extern uint32_t VBoxServiceBalloonQueryChunks();
+extern uint32_t VBoxServiceBalloonQueryChunks(void);
 #endif
 
 RT_C_DECLS_END
