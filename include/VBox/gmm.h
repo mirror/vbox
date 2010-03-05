@@ -184,6 +184,18 @@ typedef enum GMMACCOUNT
     GMMACCOUNT_32BIT_HACK = 0x7fffffff
 } GMMACCOUNT;
 
+/**
+ * Balloon action enum.
+ */
+typedef enum
+{
+    GMMBALLOONACTION_INVALID = 0,
+    GMMBALLOONACTION_INFLATE = 1,
+    GMMBALLOONACTION_DEFLATE = 2,
+    GMMBALLOONACTION_RESET   = 3,
+    /** hack forcing the size of the enum to 32-bits. */
+    GMMBALLOONACTION_MAKE_32BIT_HACK = 0x7fffffff
+} GMMBALLOONACTION;
 
 /**
  * A page descriptor for use when freeing pages.
@@ -273,8 +285,7 @@ GMMR0DECL(int)  GMMR0AllocatePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMM
 GMMR0DECL(int)  GMMR0AllocateLargePage(PVM pVM, VMCPUID idCpu, uint32_t cbPage, uint32_t *pIdPage, RTHCPHYS *pHCPhys);
 GMMR0DECL(int)  GMMR0FreePages(PVM pVM, VMCPUID idCpu, uint32_t cPages, PGMMFREEPAGEDESC paPages, GMMACCOUNT enmAccount);
 GMMR0DECL(int)  GMMR0FreeLargePage(PVM pVM, VMCPUID idCpu, uint32_t idPage);
-GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, uint32_t cBalloonedPages, uint32_t cPagesToFree, PGMMFREEPAGEDESC paPages, bool fCompleted);
-GMMR0DECL(int)  GMMR0DeflatedBalloon(PVM pVM, VMCPUID idCpu, uint32_t cPages);
+GMMR0DECL(int)  GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 GMMR0DECL(int)  GMMR0MapUnmapChunk(PVM pVM, VMCPUID idCpu, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR0DECL(int)  GMMR0SeedChunk(PVM pVM, VMCPUID idCpu, RTR3PTR pvR3);
 
@@ -359,7 +370,6 @@ typedef GMMFREEPAGESREQ *PGMMFREEPAGESREQ;
 
 GMMR0DECL(int)  GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq);
 
-
 /**
  * Request buffer for GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES.
  * @see GMMR0BalloonedPages.
@@ -367,11 +377,11 @@ GMMR0DECL(int)  GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
 typedef struct GMMBALLOONEDPAGESREQ
 {
     /** The header. */
-    SUPVMMR0REQHDR  Hdr;
+    SUPVMMR0REQHDR      Hdr;
     /** The number of ballooned pages. */
-    uint32_t        cBalloonedPages;
+    uint32_t            cBalloonedPages;
     /** Inflate or deflate the balloon. */
-    bool            fInflate;
+    GMMBALLOONACTION    enmAction;
 } GMMBALLOONEDPAGESREQ;
 /** Pointer to a GMMR0BalloonedPagesReq / VMMR0_DO_GMM_BALLOONED_PAGES request buffer. */
 typedef GMMBALLOONEDPAGESREQ *PGMMBALLOONEDPAGESREQ;
@@ -437,7 +447,7 @@ GMMR3DECL(int)  GMMR3AllocateLargePage(PVM pVM,  uint32_t cbPage);
 GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
-GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, bool fInflate, uint32_t cBalloonedPages);
+GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
 /** @} */
 #endif /* IN_RING3 */
 

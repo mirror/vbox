@@ -278,12 +278,12 @@ GMMR3DECL(void) GMMR3FreeAllocatedPages(PVM pVM, GMMALLOCATEPAGESREQ const *pAll
 /**
  * @see GMMR0BalloonedPages
  */
-GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, bool fInflate, uint32_t cBalloonedPages)
+GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages)
 {
     GMMBALLOONEDPAGESREQ Req;
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
-    Req.fInflate = fInflate;
+    Req.enmAction = enmAction;
     Req.cBalloonedPages = cBalloonedPages;
 
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
