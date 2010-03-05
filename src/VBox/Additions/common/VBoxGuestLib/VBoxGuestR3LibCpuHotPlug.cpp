@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, CPU hotplug.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, CPU Hot Plugging.
  */
 
 /*
