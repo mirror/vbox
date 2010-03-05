@@ -63,8 +63,10 @@ private:
     void prepareFilters();
     void prepareConnections();
     void prepareConsoleConnections();
+    //void prepareFullscreen() {}
 
     /* Cleanup routines: */
+    void cleanupFullscreen();
     //void cleanupConsoleConnections() {}
     //void cleanupConnections() {}
     //void cleanupFilters() {}

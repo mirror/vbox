@@ -62,8 +62,10 @@ private:
     void prepareFilters();
     void prepareConnections();
     void prepareConsoleConnections();
+    //void loadMachineViewSettings();
 
     /* Cleanup helpers: */
+    void saveMachineViewSettings();
     //void cleanupConsoleConnections() {}
     //void prepareConnections() {}
     //void cleanupFilters() {}
