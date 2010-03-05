@@ -183,7 +183,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_MEMORY;
     }
-    Assert(physAddr < UINT64_MAX);
+    Assert(!(physAddr & PAGE_OFFSET_MASK));
     pMemSolaris->Core.pv = virtAddr;
     pMemSolaris->Core.u.Phys.PhysBase = physAddr;
     pMemSolaris->Core.u.Phys.fAllocated = true;
@@ -209,8 +209,7 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
      if (!pMemSolaris)
          return VERR_NO_MEMORY;
 
-    if (PhysHighest == NIL_RTHCPHYS)
-        PhysHighest = UINT64_MAX - 1;
+     AssertCompile(NIL_RTHCPHYS == UINT64_MAX);
 
      /* Allocate physically contiguous memory aligned as specified. */
      uint64_t physAddr = PhysHighest;
@@ -220,7 +219,9 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
          rtR0MemObjDelete(&pMemSolaris->Core);
          return VERR_NO_CONT_MEMORY;
      }
-     Assert(physAddr < UINT64_MAX);
+     Assert(!(physAddr & PAGE_OFFSET_MASK));
+     Assert(physAddr < PhysHighest);
+     Assert(physAddr + cb <= PhysHighest);
      pMemSolaris->Core.pv = virtAddr;
      pMemSolaris->Core.u.Cont.Phys = physAddr;
      pMemSolaris->pvHandle = NULL;
