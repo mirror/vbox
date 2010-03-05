@@ -841,7 +841,7 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
     }
 
     /* Notify GMM about the balloon change. */
-    rc = GMMR3BalloonedPages(pVM, fInflate, cPages);
+    rc = GMMR3BalloonedPages(pVM, (fInflate) ? GMMBALLOONACTION_INFLATE : GMMBALLOONACTION_DEFLATE, cPages);
     pgmUnlock(pVM);
     AssertLogRelRC(rc);
     return rc;
@@ -1284,13 +1284,17 @@ int pgmR3PhysRamReset(PVM pVM)
 {
     Assert(PGMIsLockOwner(pVM));
 
+    /* Reset the memory balloon. */
+    int rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_RESET, 0);
+    AssertRC(rc);
+
     /*
      * We batch up pages that should be freed instead of calling GMM for
      * each and every one of them.
      */
     uint32_t            cPendingPages = 0;
     PGMMFREEPAGESREQ    pReq;
-    int rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
+    rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
     AssertLogRelRCReturn(rc, rc);
 
     /*
