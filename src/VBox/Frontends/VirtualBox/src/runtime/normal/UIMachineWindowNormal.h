@@ -102,6 +102,9 @@ private:
     //void cleanupMenu() {}
     //void cleanupConsoleConnections() {}
 
+    /* Other members: */
+    void showSimple();
+
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;
     /* Other QWidgets: */

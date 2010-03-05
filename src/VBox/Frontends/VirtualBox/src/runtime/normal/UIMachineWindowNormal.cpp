@@ -81,7 +81,7 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulon
     updateAppearanceOf(UIVisualElement_AllStuff);
 
     /* Show window: */
-    show();
+    showSimple();
 }
 
 UIMachineWindowNormal::~UIMachineWindowNormal()
@@ -572,5 +572,14 @@ void UIMachineWindowNormal::cleanupStatusBar()
     /* Stop LED-update timer: */
     m_pIdleTimer->stop();
     m_pIdleTimer->disconnect(SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
+}
+
+void UIMachineWindowNormal::showSimple()
+{
+    /* Diable auto centering: */
+    setAutoCenteringEnabled(false);
+
+    /* Just show window: */
+    show();
 }
 
