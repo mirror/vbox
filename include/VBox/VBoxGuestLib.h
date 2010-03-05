@@ -460,14 +460,14 @@ VBGLR3DECL(int)     VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, 
 
 /** @name VM Statistics
  * @{ */
-VBGLR3DECL(int) VbglR3StatQueryInterval(uint32_t *pu32Interval);
-VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq);
+VBGLR3DECL(int)     VbglR3StatQueryInterval(uint32_t *pu32Interval);
+VBGLR3DECL(int)     VbglR3StatReport(VMMDevReportGuestStats *pReq);
 /** @}  */
 
 /** @name Memory ballooning
  * @{ */
-VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3);
-VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate);
+VBGLR3DECL(int)     VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3);
+VBGLR3DECL(int)     VbglR3MemBalloonChange(void *pv, bool fInflate);
 /** @}  */
 
 # ifdef VBOX_WITH_GUEST_PROPS
