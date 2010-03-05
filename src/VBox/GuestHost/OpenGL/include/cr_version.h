@@ -121,4 +121,6 @@
 #define CR_EXT_framebuffer_object 1
 #define CR_EXT_compiled_vertex_array 1
 
+#define CR_ARB_pixel_buffer_object 1
+
 #endif /* CR_VERSION_H */

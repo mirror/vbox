@@ -128,3 +128,11 @@ GLint GL_GENERATE_MIPMAP_HINT GL_SGIS_generate_mipmap  g->hint.generateMipmap
 
 # GL_ARB_point_sprite
 GLboolean GL_POINT_SPRITE_ARB GL_ARB_point_sprite g->point.pointSprite
+
+# GL_ARB_vertex_buffer_object
+GLuint GL_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.arrayBuffer->name
+GLuint GL_ELEMENT_ARRAY_BUFFER_BINDING_ARB GL_ARB_vertex_buffer_object g->bufferobject.elementsBuffer->name
+
+# GL_ARB_pixel_buffer_object
+GLuint GL_PIXEL_PACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.packBuffer->name
+GLuint GL_PIXEL_UNPACK_BUFFER_BINDING_ARB GL_ARB_pixel_buffer_object g->bufferobject.unpackBuffer->name

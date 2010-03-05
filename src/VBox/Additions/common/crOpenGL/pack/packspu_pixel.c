@@ -183,17 +183,29 @@ void PACKSPU_APIENTRY packspu_ReadPixels( GLint x, GLint y, GLsizei width, GLsiz
     GET_THREAD(thread);
     ContextInfo *ctx = thread->currentContext;
     CRClientState *clientState = &(ctx->clientState->client);
-    int writeback;
-    pack_spu.ReadPixels++;
+    int writeback;    
+
     if (pack_spu.swap)
-        crPackReadPixelsSWAP( x, y, width, height, format, type, pixels,
-                            &(clientState->pack), &writeback );
+    {
+        crPackReadPixelsSWAP(x, y, width, height, format, type, pixels,
+                             &(clientState->pack), &writeback);
+    }
     else
-        crPackReadPixels( x, y, width, height, format, type, pixels,
-                            &(clientState->pack), &writeback );
-    packspuFlush( (void *) thread );
-    while (pack_spu.ReadPixels) 
-        crNetRecv();
+    {
+        crPackReadPixels(x, y, width, height, format, type, pixels,
+                         &(clientState->pack), &writeback);
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        pack_spu.ReadPixels++;
+
+        packspuFlush((void *) thread);
+        while (pack_spu.ReadPixels) 
+            crNetRecv();
+    }
 }
 
 void PACKSPU_APIENTRY packspu_CopyPixels( GLint x, GLint y, GLsizei width, GLsizei height, GLenum type )
@@ -224,7 +236,7 @@ void PACKSPU_APIENTRY packspu_TexImage1D( GLenum target, GLint level, GLint inte
 
     if (!packspu_CheckTexImageParams(internalformat, format, type))
     {
-        if (pixels)
+        if (pixels || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
         {
             crWarning("packspu_TexImage1D invalid internalFormat(%x)/format(%x)/type(%x)", internalformat, format, type);
             return;
@@ -247,7 +259,7 @@ void PACKSPU_APIENTRY packspu_TexImage2D( GLenum target, GLint level, GLint inte
 
     if (!packspu_CheckTexImageParams(internalformat, format, type))
     {
-        if (pixels)
+        if (pixels || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
         {
             crWarning("packspu_TexImage2D invalid internalFormat(%x)/format(%x)/type(%x)", internalformat, format, type);
             return;
@@ -358,7 +370,37 @@ void PACKSPU_APIENTRY packspu_GetTexImage (GLenum target, GLint level, GLenum fo
         crPackGetTexImageSWAP( target, level, format, type, pixels, &(clientState->pack), &writeback );
     else
         crPackGetTexImage( target, level, format, type, pixels, &(clientState->pack), &writeback );
-    packspuFlush( (void *) thread );
-    while (writeback) 
-        crNetRecv();
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback) 
+            crNetRecv();
+    }
+}
+
+void PACKSPU_APIENTRY packspu_GetCompressedTexImageARB( GLenum target, GLint level, GLvoid * img )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    if (pack_spu.swap)
+    {
+        crPackGetCompressedTexImageARBSWAP( target, level, img, &writeback );
+    }
+    else
+    {
+        crPackGetCompressedTexImageARB( target, level, img, &writeback );
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (!crStateIsBufferBound(GL_PIXEL_PACK_BUFFER_ARB))
+#endif
+    {
+        packspuFlush( (void *) thread );
+        while (writeback)
+            crNetRecv();
+    }
 }

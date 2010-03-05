@@ -10,51 +10,42 @@
 #include "packspu.h"
 #include "packspu_proto.h"
 
+static void packspu_GetHostBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size, void * data )
+{
+    GET_THREAD(thread);
+    int writeback = 1;
+
+    crPackGetBufferSubDataARB(target, offset, size, data, &writeback);
+
+    packspuFlush((void *) thread);
+
+    while (writeback)
+        crNetRecv();
+}
 
 void * PACKSPU_APIENTRY
 packspu_MapBufferARB( GLenum target, GLenum access )
 {
     GET_CONTEXT(ctx);
     void *buffer;
-#if 0
-    CRBufferObject *bufObj;
-    GLint size = -1;
+    CRBufferObject *pBufObj;
 
-    (void) crStateMapBufferARB( target, access );
-
-    crStateGetBufferParameterivARB(target, GL_BUFFER_SIZE_ARB, &size);
-    if (size <= 0)
-        return NULL;
-
-    if (crStateGetError()) {
-        /* something may have gone wrong already */
-        return NULL;
-    }
-
-    /* allocate buffer space */
-    buffer = crAlloc(size);
-    if (!buffer) {
-        return NULL;
-    }
-
-    /* update state tracker info */
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        bufObj = ctx->clientState->bufferobject.arrayBuffer;
-    }
-    else {
-        CRASSERT(target == GL_ELEMENT_ARRAY_BUFFER_ARB);
-        bufObj = ctx->clientState->bufferobject.elementsBuffer;
-    }
-    bufObj->pointer = buffer;
-
-    /* Get current buffer data from server.
-     * Ideally, if we could detect that the entire buffer was being
-     * rewritten, we wouldn't have to fetch the current data here.
-     */
-    packspu_GetBufferSubDataARB(target, 0, bufObj->size, buffer);
-#else
     CRASSERT(GL_TRUE == ctx->clientState->bufferobject.retainBufferData);
-    buffer = crStateMapBufferARB(target, access); 
+    buffer = crStateMapBufferARB(target, access);
+
+#ifdef CR_ARB_pixel_buffer_object
+    if (buffer)
+    {
+        pBufObj = crStateGetBoundBufferObject(target, &ctx->clientState->bufferobject);
+        CRASSERT(pBufObj);
+
+        if (pBufObj->bResyncOnRead && 
+            access != GL_WRITE_ONLY_ARB)
+        {
+            /*fetch data from host side*/
+            packspu_GetHostBufferSubDataARB(target, 0, pBufObj->size, buffer);
+        }
+    }
 #endif
 
     return buffer;
@@ -62,6 +53,20 @@ packspu_MapBufferARB( GLenum target, GLenum access )
 
 void PACKSPU_APIENTRY packspu_GetBufferSubDataARB( GLenum target, GLintptrARB offset, GLsizeiptrARB size, void * data )
 {
+    GET_CONTEXT(ctx);
+
+#ifdef CR_ARB_pixel_buffer_object
+    CRBufferObject *pBufObj;
+
+    pBufObj = crStateGetBoundBufferObject(target, &ctx->clientState->bufferobject);
+
+    if (pBufObj && pBufObj->bResyncOnRead)
+    {
+        packspu_GetHostBufferSubDataARB(target, offset, size, data);
+        return;
+    }
+#endif
+    
     crStateGetBufferSubDataARB(target, offset, size, data);
 }
 
@@ -74,13 +79,7 @@ packspu_UnmapBufferARB( GLenum target )
 #if CR_ARB_vertex_buffer_object
     CRBufferObject *bufObj;
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        bufObj = ctx->clientState->bufferobject.arrayBuffer;
-    }
-    else {
-        CRASSERT(target == GL_ELEMENT_ARRAY_BUFFER_ARB);
-        bufObj = ctx->clientState->bufferobject.elementsBuffer;
-    }
+    bufObj = crStateGetBoundBufferObject(target, &ctx->clientState->bufferobject);
 
     /* send new buffer contents to server */
     crPackBufferDataARB( target, bufObj->size, bufObj->pointer, bufObj->usage );
@@ -122,7 +121,6 @@ packspu_GetBufferParameterivARB( GLenum target, GLenum pname, GLint * params )
 {
     crStateGetBufferParameterivARB( target, pname, params );
 }
-
 
 /*
  * Need to update our local state for vertex arrays.

@@ -42,5 +42,5 @@ void crUnpackReadPixels( void )
 
 	cr_unpackDispatch.ReadPixels( x, y, width, height, format, type, pixels);
 
-	INCR_VAR_PTR();
+	INCR_DATA_PTR(48+sizeof(CRNetworkPointer));
 }

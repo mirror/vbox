@@ -22,6 +22,10 @@ extern "C" {
  */
 #define CR_STATE_NO_TEXTURE_IMAGE_STORE
 
+#if defined(CR_ARB_pixel_buffer_object) && !defined(CR_STATE_NO_TEXTURE_IMAGE_STORE)
+#error CR_ARB_pixel_buffer_object not supported without CR_STATE_NO_TEXTURE_IMAGE_STORE
+#endif
+
 #define CR_MAX_MIPMAP_LEVELS 20
 
 typedef struct {

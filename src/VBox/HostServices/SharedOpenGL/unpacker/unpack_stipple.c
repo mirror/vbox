@@ -8,8 +8,18 @@
 
 void crUnpackPolygonStipple( void  )
 {
-	GLubyte *mask = DATA_POINTER( 0, GLubyte );
+    int nodata = READ_DATA(0, int);
+    GLubyte *mask;
 
-	cr_unpackDispatch.PolygonStipple( mask );
-	INCR_DATA_PTR( 32*32/8 );
+    if (nodata)
+        mask = (void*) READ_DATA(4, uintptr_t);
+    else
+        mask = DATA_POINTER( 4, GLubyte );
+
+    cr_unpackDispatch.PolygonStipple(mask);
+
+    if (nodata)
+        INCR_DATA_PTR(8);
+    else
+        INCR_DATA_PTR(4 + 32*32/8);
 }

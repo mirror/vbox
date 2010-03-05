@@ -9,25 +9,26 @@
 #include "cr_error.h"
 #include "cr_string.h"
 #include "cr_version.h"
+#include "cr_glstate.h"
 
 void PACK_APIENTRY
 crPackTexImage1D(GLenum target, GLint level,
-                                 GLint internalformat, GLsizei width, GLint border,
-                                 GLenum format, GLenum type, const GLvoid * pixels,
-                                 const CRPixelPackState * unpackstate)
+                 GLint internalformat, GLsizei width, GLint border,
+                 GLenum format, GLenum type, const GLvoid * pixels,
+                 const CRPixelPackState * unpackstate)
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (pixels == NULL);
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     packet_length =
         sizeof(target) +
         sizeof(level) +
         sizeof(internalformat) +
         sizeof(width) +
-        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int);
+        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
 
-    if (pixels)
+    if (!noimagedata)
     {
         packet_length += crImageSize(format, type, width, 1);
     }
@@ -40,12 +41,13 @@ crPackTexImage1D(GLenum target, GLint level,
     WRITE_DATA(16, GLint, border);
     WRITE_DATA(20, GLenum, format);
     WRITE_DATA(24, GLenum, type);
-    WRITE_DATA(28, int, isnull);
+    WRITE_DATA(28, int, noimagedata);
+    WRITE_DATA(32, uintptr_t, (uintptr_t) pixels);
 
-    if (pixels)
+    if (!noimagedata)
     {
-        crPixelCopy1D((void *) (data_ptr + 32), format, type,
-                                    pixels, format, type, width, unpackstate);
+        crPixelCopy1D((void *) (data_ptr + 36), format, type,
+                      pixels, format, type, width, unpackstate);
     }
 
     crHugePacket(CR_TEXIMAGE1D_OPCODE, data_ptr);
@@ -54,13 +56,13 @@ crPackTexImage1D(GLenum target, GLint level,
 
 void PACK_APIENTRY
 crPackTexImage2D(GLenum target, GLint level,
-                                 GLint internalformat, GLsizei width, GLsizei height,
-                                 GLint border, GLenum format, GLenum type,
-                                 const GLvoid * pixels, const CRPixelPackState * unpackstate)
+                 GLint internalformat, GLsizei width, GLsizei height,
+                 GLint border, GLenum format, GLenum type,
+                 const GLvoid * pixels, const CRPixelPackState * unpackstate)
 {
     unsigned char *data_ptr;
     int packet_length;
-    const int isnull = (pixels == NULL);
+    const int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     const int is_distrib = ((type == GL_TRUE) || (type == GL_FALSE));
     int distrib_buf_len = 0;
 
@@ -70,9 +72,9 @@ crPackTexImage2D(GLenum target, GLint level,
         sizeof(internalformat) +
         sizeof(width) +
         sizeof(height) +
-        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int);
+        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if (is_distrib)
         {
@@ -101,18 +103,19 @@ crPackTexImage2D(GLenum target, GLint level,
     WRITE_DATA(20, GLint, border);
     WRITE_DATA(24, GLenum, format);
     WRITE_DATA(28, GLenum, type);
-    WRITE_DATA(32, int, isnull);
+    WRITE_DATA(32, int, noimagedata);
+    WRITE_DATA(36, uintptr_t, (uintptr_t) pixels);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if (is_distrib)
         {
-            crMemcpy((void *) (data_ptr + 36), pixels, distrib_buf_len);
+            crMemcpy((void *) (data_ptr + 40), pixels, distrib_buf_len);
         }
         else
         {
             crPixelCopy2D(width, height,
-                                        (void *) (data_ptr + 36), /* dest image addr */
+                                        (void *) (data_ptr + 40), /* dest image addr */
                                         format, type,             /* dest image format/type */
                                         NULL,   /* dst packing (use default params) */
                                         pixels,       /* src image addr */
@@ -126,15 +129,16 @@ crPackTexImage2D(GLenum target, GLint level,
 }
 
 #if defined( GL_EXT_texture3D )
-void PACK_APIENTRY crPackTexImage3DEXT(GLenum target, GLint level,
-                GLenum internalformat,
-                GLsizei width, GLsizei height, GLsizei depth, GLint border,
-                GLenum format, GLenum type, const GLvoid *pixels,
-                const CRPixelPackState *unpackstate )
+void PACK_APIENTRY 
+crPackTexImage3DEXT(GLenum target, GLint level,
+                    GLenum internalformat,
+                    GLsizei width, GLsizei height, GLsizei depth, GLint border,
+                    GLenum format, GLenum type, const GLvoid *pixels,
+                    const CRPixelPackState *unpackstate )
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (pixels == NULL);
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     int is_distrib = ( (type == GL_TRUE) || (type == GL_FALSE) ) ;
     int distrib_buf_len = 0;
     int tex_size = 0;
@@ -149,9 +153,9 @@ void PACK_APIENTRY crPackTexImage3DEXT(GLenum target, GLint level,
         sizeof( border ) +
         sizeof( format ) +
         sizeof( type ) +
-        sizeof( int );
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if ( is_distrib )
         {
@@ -176,18 +180,19 @@ void PACK_APIENTRY crPackTexImage3DEXT(GLenum target, GLint level,
     WRITE_DATA( 24, GLint, border );
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLenum, type );
-    WRITE_DATA( 36, int, isnull );
+    WRITE_DATA( 36, int, noimagedata );
+    WRITE_DATA( 40, uintptr_t, (uintptr_t) pixels);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if ( is_distrib )
         {
-            crMemcpy( (void*)(data_ptr + 40), pixels, distrib_buf_len ) ;
+            crMemcpy( (void*)(data_ptr + 44), pixels, distrib_buf_len ) ;
         }
         else
         {               
             crPixelCopy3D( width, height, depth,
-                                         (void *)(data_ptr + 40), format, type, NULL,
+                                         (void *)(data_ptr + 44), format, type, NULL,
                                          pixels, format, type, unpackstate );
         }
     }
@@ -198,17 +203,18 @@ void PACK_APIENTRY crPackTexImage3DEXT(GLenum target, GLint level,
 #endif /* GL_EXT_texture3D */
 
 #ifdef CR_OPENGL_VERSION_1_2
-void PACK_APIENTRY crPackTexImage3D(GLenum target, GLint level,
-                                                                        GLint internalformat,
-                                                                        GLsizei width, GLsizei height,
-                                                                        GLsizei depth, GLint border,
-                                                                        GLenum format, GLenum type,
-                                                                        const GLvoid *pixels,
-                                                                        const CRPixelPackState *unpackstate )
+void PACK_APIENTRY 
+crPackTexImage3D(GLenum target, GLint level,
+                 GLint internalformat,
+                 GLsizei width, GLsizei height,
+                 GLsizei depth, GLint border,
+                 GLenum format, GLenum type,
+                 const GLvoid *pixels,
+                 const CRPixelPackState *unpackstate )
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (pixels == NULL);
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     int is_distrib = ( (type == GL_TRUE) || (type == GL_FALSE) ) ;
     int distrib_buf_len = 0;
     int tex_size = 0;
@@ -223,9 +229,9 @@ void PACK_APIENTRY crPackTexImage3D(GLenum target, GLint level,
         sizeof( border ) +
         sizeof( format ) +
         sizeof( type ) +
-        sizeof( int );
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if ( is_distrib )
         {
@@ -250,18 +256,19 @@ void PACK_APIENTRY crPackTexImage3D(GLenum target, GLint level,
     WRITE_DATA( 24, GLint, border );
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLenum, type );
-    WRITE_DATA( 36, int, isnull );
+    WRITE_DATA( 36, int, noimagedata );
+    WRITE_DATA( 40, uintptr_t, (uintptr_t) pixels);
 
-    if (pixels)
+    if (!noimagedata)
     {
         if ( is_distrib )
         {
-            crMemcpy( (void*)(data_ptr + 40), pixels, distrib_buf_len ) ;
+            crMemcpy( (void*)(data_ptr + 44), pixels, distrib_buf_len ) ;
         }
         else
         {               
             crPixelCopy3D( width, height, depth,
-                                         (void *)(data_ptr + 40), format, type, NULL,
+                                         (void *)(data_ptr + 44), format, type, NULL,
                                          pixels, format, type, unpackstate );
         }
     }
@@ -535,13 +542,14 @@ crPackTexParameteri(GLenum target, GLenum pname, GLint param)
 #ifdef CR_OPENGL_VERSION_1_2
 void PACK_APIENTRY
 crPackTexSubImage3D(GLenum target, GLint level,
-                                        GLint xoffset, GLint yoffset, GLint zoffset,
-                                        GLsizei width, GLsizei height, GLsizei depth,
-                                        GLenum format, GLenum type, const GLvoid * pixels,
-                                        const CRPixelPackState * unpackstate)
+                    GLint xoffset, GLint yoffset, GLint zoffset,
+                    GLsizei width, GLsizei height, GLsizei depth,
+                    GLenum format, GLenum type, const GLvoid * pixels,
+                    const CRPixelPackState * unpackstate)
 {
     unsigned char *data_ptr;
     int packet_length;
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     packet_length =
         sizeof(target) +
@@ -553,7 +561,12 @@ crPackTexSubImage3D(GLenum target, GLint level,
         sizeof(height) +
         sizeof(depth) +
         sizeof(format) +
-        sizeof(type) + crTextureSize(format, type, width, height, depth);
+        sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+
+    if (!noimagedata)
+    {
+        packet_length += crTextureSize(format, type, width, height, depth);
+    }
 
     data_ptr = (unsigned char *) crPackAlloc(packet_length);
     WRITE_DATA(0, GLenum, target);
@@ -566,9 +579,14 @@ crPackTexSubImage3D(GLenum target, GLint level,
     WRITE_DATA(28, GLsizei, depth);
     WRITE_DATA(32, GLenum, format);
     WRITE_DATA(36, GLenum, type);
+    WRITE_DATA(40, GLint, noimagedata);
+    WRITE_DATA(44, uintptr_t, (uintptr_t) pixels);
 
-    crPixelCopy3D(width, height, depth, (GLvoid *) (data_ptr + 40), format, type, NULL, /* dst */
-                                pixels, format, type, unpackstate); /* src */
+    if (!noimagedata)
+    {
+        crPixelCopy3D(width, height, depth, (GLvoid *) (data_ptr + 48), format, type, NULL, /* dst */
+                      pixels, format, type, unpackstate); /* src */
+    }
 
     crHugePacket(CR_TEXSUBIMAGE3D_OPCODE, data_ptr);
     crPackFree( data_ptr );
@@ -577,13 +595,14 @@ crPackTexSubImage3D(GLenum target, GLint level,
 
 void PACK_APIENTRY
 crPackTexSubImage2D(GLenum target, GLint level,
-                                        GLint xoffset, GLint yoffset, GLsizei width,
-                                        GLsizei height, GLenum format, GLenum type,
-                                        const GLvoid * pixels,
-                                        const CRPixelPackState * unpackstate)
+                    GLint xoffset, GLint yoffset, GLsizei width,
+                    GLsizei height, GLenum format, GLenum type,
+                    const GLvoid * pixels,
+                    const CRPixelPackState * unpackstate)
 {
     unsigned char *data_ptr;
     int packet_length;
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     packet_length =
         sizeof(target) +
@@ -592,7 +611,12 @@ crPackTexSubImage2D(GLenum target, GLint level,
         sizeof(yoffset) +
         sizeof(width) +
         sizeof(height) +
-        sizeof(format) + sizeof(type) + crImageSize(format, type, width, height);
+        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+
+    if (!noimagedata)
+    {
+        packet_length += crImageSize(format, type, width, height);
+    }
 
     data_ptr = (unsigned char *) crPackAlloc(packet_length);
     WRITE_DATA(0, GLenum, target);
@@ -603,9 +627,14 @@ crPackTexSubImage2D(GLenum target, GLint level,
     WRITE_DATA(20, GLsizei, height);
     WRITE_DATA(24, GLenum, format);
     WRITE_DATA(28, GLenum, type);
+    WRITE_DATA(32, GLint, noimagedata);
+    WRITE_DATA(36, uintptr_t, (uintptr_t) pixels);
 
-    crPixelCopy2D(width, height, (GLvoid *) (data_ptr + 32), format, type, NULL,    /* dst */
-                                pixels, format, type, unpackstate); /* src */
+    if (!noimagedata)
+    {
+        crPixelCopy2D(width, height, (GLvoid *) (data_ptr + 40), format, type, NULL,    /* dst */
+                      pixels, format, type, unpackstate); /* src */
+    }
 
     crHugePacket(CR_TEXSUBIMAGE2D_OPCODE, data_ptr);
     crPackFree( data_ptr );
@@ -619,13 +648,19 @@ crPackTexSubImage1D(GLenum target, GLint level,
 {
     unsigned char *data_ptr;
     int packet_length;
+    int noimagedata = (pixels == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     packet_length =
         sizeof(target) +
         sizeof(level) +
         sizeof(xoffset) +
         sizeof(width) +
-        sizeof(format) + sizeof(type) + crImageSize(format, type, width, 1);
+        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+
+    if (!noimagedata)
+    {
+        packet_length += crImageSize(format, type, width, 1);
+    }
 
     data_ptr = (unsigned char *) crPackAlloc(packet_length);
     WRITE_DATA(0, GLenum, target);
@@ -634,9 +669,14 @@ crPackTexSubImage1D(GLenum target, GLint level,
     WRITE_DATA(12, GLsizei, width);
     WRITE_DATA(16, GLenum, format);
     WRITE_DATA(20, GLenum, type);
+    WRITE_DATA(24, GLint, noimagedata);
+    WRITE_DATA(28, uintptr_t, (uintptr_t) pixels);
 
-    crPixelCopy1D((GLvoid *) (data_ptr + 24), format, type,
-                                pixels, format, type, width, unpackstate);
+    if (!noimagedata)
+    {
+        crPixelCopy1D((GLvoid *) (data_ptr + 32), format, type,
+                      pixels, format, type, width, unpackstate);
+    }
 
     crHugePacket(CR_TEXSUBIMAGE1D_OPCODE, data_ptr);
     crPackFree( data_ptr );
@@ -678,7 +718,7 @@ void PACK_APIENTRY crPackCompressedTexImage1DARB( GLenum target, GLint level, GL
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -692,9 +732,9 @@ void PACK_APIENTRY crPackCompressedTexImage1DARB( GLenum target, GLint level, GL
         sizeof( width ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -708,10 +748,11 @@ void PACK_APIENTRY crPackCompressedTexImage1DARB( GLenum target, GLint level, GL
     WRITE_DATA( 16, GLsizei, width );
     WRITE_DATA( 20, GLint, border );
     WRITE_DATA( 24, GLsizei, imagesize );
-    WRITE_DATA( 28, int, isnull );
+    WRITE_DATA( 28, int, noimagedata );
+    WRITE_DATA( 32, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 32), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 36), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );
@@ -722,7 +763,7 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -737,9 +778,9 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
         sizeof( height ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -755,10 +796,11 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
     WRITE_DATA( 20, GLsizei, height );
     WRITE_DATA( 24, GLint, border );
     WRITE_DATA( 28, GLsizei, imagesize );
-    WRITE_DATA( 32, int, isnull );
+    WRITE_DATA( 32, int, noimagedata );
+    WRITE_DATA( 36, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 36), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 40), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );
@@ -769,7 +811,7 @@ void PACK_APIENTRY crPackCompressedTexImage3DARB( GLenum target, GLint level, GL
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -785,9 +827,9 @@ void PACK_APIENTRY crPackCompressedTexImage3DARB( GLenum target, GLint level, GL
         sizeof( depth ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -802,10 +844,11 @@ void PACK_APIENTRY crPackCompressedTexImage3DARB( GLenum target, GLint level, GL
     WRITE_DATA( 24, GLsizei, depth );
     WRITE_DATA( 28, GLint, border );
     WRITE_DATA( 32, GLsizei, imagesize );
-    WRITE_DATA( 36, int, isnull );
+    WRITE_DATA( 36, int, noimagedata );
+    WRITE_DATA( 40, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 40), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 44), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );
@@ -816,7 +859,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage1DARB( GLenum target, GLint level,
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -830,9 +873,9 @@ void PACK_APIENTRY crPackCompressedTexSubImage1DARB( GLenum target, GLint level,
         sizeof( width ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -845,10 +888,11 @@ void PACK_APIENTRY crPackCompressedTexSubImage1DARB( GLenum target, GLint level,
     WRITE_DATA( 16, GLsizei, width );
     WRITE_DATA( 20, GLenum, format );
     WRITE_DATA( 24, GLsizei, imagesize );
-    WRITE_DATA( 28, int, isnull );
+    WRITE_DATA( 28, int, noimagedata );
+    WRITE_DATA( 32, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 32), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 36), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );
@@ -859,7 +903,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage2DARB( GLenum target, GLint level,
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -875,9 +919,9 @@ void PACK_APIENTRY crPackCompressedTexSubImage2DARB( GLenum target, GLint level,
         sizeof( height ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -892,10 +936,11 @@ void PACK_APIENTRY crPackCompressedTexSubImage2DARB( GLenum target, GLint level,
     WRITE_DATA( 24, GLsizei, height );
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLsizei, imagesize );
-    WRITE_DATA( 36, int, isnull );
+    WRITE_DATA( 36, int, noimagedata );
+    WRITE_DATA( 40, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 40), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 44), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );
@@ -906,7 +951,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
 {
     unsigned char *data_ptr;
     int packet_length;
-    int isnull = (data == NULL);
+    int noimagedata = (data == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     /* All extended opcodes have their first 8 bytes predefined:
      * the first four indicate the packet size, and the next four
@@ -924,9 +969,9 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
         sizeof( depth ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ); /* isnull */
+        sizeof( int ) + sizeof(uintptr_t);
 
-    if (data)
+    if (!noimagedata)
     {
         packet_length += imagesize;
     }
@@ -943,10 +988,11 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
     WRITE_DATA( 32, GLsizei, depth );
     WRITE_DATA( 36, GLenum, format );
     WRITE_DATA( 40, GLsizei, imagesize );
-    WRITE_DATA( 44, int, isnull );
+    WRITE_DATA( 44, int, noimagedata );
+    WRITE_DATA( 48, uintptr_t, (uintptr_t) data);
 
-    if (data) {
-        crMemcpy( (void *)(data_ptr + 48), (void *)data, imagesize);
+    if (!noimagedata) {
+        crMemcpy( (void *)(data_ptr + 52), (void *)data, imagesize);
     }
 
     crHugePacket( CR_EXTEND_OPCODE, data_ptr );

@@ -10,7 +10,13 @@ void crUnpackPixelMapfv( void  )
 {
     GLenum map = READ_DATA( sizeof( int ) + 0, GLenum );
     GLsizei mapsize = READ_DATA( sizeof( int ) + 4, GLsizei );
-    GLfloat *values = DATA_POINTER( sizeof( int ) + 8, GLfloat );
+    int nodata = READ_DATA( sizeof(int) + 8, int);
+    GLfloat *values;
+
+    if (nodata)
+        values = (GLfloat*) READ_DATA(sizeof(int) + 12, uintptr_t);
+    else
+        values = DATA_POINTER( sizeof( int ) + 16, GLfloat );
 
     cr_unpackDispatch.PixelMapfv( map, mapsize, values );
     INCR_VAR_PTR();
@@ -20,7 +26,13 @@ void crUnpackPixelMapuiv( void  )
 {
     GLenum map = READ_DATA( sizeof( int ) + 0, GLenum );
     GLsizei mapsize = READ_DATA( sizeof( int ) + 4, GLsizei );
-    GLuint *values = DATA_POINTER( sizeof( int ) + 8, GLuint );
+    int nodata = READ_DATA( sizeof(int) + 8, int);
+    GLuint *values;
+
+    if (nodata)
+        values = (GLuint*) READ_DATA(sizeof(int) + 12, uintptr_t);
+    else
+        values = DATA_POINTER( sizeof( int ) + 16, GLuint );
         
     cr_unpackDispatch.PixelMapuiv( map, mapsize, values );
     INCR_VAR_PTR();
@@ -30,7 +42,13 @@ void crUnpackPixelMapusv( void  )
 {
     GLenum map = READ_DATA( sizeof( int ) + 0, GLenum );
     GLsizei mapsize = READ_DATA( sizeof( int ) + 4, GLsizei );
-    GLushort *values = DATA_POINTER( sizeof( int ) + 8, GLushort );
+    int nodata = READ_DATA( sizeof(int) + 8, int);
+    GLushort *values;
+
+    if (nodata)
+        values = (GLushort*) READ_DATA(sizeof(int) + 12, uintptr_t);
+    else
+        values = DATA_POINTER( sizeof( int ) + 16, GLushort );
 
     cr_unpackDispatch.PixelMapusv( map, mapsize, values );
     INCR_VAR_PTR();

@@ -207,6 +207,7 @@ void STATE_APIENTRY crStatePixelMapfv (GLenum map, GLint mapsize, const GLfloat 
     CRStateBits *sb = GetCurrentBits();
     CRPixelBits *pb = &(sb->pixel);
     GLint i;
+    GLboolean unpackbuffer = crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
 
     if (g->current.inBeginEnd) {
         crStateError(__LINE__, __FILE__, GL_INVALID_OPERATION, "PixelMap called in Begin/End");
@@ -227,67 +228,77 @@ void STATE_APIENTRY crStatePixelMapfv (GLenum map, GLint mapsize, const GLfloat 
     switch (map) {
     case GL_PIXEL_MAP_S_TO_S:
         p->mapStoSsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            p->mapStoS[i] = (GLint) values[i];
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                p->mapStoS[i] = (GLint) values[i];
+            }
         break;
     case GL_PIXEL_MAP_I_TO_I:
         p->mapItoIsize = mapsize;
+        if (!unpackbuffer)
         for (i=0;i<mapsize;i++) {
             p->mapItoI[i] = (GLint) values[i];
         }
         break;
     case GL_PIXEL_MAP_I_TO_R:
         p->mapItoRsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
-            p->mapItoR[i] = val;
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
+                p->mapItoR[i] = val;
+            }
         break;
     case GL_PIXEL_MAP_I_TO_G:
         p->mapItoGsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
-            p->mapItoG[i] = val;
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
+                p->mapItoG[i] = val;
+            }
         break;
     case GL_PIXEL_MAP_I_TO_B:
         p->mapItoBsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-                    GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
-            p->mapItoB[i] = val;
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
+                p->mapItoB[i] = val;
+            }
         break;
     case GL_PIXEL_MAP_I_TO_A:
         p->mapItoAsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-                    GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
-            p->mapItoA[i] = val;
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                GLfloat val = CLAMP( values[i], 0.0F, 1.0F );
+                p->mapItoA[i] = val;
+            }
         break;
     case GL_PIXEL_MAP_R_TO_R:
         p->mapRtoRsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            p->mapRtoR[i] = CLAMP( values[i], 0.0F, 1.0F );
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                p->mapRtoR[i] = CLAMP( values[i], 0.0F, 1.0F );
+            }
         break;
     case GL_PIXEL_MAP_G_TO_G:
         p->mapGtoGsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            p->mapGtoG[i] = CLAMP( values[i], 0.0F, 1.0F );
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                p->mapGtoG[i] = CLAMP( values[i], 0.0F, 1.0F );
+            }
         break;
     case GL_PIXEL_MAP_B_TO_B:
         p->mapBtoBsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            p->mapBtoB[i] = CLAMP( values[i], 0.0F, 1.0F );
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                p->mapBtoB[i] = CLAMP( values[i], 0.0F, 1.0F );
+            }
         break;
     case GL_PIXEL_MAP_A_TO_A:
         p->mapAtoAsize = mapsize;
-        for (i=0;i<mapsize;i++) {
-            p->mapAtoA[i] = CLAMP( values[i], 0.0F, 1.0F );
-        }
+        if (!unpackbuffer)
+            for (i=0;i<mapsize;i++) {
+                p->mapAtoA[i] = CLAMP( values[i], 0.0F, 1.0F );
+            }
         break;
     default:
         crStateError(__LINE__, __FILE__, GL_INVALID_VALUE, "PixelMap(map)");
@@ -300,36 +311,52 @@ void STATE_APIENTRY crStatePixelMapfv (GLenum map, GLint mapsize, const GLfloat 
 
 void STATE_APIENTRY crStatePixelMapuiv (GLenum map, GLint mapsize, const GLuint * values)
 {
-   GLfloat fvalues[CR_MAX_PIXEL_MAP_TABLE];
-   GLint i;
-   if (map==GL_PIXEL_MAP_I_TO_I || map==GL_PIXEL_MAP_S_TO_S) {
-      for (i=0;i<mapsize;i++) {
-         fvalues[i] = (GLfloat) values[i];
-      }
-   }
-   else {
-      for (i=0;i<mapsize;i++) {
-         fvalues[i] = values[i] / 4294967295.0F;
-      }
-   }
-   crStatePixelMapfv(map, mapsize, fvalues);
+    GLfloat fvalues[CR_MAX_PIXEL_MAP_TABLE];
+    GLint i;
+
+    if (!crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        if (map==GL_PIXEL_MAP_I_TO_I || map==GL_PIXEL_MAP_S_TO_S) {
+           for (i=0;i<mapsize;i++) {
+              fvalues[i] = (GLfloat) values[i];
+           }
+        }
+        else {
+           for (i=0;i<mapsize;i++) {
+              fvalues[i] = values[i] / 4294967295.0F;
+           }
+        }
+        crStatePixelMapfv(map, mapsize, fvalues);
+    }
+    else
+    {
+        crStatePixelMapfv(map, mapsize, (const GLfloat*) values);
+    }
 }
  
 void STATE_APIENTRY crStatePixelMapusv (GLenum map, GLint mapsize, const GLushort * values)
 {
-   GLfloat fvalues[CR_MAX_PIXEL_MAP_TABLE];
-   GLint i;
-   if (map==GL_PIXEL_MAP_I_TO_I || map==GL_PIXEL_MAP_S_TO_S) {
-      for (i=0;i<mapsize;i++) {
-         fvalues[i] = (GLfloat) values[i];
-      }
-   }
-   else {
-      for (i=0;i<mapsize;i++) {
-         fvalues[i] = values[i] / 65535.0F;
-      }
-   }
-   crStatePixelMapfv(map, mapsize, fvalues);
+    GLfloat fvalues[CR_MAX_PIXEL_MAP_TABLE];
+    GLint i;
+
+    if (!crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB))
+    {
+        if (map==GL_PIXEL_MAP_I_TO_I || map==GL_PIXEL_MAP_S_TO_S) {
+           for (i=0;i<mapsize;i++) {
+              fvalues[i] = (GLfloat) values[i];
+           }
+        }
+        else {
+           for (i=0;i<mapsize;i++) {
+              fvalues[i] = values[i] / 65535.0F;
+           }
+        }
+        crStatePixelMapfv(map, mapsize, fvalues);
+    }
+    else
+    {
+        crStatePixelMapfv(map, mapsize, (const GLfloat*) values);
+    }
 }
 
  

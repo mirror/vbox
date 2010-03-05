@@ -93,6 +93,9 @@ static const char *crExtensions =
 #ifdef CR_ARB_vertex_buffer_object
 	"GL_ARB_vertex_buffer_object "
 #endif
+#ifdef CR_ARB_pixel_buffer_object
+    "GL_ARB_pixel_buffer_object "
+#endif
 #ifdef CR_ARB_vertex_program
 	"GL_ARB_vertex_program "
 #endif

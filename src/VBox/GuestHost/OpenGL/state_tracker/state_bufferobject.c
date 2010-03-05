@@ -20,10 +20,51 @@ static CRBufferObject *AllocBufferObject(GLuint name)
         b->name = name;
         b->usage = GL_STATIC_DRAW_ARB;
         b->access = GL_READ_WRITE_ARB;
+        b->bResyncOnRead = GL_FALSE;
     }
     return b;
 }
 
+GLboolean crStateIsBufferBound(GLenum target)
+{
+    CRContext *g = GetCurrentContext();
+    CRBufferObjectState *b = &(g->bufferobject);
+
+    switch (target)
+    {
+        case GL_ARRAY_BUFFER_ARB:
+            return b->arrayBuffer->name!=0;
+        case GL_ELEMENT_ARRAY_BUFFER_ARB:
+            return b->elementsBuffer->name!=0;
+#ifdef CR_ARB_pixel_buffer_object
+        case GL_PIXEL_PACK_BUFFER_ARB:
+            return b->packBuffer->name!=0;
+        case GL_PIXEL_UNPACK_BUFFER_ARB:
+            return b->unpackBuffer->name!=0;
+#endif
+        default:
+            return GL_FALSE;
+    }
+}
+
+CRBufferObject *crStateGetBoundBufferObject(GLenum target, CRBufferObjectState *b)
+{
+    switch (target)
+    {
+        case GL_ARRAY_BUFFER_ARB:
+            return b->arrayBuffer;
+        case GL_ELEMENT_ARRAY_BUFFER_ARB:
+            return b->elementsBuffer;
+#ifdef CR_ARB_pixel_buffer_object
+        case GL_PIXEL_PACK_BUFFER_ARB:
+            return b->packBuffer;
+        case GL_PIXEL_UNPACK_BUFFER_ARB:
+            return b->unpackBuffer;
+#endif
+        default:
+            return NULL;
+    }
+}
 
 void crStateBufferObjectInit (CRContext *ctx)
 {
@@ -45,6 +86,11 @@ void crStateBufferObjectInit (CRContext *ctx)
     b->arrayBuffer = b->nullBuffer;
     b->elementsBuffer = b->nullBuffer;
     b->nullBuffer->refCount = 3;
+#ifdef CR_ARB_pixel_buffer_object
+    b->packBuffer = b->nullBuffer;
+    b->unpackBuffer = b->nullBuffer;
+    b->nullBuffer->refCount += 2;
+#endif    
 
     b->buffers = crAllocHashtable();
 
@@ -91,15 +137,10 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
 
     FLUSH();
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        oldObj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        oldObj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glBindBufferARB(target)");
+    oldObj = crStateGetBoundBufferObject(target, b);
+    if (!oldObj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glBindBufferARB(target)");
         return;
     }
 
@@ -121,16 +162,33 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
     newObj->refCount++;
     oldObj->refCount--;
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        b->arrayBuffer = newObj;
-        DIRTY(bb->dirty, g->neg_bitid);
-        DIRTY(bb->arrayBinding, g->neg_bitid);
-    }
-    else {
-        CRASSERT(target == GL_ELEMENT_ARRAY_BUFFER_ARB);
-        b->elementsBuffer = newObj;
-        DIRTY(bb->dirty, g->neg_bitid);
-        DIRTY(bb->elementsBinding, g->neg_bitid);
+    switch (target)
+    {
+        case GL_ARRAY_BUFFER_ARB:
+            b->arrayBuffer = newObj;
+            DIRTY(bb->dirty, g->neg_bitid);
+            DIRTY(bb->arrayBinding, g->neg_bitid);
+            break;
+        case GL_ELEMENT_ARRAY_BUFFER_ARB:
+            b->elementsBuffer = newObj;
+            DIRTY(bb->dirty, g->neg_bitid);
+            DIRTY(bb->elementsBinding, g->neg_bitid);
+            break;
+#ifdef CR_ARB_pixel_buffer_object
+        case GL_PIXEL_PACK_BUFFER_ARB:
+            b->packBuffer = newObj;
+            DIRTY(bb->dirty, g->neg_bitid);
+            DIRTY(bb->packBinding, g->neg_bitid);
+            break;
+        case GL_PIXEL_UNPACK_BUFFER_ARB:
+            b->unpackBuffer = newObj;
+            DIRTY(bb->dirty, g->neg_bitid);
+            DIRTY(bb->unpackBinding, g->neg_bitid);
+            break;
+#endif
+        default: /*can't get here*/
+            CRASSERT(false);
+            return;
     }
 
     if (oldObj->refCount <= 0) {
@@ -138,6 +196,13 @@ crStateBindBufferARB (GLenum target, GLuint buffer)
         CRASSERT(false);
         crHashtableDelete(b->buffers, (unsigned long) oldObj->name, crStateFreeBufferObject);
     }
+
+#ifdef IN_GUEST
+    if (target == GL_PIXEL_PACK_BUFFER_ARB)
+    {
+        newObj->bResyncOnRead = GL_TRUE;
+    }
+#endif
 }
 
 void STATE_APIENTRY
@@ -168,18 +233,36 @@ crStateDeleteBuffersARB(GLsizei n, const GLuint *buffers)
             CRBufferObject *obj = (CRBufferObject *)
                 crHashtableSearch(b->buffers, buffers[i]);
             if (obj) {
-                if (obj == b->arrayBuffer) {
+                if (obj == b->arrayBuffer) 
+                {
                     b->arrayBuffer = b->nullBuffer;
                     b->arrayBuffer->refCount++;
                     DIRTY(bb->dirty, g->neg_bitid);
                     DIRTY(bb->arrayBinding, g->neg_bitid);
-                }
-                if (obj == b->elementsBuffer) {
+                } 
+                else if (obj == b->elementsBuffer) 
+                {
                     b->elementsBuffer = b->nullBuffer;
                     b->elementsBuffer->refCount++;
                     DIRTY(bb->dirty, g->neg_bitid);
                     DIRTY(bb->elementsBinding, g->neg_bitid);
                 }
+#ifdef CR_ARB_pixel_buffer_object
+                else if (obj == b->packBuffer) 
+                {
+                    b->packBuffer = b->nullBuffer;
+                    b->packBuffer->refCount++;
+                    DIRTY(bb->dirty, g->neg_bitid);
+                    DIRTY(bb->packBinding, g->neg_bitid);
+                }
+                else if (obj == b->unpackBuffer) 
+                {
+                    b->unpackBuffer = b->nullBuffer;
+                    b->unpackBuffer->refCount++;
+                    DIRTY(bb->dirty, g->neg_bitid);
+                    DIRTY(bb->unpackBinding, g->neg_bitid);
+                }
+#endif
                 /* @todo check bindings with the vertex arrays */
 
                 crHashtableDelete(b->buffers, buffers[i], crStateFreeBufferObject);
@@ -284,15 +367,10 @@ crStateBufferDataARB(GLenum target, GLsizeiptrARB size, const GLvoid * data, GLe
             return;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glBufferDataARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glBufferDataARB(target)");
         return;
     }
 
@@ -351,15 +429,10 @@ crStateBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeiptrARB size, c
         return;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glBufferSubDataARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glBufferSubDataARB(target)");
         return;
     }
 
@@ -410,15 +483,10 @@ crStateGetBufferSubDataARB(GLenum target, GLintptrARB offset, GLsizeiptrARB size
         return;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glGetBufferSubDataARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glGetBufferSubDataARB(target)");
         return;
     }
 
@@ -461,15 +529,10 @@ crStateMapBufferARB(GLenum target, GLenum access)
         return NULL;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glMapBufferARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glMapBufferARB(target)");
         return NULL;
     }
 
@@ -514,15 +577,10 @@ crStateUnmapBufferARB(GLenum target)
         return GL_FALSE;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glUnmapBufferARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glUnmapBufferARB(target)");
         return GL_FALSE;
     }
 
@@ -565,15 +623,10 @@ crStateGetBufferParameterivARB(GLenum target, GLenum pname, GLint *params)
         return;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glGetBufferParameterivARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glGetBufferParameterivARB(target)");
         return;
     }
 
@@ -613,21 +666,15 @@ crStateGetBufferPointervARB(GLenum target, GLenum pname, GLvoid **params)
         return;
     }
 
-    if (target == GL_ARRAY_BUFFER_ARB) {
-        obj = b->arrayBuffer;
-    }
-    else if (target == GL_ELEMENT_ARRAY_BUFFER_ARB) {
-        obj = b->elementsBuffer;
-    }
-    else {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glGetBufferPointervARB(target)");
+    obj = crStateGetBoundBufferObject(target, b);
+    if (!obj)
+    {
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glGetBufferPointervARB(target)");
         return;
     }
 
     if (pname != GL_BUFFER_MAP_POINTER_ARB) {
-        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM,
-                                 "glGetBufferPointervARB(pname)");
+        crStateError(__LINE__, __FILE__, GL_INVALID_ENUM, "glGetBufferPointervARB(pname)");
         return;
     }
 
@@ -671,9 +718,186 @@ HaveBufferObjectExtension(void)
     return haveBufferObjectExt;
 }
 
+static crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
+                                 CRContext *fromCtx, CRContext *toCtx,
+                                 GLboolean bSwitch)
+{
+    CRBufferObjectState *from = &(fromCtx->bufferobject);
+    const CRBufferObjectState *to = &(toCtx->bufferobject);
+
+    /* ARRAY_BUFFER */
+    if (CHECKDIRTY(bb->arrayBinding, bitID)) 
+    {
+        if (from->arrayBuffer != to->arrayBuffer)
+        {
+            GLuint bufferID = to->arrayBuffer ? to->arrayBuffer->name : 0;
+            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, bufferID);
+            if (bSwitch)
+            {
+                FILLDIRTY(bb->arrayBinding);
+            }
+            else
+            {
+                CLEARDIRTY2(bb->arrayBinding, bitID);
+                from->arrayBuffer = to->arrayBuffer;
+            }
+        }
+        if (bSwitch) CLEARDIRTY2(bb->arrayBinding, bitID);
+    }
+
+    if (to->arrayBuffer && CHECKDIRTY(to->arrayBuffer->dirty, bitID))
+    {
+        /* update array buffer data */
+        CRBufferObject *bufObj = to->arrayBuffer;
+        CRASSERT(bufObj);
+        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) 
+        {
+            /* update whole buffer */
+            diff_api.BufferDataARB(GL_ARRAY_BUFFER_ARB, bufObj->size,
+                                   bufObj->data, bufObj->usage);
+        }
+        else 
+        {
+            /* update sub buffer */
+            diff_api.BufferSubDataARB(GL_ARRAY_BUFFER_ARB,
+                                      bufObj->dirtyStart, bufObj->dirtyLength,
+                                      (char *) bufObj->data + bufObj->dirtyStart);
+        }
+        if (bSwitch) FILLDIRTY(bufObj->dirty);
+        CLEARDIRTY2(bufObj->dirty, bitID);
+    }
+
+    /* ELEMENTS_BUFFER */
+    if (CHECKDIRTY(bb->elementsBinding, bitID)) 
+    {
+        if (from->elementsBuffer != to->elementsBuffer)
+        {
+            GLuint bufferID = to->elementsBuffer ? to->elementsBuffer->name : 0;
+            diff_api.BindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufferID);
+            if (bSwitch)
+            {
+                FILLDIRTY(bb->elementsBinding);
+            }
+            else
+            {
+                CLEARDIRTY2(bb->elementsBinding, bitID);
+                from->elementsBuffer = to->elementsBuffer;
+            }
+        }
+        if (bSwitch) CLEARDIRTY2(bb->elementsBinding, bitID);
+    }
+
+    if (to->elementsBuffer && CHECKDIRTY(to->elementsBuffer->dirty, bitID))
+    {
+        /* update array buffer data */
+        CRBufferObject *bufObj = to->elementsBuffer;
+        CRASSERT(bufObj);
+        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) 
+        {
+            /* update whole buffer */
+            diff_api.BufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufObj->size,
+                                   bufObj->data, bufObj->usage);
+        }
+        else 
+        {
+            /* update sub buffer */
+            diff_api.BufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
+                                      bufObj->dirtyStart, bufObj->dirtyLength,
+                                      (char *) bufObj->data + bufObj->dirtyStart);
+        }
+        if (bSwitch) FILLDIRTY(bufObj->dirty);
+        CLEARDIRTY2(bufObj->dirty, bitID);
+    }
+
+#ifdef CR_ARB_pixel_buffer_object
+    /* PIXEL_PACK_BUFFER */
+    if (CHECKDIRTY(bb->packBinding, bitID)) 
+    {
+        if (from->packBuffer != to->packBuffer)
+        {
+            GLuint bufferID = to->packBuffer ? to->packBuffer->name : 0;
+            diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, bufferID);
+            if (bSwitch)
+            {
+                FILLDIRTY(bb->packBinding);
+            }
+            else
+            {
+                CLEARDIRTY2(bb->packBinding, bitID);
+                from->packBuffer = to->packBuffer;
+            }
+        }
+        if (bSwitch) CLEARDIRTY2(bb->packBinding, bitID);
+    }
+
+    if (to->packBuffer && CHECKDIRTY(to->packBuffer->dirty, bitID))
+    {
+        /* update array buffer data */
+        CRBufferObject *bufObj = to->packBuffer;
+        CRASSERT(bufObj);
+        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) 
+        {
+            /* update whole buffer */
+            diff_api.BufferDataARB(GL_PIXEL_PACK_BUFFER_ARB, bufObj->size,
+                                   bufObj->data, bufObj->usage);
+        }
+        else 
+        {
+            /* update sub buffer */
+            diff_api.BufferSubDataARB(GL_PIXEL_PACK_BUFFER_ARB,
+                                      bufObj->dirtyStart, bufObj->dirtyLength,
+                                      (char *) bufObj->data + bufObj->dirtyStart);
+        }
+        if (bSwitch) FILLDIRTY(bufObj->dirty);
+        CLEARDIRTY2(bufObj->dirty, bitID);
+    }
+
+    /* PIXEL_UNPACK_BUFFER */
+    if (CHECKDIRTY(bb->unpackBinding, bitID)) 
+    {
+        if (from->unpackBuffer != to->unpackBuffer)
+        {
+            GLuint bufferID = to->unpackBuffer ? to->unpackBuffer->name : 0;
+            diff_api.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, bufferID);
+            if (bSwitch)
+            {
+                FILLDIRTY(bb->unpackBinding);
+            }
+            else
+            {
+                CLEARDIRTY2(bb->unpackBinding, bitID);
+                from->unpackBuffer = to->unpackBuffer;
+            }
+        }
+        if (bSwitch) CLEARDIRTY2(bb->unpackBinding, bitID);
+    }
+
+    if (to->unpackBuffer && CHECKDIRTY(to->unpackBuffer->dirty, bitID))
+    {
+        /* update array buffer data */
+        CRBufferObject *bufObj = to->unpackBuffer;
+        CRASSERT(bufObj);
+        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) 
+        {
+            /* update whole buffer */
+            diff_api.BufferDataARB(GL_PIXEL_UNPACK_BUFFER_ARB, bufObj->size,
+                                   bufObj->data, bufObj->usage);
+        }
+        else 
+        {
+            /* update sub buffer */
+            diff_api.BufferSubDataARB(GL_PIXEL_UNPACK_BUFFER_ARB,
+                                      bufObj->dirtyStart, bufObj->dirtyLength,
+                                      (char *) bufObj->data + bufObj->dirtyStart);
+        }
+        if (bSwitch) FILLDIRTY(bufObj->dirty);
+        CLEARDIRTY2(bufObj->dirty, bitID);
+    }
+#endif /*ifdef CR_ARB_pixel_buffer_object*/
+}
 
 void crStateBufferObjectDiff(CRBufferObjectBits *bb, CRbitvalue *bitID,
-                                                         CRContext *fromCtx, CRContext *toCtx)
+                             CRContext *fromCtx, CRContext *toCtx)
 {
     CRBufferObjectState *from = &(fromCtx->bufferobject);
     const CRBufferObjectState *to = &(toCtx->bufferobject);
@@ -681,73 +905,7 @@ void crStateBufferObjectDiff(CRBufferObjectBits *bb, CRbitvalue *bitID,
     if (!HaveBufferObjectExtension())
         return;
 
-    /* ARRAY_BUFFER binding */
-    if (CHECKDIRTY(bb->arrayBinding, bitID)) {
-        if (from->arrayBuffer != to->arrayBuffer) {
-            GLuint bufferID = to->arrayBuffer ? to->arrayBuffer->name : 0;
-            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, bufferID);
-            CLEARDIRTY2(bb->arrayBinding, bitID);
-            from->arrayBuffer = to->arrayBuffer;
-        }
-    }
-
-    if (to->arrayBuffer && CHECKDIRTY(to->arrayBuffer->dirty, bitID)) {
-        /* update array buffer data */
-        CRBufferObject *bufObj = to->arrayBuffer;
-        CRASSERT(bufObj);
-        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) {
-            /* update whole buffer */
-            diff_api.BufferDataARB(GL_ARRAY_BUFFER_ARB, bufObj->size,
-                                                         bufObj->data, bufObj->usage);
-        }
-        else {
-            /* update sub buffer */
-            diff_api.BufferSubDataARB(GL_ARRAY_BUFFER_ARB,
-                                                                bufObj->dirtyStart,
-                                                                bufObj->dirtyLength,
-                                                                (char *) bufObj->data
-                                                                + bufObj->dirtyStart);
-        }
-        CLEARDIRTY2(bufObj->dirty, bitID);
-#if 0
-        bufObj->dirtyStart = 0;
-        bufObj->dirtyLength = 0;
-#endif
-    }
-
-    /* ELEMENTS_BUFFER binding */
-    if (CHECKDIRTY(bb->elementsBinding, bitID)) {
-        if (from->elementsBuffer != to->elementsBuffer) {
-            GLuint bufferID = to->elementsBuffer ? to->elementsBuffer->name : 0;
-            diff_api.BindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufferID);
-            CLEARDIRTY2(bb->elementsBinding, bitID);
-            from->elementsBuffer = to->elementsBuffer;
-        }
-    }
-
-    if (to->elementsBuffer && CHECKDIRTY(to->elementsBuffer->dirty, bitID)) {
-        /* update element buffer data */
-        CRBufferObject *bufObj = to->elementsBuffer;
-        CRASSERT(bufObj);
-        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) {
-            /* update whole buffer */
-            diff_api.BufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufObj->size,
-                                                         bufObj->data, bufObj->usage);
-        }
-        else {
-            /* update sub buffer */
-            diff_api.BufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-                                                                bufObj->dirtyStart,
-                                                                bufObj->dirtyLength,
-                                                                (char *) bufObj->data
-                                                                + bufObj->dirtyStart);
-        }
-        CLEARDIRTY2(bufObj->dirty, bitID);
-#if 0
-        bufObj->dirtyStart = 0;
-        bufObj->dirtyLength = 0;
-#endif
-    }
+    crStateBufferObjectIntCmp(bb, bitID, fromCtx, toCtx, GL_FALSE);
 }
 
 static void crStateBufferObjectSyncCB(unsigned long key, void *data1, void *data2)
@@ -757,6 +915,13 @@ static void crStateBufferObjectSyncCB(unsigned long key, void *data1, void *data
 
     if (pBufferObj->data)
     {
+        /*@todo http://www.opengl.org/registry/specs/ARB/pixel_buffer_object.txt
+          "While it is entirely legal to create a buffer object by binding
+          it to GL_ARRAY_BUFFER and loading it with data, then using it
+          with the GL_PIXEL_UNPACK_BUFFER_ARB or GL_PIXEL_PACK_BUFFER_ARB
+          binding, such behavior is liable to confuse the driver and may
+          hurt performance." 
+         */
         diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, pBufferObj->name);
         diff_api.BufferDataARB(GL_ARRAY_BUFFER_ARB, pBufferObj->size, pBufferObj->data, pBufferObj->usage);
 
@@ -867,76 +1032,14 @@ void crStateBufferObjectSwitch(CRBufferObjectBits *bb, CRbitvalue *bitID,
 #endif
         diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, to->arrayBuffer->name);
         diff_api.BindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, to->elementsBuffer->name);
-    }
-
-    /* ARRAY_BUFFER binding */
-    if (CHECKDIRTY(bb->arrayBinding, bitID)) {
-        if (from->arrayBuffer != to->arrayBuffer) {
-            GLuint bufferID = to->arrayBuffer ? to->arrayBuffer->name : 0;
-            diff_api.BindBufferARB(GL_ARRAY_BUFFER_ARB, bufferID);
-            FILLDIRTY(bb->arrayBinding);
-        }
-        CLEARDIRTY2(bb->arrayBinding, bitID);
-    }
-
-    if (to->arrayBuffer && CHECKDIRTY(to->arrayBuffer->dirty, bitID)) {
-        /* update array buffer data */
-        CRBufferObject *bufObj = to->arrayBuffer;
-        CRASSERT(bufObj);
-        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) {
-            /* update whole buffer */
-            diff_api.BufferDataARB(GL_ARRAY_BUFFER_ARB, bufObj->size,
-                                                         bufObj->data, bufObj->usage);
-        }
-        else {
-            /* update sub buffer */
-            diff_api.BufferSubDataARB(GL_ARRAY_BUFFER_ARB,
-                                                                bufObj->dirtyStart,
-                                                                bufObj->dirtyLength,
-                                                                (char *) bufObj->data
-                                                                + bufObj->dirtyStart);
-        }
-        FILLDIRTY(bufObj->dirty);
-        CLEARDIRTY2(bufObj->dirty, bitID);
-#if 0
-        bufObj->dirtyStart = 0;
-        bufObj->dirtyLength = 0;
+#ifdef CR_ARB_pixel_buffer_object
+        diff_api.BindBufferARB(GL_PIXEL_PACK_BUFFER_ARB, to->packBuffer->name);
+        diff_api.BindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, to->unpackBuffer->name);
 #endif
     }
-
-    /* ELEMENTS_BUFFER binding */
-    if (CHECKDIRTY(bb->elementsBinding, bitID)) {
-        if (from->elementsBuffer != to->elementsBuffer) {
-            GLuint bufferID = to->elementsBuffer ? to->elementsBuffer->name : 0;
-            diff_api.BindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufferID);
-            FILLDIRTY(bb->elementsBinding);
-        }
-        CLEARDIRTY2(bb->elementsBinding, bitID);
-    }
-
-    if (to->elementsBuffer && CHECKDIRTY(to->elementsBuffer->dirty, bitID)) {
-        /* update element buffer data */
-        CRBufferObject *bufObj = to->elementsBuffer;
-        CRASSERT(bufObj);
-        if (bufObj->dirtyStart == 0 && bufObj->dirtyLength == (int) bufObj->size) {
-            /* update whole buffer */
-            diff_api.BufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB, bufObj->size,
-                                                         bufObj->data, bufObj->usage);
-        }
-        else {
-            /* update sub buffer */
-            diff_api.BufferSubDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-                                                                bufObj->dirtyStart,
-                                                                bufObj->dirtyLength,
-                                                                (char *) bufObj->data
-                                                                + bufObj->dirtyStart);
-        }
-        FILLDIRTY(bufObj->dirty);
-        CLEARDIRTY2(bufObj->dirty, bitID);
-#if 0
-        bufObj->dirtyStart = 0;
-        bufObj->dirtyLength = 0;
-#endif
+    else
+    {
+        crStateBufferObjectIntCmp(bb, bitID, fromCtx, toCtx, GL_TRUE);
     }
 }
 

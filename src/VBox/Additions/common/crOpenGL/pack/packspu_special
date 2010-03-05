@@ -95,3 +95,8 @@ FramebufferRenderbufferEXT
 CheckFramebufferStatusEXT
 BindTexture
 DeleteTextures
+GetPolygonStipple
+GetPixelMapfv
+GetPixelMapuiv
+GetPixelMapusv
+GetCompressedTexImageARB
