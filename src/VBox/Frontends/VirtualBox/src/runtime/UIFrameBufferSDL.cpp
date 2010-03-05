@@ -50,7 +50,8 @@ UIFrameBufferSDL::UIFrameBufferSDL(UIMachineView *pMachineView)
     m_pSurfVRAM = NULL;
 
     X11ScreenSaverSettingsInit();
-    resizeEvent(new UIResizeEvent(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480));
+    UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
+    resizeEvent(&event);
 }
 
 UIFrameBufferSDL::~UIFrameBufferSDL()

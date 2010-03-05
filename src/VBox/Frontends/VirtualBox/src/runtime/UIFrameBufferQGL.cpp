@@ -51,11 +51,11 @@ UIFrameBufferQGL::UIFrameBufferQGL (UIMachineView *pMachineView) :
 {
 //    mWidget = new GLWidget(aView->viewport());
 #ifndef VBOXQGL_PROF_BASE
-    resizeEvent (new UIResizeEvent (FramebufferPixelFormat_Opaque,
-                                    NULL, 0, 0, 640, 480));
+    UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, 640, 480);
+    resizeEvent(&event);
 #else
-    resizeEvent (new UIResizeEvent (FramebufferPixelFormat_Opaque,
-                                    NULL, 0, 0, VBOXQGL_PROF_WIDTH, VBOXQGL_PROF_HEIGHT));
+    UIResizeEvent event(FramebufferPixelFormat_Opaque, NULL, 0, 0, VBOXQGL_PROF_WIDTH, VBOXQGL_PROF_HEIGHT);
+    resizeEvent(&event);
 #endif
 }
 
