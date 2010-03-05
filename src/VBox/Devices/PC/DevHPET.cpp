@@ -615,7 +615,7 @@ static int configRegWrite32(HpetState* pThis,
 
             iOldValue = (uint32_t)(pThis->u64Config);
 
-            /**
+            /*
              * This check must be here, before actual update, as hpetLegacyMode
              * may request retry in R3 - so we must keep state intact.
              */

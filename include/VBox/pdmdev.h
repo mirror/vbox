@@ -1710,9 +1710,9 @@ typedef struct PDMHPETHLPR3
      * @returns VINF_SUCCESS on success.
      * @returns rc if we failed to set legacy mode.
      * @param   pDevIns         Device instance of the HPET.
-     * @param   fActivate       Activate or deactivate legacy mode.
+     * @param   fActivated      Whether legacy mode is activated or deactivated.
      */
-    DECLR3CALLBACKMEMBER(int, pfnSetLegacyMode,(PPDMDEVINS pDevIns, bool fActivate));
+    DECLR3CALLBACKMEMBER(int, pfnSetLegacyMode,(PPDMDEVINS pDevIns, bool fActivated));
 
 
     /**

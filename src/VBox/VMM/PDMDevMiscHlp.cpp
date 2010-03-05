@@ -556,40 +556,38 @@ const PDMPCIHLPR3 g_pdmR3DevPciHlp =
  */
 
 /** @interface_method_impl{PDMHPETHLPR3,pfnSetLegacyMode} */
-static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fActivate)
+static DECLCALLBACK(int) pdmR3HpetHlp_SetLegacyMode(PPDMDEVINS pDevIns, bool fActivated)
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
-    LogFlow(("pdmR3HpetHlp_SetLegacyMode: caller='%s'/%d: fActivate=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, fActivate));
+    LogFlow(("pdmR3HpetHlp_SetLegacyMode: caller='%s'/%d: fActivated=%RTbool\n", pDevIns->pReg->szName, pDevIns->iInstance, fActivated));
 
-    PPDMIBASE pBase;
-    int rc;
-
-    rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "i8254", 0, &pBase);
-    /* No PIT - no problems too */
-    if (RT_SUCCESS(rc))
+    size_t                      i;
+    int                         rc = VINF_SUCCESS;
+    static const char * const   s_apszDevsToNotify[] =
     {
-        Assert(pBase);
-        PPDMIPITPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIPITPORT);
-
-        rc = pPort ? pPort->pfnNotifyHpetLegacy(pPort, fActivate) : VINF_SUCCESS;
-    }
-    else
-        rc = VINF_SUCCESS;
-
-    if (RT_FAILURE(rc))
-        return rc;
-
-    rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "mc146818", 0, &pBase);
-    /* No RTC - no problems too */
-    if (RT_SUCCESS(rc))
+        "i8254",
+        "mc146818"
+    };
+    for (i = 0; i < RT_ELEMENTS(s_apszDevsToNotify); i++)
     {
-        Assert(pBase);
-        PPDMIRTCPORT pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIRTCPORT);
-        rc = pPort ? pPort->pfnNotifyHpetLegacy(pPort, fActivate) : VINF_SUCCESS;
+        PPDMIBASE pBase;
+        rc = PDMR3QueryDevice(pDevIns->Internal.s.pVMR3, "i8254", 0, &pBase);
+        if (RT_SUCCESS(rc))
+        {
+            PPDMIHPETLEGACYNOTIFY pPort = PDMIBASE_QUERY_INTERFACE(pBase, PDMIHPETLEGACYNOTIFY);
+            AssertLogRelMsgBreakStmt(pPort, ("%s\n", s_apszDevsToNotify[i]), rc == VERR_INTERNAL_ERROR_3);
+            pPort->pfnModeChanged(pPort, fActivated);
+        }
+        else if (   rc == VERR_PDM_DEVICE_NOT_FOUND
+                 || rc == VERR_PDM_DEVICE_INSTANCE_NOT_FOUND)
+            rc = VINF_SUCCESS; /* the device isn't configured, ignore. */
+        else
+            AssertLogRelMsgFailedBreak(("%s -> %Rrc\n", s_apszDevsToNotify[i], rc));
     }
-    else
-        rc = VINF_SUCCESS;
 
+    /* Don't bother cleaning up, any failure here will cause a guru meditation. */
+
+    LogFlow(("pdmR3HpetHlp_SetLegacyMode: caller='%s'/%d: returns %Rrc\n", pDevIns->pReg->szName, pDevIns->iInstance, rc));
     return rc;
 }
 

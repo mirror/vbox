@@ -145,8 +145,7 @@ struct my_tm
 struct RTCState {
     uint8_t cmos_data[128];
     uint8_t cmos_index;
-    uint8_t fDisabledByHpet;
-    uint8_t Alignment0[6];
+    uint8_t Alignment0[7];
     struct my_tm current_tm;
     /** The configured IRQ. */
     int32_t irq;
@@ -154,13 +153,12 @@ struct RTCState {
     RTIOPORT IOPortBase;
     /** Use UTC or local time initially. */
     bool fUTC;
+    /** Disabled by HPET legacy mode. */
+    bool fDisabledByHpet;
     /* periodic timer */
     int64_t next_periodic_time;
     /* second update */
     int64_t next_second_time;
-
-    /** RTC port interface. */
-    PDMIRTCPORT  IRTCPort;
 
     /** Pointer to the device instance - R3 Ptr. */
     PPDMDEVINSR3 pDevInsR3;
@@ -197,6 +195,9 @@ struct RTCState {
     uint32_t cRelLogEntries;
     /** The current/previous timer period. Used to prevent flooding changes. */
     int32_t CurPeriod;
+
+    /** HPET legacy mode notification interface. */
+    PDMIHPETLEGACYNOTIFY  IHpetLegacyNotify;
 };
 
 #ifndef VBOX_DEVICE_STRUCT_TESTCASE
@@ -236,7 +237,6 @@ static void rtc_timer_update(RTCState *s, int64_t current_time)
         TMTimerStop(s->CTX_SUFF(pPeriodicTimer));
     }
 }
-
 
 static void rtc_raise_irq(RTCState* pThis, uint32_t iLevel)
 {
@@ -662,9 +662,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer), pSSM);
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
-    SSMR3PutU8(pSSM, pThis->fDisabledByHpet);
-
-    return VINF_SUCCESS;
+    return SSMR3PutBool(pSSM, pThis->fDisabledByHpet);
 }
 
 
@@ -723,6 +721,9 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer), pSSM);
     TMR3TimerLoad(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
+    if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_31)
+         SSMR3GetBool(pSSM, &pThis->fDisabledByHpet);
+
     int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
     if (    period_code != 0
         &&  (pThis->cmos_data[RTC_REG_B] & REG_B_PIE)) {
@@ -736,10 +737,6 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         pThis->CurPeriod = 0;
     }
     pThis->cRelLogEntries = 0;
-
-
-    if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_31)
-         SSMR3GetU8(pSSM, &pThis->fDisabledByHpet);
 
     return VINF_SUCCESS;
 }
@@ -861,6 +858,29 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
 /* -=-=-=-=-=- real code -=-=-=-=-=- */
 
 /**
+ * @interface_method_impl{PDMIBASE,pfnQueryInterface}
+ */
+static DECLCALLBACK(void *) rtcQueryInterface(PPDMIBASE pInterface, const char *pszIID)
+{
+    PPDMDEVINS  pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
+    RTCState   *pThis   = PDMINS_2_DATA(pDevIns, RTCState *);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,             &pDevIns->IBase);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIHPETLEGACYNOTIFY, &pThis->IHpetLegacyNotify);
+    return NULL;
+}
+
+
+/**
+ * @interface_method_impl{PDMIHPETLEGACYNOTIFY,pfnModeChanged}
+ */
+static DECLCALLBACK(void) rtcHpetLegacyNotify_ModeChanged(PPDMIHPETLEGACYNOTIFY pInterface, bool fActivated)
+{
+    RTCState *pThis = RT_FROM_MEMBER(pInterface, RTCState, IHpetLegacyNotify);
+    pThis->fDisabledByHpet = fActivated;
+}
+
+
+/**
  * @copydoc
  */
 static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
@@ -873,27 +893,6 @@ static DECLCALLBACK(void) rtcRelocate(PPDMDEVINS pDevIns, RTGCINTPTR offDelta)
     pThis->pSecondTimer2RC  = TMTimerRCPtr(pThis->pSecondTimer2R3);
 }
 
-/**
- * @interface_method_impl{PDMIBASE,pfnQueryInterface}
- */
-static DECLCALLBACK(void *) rtcQueryInterface(PPDMIBASE pInterface, const char *pszIID)
-{
-    PPDMDEVINS pDevIns = RT_FROM_MEMBER(pInterface, PDMDEVINS, IBase);
-    RTCState *pThis = PDMINS_2_DATA(pDevIns, RTCState *);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE,    &pDevIns->IBase);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIRTCPORT, &pThis->IRTCPort);
-    return NULL;
-}
-
-/**
- * @interface_method_impl{PDMIRTCPORT,pfnNotifyHpetLegacy}
- */
-static DECLCALLBACK(int) rtcNotifyHpetLegacy(PPDMIRTCPORT pInterface, bool fActivate)
-{
-    RTCState *pThis = RT_FROM_MEMBER(pInterface, RTCState, IRTCPort);
-    pThis->fDisabledByHpet = fActivate;
-    return VINF_SUCCESS;
-}
 
 /**
  * @interface_method_impl{PDMDEVREG,pfnConstruct}
@@ -963,6 +962,11 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     pThis->RtcReg.pfnWrite      = rtcCMOSWrite;
     pThis->fDisabledByHpet      = false;
 
+    /* IBase */
+    pDevIns->IBase.pfnQueryInterface        = rtcQueryInterface;
+    /* IHpetLegacyNotify */
+    pThis->IHpetLegacyNotify.pfnModeChanged = rtcHpetLegacyNotify_ModeChanged;
+
     /*
      * Create timers, arm them, register I/O Ports and save state.
      */
@@ -1019,16 +1023,7 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return rc;
 
     /*
-     * Interfaces
-     */
-    /* IBase */
-    pDevIns->IBase.pfnQueryInterface            = rtcQueryInterface;
-    /* IRTCPort */
-    pThis->IRTCPort.pfnNotifyHpetLegacy         = rtcNotifyHpetLegacy;
-
-    /*
      * Register ourselves as the RTC/CMOS with PDM.
-     * @todo: maybe use generic iface above?
      */
     rc = PDMDevHlpRTCRegister(pDevIns, &pThis->RtcReg, &pThis->pRtcHlpR3);
     if (RT_FAILURE(rc))
@@ -1095,3 +1090,4 @@ const PDMDEVREG g_DeviceMC146818 =
 
 #endif /* IN_RING3 */
 #endif /* !VBOX_DEVICE_STRUCT_TESTCASE */
+
