@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Misc.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Ballooning.
  */
 
 /*
@@ -32,49 +32,43 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/log.h>
 #include "VBGLR3Internal.h"
 
 
 /**
- * Change the IRQ filter mask.
+ * Refresh the memory balloon after a change.
  *
  * @returns IPRT status code.
- * @param   fOr     The OR mask.
- * @param   fNo     The NOT mask.
+ * @param   pcChunks        The size of the balloon in chunks of 1MB (out).
+ * @param   pfHandleInR3    Allocating of memory in R3 required (out).
  */
-VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
+VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
 {
-    VBoxGuestFilterMaskInfo Info;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
+    VBoxGuestCheckBalloonInfo Info;
+    int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, &Info, sizeof(Info));
+    if (RT_SUCCESS(rc))
+    {
+        *pcChunks = Info.cBalloonChunks;
+        Assert(Info.fHandleInR3 == false || Info.fHandleInR3 == true ||  RT_FAILURE(rc));
+        *pfHandleInR3 = Info.fHandleInR3 != false;
+    }
+    return rc;
 }
 
 
 /**
- * Report a change in the capabilities that we support to the host.
+ * Change the memory by granting/reclaiming memory to/from R0.
  *
  * @returns IPRT status code.
- * @param   fOr     Capabilities which have been added.
- * @param   fNot    Capabilities which have been removed.
- *
- * @todo    Move to a different file.
+ * @param   pv          Memory chunk (1MB).
+ * @param   fInflate    true = inflate balloon (grant memory).
+ *                      false = deflate balloon (reclaim memory).
  */
-VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
+VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
 {
-    VMMDevReqGuestCapabilities2 Req;
-
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetGuestCapabilities);
-    Req.u32OrMask = fOr;
-    Req.u32NotMask = fNot;
-    int rc = vbglR3GRPerform(&Req.header);
-#if defined(DEBUG) && !defined(VBOX_VBGLR3_XFREE86)
-    if (RT_SUCCESS(rc))
-        LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
-    else
-        LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc=%Rrc.\n", fOr, fNot, rc));
-#endif
-    return rc;
+    VBoxGuestChangeBalloonInfo Info;
+    Info.u64ChunkAddr = (uint64_t)((uintptr_t)pv);
+    Info.fInflate = fInflate;
+    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHANGE_BALLOON, &Info, sizeof(Info));
 }
 

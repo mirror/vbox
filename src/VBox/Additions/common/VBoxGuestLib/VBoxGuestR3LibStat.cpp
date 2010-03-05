@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Misc.
+ * VBoxGuestR3Lib - Ring-3 Support Library for VirtualBox guest additions, Statistics.
  */
 
 /*
@@ -32,49 +32,42 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#include <VBox/log.h>
 #include "VBGLR3Internal.h"
 
 
 /**
- * Change the IRQ filter mask.
+ * Query the current statistics update interval.
  *
  * @returns IPRT status code.
- * @param   fOr     The OR mask.
- * @param   fNo     The NOT mask.
+ * @param   pcMsInterval    Update interval in ms (out).
  */
-VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
+VBGLR3DECL(int) VbglR3StatQueryInterval(PRTMSINTERVAL pcMsInterval)
 {
-    VBoxGuestFilterMaskInfo Info;
-    Info.u32OrMask = fOr;
-    Info.u32NotMask = fNot;
-    return vbglR3DoIOCtl(VBOXGUEST_IOCTL_CTL_FILTER_MASK, &Info, sizeof(Info));
+    VMMDevGetStatisticsChangeRequest Req;
+
+    vmmdevInitRequest(&Req.header, VMMDevReq_GetStatisticsChangeRequest);
+    Req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+    Req.u32StatInterval = 1;
+    int rc = vbglR3GRPerform(&Req.header);
+    if (RT_SUCCESS(rc))
+    {
+        *pcMsInterval = Req.u32StatInterval * 1000;
+        if (*pcMsInterval / 1000 != Req.u32StatInterval)
+            *pcMsInterval = ~(RTMSINTERVAL)0;
+    }
+    return rc;
 }
 
 
 /**
- * Report a change in the capabilities that we support to the host.
+ * Report guest statistics.
  *
  * @returns IPRT status code.
- * @param   fOr     Capabilities which have been added.
- * @param   fNot    Capabilities which have been removed.
- *
- * @todo    Move to a different file.
+ * @param   pReq        Request packet with statistics.
  */
-VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
+VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
 {
-    VMMDevReqGuestCapabilities2 Req;
-
-    vmmdevInitRequest(&Req.header, VMMDevReq_SetGuestCapabilities);
-    Req.u32OrMask = fOr;
-    Req.u32NotMask = fNot;
-    int rc = vbglR3GRPerform(&Req.header);
-#if defined(DEBUG) && !defined(VBOX_VBGLR3_XFREE86)
-    if (RT_SUCCESS(rc))
-        LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
-    else
-        LogRel(("Failed to change guest capabilities: or mask 0x%x, not mask 0x%x.  rc=%Rrc.\n", fOr, fNot, rc));
-#endif
-    return rc;
+    vmmdevInitRequest(&pReq->header, VMMDevReq_ReportGuestStats);
+    return vbglR3GRPerform(&pReq->header);
 }
 
