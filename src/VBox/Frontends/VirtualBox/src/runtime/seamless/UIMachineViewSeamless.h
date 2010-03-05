@@ -78,7 +78,6 @@ private:
     /* Private variables: */
     bool m_fShouldWeDoResize : 1;
     QRegion m_lastVisibleRegion;
-    QSize m_normalSize;
 
     /* Friend classes: */
     friend class UIMachineView;

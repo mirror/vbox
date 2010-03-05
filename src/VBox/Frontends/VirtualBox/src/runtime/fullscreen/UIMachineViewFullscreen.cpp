@@ -309,9 +309,6 @@ void UIMachineViewFullscreen::prepareCommon()
     /* Base class common settings: */
     UIMachineView::prepareCommon();
 
-    /* Store old machine view size before bramebuffer resized: */
-    m_normalSize = QSize(frameBuffer()->width(), frameBuffer()->height());
-
     /* Minimum size is ignored: */
     setMinimumSize(0, 0);
     /* No scrollbars: */
