@@ -538,9 +538,6 @@ void UIMachineView::prepareCommon()
     /* Dock icon update connection */
     connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
             this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
-    /* Presentation Mode connection */
-    connect(&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
-            this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
 
     /* Overlay logo for the dock icon */
     //mVirtualBoxLogo = ::darwinToCGImageRef("VirtualBox_cube_42px.png");
@@ -1140,32 +1137,6 @@ void UIMachineView::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent 
     setDockIconEnabled(event.mChanged);
     updateDockOverlay();
 }
-
-# ifdef QT_MAC_USE_COCOA
-void UIMachineView::sltChangePresentationMode(const VBoxChangePresentationModeEvent &event)
-{
-    // TODO_NEW_CORE
-    // this is full screen related
-#if 0
-    if (mIsFullscreen)
-    {
-        /* First check if we are on the primary screen, only than the presentation mode have to be changed. */
-        QDesktopWidget* pDesktop = QApplication::desktop();
-        if (pDesktop->screenNumber(this) == pDesktop->primaryScreen())
-        {
-            QString testStr = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_PresentationModeEnabled).toLower();
-            /* Default to false if it is an empty value */
-            if (testStr.isEmpty() || testStr == "false")
-                SetSystemUIMode(kUIModeAllHidden, 0);
-            else
-                SetSystemUIMode(kUIModeAllSuppressed, 0);
-        }
-    }
-    else
-        SetSystemUIMode(kUIModeNormal, 0);
-#endif
-}
-# endif /* QT_MAC_USE_COCOA */
 #endif
 
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
@@ -2660,7 +2631,7 @@ void UIMachineView::updateDockOverlay()
 //        mDockIconPreview->updateDockOverlay();
 }
 
-void UIMachineView::setMouseCoalescingEnabled (bool aOn)
+void UIMachineView::setMouseCoalescingEnabled(bool fOn)
 {
     /* Enable mouse event compression if we leave the VM view. This
        is necessary for having smooth resizing of the VM/other
@@ -2669,8 +2640,8 @@ void UIMachineView::setMouseCoalescingEnabled (bool aOn)
        all mouse events are registered in the VM. Only do this if
        the keyboard/mouse is grabbed (this is when we have a valid
        event handler). */
-    if (aOn || m_fKeyboardGrabbed)
-        ::darwinSetMouseCoalescingEnabled (aOn);
+    if (fOn || m_fKeyboardGrabbed)
+        ::darwinSetMouseCoalescingEnabled(fOn);
 }
 #endif /* Q_WS_MAC */
 
