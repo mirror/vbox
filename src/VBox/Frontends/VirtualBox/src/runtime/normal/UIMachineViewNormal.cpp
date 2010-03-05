@@ -61,6 +61,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     /* Prepare event-filters: */
     prepareFilters();
 
+    /* Prepare connections: */
+    prepareConnections();
+
     /* Prepare console connections: */
     prepareConsoleConnections();
 
@@ -136,116 +139,6 @@ void UIMachineViewNormal::sltPerformGuestResize(const QSize &toSize)
 void UIMachineViewNormal::sltDesktopResized()
 {
     calculateDesktopGeometry();
-}
-
-void UIMachineViewNormal::prepareFilters()
-{
-    /* Base class filters: */
-    UIMachineView::prepareFilters();
-
-    /* Menu bar filters: */
-    qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
-}
-
-void UIMachineViewNormal::prepareConsoleConnections()
-{
-    /* Base class connections: */
-    UIMachineView::prepareConsoleConnections();
-
-    /* Guest additions state-change updater: */
-    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
-}
-
-void UIMachineViewNormal::loadMachineViewSettings()
-{
-    /* Base class settings: */
-    UIMachineView::loadMachineViewSettings();
-
-    /* Global settings: */
-    {
-        connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
-    }
-}
-
-void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
-{
-    if (m_bIsGuestAutoresizeEnabled != fEnabled)
-    {
-        m_bIsGuestAutoresizeEnabled = fEnabled;
-
-        maybeRestrictMinimumSize();
-
-        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
-            sltPerformGuestResize();
-    }
-}
-
-void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
-{
-    QWidget *pTopLevelWidget = window();
-
-    /* Make no normalizeGeometry in case we are in manual resize mode or main window is maximized: */
-    if (pTopLevelWidget->isMaximized())
-        return;
-
-    /* Calculate client window offsets: */
-    QRect frameGeo = pTopLevelWidget->frameGeometry();
-    QRect geo = pTopLevelWidget->geometry();
-    int dl = geo.left() - frameGeo.left();
-    int dt = geo.top() - frameGeo.top();
-    int dr = frameGeo.right() - geo.right();
-    int db = frameGeo.bottom() - geo.bottom();
-
-    /* Get the best size w/o scroll bars: */
-    QSize s = pTopLevelWidget->sizeHint();
-
-    /* Resize the frame to fit the contents: */
-    s -= pTopLevelWidget->size();
-    frameGeo.setRight(frameGeo.right() + s.width());
-    frameGeo.setBottom(frameGeo.bottom() + s.height());
-
-    if (bAdjustPosition)
-    {
-        QRegion availableGeo;
-        QDesktopWidget *dwt = QApplication::desktop();
-        if (dwt->isVirtualDesktop())
-            /* Compose complex available region */
-            for (int i = 0; i < dwt->numScreens(); ++ i)
-                availableGeo += dwt->availableGeometry(i);
-        else
-            /* Get just a simple available rectangle */
-            availableGeo = dwt->availableGeometry(pTopLevelWidget->pos());
-
-        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, mode() != VBoxDefs::SDLMode /* can resize? */);
-    }
-
-#if 0
-    /* Center the frame on the desktop: */
-    frameGeo.moveCenter(availableGeo.center());
-#endif
-
-    /* Finally, set the frame geometry */
-    pTopLevelWidget->setGeometry(frameGeo.left() + dl, frameGeo.top() + dt, frameGeo.width() - dl - dr, frameGeo.height() - dt - db);
-}
-
-QRect UIMachineViewNormal::availableGeometry()
-{
-    return QApplication::desktop()->availableGeometry(this);
-}
-
-void UIMachineViewNormal::maybeRestrictMinimumSize()
-{
-    /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
-     * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
-     * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
-     * In all other modes, or when auto-resize is in force, this function does nothing. */
-    if (mode() == VBoxDefs::SDLMode)
-    {
-        if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
-            setMinimumSize(sizeHint());
-        else
-            setMinimumSize(0, 0);
-    }
 }
 
 bool UIMachineViewNormal::event(QEvent *pEvent)
@@ -429,5 +322,109 @@ bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
         }
     }
     return UIMachineView::eventFilter(pWatched, pEvent);
+}
+
+void UIMachineViewNormal::prepareFilters()
+{
+    /* Base class filters: */
+    UIMachineView::prepareFilters();
+
+    /* Menu bar filters: */
+    qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
+}
+
+void UIMachineViewNormal::prepareConnections()
+{
+    connect(QApplication::desktop(), SIGNAL(resized(int)), this, SLOT(sltDesktopResized()));
+}
+
+void UIMachineViewNormal::prepareConsoleConnections()
+{
+    /* Base class connections: */
+    UIMachineView::prepareConsoleConnections();
+
+    /* Guest additions state-change updater: */
+    connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
+}
+
+void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)
+{
+    if (m_bIsGuestAutoresizeEnabled != fEnabled)
+    {
+        m_bIsGuestAutoresizeEnabled = fEnabled;
+
+        maybeRestrictMinimumSize();
+
+        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+            sltPerformGuestResize();
+    }
+}
+
+void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
+{
+    QWidget *pTopLevelWidget = window();
+
+    /* Make no normalizeGeometry in case we are in manual resize mode or main window is maximized: */
+    if (pTopLevelWidget->isMaximized())
+        return;
+
+    /* Calculate client window offsets: */
+    QRect frameGeo = pTopLevelWidget->frameGeometry();
+    QRect geo = pTopLevelWidget->geometry();
+    int dl = geo.left() - frameGeo.left();
+    int dt = geo.top() - frameGeo.top();
+    int dr = frameGeo.right() - geo.right();
+    int db = frameGeo.bottom() - geo.bottom();
+
+    /* Get the best size w/o scroll bars: */
+    QSize s = pTopLevelWidget->sizeHint();
+
+    /* Resize the frame to fit the contents: */
+    s -= pTopLevelWidget->size();
+    frameGeo.setRight(frameGeo.right() + s.width());
+    frameGeo.setBottom(frameGeo.bottom() + s.height());
+
+    if (bAdjustPosition)
+    {
+        QRegion availableGeo;
+        QDesktopWidget *dwt = QApplication::desktop();
+        if (dwt->isVirtualDesktop())
+            /* Compose complex available region */
+            for (int i = 0; i < dwt->numScreens(); ++ i)
+                availableGeo += dwt->availableGeometry(i);
+        else
+            /* Get just a simple available rectangle */
+            availableGeo = dwt->availableGeometry(pTopLevelWidget->pos());
+
+        frameGeo = VBoxGlobal::normalizeGeometry(frameGeo, availableGeo, mode() != VBoxDefs::SDLMode /* can resize? */);
+    }
+
+#if 0
+    /* Center the frame on the desktop: */
+    frameGeo.moveCenter(availableGeo.center());
+#endif
+
+    /* Finally, set the frame geometry */
+    pTopLevelWidget->setGeometry(frameGeo.left() + dl, frameGeo.top() + dt, frameGeo.width() - dl - dr, frameGeo.height() - dt - db);
+}
+
+QRect UIMachineViewNormal::availableGeometry()
+{
+    return QApplication::desktop()->availableGeometry(this);
+}
+
+void UIMachineViewNormal::maybeRestrictMinimumSize()
+{
+    /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
+     * Currently, the restriction is set only in SDL mode and only when the auto-resize feature is inactive.
+     * We need to do that because we cannot correctly draw in a scrolled window in SDL mode.
+     * In all other modes, or when auto-resize is in force, this function does nothing. */
+    if (mode() == VBoxDefs::SDLMode)
+    {
+        if (!uisession()->isGuestSupportsGraphics() || !m_bIsGuestAutoresizeEnabled)
+            setMinimumSize(sizeHint());
+        else
+            setMinimumSize(0, 0);
+    }
 }
 
