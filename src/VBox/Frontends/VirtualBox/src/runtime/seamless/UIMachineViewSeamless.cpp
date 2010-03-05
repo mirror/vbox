@@ -96,12 +96,12 @@ UIMachineViewSeamless::~UIMachineViewSeamless()
 void UIMachineViewSeamless::sltPerformGuestResize()
 {
     /* Get machine window: */
-    QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+    QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                                 qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
 
-    /* Get the available size for the guest display. We assume here that the centralWidget()
-     * contains only this machine view and gives it all available space: */
-    QSize newSize(pMainDialog ? pMainDialog->centralWidget()->size() : QSize());
+    /* Get the available size for the guest display. We assume here that
+     * centralWidget() contains only this machine view and gives it all available space: */
+    QSize newSize(pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
     AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
     /* Do not send the same hints as we already have: */

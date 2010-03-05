@@ -90,16 +90,15 @@ void UIMachineViewFullscreen::sltPerformGuestResize(const QSize &toSize)
 {
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
-        /* Taking Main Dialog: */
-        QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                    qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+        /* Get machine window: */
+        QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                       qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
 
-        /* If this slot is invoked directly then use the passed size
-         * otherwise get the available size for the guest display.
-         * We assume here that the centralWidget() contains this view only
-         * and gives it all available space. */
-        QSize newSize(toSize.isValid() ? toSize : pMainDialog ? pMainDialog->centralWidget()->size() : QSize());
-        AssertMsg(newSize.isValid(), ("This size should be valid!\n"));
+        /* If this slot is invoked directly then use the passed size otherwise get
+         * the available size for the guest display. We assume here that centralWidget()
+         * contains this view only and gives it all available space: */
+        QSize newSize(toSize.isValid() ? toSize : pMachineWindow ? pMachineWindow->centralWidget()->size() : QSize());
+        AssertMsg(newSize.isValid(), ("Size should be valid!\n"));
 
         /* Do not send the same hints as we already have: */
         if ((newSize.width() == storedConsoleSize().width()) && (newSize.height() == storedConsoleSize().height()))
