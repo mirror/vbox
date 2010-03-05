@@ -64,16 +64,16 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare normal machine view: */
     prepareMachineView();
 
-#ifdef Q_WS_MAC
-    /* Load normal window settings: */
-    loadWindowSettings();
-#endif /* Q_WS_MAC */
-
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
     /* Show window: */
     showFullScreen();
+
+#ifdef Q_WS_MAC
+    /* Make sure it is really on the right place (especially on the Mac) */
+    move(0, 0);
+#endif /* Q_WS_MAC */
 }
 
 UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
@@ -170,17 +170,6 @@ void UIMachineWindowFullscreen::prepareMachineView()
     centralWidget()->setAutoFillBackground(true);
     setAutoFillBackground(true);
 }
-
-#ifdef Q_WS_MAC
-void UIMachineWindowFullscreen::loadWindowSettings()
-{
-    /* Load global settings: */
-    {
-        VBoxGlobalSettings settings = vboxGlobal().settings();
-        menuBar()->setHidden(settings.isFeatureActive("noMenuBar"));
-    }
-}
-#endif
 
 void UIMachineWindowFullscreen::cleanupMachineView()
 {
