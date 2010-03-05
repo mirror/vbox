@@ -827,7 +827,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** BIOS update signature (microcode). */
 #define MSR_IA32_BIOS_SIGN_ID               0x8B
 
-/* Nehalem power control */
+/** Nehalem power control. */
 #define MSR_IA32_PLATFORM_INFO              0xCE
 
 /** MTRR Capabilities. */
