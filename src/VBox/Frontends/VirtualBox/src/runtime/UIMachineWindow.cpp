@@ -401,7 +401,7 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
             strMachineName += " [" + vboxGlobal().toString(state) + "] - ";
         strMachineName += m_strWindowTitlePrefix;
         if (machine.GetMonitorCount() > 1)
-            strMachineName += QString(" : %1").arg(m_uScreenId);
+            strMachineName += QString(" : %1").arg(m_uScreenId + 1);
         machineWindow()->setWindowTitle(strMachineName);
 
         // TODO: Move that to fullscreen/seamless update routine:
