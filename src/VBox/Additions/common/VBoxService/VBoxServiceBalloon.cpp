@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * VBoxMemBalloon - Memory balloon notification.
+ * VBoxService - Memory Ballooning.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -18,13 +18,18 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #include <iprt/assert.h>
 #include <iprt/mem.h>
-#include <iprt/thread.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/semaphore.h>
 #include <iprt/system.h>
+#include <iprt/thread.h>
 #include <iprt/time.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
@@ -35,6 +40,7 @@
 /*******************************************************************************
 *   Global Variables                                                           *
 *******************************************************************************/
+/** The balloon size. */
 static uint32_t g_cMemBalloonChunks = 0;
 
 /** The semaphore we're blocking on. */
@@ -48,7 +54,7 @@ static void **g_pavBalloon = NULL;
  * Adapt the R0 memory balloon by granting/reclaiming 1MB chunks to/from R0.
  *
  * returns IPRT status code.
- * @param   cNewChunks     the number of 1MB chunks in the balloon
+ * @param   cNewChunks     The new number of 1MB chunks in the balloon.
  */
 static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
 {
@@ -63,17 +69,23 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
         g_pavBalloon = (void**)RTMemRealloc(g_pavBalloon, cNewChunks * sizeof(void*));
         for (i = g_cMemBalloonChunks; i < cNewChunks; i++)
         {
+/** @todo r=bird: this isn't safe on linux. See suplibOsPageAlloc in
+ *        SUPLib-linux.cpp. We should probably just fail outright here if
+ *        linux, just in case... */
             void *pv = RTMemPageAlloc(VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
             rc = VbglR3MemBalloonChange(pv, /* inflate=*/ true);
             if (RT_SUCCESS(rc))
             {
                 g_pavBalloon[i] = pv;
-                /* protect against access by dangling pointers */
+                /* protect against access by dangling pointers (may fail) */
                 RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
                 g_cMemBalloonChunks++;
             }
             else
+            {
+                RTMemPageFree(pv);
                 break;
+            }
         }
     }
     else
@@ -151,18 +163,22 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
 }
 
 
-uint32_t VBoxServiceBalloonQueryChunks()
+/**
+ * Query the size of the memory balloon, given as a count of chunks.
+ *
+ * @returns The number of chunks (VMMDEV_MEMORY_BALLOON_CHUNK_SIZE).
+ */
+uint32_t VBoxServiceBalloonQueryChunks(void)
 {
     return g_cMemBalloonChunks;
 }
 
+
 /** @copydoc VBOXSERVICE::pfnWorker */
 DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
 {
-    int rc = VINF_SUCCESS;
-
     /* Start monitoring of the stat event change event. */
-    rc = VbglR3CtlFilterMask(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0);
+    int rc = VbglR3CtlFilterMask(VMMDEV_EVENT_BALLOON_CHANGE_REQUEST, 0);
     if (RT_FAILURE(rc))
     {
         VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: VbglR3CtlFilterMask failed with %Rrc\n", rc);
