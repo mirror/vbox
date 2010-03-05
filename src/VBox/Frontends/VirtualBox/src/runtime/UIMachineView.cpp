@@ -1755,7 +1755,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
 //    else
 #endif
 //    {
-#if 0 // TODO: Paint pause-shot on screen during pause!
         /* We have a snapshot for the paused state: */
         QRect r = pPaintEvent->rect().intersect(viewport()->rect());
         /* We have to disable paint on screen if we are using the regular painter: */
@@ -1765,7 +1764,6 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         pnt.drawPixmap(r.x(), r.y(), m_pauseShot, r.x() + contentsX(), r.y() + contentsY(), r.width(), r.height());
         /* Restore the attribute to its previous state: */
         viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
-#endif
 #ifdef Q_WS_MAC
 //        updateDockIcon();
 #endif
