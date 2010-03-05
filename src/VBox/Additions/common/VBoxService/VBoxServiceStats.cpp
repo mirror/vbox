@@ -42,7 +42,7 @@
 
 typedef struct _VBOXSTATSCONTEXT
 {
-    uint32_t              uStatInterval;
+    RTMSINTERVAL          cMsStatInterval;
 
     uint64_t              ullLastCpuLoad_Idle;
     uint64_t              ullLastCpuLoad_Kernel;
@@ -90,14 +90,14 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
     int rc = RTSemEventMultiCreate(&g_VMStatEvent);
     AssertRCReturn(rc, rc);
 
-    gCtx.uStatInterval          = 0;     /* default; update disabled */
+    gCtx.cMsStatInterval        = 0;     /* default; update disabled */
     gCtx.ullLastCpuLoad_Idle    = 0;
     gCtx.ullLastCpuLoad_Kernel  = 0;
     gCtx.ullLastCpuLoad_User    = 0;
 
-    rc = VbglR3StatQueryInterval(&gCtx.uStatInterval);
+    rc = VbglR3StatQueryInterval(&gCtx.cMsStatInterval);
     if (RT_SUCCESS(rc))
-        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %d seconds\n", gCtx.uStatInterval);
+        VBoxServiceVerbose(3, "VBoxStatsInit: new statistics interval %u seconds\n", gCtx.cMsStatInterval);
     else
         VBoxServiceVerbose(3, "VBoxStatsInit: DeviceIoControl failed with %d\n", rc);
 
@@ -282,23 +282,23 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
     for (;;)
     {
         uint32_t fEvents = 0;
-        uint32_t u32WaitMillies;
+        RTMSINTERVAL cWaitMillies;
 
         /* Check if an update interval change is pending. */
         rc = VbglR3WaitEvent(VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST, 0 /* no wait */, &fEvents);
         if (    RT_SUCCESS(rc)
             &&  (fEvents & VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST))
         {
-            VbglR3StatQueryInterval(&gCtx.uStatInterval);
+            VbglR3StatQueryInterval(&gCtx.cMsStatInterval);
         }
 
-        if (gCtx.uStatInterval)
+        if (gCtx.cMsStatInterval)
         {
             VBoxServiceVMStatsReport();
-            u32WaitMillies = gCtx.uStatInterval;
+            cWaitMillies = gCtx.cMsStatInterval;
         }
         else
-            u32WaitMillies = 3000;
+            cWaitMillies = 3000;
 
         /*
          * Block for a while.
@@ -308,7 +308,7 @@ DECLCALLBACK(int) VBoxServiceVMStatsWorker(bool volatile *pfShutdown)
          */
         if (*pfShutdown)
             break;
-        int rc2 = RTSemEventMultiWait(g_VMStatEvent, u32WaitMillies);
+        int rc2 = RTSemEventMultiWait(g_VMStatEvent, cWaitMillies);
         if (*pfShutdown)
             break;
         if (rc2 != VERR_TIMEOUT && RT_FAILURE(rc2))

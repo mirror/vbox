@@ -38,6 +38,8 @@
 #include <VBox/version.h>
 #include "VBGLR3Internal.h"
 
+/** @todo Split this file up so we can drop most of the VBOX_VBGLR3_XFREE86
+ *        #ifdef'ing. */
 
 /**
  * Wait for the host to signal one or more events and return which.
@@ -47,7 +49,7 @@
  * have already been signalled but not yet waited for, this function will return
  * immediately and return those events.
  *
- * @returns IPRT status code
+ * @returns IPRT status code.
  *
  * @param   fMask       The events we want to wait for, or-ed together.
  * @param   cMillies    How long to wait before giving up and returning
@@ -73,7 +75,7 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
     if (RT_SUCCESS(rc))
     {
 #if !defined(VBOX_VBGLR3_XFREE86) && !defined(RT_OS_WINDOWS)
-        AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d rc=%d\n", waitEvent.u32Result, rc));
+        AssertMsg(waitEvent.u32Result == VBOXGUEST_WAITEVENT_OK, ("%d rc=%Rrc\n", waitEvent.u32Result, rc));
 #endif
         if (pfEvents)
             *pfEvents = waitEvent.u32EventFlagsOut;
@@ -92,9 +94,9 @@ VBGLR3DECL(int) VbglR3WaitEvent(uint32_t fMask, uint32_t cMillies, uint32_t *pfE
  * with a VERR_INTERRUPTED status.
  *
  * Can be used in combination with a termination flag variable for interrupting
- * event loops. Avoiding race conditions is the responsibility of the caller.
+ * event loops.  Avoiding race conditions is the responsibility of the caller.
  *
- * @returns IPRT status code
+ * @returns IPRT status code.
  */
 VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 {
@@ -105,7 +107,11 @@ VBGLR3DECL(int) VbglR3InterruptEventWaits(void)
 /**
  * Write to the backdoor logger from ring 3 guest code.
  *
- * @returns IPRT status code
+ * @returns IPRT status code.
+ *
+ * @param   pch     The string to log.  Does not need to be terminated.
+ * @param   cb      The number of byte to log.
+ * @todo    cb -> cch.
  *
  * @remarks This currently does not accept more than 255 bytes of data at
  *          one time. It should probably be rewritten to use pass a pointer
@@ -160,7 +166,7 @@ VBGLR3DECL(int) VbglR3WriteLog(const char *pch, size_t cb)
 /**
  * Change the IRQ filter mask.
  *
- * @returns IPRT status code
+ * @returns IPRT status code.
  * @param   fOr     The OR mask.
  * @param   fNo     The NOT mask.
  */
@@ -176,7 +182,7 @@ VBGLR3DECL(int) VbglR3CtlFilterMask(uint32_t fOr, uint32_t fNot)
 /**
  * Report a change in the capabilities that we support to the host.
  *
- * @returns IPRT status value
+ * @returns IPRT status code.
  * @param   fOr     Capabilities which have been added.
  * @param   fNot    Capabilities which have been removed.
  *
@@ -199,30 +205,37 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     return rc;
 }
 
+#ifndef VBOX_VBGLR3_XFREE86
+
 /**
- * Query the current statistics update interval
+ * Query the current statistics update interval.
  *
- * @returns IPRT status code
- * @param   pu32Interval    Update interval in ms (out)
+ * @returns IPRT status code.
+ * @param   pcMsInterval    Update interval in ms (out).
  */
-VBGLR3DECL(int) VbglR3StatQueryInterval(uint32_t *pu32Interval)
+VBGLR3DECL(int) VbglR3StatQueryInterval(PRTMSINTERVAL pcMsInterval)
 {
     VMMDevGetStatisticsChangeRequest Req;
 
     vmmdevInitRequest(&Req.header, VMMDevReq_GetStatisticsChangeRequest);
     Req.eventAck = VMMDEV_EVENT_STATISTICS_INTERVAL_CHANGE_REQUEST;
+    Req.u32StatInterval = 1;
     int rc = vbglR3GRPerform(&Req.header);
     if (RT_SUCCESS(rc))
-        *pu32Interval = Req.u32StatInterval * 1000;
+    {
+        *pcMsInterval = Req.u32StatInterval * 1000;
+        if (*pcMsInterval / 1000 != Req.u32StatInterval)
+            *pcMsInterval = ~(RTMSINTERVAL)0;
+    }
     return rc;
 }
 
 
 /**
- * Report guest statistics
+ * Report guest statistics.
  *
- * @returns IPRT status code
- * @param   pReq        Request packet with statistics
+ * @returns IPRT status code.
+ * @param   pReq        Request packet with statistics.
  */
 VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
 {
@@ -232,18 +245,22 @@ VBGLR3DECL(int) VbglR3StatReport(VMMDevReportGuestStats *pReq)
 
 
 /**
- * Refresh the memory balloon after a change
+ * Refresh the memory balloon after a change.
  *
- * @returns IPRT status code
- * @param   pu32Size    Memory balloon size in MBs (out)
- * @param   pfHandleInR3 Allocating of memory in R3 required (out)
+ * @returns IPRT status code.
+ * @param   pcChunks        The size of the balloon in chunks of 1MB (out).
+ * @param   pfHandleInR3    Allocating of memory in R3 required (out).
  */
 VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
 {
     VBoxGuestCheckBalloonInfo Info;
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_CHECK_BALLOON, &Info, sizeof(Info));
-    *pcChunks = Info.cBalloonChunks;
-    *pfHandleInR3 = Info.fHandleInR3;
+    if (RT_SUCCESS(rc))
+    {
+        *pcChunks = Info.cBalloonChunks;
+        Assert(Info.fHandleInR3 == false || Info.fHandleInR3 == true ||  RT_FAILURE(rc));
+        *pfHandleInR3 = Info.fHandleInR3 != false;
+    }
     return rc;
 }
 
@@ -251,10 +268,10 @@ VBGLR3DECL(int) VbglR3MemBalloonRefresh(uint32_t *pcChunks, bool *pfHandleInR3)
 /**
  * Change the memory by granting/reclaiming memory to/from R0.
  *
- * @returns IPRT status code
- * @param   pv          Memory chunk (1MB)
- * @param   fInflate    true = inflate balloon (grant memory)
- *                      false = deflate balloon (reclaim memory)
+ * @returns IPRT status code.
+ * @param   pv          Memory chunk (1MB).
+ * @param   fInflate    true = inflate balloon (grant memory).
+ *                      false = deflate balloon (reclaim memory).
  */
 VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
 {
@@ -265,7 +282,6 @@ VBGLR3DECL(int) VbglR3MemBalloonChange(void *pv, bool fInflate)
 }
 
 
-#ifndef VBOX_VBGLR3_XFREE86
 /**
  * Fallback for vbglR3GetAdditionsVersion.
  */
@@ -296,8 +312,6 @@ static int vbglR3GetAdditionsCompileTimeVersion(char **ppszVer, char **ppszRev)
 
     return VINF_SUCCESS;
 }
-#endif
-
 
 #ifdef RT_OS_WINDOWS
 /**
@@ -352,10 +366,9 @@ static int vbglR3CloseAdditionsWinStoragePath(HKEY hKey)
 {
     return RTErrConvertFromWin32(RegCloseKey(hKey));
 }
+
 #endif /* RT_OS_WINDOWS */
 
-
-#ifndef VBOX_VBGLR3_XFREE86
 /**
  * Retrieves the installed Guest Additions version and/or revision.
  *
@@ -450,7 +463,7 @@ VBGLR3DECL(int) VbglR3GetAdditionsVersion(char **ppszVer, char **ppszRev)
     return vbglR3GetAdditionsCompileTimeVersion(ppszVer, ppszRev);
 #endif /* !RT_OS_WINDOWS */
 }
-#endif /* !VBOX_VBGLR3_XFREE86 */
+
 
 /**
  * Retrieves the installation path of Guest Additions.
@@ -505,3 +518,6 @@ VBGLR3DECL(int) VbglR3GetAdditionsInstallationPath(char **ppszPath)
 #endif
     return rc;
 }
+
+#endif /* !VBOX_VBGLR3_XFREE86 */
+
