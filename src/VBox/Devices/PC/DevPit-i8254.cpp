@@ -163,6 +163,9 @@ typedef struct PITState
     PDMIPITPORT             IPITPort;
     /** Pointer to the device instance. */
     PPDMDEVINSR3            pDevIns;
+#if HC_ARCH_BITS == 32
+    uint32_t                alignment1;
+#endif
     /** Number of IRQs that's been raised. */
     STAMCOUNTER             StatPITIrq;
     /** Profiling the timer callback handler. */
