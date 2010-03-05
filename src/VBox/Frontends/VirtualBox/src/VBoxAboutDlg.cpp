@@ -101,7 +101,7 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
                       Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
                       mAboutText);
 #else /* VBOX_OSE */
-    painter.drawText (QRect (349, 370, 300, 72),
+    painter.drawText (QRect (290, 370, 360, 72),
                       Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                       mAboutText);
 #endif /* VBOX_OSE */
