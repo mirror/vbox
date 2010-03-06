@@ -57,6 +57,8 @@ typedef struct VDSNAPTEST
     uint32_t    uCreateDiffChance;
     /** Chance to change a segment after a diff was created */
     uint32_t    uChangeSegChance;
+    /** Numer of allocated blocks in the base image in percent */
+    uint32_t    uAllocatedBlocks;
 } VDSNAPTEST, *PVDSNAPTEST;
 
 /**
@@ -136,11 +138,16 @@ static int tstVDSnapWrite(PVBOXHDD pVD, PVDDISKSEG paDiskSegments,
         {
             size_t cbWrite  = paDiskSegments[i].cbSeg;
             uint64_t off    = paDiskSegments[i].off;
-            uint8_t *pbData = fInit ? paDiskSegments[i].pbData : paDiskSegments[i].pbDataDiff;
+            uint8_t *pbData =   fInit
+                              ? paDiskSegments[i].pbData
+                              : paDiskSegments[i].pbDataDiff;
 
-            rc = VDWrite(pVD, off, pbData, cbWrite);
-            if (RT_FAILURE(rc))
-                return rc;
+            if (pbData)
+            {
+                rc = VDWrite(pVD, off, pbData, cbWrite);
+                if (RT_FAILURE(rc))
+                    return rc;
+            }
         }
     }
 
@@ -168,22 +175,39 @@ static int tstVDSnapReadVerify(PVBOXHDD pVD, PVDDISKSEG paDiskSegments, uint32_t
             if (RT_FAILURE(rc))
                 return rc;
 
-            if (memcmp(pbCmp, pbBuf, cbToRead))
+            if (pbCmp)
             {
+                if (memcmp(pbCmp, pbBuf, cbToRead))
+                {
+                    for (unsigned iCmp = 0; iCmp < cbToRead; iCmp++)
+                    {
+                        if (pbCmp[iCmp] != pbBuf[iCmp])
+                        {
+                            RTPrintf("Unexpected data at %llu expected %#x got %#x\n", off+iCmp, pbCmp[iCmp], pbBuf[iCmp]);
+                            break;
+                        }
+                    }
+                    return VERR_INTERNAL_ERROR;
+                }
+            }
+            else
+            {
+                /* Verify that the block is 0 */
                 for (unsigned iCmp = 0; iCmp < cbToRead; iCmp++)
                 {
-                    if (pbCmp[iCmp] != pbBuf[iCmp])
+                    if (pbBuf[iCmp] != 0)
                     {
-                        RTPrintf("Unexpected data at %llu expected %#x got %#x\n", off+i, pbCmp[iCmp], pbBuf[iCmp]);
-                        break;
+                        RTPrintf("Zero block contains data at %llu\n", off+iCmp);
+                        return VERR_INTERNAL_ERROR;
                     }
                 }
-                return VERR_INTERNAL_ERROR;
             }
 
             cbRead -= cbToRead;
             off    += cbToRead;
-            pbCmp  += cbToRead;
+
+            if (pbCmp)
+                pbCmp  += cbToRead;
         }
     }
 
@@ -224,7 +248,10 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     {
         paDiskSeg[i].off    = cbDisk;
         paDiskSeg[i].cbSeg  = RT_ALIGN_64(RTRandU64Ex(512, pTest->cbTestPattern), 512);
-        paDiskSeg[i].pbData = pbTestPattern + RT_ALIGN_64(RTRandU64Ex(0, pTest->cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
+        if (tstVDSnapIsTrue(pTest->uAllocatedBlocks))
+            paDiskSeg[i].pbData = pbTestPattern + RT_ALIGN_64(RTRandU64Ex(0, pTest->cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
+        else
+            paDiskSeg[i].pbData = NULL; /* Not allocated initially */
         cbDisk += paDiskSeg[i].cbSeg;
     }
 
@@ -370,6 +397,7 @@ int main(int argc, char *argv[])
     Test.cDiffsMinBeforeMerge = 10;
     Test.uCreateDiffChance    = 50; /* % */
     Test.uChangeSegChance     = 20; /* % */
+    Test.uAllocatedBlocks     = 50; /* 50% allocated */
     tstVDOpenCreateWriteMerge(&Test);
 
     rc = VDShutdown();
