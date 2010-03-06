@@ -52,7 +52,7 @@ endif
 # Basic testcases for the VD code.
 #
 ifdef VBOX_WITH_TESTCASES
- PROGRAMS += tstVD tstVD-2 tstVDCopy
+ PROGRAMS += tstVD tstVD-2 tstVDCopy tstVDSnap
  ifeq ($(KBUILD_TARGET),l4)
   tstVD_TEMPLATE = VBOXLNXHOSTR3EXE
   tstVD-2_TEMPLATE = VBOXLNXHOSTR3EXE
@@ -65,9 +65,11 @@ ifdef VBOX_WITH_TESTCASES
  tstVD_LIBS     = $(LIB_DDU) $(LIB_RUNTIME)
  tstVD-2_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVDCopy_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
+ tstVDSnap_LIBS   = $(LIB_DDU) $(LIB_RUNTIME)
  tstVD_SOURCES  = tstVD.cpp
  tstVD-2_SOURCES  = tstVD-2.cpp
  tstVDCopy_SOURCES  = tstVDCopy.cpp
+ tstVDSnap_SOURCES  = tstVDSnap.cpp
 endif
 
 include	$(KBUILD_PATH)/subfooter.kmk
