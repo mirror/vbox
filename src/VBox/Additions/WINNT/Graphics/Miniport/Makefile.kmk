@@ -86,7 +86,7 @@ ifdef VBOXWDDM
   VBoxVideoWddm_DEFS      += VBOX_WITH_VIDEOHWACCEL
  endif
  VBoxVideoWddm_DEFS       += LOG_ENABLED
- #VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR 
+ #VBoxVideoWddm_DEFS       += LOG_TO_BACKDOOR
  VBoxVideoWddm_INCS       += ../../include
  VBoxVideoWddm_LDFLAGS.x86 += /Entry:DriverEntry@8
  VBoxVideoWddm_LDFLAGS.amd64 += /Entry:DriverEntry

@@ -92,4 +92,3 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
     return VERR_NOT_IMPLEMENTED;
 }
 
-

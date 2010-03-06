@@ -49,11 +49,11 @@ HRESULT rtSystemInitializeDmiLookup()
     HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
     if (SUCCEEDED(hr))
     {
-        hr = CoInitializeSecurity(NULL, 
+        hr = CoInitializeSecurity(NULL,
                                   -1,                          /* COM authentication. */
                                   NULL,                        /* Which authentication services. */
                                   NULL,                        /* Reserved. */
-                                  RPC_C_AUTHN_LEVEL_DEFAULT,   /* Default authentication. */ 
+                                  RPC_C_AUTHN_LEVEL_DEFAULT,   /* Default authentication. */
                                   RPC_C_IMP_LEVEL_IMPERSONATE, /* Default impersonation. */
                                   NULL,                        /* Authentication info. */
                                   EOAC_NONE,                   /* Additional capabilities. */
@@ -75,24 +75,24 @@ HRESULT rtSystemConnectToDmiServer(IWbemLocator *pLocator, const char *pszServer
     AssertPtrNull(pszServer);
     AssertPtr(ppServices);
 
-    HRESULT hr = pLocator->ConnectServer(_bstr_t(TEXT(pszServer)),         
-                                         NULL,                    
-                                         NULL,                   
-                                         0,                      
-                                         NULL,                   
-                                         0,                      
-                                         0,                      
+    HRESULT hr = pLocator->ConnectServer(_bstr_t(TEXT(pszServer)),
+                                         NULL,
+                                         NULL,
+                                         0,
+                                         NULL,
+                                         0,
+                                         0,
                                          ppServices);
     if (SUCCEEDED(hr))
     {
-        hr = CoSetProxyBlanket(*ppServices,                  
-                               RPC_C_AUTHN_WINNT,          
-                               RPC_C_AUTHZ_NONE,            
-                               NULL,                        
-                               RPC_C_AUTHN_LEVEL_CALL,     
+        hr = CoSetProxyBlanket(*ppServices,
+                               RPC_C_AUTHN_WINNT,
+                               RPC_C_AUTHZ_NONE,
+                               NULL,
+                               RPC_C_AUTHN_LEVEL_CALL,
                                RPC_C_IMP_LEVEL_IMPERSONATE,
-                               NULL,                       
-                               EOAC_NONE);             
+                               NULL,
+                               EOAC_NONE);
     }
     return hr;
 }
@@ -110,9 +110,9 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
         return VERR_NOT_SUPPORTED;
 
     IWbemLocator *pLoc;
-    hr = CoCreateInstance(CLSID_WbemLocator,             
-                          0, 
-                          CLSCTX_INPROC_SERVER, 
+    hr = CoCreateInstance(CLSID_WbemLocator,
+                          0,
+                          CLSCTX_INPROC_SERVER,
                           IID_IWbemLocator, (LPVOID *)&pLoc);
     int rc = VINF_SUCCESS;
     if (SUCCEEDED(hr))
@@ -127,13 +127,13 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
             {
                 IWbemClassObject *pObj;
                 ULONG uCount;
-    
+
                 do
                 {
                     hr = pEnum->Next(WBEM_INFINITE,
                                      1,
                                      &pObj,
-                                     &uCount);            
+                                     &uCount);
                     if (   SUCCEEDED(hr)
                         && uCount > 0)
                     {
@@ -147,7 +147,7 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
                             default:
                                 rc = VERR_NOT_SUPPORTED;
                         }
-        
+
                         if (RT_SUCCESS(rc))
                         {
                             _variant_t v;
@@ -175,5 +175,4 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     return rc;
 }
 RT_EXPORT_SYMBOL(RTSystemQueryDmiString);
-
 

@@ -280,7 +280,7 @@ int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                 pUpPort = mpDrv[i]->pUpPort;
         }
         if (!pUpPort)
-            return S_OK;        
+            return S_OK;
 
         int vrc = pUpPort->pfnPutEvent(pUpPort, dx, dy, dz, dw, fButtons);
 
@@ -312,7 +312,7 @@ int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                 pUpPort = mpDrv[i]->pUpPort;
         }
         if (!pUpPort)
-            return S_OK;        
+            return S_OK;
 
         int vrc = pUpPort->pfnPutEventAbs(pUpPort, mouseXAbs, mouseYAbs, dz,
                                           dw, fButtons);

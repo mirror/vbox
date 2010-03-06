@@ -108,4 +108,3 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     return rc;
 }
 
-

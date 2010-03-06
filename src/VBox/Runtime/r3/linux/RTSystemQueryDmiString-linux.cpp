@@ -106,4 +106,3 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
 }
 RT_EXPORT_SYMBOL(RTSystemQueryDmiString);
 
-

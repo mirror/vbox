@@ -3175,7 +3175,7 @@ DECLINLINE(int) emInterpretInstructionCPU(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pD
             return VERR_EM_INTERPRETER;
         }
     }
-    else 
+    else
         Log2(("emInterpretInstructionCPU allowed to interpret user-level code!!\n"));
 
 #ifdef IN_RC
