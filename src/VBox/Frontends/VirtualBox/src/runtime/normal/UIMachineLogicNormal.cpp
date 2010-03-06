@@ -68,6 +68,11 @@ void UIMachineLogicNormal::initialize()
         /* Prepare normal machine window: */
         prepareMachineWindows();
 
+#ifdef Q_WS_MAC
+        /* Prepare dock: */
+        prepareDock();
+#endif /* Q_WS_MAC */
+
         /* Initialization: */
         sltMachineStateChanged();
         sltAdditionsStateChanged();

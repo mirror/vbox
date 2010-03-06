@@ -33,6 +33,7 @@
 #endif
 
 /* Global forwards */
+class QAction;
 class QActionGroup;
 
 /* Local forwards */
@@ -100,6 +101,9 @@ protected:
     virtual void prepareConsoleConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
+#ifdef Q_WS_MAC
+    virtual void prepareDock();
+#endif /* Q_WS_MAC */
     virtual void prepareRequiredFeatures();
     virtual void prepareConsolePowerUp();
 
@@ -151,6 +155,10 @@ private slots:
     void sltShowDebugCommandLine();
     void sltLoggingToggled(bool);
 #endif
+
+#ifdef Q_WS_MAC
+    void sltDockPreviewModeChanged(QAction *pAction);
+#endif /* Q_WS_MAC */
 
 private:
 

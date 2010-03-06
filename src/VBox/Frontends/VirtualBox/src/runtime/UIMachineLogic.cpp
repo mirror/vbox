@@ -562,6 +562,38 @@ void UIMachineLogic::prepareActionConnections()
 #endif
 }
 
+#ifdef Q_WS_MAC
+void UIMachineLogic::prepareDock()
+{
+    QMenu *pDockMenu = actionsPool()->action(UIActionIndex_Menu_Dock)->menu();
+
+    /* Add all VM menu entries to the dock menu. Leave out close and stuff like
+     * this. */
+    QList<QAction*> actions = actionsPool()->action(UIActionIndex_Menu_Machine)->menu()->actions();
+    for (int i=0; i < actions.size(); ++i)
+        if (actions.at(i)->menuRole() == QAction::TextHeuristicRole)
+            pDockMenu->addAction(actions.at(i));
+    pDockMenu->addSeparator();
+
+    QMenu *pDockSettingsMenu = actionsPool()->action(UIActionIndex_Menu_DockSettings)->menu();
+    QActionGroup *pDockPreviewModeGroup = new QActionGroup(this);
+    QAction *pDockEnablePreviewMonitor = actionsPool()->action(UIActionIndex_Toggle_DockPreviewMonitor);
+    pDockPreviewModeGroup->addAction(pDockEnablePreviewMonitor);
+    QAction *pDockDisablePreview = actionsPool()->action(UIActionIndex_Toggle_DockDisableMonitor);
+    pDockPreviewModeGroup->addAction(pDockDisablePreview);
+    pDockSettingsMenu->addActions(pDockPreviewModeGroup->actions());
+
+    pDockMenu->addMenu(pDockSettingsMenu);
+
+    connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
+            this, SLOT(sltDockPreviewModeChanged(QAction*)));
+
+    /* Add it to the dock. */
+    extern void qt_mac_set_dock_menu(QMenu *);
+    qt_mac_set_dock_menu(pDockMenu);
+}
+#endif /* Q_WS_MAC */
+
 void UIMachineLogic::prepareRequiredFeatures()
 {
     /* Get current console: */
@@ -1397,6 +1429,24 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
     }
 }
 #endif
+
+#ifdef Q_WS_MAC
+void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
+{
+//    if (mConsole)
+    {
+        CMachine machine = m_pSession->session().GetMachine();
+        if (!machine.isNull())
+        {
+            if (pAction == actionsPool()->action(UIActionIndex_Toggle_DockDisableMonitor))
+                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "false");
+            else if (pAction == actionsPool()->action(UIActionIndex_Toggle_DockPreviewMonitor))
+                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "true");
+//            mConsole->updateDockOverlay();
+        }
+    }
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
 {

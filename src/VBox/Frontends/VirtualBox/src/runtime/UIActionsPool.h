@@ -105,6 +105,13 @@ enum UIActionIndex
     UIActionIndex_Simple_Update,
     UIActionIndex_Simple_About,
 
+#ifdef Q_WS_MAC
+    UIActionIndex_Menu_Dock,
+    UIActionIndex_Menu_DockSettings,
+    UIActionIndex_Toggle_DockPreviewMonitor,
+    UIActionIndex_Toggle_DockDisableMonitor,
+#endif /* Q_WS_MAC */
+
     UIActionIndex_End
 };
 
