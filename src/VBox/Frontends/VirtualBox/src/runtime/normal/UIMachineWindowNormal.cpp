@@ -50,6 +50,10 @@ UIMachineWindowNormal::UIMachineWindowNormal(UIMachineLogic *pMachineLogic, ulon
     /* "This" is machine window: */
     m_pMachineWindow = this;
 
+    /* Set the main window in VBoxGlobal */
+    if (uScreenId == 0)
+        vboxGlobal().setMainWindow(this);
+
     /* Prepare window icon: */
     prepareWindowIcon();
 
