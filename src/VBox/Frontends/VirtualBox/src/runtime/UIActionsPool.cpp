@@ -25,6 +25,9 @@
 #include "UIActionsPool.h"
 #include "VBoxGlobal.h"
 
+/* Global includes */
+#include <QtGlobal>
+
 /* Action activation event */
 class ActivateActionEvent : public QEvent
 {
@@ -956,6 +959,84 @@ protected:
     }
 };
 
+#ifdef Q_WS_MAC
+class DockMenuAction : public UIMenuAction
+{
+    Q_OBJECT;
+
+public:
+
+    DockMenuAction(QObject *pParent)
+        : UIMenuAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi() {}
+};
+
+class DockSettingsMenuAction : public UIMenuAction
+{
+    Q_OBJECT;
+
+public:
+
+    DockSettingsMenuAction(QObject *pParent)
+        : UIMenuAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("Dock Icon"));
+    }
+};
+
+class ToggleDockPreviewMonitorAction : public UIToggleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ToggleDockPreviewMonitorAction(QObject *pParent)
+        : UIToggleAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("Show Monitor Preview"));
+    }
+};
+
+class ToggleDockDisableMonitorAction : public UIToggleAction
+{
+    Q_OBJECT;
+
+public:
+
+    ToggleDockDisableMonitorAction(QObject *pParent)
+        : UIToggleAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        setText(UIActionsPool::tr("Show Application Icon"));
+    }
+};
+#endif /* Q_WS_MAC */
 
 UIActionsPool::UIActionsPool(QObject *pParent)
     : QObject(pParent)
@@ -1001,6 +1082,12 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Simple_Register] = new PerformRegisterAction(this);
     m_actionsPool[UIActionIndex_Simple_Update] = new PerformUpdateAction(this);
     m_actionsPool[UIActionIndex_Simple_About] = new ShowAboutAction(this);
+
+#ifdef Q_WS_MAC
+    /* "Dock" menu actions: */
+    m_actionsPool[UIActionIndex_Toggle_DockPreviewMonitor] = new ToggleDockPreviewMonitorAction(this);
+    m_actionsPool[UIActionIndex_Toggle_DockDisableMonitor] = new ToggleDockDisableMonitorAction(this);
+#endif /* Q_WS_MAC */
 
     /* Create all menus */
     createMenus();
@@ -1063,6 +1150,15 @@ void UIActionsPool::createMenus()
     if (m_actionsPool[UIActionIndex_Menu_Help])
         delete m_actionsPool[UIActionIndex_Menu_Help];
     m_actionsPool[UIActionIndex_Menu_Help] = new MenuHelpAction(this);
+
+#ifdef Q_WS_MAC
+    if (m_actionsPool[UIActionIndex_Menu_Dock])
+        delete m_actionsPool[UIActionIndex_Menu_Dock];
+    m_actionsPool[UIActionIndex_Menu_Dock] = new DockMenuAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_DockSettings])
+        delete m_actionsPool[UIActionIndex_Menu_DockSettings];
+    m_actionsPool[UIActionIndex_Menu_DockSettings] = new DockSettingsMenuAction(this);
+#endif /* Q_WS_MAC */
 }
 
 bool UIActionsPool::processHotKey(const QKeySequence &key)
