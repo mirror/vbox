@@ -356,6 +356,8 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     if (aSelf)
         *aSelf = this;
 
+    vboxGlobal().setMainWindow (this);
+
     /* Cache IMedium data! */
     vboxGlobal().startEnumeratingMedia();
 
