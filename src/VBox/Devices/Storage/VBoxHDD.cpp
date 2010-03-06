@@ -2040,7 +2040,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 rc = pImageTo->Backend->pfnGetUuid(pImageTo->pvBackendData,
                                                    &Uuid);
                 AssertRC(rc);
-                rc = pImageFrom->Backend->pfnSetParentUuid(pImageFrom->pNext,
+                rc = pImageFrom->Backend->pfnSetParentUuid(pImageFrom->pNext->pvBackendData,
                                                            &Uuid);
                 AssertRC(rc);
             }
