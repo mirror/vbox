@@ -1165,7 +1165,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 ret = soread(pData, so);
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
-                else 
+                else
                     break;
             }
             /* mark the socket for termination _after_ it was drained */

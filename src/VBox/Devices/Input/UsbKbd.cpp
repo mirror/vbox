@@ -383,14 +383,14 @@ static uint8_t aExtScan2Hid[] =
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
 
-/** 
+/**
  * Convert a PC scan code to a USB HID usage byte.
- * 
+ *
  * @param state         Current state of the translator (scan_state_t).
  * @param scanCode      Incoming scan code.
  * @param pUsage        Pointer to usage; high bit set for key up events. The
  *                      contents are only valid if returned state is SS_IDLE.
- * 
+ *
  * @return scan_state_t New state of the translator.
  */
 static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uint32_t *pUsage)
@@ -895,7 +895,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
             {
                 uint16_t    wRet = 0;
 
-                if (pSetup->wLength != 2) 
+                if (pSetup->wLength != 2)
                 {
                     Log(("usbHid: Bad GET_STATUS req: wLength=%#x\n", pSetup->wLength));
                     break;
@@ -911,7 +911,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
                         return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
                     }
-    
+
                     case VUSB_TO_INTERFACE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
                     {
                         if (pSetup->wIndex == 0)

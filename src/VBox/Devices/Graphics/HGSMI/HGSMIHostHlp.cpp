@@ -82,4 +82,3 @@ HGSMILISTENTRY * hgsmiListRemoveAll (HGSMILIST *pList, HGSMILISTENTRY ** ppTail 
     return pHead;
 }
 
-

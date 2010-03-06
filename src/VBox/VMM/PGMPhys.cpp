@@ -3233,12 +3233,12 @@ VMMR3DECL(void) PGMR3PhysChunkInvalidateTLB(PVM pVM)
 
 
 /**
- * Response to VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE to allocate a large (2MB) page 
+ * Response to VMMCALLRING3_PGM_ALLOCATE_LARGE_PAGE to allocate a large (2MB) page
  * for use with a nested paging PDE.
  *
  * @returns The following VBox status codes.
- * @retval  VINF_SUCCESS on success. 
- * @retval  VINF_EM_NO_MEMORY if we're out of memory. 
+ * @retval  VINF_SUCCESS on success.
+ * @retval  VINF_EM_NO_MEMORY if we're out of memory.
  *
  * @param   pVM         The VM handle.
  * @param   GCPhys      GC physical start address of the 2 MB range

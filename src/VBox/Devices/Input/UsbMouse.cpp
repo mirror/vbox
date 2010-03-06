@@ -992,8 +992,8 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
             case VUSB_REQ_GET_STATUS:
             {
                 uint16_t    wRet = 0;
-    
-                if (pSetup->wLength != 2) 
+
+                if (pSetup->wLength != 2)
                 {
                     Log(("usbHid: Bad GET_STATUS req: wLength=%#x\n", pSetup->wLength));
                     break;
@@ -1009,7 +1009,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         memcpy(&pUrb->abData[sizeof(*pSetup)], &wRet, sizeof(wRet));
                         return usbHidCompleteOk(pThis, pUrb, sizeof(wRet) + sizeof(*pSetup));
                     }
-    
+
                     case VUSB_TO_INTERFACE | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
                     {
                         if (pSetup->wIndex == 0)
@@ -1023,7 +1023,7 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         }
                         break;
                     }
-    
+
                     case VUSB_TO_ENDPOINT | VUSB_REQ_STANDARD | VUSB_DIR_TO_HOST:
                     {
                         if (pSetup->wIndex < RT_ELEMENTS(pThis->aEps))
@@ -1038,14 +1038,14 @@ static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
                         }
                         break;
                     }
-    
+
                     default:
                         Log(("usbHid: Bad GET_STATUS req: bmRequestType=%#x\n", pSetup->bmRequestType));
                         return usbHidCompleteStall(pThis, pEp, pUrb, "Bad GET_STATUS");
                 }
                 break;
             }
-    
+
             case VUSB_REQ_CLEAR_FEATURE:
                 break;
         }
@@ -1161,7 +1161,7 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
         usbHidResetWorker(pThis, NULL, true /*fSetConfig*/); /** @todo figure out the exact difference */
     pThis->bConfigurationValue = bConfigurationValue;
 
-    /* 
+    /*
      * Set received event type to absolute or relative.
      */
     pThis->Lun0.pDrv->pfnReportModes(pThis->Lun0.pDrv, !pThis->isAbsolute,
@@ -1258,7 +1258,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     rc = CFGMR3QueryBoolDef(pCfg, "Absolute", &pThis->isAbsolute, false);
     if (RT_FAILURE(rc))
         return PDMUsbHlpVMSetError(pUsbIns, rc, RT_SRC_POS, N_("HID failed to query settings"));
-    
+
     pThis->Lun0.IBase.pfnQueryInterface = usbHidMouseQueryInterface;
     pThis->Lun0.IPort.pfnPutEvent       = usbHidMousePutEvent;
     pThis->Lun0.IPort.pfnPutEventAbs    = usbHidMousePutEventAbs;

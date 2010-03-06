@@ -491,7 +491,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
         unsigned uPDEType = PGM_PAGE_GET_PDE_TYPE(pPage);
 
         /* Don't call this function for already allocated pages. */
-        Assert(uPDEType != PGM_PAGE_PDE_TYPE_PDE); 
+        Assert(uPDEType != PGM_PAGE_PDE_TYPE_PDE);
 
         if  (   uPDEType == PGM_PAGE_PDE_TYPE_DONTCARE
              && PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
@@ -500,7 +500,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
 
             GCPhys = GCPhysBase;
 
-            /* Lazy approach: check all pages in the 2 MB range. 
+            /* Lazy approach: check all pages in the 2 MB range.
              * The whole range must be ram and unallocated
              */
             for (iPage = 0; iPage < _2M/PAGE_SIZE; iPage++)
@@ -535,7 +535,7 @@ int pgmPhysAllocLargePage(PVM pVM, RTGCPHYS GCPhys)
                 rc = VMMRZCallRing3NoCpu(pVM, VMMCALLRING3_PGM_ALLOCATE_LARGE_HANDY_PAGE, GCPhysBase);
 # endif
                 if (RT_SUCCESS(rc))
-                {   
+                {
                     Assert(PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED);
                     STAM_REL_COUNTER_INC(&pVM->pgm.s.StatLargePageAlloc);
                     return VINF_SUCCESS;
