@@ -102,6 +102,8 @@ TEMPLATE_XPCOM_DEFS.solaris        = OSTYPE=\"Solaris10\"   OSARCH=\"Solaris\" X
 ## @todo The LDFLAGS inheriting is being hidden here and below where -fPIC is added.
 ifdef VBOX_WITH_RUNPATH
 TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RUNPATH)'
+else ifdef VBOX_WITH_RELATIVE_RUNPATH
+TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$(VBOX_WITH_RELATIVE_RUNPATH)/'
 else ifdef VBOX_WITH_ORIGIN
 TEMPLATE_XPCOM_LDFLAGS            += '$(VBOX_GCC_RPATH_OPT)$$(VBOX_ORIGIN)'
 endif
@@ -110,6 +112,7 @@ TEMPLATE_XPCOM_LDFLAGS.amd64       = -m64
 TEMPLATE_XPCOM_LDFLAGS.darwin      = $(TEMPLATE_VBOXR3NP_LDFLAGS.darwin) \
 	-fshort-wchar -fno-rtti -fno-exceptions -fpascal-strings \
 	-current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
+	-compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD) \
 	-framework CoreServices \
 	-framework CoreFoundation \
 	-framework Foundation \
@@ -186,7 +189,7 @@ TEMPLATE_XPCOMEXE_LIBS             = \
 TEMPLATE_XPCOMEXE_LIBS.freebsd     = $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.linux       = dl $(LIB_PTHREAD)
 TEMPLATE_XPCOMEXE_LIBS.l4          = $(LIB_RUNTIME) $(VBOX_GCC_LIBGCC)
-TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(filter-out -current_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD),$(TEMPLATE_XPCOM_LDFLAGS.darwin))
+TEMPLATE_XPCOMEXE_LDFLAGS.darwin   = -bind_at_load $(filter-out -current_version -compatibility_version $(VBOX_VERSION_MAJOR).$(VBOX_VERSION_MINOR).$(VBOX_VERSION_BUILD),$(TEMPLATE_XPCOM_LDFLAGS.darwin))
 TEMPLATE_XPCOMEXE_LDFLAGS.l4       = $(L4_DIR)/lib/x86_586/crt0.o \
     -T$(L4_DIR)/lib/x86_586/main_dyn.ld -nostdlib -lgcc \
     -Wl,--export-dynamic,--dynamic-linker=libld-l4.s.so \
