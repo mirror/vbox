@@ -84,8 +84,7 @@ SRCS += \
 	strformattype.c \
 	strprintf.c \
 	strtonum.c \
-	memchr.c \
-	string.c
+	memchr.c
 
 .PATH:	${.CURDIR}/common/rand
 SRCS += \
