@@ -173,8 +173,9 @@ void UIMachineLogicFullscreen::prepareActionGroups()
     /* Base class action groups: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Adjust window isn't allowed in fullscreen */
+    /* Adjust-window action isn't allowed in fullscreen: */
     actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(false);
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(false);
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
@@ -315,8 +316,9 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
 
 void UIMachineLogicFullscreen::cleanupActionGroups()
 {
-    /* Reenable adjust window */
+    /* Reenable adjust-window action: */
     actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(true);
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(true);
 }
 
 #ifdef Q_WS_MAC
