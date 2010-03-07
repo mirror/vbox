@@ -46,6 +46,9 @@ private slots:
     /* Console callback handlers: */
     void sltMachineStateChanged();
 
+    /* Popup main menu: */
+    void sltPopupMainMenu();
+
     /* Close window reimplementation: */
     void sltTryClose();
 
@@ -65,9 +68,7 @@ private:
 
     /* Prepare helpers: */
     void prepareSeamless();
-#ifdef Q_WS_MAC
     void prepareMenu();
-#endif /* Q_WS_MAC */
     void prepareMachineView();
 #ifdef Q_WS_MAC
     void loadWindowSettings();
@@ -78,9 +79,7 @@ private:
     //void saveWindowSettings() {}
 #endif /* Q_WS_MAC */
     void cleanupMachineView();
-#ifdef Q_WS_MAC
-    //void cleanupMenu() {}
-#endif /* Q_WS_MAC */
+    void cleanupMenu();
     //void cleanupSeamless() {}
 
     /* Other members: */
@@ -89,6 +88,7 @@ private:
     void clearMask();
 
     /* Private variables: */
+    QMenu *m_pMainMenu;
 #ifdef Q_WS_WIN
     QRegion m_prevRegion;
 #endif /* Q_WS_WIN */

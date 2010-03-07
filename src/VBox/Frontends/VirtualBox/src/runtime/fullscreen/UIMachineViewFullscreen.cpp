@@ -234,11 +234,7 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
             if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
             {
                 if (pKeyEvent->key() == Qt::Key_Home)
-                {
-#if 0 // TODO: Activate Main Menu!
-                    // should we create it first?
-#endif
-                }
+                    QTimer::singleShot(0, machineWindowWrapper()->machineWindow(), SLOT(sltPopupMainMenu()));
                 else
                     pEvent->ignore();
             }

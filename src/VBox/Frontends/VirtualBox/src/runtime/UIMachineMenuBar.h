@@ -23,20 +23,28 @@
 #ifndef __UIMachineMenuBar_h__
 #define __UIMachineMenuBar_h__
 
-class UISession;
-class UIActionsPool;
-class QMenuBar;
+/* Global includes */
+#include <QList>
+
+/* Global forwards */
 class QMenu;
+class QMenuBar;
+
+/* Local forwards */
+class UIActionsPool;
 
 class UIMachineMenuBar
 {
 public:
+
     UIMachineMenuBar();
 
-    QMenuBar* createMenuBar(UISession *pSession);
+    QMenu* createMenu(UIActionsPool *pActionsPool);
+    QMenuBar* createMenuBar(UIActionsPool *pActionsPool);
 
 protected:
 
+    QList<QMenu*> prepareSubMenus(UIActionsPool *pActionsPool);
     void prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsPool);
     void prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool);
 #ifdef VBOX_WITH_DEBUGGER_GUI

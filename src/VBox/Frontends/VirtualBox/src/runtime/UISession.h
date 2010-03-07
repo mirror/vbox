@@ -31,6 +31,7 @@
 #include "COMDefs.h"
 
 /* Global forwards */
+class QMenu;
 class QMenuBar;
 
 /* Local forwards */
@@ -78,7 +79,9 @@ public:
     CSession& session() { return m_session; }
     KMachineState machineState() const { return m_machineState; }
     UIActionsPool* actionsPool() const;
+    QMenu* newMenu();
     QMenuBar* newMenuBar();
+    QCursor cursor() const { return m_cursor; }
     QSize guestSizeHint(ulong uScreenId) const;
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }
@@ -94,7 +97,6 @@ public:
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRutimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
-    QCursor cursor() const { return m_cursor; }
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
@@ -170,21 +172,24 @@ private:
     bool event(QEvent *pEvent);
 
     /* Prepare helpers: */
+    void prepareMenuPool();
     void loadSessionSettings();
 
     /* Cleanup helpers: */
     void saveSessionSettings();
+    void cleanupMenuPool();
 
     /* Common helpers: */
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
+    void reinitMenuPool();
 
     /* Private variables: */
     UIMachine *m_pMachine;
     CSession &m_session;
     const CConsoleCallback m_callback;
 
-    UIMachineMenuBar *m_pMenuBar;
+    UIMachineMenuBar *m_pMenuPool;
 
     /* Common variables: */
     KMachineState m_machineState;
