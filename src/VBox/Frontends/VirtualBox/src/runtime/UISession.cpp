@@ -528,7 +528,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_session(sessionReference)
     , m_callback(CConsoleCallback(new UIConsoleCallback(this)))
     /* Common variables: */
-    , m_pMenuBar(0)
+    , m_pMenuPool(0)
     , m_machineState(KMachineState_Null)
 #if defined(Q_WS_WIN)
     , m_alphaCursor(0)
@@ -559,6 +559,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     /* Register console callback: */
     session().GetConsole().RegisterCallback(m_callback);
 
+    /* Prepare main menu: */
+    prepareMenuPool();
+
     /* Load uisession settings: */
     loadSessionSettings();
 }
@@ -567,6 +570,9 @@ UISession::~UISession()
 {
     /* Save uisession settings: */
     saveSessionSettings();
+
+    /* Cleanup main menu: */
+    cleanupMenuPool();
 
     /* Unregister console callback: */
     session().GetConsole().UnregisterCallback(m_callback);
@@ -583,52 +589,27 @@ UIActionsPool* UISession::actionsPool() const
     return m_pMachine->actionsPool();
 }
 
+QMenu* UISession::newMenu()
+{
+    /* Create new menu: */
+    QMenu *pMenu = m_pMenuPool->createMenu(actionsPool());
+
+    /* Re-init menu pool for the case manu were recreated: */
+    reinitMenuPool();
+
+    /* Return newly created menu: */
+    return pMenu;
+}
+
 QMenuBar* UISession::newMenuBar()
 {
-    /* */
-    QMenuBar *pMenuBar = m_pMenuBar->createMenuBar(this);
+    /* Create new menubar: */
+    QMenuBar *pMenuBar = m_pMenuPool->createMenuBar(actionsPool());
 
-    /* Get uisession machine: */
-    CMachine machine = session().GetConsole().GetMachine();
+    /* Re-init menu pool for the case manu were recreated: */
+    reinitMenuPool();
 
-    /* Availability settings: */
-    {
-        /* USB Stuff: */
-        CUSBController usbController = machine.GetUSBController();
-        if (   usbController.isNull()
-            || !usbController.GetProxyAvailable())
-        {
-            /* Hide USB menu if controller is NULL or no USB proxy available: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
-        }
-        else
-        {
-            /* Enable/Disable USB menu depending on USB controller: */
-            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
-        }
-    }
-
-    /* Prepare some initial settings: */
-    {
-        /* Initialize CD/FD menus: */
-        int iDevicesCountCD = 0;
-        int iDevicesCountFD = 0;
-        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
-        foreach (const CMediumAttachment &attachment, attachments)
-        {
-            if (attachment.GetType() == KDeviceType_DVD)
-                ++ iDevicesCountCD;
-            if (attachment.GetType() == KDeviceType_Floppy)
-                ++ iDevicesCountFD;
-        }
-        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
-        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
-        pOpticalDevicesMenu->setData(iDevicesCountCD);
-        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
-        pFloppyDevicesMenu->setData(iDevicesCountFD);
-        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
-    }
-
+    /* Return newly created menubar: */
     return pMenuBar;
 }
 
@@ -915,11 +896,14 @@ bool UISession::event(QEvent *pEvent)
     return QObject::event(pEvent);
 }
 
+void UISession::prepareMenuPool()
+{
+    m_pMenuPool = new UIMachineMenuBar;
+}
+
 void UISession::loadSessionSettings()
 {
-    m_pMenuBar = new UIMachineMenuBar;
-
-    /* Get uisession machine: */
+   /* Get uisession machine: */
     CMachine machine = session().GetConsole().GetMachine();
 
     /* Availability settings: */
@@ -983,9 +967,12 @@ void UISession::saveSessionSettings()
         // TODO: Move to fullscreen/seamless logic:
         //machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, mMiniToolBar->isAutoHide() ? "on" : "off");
     }
+}
 
-    delete m_pMenuBar;
-    m_pMenuBar = 0;
+void UISession::cleanupMenuPool()
+{
+    delete m_pMenuPool;
+    m_pMenuPool = 0;
 }
 
 WId UISession::winId() const
@@ -1226,5 +1213,49 @@ void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
 # warning "port me"
 
 #endif
+}
+
+void UISession::reinitMenuPool()
+{
+    /* Get uisession machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Availability settings: */
+    {
+        /* USB Stuff: */
+        CUSBController usbController = machine.GetUSBController();
+        if (   usbController.isNull()
+            || !usbController.GetProxyAvailable())
+        {
+            /* Hide USB menu if controller is NULL or no USB proxy available: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setVisible(false);
+        }
+        else
+        {
+            /* Enable/Disable USB menu depending on USB controller: */
+            uimachine()->actionsPool()->action(UIActionIndex_Menu_USBDevices)->setEnabled(usbController.GetEnabled());
+        }
+    }
+
+    /* Prepare some initial settings: */
+    {
+        /* Initialize CD/FD menus: */
+        int iDevicesCountCD = 0;
+        int iDevicesCountFD = 0;
+        const CMediumAttachmentVector &attachments = machine.GetMediumAttachments();
+        foreach (const CMediumAttachment &attachment, attachments)
+        {
+            if (attachment.GetType() == KDeviceType_DVD)
+                ++ iDevicesCountCD;
+            if (attachment.GetType() == KDeviceType_Floppy)
+                ++ iDevicesCountFD;
+        }
+        QAction *pOpticalDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_OpticalDevices);
+        QAction *pFloppyDevicesMenu = uimachine()->actionsPool()->action(UIActionIndex_Menu_FloppyDevices);
+        pOpticalDevicesMenu->setData(iDevicesCountCD);
+        pOpticalDevicesMenu->setVisible(iDevicesCountCD);
+        pFloppyDevicesMenu->setData(iDevicesCountFD);
+        pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
 }
 

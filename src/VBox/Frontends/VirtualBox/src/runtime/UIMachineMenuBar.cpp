@@ -38,66 +38,73 @@ UIMachineMenuBar::UIMachineMenuBar()
 {
 }
 
-QMenuBar* UIMachineMenuBar::createMenuBar(UISession *pSession)
+QMenu* UIMachineMenuBar::createMenu(UIActionsPool *pActionsPool)
 {
-    QMenuBar *pMenuBar = new QMenuBar(0);
+    /* Create empty menu: */
+    QMenu *pMenu = new QMenu;
 
-    UIActionsPool *pActionsPool = pSession->actionsPool();
+    /* Fill menu with prepared items: */
+    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool))
+        pMenu->addMenu(pSubMenu);
+
+    /* Return filled menu: */
+    return pMenu;
+}
+
+QMenuBar* UIMachineMenuBar::createMenuBar(UIActionsPool *pActionsPool)
+{
+    /* Create empty menubar: */
+    QMenuBar *pMenuBar = new QMenuBar;
+
+    /* Fill menubar with prepared items: */
+    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool))
+        pMenuBar->addMenu(pSubMenu);
+
+    /* Return filled menubar: */
+    return pMenuBar;
+}
+
+QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool)
+{
+    /* Create empty submenu list: */
+    QList<QMenu*> preparedSubMenus;
 
     /* Machine submenu: */
     QMenu *pMenuMachine = pActionsPool->action(UIActionIndex_Menu_Machine)->menu();
     prepareMenuMachine(pMenuMachine, pActionsPool);
-    pMenuBar->addMenu(pMenuMachine);
+    preparedSubMenus << pMenuMachine;
 
     /* Devices submenu: */
     QMenu *pMenuDevices = pActionsPool->action(UIActionIndex_Menu_Devices)->menu();
     prepareMenuDevices(pMenuDevices, pActionsPool);
-    pMenuBar->addMenu(pMenuDevices);
+    preparedSubMenus << pMenuDevices;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Debug submenu: */
     if (vboxGlobal().isDebuggerEnabled())
     {
         QMenu *pMenuDebug = pActionsPool->action(UIActionIndex_Menu_Debug)->menu();
         prepareMenuDebug(pMenuDebug, pActionsPool);
-        pMenuBar->addMenu(pMenuDebug);
+        preparedSubMenus << pMenuDebug;
     }
 #endif
 
     /* Help submenu: */
     QMenu *pMenuHelp = pActionsPool->action(UIActionIndex_Menu_Help)->menu();
     prepareMenuHelp(pMenuHelp, pActionsPool);
-    pMenuBar->addMenu(pMenuHelp);
+    preparedSubMenus << pMenuHelp;
 
-    /* Because this connections are done to VBoxGlobal, they are needed once
-     * only. Otherwise we will get the slots called more than once. */
-    if (m_fIsFirstTime)
-    {
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(showHelpHelpDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(showHelpWebDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(resetSuppressedMessages()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
-                            &vboxGlobal(), SLOT(showRegistrationDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
-                            &vboxGlobal(), SLOT(showUpdateDialog()));
-        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
-                            &vboxProblem(), SLOT(showHelpAboutDialog()));
-
-        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
-                            pActionsPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
-        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
-                            pActionsPool->action(UIActionIndex_Simple_Update), SLOT(setEnabled(bool)));
-
-        m_fIsFirstTime = false;
-    }
-
-    return pMenuBar;
+    /* Return a list of prepared submenus: */
+    return preparedSubMenus;
 }
 
 void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsPool)
 {
+    /* Do not prepare if ready: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Machine submenu: */
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Fullscreen));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Seamless));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_GuestAutoresize));
@@ -127,7 +134,11 @@ void UIMachineMenuBar::prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsP
 
 void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool)
 {
-    /* Devices submenu */
+    /* Do not prepare if ready: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Devices submenu: */
     pMenu->addMenu(pActionsPool->action(UIActionIndex_Menu_OpticalDevices)->menu());
     pMenu->addMenu(pActionsPool->action(UIActionIndex_Menu_FloppyDevices)->menu());
     pMenu->addMenu(pActionsPool->action(UIActionIndex_Menu_USBDevices)->menu());
@@ -142,7 +153,11 @@ void UIMachineMenuBar::prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsP
 #ifdef VBOX_WITH_DEBUGGER_GUI
 void UIMachineMenuBar::prepareMenuDebug(QMenu *pMenu, UIActionsPool *pActionsPool)
 {
-    /* Debug submenu */
+    /* Do not prepare if ready: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Debug submenu: */
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Statistics));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_CommandLine));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Toggle_Logging));
@@ -151,6 +166,11 @@ void UIMachineMenuBar::prepareMenuDebug(QMenu *pMenu, UIActionsPool *pActionsPoo
 
 void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool)
 {
+    /* Do not prepare if ready: */
+    if (!pMenu->isEmpty())
+        return;
+
+    /* Help submenu: */
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Help));
     pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_Web));
     pMenu->addSeparator();
@@ -172,5 +192,30 @@ void UIMachineMenuBar::prepareMenuHelp(QMenu *pMenu, UIActionsPool *pActionsPool
     if (m_fIsFirstTime)
 #endif /* !Q_WS_MAC */
         pMenu->addAction(pActionsPool->action(UIActionIndex_Simple_About));
+
+    /* Because this connections are done to VBoxGlobal, they are needed once only.
+     * Otherwise we will get the slots called more than once. */
+    if (m_fIsFirstTime)
+    {
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Help), SIGNAL(triggered()),
+                            &vboxProblem(), SLOT(showHelpHelpDialog()));
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Web), SIGNAL(triggered()),
+                            &vboxProblem(), SLOT(showHelpWebDialog()));
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_ResetWarnings), SIGNAL(triggered()),
+                            &vboxProblem(), SLOT(resetSuppressedMessages()));
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Register), SIGNAL(triggered()),
+                            &vboxGlobal(), SLOT(showRegistrationDialog()));
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_Update), SIGNAL(triggered()),
+                            &vboxGlobal(), SLOT(showUpdateDialog()));
+        VBoxGlobal::connect(pActionsPool->action(UIActionIndex_Simple_About), SIGNAL(triggered()),
+                            &vboxProblem(), SLOT(showHelpAboutDialog()));
+
+        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowRegDlg (bool)),
+                            pActionsPool->action(UIActionIndex_Simple_Register), SLOT(setEnabled(bool)));
+        VBoxGlobal::connect(&vboxGlobal(), SIGNAL (canShowUpdDlg (bool)),
+                            pActionsPool->action(UIActionIndex_Simple_Update), SLOT(setEnabled(bool)));
+
+        m_fIsFirstTime = false;
+    }
 }
 

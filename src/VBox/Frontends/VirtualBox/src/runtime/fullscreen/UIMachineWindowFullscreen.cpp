@@ -30,9 +30,7 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 
-#ifdef Q_WS_MAC
 #include "UISession.h"
-#endif /* Q_WS_MAC */
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowFullscreen.h"
@@ -40,32 +38,31 @@
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
+    , m_pMainMenu(0)
 {
     /* "This" is machine window: */
     m_pMachineWindow = this;
 
-    /* Set the main window in VBoxGlobal */
+    /* Set the main window in VBoxGlobal: */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
 
-    /* Prepare window icon: */
+    /* Prepare fullscreen window icon: */
     prepareWindowIcon();
 
     /* Prepare console connections: */
     prepareConsoleConnections();
 
-#ifdef Q_WS_MAC
-    /* Prepare menu: */
+    /* Prepare fullscreen menu: */
     prepareMenu();
-#endif /* Q_WS_MAC */
 
-    /* Retranslate normal window finally: */
+    /* Retranslate fullscreen window finally: */
     retranslateUi();
 
     /* Prepare machine view container: */
     prepareMachineViewContainer();
 
-    /* Prepare normal machine view: */
+    /* Prepare fullscreen machine view: */
     prepareMachineView();
 
     /* Update all the elements: */
@@ -84,11 +81,21 @@ UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
 {
     /* Cleanup normal machine view: */
     cleanupMachineView();
+
+    /* Cleanup menu: */
+    cleanupMenu();
 }
 
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
+}
+
+void UIMachineWindowFullscreen::sltPopupMainMenu()
+{
+    /* Popup main menu if present: */
+    if (m_pMainMenu && !m_pMainMenu->isEmpty())
+        m_pMainMenu->popup(machineWindow()->geometry().center());
 }
 
 void UIMachineWindowFullscreen::sltTryClose()
@@ -136,12 +143,14 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
     return UIMachineWindow::closeEvent(pEvent);
 }
 
-#ifdef Q_WS_MAC
 void UIMachineWindowFullscreen::prepareMenu()
 {
+#ifdef Q_WS_MAC
     setMenuBar(uisession()->newMenuBar());
-}
+#else /* To NaN: Please uncomment below for mac too and test! */
+    m_pMainMenu = uisession()->newMenu();
 #endif /* Q_WS_MAC */
+}
 
 void UIMachineWindowFullscreen::prepareMachineView()
 {
@@ -183,5 +192,15 @@ void UIMachineWindowFullscreen::cleanupMachineView()
 
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindowFullscreen::cleanupMenu()
+{
+#ifdef Q_WS_MAC
+    // Sync with UIMachineWindowFullscreen::prepareMenu()!
+#else /* To NaN: Please uncomment below for mac too and test! */
+    delete m_pMainMenu;
+    m_pMainMenu = 0;
+#endif /* Q_WS_MAC */
 }
 

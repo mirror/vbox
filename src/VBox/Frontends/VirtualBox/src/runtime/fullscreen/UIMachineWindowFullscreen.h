@@ -46,6 +46,9 @@ private slots:
     /* Console callback handlers: */
     void sltMachineStateChanged();
 
+    /* Popup main menu: */
+    void sltPopupMainMenu();
+
     /* Close window reimplementation: */
     void sltTryClose();
 
@@ -61,17 +64,16 @@ private:
     void closeEvent(QCloseEvent *pEvent);
 
     /* Prepare helpers: */
-#ifdef Q_WS_MAC
     void prepareMenu();
-#endif /* Q_WS_MAC */
     void prepareMachineView();
 
     /* Cleanup helpers: */
     //void saveWindowSettings() {}
     void cleanupMachineView();
-#ifdef Q_WS_MAC
-    //void cleanupMenu() {}
-#endif /* Q_WS_MAC */
+    void cleanupMenu();
+
+    /* Private variables: */
+    QMenu *m_pMainMenu;
 
     /* Factory support: */
     friend class UIMachineWindow;

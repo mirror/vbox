@@ -31,9 +31,9 @@
 #include "VBoxGlobal.h"
 
 #ifdef Q_WS_MAC
-# include "UISession.h"
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
+#include "UISession.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowSeamless.h"
@@ -41,15 +41,16 @@
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
+    , m_pMainMenu(0)
 {
     /* "This" is machine window: */
     m_pMachineWindow = this;
 
-    /* Set the main window in VBoxGlobal */
+    /* Set the main window in VBoxGlobal: */
     if (uScreenId == 0)
         vboxGlobal().setMainWindow(this);
 
-    /* Prepare window icon: */
+    /* Prepare seamless window icon: */
     prepareWindowIcon();
 
     /* Prepare console connections: */
@@ -58,22 +59,20 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     /* Prepare seamless window: */
     prepareSeamless();
 
-#ifdef Q_WS_MAC
-    /* Prepare menu: */
+    /* Prepare seamless menu: */
     prepareMenu();
-#endif /* Q_WS_MAC */
 
     /* Retranslate seamless window finally: */
     retranslateUi();
 
-    /* Prepare normal machine view container: */
+    /* Prepare machine view container: */
     prepareMachineViewContainer();
 
-    /* Prepare normal machine view: */
+    /* Prepare seamless machine view: */
     prepareMachineView();
 
 #ifdef Q_WS_MAC
-    /* Load normal window settings: */
+    /* Load seamless window settings: */
     loadWindowSettings();
 #endif /* Q_WS_MAC */
 
@@ -88,11 +87,21 @@ UIMachineWindowSeamless::~UIMachineWindowSeamless()
 {
     /* Cleanup normal machine view: */
     cleanupMachineView();
+
+    /* Cleanup menu: */
+    cleanupMenu();
 }
 
 void UIMachineWindowSeamless::sltMachineStateChanged()
 {
     UIMachineWindow::sltMachineStateChanged();
+}
+
+void UIMachineWindowSeamless::sltPopupMainMenu()
+{
+    /* Popup main menu if present: */
+    if (m_pMainMenu && !m_pMainMenu->isEmpty())
+        m_pMainMenu->popup(machineWindow()->geometry().center());
 }
 
 void UIMachineWindowSeamless::sltTryClose()
@@ -173,12 +182,14 @@ void UIMachineWindowSeamless::prepareSeamless()
 #endif
 }
 
-#ifdef Q_WS_MAC
 void UIMachineWindowSeamless::prepareMenu()
 {
+#ifdef Q_WS_MAC
     setMenuBar(uisession()->newMenuBar());
-}
+#else /* To NaN: Please uncomment below for mac too and test! */
+    m_pMainMenu = uisession()->newMenu();
 #endif /* Q_WS_MAC */
+}
 
 void UIMachineWindowSeamless::prepareMachineView()
 {
@@ -227,6 +238,16 @@ void UIMachineWindowSeamless::cleanupMachineView()
 
     UIMachineView::destroy(m_pMachineView);
     m_pMachineView = 0;
+}
+
+void UIMachineWindowSeamless::cleanupMenu()
+{
+#ifdef Q_WS_MAC
+    // Sync with UIMachineWindowSeamless::prepareMenu()!
+#else /* To NaN: Please uncomment below for mac too and test! */
+    delete m_pMainMenu;
+    m_pMainMenu = 0;
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowSeamless::showSeamless()
