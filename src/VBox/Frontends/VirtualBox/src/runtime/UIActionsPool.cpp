@@ -1170,7 +1170,7 @@ bool UIActionsPool::processHotKey(const QKeySequence &key)
         if (pAction->type() == UIActionType_Menu || pAction->type() == UIActionType_Separator)
             continue;
         QString hotkey = VBoxGlobal::extractKeyFromActionText(pAction->text());
-        if (pAction->isEnabled() && !hotkey.isEmpty())
+        if (pAction->isEnabled() && pAction->isVisible() && !hotkey.isEmpty())
         {
             if (key.matches(QKeySequence(hotkey)) == QKeySequence::ExactMatch)
             {
