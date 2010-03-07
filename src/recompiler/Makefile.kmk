@@ -38,6 +38,11 @@ ifeq ($(KBUILD_TARGET_ARCH),x86)
  endif
 endif
 
+# Workaround for darwin hell.
+ifeq ($(KBUILD_TARGET),darwin)
+ VBOX_WITHOUT_REM_LDR_CYCLE = 1
+endif
+
 
 TEMPLATE_DUMMY = dummy template (move to kBuild) ## @todo Will be there in the next update, remove this.
 
@@ -78,10 +83,8 @@ endif
 #
 ifdef VBOX_USE_REM2
  SYSMODS += VBoxREM2
-else
- ifndef VBOX_USE_REM64
-  DLLS    += VBoxREM
- endif
+else ifndef VBOX_USE_REM64
+ DLLS    += VBoxREM
 endif
 
 
@@ -198,7 +201,7 @@ $(REM_MOD)_LDFLAGS.solaris = -mimpure-text
 
 if defined(VBOX_USE_REM2) || defined(VBOX_USE_REM64)
 #
-# The VBoxREM2 wrapper.
+# The VBoxREM2, VBoxREM32 and VBoxREM64 wrapper.
 #
 DLLS += VBoxREMWrapper
 VBoxREMWrapper_TEMPLATE    = VBOXR3
@@ -207,15 +210,25 @@ VBoxREMWrapper_DEFS        = IN_REM_R3 $(if $(VBOX_WITH_VMI),VBOX_WITH_VMI,)
  ifdef VBOX_USE_REM64
 VBoxREMWrapper_DEFS       += VBOX_USE_BITNESS_SELECTOR
  endif
+ ifdef VBOX_WITHOUT_REM_LDR_CYCLE
+VBoxREMWrapper_DEFS       += VBOX_WITHOUT_REM_LDR_CYCLE
+ endif
 VBoxREMWrapper_SOURCES     = \
-	VBoxREMWrapper.cpp \
-	$(if $(VBOX_USE_REM2),VBoxREMWrapperA.asm)
+	VBoxREMWrapper.cpp
+ ifdef VBOX_USE_REM2
+VBoxREMWrapper_SOURCES    += \
+	VBoxREMWrapperA.asm
+ endif
 VBoxREMWrapper_LIBS        = \
-	$(LIB_VMM) \
-	$(LIB_RUNTIME)
+ 	$(LIB_RUNTIME)
+ ifndef VBOX_WITHOUT_REM_LDR_CYCLE
+VBoxREMWrapper_LIBS       += \
+	$(LIB_VMM)
 VBoxREMWrapper_LIBS.darwin += \
 	$(TARGET_VBoxREMImp)
-#VBoxREMWrapper_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+ else
+VBoxREMWrapper_LDFLAGS.darwin = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+ endif
 endif
 
 
@@ -262,7 +275,11 @@ VBoxREMImp_CLEAN           = $(PATH_VBoxREMImp)/VBoxREMImp.c
  ifn1of ($(KBUILD_TARGET), darwin os2 win)
 VBoxREMImp_SONAME          = VBoxREM$(SUFF_DLL)
  endif
-VBoxREMImp_LDFLAGS.darwin   = -install_name $(subst @rpath,@executable_path,$(VBOX_DYLD_EXECUTABLE_PATH))/VBoxREM.dylib
+ifdef VBOX_WITHOUT_REM_LDR_CYCLE
+ VBoxREMImp_LDFLAGS.darwin  = -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxREM.dylib
+else
+ VBoxREMImp_LDFLAGS.darwin  = -install_name $(subst @rpath,@executable_path,$(VBOX_DYLD_EXECUTABLE_PATH))/VBoxREM.dylib
+endif
 VBoxREMImp_LDFLAGS.l4       = -T$(L4_LIBDIR)/../main_rel.ld -nostdlib
 
 $$(PATH_VBoxREMImp)/VBoxREMImp.c: $(VBOX_PATH_RECOMPILER_SRC)/VBoxREM.def $(VBOX_PATH_RECOMPILER_SRC)/Sun/deftoimp.sed $(MAKEFILE_CURRENT) | $$(dir $$@)
