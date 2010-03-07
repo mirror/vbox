@@ -45,6 +45,9 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
 {
     /* Cleanup normal machine window: */
     cleanupMachineWindows();
+
+    /* Cleanup actions groups: */
+    cleanupActionGroups();
 }
 
 bool UIMachineLogicSeamless::checkAvailability()
@@ -150,8 +153,14 @@ void UIMachineLogicSeamless::prepareActionGroups()
     /* Base class action groups: */
     UIMachineLogic::prepareActionGroups();
 
-    /* Adjust window isn't allowed in seamless */
-    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(false);
+    /* Guest auto-resize isn't allowed in seamless: */
+    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setVisible(false);
+
+    /* Adjust-window isn't allowed in seamless: */
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(false);
+
+    /* Disable mouse-integration isn't allowed in seamless: */
+    actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setVisible(false);
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -288,7 +297,13 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
 
 void UIMachineLogicSeamless::cleanupActionGroups()
 {
-    /* Reenable adjust window */
-    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setEnabled(true);
+    /* Reenable guest-autoresize action: */
+    actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setVisible(true);
+
+    /* Reenable adjust-window action: */
+    actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(true);
+
+    /* Reenable mouse-integration action: */
+    actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setVisible(true);
 }
 
