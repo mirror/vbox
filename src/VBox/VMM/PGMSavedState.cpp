@@ -144,7 +144,6 @@ static const SSMFIELD s_aPGMFieldsPreBalloon[] =
     SSMFIELD_ENTRY(         PGM, fMappingsFixed),
     SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
     SSMFIELD_ENTRY(         PGM, cbMappingFixed),
-    SSMFIELD_ENTRY(         PGM, cBalloonedPages),
     SSMFIELD_ENTRY_TERM()
 };
 
