@@ -342,11 +342,14 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
 
 void UIMachineViewFullscreen::cleanupFullscreen()
 {
-    /* Rollback fullscreen frame-buffer size to normal: */
-    machineWindowWrapper()->machineWindow()->hide();
-    UIMachineViewBlocker blocker(this);
-    sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
-    blocker.exec();
+    if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+    {
+        /* Rollback fullscreen frame-buffer size to normal: */
+        machineWindowWrapper()->machineWindow()->hide();
+        UIMachineViewBlocker blocker(this);
+        sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+        blocker.exec();
+    }
 }
 
 void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
