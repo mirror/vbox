@@ -10233,7 +10233,7 @@ pci_routing_table_structure:
 #if 0
   dw 32 + (30 * 16) ;; table size
 #else
-  dw 32 + (10 * 16) ;; table size
+  dw 32 + (11 * 16) ;; table size
 #endif
 #else /* !VBOX */
   dw 32 + (6 * 16) ;; table size
@@ -10385,39 +10385,39 @@ pci_routing_table_structure_start:
   ;; 11th slot entry: 10th PCI slot
   db 0 ;; pci bus number
   db 0x58 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x62 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x63 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x60 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x61 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 10 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 12th slot entry: 11th PCI slot
   db 0 ;; pci bus number
   db 0x60 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x63 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x60 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x61 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x62 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 11 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 13th slot entry: 12th PCI slot
   db 0 ;; pci bus number
   db 0x68 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x60 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x61 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x62 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x63 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 12 ;; physical slot (0 = embedded)
   db 0 ;; reserved
@@ -10437,39 +10437,39 @@ pci_routing_table_structure_start:
   ;; 15th slot entry: 14th PCI slot
   db 0 ;; pci bus number
   db 0x78 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x62 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x63 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x60 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x61 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 14 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 16th slot entry: 15th PCI slot
   db 0 ;; pci bus number
   db 0x80 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x63 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x60 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x61 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x62 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 15 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 17th slot entry: 16th PCI slot
   db 0 ;; pci bus number
   db 0x88 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x60 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x61 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x62 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x63 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 16 ;; physical slot (0 = embedded)
   db 0 ;; reserved
@@ -10489,43 +10489,43 @@ pci_routing_table_structure_start:
   ;; 19th slot entry: 18th PCI slot
   db 0 ;; pci bus number
   db 0x98 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x62 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x63 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x60 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x61 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 18 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 20th slot entry: 19th PCI slot
   db 0 ;; pci bus number
   db 0xa0 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x63 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x60 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x61 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x62 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 19 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 21th slot entry: 20th PCI slot
+  ;; 21st slot entry: 20th PCI slot
   db 0 ;; pci bus number
   db 0xa8 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0x60 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x61 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x62 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x63 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 20 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 21th slot entry: 20th PCI slot
+  ;; 22nd slot entry: 21st PCI slot
   db 0 ;; pci bus number
   db 0xb0 ;; pci device number (bit 7-3)
   db 0x61 ;; link value INTA#
@@ -10536,63 +10536,50 @@ pci_routing_table_structure_start:
   dw 0xdef8 ;; IRQ bitmap INTC#
   db 0x60 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
-  db 20 ;; physical slot (0 = embedded)
-  db 0 ;; reserved
-  ;; 22th slot entry: 21th PCI slot
-  db 0 ;; pci bus number
-  db 0xb8 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
-  dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
-  dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
-  dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
-  dw 0xdef8 ;; IRQ bitmap INTD#
   db 21 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 23th slot entry: 22th PCI slot
+  ;; 23rd slot entry: 22nd PCI slot
   db 0 ;; pci bus number
-  db 0xc0 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xb8 ;; pci device number (bit 7-3)
+  db 0x62 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x63 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x60 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x61 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 22 ;; physical slot (0 = embedded)
   db 0 ;; reserved
-  ;; 24th slot entry: 23th PCI slot
+  ;; 24th slot entry: 23rd PCI slot
   db 0 ;; pci bus number
-  db 0xc8 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xc0 ;; pci device number (bit 7-3)
+  db 0x63 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x60 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x61 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x62 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 23 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 25th slot entry: 24th PCI slot
   db 0 ;; pci bus number
-  db 0xd0 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xc8 ;; pci device number (bit 7-3)
+  db 0x60 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x61 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x62 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x63 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 24 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 26th slot entry: 25th PCI slot
   db 0 ;; pci bus number
-  db 0xd8 ;; pci device number (bit 7-3)
+  db 0xd0 ;; pci device number (bit 7-3)
   db 0x61 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
   db 0x62 ;; link value INTB#
@@ -10605,46 +10592,46 @@ pci_routing_table_structure_start:
   db 0 ;; reserved
   ;; 27th slot entry: 26th PCI slot
   db 0 ;; pci bus number
-  db 0xe0 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xd8 ;; pci device number (bit 7-3)
+  db 0x62 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x63 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x60 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x61 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 26 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 28th slot entry: 27th PCI slot
   db 0 ;; pci bus number
-  db 0xe8 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xe0 ;; pci device number (bit 7-3)
+  db 0x63 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x60 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x61 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x62 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 27 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 29th slot entry: 28th PCI slot
   db 0 ;; pci bus number
-  db 0xf0 ;; pci device number (bit 7-3)
-  db 0x61 ;; link value INTA#
+  db 0xe8 ;; pci device number (bit 7-3)
+  db 0x60 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
-  db 0x62 ;; link value INTB#
+  db 0x61 ;; link value INTB#
   dw 0xdef8 ;; IRQ bitmap INTB#
-  db 0x63 ;; link value INTC#
+  db 0x62 ;; link value INTC#
   dw 0xdef8 ;; IRQ bitmap INTC#
-  db 0x60 ;; link value INTD#
+  db 0x63 ;; link value INTD#
   dw 0xdef8 ;; IRQ bitmap INTD#
   db 28 ;; physical slot (0 = embedded)
   db 0 ;; reserved
   ;; 30th slot entry: 29th PCI slot
   db 0 ;; pci bus number
-  db 0xf8 ;; pci device number (bit 7-3)
+  db 0xf0 ;; pci device number (bit 7-3)
   db 0x61 ;; link value INTA#
   dw 0xdef8 ;; IRQ bitmap INTA#
   db 0x62 ;; link value INTB#
