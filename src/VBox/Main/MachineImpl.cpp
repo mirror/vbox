@@ -1451,10 +1451,14 @@ STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
     switch(property)
     {
     case CpuPropertyType_PAE:
+        setModified(IsModified_MachineData);
+        mHWData.backup();
         mHWData->mPAEEnabled = !!aVal;
         break;
 
     case CpuPropertyType_Synthetic:
+        setModified(IsModified_MachineData);
+        mHWData.backup();
         mHWData->mSyntheticCpu = !!aVal;
         break;
 
@@ -1549,6 +1553,8 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
         case 0xA:
             AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
             AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
+            setModified(IsModified_MachineData);
+            mHWData.backup();
             mHWData->mCpuIdStdLeafs[aId].ulId  = aId;
             mHWData->mCpuIdStdLeafs[aId].ulEax = aValEax;
             mHWData->mCpuIdStdLeafs[aId].ulEbx = aValEbx;
@@ -1569,6 +1575,8 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
         case 0x8000000A:
             AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
             AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
+            setModified(IsModified_MachineData);
+            mHWData.backup();
             mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId  = aId;
             mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEax = aValEax;
             mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulEbx = aValEbx;
@@ -1607,6 +1615,8 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
         case 0xA:
             AssertCompile(RT_ELEMENTS(mHWData->mCpuIdStdLeafs) == 0xA);
             AssertRelease(aId < RT_ELEMENTS(mHWData->mCpuIdStdLeafs));
+            setModified(IsModified_MachineData);
+            mHWData.backup();
             /* Invalidate leaf. */
             mHWData->mCpuIdStdLeafs[aId].ulId = UINT32_MAX;
             break;
@@ -1624,6 +1634,8 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
         case 0x8000000A:
             AssertCompile(RT_ELEMENTS(mHWData->mCpuIdExtLeafs) == 0xA);
             AssertRelease(aId - 0x80000000 < RT_ELEMENTS(mHWData->mCpuIdExtLeafs));
+            setModified(IsModified_MachineData);
+            mHWData.backup();
             /* Invalidate leaf. */
             mHWData->mCpuIdExtLeafs[aId - 0x80000000].ulId = UINT32_MAX;
             break;
@@ -1643,6 +1655,9 @@ STDMETHODIMP Machine::RemoveAllCpuIdLeafs()
 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
+
+    setModified(IsModified_MachineData);
+    mHWData.backup();
 
     /* Invalidate all standard leafs. */
     for (unsigned i = 0; i < RT_ELEMENTS(mHWData->mCpuIdStdLeafs); i++)
