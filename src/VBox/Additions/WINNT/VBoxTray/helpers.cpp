@@ -83,6 +83,8 @@ unsigned nextAdjacentRectYN (RECTL *paRects, unsigned nRects, unsigned iRect)
 
 void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iResized, int NewWidth, int NewHeight)
 {
+    DDCLOG(("nRects %d, iPrimary %d, iResized %d, NewWidth %d, NewHeight %d\n", nRects, iPrimary, iResized, NewWidth, NewHeight));
+
     RECTL *paNewRects = (RECTL *)alloca (sizeof (RECTL) * nRects);
     memcpy (paNewRects, paRects, sizeof (RECTL) * nRects);
     paNewRects[iResized].right += NewWidth - (paNewRects[iResized].right - paNewRects[iResized].left);
@@ -112,7 +114,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
          */
         int delta = paNewRects[iRect].right - paNewRects[iNextRect].left;
 
-        if (delta > 0)
+        if (delta != 0)
         {
             DDCLOG(("XP intersection right %d left %d, diff %d\n",
                      paNewRects[iRect].right, paNewRects[iNextRect].left,
@@ -140,7 +142,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
          */
         int delta = paNewRects[iRect].left - paNewRects[iNextRect].right;
 
-        if (delta < 0)
+        if (delta != 0)
         {
             DDCLOG(("XN intersection left %d right %d, diff %d\n",
                      paNewRects[iRect].left, paNewRects[iNextRect].right,
@@ -168,7 +170,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
          */
         int delta = paNewRects[iRect].bottom - paNewRects[iNextRect].top;
 
-        if (delta > 0)
+        if (delta != 0)
         {
             DDCLOG(("YP intersection bottom %d top %d, diff %d\n",
                      paNewRects[iRect].bottom, paNewRects[iNextRect].top,
@@ -196,7 +198,7 @@ void resizeRect(RECTL *paRects, unsigned nRects, unsigned iPrimary, unsigned iRe
          */
         int delta = paNewRects[iRect].top - paNewRects[iNextRect].bottom;
 
-        if (delta < 0)
+        if (delta != 0)
         {
             DDCLOG(("YN intersection top %d bottom %d, diff %d\n",
                      paNewRects[iRect].top, paNewRects[iNextRect].bottom,

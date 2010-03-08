@@ -63,15 +63,15 @@ typedef struct _VIDEO_POINTER_ATTRIBUTES
 #pragma alloc_text(PAGE, vboxQueryHostWantsAbsolute)
 #pragma alloc_text(PAGE, vboxQueryWinVersion)
 
-BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
+BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp, uint32_t *pDisplayId)
 {
     BOOLEAN bRC = FALSE;
 
     dprintf(("VBoxVideo::vboxQueryDisplayRequest: xres = 0x%p, yres = 0x%p bpp = 0x%p\n", xres, yres, bpp));
 
-    VMMDevDisplayChangeRequest *req = NULL;
+    VMMDevDisplayChangeRequest2 *req = NULL;
 
-    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevDisplayChangeRequest), VMMDevReq_GetDisplayChangeRequest);
+    int rc = VbglGRAlloc ((VMMDevRequestHeader **)&req, sizeof (VMMDevDisplayChangeRequest2), VMMDevReq_GetDisplayChangeRequest2);
 
     if (RT_FAILURE(rc))
     {
@@ -91,8 +91,10 @@ BOOLEAN vboxQueryDisplayRequest(uint32_t *xres, uint32_t *yres, uint32_t *bpp)
                 *yres = req->yres;
             if (bpp)
                 *bpp  = req->bpp;
-            dprintf(("VBoxVideo::vboxQueryDisplayRequest: returning %d x %d @ %d\n",
-                     req->xres, req->yres, req->bpp));
+            if (pDisplayId)
+                *pDisplayId  = req->display;
+            dprintf(("VBoxVideo::vboxQueryDisplayRequest: returning %d x %d @ %d for %d\n",
+                     req->xres, req->yres, req->bpp, req->display));
             bRC = TRUE;
         }
         else

@@ -41,6 +41,7 @@ endif
 ifdef VBOX_WITH_VIDEOHWACCEL
  VBoxVideo_DEFS      += VBOX_WITH_VIDEOHWACCEL
 endif
+VBoxVideo_DEFS        += VBOX_WITH_MULTIMONITOR_FIX
 #VBoxVideo_DEFS        += LOG_ENABLED
 VBoxVideo_INCS        = ../../include
 VBoxVideo_LDFLAGS.x86   = /Entry:DriverEntry@8
