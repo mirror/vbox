@@ -395,7 +395,7 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    RTRandAdvSeed(g_hRand, 0x1234567890);
+    RTRandAdvSeed(g_hRand, 0x12345678);
 
     Test.pcszBackend          = "vmdk";
     Test.pcszBaseImage        = "tstVDSnapBase.vmdk";
