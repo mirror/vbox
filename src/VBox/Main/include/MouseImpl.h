@@ -122,15 +122,15 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    int getVMMDevMouseCaps(uint32_t *pfCaps);
-    int setVMMDevMouseCaps(uint32_t fCaps);
-    int reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
+    HRESULT getVMMDevMouseCaps(uint32_t *pfCaps);
+    HRESULT setVMMDevMouseCaps(uint32_t fCaps);
+    HRESULT reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
                                  int32_t dw, uint32_t fButtons);
-    int reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
+    HRESULT reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
                                  int32_t dz, int32_t dw, uint32_t fButtons);
-    int reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
-    int convertDisplayWidth(LONG x, uint32_t *pcX);
-    int convertDisplayHeight(LONG y, uint32_t *pcY);
+    HRESULT reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs);
+    HRESULT convertDisplayWidth(LONG x, uint32_t *pcX);
+    HRESULT convertDisplayHeight(LONG y, uint32_t *pcY);
 
     void sendMouseCapsNotifications(void);
 
