@@ -81,7 +81,8 @@ typedef struct VDDISKSEG
 *******************************************************************************/
 /** The error count. */
 unsigned g_cErrors = 0;
-
+/** Global RNG state. */
+RTRAND   g_hRand;
 
 static void tstVDError(void *pvUser, int rc, RT_SRC_POS_DECL,
                        const char *pszFormat, va_list va)
@@ -111,7 +112,7 @@ static int tstVDMessage(void *pvUser, const char *pszFormat, ...)
  */
 static bool tstVDSnapIsTrue(int iPercentage)
 {
-    int uRnd = RTRandU32Ex(0, 100);
+    int uRnd = RTRandAdvU32Ex(g_hRand, 0, 100);
 
     return (uRnd <= iPercentage); /* This should be enough for our purpose */
 }
@@ -123,7 +124,7 @@ static void tstVDSnapSegmentsDice(PVDSNAPTEST pTest, PVDDISKSEG paDiskSeg, uint3
     {
         /* Do we want to change the current segment? */
         if (tstVDSnapIsTrue(pTest->uChangeSegChance))
-            paDiskSeg[i].pbDataDiff = pbTestPattern + RT_ALIGN_64(RTRandU64Ex(0, cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
+            paDiskSeg[i].pbDataDiff = pbTestPattern + RT_ALIGN_64(RTRandAdvU64Ex(g_hRand, 0, cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
     }
 }
 
@@ -238,8 +239,8 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     /* Create the virtual disk test data */
     pbTestPattern = (uint8_t *)RTMemAlloc(pTest->cbTestPattern);
 
-    RTRandBytes(pbTestPattern, pTest->cbTestPattern);
-    cDiskSegments = RTRandU32Ex(pTest->cDiskSegsMin, pTest->cDiskSegsMax);
+    RTRandAdvBytes(g_hRand, pbTestPattern, pTest->cbTestPattern);
+    cDiskSegments = RTRandAdvU32Ex(g_hRand, pTest->cDiskSegsMin, pTest->cDiskSegsMax);
 
     uint64_t cbDisk = 0;
 
@@ -247,9 +248,9 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
     for (unsigned i = 0; i < cDiskSegments; i++)
     {
         paDiskSeg[i].off    = cbDisk;
-        paDiskSeg[i].cbSeg  = RT_ALIGN_64(RTRandU64Ex(512, pTest->cbTestPattern), 512);
+        paDiskSeg[i].cbSeg  = RT_ALIGN_64(RTRandAdvU64Ex(g_hRand, 512, pTest->cbTestPattern), 512);
         if (tstVDSnapIsTrue(pTest->uAllocatedBlocks))
-            paDiskSeg[i].pbData = pbTestPattern + RT_ALIGN_64(RTRandU64Ex(0, pTest->cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
+            paDiskSeg[i].pbData = pbTestPattern + RT_ALIGN_64(RTRandAdvU64Ex(g_hRand, 0, pTest->cbTestPattern - paDiskSeg[i].cbSeg - 512), 512);
         else
             paDiskSeg[i].pbData = NULL; /* Not allocated initially */
         cbDisk += paDiskSeg[i].cbSeg;
@@ -330,13 +331,13 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
         }
         else
         {
-            uint32_t uStartMerge = RTRandU32Ex(0, cDiffs - 1);
-            uint32_t uEndMerge   = RTRandU32Ex(uStartMerge + 1, cDiffs);
+            uint32_t uStartMerge = RTRandAdvU32Ex(g_hRand, 1, cDiffs - 1);
+            uint32_t uEndMerge   = RTRandAdvU32Ex(g_hRand, uStartMerge + 1, cDiffs);
             RTPrintf("Merging %u diffs from %u to %u...\n",
                      uEndMerge - uStartMerge,
                      uStartMerge,
                      uEndMerge);
-            rc = VDMerge(pVD, uEndMerge, uStartMerge, NULL);
+            rc = VDMerge(pVD, uStartMerge, uEndMerge, NULL);
             CHECK("VDMerge()");
 
             cDiffs -= uEndMerge - uStartMerge;
@@ -387,16 +388,25 @@ int main(int argc, char *argv[])
 
     RTPrintf("tstVDSnap: TESTING...\n");
 
-    Test.pcszBackend          = "VHD";
-    Test.pcszBaseImage        = "tstVDSnapBase.vhd";
-    Test.pcszDiffSuff         = "vhd";
-    Test.cIterations          = 20;
+    rc = RTRandAdvCreateParkMiller(&g_hRand);
+    if (RT_FAILURE(rc))
+    {
+        RTPrintf("tstVDSnap: Creating RNG failed rc=%Rrc\n", rc);
+        return 1;
+    }
+
+    RTRandAdvSeed(g_hRand, 0x1234567890);
+
+    Test.pcszBackend          = "vmdk";
+    Test.pcszBaseImage        = "tstVDSnapBase.vmdk";
+    Test.pcszDiffSuff         = "vmdk";
+    Test.cIterations          = 30;
     Test.cbTestPattern        = 10 * _1M;
-    Test.cDiskSegsMin         = 50;
-    Test.cDiskSegsMax         = 100;
-    Test.cDiffsMinBeforeMerge = 10;
+    Test.cDiskSegsMin         = 10;
+    Test.cDiskSegsMax         = 50;
+    Test.cDiffsMinBeforeMerge = 5;
     Test.uCreateDiffChance    = 50; /* % */
-    Test.uChangeSegChance     = 20; /* % */
+    Test.uChangeSegChance     = 50; /* % */
     Test.uAllocatedBlocks     = 50; /* 50% allocated */
     tstVDOpenCreateWriteMerge(&Test);
 
@@ -413,6 +423,8 @@ int main(int argc, char *argv[])
         RTPrintf("tstVDSnap: SUCCESS\n");
     else
         RTPrintf("tstVDSnap: FAILURE - %d errors\n", g_cErrors);
+
+    RTRandAdvDestroy(g_hRand);
 
     return !!g_cErrors;
 }
