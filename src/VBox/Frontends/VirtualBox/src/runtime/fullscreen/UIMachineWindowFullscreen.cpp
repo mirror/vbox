@@ -147,9 +147,8 @@ void UIMachineWindowFullscreen::prepareMenu()
 {
 #ifdef Q_WS_MAC
     setMenuBar(uisession()->newMenuBar());
-#else /* To NaN: Please uncomment below for mac too and test! */
-    m_pMainMenu = uisession()->newMenu();
 #endif /* Q_WS_MAC */
+    m_pMainMenu = uisession()->newMenu();
 }
 
 void UIMachineWindowFullscreen::prepareMachineView()
