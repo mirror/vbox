@@ -50,7 +50,9 @@
 *******************************************************************************/
 /** Saved state data unit version.
  * @todo remove the guest mappings from the saved state at next version change! */
-#define PGM_SAVED_STATE_VERSION                 11
+#define PGM_SAVED_STATE_VERSION                 12
+/** Saved state before the balloon change. */
+#define PGM_SAVED_STATE_VERSION_PRE_BALLOON     11
 /** Saved state data unit version used during 3.1 development, misses the RAM
  *  config. */
 #define PGM_SAVED_STATE_VERSION_NO_RAM_CFG      10
@@ -113,8 +115,8 @@ typedef struct
     RTGCPTR                         GCPtrMappingFixed;
     /** A20 gate mask.
      * Our current approach to A20 emulation is to let REM do it and don't bother
-     * anywhere else. The interesting Guests will be operating with it enabled anyway.
-     * But whould need arrise, we'll subject physical addresses to this mask. */
+     * anywhere else. The interesting guests will be operating with it enabled anyway.
+     * But should the need arise, we'll subject physical addresses to this mask. */
     RTGCPHYS                        GCPhysA20Mask;
     /** A20 gate state - boolean! */
     bool                            fA20Enabled;
@@ -127,11 +129,22 @@ typedef struct
 *   Global Variables                                                           *
 *******************************************************************************/
 /** PGM fields to save/load. */
+
 static const SSMFIELD s_aPGMFields[] =
 {
     SSMFIELD_ENTRY(         PGM, fMappingsFixed),
     SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
     SSMFIELD_ENTRY(         PGM, cbMappingFixed),
+    SSMFIELD_ENTRY(         PGM, cBalloonedPages),
+    SSMFIELD_ENTRY_TERM()
+};
+
+static const SSMFIELD s_aPGMFieldsPreBalloon[] =
+{
+    SSMFIELD_ENTRY(         PGM, fMappingsFixed),
+    SSMFIELD_ENTRY_GCPTR(   PGM, GCPtrMappingFixed),
+    SSMFIELD_ENTRY(         PGM, cbMappingFixed),
+    SSMFIELD_ENTRY(         PGM, cBalloonedPages),
     SSMFIELD_ENTRY_TERM()
 };
 
@@ -2754,7 +2767,19 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
      */
     if (uVersion >= PGM_SAVED_STATE_VERSION_3_0_0)
     {
-        rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
+        if (uVersion > PGM_SAVED_STATE_VERSION_PRE_BALLOON)
+        {
+            rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
+            if (    RT_SUCCESS(rc)
+                &&  pVM->pgm.s.cBalloonedPages)
+            {
+                rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_INFLATE, pVM->pgm.s.cBalloonedPages);
+                AssertRC(rc);
+            }
+        }
+        else
+            rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFieldsPreBalloon[0]);
+
         AssertLogRelRCReturn(rc, rc);
 
         for (VMCPUID i = 0; i < pVM->cCpus; i++)
@@ -2884,8 +2909,10 @@ static DECLCALLBACK(int) pgmR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, 
      */
     if (   (   uPass != SSM_PASS_FINAL
             && uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_PRE_BALLOON
             && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG)
         || (   uVersion != PGM_SAVED_STATE_VERSION
+            && uVersion != PGM_SAVED_STATE_VERSION_PRE_BALLOON
             && uVersion != PGM_SAVED_STATE_VERSION_NO_RAM_CFG
             && uVersion != PGM_SAVED_STATE_VERSION_3_0_0
             && uVersion != PGM_SAVED_STATE_VERSION_2_2_2
