@@ -478,7 +478,9 @@ void UIMachineWindowNormal::loadWindowSettings()
 
     /* Load extra-data settings: */
     {
-        QString strPositionSettings = machine.GetExtraData(VBoxDefs::GUI_LastWindowPosition);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastWindowPosition) :
+                                     QString("%1%2").arg(VBoxDefs::GUI_LastWindowPosition).arg(m_uScreenId);
+        QString strPositionSettings = machine.GetExtraData(strPositionAddress);
 
         bool ok = false, max = false;
         int x = 0, y = 0, w = 0, h = 0;
@@ -557,7 +559,9 @@ void UIMachineWindowNormal::saveWindowSettings()
                                     .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
         if (isMaximized())
             strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowPosition_Max);
-        machine.SetExtraData(VBoxDefs::GUI_LastWindowPosition, strWindowPosition);
+        QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastWindowPosition) :
+                                     QString("%1%2").arg(VBoxDefs::GUI_LastWindowPosition).arg(m_uScreenId);
+        machine.SetExtraData(strPositionAddress, strWindowPosition);
     }
 }
 
