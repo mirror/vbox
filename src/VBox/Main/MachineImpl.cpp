@@ -6949,7 +6949,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
             /* last, try to update the global settings with the new path */
             if (mData->mRegistered)
             {
-                rc = mParent->updateSettings(configDir.c_str(), newConfigDir.c_str());
+                rc = mParent->updatePathInMediaRegistry(configDir.c_str(), newConfigDir.c_str());
                 if (FAILED(rc))
                 {
                     /* revert to old values */

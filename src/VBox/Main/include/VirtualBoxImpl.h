@@ -278,7 +278,7 @@ public:
     HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
 
     HRESULT saveSettings();
-    HRESULT updateSettings(const char *aOldPath, const char *aNewPath);
+    HRESULT updatePathInMediaRegistry(const char *aOldPath, const char *aNewPath);
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);
 

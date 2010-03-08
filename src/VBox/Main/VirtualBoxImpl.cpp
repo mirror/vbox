@@ -3661,7 +3661,7 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
  *
  * @note Locks this object + DVD, Floppy and HardDisk children for writing.
  */
-HRESULT VirtualBox::updateSettings(const char *aOldPath, const char *aNewPath)
+HRESULT VirtualBox::updatePathInMediaRegistry(const char *aOldPath, const char *aNewPath)
 {
     LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
 
