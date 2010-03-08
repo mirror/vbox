@@ -1293,7 +1293,7 @@ VMMR3DECL(int) HWACCMR3InitFinalizeR0(PVM pVM)
 #if HC_ARCH_BITS == 64
                     if (pVM->hwaccm.s.fLargePages)
                     {
-                        /* Use large (2 MB) pages for our EPT PDEs where possible. */
+                        /* Use large (2 MB) pages for our nested paging PDEs where possible. */
                         PGMSetLargePageUsage(pVM, true);
                         LogRel(("HWACCM:    Large page support enabled!\n"));
                     }
