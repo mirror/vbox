@@ -1055,8 +1055,6 @@ static int kbd_write_data(void *opaque, uint32_t addr, uint32_t val)
     default:
         break;
     }
-    /** @todo this was unconditional before.  That looks wrong to me, but I
-     * just can't believe that no one would have noticed before... */
     if (rc != VINF_IOM_HC_IOPORT_WRITE)
         s->write_cmd = 0;
     return rc;
@@ -1292,6 +1290,8 @@ static int kbd_load(QEMUFile* f, void* opaque, int version_id)
         AssertMsgFailed(("u32=%#x\n", u32));
         return VERR_SSM_DATA_UNIT_FORMAT_CHANGED;
     }
+    /* Resend a notification to Main if the device is active */
+    kbd_mouse_update_downstream_status(s);
     return 0;
 }
 #endif /* IN_RING3 */
