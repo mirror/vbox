@@ -100,8 +100,8 @@ public:
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
-    bool isGuestSupportsGraphics() const { return m_fIsGuestSupportsGraphics; }
-    bool isGuestSupportsSeamless() const { return m_fIsGuestSupportsSeamless; }
+    bool isGuestSupportsGraphics() const { return isGuestAdditionsActive() && m_fIsGuestSupportsGraphics; }
+    bool isGuestSupportsSeamless() const { return isGuestSupportsGraphics() && m_fIsGuestSupportsSeamless; }
 
     /* Keyboard getters: */
     bool isNumLock() const { return m_fNumLock; }
