@@ -42,7 +42,7 @@ ifdef VBOX_WITH_GUEST_PROPS
  endif
 ifdef VBOX_WITH_GUEST_CONTROL
  if1of ($(KBUILD_TARGET), win)
-  VBoxService_DEFS        += VBOXSERVICE_CONTROL
+  VBoxService_DEFS       += VBOXSERVICE_CONTROL
  endif
 endif
 endif
