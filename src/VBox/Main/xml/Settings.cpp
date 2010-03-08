@@ -1460,6 +1460,7 @@ Hardware::Hardware()
           fHardwareVirt(true),
           fHardwareVirtExclusive(HWVIRTEXCLUSIVEDEFAULT),
           fNestedPaging(true),
+          fLargePages(false),
           fVPID(true),
           fSyntheticCpu(false),
           fPAE(false),
@@ -1504,6 +1505,7 @@ bool Hardware::operator==(const Hardware& h) const
                   && (fHardwareVirt             == h.fHardwareVirt)
                   && (fHardwareVirtExclusive    == h.fHardwareVirtExclusive)
                   && (fNestedPaging             == h.fNestedPaging)
+                  && (fLargePages               == h.fLargePages)
                   && (fVPID                     == h.fVPID)
                   && (fSyntheticCpu             == h.fSyntheticCpu)
                   && (fPAE                      == h.fPAE)
@@ -2011,6 +2013,8 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
             }
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExNestedPaging")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fNestedPaging);
+            if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExLargePages")))
+                pelmCPUChild->getAttributeValue("enabled", hw.fLargePages);
             if ((pelmCPUChild = pelmHwChild->findChildElement("HardwareVirtExVPID")))
                 pelmCPUChild->getAttributeValue("enabled", hw.fVPID);
 
@@ -2908,6 +2912,7 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     if (m->sv >= SettingsVersion_v1_10)
     {
+        pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
         pelmCPU->setAttribute("hotplug", hw.fCpuHotPlug);
 
         xml::ElementNode *pelmCpuTree = NULL;

@@ -432,6 +432,13 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     else
         RTPrintf("Nested Paging:   %s\n", HWVirtExNestedPagingEnabled ? "on" : "off");
 
+    BOOL HWVirtExLargePagesEnabled;
+    machine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &HWVirtExLargePagesEnabled);
+    if (details == VMINFO_MACHINEREADABLE)
+        RTPrintf("largepages=\"%s\"\n", HWVirtExLargePagesEnabled ? "on" : "off");
+    else
+        RTPrintf("Large Pages:   %s\n", HWVirtExLargePagesEnabled ? "on" : "off");
+
     BOOL HWVirtExVPIDEnabled;
     machine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &HWVirtExVPIDEnabled);
     if (details == VMINFO_MACHINEREADABLE)

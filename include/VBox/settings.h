@@ -560,6 +560,7 @@ struct Hardware
     bool                fHardwareVirt,
                         fHardwareVirtExclusive,
                         fNestedPaging,
+                        fLargePages,
                         fVPID,
                         fSyntheticCpu,
                         fPAE;
