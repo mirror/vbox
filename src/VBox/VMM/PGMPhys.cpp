@@ -3274,7 +3274,7 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
             /*
              * Clear the pages.
              */
-            STAM_PROFILE_START(&pVM->pgm.s.StatClearLargePage, a);
+            STAM_PROFILE_START(&pVM->pgm.s.StatClearLargePage, b);
             for (unsigned i = 0; i < _2M/PAGE_SIZE; i++)
             {
                 ASMMemZeroPage(pv);
@@ -3306,12 +3306,12 @@ VMMR3DECL(int) PGMR3PhysAllocateLargeHandyPage(PVM pVM, RTGCPHYS GCPhys)
 
                 Log3(("PGMR3PhysAllocateLargePage: idPage=%#x HCPhys=%RGp\n", idPage, HCPhys));
             }
-            STAM_PROFILE_STOP(&pVM->pgm.s.StatClearLargePage, a);
+            STAM_PROFILE_STOP(&pVM->pgm.s.StatClearLargePage, b);
 
             /* Flush all TLBs. */
             PGM_INVL_ALL_VCPU_TLBS(pVM);
             PGMPhysInvalidatePageMapTLB(pVM);
-       }
+        }
         pVM->pgm.s.cLargeHandyPages = 0;
     }
 
