@@ -1814,15 +1814,15 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
         case GMMACCOUNT_BASE:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cBasePages + pGVM->gmm.s.cBalloonedPages + cPages > pGVM->gmm.s.Reserved.cBasePages))
             {
-                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
-                     pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, cPages));
+                Log(("gmmR0AllocatePages:Base: Reserved=%#llx Allocated+Ballooned+Requested=%#llx+%#llx+%#x!\n",
+                     pGVM->gmm.s.Reserved.cBasePages, pGVM->gmm.s.Allocated.cBasePages, pGVM->gmm.s.cBalloonedPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
             break;
         case GMMACCOUNT_SHADOW:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cShadowPages + cPages > pGVM->gmm.s.Reserved.cShadowPages))
             {
-                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                Log(("gmmR0AllocatePages:Shadow: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
                      pGVM->gmm.s.Reserved.cShadowPages, pGVM->gmm.s.Allocated.cShadowPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
@@ -1830,7 +1830,7 @@ static int gmmR0AllocatePages(PGMM pGMM, PGVM pGVM, uint32_t cPages, PGMMPAGEDES
         case GMMACCOUNT_FIXED:
             if (RT_UNLIKELY(pGVM->gmm.s.Allocated.cFixedPages + cPages > pGVM->gmm.s.Reserved.cFixedPages))
             {
-                Log(("gmmR0AllocatePages: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
+                Log(("gmmR0AllocatePages:Fixed: Reserved=%#llx Allocated+Requested=%#llx+%#x!\n",
                      pGVM->gmm.s.Reserved.cFixedPages, pGVM->gmm.s.Allocated.cFixedPages, cPages));
                 return VERR_GMM_HIT_VM_ACCOUNT_LIMIT;
             }
@@ -2949,7 +2949,7 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
                 Assert(pGMM->cBalloonedPages >= pGVM->gmm.s.cBalloonedPages);
 
                 pGMM->cBalloonedPages       -= pGVM->gmm.s.cBalloonedPages;
-                pGVM->gmm.s.cBalloonedPages -= 0;
+                pGVM->gmm.s.cBalloonedPages  = 0;
                 break;
             }
 
