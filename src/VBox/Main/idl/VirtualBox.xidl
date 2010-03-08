@@ -867,6 +867,11 @@
         Whether Nested Paging is enabled. If this extension is not available, it will not be used.
       </desc>
     </const>
+    <const name="LargePages"          value="5">
+      <desc>
+        Whether large page allocation is enabled; requires nested paging and a 64 bits host.
+      </desc>
+    </const>
   </enum>
 
   <enum

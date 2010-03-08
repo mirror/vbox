@@ -164,6 +164,7 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--hpet on|off]\n"
                  "                            [--hwvirtex on|off]\n"
                  "                            [--nestedpaging on|off]\n"
+                 "                            [--largepages on|off]\n"
                  "                            [--vtxvpid on|off]\n"
                  "                            [--cpuidset <leaf> <eax> <ebx> <ecx> <edx>]\n"
                  "                            [--cpuidremove <leaf>]\n"

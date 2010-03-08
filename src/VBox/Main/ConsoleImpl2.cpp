@@ -480,6 +480,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_NestedPaging, &fEnableNestedPaging);   H();
     rc = CFGMR3InsertInteger(pHWVirtExt, "EnableNestedPaging", fEnableNestedPaging);     RC_CHECK();
 
+    /* Large pages; requires nested paging */
+    BOOL fEnableLargePages = false;
+    hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_LargePages, &fEnableLargePages);   H();
+    rc = CFGMR3InsertInteger(pHWVirtExt, "EnableLargePages", fEnableLargePages);     RC_CHECK();
+
     /* VPID (VT-x) */
     BOOL fEnableVPID = false;
     hrc = pMachine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &fEnableVPID);        H();

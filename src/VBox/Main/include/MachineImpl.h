@@ -274,6 +274,7 @@ public:
         BOOL                 mHWVirtExEnabled;
         BOOL                 mHWVirtExExclusive;
         BOOL                 mHWVirtExNestedPagingEnabled;
+        BOOL                 mHWVirtExLargePagesEnabled;
         BOOL                 mHWVirtExVPIDEnabled;
         BOOL                 mAccelerate2DVideoEnabled;
         BOOL                 mPAEEnabled;

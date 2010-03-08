@@ -163,6 +163,13 @@ Machine::HWData::HWData()
     mMonitorCount = 1;
     mHWVirtExEnabled = true;
     mHWVirtExNestedPagingEnabled = true;
+#if HC_ARCH_BITS == 64
+    /* Default value decision pending. */
+    mHWVirtExLargePagesEnabled = false;
+#else
+    /* Not supported on 32 bits hosts. */
+    mHWVirtExLargePagesEnabled = false;
+#endif
     mHWVirtExVPIDEnabled = true;
 #if defined(RT_OS_DARWIN) || defined(RT_OS_WINDOWS)
     mHWVirtExExclusive = false;
@@ -1660,24 +1667,28 @@ STDMETHODIMP Machine::GetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
 
     switch(property)
     {
-    case HWVirtExPropertyType_Enabled:
-        *aVal = mHWData->mHWVirtExEnabled;
-        break;
+        case HWVirtExPropertyType_Enabled:
+            *aVal = mHWData->mHWVirtExEnabled;
+            break;
 
-    case HWVirtExPropertyType_Exclusive:
-        *aVal = mHWData->mHWVirtExExclusive;
-        break;
+        case HWVirtExPropertyType_Exclusive:
+            *aVal = mHWData->mHWVirtExExclusive;
+            break;
 
-    case HWVirtExPropertyType_VPID:
-        *aVal = mHWData->mHWVirtExVPIDEnabled;
-        break;
+        case HWVirtExPropertyType_VPID:
+            *aVal = mHWData->mHWVirtExVPIDEnabled;
+            break;
 
-    case HWVirtExPropertyType_NestedPaging:
-        *aVal = mHWData->mHWVirtExNestedPagingEnabled;
-        break;
+        case HWVirtExPropertyType_NestedPaging:
+            *aVal = mHWData->mHWVirtExNestedPagingEnabled;
+            break;
 
-    default:
-        return E_INVALIDARG;
+        case HWVirtExPropertyType_LargePages:
+            *aVal = mHWData->mHWVirtExLargePagesEnabled;
+            break;
+
+        default:
+            return E_INVALIDARG;
     }
     return S_OK;
 }
@@ -1698,19 +1709,23 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
     {
         case HWVirtExPropertyType_Enabled:
             pb = &mHWData->mHWVirtExEnabled;
-        break;
+            break;
 
         case HWVirtExPropertyType_Exclusive:
             pb = &mHWData->mHWVirtExExclusive;
-        break;
+            break;
 
         case HWVirtExPropertyType_VPID:
             pb = &mHWData->mHWVirtExVPIDEnabled;
-        break;
+            break;
 
         case HWVirtExPropertyType_NestedPaging:
             pb = &mHWData->mHWVirtExNestedPagingEnabled;
-        break;
+            break;
+
+        case HWVirtExPropertyType_LargePages:
+            pb = &mHWData->mHWVirtExLargePagesEnabled;
+            break;
 
         default:
             return E_INVALIDARG;
@@ -6197,6 +6212,7 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
         mHWData->mHWVirtExEnabled             = data.fHardwareVirt;
         mHWData->mHWVirtExExclusive           = data.fHardwareVirtExclusive;
         mHWData->mHWVirtExNestedPagingEnabled = data.fNestedPaging;
+        mHWData->mHWVirtExLargePagesEnabled   = data.fLargePages;
         mHWData->mHWVirtExVPIDEnabled         = data.fVPID;
         mHWData->mPAEEnabled                  = data.fPAE;
         mHWData->mSyntheticCpu                = data.fSyntheticCpu;
@@ -7253,6 +7269,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.fHardwareVirt          = !!mHWData->mHWVirtExEnabled;
         data.fHardwareVirtExclusive = !!mHWData->mHWVirtExExclusive;
         data.fNestedPaging          = !!mHWData->mHWVirtExNestedPagingEnabled;
+        data.fLargePages            = !!mHWData->mHWVirtExLargePagesEnabled;
         data.fVPID                  = !!mHWData->mHWVirtExVPIDEnabled;
         data.fPAE                   = !!mHWData->mPAEEnabled;
         data.fSyntheticCpu          = !!mHWData->mSyntheticCpu;
