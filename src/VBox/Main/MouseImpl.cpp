@@ -285,10 +285,9 @@ HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
         int vrc = pUpPort->pfnPutEvent(pUpPort, dx, dy, dz, dw, fButtons);
 
         if (RT_FAILURE(vrc))
-            setError(VBOX_E_IPRT_ERROR,
-                     tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                     vrc);
-        AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                            vrc);
     }
     return S_OK;
 }
@@ -317,10 +316,9 @@ HRESULT Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
         int vrc = pUpPort->pfnPutEventAbs(pUpPort, mouseXAbs, mouseYAbs, dz,
                                           dw, fButtons);
         if (RT_FAILURE(vrc))
-            setError(VBOX_E_IPRT_ERROR,
-                     tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                     vrc);
-        AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                            vrc);
     }
     return S_OK;
 }
@@ -343,10 +341,9 @@ HRESULT Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
         int vrc = pVMMDevPort->pfnSetAbsoluteMouse(pVMMDevPort,
                                                    mouseXAbs, mouseYAbs);
         if (RT_FAILURE(vrc))
-            setError(VBOX_E_IPRT_ERROR,
-                     tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
-                     vrc);
-        AssertRCReturn(vrc, VBOX_E_IPRT_ERROR);
+            return setError(VBOX_E_IPRT_ERROR,
+                            tr("Could not send the mouse event to the virtual mouse (%Rrc)"),
+                            vrc);
     }
     return S_OK;
 }
@@ -402,8 +399,8 @@ HRESULT Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
     ComAssertRet(pDisplay, E_FAIL);
 
     ULONG displayWidth;
-    int rc = pDisplay->COMGETTER(Width)(&displayWidth);
-    ComAssertComRCRet(rc, rc);
+    HRESULT rc = pDisplay->COMGETTER(Width)(&displayWidth);
+    if (FAILED(rc)) return rc;
 
     *pcX = displayWidth ? (x * 0xFFFF) / displayWidth: 0;
     return S_OK;
@@ -421,8 +418,8 @@ HRESULT Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
     ComAssertRet(pDisplay, E_FAIL);
 
     ULONG displayHeight;
-    int rc = pDisplay->COMGETTER(Height)(&displayHeight);
-    ComAssertComRCRet(rc, rc);
+    HRESULT rc = pDisplay->COMGETTER(Height)(&displayHeight);
+    if (FAILED(rc)) return rc;
 
     *pcY = displayHeight ? (y * 0xFFFF) / displayHeight: 0;
     return S_OK;
@@ -452,7 +449,8 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     uint32_t mouseXAbs;
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
-    ComAssertComRCRet(rc, rc);
+    if (FAILED(rc)) return rc;
+
     /**
      * @todo multi-monitor Windows guests expect this to be unbounded.
      * Understand the issues involved and fix for the rest.
@@ -462,7 +460,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     uint32_t mouseYAbs;
     rc = convertDisplayHeight(y, &mouseYAbs);
-    ComAssertComRCRet(rc, rc);
+    if (FAILED(rc)) return rc;
     /* if (mouseYAbs > 0xffff)
         mouseYAbs = mLastAbsY; */
 
@@ -470,7 +468,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
 
     uint32_t mouseCaps;
     rc = getVMMDevMouseCaps(&mouseCaps);
-    ComAssertComRCRet(rc, rc);
+    if (FAILED(rc)) return rc;
 
     /*
      * This method being called implies that the host wants
@@ -499,13 +497,12 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
         {
             rc = reportRelEventToMouseDev(fNeedsJiggle ? 1 : 0, 0, dz, dw,
                                           fButtons);
-            ComAssertComRCRet(rc, rc);
         }
     }
     else
         rc = reportAbsEventToMouseDev(mouseXAbs, mouseYAbs, dz, dw, fButtons);
 
-    ComAssertComRCRet(rc, rc);
+    if (FAILED(rc)) return rc;
 
     mLastAbsX = mouseXAbs;
     mLastAbsY = mouseYAbs;
