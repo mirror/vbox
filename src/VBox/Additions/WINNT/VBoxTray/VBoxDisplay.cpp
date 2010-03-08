@@ -322,10 +322,14 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
     /* Without this, Windows will not ask the miniport for its
      * mode table but uses an internal cache instead.
      */
-    DEVMODE tempDevMode;
-    ZeroMemory (&tempDevMode, sizeof (tempDevMode));
-    tempDevMode.dmSize = sizeof(DEVMODE);
-    EnumDisplaySettings(NULL, 0xffffff, &tempDevMode);
+    for (i = 0; i < NumDevices; i++)
+    {
+        DEVMODE tempDevMode;
+        ZeroMemory (&tempDevMode, sizeof (tempDevMode));
+        tempDevMode.dmSize = sizeof(DEVMODE);
+        EnumDisplaySettings((LPSTR)paDisplayDevices[i].DeviceName, 0xffffff, &tempDevMode);
+        Log(("ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
+    }
 
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
@@ -355,13 +359,13 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
               paDeviceModes[i].dmPosition.x,
               paDeviceModes[i].dmPosition.y));
 
-        gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
+        LONG status = gCtx.pfnChangeDisplaySettingsEx((LPSTR)paDisplayDevices[i].DeviceName,
                                         &paDeviceModes[i], NULL, CDS_NORESET | CDS_UPDATEREGISTRY, NULL);
-        Log(("ResizeDisplayDevice: ChangeDisplaySettingsEx position err %d\n", GetLastError ()));
+        Log(("ResizeDisplayDevice: ChangeDisplaySettingsEx position status %d, err %d\n", status, GetLastError ()));
     }
 
     /* A second call to ChangeDisplaySettings updates the monitor. */
-    LONG status = ChangeDisplaySettings(NULL, 0);
+    LONG status = gCtx.pfnChangeDisplaySettingsEx(NULL, NULL, NULL, 0, NULL);
     Log(("ResizeDisplayDevice: ChangeDisplaySettings update status %d\n", status));
     if (status == DISP_CHANGE_SUCCESSFUL || status == DISP_CHANGE_BADMODE)
     {
