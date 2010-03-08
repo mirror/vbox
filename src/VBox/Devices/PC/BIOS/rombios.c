@@ -10233,7 +10233,7 @@ pci_routing_table_structure:
 #if 0
   dw 32 + (30 * 16) ;; table size
 #else
-  dw 32 + (11 * 16) ;; table size
+  dw 32 + (20 * 16) ;; table size
 #endif
 #else /* !VBOX */
   dw 32 + (6 * 16) ;; table size
