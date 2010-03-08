@@ -259,6 +259,9 @@ typedef struct HWACCM
     /** Set if nested paging is allowed. */
     bool                        fAllowNestedPaging;
 
+    /** Set if large pages are enabled (requires nested paging). */
+    bool                        fLargePages;
+
     /** Set if we can support 64-bit guests or not. */
     bool                        fAllow64BitGuests;
 
@@ -273,7 +276,7 @@ typedef struct HWACCM
 
     /** Set when TPR patching is active. */
     bool                        fTPRPatchingActive;
-    bool                        u8Alignment[7];
+    bool                        u8Alignment[6];
 
     /** And mask for copying register contents. */
     uint64_t                    u64RegisterMask;
