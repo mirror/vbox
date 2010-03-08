@@ -580,6 +580,7 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
         return VERR_PGM_INVALID_LARGE_PAGE_RANGE;
     }
 
+    STAM_PROFILE_START(&pVM->pgm.s.CTX_MID_Z(Stat,IsValidLargePage), a);
     /* Check all remaining pages in the 2 MB range. */
     GCPhys += PAGE_SIZE;
     for (i = 1; i < _2M/PAGE_SIZE; i++)
@@ -599,6 +600,8 @@ int pgmPhysIsValidLargePage(PVM pVM, RTGCPHYS GCPhys, PPGMPAGE pLargePage)
 
         GCPhys += PAGE_SIZE;
     }
+    STAM_PROFILE_STOP(&pVM->pgm.s.CTX_MID_Z(Stat,IsValidLargePage), a);
+
     if (i == _2M/PAGE_SIZE)
     {
         PGM_PAGE_SET_PDE_TYPE(pLargePage, PGM_PAGE_PDE_TYPE_PDE);
