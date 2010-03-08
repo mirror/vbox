@@ -718,9 +718,9 @@ HaveBufferObjectExtension(void)
     return haveBufferObjectExt;
 }
 
-static crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
-                                 CRContext *fromCtx, CRContext *toCtx,
-                                 GLboolean bSwitch)
+static void crStateBufferObjectIntCmp(CRBufferObjectBits *bb, CRbitvalue *bitID,
+                                      CRContext *fromCtx, CRContext *toCtx,
+                                      GLboolean bSwitch)
 {
     CRBufferObjectState *from = &(fromCtx->bufferobject);
     const CRBufferObjectState *to = &(toCtx->bufferobject);
