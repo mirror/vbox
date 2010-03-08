@@ -842,6 +842,17 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
 
     /* Notify GMM about the balloon change. */
     rc = GMMR3BalloonedPages(pVM, (fInflate) ? GMMBALLOONACTION_INFLATE : GMMBALLOONACTION_DEFLATE, cPages);
+    if (RT_SUCCESS(rc))
+    {
+        if (!fInflate)
+        {
+            Assert(pVM->pgm.s.cBalloonedPages >= cPages);
+            pVM->pgm.s.cBalloonedPages -= cPages;
+        }
+        else
+            pVM->pgm.s.cBalloonedPages += cPages;
+    }
+
     pgmUnlock(pVM);
     AssertLogRelRC(rc);
     return rc;

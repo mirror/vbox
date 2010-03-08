@@ -1573,6 +1573,7 @@ static void pgmR3InitStats(PVM pVM)
     STAM_REL_REG(pVM, &pPGM->cWrittenToPages,                    STAMTYPE_U32,     "/PGM/Page/cWrittenToPages",          STAMUNIT_COUNT,     "The number of previously write monitored pages that have been written to.");
     STAM_REL_REG(pVM, &pPGM->cWriteLockedPages,                  STAMTYPE_U32,     "/PGM/Page/cWriteLockedPages",        STAMUNIT_COUNT,     "The number of write(/read) locked pages.");
     STAM_REL_REG(pVM, &pPGM->cReadLockedPages,                   STAMTYPE_U32,     "/PGM/Page/cReadLockedPages",         STAMUNIT_COUNT,     "The number of read (only) locked pages.");
+    STAM_REL_REG(pVM, &pPGM->cBalloonedPages,                    STAMTYPE_U32,     "/PGM/Page/cBalloonedPages",          STAMUNIT_COUNT,     "The number of ballooned pages.");
     STAM_REL_REG(pVM, &pPGM->cHandyPages,                        STAMTYPE_U32,     "/PGM/Page/cHandyPages",              STAMUNIT_COUNT,     "The number of handy pages (not included in cAllPages).");
     STAM_REL_REG(pVM, &pPGM->cRelocations,                       STAMTYPE_COUNTER, "/PGM/cRelocations",                  STAMUNIT_OCCURENCES,"Number of hypervisor relocations.");
     STAM_REL_REG(pVM, &pPGM->ChunkR3Map.c,                       STAMTYPE_U32,     "/PGM/ChunkR3Map/c",                  STAMUNIT_COUNT,     "Number of mapped chunks.");

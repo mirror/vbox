@@ -2837,14 +2837,14 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  * Report back on a memory ballooning request.
  *
  * The request may or may not have been initiated by the GMM. If it was initiated
- * by the GMM it is important that this function is called even if no pages was
+ * by the GMM it is important that this function is called even if no pages were
  * ballooned.
  *
  * @returns VBox status code:
  * @retval  VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH
- * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH
+ * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH 
  * @retval  VERR_GMM_OVERCOMMITED_TRY_AGAIN_IN_A_BIT - reset condition
- *          indicating that we won't neceessarily have sufficient RAM to boot
+ *          indicating that we won't necessarily have sufficient RAM to boot
  *          the VM again and that it should pause until this changes (we'll try
  *          balloon some other VM).  (For standard deflate we have little choice
  *          but to hope the VM won't use the memory that was returned to it.)
