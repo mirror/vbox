@@ -241,12 +241,8 @@ void UIMachineWindowSeamless::cleanupMachineView()
 
 void UIMachineWindowSeamless::cleanupMenu()
 {
-#ifdef Q_WS_MAC
-    // Sync with UIMachineWindowSeamless::prepareMenu()!
-#else /* To NaN: Please uncomment below for mac too and test! */
     delete m_pMainMenu;
     m_pMainMenu = 0;
-#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowSeamless::showSeamless()

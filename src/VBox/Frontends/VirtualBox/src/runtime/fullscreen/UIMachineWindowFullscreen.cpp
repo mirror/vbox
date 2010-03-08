@@ -195,11 +195,7 @@ void UIMachineWindowFullscreen::cleanupMachineView()
 
 void UIMachineWindowFullscreen::cleanupMenu()
 {
-#ifdef Q_WS_MAC
-    // Sync with UIMachineWindowFullscreen::prepareMenu()!
-#else /* To NaN: Please uncomment below for mac too and test! */
     delete m_pMainMenu;
     m_pMainMenu = 0;
-#endif /* Q_WS_MAC */
 }
 
