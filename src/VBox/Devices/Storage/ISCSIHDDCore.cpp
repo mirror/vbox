@@ -1425,7 +1425,7 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
 
     uint32_t *pDst = NULL;
     size_t cbBufLength;
-    uint32_t aStat[64];
+    uint32_t aStatus[256]; /**< Plenty of buffer for status information. */
     uint32_t ExpDataSN = 0;
     bool final = false;
 
@@ -1524,8 +1524,8 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
         }
         /* Always reserve space for the status - it's impossible to tell
          * beforehand whether this will be the final PDU or not. */
-        aISCSIRes[cnISCSIRes].pvSeg = aStat;
-        aISCSIRes[cnISCSIRes].cbSeg = sizeof(aStat);
+        aISCSIRes[cnISCSIRes].pvSeg = aStatus;
+        aISCSIRes[cnISCSIRes].cbSeg = sizeof(aStatus);
         cnISCSIRes++;
 
         rc = iscsiRecvPDU(pImage, itt, aISCSIRes, cnISCSIRes);
@@ -1554,15 +1554,23 @@ static int iscsiCommand(PISCSIIMAGE pImage, PSCSIREQ pRequest)
             if (cbData >= 2)
             {
                 uint32_t cbStat = RT_N2H_U32(((uint32_t *)aISCSIRes[1].pvSeg)[0]) >> 16;
-                if (cbStat + 2 > cbData || cbStat > pRequest->cbSense)
+                if (cbStat + 2 > cbData)
                 {
                     rc = VERR_BUFFER_OVERFLOW;
                     break;
                 }
-                pRequest->cbSense = cbStat;
-                memcpy(pRequest->pvSense, ((const uint8_t *)aISCSIRes[1].pvSeg) + 2, aISCSIRes[1].cbSeg - 2);
-                if (cnISCSIRes > 2 && aISCSIRes[2].cbSeg && (ssize_t)cbStat - aISCSIRes[1].cbSeg - 2 > 0)
-                    memcpy((char *)pRequest->pvSense + aISCSIRes[1].cbSeg, aISCSIRes[2].pvSeg, cbStat - aISCSIRes[1].cbSeg - 2);
+                /* Truncate sense data if it doesn't fit into the buffer. */
+                pRequest->cbSense = RT_MIN(cbStat, pRequest->cbSense);
+                memcpy(pRequest->pvSense,
+                       ((const char *)aISCSIRes[1].pvSeg) + 2,
+                       RT_MIN(aISCSIRes[1].cbSeg - 2, pRequest->cbSense));
+                if (   cnISCSIRes > 2 && aISCSIRes[2].cbSeg
+                    && (ssize_t)pRequest->cbSense - aISCSIRes[1].cbSeg + 2 > 0)
+                {
+                    memcpy((char *)pRequest->pvSense + aISCSIRes[1].cbSeg - 2,
+                           aISCSIRes[2].pvSeg,
+                           pRequest->cbSense - aISCSIRes[1].cbSeg + 2);
+                }
             }
             else if (cbData == 1)
             {
@@ -2537,7 +2545,7 @@ static int iscsiOpenImage(PISCSIIMAGE pImage, unsigned uOpenFlags)
     LogFlowFunc(("target '%s' opened successfully\n", pImage->pszTargetName));
 
     SCSIREQ sr;
-    uint8_t sense[32];
+    uint8_t sense[96];
     uint8_t data8[8];
     uint8_t data12[12];
 
@@ -3009,7 +3017,7 @@ static int iscsiRead(void *pBackendData, uint64_t uOffset, void *pvBuf,
     tls = (uint16_t)(cbToRead / pImage->cbSector);
     SCSIREQ sr;
     uint8_t cdb[10];
-    uint8_t sense[32];
+    uint8_t sense[96];
 
     cdb[0] = SCSI_READ_10;
     cdb[1] = 0;         /* reserved */
@@ -3090,7 +3098,7 @@ static int iscsiWrite(void *pBackendData, uint64_t uOffset, const void *pvBuf,
     tls = (uint16_t)(cbToWrite / pImage->cbSector);
     SCSIREQ sr;
     uint8_t cdb[10];
-    uint8_t sense[32];
+    uint8_t sense[96];
 
     cdb[0] = SCSI_WRITE_10;
     cdb[1] = 0;         /* reserved */
@@ -3146,7 +3154,7 @@ static int iscsiFlush(void *pBackendData)
 
     SCSIREQ sr;
     uint8_t cdb[10];
-    uint8_t sense[32];
+    uint8_t sense[96];
 
     cdb[0] = SCSI_SYNCHRONIZE_CACHE;
     cdb[1] = 0;         /* reserved */
