@@ -145,7 +145,7 @@ void Mouse::uninit()
 // IMouse properties
 /////////////////////////////////////////////////////////////////////////////
 
-int Mouse::getVMMDevMouseCaps(uint32_t *pfCaps)
+HRESULT Mouse::getVMMDevMouseCaps(uint32_t *pfCaps)
 {
     AssertPtrReturn(pfCaps, E_POINTER);
     VMMDev *pVMMDev = mParent->getVMMDev();
@@ -157,7 +157,7 @@ int Mouse::getVMMDevMouseCaps(uint32_t *pfCaps)
     return RT_SUCCESS(rc) ? S_OK : E_FAIL;
 }
 
-int Mouse::setVMMDevMouseCaps(uint32_t fCaps)
+HRESULT Mouse::setVMMDevMouseCaps(uint32_t fCaps)
 {
     VMMDev *pVMMDev = mParent->getVMMDev();
     ComAssertRet(pVMMDev, E_FAIL);
@@ -268,8 +268,8 @@ static uint32_t mouseButtonsToPDM(LONG buttonState)
  *
  * @returns   COM status code
  */
-int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
-                                    int32_t dw, uint32_t fButtons)
+HRESULT Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
+                                        int32_t dw, uint32_t fButtons)
 {
     if (dx || dy || dz || dw || fButtons != mLastButtons)
     {
@@ -299,8 +299,8 @@ int Mouse::reportRelEventToMouseDev(int32_t dx, int32_t dy, int32_t dz,
  *
  * @returns   COM status code
  */
-int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
-                                    int32_t dz, int32_t dw, uint32_t fButtons)
+HRESULT Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
+                                        int32_t dz, int32_t dw, uint32_t fButtons)
 {
     if (   mouseXAbs != mLastAbsX || mouseYAbs != mLastAbsY
         || dz || dw || fButtons != mLastButtons)
@@ -331,7 +331,7 @@ int Mouse::reportAbsEventToMouseDev(uint32_t mouseXAbs, uint32_t mouseYAbs,
  *
  * @returns   COM status code
  */
-int Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
+HRESULT Mouse::reportAbsEventToVMMDev(uint32_t mouseXAbs, uint32_t mouseYAbs)
 {
     VMMDev *pVMMDev = mParent->getVMMDev();
     ComAssertRet(pVMMDev, E_FAIL);
@@ -395,7 +395,7 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
  *
  * @returns   COM status value
  */
-int Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
+HRESULT Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
 {
     AssertPtrReturn(pcX, E_POINTER);
     Display *pDisplay = mParent->getDisplay();
@@ -414,7 +414,7 @@ int Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
  *
  * @returns   COM status value
  */
-int Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
+HRESULT Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
 {
     AssertPtrReturn(pcY, E_POINTER);
     Display *pDisplay = mParent->getDisplay();
@@ -531,7 +531,7 @@ void Mouse::sendMouseCapsNotifications(void)
            if (mpDrv[i]->u32DevCaps & MOUSE_DEVCAP_RELATIVE)
                fRelDev = true;
         }
-    if (RT_SUCCESS(getVMMDevMouseCaps(&u32MouseCaps)))
+    if (SUCCEEDED(getVMMDevMouseCaps(&u32MouseCaps)))
         fVMMDevCanAbs =    (u32MouseCaps & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
                         && fRelDev;
     else
