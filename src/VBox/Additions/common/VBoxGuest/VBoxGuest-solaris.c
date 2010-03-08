@@ -383,6 +383,7 @@ static int VBoxGuestSolarisDetach(dev_info_t *pDip, ddi_detach_cmd_t enmCmd)
             ddi_remove_minor_node(pDip, NULL);
             VBoxGuestDeleteDevExt(&g_DevExt);
             RTR0Term();
+            g_pDip = NULL;
             return DDI_SUCCESS;
         }
 
