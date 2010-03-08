@@ -1616,14 +1616,16 @@ endif # target=darwin
 # Macro switching between @executable_path, @rpath and /Applications/VirtualBox.app
 # depending on whether the build is hardened or not (dylib install_name).
 #
-ifndef VBOX_DYLD_EXECUTABLE_PATH
- ifdef VBOX_WITH_HARDENING
-  VBOX_DYLD_EXECUTABLE_PATH = $(VBOX_PATH_APP_PRIVATE_ARCH)
- else if 0
-  VBOX_DYLD_EXECUTABLE_PATH = @executable_path
- else
-  VBOX_DYLD_EXECUTABLE_PATH = @rpath
-  VBOX_WITH_RELATIVE_RUNPATH = @loader_path/
+ifeq ($(KBUILD_TARGET),darwin)
+ ifndef VBOX_DYLD_EXECUTABLE_PATH
+  ifdef VBOX_WITH_HARDENING
+   VBOX_DYLD_EXECUTABLE_PATH = $(VBOX_PATH_APP_PRIVATE_ARCH)
+  else if 0
+   VBOX_DYLD_EXECUTABLE_PATH = @executable_path
+  else
+   VBOX_DYLD_EXECUTABLE_PATH = @rpath
+   VBOX_WITH_RELATIVE_RUNPATH = @loader_path/
+  endif
  endif
 endif
 
