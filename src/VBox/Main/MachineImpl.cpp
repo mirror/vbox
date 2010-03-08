@@ -1747,7 +1747,9 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
             break;
 
         case HWVirtExPropertyType_LargePages:
-            pb = &mHWData->mHWVirtExLargePagesEnabled;
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            mHWData->mHWVirtExLargePagesEnabled = !!aVal;
             break;
 
         default:
