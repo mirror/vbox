@@ -2910,9 +2910,11 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
         pelmCPU->createChild("SyntheticCpu")->setAttribute("enabled", hw.fSyntheticCpu);
     pelmCPU->setAttribute("count", hw.cCPUs);
 
+    if (hw.fLargePages)
+        pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
+
     if (m->sv >= SettingsVersion_v1_10)
     {
-        pelmCPU->createChild("HardwareVirtExLargePages")->setAttribute("enabled", hw.fLargePages);
         pelmCPU->setAttribute("hotplug", hw.fCpuHotPlug);
 
         xml::ElementNode *pelmCpuTree = NULL;
