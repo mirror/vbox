@@ -62,7 +62,7 @@
 
     <template>
         <common_name>
-            <loctext xml:lang='C'>VirtualBox Time Synchronize Daemon.</loctext>
+            <loctext xml:lang='C'>VirtualBox Service.</loctext>
         </common_name>
     </template>
 </service>
