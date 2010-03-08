@@ -108,7 +108,11 @@ protected:
     virtual void prepareConsolePowerUp();
 
     /* Cleanup helpers: */
+    //virtual void cleanupConsolePowerUp() {}
     //virtual void cleanupRequiredFeatures() {}
+#ifdef Q_WS_MAC
+    //virtual void cleanupDock() {}
+#endif /* Q_WS_MAC */
     //virtual void cleanupActionConnections() {}
     //virtual void cleanupActionGroups() {}
     //virtual void cleanupConsoleConnections() {}
