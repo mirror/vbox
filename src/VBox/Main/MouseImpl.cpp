@@ -536,10 +536,7 @@ void Mouse::sendMouseCapsNotifications(void)
     mParent->onMouseCapabilityChange(fAbsDev || fVMMDevCanAbs, fRelDev,
                                      fVMMDevNeedsHostCursor);
     /** @todo if this gets called during device initialisation we get an
-     * error due to VMMDev not being initialised yet.  This is currently
-     * worked around in DevPS2 (which doesn't need the capability anyway of
-     * course), but it seems to me that Main should be initialised before
-     * the devices are. */
+     * error due to VMMDev not being initialised yet. */
     if (fAbsDev && !(uHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
         uHostCaps |= VMMDEV_MOUSE_HOST_HAS_ABS_DEV;
     if (!fAbsDev && (uHostCaps & VMMDEV_MOUSE_HOST_HAS_ABS_DEV))
