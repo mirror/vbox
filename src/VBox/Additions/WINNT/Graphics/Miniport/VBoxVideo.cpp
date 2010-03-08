@@ -968,9 +968,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                  * do not change.
                  */
                 BOOLEAN fNewInvocation = FALSE;
-                static sPrev_xres    = 0;
-                static sPrev_yres    = 0;
-                static sPrev_bpp     = 0;
+                static uint32_t sPrev_xres    = 0;
+                static uint32_t sPrev_yres    = 0;
+                static uint32_t sPrev_bpp     = 0;
                 if (   sPrev_xres != xres
                     || sPrev_yres != yres
                     || sPrev_bpp != bpp)
