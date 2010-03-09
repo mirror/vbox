@@ -1303,8 +1303,6 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
             {
                 PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
                 pgmTrackDerefGCPhys(pPool, pShwPage, &pRam->aPages[iPage]);
-                pShwPage->cPresent--;
-                pPool->cPresent--;
                 STAM_PROFILE_STOP(&pVM->pgm.s.StatTrackDeref, a);
                 return;
             }
