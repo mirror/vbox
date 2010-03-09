@@ -70,7 +70,7 @@ public:
     virtual void setMouseIntegrationEnabled(bool fEnabled);
 
     /* Public members: */
-    virtual void normalizeGeometry(bool /* bAdjustPosition = false */) {}
+    virtual void normalizeGeometry(bool /* bAdjustPosition = false */) = 0;
 
 signals:
 
@@ -124,7 +124,9 @@ protected:
 #ifdef Q_WS_WIN32
     void updateMouseCursorClipping();
 #endif
-    void updateSliders();
+    virtual QRect availableGeometry() = 0;
+    virtual void maybeRestrictMinimumSize() = 0;
+    virtual void updateSliders() =  0;
 
 #ifdef Q_WS_MAC
     void updateDockIcon();
@@ -207,8 +209,6 @@ private:
     void saveKeyStates();
     void releaseAllPressedKeys(bool aReleaseHostKey = true);
     void sendChangedKeyStates();
-
-    virtual QRect availableGeometry() = 0;
 
     static void dimImage(QImage &img);
 
