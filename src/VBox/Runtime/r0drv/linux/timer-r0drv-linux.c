@@ -420,9 +420,11 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
             pSubTimer->ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u64NextTS - u64NanoTS);
         }
 
+# ifdef CONFIG_SMP
         if (pTimer->fSpecificCpu || pTimer->fAllCpus)
             mod_timer_pinned(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
         else
+# endif
             mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
 #endif
 
