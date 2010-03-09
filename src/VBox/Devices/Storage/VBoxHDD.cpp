@@ -299,8 +299,8 @@ static PVDIMAGE vdGetImageByNumber(PVBOXHDD pDisk, unsigned nImage)
  * internal: read the specified amount of data in whatever blocks the backend
  * will give us.
  */
-static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
-                        void *pvBuf, size_t cbRead)
+static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                        uint64_t uOffset, void *pvBuf, size_t cbRead)
 {
     int rc;
     size_t cbThisRead;
@@ -312,14 +312,25 @@ static int vdReadHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
          * than the previous reads marked as valid. Otherwise this would return
          * stale data when different block sizes are used for the images. */
         cbThisRead = cbRead;
-        rc = VERR_VD_BLOCK_FREE;
-        for (PVDIMAGE pCurrImage = pImage;
-             pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
-             pCurrImage = pCurrImage->pPrev)
+
+        /*
+         * Try to read from the given image.
+         * If the block is not allocated read from override chain if present.
+         */
+        rc = pImage->Backend->pfnRead(pImage->pvBackendData,
+                                      uOffset, pvBuf, cbThisRead,
+                                      &cbThisRead);
+
+        if (rc == VERR_VD_BLOCK_FREE)
         {
-            rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
-                                              uOffset, pvBuf, cbThisRead,
-                                              &cbThisRead);
+            for (PVDIMAGE pCurrImage = pImageParentOverride ? pImageParentOverride : pImage->pPrev;
+                 pCurrImage != NULL && rc == VERR_VD_BLOCK_FREE;
+                 pCurrImage = pCurrImage->pPrev)
+            {
+                rc = pCurrImage->Backend->pfnRead(pCurrImage->pvBackendData,
+                                                  uOffset, pvBuf, cbThisRead,
+                                                  &cbThisRead);
+            }
         }
 
         /* No image in the chain contains the data for the block. */
@@ -344,7 +355,7 @@ static int vdParentRead(void *pvUser, uint64_t uOffset, void *pvBuf,
                         size_t cbRead)
 {
     PVDPARENTSTATEDESC pParentState = (PVDPARENTSTATEDESC)pvUser;
-    return vdReadHelper(pParentState->pDisk, pParentState->pImage, uOffset,
+    return vdReadHelper(pParentState->pDisk, pParentState->pImage, NULL, uOffset,
                         pvBuf, cbRead);
 }
 
@@ -394,6 +405,7 @@ static void vdSetModifiedFlag(PVBOXHDD pDisk)
  * images that are really needed).
  */
 static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                 PVDIMAGE pImageParentOverride,
                                  uint64_t uOffset, size_t cbWrite,
                                  size_t cbThisWrite, size_t cbPreRead,
                                  size_t cbPostRead, const void *pvBuf,
@@ -404,8 +416,8 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
     /* Read the data that goes before the write to fill the block. */
     if (cbPreRead)
     {
-        rc = vdReadHelper(pDisk, pImage, uOffset - cbPreRead, pvTmp,
-                          cbPreRead);
+        rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
+                          uOffset - cbPreRead, pvTmp, cbPreRead);
         if (RT_FAILURE(rc))
             return rc;
     }
@@ -439,7 +451,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
             memcpy((char *)pvTmp + cbPreRead + cbThisWrite,
                    (char *)pvBuf + cbThisWrite, cbWriteCopy);
         if (cbReadImage)
-            rc = vdReadHelper(pDisk, pImage,
+            rc = vdReadHelper(pDisk, pImage, pImageParentOverride,
                               uOffset + cbThisWrite + cbWriteCopy,
                               (char *)pvTmp + cbPreRead + cbThisWrite + cbWriteCopy,
                               cbReadImage);
@@ -471,6 +483,7 @@ static int vdWriteHelperStandard(PVBOXHDD pDisk, PVDIMAGE pImage,
  * All backends which support differential/growing images support this.
  */
 static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
+                                  PVDIMAGE pImageParentOverride,
                                   uint64_t uOffset, size_t cbWrite,
                                   size_t cbThisWrite, size_t cbPreRead,
                                   size_t cbPostRead, const void *pvBuf,
@@ -500,7 +513,7 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
 
     /* Read the entire data of the block so that we can compare whether it will
      * be modified by the write or not. */
-    rc = vdReadHelper(pDisk, pImage, uOffset - cbPreRead, pvTmp,
+    rc = vdReadHelper(pDisk, pImage, pImageParentOverride, uOffset - cbPreRead, pvTmp,
                       cbPreRead + cbThisWrite + cbPostRead - cbFill);
     if (RT_FAILURE(rc))
         return rc;
@@ -547,8 +560,8 @@ static int vdWriteHelperOptimized(PVBOXHDD pDisk, PVDIMAGE pImage,
  * internal: write buffer to the image, taking care of block boundaries and
  * write optimizations.
  */
-static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
-                         const void *pvBuf, size_t cbWrite)
+static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, PVDIMAGE pImageParentOverride,
+                         uint64_t uOffset, const void *pvBuf, size_t cbWrite)
 {
     int rc;
     unsigned fWrite;
@@ -579,7 +592,8 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
             {
                 /* Optimized write, suppress writing to a so far unallocated
                  * block if the data is in fact not changed. */
-                rc = vdWriteHelperOptimized(pDisk, pImage, uOffset, cbWrite,
+                rc = vdWriteHelperOptimized(pDisk, pImage, pImageParentOverride,
+                                            uOffset, cbWrite,
                                             cbThisWrite, cbPreRead, cbPostRead,
                                             pvBuf, pvTmp);
             }
@@ -589,7 +603,8 @@ static int vdWriteHelper(PVBOXHDD pDisk, PVDIMAGE pImage, uint64_t uOffset,
                  * be written no matter what. This will usually (unless the
                  * backend has some further optimization enabled) cause the
                  * block to be allocated. */
-                rc = vdWriteHelperStandard(pDisk, pImage, uOffset, cbWrite,
+                rc = vdWriteHelperStandard(pDisk, pImage, pImageParentOverride,
+                                           uOffset, cbWrite,
                                            cbThisWrite, cbPreRead, cbPostRead,
                                            pvBuf, pvTmp);
             }
@@ -1839,6 +1854,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
     return rc;
 }
 
+
 /**
  * Merges two images (not necessarily with direct parent/child relationship).
  * As a side effect the source image and potentially the other images which
@@ -1943,7 +1959,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                     {
                         if (RT_FAILURE(rc))
                             break;
-                        rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
+                        rc = vdWriteHelper(pDisk, pImageTo, pImageFrom->pPrev,
+                                           uOffset, pvBuf,
                                            cbThisRead);
                         if (RT_FAILURE(rc))
                             break;
@@ -1969,6 +1986,30 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         }
         else
         {
+            /*
+             * We may need to update the parent uuid of the child coming after the
+             * last image to be merged. We have to reopen it read/write.
+             *
+             * This is done before we do the actual merge to prevent an incosistent
+             * chain if the mode change fails for some reason.
+             */
+            if (pImageFrom->pNext)
+            {
+                PVDIMAGE pImageChild = pImageFrom->pNext;
+
+                /* We need to open the image in read/write mode. */
+                uOpenFlags = pImageChild->Backend->pfnGetOpenFlags(pImageChild->pvBackendData);
+
+                if (uOpenFlags  & VD_OPEN_FLAGS_READONLY)
+                {
+                    uOpenFlags  &= ~VD_OPEN_FLAGS_READONLY;
+                    rc = pImageChild->Backend->pfnSetOpenFlags(pImageChild->pvBackendData,
+                                                               uOpenFlags);
+                    if (RT_FAILURE(rc))
+                        break;
+                }
+            }
+
             /* Merge child state into parent. This means writing all blocks
              * which are allocated in the image up to the source image to the
              * destination image. */
@@ -1995,7 +2036,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 {
                     if (RT_FAILURE(rc))
                         break;
-                    rc = vdWriteHelper(pDisk, pImageTo, uOffset, pvBuf,
+                    rc = vdWriteHelper(pDisk, pImageTo, NULL, uOffset, pvBuf,
                                        cbThisRead);
                     if (RT_FAILURE(rc))
                         break;
@@ -2035,14 +2076,33 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         }
         else
         {
+            /* Update the parent uuid of the child of the last merged image. */
             if (pImageFrom->pNext)
             {
                 rc = pImageTo->Backend->pfnGetUuid(pImageTo->pvBackendData,
                                                    &Uuid);
                 AssertRC(rc);
+
                 rc = pImageFrom->Backend->pfnSetParentUuid(pImageFrom->pNext->pvBackendData,
                                                            &Uuid);
                 AssertRC(rc);
+
+                /* Reopen readonly if neccessary */
+                if (pImageFrom->pNext != pDisk->pLast)
+                {
+                    PVDIMAGE pImageChild = pImageFrom->pNext;
+
+                    uOpenFlags = pImageChild->Backend->pfnGetOpenFlags(pImageChild->pvBackendData);
+                    uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+                    rc = pImageChild->Backend->pfnSetOpenFlags(pImageChild->pvBackendData,
+                                                               uOpenFlags);
+                    /** @todo: What to do if this fails?. Breaking would
+                     * prevent the merged images from being removed 
+                     * from the chain possibly causing inconsistent behavior.
+                     */
+                    if (RT_FAILURE(rc))
+                        break;
+                }
             }
         }
 
@@ -2307,12 +2367,12 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         {
             size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
 
-            rc = vdReadHelper(pDiskFrom, pImageFrom, uOffset, pvBuf,
+            rc = vdReadHelper(pDiskFrom, pImageFrom, NULL, uOffset, pvBuf,
                               cbThisRead);
             if (RT_FAILURE(rc))
                 break;
 
-            rc = vdWriteHelper(pDiskTo, pImageTo, uOffset, pvBuf,
+            rc = vdWriteHelper(pDiskTo, pImageTo, NULL, uOffset, pvBuf,
                                cbThisRead);
             if (RT_FAILURE(rc))
                 break;
@@ -2649,7 +2709,7 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
-        rc = vdReadHelper(pDisk, pImage, uOffset, pvBuf, cbRead);
+        rc = vdReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbRead);
     } while (0);
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2696,7 +2756,7 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdSetModifiedFlag(pDisk);
-        rc = vdWriteHelper(pDisk, pImage, uOffset, pvBuf, cbWrite);
+        rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite);
     } while (0);
 
     LogFlowFunc(("returns %Rrc\n", rc));
