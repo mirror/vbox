@@ -1289,6 +1289,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorkerTrackDeref)(PVMCPU pVCpu, PPGMPOOLPA
      *      1. have a medium sized HCPhys -> GCPhys TLB (hash?)
      *      2. write protect all shadowed pages. I.e. implement caching.
      */
+    /** @todo duplicated in the 2nd half of pgmPoolTracDerefGCPhysHint */
+
     /*
      * Find the guest address.
      */
