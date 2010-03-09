@@ -580,6 +580,14 @@ DECLINLINE(ULONG) vboxWddmVramReportedSize(PDEVICE_EXTENSION pDevExt)
     return pDevExt->u.primary.Vdma.CmdHeap.area.offBase;
 }
 
+DECLINLINE(ULONG) vboxWddmVramReportedSegmentSize(PDEVICE_EXTENSION pDevExt)
+{
+    ULONG size = vboxWddmVramReportedSize(pDevExt);
+    size /= 2;
+    size &= ~0xfffUL;
+    return size;
+}
+
 DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
     if (pSource->pAllocation == pAllocation)

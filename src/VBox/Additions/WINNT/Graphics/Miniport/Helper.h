@@ -80,5 +80,17 @@ int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 # define dprintf2(a) do { } while (0)
 #endif
 
+#ifdef DEBUG_misha
+/* specifies whether the vboxVDbgBreakF should break in the debugger
+ * windbg seems to have some issues when there is a lot ( >~50) of sw breakpoints defined
+ * to simplify things we just insert breaks for the case of intensive debugging WDDM driver*/
+extern bool g_bVBoxVDbgBreakF;
+extern bool g_bVBoxVDbgBreakFv;
+#define vboxVDbgBreakF() do { if (g_bVBoxVDbgBreakF) AssertBreakpoint(); } while (0)
+#define vboxVDbgBreakFv() do { if (g_bVBoxVDbgBreakF) AssertBreakpoint(); } while (0)
+#else
+#define vboxVDbgBreakF() do { } while (0)
+#define vboxVDbgBreakFv() do { } while (0)
+#endif
 
 #endif // __HELPER_h__
