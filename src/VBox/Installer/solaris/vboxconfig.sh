@@ -672,7 +672,7 @@ postinstall()
 
         return 0
     else
-        errorprint "Failed to update boot-archive"
+        errorprint "Failed to install drivers"
         exit 666
     fi
     return 1
