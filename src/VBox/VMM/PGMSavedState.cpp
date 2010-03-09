@@ -2767,15 +2767,7 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     if (uVersion >= PGM_SAVED_STATE_VERSION_3_0_0)
     {
         if (uVersion > PGM_SAVED_STATE_VERSION_PRE_BALLOON)
-        {
             rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFields[0]);
-            if (    RT_SUCCESS(rc)
-                &&  pVM->pgm.s.cBalloonedPages)
-            {
-                rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_INFLATE, pVM->pgm.s.cBalloonedPages);
-                AssertRC(rc);
-            }
-        }
         else
             rc = SSMR3GetStruct(pSSM, pPGM, &s_aPGMFieldsPreBalloon[0]);
 
@@ -2885,6 +2877,13 @@ static int pgmR3LoadFinalLocked(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion)
     }
     else
         rc = pgmR3LoadMemoryOld(pVM, pSSM, uVersion);
+
+    /* Refresh balloon accounting. */
+    if (pVM->pgm.s.cBalloonedPages)
+    {
+        rc = GMMR3BalloonedPages(pVM, GMMBALLOONACTION_INFLATE, pVM->pgm.s.cBalloonedPages);
+        AssertRC(rc);
+    }
     return rc;
 }
 
