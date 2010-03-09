@@ -999,7 +999,8 @@ void UIMachineView::sltMachineStateChanged()
                     {
                         BYTE *pMem;
                         m_pFrameBuffer->GetAddress(&pMem);
-                        QImage shot = QImage(pMem, m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                        /* Make a *real* depth copy out of the current framebuffer content. */
+                        QImage shot = QImage(pMem, m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32).copy();
                         dimImage(shot);
                         m_pauseShot = QPixmap::fromImage(shot);
                         /* Fully repaint to pick up m_pauseShot: */
@@ -1037,6 +1038,11 @@ void UIMachineView::sltMachineStateChanged()
                      * the viewport through IFramebuffer::NotifyUpdate): */
                     CDisplay dsp = session().GetConsole().GetDisplay();
                     dsp.InvalidateAndUpdate();
+                    /* There seems to be a bug in InvalidateAndUpdate. That is,
+                     * only the primary screen get updated. Manually force a
+                     * repaint on this screen. */
+                    if (screenId() > 0)
+                        viewport()->repaint();
                 }
             }
             /* Reuse the focus event handler to capture input: */
