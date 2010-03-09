@@ -78,6 +78,7 @@ void UIMachineLogicNormal::initialize()
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
 
+        /* Retranslate logic part: */
         retranslateUi();
     }
 }

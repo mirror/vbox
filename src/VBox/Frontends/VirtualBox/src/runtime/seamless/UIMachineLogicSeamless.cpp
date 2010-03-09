@@ -52,7 +52,7 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
 
 bool UIMachineLogicSeamless::checkAvailability()
 {
-    /* Temporary get a machine object */
+    /* Temporary get a machine object: */
     const CMachine &machine = uisession()->session().GetMachine();
     const CConsole &console = uisession()->session().GetConsole();
 
@@ -63,7 +63,7 @@ bool UIMachineLogicSeamless::checkAvailability()
 #endif /* !(QT_VERSION >= 0x040600) */
 
     int cGuestScreens = machine.GetMonitorCount();
-    /* Check that there are enough physical screens are connected */
+    /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
         vboxProblem().cannotEnterSeamlessMode();
@@ -105,9 +105,9 @@ bool UIMachineLogicSeamless::checkAvailability()
     /* Take the toggle hot key from the menu item. Since
      * VBoxGlobal::extractKeyFromActionText gets exactly the
      * linked key without the 'Host+' part we are adding it here. */
-    QString hotKey = QString ("Host+%1")
-        .arg (VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Seamless)->text()));
-    Assert (!hotKey.isEmpty());
+    QString hotKey = QString("Host+%1")
+        .arg(VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Seamless)->text()));
+    Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
     if (!vboxProblem().confirmGoingSeamless(hotKey))
@@ -146,6 +146,7 @@ void UIMachineLogicSeamless::initialize()
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
 
+        /* Retranslate logic part: */
         retranslateUi();
     }
 }

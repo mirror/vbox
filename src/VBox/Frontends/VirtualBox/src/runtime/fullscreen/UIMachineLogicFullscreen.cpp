@@ -58,7 +58,7 @@ UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 
 bool UIMachineLogicFullscreen::checkAvailability()
 {
-    /* Temporary get a machine object */
+    /* Temporary get a machine object: */
     const CMachine &machine = uisession()->session().GetMachine();
     const CConsole &console = uisession()->session().GetConsole();
 
@@ -69,7 +69,7 @@ bool UIMachineLogicFullscreen::checkAvailability()
 #endif /* !(QT_VERSION >= 0x040600) */
 
     int cGuestScreens = machine.GetMonitorCount();
-    /* Check that there are enough physical screens are connected */
+    /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
         vboxProblem().cannotEnterFullscreenMode();
@@ -112,9 +112,9 @@ bool UIMachineLogicFullscreen::checkAvailability()
     /* Take the toggle hot key from the menu item. Since
      * VBoxGlobal::extractKeyFromActionText gets exactly the
      * linked key without the 'Host+' part we are adding it here. */
-    QString hotKey = QString ("Host+%1")
-        .arg (VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Fullscreen)->text()));
-    Assert (!hotKey.isEmpty());
+    QString hotKey = QString("Host+%1")
+        .arg(VBoxGlobal::extractKeyFromActionText(actionsPool()->action(UIActionIndex_Toggle_Fullscreen)->text()));
+    Assert(!hotKey.isEmpty());
 
     /* Show the info message. */
     if (!vboxProblem().confirmGoingFullscreen(hotKey))
@@ -148,12 +148,12 @@ void UIMachineLogicFullscreen::initialize()
         prepareDock();
 #endif /* Q_WS_MAC */
 
-
         /* Initialization: */
         sltMachineStateChanged();
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
 
+        /* Retranslate logic part: */
         retranslateUi();
     }
 }
