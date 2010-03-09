@@ -51,6 +51,7 @@ public:
 
     /* Public getters: */
     QWidget* mainWindow() const;
+    UISession *uisession() const { return m_pSession; }
 
 private slots:
 

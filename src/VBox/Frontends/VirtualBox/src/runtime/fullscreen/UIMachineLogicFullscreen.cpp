@@ -153,6 +153,8 @@ void UIMachineLogicFullscreen::initialize()
         sltMachineStateChanged();
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
+
+        retranslateUi();
     }
 }
 

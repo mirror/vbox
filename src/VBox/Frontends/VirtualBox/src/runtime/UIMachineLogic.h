@@ -23,11 +23,9 @@
 #ifndef __UIMachineLogic_h__
 #define __UIMachineLogic_h__
 
-/* Global includes */
-#include <QObject>
-
 /* Local includes */
 #include "UIMachineDefs.h"
+#include <QIWithRetranslateUI.h>
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <VBox/dbggui.h>
 #endif
@@ -45,8 +43,10 @@ class CVirtualBoxErrorInfo;
 class UISession;
 class UIActionsPool;
 class UIMachineWindow;
+class UIDockIconPreview;
+class VBoxChangeDockIconUpdateEvent;
 
-class UIMachineLogic : public QObject
+class UIMachineLogic : public QIWithRetranslateUI3<QObject>
 {
     Q_OBJECT;
 
@@ -78,6 +78,10 @@ public:
     void setPreventAutoStart(bool fIsPreventAutoStart) { m_fIsPreventAutoStart = fIsPreventAutoStart; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
+#ifdef Q_WS_MAC
+    void updateDockIcon();
+#endif /* Q_WS_MAC */
+
 protected:
 
     /* Machine logic constructor/destructor: */
@@ -96,6 +100,12 @@ protected:
 
     /* Protected members: */
     void addMachineWindow(UIMachineWindow *pMachineWindow);
+    void retranslateUi();
+#ifdef Q_WS_MAC
+    bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
+    void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }
+    void updateDockOverlay();
+#endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
     virtual void prepareConsoleConnections();
@@ -160,9 +170,11 @@ private slots:
     void sltLoggingToggled(bool);
 #endif
 
-#ifdef Q_WS_MAC
+#ifdef RT_OS_DARWIN /* Something is *really* broken in regards of the moc here */
     void sltDockPreviewModeChanged(QAction *pAction);
-#endif /* Q_WS_MAC */
+    void sltDockPreviewMonitorChanged(QAction *pAction);
+    void sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event);
+#endif /* RT_OS_DARWIN */
 
 private:
 
@@ -196,16 +208,17 @@ private:
     PCDBGGUIVT m_dbgGuiVT;
 #endif
 
+#ifdef Q_WS_MAC
+    bool m_fIsDockIconEnabled;
+    UIDockIconPreview *m_pDockIconPreview;
+    QActionGroup *m_pDockPreviewSelectMonitorGroup;
+    int m_DockIconPreviewMonitor;
+#endif /* Q_WS_MAC */
+
     /* Friend classes: */
     friend class UIMachineWindow;
 
 #if 0 // TODO: Where to move that?
-# ifdef Q_WS_MAC
-    void fadeToBlack();
-    void fadeToNormal();
-# endif
-    bool toggleFullscreenMode(bool aOn, bool aSeamless);
-    void switchToFullscreen(bool aOn, bool aSeamless);
     void setViewInSeamlessMode(const QRect &aTargetRect);
 #endif
 };
