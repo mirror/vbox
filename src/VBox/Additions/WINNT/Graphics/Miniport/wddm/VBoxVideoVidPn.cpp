@@ -24,161 +24,176 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
     NTSTATUS Status = pVidPnTopologyInterface->pfnAcquireFirstPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
     BOOLEAN bSupported = TRUE;
 
-    while (pNewVidPnPresentPathInfo)
+    if (Status == STATUS_SUCCESS)
     {
-        /* @todo: which paths do we support? no matter for now
-        pNewVidPnPresentPathInfo->VidPnSourceId
-        pNewVidPnPresentPathInfo->VidPnTargetId
-
-        ImportanceOrdinal does not matter for now
-        pNewVidPnPresentPathInfo->ImportanceOrdinal
-        */
-
-        if (pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_UNPINNED
-                || pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY
-                || pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED)
+        while (1)
         {
-            dprintf(("unsupported Scaling (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Scaling));
-            bSupported = FALSE;
-            break;
+            /* @todo: which paths do we support? no matter for now
+            pNewVidPnPresentPathInfo->VidPnSourceId
+            pNewVidPnPresentPathInfo->VidPnTargetId
+
+            ImportanceOrdinal does not matter for now
+            pNewVidPnPresentPathInfo->ImportanceOrdinal
+            */
+
+            if (pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_UNPINNED
+                    && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY
+                    && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED)
+            {
+                dprintf(("unsupported Scaling (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Scaling));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Stretched)
+            {
+                dprintf(("unsupported Scaling support (Stretched)\n"));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (!pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Identity
+                    && !pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Centered)
+            {
+                dprintf(("\"Identity\" or \"Centered\" Scaling support not set\n"));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_UNPINNED
+                    && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY)
+            {
+                dprintf(("unsupported rotation (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Rotation));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate180
+                    || pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate270
+                    || pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate90)
+            {
+                dprintf(("unsupported RotationSupport\n"));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (!pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Identity)
+            {
+                dprintf(("\"Identity\" RotationSupport not set\n"));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx
+                    || pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy)
+            {
+                dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
+                        pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx,
+                        pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx
+                    || pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy)
+            {
+                dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
+                        pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx,
+                        pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->VidPnTargetColorBasis != D3DKMDT_CB_SRGB
+                    && pNewVidPnPresentPathInfo->VidPnTargetColorBasis != D3DKMDT_CB_UNINITIALIZED)
+            {
+                dprintf(("unsupported VidPnTargetColorBasis (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorBasis));
+                bSupported = FALSE;
+                break;
+            }
+
+            /* channels?
+            pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FirstChannel;
+            pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.SecondChannel;
+            pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.ThirdChannel;
+            we definitely not support fourth channel
+            */
+            if (pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel)
+            {
+                dprintf(("Non-zero FourthChannel (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel));
+                bSupported = FALSE;
+                break;
+            }
+
+            /* Content (D3DKMDT_VPPC_GRAPHICS, _NOTSPECIFIED, _VIDEO), does not matter for now
+            pNewVidPnPresentPathInfo->Content
+            */
+            /* not support copy protection for now */
+            if (pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType != D3DKMDT_VPPMT_NOPROTECTION)
+            {
+                dprintf(("Copy protection not supported CopyProtectionType(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits)
+            {
+                dprintf(("Copy protection not supported APSTriggerBits(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits));
+                bSupported = FALSE;
+                break;
+            }
+
+            D3DKMDT_VIDPN_PRESENT_PATH_COPYPROTECTION_SUPPORT tstCPSupport = {0};
+            tstCPSupport.NoProtection = 1;
+            if (memcmp(&tstCPSupport, &pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, sizeof(tstCPSupport)))
+            {
+                dprintf(("Copy protection support (0x%x)\n", *((UINT*)&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport)));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->GammaRamp.Type != D3DDDI_GAMMARAMP_DEFAULT)
+            {
+                dprintf(("Unsupported GammaRamp.Type (%d)\n", pNewVidPnPresentPathInfo->GammaRamp.Type));
+                bSupported = FALSE;
+                break;
+            }
+
+            if (pNewVidPnPresentPathInfo->GammaRamp.DataSize != 0)
+            {
+                dprintf(("Warning: non-zero GammaRamp.DataSize (%d), treating as supported\n", pNewVidPnPresentPathInfo->GammaRamp.DataSize));
+            }
+
+            const D3DKMDT_VIDPN_PRESENT_PATH *pNextVidPnPresentPathInfo;
+
+            Status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, pNewVidPnPresentPathInfo, &pNextVidPnPresentPathInfo);
+            pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
+            if (Status == STATUS_SUCCESS)
+            {
+                pNewVidPnPresentPathInfo = pNextVidPnPresentPathInfo;
+            }
+            else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+            {
+                Status = STATUS_SUCCESS;
+                break;
+            }
+            else
+            {
+                AssertBreakpoint();
+                dprintf(("pfnAcquireNextPathInfo Failed Status(0x%x)\n", Status));
+                pNewVidPnPresentPathInfo = NULL;
+                break;
+            }
         }
 
-        if (pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Stretched)
-        {
-            dprintf(("unsupported Scaling support (Stretched)\n"));
-            bSupported = FALSE;
-            break;
-        }
+        if (pNewVidPnPresentPathInfo)
+            pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
 
-        if (!pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Identity
-                && !pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Centered)
-        {
-            dprintf(("\"Identity\" or \"Centered\" Scaling support not set\n"));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY)
-        {
-            dprintf(("unsupported rotation (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Rotation));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate180
-                || pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate270
-                || pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate90)
-        {
-            dprintf(("unsupported RotationSupport\n"));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (!pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Identity)
-        {
-            dprintf(("\"Identity\" RotationSupport not set\n"));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx
-                || pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy)
-        {
-            dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
-                    pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx,
-                    pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx
-                || pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy)
-        {
-            dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
-                    pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx,
-                    pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->VidPnTargetColorBasis != D3DKMDT_CB_SRGB)
-        {
-            dprintf(("unsupported VidPnTargetColorBasis (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorBasis));
-            bSupported = FALSE;
-            break;
-        }
-
-        /* channels?
-        pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FirstChannel;
-        pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.SecondChannel;
-        pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.ThirdChannel;
-        we definitely not support fourth channel
-        */
-        if (pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel)
-        {
-            dprintf(("Non-zero FourthChannel (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel));
-            bSupported = FALSE;
-            break;
-        }
-
-        /* Content (D3DKMDT_VPPC_GRAPHICS, _NOTSPECIFIED, _VIDEO), does not matter for now
-        pNewVidPnPresentPathInfo->Content
-        */
-        /* not support copy protection for now */
-        if (pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType != D3DKMDT_VPPMT_NOPROTECTION)
-        {
-            dprintf(("Copy protection not supported CopyProtectionType(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits)
-        {
-            dprintf(("Copy protection not supported APSTriggerBits(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits));
-            bSupported = FALSE;
-            break;
-        }
-
-        D3DKMDT_VIDPN_PRESENT_PATH_COPYPROTECTION_SUPPORT tstCPSupport = {0};
-        tstCPSupport.NoProtection = 1;
-        if (memcmp(&tstCPSupport, &pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, sizeof(tstCPSupport)))
-        {
-            dprintf(("Copy protection support (0x%x)\n", *((UINT*)&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport)));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->GammaRamp.Type != D3DDDI_GAMMARAMP_DEFAULT)
-        {
-            dprintf(("Unsupported GammaRamp.Type (%d)\n", pNewVidPnPresentPathInfo->GammaRamp.Type));
-            bSupported = FALSE;
-            break;
-        }
-
-        if (pNewVidPnPresentPathInfo->GammaRamp.DataSize != 0)
-        {
-            dprintf(("Warning: non-zero GammaRamp.DataSize (%d), treating as supported\n", pNewVidPnPresentPathInfo->GammaRamp.DataSize));
-        }
-
-        const D3DKMDT_VIDPN_PRESENT_PATH *pNextVidPnPresentPathInfo;
-
-        Status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, pNewVidPnPresentPathInfo, &pNextVidPnPresentPathInfo);
-        pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
-        if (Status == STATUS_SUCCESS)
-        {
-            pNewVidPnPresentPathInfo = pNextVidPnPresentPathInfo;
-        }
-        else
-        {
-            AssertBreakpoint();
-            dprintf(("pfnAcquireNextPathInfo Failed Status(0x%x)\n", Status));
-            pNewVidPnPresentPathInfo = NULL;
-            break;
-        }
     }
-
-    if (pNewVidPnPresentPathInfo)
-        pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNewVidPnPresentPathInfo);
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
+    else
+        drprintf((__FUNCTION__": pfnAcquireFirstPathInfo failed Status(0x%x)\n", Status));
 
     *pbSupported = bSupported;
 
@@ -239,7 +254,7 @@ NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     BOOLEAN bSupported = TRUE;
     if (Status == STATUS_SUCCESS)
     {
-        while (pNewVidPnSourceModeInfo)
+        while (1)
         {
             Status = vboxVidPnCheckSourceModeInfo(hDesiredVidPn, pNewVidPnSourceModeInfo, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
@@ -250,6 +265,11 @@ NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
                 if (Status == STATUS_SUCCESS)
                 {
                     pNewVidPnSourceModeInfo = pNextVidPnSourceModeInfo;
+                }
+                else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
                 }
                 else
                 {
@@ -264,10 +284,10 @@ NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
             }
         }
     }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
     else
-    {
         drprintf(("VBoxVideoWddm: pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
-    }
 
     *pbSupported = bSupported;
     return Status;
@@ -324,7 +344,8 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     BOOLEAN bSupported = TRUE;
     if (Status == STATUS_SUCCESS)
     {
-        while (pNewVidPnTargetModeInfo)
+        Assert(pNewVidPnTargetModeInfo);
+        while (1)
         {
             Status = vboxVidPnCheckTargetModeInfo(hDesiredVidPn, pNewVidPnTargetModeInfo, &bSupported);
             if (Status == STATUS_SUCCESS && bSupported)
@@ -335,6 +356,11 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
                 if (Status == STATUS_SUCCESS)
                 {
                     pNewVidPnTargetModeInfo = pNextVidPnTargetModeInfo;
+                }
+                else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
                 }
                 else
                 {
@@ -349,10 +375,10 @@ NTSTATUS vboxVidPnCheckTargetModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
             }
         }
     }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
     else
-    {
         drprintf((__FUNCTION__": pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
-    }
 
     *pbSupported = bSupported;
     return Status;
@@ -797,7 +823,8 @@ NTSTATUS vboxVidPnEnumSourceModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
     NTSTATUS Status = pVidPnSourceModeSetInterface->pfnAcquireFirstModeInfo(hNewVidPnSourceModeSet, &pNewVidPnSourceModeInfo);
     if (Status == STATUS_SUCCESS)
     {
-        while (pNewVidPnSourceModeInfo)
+        Assert(pNewVidPnSourceModeInfo);
+        while (1)
         {
             const D3DKMDT_VIDPN_SOURCE_MODE *pNextVidPnSourceModeInfo;
             Status = pVidPnSourceModeSetInterface->pfnAcquireNextModeInfo(hNewVidPnSourceModeSet, pNewVidPnSourceModeInfo, &pNextVidPnSourceModeInfo);
@@ -808,6 +835,11 @@ NTSTATUS vboxVidPnEnumSourceModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
                 Assert(Status == STATUS_SUCCESS);
                 if (Status == STATUS_SUCCESS)
                     pVidPnSourceModeSetInterface->pfnReleaseModeInfo(hNewVidPnSourceModeSet, pNextVidPnSourceModeInfo);
+                else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
                 else
                 {
                     drprintf((__FUNCTION__": pfnAcquireNextModeInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
@@ -827,10 +859,10 @@ NTSTATUS vboxVidPnEnumSourceModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
             }
         }
     }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
     else
-    {
         drprintf((__FUNCTION__": pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
-    }
 
     return Status;
 }
@@ -843,7 +875,8 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
     NTSTATUS Status = pVidPnTargetModeSetInterface->pfnAcquireFirstModeInfo(hNewVidPnTargetModeSet, &pNewVidPnTargetModeInfo);
     if (Status == STATUS_SUCCESS)
     {
-        while (pNewVidPnTargetModeInfo)
+        Assert(pNewVidPnTargetModeInfo);
+        while (1)
         {
             const D3DKMDT_VIDPN_TARGET_MODE *pNextVidPnTargetModeInfo;
             Status = pVidPnTargetModeSetInterface->pfnAcquireNextModeInfo(hNewVidPnTargetModeSet, pNewVidPnTargetModeInfo, &pNextVidPnTargetModeInfo);
@@ -854,6 +887,11 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
                 Assert(Status == STATUS_SUCCESS);
                 if (Status == STATUS_SUCCESS)
                     pVidPnTargetModeSetInterface->pfnReleaseModeInfo(hNewVidPnTargetModeSet, pNextVidPnTargetModeInfo);
+                else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
                 else
                 {
                     drprintf((__FUNCTION__": pfnAcquireNextModeInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
@@ -873,10 +911,10 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
             }
         }
     }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
     else
-    {
         drprintf((__FUNCTION__": pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
-    }
 
     return Status;
 }
@@ -890,7 +928,7 @@ NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDes
     NTSTATUS Status = pVidPnTopologyInterface->pfnAcquireFirstPathInfo(hVidPnTopology, &pNewVidPnPresentPathInfo);
     if (Status == STATUS_SUCCESS)
     {
-        while (pNewVidPnPresentPathInfo)
+        while (1)
         {
             const D3DKMDT_VIDPN_PRESENT_PATH *pNextVidPnPresentPathInfo;
             Status = pVidPnTopologyInterface->pfnAcquireNextPathInfo(hVidPnTopology, pNewVidPnPresentPathInfo, &pNextVidPnPresentPathInfo);
@@ -902,7 +940,9 @@ NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDes
                     pVidPnTopologyInterface->pfnReleasePathInfo(hVidPnTopology, pNextVidPnPresentPathInfo);
                 else
                 {
-                    drprintf((__FUNCTION__": pfnAcquireNextPathInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
+                    Assert(Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET);
+                    if (Status != STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                        drprintf((__FUNCTION__": pfnAcquireNextPathInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
                     Status = STATUS_SUCCESS;
                 }
 
@@ -910,6 +950,11 @@ NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDes
             }
             else if (Status == STATUS_SUCCESS)
                 pNewVidPnPresentPathInfo = pNextVidPnPresentPathInfo;
+            else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+            {
+                Status = STATUS_SUCCESS;
+                break;
+            }
             else
             {
                 AssertBreakpoint();
@@ -919,6 +964,10 @@ NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDes
             }
         }
     }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
+    else
+        drprintf((__FUNCTION__": pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
 
     return Status;
 }
