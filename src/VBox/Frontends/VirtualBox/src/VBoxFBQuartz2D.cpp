@@ -229,7 +229,8 @@ void VBoxQuartz2DFrameBuffer::paintEvent (QPaintEvent *aEvent)
     CGContextScaleCTM (ctx, 1.0, -1.0);
 
     /* We handle the seamless mode as a special case. */
-    if (main->isTrueSeamless())
+    if (   main
+        && main->isTrueSeamless())
     {
         /* Here we paint the windows without any wallpaper.
          * So the background would be set transparently. */

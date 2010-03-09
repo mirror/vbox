@@ -81,13 +81,9 @@ const int XKeyRelease = KeyRelease;
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 # include "DarwinKeyboard.h"
-# ifdef QT_MAC_USE_COCOA
-#  include "darwin/VBoxCocoaApplication.h"
-# else /* QT_MAC_USE_COCOA */
-#  include <Carbon/Carbon.h>
-# endif /* !QT_MAC_USE_COCOA */
+# include "darwin/VBoxCocoaApplication.h"
 # include <VBox/err.h>
-#endif /* defined (Q_WS_MAC) */
+#endif /* Q_WS_MAC */
 
 class VBoxViewport: public QWidget
 {
@@ -215,15 +211,11 @@ UIMachineView::UIMachineView(  UIMachineWindow *pMachineWindow
     , m_fPassCAD(false)
 #ifdef VBOX_WITH_VIDEOHWACCEL
     , m_fAccelerate2DVideo(bAccelerate2DVideo)
-#endif
-#if defined(Q_WS_MAC)
-# ifndef QT_MAC_USE_COCOA
-    , m_darwinEventHandlerRef(NULL)
-# endif /* !QT_MAC_USE_COCOA */
+#endif /* VBOX_WITH_VIDEOHWACCEL */
+#ifdef Q_WS_MAC
     , m_darwinKeyModifiers(0)
     , m_fKeyboardGrabbed (false)
-    , mDockIconEnabled(true)
-#endif
+#endif /* Q_WS_MAC */
 {
 }
 
@@ -533,39 +525,6 @@ void UIMachineView::prepareCommon()
     Assert(ok);
     NOREF(ok);
 #endif
-
-#if defined Q_WS_MAC
-    /* Dock icon update connection */
-    connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
-            this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
-
-    /* Overlay logo for the dock icon */
-    //mVirtualBoxLogo = ::darwinToCGImageRef("VirtualBox_cube_42px.png");
-    QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
-
-    // TODO_NEW_CORE
-//    mDockIconPreview = new VBoxDockIconPreview(machineWindowWrapper(), vboxGlobal().vmGuestOSTypeIcon (osTypeId));
-
-# ifdef QT_MAC_USE_COCOA
-    /** @todo Carbon -> Cocoa */
-# else /* !QT_MAC_USE_COCOA */
-    /* Install the event handler which will proceed external window handling */
-    EventHandlerUPP eventHandler = ::NewEventHandlerUPP(::darwinOverlayWindowHandler);
-    EventTypeSpec eventTypes[] =
-    {
-        { kEventClassVBox, kEventVBoxShowWindow },
-        { kEventClassVBox, kEventVBoxHideWindow },
-        { kEventClassVBox, kEventVBoxMoveWindow },
-        { kEventClassVBox, kEventVBoxResizeWindow },
-        { kEventClassVBox, kEventVBoxDisposeWindow },
-        { kEventClassVBox, kEventVBoxUpdateDock }
-    };
-
-    mDarwinWindowOverlayHandlerRef = NULL;
-    ::InstallApplicationEventHandler(eventHandler, RT_ELEMENTS (eventTypes), &eventTypes[0], this, &mDarwinWindowOverlayHandlerRef);
-    ::DisposeEventHandlerUPP(eventHandler);
-# endif /* !QT_MAC_USE_COCOA */
-#endif
 }
 
 void UIMachineView::prepareFilters()
@@ -627,45 +586,27 @@ void UIMachineView::loadMachineViewSettings()
         if (!passCAD.isEmpty() && ((passCAD != "false") || (passCAD != "no")))
             m_fPassCAD = true;
     }
-
-#ifdef Q_WS_MAC
-    QString strSettings = vboxGlobal().virtualBox().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
-    /* Default to true if it is an empty value: */
-    bool fIsDockIconEnabled = strSettings.isEmpty() || strSettings == "true";
-    setDockIconEnabled(fIsDockIconEnabled);
-    updateDockOverlay();
-#endif
 }
 
 void UIMachineView::cleanupCommon()
 {
-#if defined (Q_WS_PM)
+#ifdef Q_WS_PM
     bool ok = VBoxHlpUninstallKbdHook(0, winId(), UM_PREACCEL_CHAR);
     Assert(ok);
     NOREF(ok);
-#endif
+#endif /* Q_WS_PM */
 
-#if defined (Q_WS_WIN)
+#ifdef Q_WS_WIN
     if (gKbdHook)
         UnhookWindowsHookEx(gKbdHook);
     gView = 0;
-#endif
+#endif /* Q_WS_WIN */
 
 #ifdef Q_WS_MAC
     /* We have to make sure the callback for the keyboard events is released
      * when closing this view. */
     if (m_fKeyboardGrabbed)
         darwinGrabKeyboardEvents (false);
-# ifndef QT_MAC_USE_COCOA
-    if (mDarwinWindowOverlayHandlerRef)
-    {
-        ::RemoveEventHandler(mDarwinWindowOverlayHandlerRef);
-        mDarwinWindowOverlayHandlerRef = NULL;
-    }
-# endif /* !QT_MAC_USE_COCOA */
-    // TODO_NEW_CORE
-//    delete mDockIconPreview;
-    mDockIconPreview = NULL;
 #endif /* Q_WS_MAC */
 }
 
@@ -1004,7 +945,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
             }
 #endif /* defined (Q_WS_WIN32) */
-#if defined (Q_WS_MAC)
+#ifdef Q_WS_MAC
             /* Install/remove the keyboard event handler: */
             case QEvent::WindowActivate:
                 darwinGrabKeyboardEvents(true);
@@ -1012,7 +953,7 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
             case QEvent::WindowDeactivate:
                 darwinGrabKeyboardEvents(false);
                 break;
-#endif /* defined (Q_WS_MAC) */
+#endif /* Q_WS_MAC */
             default:
                 break;
         }
@@ -1078,11 +1019,6 @@ void UIMachineView::sltMachineStateChanged()
             break;
     }
 
-#ifdef Q_WS_MAC
-    /* Update Dock Overlay: */
-    updateDockOverlay();
-#endif /* Q_WS_MAC */
-
     m_previousState = state;
 }
 
@@ -1134,14 +1070,6 @@ void UIMachineView::sltMouseCapturedStatusChanged()
         viewport()->unsetCursor();
     }
 }
-
-#ifdef Q_WS_MAC
-void UIMachineView::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
-{
-    setDockIconEnabled(event.mChanged);
-    updateDockOverlay();
-}
-#endif
 
 void UIMachineView::focusEvent(bool fHasFocus, bool fReleaseHostKey /* = true */)
 {
@@ -1412,7 +1340,6 @@ bool UIMachineView::keyEvent(int iKey, uint8_t uScan, int fFlags, wchar_t *pUniK
                 QChar c = QString::fromLocal8Bit(&ch, 1)[0];
         }
 #elif defined (Q_WS_MAC)
-        // TODO_NEW_CORE
         if (pUniKey && pUniKey[0] && !pUniKey[1])
             processed = machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence(Qt::UNICODE_ACCEL + QChar(pUniKey[0]).toUpper().unicode()));
 
@@ -1688,19 +1615,11 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
 void UIMachineView::resizeEvent(QResizeEvent *pEvent)
 {
     updateSliders();
-#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
-    QRect rectangle = viewport()->geometry();
-    PostBoundsChanged(rectangle);
-#endif /* Q_WS_MAC */
     return QAbstractScrollArea::resizeEvent(pEvent);
 }
 
 void UIMachineView::moveEvent(QMoveEvent *pEvent)
 {
-#if defined(Q_WS_MAC) && !defined(QT_MAC_USE_COCOA)
-    QRect r = viewport()->geometry();
-    PostBoundsChanged (r);
-#endif /* Q_WS_MAC */
     return QAbstractScrollArea::moveEvent(pEvent);
 }
 
@@ -1713,10 +1632,9 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
             m_pFrameBuffer->paintEvent(pPaintEvent);
 #ifdef Q_WS_MAC
         /* Update the dock icon if we are in the running state */
-            // TODO_NEW_CORE
-//        if (uisession()->isRunning())
-//            updateDockIcon();
-#endif
+        if (uisession()->isRunning())
+            updateDockIcon();
+#endif /* Q_WS_MAC */
         return;
     }
 
@@ -1724,10 +1642,10 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
     if (mode() == VBoxDefs::Quartz2DMode && m_pFrameBuffer)
     {
         m_pFrameBuffer->paintEvent(pPaintEvent);
-//        updateDockIcon();
+        updateDockIcon();
     }
     else
-#endif
+#endif /* VBOX_GUI_USE_QUARTZ2D */
     {
         /* We have a snapshot for the paused state: */
         QRect r = pPaintEvent->rect().intersect(viewport()->rect());
@@ -1739,8 +1657,8 @@ void UIMachineView::paintEvent(QPaintEvent *pPaintEvent)
         /* Restore the attribute to its previous state: */
         viewport()->setAttribute(Qt::WA_PaintOnScreen, paintOnScreen);
 #ifdef Q_WS_MAC
-//        updateDockIcon();
-#endif
+        updateDockIcon();
+#endif /* Q_WS_MAC */
     }
 }
 
@@ -2583,56 +2501,56 @@ void UIMachineView::dimImage(QImage &img)
     }
 }
 
-#if defined(Q_WS_MAC)
-void UIMachineView::updateDockIcon()
+#ifdef Q_WS_MAC
+CGImageRef UIMachineView::vmContentImage()
 {
-    // TODO_NEW_CORE
-//    if (mDockIconEnabled)
-//    {
-//        if (!m_pauseShot.isNull())
-//        {
-//            CGImageRef pauseImg = ::darwinToCGImageRef (&m_pauseShot);
-//            /* Use the pause image as background */
-//            mDockIconPreview->updateDockPreview (pauseImg);
-//            CGImageRelease (pauseImg);
-//        }
-//        else
-//        {
-//# if defined (VBOX_GUI_USE_QUARTZ2D)
-//            if (mode() == VBoxDefs::Quartz2DMode)
-//            {
-//                /* If the render mode is Quartz2D we could use the CGImageRef
-//                 * of the framebuffer for the dock icon creation. This saves
-//                 * some conversion time. */
-//                mDockIconPreview->updateDockPreview(static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef());
-//            }
-//            else
-//# endif
-//                /* In image mode we have to create the image ref out of the
-//                 * framebuffer */
-//                mDockIconPreview->updateDockPreview(m_pFrameBuffer);
-//        }
-//    }
+    if (!m_pauseShot.isNull())
+    {
+        CGImageRef pauseImg = ::darwinToCGImageRef(&m_pauseShot);
+        /* Use the pause image as background */
+        return pauseImg;
+    }
+    else
+    {
+# ifdef VBOX_GUI_USE_QUARTZ2D
+        if (mode() == VBoxDefs::Quartz2DMode)
+        {
+            /* If the render mode is Quartz2D we could use the CGImageRef
+             * of the framebuffer for the dock icon creation. This saves
+             * some conversion time. */
+            CGImageRef image = static_cast<UIFrameBufferQuartz2D*>(m_pFrameBuffer)->imageRef();
+            CGImageRetain(image); /* Retain it, cause the consumer will release it. */
+            return image;
+        }
+        else
+# endif /* VBOX_GUI_USE_QUARTZ2D */
+            /* In image mode we have to create the image ref out of the
+             * framebuffer */
+            return frameBuffertoCGImageRef(m_pFrameBuffer);
+    }
+    return 0;
 }
 
-void UIMachineView::updateDockOverlay()
+CGImageRef UIMachineView::frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer)
 {
-    /* Only to an update to the realtime preview if this is enabled by the user
-     * & we are in an state where the framebuffer is likely valid. Otherwise to
-     * the overlay stuff only. */
-    // TODO_NEW_CORE
-//    if (mDockIconEnabled &&
-//        (machineState() == KMachineState_Running ||
-//         machineState() == KMachineState_Paused ||
-//         machineState() == KMachineState_Teleporting ||
-//         machineState() == KMachineState_LiveSnapshotting ||
-//         machineState() == KMachineState_Restoring ||
-//         machineState() == KMachineState_TeleportingPausedVM ||
-//         machineState() == KMachineState_TeleportingIn ||
-//         machineState() == KMachineState_Saving))
-//        updateDockIcon();
-//    else
-//        mDockIconPreview->updateDockOverlay();
+    CGColorSpaceRef cs = CGColorSpaceCreateDeviceRGB();
+    Assert(cs);
+    /* Create the image copy of the framebuffer */
+    CGDataProviderRef dp = CGDataProviderCreateWithData(pFrameBuffer, pFrameBuffer->address(), pFrameBuffer->bitsPerPixel() / 8 * pFrameBuffer->width() * pFrameBuffer->height(), NULL);
+    Assert(dp);
+    CGImageRef ir = CGImageCreate(pFrameBuffer->width(), pFrameBuffer->height(), 8, 32, pFrameBuffer->bytesPerLine(), cs,
+                                  kCGImageAlphaNoneSkipFirst | kCGBitmapByteOrder32Host, dp, 0, false,
+                                  kCGRenderingIntentDefault);
+    Assert(ir);
+    CGDataProviderRelease(dp);
+    CGColorSpaceRelease(cs);
+
+    return ir;
+}
+
+void UIMachineView::updateDockIcon()
+{
+    machineLogic()->updateDockIcon();
 }
 
 void UIMachineView::setMouseCoalescingEnabled(bool fOn)

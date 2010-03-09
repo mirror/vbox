@@ -37,6 +37,9 @@
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
 #include "UIFirstRunWzd.h"
+#ifdef Q_WS_MAC
+# include "DockIconPreview.h"
+#endif /* Q_WS_MAC */
 
 //#include "VBoxDownloaderWgt.h"
 
@@ -57,15 +60,12 @@
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
 # include <iprt/ldr.h>
-#endif
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
 #ifdef Q_WS_X11
 # include <XKeyboard.h>
-#endif
-
-#ifdef Q_WS_X11
 # include <QX11Info>
-#endif
+#endif /* Q_WS_X11 */
 
 struct MediumTarget
 {
@@ -395,11 +395,28 @@ UIMachineWindow* UIMachineLogic::defaultMachineWindow()
     return pWindowToPropose;
 }
 
+#ifdef Q_WS_MAC
+void UIMachineLogic::updateDockIcon()
+{
+    if (!isMachineWindowsCreated())
+        return;
+
+    if (   m_fIsDockIconEnabled
+        && m_pDockIconPreview)
+        if(UIMachineView *pView = machineWindows().at(m_DockIconPreviewMonitor)->machineView())
+            if (CGImageRef image = pView->vmContentImage())
+            {
+                m_pDockIconPreview->updateDockPreview(image);
+                CGImageRelease(image);
+            }
+}
+#endif /* Q_WS_MAC */
+
 UIMachineLogic::UIMachineLogic(QObject *pParent,
                                UISession *pSession,
                                UIActionsPool *pActionsPool,
                                UIVisualStateType visualStateType)
-    : QObject(pParent)
+    : QIWithRetranslateUI3<QObject>(pParent)
     , m_pSession(pSession)
     , m_pActionsPool(pActionsPool)
     , m_visualStateType(visualStateType)
@@ -408,6 +425,12 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_fIsWindowsCreated(false)
     , m_fIsPreventAutoStart(false)
     , m_fIsPreventAutoClose(false)
+#ifdef Q_WS_MAC
+    , m_fIsDockIconEnabled(true)
+    , m_pDockIconPreview(0)
+    , m_pDockPreviewSelectMonitorGroup(0)
+    , m_DockIconPreviewMonitor(0)
+#endif /* Q_WS_MAC */
 {
 }
 
@@ -417,6 +440,11 @@ UIMachineLogic::~UIMachineLogic()
     /* Close debugger: */
     //dbgDestroy();
 #endif
+
+#ifdef Q_WS_MAC
+    if (m_pDockIconPreview)
+        delete m_pDockIconPreview;
+#endif /* Q_WS_MAC */
 }
 
 CSession& UIMachineLogic::session()
@@ -428,6 +456,43 @@ void UIMachineLogic::addMachineWindow(UIMachineWindow *pMachineWindow)
 {
     m_machineWindowsList << pMachineWindow;
 }
+
+void UIMachineLogic::retranslateUi()
+{
+#ifdef Q_WS_MAC
+    if (m_pDockPreviewSelectMonitorGroup)
+    {
+        const QList<QAction*> &actions = m_pDockPreviewSelectMonitorGroup->actions();
+        for (int i = 0; i < actions.size(); ++i)
+        {
+            QAction *pAction = actions.at(i);
+            pAction->setText(tr("Preview Monitor %1").arg(pAction->data().toInt() + 1));
+        }
+    }
+#endif /* Q_WS_MAC */
+}
+
+#ifdef Q_WS_MAC
+void UIMachineLogic::updateDockOverlay()
+{
+    /* Only to an update to the realtime preview if this is enabled by the user
+     * & we are in an state where the framebuffer is likely valid. Otherwise to
+     * the overlay stuff only. */
+    KMachineState state = uisession()->machineState();
+    if (m_fIsDockIconEnabled &&
+        (state == KMachineState_Running ||
+         state == KMachineState_Paused ||
+         state == KMachineState_Teleporting ||
+         state == KMachineState_LiveSnapshotting ||
+         state == KMachineState_Restoring ||
+         state == KMachineState_TeleportingPausedVM ||
+         state == KMachineState_TeleportingIn ||
+         state == KMachineState_Saving))
+        updateDockIcon();
+    else if (m_pDockIconPreview)
+        m_pDockIconPreview->updateDockOverlay();
+}
+#endif /* Q_WS_MAC */
 
 void UIMachineLogic::prepareConsoleConnections()
 {
@@ -577,20 +642,58 @@ void UIMachineLogic::prepareDock()
 
     QMenu *pDockSettingsMenu = actionsPool()->action(UIActionIndex_Menu_DockSettings)->menu();
     QActionGroup *pDockPreviewModeGroup = new QActionGroup(this);
-    QAction *pDockEnablePreviewMonitor = actionsPool()->action(UIActionIndex_Toggle_DockPreviewMonitor);
-    pDockPreviewModeGroup->addAction(pDockEnablePreviewMonitor);
     QAction *pDockDisablePreview = actionsPool()->action(UIActionIndex_Toggle_DockDisableMonitor);
     pDockPreviewModeGroup->addAction(pDockDisablePreview);
+    QAction *pDockEnablePreviewMonitor = actionsPool()->action(UIActionIndex_Toggle_DockPreviewMonitor);
+    pDockPreviewModeGroup->addAction(pDockEnablePreviewMonitor);
     pDockSettingsMenu->addActions(pDockPreviewModeGroup->actions());
-
-    pDockMenu->addMenu(pDockSettingsMenu);
 
     connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
+    connect(&vboxGlobal(), SIGNAL(dockIconUpdateChanged(const VBoxChangeDockIconUpdateEvent &)),
+            this, SLOT(sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &)));
+
+    /* Monitor selection if there are more than one monitor */
+    int cGuestScreens = uisession()->session().GetMachine().GetMonitorCount();
+    if (cGuestScreens > 1)
+    {
+        pDockSettingsMenu->addSeparator();
+        m_DockIconPreviewMonitor = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt();
+        m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
+        for (int i = 0; i < cGuestScreens; ++i)
+        {
+            QAction *pAction = new QAction(m_pDockPreviewSelectMonitorGroup);
+            pAction->setCheckable(true);
+            pAction->setData(i);
+            if (m_DockIconPreviewMonitor == i)
+                pAction->setChecked(true);
+        }
+        pDockSettingsMenu->addActions(m_pDockPreviewSelectMonitorGroup->actions());
+        connect(m_pDockPreviewSelectMonitorGroup, SIGNAL(triggered(QAction*)),
+                this, SLOT(sltDockPreviewMonitorChanged(QAction*)));
+    }
+
+    pDockMenu->addMenu(pDockSettingsMenu);
 
     /* Add it to the dock. */
     extern void qt_mac_set_dock_menu(QMenu *);
     qt_mac_set_dock_menu(pDockMenu);
+
+    /* Now the dock icon preview */
+    QString osTypeId = session().GetConsole().GetGuest().GetOSTypeId();
+    m_pDockIconPreview = new UIDockIconPreview(m_pSession, vboxGlobal().vmGuestOSTypeIcon(osTypeId));
+
+    QString strTest = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled).toLower();
+    /* Default to true if it is an empty value */
+    bool f = (strTest.isEmpty() || strTest == "true");
+    if (f)
+        pDockEnablePreviewMonitor->setChecked(true);
+    else
+        pDockDisablePreview->setChecked(true);
+
+    /* Default to true if it is an empty value */
+    setDockIconPreviewEnabled(f);
+    updateDockOverlay();
 }
 #endif /* Q_WS_MAC */
 
@@ -740,6 +843,11 @@ void UIMachineLogic::sltMachineStateChanged()
         default:
             break;
     }
+
+#ifdef Q_WS_MAC
+    /* Update Dock Overlay: */
+    updateDockOverlay();
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineLogic::sltAdditionsStateChanged()
@@ -1433,17 +1541,37 @@ void UIMachineLogic::sltLoggingToggled(bool fState)
 #ifdef Q_WS_MAC
 void UIMachineLogic::sltDockPreviewModeChanged(QAction *pAction)
 {
-//    if (mConsole)
+    CMachine machine = m_pSession->session().GetMachine();
+    if (!machine.isNull())
     {
-        CMachine machine = m_pSession->session().GetMachine();
-        if (!machine.isNull())
-        {
-            if (pAction == actionsPool()->action(UIActionIndex_Toggle_DockDisableMonitor))
-                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "false");
-            else if (pAction == actionsPool()->action(UIActionIndex_Toggle_DockPreviewMonitor))
-                machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, "true");
-//            mConsole->updateDockOverlay();
-        }
+        bool fEnabled = true;
+        if (pAction == actionsPool()->action(UIActionIndex_Toggle_DockDisableMonitor))
+            fEnabled = false;
+
+        machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateEnabled, fEnabled ? "true" : "false");
+        updateDockOverlay();
+    }
+}
+
+void UIMachineLogic::sltDockPreviewMonitorChanged(QAction *pAction)
+{
+    CMachine machine = m_pSession->session().GetMachine();
+    if (!machine.isNull())
+    {
+        int monitor = pAction->data().toInt();
+        machine.SetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor, QString::number(monitor));
+        updateDockOverlay();
+    }
+}
+
+void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event)
+{
+    if (isMachineWindowsCreated())
+    {
+        setDockIconPreviewEnabled(event.mChanged);
+        m_pDockPreviewSelectMonitorGroup->setEnabled(event.mChanged);
+        m_DockIconPreviewMonitor = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt();
+        updateDockOverlay();
     }
 }
 #endif /* Q_WS_MAC */
@@ -1611,333 +1739,6 @@ void UIMachineLogic::dbgAdjustRelativePos()
 #endif
 
 #if 0 // TODO: Where to move that?
-# ifdef Q_WS_MAC
-void UIMachineLogic::fadeToBlack()
-{
-    /* Fade to black */
-    CGAcquireDisplayFadeReservation (kCGMaxDisplayReservationInterval, &mFadeToken);
-    CGDisplayFade (mFadeToken, 0.3, kCGDisplayBlendNormal, kCGDisplayBlendSolidColor, 0.0, 0.0, 0.0, true);
-}
-void UIMachineLogic::fadeToNormal()
-{
-    /* Fade back to the normal gamma */
-    CGDisplayFade (mFadeToken, 0.5, kCGDisplayBlendSolidColor, kCGDisplayBlendNormal, 0.0, 0.0, 0.0, false);
-    CGReleaseDisplayFadeReservation (mFadeToken);
-    mConsole->setMouseCoalescingEnabled (true);
-}
-# endif
-bool UIMachineLogic::toggleFullscreenMode (bool fOn, bool fSeamless)
-{
-    /* Please note: For some platforms like the Mac, the calling order of the
-     * functions in this methods is vital. So please be careful on changing
-     * this. */
-
-    QSize initialSize = size();
-    if (fSeamless || mConsole->isAutoresizeGuestActive())
-    {
-        QRect screen = fSeamless ?
-            QApplication::desktop()->availableGeometry (this) :
-            QApplication::desktop()->screenGeometry (this);
-        ULONG64 availBits = mSession.GetMachine().GetVRAMSize() /* vram */
-                          * _1M /* mb to bytes */
-                          * 8; /* to bits */
-        ULONG guestBpp = mConsole->console().GetDisplay().GetBitsPerPixel();
-        ULONG64 usedBits = (screen.width() /* display width */
-                         * screen.height() /* display height */
-                         * guestBpp
-                         + _1M * 8) /* current cache per screen - may be changed in future */
-                         * mSession.GetMachine().GetMonitorCount() /**< @todo fix assumption that all screens have same resolution */
-                         + 4096 * 8; /* adapter info */
-        if (fOn && (availBits < usedBits))
-        {
-            if (fSeamless)
-            {
-                vboxProblem().cannotEnterSeamlessMode (
-                    screen.width(), screen.height(), guestBpp,
-                    (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
-                return false;
-            }
-            else
-            {
-                int result = vboxProblem().cannotEnterFullscreenMode (
-                    screen.width(), screen.height(), guestBpp,
-                    (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
-                if (result == QIMessageBox::Cancel)
-                    return false;
-            }
-        }
-    }
-
-    AssertReturn (mConsole, false);
-    AssertReturn ((mHiddenChildren.empty() == fOn), false);
-    AssertReturn ((fSeamless && mIsSeamless != fOn) ||
-                  (!fSeamless && mIsFullscreen != fOn), false);
-    if (fOn)
-        AssertReturn ((fSeamless && !mIsFullscreen) ||
-                      (!fSeamless && !mIsSeamless), false);
-
-    if (fOn)
-    {
-        /* Take the toggle hot key from the menu item. Since
-         * VBoxGlobal::extractKeyFromActionText gets exactly the
-         * linked key without the 'Host+' part we are adding it here. */
-        QString hotKey = QString ("Host+%1")
-            .arg (VBoxGlobal::extractKeyFromActionText (fSeamless ?
-                  mVmSeamlessAction->text() : mVmFullscreenAction->text()));
-
-        Assert (!hotKey.isEmpty());
-
-        /* Show the info message. */
-        bool ok = fSeamless ?
-            vboxProblem().confirmGoingSeamless (hotKey) :
-            vboxProblem().confirmGoingFullscreen (hotKey);
-        if (!ok)
-            return false;
-    }
-
-#ifdef Q_WS_MAC
-    if (!fSeamless)
-    {
-    }
-#endif
-
-    if (fSeamless)
-    {
-        /* Activate the auto-resize feature required for the seamless mode. */
-        if (!mVmAutoresizeGuestAction->isChecked())
-            mVmAutoresizeGuestAction->setChecked (true);
-
-        /* Activate the mouse integration feature for the seamless mode. */
-        if (mVmDisableMouseIntegrAction->isChecked())
-            mVmDisableMouseIntegrAction->setChecked (false);
-
-        mVmAdjustWindowAction->setEnabled (!fOn);
-        mVmFullscreenAction->setEnabled (!fOn);
-        mVmAutoresizeGuestAction->setEnabled (!fOn);
-        mVmDisableMouseIntegrAction->setEnabled (!fOn);
-
-        mConsole->console().GetDisplay().SetSeamlessMode (fOn);
-        mIsSeamless = fOn;
-    }
-    else
-    {
-        mIsFullscreen = fOn;
-        mVmAdjustWindowAction->setEnabled (!fOn);
-        mVmSeamlessAction->setEnabled (!fOn && m_fIsGuestSupportsSeamless && m_fIsGuestSupportsGraphics);
-    }
-
-    bool wasHidden = isHidden();
-
-    /* Temporarily disable the mode-related action to make sure
-     * user can not leave the mode before he enter it and inside out. */
-    fSeamless ? mVmSeamlessAction->setEnabled (false) :
-                mVmFullscreenAction->setEnabled (false);
-
-    /* Calculate initial console size */
-    QSize consoleSize;
-
-    if (fOn)
-    {
-        consoleSize = mConsole->frameSize();
-        consoleSize -= QSize (mConsole->frameWidth() * 2, mConsole->frameWidth() * 2);
-
-        /* Toggle console to manual resize mode. */
-        mConsole->setIgnoreMainwndResize (true);
-
-        /* Memorize the maximized state. */
-        QDesktopWidget *dtw = QApplication::desktop();
-        mWasMax = isWindowMaximized() &&
-                  dtw->availableGeometry().width()  == frameSize().width() &&
-                  dtw->availableGeometry().height() == frameSize().height();
-
-        /* Save the previous scroll-view minimum size before entering
-         * fullscreen/seamless state to restore this minimum size before
-         * the exiting fullscreen. Required for correct scroll-view and
-         * guest display update in SDL mode. */
-        mPrevMinSize = mConsole->minimumSize();
-        mConsole->setMinimumSize (0, 0);
-
-        /* let the widget take the whole available desktop space */
-        QRect scrGeo = fSeamless ?
-            dtw->availableGeometry (this) : dtw->screenGeometry (this);
-
-        /* It isn't guaranteed that the guest os set the video mode that
-         * we requested. So after all the resizing stuff set the clipping
-         * mask and the spacing shifter to the corresponding values. */
-        if (fSeamless)
-            setViewInSeamlessMode (scrGeo);
-
-#ifdef Q_WS_WIN
-        mPrevRegion = dtw->screenGeometry (this);
-#endif
-
-        /* Hide all but the central widget containing the console view. */
-        QList <QWidget*> list (findChildren <QWidget*> ());
-        QList <QWidget*> excludes;
-        excludes << centralWidget() << centralWidget()->findChildren <QWidget*> ();
-        foreach (QWidget *w, list)
-        {
-            if (!excludes.contains (w))
-            {
-                if (!w->isHidden())
-                {
-                    w->hide();
-                    mHiddenChildren.append (w);
-                }
-            }
-        }
-
-        /* Adjust colors and appearance. */
-        mErasePalette = centralWidget()->palette();
-        QPalette palette(mErasePalette);
-        palette.setColor (centralWidget()->backgroundRole(), Qt::black);
-        centralWidget()->setPalette (palette);
-        centralWidget()->setAutoFillBackground (!fSeamless);
-        mConsoleStyle = mConsole->frameStyle();
-        mConsole->setFrameStyle (QFrame::NoFrame);
-        mConsole->setMaximumSize (scrGeo.size());
-        mConsole->setHorizontalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-        mConsole->setVerticalScrollBarPolicy (Qt::ScrollBarAlwaysOff);
-    }
-    else
-    {
-        /* Reset the shifting spacers. */
-        mShiftingSpacerLeft->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerTop->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerRight->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-        mShiftingSpacerBottom->changeSize (0, 0, QSizePolicy::Fixed, QSizePolicy::Fixed);
-
-        /* Restore the previous scroll-view minimum size before the exiting
-         * fullscreen. Required for correct scroll-view and guest display
-         * update in SDL mode. */
-        mConsole->setMinimumSize (mPrevMinSize);
-
-#ifdef Q_WS_MAC
-        if (fSeamless)
-        {
-            /* Please note: All the stuff below has to be done before the
-             * window switch back to normal size. Qt changes the winId on the
-             * fullscreen switch and make this stuff useless with the old
-             * winId. So please be careful on rearrangement of the method
-             * calls. */
-            /* Undo all mac specific installations */
-            ::darwinSetShowsWindowTransparent (this, false);
-        }
-#endif
-
-        /* Adjust colors and appearance. */
-        clearMask();
-        centralWidget()->setPalette (mErasePalette);
-        centralWidget()->setAutoFillBackground (false);
-        mConsole->setFrameStyle (mConsoleStyle);
-        mConsole->setMaximumSize (mConsole->sizeHint());
-        mConsole->setHorizontalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-        mConsole->setVerticalScrollBarPolicy (Qt::ScrollBarAsNeeded);
-
-        /* Show everything hidden when going fullscreen. */
-        foreach (QPointer <QWidget> child, mHiddenChildren)
-            if (child) child->show();
-        mHiddenChildren.clear();
-    }
-
-    /* Set flag for waiting host resize if it awaited during mode entering */
-    if ((mIsFullscreen || mIsSeamless) && (consoleSize != initialSize))
-        mIsWaitingModeResize = true;
-
-    if (!fOn)
-    {
-        /* Animation takes a bit long, the mini toolbar is still disappearing
-         * when switched to normal mode so hide it completely */
-        mMiniToolBar->hide();
-        mMiniToolBar->updateDisplay (false, true);
-    }
-
-    /* Toggle qt full-screen mode */
-    switchToFullscreen (fOn, fSeamless);
-
-    if (fOn)
-    {
-        mMiniToolBar->setSeamlessMode (fSeamless);
-        mMiniToolBar->updateDisplay (true, true);
-    }
-
-#ifdef Q_WS_MAC
-    if (fOn && fSeamless)
-    {
-        /* Please note: All the stuff below has to be done after the window has
-         * switched to fullscreen. Qt changes the winId on the fullscreen
-         * switch and make this stuff useless with the old winId. So please be
-         * careful on rearrangement of the method calls. */
-        ::darwinSetShowsWindowTransparent (this, true);
-    }
-#endif
-
-    /* Send guest size hint */
-    mConsole->toggleFSMode (consoleSize);
-
-    /* Process all console attributes changes and sub-widget hidings */
-    qApp->processEvents();
-
-    if (!mIsWaitingModeResize)
-        onExitFullscreen();
-
-    /* Unlock FS actions locked during modes toggling */
-    QTimer::singleShot (300, this, SLOT (unlockActionsSwitch()));
-
-#ifdef Q_WS_MAC /* wasHidden is wrong on the mac it seems. */
-    /** @todo figure out what is really wrong here... */
-    if (!wasHidden)
-        show();
-#else
-    if (wasHidden)
-        hide();
-#endif
-    return true;
-}
-void UIMachineLogic::switchToFullscreen (bool fOn, bool fSeamless)
-{
-#ifdef Q_WS_MAC
-# ifndef QT_MAC_USE_COCOA
-    /* setWindowState removes the window group connection somehow. So save it
-     * temporary. */
-    WindowGroupRef g = GetWindowGroup (::darwinToNativeWindow (this));
-# endif  /* !QT_MAC_USE_COCOA */
-    if (fSeamless)
-        if (fOn)
-        {
-            /* Save for later restoring */
-            mNormalGeometry = geometry();
-            mSavedFlags = windowFlags();
-            /* Remove the frame from the window */
-            const QRect fullscreen (qApp->desktop()->screenGeometry (qApp->desktop()->screenNumber (this)));
-            setParent (0, Qt::Window | Qt::FramelessWindowHint | (windowFlags() & 0xffff0000));
-            setGeometry (fullscreen);
-            /* Set it maximized */
-            setWindowState (windowState() ^ Qt::WindowMaximized);
-        }
-        else
-        {
-            /* Restore old values */
-            setParent (0, mSavedFlags);
-            setGeometry (mNormalGeometry);
-        }
-    else
-    {
-        /* Here we are going really fullscreen */
-        setWindowState (windowState() ^ Qt::WindowFullScreen);
-        sltChangePresentationMode (VBoxChangePresentationModeEvent(fOn));
-    }
-
-# ifndef QT_MAC_USE_COCOA
-    /* Reassign the correct window group. */
-    SetWindowGroup (::darwinToNativeWindow (this), g);
-# endif /* !QT_MAC_USE_COCOA */
-#else
-    NOREF (fOn);
-    NOREF (fSeamless);
-    setWindowState (windowState() ^ Qt::WindowFullScreen);
-#endif
-}
 void UIMachineLogic::setViewInSeamlessMode (const QRect &aTargetRect)
 {
 #ifndef Q_WS_MAC

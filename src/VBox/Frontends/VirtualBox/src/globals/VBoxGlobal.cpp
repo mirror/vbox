@@ -34,10 +34,11 @@
 #include "QIDialogButtonBox.h"
 
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
-#include "UIMachine.h"
+# include "UIMachine.h"
+# include "UISession.h"
 #endif
 #ifdef VBOX_WITH_REGISTRATION
-#include "UIRegistrationWzd.h"
+# include "UIRegistrationWzd.h"
 #endif
 #include "VBoxUpdateDlg.h"
 
@@ -394,23 +395,23 @@ public:
 #ifdef Q_WS_MAC
         else if (mGlobal.isVMConsoleProcess())
         {
-#ifndef VBOX_WITH_NEW_RUNTIME_CORE
-            /* TODO_NEW_CORE */
             /* Check for the currently running machine */
-            CMachine machine = mGlobal.consoleWnd().session().GetMachine();
-            if (QString::fromUtf16(id) == machine.GetId())
+            if (QString::fromUtf16(id) == mGlobal.vmUuid)
             {
                 QString strKey = QString::fromUtf16(key);
                 QString strVal = QString::fromUtf16(value);
-                if (strKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled)
+                // TODO_NEW_CORE: we should cleanup
+                // VBoxChangeDockIconUpdateEvent to have no parameters. So it
+                // could really be use for both events and the consumer should
+                // ask per GetExtraData how the current values are.
+                if (   strKey == VBoxDefs::GUI_RealtimeDockIconUpdateEnabled
+                    || strKey == VBoxDefs::GUI_RealtimeDockIconUpdateMonitor)
                 {
                     /* Default to true if it is an empty value */
-                    QString strTest = strVal.toLower();
-                    bool f = (strTest.isEmpty() || strTest == "true");
+                    bool f = strVal.toLower() == "false" ? false : true;
                     QApplication::postEvent(&mGlobal, new VBoxChangeDockIconUpdateEvent(f));
                 }
             }
-#endif /* VBOX_WITH_NEW_RUNTIME_CORE */
         }
 #endif /* Q_WS_MAC */
         return S_OK;

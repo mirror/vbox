@@ -34,6 +34,14 @@ public:
       : CocoaDockIconPreview (aMainWnd, aOverlayImage) {}
 };
 
+#include "UICocoaDockIconPreview.h"
+class UIDockIconPreview: public UICocoaDockIconPreview
+{
+public:
+    UIDockIconPreview(UISession *pSession, const QPixmap& overlayImage)
+      : UICocoaDockIconPreview(pSession, overlayImage) {}
+};
+
 #else /* QT_MAC_USE_COCOA */
 
 #include "CarbonDockIconPreview.h"

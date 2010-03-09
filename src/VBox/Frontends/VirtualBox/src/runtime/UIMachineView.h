@@ -41,10 +41,6 @@ class UIFrameBuffer;
 class UIMachineWindow;
 class UIMachineLogic;
 class VBoxGlobalSettings;
-#ifdef Q_WS_MAC
-class VBoxChangeDockIconUpdateEvent;
-class VBoxDockIconPreview;
-#endif /* Q_WS_MAC */
 
 class UIMachineView : public QAbstractScrollArea
 {
@@ -75,13 +71,6 @@ public:
 
     /* Public members: */
     virtual void normalizeGeometry(bool /* bAdjustPosition = false */) {}
-
-#if defined(Q_WS_MAC)
-    void updateDockIcon();
-    void updateDockOverlay();
-    void setMouseCoalescingEnabled(bool fOn);
-    void setDockIconEnabled(bool aOn) { mDockIconEnabled = aOn; };
-#endif
 
 signals:
 
@@ -136,6 +125,13 @@ protected:
     void updateMouseClipping();
     void updateSliders();
 
+#ifdef Q_WS_MAC
+    void updateDockIcon();
+    void setMouseCoalescingEnabled(bool fOn);
+    CGImageRef vmContentImage();
+    CGImageRef frameBuffertoCGImageRef(UIFrameBuffer *pFrameBuffer);
+#endif /* Q_WS_MAC */
+
     /* Prepare routines: */
     virtual void prepareFrameBuffer();
     virtual void prepareCommon();
@@ -164,13 +160,6 @@ protected slots:
 
     /* Session callback handlers: */
     virtual void sltMouseCapturedStatusChanged();
-
-private slots:
-
-#ifdef Q_WS_MAC
-    /* Dock icon update handler */
-    void sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent &event);
-#endif
 
 private:
 
@@ -253,27 +242,17 @@ private:
     bool m_fAccelerate2DVideo;
 #endif
 
-#if defined(Q_WS_MAC)
-# ifndef QT_MAC_USE_COCOA
-    /** Event handler reference. NULL if the handler isn't installed. */
-    EventHandlerRef m_darwinEventHandlerRef;
-# endif /* !QT_MAC_USE_COCOA */
+#ifdef Q_WS_MAC
     /** The current modifier key mask. Used to figure out which modifier
      *  key was pressed when we get a kEventRawKeyModifiersChanged event. */
     UInt32 m_darwinKeyModifiers;
     bool m_fKeyboardGrabbed;
-#endif
+#endif /* Q_WS_MAC */
 
     QPixmap m_pauseShot;
-#if defined(Q_WS_MAC)
-# if !defined (QT_MAC_USE_COCOA)
-    EventHandlerRef mDarwinWindowOverlayHandlerRef;
-# endif
-    VBoxDockIconPreview *mDockIconPreview;
-    bool mDockIconEnabled;
-#endif
 
     /* Friend classes: */
+    friend class UIMachineLogic;
     friend class UIMachineWindowFullscreen;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;

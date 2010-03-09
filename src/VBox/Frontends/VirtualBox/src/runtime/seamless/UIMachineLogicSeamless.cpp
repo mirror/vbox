@@ -145,6 +145,8 @@ void UIMachineLogicSeamless::initialize()
         sltMachineStateChanged();
         sltAdditionsStateChanged();
         sltMouseCapabilityChanged();
+
+        retranslateUi();
     }
 }
 

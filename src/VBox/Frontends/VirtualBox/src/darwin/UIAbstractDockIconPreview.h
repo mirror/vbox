@@ -1,0 +1,82 @@
+/* $Id$ */
+/** @file
+ *
+ * VBox frontends: Qt GUI ("VirtualBox"):
+ * Abstract class for the dock icon preview
+ */
+
+/*
+ * Copyright (C) 2009 Sun Microsystems, Inc.
+ *
+ * This file is part of VirtualBox Open Source Edition (OSE), as
+ * available from http://www.virtualbox.org. This file is free software;
+ * you can redistribute it and/or modify it under the terms of the GNU
+ * General Public License (GPL) as published by the Free Software
+ * Foundation, in version 2 as it comes in the "COPYING" file of the
+ * VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+ * hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+ *
+ * Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+ * Clara, CA 95054 USA or visit http://www.sun.com if you need
+ * additional information or have any questions.
+ */
+
+#ifndef ___UIAbstractDockIconPreview_h___
+#define ___UIAbstractDockIconPreview_h___
+
+/* System includes */
+#include <ApplicationServices/ApplicationServices.h>
+
+/* VBox includes */
+#include "VBoxUtils-darwin.h"
+
+class UISession;
+class UIFrameBuffer;
+
+class QPixmap;
+
+class UIAbstractDockIconPreview
+{
+public:
+    UIAbstractDockIconPreview(UISession *pSession, const QPixmap& overlayImage);
+    virtual ~UIAbstractDockIconPreview() {};
+
+    virtual void updateDockOverlay() = 0;
+    virtual void updateDockPreview(CGImageRef VMImage) = 0;
+    virtual void updateDockPreview(UIFrameBuffer *pFrameBuffer);
+
+    virtual void setOriginalSize(int /* aWidth */, int /* aHeight */) {}
+};
+
+class UIAbstractDockIconPreviewHelper
+{
+public:
+    UIAbstractDockIconPreviewHelper(UISession *pSession, const QPixmap& overlayImage);
+    virtual ~UIAbstractDockIconPreviewHelper();
+    void initPreviewImages();
+    inline CGImageRef stateImage() const;
+    void drawOverlayIcons(CGContextRef context);
+
+    /* Flipping is necessary cause the drawing context in Carbon is flipped by 180 degree */
+    inline CGRect flipRect(CGRect rect) const { return ::darwinFlipCGRect(rect, m_dockIconRect); }
+    inline CGRect centerRect(CGRect rect) const { return ::darwinCenterRectTo(rect, m_dockIconRect); }
+    inline CGRect centerRectTo(CGRect rect, const CGRect& toRect) const { return ::darwinCenterRectTo(rect, toRect); }
+
+    /* Private member vars */
+    UISession *m_pSession;
+    const CGRect m_dockIconRect;
+
+    CGImageRef m_overlayImage;
+    CGImageRef m_dockMonitor;
+    CGImageRef m_dockMonitorGlossy;
+
+    CGImageRef m_statePaused;
+    CGImageRef m_stateSaving;
+    CGImageRef m_stateRestoring;
+
+    CGRect m_updateRect;
+    CGRect m_monitorRect;
+};
+
+#endif /* ___UIAbstractDockIconPreview_h___ */
+
