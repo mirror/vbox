@@ -60,6 +60,10 @@
 # error "RT_USE_LINUX_HRTIMER requires 2.6.28 or later, sorry."
 #endif
 
+#if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
+# define mod_timer_pinned       mod_timer
+#endif
+
 
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
@@ -265,8 +269,10 @@ DECLINLINE(unsigned long) rtTimerLnxNanoToJiffies(uint64_t cNanoSecs)
  * @param   pSubTimer   The sub-timer to start.
  * @param   u64Now      The current timestamp (RTTimeNanoTS()).
  * @param   u64First    The interval from u64Now to the first time the timer should fire.
+ * @param   fPinned     true = timer pinned to a specific CPU,
+ *                      false = timer can migrate between CPUs
  */
-static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64Now, uint64_t u64First)
+static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64Now, uint64_t u64First, bool fPinned)
 {
     /*
      * Calc when it should start firing.
@@ -285,7 +291,10 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
         pSubTimer->ulNextJiffies = jiffies + cJiffies;
-        mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
+        if (fPinned)
+            mod_timer_pinned(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
+        else
+            mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
     }
 #endif
 
@@ -411,7 +420,10 @@ static void rtTimerLinuxCallback(unsigned long ulUser)
             pSubTimer->ulNextJiffies = jiffies + rtTimerLnxNanoToJiffies(pSubTimer->u64NextTS - u64NanoTS);
         }
 
-        mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
+        if (pTimer->fSpecificCpu || pTimer->fAllCpus)
+            mod_timer_pinned(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
+        else
+            mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
 #endif
 
         /*
@@ -440,7 +452,7 @@ static DECLCALLBACK(void) rtTimerLnxStartAllOnCpu(RTCPUID idCpu, void *pvUser1, 
     PRTTIMERLINUXSTARTONCPUARGS pArgs = (PRTTIMERLINUXSTARTONCPUARGS)pvUser2;
     PRTTIMER pTimer = (PRTTIMER)pvUser1;
     Assert(idCpu < pTimer->cCpus);
-    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[idCpu], pArgs->u64Now, pArgs->u64First);
+    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[idCpu], pArgs->u64Now, pArgs->u64First, true /*fPinned*/);
 }
 
 
@@ -592,7 +604,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpStartOnCpu(RTCPUID idCpu, void *pvUser1,
             /* We're sane and the timer is not suspended yet. */
             PRTTIMERLNXSUBTIMER pSubTimer = &pTimer->aSubTimers[idCpu];
             if (rtTimerLnxCmpXchgState(&pSubTimer->enmState, RTTIMERLNXSTATE_MP_STARTING, RTTIMERLNXSTATE_STOPPED))
-                rtTimerLnxStartSubTimer(pSubTimer, pArgs->u64Now, pArgs->u64First);
+                rtTimerLnxStartSubTimer(pSubTimer, pArgs->u64Now, pArgs->u64First, true /*fPinned*/);
         }
 
         RTSpinlockRelease(hSpinlock, &Tmp);
@@ -645,7 +657,7 @@ static DECLCALLBACK(void) rtTimerLinuxMpEvent(RTMPEVENT enmEvent, RTCPUID idCpu,
                     Args.u64First = 0;
 
                     if (RTMpCpuId() == idCpu)
-                        rtTimerLnxStartSubTimer(pSubTimer, Args.u64Now, Args.u64First);
+                        rtTimerLnxStartSubTimer(pSubTimer, Args.u64Now, Args.u64First, true /*fPinned*/);
                     else
                     {
                         rtTimerLnxSetState(&pSubTimer->enmState, RTTIMERLNXSTATE_STOPPED); /* we'll recheck it. */
@@ -693,7 +705,7 @@ static DECLCALLBACK(void) rtTimerLnxStartOnSpecificCpu(RTCPUID idCpu, void *pvUs
 {
     PRTTIMERLINUXSTARTONCPUARGS pArgs = (PRTTIMERLINUXSTARTONCPUARGS)pvUser2;
     PRTTIMER pTimer = (PRTTIMER)pvUser1;
-    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], pArgs->u64Now, pArgs->u64First);
+    rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], pArgs->u64Now, pArgs->u64First, true /*fPinned*/);
 }
 
 
@@ -727,7 +739,7 @@ RTDECL(int) RTTimerStart(PRTTIMER pTimer, uint64_t u64First)
     rtTimerLnxSetState(&pTimer->aSubTimers[0].enmState, RTTIMERLNXSTATE_STARTING);
     ASMAtomicWriteBool(&pTimer->fSuspended, false);
     if (!pTimer->fSpecificCpu)
-        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First);
+        rtTimerLnxStartSubTimer(&pTimer->aSubTimers[0], Args.u64Now, Args.u64First, false /*fPinned*/);
     else
     {
         rc2 = RTMpOnSpecific(pTimer->idCpu, rtTimerLnxStartOnSpecificCpu, pTimer, &Args);
