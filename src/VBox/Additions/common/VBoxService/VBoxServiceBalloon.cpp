@@ -61,12 +61,13 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
     if (cNewChunks == g_cMemBalloonChunks)
         return VINF_SUCCESS;
 
+    VBoxServiceVerbose(3, "VBoxServiceBalloonSetUser: cNewChunks=%u g_cMemBalloonChunks=%u\n", cNewChunks, g_cMemBalloonChunks);
     int rc = VINF_SUCCESS;
     if (cNewChunks > g_cMemBalloonChunks)
     {
         /* inflate */
-        uint32_t i;
         g_pavBalloon = (void**)RTMemRealloc(g_pavBalloon, cNewChunks * sizeof(void*));
+        uint32_t i;
         for (i = g_cMemBalloonChunks; i < cNewChunks; i++)
         {
 /** @todo r=bird: this isn't safe on linux. See suplibOsPageAlloc in
@@ -78,8 +79,14 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
             if (RT_SUCCESS(rc))
             {
                 g_pavBalloon[i] = pv;
-                /* protect against access by dangling pointers (may fail) */
+#ifndef RT_OS_SOLARIS
+                /*
+                 * Protect against access by dangling pointers (ignore errors as it may fail).
+                 * On Solaris it corrupts the address space leaving the process unkillable. This could
+                 * perhaps be related to what the underlying segment driver does; currently just disable it.
+                 */
                 RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
+#endif
                 g_cMemBalloonChunks++;
             }
             else
@@ -88,6 +95,7 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
                 break;
             }
         }
+        VBoxServiceVerbose(3, "VBoxServiceBalloonSetUser: inflation complete. chunks=%u rc=%d\n", i, rc);
     }
     else
     {
@@ -99,14 +107,17 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
             rc = VbglR3MemBalloonChange(pv, /* inflate=*/ false);
             if (RT_SUCCESS(rc))
             {
+#ifndef RT_OS_SOLARIS
                 /* unprotect */
                 RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+#endif
                 RTMemPageFree(g_pavBalloon[i]);
                 g_pavBalloon[i] = NULL;
                 g_cMemBalloonChunks--;
             }
             else
                 break;
+            VBoxServiceVerbose(3, "VBoxServiceBalloonSetUser: deflation complete. chunks=%u rc=%d\n", i, rc);
         }
     }
 
@@ -212,7 +223,16 @@ DECLCALLBACK(int) VBoxServiceBalloonWorker(bool volatile *pfShutdown)
                 VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: new balloon size %d MB (%s memory)\n",
                                    cNewChunks, fHandleInR3 ? "R3" : "R0");
                 if (fHandleInR3)
+                {
                     rc = VBoxServiceBalloonSetUser(cNewChunks);
+                    if (RT_FAILURE(rc))
+                    {
+                        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: failed to set balloon size %d MB (%s memory)\n",
+                                    cNewChunks, fHandleInR3 ? "R3" : "R0");
+                    }
+                    else
+                        VBoxServiceVerbose(3, "VBoxServiceBalloonWorker: successfully set requested balloon size %d.\n", cNewChunks);
+                }
                 else
                     g_cMemBalloonChunks = cNewChunks;
             }
