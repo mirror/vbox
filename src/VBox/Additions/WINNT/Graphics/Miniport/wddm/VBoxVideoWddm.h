@@ -114,6 +114,7 @@ typedef enum
 typedef struct VBOXWDDM_CONTEXT
 {
     struct VBOXWDDM_DEVICE * pDevice;
+    HANDLE hContext;
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;

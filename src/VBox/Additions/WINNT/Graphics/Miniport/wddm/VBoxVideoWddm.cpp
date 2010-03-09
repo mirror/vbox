@@ -1093,7 +1093,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     switch (pQueryAdapterInfo->Type)
     {
@@ -1376,7 +1376,7 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1433,7 +1433,8 @@ DxgkDdiDescribeAllocation(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
+
     PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDescribeAllocation->hAllocation;
     pDescribeAllocation->Width = pAllocation->u.SurfInfo.width;
     pDescribeAllocation->Height = pAllocation->u.SurfInfo.height;
@@ -1462,7 +1463,7 @@ DxgkDdiGetStandardAllocationDriverData(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCINFO pAllocInfo = NULL;
@@ -1692,6 +1693,9 @@ DxgkDdiPreemptCommand(
     return STATUS_SUCCESS;
 }
 
+/*
+ * DxgkDdiBuildPagingBuffer
+ */
 NTSTATUS
 APIENTRY
 DxgkDdiBuildPagingBuffer(
@@ -1701,7 +1705,7 @@ DxgkDdiBuildPagingBuffer(
     /* DxgkDdiBuildPagingBuffer should be made pageable. */
     PAGED_CODE();
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1856,7 +1860,7 @@ DxgkDdiIsSupportedVidPn(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
     BOOLEAN bSupported = TRUE;
@@ -2151,6 +2155,8 @@ DxgkDdiEnumVidPnCofuncModality(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+
+    vboxVDbgBreakF();
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
@@ -2467,7 +2473,7 @@ DxgkDdiRecommendVidPnTopology(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
@@ -2557,6 +2563,9 @@ DxgkDdiDestroyDevice(
     return STATUS_SUCCESS;
 }
 
+/*
+ * DxgkDdiOpenAllocation
+ */
 NTSTATUS
 APIENTRY
 DxgkDdiOpenAllocation(
@@ -2568,7 +2577,7 @@ DxgkDdiOpenAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -2862,13 +2871,14 @@ DxgkDdiCreateContext(
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)hDevice;
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)vboxWddmMemAllocZero(sizeof (VBOXWDDM_CONTEXT));
 
     pContext->pDevice = pDevice;
+    pContext->hContext = pCreateContext->hContext;
     pContext->EngineAffinity = pCreateContext->EngineAffinity;
     pContext->NodeOrdinal = pCreateContext->NodeOrdinal;
     if (pCreateContext->Flags.SystemContext)
