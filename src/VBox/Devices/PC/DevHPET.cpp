@@ -36,6 +36,7 @@
  *   - not entirely correct time of interrupt, i.e. never
  *     schedule interrupt earlier than in 1ms
  *   - statistics not implemented
+ *   - level-triggered mode not implemented
  */
 /*
  * Base address for MMIO
@@ -86,16 +87,17 @@
 #define HPET_TN_ROUTE            0x010
 #define HPET_CFG_WRITE_MASK      0x3
 
-#define HPET_TN_ENABLE           0x004
-#define HPET_TN_PERIODIC         0x008
-#define HPET_TN_PERIODIC_CAP     0x010
-#define HPET_TN_SIZE_CAP         0x020
-#define HPET_TN_SETVAL           0x040
-#define HPET_TN_32BIT            0x100
-#define HPET_TN_INT_ROUTE_MASK   0x3e00
-#define HPET_TN_CFG_WRITE_MASK   0x3f4e
-#define HPET_TN_INT_ROUTE_SHIFT      9
-#define HPET_TN_INT_ROUTE_CAP_SHIFT 32
+#define HPET_TN_INT_TYPE                      (1 << 1)
+#define HPET_TN_ENABLE                        (1 << 2)
+#define HPET_TN_PERIODIC                      (1 << 3)
+#define HPET_TN_PERIODIC_CAP                  (1 << 4)
+#define HPET_TN_SIZE_CAP                      (1 << 5)
+#define HPET_TN_SETVAL                        (1 << 6)
+#define HPET_TN_32BIT                         (1 << 8)
+#define HPET_TN_INT_ROUTE_MASK                0x3e00
+#define HPET_TN_CFG_WRITE_MASK                0x3f4e
+#define HPET_TN_INT_ROUTE_SHIFT               9
+#define HPET_TN_INT_ROUTE_CAP_SHIFT           32
 #define HPET_TN_CFG_BITS_READONLY_OR_RESERVED 0xffff80b1U
 
 /** The version of the saved state. */
@@ -358,10 +360,6 @@ static uint32_t getTimerIrq(struct HpetTimer *pTimer)
      *        to allow figuring that out and enabling/disabling
      *        PIT and RTC
      */
-    /*
-     * nike: Linux refuses to boot with HPET, claiming that 8259 timer not
-     * connected to IO-APIC, if we use IRQ2, so let's use IRQ0 for now.
-     */
     if ((pTimer->u8TimerNumber <= 1) &&
         (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_LEGACY))
         return (pTimer->u8TimerNumber == 0) ? 2 : 8;
@@ -487,19 +485,19 @@ static int timerRegWrite32(HpetState* pThis,
         case HPET_TN_CFG:
         {
             Log(("write HPET_TN_CFG: %d\n", iTimerNo));
-            /** We only care about lower 32-bits so far */
-            pTimer->u64Config =
-                    updateMasked(iNewValue, iOldValue, HPET_TN_CFG_WRITE_MASK);
             if (iNewValue & HPET_TN_32BIT)
             {
                 pTimer->u64Cmp = (uint32_t)pTimer->u64Cmp;
                 pTimer->u64Period = (uint32_t)pTimer->u64Period;
             }
-            if (iNewValue & HPET_TIMER_TYPE_LEVEL)
+            if ((iNewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL) 
             {
                 LogRel(("level-triggered config not yet supported\n"));
                 Assert(false);
             }
+            /** We only care about lower 32-bits so far */
+            pTimer->u64Config =
+                    updateMasked(iNewValue, iOldValue, HPET_TN_CFG_WRITE_MASK);
             break;
         }
         case HPET_TN_CFG + 4: /* Interrupt capabilities */
@@ -983,11 +981,15 @@ static void irqUpdate(struct HpetTimer *pTimer)
         (pThis->u64Config & HPET_CFG_ENABLE))
     {
         Log4(("HPET: raising IRQ %d\n", irq));
-        if ((pTimer->u64Config & HPET_TIMER_TYPE_LEVEL) == 0)
-        {
+
+        /* ISR bits are only set in level-triggered mode */
+        if ((pTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
             pThis->u64Isr |= (uint64_t)(1 << pTimer->u8TimerNumber);
+
+        /* We trigger flip/flop in edge-triggered mode and do nothing in level-triggered mode yet */
+        if ((pTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_EDGE)
             pThis->pHpetHlpR3->pfnSetIrq(pThis->CTX_SUFF(pDevIns), irq, PDM_IRQ_LEVEL_FLIP_FLOP);
-        }
+        /* @todo: implement IRQs in level-triggered mode */
     }
 }
 
@@ -1202,7 +1204,7 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* Query configuration. */
-#if 1
+#if 0
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fRCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
