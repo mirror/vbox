@@ -2216,6 +2216,8 @@ DxgkDdiSetVidPnSourceAddress(
     /* The DxgkDdiSetVidPnSourceAddress function should be made pageable. */
     PAGED_CODE();
 
+    vboxVDbgBreakF();
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -2281,6 +2283,8 @@ DxgkDdiSetVidPnSourceVisibility(
     /* DxgkDdiSetVidPnSourceVisibility should be made pageable. */
     PAGED_CODE();
 
+    vboxVDbgBreakF();
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -2330,6 +2334,8 @@ DxgkDdiCommitVidPn(
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+
+    vboxVDbgBreakF();
 
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
@@ -2715,6 +2721,8 @@ DxgkDdiPresent(
     PAGED_CODE();
 
     dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;
