@@ -2717,13 +2717,15 @@ static int emInterpretRdpmc(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCO
 /**
  * MONITOR Emulation.
  */
-static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+VMMDECL(int) EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
     uint32_t u32Dummy, u32ExtFeatures, cpl;
 
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
     if (pRegFrame->ecx != 0)
+    {
+        Log(("emInterpretMonitor: unexpected ecx=%x -> recompiler!!\n", pRegFrame->ecx));
         return VERR_EM_INTERPRETER; /* illegal value. */
+    }
 
     /* Get the current privilege level. */
     cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
@@ -2734,7 +2736,16 @@ static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
+    pVCpu->em.s.mwait.uMonitorEAX = pRegFrame->rax;
+    pVCpu->em.s.mwait.uMonitorECX = pRegFrame->rcx;
+    pVCpu->em.s.mwait.uMonitorEDX = pRegFrame->rdx;
+    pVCpu->em.s.mwait.fWait |= EMMWAIT_FLAG_MONITOR_ACTIVE;
     return VINF_SUCCESS;
+}
+
+static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
+{
+    return EMInterpretMonitor(pVM, pVCpu, pRegFrame);
 }
 
 
@@ -2743,14 +2754,7 @@ static int emInterpretMonitor(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTX
  */
 VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
 {
-    uint32_t u32Dummy, u32ExtFeatures, cpl;
-
-    /* @todo bit 1 is supposed to tell the cpu to wake us up on interrupts even if IF is cleared.
-     * Not sure which models. Intel docs say ecx and eax must be zero for Pentium 4 CPUs
-     * CPUID.05H.ECX[0] defines support for power management extensions (eax)
-     */
-    if (pRegFrame->ecx != 0)
-        return VERR_EM_INTERPRETER; /* illegal value. */
+    uint32_t u32Dummy, u32ExtFeatures, cpl, u32MWaitFeatures;
 
     /* Get the current privilege level. */
     cpl = CPUMGetGuestCPL(pVCpu, pRegFrame);
@@ -2761,14 +2765,39 @@ VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
+    /* 
+     * CPUID.05H.ECX[0] defines support for power management extensions (eax)
+     * CPUID.05H.ECX[1] defines support for interrupts as break events for mwait even when IF=0
+     */
+    CPUMGetGuestCpuId(pVCpu, 5, &u32Dummy, &u32Dummy, &u32MWaitFeatures, &u32Dummy);
+    if (pRegFrame->ecx > 1)
+    {
+        Log(("EMInterpretMWait: unexpected ecx value %x -> recompiler\n", pRegFrame->ecx));
+        return VERR_EM_INTERPRETER; /* illegal value. */
+    }
+
+    if (pRegFrame->ecx)
+    {
+        if (!(u32MWaitFeatures & X86_CPUID_MWAIT_ECX_BREAKIRQIF0))
+        {
+            Log(("EMInterpretMWait: unsupported X86_CPUID_MWAIT_ECX_BREAKIRQIF0 -> recompiler\n"));
+            return VERR_EM_INTERPRETER; /* illegal value. */
+        }
+
+        pVCpu->em.s.mwait.fWait = EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0;
+    }
+    else
+        pVCpu->em.s.mwait.fWait = EMMWAIT_FLAG_ACTIVE;
+
+    pVCpu->em.s.mwait.uMWaitEAX = pRegFrame->rax;
+    pVCpu->em.s.mwait.uMWaitECX = pRegFrame->rcx;
+
     /** @todo not completely correct */
     return VINF_EM_HALT;
 }
 
 static int emInterpretMWait(PVM pVM, PVMCPU pVCpu, PDISCPUSTATE pDis, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, uint32_t *pcbSize)
 {
-    Assert(pDis->mode != CPUMODE_64BIT);    /** @todo check */
-
     return EMInterpretMWait(pVM, pVCpu, pRegFrame);
 }
 
@@ -3497,5 +3526,24 @@ VMMDECL(bool) EMRemIsLockOwner(PVM pVM)
 VMMDECL(int) EMTryEnterRemLock(PVM pVM)
 {
     return PDMCritSectTryEnter(&pVM->em.s.CritSectREM);
+}
+
+/**
+ * Determine if we should continue after encountering a hlt or mwait instruction
+ *
+ * @returns boolean
+ * @param   pVCpu           The VMCPU to operate on.
+ * @param   pCtx            Current CPU context
+ */
+VMMDECL(bool) EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx)
+{
+    if (    pCtx->eflags.Bits.u1IF
+        ||  ((pVCpu->em.s.mwait.fWait & (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)) == (EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0)))
+    {
+        pVCpu->em.s.mwait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+        return !!VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC));
+    }
+
+    return false;
 }
 

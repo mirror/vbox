@@ -521,6 +521,20 @@ static DECLCALLBACK(int) emR3Save(PVM pVM, PSSMHANDLE pSSM)
         Assert(pVCpu->em.s.enmPrevState != EMSTATE_SUSPENDED);
         rc = SSMR3PutU32(pSSM, pVCpu->em.s.enmPrevState);
         AssertRCReturn(rc, rc);
+
+        /* Save mwait state. */
+        rc = SSMR3PutU32(pSSM, pVCpu->em.s.mwait.fWait);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMWaitEAX);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMWaitECX);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorEAX);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorECX);
+        AssertRCReturn(rc, rc);
+        rc = SSMR3PutGCPtr(pSSM, pVCpu->em.s.mwait.uMonitorEDX);
+        AssertRCReturn(rc, rc);
     }
     return VINF_SUCCESS;
 }
@@ -541,6 +555,7 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
      * Validate version.
      */
     if (    uVersion != EM_SAVED_STATE_VERSION
+        &&  uVersion != EM_SAVED_STATE_VERSION_PRE_MWAIT
         &&  uVersion != EM_SAVED_STATE_VERSION_PRE_SMP)
     {
         AssertMsgFailed(("emR3Load: Invalid version uVersion=%d (current %d)!\n", uVersion, EM_SAVED_STATE_VERSION));
@@ -569,6 +584,23 @@ static DECLCALLBACK(int) emR3Load(PVM pVM, PSSMHANDLE pSSM, uint32_t uVersion, u
 
             pVCpu->em.s.enmState = EMSTATE_SUSPENDED;
         }
+        if (uVersion > EM_SAVED_STATE_VERSION_PRE_MWAIT)
+        {
+            /* Load mwait state. */
+            rc = SSMR3GetU32(pSSM, &pVCpu->em.s.mwait.fWait);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMWaitEAX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMWaitECX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorEAX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorECX);
+            AssertRCReturn(rc, rc);
+            rc = SSMR3GetGCPtr(pSSM, &pVCpu->em.s.mwait.uMonitorEDX);
+            AssertRCReturn(rc, rc);
+        }
+
         Assert(!pVCpu->em.s.pCliStatTree);
     }
     return VINF_SUCCESS;
@@ -1968,7 +2000,15 @@ VMMR3DECL(int) EMR3ExecuteVM(PVM pVM, PVMCPU pVCpu)
                 case EMSTATE_HALTED:
                 {
                     STAM_REL_PROFILE_START(&pVCpu->em.s.StatHalted, y);
-                    rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+                    if (pVCpu->em.s.mwait.fWait & EMMWAIT_FLAG_ACTIVE)
+                    {
+                        /* mwait has a special extension where it's woken up when an interrupt is pending even when IF=0. */
+                        rc = VMR3WaitHalted(pVM, pVCpu, !(pVCpu->em.s.mwait.fWait & EMMWAIT_FLAG_BREAKIRQIF0) && !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+                        pVCpu->em.s.mwait.fWait &= ~(EMMWAIT_FLAG_ACTIVE | EMMWAIT_FLAG_BREAKIRQIF0);
+                    }
+                    else
+                        rc = VMR3WaitHalted(pVM, pVCpu, !(CPUMGetGuestEFlags(pVCpu) & X86_EFL_IF));
+
                     STAM_REL_PROFILE_STOP(&pVCpu->em.s.StatHalted, y);
                     break;
                 }
