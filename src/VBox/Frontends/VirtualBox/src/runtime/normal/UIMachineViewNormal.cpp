@@ -143,54 +143,29 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
     {
         case VBoxDefs::ResizeEventType:
         {
-            /* Some situations require initial VGA Resize Request
-             * to be ignored at all, leaving previous framebuffer,
-             * machine view and machine window sizes preserved: */
+            /* Some situations require framebuffer resize events to be ignored,
+             * leaving machine window & machine view & framebuffer sizes preserved: */
             if (uisession()->isGuestResizeIgnored())
                 return true;
 
+            /* We are starting to perform machine view resize: */
             bool oldIgnoreMainwndResize = isMachineWindowResizeIgnored();
             setMachineWindowResizeIgnored(true);
 
+            /* Get guest resize-event: */
             UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
+
+            /* Perform framebuffer resize: */
+            frameBuffer()->resizeEvent(pResizeEvent);
+
+            /* Reapply maximum size restriction for machine view: */
+            setMaximumSize(sizeHint());
 
             /* Store the new size to prevent unwanted resize hints being sent back. */
             storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
 
-            /* Unfortunately restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen widgets are present.
-             * This is the case on linux with SDL. As workaround we save/restore the arrow cursor manually.
-             * See http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry for details.
-             * Moreover the current cursor, which could be set by the guest, should be restored after resize: */
-            QCursor cursor;
-            if (uisession()->isHidingHostPointer())
-                cursor = QCursor(Qt::BlankCursor);
-            else
-                cursor = viewport()->cursor();
-            frameBuffer()->resizeEvent(pResizeEvent);
-            viewport()->setCursor(cursor);
-
-#ifdef Q_WS_MAC
-            // TODO_NEW_CORE
-//            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-            /* This event appears in case of guest video was changed for somehow even without video resolution change.
-             * In this last case the host VM window will not be resized according this event and the host mouse cursor
-             * which was unset to default here will not be hidden in capture state. So it is necessary to perform
-             * updateMouseClipping() for the guest resize event if the mouse cursor was captured: */
-            if (uisession()->isMouseCaptured())
-                updateMouseClipping();
-
-            /* Apply maximum size restriction: */
-            setMaximumSize(sizeHint());
-
-            /* May be we have to restrict minimum size? */
-            maybeRestrictMinimumSize();
-
             /* Resize the guest canvas: */
-            if (!isFrameBufferResizeIgnored())
-                resize(pResizeEvent->width(), pResizeEvent->height());
-            updateSliders();
+            resize(pResizeEvent->width(), pResizeEvent->height());
 
             /* Let our toplevel widget calculate its sizeHint properly. */
 #ifdef Q_WS_X11
@@ -202,28 +177,42 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
             QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
 #endif /* Q_WS_X11 */
 
-            if (!isFrameBufferResizeIgnored())
-                normalizeGeometry(true /* adjustPosition */);
+#ifdef Q_WS_MAC
+            // TODO_NEW_CORE
+//            mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
+#endif /* Q_WS_MAC */
+
+            /* Update mouse cursor shape: */
+            updateMouseCursorShape();
+#ifdef Q_WS_WIN32
+            updateMouseCursorClipping();
+#endif
+
+            /* May be we have to restrict minimum size? */
+            maybeRestrictMinimumSize();
+
+            /* Update machine view sliders: */
+            updateSliders();
+
+            /* Normalize geometry: */
+            normalizeGeometry(true /* adjustPosition */);
 
             /* Report to the VM thread that we finished resizing */
             session().GetConsole().GetDisplay().ResizeCompleted(screenId());
 
+            /* We are finishing to perform machine view resize: */
             setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
 
             /* Make sure that all posted signals are processed: */
             qApp->processEvents();
-
-            /* Emit a signal about guest was resized: */
-            emit resizeHintDone();
 
             /* We also recalculate the desktop geometry if this is determined
              * automatically.  In fact, we only need this on the first resize,
              * but it is done every time to keep the code simpler. */
             calculateDesktopGeometry();
 
-            /* Enable frame-buffer resize watching: */
-            if (isFrameBufferResizeIgnored())
-                setFrameBufferResizeIgnored(false);
+            /* Emit a signal about guest was resized: */
+            emit resizeHintDone();
 
             return true;
         }

@@ -117,7 +117,7 @@ public:
     bool isMouseCaptured() const { return m_fIsMouseCaptured; }
     bool isMouseIntegrated() const { return m_fIsMouseIntegrated; }
     bool isValidPointerShapePresent() const { return m_fIsValidPointerShapePresent; }
-    bool isHidingHostPointer() const { return m_fIsMouseCaptured || (m_fIsMouseSupportsAbsolute && m_fIsHideHostPointer); }
+    bool isHidingHostPointer() const { return m_fIsHidingHostPointer; }
 
     /* Common setters: */
     bool pause() { return setPause(true); }
@@ -223,7 +223,7 @@ private:
     bool m_fIsMouseCaptured : 1;
     bool m_fIsMouseIntegrated : 1;
     bool m_fIsValidPointerShapePresent : 1;
-    bool m_fIsHideHostPointer : 1;
+    bool m_fIsHidingHostPointer : 1;
 
     /* Friend classes: */
     friend class UIConsoleCallback;
