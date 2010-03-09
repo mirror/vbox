@@ -175,6 +175,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
             {
                 Status = STATUS_SUCCESS;
+                pNewVidPnPresentPathInfo = NULL;
                 break;
             }
             else
