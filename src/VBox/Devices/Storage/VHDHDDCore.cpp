@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -244,7 +244,9 @@ static int vhdFileOpen(PVHDIMAGE pImage, bool fReadonly, bool fCreate)
     rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
                                                      pImage->pszFilename,
                                                      uOpenFlags,
-                                                     NULL, &pImage->pvStorage);
+                                                     NULL,
+                                                     pImage->pVDIfsDisk,
+                                                     &pImage->pvStorage);
 #endif
 
     return rc;
@@ -1806,7 +1808,7 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
                           unsigned uOpenFlags,
-                          PFNVMPROGRESS pfnProgress, void *pvUser,
+                          PFNVDPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
@@ -1892,7 +1894,7 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
                               : RT_H2BE_U32(VHD_FOOTER_DISK_TYPE_DYNAMIC);
         /* We are half way thourgh with creation of image, let the caller know. */
         if (pfnProgress)
-            pfnProgress(NULL /* WARNING! pVM=NULL  */, (uPercentStart + uPercentSpan) / 2, pvUser);
+            pfnProgress(pvUser, (uPercentStart + uPercentSpan) / 2);
 
         rc = vhdCreateDynamicImage(pImage, cbSize);
         if (RT_FAILURE(rc))
@@ -1928,7 +1930,7 @@ static int vhdCreateImage(PVHDIMAGE pImage, uint64_t cbSize,
     }
 
     if (pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */, uPercentStart + uPercentSpan, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
 out:
     return rc;
@@ -1946,7 +1948,7 @@ static int vhdCreate(const char *pszFilename, uint64_t cbSize,
     int rc = VINF_SUCCESS;
     PVHDIMAGE pImage;
 
-    PFNVMPROGRESS pfnProgress = NULL;
+    PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);

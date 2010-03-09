@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -140,7 +140,9 @@ static int rawFileOpen(PRAWIMAGE pImage, bool fReadonly, bool fCreate)
     rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
                                                      pImage->pszFilename,
                                                      uOpenFlags,
-                                                     NULL, &pImage->pvStorage);
+                                                     NULL, 
+                                                     pImage->pVDIfsDisk,
+                                                     &pImage->pvStorage);
 #endif
 
     return rc;
@@ -316,7 +318,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
                           unsigned uImageFlags, const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry,
-                          PFNVMPROGRESS pfnProgress, void *pvUser,
+                          PFNVDPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
@@ -402,9 +404,8 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 
         if (pfnProgress)
         {
-            rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                             uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100),
-                             pvUser);
+            rc = pfnProgress(pvUser,
+                             uPercentStart + uOff * uPercentSpan * 98 / (cbSize * 100));
             if (RT_FAILURE(rc))
                 goto out;
         }
@@ -412,8 +413,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
     RTMemTmpFree(pvBuf);
 
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                    uPercentStart + uPercentSpan * 98 / 100, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan * 98 / 100);
 
     pImage->cbSize = cbSize;
 
@@ -421,8 +421,7 @@ static int rawCreateImage(PRAWIMAGE pImage, uint64_t cbSize,
 
 out:
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                    uPercentStart + uPercentSpan, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
     if (RT_FAILURE(rc))
         rawFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
@@ -547,7 +546,7 @@ static int rawCreate(const char *pszFilename, uint64_t cbSize,
     int rc;
     PRAWIMAGE pImage;
 
-    PFNVMPROGRESS pfnProgress = NULL;
+    PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);

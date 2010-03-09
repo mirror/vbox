@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -586,6 +586,7 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
                                                            ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
                                                            : 0,
                                                          NULL,
+                                                         pImage->pVDIfsDisk,
                                                          &pVmdkFile->pStorage);
         pVmdkFile->fAsyncIO = true;
     }
@@ -3486,7 +3487,7 @@ static int vmdkCreateRawImage(PVMDKIMAGE pImage, const PVBOXHDDRAW pRaw,
  */
 static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
                                   unsigned uImageFlags,
-                                  PFNVMPROGRESS pfnProgress, void *pvUser,
+                                  PFNVDPROGRESS pfnProgress, void *pvUser,
                                   unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc = VINF_SUCCESS;
@@ -3625,9 +3626,8 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
 
                 if (pfnProgress)
                 {
-                    rc = pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                     uPercentStart + uOff * uPercentSpan / cbExtent,
-                                     pvUser);
+                    rc = pfnProgress(pvUser,
+                                     uPercentStart + uOff * uPercentSpan / cbExtent);
                     if (RT_FAILURE(rc))
                     {
                         RTMemFree(pvBuf);
@@ -3694,9 +3694,7 @@ static int vmdkCreateRegularImage(PVMDKIMAGE pImage, uint64_t cbSize,
         }
 
         if (RT_SUCCESS(rc) && pfnProgress)
-            pfnProgress(NULL /* WARNING! pVM=NULL */,
-                        uPercentStart + i * uPercentSpan / cExtents,
-                        pvUser);
+            pfnProgress(pvUser, uPercentStart + i * uPercentSpan / cExtents);
 
         cbRemaining -= cbExtent;
         cbOffset += cbExtent;
@@ -3745,7 +3743,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
                            unsigned uImageFlags, const char *pszComment,
                            PCPDMMEDIAGEOMETRY pPCHSGeometry,
                            PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                           PFNVMPROGRESS pfnProgress, void *pvUser,
+                           PFNVDPROGRESS pfnProgress, void *pvUser,
                            unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
@@ -3792,8 +3790,7 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
         goto out;
 
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL */,
-                    uPercentStart + uPercentSpan * 98 / 100, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan * 98 / 100);
 
     pImage->cbSize = cbSize;
 
@@ -3879,15 +3876,13 @@ static int vmdkCreateImage(PVMDKIMAGE pImage, uint64_t cbSize,
     }
 
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL */,
-                    uPercentStart + uPercentSpan * 99 / 100, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan * 99 / 100);
 
     rc = vmdkFlushImage(pImage);
 
 out:
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL */,
-                    uPercentStart + uPercentSpan, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
     if (RT_FAILURE(rc))
         vmdkFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
@@ -4514,7 +4509,7 @@ static int vmdkCreate(const char *pszFilename, uint64_t cbSize,
     int rc;
     PVMDKIMAGE pImage;
 
-    PFNVMPROGRESS pfnProgress = NULL;
+    PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
