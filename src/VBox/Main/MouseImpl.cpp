@@ -402,7 +402,7 @@ HRESULT Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
     HRESULT rc = pDisplay->COMGETTER(Width)(&displayWidth);
     if (FAILED(rc)) return rc;
 
-    *pcX = displayWidth ? (x * 0xFFFF) / displayWidth: 0;
+    *pcX = displayWidth ? ((x - 1) * 0xFFFF) / displayWidth: 0;
     return S_OK;
 }
 
@@ -421,7 +421,7 @@ HRESULT Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
     HRESULT rc = pDisplay->COMGETTER(Height)(&displayHeight);
     if (FAILED(rc)) return rc;
 
-    *pcY = displayHeight ? (y * 0xFFFF) / displayHeight: 0;
+    *pcY = displayHeight ? ((y - 1) * 0xFFFF) / displayHeight: 0;
     return S_OK;
 }
 
@@ -448,6 +448,7 @@ STDMETHODIMP Mouse::PutMouseEventAbsolute(LONG x, LONG y, LONG dz, LONG dw,
              __PRETTY_FUNCTION__, x, y, dz, dw, buttonState));
 
     uint32_t mouseXAbs;
+    /** @todo the front end should do this conversion to avoid races */
     HRESULT rc = convertDisplayWidth(x, &mouseXAbs);
     if (FAILED(rc)) return rc;
 
@@ -593,7 +594,12 @@ DECLCALLBACK(void) Mouse::drvDestruct(PPDMDRVINS pDrvIns)
     if (pData->pMouse)
     {
         AutoWriteLock mouseLock(pData->pMouse COMMA_LOCKVAL_SRC_POS);
-        RT_ZERO(pData->pMouse->mpDrv);
+        for (unsigned cDev = 0; cDev < MOUSE_MAX_DEVICES; ++cDev)
+            if (pData->pMouse->mpDrv[cDev] == pData)
+            {
+                pData->pMouse->mpDrv[cDev] = NULL;
+                break;
+            }
     }
 }
 
