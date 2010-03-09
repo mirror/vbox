@@ -1227,7 +1227,7 @@ static uint32_t apic_get_delivery_bitmask(APICDeviceInfo *dev, uint8_t dest, uin
             if (apic->dest_mode == APIC_DESTMODE_FLAT)
             {
                 if (dest & apic->log_dest)
-                    mask |= (1 << apic->id);
+                    mask |= (1 << i);
             }
             else if (apic->dest_mode == APIC_DESTMODE_CLUSTER)
             {
