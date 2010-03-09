@@ -815,19 +815,8 @@ bool UIMachineView::event(QEvent *pEvent)
                     keyboard.PutScancodes(combo);
                 }
 
-                if (pKeyEvent->key() == Qt::Key_Home)
-                {
-#if 0 // TODO: Divide tha code to specific parts of fullscreen & seamless and move it there:
-                    /* Activate the main menu */
-                    if (machineWindowWrapper()->isTrueSeamless() || machineWindowWrapper()->isTrueFullscreen())
-                        machineWindowWrapper()->popupMainMenu (uisession()->isMouseCaptured());
-#endif
-                }
-                else
-                {
-                    /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
-                    machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence(pKeyEvent->key()));
-                }
+                /* Process hot keys not processed in keyEvent() (as in case of non-alphanumeric keys): */
+                machineWindowWrapper()->machineLogic()->actionsPool()->processHotKey(QKeySequence(pKeyEvent->key()));
             }
             else if (!m_bIsHostkeyPressed && pEvent->type() == QEvent::KeyRelease)
             {
