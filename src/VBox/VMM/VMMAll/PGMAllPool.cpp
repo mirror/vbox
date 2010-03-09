@@ -3231,6 +3231,10 @@ static void pgmPoolTrackFlushGCPhysPT(PVM pVM, PPGMPAGE pPhysPage, bool fFlushPT
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool); NOREF(pPool);
 
+    /* We should only come here with when there's only one reference in this physical page. */
+    Assert(PGMPOOL_TD_GET_CREFS(PGM_PAGE_GET_TRACKING(pPhysPage)) == 1);
+    Assert(cRefs == 1);
+
     Log2(("pgmPoolTrackFlushGCPhysPT: pPhysPage=%RHp iShw=%d cRefs=%d\n", PGM_PAGE_GET_HCPHYS(pPhysPage), iShw, cRefs));
     STAM_PROFILE_START(&pPool->StatTrackFlushGCPhysPT, f);
     bool fKeptPTEs = pgmPoolTrackFlushGCPhysPTInt(pVM, pPhysPage, fFlushPTEs, iShw, cRefs);
