@@ -61,7 +61,8 @@
 #endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(2, 6, 31)
-# define mod_timer_pinned       mod_timer
+# define mod_timer_pinned               mod_timer
+# define HRTIMER_MODE_ABS_PINNED        HRTIMER_MODE_ABS
 #endif
 
 
@@ -286,7 +287,8 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     pSubTimer->iTick = 0;
 
 #ifdef RT_USE_LINUX_HRTIMER
-    hrtimer_start(&pSubTimer->LnxTimer, rtTimerLnxNanoToKt(u64NextTS), HRTIMER_MODE_ABS);
+    hrtimer_start(&pSubTimer->LnxTimer, rtTimerLnxNanoToKt(u64NextTS),
+                  fPinned ? HRTIMER_MODE_ABS_PINNED : HRTIMER_MODE_ABS);
 #else
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
