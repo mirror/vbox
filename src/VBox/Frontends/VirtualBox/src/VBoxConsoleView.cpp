@@ -1407,8 +1407,7 @@ bool VBoxConsoleView::event (QEvent *e)
                                                      0);
                         captureMouse (false, false);
                     }
-                    else
-                        updateHostCursor();
+                    updateHostCursor();
                     emitMouseStateChanged();
                     vboxProblem().remindAboutMouseIntegration (mMouseCanAbsolute);
                 }
