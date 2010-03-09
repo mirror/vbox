@@ -102,7 +102,7 @@ public:
 
     void updateHostCursor();
 
-    void setAutoresizeGuest (bool on);
+    void setAutoresizeGuest (bool on, bool doHint);
 
     void onFullscreenChange (bool on);
 
