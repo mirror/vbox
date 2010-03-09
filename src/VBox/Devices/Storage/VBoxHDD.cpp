@@ -2060,6 +2060,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
         /* Update parent UUID so that image chain is consistent. */
         RTUUID Uuid;
+        PVDIMAGE pImageChild = NULL;
         if (nImageFrom < nImageTo)
         {
             if (pImageTo->pPrev)
@@ -2087,34 +2088,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                                                            &Uuid);
                 AssertRC(rc);
 
-                /* Reopen readonly if neccessary */
-                if (pImageFrom->pNext != pDisk->pLast)
-                {
-                    PVDIMAGE pImageChild = pImageFrom->pNext;
-
-                    uOpenFlags = pImageChild->Backend->pfnGetOpenFlags(pImageChild->pvBackendData);
-                    uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-                    rc = pImageChild->Backend->pfnSetOpenFlags(pImageChild->pvBackendData,
-                                                               uOpenFlags);
-                    /** @todo: What to do if this fails?. Breaking would
-                     * prevent the merged images from being removed 
-                     * from the chain possibly causing inconsistent behavior.
-                     */
-                    if (RT_FAILURE(rc))
-                        break;
-                }
+                pImageChild = pImageFrom->pNext;
             }
-        }
-
-        /* Make sure destination image is back to read only if necessary. */
-        if (pImageTo != pDisk->pLast && pImageFrom != pDisk->pLast)
-        {
-            uOpenFlags = pImageTo->Backend->pfnGetOpenFlags(pImageTo->pvBackendData);
-            uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-            rc = pImageTo->Backend->pfnSetOpenFlags(pImageTo->pvBackendData,
-                                                    uOpenFlags);
-            if (RT_FAILURE(rc))
-                break;
         }
 
         /* Delete the no longer needed images. */
@@ -2130,6 +2105,34 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             RTMemFree(pImg->pszFilename);
             RTMemFree(pImg);
             pImg = pTmp;
+        }
+
+        /* Make sure destination image is back to read only if necessary. */
+        if (pImageTo != pDisk->pLast)
+        {
+            uOpenFlags = pImageTo->Backend->pfnGetOpenFlags(pImageTo->pvBackendData);
+            uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+            rc = pImageTo->Backend->pfnSetOpenFlags(pImageTo->pvBackendData,
+                                                    uOpenFlags);
+            if (RT_FAILURE(rc))
+                break;
+        }
+
+        /*
+         * Make sure the child is readonly
+         * for the child -> parent merge direction
+         * if neccessary.
+        */
+        if (   nImageFrom > nImageTo
+            && pImageChild
+            && pImageChild != pDisk->pLast)
+        {
+            uOpenFlags = pImageChild->Backend->pfnGetOpenFlags(pImageChild->pvBackendData);
+            uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+            rc = pImageChild->Backend->pfnSetOpenFlags(pImageChild->pvBackendData,
+                                                       uOpenFlags);
+            if (RT_FAILURE(rc))
+                break;
         }
     } while (0);
 
