@@ -285,8 +285,10 @@ VOID vboxWddmBuildResolutionTable()
 
         if (!bFound)
         {
+            Assert(g_VBoxWddmNumResolutions < RT_ELEMENTS(g_VBoxWddmVideoResolutions));
             g_VBoxWddmVideoResolutions[g_VBoxWddmNumResolutions].cx = pMode->VisScreenWidth;
             g_VBoxWddmVideoResolutions[g_VBoxWddmNumResolutions].cy = pMode->VisScreenHeight;
+            ++g_VBoxWddmNumResolutions;
         }
     }
 }
