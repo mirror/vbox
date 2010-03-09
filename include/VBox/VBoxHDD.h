@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -38,8 +38,6 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <VBox/pdmifs.h>
-/** @todo remove this dependency, using PFNVMPROGRESS outside VMM is *WRONG*. */
-#include <VBox/vmapi.h>
 
 RT_C_DECLS_BEGIN
 
@@ -225,6 +223,8 @@ typedef enum VDINTERFACETYPE
     VDINTERFACETYPE_TCPNET,
     /** Interface for getting parent image state. Per-operation. */
     VDINTERFACETYPE_PARENTSTATE,
+    /** Interface for synchronizing accesses from several threads. Per-disk. */
+    VDINTERFACETYPE_THREADSYNC,
     /** invalid interface. */
     VDINTERFACETYPE_INVALID
 } VDINTERFACETYPE;
@@ -445,15 +445,19 @@ typedef struct VDINTERFACEASYNCIO
      * @param   pszLocation     Name of the location to open.
      * @param   uOpenFlags      Flags for opening the backend.
      *                          See VD_INTERFACEASYNCIO_OPEN_FLAGS_* #defines
-     * @param   pfnCompleted    The callabck which is called whenever a task
+     * @param   pfnCompleted    The callback which is called whenever a task
      *                          completed. The backend has to pass the user data
      *                          of the request initiator (ie the one who calls
      *                          VDAsyncRead or VDAsyncWrite) in pvCompletion
      *                          if this is NULL.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
      * @param   ppStorage       Where to store the opaque storage handle.
      */
-    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation, unsigned uOpenFlags,
-                                        PFNVDCOMPLETED pfnCompleted, void **ppStorage));
+    DECLR3CALLBACKMEMBER(int, pfnOpen, (void *pvUser, const char *pszLocation,
+                                        unsigned uOpenFlags,
+                                        PFNVDCOMPLETED pfnCompleted,
+                                        PVDINTERFACE pVDIfsDisk,
+                                        void **ppStorage));
 
     /**
      * Close callback.
@@ -596,6 +600,18 @@ DECLINLINE(PVDINTERFACEASYNCIO) VDGetInterfaceAsyncIO(PVDINTERFACE pInterface)
 }
 
 /**
+ * Callback which provides progress information about a currently running
+ * lengthy operation.
+ *
+ * @return  VBox status code.
+ * @param   pvUser          The opaque user data associated with this interface.
+ * @param   uPercent        Completion percentage.
+ */
+typedef DECLCALLBACK(int) FNVDPROGRESS(void *pvUser, unsigned uPercentage);
+/** Pointer to FNVDPROGRESS() */
+typedef FNVDPROGRESS *PFNVDPROGRESS;
+
+/**
  * Progress notification interface
  *
  * Per-operation. Optional.
@@ -614,9 +630,9 @@ typedef struct VDINTERFACEPROGRESS
 
     /**
      * Progress notification callbacks.
-     * @todo r=bird: Why the heck are we using PFNVMPROGRESS here?
      */
-    PFNVMPROGRESS   pfnProgress;
+    PFNVDPROGRESS pfnProgress;
+
 } VDINTERFACEPROGRESS, *PVDINTERFACEPROGRESS;
 
 /**
@@ -697,6 +713,7 @@ typedef struct VDINTERFACECONFIG
      * @param   cchValue        Length of value buffer.
      */
     DECLR3CALLBACKMEMBER(int, pfnQuery, (void *pvUser, const char *pszName, char *pszValue, size_t cchValue));
+
 } VDINTERFACECONFIG, *PVDINTERFACECONFIG;
 
 /**
@@ -1112,6 +1129,84 @@ DECLINLINE(PVDINTERFACEPARENTSTATE) VDGetInterfaceParentState(PVDINTERFACE pInte
     return pInterfaceParentState;
 }
 
+/**
+ * Interface to synchronize concurrent accesses by several threads.
+ *
+ * @note The scope of this interface is to manage concurrent accesses after
+ * the HDD container has been created, and they must stop before destroying the
+ * container. Opening or closing images is covered by the synchronization, but
+ * that does not mean it is safe to close images while a thread executes
+ * <link to="VDMerge"/> or <link to="VDCopy"/> operating on these images.
+ * Making them safe would require the lock to be held during the entire
+ * operation, which prevents other concurrent acitivities.
+ *
+ * @note Right now this is kept as simple as possible, and does not even
+ * attempt to provide enough information to allow e.g. concurrent write
+ * accesses to different areas of the disk. The reason is that it is very
+ * difficult to predict which area of a disk is affected by a write,
+ * especially when different image formats are mixed. Maybe later a more
+ * sophisticated interface will be provided which has the necessary information
+ * about worst case affected areas.
+ *
+ * Per disk interface. Optional, needed if the disk is accessed concurrently
+ * by several threads, e.g. when merging diff images while a VM is running.
+ */
+typedef struct VDINTERFACETHREADSYNC
+{
+    /**
+     * Size of the thread synchronization interface.
+     */
+    uint32_t    cbSize;
+
+    /**
+     * Interface type.
+     */
+    VDINTERFACETYPE enmInterface;
+
+    /**
+     * Start a read operation.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartRead, (void *pvUser));
+    
+    /**
+     * Finish a read operation.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFinishRead, (void *pvUser));
+
+    /**
+     * Start a write operation.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite, (void *pvUser));
+
+    /**
+     * Finish a write operation.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnFinishWrite, (void *pvUser));
+
+} VDINTERFACETHREADSYNC, *PVDINTERFACETHREADSYNC;
+
+/**
+ * Get thread synchronization interface from opaque callback table.
+ *
+ * @return Pointer to the callback table.
+ * @param  pInterface Pointer to the interface descriptor.
+ */
+DECLINLINE(PVDINTERFACETHREADSYNC) VDGetInterfaceThreadSync(PVDINTERFACE pInterface)
+{
+    /* Check that the interface descriptor is a thread synchronization interface. */
+    AssertMsgReturn(   (pInterface->enmInterface == VDINTERFACETYPE_THREADSYNC)
+                    && (pInterface->cbSize == sizeof(VDINTERFACE)),
+                    ("Not a thread synchronization interface"), NULL);
+
+    PVDINTERFACETHREADSYNC pInterfaceThreadSync = (PVDINTERFACETHREADSYNC)pInterface->pCallbacks;
+
+    /* Do basic checks. */
+    AssertMsgReturn(   (pInterfaceThreadSync->cbSize == sizeof(VDINTERFACETHREADSYNC))
+                    && (pInterfaceThreadSync->enmInterface == VDINTERFACETYPE_THREADSYNC),
+                    ("A non thread synchronization callback table attached to a thread synchronization interface descriptor\n"), NULL);
+
+    return pInterfaceThreadSync;
+}
 
 /** @name Configuration interface key handling flags.
  * @{
@@ -1218,7 +1313,6 @@ VBOXDDU_DECL(int) VDShutdown(void);
 
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
- * Free all returned names with RTStrFree() when you no longer need them.
  *
  * @return  VBox status code.
  *          VERR_BUFFER_OVERFLOW if not enough space is passed.
@@ -1231,7 +1325,6 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
 /**
  * Lists the capablities of a backend indentified by its name.
- * Free all returned names with RTStrFree() when you no longer need them.
  *
  * @return  VBox status code.
  * @param   pszBackend      The backend name (case insensitive).
@@ -1367,6 +1460,10 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
  * The source container is unchanged if the move operation fails, otherwise
  * the image at the new location is opened in the same way as the old one was.
  *
+ * @note The read/write accesses across disks are not synchronized, just the
+ * accesses to each disk. Once there is a use case which requires a defined
+ * read/write behavior in this situation this needs to be extended.
+ *
  * @return  VBox status code.
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @param   pDiskFrom       Pointer to source HDD container.
@@ -1403,6 +1500,11 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
  * a significant performance boost, as reads and writes tend to use less random
  * file offsets.
  *
+ * @note Compaction is treated as a single operation with regard to thread
+ * synchronization, which means that it potentially blocks other activities for
+ * a long time. The complexity of compaction would grow even more if concurrent
+ * accesses have to be handled.
+ *
  * @return  VBox status code.
  * @return  VERR_VD_IMAGE_NOT_FOUND if image with specified number was not opened.
  * @return  VERR_VD_IMAGE_READ_ONLY if image is not writable.
@@ -1417,9 +1519,9 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 
 /**
  * Closes the last opened image file in HDD container.
- * If previous image file was opened in read-only mode (that is normal) and closing image
- * was opened in read-write mode (the whole disk was in read-write mode) - the previous image
- * will be reopened in read/write mode.
+ * If previous image file was opened in read-only mode (the normal case) and
+ * the last opened image is in read-write mode then the previous image will be
+ * reopened in read/write mode.
  *
  * @return  VBox status code.
  * @return  VERR_VD_NOT_OPENED if no image is opened in HDD container.

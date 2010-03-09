@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -102,6 +102,11 @@ typedef struct DRVVDSTORAGEBACKEND
     volatile bool               fSyncIoPending;
     /** Callback routine */
     PFNVDCOMPLETED              pfnCompleted;
+
+    /** Pointer to the optional thread synchronization interface of the disk. */
+    PVDINTERFACE        pInterfaceThreadSync;
+    /** Pointer to the optional thread synchronization callbacks of the disk. */
+    PVDINTERFACETHREADSYNC pInterfaceThreadSyncCallbacks;
 } DRVVDSTORAGEBACKEND, *PDRVVDSTORAGEBACKEND;
 
 /**
@@ -262,6 +267,16 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
         else
             pvCallerUser = pvUser;
 
+        /* If thread synchronization is active, then signal the end of the
+         * this disk read/write operation. */
+        /** @todo provide a way to determine the type of task (read/write)
+         * which was completed, see also VBoxHDD.cpp. */
+        if (RT_UNLIKELY(pStorageBackend->pInterfaceThreadSyncCallbacks))
+        {
+            int rc2 = pStorageBackend->pInterfaceThreadSyncCallbacks->pfnFinishWrite(pStorageBackend->pInterfaceThreadSync->pvUser);
+            AssertRC(rc2);
+        }
+
         if (rc == VINF_VD_ASYNC_IO_FINISHED)
         {
             rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvCallerUser);
@@ -272,8 +287,11 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     }
 }
 
-static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation, unsigned uOpenFlags,
-                                          PFNVDCOMPLETED pfnCompleted, void **ppStorage)
+static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
+                                          unsigned uOpenFlags,
+                                          PFNVDCOMPLETED pfnCompleted, 
+                                          PVDINTERFACE pVDIfsDisk,
+                                          void **ppStorage)
 {
     PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)RTMemAllocZ(sizeof(DRVVDSTORAGEBACKEND));
@@ -283,6 +301,12 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
     {
         pStorageBackend->fSyncIoPending = false;
         pStorageBackend->pfnCompleted   = pfnCompleted;
+        pStorageBackend->pInterfaceThreadSync = NULL;
+        pStorageBackend->pInterfaceThreadSyncCallbacks = NULL;
+
+        pStorageBackend->pInterfaceThreadSync = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_THREADSYNC);
+        if (RT_UNLIKELY(pStorageBackend->pInterfaceThreadSync))
+            pStorageBackend->pInterfaceThreadSyncCallbacks = VDGetInterfaceThreadSync(pStorageBackend->pInterfaceThreadSync);
 
         rc = RTSemEventCreate(&pStorageBackend->EventSem);
         if (RT_SUCCESS(rc))
@@ -1264,6 +1288,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
                                      RT_SRC_POS, N_("DrvVD: Configuration error: Async Completion Framework not compiled in"));
 #endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
         }
+
+        /** @todo implement and set up the thread synchronization interface
+         * if enabled by some CFGM key. If this is enabled then there also
+         * needs to be a way for the console object to query the pDisk pointer
+         * (so that it can perform the merge in parallel), or alternatively
+         * some code needs to be added here which does the merge. The latter
+         * might be preferred, as a running merge must block the destruction
+         * of the disk, or things will go really wrong. */
 
         if (RT_SUCCESS(rc))
         {

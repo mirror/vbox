@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -107,7 +107,9 @@ static int vdiFileOpen(PVDIIMAGEDESC pImage, bool fReadonly, bool fCreate)
     rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
                                                      pImage->pszFilename,
                                                      uOpenFlags,
-                                                     NULL, &pImage->pvStorage);
+                                                     NULL,
+                                                     pImage->pVDIfsDisk,
+                                                     &pImage->pvStorage);
 #endif
 
     return rc;
@@ -498,7 +500,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
                           unsigned uImageFlags, const char *pszComment,
                           PCPDMMEDIAGEOMETRY pPCHSGeometry,
                           PCPDMMEDIAGEOMETRY pLCHSGeometry, PCRTUUID pUuid,
-                          PFNVMPROGRESS pfnProgress, void *pvUser,
+                          PFNVDPROGRESS pfnProgress, void *pvUser,
                           unsigned uPercentStart, unsigned uPercentSpan)
 {
     int rc;
@@ -675,9 +677,8 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 
             if (pfnProgress)
             {
-                rc = pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                                 uPercentStart + uOff * uPercentSpan / cbFill,
-                                 pvUser);
+                rc = pfnProgress(pvUser,
+                                 uPercentStart + uOff * uPercentSpan / cbFill);
                 if (RT_FAILURE(rc))
                     goto out;
             }
@@ -687,8 +688,7 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
 
 out:
     if (RT_SUCCESS(rc) && pfnProgress)
-        pfnProgress(NULL /* WARNING! pVM=NULL  */,
-                    uPercentStart + uPercentSpan, pvUser);
+        pfnProgress(pvUser, uPercentStart + uPercentSpan);
 
     if (RT_FAILURE(rc))
         vdiFreeImage(pImage, rc != VERR_ALREADY_EXISTS);
@@ -1011,7 +1011,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
     int rc;
     PVDIIMAGEDESC pImage;
 
-    PFNVMPROGRESS pfnProgress = NULL;
+    PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
@@ -2005,7 +2005,8 @@ static int vdiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
 
 /** @copydoc VBOXHDDBACKEND::pfnCompact */
 static int vdiCompact(void *pBackendData, unsigned uPercentStart,
-                      unsigned uPercentSpan, PVDINTERFACE pVDIfsOperation)
+                      unsigned uPercentSpan, PVDINTERFACE pVDIfsDisk,
+                      PVDINTERFACE pVDIfsImage, PVDINTERFACE pVDIfsOperation)
 {
     PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pBackendData;
     int rc = VINF_SUCCESS;
@@ -2025,7 +2026,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
         pvParent = pIfParentState->pvUser;
     }
 
-    PFNVMPROGRESS pfnProgress = NULL;
+    PFNVDPROGRESS pfnProgress = NULL;
     void *pvUser = NULL;
     PVDINTERFACE pIfProgress = VDInterfaceGet(pVDIfsOperation,
                                               VDINTERFACETYPE_PROGRESS);
@@ -2155,9 +2156,8 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
 
             if (pCbProgress && pCbProgress->pfnProgress)
             {
-                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                              (uint64_t)i * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart,
-                                              pIfProgress->pvUser);
+                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                              (uint64_t)i * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -2200,9 +2200,9 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
 
             if (pCbProgress && pCbProgress->pfnProgress)
             {
-                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                              (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart,
-                                              pIfProgress->pvUser);
+                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                              (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
+                                             
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -2229,9 +2229,8 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
 
     if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
     {
-        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                 uPercentStart + uPercentSpan,
-                                 pIfProgress->pvUser);
+        pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                 uPercentStart + uPercentSpan);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));

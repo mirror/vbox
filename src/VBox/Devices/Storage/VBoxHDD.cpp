@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -126,8 +126,13 @@ struct VBOXHDD
     PVDINTERFACE        pVDIfsDisk;
     /** Pointer to the common interface structure for error reporting. */
     PVDINTERFACE        pInterfaceError;
-    /** Pointer to the error interface we use if available. */
+    /** Pointer to the error interface callbacks we use if available. */
     PVDINTERFACEERROR   pInterfaceErrorCallbacks;
+
+    /** Pointer to the optional thread synchronization interface. */
+    PVDINTERFACE        pInterfaceThreadSync;
+    /** Pointer to the optional thread synchronization callbacks. */
+    PVDINTERFACETHREADSYNC pInterfaceThreadSyncCallbacks;
 
     /** Fallback async interface. */
     VDINTERFACE         VDIAsyncIO;
@@ -205,6 +210,50 @@ static int vdError(PVBOXHDD pDisk, int rc, RT_SRC_POS_DECL,
     if (pDisk->pInterfaceErrorCallbacks)
         pDisk->pInterfaceErrorCallbacks->pfnError(pDisk->pInterfaceError->pvUser, rc, RT_SRC_POS_ARGS, pszFormat, va);
     va_end(va);
+    return rc;
+}
+
+/**
+ * internal: thread synchronization, start read.
+ */
+DECLINLINE(int) vdThreadStartRead(PVBOXHDD pDisk)
+{
+    int rc = VINF_SUCCESS;
+    if (RT_UNLIKELY(pDisk->pInterfaceThreadSyncCallbacks))
+        rc = pDisk->pInterfaceThreadSyncCallbacks->pfnStartRead(pDisk->pInterfaceThreadSync->pvUser);
+    return rc;
+}
+
+/**
+ * internal: thread synchronization, finish read.
+ */
+DECLINLINE(int) vdThreadFinishRead(PVBOXHDD pDisk)
+{
+    int rc = VINF_SUCCESS;
+    if (RT_UNLIKELY(pDisk->pInterfaceThreadSyncCallbacks))
+        rc = pDisk->pInterfaceThreadSyncCallbacks->pfnFinishRead(pDisk->pInterfaceThreadSync->pvUser);
+    return rc;
+}
+
+/**
+ * internal: thread synchronization, start write.
+ */
+DECLINLINE(int) vdThreadStartWrite(PVBOXHDD pDisk)
+{
+    int rc = VINF_SUCCESS;
+    if (RT_UNLIKELY(pDisk->pInterfaceThreadSyncCallbacks))
+        rc = pDisk->pInterfaceThreadSyncCallbacks->pfnStartWrite(pDisk->pInterfaceThreadSync->pvUser);
+    return rc;
+}
+
+/**
+ * internal: thread synchronization, finish write.
+ */
+DECLINLINE(int) vdThreadFinishWrite(PVBOXHDD pDisk)
+{
+    int rc = VINF_SUCCESS;
+    if (RT_UNLIKELY(pDisk->pInterfaceThreadSyncCallbacks))
+        rc = pDisk->pInterfaceThreadSyncCallbacks->pfnFinishWrite(pDisk->pInterfaceThreadSync->pvUser);
     return rc;
 }
 
@@ -743,7 +792,8 @@ out:
  * VD async I/O interface open callback.
  */
 static int vdAsyncIOOpen(void *pvUser, const char *pszLocation, unsigned uOpenFlags,
-                         PFNVDCOMPLETED pfnCompleted, void **ppStorage)
+                         PFNVDCOMPLETED pfnCompleted, PVDINTERFACE pVDIfsDisk,
+                         void **ppStorage)
 {
     PVDIASYNCIOSTORAGE pStorage = (PVDIASYNCIOSTORAGE)RTMemAllocZ(sizeof(VDIASYNCIOSTORAGE));
 
@@ -924,12 +974,8 @@ VBOXDDU_DECL(int) VDShutdown(void)
 }
 
 
-
 /**
  * Lists all HDD backends and their capabilities in a caller-provided buffer.
- *
- * @todo this code contains memory leaks, inconsistent (and probably buggy)
- * allocation, and it lacks documentation what the caller needs to free.
  *
  * @returns VBox status code.
  *          VERR_BUFFER_OVERFLOW if not enough space is passed.
@@ -981,7 +1027,6 @@ VBOXDDU_DECL(int) VDBackendInfo(unsigned cEntriesAlloc, PVDBACKENDINFO pEntries,
 
 /**
  * Lists the capablities of a backend indentified by its name.
- * Free all returned names with RTStrFree() when you no longer need them.
  *
  * @returns VBox status code.
  * @param   pszBackend      The backend name.
@@ -1054,10 +1099,16 @@ VBOXDDU_DECL(int) VDCreate(PVDINTERFACE pVDIfsDisk, PVBOXHDD *ppDisk)
             pDisk->pVDIfsDisk  = pVDIfsDisk;
             pDisk->pInterfaceError = NULL;
             pDisk->pInterfaceErrorCallbacks = NULL;
+            pDisk->pInterfaceThreadSync = NULL;
+            pDisk->pInterfaceThreadSyncCallbacks = NULL;
 
             pDisk->pInterfaceError = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ERROR);
             if (pDisk->pInterfaceError)
                 pDisk->pInterfaceErrorCallbacks = VDGetInterfaceError(pDisk->pInterfaceError);
+
+            pDisk->pInterfaceThreadSync = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_THREADSYNC);
+            if (pDisk->pInterfaceThreadSync)
+                pDisk->pInterfaceThreadSyncCallbacks = VDGetInterfaceThreadSync(pDisk->pInterfaceThreadSync);
 
             /* Use the fallback async I/O interface if the caller doesn't provide one. */
             PVDINTERFACE pVDIfAsyncIO = VDInterfaceGet(pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
@@ -1227,10 +1278,13 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
                          PVDINTERFACE pVDIfsImage)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
     PVDIMAGE pImage = NULL;
 
     LogFlowFunc(("pDisk=%#p pszBackend=\"%s\" pszFilename=\"%s\" uOpenFlags=%#x, pVDIfsImage=%#p\n",
                  pDisk, pszBackend, pszFilename, uOpenFlags, pVDIfsImage));
+
     do
     {
         /* sanity check */
@@ -1302,13 +1356,18 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             }
         }
 
-        unsigned uImageFlags;
-        uImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
+        /* Lock disk for writing, as we modify pDisk information below. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         /* Check image type. As the image itself has only partial knowledge
          * whether it's a base image or not, this info is derived here. The
          * base image can be fixed or normal, all others must be normal or
          * diff images. Some image formats don't distinguish between normal
          * and diff images, so this must be corrected here. */
+        unsigned uImageFlags;
+        uImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
         if (RT_FAILURE(rc))
             uImageFlags = VD_IMAGE_FLAGS_NONE;
         if (    RT_SUCCESS(rc)
@@ -1339,8 +1398,6 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
             pImage->uOpenFlags |= VD_OPEN_FLAGS_HONOR_SAME;
 
         /** @todo optionally check UUIDs */
-
-        int rc2;
 
         /* Cache disk information. */
         pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
@@ -1406,6 +1463,12 @@ VBOXDDU_DECL(int) VDOpen(PVBOXHDD pDisk, const char *pszBackend,
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
     if (RT_FAILURE(rc))
     {
         if (pImage)
@@ -1447,6 +1510,8 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                                PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false, fLockRead = false;
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
@@ -1507,10 +1572,17 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
-        /* Check state. */
+        /* Check state. Needs a temporary read lock. Holding the write lock
+         * all the time would be blocking other activities for too long. */
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
         AssertMsgBreakStmt(pDisk->cImages == 0,
                            ("Create base image cannot be done with other images open\n"),
                            rc = VERR_VD_INVALID_STATE);
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1572,10 +1644,22 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
             if (uImageFlags & VD_IMAGE_FLAGS_FIXED)
                 pImage->uOpenFlags |= VD_OPEN_FLAGS_HONOR_SAME;
 
+            /* Lock disk for writing, as we modify pDisk information below. */
+            rc2 = vdThreadStartWrite(pDisk);
+            AssertRC(rc2);
+            fLockWrite = true;
+
             /** @todo optionally check UUIDs */
 
-            int rc2;
+            /* Re-check state, as the lock wasn't held and another image
+             * creation call could have been done by another thread. */
+            AssertMsgStmt(pDisk->cImages == 0,
+                          ("Create base image cannot be done with other images open\n"),
+                          rc = VERR_VD_INVALID_STATE);
+        }
 
+        if (RT_SUCCESS(rc))
+        {
             /* Cache disk information. */
             pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
 
@@ -1611,10 +1695,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
                 pDisk->LCHSGeometry.cHeads = RT_MIN(pDisk->LCHSGeometry.cHeads, 255);
                 pDisk->LCHSGeometry.cSectors = RT_MIN(pDisk->LCHSGeometry.cSectors, 63);
             }
-        }
 
-        if (RT_SUCCESS(rc))
-        {
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
             if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
@@ -1630,6 +1711,17 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
     if (RT_FAILURE(rc))
     {
         if (pImage)
@@ -1641,8 +1733,7 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
     }
 
     if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
-        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                 pIfProgress->pvUser);
+        pCbProgress->pfnProgress(pIfProgress, 100);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1672,6 +1763,8 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false, fLockRead = false;
     PVDIMAGE pImage = NULL;
     RTUUID uuid;
 
@@ -1713,10 +1806,17 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
-        /* Check state. */
+        /* Check state. Needs a temporary read lock. Holding the write lock
+         * all the time would be blocking other activities for too long. */
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
         AssertMsgBreakStmt(pDisk->cImages != 0,
                            ("Create diff image cannot be done without other images open\n"),
                            rc = VERR_VD_INVALID_STATE);
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
 
         /* Set up image descriptor. */
         pImage = (PVDIMAGE)RTMemAllocZ(sizeof(VDIMAGE));
@@ -1769,9 +1869,14 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                                         pVDIfsOperation,
                                         &pImage->pvBackendData);
 
-        if (RT_SUCCESS(rc) && pDisk->cImages != 0)
+        if (RT_SUCCESS(rc))
         {
             pImage->uImageFlags = uImageFlags;
+
+            /* Lock disk for writing, as we modify pDisk information below. */
+            rc2 = vdThreadStartWrite(pDisk);
+            AssertRC(rc2);
+            fLockWrite = true;
 
             /* Switch previous image to read-only mode. */
             unsigned uOpenFlagsPrevImg;
@@ -1781,13 +1886,20 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
                 uOpenFlagsPrevImg |= VD_OPEN_FLAGS_READONLY;
                 rc = pDisk->pLast->Backend->pfnSetOpenFlags(pDisk->pLast->pvBackendData, uOpenFlagsPrevImg);
             }
+
+            /** @todo optionally check UUIDs */
+
+            /* Re-check state, as the lock wasn't held and another image
+             * creation call could have been done by another thread. */
+            AssertMsgStmt(pDisk->cImages != 0,
+                          ("Create diff image cannot be done without other images open\n"),
+                          rc = VERR_VD_INVALID_STATE);
         }
 
         if (RT_SUCCESS(rc))
         {
             RTUUID Uuid;
             RTTIMESPEC ts;
-            int rc2;
 
             if (pParentUuid && !RTUuidIsNull(pParentUuid))
             {
@@ -1816,11 +1928,6 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
 
         if (RT_SUCCESS(rc))
         {
-            /** @todo optionally check UUIDs */
-        }
-
-        if (RT_SUCCESS(rc))
-        {
             /* Image successfully opened, make it the last image. */
             vdAddImageToList(pDisk, pImage);
             if (!(uOpenFlags & VD_OPEN_FLAGS_READONLY))
@@ -1829,12 +1936,22 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
         else
         {
             /* Error detected, but image opened. Close and delete image. */
-            int rc2;
             rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, true);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
         }
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     if (RT_FAILURE(rc))
     {
@@ -1847,8 +1964,7 @@ VBOXDDU_DECL(int) VDCreateDiff(PVBOXHDD pDisk, const char *pszBackend,
     }
 
     if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
-        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                 pIfProgress->pvUser);
+        pCbProgress->pfnProgress(pIfProgress, 100);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -1872,6 +1988,8 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                           unsigned nImageTo, PVDINTERFACE pVDIfsOperation)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false, fLockRead = false;
     void *pvBuf = NULL;
 
     LogFlowFunc(("pDisk=%#p nImageFrom=%u nImageTo=%u pVDIfsOperation=%#p\n",
@@ -1889,6 +2007,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDisk, nImageFrom);
         PVDIMAGE pImageTo = vdGetImageByNumber(pDisk, nImageTo);
         if (!pImageFrom || !pImageTo)
@@ -1911,6 +2032,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
         /* Get size of destination image. */
         uint64_t cbSize = pImageTo->Backend->pfnGetSize(pImageTo->pvBackendData);
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
 
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
@@ -1922,10 +2046,6 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
         /* Merging is done directly on the images itself. This potentially
          * causes trouble if the disk is full in the middle of operation. */
-        /** @todo write alternative implementation which works with temporary
-         * images (which is safer, but requires even more space). Also has the
-         * drawback that merging into a raw disk parent simply isn't possible
-         * this way (but in that case disk full isn't really a problem). */
         if (nImageFrom < nImageTo)
         {
             /* Merge parent state into child. This means writing all not
@@ -1936,6 +2056,12 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             do
             {
                 size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
+
+                /* Need to hold the write lock during a read-write operation. */
+                rc2 = vdThreadStartWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
                 rc = pImageTo->Backend->pfnRead(pImageTo->pvBackendData,
                                                 uOffset, pvBuf, cbThisRead,
                                                 &cbThisRead);
@@ -1971,14 +2097,17 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 else if (RT_FAILURE(rc))
                     break;
 
+                rc2 = vdThreadFinishWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = false;
+
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
 
                 if (pCbProgress && pCbProgress->pfnProgress)
                 {
-                    rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                                  uOffset * 99 / cbSize,
-                                                  pIfProgress->pvUser);
+                    rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                                  uOffset * 99 / cbSize);
                     if (RT_FAILURE(rc))
                         break;
                 }
@@ -2019,6 +2148,12 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
             {
                 size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
                 rc = VERR_VD_BLOCK_FREE;
+
+                /* Need to hold the write lock during a read-write operation. */
+                rc2 = vdThreadStartWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
                 /* Search for image with allocated block. Do not attempt to
                  * read more than the previous reads marked as valid. Otherwise
                  * this would return stale data when different block sizes are
@@ -2044,19 +2179,27 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
                 else
                     rc = VINF_SUCCESS;
 
+                rc2 = vdThreadFinishWrite(pDisk);
+                AssertRC(rc2);
+                fLockWrite = true;
+
                 uOffset += cbThisRead;
                 cbRemaining -= cbThisRead;
 
                 if (pCbProgress && pCbProgress->pfnProgress)
                 {
-                    rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                                  uOffset * 99 / cbSize,
-                                                  pIfProgress->pvUser);
+                    rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                                  uOffset * 99 / cbSize);
                     if (RT_FAILURE(rc))
                         break;
                 }
             } while (uOffset < cbSize);
         }
+
+        /* Need to hold the write lock while finishing the merge. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
 
         /* Update parent UUID so that image chain is consistent. */
         RTUUID Uuid;
@@ -2136,12 +2279,22 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
+
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
     if (RT_SUCCESS(rc) && pCbProgress && pCbProgress->pfnProgress)
-        pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                 pIfProgress->pvUser);
+        pCbProgress->pfnProgress(pIfProgress->pvUser, 100);
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2184,7 +2337,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                          PVDINTERFACE pDstVDIfsImage,
                          PVDINTERFACE pDstVDIfsOperation)
 {
-    int rc, rc2 = VINF_SUCCESS;
+    int rc = VINF_SUCCESS; 
+    int rc2;
+    bool fLockReadFrom = false, fLockWriteFrom = false, fLockWriteTo = false;
     void *pvBuf = NULL;
     PVDIMAGE pImageTo = NULL;
 
@@ -2210,6 +2365,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         AssertMsg(pDiskFrom->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDiskFrom->u32Signature));
 
+        rc2 = vdThreadStartRead(pDiskFrom);
+        AssertRC(rc2);
+        fLockReadFrom = true;
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDiskFrom, nImage);
         AssertPtrBreakStmt(pImageFrom, rc = VERR_VD_IMAGE_NOT_FOUND);
         AssertMsgBreakStmt(VALID_PTR(pDiskTo), ("pDiskTo=%#p\n", pDiskTo),
@@ -2224,6 +2382,13 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             if (    fMoveByRename
                 &&  !RTStrICmp(pszBackend, pImageFrom->Backend->pszBackendName))
             {
+                rc2 = vdThreadFinishRead(pDiskFrom);
+                AssertRC(rc2);
+                fLockReadFrom = false;
+
+                rc2 = vdThreadStartWrite(pDiskFrom);
+                AssertRC(rc2);
+                fLockWriteFrom = true;
                 rc = pImageFrom->Backend->pfnRename(pImageFrom->pvBackendData, pszFilename ? pszFilename : pImageFrom->pszFilename);
                 break;
             }
@@ -2287,6 +2452,10 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         unsigned uOpenFlagsFrom;
         uOpenFlagsFrom = pImageFrom->Backend->pfnGetOpenFlags(pImageFrom->pvBackendData);
 
+        rc2 = vdThreadFinishRead(pDiskFrom);
+        AssertRC(rc2);
+        fLockReadFrom = false;
+
         if (pszFilename)
         {
             if (cbSize == 0)
@@ -2295,13 +2464,18 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             /* Create destination image with the properties of the source image. */
             /** @todo replace the VDCreateDiff/VDCreateBase calls by direct
              * calls to the backend. Unifies the code and reduces the API
-             * dependencies. */
+             * dependencies. Would also make the synchronization explicit. */
             if (uImageFlags & VD_IMAGE_FLAGS_DIFF)
             {
                 rc = VDCreateDiff(pDiskTo, pszBackend, pszFilename, uImageFlags,
                                   szComment, &ImageUuid, &ParentUuid, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+
+                rc2 = vdThreadStartWrite(pDiskTo);
+                AssertRC(rc2);
+                fLockWriteTo = true;
             } else {
-                /** @todo Please, review this! It's an ugly hack I think... */
+                /** @todo hack to force creation of a fixed image for
+                 * the RAW backend, which can't handle anything else. */
                 if (!RTStrICmp(pszBackend, "RAW"))
                     uImageFlags |= VD_IMAGE_FLAGS_FIXED;
 
@@ -2324,6 +2498,11 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                                   uImageFlags, szComment,
                                   &PCHSGeometryFrom, &LCHSGeometryFrom,
                                   NULL, uOpenFlagsFrom & ~VD_OPEN_FLAGS_READONLY, NULL, NULL);
+                    
+                rc2 = vdThreadStartWrite(pDiskTo);
+                AssertRC(rc2);
+                fLockWriteTo = true;
+
                 if (RT_SUCCESS(rc) && !RTUuidIsNull(&ImageUuid))
                      pDiskTo->pLast->Backend->pfnSetUuid(pDiskTo->pLast->pvBackendData, &ImageUuid);
                 if (RT_SUCCESS(rc) && !RTUuidIsNull(&ParentUuid))
@@ -2354,6 +2533,10 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
                 cbSize = RT_MIN(cbSizeFrom, cbSizeTo);
         }
 
+        rc2 = vdThreadFinishWrite(pDiskTo);
+        AssertRC(rc2);
+        fLockWriteTo = false;
+
         /* Allocate tmp buffer. */
         pvBuf = RTMemTmpAlloc(VD_MERGE_BUFFER_SIZE);
         if (!pvBuf)
@@ -2370,32 +2553,51 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         {
             size_t cbThisRead = RT_MIN(VD_MERGE_BUFFER_SIZE, cbRemaining);
 
+            /* Note that we don't attempt to synchronize cross-disk accesses.
+             * It wouldn't be very difficult to do, just the lock order would
+             * need to be defined somehow to prevent deadlocks. Postpone such
+             * magic as there is no use case for this. */
+
+            rc2 = vdThreadStartRead(pDiskFrom);
+            AssertRC(rc2);
+            fLockReadFrom = true;
+
             rc = vdReadHelper(pDiskFrom, pImageFrom, NULL, uOffset, pvBuf,
                               cbThisRead);
             if (RT_FAILURE(rc))
                 break;
+
+            rc2 = vdThreadFinishRead(pDiskFrom);
+            AssertRC(rc2);
+            fLockReadFrom = false;
+
+            rc2 = vdThreadStartWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = true;
 
             rc = vdWriteHelper(pDiskTo, pImageTo, NULL, uOffset, pvBuf,
                                cbThisRead);
             if (RT_FAILURE(rc))
                 break;
 
+            rc2 = vdThreadFinishWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = false;
+
             uOffset += cbThisRead;
             cbRemaining -= cbThisRead;
 
             if (pCbProgress && pCbProgress->pfnProgress)
             {
-                rc = pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                              uOffset * 99 / cbSize,
-                                              pIfProgress->pvUser);
+                rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
+                                              uOffset * 99 / cbSize);
                 if (RT_FAILURE(rc))
                     break;
             }
             if (pDstCbProgress && pDstCbProgress->pfnProgress)
             {
-                rc = pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */,
-                                                 uOffset * 99 / cbSize,
-                                                 pDstIfProgress->pvUser);
+                rc = pDstCbProgress->pfnProgress(pDstIfProgress->pvUser,
+                                                 uOffset * 99 / cbSize);
                 if (RT_FAILURE(rc))
                     break;
             }
@@ -2403,6 +2605,10 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
         if (RT_SUCCESS(rc))
         {
+            rc2 = vdThreadStartWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = true;
+
             /* Only set modification UUID if it is non-null, since the source
              * backend might not provide a valid modification UUID. */
             if (!RTUuidIsNull(&ImageModificationUuid))
@@ -2417,6 +2623,14 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
     if (RT_FAILURE(rc) && pImageTo && pszFilename)
     {
+        /* Take the write lock only if it is not taken. Not worth making the
+         * above code even more complicated. */
+        if (RT_UNLIKELY(!fLockWriteTo))
+        {
+            rc2 = vdThreadStartWrite(pDiskTo);
+            AssertRC(rc2);
+            fLockWriteTo = true;
+        }
         /* Error detected, but new image created. Remove image from list. */
         vdRemoveImageFromList(pDiskTo, pImageTo);
 
@@ -2432,17 +2646,31 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
         RTMemFree(pImageTo);
     }
 
+    if (RT_UNLIKELY(fLockWriteTo))
+    {
+        rc2 = vdThreadFinishWrite(pDiskTo);
+        AssertRC(rc2);
+    }
+    if (RT_UNLIKELY(fLockWriteFrom))
+    {
+        rc2 = vdThreadFinishWrite(pDiskFrom);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockReadFrom))
+    {
+        rc2 = vdThreadFinishRead(pDiskFrom);
+        AssertRC(rc2);
+    }
+
     if (pvBuf)
         RTMemTmpFree(pvBuf);
 
     if (RT_SUCCESS(rc))
     {
         if (pCbProgress && pCbProgress->pfnProgress)
-            pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                     pIfProgress->pvUser);
+            pCbProgress->pfnProgress(pIfProgress->pvUser, 100);
         if (pDstCbProgress && pDstCbProgress->pfnProgress)
-            pDstCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                        pDstIfProgress->pvUser);
+            pDstCbProgress->pfnProgress(pDstIfProgress->pvUser, 100);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2468,7 +2696,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                             PVDINTERFACE pVDIfsOperation)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false, fLockWrite = false;
     void *pvBuf = NULL;
     void *pvTmp = NULL;
 
@@ -2487,6 +2717,10 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
                            rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE,
                   ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -2520,10 +2754,31 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
             AssertRC(rc);
         }
 
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = false;
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         rc = pImage->Backend->pfnCompact(pImage->pvBackendData,
                                          0, 99,
+                                         pDisk->pVDIfsDisk,
+                                         pImage->pVDIfsImage,
                                          pVDIfsOperation);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+    else if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     if (pvBuf)
         RTMemTmpFree(pvBuf);
@@ -2533,8 +2788,7 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
     if (RT_SUCCESS(rc))
     {
         if (pCbProgress && pCbProgress->pfnProgress)
-            pCbProgress->pfnProgress(NULL /* WARNING! pVM=NULL */, 100,
-                                     pIfProgress->pvUser);
+            pCbProgress->pfnProgress(pIfProgress->pvUser, 100);
     }
 
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2543,9 +2797,9 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 
 /**
  * Closes the last opened image file in HDD container.
- * If previous image file was opened in read-only mode (that is normal) and closing image
- * was opened in read-write mode (the whole disk was in read-write mode) - the previous image
- * will be reopened in read/write mode.
+ * If previous image file was opened in read-only mode (the normal case) and
+ * the last opened image is in read-write mode then the previous image will be
+ * reopened in read/write mode.
  *
  * @returns VBox status code.
  * @returns VERR_VD_NOT_OPENED if no image is opened in HDD container.
@@ -2555,6 +2809,8 @@ VBOXDDU_DECL(int) VDCompact(PVBOXHDD pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p fDelete=%d\n", pDisk, fDelete));
     do
@@ -2562,6 +2818,13 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         /* sanity check */
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Not worth splitting this up into a read lock phase and write
+         * lock phase, as closing an image is a relatively fast operation
+         * dominated by the part which needs the write lock. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
 
         PVDIMAGE pImage = pDisk->pLast;
         if (!pImage)
@@ -2591,8 +2854,6 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
             uOpenFlags &= ~ VD_OPEN_FLAGS_READONLY;
             rc = pImage->Backend->pfnSetOpenFlags(pImage->pvBackendData, uOpenFlags);
         }
-
-        int rc2;
 
         /* Cache disk information. */
         pDisk->cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
@@ -2631,6 +2892,12 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2644,6 +2911,8 @@ VBOXDDU_DECL(int) VDClose(PVBOXHDD pDisk, bool fDelete)
 VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
     do
@@ -2651,6 +2920,11 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
         /* sanity check */
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
+
+        /* Lock the entire operation. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
 
         PVDIMAGE pImage = pDisk->pLast;
         while (VALID_PTR(pImage))
@@ -2670,6 +2944,12 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
         Assert(!VALID_PTR(pDisk->pLast));
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2687,7 +2967,9 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
 VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
                          size_t cbRead)
 {
-    int rc;
+    int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbRead=%zu\n",
                  pDisk, uOffset, pvBuf, cbRead));
@@ -2704,6 +2986,11 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
         AssertMsgBreakStmt(cbRead,
                            ("cbRead=%zu\n", cbRead),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
                            ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
                             uOffset, cbRead, pDisk->cbSize),
@@ -2714,6 +3001,12 @@ VBOXDDU_DECL(int) VDRead(PVBOXHDD pDisk, uint64_t uOffset, void *pvBuf,
 
         rc = vdReadHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbRead);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2734,6 +3027,8 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
                           size_t cbWrite)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu pvBuf=%p cbWrite=%zu\n",
                  pDisk, uOffset, pvBuf, cbWrite));
@@ -2750,6 +3045,11 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         AssertMsgBreakStmt(cbWrite,
                            ("cbWrite=%zu\n", cbWrite),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
                            ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
                             uOffset, cbWrite, pDisk->cbSize),
@@ -2761,6 +3061,12 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
         vdSetModifiedFlag(pDisk);
         rc = vdWriteHelper(pDisk, pImage, NULL, uOffset, pvBuf, cbWrite);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2776,6 +3082,8 @@ VBOXDDU_DECL(int) VDWrite(PVBOXHDD pDisk, uint64_t uOffset, const void *pvBuf,
 VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
     do
@@ -2784,12 +3092,22 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
 
         vdResetModifiedFlag(pDisk);
         rc = pImage->Backend->pfnFlush(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -2804,6 +3122,8 @@ VBOXDDU_DECL(int) VDFlush(PVBOXHDD pDisk)
 VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk)
 {
     unsigned cImages;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
     do
@@ -2812,8 +3132,18 @@ VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk)
         AssertPtrBreakStmt(pDisk, cImages = 0);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         cImages = pDisk->cImages;
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %u\n", cImages));
     return cImages;
@@ -2829,6 +3159,8 @@ VBOXDDU_DECL(unsigned) VDGetCount(PVBOXHDD pDisk)
 VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
 {
     bool fReadOnly;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p\n", pDisk));
     do
@@ -2837,6 +3169,10 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
         AssertPtrBreakStmt(pDisk, fReadOnly = false);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, fReadOnly = true);
 
@@ -2844,6 +3180,12 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
         uOpenFlags = pDisk->pLast->Backend->pfnGetOpenFlags(pDisk->pLast->pvBackendData);
         fReadOnly = !!(uOpenFlags & VD_OPEN_FLAGS_READONLY);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %d\n", fReadOnly));
     return fReadOnly;
@@ -2860,6 +3202,8 @@ VBOXDDU_DECL(bool) VDIsReadOnly(PVBOXHDD pDisk)
 VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
 {
     uint64_t cbSize;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
     do
@@ -2868,10 +3212,20 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
         AssertPtrBreakStmt(pDisk, cbSize = 0);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, cbSize = 0);
         cbSize = pImage->Backend->pfnGetSize(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %llu\n", cbSize));
     return cbSize;
@@ -2888,6 +3242,8 @@ VBOXDDU_DECL(uint64_t) VDGetSize(PVBOXHDD pDisk, unsigned nImage)
 VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
 {
     uint64_t cbSize;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u\n", pDisk, nImage));
     do
@@ -2896,10 +3252,20 @@ VBOXDDU_DECL(uint64_t) VDGetFileSize(PVBOXHDD pDisk, unsigned nImage)
         AssertPtrBreakStmt(pDisk, cbSize = 0);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, cbSize = 0);
         cbSize = pImage->Backend->pfnGetFileSize(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %llu\n", cbSize));
     return cbSize;
@@ -2919,6 +3285,8 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                     PPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p\n",
                  pDisk, nImage, pPCHSGeometry));
@@ -2932,6 +3300,10 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsgBreakStmt(VALID_PTR(pPCHSGeometry),
                            ("pPCHSGeometry=%#p\n", pPCHSGeometry),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -2948,6 +3320,12 @@ VBOXDDU_DECL(int) VDGetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             rc = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
                                                      pPCHSGeometry);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("%s: %Rrc (PCHS=%u/%u/%u)\n", __FUNCTION__, rc,
                  pDisk->PCHSGeometry.cCylinders, pDisk->PCHSGeometry.cHeads,
@@ -2971,6 +3349,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                     PCPDMMEDIAGEOMETRY pPCHSGeometry)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pPCHSGeometry=%#p PCHS=%u/%u/%u\n",
                  pDisk, nImage, pPCHSGeometry, pPCHSGeometry->cCylinders,
@@ -2989,6 +3369,10 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                             pPCHSGeometry->cCylinders, pPCHSGeometry->cHeads,
                             pPCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -3045,6 +3429,12 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -3063,6 +3453,8 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                     PPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pLCHSGeometry=%#p\n",
                  pDisk, nImage, pLCHSGeometry));
@@ -3076,6 +3468,10 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         AssertMsgBreakStmt(VALID_PTR(pLCHSGeometry),
                            ("pLCHSGeometry=%#p\n", pLCHSGeometry),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -3092,6 +3488,12 @@ VBOXDDU_DECL(int) VDGetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
             rc = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
                                                      pLCHSGeometry);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc((": %Rrc (LCHS=%u/%u/%u)\n", rc,
                  pDisk->LCHSGeometry.cCylinders, pDisk->LCHSGeometry.cHeads,
@@ -3115,6 +3517,8 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                     PCPDMMEDIAGEOMETRY pLCHSGeometry)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pLCHSGeometry=%#p LCHS=%u/%u/%u\n",
                  pDisk, nImage, pLCHSGeometry, pLCHSGeometry->cCylinders,
@@ -3133,6 +3537,10 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                             pLCHSGeometry->cCylinders, pLCHSGeometry->cHeads,
                             pLCHSGeometry->cSectors),
                            rc = VERR_INVALID_PARAMETER);
+
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
 
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
@@ -3189,6 +3597,12 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
         }
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -3206,6 +3620,8 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
                                unsigned *puVersion)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u puVersion=%#p\n",
                  pDisk, nImage, puVersion));
@@ -3220,11 +3636,21 @@ VBOXDDU_DECL(int) VDGetVersion(PVBOXHDD pDisk, unsigned nImage,
                            ("puVersion=%#p\n", puVersion),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puVersion = pImage->Backend->pfnGetVersion(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc uVersion=%#x\n", rc, *puVersion));
     return rc;
@@ -3243,6 +3669,8 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
                                       PVDBACKENDINFO pBackendInfo)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pBackendInfo=%#p\n",
                  pDisk, nImage, pBackendInfo));
@@ -3257,14 +3685,24 @@ VBOXDDU_DECL(int) VDBackendInfoSingle(PVBOXHDD pDisk, unsigned nImage,
                            ("pBackendInfo=%#p\n", pBackendInfo),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
-        pBackendInfo->pszBackend = RTStrDup(pImage->Backend->pszBackendName);
+        pBackendInfo->pszBackend = pImage->Backend->pszBackendName;
         pBackendInfo->uBackendCaps = pImage->Backend->uBackendCaps;
         pBackendInfo->papszFileExtensions = pImage->Backend->papszFileExtensions;
         pBackendInfo->paConfigInfo = pImage->Backend->paConfigInfo;
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3283,6 +3721,8 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
                                   unsigned *puImageFlags)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u puImageFlags=%#p\n",
                  pDisk, nImage, puImageFlags));
@@ -3297,11 +3737,21 @@ VBOXDDU_DECL(int) VDGetImageFlags(PVBOXHDD pDisk, unsigned nImage,
                            ("puImageFlags=%#p\n", puImageFlags),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puImageFlags = pImage->Backend->pfnGetImageFlags(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc uImageFlags=%#x\n", rc, *puImageFlags));
     return rc;
@@ -3320,6 +3770,8 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                                  unsigned *puOpenFlags)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u puOpenFlags=%#p\n",
                  pDisk, nImage, puOpenFlags));
@@ -3334,11 +3786,21 @@ VBOXDDU_DECL(int) VDGetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                            ("puOpenFlags=%#p\n", puOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         *puOpenFlags = pImage->Backend->pfnGetOpenFlags(pImage->pvBackendData);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc uOpenFlags=%#x\n", rc, *puOpenFlags));
     return rc;
@@ -3359,6 +3821,8 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                                  unsigned uOpenFlags)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p uOpenFlags=%#u\n", pDisk, uOpenFlags));
     do
@@ -3372,12 +3836,22 @@ VBOXDDU_DECL(int) VDSetOpenFlags(PVBOXHDD pDisk, unsigned nImage,
                            ("uOpenFlags=%#x\n", uOpenFlags),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnSetOpenFlags(pImage->pvBackendData,
                                               uOpenFlags);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3400,6 +3874,8 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
                                 char *pszFilename, unsigned cbFilename)
 {
     int rc;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pszFilename=%#p cbFilename=%u\n",
                  pDisk, nImage, pszFilename, cbFilename));
@@ -3417,6 +3893,10 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
                            ("cbFilename=%u\n", cbFilename),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
@@ -3433,6 +3913,12 @@ VBOXDDU_DECL(int) VDGetFilename(PVBOXHDD pDisk, unsigned nImage,
             rc = VERR_BUFFER_OVERFLOW;
         }
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, pszFilename=\"%s\"\n", rc, pszFilename));
     return rc;
@@ -3453,6 +3939,8 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
                                char *pszComment, unsigned cbComment)
 {
     int rc;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pszComment=%#p cbComment=%u\n",
                  pDisk, nImage, pszComment, cbComment));
@@ -3470,12 +3958,22 @@ VBOXDDU_DECL(int) VDGetComment(PVBOXHDD pDisk, unsigned nImage,
                            ("cbComment=%u\n", cbComment),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetComment(pImage->pvBackendData, pszComment,
                                             cbComment);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, pszComment=\"%s\"\n", rc, pszComment));
     return rc;
@@ -3494,6 +3992,8 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
                                const char *pszComment)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pszComment=%#p \"%s\"\n",
                  pDisk, nImage, pszComment, pszComment));
@@ -3508,11 +4008,21 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
                            ("pszComment=%#p \"%s\"\n", pszComment, pszComment),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnSetComment(pImage->pvBackendData, pszComment);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3531,6 +4041,8 @@ VBOXDDU_DECL(int) VDSetComment(PVBOXHDD pDisk, unsigned nImage,
 VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
 {
     int rc;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p\n", pDisk, nImage, pUuid));
     do
@@ -3544,11 +4056,21 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetUuid(pImage->pvBackendData, pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
@@ -3566,6 +4088,8 @@ VBOXDDU_DECL(int) VDGetUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
 VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
@@ -3579,6 +4103,10 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
@@ -3590,6 +4118,12 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
         }
         rc = pImage->Backend->pfnSetUuid(pImage->pvBackendData, pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3607,6 +4141,8 @@ VBOXDDU_DECL(int) VDSetUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
 VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID pUuid)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p\n", pDisk, nImage, pUuid));
     do
@@ -3620,12 +4156,22 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetModificationUuid(pImage->pvBackendData,
                                                      pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
@@ -3643,6 +4189,8 @@ VBOXDDU_DECL(int) VDGetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PRTUUID
 VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUID pUuid)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
@@ -3657,6 +4205,10 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
@@ -3669,6 +4221,12 @@ VBOXDDU_DECL(int) VDSetModificationUuid(PVBOXHDD pDisk, unsigned nImage, PCRTUUI
         rc = pImage->Backend->pfnSetModificationUuid(pImage->pvBackendData,
                                                      pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3687,6 +4245,8 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                                   PRTUUID pUuid)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p\n", pDisk, nImage, pUuid));
     do
@@ -3700,11 +4260,21 @@ VBOXDDU_DECL(int) VDGetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
         rc = pImage->Backend->pfnGetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, Uuid={%RTuuid}\n", rc, pUuid));
     return rc;
@@ -3722,6 +4292,8 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                                   PCRTUUID pUuid)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pUuid=%#p {%RTuuid}\n",
                  pDisk, nImage, pUuid, pUuid));
@@ -3736,6 +4308,10 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
                            ("pUuid=%#p\n", pUuid),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
@@ -3747,6 +4323,12 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
         }
         rc = pImage->Backend->pfnSetParentUuid(pImage->pvBackendData, pUuid);
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3760,6 +4342,9 @@ VBOXDDU_DECL(int) VDSetParentUuid(PVBOXHDD pDisk, unsigned nImage,
  */
 VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
 {
+    int rc2;
+    bool fLockRead = false;
+
     do
     {
         /* sanity check */
@@ -3777,6 +4362,10 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
             pfnMessage = vdLogMessage;
         }
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         pfnMessage(pvUser, "--- Dumping VD Disk, Images=%u\n", pDisk->cImages);
         for (PVDIMAGE pImage = pDisk->pBase; pImage; pImage = pImage->pNext)
         {
@@ -3785,6 +4374,12 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
             pImage->Backend->pfnDump(pImage->pvBackendData);
         }
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 }
 
 /**
@@ -3799,6 +4394,8 @@ VBOXDDU_DECL(void) VDDumpImages(PVBOXHDD pDisk)
 VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, bool *pfAIOSupported)
 {
     int rc = VINF_SUCCESS;
+    int rc2;
+    bool fLockRead = false;
 
     LogFlowFunc(("pDisk=%#p nImage=%u pfAIOSupported=%#p\n", pDisk, nImage, pfAIOSupported));
     do
@@ -3812,6 +4409,10 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
                            ("pfAIOSupported=%#p\n", pfAIOSupported),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartRead(pDisk);
+        AssertRC(rc2);
+        fLockRead = true;
+
         PVDIMAGE pImage = vdGetImageByNumber(pDisk, nImage);
         AssertPtrBreakStmt(pImage, rc = VERR_VD_IMAGE_NOT_FOUND);
 
@@ -3820,6 +4421,12 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
         else
             *pfAIOSupported = false;
     } while (0);
+
+    if (RT_UNLIKELY(fLockRead))
+    {
+        rc2 = vdThreadFinishRead(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc, fAIOSupported=%u\n", rc, *pfAIOSupported));
     return rc;
@@ -3841,6 +4448,8 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                               void *pvUser)
 {
     int rc = VERR_VD_BLOCK_FREE;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbRead=%zu\n",
                  pDisk, uOffset, paSeg, cSeg, cbRead));
@@ -3854,10 +4463,6 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         AssertMsgBreakStmt(cbRead,
                            ("cbRead=%zu\n", cbRead),
                            rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
-                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
-                            uOffset, cbRead, pDisk->cbSize),
-                           rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt(VALID_PTR(paSeg),
                            ("paSeg=%#p\n", paSeg),
                            rc = VERR_INVALID_PARAMETER);
@@ -3865,6 +4470,16 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
                            ("cSeg=%zu\n", cSeg),
                            rc = VERR_INVALID_PARAMETER);
 
+        /** @todo handle this just like a write, as in the completion code in
+         * DrvVD.cpp there is no way to figure out if it is a read or write. */
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        AssertMsgBreakStmt(uOffset + cbRead <= pDisk->cbSize,
+                           ("uOffset=%llu cbRead=%zu pDisk->cbSize=%llu\n",
+                            uOffset, cbRead, pDisk->cbSize),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
@@ -3889,9 +4504,19 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
             }
             /* Request finished without the need to enqueue a async I/O request. Tell caller. */
             rc = VINF_VD_ASYNC_IO_FINISHED;
+
+            rc2 = vdThreadFinishWrite(pDisk);
+            AssertRC(rc2);
+            fLockWrite = false;
         }
 
     } while (0);
+
+    if (RT_UNLIKELY(fLockWrite) && RT_FAILURE(rc))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
 
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
@@ -3914,6 +4539,8 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                                void *pvUser)
 {
     int rc;
+    int rc2;
+    bool fLockWrite = false;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbWrite=%zu\n",
                  pDisk, uOffset, paSeg, cSeg, cbWrite));
@@ -3927,10 +4554,6 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         AssertMsgBreakStmt(cbWrite,
                            ("cbWrite=%zu\n", cbWrite),
                            rc = VERR_INVALID_PARAMETER);
-        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
-                           ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
-                            uOffset, cbWrite, pDisk->cbSize),
-                           rc = VERR_INVALID_PARAMETER);
         AssertMsgBreakStmt(VALID_PTR(paSeg),
                            ("paSeg=%#p\n", paSeg),
                            rc = VERR_INVALID_PARAMETER);
@@ -3938,6 +4561,14 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                            ("cSeg=%zu\n", cSeg),
                            rc = VERR_INVALID_PARAMETER);
 
+        rc2 = vdThreadStartWrite(pDisk);
+        AssertRC(rc2);
+        fLockWrite = true;
+
+        AssertMsgBreakStmt(uOffset + cbWrite <= pDisk->cbSize,
+                           ("uOffset=%llu cbWrite=%zu pDisk->cbSize=%llu\n",
+                            uOffset, cbWrite, pDisk->cbSize),
+                           rc = VERR_INVALID_PARAMETER);
 
         PVDIMAGE pImage = pDisk->pLast;
         AssertPtrBreakStmt(pImage, rc = VERR_VD_NOT_OPENED);
@@ -3948,6 +4579,11 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
                                             paSeg, cSeg, pvUser);
     } while (0);
 
+    if (RT_UNLIKELY(fLockWrite) && RT_FAILURE(rc))
+    {
+        rc2 = vdThreadFinishWrite(pDisk);
+        AssertRC(rc2);
+    }
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 

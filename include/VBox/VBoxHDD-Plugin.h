@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -513,10 +513,14 @@ typedef struct VBOXHDDBACKEND
      * @param   pvBackendData   Opaque state data for this image.
      * @param   uPercentStart   Starting value for progress percentage.
      * @param   uPercentSpan    Span for varying progress percentage.
+     * @param   pVDIfsDisk      Pointer to the per-disk VD interface list.
+     * @param   pVDIfsImage     Pointer to the per-image VD interface list.
      * @param   pVDIfsOperation Pointer to the per-operation VD interface list.
      */
     DECLR3CALLBACKMEMBER(int, pfnCompact, (void *pvBackendData,
                                            unsigned uPercentStart, unsigned uPercentSpan,
+                                           PVDINTERFACE pVDIfsDisk,
+                                           PVDINTERFACE pVDIfsImage,
                                            PVDINTERFACE pVDIfsOperation));
 
 } VBOXHDDBACKEND;

@@ -26,7 +26,6 @@
 #include "VirtualBoxBase.h"
 
 class Progress;
-struct VM;
 
 namespace settings
 {
@@ -294,8 +293,7 @@ private:
     static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                           const char *pszFormat, va_list va);
 
-    static DECLCALLBACK(int) vdProgressCall(VM* /* pVM */, unsigned uPercent,
-                                            void *pvUser);
+    static DECLCALLBACK(int) vdProgressCall(void *pvUser, unsigned uPercent);
 
     static DECLCALLBACK(bool) vdConfigAreKeysValid(void *pvUser,
                                                    const char *pszzValid);
