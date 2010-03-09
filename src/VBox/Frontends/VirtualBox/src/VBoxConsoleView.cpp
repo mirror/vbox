@@ -3971,8 +3971,11 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         if (!ok)
             mLastCursor = QCursor();  /* in practice this is equivalent to
                                        * unsetCursor() */
+        mHideHostPointer = false;
     }
-    mHideHostPointer = !me->isVisible();
+    else
+        /* The visiblity flag is only interpreted if there is no shape */
+        mHideHostPointer = !me->isVisible();
     updateHostCursor();
 }
 
