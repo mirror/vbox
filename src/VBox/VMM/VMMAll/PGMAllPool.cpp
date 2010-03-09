@@ -4038,6 +4038,10 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
             Assert(PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]));
             if (PGM_PAGE_GET_HCPHYS(&pRam->aPages[iPage]) == HCPhys)
             {
+                Assert(pPage->cPresent);
+                Assert(pPool->cPresent);
+                pPage->cPresent--;
+                pPool->cPresent--;
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
             }
@@ -4060,6 +4064,10 @@ static void pgmPoolTracDerefGCPhysHint(PPGMPOOL pPool, PPGMPOOLPAGE pPage, RTHCP
             {
                 Log4(("pgmPoolTracDerefGCPhysHint: Linear HCPhys=%RHp GCPhysHint=%RGp GCPhysReal=%RGp\n",
                       HCPhys, GCPhysHint, pRam->GCPhys + (iPage << PAGE_SHIFT)));
+                Assert(pPage->cPresent);
+                Assert(pPool->cPresent);
+                pPage->cPresent--;
+                pPool->cPresent--;
                 pgmTrackDerefGCPhys(pPool, pPage, &pRam->aPages[iPage]);
                 return;
             }
