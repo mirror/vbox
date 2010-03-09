@@ -1372,11 +1372,13 @@ STDMETHODIMP Medium::COMSETTER(Description)(IN_BSTR aDescription)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+//     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     /// @todo update m->description and save the global registry (and local
     /// registries of portable VMs referring to this medium), this will also
     /// require to add the mRegistered flag to data
+
+    NOREF(aDescription);
 
     ReturnComNotImplemented();
 }
@@ -2060,6 +2062,9 @@ STDMETHODIMP Medium::Close()
         if (FAILED(rc)) return rc;
     }
 
+    // make a copy of VirtualBox pointer which gets nulled by uninit()
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+
     /* Keep the locks held until after uninit, as otherwise the consistency
      * of the medium tree cannot be guaranteed. */
     uninit();
@@ -2069,7 +2074,7 @@ STDMETHODIMP Medium::Close()
     if (fNeedsSaveSettings)
     {
         AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-        m->pVirtualBox->saveSettings();
+        pVirtualBox->saveSettings();
     }
 
     return S_OK;
