@@ -73,7 +73,10 @@ private:
     //void cleanupCommon();
 
     /* Private helpers: */
+    void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect availableGeometry();
+    void maybeRestrictMinimumSize() {}
+    void updateSliders() {}
 
     /* Private variables: */
     bool m_fShouldWeDoResize : 1;

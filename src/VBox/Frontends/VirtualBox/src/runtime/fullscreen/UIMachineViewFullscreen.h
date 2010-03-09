@@ -76,8 +76,10 @@ private:
     void setGuestAutoresizeEnabled(bool bEnabled);
 
     /* Private helpers: */
+    void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect availableGeometry();
     void maybeRestrictMinimumSize();
+    void updateSliders() {}
 
     /* Private members: */
     bool m_bIsGuestAutoresizeEnabled : 1;

@@ -146,76 +146,12 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 {
     switch (pEvent->type())
     {
-        case VBoxDefs::ResizeEventType:
-        {
-            /* Some situations require framebuffer resize events to be ignored,
-             * leaving machine window & machine view & framebuffer sizes preserved: */
-            if (uisession()->isGuestResizeIgnored())
-                return true;
-
-            /* We are starting to perform machine view resize: */
-            bool oldIgnoreMainwndResize = isMachineWindowResizeIgnored();
-            setMachineWindowResizeIgnored(true);
-
-            /* Get guest resize-event: */
-            UIResizeEvent *pResizeEvent = static_cast<UIResizeEvent*>(pEvent);
-
-            /* Perform framebuffer resize: */
-            frameBuffer()->resizeEvent(pResizeEvent);
-
-            /* Reapply maximum size restriction for machine view: */
-            setMaximumSize(sizeHint());
-
-            /* Store the new size to prevent unwanted resize hints being sent back: */
-            storeConsoleSize(pResizeEvent->width(), pResizeEvent->height());
-
-            /* Perform machine view resize: */
-            resize(pResizeEvent->width(), pResizeEvent->height());
-
-            /* Let our toplevel widget calculate its sizeHint properly. */
-#ifdef Q_WS_X11
-            /* We use processEvents rather than sendPostedEvents & set the time out value to max cause on X11 otherwise
-             * the layout isn't calculated correctly. Dosn't find the bug in Qt, but this could be triggered through
-             * the async nature of the X11 window event system. */
-            QCoreApplication::processEvents(QEventLoop::AllEvents, INT_MAX);
-#else /* Q_WS_X11 */
-            QCoreApplication::sendPostedEvents(0, QEvent::LayoutRequest);
-#endif /* Q_WS_X11 */
-
-#ifdef Q_WS_MAC
-            // TODO_NEW_CORE
-            //mDockIconPreview->setOriginalSize(pResizeEvent->width(), pResizeEvent->height());
-#endif /* Q_WS_MAC */
-
-            /* Update mouse cursor shape: */
-            updateMouseCursorShape();
-#ifdef Q_WS_WIN32
-            updateMouseCursorClipping();
-#endif
-
-            /* Report to the VM thread that we finished resizing: */
-            session().GetConsole().GetDisplay().ResizeCompleted(screenId());
-
-            /* We are finishing to perform machine view resize: */
-            setMachineWindowResizeIgnored(oldIgnoreMainwndResize);
-
-            /* Make sure that all posted signals are processed: */
-            qApp->processEvents();
-
-            /* We also recalculate the desktop geometry if this is determined automatically.
-             * In fact, we only need this on the first resize,
-             * but it is done every time to keep the code simpler. */
-            calculateDesktopGeometry();
-
-            /* Emit a signal about guest was resized: */
-            emit resizeHintDone();
-
-            return true;
-        }
-
         case VBoxDefs::SetRegionEventType:
         {
+            /* Get region-update event: */
             UISetRegionEvent *pSetRegionEvent = static_cast<UISetRegionEvent*>(pEvent);
+
+            /* Apply new region: */
             if (pSetRegionEvent->region() != m_lastVisibleRegion)
             {
                 m_lastVisibleRegion = pSetRegionEvent->region();
@@ -227,8 +163,10 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
         case QEvent::KeyPress:
         case QEvent::KeyRelease:
         {
+            /* Get key-event: */
             QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
 
+            /* Process Host+Home for menu popup: */
             if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
             {
                 if (pKeyEvent->key() == Qt::Key_Home)
