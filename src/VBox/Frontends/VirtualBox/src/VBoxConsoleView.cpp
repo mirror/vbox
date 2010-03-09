@@ -1150,11 +1150,24 @@ void VBoxConsoleView::setMouseIntegrationEnabled (bool enabled)
      * This notification is not always possible though, as not all guests
      * support switching to a hardware pointer on demand. */
     if (enabled)
-        viewport()->setCursor (QCursor (Qt::BlankCursor));
+    {
+        mHideHostPointer = true;
+        updateHostCursor();
+    }
 
     mMouseIntegration = enabled;
 
     emitMouseStateChanged();
+}
+
+void VBoxConsoleView::updateHostCursor()
+{
+    if (!mMouseIntegration && !mMouseCaptured)
+        viewport()->unsetCursor();
+    else if (mMouseCaptured || (mMouseCanAbsolute && mHideHostPointer))
+        viewport()->setCursor(Qt::BlankCursor);
+    else
+        viewport()->setCursor(mLastCursor);
 }
 
 void VBoxConsoleView::setAutoresizeGuest (bool on)
@@ -1251,20 +1264,13 @@ bool VBoxConsoleView::event (QEvent *e)
 
                 /* restoreOverrideCursor() is broken in Qt 4.4.0 if WA_PaintOnScreen
                  * widgets are present. This is the case on linux with SDL. As
-                 * workaround we save/restore the arrow cursor manually. See
+                 * workaround we restore the arrow cursor manually after the resize. See
                  * http://trolltech.com/developer/task-tracker/index_html?id=206165&method=entry
                  * for details.
-                 *
-                 * Moreover the current cursor, which could be set by the guest,
-                 * should be restored after resize.
                  */
                 QCursor cursor;
-                if (shouldHideHostPointer())
-                    cursor = QCursor (Qt::BlankCursor);
-                else
-                    cursor = viewport()->cursor();
                 mFrameBuf->resizeEvent (re);
-                viewport()->setCursor (cursor);
+                updateHostCursor();
 
 #ifdef Q_WS_MAC
                 mDockIconPreview->setOriginalSize (re->width(), re->height());
@@ -1402,7 +1408,7 @@ bool VBoxConsoleView::event (QEvent *e)
                         captureMouse (false, false);
                     }
                     else
-                        viewport()->unsetCursor();
+                        updateHostCursor();
                     emitMouseStateChanged();
                     vboxProblem().remindAboutMouseIntegration (mMouseCanAbsolute);
                 }
@@ -3703,7 +3709,7 @@ void VBoxConsoleView::updateMouseClipping()
 
     if (mMouseCaptured)
     {
-        viewport()->setCursor (QCursor (Qt::BlankCursor));
+        updateHostCursor();
 #ifdef Q_WS_WIN32
         QRect r = viewport()->rect();
         r.moveTopLeft (viewport()->mapToGlobal (QPoint (0, 0)));
@@ -3718,7 +3724,7 @@ void VBoxConsoleView::updateMouseClipping()
 #endif
         /* return the cursor to where it was when we captured it and show it */
         QCursor::setPos (mCapturedPos);
-        viewport()->unsetCursor();
+        updateHostCursor();
     }
 }
 
@@ -3848,7 +3854,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
             Assert (hAlphaCursor);
             if (hAlphaCursor)
             {
-                viewport()->setCursor (QCursor (hAlphaCursor));
+                mLastCursor = QCursor (hAlphaCursor);
                 ok = true;
                 if (mAlphaCursor)
                     DestroyIcon (mAlphaCursor);
@@ -3911,7 +3917,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
             Assert (cur);
             if (cur)
             {
-                viewport()->setCursor (QCursor (cur));
+                mLastCursor = QCursor (cur);
                 ok = true;
             }
 
@@ -3954,7 +3960,7 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
         /* Set the new cursor */
         QCursor cursor (QPixmap::fromImage (image),
                         me->xHot(), me->yHot());
-        viewport()->setCursor (cursor);
+        mLastCursor = cursor;
         ok = true;
         NOREF (srcShapePtrScan);
 
@@ -3963,26 +3969,12 @@ void VBoxConsoleView::setPointerShape (MousePointerChangeEvent *me)
 # warning "port me"
 
 #endif
-        if (ok)
-            mLastCursor = viewport()->cursor();
-        else
-            viewport()->unsetCursor();
-    }
-    else
-    {
-        /*
-         * We did not get any shape data
-         */
-        if (me->isVisible())
-        {
-            viewport()->setCursor (mLastCursor);
-        }
-        else
-        {
-            viewport()->setCursor (Qt::BlankCursor);
-        }
+        if (!ok)
+            mLastCursor = QCursor();  /* in practice this is equivalent to
+                                       * unsetCursor() */
     }
     mHideHostPointer = !me->isVisible();
+    updateHostCursor();
 }
 
 inline QRgb qRgbIntensity (QRgb rgb, int mul, int div)

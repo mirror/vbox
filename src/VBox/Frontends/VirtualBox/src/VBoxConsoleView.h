@@ -100,8 +100,7 @@ public:
     bool mouseCanRelative() const { return mMouseCanRelative; }
     bool mouseNeedsHostCursor() const { return mMouseNeedsHostCursor; }
 
-    bool shouldHideHostPointer() const
-    { return mMouseCaptured || (mMouseCanAbsolute && mHideHostPointer); }
+    void updateHostCursor();
 
     void setAutoresizeGuest (bool on);
 
