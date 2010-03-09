@@ -1170,7 +1170,7 @@ void VBoxConsoleView::updateHostCursor()
         viewport()->setCursor(mLastCursor);
 }
 
-void VBoxConsoleView::setAutoresizeGuest (bool on)
+void VBoxConsoleView::setAutoresizeGuest (bool on, bool doHint)
 {
     if (mAutoresizeGuest != on)
     {
@@ -1178,7 +1178,7 @@ void VBoxConsoleView::setAutoresizeGuest (bool on)
 
         maybeRestrictMinimumSize();
 
-        if (mGuestSupportsGraphics && mAutoresizeGuest)
+        if (mGuestSupportsGraphics && mAutoresizeGuest && doHint)
             doResizeHint();
     }
 }

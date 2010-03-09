@@ -2048,7 +2048,7 @@ void VBoxConsoleWnd::vmAutoresizeGuest (bool on)
     mAutoresizeLed->setState (on ? 3 : 1);
 #endif
 
-    mConsole->setAutoresizeGuest (on);
+    mConsole->setAutoresizeGuest (on, true);
 }
 
 void VBoxConsoleWnd::vmAdjustWindow()
@@ -2795,7 +2795,7 @@ void VBoxConsoleWnd::updateAdditionsState (const QString &aVersion,
         if (mVmSeamlessAction->isChecked() && mIsOpenViewFinished && aSeamlessSupported && aGraphicsSupported)
             toggleFullscreenMode (true, true);
         /* Disable auto-resizing if advanced graphics are not available */
-        mConsole->setAutoresizeGuest (mIsGraphicsSupported && mVmAutoresizeGuestAction->isChecked());
+        mConsole->setAutoresizeGuest (mIsGraphicsSupported && mVmAutoresizeGuestAction->isChecked(), false);
         mVmAutoresizeGuestAction->setEnabled (mIsGraphicsSupported);
     }
 
