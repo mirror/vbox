@@ -1990,7 +1990,10 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 {
     BOOLEAN Result = TRUE;
 
-    if (DEV_MOUSE_HIDDEN((PDEVICE_EXTENSION)HwDeviceExtension))
+    /* Use primary device extension, because the show pointer request should be processed
+     * in vboxUpdatePointerShape regardless of the device. */
+    PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary;
+    if (DEV_MOUSE_HIDDEN(PrimaryExtension))
     {
         // tell the host to use the guest's pointer
         VIDEO_POINTER_ATTRIBUTES PointerAttributes;
@@ -2003,11 +2006,11 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 #ifndef VBOX_WITH_HGSMI
         Result = vboxUpdatePointerShape(&PointerAttributes, sizeof (PointerAttributes));
 #else
-        Result = vboxUpdatePointerShape((PDEVICE_EXTENSION)HwDeviceExtension, &PointerAttributes, sizeof (PointerAttributes));
+        Result = vboxUpdatePointerShape(PrimaryExtension, &PointerAttributes, sizeof (PointerAttributes));
 #endif /* VBOX_WITH_HGSMI */
 
         if (Result)
-            DEV_SET_MOUSE_SHOWN((PDEVICE_EXTENSION)HwDeviceExtension);
+            DEV_SET_MOUSE_SHOWN(PrimaryExtension);
         else
             dprintf(("VBoxVideo::ShowPointer: Could not show the hardware pointer -> fallback\n"));
     }
