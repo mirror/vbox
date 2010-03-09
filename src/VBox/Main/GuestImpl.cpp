@@ -319,6 +319,10 @@ void Guest::setAdditionsVersion(Bstr aVersion, VBOXOSTYPE aOsType)
 
     mData.mAdditionsVersion = aVersion;
     mData.mAdditionsActive = !aVersion.isEmpty();
+    /* Older Additions didn't have this finer grained capability bit,
+     * so enable it by default.  Newer Additions will disable it immediately
+     * if relevant. */
+    mData.mSupportsGraphics = mData.mAdditionsActive;
 
     mData.mOSTypeId = Global::OSTypeId (aOsType);
 }

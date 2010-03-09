@@ -89,8 +89,7 @@ private:
     struct Data
     {
         Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
-                  /* Windows and OS/2 guests take this for granted */
-                 mSupportsGraphics (TRUE) {}
+                 mSupportsGraphics (FALSE) {}
 
         Bstr  mOSTypeId;
         BOOL  mAdditionsActive;
