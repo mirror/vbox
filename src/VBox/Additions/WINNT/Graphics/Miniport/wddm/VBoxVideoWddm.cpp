@@ -1059,7 +1059,7 @@ NTSTATUS DxgkDdiQueryInterface(
 {
     dfprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     dfprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
@@ -1141,9 +1141,9 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             if (!pQsOut->pSegmentDescriptor)
             {
                 /* we are requested to provide the number of segments we support */
-                pQsOut->NbSegment = 1;
+                pQsOut->NbSegment = 2;
             }
-            else if (pQsOut->NbSegment != 1)
+            else if (pQsOut->NbSegment != 2)
             {
                 AssertBreakpoint();
                 drprintf((__FUNCTION__ " NbSegment (%d) != 1\n", pQsOut->NbSegment));
@@ -2862,7 +2862,7 @@ DxgkDdiCreateContext(
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)hDevice;

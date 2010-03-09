@@ -87,7 +87,7 @@ int vboxVbvaEnable (ULONG ulEnable, VBVAENABLERESULT *pVbvaResult);
 extern bool g_bVBoxVDbgBreakF;
 extern bool g_bVBoxVDbgBreakFv;
 #define vboxVDbgBreakF() do { if (g_bVBoxVDbgBreakF) AssertBreakpoint(); } while (0)
-#define vboxVDbgBreakFv() do { if (g_bVBoxVDbgBreakF) AssertBreakpoint(); } while (0)
+#define vboxVDbgBreakFv() do { if (g_bVBoxVDbgBreakFv) AssertBreakpoint(); } while (0)
 #else
 #define vboxVDbgBreakF() do { } while (0)
 #define vboxVDbgBreakFv() do { } while (0)
