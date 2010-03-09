@@ -245,8 +245,10 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
 
 bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
+    /* Who are we watching? */
     QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-        qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+                                qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+
     if (pWatched != 0 && pWatched == pMainDialog)
     {
         switch (pEvent->type())
@@ -269,35 +271,7 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
                 break;
         }
     }
-#ifdef Q_WS_MAC // TODO: Is it really needed?
-    QMenuBar *pMenuBar = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                         qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
-    if (pWatched != 0 && pWatched == pMenuBar)
-    {
-        /* Sometimes when we press ESC in the menu it brings the focus away (Qt bug?)
-         * causing no widget to have a focus, or holds the focus itself, instead of
-         * returning the focus to the console window. Here we fix this: */
-        switch (pEvent->type())
-        {
-            case QEvent::FocusOut:
-            {
-                if (qApp->focusWidget() == 0)
-                    setFocus();
-                break;
-            }
-            case QEvent::KeyPress:
-            {
-                QKeyEvent *pKeyEvent = static_cast<QKeyEvent*>(pEvent);
-                if (pKeyEvent->key() == Qt::Key_Escape && (pKeyEvent->modifiers() == Qt::NoModifier))
-                    if (pMenuBar->hasFocus())
-                        setFocus();
-                break;
-            }
-            default:
-                break;
-        }
-    }
-#endif /* Q_WS_MAC */
+
     return UIMachineView::eventFilter(pWatched, pEvent);
 }
 
