@@ -224,16 +224,32 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 
             if (isHostKeyPressed() && pEvent->type() == QEvent::KeyPress)
             {
+                /* Process Host+Home as menu-bar activator: */
                 if (pKeyEvent->key() == Qt::Key_Home)
                 {
-                    /* In Qt4 it is not enough to just set the focus to menu-bar.
-                     * So to get the menu-bar we have to send Qt::Key_Alt press/release events directly: */
-                    QKeyEvent e1(QEvent::KeyPress, Qt::Key_Alt, Qt::NoModifier);
-                    QKeyEvent e2(QEvent::KeyRelease, Qt::Key_Alt, Qt::NoModifier);
+                    /* Trying to get menu-bar: */
                     QMenuBar *pMenuBar = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
                                          qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
-                    QApplication::sendEvent(pMenuBar, &e1);
-                    QApplication::sendEvent(pMenuBar, &e2);
+
+                    /* If menu-bar is present and have actions: */
+                    if (pMenuBar && !pMenuBar->actions().isEmpty())
+                    {
+                        /* If 'active' action is NOT chosen: */
+                        if (!pMenuBar->activeAction())
+                            /* Set first menu-bar action as 'active': */
+                            pMenuBar->setActiveAction(pMenuBar->actions()[0]);
+
+                        /* If 'active' action is chosen: */
+                        if (pMenuBar->activeAction())
+                        {
+                            /* Activate 'active' menu-bar action: */
+                            pMenuBar->activeAction()->activate(QAction::Trigger);
+
+                            /* Accept this event: */
+                            pEvent->accept();
+                            return true;
+                        }
+                    }
                 }
                 else
                     pEvent->ignore();
