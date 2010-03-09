@@ -41,6 +41,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                     && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED)
             {
                 dprintf(("unsupported Scaling (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Scaling));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -48,6 +49,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Stretched)
             {
                 dprintf(("unsupported Scaling support (Stretched)\n"));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -56,6 +58,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                     && !pNewVidPnPresentPathInfo->ContentTransformation.ScalingSupport.Centered)
             {
                 dprintf(("\"Identity\" or \"Centered\" Scaling support not set\n"));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -64,6 +67,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                     && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY)
             {
                 dprintf(("unsupported rotation (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Rotation));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -73,6 +77,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                     || pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Rotate90)
             {
                 dprintf(("unsupported RotationSupport\n"));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -80,6 +85,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (!pNewVidPnPresentPathInfo->ContentTransformation.RotationSupport.Identity)
             {
                 dprintf(("\"Identity\" RotationSupport not set\n"));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -90,6 +96,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                 dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
                         pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cx,
                         pNewVidPnPresentPathInfo->VisibleFromActiveTLOffset.cy));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -100,6 +107,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                 dprintf(("Non-zero TLOffset: cx(%d), cy(%d)\n",
                         pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cx,
                         pNewVidPnPresentPathInfo->VisibleFromActiveBROffset.cy));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -108,6 +116,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
                     && pNewVidPnPresentPathInfo->VidPnTargetColorBasis != D3DKMDT_CB_UNINITIALIZED)
             {
                 dprintf(("unsupported VidPnTargetColorBasis (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorBasis));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -121,6 +130,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel)
             {
                 dprintf(("Non-zero FourthChannel (%d)\n", pNewVidPnPresentPathInfo->VidPnTargetColorCoeffDynamicRanges.FourthChannel));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -132,6 +142,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType != D3DKMDT_VPPMT_NOPROTECTION)
             {
                 dprintf(("Copy protection not supported CopyProtectionType(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionType));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -139,6 +150,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits)
             {
                 dprintf(("Copy protection not supported APSTriggerBits(%d)\n", pNewVidPnPresentPathInfo->CopyProtection.APSTriggerBits));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -148,6 +160,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (memcmp(&tstCPSupport, &pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport, sizeof(tstCPSupport)))
             {
                 dprintf(("Copy protection support (0x%x)\n", *((UINT*)&pNewVidPnPresentPathInfo->CopyProtection.CopyProtectionSupport)));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -155,6 +168,7 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
             if (pNewVidPnPresentPathInfo->GammaRamp.Type != D3DDDI_GAMMARAMP_DEFAULT)
             {
                 dprintf(("Unsupported GammaRamp.Type (%d)\n", pNewVidPnPresentPathInfo->GammaRamp.Type));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -222,6 +236,7 @@ NTSTATUS vboxVidPnCheckSourceModeInfo(const D3DKMDT_HVIDPN hDesiredVidPn,
                         pNewVidPnSourceModeInfo->Format.Graphics.VisibleRegionSize.cy,
                         pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cx,
                         pNewVidPnSourceModeInfo->Format.Graphics.PrimSurfSize.cy));
+                AssertBreakpoint();
                 bSupported = FALSE;
                 break;
             }
@@ -294,43 +309,51 @@ NTSTATUS vboxVidPnCheckSourceModeSet(const D3DKMDT_HVIDPN hDesiredVidPn,
     return Status;
 }
 
+NTSTATUS vboxVidPnPopulateVideoSignalInfo(D3DKMDT_VIDEO_SIGNAL_INFO *pVsi,
+        D3DKMDT_2DREGION *pResolution,
+        ULONG VSync)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    pVsi->VideoStandard  = D3DKMDT_VSS_VESA_DMT;
+    pVsi->ActiveSize = *pResolution;
+    pVsi->VSyncFreq.Numerator = VSync * 1000;
+    pVsi->VSyncFreq.Denominator = 1000;
+    pVsi->TotalSize.cx = pVsi->ActiveSize.cx + VBOXVDPN_C_DISPLAY_HBLANK_SIZE;
+    pVsi->TotalSize.cy = pVsi->ActiveSize.cy + VBOXVDPN_C_DISPLAY_VBLANK_SIZE;
+    pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
+    pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
+    pVsi->HSyncFreq.Denominator = 1000;
+    pVsi->ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
+
+    return Status;
+}
+
 NTSTATUS vboxVidPnCheckTargetModeInfo(const D3DKMDT_HVIDPN hDesiredVidPn,
         const D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo,
         BOOLEAN *pbSupported)
 {
     BOOLEAN bSupported = TRUE;
-    do
+    D3DKMDT_VIDEO_SIGNAL_INFO CmpVsi;
+    D3DKMDT_2DREGION CmpRes;
+    CmpRes.cx = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cx;
+    CmpRes.cy = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy;
+    NTSTATUS Status = vboxVidPnPopulateVideoSignalInfo(&CmpVsi,
+                &CmpRes,
+                pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator/pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status != STATUS_SUCCESS)
     {
-        /* video standatd does not matter ??
-        pNewVidPnTargetModeInfo->VideoSignalInfo.VideoStandard
+        drprintf((__FUNCTION__": vboxVidPnPopulateVideoSignalInfo error Status (0x%x)\n", Status));
+        return Status;
+    }
 
-        we support any total size??
-        pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx
-        pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy
-        */
-        /* ActualSize should be same as total size??*/
-        if (pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cx != pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx
-                || pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy != pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy)
-        {
-            dprintf(("ActiveSize(%d, %d) !=  TotalSize(%d, %d)\n",
-                    pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cx,
-                    pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy,
-                    pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cx,
-                    pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize.cy));
-            bSupported = FALSE;
-            break;
-        }
-
-        /* we do not care about those
-        pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator
-        pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator
-        pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator
-        pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator
-        pNewVidPnTargetModeInfo->VideoSignalInfo.PixelRate
-        pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering
-        pNewVidPnTargetModeInfo->Preference
-        */
-    } while (1);
+    if (memcmp(&CmpRes, &pNewVidPnTargetModeInfo->VideoSignalInfo, sizeof (D3DKMDT_VIDEO_SIGNAL_INFO)))
+    {
+        dfprintf((__FUNCTION__": VideoSignalInfos do not match!!!\n"));
+        AssertBreakpoint();
+        bSupported = FALSE;
+    }
 
     *pbSupported = bSupported;
     return STATUS_SUCCESS;
@@ -523,34 +546,13 @@ NTSTATUS vboxVidPnPopulateSourceModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
     return Status;
 }
 
-NTSTATUS vboxVidPnPopulateVideoSignalInfo(PDEVICE_EXTENSION pDevExt,
-        D3DKMDT_VIDEO_SIGNAL_INFO *pVsi,
-        D3DKMDT_2DREGION *pResolution,
-        ULONG VSync)
-{
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    pVsi->VideoStandard  = D3DKMDT_VSS_VESA_DMT;
-    pVsi->ActiveSize = *pResolution;
-    pVsi->VSyncFreq.Numerator = VSync * 1000;
-    pVsi->VSyncFreq.Denominator = 1000;
-    pVsi->TotalSize.cx = pVsi->ActiveSize.cx + VBOXVDPN_C_DISPLAY_HBLANK_SIZE;
-    pVsi->TotalSize.cy = pVsi->ActiveSize.cy + VBOXVDPN_C_DISPLAY_VBLANK_SIZE;
-    pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
-    pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
-    pVsi->HSyncFreq.Denominator = 1000;
-    pVsi->ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
-
-    return Status;
-}
-
 NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
         D3DKMDT_MONITOR_SOURCE_MODE *pMonitorSourceMode,
         D3DKMDT_2DREGION *pResolution,
         D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
         BOOLEAN bPreferred)
 {
-    NTSTATUS Status = vboxVidPnPopulateVideoSignalInfo(pDevExt, &pMonitorSourceMode->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
+    NTSTATUS Status = vboxVidPnPopulateVideoSignalInfo(&pMonitorSourceMode->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
     Assert(Status == STATUS_SUCCESS);
     if (Status == STATUS_SUCCESS)
     {
@@ -573,7 +575,7 @@ NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
 {
     pNewVidPnTargetModeInfo->Preference = bPreferred ? D3DKMDT_MP_PREFERRED : D3DKMDT_MP_NOTPREFERRED;
 
-    return vboxVidPnPopulateVideoSignalInfo(pDevExt, &pNewVidPnTargetModeInfo->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
+    return vboxVidPnPopulateVideoSignalInfo(&pNewVidPnTargetModeInfo->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
 }
 
 NTSTATUS vboxVidPnPopulateTargetModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
