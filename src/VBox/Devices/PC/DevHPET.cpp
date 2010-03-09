@@ -490,7 +490,7 @@ static int timerRegWrite32(HpetState* pThis,
                 pTimer->u64Cmp = (uint32_t)pTimer->u64Cmp;
                 pTimer->u64Period = (uint32_t)pTimer->u64Period;
             }
-            if ((iNewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL) 
+            if ((iNewValue & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_LEVEL)
             {
                 LogRel(("level-triggered config not yet supported\n"));
                 Assert(false);
@@ -1204,7 +1204,7 @@ static DECLCALLBACK(int) hpetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
         return VERR_PDM_DEVINS_UNKNOWN_CFG_VALUES;
 
     /* Query configuration. */
-#if 0
+#if 1
     rc = CFGMR3QueryBoolDef(pCfg, "GCEnabled", &fRCEnabled, true);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
