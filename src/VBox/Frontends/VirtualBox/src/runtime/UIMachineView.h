@@ -109,7 +109,6 @@ protected:
     UIMachineLogic* machineLogic() const;
     bool isHostKeyPressed() const { return m_bIsHostkeyPressed; }
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
-    bool isFrameBufferResizeIgnored() const { return m_bIsFrameBufferResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
     QSize storedConsoleSize() const { return m_storedConsoleSize; }
     virtual QSize desktopGeometry() const;
@@ -118,11 +117,13 @@ protected:
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
     void storeConsoleSize(int iWidth, int iHeight);
     void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
-    void setFrameBufferResizeIgnored(bool fIgnore = true) { m_bIsFrameBufferResizeIgnored = fIgnore; }
 
     /* Protected helpers: */
     void calculateDesktopGeometry();
-    void updateMouseClipping();
+    void updateMouseCursorShape();
+#ifdef Q_WS_WIN32
+    void updateMouseCursorClipping();
+#endif
     void updateSliders();
 
 #ifdef Q_WS_MAC
@@ -236,7 +237,6 @@ private:
     bool m_bIsHostkeyAlone : 1;
     bool m_bIsHostkeyInCapture : 1;
     bool m_bIsMachineWindowResizeIgnored : 1;
-    bool m_bIsFrameBufferResizeIgnored : 1;
     bool m_fPassCAD;
 #ifdef VBOX_WITH_VIDEOHWACCEL
     bool m_fAccelerate2DVideo;

@@ -554,7 +554,7 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_fIsMouseCaptured(false)
     , m_fIsMouseIntegrated(true)
     , m_fIsValidPointerShapePresent(false)
-    , m_fIsHideHostPointer(true)
+    , m_fIsHidingHostPointer(true)
 {
     /* Register console callback: */
     session().GetConsole().RegisterCallback(m_callback);
@@ -666,7 +666,7 @@ bool UISession::event(QEvent *pEvent)
             if (pConsoleEvent->shapeData())
             {
                 /* We are ignoring visibility flag: */
-                m_fIsHideHostPointer = false;
+                m_fIsHidingHostPointer = false;
 
                 /* And updating current cursor shape: */
                 setPointerShape(pConsoleEvent->shapeData(), pConsoleEvent->hasAlpha(),
@@ -677,7 +677,7 @@ bool UISession::event(QEvent *pEvent)
             else
             {
                 /* Remember if we should hide the cursor: */
-                m_fIsHideHostPointer = !pConsoleEvent->isVisible();
+                m_fIsHidingHostPointer = !pConsoleEvent->isVisible();
             }
 
             /* Notify listeners about mouse capability changed: */
