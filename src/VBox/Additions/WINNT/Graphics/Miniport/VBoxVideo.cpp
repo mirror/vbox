@@ -345,7 +345,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
     ULONG vramSize = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
 #else
-    ULONG vramSize = vboxWddmVramReportedSize(DeviceExtension);
+    ULONG vramSize = vboxWddmVramReportedSegmentSize(DeviceExtension);
 
     gPreferredVideoMode = 0;
 #endif

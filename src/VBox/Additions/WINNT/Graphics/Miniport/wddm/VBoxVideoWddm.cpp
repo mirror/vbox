@@ -140,7 +140,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALL
 
         pView->u32ViewIndex     = pPrimaryInfo->VidPnSourceId;
         pView->u32ViewOffset    = offVram;
-        pView->u32ViewSize      = vboxWddmVramReportedSize(pDevExt)/pDevExt->cSources;
+        pView->u32ViewSize      = vboxWddmVramReportedSegmentSize(pDevExt)/pDevExt->cSources;
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
@@ -916,6 +916,8 @@ NTSTATUS DxgkDdiQueryChildRelations(
     /* The DxgkDdiQueryChildRelations function should be made pageable. */
     PAGED_CODE();
 
+    vboxVDbgBreakFv();
+
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
@@ -943,6 +945,8 @@ NTSTATUS DxgkDdiQueryChildStatus(
     /* The DxgkDdiQueryChildStatus should be made pageable. */
     PAGED_CODE();
 
+    vboxVDbgBreakFv();
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
     NTSTATUS Status = STATUS_SUCCESS;
@@ -958,6 +962,7 @@ NTSTATUS DxgkDdiQueryChildStatus(
             break;
         default:
             drprintf(("VBoxVideoWddm: ERROR: status type: %d\n", ChildStatus->Type));
+            AssertBreakpoint();
             Status = STATUS_INVALID_PARAMETER;
             break;
     }
@@ -975,6 +980,8 @@ NTSTATUS DxgkDdiQueryDeviceDescriptor(
 {
     /* The DxgkDdiQueryDeviceDescriptor should be made pageable. */
     PAGED_CODE();
+
+    vboxVDbgBreakFv();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
@@ -997,6 +1004,7 @@ NTSTATUS DxgkDdiSetPowerState(
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
     /* @todo: */
+    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 
@@ -1013,7 +1021,7 @@ NTSTATUS DxgkDdiNotifyAcpiEvent(
 {
     dfprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
@@ -1025,6 +1033,8 @@ VOID DxgkDdiResetDevice(
     )
 {
     /* DxgkDdiResetDevice can be called at any IRQL, so it must be in nonpageable memory.  */
+    vboxVDbgBreakF();
+
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", MiniportDeviceContext));
 }
@@ -1049,7 +1059,7 @@ NTSTATUS DxgkDdiQueryInterface(
 {
     dfprintf(("==> "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ ", MiniportDeviceContext(0x%x)\n", MiniportDeviceContext));
 
@@ -1064,7 +1074,7 @@ VOID DxgkDdiControlEtwLogging(
 {
     dfprintf(("==> "__FUNCTION__ "\n"));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ "\n"));
 }
@@ -1083,7 +1093,7 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     switch (pQueryAdapterInfo->Type)
     {
@@ -1141,21 +1151,35 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             }
             else
             {
+                DXGK_SEGMENTDESCRIPTOR* pDr = pQsOut->pSegmentDescriptor;
                 /* we are requested to provide segment information */
-                pQsOut->pSegmentDescriptor->BaseAddress.QuadPart = 0; /* VBE_DISPI_LFB_PHYSICAL_ADDRESS; */
-                pQsOut->pSegmentDescriptor->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
+                pDr->BaseAddress.QuadPart = 0; /* VBE_DISPI_LFB_PHYSICAL_ADDRESS; */
+                pDr->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pQsOut->pSegmentDescriptor->Size = vboxWddmVramReportedSize(pContext);
-                pQsOut->pSegmentDescriptor->NbOfBanks = 0;
-                pQsOut->pSegmentDescriptor->pBankRangeTable = 0;
-                pQsOut->pSegmentDescriptor->CommitLimit = pQsOut->pSegmentDescriptor->Size;
-                pQsOut->pSegmentDescriptor->Flags.Value = 0;
-                pQsOut->pSegmentDescriptor->Flags.CpuVisible = 1;
+                pDr->Size = vboxWddmVramReportedSegmentSize(pContext);
+                pDr->NbOfBanks = 0;
+                pDr->pBankRangeTable = 0;
+                pDr->CommitLimit = pDr->Size;
+                pDr->Flags.Value = 0;
+                pDr->Flags.CpuVisible = 1;
+
+                ++pDr;
+                /* create cpu-invisible segment of the same size */
+                pDr->BaseAddress.QuadPart = 0;
+                pDr->CpuTranslatedAddress.QuadPart = 0;
+                /* make sure the size is page aligned */
+                /* @todo: need to setup VBVA buffers and adjust the mem size here */
+                pDr->Size = vboxWddmVramReportedSegmentSize(pContext);
+                pDr->NbOfBanks = 0;
+                pDr->pBankRangeTable = 0;
+                pDr->CommitLimit = pDr->Size;
+                pDr->Flags.Value = 0;
+
+                pQsOut->PagingBufferSegmentId = 0;
+                pQsOut->PagingBufferSize = 1024;
+                pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: do we need a private buffer ? */
             }
-            pQsOut->PagingBufferSegmentId = 0;
-            pQsOut->PagingBufferSize = 1024;
-            pQsOut->PagingBufferPrivateDataSize = 0; /* @todo: do we need a private buffer ? */
             break;
         }
         case DXGKQAITYPE_UMDRIVERPRIVATE:
@@ -1187,7 +1211,7 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     NTSTATUS Status = STATUS_SUCCESS;
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
 
-    AssertBreakpoint();
+    vboxVDbgBreakFv();
 
     PVBOXWDDM_DEVICE pDevice = (PVBOXWDDM_DEVICE)vboxWddmMemAllocZero(sizeof (VBOXWDDM_DEVICE));
     pCreateDevice->hDevice = pDevice;
@@ -2382,11 +2406,56 @@ DxgkDdiRecommendMonitorModes(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
+
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    NTSTATUS Status;
+    uint32_t cModes;
+    uint32_t iPreferredMode;
+    VIDEO_MODE_INFORMATION *pModes;
+    uint32_t cResolutions;
+    D3DKMDT_2DREGION *pResolutions;
+    VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
+            true, /* bool bRebuildTable*/
+            &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
+            &cModes, /* uint32_t * pcModes */
+            &iPreferredMode, /* uint32_t * pPreferrableMode*/
+            &pResolutions, /* D3DKMDT_2DREGION **ppResolutions */
+            &cResolutions /* uint32_t * pcResolutions */);
+
+    for (uint32_t i = 0; i < cResolutions; i++)
+    {
+        D3DKMDT_MONITOR_SOURCE_MODE * pNewMonitorSourceModeInfo;
+        Status = pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnCreateNewModeInfo(
+                    pRecommendMonitorModesArg->hMonitorSourceModeSet, &pNewMonitorSourceModeInfo);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            Status = vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(pDevExt,
+                    pNewMonitorSourceModeInfo,
+                    &pResolutions[i],
+                    D3DKMDT_MCO_DRIVER,
+                    true);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                Status = pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnAddMode(
+                        pRecommendMonitorModesArg->hMonitorSourceModeSet, pNewMonitorSourceModeInfo);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                    continue;
+            }
+
+            /* error has occured, release & break */
+            pRecommendMonitorModesArg->pMonitorSourceModeSetInterface->pfnReleaseModeInfo(
+                    pRecommendMonitorModesArg->hMonitorSourceModeSet, pNewMonitorSourceModeInfo);
+            break;
+        }
+    }
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    return STATUS_SUCCESS;
+    return Status;
 }
 
 NTSTATUS
@@ -2398,7 +2467,7 @@ DxgkDdiRecommendVidPnTopology(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakF();
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 

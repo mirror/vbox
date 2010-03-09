@@ -16,6 +16,9 @@
 #ifndef ___VBoxVideoVidPn_h___
 #define ___VBoxVideoVidPn_h___
 
+#define VBOXVDPN_C_DISPLAY_HBLANK_SIZE 200
+#define VBOXVDPN_C_DISPLAY_VBLANK_SIZE 180
+
 NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
         D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology, const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface,
         BOOLEAN *pbSupported);
@@ -102,5 +105,11 @@ NTSTATUS vboxVidPnEnumSourceModes(struct _DEVICE_EXTENSION* pDevExt, const D3DKM
 NTSTATUS vboxVidPnEnumTargetModes(struct _DEVICE_EXTENSION* pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNTARGETMODESET hNewVidPnTargetModeSet, const DXGK_VIDPNTARGETMODESET_INTERFACE *pVidPnTargetModeSetInterface,
         PFNVBOXVIDPNENUMTARGETMODES pfnCallback, PVOID pContext);
+
+NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(struct _DEVICE_EXTENSION* pDevExt,
+        D3DKMDT_MONITOR_SOURCE_MODE *pMonitorSourceMode,
+        D3DKMDT_2DREGION *pResolution,
+        D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
+        BOOLEAN bPreferred);
 
 #endif /* #ifndef ___VBoxVideoVidPn_h___ */

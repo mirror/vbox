@@ -51,6 +51,11 @@ typedef struct _VIDEO_POINTER_ATTRIBUTES
 
 #include "Helper.h"
 
+#ifdef DEBUG_misha
+bool g_bVBoxVDbgBreakF = true;
+bool g_bVBoxVDbgBreakFv = false;
+#endif
+
 /**
  * Globals
  */

@@ -495,25 +495,57 @@ NTSTATUS vboxVidPnPopulateSourceModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
     return Status;
 }
 
+NTSTATUS vboxVidPnPopulateVideoSignalInfo(PDEVICE_EXTENSION pDevExt,
+        D3DKMDT_VIDEO_SIGNAL_INFO *pVsi,
+        D3DKMDT_2DREGION *pResolution,
+        ULONG VSync)
+{
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    pVsi->VideoStandard  = D3DKMDT_VSS_VESA_DMT;
+    pVsi->ActiveSize = *pResolution;
+    pVsi->VSyncFreq.Numerator = VSync * 1000;
+    pVsi->VSyncFreq.Denominator = 1000;
+    pVsi->TotalSize.cx = pVsi->ActiveSize.cx + VBOXVDPN_C_DISPLAY_HBLANK_SIZE;
+    pVsi->TotalSize.cy = pVsi->ActiveSize.cy + VBOXVDPN_C_DISPLAY_VBLANK_SIZE;
+    pVsi->PixelRate = pVsi->TotalSize.cx * pVsi->TotalSize.cy * VSync;
+    pVsi->HSyncFreq.Numerator = (UINT)((pVsi->PixelRate / pVsi->TotalSize.cy) * 1000);
+    pVsi->HSyncFreq.Denominator = 1000;
+    pVsi->ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
+
+    return Status;
+}
+
+NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
+        D3DKMDT_MONITOR_SOURCE_MODE *pMonitorSourceMode,
+        D3DKMDT_2DREGION *pResolution,
+        D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
+        BOOLEAN bPreferred)
+{
+    NTSTATUS Status = vboxVidPnPopulateVideoSignalInfo(pDevExt, &pMonitorSourceMode->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        pMonitorSourceMode->ColorBasis = D3DKMDT_CB_SRGB;
+        pMonitorSourceMode->ColorCoeffDynamicRanges.FirstChannel = 8;
+        pMonitorSourceMode->ColorCoeffDynamicRanges.SecondChannel = 8;
+        pMonitorSourceMode->ColorCoeffDynamicRanges.ThirdChannel = 8;
+        pMonitorSourceMode->ColorCoeffDynamicRanges.FourthChannel = 0;
+        pMonitorSourceMode->Origin = enmOrigin;
+        pMonitorSourceMode->Preference = bPreferred ? D3DKMDT_MP_PREFERRED : D3DKMDT_MP_NOTPREFERRED;
+    }
+
+    return Status;
+}
+
 NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
         D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo,
         D3DKMDT_2DREGION *pResolution,
         BOOLEAN bPreferred)
 {
-    NTSTATUS Status = STATUS_SUCCESS;
-
-    pNewVidPnTargetModeInfo->VideoSignalInfo.VideoStandard  = D3DKMDT_VSS_VESA_DMT;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize = *pResolution;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize = pNewVidPnTargetModeInfo->VideoSignalInfo.TotalSize;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Numerator = 60000;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.VSyncFreq.Denominator = 1000;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Numerator = pNewVidPnTargetModeInfo->VideoSignalInfo.ActiveSize.cy * 63; /* 63 is (60 * 1.05)*/
-    pNewVidPnTargetModeInfo->VideoSignalInfo.HSyncFreq.Denominator = 1;
-    pNewVidPnTargetModeInfo->VideoSignalInfo.PixelRate = 165000; /* @todo: ? */
-    pNewVidPnTargetModeInfo->VideoSignalInfo.ScanLineOrdering = D3DDDI_VSSLO_PROGRESSIVE;
     pNewVidPnTargetModeInfo->Preference = bPreferred ? D3DKMDT_MP_PREFERRED : D3DKMDT_MP_NOTPREFERRED;
 
-    return Status;
+    return vboxVidPnPopulateVideoSignalInfo(pDevExt, &pNewVidPnTargetModeInfo->VideoSignalInfo, pResolution, 60 /* ULONG VSync */);
 }
 
 NTSTATUS vboxVidPnPopulateTargetModeSetFromLegacy(PDEVICE_EXTENSION pDevExt,
