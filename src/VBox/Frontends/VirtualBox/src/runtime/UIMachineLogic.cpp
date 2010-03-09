@@ -658,7 +658,7 @@ void UIMachineLogic::prepareDock()
     if (cGuestScreens > 1)
     {
         pDockSettingsMenu->addSeparator();
-        m_DockIconPreviewMonitor = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt();
+        m_DockIconPreviewMonitor = qMin(session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), cGuestScreens - 1);
         m_pDockPreviewSelectMonitorGroup = new QActionGroup(this);
         for (int i = 0; i < cGuestScreens; ++i)
         {
@@ -1571,7 +1571,8 @@ void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent
     {
         setDockIconPreviewEnabled(event.mChanged);
         m_pDockPreviewSelectMonitorGroup->setEnabled(event.mChanged);
-        m_DockIconPreviewMonitor = session().GetMachine().GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt();
+        CMachine machine = session().GetMachine();
+        m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
         updateDockOverlay();
     }
 }
