@@ -291,9 +291,11 @@ static void rtTimerLnxStartSubTimer(PRTTIMERLNXSUBTIMER pSubTimer, uint64_t u64N
     {
         unsigned long cJiffies = !u64First ? 0 : rtTimerLnxNanoToJiffies(u64First);
         pSubTimer->ulNextJiffies = jiffies + cJiffies;
+# ifdef CONFIG_SMP
         if (fPinned)
             mod_timer_pinned(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
         else
+# endif
             mod_timer(&pSubTimer->LnxTimer, pSubTimer->ulNextJiffies);
     }
 #endif
