@@ -412,6 +412,7 @@ VMMR0DECL(int) VMXR0SetupVM(PVM pVM)
                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT
                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_UNCOND_IO_EXIT
                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_RDPMC_EXIT
+                  | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MONITOR_EXIT
                   | VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MWAIT_EXIT;    /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
 
         /* Without nested paging we should intercept invlpg and cr3 mov instructions. */
@@ -3529,6 +3530,22 @@ ResumeExecution:
         break;
     }
 
+    case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
+    {
+        Log2(("VMX: monitor\n"));
+
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMonitor);
+        rc = EMInterpretMonitor(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += cbInstr;
+            goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: monitor failed with %Rrc\n", rc));
+        break;
+    }
+
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
         /* When an interrupt is pending, we'll let MSR_K8_LSTAR writes fault in our TPR patch code. */
         if (    pVM->hwaccm.s.fTPRPatchingActive
@@ -3974,8 +3991,7 @@ ResumeExecution:
         /** Check if external interrupts are pending; if so, don't switch back. */
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
-        if (    pCtx->eflags.Bits.u1IF
-            &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+        if (EMShouldContinueAfterHalt(pVCpu, pCtx))
             goto ResumeExecution;
 
         rc = VINF_EM_HALT;
@@ -3994,8 +4010,7 @@ ResumeExecution:
             /** Check if external interrupts are pending; if so, don't switch back. */
             if (    rc == VINF_SUCCESS
                 ||  (   rc == VINF_EM_HALT
-                     && pCtx->eflags.Bits.u1IF
-                     && VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+                     && EMShouldContinueAfterHalt(pVCpu, pCtx))
                )
                 goto ResumeExecution;
         }
@@ -4046,8 +4061,8 @@ ResumeExecution:
     case VMX_EXIT_APIC_ACCESS:          /* 44 APIC access. Guest software attempted to access memory at a physical address on the APIC-access page. */
     case VMX_EXIT_RDMSR:                /* 31 RDMSR. Guest software attempted to execute RDMSR. */
     case VMX_EXIT_WRMSR:                /* 32 WRMSR. Guest software attempted to execute WRMSR. */
-    case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
     case VMX_EXIT_PAUSE:                /* 40 Guest software attempted to execute PAUSE. */
+    case VMX_EXIT_MONITOR:              /* 39 Guest software attempted to execute MONITOR. */
         /* Note: If we decide to emulate them here, then we must sync the MSRs that could have been changed (sysenter, fs/gs base)!!! */
         rc = VERR_EM_INTERPRETER;
         break;

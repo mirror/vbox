@@ -343,6 +343,7 @@ VMMR0DECL(int) SVMR0SetupVM(PVM pVM)
                                         | SVM_CTRL2_INTERCEPT_CLGI
                                         | SVM_CTRL2_INTERCEPT_SKINIT
                                         | SVM_CTRL2_INTERCEPT_WBINVD
+                                        | SVM_CTRL2_INTERCEPT_MONITOR
                                         | SVM_CTRL2_INTERCEPT_MWAIT_UNCOND; /* don't execute mwait or else we'll idle inside the guest (host thinks the cpu load is high) */
                                         ;
         Log(("pVMCB->ctrl.u32InterceptException = %x\n", pVMCB->ctrl.u32InterceptException));
@@ -2348,8 +2349,7 @@ ResumeExecution:
         /** Check if external interrupts are pending; if so, don't switch back. */
         STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitHlt);
         pCtx->rip++;    /* skip hlt */
-        if (    pCtx->eflags.Bits.u1IF
-            &&  VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+        if (EMShouldContinueAfterHalt(pVCpu, pCtx))
             goto ResumeExecution;
 
         rc = VINF_EM_HALT;
@@ -2368,13 +2368,29 @@ ResumeExecution:
             /** Check if external interrupts are pending; if so, don't switch back. */
             if (    rc == VINF_SUCCESS
                 ||  (   rc == VINF_EM_HALT
-                     && pCtx->eflags.Bits.u1IF
-                     && VMCPU_FF_ISPENDING(pVCpu, (VMCPU_FF_INTERRUPT_APIC|VMCPU_FF_INTERRUPT_PIC)))
+                     && EMShouldContinueAfterHalt(pVCpu, pCtx))
                )
                 goto ResumeExecution;
         }
         AssertMsg(rc == VERR_EM_INTERPRETER || rc == VINF_EM_HALT, ("EMU: mwait failed with %Rrc\n", rc));
         break;
+
+    case SVM_EXIT_MONITOR:
+    {
+        Log2(("SVM: monitor\n"));
+
+        STAM_COUNTER_INC(&pVCpu->hwaccm.s.StatExitMonitor);
+        rc = EMInterpretMonitor(pVM, pVCpu, CPUMCTX2CORE(pCtx));
+        if (rc == VINF_SUCCESS)
+        {
+            /* Update EIP and continue execution. */
+            pCtx->rip += 3;     /* Note: hardcoded opcode size assumption! */
+            goto ResumeExecution;
+        }
+        AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: monitor failed with %Rrc\n", rc));
+        break;
+    }
+        
 
     case SVM_EXIT_VMMCALL:
         rc = svmR0EmulateTprVMMCall(pVM, pVCpu, pCtx);
@@ -2481,7 +2497,6 @@ ResumeExecution:
         rc = VERR_EM_INTERPRETER;
         break;
 
-    case SVM_EXIT_MONITOR:
     case SVM_EXIT_PAUSE:
     case SVM_EXIT_MWAIT_ARMED:
         rc = VERR_EM_INTERPRETER;

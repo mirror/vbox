@@ -149,6 +149,7 @@ VMMDECL(int)        EMInterpretRdtscp(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx);
 VMMDECL(int)        EMInterpretInvlpg(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, RTGCPTR pAddrGC);
 VMMDECL(int)        EMInterpretIret(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
+VMMDECL(int)        EMInterpretMonitor(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretDRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegDrx, uint32_t SrcRegGen);
 VMMDECL(int)        EMInterpretDRxRead(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegGen, uint32_t SrcRegDrx);
 VMMDECL(int)        EMInterpretCRxWrite(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t DestRegCrx, uint32_t SrcRegGen);
@@ -158,6 +159,7 @@ VMMDECL(int)        EMInterpretCLTS(PVM pVM, PVMCPU pVCpu);
 VMMDECL(VBOXSTRICTRC)   EMInterpretPortIO(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pCtxCore, PDISCPUSTATE pCpu, uint32_t cbOp);
 VMMDECL(int)        EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
 VMMDECL(int)        EMInterpretWrmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame);
+VMMDECL(bool)       EMShouldContinueAfterHalt(PVMCPU pVCpu, PCPUMCTX pCtx);
 
 /* Wrap EMInterpretInstructionCPUEx for supervisor code only interpretation.
  */
