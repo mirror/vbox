@@ -974,18 +974,45 @@ void UIMachineView::sltMachineStateChanged()
             if (mode() != VBoxDefs::TimerMode &&  m_pFrameBuffer &&
                 (state != KMachineState_TeleportingPausedVM || m_previousState != KMachineState_Teleporting))
             {
-                /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
-                QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
-                CDisplay dsp = session().GetConsole().GetDisplay();
-                dsp.TakeScreenShot(shot.bits(), shot.width(), shot.height());
-                /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
-                 * after the machine execution was resumed. It's not fatal: */
-                if (dsp.isOk())
+                if (screenId() == 0)
                 {
-                    dimImage(shot);
-                    m_pauseShot = QPixmap::fromImage(shot);
-                    /* Fully repaint to pick up m_pauseShot: */
-                    repaint();
+                    /* Take a screen snapshot. Note that TakeScreenShot() always needs a 32bpp image: */
+                    QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                    CDisplay dsp = session().GetConsole().GetDisplay();
+                    dsp.TakeScreenShot(shot.bits(), shot.width(), shot.height());
+                    /* TakeScreenShot() may fail if, e.g. the Paused notification was delivered
+                     * after the machine execution was resumed. It's not fatal: */
+                    if (dsp.isOk())
+                    {
+                        dimImage(shot);
+                        m_pauseShot = QPixmap::fromImage(shot);
+                        /* Fully repaint to pick up m_pauseShot: */
+                        repaint();
+                    }
+                }else
+                {
+                    /* For secondary monitors we support 32 bit formats only for now. */
+                    if (   m_pFrameBuffer
+                        && m_pFrameBuffer->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
+                        && m_pFrameBuffer->bitsPerPixel() == 32)
+                    {
+                        BYTE *pMem;
+                        m_pFrameBuffer->GetAddress(&pMem);
+                        QImage shot = QImage(pMem, m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                        dimImage(shot);
+                        m_pauseShot = QPixmap::fromImage(shot);
+                        /* Fully repaint to pick up m_pauseShot: */
+                        repaint();
+                    }
+                    else
+                    {
+                        /* If there is no framebuffer or a unsupported format, just create a black image to show. */
+                        QImage shot = QImage(m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32);
+                        shot.fill(0);
+                        m_pauseShot = QPixmap::fromImage(shot);
+                        /* Fully repaint to pick up m_pauseShot: */
+                        repaint();
+                    }
                 }
             }
         }

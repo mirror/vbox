@@ -771,7 +771,8 @@ void UIMachineLogic::sltMachineStateChanged()
             /* Get console: */
             CConsole console = session().GetConsole();
 
-            /* Take the screenshot for debugging purposes and save it */
+            /* Take the screenshot for debugging purposes and save it.
+             * TODO: create png's from all configured monitors if possible. */
             QString strLogFolder = console.GetMachine().GetLogFolder();
             QString strFileName = strLogFolder + "/VBox.png";
             CDisplay display = console.GetDisplay();

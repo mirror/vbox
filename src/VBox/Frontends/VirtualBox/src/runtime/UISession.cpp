@@ -594,7 +594,7 @@ QMenu* UISession::newMenu()
     /* Create new menu: */
     QMenu *pMenu = m_pMenuPool->createMenu(actionsPool());
 
-    /* Re-init menu pool for the case manu were recreated: */
+    /* Re-init menu pool for the case menu were recreated: */
     reinitMenuPool();
 
     /* Return newly created menu: */
@@ -606,7 +606,7 @@ QMenuBar* UISession::newMenuBar()
     /* Create new menubar: */
     QMenuBar *pMenuBar = m_pMenuPool->createMenuBar(actionsPool());
 
-    /* Re-init menu pool for the case manu were recreated: */
+    /* Re-init menu pool for the case menu were recreated: */
     reinitMenuPool();
 
     /* Return newly created menubar: */
