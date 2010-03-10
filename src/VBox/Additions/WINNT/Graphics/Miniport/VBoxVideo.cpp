@@ -1992,7 +1992,12 @@ static BOOLEAN ShowPointer(PVOID HwDeviceExtension)
 
     /* Use primary device extension, because the show pointer request should be processed
      * in vboxUpdatePointerShape regardless of the device. */
+#ifndef VBOXWDDM
     PDEVICE_EXTENSION PrimaryExtension = ((PDEVICE_EXTENSION)HwDeviceExtension)->pPrimary;
+#else
+    PDEVICE_EXTENSION PrimaryExtension = (PDEVICE_EXTENSION)HwDeviceExtension;
+#endif
+
     if (DEV_MOUSE_HIDDEN(PrimaryExtension))
     {
         // tell the host to use the guest's pointer
