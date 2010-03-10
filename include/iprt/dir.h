@@ -102,7 +102,7 @@ RTDECL(int) RTDirCreateTemp(char *pszTemplate);
  * Removes a directory if empty.
  *
  * @returns iprt status code.
- * @param   pszPath   Path to the directory to remove.
+ * @param   pszPath         Path to the directory to remove.
  */
 RTDECL(int) RTDirRemove(const char *pszPath);
 
@@ -110,9 +110,18 @@ RTDECL(int) RTDirRemove(const char *pszPath);
  * Removes a directory tree recursively.
  *
  * @returns iprt status code.
- * @param   pszPath   Path to the directory to remove recursively.
+ * @param   pszPath         Path to the directory to remove recursively.
+ * @param   fFlags          Flags, see RTDIRRMREC_F_XXX.
  */
-RTDECL(int) RTDirRemoveRecursive(const char *pszPath);
+RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags);
+
+/** @name   RTDirRemoveRecursive flags.
+ * @{ */
+/** Only delete the content of the directory, omit the directory it self. */
+#define RTDIRRMREC_F_CONTENT_ONLY   RT_BIT_32(0)
+/** Mask of valid flags. */
+#define RTDIRRMREC_F_VALID_MASK     UINT32_C(0x00000001)
+/** @} */
 
 
 /** Pointer to an open directory (sort of handle). */
@@ -183,15 +192,19 @@ typedef enum RTDIRENTRYTYPE
 typedef struct RTDIRENTRY
 {
     /** The unique identifier (within the file system) of this file system object (d_ino).
+     *
      * Together with INodeIdDevice, this field can be used as a OS wide unique id
-     * when both their values are not 0.
-     * This field is 0 if the information is not available. */
+     * when both their values are not 0.  This field is 0 if the information is not
+     * available. */
     RTINODE         INodeId;
     /** The entry type. (d_type)
-     * RTDIRENTRYTYPE_UNKNOWN is a legal return value here and
-     * should be expected by the user. */
+     * RTDIRENTRYTYPE_UNKNOWN is a common return value here since not all file
+     * systems (or Unixes) stores the type of a directory entry and instead
+     * expects the user to use stat() to get it.  So, when you see this you
+     * should use RTPathQueryInfo to get the type, or if if you're lazy, use
+     * RTDirReadEx. */
     RTDIRENTRYTYPE  enmType;
-    /** The length of the filename. */
+    /** The length of the filename, excluding the terminating nul character. */
     uint16_t        cbName;
     /** The filename. (no path)
      * Using the pcbDirEntry parameter of RTDirRead makes this field variable in size. */
