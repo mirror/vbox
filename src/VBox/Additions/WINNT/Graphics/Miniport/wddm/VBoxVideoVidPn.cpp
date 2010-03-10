@@ -348,7 +348,7 @@ NTSTATUS vboxVidPnCheckTargetModeInfo(const D3DKMDT_HVIDPN hDesiredVidPn,
         return Status;
     }
 
-    if (memcmp(&CmpRes, &pNewVidPnTargetModeInfo->VideoSignalInfo, sizeof (D3DKMDT_VIDEO_SIGNAL_INFO)))
+    if (memcmp(&CmpVsi, &pNewVidPnTargetModeInfo->VideoSignalInfo, sizeof (D3DKMDT_VIDEO_SIGNAL_INFO)))
     {
         dfprintf((__FUNCTION__": VideoSignalInfos do not match!!!\n"));
         AssertBreakpoint();
