@@ -258,15 +258,18 @@ void UIMachineViewSeamless::prepareSeamless()
 
 void UIMachineViewSeamless::cleanupSeamless()
 {
-    /* Reset seamless feature flag of the guest: */
+    /* If machine still running: */
     if (uisession()->isRunning())
+    {
+        /* Reset seamless feature flag of the guest: */
         session().GetConsole().GetDisplay().SetSeamlessMode(false);
 
-    /* Rollback seamless frame-buffer size to normal: */
-    machineWindowWrapper()->machineWindow()->hide();
-    UIMachineViewBlocker blocker(this);
-    sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
-    blocker.exec();
+        /* Rollback seamless frame-buffer size to normal: */
+        machineWindowWrapper()->machineWindow()->hide();
+        UIMachineViewBlocker blocker(this);
+        sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+        blocker.exec();
+    }
 }
 
 QRect UIMachineViewSeamless::availableGeometry()
