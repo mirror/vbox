@@ -3454,6 +3454,8 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
 
     HRESULT rc = S_OK;
 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     {
         ComObjPtr<Machine> pMachine;
         rc = findMachine(aMachine->getId(), false /* aDoSetError */, &pMachine);
@@ -3475,9 +3477,6 @@ HRESULT VirtualBox::registerMachine(Machine *aMachine)
 
     if (autoCaller.state() != InInit)
     {
-        // trySetRegistered needs VirtualBox object write lock;
-        // it will commit and save machine settings
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
         rc = aMachine->trySetRegistered(TRUE);
         if (FAILED(rc)) return rc;
     }
