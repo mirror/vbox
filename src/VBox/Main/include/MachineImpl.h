@@ -717,8 +717,8 @@ protected:
         SaveSTS_StateTimeStamp = 0x80,
     };
 
-    HRESULT prepareSaveSettings(bool &aRenamed, bool &aNew);
-    HRESULT saveSettings(int aFlags = 0);
+    HRESULT prepareSaveSettings(bool *pfNeedsGlobalSaveSettings);
+    HRESULT saveSettings(bool *pfNeedsGlobalSaveSettings, int aFlags = 0);
 
     HRESULT saveAllSnapshots();
 

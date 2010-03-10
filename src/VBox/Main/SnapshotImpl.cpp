@@ -1259,12 +1259,9 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
     {
         /* save all current settings to ensure current changes are committed and
          * hard disks are fixed up */
-
-        // VirtualBox lock before machine lock
-        alock.release();
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        alock.acquire();
-        HRESULT rc = saveSettings();
+        HRESULT rc = saveSettings(NULL);
+                // no need to check for whether VirtualBox.xml needs changing since
+                // we can't have a machine XML rename pending at this point
         if (FAILED(rc)) return rc;
     }
 
@@ -1462,7 +1459,9 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
              * reset the mCurrentStateModified flag */
             mData->mCurrentStateModified = FALSE;
 
-        rc = saveSettings();
+        rc = saveSettings(NULL);
+                // no need to change for whether VirtualBox.xml needs saving since
+                // we can't have a machine XML rename pending at this point
     }
 
     if (aSuccess && SUCCEEDED(rc))
@@ -1849,19 +1848,12 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
             llDiffsToDelete.push_back(pMedium);
         }
 
-        alock.leave();
-
-        AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-        alock.enter();
-
         // save machine settings, reset the modified flag and commit;
-        rc = saveSettings(SaveS_ResetCurStateModified | saveFlags);
+        rc = saveSettings(&fNeedsSaveSettings, SaveS_ResetCurStateModified | saveFlags);
         if (FAILED(rc)) throw rc;
 
         // let go of the locks while we're deleting image files below
         alock.leave();
-        vboxLock.release();
-
         // from here on we cannot roll back on failure any more
 
         for (MediaList::iterator it = llDiffsToDelete.begin();
@@ -1880,7 +1872,7 @@ void SessionMachine::restoreSnapshotHandler(RestoreSnapshotTask &aTask)
         if (fNeedsSaveSettings)
         {
             // finally, VirtualBox.xml needs saving too
-            vboxLock.acquire();
+            AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
             mParent->saveSettings();
         }
     }
@@ -1951,8 +1943,7 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
-    /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     // machine must not be running
     ComAssertRet(!Global::IsOnlineOrTransient(mData->mMachineState), E_FAIL);
@@ -1978,7 +1969,9 @@ STDMETHODIMP SessionMachine::DeleteSnapshot(IConsole *aInitiator,
     {
         if (m_flModifications)
         {
-            rc = saveSettings();
+            rc = saveSettings(NULL);
+                // no need to change for whether VirtualBox.xml needs saving since
+                // we can't have a machine XML rename pending at this point
             if (FAILED(rc)) return rc;
         }
     }
@@ -2403,18 +2396,17 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
 
         if (fMachineSettingsChanged || fNeedsSaveSettings)
         {
-            // saveSettings needs VirtualBox write lock in addition to our own
-            // (parent -> child locking order!)
-            AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
-
             if (fMachineSettingsChanged)
             {
                 AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
-                saveSettings(SaveS_InformCallbacksAnyway);
+                saveSettings(&fNeedsSaveSettings, SaveS_InformCallbacksAnyway);
             }
 
             if (fNeedsSaveSettings)
+            {
+                AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
                 mParent->saveSettings();
+            }
         }
     }
 

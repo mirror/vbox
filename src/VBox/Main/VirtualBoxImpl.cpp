@@ -222,13 +222,23 @@ struct VirtualBox::Data
 
     // All the media lists are protected by the following locking handle:
     RWLockHandle                        lockMedia;
-    MediaOList                          ollHardDisks,
+    MediaOList                          ollHardDisks,           // base images only!
                                         ollDVDImages,
                                         ollFloppyImages;
     // the hard disks map is an additional map sorted by UUID for quick lookup
     // and contains ALL hard disks (base and differencing); it is protected by
     // the same lock as the other media lists above
     HardDiskMap                         mapHardDisks;
+
+    // list of pending machine renames (also protected by media tree lock;
+    // see VirtualBox::rememberMachineNameChangeForMedia())
+    struct PendingMachineRename
+    {
+        Utf8Str     strConfigDirOld;
+        Utf8Str     strConfigDirNew;
+    };
+    typedef std::list<PendingMachineRename> PendingMachineRenamesList;
+    PendingMachineRenamesList           llPendingMachineRenames;
 
     RWLockHandle                        lockSharedFolders;
     SharedFoldersOList                  ollSharedFolders;
@@ -239,7 +249,6 @@ struct VirtualBox::Data
     RWLockHandle                        mtxProgressOperations;
     ProgressMap                         mapProgressOperations;
     CallbackList                        llCallbacks;
-
 
     // the following are data for the client watcher thread
     const UPDATEREQTYPE                 updateReq;
@@ -3244,83 +3253,140 @@ HRESULT VirtualBox::checkMediaForConflicts2(const Guid &aId,
 }
 
 /**
+ * Called from Machine::prepareSaveSettings() when it has detected
+ * that a machine has been renamed. Such renames will require
+ * updating the global media registry during the
+ * VirtualBox::saveSettings() that follows later.
+*
+ * When a machine is renamed, there may well be media (in particular,
+ * diff images for snapshots) in the global registry that will need
+ * to have their paths updated. Before 3.2, Machine::saveSettings
+ * used to call VirtualBox::saveSettings implicitly, which was both
+ * unintuitive and caused locking order problems. Now, we remeber
+ * such pending name changes with this method so that
+ * VirtualBox::saveSettings() can process them properly.
+ */
+void VirtualBox::rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
+                                                   const Utf8Str &strNewConfigDir)
+{
+    AutoWriteLock mediaLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+    Data::PendingMachineRename pmr;
+    pmr.strConfigDirOld = strOldConfigDir;
+    pmr.strConfigDirNew = strNewConfigDir;
+    m->llPendingMachineRenames.push_back(pmr);
+}
+
+/**
  *  Helper function to write out the configuration tree.
  *
- *  @note Locks this object for writing and child objects for reading/writing!
+ *  @note Caller must have locked the VirtualBox object for writing!
  */
 HRESULT VirtualBox::saveSettings()
 {
     AutoCaller autoCaller(this);
     AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
 
+    AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(!m->strSettingsFilePath.isEmpty(), E_FAIL);
 
     HRESULT rc = S_OK;
 
     try
     {
+        // lock the lists while we're here
+        AutoReadLock machinesLock(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+
         // machines
         settings::MachinesRegistry machinesTemp;
         {
-            AutoReadLock al(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (MachinesOList::iterator it = m->ollMachines.begin();
                  it != m->ollMachines.end();
                  ++it)
             {
+                Machine *pMachine = *it;
+                // save actual machine registry entry
                 settings::MachineRegistryEntry mre;
-                rc = (*it)->saveRegistryEntry(mre);
+                rc = pMachine->saveRegistryEntry(mre);
                 machinesTemp.push_back(mre);
             }
         }
 
-        // hard disks
-        settings::MediaList hardDisksTemp;
+        // lock all media for the following; use a write lock because we're
+        // modifying the PendingMachineRenamesList, which is protected by this
+        AutoWriteLock mediaLock(getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+
+        // if a machine was renamed, then we'll need to refresh media paths
+        if (m->llPendingMachineRenames.size())
         {
-            AutoReadLock al(m->ollHardDisks.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-            for (MediaList::const_iterator it = m->ollHardDisks.begin();
-                 it != m->ollHardDisks.end();
+            // make a single list from the three media lists so we don't need three loops
+            MediaList llAllMedia;
+            // with hard disks, we must use the map, not the list, because the list only has base images
+            for (HardDiskMap::iterator it = m->mapHardDisks.begin(); it != m->mapHardDisks.end(); ++it)
+                llAllMedia.push_back(it->second);
+            for (MediaList::iterator it = m->ollDVDImages.begin(); it != m->ollDVDImages.end(); ++it)
+                llAllMedia.push_back(*it);
+            for (MediaList::iterator it = m->ollFloppyImages.begin(); it != m->ollFloppyImages.end(); ++it)
+                llAllMedia.push_back(*it);
+
+            for (MediaList::iterator it = llAllMedia.begin();
+                 it != llAllMedia.end();
                  ++it)
             {
-                settings::Medium med;
-                rc = (*it)->saveSettings(med);
-                if (FAILED(rc)) throw rc;
-                hardDisksTemp.push_back(med);
+                Medium *pMedium = *it;
+                for (Data::PendingMachineRenamesList::iterator it2 = m->llPendingMachineRenames.begin();
+                     it2 != m->llPendingMachineRenames.end();
+                     ++it2)
+                {
+                    const Data::PendingMachineRename &pmr = *it2;
+                    const char *pcszOld = pmr.strConfigDirOld.c_str();
+                    const char *pcszNew = pmr.strConfigDirNew.c_str();
+                    pMedium->updatePath(pcszOld, pcszNew);
+                }
             }
+            // done, don't do it again until we have more machine renames
+            m->llPendingMachineRenames.clear();
+        }
+
+        // hard disks
+        settings::MediaList hardDisksTemp;
+        for (MediaList::const_iterator it = m->ollHardDisks.begin();
+                it != m->ollHardDisks.end();
+                ++it)
+        {
+            settings::Medium med;
+            rc = (*it)->saveSettings(med);     // this recurses into its children
+            if (FAILED(rc)) throw rc;
+            hardDisksTemp.push_back(med);
         }
 
         /* CD/DVD images */
         settings::MediaList dvdsTemp;
+        for (MediaList::const_iterator it = m->ollDVDImages.begin();
+                it != m->ollDVDImages.end();
+                ++it)
         {
-            AutoReadLock al(m->ollDVDImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-            for (MediaList::const_iterator it = m->ollDVDImages.begin();
-                 it != m->ollDVDImages.end();
-                 ++it)
-            {
-                settings::Medium med;
-                rc = (*it)->saveSettings(med);
-                if (FAILED(rc)) throw rc;
-                dvdsTemp.push_back(med);
-            }
+            settings::Medium med;
+            rc = (*it)->saveSettings(med);
+            if (FAILED(rc)) throw rc;
+            dvdsTemp.push_back(med);
         }
 
         /* floppy images */
         settings::MediaList floppiesTemp;
+        for (MediaList::const_iterator it = m->ollFloppyImages.begin();
+                it != m->ollFloppyImages.end();
+                ++it)
         {
-            AutoReadLock al(m->ollFloppyImages.getLockHandle() COMMA_LOCKVAL_SRC_POS);
-            for (MediaList::const_iterator it = m->ollFloppyImages.begin();
-                 it != m->ollFloppyImages.end();
-                 ++it)
-            {
-                settings::Medium med;
-                rc = (*it)->saveSettings(med);
-                if (FAILED(rc)) throw rc;
-                floppiesTemp.push_back(med);
-            }
+            settings::Medium med;
+            rc = (*it)->saveSettings(med);
+            if (FAILED(rc)) throw rc;
+            floppiesTemp.push_back(med);
         }
 
         settings::DHCPServersList dhcpServersTemp;
         {
-            AutoReadLock al(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
+            AutoReadLock dhcpLock(m->ollDHCPServers.getLockHandle() COMMA_LOCKVAL_SRC_POS);
             for (DHCPServersOList::const_iterator it = m->ollDHCPServers.begin();
                  it != m->ollDHCPServers.end();
                  ++it)
@@ -3331,9 +3397,6 @@ HRESULT VirtualBox::saveSettings()
                 dhcpServersTemp.push_back(d);
             }
         }
-
-        /* finally, lock VirtualBox object for writing */
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         /* now copy the temp data to the config file under the VirtualBox lock */
         m->pMainConfigFile->llMachines = machinesTemp;
@@ -3647,44 +3710,6 @@ HRESULT VirtualBox::unregisterImage(Medium *argImage,
 
     if (pfNeedsSaveSettings)
         *pfNeedsSaveSettings = true;
-
-    return rc;
-}
-
-/**
- * Helper to update the global settings file when the name of some machine
- * changes so that file and directory renaming occurs. This method ensures that
- * all affected paths in the disk registry are properly updated.
- *
- * @param aOldPath  Old path (full).
- * @param aNewPath  New path (full).
- *
- * @note Locks this object + DVD, Floppy and HardDisk children for writing.
- */
-HRESULT VirtualBox::updatePathInMediaRegistry(const char *aOldPath, const char *aNewPath)
-{
-    LogFlowThisFunc(("aOldPath={%s} aNewPath={%s}\n", aOldPath, aNewPath));
-
-    AssertReturn(aOldPath, E_INVALIDARG);
-    AssertReturn(aNewPath, E_INVALIDARG);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    RWLockHandle tmpLock(LOCKCLASS_LISTOFMEDIA);        // not really necessary but the ObjectsList<> constructor wants one
-    ObjectsList<Medium> ollAll(tmpLock);
-    ollAll.appendOtherList(m->ollDVDImages);
-    ollAll.appendOtherList(m->ollFloppyImages);
-    ollAll.appendOtherList(m->ollHardDisks);
-
-    for (MediaList::iterator it = ollAll.begin();
-         it != ollAll.end();
-         ++ it)
-    {
-        (*it)->updatePath(aOldPath, aNewPath);
-    }
-
-    HRESULT rc = saveSettings();
 
     return rc;
 }

@@ -2893,16 +2893,15 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
 
     LogFlowThisFunc(("locationFull.before='%s'\n", m->strLocationFull.raw()));
 
-    Utf8Str path = m->strLocationFull;
+    const char *pcszMediumPath = m->strLocationFull.c_str();
 
-    if (RTPathStartsWith(path.c_str(), aOldPath))
+    if (RTPathStartsWith(pcszMediumPath, aOldPath))
     {
-        Utf8Str newPath = Utf8StrFmt("%s%s", aNewPath,
-                                     path.raw() + strlen(aOldPath));
-        path = newPath;
-
+        Utf8Str newPath = Utf8StrFmt("%s%s",
+                                     aNewPath,
+                                     pcszMediumPath + strlen(aOldPath));
+        Utf8Str path = newPath;
         m->pVirtualBox->calculateRelativePath(path, path);
-
         unconst(m->strLocationFull) = newPath;
         unconst(m->strLocation) = path;
 

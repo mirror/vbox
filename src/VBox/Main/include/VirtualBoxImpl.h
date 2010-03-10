@@ -277,8 +277,10 @@ public:
     HRESULT registerImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
     HRESULT unregisterImage(Medium *aImage, DeviceType_T argType, bool *pfNeedsSaveSettings);
 
+    void rememberMachineNameChangeForMedia(const Utf8Str &strOldConfigDir,
+                                           const Utf8Str &strNewConfigDir);
+
     HRESULT saveSettings();
-    HRESULT updatePathInMediaRegistry(const char *aOldPath, const char *aNewPath);
 
     static HRESULT ensureFilePathExists(const Utf8Str &strFileName);
 
