@@ -112,4 +112,8 @@ NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(struct _DEVICE_EXTENSI
         D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
         BOOLEAN bPreferred);
 
+NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(struct _DEVICE_EXTENSION* pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
+        VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, uint32_t iPreferredMomde,
+        D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions);
+
 #endif /* #ifndef ___VBoxVideoVidPn_h___ */

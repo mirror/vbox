@@ -1174,7 +1174,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
             dprintf(("VBoxVideo: host does not like special mode: (xres = %d, yres = %d, bpp = %d)\n",
                      xres, yres, bpp));
     }
-#ifdef LOG_ENABLED
+#if defined(LOG_ENABLED) && !defined(DEBUG_misha)
     {
         int i;
 #ifndef VBOXWDDM
