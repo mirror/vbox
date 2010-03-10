@@ -78,6 +78,7 @@ private:
     /* Private helpers: */
     void normalizeGeometry(bool /* fAdjustPosition */) {}
     QRect availableGeometry();
+    void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
     void updateSliders() {}
 
