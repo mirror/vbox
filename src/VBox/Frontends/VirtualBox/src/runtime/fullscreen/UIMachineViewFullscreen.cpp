@@ -239,13 +239,18 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
 
 void UIMachineViewFullscreen::cleanupFullscreen()
 {
-    if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+    /* If machine still running: */
+    if (uisession()->isRunning())
     {
-        /* Rollback fullscreen frame-buffer size to normal: */
-        machineWindowWrapper()->machineWindow()->hide();
-        UIMachineViewBlocker blocker(this);
-        sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
-        blocker.exec();
+        /* And guest supports advanced graphics management which is enabled: */
+        if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
+        {
+            /* Rollback fullscreen frame-buffer size to normal: */
+            machineWindowWrapper()->machineWindow()->hide();
+            UIMachineViewBlocker blocker(this);
+            sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+            blocker.exec();
+        }
     }
 }
 
