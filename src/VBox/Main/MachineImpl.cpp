@@ -1718,8 +1718,6 @@ STDMETHODIMP Machine::SetHWVirtExProperty(HWVirtExPropertyType_T property, BOOL 
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    BOOL *pb;
-
     switch(property)
     {
         case HWVirtExPropertyType_Enabled:
@@ -2927,9 +2925,15 @@ STDMETHODIMP Machine::DetachDevice(IN_BSTR aControllerName, LONG aControllerPort
 
     if (fNeedsSaveSettings)
     {
-        alock.release();
-        AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
-        saveSettings();
+        bool fNeedsGlobalSaveSettings = false;
+        saveSettings(&fNeedsGlobalSaveSettings);
+
+        if (fNeedsGlobalSaveSettings)
+        {
+            alock.release();
+            AutoWriteLock vboxlock(this COMMA_LOCKVAL_SRC_POS);
+            mParent->saveSettings();
+        }
     }
 
     return S_OK;
@@ -3305,10 +3309,8 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
                             err);
         }
 
-        // data is changing and change not vetoed: then write it out under the locks
-
-        // saveSettings() needs VirtualBox write lock
-        AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+        // data is changing and change not vetoed: then write it out under the lock
+        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
         if (getClassID() == clsidSnapshotMachine)
         {
@@ -3322,9 +3324,15 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
             mData->m_pMachineConfigFile->mapExtraDataItems[strKey] = strValue;
                 // creates a new key if needed
 
-        /* save settings on success */
-        HRESULT rc = saveSettings();
-        if (FAILED(rc)) return rc;
+        bool fNeedsGlobalSaveSettings = false;
+        saveSettings(&fNeedsGlobalSaveSettings);
+
+        if (fNeedsGlobalSaveSettings)
+        {
+            alock.release();
+            AutoWriteLock vboxlock(mParent COMMA_LOCKVAL_SRC_POS);
+            mParent->saveSettings();
+        }
     }
 
     // fire notification outside the lock
@@ -3339,8 +3347,7 @@ STDMETHODIMP Machine::SaveSettings()
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    /* saveSettings() needs mParent lock */
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock mlock(this COMMA_LOCKVAL_SRC_POS);
 
     /* when there was auto-conversion, we want to save the file even if
      * the VM is saved */
@@ -3351,7 +3358,17 @@ STDMETHODIMP Machine::SaveSettings()
     ComAssertRet(!mData->m_strConfigFileFull.isEmpty(), E_FAIL);
 
     /* save all VM data excluding snapshots */
-    return saveSettings();
+    bool fNeedsGlobalSaveSettings = false;
+    rc = saveSettings(&fNeedsGlobalSaveSettings);
+    mlock.release();
+
+    if (SUCCEEDED(rc) && fNeedsGlobalSaveSettings)
+    {
+        AutoWriteLock vlock(mParent COMMA_LOCKVAL_SRC_POS);
+        rc = mParent->saveSettings();
+    }
+
+    return rc;
 }
 
 STDMETHODIMP Machine::DiscardSettings()
@@ -5475,7 +5492,9 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
          || (argNewRegistered && !mData->m_pMachineConfigFile->fileExists())
        )
     {
-        rc = saveSettings();
+        rc = saveSettings(NULL);
+                // no need to check whether VirtualBox.xml needs saving too since
+                // we can't have a machine XML file rename pending
         if (FAILED(rc)) return rc;
     }
 
@@ -6839,23 +6858,13 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
  *                  value makes sense only on success.
  *  @param aNew     receives |true| if a virgin settings file was created.
  */
-HRESULT Machine::prepareSaveSettings(bool &aRenamed,
-                                     bool &aNew)
+HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 {
-    /* Note: tecnhically, mParent needs to be locked only when the machine is
-     * registered (see prepareSaveSettings() for details) but we don't
-     * currently differentiate it in callers of saveSettings() so we don't
-     * make difference here too.  */
-    AssertReturn(mParent->isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     HRESULT rc = S_OK;
 
-    aRenamed = false;
-
-    /* if we're ready and isConfigLocked() is FALSE then it means
-     * that no config file exists yet (we will create a virgin one) */
-    aNew = !mData->m_pMachineConfigFile->fileExists();
+    bool fSettingsFileIsNew = !mData->m_pMachineConfigFile->fileExists();
 
     /* attempt to rename the settings file if machine name is changed */
     if (    mUserData->mNameSync
@@ -6863,8 +6872,6 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
          && mUserData.backedUpData()->mName != mUserData->mName
        )
     {
-        aRenamed = true;
-
         bool dirRenamed = false;
         bool fileRenamed = false;
 
@@ -6892,7 +6899,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
                 /* new dir and old dir cannot be equal here because of 'if'
                  * above and because name != newName */
                 Assert(configDir != newConfigDir);
-                if (!aNew)
+                if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTPathRename(configDir.raw(), newConfigDir.raw(), 0);
@@ -6920,7 +6927,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
                                         newConfigDir.raw(),
                                         RTPATH_DELIMITER,
                                         RTPathFilename(configFile.c_str()));
-                if (!aNew)
+                if (!fSettingsFileIsNew)
                 {
                     /* perform real rename only if the machine is not new */
                     vrc = RTFileRename(configFile.raw(), newConfigFile.raw(), 0);
@@ -6938,25 +6945,22 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
             }
 
             /* update m_strConfigFileFull amd mConfigFile */
-            Utf8Str oldConfigFileFull = mData->m_strConfigFileFull;
-            Utf8Str oldConfigFile = mData->m_strConfigFile;
             mData->m_strConfigFileFull = newConfigFile;
-            /* try to get the relative path for mConfigFile */
+
+            // compute the relative path too
             Utf8Str path = newConfigFile;
             mParent->calculateRelativePath(path, path);
             mData->m_strConfigFile = path;
 
-            /* last, try to update the global settings with the new path */
-            if (mData->mRegistered)
+            // store the old and new so that VirtualBox::saveSettings() can update
+            // the media registry
+            if (    mData->mRegistered
+                 && configDir != newConfigDir)
             {
-                rc = mParent->updatePathInMediaRegistry(configDir.c_str(), newConfigDir.c_str());
-                if (FAILED(rc))
-                {
-                    /* revert to old values */
-                    mData->m_strConfigFileFull = oldConfigFileFull;
-                    mData->m_strConfigFile = oldConfigFile;
-                    break;
-                }
+                mParent->rememberMachineNameChangeForMedia(configDir, newConfigDir);
+
+                if (pfNeedsGlobalSaveSettings)
+                    *pfNeedsGlobalSaveSettings = true;
             }
 
             /* update the snapshot folder */
@@ -7000,7 +7004,7 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
         if (FAILED(rc)) return rc;
     }
 
-    if (aNew)
+    if (fSettingsFileIsNew)
     {
         /* create a virgin config file */
         int vrc = VINF_SUCCESS;
@@ -7052,20 +7056,21 @@ HRESULT Machine::prepareSaveSettings(bool &aRenamed,
  *    #isReallyModified() returns false. This is necessary for cases when we
  *    change machine data directly, not through the backup()/commit() mechanism.
  *
- * @note Must be called from under mParent write lock (sometimes needed by
- * #prepareSaveSettings()) and this object's write lock. Locks children for
- * writing. There is one exception when mParent is unused and therefore may be
- * left unlocked: if this machine is an unregistered one.
+ * @note Must be called from under this object's write lock. Locks children for
+ * writing.
+ *
+ * @param pfNeedsGlobalSaveSettings Optional pointer to a bool that must have been
+ *          initialized to false and that will be set to true by this function if
+ *          the caller must invoke VirtualBox::saveSettings() because the global
+ *          settings have changed. This will happen if a machine rename has been
+ *          saved and the global machine and media registries will therefore need
+ *          updating.
  */
-HRESULT Machine::saveSettings(int aFlags /*= 0*/)
+HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
+                              int aFlags /*= 0*/)
 {
     LogFlowThisFuncEnter();
 
-    /* Note: tecnhically, mParent needs to be locked only when the machine is
-     * registered (see prepareSaveSettings() for details) but we don't
-     * currently differentiate it in callers of saveSettings() so we don't
-     * make difference here too.  */
-    AssertReturn(mParent->isWriteLockOnCurrentThread(), E_FAIL);
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
     /* make sure child objects are unable to modify the settings while we are
@@ -7082,9 +7087,7 @@ HRESULT Machine::saveSettings(int aFlags /*= 0*/)
     /* First, prepare to save settings. It will care about renaming the
      * settings directory and file if the machine name was changed and about
      * creating a new settings file if this is a new machine. */
-    bool fIsRenamed = false;
-    bool fIsNew = false;
-    rc = prepareSaveSettings(fIsRenamed, fIsNew);
+    rc = prepareSaveSettings(pfNeedsGlobalSaveSettings);
     if (FAILED(rc)) return rc;
 
     // keep a pointer to the current settings structures
@@ -10200,7 +10203,9 @@ HRESULT SessionMachine::endSavingState(BOOL aSuccess)
         mSSData->mStateFilePath = mSnapshotData.mStateFilePath;
 
         /* save all VM settings */
-        rc = saveSettings();
+        rc = saveSettings(NULL);
+                // no need to check whether VirtualBox.xml needs saving also since
+                // we can't have a name change pending at this point
     }
     else
     {
