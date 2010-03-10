@@ -111,7 +111,8 @@ protected:
     bool isMachineWindowResizeIgnored() const { return m_bIsMachineWindowResizeIgnored; }
     const QPixmap& pauseShot() const { return m_pauseShot; }
     QSize storedConsoleSize() const { return m_storedConsoleSize; }
-    virtual QSize desktopGeometry() const;
+    DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
+    QSize desktopGeometry() const;
 
     /* Protected setters: */
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
@@ -119,12 +120,12 @@ protected:
     void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
 
     /* Protected helpers: */
-    void calculateDesktopGeometry();
     void updateMouseCursorShape();
 #ifdef Q_WS_WIN32
     void updateMouseCursorClipping();
 #endif
     virtual QRect availableGeometry() = 0;
+    virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders() =  0;
 
@@ -152,6 +153,9 @@ protected:
     /* Cross-platforms event processors: */
     bool event(QEvent *pEvent);
     bool eventFilter(QObject *pWatched, QEvent *pEvent);
+
+    /* Protected variables: */
+    QSize m_desktopGeometry;
 
 protected slots:
 
@@ -221,7 +225,6 @@ private:
     KMachineState m_previousState;
 
     DesktopGeo m_desktopGeometryType;
-    QSize m_desktopGeometry;
     QSize m_storedConsoleSize;
 
     QPoint m_lastMousePos;

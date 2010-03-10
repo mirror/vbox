@@ -266,6 +266,17 @@ QRect UIMachineViewFullscreen::availableGeometry()
     return QApplication::desktop()->screenGeometry(this);
 }
 
+void UIMachineViewFullscreen::calculateDesktopGeometry()
+{
+    /* This method should not get called until we have initially set up the desktop geometry type: */
+    Assert((desktopGeometryType() != DesktopGeo_Invalid));
+    /* If we are not doing automatic geometry calculation then there is nothing to do: */
+    if (desktopGeometryType() == DesktopGeo_Automatic)
+    {
+        m_desktopGeometry = QSize(availableGeometry().width(), availableGeometry().height());
+    }
+}
+
 void UIMachineViewFullscreen::maybeRestrictMinimumSize()
 {
     /* Sets the minimum size restriction depending on the auto-resize feature state and the current rendering mode.
