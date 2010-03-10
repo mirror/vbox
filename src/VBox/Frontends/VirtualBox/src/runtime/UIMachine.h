@@ -64,14 +64,21 @@ private:
     void closeVirtualMachine();
 
     /* Move VM to default (normal) state: */
-    void enterBaseVisualState();
+    void enterInitialVisualState();
 
     /* Private getters: */
     UIMachineLogic* machineLogic() const;
     UIActionsPool* actionsPool() const { return m_pActionsPool; }
 
+    /* Prepare helpers: */
+    void loadMachineSettings();
+
+    /* Cleanup helpers: */
+    void saveMachineSettings();
+
     /* Private variables: */
     UIMachine **m_ppThis;
+    UIVisualStateType initialStateType;
     CSession m_session;
     UIActionsPool *m_pActionsPool;
     UISession *m_pSession;

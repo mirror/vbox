@@ -259,6 +259,7 @@ private slots:
 UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     : QObject(0)
     , m_ppThis(ppSelf)
+    , initialStateType(UIVisualStateType_Normal)
     , m_session(session)
     , m_pActionsPool(new UIActionsPool(this))
     , m_pSession(new UISession(this, m_session))
@@ -277,12 +278,17 @@ UIMachine::UIMachine(UIMachine **ppSelf, const CSession &session)
     if (m_ppThis)
         *m_ppThis = this;
 
+    /* Load machine settings: */
+    loadMachineSettings();
+
     /* Enter default (normal) state */
-    enterBaseVisualState();
+    enterInitialVisualState();
 }
 
 UIMachine::~UIMachine()
 {
+    /* Save machine settings: */
+    saveMachineSettings();
     /* Erase itself pointer: */
     *m_ppThis = 0;
     /* Delete uisession children in backward direction: */
@@ -303,14 +309,6 @@ QWidget* UIMachine::mainWindow() const
         machineLogic()->mainMachineWindow() &&
         machineLogic()->mainMachineWindow()->machineWindow())
         return machineLogic()->mainMachineWindow()->machineWindow();
-    else
-        return 0;
-}
-
-UIMachineLogic* UIMachine::machineLogic() const
-{
-    if (m_pVisualState && m_pVisualState->machineLogic())
-        return m_pVisualState->machineLogic();
     else
         return 0;
 }
@@ -371,9 +369,44 @@ void UIMachine::closeVirtualMachine()
     delete this;
 }
 
-void UIMachine::enterBaseVisualState()
+void UIMachine::enterInitialVisualState()
 {
-    sltChangeVisualState(UIVisualStateType_Normal);
+    sltChangeVisualState(initialStateType);
+}
+
+UIMachineLogic* UIMachine::machineLogic() const
+{
+    if (m_pVisualState && m_pVisualState->machineLogic())
+        return m_pVisualState->machineLogic();
+    else
+        return 0;
+}
+
+void UIMachine::loadMachineSettings()
+{
+    /* Load machine settings: */
+    CMachine machine = uisession()->session().GetMachine();
+
+    /* Load extra-data settings: */
+    {
+        /* Get 'fullscreen' attributes: */
+        QString strFullscreenSettings = machine.GetExtraData(VBoxDefs::GUI_Fullscreen);
+        if (strFullscreenSettings == "yes")
+            initialStateType = UIVisualStateType_Fullscreen;
+    }
+}
+
+void UIMachine::saveMachineSettings()
+{
+    /* Save machine settings: */
+    CMachine machine = uisession()->session().GetMachine();
+
+    /* Save extra-data settings: */
+    {
+        /* Set 'fullscreen' attributes: */
+        machine.SetExtraData(VBoxDefs::GUI_Fullscreen, m_pVisualState &&
+                             m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "yes" : QString());
+    }
 }
 
 #include "UIMachine.moc"
