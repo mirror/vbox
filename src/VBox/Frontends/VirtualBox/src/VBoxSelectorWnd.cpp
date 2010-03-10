@@ -1025,11 +1025,12 @@ void VBoxSelectorWnd::vmStart (const QString &aUuid /*= QUuid_null*/)
         return;
     }
 
-    /* show the "VM spawning" progress dialog */
-    vboxProblem().showModalProgressDialog (progress, item->name(), this);
-
+    /* Hide the "VM spawning" progress dialog */
+    /* I hope 1 minute will be enough to spawn any running VM silently, isn't it? */
+    int iSpawningDuration = 60000;
+    vboxProblem().showModalProgressDialog(progress, item->name(), this, iSpawningDuration);
     if (progress.GetResultCode() != 0)
-        vboxProblem().cannotOpenSession (vbox, item->machine(), progress);
+        vboxProblem().cannotOpenSession(vbox, item->machine(), progress);
 
     session.Close();
 
