@@ -474,6 +474,14 @@ remove_drivers()
         mv -f $nwambackupfile $nwamfile
     fi
 
+    # remove netmask configuration
+    nmaskfile=/etc/netmasks
+    nmaskbackupfile=$nmaskfile.vbox
+    if test -f "$nmaskfile"; then
+        sed -e '/VirtualBox_SectionStart_DoNotEdit/,/VirtualBox_SectionEnd_DoNotEdit/d' $nmaskfile > $nmaskbackupfile
+        mv -f $nmaskbackupfile $nmaskfile
+    fi
+
     return 0
 }
 
@@ -599,6 +607,17 @@ postinstall()
             $BIN_IFCONFIG vboxnet0 plumb up
             if test "$?" -eq 0; then
                 $BIN_IFCONFIG vboxnet0 192.168.56.1 netmask 255.255.255.0 up
+
+                # add the netmask to stay persistent across host reboots
+                nmaskfile=/etc/netmasks
+                nmaskbackupfile=$nmaskfile.vbox
+                if test -f $nmaskfile; then
+                    sed -e '/VirtualBox_SectionStart_DoNotEdit/,/VirtualBox_SectionEnd_DoNotEdit/d' $nmaskfile > $nmaskbackupfile
+                    echo "VirtualBox_SectionStart_DoNotEdit" >> $nmaskbackupfile
+                    echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
+                    echo "VirtualBox_SectionEnd_DoNotEdit" >> $nmaskbackupfile
+                    mv -f $netmasksbackupfile $netmasksfile
+                fi
             else
                 # Should this be fatal?
                 warnprint "Failed to bring up vboxnet0!!"
