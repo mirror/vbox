@@ -38,7 +38,8 @@ NTSTATUS vboxVidPnCheckTopology(const D3DKMDT_HVIDPN hDesiredVidPn,
 
             if (pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_UNPINNED
                     && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY
-                    && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED)
+                    && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED
+                    && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_NOTSPECIFIED)
             {
                 dprintf(("unsupported Scaling (%d)\n", pNewVidPnPresentPathInfo->ContentTransformation.Scaling));
                 AssertBreakpoint();
@@ -816,9 +817,11 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
     {
         if (pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_IDENTITY
                 && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_CENTERED
-                && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_STRETCHED)
+                && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_STRETCHED
+                && pNewVidPnPresentPathInfo->ContentTransformation.Scaling != D3DKMDT_VPPS_UNPINNED)
         {
-            const_cast<D3DKMDT_VIDPN_PRESENT_PATH*>(pNewVidPnPresentPathInfo)->ContentTransformation.Scaling = D3DKMDT_VPPS_IDENTITY;
+            AssertBreakpoint();
+            /* todo: create a new path (if not done already) and assign a propper info */
         }
     }
 
@@ -828,9 +831,11 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
         if (pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_IDENTITY
                 && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE90
                 && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE180
-                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE270)
+                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_ROTATE270
+                && pNewVidPnPresentPathInfo->ContentTransformation.Rotation != D3DKMDT_VPPR_UNPINNED)
         {
-            const_cast<D3DKMDT_VIDPN_PRESENT_PATH*>(pNewVidPnPresentPathInfo)->ContentTransformation.Rotation = D3DKMDT_VPPR_IDENTITY;
+            AssertBreakpoint();
+            /* todo: create a new path (if not done already) and assign a propper info */
         }
     }
 
@@ -1088,22 +1093,22 @@ NTSTATUS vboxVidPnEnumPaths(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDes
     return Status;
 }
 
-NTSTATUS vboxVidPnSetupSourceInfo(struct _DEVICE_EXTENSION* pDevExt, PVBOXWDDM_SOURCE pSource, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS vboxVidPnSetupSourceInfo(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, PVBOXWDDM_SOURCE pSource, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, pVidPnSourceModeInfo->Id);
+    vboxWddmAssignPrimary(pDevExt, pSource, pAllocation, srcId);
     return STATUS_SUCCESS;
 }
 
-NTSTATUS vboxVidPnCommitSourceMode(struct _DEVICE_EXTENSION* pDevExt, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
+NTSTATUS vboxVidPnCommitSourceMode(struct _DEVICE_EXTENSION* pDevExt, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId, CONST D3DKMDT_VIDPN_SOURCE_MODE* pVidPnSourceModeInfo, PVBOXWDDM_ALLOCATION pAllocation)
 {
-    Assert(pVidPnSourceModeInfo->Id < pDevExt->cSources);
-    if (pVidPnSourceModeInfo->Id < pDevExt->cSources)
+    Assert(srcId < pDevExt->cSources);
+    if (srcId < pDevExt->cSources)
     {
-        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[pVidPnSourceModeInfo->Id];
-        return vboxVidPnSetupSourceInfo(pDevExt, pSource, pVidPnSourceModeInfo, pAllocation);
+        PVBOXWDDM_SOURCE pSource = &pDevExt->aSources[srcId];
+        return vboxVidPnSetupSourceInfo(pDevExt, srcId, pSource, pVidPnSourceModeInfo, pAllocation);
     }
 
-    drprintf((__FUNCTION__": invalid mode id (%d), cSources(%d)\n", pVidPnSourceModeInfo->Id, pDevExt->cSources));
+    drprintf((__FUNCTION__": invalid srcId (%d), cSources(%d)\n", srcId, pDevExt->cSources));
     return STATUS_INVALID_PARAMETER;
 }
 
@@ -1125,7 +1130,7 @@ NTSTATUS vboxVidPnCommitSourceModeForSrcId(struct _DEVICE_EXTENSION* pDevExt, co
         if (Status == STATUS_SUCCESS)
         {
             Assert(pPinnedVidPnSourceModeInfo);
-            Status = vboxVidPnCommitSourceMode(pDevExt, pPinnedVidPnSourceModeInfo, pAllocation);
+            Status = vboxVidPnCommitSourceMode(pDevExt, srcId, pPinnedVidPnSourceModeInfo, pAllocation);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
                 drprintf((__FUNCTION__": vboxVidPnCommitSourceMode failed Status(0x%x)\n", Status));
