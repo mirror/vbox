@@ -244,7 +244,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("hpet=\"%s\"\n", fHpetEnabled ? "on" : "off");
     else
-        RTPrintf("HPET:   %s\n", fHpetEnabled ? "on" : "off");
+        RTPrintf("HPET:            %s\n", fHpetEnabled ? "on" : "off");
 
     ULONG numCpus;
     rc = machine->COMGETTER(CPUCount)(&numCpus);
@@ -437,7 +437,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("largepages=\"%s\"\n", HWVirtExLargePagesEnabled ? "on" : "off");
     else
-        RTPrintf("Large Pages:   %s\n", HWVirtExLargePagesEnabled ? "on" : "off");
+        RTPrintf("Large Pages:     %s\n", HWVirtExLargePagesEnabled ? "on" : "off");
 
     BOOL HWVirtExVPIDEnabled;
     machine->GetHWVirtExProperty(HWVirtExPropertyType_VPID, &HWVirtExVPIDEnabled);
