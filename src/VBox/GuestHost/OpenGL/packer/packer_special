@@ -170,3 +170,9 @@ DeleteFramebuffersEXT
 DeleteRenderbuffersEXT
 LockArraysEXT
 GetUniformsLocations
+UniformMatrix2x3fv
+UniformMatrix3x2fv
+UniformMatrix2x4fv
+UniformMatrix4x2fv
+UniformMatrix3x4fv
+UniformMatrix4x3fv

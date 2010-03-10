@@ -161,6 +161,60 @@ void crUnpackExtendUniformMatrix4fv(void)
     cr_unpackDispatch.UniformMatrix4fv(location, count, transpose, value);
 }
 
+void crUnpackExtendUniformMatrix2x3fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix2x3fv(location, count, transpose, value);
+}
+
+void crUnpackExtendUniformMatrix3x2fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix3x2fv(location, count, transpose, value);
+}
+
+void crUnpackExtendUniformMatrix2x4fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix2x4fv(location, count, transpose, value);
+}
+
+void crUnpackExtendUniformMatrix4x2fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix4x2fv(location, count, transpose, value);
+}
+
+void crUnpackExtendUniformMatrix3x4fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix3x4fv(location, count, transpose, value);
+}
+
+void crUnpackExtendUniformMatrix4x3fv(void)
+{
+    GLint location = READ_DATA(8, GLint);
+    GLsizei count = READ_DATA(12, GLsizei);
+    GLboolean transpose = READ_DATA(16, GLboolean);
+    const GLfloat *value = DATA_POINTER(16+sizeof(GLboolean), const GLfloat);
+    cr_unpackDispatch.UniformMatrix4x3fv(location, count, transpose, value);
+}
+
 void crUnpackExtendDrawBuffers(void)
 {
     GLsizei n = READ_DATA(8, GLsizei);

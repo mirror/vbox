@@ -257,6 +257,108 @@ void PACK_APIENTRY crPackUniformMatrix4fv(GLint location, GLsizei count, GLboole
     WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
 }
 
+void PACK_APIENTRY crPackUniformMatrix2x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 2*3*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX2X3FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 2*3*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackUniformMatrix3x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 3*2*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX3X2FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 3*2*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackUniformMatrix2x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 2*4*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX2X4FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 2*4*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackUniformMatrix4x2fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 4*2*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX4X2FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 4*2*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackUniformMatrix3x4fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 3*4*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX3X4FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 3*4*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
+void PACK_APIENTRY crPackUniformMatrix4x3fv(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    unsigned char *data_ptr;
+    int packet_length = sizeof(int)+sizeof(GLenum)+sizeof(location)+sizeof(count)+sizeof(transpose)
+                        + 4*3*count*sizeof(*value);
+
+    GET_BUFFERED_POINTER(pc, packet_length);
+    WRITE_DATA_AI(int, packet_length);
+    WRITE_DATA_AI(GLenum, CR_UNIFORMMATRIX4X3FV_EXTEND_OPCODE);
+    WRITE_DATA_AI(GLint, location);
+    WRITE_DATA_AI(GLsizei, count);
+    WRITE_DATA_AI(GLboolean, transpose);
+    crMemcpy(data_ptr, value, 4*3*count*sizeof(*value));
+    WRITE_OPCODE(pc, CR_EXTEND_OPCODE);
+}
+
 void PACK_APIENTRY crPackDrawBuffers(GLsizei n, const GLenum *bufs)
 {
     GET_PACKER_CONTEXT(pc);
@@ -583,6 +685,72 @@ void PACK_APIENTRY crPackUniformMatrix3fvSWAP(GLint location, GLsizei count, GLb
 }
 
 void PACK_APIENTRY crPackUniformMatrix4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix2x3fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix3x2fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix2x4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix4x2fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix3x4fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
+{
+    GET_PACKER_CONTEXT(pc);
+    (void)location;
+    (void)count;
+    (void)transpose;
+    (void)value;
+    crError ("No swap version");
+    (void) pc;
+}
+
+void PACK_APIENTRY crPackUniformMatrix4x3fvSWAP(GLint location, GLsizei count, GLboolean transpose, const GLfloat *value)
 {
     GET_PACKER_CONTEXT(pc);
     (void)location;
