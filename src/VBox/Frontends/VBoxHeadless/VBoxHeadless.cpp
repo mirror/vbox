@@ -701,7 +701,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             case 's':
                 id = asGuidStr(ValueUnion.psz);
                 /* If the argument was not a UUID, then it must be a name. */
-                if (!id)
+                if (id.isEmpty())
                     name = ValueUnion.psz;
                 break;
 #ifdef VBOX_WITH_VRDP
@@ -808,7 +808,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     RTStrPrintf(&pszMPEGFile[0], RTPATH_MAX, pszFileNameParam, RTProcSelf());
 #endif /* defined VBOX_FFMPEG */
 
-    if (!id && !name)
+    if (id.isEmpty() && !name)
     {
         show_usage();
         return 1;
@@ -854,7 +854,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 
         /* find ID by name */
-        if (!id)
+        if (id.isEmpty())
         {
             ComPtr <IMachine> m;
             rc = virtualBox->FindMachine(Bstr(name), m.asOutParam());
@@ -864,6 +864,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             m->COMGETTER(Id)(id.asOutParam());
+
             AssertComRC(rc);
             if (FAILED(rc))
                 break;
@@ -871,7 +872,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).raw()));
-
+        
         // open a session
         CHECK_ERROR_BREAK(virtualBox, OpenSession(session, id));
         fSessionOpened = true;
