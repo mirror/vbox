@@ -722,65 +722,145 @@ RTDECL(int) RTDirOpenFiltered(PRTDIR *ppDir, const char *pszPath, RTDIRFILTER en
 }
 
 
-RTDECL(int) RTDirRemoveRecursive(const char *pszPath)
+/**
+ * Recursion worker for RTDirRemoveRecursive.
+ *
+ * @returns IPRT status code.
+ * @param   pszBuf              The path buffer.  Contains the abs path to the
+ *                              directory to recurse into.  Trailing slash.
+ * @param   cchDir              The length of the directory we're cursing into,
+ *                              including the trailing slash.
+ * @param   pDirEntry           The dir entry buffer.  (Shared to save stack.)
+ * @param   pObjInfo            The object info buffer.  (ditto)
+ */
+static int rtDirRemoveRecursiveSub(char *pszBuf, size_t cchDir, PRTDIRENTRY pDirEntry, PRTFSOBJINFO pObjInfo)
 {
-    int rc;
+    AssertReturn(RTPATH_IS_SLASH(pszBuf[cchDir - 1]), VERR_INTERNAL_ERROR_4);
 
-    if (!RTDirExists(pszPath))
-        return VINF_SUCCESS;
-
-    char szAbsPath[RTPATH_MAX];
-    /** @todo use RTPathReal here instead? */
-    rc = RTPathAbs(pszPath, szAbsPath, sizeof(szAbsPath));
+    /*
+     * Enumerate the directory content and dispose of it.
+     */
+    PRTDIR pDir;
+    int rc = RTDirOpen(&pDir, pszBuf);
     if (RT_FAILURE(rc))
         return rc;
-
-    PRTDIR pDir = NULL;
-    rc = RTDirOpen(&pDir, szAbsPath);
-    if (RT_SUCCESS(rc))
+    while (RT_SUCCESS(rc = RTDirRead(pDir, pDirEntry, NULL)))
     {
-        RTDIRENTRY dirEntry;
-        size_t cbDirEntry = sizeof(dirEntry);
-
-        while ((rc = RTDirRead(pDir, &dirEntry, NULL /* Passing an argument won't work here yet. */)) == VINF_SUCCESS)
+        if (   pDirEntry->szName[0] != '.'
+            || pDirEntry->cbName > 2
+            || (   pDirEntry->cbName == 2
+                && pDirEntry->szName[1] != '.')
+           )
         {
-            char* pszEntry = NULL;
-            rc = RTStrAPrintf(&pszEntry, "%s/%s", szAbsPath, dirEntry.szName);
-            if(    RT_SUCCESS(rc)
-                && strcmp(dirEntry.szName, ".")
-                && strcmp(dirEntry.szName, ".."))
+            /* Construct the full name of the entry. */
+            if (cchDir + pDirEntry->cbName + 1 /* dir slash */ >= RTPATH_MAX)
             {
-                switch (dirEntry.enmType)
-                {
-                    case RTDIRENTRYTYPE_FILE:
+                rc = VERR_FILENAME_TOO_LONG;
+                break;
+            }
+            memcpy(&pszBuf[cchDir], pDirEntry->szName, pDirEntry->cbName + 1);
 
-                        rc = RTFileDelete(pszEntry);
-                        break;
-
-                    case RTDIRENTRYTYPE_DIRECTORY:
-
-                        rc = RTDirRemoveRecursive(pszEntry);
-                        break;
-
-                    default:
-                        /** @todo not implemented yet. */
-                        break;
-                }
-
-                RTStrFree(pszEntry);
+            /* Deal with the unknown type. */
+            if (pDirEntry->enmType == RTDIRENTRYTYPE_UNKNOWN)
+            {
+                rc = RTPathQueryInfoEx(pszBuf, pObjInfo, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+                if (RT_SUCCESS(rc) && RTFS_IS_DIRECTORY(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_DIRECTORY;
+                else if (RT_SUCCESS(rc) && RTFS_IS_FILE(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_FILE;
+                else if (RT_SUCCESS(rc) && RTFS_IS_SYMLINK(pObjInfo->Attr.fMode))
+                    pDirEntry->enmType = RTDIRENTRYTYPE_SYMLINK;
             }
 
+            /* Try the delete the fs object. */
+            switch (pDirEntry->enmType)
+            {
+                case RTDIRENTRYTYPE_FILE:
+                    rc = RTFileDelete(pszBuf);
+                    break;
+
+                case RTDIRENTRYTYPE_DIRECTORY:
+                {
+                    size_t cchSubDir = cchDir + pDirEntry->cbName;
+                    pszBuf[cchSubDir++] = '/';
+                    pszBuf[cchSubDir]   = '\0';
+                    rc = rtDirRemoveRecursiveSub(pszBuf, cchSubDir, pDirEntry, pObjInfo);
+                    if (RT_SUCCESS(rc))
+                    {
+                        pszBuf[cchSubDir] = '\0';
+                        rc = RTDirRemove(pszBuf);
+                    }
+                    break;
+                }
+
+                //case RTDIRENTRYTYPE_SYMLINK:
+                //    rc = RTSymlinkDelete(pszBuf);
+                //    break;
+
+                default:
+                    /** @todo not implemented yet. */
+                    rc = VINF_SUCCESS;
+                    break;
+            }
             if (RT_FAILURE(rc))
                break;
         }
-        if (rc == VERR_NO_MORE_FILES)
-            rc = VINF_SUCCESS;
+    }
+    if (rc == VERR_NO_MORE_FILES)
+        rc = VINF_SUCCESS;
+    RTDirClose(pDir);
+    return rc;
+}
 
-        RTDirClose(pDir);
+
+RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags)
+{
+    AssertReturn(!(fFlags & ~RTDIRRMREC_F_VALID_MASK), VERR_INVALID_PARAMETER);
+
+    /* Get an absolute path because this is easier to work with. */
+    /** @todo use RTPathReal here instead? */
+    char szAbsPath[RTPATH_MAX];
+    int rc = RTPathAbs(pszPath, szAbsPath, sizeof(szAbsPath));
+    if (RT_FAILURE(rc))
+        return rc;
+
+    /* This API is not permitted applied to the root of anything. */
+    if (RTPathCountComponents(szAbsPath) <= 1)
+        return VERR_ACCESS_DENIED;
+
+    /* Because of the above restriction, we never have to deal with the root
+       slash problem and can safely strip any trailing slashes and add a
+       definite one. */
+    RTPathStripTrailingSlash(szAbsPath);
+    size_t cchAbsPath = strlen(szAbsPath);
+    if (cchAbsPath + 1 >= RTPATH_MAX)
+        return VERR_FILENAME_TOO_LONG;
+    szAbsPath[cchAbsPath++] = '/';
+    szAbsPath[cchAbsPath] = 0;
+
+    /* Check if it exists so we can return quietly if it doesn't. */
+    RTFSOBJINFO SharedObjInfoBuf;
+    rc = RTPathQueryInfoEx(szAbsPath, &SharedObjInfoBuf, RTFSOBJATTRADD_NOTHING, RTPATH_F_ON_LINK);
+    if (   rc == VERR_PATH_NOT_FOUND
+        || rc == VERR_FILE_NOT_FOUND)
+        return VINF_SUCCESS;
+    if (RT_FAILURE(rc))
+        return rc;
+    if (!RTFS_IS_DIRECTORY(SharedObjInfoBuf.Attr.fMode))
+        return VERR_NOT_A_DIRECTORY;
+
+    /* We're all set for the recursion now, so get going. */
+    RTDIRENTRY  SharedDirEntryBuf;
+    rc = rtDirRemoveRecursiveSub(szAbsPath, cchAbsPath, &SharedDirEntryBuf, &SharedObjInfoBuf);
+
+    /* Remove the specified directory if desired and removing the content was
+       successful. */
+    if (   RT_SUCCESS(rc)
+        && !(fFlags & RTDIRRMREC_F_CONTENT_ONLY))
+    {
+        szAbsPath[cchAbsPath] = 0;
         rc = RTDirRemove(szAbsPath);
     }
-
-    LogFlow(("RTDirRemoveRecursive(%p:{%s}): returns %Rrc\n", pszPath, pszPath, rc));
     return rc;
 }
 
