@@ -864,7 +864,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
             }
             m->COMGETTER(Id)(id.asOutParam());
-
             AssertComRC(rc);
             if (FAILED(rc))
                 break;
@@ -872,7 +871,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 
         Log(("VBoxHeadless: Opening a session with machine (id={%s})...\n",
               Utf8Str(id).raw()));
-        
+
         // open a session
         CHECK_ERROR_BREAK(virtualBox, OpenSession(session, id));
         fSessionOpened = true;
