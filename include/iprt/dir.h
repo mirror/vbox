@@ -112,6 +112,8 @@ RTDECL(int) RTDirRemove(const char *pszPath);
  * @returns iprt status code.
  * @param   pszPath         Path to the directory to remove recursively.
  * @param   fFlags          Flags, see RTDIRRMREC_F_XXX.
+ *
+ * @remarks This will not work on a root directory.
  */
 RTDECL(int) RTDirRemoveRecursive(const char *pszPath, uint32_t fFlags);
 
