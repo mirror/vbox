@@ -259,7 +259,8 @@ void UIMachineViewSeamless::prepareSeamless()
 void UIMachineViewSeamless::cleanupSeamless()
 {
     /* Reset seamless feature flag of the guest: */
-    session().GetConsole().GetDisplay().SetSeamlessMode(false);
+    if (uisession()->isRunning())
+        session().GetConsole().GetDisplay().SetSeamlessMode(false);
 
     /* Rollback seamless frame-buffer size to normal: */
     machineWindowWrapper()->machineWindow()->hide();
