@@ -2046,7 +2046,6 @@ DxgkDdiEnumVidPnCofuncModality(
     vboxVDbgBreakFv();
 
     PDEVICE_EXTENSION pContext = (PDEVICE_EXTENSION)hAdapter;
-
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pContext->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pEnumCofuncModalityArg->hConstrainingVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
     if (Status == STATUS_SUCCESS)
@@ -2625,6 +2624,7 @@ DxgkDdiPresent(
         Assert(pPresent->Flags.Value == 1); /* only Blt is set, we do not support anything else for now */
         UINT cbCmd = pPresent->DmaSize;
 
+        Assert(pPresent->SubRectCnt);
         UINT cmdSize = VBOXVDMACMD_DMA_PRESENT_BLT_SIZE(pPresent->SubRectCnt - pPresent->MultipassOffset);
         PVBOXVDMACMD pCmd = (PVBOXVDMACMD)pPresent->pDmaBuffer;
         pPresent->pDmaBuffer = ((uint8_t*)pPresent->pDmaBuffer) + cmdSize;
