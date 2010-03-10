@@ -583,21 +583,21 @@ void Console::updateGuestPropertiesVRDPDisconnect(uint32_t u32ClientId)
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Name", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/User", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
     rc = RTStrAPrintf(&pszPropertyName, "/VirtualBox/HostInfo/VRDP/Client/%u/Domain", u32ClientId);
     if (RT_SUCCESS(rc))
     {
-        mMachine->SetGuestProperty(Bstr(pszPropertyName), NULL, bstrReadOnlyGuest);
+        mMachine->SetGuestProperty(Bstr(pszPropertyName), Bstr(""), bstrReadOnlyGuest);
         RTStrFree(pszPropertyName);
     }
 
