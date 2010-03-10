@@ -458,7 +458,7 @@ static DECLCALLBACK(void) pdmR3PciHlp_IsaSetIrq(PPDMDEVINS pDevIns, int iIrq, in
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     Log4(("pdmR3PciHlp_IsaSetIrq: iIrq=%d iLevel=%d\n", iIrq, iLevel));
-    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel,  /* ISA source */ true);
+    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel);
 }
 
 
@@ -597,7 +597,7 @@ static DECLCALLBACK(int) pdmR3HpetHlp_SetIrq(PPDMDEVINS pDevIns, int iIrq, int i
 {
     PDMDEV_ASSERT_DEVINS(pDevIns);
     LogFlow(("pdmR3HpetHlp_SetIrq: caller='%s'/%d: iIrq=%d iLevel=%d\n", pDevIns->pReg->szName, pDevIns->iInstance, iIrq, iLevel));
-    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel, false /* Non-ISA source */);
+    PDMIsaSetIrq(pDevIns->Internal.s.pVMR3, iIrq, iLevel);
     return 0;
 }
 

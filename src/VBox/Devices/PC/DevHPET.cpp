@@ -354,15 +354,13 @@ static uint32_t getTimerIrq(struct HpetTimer *pTimer)
      * Per spec, in legacy mode HPET timers wired as:
      *   timer 0: IRQ0 for PIC and IRQ2 for APIC
      *   timer 1: IRQ8 for both PIC and APIC
-     * As primary usecase for HPET is APIC config, we pretend
-     * being always APIC, although for safety we shall check currect IC.
-     * @todo: implement private interface between HPET and PDM
-     *        to allow figuring that out and enabling/disabling
-     *        PIT and RTC
+     *
+     * ISA IRQ delivery logic will take care of correct delivery 
+     * to the different ICs.
      */
     if ((pTimer->u8TimerNumber <= 1) &&
         (pTimer->CTX_SUFF(pHpet)->u64Config & HPET_CFG_LEGACY))
-        return (pTimer->u8TimerNumber == 0) ? 2 : 8;
+        return (pTimer->u8TimerNumber == 0) ? 0 : 8;
     else
         return (pTimer->u64Config & HPET_TN_INT_ROUTE_MASK) >> HPET_TN_INT_ROUTE_SHIFT;
 }
@@ -973,7 +971,7 @@ static DECLCALLBACK(int) hpetLoadExec(PPDMDEVINS pDevIns,
 
 static void irqUpdate(struct HpetTimer *pTimer)
 {
-    uint32_t irq     = getTimerIrq(pTimer);
+    uint32_t irq    = getTimerIrq(pTimer);
     HpetState* pThis = pTimer->CTX_SUFF(pHpet);
 
     /** @todo: is it correct? */
@@ -989,6 +987,8 @@ static void irqUpdate(struct HpetTimer *pTimer)
         /* We trigger flip/flop in edge-triggered mode and do nothing in level-triggered mode yet */
         if ((pTimer->u64Config & HPET_TN_INT_TYPE) == HPET_TIMER_TYPE_EDGE)
             pThis->pHpetHlpR3->pfnSetIrq(pThis->CTX_SUFF(pDevIns), irq, PDM_IRQ_LEVEL_FLIP_FLOP);
+        else
+            Assert(false);
         /* @todo: implement IRQs in level-triggered mode */
     }
 }
