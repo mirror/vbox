@@ -10230,6 +10230,61 @@ category    Chromium
 props       get
 chromium    extpack
 
+# OpenGL 2.1
+name        UniformMatrix2x3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
+name        UniformMatrix3x2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
+name        UniformMatrix2x4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
+name        UniformMatrix4x2fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
+name        UniformMatrix4x3fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
+name        UniformMatrix3x4fv
+return      void
+param       location    GLint
+param       count       GLsizei
+param       transpose   GLboolean
+param       value       const GLfloat *
+category    2.1
+chromium    extpack
+
 # end of file sentinel
 
 name        dummy
