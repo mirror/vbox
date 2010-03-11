@@ -670,7 +670,7 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                                         }
                                     }
                                 }
-                                AssertFatalMsg(pPage->cPresent == 0, ("cPresent = %d pPage = 0x%x\n", pPage->cPresent, (uint32_t) pPage));
+                                AssertFatalMsg(pPage->cPresent == 0, ("cPresent = %d pPage = %RGv\n", pPage->cPresent, pPage->GCPhys));
                                 break;
                             }
                             default:
