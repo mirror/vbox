@@ -291,12 +291,7 @@ void *rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller
         cb = 1;
 #endif
     }
-
-    /** @todo this alignment decreases fence accuracy, but there are lots
-     * of places in VirtualBox which assumes that the allocation is aligned
-     * properly even for totally unusual allocation sizes, otherwise assertions
-     * are triggered, which ensure a particular alignment of elements. */
-    cb = RT_ALIGN_Z(cb, ARCH_BITS / 8);
+    cb = RT_ALIGN_Z(cb, RTALLOC_EFENCE_ALIGNMENT);
 
 #ifdef RTALLOC_EFENCE_TRACE
     /*
