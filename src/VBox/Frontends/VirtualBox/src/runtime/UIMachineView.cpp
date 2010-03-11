@@ -309,6 +309,41 @@ QSize UIMachineView::desktopGeometry() const
     return geometry;
 }
 
+QSize UIMachineView::guestSizeHint()
+{
+    /* Result: */
+    QSize sizeHint;
+
+    /* Get current machine: */
+    CMachine machine = session().GetMachine();
+
+    /* Load machine view hint: */
+    QString strKey = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastGuestSizeHint) :
+                     QString("%1%2").arg(VBoxDefs::GUI_LastGuestSizeHint).arg(m_uScreenId);
+    QString strValue = machine.GetExtraData(strKey);
+
+    bool ok = true;
+    int width = 0, height = 0;
+    if (ok)
+        width = strValue.section(',', 0, 0).toInt(&ok);
+    if (ok)
+        height = strValue.section(',', 1, 1).toInt(&ok);
+
+    if (ok /* If previous parameters were read correctly! */)
+    {
+        /* Compose guest size hint from loaded values: */
+        sizeHint = QSize(width, height);
+    }
+    else
+    {
+        /* Compose guest size hint from default attributes: */
+        sizeHint = QSize(800, 600);
+    }
+
+    /* Return result: */
+    return sizeHint;
+}
+
 void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHeight)
 {
     switch (geometry)
@@ -339,6 +374,18 @@ void UIMachineView::setDesktopGeometry(DesktopGeo geometry, int aWidth, int aHei
 void UIMachineView::storeConsoleSize(int iWidth, int iHeight)
 {
     m_storedConsoleSize = QSize(iWidth, iHeight);
+}
+
+void UIMachineView::storeGuestSizeHint(const QSize &sizeHint)
+{
+    /* Get current machine: */
+    CMachine machine = session().GetMachine();
+
+    /* Save machine view hint: */
+    QString strKey = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastGuestSizeHint) :
+                     QString("%1%2").arg(VBoxDefs::GUI_LastGuestSizeHint).arg(m_uScreenId);
+    QString strValue = QString("%1,%2").arg(sizeHint.width()).arg(sizeHint.height());
+    machine.SetExtraData(strKey, strValue);
 }
 
 void UIMachineView::updateMouseCursorShape()

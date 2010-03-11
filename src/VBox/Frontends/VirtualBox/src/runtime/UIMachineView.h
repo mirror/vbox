@@ -113,11 +113,13 @@ protected:
     QSize storedConsoleSize() const { return m_storedConsoleSize; }
     DesktopGeo desktopGeometryType() const { return m_desktopGeometryType; }
     QSize desktopGeometry() const;
+    QSize guestSizeHint();
 
     /* Protected setters: */
     void setDesktopGeometry(DesktopGeo geometry, int iWidth, int iHeight);
     void storeConsoleSize(int iWidth, int iHeight);
     void setMachineWindowResizeIgnored(bool fIgnore = true) { m_bIsMachineWindowResizeIgnored = fIgnore; }
+    void storeGuestSizeHint(const QSize &sizeHint);
 
     /* Protected helpers: */
     void updateMouseCursorShape();
