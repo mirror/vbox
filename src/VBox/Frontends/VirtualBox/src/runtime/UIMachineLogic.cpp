@@ -423,6 +423,7 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
     , m_fIsWindowsCreated(false)
+    , m_fIsMachineStarted(false)
     , m_fIsPreventAutoStart(false)
     , m_fIsPreventAutoClose(false)
 #ifdef Q_WS_MAC
@@ -475,7 +476,7 @@ void UIMachineLogic::retranslateUi()
 void UIMachineLogic::tryToStartMachine()
 {
     /* If we are started already => just return: */
-    if (uisession()->isRunning() || uisession()->isPaused())
+    if (m_fIsMachineStarted || uisession()->isRunning() || uisession()->isPaused())
         return;
 
     /* Prepare console powerup: */
@@ -556,6 +557,9 @@ void UIMachineLogic::tryToStartMachine()
     vboxGlobal().showUpdateDialog(false /* force request? */);
 #endif
 
+    /* Remember what machine was started already: */
+    m_fIsMachineStarted = true;
+
     /* Warn listeners about machine was started: */
     emit sigMachineStarted();
 }
@@ -581,6 +585,12 @@ void UIMachineLogic::updateDockOverlay()
         m_pDockIconPreview->updateDockOverlay();
 }
 #endif /* Q_WS_MAC */
+
+void UIMachineLogic::prepareConnections()
+{
+    /* Connect common handlers: */
+    connect(this, SIGNAL(sigMachineStarted()), this, SLOT(sltCheckRequestedModes()));
+}
 
 void UIMachineLogic::prepareConsoleConnections()
 {
@@ -950,6 +960,9 @@ void UIMachineLogic::sltAdditionsStateChanged()
     actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setEnabled(fIsSupportsGraphics);
     actionsPool()->action(UIActionIndex_Toggle_Seamless)->setEnabled(fIsSupportsSeamless);
 
+    /* Check if we should enter some extended mode: */
+    sltCheckRequestedModes();
+
     /* Check the GA version only in case of additions are active: */
     if (!fIsAdditionsActive)
         return;
@@ -1004,6 +1017,34 @@ void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsA
 void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage)
 {
     vboxProblem().showRuntimeError(session().GetConsole(), fIsFatal, strErrorId, strMessage);
+}
+
+void UIMachineLogic::sltCheckRequestedModes()
+{
+    /* Do not try to enter extended mode if machine was not started yet: */
+    if (!m_fIsMachineStarted)
+        return;
+
+    /* If seamless mode is requested, supported and we are NOT currently in seamless mode: */
+    if (uisession()->isSeamlessModeRequested() &&
+        uisession()->isGuestSupportsSeamless() &&
+        visualStateType() != UIVisualStateType_Seamless)
+    {
+        uisession()->setSeamlessModeRequested(false);
+        QAction *pSeamlessModeAction = actionsPool()->action(UIActionIndex_Toggle_Seamless);
+        AssertMsg(!pSeamlessModeAction->isChecked(), ("Seamless action should not be triggered before us!\n"));
+        QTimer::singleShot(0, pSeamlessModeAction, SLOT(trigger()));
+    }
+    /* If seamless mode is NOT requested, NOT supported and we are currently in seamless mode: */
+    else if (!uisession()->isSeamlessModeRequested() &&
+             !uisession()->isGuestSupportsSeamless() &&
+             visualStateType() == UIVisualStateType_Seamless)
+    {
+        uisession()->setSeamlessModeRequested(true);
+        QAction *pSeamlessModeAction = actionsPool()->action(UIActionIndex_Toggle_Seamless);
+        AssertMsg(pSeamlessModeAction->isChecked(), ("Seamless action should not be triggered before us!\n"));
+        QTimer::singleShot(0, pSeamlessModeAction, SLOT(trigger()));
+    }
 }
 
 void UIMachineLogic::sltToggleGuestAutoresize(bool fEnabled)

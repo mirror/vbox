@@ -124,6 +124,9 @@ void UIMachineLogicSeamless::initialize()
     /* If required features are ready: */
     if (!isPreventAutoStart())
     {
+        /* Prepare common connections: */
+        prepareConnections();
+
         /* Prepare console connections: */
         prepareConsoleConnections();
 

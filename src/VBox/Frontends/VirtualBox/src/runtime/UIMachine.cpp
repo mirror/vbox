@@ -389,10 +389,38 @@ void UIMachine::loadMachineSettings()
 
     /* Load extra-data settings: */
     {
-        /* Get 'fullscreen' attributes: */
-        QString strFullscreenSettings = machine.GetExtraData(VBoxDefs::GUI_Fullscreen);
-        if (strFullscreenSettings == "yes")
-            initialStateType = UIVisualStateType_Fullscreen;
+        /* Machine while saving own settings will save "yes" only for current
+         * visual representation mode if its differs from normal mode of course.
+         * But user can alter extra data manually in machine xml file and set there
+         * more than one visual representation mode flags. Shame on such user!
+         * There is no reason to enter in more than one visual representation mode
+         * at machine start, so we are chosing first of requested modes: */
+        bool fIsSomeExtendedModeChosen = false;
+
+        if (!fIsSomeExtendedModeChosen)
+        {
+            /* Test 'seamless' flag: */
+            QString strSeamlessSettings = machine.GetExtraData(VBoxDefs::GUI_Seamless);
+            if (strSeamlessSettings == "yes")
+            {
+                fIsSomeExtendedModeChosen = true;
+                /* We can't enter seamless mode initially,
+                 * so we should ask ui-session for that: */
+                uisession()->setSeamlessModeRequested(true);
+            }
+        }
+
+        if (!fIsSomeExtendedModeChosen)
+        {
+            /* Test 'fullscreen' flag: */
+            QString strFullscreenSettings = machine.GetExtraData(VBoxDefs::GUI_Fullscreen);
+            if (strFullscreenSettings == "yes")
+            {
+                fIsSomeExtendedModeChosen = true;
+                /* We can enter fullscreen mode initially: */
+                initialStateType = UIVisualStateType_Fullscreen;
+            }
+        }
     }
 }
 
@@ -403,7 +431,11 @@ void UIMachine::saveMachineSettings()
 
     /* Save extra-data settings: */
     {
-        /* Set 'fullscreen' attributes: */
+        /* Set 'seamless' flag: */
+        machine.SetExtraData(VBoxDefs::GUI_Seamless, m_pVisualState &&
+                             m_pVisualState->visualStateType() == UIVisualStateType_Seamless ? "yes" : QString());
+
+        /* Set 'fullscreen' flag: */
         machine.SetExtraData(VBoxDefs::GUI_Fullscreen, m_pVisualState &&
                              m_pVisualState->visualStateType() == UIVisualStateType_Fullscreen ? "yes" : QString());
     }
