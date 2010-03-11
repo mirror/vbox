@@ -329,6 +329,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     ComPtr<IGuestOSType> guestOSType;
     hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());           H();
+    
+    Bstr guestTypeFamilyId;
+    hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());       H();
+    BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
 
     /*
      * Get root node first.
@@ -391,10 +395,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         rc = CFGMR3InsertInteger(pCPUM, "NT4LeafLimit", true);                      RC_CHECK();
     }
 
-    if (osTypeId == "MacOS")
+    if (fOsXGuest)
     {
         /*
-         * Expose extended MWAIT features to Mac OS guests.
+         * Expose extended MWAIT features to Mac OS X guests.
          */
         LogRel(("Using MWAIT extensions\n"));
         PCFGMNODE pCPUM;
@@ -594,12 +598,10 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = CFGMR3InsertInteger(pInst, "PCIBusNo",             1);/* ->pcibridge[0] */ RC_CHECK();
 #endif
 
-    Bstr tmpStr2;
-    hrc = guestOSType->COMGETTER(FamilyId)(tmpStr2.asOutParam());                   H();
     /*
      * Enable 3 following devices: HPET, SMC, LPC on MacOS X guests
      */
-    BOOL fExtProfile = tmpStr2 == Bstr("MacOS");
+    BOOL fExtProfile = fOsXGuest;
 
     /*
      * High Precision Event Timer (HPET)
@@ -631,6 +633,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 #endif
     if (fSmcEnabled)
     {
+        Bstr tmpStr2;
         rc = CFGMR3InsertNode(pDevices, "smc", &pDev);                       RC_CHECK();
         rc = CFGMR3InsertNode(pDev,     "0", &pInst);                        RC_CHECK();
         rc = CFGMR3InsertInteger(pInst, "Trusted",   1);     /* boolean */   RC_CHECK();
