@@ -357,7 +357,8 @@ def GetCategoryWrapper(func_name):
 	elif (cat == '1.3' or
           cat == '1.4' or
           cat == '1.5' or
-          cat == '2.0'):
+          cat == '2.0' or
+          cat == '2.1'):
 		# i.e. OpenGL 1.3 or 1.4 or 1.5
 		return "OPENGL_VERSION_" + string.replace(cat, ".", "_")
 	else:
