@@ -280,7 +280,7 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
             ch = val;
             if (RT_LIKELY(s->pDrvChar))
             {
-                Log(("serial_io_port_write: write 0x%X\n", ch));
+                Log(("serial_ioport_write: write 0x%X\n", ch));
                 int rc = s->pDrvChar->pfnWrite(s->pDrvChar, &ch, 1);
                 AssertRC(rc);
             }
@@ -317,7 +317,7 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 s->last_break_enable = break_enable;
                 if (RT_LIKELY(s->pDrvChar))
                 {
-                    Log(("serial_io_port_write: Set break %d\n", break_enable));
+                    Log(("serial_ioport_write: Set break %d\n", break_enable));
                     int rc = s->pDrvChar->pfnSetBreak(s->pDrvChar, !!break_enable);
                     AssertRC(rc);
                 }
