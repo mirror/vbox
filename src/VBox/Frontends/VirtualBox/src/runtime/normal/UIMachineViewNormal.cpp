@@ -252,7 +252,7 @@ void UIMachineViewNormal::prepareConsoleConnections()
 void UIMachineViewNormal::saveMachineViewSettings()
 {
     /* Store guest size hint: */
-    uisession()->setGuestSizeHint(screenId(), QSize(frameBuffer()->width(), frameBuffer()->height()));
+    storeGuestSizeHint(QSize(frameBuffer()->width(), frameBuffer()->height()));
 }
 
 void UIMachineViewNormal::setGuestAutoresizeEnabled(bool fEnabled)

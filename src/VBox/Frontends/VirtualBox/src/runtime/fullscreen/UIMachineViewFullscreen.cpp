@@ -248,7 +248,7 @@ void UIMachineViewFullscreen::cleanupFullscreen()
             /* Rollback fullscreen frame-buffer size to normal: */
             machineWindowWrapper()->machineWindow()->hide();
             UIMachineViewBlocker blocker(this);
-            sltPerformGuestResize(uisession()->guestSizeHint(screenId()));
+            sltPerformGuestResize(guestSizeHint());
             blocker.exec();
         }
     }

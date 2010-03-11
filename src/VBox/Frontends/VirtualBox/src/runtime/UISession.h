@@ -82,7 +82,6 @@ public:
     QMenu* newMenu();
     QMenuBar* newMenuBar();
     QCursor cursor() const { return m_cursor; }
-    QSize guestSizeHint(ulong uScreenId) const;
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }
     bool isTurnedOff() const { return machineState() == KMachineState_PoweredOff ||
@@ -124,7 +123,6 @@ public:
     bool unpause() { return setPause(false); }
     bool setPause(bool fOn);
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
-    void setGuestSizeHint(ulong uScreenId, QSize size);
 
     /* Keyboard setters: */
     void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
@@ -197,7 +195,6 @@ private:
 #if defined(Q_WS_WIN)
     HCURSOR m_alphaCursor;
 #endif
-    QList<QSize> m_guestSizeHints;
 
     /* Common flags: */
     bool m_fIsFirstTimeStarted : 1;
