@@ -4526,6 +4526,7 @@ static void pgmPoolTrackDeref(PPGMPOOL pPool, PPGMPOOLPAGE pPage)
     STAM_PROFILE_STOP(&pPool->StatZeroPage, z);
     pPage->fZeroed = true;
     PGMPOOL_UNLOCK_PTR(pPool->CTX_SUFF(pVM), pvShw);
+    Assert(!pPage->cPresent);
 }
 
 /**
