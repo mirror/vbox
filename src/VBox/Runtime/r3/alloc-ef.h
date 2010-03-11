@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -44,7 +44,7 @@
  * If defined the electric fence put up for ALL allocations by RTMemAlloc(),
  * RTMemAllocZ(), RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ().
  */
-#if 0// defined(DEBUG_bird)
+#if 1
 # define RTALLOC_USE_EFENCE
 #endif
 
@@ -80,7 +80,7 @@
  * decommitted.
  * Requires RTALLOC_EFENCE_TRACE.
  */
-#if defined(RT_OS_LINUX)
+#if defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS)
 # define RTALLOC_EFENCE_FREE_FILL       'f'
 #endif
 
@@ -89,6 +89,18 @@
  * memory when the API doesn't require it to be zero'ed.
  */
 #define RTALLOC_EFENCE_FILLER           0xef
+
+/** @def RTALLOC_EFENCE_NOMAN_FILLER
+ * This define will enable memset(,RTALLOC_EFENCE_NOMAN_FILLER,)'ing the
+ * unprotected but not allocated area of memory, the so called no man's land.
+ */
+#define RTALLOC_EFENCE_NOMAN_FILLER           0xaa
+
+/** @def RTALLOC_EFENCE_FENCE_FILLER
+ * This define will enable memset(,RTALLOC_EFENCE_FENCE_FILLER,)'ing the
+ * fence itself, as debuggers can usually read them.
+ */
+#define RTALLOC_EFENCE_FENCE_FILLER           0xcc
 
 #if defined(DOXYGEN_RUNNING)
 /** @def RTALLOC_EFENCE_CPP
