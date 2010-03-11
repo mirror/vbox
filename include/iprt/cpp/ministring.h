@@ -159,6 +159,8 @@ public:
             char *pszNew = (char*)RTMemRealloc(m_psz, cb);
             if (RT_LIKELY(pszNew))
             {
+                if (!m_psz)
+                    *pszNew = '\0';
                 m_psz = pszNew;
                 m_cbAllocated = cb;
             }
