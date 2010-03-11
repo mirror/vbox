@@ -294,8 +294,11 @@ vbox_crtc_mode_set (xf86CrtcPtr crtc, DisplayModePtr mode,
            adjusted_mode->HDisplay, adjusted_mode->VDisplay, x, y);
     VBOXSetMode(crtc->scrn, adjusted_mode);
     VBOXAdjustFrame(crtc->scrn->scrnIndex, x, y, 0);
-    vboxSaveVideoMode(crtc->scrn, adjusted_mode->HDisplay,
-                      adjusted_mode->VDisplay, crtc->scrn->bitsPerPixel);
+    /* Don't remember any modes set while we are seamless, as they are
+     * just temporary. */
+    if (!vboxGuestIsSeamless(crtc->scrn))
+        vboxSaveVideoMode(crtc->scrn, adjusted_mode->HDisplay,
+                          adjusted_mode->VDisplay, crtc->scrn->bitsPerPixel);
 }
 
 static void

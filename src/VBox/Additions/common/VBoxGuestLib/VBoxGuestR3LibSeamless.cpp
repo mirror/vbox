@@ -66,7 +66,9 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     VBoxGuestWaitEventInfo waitEvent;
     int rc;
 
+#if !defined(VBOX_VBGLR3_XFREE86)
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
+#endif
     waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
@@ -91,6 +93,34 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
         }
         else
             rc = VERR_TRY_AGAIN;
+    }
+    return rc;
+}
+
+/**
+ * Request the last seamless mode switch from the host again.
+ *
+ * @returns IPRT status value
+ * @retval  pMode on success, the seamless mode that was switched into (i.e.
+ *          disabled, visible region or host window)
+ */
+VBGLR3DECL(int) VbglR3SeamlessGetLastEvent(VMMDevSeamlessMode *pMode)
+{
+    int rc;
+
+#if !defined(VBOX_VBGLR3_XFREE86)
+    AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
+#endif
+    VMMDevSeamlessChangeRequest seamlessChangeRequest;
+
+    /* get the seamless change request */
+    vmmdevInitRequest(&seamlessChangeRequest.header, VMMDevReq_GetSeamlessChangeRequest);
+    seamlessChangeRequest.eventAck = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
+    rc = vbglR3GRPerform(&seamlessChangeRequest.header);
+    if (RT_SUCCESS(rc))
+    {
+        *pMode = seamlessChangeRequest.mode;
+        return VINF_SUCCESS;
     }
     return rc;
 }
