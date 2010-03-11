@@ -640,7 +640,8 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                     {
                         void *pvShw = PGMPOOL_PAGE_2_PTR(pPool->CTX_SUFF(pVM), pPage);
                         STAM_PROFILE_START(&pPool->StatZeroPage, z);
-#ifdef DEBUG_sandervl
+#if 0
+                        /* Useful check for leaking references; *very* expensive though. */
                         switch (pPage->enmKind)
                         {
                             case PGMPOOLKIND_PAE_PT_FOR_32BIT_PT:
