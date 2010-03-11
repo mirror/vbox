@@ -123,11 +123,7 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevVideoModeSupportedRequest), VMMDevReq_VideoModeSupported);
     if (RT_FAILURE(rc))
     {
-#ifndef DEBUG_misha
         dprintf(("VBoxVideo::vboxLikesVideoMode: ERROR allocating request, rc = %Rrc\n", rc));
-#else
-        /* @todo: fixme: remove this ifdef*/
-#endif
         /* Most likely the VBoxGuest driver is not loaded.
          * To get at least the video working, report the mode as supported.
          */
@@ -150,11 +146,8 @@ BOOLEAN vboxLikesVideoMode(uint32_t width, uint32_t height, uint32_t bpp)
         }
         VbglGRFree(&req->header);
     }
-#ifndef DEBUG_misha
+
     dprintf(("VBoxVideo::vboxLikesVideoMode: width: %d, height: %d, bpp: %d -> %s\n", width, height, bpp, (bRC == 1) ? "OK" : "FALSE"));
-#else
-        /* @todo: fixme: remove this ifdef*/
-#endif
 
     return bRC;
 }
@@ -163,18 +156,14 @@ ULONG vboxGetHeightReduction()
 {
     ULONG retHeight = 0;
 
-#ifndef DEBUG_misha
     dprintf(("VBoxVideo::vboxGetHeightReduction\n"));
-#endif
 
     VMMDevGetHeightReductionRequest *req = NULL;
 
     int rc = VbglGRAlloc((VMMDevRequestHeader**)&req, sizeof(VMMDevGetHeightReductionRequest), VMMDevReq_GetHeightReduction);
     if (RT_FAILURE(rc))
     {
-#ifndef DEBUG_misha
         dprintf(("VBoxVideo::vboxGetHeightReduction: ERROR allocating request, rc = %Rrc\n", rc));
-#endif
     }
     else
     {

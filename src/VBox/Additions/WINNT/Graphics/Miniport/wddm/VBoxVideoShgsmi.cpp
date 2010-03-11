@@ -181,7 +181,7 @@ int VBoxSHGSMICommandProcessCompletion (struct _HGSMIHEAP * pHeap, HGSMIOFFSET o
 {
     int rc = VINF_SUCCESS;
 
-    PVBOXSHGSMIHEADER pCur = (PVBOXSHGSMIHEADER)HGSMIOffsetToPointer (&pHeap->area, offCmd);
+    PVBOXSHGSMIHEADER pCur = (PVBOXSHGSMIHEADER)HGSMIBufferDataFromOffset (&pHeap->area, offCmd);
     Assert(pCur);
     if (pCur)
     {

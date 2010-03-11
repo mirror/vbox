@@ -1120,14 +1120,16 @@ typedef struct VBOXVDMA_SURF_DESC
 //typedef uint64_t VBOXVDMAPHADDRESS;
 typedef uint64_t VBOXVDMASURFHANDLE;
 
-typedef uint32_t VBOXVIDEOOFFSET;
+typedef uint64_t VBOXVIDEOOFFSET;
 
 #define VBOXVIDEOOFFSET_VOID ((VBOXVIDEOOFFSET)~0)
 
 typedef enum
 {
-    VBOXVDMACMD_TYPE_UNDEFINED        = 0,
-    VBOXVDMACMD_TYPE_DMA_PRESENT_BLT      = 1
+    VBOXVDMACMD_TYPE_UNDEFINED         = 0,
+    VBOXVDMACMD_TYPE_DMA_PRESENT_BLT   = 1,
+    VBOXVDMACMD_TYPE_DMA_BPB_TRANSFER  = 2,
+    VBOXVDMACMD_TYPE_DMA_BPB_FILL = 3
 } VBOXVDMACMD_TYPE;
 
 /* region specified as a rectangle, otherwize it is a size of memory pointed to by phys address */
@@ -1194,6 +1196,31 @@ typedef struct VBOXVDMACMD_DMA_PRESENT_BLT
     uint32_t cDstSubRects;
     VBOXVDMA_RECTL aDstSubRects[1];
 } VBOXVDMACMD_DMA_PRESENT_BLT, *PVBOXVDMACMD_DMA_PRESENT_BLT;
+
+typedef struct VBOXVDMACMD_DMA_BPB_TRANSFER
+{
+    uint32_t cbTransferSize;
+    uint32_t offTransfer; /* <- applicable for offVramBuf, which always points to the surface start*/
+    uint32_t fFlags;
+    uint32_t u32Reserved;
+    union
+    {
+        uint64_t phBuf;
+        VBOXVIDEOOFFSET offVramBuf;
+    } Src;
+    union
+    {
+        uint64_t phBuf;
+        VBOXVIDEOOFFSET offVramBuf;
+    } Dst;
+} VBOXVDMACMD_DMA_BPB_TRANSFER, *PVBOXVDMACMD_DMA_BPB_TRANSFER;
+
+typedef struct VBOXVDMACMD_DMA_BPB_FILL
+{
+    VBOXVIDEOOFFSET offSurf;
+    uint32_t cbFillSize;
+    uint32_t u32FillPattern;
+} VBOXVDMACMD_DMA_BPB_FILL, *PVBOXVDMACMD_DMA_BPB_FILL;
 
 # pragma pack()
 #endif /* #ifdef VBOXVDMA */
