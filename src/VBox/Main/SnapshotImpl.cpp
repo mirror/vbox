@@ -1397,7 +1397,7 @@ STDMETHODIMP SessionMachine::BeginTakingSnapshot(IConsole *aInitiator,
 }
 
 /**
- * Implementation for IInternalMachineControl::beginTakingSnapshot().
+ * Implementation for IInternalMachineControl::endTakingSnapshot().
  *
  * Called by the Console when it's done saving the VM state into the snapshot
  * (if online) and reconfiguring the hard disks. See BeginTakingSnapshot() above.
@@ -1417,7 +1417,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     AutoCaller autoCaller(this);
     AssertComRCReturn (autoCaller.rc(), autoCaller.rc());
 
-    AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
+    AutoWriteLock machineLock(this COMMA_LOCKVAL_SRC_POS);
 
     AssertReturn(   !aSuccess
                  || (    (    mData->mMachineState == MachineState_Saving
@@ -1461,7 +1461,7 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
 
         rc = saveSettings(NULL);
                 // no need to change for whether VirtualBox.xml needs saving since
-                // we can't have a machine XML rename pending at this point
+                // we'll save the global settings below anyway
     }
 
     if (aSuccess && SUCCEEDED(rc))
@@ -1492,6 +1492,11 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
     /* clear out the snapshot data */
     mSnapshotData.mLastState = MachineState_Null;
     mSnapshotData.mSnapshot.setNull();
+
+    // save VirtualBox.xml (media registry most probably changed with diff image)
+    machineLock.release();
+    AutoWriteLock vboxLock(mParent COMMA_LOCKVAL_SRC_POS);
+    mParent->saveSettings();
 
     return rc;
 }
