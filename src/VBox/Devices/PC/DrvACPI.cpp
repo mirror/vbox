@@ -800,9 +800,11 @@ static DECLCALLBACK(void) drvACPIDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvACPIDestruct\n"));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
+#ifdef RT_OS_LINUX
     RTSemEventDestroy(pThis->hPollerSleepEvent);
     pThis->hPollerSleepEvent = NIL_RTSEMEVENT;
     RTCritSectDelete(&pThis->CritSect);
+#endif
 }
 
 /**
