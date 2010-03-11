@@ -35,7 +35,6 @@
 
 #include <iprt/asm.h>
 #include <iprt/err.h>
-#include <iprt/cache.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/param.h>
@@ -57,7 +56,6 @@ typedef struct TST3THREAD
     uint64_t volatile   cIterations;
     uint32_t            cbObject;
     bool                fUseCache;
-    bool                fUseOldCache;
 } TST3THREAD, *PTST3THREAD;
 
 
@@ -68,8 +66,6 @@ typedef struct TST3THREAD
 static RTTEST               g_hTest;
 /** Global mem cache handle for use in some of the testcases. */
 static RTMEMCACHE           g_hMemCache;
-/** For testcase 3. */
-static PRTOBJCACHE          g_pOldCacheTst3;
 /** Stop indicator for tst3 threads.  */
 static bool volatile        g_fTst3Stop;
 
@@ -234,24 +230,6 @@ static DECLCALLBACK(int) tst3Thread(RTTHREAD hThreadSelf, void *pvArg)
             cIterations += RT_ELEMENTS(apv);
         }
     }
-    else if (pThread->fUseOldCache)
-    {
-        while (!g_fTst3Stop)
-        {
-            void *apv[64];
-
-            for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
-            {
-                apv[i] = NULL;
-                RTTEST_CHECK_RC_OK(g_hTest, RTCacheRequest(g_pOldCacheTst3, &apv[i]));
-            }
-
-            for (unsigned i = 0; i < RT_ELEMENTS(apv); i++)
-                RTCacheInsert(g_pOldCacheTst3, apv[i]);
-
-            cIterations += RT_ELEMENTS(apv);
-        }
-    }
     else
     {
         while (!g_fTst3Stop)
@@ -283,7 +261,6 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, int iMethod, uint32_t cSe
 {
     RTTestISubF("Benchmark - %u threads, %u bytes, %u secs, %s", cThreads, cbObject, cSecs,
                 iMethod == 0 ? "RTMemCache"
-                : iMethod == 1 ? "RTCache"
                 : "RTMemAlloc");
 
     /*
@@ -291,7 +268,6 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, int iMethod, uint32_t cSe
      * the threads.
      */
     RTTESTI_CHECK_RC_RETV(RTMemCacheCreate(&g_hMemCache, cbObject, 0 /*cbAlignment*/, UINT32_MAX, NULL, NULL, NULL, 0 /*fFlags*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RC_RETV(RTCacheCreate(&g_pOldCacheTst3, 0, cbObject, RTOBJCACHE_PROTECT_INSERT | RTOBJCACHE_PROTECT_REQUEST), VINF_SUCCESS);
 
     RTSEMEVENTMULTI hEvt;
     RTTESTI_CHECK_RC_OK_RETV(RTSemEventMultiCreate(&hEvt));
@@ -305,7 +281,6 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, int iMethod, uint32_t cSe
         aThreads[i].hThread     = NIL_RTTHREAD;
         aThreads[i].cIterations = 0;
         aThreads[i].fUseCache   = iMethod == 0;
-        aThreads[i].fUseOldCache= iMethod == 1;
         aThreads[i].cbObject    = cbObject;
         aThreads[i].hEvt        = hEvt;
         RTTESTI_CHECK_RC_OK_RETV(RTThreadCreateF(&aThreads[i].hThread, tst3Thread, &aThreads[i], 0,
@@ -337,7 +312,6 @@ static void tst3(uint32_t cThreads, uint32_t cbObject, int iMethod, uint32_t cSe
                   cElapsedNS / cIterations);
 
     /* clean up */
-    RTTESTI_CHECK_RC(RTCacheDestroy(g_pOldCacheTst3), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTMemCacheDestroy(g_hMemCache), VINF_SUCCESS);
     RTTESTI_CHECK_RC_OK(RTSemEventMultiDestroy(hEvt));
 }
@@ -346,7 +320,6 @@ static void tst3AllMethods(uint32_t cThreads, uint32_t cbObject, uint32_t cSecs)
 {
     tst3(cThreads, cbObject, 0, cSecs);
     tst3(cThreads, cbObject, 1, cSecs);
-    tst3(cThreads, cbObject, 2, cSecs);
 }
 
 
