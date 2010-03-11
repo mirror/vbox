@@ -61,7 +61,13 @@ int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr)
 
         if (pAioMgr->pahReqsFree)
         {
-            return VINF_SUCCESS;
+            /* Create the range lock memcache. */
+            rc = RTMemCacheCreate(&pAioMgr->hMemCacheRangeLocks, sizeof(PDMACFILERANGELOCK),
+                                  0, UINT32_MAX, NULL, NULL, NULL, 0);
+            if (RT_SUCCESS(rc))
+                return VINF_SUCCESS;
+
+            RTMemFree(pAioMgr->pahReqsFree);
         }
         else
         {
@@ -84,6 +90,7 @@ void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr)
     }
 
     RTMemFree(pAioMgr->pahReqsFree);
+    RTMemCacheDestroy(pAioMgr->hMemCacheRangeLocks);
 }
 
 /**
@@ -510,7 +517,8 @@ static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE p
     return false;
 }
 
-static int pdmacFileAioMgrNormalRangeLock(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+static int pdmacFileAioMgrNormalRangeLock(PPDMACEPFILEMGR pAioMgr,
+                                          PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
                                           RTFOFF offStart, size_t cbRange,
                                           PPDMACTASKFILE pTask)
 {
@@ -518,7 +526,7 @@ static int pdmacFileAioMgrNormalRangeLock(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpo
               ("Range is already locked offStart=%RTfoff cbRange=%u\n",
                offStart, cbRange));
 
-    PPDMACFILERANGELOCK pRangeLock = (PPDMACFILERANGELOCK)RTMemAllocZ(sizeof(PDMACFILERANGELOCK));
+    PPDMACFILERANGELOCK pRangeLock = (PPDMACFILERANGELOCK)RTMemCacheAlloc(pAioMgr->hMemCacheRangeLocks);
     if (!pRangeLock)
         return VERR_NO_MEMORY;
 
@@ -548,7 +556,7 @@ static int pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
 
     RTAvlrFileOffsetRemove(pEndpoint->AioMgr.pTreeRangesLocked, pRangeLock->Core.Key);
     pTasksWaitingHead = pRangeLock->pWaitingTasksHead;
-    RTMemFree(pRangeLock);
+    RTMemCacheFree(pAioMgr->hMemCacheRangeLocks, pRangeLock);
 
     return pdmacFileAioMgrNormalProcessTaskList(pTasksWaitingHead, pAioMgr, pEndpoint);
 }
@@ -594,10 +602,10 @@ static int pdmacFileAioMgrNormalTaskPrepare(PPDMACEPFILEMGR pAioMgr,
      * and will be executed when the active one completes. (The method below
      * which checks whether a range is already used will add the task)
      *
-     * This is neccessary because of the requirementto align all requests to a 512 boundary
+     * This is neccessary because of the requirement to align all requests to a 512 boundary
      * which is enforced by the host OS (Linux and Windows atm). It is possible that
      * we have to process unaligned tasks and need to align them using bounce buffers.
-     * While the data is feteched from the file another request might arrive writing to
+     * While the data is fetched from the file another request might arrive writing to
      * the same range. This will result in data corruption if both are executed concurrently.
      */
     bool fLocked = pdmacFileAioMgrNormalIsRangeLocked(pEndpoint, offStart, cbToTransfer, pTask);
@@ -670,7 +678,7 @@ static int pdmacFileAioMgrNormalTaskPrepare(PPDMACEPFILEMGR pAioMgr,
                                              offStart, pvBuf, cbToTransfer, pTask);
             AssertRC(rc);
 
-            rc = pdmacFileAioMgrNormalRangeLock(pEndpoint, offStart, cbToTransfer, pTask);
+            rc = pdmacFileAioMgrNormalRangeLock(pAioMgr, pEndpoint, offStart, cbToTransfer, pTask);
 
             if (RT_SUCCESS(rc))
                 *phReq = hReq;
