@@ -2115,6 +2115,11 @@ static int e1kRegWriteCTRL(E1KSTATE* pState, uint32_t offset, uint32_t index, ui
             /* The driver indicates that we should bring up the link */
             /* Do so in 5 seconds. */
             e1kArmTimer(pState, pState->CTX_SUFF(pLUTimer), 5000000);
+            /*
+             * Change the status (but not PHY status) anyway as Windows expects
+             * it for 82543GC.
+             */
+            STATUS |= STATUS_LU;
         }
         if (value & CTRL_VME)
         {
