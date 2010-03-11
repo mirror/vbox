@@ -113,6 +113,7 @@ protected:
 #endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
+    virtual void prepareConnections();
     virtual void prepareConsoleConnections();
     virtual void prepareActionGroups();
     virtual void prepareActionConnections();
@@ -131,6 +132,7 @@ protected:
     //virtual void cleanupActionConnections() {}
     //virtual void cleanupActionGroups() {}
     //virtual void cleanupConsoleConnections() {}
+    //virtual void cleanupConnections() {}
 
 protected slots:
 
@@ -140,6 +142,9 @@ protected slots:
     virtual void sltMouseCapabilityChanged();
     virtual void sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsAttached, const CVirtualBoxErrorInfo &error);
     virtual void sltRuntimeError(bool fIsFatal, const QString &strErrorId, const QString &strMessage);
+
+    /* Mode request watch dog: */
+    void sltCheckRequestedModes();
 
 private slots:
 
@@ -199,6 +204,7 @@ private:
     QActionGroup *m_pRunningOrPausedActions;
 
     bool m_fIsWindowsCreated : 1;
+    bool m_fIsMachineStarted : 1;
     bool m_fIsPreventAutoStart : 1;
     bool m_fIsPreventAutoClose : 1;
 

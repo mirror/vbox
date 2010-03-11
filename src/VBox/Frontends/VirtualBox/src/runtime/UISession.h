@@ -96,6 +96,7 @@ public:
     bool isFirstTimeStarted() const { return m_fIsFirstTimeStarted; }
     bool isIgnoreRuntimeMediumsChanging() const { return m_fIsIgnoreRutimeMediumsChanging; }
     bool isGuestResizeIgnored() const { return m_fIsGuestResizeIgnored; }
+    bool isSeamlessModeRequested() const { return m_fIsSeamlessModeRequested; }
 
     /* Guest additions state getters: */
     bool isGuestAdditionsActive() const { return m_fIsGuestAdditionsActive; }
@@ -123,6 +124,7 @@ public:
     bool unpause() { return setPause(false); }
     bool setPause(bool fOn);
     void setGuestResizeIgnored(bool fIsGuestResizeIgnored) { m_fIsGuestResizeIgnored = fIsGuestResizeIgnored; }
+    void setSeamlessModeRequested(bool fIsSeamlessModeRequested) { m_fIsSeamlessModeRequested = fIsSeamlessModeRequested; }
 
     /* Keyboard setters: */
     void setNumLockAdaptionCnt(uint uNumLockAdaptionCnt) { m_uNumLockAdaptionCnt = uNumLockAdaptionCnt; }
@@ -200,6 +202,7 @@ private:
     bool m_fIsFirstTimeStarted : 1;
     bool m_fIsIgnoreRutimeMediumsChanging : 1;
     bool m_fIsGuestResizeIgnored : 1;
+    bool m_fIsSeamlessModeRequested : 1;
 
     /* Guest additions flags: */
     bool m_fIsGuestAdditionsActive : 1;
