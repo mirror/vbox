@@ -208,7 +208,6 @@ vboxHandleDirtyRect(ScrnInfoPtr pScrn, int iRects, BoxPtr aRects)
     int i;
 
     pVBox = pScrn->driverPrivate;
-    TRACE_ENTRY();
     if (pVBox->useVbva == FALSE)
         return;
     pMem = pVBox->pVbvaMemory;
@@ -1016,6 +1015,19 @@ vboxHostLikesVideoMode(ScrnInfoPtr pScrn, uint32_t cx, uint32_t cy, uint32_t cBi
     if (!pVBox->useDevice)
         return TRUE;  /* If we can't ask the host then we like everything. */
     return VbglR3HostLikesVideoMode(cx, cy, cBits);
+}
+
+Bool
+vboxGuestIsSeamless(ScrnInfoPtr pScrn)
+{
+    VMMDevSeamlessMode mode;
+    VBOXPtr pVBox = pScrn->driverPrivate;
+    TRACE_ENTRY();
+    if (!pVBox->useDevice)
+        return FALSE;
+    if (RT_FAILURE(VbglR3SeamlessGetLastEvent(&mode)))
+        return FALSE;
+    return (mode != VMMDev_Seamless_Disabled);
 }
 
 /**
