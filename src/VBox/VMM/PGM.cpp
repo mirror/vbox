@@ -1686,14 +1686,12 @@ static void pgmR3InitStats(PVM pVM)
     PGM_REG_COUNTER(&pPGM->StatRCPhysSimpleWrite,             "/PGM/RC/Phys/Simple/Write",          "The number of times PGMPhysSimpleWriteGCPtr was called.");
     PGM_REG_COUNTER_BYTES(&pPGM->StatRCPhysSimpleWriteBytes,  "/PGM/RC/Phys/Simple/Write/Bytes",    "The number of bytes written by PGMPhysSimpleWriteGCPtr.");
 
-# ifdef PGMPOOL_WITH_GCPHYS_TRACKING
     PGM_REG_COUNTER(&pPGM->StatTrackVirgin,                   "/PGM/Track/Virgin",                  "The number of first time shadowings");
     PGM_REG_COUNTER(&pPGM->StatTrackAliased,                  "/PGM/Track/Aliased",                 "The number of times switching to cRef2, i.e. the page is being shadowed by two PTs.");
     PGM_REG_COUNTER(&pPGM->StatTrackAliasedMany,              "/PGM/Track/AliasedMany",             "The number of times we're tracking using cRef2.");
     PGM_REG_COUNTER(&pPGM->StatTrackAliasedLots,              "/PGM/Track/AliasedLots",             "The number of times we're hitting pages which has overflowed cRef2");
     PGM_REG_COUNTER(&pPGM->StatTrackOverflows,                "/PGM/Track/Overflows",               "The number of times the extent list grows too long.");
     PGM_REG_PROFILE(&pPGM->StatTrackDeref,                    "/PGM/Track/Deref",                   "Profiling of SyncPageWorkerTrackDeref (expensive).");
-# endif
 
 # undef PGM_REG_COUNTER
 # undef PGM_REG_PROFILE
