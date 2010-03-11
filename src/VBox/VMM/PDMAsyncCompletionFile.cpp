@@ -386,9 +386,10 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
  * @returns VBox status code.
  * @param   pEpClass    Pointer to the endpoint class data.
  * @param   ppAioMgr    Where to store the pointer to the new async I/O manager on success.
- * @param   fFailsafe   Flag to force a failsafe manager even if the global flag is not set.
+ * @param   enmMgrType  Wanted manager type - can be overwritten by the global override.
  */
-int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr, bool fFailsafe)
+int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr,
+                          PDMACEPFILEMGRTYPE enmMgrType)
 {
     int rc = VINF_SUCCESS;
     PPDMACEPFILEMGR pAioMgrNew;
@@ -398,7 +399,10 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
     rc = MMR3HeapAllocZEx(pEpClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION, sizeof(PDMACEPFILEMGR), (void **)&pAioMgrNew);
     if (RT_SUCCESS(rc))
     {
-        pAioMgrNew->fFailsafe = fFailsafe || pEpClass->fFailsafe;
+        if (enmMgrType < pEpClass->enmMgrTypeOverride)
+            pAioMgrNew->enmMgrType = enmMgrType;
+        else
+            pAioMgrNew->enmMgrType = pEpClass->enmMgrTypeOverride;
 
         rc = RTSemEventCreate(&pAioMgrNew->EventSem);
         if (RT_SUCCESS(rc))
@@ -410,7 +414,7 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
                 if (RT_SUCCESS(rc))
                 {
                     /* Init the rest of the manager. */
-                    if (!pAioMgrNew->fFailsafe)
+                    if (pAioMgrNew->enmMgrType != PDMACEPFILEMGRTYPE_SIMPLE)
                         rc = pdmacFileAioMgrNormalInit(pAioMgrNew);
 
                     if (RT_SUCCESS(rc))
@@ -418,7 +422,7 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
                         pAioMgrNew->enmState = PDMACEPFILEMGRSTATE_RUNNING;
 
                         rc = RTThreadCreateF(&pAioMgrNew->Thread,
-                                             pAioMgrNew->fFailsafe
+                                             pAioMgrNew->enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE
                                              ? pdmacFileAioMgrFailsafe
                                              : pdmacFileAioMgrNormal,
                                              pAioMgrNew,
@@ -426,7 +430,7 @@ int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILE
                                              RTTHREADTYPE_IO,
                                              0,
                                              "AioMgr%d-%s", pEpClass->cAioMgrs,
-                                             pAioMgrNew->fFailsafe
+                                             pAioMgrNew->enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE
                                              ? "F"
                                              : "N");
                         if (RT_SUCCESS(rc))
@@ -494,7 +498,7 @@ static void pdmacFileAioMgrDestroy(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile, 
     /* Free the ressources. */
     RTCritSectDelete(&pAioMgr->CritSectBlockingEvent);
     RTSemEventDestroy(pAioMgr->EventSem);
-    if (!pAioMgr->fFailsafe)
+    if (pAioMgr->enmMgrType != PDMACEPFILEMGRTYPE_SIMPLE)
         pdmacFileAioMgrNormalDestroy(pAioMgr);
 
     MMR3HeapFree(pAioMgr);
@@ -514,7 +518,7 @@ static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
         /* Init I/O flow control. */
         rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecMax", &pBwMgr->cbVMTransferPerSecMax, UINT32_MAX);
         AssertLogRelRCReturn(rc, rc);
-        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStart", &pBwMgr->cbVMTransferPerSecStart, _1M);
+        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStart", &pBwMgr->cbVMTransferPerSecStart, 5 * _1M);
         AssertLogRelRCReturn(rc, rc);
         rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStep", &pBwMgr->cbVMTransferPerSecStep, _1M);
         AssertLogRelRCReturn(rc, rc);
@@ -584,6 +588,54 @@ bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer
     return fAllowed;
 }
 
+static int pdmacFileMgrTypeFromName(const char *pszVal, PPDMACEPFILEMGRTYPE penmMgrType)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!RTStrCmp(pszVal, "Simple"))
+        *penmMgrType = PDMACEPFILEMGRTYPE_SIMPLE;
+    else if (!RTStrCmp(pszVal, "Async"))
+        *penmMgrType = PDMACEPFILEMGRTYPE_ASYNC;
+    else
+        rc = VERR_CFGM_CONFIG_UNKNOWN_VALUE;
+
+    return rc;
+}
+
+static const char *pdmacFileMgrTypeToName(PDMACEPFILEMGRTYPE enmMgrType)
+{
+    if (enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
+        return "Simple";
+    if (enmMgrType == PDMACEPFILEMGRTYPE_ASYNC)
+        return "Async";
+
+    return NULL;
+}
+
+static int pdmacFileBackendTypeFromName(const char *pszVal, PPDMACFILEEPBACKEND penmBackendType)
+{
+    int rc = VINF_SUCCESS;
+
+    if (!RTStrCmp(pszVal, "Buffered"))
+        *penmBackendType = PDMACFILEEPBACKEND_BUFFERED;
+    else if (!RTStrCmp(pszVal, "NonBuffered"))
+        *penmBackendType = PDMACFILEEPBACKEND_NON_BUFFERED;
+    else
+        rc = VERR_CFGM_CONFIG_UNKNOWN_VALUE;
+
+    return rc;
+}
+
+static const char *pdmacFileBackendTypeToName(PDMACFILEEPBACKEND enmBackendType)
+{
+    if (enmBackendType == PDMACFILEEPBACKEND_BUFFERED)
+        return "Buffered";
+    if (enmBackendType == PDMACFILEEPBACKEND_NON_BUFFERED)
+        return "NonBuffered";
+
+    return NULL;
+}
+
 static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNODE pCfgNode)
 {
     int rc = VINF_SUCCESS;
@@ -598,44 +650,70 @@ static int pdmacFileInitialize(PPDMASYNCCOMPLETIONEPCLASS pClassGlobals, PCFGMNO
 #endif
     if (RT_FAILURE(rc))
     {
-        LogRel(("AIO: Async I/O manager not supported (rc=%Rrc). Falling back to failsafe manager\n",
+        LogRel(("AIO: Async I/O manager not supported (rc=%Rrc). Falling back to simple manager\n",
                 rc));
-        pEpClassFile->fFailsafe = true;
+        pEpClassFile->enmMgrTypeOverride = PDMACEPFILEMGRTYPE_SIMPLE;
+        pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_BUFFERED;
     }
     else
     {
         pEpClassFile->uBitmaskAlignment   = AioLimits.cbBufferAlignment ? ~((RTR3UINTPTR)AioLimits.cbBufferAlignment - 1) : RTR3UINTPTR_MAX;
         pEpClassFile->cReqsOutstandingMax = AioLimits.cReqsOutstandingMax;
 
-        /* The user can force the failsafe manager. */
-        rc = CFGMR3QueryBoolDef(pCfgNode, "UseFailsafeIo", &pEpClassFile->fFailsafe, false);
-        AssertLogRelRCReturn(rc, rc);
+        if (pCfgNode)
+        {
+            /* Query the default manager type */
+            char *pszVal = NULL;
+            rc = CFGMR3QueryStringAllocDef(pCfgNode, "IoMgr", &pszVal, "Async");
+            AssertLogRelRCReturn(rc, rc);
 
-        if (pEpClassFile->fFailsafe)
-            LogRel(("AIOMgr: Failsafe I/O was requested by user\n"));
+            rc = pdmacFileMgrTypeFromName(pszVal, &pEpClassFile->enmMgrTypeOverride);
+            MMR3HeapFree(pszVal);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            LogRel(("AIOMgr: Default manager type is \"%s\"\n", pdmacFileMgrTypeToName(pEpClassFile->enmMgrTypeOverride)));
+
+            /* Query default backend type */
+#ifndef RT_OS_LINUX
+            rc = CFGMR3QueryStringAllocDef(pCfgNode, "FileBackend", &pszVal, "Buffered");
+#else /* Linux can't use buffered with async */
+            rc = CFGMR3QueryStringAllocDef(pCfgNode, "FileBackend", &pszVal, "NonBuffered");
+#endif
+            AssertLogRelRCReturn(rc, rc);
+
+            rc = pdmacFileBackendTypeFromName(pszVal, &pEpClassFile->enmEpBackendDefault);
+            MMR3HeapFree(pszVal);
+            if (RT_FAILURE(rc))
+                return rc;
+
+            LogRel(("AIOMgr: Default file backend is \"%s\"\n", pdmacFileBackendTypeToName(pEpClassFile->enmEpBackendDefault)));
+
+#ifdef RT_OS_LINUX
+            if (   pEpClassFile->enmMgrTypeOverride == PDMACEPFILEMGRTYPE_ASYNC
+                && pEpClassFile->enmEpBackendDefault == PDMACFILEEPBACKEND_BUFFERED)
+            {
+                LogRel(("AIOMgr: Linux does not support buffered async I/O, changing to non buffered\n"));
+                pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_NON_BUFFERED;
+            }
+#endif
+        }
+        else
+        {
+            /* No configuration supplied, set defaults */
+            pEpClassFile->enmMgrTypeOverride = PDMACEPFILEMGRTYPE_ASYNC;
+#ifdef RT_OS_LINUX
+            pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_NON_BUFFERED;
+#else
+            pEpClassFile->enmEpBackendDefault = PDMACFILEEPBACKEND_BUFFERED;
+#endif
+        }
     }
 
     /* Init critical section. */
     rc = RTCritSectInit(&pEpClassFile->CritSect);
     if (RT_SUCCESS(rc))
     {
-        /* Check if the host cache should be used too. */
-#ifndef RT_OS_LINUX
-        rc = CFGMR3QueryBoolDef(pCfgNode, "HostCacheEnabled", &pEpClassFile->fHostCacheEnabled, false);
-        AssertLogRelRCReturn(rc, rc);
-#else
-        /*
-         * Host cache + async I/O is not supported on Linux. Check if the user enabled the cache,
-         * leave a warning and disable it always.
-         */
-        bool fDummy;
-        rc = CFGMR3QueryBool(pCfgNode, "HostCacheEnabled", &fDummy);
-        if (RT_SUCCESS(rc))
-            LogRel(("AIOMgr: The host cache is not supported with async I/O on Linux\n"));
-
-        pEpClassFile->fHostCacheEnabled = false;
-#endif
-
         /* Check if the cache was disabled by the user. */
         rc = CFGMR3QueryBoolDef(pCfgNode, "CacheEnabled", &pEpClassFile->fCacheEnabled, true);
         AssertLogRelRCReturn(rc, rc);
@@ -686,7 +764,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     int rc = VINF_SUCCESS;
     PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
     PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->pEpClass;
-    bool fUseFailsafeManager = pEpClassFile->fFailsafe;
+    PDMACEPFILEMGRTYPE enmMgrType = pEpClassFile->enmMgrTypeOverride;
+    PDMACFILEEPBACKEND enmEpBackend = pEpClassFile->enmEpBackendDefault;
 
     AssertMsgReturn((fFlags & ~(PDMACEP_FILE_FLAGS_READ_ONLY | PDMACEP_FILE_FLAGS_CACHING)) == 0,
                     ("PDMAsyncCompletion: Invalid flag specified\n"), VERR_INVALID_PARAMETER);
@@ -695,10 +774,8 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                          ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
                          : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE;
 
-    if (!pEpClassFile->fFailsafe)
+    if (enmEpBackend == PDMACFILEEPBACKEND_NON_BUFFERED)
     {
-        fFileFlags |= (RTFILE_O_ASYNC_IO | RTFILE_O_WRITE_THROUGH);
-
         /*
          * We only disable the cache if the size of the file is a multiple of 512.
          * Certain hosts like Windows, Linux and Solaris require that transfer sizes
@@ -716,20 +793,12 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 
             rc = RTFileGetSize(File, &cbSize);
             if (RT_SUCCESS(rc) && ((cbSize % 512) == 0))
-            {
-                fFileFlags &= ~RTFILE_O_WRITE_THROUGH;
-
-#if defined(RT_OS_LINUX)
-                AssertMsg(!pEpClassFile->fHostCacheEnabled, ("Host cache + async I/O is not supported on Linux\n"));
                 fFileFlags |= RTFILE_O_NO_CACHE;
-#else
-                if (!pEpClassFile->fHostCacheEnabled)
-                    fFileFlags |= RTFILE_O_NO_CACHE;
-#endif
+            else
+            {
+                /* Downgrade to the buffered backend */
+                enmEpBackend = PDMACFILEEPBACKEND_BUFFERED;
             }
-
-            pEpFile->cbFile = cbSize;
-
             RTFileClose(File);
         }
     }
@@ -752,10 +821,11 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
          * Have to disable async I/O here too because it requires O_DIRECT.
          */
         fFileFlags &= ~RTFILE_O_NO_CACHE;
+        enmEpBackend = PDMACFILEEPBACKEND_BUFFERED;
 
 #ifdef RT_OS_LINUX
         fFileFlags &= ~RTFILE_O_ASYNC_IO;
-        fUseFailsafeManager = true;
+        enmMgrType   = PDMACEPFILEMGRTYPE_SIMPLE;
 #endif
 
         /* Open again. */
@@ -792,12 +862,13 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                 pEpFile->pTasksFreeTail = pEpFile->pTasksFreeHead;
                 pEpFile->cTasksCached   = 0;
                 pEpFile->pBwMgr         = pEpClassFile->pBwMgr;
+                pEpFile->enmBackendType = enmEpBackend;
                 pdmacFileBwRef(pEpFile->pBwMgr);
 
-                if (fUseFailsafeManager)
+                if (enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
                 {
-                    /* Safe mode. Every file has its own async I/O manager. */
-                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, true);
+                    /* Simple mode. Every file has its own async I/O manager. */
+                    rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, PDMACEPFILEMGRTYPE_SIMPLE);
                     AssertRC(rc);
                 }
                 else
@@ -816,13 +887,17 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 
                     pAioMgr = pEpClassFile->pAioMgrHead;
 
-                    /* Check for an idling not failsafe one or create new if not found */
-                    while (pAioMgr && pAioMgr->fFailsafe)
+                    /* Check for an idling manager of the same type */
+                    while (pAioMgr)
+                    {
+                        if (pAioMgr->enmMgrType == enmMgrType)
+                            break;
                         pAioMgr = pAioMgr->pNext;
+                    }
 
                     if (!pAioMgr)
                     {
-                        rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, false);
+                        rc = pdmacFileAioMgrCreate(pEpClassFile, &pAioMgr, enmMgrType);
                         AssertRC(rc);
                     }
                 }
@@ -887,7 +962,7 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
      * If the async I/O manager is in failsafe mode this is the only endpoint
      * he processes and thus can be destroyed now.
      */
-    if (pEpFile->pAioMgr->fFailsafe)
+    if (pEpFile->pAioMgr->enmMgrType == PDMACEPFILEMGRTYPE_SIMPLE)
         pdmacFileAioMgrDestroy(pEpClassFile, pEpFile->pAioMgr);
 
     /* Free cached tasks. */
