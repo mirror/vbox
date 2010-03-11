@@ -88,6 +88,21 @@ typedef enum PDMACEPFILEAIOMGRBLOCKINGEVENT
 } PDMACEPFILEAIOMGRBLOCKINGEVENT;
 
 /**
+ * I/O manager type.
+ */
+typedef enum PDMACEPFILEMGRTYPE
+{
+    /** Simple aka failsafe */
+    PDMACEPFILEMGRTYPE_SIMPLE = 0,
+    /** Async I/O with host cache enabled. */
+    PDMACEPFILEMGRTYPE_ASYNC,
+    /** 32bit hack */
+    PDMACEPFILEMGRTYPE_32BIT_HACK = 0x7fffffff
+} PDMACEPFILEMGRTYPE;
+/** Pointer to a I/O manager type */
+typedef PDMACEPFILEMGRTYPE *PPDMACEPFILEMGRTYPE;
+
+/**
  * States of the I/O manager.
  */
 typedef enum PDMACEPFILEMGRSTATE
@@ -123,14 +138,14 @@ typedef struct PDMACEPFILEMGR
     R3PTRTYPE(struct PDMACEPFILEMGR *)     pNext;
     /** Previous Aio manager in the list. */
     R3PTRTYPE(struct PDMACEPFILEMGR *)     pPrev;
+    /** Manager type */
+    PDMACEPFILEMGRTYPE                     enmMgrType;
     /** Current state of the manager. */
     PDMACEPFILEMGRSTATE                    enmState;
     /** Event semaphore the manager sleeps on when waiting for new requests. */
     RTSEMEVENT                             EventSem;
     /** Flag whether the thread waits in the event semaphore. */
     volatile bool                          fWaitingEventSem;
-   /** Flag whether this manager uses the failsafe method. */
-    bool                                   fFailsafe;
     /** Thread data */
     RTTHREAD                               Thread;
     /** The async I/O context for this manager. */
@@ -401,18 +416,33 @@ typedef struct PDMACFILEENDPOINTCACHE
 } PDMACFILEENDPOINTCACHE, *PPDMACFILEENDPOINTCACHE;
 
 /**
+ * Backend type for the endpoint.
+ */
+typedef enum PDMACFILEEPBACKEND
+{
+    /** Non buffered. */
+    PDMACFILEEPBACKEND_NON_BUFFERED = 0,
+    /** Buffered (i.e host cache enabled) */
+    PDMACFILEEPBACKEND_BUFFERED,
+    /** 32bit hack */
+    PDMACFILEEPBACKEND_32BIT_HACK = 0x7fffffff
+} PDMACFILEEPBACKEND;
+/** Pointer to a backend type. */
+typedef PDMACFILEEPBACKEND *PPDMACFILEEPBACKEND;
+
+/**
  * Global data for the file endpoint class.
  */
 typedef struct PDMASYNCCOMPLETIONEPCLASSFILE
 {
     /** Common data. */
     PDMASYNCCOMPLETIONEPCLASS           Core;
-    /** Flag whether we use the failsafe method. */
-    bool                                fFailsafe;
+    /** Override I/O manager type - set to SIMPLE after failure. */
+    PDMACEPFILEMGRTYPE                  enmMgrTypeOverride;
+    /** Default backend type for the endpoint. */
+    PDMACFILEEPBACKEND                  enmEpBackendDefault;
     /** Flag whether the file data cache is enabled. */
     bool                                fCacheEnabled;
-    /** Flag whether the host cache should be used too. */
-    bool                                fHostCacheEnabled;
     /** Critical section protecting the list of async I/O managers. */
     RTCRITSECT                          CritSect;
     /** Pointer to the head of the async I/O managers. */
@@ -479,6 +509,8 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     PDMASYNCCOMPLETIONENDPOINT             Core;
     /** Current state of the endpoint. */
     PDMASYNCCOMPLETIONENDPOINTFILESTATE    enmState;
+    /** The backend to use for this endpoint. */
+    PDMACFILEEPBACKEND                     enmBackendType;
     /** async I/O manager this endpoint is assigned to. */
     R3PTRTYPE(volatile PPDMACEPFILEMGR)    pAioMgr;
     /** Flags for opening the file. */
@@ -643,7 +675,7 @@ int pdmacFileAioMgrNormal(RTTHREAD ThreadSelf, void *pvUser);
 int pdmacFileAioMgrNormalInit(PPDMACEPFILEMGR pAioMgr);
 void pdmacFileAioMgrNormalDestroy(PPDMACEPFILEMGR pAioMgr);
 
-int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr, bool fFailsafe);
+int pdmacFileAioMgrCreate(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClass, PPPDMACEPFILEMGR ppAioMgr, PDMACEPFILEMGRTYPE enmMgrType);
 
 int pdmacFileAioMgrAddEndpoint(PPDMACEPFILEMGR pAioMgr, PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
 

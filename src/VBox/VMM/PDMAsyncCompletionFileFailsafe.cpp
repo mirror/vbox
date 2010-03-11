@@ -1,7 +1,7 @@
 /* $Id$ */
 /** @file
  * PDM Async I/O - Transport data asynchronous in R3 using EMT.
- * Failsafe File I/O manager.
+ * Simple File I/O manager.
  */
 
 /*
