@@ -2073,7 +2073,7 @@ STDMETHODIMP Medium::Close()
 
     if (fNeedsSaveSettings)
     {
-        AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
+        AutoWriteLock vboxlock(pVirtualBox COMMA_LOCKVAL_SRC_POS);
         pVirtualBox->saveSettings();
     }
 
