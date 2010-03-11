@@ -34,7 +34,7 @@
 #include <iprt/log.h>
 #ifdef IN_RING3
 # include <iprt/alloc.h>
-# include <iprt/cache.h>
+# include <iprt/memcache.h>
 # include <iprt/param.h>
 # include <iprt/uuid.h>
 #endif
@@ -368,7 +368,7 @@ typedef struct BUSLOGIC
 #endif
 
     /** Cache for task states. */
-    R3PTRTYPE(PRTOBJCACHE)          pTaskCache;
+    R3PTRTYPE(RTMEMCACHE)           hTaskCache;
 
     /** Device state for BIOS access. */
     VBOXSCSI                        VBoxSCSI;
@@ -1765,7 +1765,7 @@ static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
     PBUSLOGICTASKSTATE pTaskState;
     uint32_t           uTargetDevice;
 
-    rc = RTCacheRequest(pBusLogic->pTaskCache, (void **)&pTaskState);
+    rc = RTMemCacheAllocEx(pBusLogic->hTaskCache, (void **)&pTaskState);
     AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
 
     pTaskState->fBIOS = true;
@@ -1794,8 +1794,7 @@ static int buslogicPrepareBIOSSCSIRequest(PBUSLOGIC pBusLogic)
         rc = vboxscsiRequestFinished(&pBusLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
         AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
 
-        rc = RTCacheInsert(pBusLogic->pTaskCache, pTaskState);
-        AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
+        RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
     }
     else
     {
@@ -1987,9 +1986,7 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     }
 
     /* Add task to the cache. */
-    rc = RTCacheInsert(pBusLogic->pTaskCache, pTaskState);
-    AssertMsgRC(rc, ("Inserting task state into cache failed rc=%Rrc\n", rc));
-
+    RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
     return VINF_SUCCESS;
 }
 
@@ -2005,7 +2002,7 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
     RTGCPHYS           GCPhysAddrMailboxCurrent;
     int rc;
 
-    rc = RTCacheRequest(pBusLogic->pTaskCache, (void **)&pTaskState);
+    rc = RTMemCacheAllocEx(pBusLogic->hTaskCache, (void **)&pTaskState);
     AssertMsgReturn(RT_SUCCESS(rc) && (pTaskState != NULL), ("Failed to get task state from cache\n"), rc);
 
     pTaskState->fBIOS = false;
@@ -2078,8 +2075,7 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
                                         BUSLOGIC_MAILBOX_INCOMING_DEVICE_STATUS_OPERATION_GOOD,
                                         BUSLOGIC_MAILBOX_INCOMING_COMPLETION_WITH_ERROR);
 
-            rc = RTCacheInsert(pBusLogic->pTaskCache, pTaskState);
-            AssertMsgRC(rc, ("Failed to insert task state into cache rc=%Rrc\n", rc));
+            RTMemCacheFree(pBusLogic->hTaskCache, pTaskState);
         }
         else
         {
@@ -2509,7 +2505,7 @@ static DECLCALLBACK(int) buslogicDestruct(PPDMDEVINS pDevIns)
     PBUSLOGIC  pThis = PDMINS_2_DATA(pDevIns, PBUSLOGIC);
     PDMDEV_CHECK_VERSIONS_RETURN_QUIET(pDevIns);
 
-    int rc = RTCacheDestroy(pThis->pTaskCache);
+    int rc = RTMemCacheDestroy(pThis->hTaskCache);
     AssertMsgRC(rc, ("Destroying task cache failed rc=%Rrc\n", rc));
 
     return rc;
@@ -2590,7 +2586,8 @@ static DECLCALLBACK(int) buslogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
         return PDMDEV_SET_ERROR(pDevIns, rc, N_("BusLogic cannot register legacy I/O handlers"));
 
     /* Initialize task cache. */
-    rc = RTCacheCreate(&pThis->pTaskCache, 0 /* unlimited */, sizeof(BUSLOGICTASKSTATE), RTOBJCACHE_PROTECT_INSERT);
+    rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(BUSLOGICTASKSTATE), 0, UINT32_MAX,
+                          NULL, NULL, NULL, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("BusLogic: Failed to initialize task cache\n"));

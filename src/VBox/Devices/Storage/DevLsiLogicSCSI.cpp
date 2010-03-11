@@ -29,7 +29,7 @@
 #include <iprt/asm.h>
 #include <iprt/string.h>
 #ifdef IN_RING3
-# include <iprt/cache.h>
+# include <iprt/memcache.h>
 # include <iprt/mem.h>
 # include <iprt/param.h>
 # include <iprt/uuid.h>
@@ -269,7 +269,7 @@ typedef struct LSILOGICSCSI
     /** BIOS emulation. */
     VBOXSCSI                       VBoxSCSI;
     /** Cache for allocated tasks. */
-    R3PTRTYPE(PRTOBJCACHE)         pTaskCache;
+    R3PTRTYPE(RTMEMCACHE)          hTaskCache;
     /** Status LUN: The base interface. */
     PDMIBASE                       IBase;
     /** Status LUN: Leds interface. */
@@ -1939,7 +1939,7 @@ static int lsilogicProcessSCSIIORequest(PLSILOGICSCSI pLsiLogic, PLSILOGICTASKST
     pTaskState->IOCReply.SCSIIOError.u32ResponseInfo     = 0;
 
     lsilogicFinishAddressReply(pLsiLogic, &pTaskState->IOCReply, false);
-    RTCacheInsert(pLsiLogic->pTaskCache, pTaskState);
+    RTMemCacheFree(pLsiLogic->hTaskCache, pTaskState);
 
     return rc;
 }
@@ -2011,7 +2011,7 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
         }
     }
 
-    RTCacheInsert(pLsiLogic->pTaskCache, pTaskState);
+    RTMemCacheFree(pLsiLogic->hTaskCache, pTaskState);
 
     return VINF_SUCCESS;
 }
@@ -3372,7 +3372,7 @@ static DECLCALLBACK(bool) lsilogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQU
         PLSILOGICTASKSTATE pTaskState;
 
         /* Get new task state. */
-        rc = RTCacheRequest(pLsiLogic->pTaskCache, (void **)&pTaskState);
+        rc = RTMemCacheAllocEx(pLsiLogic->hTaskCache, (void **)&pTaskState);
         AssertRC(rc);
 
         pTaskState->GCPhysMessageFrameAddr = GCPhysMessageFrameAddr;
@@ -3437,7 +3437,7 @@ static DECLCALLBACK(bool) lsilogicNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQU
                 MptReplyUnion Reply;
                 rc = lsilogicProcessMessageRequest(pLsiLogic, &pTaskState->GuestRequest.Header, &Reply);
                 AssertRC(rc);
-                RTCacheInsert(pLsiLogic->pTaskCache, pTaskState);
+                RTMemCacheFree(pLsiLogic->hTaskCache, pTaskState);
             }
 
             pLsiLogic->uRequestQueueNextAddressRead++;
@@ -3513,7 +3513,7 @@ static int lsilogicPrepareBIOSSCSIRequest(PLSILOGICSCSI pLsiLogic)
     PLSILOGICTASKSTATE pTaskState;
     uint32_t           uTargetDevice;
 
-    rc = RTCacheRequest(pLsiLogic->pTaskCache, (void **)&pTaskState);
+    rc = RTMemCacheAllocEx(pLsiLogic->hTaskCache, (void **)&pTaskState);
     AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
 
     pTaskState->fBIOS = true;
@@ -3553,9 +3553,7 @@ static int lsilogicPrepareBIOSSCSIRequest(PLSILOGICSCSI pLsiLogic)
     rc = vboxscsiRequestFinished(&pLsiLogic->VBoxSCSI, &pTaskState->PDMScsiRequest);
     AssertMsgRCReturn(rc, ("Finishing BIOS SCSI request failed rc=%Rrc\n", rc), rc);
 
-    rc = RTCacheInsert(pLsiLogic->pTaskCache, pTaskState);
-    AssertMsgRCReturn(rc, ("Getting task from cache failed rc=%Rrc\n", rc), rc);
-
+    RTMemCacheFree(pLsiLogic->hTaskCache, pTaskState);
     return rc;
 }
 
@@ -4363,8 +4361,8 @@ static DECLCALLBACK(int) lsilogicDestruct(PPDMDEVINS pDevIns)
 
     /* Destroy task cache. */
     int rc = VINF_SUCCESS;
-    if (pThis->pTaskCache)
-        rc = RTCacheDestroy(pThis->pTaskCache);
+    if (pThis->hTaskCache != NIL_RTMEMCACHE)
+        rc = RTMemCacheDestroy(pThis->hTaskCache);
 
     lsilogicConfigurationPagesFree(pThis);
 
@@ -4551,7 +4549,8 @@ static DECLCALLBACK(int) lsilogicConstruct(PPDMDEVINS pDevIns, int iInstance, PC
     /*
      * Allocate task cache.
      */
-    rc = RTCacheCreate(&pThis->pTaskCache, 0, sizeof(LSILOGICTASKSTATE), RTOBJCACHE_PROTECT_INSERT);
+    rc = RTMemCacheCreate(&pThis->hTaskCache, sizeof(LSILOGICTASKSTATE), 0, UINT32_MAX,
+                          NULL, NULL, NULL, 0);
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Cannot create task cache"));

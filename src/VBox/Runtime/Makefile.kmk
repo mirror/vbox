@@ -257,7 +257,6 @@ RuntimeR3_SOURCES       = \
 	common/misc/RTFileOpenV.cpp \
 	common/misc/assert.cpp \
 	common/misc/buildconfig.cpp \
-	common/misc/cache.cpp \
 	common/misc/cidr.cpp \
 	common/misc/getopt.cpp \
 	common/misc/getoptargv.cpp \
