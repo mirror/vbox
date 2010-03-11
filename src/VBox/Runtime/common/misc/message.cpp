@@ -58,7 +58,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
                 char *pszEnd = strchr(psz, '\n');
                 if (!pszEnd)
                 {
-                    RTStrmPrintf(pDst, "%s: %s%s\n", pszPrefix, &g_szrtProcExePath[g_offrtProcName], psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", &g_szrtProcExePath[g_offrtProcName], pszPrefix, psz);
                     break;
                 }
                 if (pszEnd == psz)
@@ -66,7 +66,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
                 else
                 {
                     *pszEnd = '\0';
-                    RTStrmPrintf(pDst, "%s: %s%s\n", pszPrefix, &g_szrtProcExePath[g_offrtProcName], psz);
+                    RTStrmPrintf(pDst, "%s: %s%s\n", &g_szrtProcExePath[g_offrtProcName], pszPrefix, psz);
                 }
                 psz = pszEnd + 1;
             } while (*psz);
@@ -75,7 +75,7 @@ static int rtMsgWorker(PRTSTREAM pDst, const char *pszPrefix, const char *pszFor
         else
         {
             /* Simple fallback for handling out-of-memory conditions. */
-            RTStrmPrintf(pDst, "%s: %s", pszPrefix, &g_szrtProcExePath[g_offrtProcName]);
+            RTStrmPrintf(pDst, "%s: %s", &g_szrtProcExePath[g_offrtProcName], pszPrefix);
             RTStrmPrintfV(pDst, pszFormat, va);
             if (!strchr(pszFormat, '\n'))
                 RTStrmPrintf(pDst, "\n");
@@ -98,7 +98,7 @@ RT_EXPORT_SYMBOL(RTMsgError);
 
 RTDECL(int)  RTMsgErrorV(const char *pszFormat, va_list va)
 {
-    return rtMsgWorker(g_pStdErr, " error:", pszFormat, va);
+    return rtMsgWorker(g_pStdErr, "error: ", pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTMsgErrorV);
 
@@ -149,7 +149,7 @@ RT_EXPORT_SYMBOL(RTMsgInfo);
 
 RTDECL(int)  RTMsgWarningV(const char *pszFormat, va_list va)
 {
-    return rtMsgWorker(g_pStdErr, " warning:", pszFormat, va);
+    return rtMsgWorker(g_pStdErr, "warning: ", pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTMsgWarningV);
 
@@ -167,7 +167,7 @@ RT_EXPORT_SYMBOL(RTMsgInfo);
 
 RTDECL(int)  RTMsgInfoV(const char *pszFormat, va_list va)
 {
-    return rtMsgWorker(g_pStdOut, " info:", pszFormat, va);
+    return rtMsgWorker(g_pStdOut, "info: ", pszFormat, va);
 }
 RT_EXPORT_SYMBOL(RTMsgInfoV);
 
