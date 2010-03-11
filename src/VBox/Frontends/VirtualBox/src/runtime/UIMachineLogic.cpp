@@ -472,6 +472,94 @@ void UIMachineLogic::retranslateUi()
 #endif /* Q_WS_MAC */
 }
 
+void UIMachineLogic::tryToStartMachine()
+{
+    /* If we are started already => just return: */
+    if (uisession()->isRunning() || uisession()->isPaused())
+        return;
+
+    /* Prepare console powerup: */
+    prepareConsolePowerUp();
+
+    /* Get current machine/console: */
+    CMachine machine = session().GetMachine();
+    CConsole console = session().GetConsole();
+
+    /* Start VM: */
+    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+                         console.PowerUpPaused() : console.PowerUp();
+
+#if 0 // TODO: Check immediate failure!
+    /* Check for an immediate failure: */
+    if (!console.isOk())
+    {
+        vboxProblem().cannotStartMachine(console);
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+
+    /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
+    setPreventAutoClose(true);
+#endif
+
+    /* Show "Starting/Restoring" progress dialog: */
+    if (uisession()->isSaved())
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow(), 0);
+    else
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow());
+
+#if 0 // TODO: Check immediate failure!
+    /* Check for an progress failure */
+    if (progress.GetResultCode() != 0)
+    {
+        vboxProblem().cannotStartMachine(progress);
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+
+    /* Enable auto-closure again: */
+    setPreventAutoClose(false);
+
+    /* Check if we missed a really quick termination after successful startup, and process it if we did: */
+    if (uisession()->isTurnedOff())
+    {
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+#endif
+
+#if 0 // TODO: Rework debugger logic!
+# ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Open the debugger in "full screen" mode requested by the user. */
+    else if (vboxGlobal().isDebuggerAutoShowEnabled())
+    {
+        /* console in upper left corner of the desktop. */
+        QRect rct (0, 0, 0, 0);
+        QDesktopWidget *desktop = QApplication::desktop();
+        if (desktop)
+            rct = desktop->availableGeometry(pos());
+        move (QPoint (rct.x(), rct.y()));
+
+        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
+            sltShowDebugStatistics();
+        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
+            sltShowDebugCommandLine();
+
+        if (!vboxGlobal().isStartPausedEnabled())
+            machineWindowWrapper()->machineView()->pause (false);
+    }
+# endif
+#endif
+
+#ifdef VBOX_WITH_UPDATE_REQUEST
+    /* Check for updates if necessary: */
+    vboxGlobal().showUpdateDialog(false /* force request? */);
+#endif
+
+    /* Warn listeners about machine was started: */
+    emit sigMachineStarted();
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogic::updateDockOverlay()
 {
@@ -855,8 +943,8 @@ void UIMachineLogic::sltAdditionsStateChanged()
 {
     /* Variable falgs: */
     bool fIsAdditionsActive = uisession()->isGuestAdditionsActive();
-    bool fIsSupportsGraphics = fIsAdditionsActive && uisession()->isGuestSupportsGraphics();
-    bool fIsSupportsSeamless = fIsSupportsGraphics && uisession()->isGuestSupportsSeamless();
+    bool fIsSupportsGraphics = uisession()->isGuestSupportsGraphics();
+    bool fIsSupportsSeamless = uisession()->isGuestSupportsSeamless();
 
     /* Update action states: */
     actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->setEnabled(fIsSupportsGraphics);

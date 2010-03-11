@@ -82,6 +82,10 @@ public:
     void updateDockIcon();
 #endif /* Q_WS_MAC */
 
+signals:
+
+    void sigMachineStarted();
+
 protected:
 
     /* Machine logic constructor/destructor: */
@@ -101,6 +105,7 @@ protected:
     /* Protected members: */
     void addMachineWindow(UIMachineWindow *pMachineWindow);
     void retranslateUi();
+    void tryToStartMachine();
 #ifdef Q_WS_MAC
     bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
     void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }
