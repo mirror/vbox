@@ -984,7 +984,8 @@ void UIMachineLogic::sltMouseCapabilityChanged()
     /* Update action state: */
     QAction *pAction = actionsPool()->action(UIActionIndex_Toggle_MouseIntegration);
     pAction->setEnabled(fIsMouseSupportsAbsolute && fIsMouseSupportsRelative && !fIsMouseHostCursorNeeded);
-    pAction->setChecked(fIsMouseHostCursorNeeded || pAction->isChecked());
+    if (fIsMouseHostCursorNeeded)
+        pAction->setChecked(false);
 }
 
 void UIMachineLogic::sltUSBDeviceStateChange(const CUSBDevice &device, bool fIsAttached, const CVirtualBoxErrorInfo &error)
