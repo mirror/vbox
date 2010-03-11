@@ -53,6 +53,20 @@
  */
 #define RTALLOC_EFENCE_SIZE             PAGE_SIZE
 
+/** @def RTALLOC_EFENCE_ALIGNMENT
+ * The allocation alignment, power of two of course.
+ *
+ * Normally, 1 would be the perfect choice here, except that there is code, like
+ * the atomic operations in iprt/asm.h, that makes assumptions about naturally
+ * aligned data members.  If the code you're working against doesn't have strict
+ * alignment requirements, changing this to 1 is highly desirable.
+ */
+#if 1
+# define RTALLOC_EFENCE_ALIGNMENT       (ARCH_BITS / 8)
+#else
+# define RTALLOC_EFENCE_ALIGNMENT       1
+#endif
+
 /** @def RTALLOC_EFENCE_IN_FRONT
  * Define this to put the fence up in front of the block.
  * The default (when this isn't defined) is to up it up after the block.
@@ -94,13 +108,13 @@
  * This define will enable memset(,RTALLOC_EFENCE_NOMAN_FILLER,)'ing the
  * unprotected but not allocated area of memory, the so called no man's land.
  */
-#define RTALLOC_EFENCE_NOMAN_FILLER           0xaa
+#define RTALLOC_EFENCE_NOMAN_FILLER     0xaa
 
 /** @def RTALLOC_EFENCE_FENCE_FILLER
  * This define will enable memset(,RTALLOC_EFENCE_FENCE_FILLER,)'ing the
  * fence itself, as debuggers can usually read them.
  */
-#define RTALLOC_EFENCE_FENCE_FILLER           0xcc
+#define RTALLOC_EFENCE_FENCE_FILLER     0xcc
 
 #if defined(DOXYGEN_RUNNING)
 /** @def RTALLOC_EFENCE_CPP
