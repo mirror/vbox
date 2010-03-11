@@ -238,7 +238,7 @@ int VBoxSHGSMICommandPostprocessCompletion (struct _HGSMIHEAP * pHeap, PVBOXSHGS
         PVBOXSHGSMIHEADER pCmd = VBOXSHGSMI_LISTENTRY2CMD(pCur);
         PFNVBOXSHGSMICMDCOMPLETION pfnCallback = (PFNVBOXSHGSMICMDCOMPLETION)pCmd->u64Info1;
         void *pvCallback = (void*)pCmd->u64Info2;
-        pfnCallback(pHeap, pCmd, pvCallback);
+        pfnCallback(pHeap, VBoxSHGSMIBufferData(pCmd), pvCallback);
     }
 
     return VINF_SUCCESS;

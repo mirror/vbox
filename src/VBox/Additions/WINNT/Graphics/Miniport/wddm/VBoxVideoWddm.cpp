@@ -105,7 +105,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoScreen (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_A
         pScreen->u32ViewIndex    = pPrimaryInfo->VidPnSourceId;
         pScreen->i32OriginX      = 0;
         pScreen->i32OriginY      = 0;
-        pScreen->u32StartOffset  = offVram;
+        pScreen->u32StartOffset  = (uint32_t)offVram;
         pScreen->u32LineSize     = pAllocation->u.SurfInfo.pitch;
         pScreen->u32Width        = pAllocation->u.SurfInfo.width;
         pScreen->u32Height       = pAllocation->u.SurfInfo.height;
@@ -139,7 +139,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALL
         VBVAINFOVIEW *pView = (VBVAINFOVIEW *)p;
 
         pView->u32ViewIndex     = pPrimaryInfo->VidPnSourceId;
-        pView->u32ViewOffset    = offVram;
+        pView->u32ViewOffset    = (uint32_t)offVram;
         pView->u32ViewSize      = vboxWddmVramReportedSegmentSize(pDevExt)/pDevExt->cSources;
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
@@ -775,18 +775,20 @@ BOOLEAN DxgkDdiInterruptRoutine(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     BOOLEAN bOur = FALSE;
+    BOOLEAN bNeedDpc = FALSE;
     if (pDevExt->u.primary.pHostFlags) /* If HGSMI is enabled at all. */
     {
         VBOXSHGSMILIST CtlList;
         VBOXSHGSMILIST DmaCmdList;
         vboxSHGSMIListInit(&CtlList);
         vboxSHGSMIListInit(&DmaCmdList);
+
+        uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+        bOur = (flags & HGSMIHOSTFLAGS_IRQ);
         do
         {
-            uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
             if (flags & HGSMIHOSTFLAGS_GCOMMAND_COMPLETED)
             {
-                bOur = TRUE;
                 /* read the command offset */
                 HGSMIOFFSET offCmd = VBoxHGSMIGuestRead(pDevExt);
                 Assert(offCmd != HGSMIOFFSET_VOID);
@@ -818,34 +820,48 @@ BOOLEAN DxgkDdiInterruptRoutine(
             }
             else if (flags & HGSMIHOSTFLAGS_COMMANDS_PENDING)
             {
-                bOur = TRUE;
                 AssertBreakpoint();
                 /* @todo: FIXME: implement !!! */
             }
-            else if (flags & HGSMIHOSTFLAGS_IRQ)
-            {
-                bOur = TRUE;
-                AssertBreakpoint();
-                /* unknown command */
-            }
             else
                 break;
+
+            flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
         } while (1);
 
         if (!vboxSHGSMIListIsEmpty(&CtlList))
+        {
             vboxSHGSMIListCat(&pDevExt->CtlList, &CtlList);
+            bNeedDpc = TRUE;
+        }
 
         if (!vboxSHGSMIListIsEmpty(&DmaCmdList))
+        {
             vboxSHGSMIListCat(&pDevExt->DmaCmdList, &DmaCmdList);
+            bNeedDpc = TRUE;
+        }
 
         if (pDevExt->bSetNotifyDxDpc)
         {
+            Assert(bNeedDpc == TRUE);
             pDevExt->bNotifyDxDpc = TRUE;
             pDevExt->bSetNotifyDxDpc = FALSE;
+            bNeedDpc = TRUE;
         }
 
         if (bOur)
+        {
             HGSMIClearIrq (pDevExt);
+#ifdef DEBUG_misha
+            /* this is not entirely correct since host may concurrently complete some commands and raise a new IRQ while we are here,
+             * still this allows to check that the host flags are correctly cleared after the ISR */
+            Assert(pDevExt->u.primary.pHostFlags);
+            uint32_t flags = pDevExt->u.primary.pHostFlags->u32HostFlags;
+            Assert(flags == 0);
+#endif
+            BOOLEAN bDpcQueued = pDevExt->u.primary.DxgkInterface.DxgkCbQueueDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
+            Assert(bDpcQueued);
+        }
     }
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%p), bOur(0x%x)\n", MiniportDeviceContext, (ULONG)bOur));
@@ -888,31 +904,33 @@ VOID DxgkDdiDpcRoutine(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
-    VBOXWDDM_DPCDATA dpcData = {0};
+    VBOXWDDM_GETDPCDATA_CONTEXT context = {0};
     BOOLEAN bRet;
+
+    context.pDevExt = pDevExt;
 
     /* get DPC data at IRQL */
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbSynchronizeExecution(
             pDevExt->u.primary.DxgkInterface.DeviceHandle,
             vboxWddmGetDPCDataCallback,
-            &dpcData,
-            0,
+            &context,
+            0, /* IN ULONG MessageNumber */
             &bRet);
     Assert(Status == STATUS_SUCCESS);
 
-    if (!vboxSHGSMIListIsEmpty(&dpcData.CtlList))
+    if (!vboxSHGSMIListIsEmpty(&context.data.CtlList))
     {
-        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.hgsmiAdapterHeap, &dpcData.CtlList);
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.hgsmiAdapterHeap, &context.data.CtlList);
         AssertRC(rc);
     }
 
-    if (!vboxSHGSMIListIsEmpty(&dpcData.DmaCmdList))
+    if (!vboxSHGSMIListIsEmpty(&context.data.DmaCmdList))
     {
-        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &dpcData.DmaCmdList);
+        int rc = VBoxSHGSMICommandPostprocessCompletion (&pDevExt->u.primary.Vdma.CmdHeap, &context.data.DmaCmdList);
         AssertRC(rc);
     }
 
-    if (dpcData.bNotifyDpc)
+    if (context.data.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
@@ -2666,9 +2684,9 @@ DxgkDdiPresent(
                 {
                     if (vboxWddmPixFormatConversionSupported(pSrcAlloc->u.SurfInfo.format, pDstAlloc->u.SurfInfo.format))
                     {
-                        memset(pPresent->pPatchLocationListOut, 0, 3*sizeof (D3DDDI_PATCHLOCATIONLIST));
+                        memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
 //                        pPresent->pPatchLocationListOut->PatchOffset = 0;
-                        ++pPresent->pPatchLocationListOut;
+//                        ++pPresent->pPatchLocationListOut;
                         pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offSrc);
                         pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
                         ++pPresent->pPatchLocationListOut;

@@ -51,12 +51,12 @@ DECLINLINE(void) vboxSHGSMIListPut(PVBOXSHGSMILIST pList, PVBOXSHGSMILIST_ENTRY 
 {
     Assert(pFirst);
     Assert(pLast);
+    pLast->pNext = NULL;
     if (pList->pLast)
     {
         Assert(pList->pFirst);
         pList->pLast->pNext = pFirst;
         pList->pLast = pLast;
-        pLast->pNext = NULL;
     }
     else
     {
