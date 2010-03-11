@@ -4258,7 +4258,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
      * Create a safe mapping when doing post processing because the size of the
      * data to transfer and the amount of guest memory reserved can differ
      */
-    if (pAhciPortTaskState->pfnPostProcess)
+    if (pAhciPortTaskState->pfnPostProcess || true)
     {
         ahciLog(("%s: Request with post processing.\n"));
 
@@ -5056,6 +5056,7 @@ static int ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskS
         case ATA_READ_VERIFY_SECTORS_EXT:
         case ATA_READ_VERIFY_SECTORS:
         case ATA_READ_VERIFY_SECTORS_WITHOUT_RETRIES:
+        case ATA_SLEEP:
             pAhciPortTaskState->uATARegError = 0;
             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_SEEK;
             break;
@@ -5095,7 +5096,6 @@ static int ahciProcessCmd(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE pAhciPortTaskS
         case ATA_SECURITY_FREEZE_LOCK:
         case ATA_SMART:
         case ATA_NV_CACHE:
-        case ATA_SLEEP: /* Powermanagement not supported. */
             pAhciPortTaskState->uATARegError = ABRT_ERR;
             pAhciPortTaskState->uATARegStatus = ATA_STAT_READY | ATA_STAT_ERR;
             break;
@@ -6533,7 +6533,7 @@ static DECLCALLBACK(int) ahciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pThis->pDevInsRC = PDMDEVINS_2_RCPTR(pDevIns);
 
     PCIDevSetVendorId    (&pThis->dev, 0x8086); /* Intel */
-    PCIDevSetDeviceId    (&pThis->dev, 0x2829); /* ICH-8M */
+    PCIDevSetDeviceId    (&pThis->dev, 0x27C5); /* ICH-8M */
     PCIDevSetCommand     (&pThis->dev, 0x0000);
     PCIDevSetRevisionId  (&pThis->dev, 0x02);
     PCIDevSetClassProg   (&pThis->dev, 0x01);
