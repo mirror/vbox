@@ -628,7 +628,23 @@ static int cpumR3CpuIdInit(PVM pVM)
     bool fMWaitExtensions;
     rc = CFGMR3QueryBoolDef(pCpumCfg, "MWaitExtensions", &fMWaitExtensions, false); AssertRCReturn(rc, rc);
     if (fMWaitExtensions)
+    {
         pCPUM->aGuestCpuIdStd[5].ecx = X86_CPUID_MWAIT_ECX_EXT | X86_CPUID_MWAIT_ECX_BREAKIRQIF0;
+        /* @todo: for now we just expose host's MWAIT C-states, although conceptually
+           it shall be part of our power management virtualization model */
+#if 0
+        /* MWAIT sub C-states */
+        pCPUM->aGuestCpuIdStd[5].edx =
+                (0 << 0)  /* 0 in C0 */ |
+                (2 << 4)  /* 2 in C1 */ |
+                (2 << 8)  /* 2 in C2 */ |
+                (2 << 12) /* 2 in C3 */ |
+                (0 << 16) /* 0 in C4 */
+                ;
+#endif
+    }
+    else
+        pCPUM->aGuestCpuIdStd[5].ecx = pCPUM->aGuestCpuIdStd[5].edx = 0;
 
     /*
      * Determine the default.
