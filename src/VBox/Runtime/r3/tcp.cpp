@@ -47,6 +47,7 @@
 # include <sys/un.h>
 # include <netdb.h>
 # include <unistd.h>
+# include <fcntl.h>
 #endif /* !RT_OS_WINDOWS */
 #include <limits.h>
 
@@ -157,7 +158,7 @@ typedef union RTSOCKADDRUNION
 *******************************************************************************/
 static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer);
 static int  rtTcpServerListen(PRTTCPSERVER pServer);
-static int  rcTcpServerListenCleanup(PRTTCPSERVER pServer);
+static int  rtTcpServerListenCleanup(PRTTCPSERVER pServer);
 static int  rtTcpServerDestroySocket(RTSOCKET volatile *pSockClient, const char *pszMsg);
 static int  rtTcpClose(RTSOCKET Sock, const char *pszMsg, bool fTryGracefulShutdown);
 static int  rtTcpConvertAddress(RTSOCKADDRUNION *pSrc, size_t cbSrc, PRTNETADDR pAddr);
@@ -216,6 +217,26 @@ DECLINLINE(int) rtTcpResolverError(void)
         default:
             return VERR_UNRESOLVED_ERROR;
     }
+#endif
+}
+
+
+/**
+ * Helper that ensures the correct inheritability of a socket.
+ *
+ * We're currently ignoring failures.
+ *
+ * @param   Socket          The socket handle.
+ * @param   fInheritable    The desired inheritability state.
+ */
+static void rtTcpSetInheritance(RTSOCKET Socket, bool fInheritable)
+{
+#ifdef RT_OS_WINDOWS
+    /** @todo Find some magic way to change this...  Worst case we have to use
+     *        DuplicateHandle w/bInheritable=FALSE and replace the original
+     *        handles... */
+#else
+    fcntl(Socket, F_SETFD, fInheritable ? 0 : FD_CLOEXEC);
 #endif
 }
 
@@ -356,7 +377,7 @@ static DECLCALLBACK(int)  rtTcpServerThread(RTTHREAD ThreadSelf, void *pvServer)
     if (rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_ACCEPTING, RTTCPSERVERSTATE_STARTING))
         rc = rtTcpServerListen(pServer);
     else
-        rc = rcTcpServerListenCleanup(pServer);
+        rc = rtTcpServerListenCleanup(pServer);
     RTMemPoolRelease(RTMEMPOOL_DEFAULT, pServer);
     NOREF(ThreadSelf);
     return VINF_SUCCESS;
@@ -424,6 +445,8 @@ RTR3DECL(int) RTTcpServerCreateEx(const char *pszAddress, uint32_t uPort, PPRTTC
     RTSOCKET WaitSock = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
     if (WaitSock != -1)
     {
+        rtTcpSetInheritance(WaitSock, false /*fInheritable*/);
+
         /*
          * Set socket options.
          */
@@ -572,7 +595,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
         RTSOCKET            SockServer = pServer->SockServer;
         if (    enmState != RTTCPSERVERSTATE_ACCEPTING
             &&  enmState != RTTCPSERVERSTATE_SERVING)
-            return rcTcpServerListenCleanup(pServer);
+            return rtTcpServerListenCleanup(pServer);
         if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_ACCEPTING, enmState))
             continue;
 
@@ -588,10 +611,11 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
 #ifndef RT_OS_WINDOWS
             /* These are typical for what can happen during destruction. */
             if (errno == EBADF || errno == EINVAL || errno == ENOTSOCK)
-                return rcTcpServerListenCleanup(pServer);
+                return rtTcpServerListenCleanup(pServer);
 #endif
             continue;
         }
+        rtTcpSetInheritance(Socket, false /*fInheritable*/);
 
         /*
          * Run a pfnServe callback.
@@ -599,7 +623,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
         if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_SERVING, RTTCPSERVERSTATE_ACCEPTING))
         {
             rtTcpClose(Socket, "rtTcpServerListen", true /*fTryGracefulShutdown*/);
-            return rcTcpServerListenCleanup(pServer);
+            return rtTcpServerListenCleanup(pServer);
         }
         rtTcpAtomicXchgSock(&pServer->SockClient, Socket);
         int rc = pServer->pfnServe(Socket, pServer->pvUser);
@@ -621,7 +645,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
                 rtTcpClose(SockServer, "Listener: server stopped", false /*fTryGracefulShutdown*/);
             }
             else
-                rcTcpServerListenCleanup(pServer); /* ignore rc */
+                rtTcpServerListenCleanup(pServer); /* ignore rc */
             return rc;
         }
     }
@@ -631,7 +655,7 @@ static int rtTcpServerListen(PRTTCPSERVER pServer)
 /**
  * Clean up after listener.
  */
-static int rcTcpServerListenCleanup(PRTTCPSERVER pServer)
+static int rtTcpServerListenCleanup(PRTTCPSERVER pServer)
 {
     /*
      * Close the server socket, the client one shouldn't be set.
@@ -705,7 +729,7 @@ RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient)
         if (    enmState != RTTCPSERVERSTATE_SERVING
             &&  enmState != RTTCPSERVERSTATE_CREATED)
         {
-            rc = rcTcpServerListenCleanup(pServer);
+            rc = rtTcpServerListenCleanup(pServer);
             break;
         }
         if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_ACCEPTING, enmState))
@@ -728,24 +752,27 @@ RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient)
         {
             rc = rtTcpError();
             if (!rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_CREATED, RTTCPSERVERSTATE_ACCEPTING))
-                rc = rcTcpServerListenCleanup(pServer);
+                rc = rtTcpServerListenCleanup(pServer);
             if (RT_FAILURE(rc))
                 break;
             continue;
         }
+        rtTcpSetInheritance(Socket, false /*fInheritable*/);
 
         /*
          * Chance to the 'serving' state and return the socket.
          */
         if (rtTcpServerTrySetState(pServer, RTTCPSERVERSTATE_SERVING, RTTCPSERVERSTATE_ACCEPTING))
         {
+            RTSOCKET OldSocket = rtTcpAtomicXchgSock(&pServer->SockClient, Socket);
+            Assert(OldSocket == NIL_RTSOCKET); NOREF(OldSocket);
             *pSockClient = Socket;
             rc = VINF_SUCCESS;
         }
         else
         {
             rtTcpClose(Socket, "RTTcpServerListen2", true /*fTryGracefulShutdown*/);
-            rc = rcTcpServerListenCleanup(pServer);
+            rc = rtTcpServerListenCleanup(pServer);
         }
         break;
     }
@@ -1150,6 +1177,8 @@ RTR3DECL(int) RTTcpClientConnect(const char *pszAddress, uint32_t uPort, PRTSOCK
     RTSOCKET Sock = socket(PF_INET, SOCK_STREAM, 0);
     if (Sock != -1)
     {
+        rtTcpSetInheritance(Sock, false /*fInheritable*/);
+
         struct sockaddr_in InAddr;
         RT_ZERO(InAddr);
         InAddr.sin_family = AF_INET;
