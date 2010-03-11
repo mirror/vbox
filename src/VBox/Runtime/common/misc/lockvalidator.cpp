@@ -1023,7 +1023,7 @@ DECLHIDDEN(void) rtLockValidatorDeletePerThread(RTLOCKVALPERTHREAD *pPerThread)
     while (pCur)
     {
         PRTLOCKVALRECNEST pNext = pCur->pNextFree;
-        RTMemFree(pNext);
+        RTMemFree(pCur);
         pCur = pNext;
     }
 }
