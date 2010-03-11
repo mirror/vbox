@@ -4258,7 +4258,7 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
      * Create a safe mapping when doing post processing because the size of the
      * data to transfer and the amount of guest memory reserved can differ
      */
-    if (pAhciPortTaskState->pfnPostProcess || true)
+    if (pAhciPortTaskState->pfnPostProcess)
     {
         ahciLog(("%s: Request with post processing.\n"));
 
