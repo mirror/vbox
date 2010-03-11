@@ -1657,9 +1657,9 @@ DxgkDdiPatch(
     /* Value == 2 is Present
      * Value == 4 is RedirectedPresent
      * we do not expect any other flags to be set here */
-    Assert(pPatch->Flags.Value == 2 || pPatch->Flags.Value == 4);
+//    Assert(pPatch->Flags.Value == 2 || pPatch->Flags.Value == 4);
 
-    uint8_t *pBuf = ((uint8_t *)pPatch->pDmaBuffer) + pPatch->DmaBufferPrivateDataSubmissionStartOffset;
+    uint8_t *pBuf = ((uint8_t *)pPatch->pDmaBuffer) + pPatch->DmaBufferSubmissionStartOffset;
     for (UINT i = pPatch->PatchLocationListSubmissionStart; i < pPatch->PatchLocationListSubmissionLength; ++i)
     {
         const D3DDDI_PATCHLOCATIONLIST* pPatchList = &pPatch->pPatchLocationList[i];
@@ -1667,7 +1667,7 @@ DxgkDdiPatch(
         const DXGK_ALLOCATIONLIST *pAllocationList = &pPatch->pAllocationList[pPatchList->AllocationIndex];
         if (pAllocationList->SegmentId)
         {
-            Assert(pPatchList->PatchOffset < (pPatch->DmaBufferPrivateDataSubmissionEndOffset - pPatch->DmaBufferPrivateDataSubmissionStartOffset));
+            Assert(pPatchList->PatchOffset < (pPatch->DmaBufferSubmissionEndOffset - pPatch->DmaBufferSubmissionStartOffset));
             *((VBOXVIDEOOFFSET*)(pBuf+pPatchList->PatchOffset)) = (VBOXVIDEOOFFSET)pAllocationList->PhysicalAddress.QuadPart;
         }
         else
