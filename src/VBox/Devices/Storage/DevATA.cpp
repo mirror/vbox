@@ -3735,6 +3735,10 @@ static void ataParseCmd(ATADevState *s, uint8_t cmd)
             LogRel(("PIIX3 ATA: LUN#%d: aborting current command\n", s->iLUN));
             ataAbortCurrentCommand(s, false);
             break;
+        case ATA_SLEEP:
+            ataCmdOK(s, 0);
+            ataSetIRQ(s);
+            break;
             /* ATAPI commands */
         case ATA_IDENTIFY_PACKET_DEVICE:
             if (s->fATAPI)
