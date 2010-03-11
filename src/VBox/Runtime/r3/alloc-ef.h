@@ -44,7 +44,7 @@
  * If defined the electric fence put up for ALL allocations by RTMemAlloc(),
  * RTMemAllocZ(), RTMemRealloc(), RTMemTmpAlloc() and RTMemTmpAllocZ().
  */
-#if 1
+#if 0// defined(DEBUG_bird)
 # define RTALLOC_USE_EFENCE
 #endif
 
