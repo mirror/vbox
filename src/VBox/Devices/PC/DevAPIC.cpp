@@ -43,9 +43,7 @@
 #define MSR_IA32_APICBASE               0x1b
 #define MSR_IA32_APICBASE_BSP           (1<<8)
 #define MSR_IA32_APICBASE_ENABLE        (1<<11)
-#ifdef VBOX
 #define MSR_IA32_APICBASE_X2ENABLE      (1<<10)
-#endif
 #define MSR_IA32_APICBASE_BASE          (0xfffff<<12)
 
 #ifndef EINVAL
@@ -64,6 +62,8 @@
 /** Some ancient version... */
 #define APIC_SAVED_STATE_VERSION_ANCIENT    1
 
+/* version 0x14: Pentium 4, Xeon; LVT count depends on that */
+#define APIC_HW_VERSION                    0x14
 
 /** @def APIC_LOCK
  * Acquires the PDM lock. */
@@ -881,7 +881,9 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             val = apic->id << 24;
             break;
         case 0x03: /* version */
-            val = 0x11 | ((APIC_LVT_NB - 1) << 16); /* version 0x11 */
+            val =   APIC_HW_VERSION                                     |
+                    ((APIC_LVT_NB - 1) << 16) /* Max LVT index */       |
+                    (0 << 24) /* Support for EOI broadcast supression */;
             break;
         case 0x08:
             val = apic->tpr;
@@ -938,8 +940,16 @@ PDMBOTHCBDECL(int) apicReadMSR(PPDMDEVINS pDevIns, VMCPUID idCpu, uint32_t u32Re
             /* Self IPI register is write only */
             Log(("apicReadMSR: read from write-only register %d ignored\n", index));
             break;
+        case 0x2f:
+            /**
+             * Correctable machine check exception vector, @todo: implement me!
+             */
         default:
             AssertMsgFailed(("apicReadMSR: unknown index %x\n", index));
+            /**
+             * @todo: according to spec when APIC writes to ESR it msut raise error interrupt,
+             *        i.e. LVT[5]
+             */
             apic->esr |= ESR_ILLEGAL_ADDRESS;
             val = 0;
             break;
@@ -1708,7 +1718,7 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, target_phys_ad
         val = s->id << 24;
         break;
     case 0x03: /* version */
-        val = 0x14 | ((APIC_LVT_NB - 1) << 16); /* version 0x14 */
+        val = APIC_HW_VERSION | ((APIC_LVT_NB - 1) << 16);
         break;
     case 0x08:
         val = s->tpr;
@@ -1782,6 +1792,10 @@ static uint32_t apic_mem_readl(APICDeviceInfo* dev, APICState *s, target_phys_ad
     case 0x3e:
         val = s->divide_conf;
         break;
+    case 0x2f:
+        /**
+         * Correctable machine check exception vector, @todo: implement me!
+         */
     default:
         AssertMsgFailed(("apic_mem_readl: unknown index %x\n", index));
         s->esr |= ESR_ILLEGAL_ADDRESS;
