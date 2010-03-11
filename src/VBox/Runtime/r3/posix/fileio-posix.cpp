@@ -224,7 +224,7 @@ RTR3DECL(int) RTFileOpen(PRTFILE pFile, const char *pszFilename, uint32_t fOpen)
         /*
          * Mark the file handle close on exec, unless inherit is specified.
          */
-        if (    (fOpen & RTFILE_O_INHERIT)
+        if (    !(fOpen & RTFILE_O_INHERIT)
 #ifdef O_NOINHERIT
             &&  !(fOpenMode & O_NOINHERIT)  /* Take care since it might be a zero value dummy. */
 #endif
