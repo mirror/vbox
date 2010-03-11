@@ -1658,9 +1658,12 @@ void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent
     if (isMachineWindowsCreated())
     {
         setDockIconPreviewEnabled(event.mChanged);
-        m_pDockPreviewSelectMonitorGroup->setEnabled(event.mChanged);
-        CMachine machine = session().GetMachine();
-        m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
+        if (m_pDockPreviewSelectMonitorGroup)
+        {
+            m_pDockPreviewSelectMonitorGroup->setEnabled(event.mChanged);
+            CMachine machine = session().GetMachine();
+            m_DockIconPreviewMonitor = qMin(machine.GetExtraData(VBoxDefs::GUI_RealtimeDockIconUpdateMonitor).toInt(), (int)machine.GetMonitorCount() - 1);
+        }
         updateDockOverlay();
     }
 }
