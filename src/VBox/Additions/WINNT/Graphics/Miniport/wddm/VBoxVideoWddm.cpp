@@ -1228,11 +1228,11 @@ NTSTATUS APIENTRY DxgkDdiCreateDevice(
     pCreateDevice->hDevice = pDevice;
     if (pCreateDevice->Flags.SystemDevice)
         pDevice->enmType = VBOXWDDM_DEVICE_TYPE_SYSTEM;
-    else
-    {
-        AssertBreakpoint(); /* we do not support custom contexts for now */
-        drprintf((__FUNCTION__ ": we do not support custom devices for now, hAdapter (0x%x)\n", hAdapter));
-    }
+//    else
+//    {
+//        AssertBreakpoint(); /* we do not support custom contexts for now */
+//        drprintf((__FUNCTION__ ": we do not support custom devices for now, hAdapter (0x%x)\n", hAdapter));
+//    }
 
     pDevice->pAdapter = pContext;
     pDevice->hDevice = pCreateDevice->hDevice;
@@ -1248,6 +1248,21 @@ NTSTATUS vboxWddmDestroyAllocation(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALLOCATI
 {
     PAGED_CODE();
 
+    switch (pAllocation->enmType)
+    {
+        case VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE:
+        {
+            PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
+            if (pAlloc->bAssigned)
+            {
+                /* @todo: do we need to notify host? */
+                vboxWddmAssignPrimary(pDevExt, &pDevExt->aSources[pAlloc->VidPnSourceId], NULL, pAlloc->VidPnSourceId);
+            }
+            break;
+        }
+        default:
+            break;
+    }
     vboxWddmMemFree(pAllocation);
     return STATUS_SUCCESS;
 }
@@ -1387,7 +1402,7 @@ NTSTATUS APIENTRY DxgkDdiCreateAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -1477,7 +1492,7 @@ DxgkDdiGetStandardAllocationDriverData(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_ALLOCINFO pAllocInfo = NULL;
@@ -1666,7 +1681,7 @@ DxgkDdiSubmitCommand(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     VBOXVDMACMDBUF_INFO BufInfo = {0};
 
-    Assert(pSubmitCommand->DmaBufferSegmentId);
+    Assert(!pSubmitCommand->DmaBufferSegmentId);
 
     /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
     //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
@@ -1734,17 +1749,25 @@ DxgkDdiBuildPagingBuffer(
     {
         case DXGK_OPERATION_TRANSFER:
         {
-            PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pBuildPagingBuffer->Transfer.hAllocation;
+            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             break;
         }
         case DXGK_OPERATION_FILL:
+        {
+            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_FILL);
             break;
+        }
         case DXGK_OPERATION_DISCARD_CONTENT:
+        {
+            AssertBreakpoint();
             break;
+        }
         default:
+        {
             drprintf((__FUNCTION__": unsupported op (%d)\n", pBuildPagingBuffer->Operation));
             AssertBreakpoint();
             break;
+        }
     }
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
@@ -1994,7 +2017,7 @@ DxgkDdiRecommendFunctionalVidPn(
     uint32_t cResolutions;
     D3DKMDT_2DREGION *pResolutions;
     VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
-            true, /* bool bRebuildTable*/
+            false, /* bool bRebuildTable*/
             &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
             &cModes, /* uint32_t * pcModes */
             &iPreferredMode, /* uint32_t * pPreferrableMode*/
@@ -2059,7 +2082,7 @@ DxgkDdiEnumVidPnCofuncModality(
             VBOXVIDPNCOFUNCMODALITY CbContext = {0};
             CbContext.pEnumCofuncModalityArg = pEnumCofuncModalityArg;
             VBoxWddmGetModesTable(pContext, /* PDEVICE_EXTENSION DeviceExtension */
-                    true, /* bool bRebuildTable*/
+                    false, /* bool bRebuildTable*/
                     &CbContext.pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
                     &CbContext.cModes, /* uint32_t * pcModes */
                     &CbContext.iPreferredMode, /* uint32_t * pPreferrableMode*/
@@ -2314,7 +2337,7 @@ DxgkDdiRecommendMonitorModes(
     uint32_t cResolutions;
     D3DKMDT_2DREGION *pResolutions;
     VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
-            true, /* bool bRebuildTable*/
+            false, /* bool bRebuildTable*/
             &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
             &cModes, /* uint32_t * pcModes */
             &iPreferredMode, /* uint32_t * pPreferrableMode*/
@@ -2471,7 +2494,7 @@ DxgkDdiOpenAllocation(
 
     dfprintf(("==> "__FUNCTION__ ", hDevice(0x%x)\n", hDevice));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -2643,14 +2666,14 @@ DxgkDdiPresent(
                 {
                     if (vboxWddmPixFormatConversionSupported(pSrcAlloc->u.SurfInfo.format, pDstAlloc->u.SurfInfo.format))
                     {
-                        memset(pPresent->pPatchLocationListOut, 0, 2*sizeof (D3DDDI_PATCHLOCATIONLIST));
+                        memset(pPresent->pPatchLocationListOut, 0, 3*sizeof (D3DDDI_PATCHLOCATIONLIST));
 //                        pPresent->pPatchLocationListOut->PatchOffset = 0;
-//                        ++pPresent->pPatchLocationListOut;
+                        ++pPresent->pPatchLocationListOut;
                         pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offSrc);
-                        pPresent->pPatchLocationListOut->AllocationIndex = 0;
+                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_SOURCE_INDEX;
                         ++pPresent->pPatchLocationListOut;
                         pPresent->pPatchLocationListOut->PatchOffset = VBOXVDMACMD_BODY_FIELD_OFFSET(UINT, VBOXVDMACMD_DMA_PRESENT_BLT, offDst);
-                        pPresent->pPatchLocationListOut->AllocationIndex = 1;
+                        pPresent->pPatchLocationListOut->AllocationIndex = DXGK_PRESENT_DESTINATION_INDEX;
                         ++pPresent->pPatchLocationListOut;
 
                         pCmd->enmType = VBOXVDMACMD_TYPE_DMA_PRESENT_BLT;
@@ -2782,11 +2805,11 @@ DxgkDdiCreateContext(
     pContext->NodeOrdinal = pCreateContext->NodeOrdinal;
     if (pCreateContext->Flags.SystemContext)
         pContext->enmType = VBOXWDDM_CONTEXT_TYPE_SYSTEM;
-    else
-    {
-        AssertBreakpoint(); /* we do not support custom contexts for now */
-        drprintf((__FUNCTION__ ", we do not support custom contexts for now, hDevice (0x%x)\n", hDevice));
-    }
+//    else
+//    {
+//        AssertBreakpoint(); /* we do not support custom contexts for now */
+//        drprintf((__FUNCTION__ ", we do not support custom contexts for now, hDevice (0x%x)\n", hDevice));
+//    }
 
     pCreateContext->hContext = pContext;
     pCreateContext->ContextInfo.DmaBufferSize = VBOXWDDM_C_DMA_BUFFER_SIZE;

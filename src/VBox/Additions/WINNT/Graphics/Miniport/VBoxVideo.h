@@ -599,15 +599,17 @@ DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOUR
         PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pOldPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pOldAlloc, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
         /* clear the visibility info fo the current primary */
         pOldPrimaryInfo->bVisible = FALSE;
+        pOldPrimaryInfo->bAssigned = FALSE;
         Assert(pOldPrimaryInfo->VidPnSourceId == srcId);
-        pOldPrimaryInfo->VidPnSourceId = ~0;
     }
 
     if (pAllocation)
     {
         PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pPrimaryInfo = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
         pPrimaryInfo->bVisible = FALSE;
+        Assert(pPrimaryInfo->VidPnSourceId == srcId);
         pPrimaryInfo->VidPnSourceId = srcId;
+        pPrimaryInfo->bAssigned = TRUE;
     }
 
     pSource->pAllocation = pAllocation;
