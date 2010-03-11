@@ -4,7 +4,7 @@
 #
 
 #
-# Copyright (C) 2006-2009 Sun Microsystems, Inc.
+# Copyright (C) 2006-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -79,6 +79,7 @@ PROGRAMS += \
 	tstRTLockValidator \
 	tstLog \
 	tstMemAutoPtr \
+	tstRTMemEf \
 	tstRTMemCache \
 	tstRTMemPool \
 	tstRTR0MemUserKernelDriver \
@@ -320,6 +321,9 @@ tstRTLockValidator_SOURCES = tstRTLockValidator.cpp
 tstLog_SOURCES = tstLog.cpp
 
 tstMemAutoPtr_SOURCES = tstMemAutoPtr.cpp
+
+tstRTMemEf_TEMPLATE = VBOXR3TSTEXE
+tstRTMemEf_SOURCES = tstRTMemEf.cpp
 
 tstRTMemCache_TEMPLATE = VBOXR3TSTEXE
 tstRTMemCache_SOURCES = tstRTMemCache.cpp
