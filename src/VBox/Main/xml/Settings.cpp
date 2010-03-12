@@ -1612,6 +1612,22 @@ bool Snapshot::operator==(const Snapshot &s) const
            );
 }
 
+/**
+ * IoSettings constructor.
+ */
+IoSettings::IoSettings()
+{
+    ioMgrType        = IoMgrType_Async;
+#if defined(RT_OS_LINUX)
+    ioBackendType    = IoBackendType_Unbuffered;
+#else
+    ioBackendType    = IoBackendType_Buffered;
+#endif
+    fIoCacheEnabled  = true;
+    ulIoCacheSize    = 5;
+    ulIoBandwidthMax = 0;
+};
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // MachineConfigFile
@@ -2353,7 +2369,7 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
                 else if (strTemp == "Bidirectional")
                     hw.clipboardMode = ClipboardMode_Bidirectional;
                 else
-                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Clipbord/@mode attribute"), strTemp.c_str());
+                    throw ConfigFileError(this, pelmHwChild, N_("Invalid value '%s' in Clipboard/@mode attribute"), strTemp.c_str());
             }
         }
         else if (pelmHwChild->nameEquals("Guest"))
@@ -2365,6 +2381,46 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         }
         else if (pelmHwChild->nameEquals("GuestProperties"))
             readGuestProperties(*pelmHwChild, hw);
+        else if (pelmHwChild->nameEquals("IO"))
+        {
+            Utf8Str strTemp;
+            const xml::ElementNode *pelmIoChild;
+
+            if ((pelmIoChild = pelmHwChild->findChildElement("IoMgr")))
+            {
+                if (pelmIoChild->getAttributeValue("type", strTemp))
+                {
+                    if (strTemp == "Async")
+                        hw.ioSettings.ioMgrType = IoMgrType_Async;
+                    else if (strTemp == "Simple")
+                        hw.ioSettings.ioMgrType = IoMgrType_Simple;
+                    else
+                        throw ConfigFileError(this, pelmIoChild, N_("Invalid value '%s' in IoMgr/@type attribute"), strTemp.c_str());
+                }
+            }
+
+            if ((pelmIoChild = pelmHwChild->findChildElement("IoBackend")))
+            {
+                if (pelmIoChild->getAttributeValue("type", strTemp))
+                {
+                    if (strTemp == "Unbuffered")
+                        hw.ioSettings.ioBackendType = IoBackendType_Unbuffered;
+                    else if (strTemp == "Buffered")
+                        hw.ioSettings.ioBackendType = IoBackendType_Buffered;
+                    else
+                        throw ConfigFileError(this, pelmIoChild, N_("Invalid value '%s' in IoBackend/@type attribute"), strTemp.c_str());
+                }
+            }
+            if ((pelmIoChild = pelmHwChild->findChildElement("IoCache")))
+            {
+                pelmIoChild->getAttributeValue("enabled", hw.ioSettings.fIoCacheEnabled);
+                pelmIoChild->getAttributeValue("size", hw.ioSettings.ulIoCacheSize);
+            }
+            if ((pelmIoChild = pelmHwChild->findChildElement("IoBandwidth")))
+            {
+                pelmIoChild->getAttributeValue("max", hw.ioSettings.ulIoBandwidthMax);
+            }
+        }
     }
 
     if (hw.ulMemorySizeMB == (uint32_t)-1)
@@ -3312,6 +3368,40 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
     }
     pelmClip->setAttribute("mode", pcszClip);
 
+    if (m->sv >= SettingsVersion_v1_10)
+    {
+        xml::ElementNode *pelmIo = pelmHardware->createChild("IO");
+        xml::ElementNode *pelmIoCache;
+        xml::ElementNode *pelmIoBandwidth;
+        const char *pcszTemp;
+
+        switch (hw.ioSettings.ioMgrType)
+        {
+            case IoMgrType_Simple: pcszTemp = "Simple"; break;
+            case IoMgrType_Async:
+            default:
+                pcszTemp = "Async"; break;
+        }
+
+        pelmIo->createChild("IoMgr")->setAttribute("type", pcszTemp);
+
+        switch (hw.ioSettings.ioBackendType)
+        {
+            case IoBackendType_Buffered: pcszTemp = "Buffered"; break;
+            case IoBackendType_Unbuffered:
+            default:
+                pcszTemp = "Unbuffered"; break;
+        }
+
+        pelmIo->createChild("IoBackend")->setAttribute("type", pcszTemp);
+
+        pelmIoCache = pelmIo->createChild("IoCache");
+        pelmIoCache->setAttribute("enabled", hw.ioSettings.fIoCacheEnabled);
+        pelmIoCache->setAttribute("size", hw.ioSettings.ulIoCacheSize);
+        pelmIoBandwidth = pelmIo->createChild("IoBandwidth");
+        pelmIoBandwidth->setAttribute("max", hw.ioSettings.ulIoBandwidthMax);
+    }
+
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
     pelmGuest->setAttribute("memoryBalloonSize", hw.ulMemoryBalloonSize);
     pelmGuest->setAttribute("statisticsUpdateInterval", hw.ulStatisticsUpdateInterval);
@@ -3585,6 +3675,24 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
        )
         m->sv = SettingsVersion_v1_10;
+
+    // Check for non default I/O settings and bump the settings version.
+    if (m->sv < SettingsVersion_v1_10)
+    {
+        if (   hardwareMachine.ioSettings.fIoCacheEnabled != true
+            || hardwareMachine.ioSettings.ulIoCacheSize != 5
+            || hardwareMachine.ioSettings.ulIoBandwidthMax != 0
+            || hardwareMachine.ioSettings.ioMgrType != IoMgrType_Async)
+            m->sv = SettingsVersion_v1_10;
+
+#if defined(RT_OS_LINUX)
+        if (hardwareMachine.ioSettings.ioBackendType != IoBackendType_Unbuffered)
+            m->sv = SettingsVersion_v1_10;
+#else
+        if (hardwareMachine.ioSettings.ioBackendType != IoBackendType_Buffered)
+            m->sv = SettingsVersion_v1_10;
+#endif
+    }
 }
 
 /**

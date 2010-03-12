@@ -541,6 +541,31 @@ struct Cpu
 typedef std::list<Cpu> CpuList;
 
 /**
+ * NOTE: If you add any fields in here, you must update a) the constructor and b)
+ * the operator== which is used by MachineConfigFile::operator==(), or otherwise
+ * your settings might never get saved.
+ */
+struct IoSettings
+{
+    IoSettings();
+
+    bool operator==(const IoSettings &i) const
+    {
+        return (   (ioMgrType        == i.ioMgrType)
+                && (ioBackendType    == i.ioBackendType)
+                && (fIoCacheEnabled  == i.fIoCacheEnabled)
+                && (ulIoCacheSize    == i.ulIoCacheSize)
+                && (ulIoBandwidthMax == i.ulIoBandwidthMax));
+    }
+
+    IoMgrType_T     ioMgrType;
+    IoBackendType_T ioBackendType;
+    bool            fIoCacheEnabled;
+    uint32_t        ulIoCacheSize;
+    uint32_t        ulIoBandwidthMax;
+};
+
+/**
  * Representation of Machine hardware; this is used in the MachineConfigFile.hardwareMachine
  * field.
  *
@@ -603,6 +628,8 @@ struct Hardware
 
     GuestPropertiesList llGuestProperties;
     com::Utf8Str        strNotificationPatterns;
+
+    IoSettings          ioSettings;             // requires settings version 1.10 (VirtualBox 3.2)
 };
 
 /**
