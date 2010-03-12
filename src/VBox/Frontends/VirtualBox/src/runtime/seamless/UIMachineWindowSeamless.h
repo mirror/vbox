@@ -38,6 +38,10 @@ class UIMachineWindowSeamless : public QIWithRetranslateUI2<QIMainDialog>, publi
 {
     Q_OBJECT;
 
+public slots:
+
+    void sltPlaceOnScreen();
+
 protected:
 
     /* Seamless machine window constructor/destructor: */

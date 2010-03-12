@@ -38,6 +38,10 @@ class UIMachineWindowFullscreen : public QIWithRetranslateUI2<QIMainDialog>, pub
 {
     Q_OBJECT;
 
+public slots:
+
+    void sltPlaceOnScreen();
+
 protected:
 
     /* Fullscreen machine window constructor/destructor: */

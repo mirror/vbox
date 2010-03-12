@@ -29,22 +29,23 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogicFullscreen.h"
 #include "UIMachineWindow.h"
+#include "UIMachineWindowFullscreen.h"
+#include "UIMultiScreenLayout.h"
+#include "UISession.h"
 
-#include "VBoxUtils.h"
 
 #ifdef Q_WS_MAC
-# ifdef QT_MAC_USE_COCOA
-#  include <Carbon/Carbon.h>
-# endif /* QT_MAC_USE_COCOA */
+# include "VBoxUtils.h"
+# include <Carbon/Carbon.h>
 #endif /* Q_WS_MAC */
 
 UIMachineLogicFullscreen::UIMachineLogicFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Fullscreen)
 {
+    m_pScreenLayout = new UIMultiScreenLayout(this);
 }
 
 UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
@@ -54,6 +55,8 @@ UIMachineLogicFullscreen::~UIMachineLogicFullscreen()
 
     /* Cleanup action related stuff */
     cleanupActionGroups();
+
+    delete m_pScreenLayout;
 }
 
 bool UIMachineLogicFullscreen::checkAvailability()
@@ -66,13 +69,8 @@ bool UIMachineLogicFullscreen::checkAvailability()
     const CMachine &machine = uisession()->session().GetMachine();
     const CConsole &console = uisession()->session().GetConsole();
 
-#if (QT_VERSION >= 0x040600)
-    int cHostScreens = QApplication::desktop()->screenCount();
-#else /* (QT_VERSION >= 0x040600) */
-    int cHostScreens = QApplication::desktop()->numScreens();
-#endif /* !(QT_VERSION >= 0x040600) */
-
-    int cGuestScreens = machine.GetMonitorCount();
+    int cHostScreens = m_pScreenLayout->hostScreenCount();
+    int cGuestScreens = m_pScreenLayout->guestScreenCount();
     /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
@@ -166,6 +164,11 @@ void UIMachineLogicFullscreen::initialize()
     retranslateUi();
 }
 
+int UIMachineLogicFullscreen::hostScreenForGuestScreen(int screenId) const
+{
+    return m_pScreenLayout->hostScreenForGuestScreen(screenId);
+}
+
 #ifdef Q_WS_MAC
 void UIMachineLogicFullscreen::prepareCommonConnections()
 {
@@ -182,6 +185,10 @@ void UIMachineLogicFullscreen::prepareActionGroups()
 
     /* Adjust-window action isn't allowed in fullscreen: */
     actionsPool()->action(UIActionIndex_Simple_AdjustWindow)->setVisible(false);
+
+    /* Add the view menu: */
+    QMenu *pMenu = actionsPool()->action(UIActionIndex_Menu_View)->menu();
+    m_pScreenLayout->initialize(pMenu);
 }
 
 void UIMachineLogicFullscreen::prepareMachineWindows()
@@ -197,19 +204,19 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
 
-#if 0 // TODO: Add seamless multi-monitor support!
-    /* Get monitors count: */
-    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+    /* Update the multi screen layout */
+    m_pScreenLayout->update();
+
     /* Create machine window(s): */
-    for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
+    for (int screenId = 0; screenId < m_pScreenLayout->guestScreenCount(); ++screenId)
+        addMachineWindow(UIMachineWindow::create(this, visualStateType(), screenId));
     /* Order machine window(s): */
-    for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
-        machineWindows()[uScreenId - 1]->machineWindow()->raise();
-#else
-    /* Create primary machine window: */
-    addMachineWindow(UIMachineWindow::create(this, visualStateType(), 0 /* primary only */));
-#endif
+    for (int screenId = m_pScreenLayout->guestScreenCount() - 1; screenId >= 0; --screenId)
+        machineWindows().at(screenId)->machineWindow()->raise();
+
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+                static_cast<UIMachineWindowFullscreen*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
@@ -221,14 +228,9 @@ void UIMachineLogicFullscreen::cleanupMachineWindows()
     if (!isMachineWindowsCreated())
         return;
 
-#if 0 // TODO: Add seamless multi-monitor support!
     /* Cleanup normal machine window: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
-#else
-    /* Create machine window(s): */
-    UIMachineWindow::destroy(machineWindows()[0] /* primary only */);
-#endif
 
 #ifdef Q_WS_MAC
     setPresentationModeEnabled(false);
@@ -271,3 +273,4 @@ void UIMachineLogicFullscreen::setPresentationModeEnabled(bool fEnabled)
         SetSystemUIMode(kUIModeNormal, 0);
 }
 #endif /* Q_WS_MAC */
+

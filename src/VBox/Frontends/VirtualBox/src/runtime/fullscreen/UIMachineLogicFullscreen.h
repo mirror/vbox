@@ -28,6 +28,7 @@
 
 /* Local forwards */
 class UIActionsPool;
+class UIMultiScreenLayout;
 class VBoxChangePresentationModeEvent;
 
 class UIMachineLogicFullscreen : public UIMachineLogic
@@ -44,6 +45,8 @@ protected:
 
     bool checkAvailability();
     void initialize();
+
+    int hostScreenForGuestScreen(int screenId) const;
 
 private slots:
 
@@ -71,8 +74,11 @@ private:
     void setPresentationModeEnabled(bool fEnabled);
 #endif /* Q_WS_MAC */
 
+    UIMultiScreenLayout *m_pScreenLayout;
+
     /* Friend classes: */
     friend class UIMachineLogic;
+    friend class UIMachineWindowFullscreen;
 };
 
 #endif // __UIMachineLogicFullscreen_h__

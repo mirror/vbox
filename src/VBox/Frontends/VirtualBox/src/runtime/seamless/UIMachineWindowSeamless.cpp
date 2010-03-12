@@ -31,14 +31,17 @@
 #include "VBoxGlobal.h"
 #include "VBoxMiniToolBar.h"
 
+#include "UIActionsPool.h"
+#include "UIMachineLogic.h"
+#include "UIMachineLogicSeamless.h"
+#include "UIMachineView.h"
+#include "UIMachineWindowSeamless.h"
+#include "UIMachineWindowSeamless.h"
+#include "UISession.h"
+
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
-#include "UISession.h"
-#include "UIActionsPool.h"
-#include "UIMachineLogic.h"
-#include "UIMachineView.h"
-#include "UIMachineWindowSeamless.h"
 
 UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
@@ -99,6 +102,13 @@ UIMachineWindowSeamless::~UIMachineWindowSeamless()
 
     /* Cleanup menu: */
     cleanupMenu();
+}
+
+void UIMachineWindowSeamless::sltPlaceOnScreen()
+{
+    QRect r = QApplication::desktop()->availableGeometry(static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+    move(r.topLeft());
+    resize(r.size());
 }
 
 void UIMachineWindowSeamless::sltMachineStateChanged()
@@ -185,7 +195,7 @@ void UIMachineWindowSeamless::closeEvent(QCloseEvent *pEvent)
 void UIMachineWindowSeamless::prepareSeamless()
 {
 #ifdef Q_WS_WIN
-    m_prevRegion = QApplication::desktop()->availableGeometry();
+    m_prevRegion = QApplication::desktop()->availableGeometry(static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
 #endif
 
 #ifdef Q_WS_MAC
@@ -199,10 +209,14 @@ void UIMachineWindowSeamless::prepareSeamless()
 
 void UIMachineWindowSeamless::prepareMenu()
 {
+    UIMainMenuType fMenus = UIMainMenuType_All;
+    /* Remove the view menu in the case there is one screen only. */
+    if (session().GetMachine().GetMonitorCount() == 1)
+        fMenus = UIMainMenuType(fMenus ^ UIMainMenuType_View);
 #ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar());
+    setMenuBar(uisession()->newMenuBar(fMenus));
 #endif /* Q_WS_MAC */
-    m_pMainMenu = uisession()->newMenu();
+    m_pMainMenu = uisession()->newMenu(fMenus);
 }
 
 void UIMachineWindowSeamless::prepareMiniToolBar()
@@ -327,10 +341,14 @@ void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
 void UIMachineWindowSeamless::showSeamless()
 {
     /* Show manually maximized window: */
-    QRect geometry = QApplication::desktop()->availableGeometry();
-    move(geometry.topLeft());
-    resize(geometry.size());
+    sltPlaceOnScreen();
     show();
+
+#ifdef Q_WS_MAC
+    /* Make sure it is really on the right place (especially on the Mac) */
+    QRect r = QApplication::desktop()->availableGeometry(static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+    move(r.topLeft());
+#endif /* Q_WS_MAC */
 }
 
 void UIMachineWindowSeamless::setMask(const QRegion &constRegion)

@@ -443,6 +443,22 @@ void UIMachineView::updateMouseCursorClipping()
 }
 #endif
 
+void UIMachineView::updateSliders()
+{
+    QSize p = viewport()->size();
+    QSize m = maximumViewportSize();
+
+    QSize v = QSize(frameBuffer()->width(), frameBuffer()->height());
+    /* No scroll bars needed: */
+    if (m.expandedTo(v) == m)
+        p = m;
+
+    horizontalScrollBar()->setRange(0, v.width() - p.width());
+    verticalScrollBar()->setRange(0, v.height() - p.height());
+    horizontalScrollBar()->setPageStep(p.width());
+    verticalScrollBar()->setPageStep(p.height());
+}
+
 void UIMachineView::prepareFrameBuffer()
 {
     /* Prepare viewport: */

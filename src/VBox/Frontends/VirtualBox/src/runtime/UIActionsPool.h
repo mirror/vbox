@@ -76,6 +76,9 @@ enum UIActionIndex
     UIActionIndex_Simple_Shutdown,
     UIActionIndex_Simple_Close,
 
+    /* "View" menu actions: */
+    UIActionIndex_Menu_View,
+
     /* "Devices" menu actions: */
     UIActionIndex_Menu_Devices,
     UIActionIndex_Menu_OpticalDevices,

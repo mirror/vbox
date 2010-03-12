@@ -29,6 +29,7 @@
 
 /* Local includes */
 #include "COMDefs.h"
+#include "UIMachineDefs.h"
 
 /* Global forwards */
 class QMenu;
@@ -83,8 +84,8 @@ public:
     KMachineState machineState() const { return m_machineState; }
     UIActionsPool* actionsPool() const;
     QWidget* mainMachineWindow() const;
-    QMenu* newMenu();
-    QMenuBar* newMenuBar();
+    QMenu* newMenu(UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenuBar* newMenuBar(UIMainMenuType fOptions = UIMainMenuType_All);
     QCursor cursor() const { return m_cursor; }
 
     bool isSaved() const { return machineState() == KMachineState_Saved; }

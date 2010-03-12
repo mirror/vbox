@@ -148,6 +148,7 @@ struct VBoxDefs
     static const char* GUI_LastGuestSizeHint;
     static const char* GUI_Fullscreen;
     static const char* GUI_Seamless;
+    static const char* GUI_VirtualScreenToHostScreen;
     static const char* GUI_AutoresizeGuest;
     static const char* GUI_FirstRun;
     static const char* GUI_SaveMountedAtRuntime;
