@@ -39,18 +39,11 @@ void VBoxSHGSMICommandMarkAsynchCompletion (void *pvData)
     pHdr->fFlags |= VBOXSHGSMI_FLAG_HG_ASYNCH;
 }
 
-int VBoxSHGSMICommandCompleteAsynch (PHGSMIINSTANCE pIns, void *pvData)
+int VBoxSHGSMICommandComplete (PHGSMIINSTANCE pIns, void *pvData)
 {
     PVBOXSHGSMIHEADER pHdr = VBoxSHGSMIBufferHeader (pvData);
-    Assert(!!(pHdr->fFlags & VBOXSHGSMI_FLAG_HG_ASYNCH));
-    return vboxSHGSMICommandCompleteAsynch (pIns, pHdr);
-}
-
-int VBoxSHGSMICommandCompleteSynch (PHGSMIINSTANCE pIns, void *pvData)
-{
-    PVBOXSHGSMIHEADER pHdr = VBoxSHGSMIBufferHeader (pvData);
-    Assert(!(pHdr->fFlags & VBOXSHGSMI_FLAG_HG_ASYNCH));
-    if (vboxSHGSMICommandCanCompleteSynch(pHdr))
+    if (!(pHdr->fFlags & VBOXSHGSMI_FLAG_HG_ASYNCH) /* <- check if synchronous completion */
+            && vboxSHGSMICommandCanCompleteSynch(pHdr)) /* <- check if can complete synchronously */
         return VINF_SUCCESS;
     pHdr->fFlags |= VBOXSHGSMI_FLAG_HG_ASYNCH;
     return vboxSHGSMICommandCompleteAsynch(pIns, pHdr);

@@ -6575,6 +6575,15 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     VBVAInit (pThis);
 #endif /* VBOX_WITH_HGSMI */
 
+#ifdef VBOXVDMA
+    if(rc == VINF_SUCCESS)
+    {
+        /* @todo: perhaps this should be done from some guest->host callback,
+        * that would as well specify the cmd pool size */
+        rc = vboxVDMAConstruct(pThis, &pThis->pVdma, 1024);
+        AssertRC(rc);
+    }
+#endif
     /*
      * Statistics.
      */
