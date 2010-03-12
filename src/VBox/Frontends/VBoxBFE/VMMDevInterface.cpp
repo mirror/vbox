@@ -109,24 +109,6 @@ PPDMIVMMDEVPORT VMMDev::getVMMDevPort()
     return mpDrv->pUpPort;
 }
 
-int VMMDev::SetMouseCapabilities(uint32_t mouseCaps)
-{
-    return mpDrv->pUpPort->pfnSetMouseCapabilities(mpDrv->pUpPort, mouseCaps);
-}
-
-
-int VMMDev::SetAbsoluteMouse(uint32_t mouseXAbs, uint32_t mouseYAbs)
-{
-    return mpDrv->pUpPort->pfnSetAbsoluteMouse(mpDrv->pUpPort, mouseXAbs, mouseYAbs);
-}
-
-void VMMDev::QueryMouseCapabilities(uint32_t *pMouseCaps)
-{
-
-    Assert(mpDrv);
-    mpDrv->pUpPort->pfnQueryMouseCapabilities(mpDrv->pUpPort, pMouseCaps);
-}
-
 
 /**
  * Report guest OS version.
