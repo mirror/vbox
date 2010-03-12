@@ -1177,7 +1177,42 @@
     </const>
   </enum>
 
+  <enum
+   name="IoMgrType"
+   uuid="35567419-4d2a-4256-a74e-efcae33493a2"
+   >
+     <desc>
+       Type of the I/O manager used for the image files in a virtual machine.
+     </desc>
+     <const name="Simple" value="1">
+       <desc>Simple manager. Normally only used if the default one runs into an
+       error. </desc>
+     </const>
+     <const name="Async" value="2">
+       <desc>Asynchronous manager using the async I/O API on the host if present.
+       This is the default manager.</desc>
+     </const>
+   </enum>
 
+  <enum
+   name="IoBackendType"
+   uuid="2a7e16d1-4e6b-4d5d-b0c9-b9bbe6c5b2ad"
+   >
+     <desc>
+       Type of I/O backend used for the image files in a virtual machine.
+     </desc>
+     <const name="Buffered" value="1">
+       <desc>Image files will use the host cache if possible.
+       This type does not work with the Async I/O manager on Linux hosts.
+       Default on all hosts except Linux.</desc>
+     </const>
+     <const name="Unbuffered" value="2">
+       <desc>Image files will not use the host cache.
+       This should be used on OS X and Linux hosts if a high I/O load is expected
+       or many virtual machines are running to prevent I/O cache
+       related hangs. Default on Linux hosts.</desc>
+     </const>
+  </enum>
 
   <!--
   // IVirtualBoxErrorInfo
@@ -4231,7 +4266,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="f2816298-7408-4c44-a117-0ed8ea09b9bc"
+     uuid="8d8f6fbb-54c1-4604-b68e-17619d458611"
      wsmap="managed"
      >
     <desc>
@@ -4767,6 +4802,38 @@
         When set to @a true, the RTC device of the virtual machine will run
         in UTC time, otherwise in local time. Especially Unix guests prefer
         the time in UTC.
+      </desc>
+    </attribute>
+
+    <attribute name="ioMgr" type="IoMgrType">
+      <desc>
+        Selects the I/O manager to use for the virtual machine.
+      </desc>
+    </attribute>
+
+    <attribute name="ioBackend" type="IoBackendType">
+      <desc>
+        Selects the I/O backend to use for the virtual machine.
+      </desc>
+    </attribute>
+
+    <attribute name="ioCacheEnabled" type="boolean">
+      <desc>
+        When set to @a true, the builtin I/O cache of the virtual machine
+        will be enabled.
+      </desc>
+    </attribute>
+
+    <attribute name="ioCacheSize" type="unsigned long">
+      <desc>
+        Maximum size of the I/O cache in MB.
+      </desc>
+    </attribute>
+
+    <attribute name="ioBandwidthMax" type="unsigned long">
+      <desc>
+        The maximum number of MB the VM is allowed to transfer per second.
+        0 means unlimited bandwidth.
       </desc>
     </attribute>
 
