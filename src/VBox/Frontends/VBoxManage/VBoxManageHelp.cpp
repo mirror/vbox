@@ -281,6 +281,11 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--teleporteraddress <address|empty>\n"
                  "                            [--teleporterpassword <password>]\n"
                  "                            [--hardwareuuid <uuid>]\n"
+                 "                            [--iomgr simple|async]\n"
+                 "                            [--iobackend buffered|unbuffered]\n"
+                 "                            [--iocache on|off]\n"
+                 "                            [--iocachesize <I/O cache size in MB>]\n"
+                 "                            [--iobandwidthmax <Maximum I/O bandwidth in MB>]\n"
                 );
         RTPrintf("\n");
     }
