@@ -58,11 +58,11 @@ public:
                                   UIActionsPool *pActionsPool,
                                   UIVisualStateType visualStateType);
 
-    /* Check if this mode is available */
-    virtual bool checkAvailability() { return true; }
+    /* Check if this mode is available: */
+    virtual bool checkAvailability();
 
-    /* Do the real initialization of the object */
-    virtual void initialize() {}
+    /* Do the real initialization of the object: */
+    virtual void initialize() = 0;
 
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
@@ -73,9 +73,7 @@ public:
     UIMachineWindow* defaultMachineWindow();
 
     /* Maintenance getters/setters: */
-    bool isPreventAutoStart() const { return m_fIsPreventAutoStart; }
     bool isPreventAutoClose() const { return m_fIsPreventAutoClose; }
-    void setPreventAutoStart(bool fIsPreventAutoStart) { m_fIsPreventAutoStart = fIsPreventAutoStart; }
     void setPreventAutoClose(bool fIsPreventAutoClose) { m_fIsPreventAutoClose = fIsPreventAutoClose; }
 
 #ifdef Q_WS_MAC
@@ -195,7 +193,6 @@ private:
     QActionGroup *m_pRunningOrPausedActions;
 
     bool m_fIsWindowsCreated : 1;
-    bool m_fIsPreventAutoStart : 1;
     bool m_fIsPreventAutoClose : 1;
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
