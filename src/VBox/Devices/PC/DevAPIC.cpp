@@ -2162,29 +2162,6 @@ static void ioapic_service(IOAPICState *s)
     }
 }
 
-/**
- * This function is a hack, intended to minimize impact of not fully implemented power management support
- * on OSX guests. We do nothing smarter than make access to certain register (ISR status for LVT[6])
- * rather long operation from the guest's perspective. 
- * To be removed once real reasons why power saving states not reached by OSX will be figured out.
- * Hack seems to be safe, as guests rarely access this particular register.
- */
-int checkHeavyRegistersPolling(APICDeviceInfo * pThis, RTGCPHYS GCPhysAddr)
-{
-    int index = (GCPhysAddr >> 4) & 0xff;
-
-    /* We pick up rarely accessed IRR status register for this check */
-    if (index != 0x26)
-        return VINF_SUCCESS;
-
-#ifdef IN_RING3
-    RTThreadSleep(10);
-    return VINF_SUCCESS;
-#else
-    return VINF_IOM_HC_MMIO_READ;
-#endif
-}
-
 #ifdef VBOX
 static
 #endif
@@ -2450,9 +2427,6 @@ PDMBOTHCBDECL(int) apicMMIORead(PPDMDEVINS pDevIns, void *pvUser, RTGCPHYS GCPhy
             }
 #endif
 #endif /* experimental */
-            int rc = checkHeavyRegistersPolling(dev, GCPhysAddr);
-            if (rc != VINF_SUCCESS)
-                return rc;
             APIC_LOCK(dev, VINF_IOM_HC_MMIO_READ);
             *(uint32_t *)pv = apic_mem_readl(dev, s, GCPhysAddr);
             APIC_UNLOCK(dev);
