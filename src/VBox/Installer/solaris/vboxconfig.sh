@@ -616,7 +616,7 @@ postinstall()
                     echo "VirtualBox_SectionStart_DoNotEdit" >> $nmaskbackupfile
                     echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
                     echo "VirtualBox_SectionEnd_DoNotEdit" >> $nmaskbackupfile
-                    mv -f $netmasksbackupfile $netmasksfile
+                    mv -f $nmaskbackupfile $nmaskfile
                 fi
             else
                 # Should this be fatal?
