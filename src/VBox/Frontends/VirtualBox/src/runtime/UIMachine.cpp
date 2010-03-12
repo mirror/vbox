@@ -129,9 +129,9 @@ public:
     {
         /* Connect action handlers: */
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToFullscreenMode()));
+                this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToSeamlessMode()));
+                this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
         m_pMachineLogic->initialize();
@@ -191,9 +191,9 @@ public:
     {
         /* Connect action handlers: */
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToNormalMode()));
+                this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToSeamlessMode()));
+                this, SLOT(sltGoToSeamlessMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
         m_pMachineLogic->initialize();
@@ -253,9 +253,9 @@ public:
     {
         /* Connect action handlers: */
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToFullscreenMode()));
+                this, SLOT(sltGoToFullscreenMode()), Qt::QueuedConnection);
         connect(m_pActionsPool->action(UIActionIndex_Toggle_Seamless), SIGNAL(triggered(bool)),
-                this, SLOT(sltGoToNormalMode()));
+                this, SLOT(sltGoToNormalMode()), Qt::QueuedConnection);
 
         /* Initialize the logic object: */
         m_pMachineLogic->initialize();
