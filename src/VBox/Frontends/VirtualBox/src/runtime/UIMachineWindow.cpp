@@ -403,9 +403,6 @@ void UIMachineWindow::updateAppearanceOf(int iElement)
         if (machine.GetMonitorCount() > 1)
             strMachineName += QString(" : %1").arg(m_uScreenId + 1);
         machineWindow()->setWindowTitle(strMachineName);
-
-        // TODO: Move that to fullscreen/seamless update routine:
-        //mMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
     }
 }
 
