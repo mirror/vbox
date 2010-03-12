@@ -160,7 +160,17 @@ public:
 
     /* Fullscreen visual state holder constructor: */
     UIVisualStateFullscreen(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool) {}
+        : UIVisualState(pParent, pSession, pActionsPool)
+    {
+        /* This visual state should take care of own action: */
+        QAction *pActionFullscreen = m_pActionsPool->action(UIActionIndex_Toggle_Fullscreen);
+        if (!pActionFullscreen->isChecked())
+        {
+            pActionFullscreen->blockSignals(true);
+            pActionFullscreen->setChecked(true);
+            pActionFullscreen->blockSignals(false);
+        }
+    }
 
     /* Fullscreen visual state holder destructor: */
     virtual ~UIVisualStateFullscreen()
@@ -212,7 +222,17 @@ public:
 
     /* Seamless visual state holder constructor: */
     UIVisualStateSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
-        : UIVisualState(pParent, pSession, pActionsPool) {}
+        : UIVisualState(pParent, pSession, pActionsPool)
+    {
+        /* This visual state should take care of own action: */
+        QAction *pActionSeamless = m_pActionsPool->action(UIActionIndex_Toggle_Seamless);
+        if (pActionSeamless->isChecked())
+        {
+            pActionSeamless->blockSignals(true);
+            pActionSeamless->setChecked(true);
+            pActionSeamless->blockSignals(false);
+        }
+    }
 
     /* Seamless visual state holder destructor: */
     virtual ~UIVisualStateSeamless()
