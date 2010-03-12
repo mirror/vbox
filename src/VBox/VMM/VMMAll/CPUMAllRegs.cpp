@@ -799,6 +799,15 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
                     | ((uint64_t)u8Multiplier << 40   /* Flex ratio min */ );
             break;
 
+        case MSR_IA32_MISC_ENABLE:
+#if 0
+            /* Needs to be tested more before enabling. */
+            u64 = pVCpu->cpum.s.GuestMsr.msr.miscEnable;
+#else
+            u64 = 0;
+#endif
+            break;
+
         /* fs & gs base skipped on purpose as the current context might not be up-to-date. */
         default:
             AssertFailed();
@@ -814,6 +823,10 @@ VMMDECL(void) CPUMSetGuestMsr(PVMCPU pVCpu, unsigned idMsr, uint64_t valMsr)
     {
         case MSR_K8_TSC_AUX:
             pVCpu->cpum.s.GuestMsr.msr.tscAux = valMsr;
+            break;
+
+        case MSR_IA32_MISC_ENABLE:
+            pVCpu->cpum.s.GuestMsr.msr.miscEnable = valMsr;
             break;
 
         default:
