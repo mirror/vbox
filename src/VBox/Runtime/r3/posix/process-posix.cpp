@@ -301,8 +301,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             if (fFlags & RTPROC_FLAGS_DAEMONIZE)
             {
                 rc = RTProcDaemonize(true /* fNoChDir */, false /* fNoClose */, NULL /* pszPidFile */);
-                AssertReleaseMsgFailed(("RTProcDaemonize returns %Rrc errno=%d\n", rc, errno));
-                exit(127);
+                if (RT_FAILURE(rc))
+                {
+                    AssertReleaseMsgFailed(("RTProcDaemonize returns %Rrc errno=%d\n", rc, errno));
+                    exit(127);
+                }
             }
 
             /*
@@ -504,7 +507,9 @@ RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPid
     }
 
     if (!fNoChDir)
+    {
         int rcChdir = chdir("/");
+    }
 
     /* Second fork to lose session leader status. */
     pid = fork();
