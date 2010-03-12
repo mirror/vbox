@@ -547,7 +547,9 @@ typedef union CPUMCTXMSR
 {
     struct
     {
+        /* Never ever change the order here because of saved states!. */
         uint64_t        tscAux;         /* MSR_K8_TSC_AUX */
+        uint64_t        miscEnable;     /* MSR_IA32_MISC_ENABLE */
     } msr;
     uint64_t    au64[64];
 } CPUMCTXMSR;
