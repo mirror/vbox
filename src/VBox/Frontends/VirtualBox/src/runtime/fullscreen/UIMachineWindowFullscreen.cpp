@@ -31,11 +31,12 @@
 #include "VBoxGlobal.h"
 #include "VBoxMiniToolBar.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
+#include "UIMachineLogicFullscreen.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowFullscreen.h"
+#include "UISession.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
@@ -74,12 +75,17 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
+    /* Make sure the window is placed on the right screen before we are going
+     * into fullscreen. */
+    sltPlaceOnScreen();
+
     /* Show window: */
     showFullScreen();
 
 #ifdef Q_WS_MAC
     /* Make sure it is really on the right place (especially on the Mac) */
-    move(0, 0);
+    QRect r = QApplication::desktop()->screenGeometry(static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+    move(r.topLeft());
 #endif /* Q_WS_MAC */
 }
 
@@ -94,6 +100,14 @@ UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
     /* Cleanup menu: */
     cleanupMenu();
 }
+
+void UIMachineWindowFullscreen::sltPlaceOnScreen()
+{
+    QRect r = QApplication::desktop()->screenGeometry(static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
+    move(r.topLeft());
+    resize(r.size());
+}
+
 
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
@@ -154,10 +168,14 @@ void UIMachineWindowFullscreen::closeEvent(QCloseEvent *pEvent)
 
 void UIMachineWindowFullscreen::prepareMenu()
 {
+    UIMainMenuType fMenus = UIMainMenuType_All;
+    /* Remove the view menu in the case there is one screen only. */
+    if (session().GetMachine().GetMonitorCount() == 1)
+        fMenus = UIMainMenuType(fMenus ^ UIMainMenuType_View);
 #ifdef Q_WS_MAC
-    setMenuBar(uisession()->newMenuBar());
+    setMenuBar(uisession()->newMenuBar(fMenus));
 #endif /* Q_WS_MAC */
-    m_pMainMenu = uisession()->newMenu();
+    m_pMainMenu = uisession()->newMenu(fMenus);
 }
 
 void UIMachineWindowFullscreen::prepareMiniToolBar()

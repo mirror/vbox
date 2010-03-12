@@ -56,6 +56,8 @@ public:
     UISession* uisession() const;
     CSession& session() const;
 
+    virtual void reshow() {}
+
 protected:
 
     /* Machine window constructor/destructor: */

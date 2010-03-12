@@ -130,7 +130,7 @@ protected:
     virtual QRect availableGeometry() = 0;
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
-    virtual void updateSliders() =  0;
+    virtual void updateSliders();
 
 #ifdef Q_WS_MAC
     void updateDockIcon();
@@ -327,5 +327,5 @@ protected:
     int m_iTimerId;
 };
 
-#endif // !___UIMachineViewNormal_h___
+#endif // !___UIMachineView_h___
 

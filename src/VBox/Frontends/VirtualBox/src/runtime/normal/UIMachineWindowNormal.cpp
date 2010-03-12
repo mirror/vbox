@@ -348,7 +348,8 @@ void UIMachineWindowNormal::prepareConsoleConnections()
 
 void UIMachineWindowNormal::prepareMenu()
 {
-    setMenuBar(uisession()->newMenuBar());
+    /* No view menu in normal mode */
+    setMenuBar(uisession()->newMenuBar(UIMainMenuType(UIMainMenuType_All ^ UIMainMenuType_View)));
 }
 
 void UIMachineWindowNormal::prepareStatusBar()

@@ -29,16 +29,21 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineWindow.h"
+#include "UIMachineWindowSeamless.h"
+#include "UIMultiScreenLayout.h"
+#include "UISession.h"
 
-#include "VBoxUtils.h"
+#ifdef Q_WS_MAC
+# include "VBoxUtils.h"
+#endif /* Q_WS_MAC */
 
 UIMachineLogicSeamless::UIMachineLogicSeamless(QObject *pParent, UISession *pSession, UIActionsPool *pActionsPool)
     : UIMachineLogic(pParent, pSession, pActionsPool, UIVisualStateType_Seamless)
 {
+    m_pScreenLayout = new UIMultiScreenLayout(this);
 }
 
 UIMachineLogicSeamless::~UIMachineLogicSeamless()
@@ -48,6 +53,8 @@ UIMachineLogicSeamless::~UIMachineLogicSeamless()
 
     /* Cleanup actions groups: */
     cleanupActionGroups();
+
+    delete m_pScreenLayout;
 }
 
 bool UIMachineLogicSeamless::checkAvailability()
@@ -60,13 +67,8 @@ bool UIMachineLogicSeamless::checkAvailability()
     const CMachine &machine = uisession()->session().GetMachine();
     const CConsole &console = uisession()->session().GetConsole();
 
-#if (QT_VERSION >= 0x040600)
-    int cHostScreens = QApplication::desktop()->screenCount();
-#else /* (QT_VERSION >= 0x040600) */
-    int cHostScreens = QApplication::desktop()->numScreens();
-#endif /* !(QT_VERSION >= 0x040600) */
-
-    int cGuestScreens = machine.GetMonitorCount();
+    int cHostScreens = m_pScreenLayout->hostScreenCount();
+    int cGuestScreens = m_pScreenLayout->guestScreenCount();
     /* Check that there are enough physical screens are connected: */
     if (cHostScreens < cGuestScreens)
     {
@@ -154,6 +156,11 @@ void UIMachineLogicSeamless::initialize()
     retranslateUi();
 }
 
+int UIMachineLogicSeamless::hostScreenForGuestScreen(int screenId) const
+{
+    return m_pScreenLayout->hostScreenForGuestScreen(screenId);
+}
+
 void UIMachineLogicSeamless::prepareActionGroups()
 {
     /* Base class action groups: */
@@ -167,6 +174,11 @@ void UIMachineLogicSeamless::prepareActionGroups()
 
     /* Disable mouse-integration isn't allowed in seamless: */
     actionsPool()->action(UIActionIndex_Toggle_MouseIntegration)->setVisible(false);
+
+    /* Add the view menu: */
+    QMenu *pMenu = actionsPool()->action(UIActionIndex_Menu_View)->menu();
+    m_pScreenLayout->initialize(pMenu);
+    pMenu->setVisible(true);
 }
 
 void UIMachineLogicSeamless::prepareMachineWindows()
@@ -181,19 +193,19 @@ void UIMachineLogicSeamless::prepareMachineWindows()
     ::darwinSetFrontMostProcess();
 #endif /* Q_WS_MAC */
 
-#if 0 // TODO: Add seamless multi-monitor support!
-    /* Get monitors count: */
-    ulong uMonitorCount = session().GetMachine().GetMonitorCount();
+    /* Update the multi screen layout */
+    m_pScreenLayout->update();
+
     /* Create machine window(s): */
-    for (ulong uScreenId = 0; uScreenId < uMonitorCount; ++ uScreenId)
-        addMachineWindow(UIMachineWindow::create(this, visualStateType(), uScreenId));
+    for (int screenId = 0; screenId < m_pScreenLayout->guestScreenCount(); ++screenId)
+        addMachineWindow(UIMachineWindow::create(this, visualStateType(), screenId));
     /* Order machine window(s): */
-    for (ulong uScreenId = uMonitorCount; uScreenId > 0; -- uScreenId)
-        machineWindows()[uScreenId - 1]->machineWindow()->raise();
-#else
-    /* Create primary machine window: */
-    addMachineWindow(UIMachineWindow::create(this, visualStateType(), 0 /* primary only */));
-#endif
+    for (int screenId = m_pScreenLayout->guestScreenCount() - 1; screenId >= 0; --screenId)
+        machineWindows().at(screenId)->machineWindow()->raise();
+
+    foreach (UIMachineWindow *pMachineWindow, machineWindows())
+        connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
+                static_cast<UIMachineWindowSeamless*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
@@ -205,14 +217,9 @@ void UIMachineLogicSeamless::cleanupMachineWindows()
     if (!isMachineWindowsCreated())
         return;
 
-#if 0 // TODO: Add seamless multi-monitor support!
     /* Cleanup normal machine window: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         UIMachineWindow::destroy(pMachineWindow);
-#else
-    /* Create machine window(s): */
-    UIMachineWindow::destroy(machineWindows()[0] /* primary only */);
-#endif
 }
 
 void UIMachineLogicSeamless::cleanupActionGroups()

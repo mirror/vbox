@@ -38,50 +38,64 @@ UIMachineMenuBar::UIMachineMenuBar()
 {
 }
 
-QMenu* UIMachineMenuBar::createMenu(UIActionsPool *pActionsPool)
+QMenu* UIMachineMenuBar::createMenu(UIActionsPool *pActionsPool, UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty menu: */
     QMenu *pMenu = new QMenu;
 
     /* Fill menu with prepared items: */
-    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool))
+    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool, fOptions))
         pMenu->addMenu(pSubMenu);
 
     /* Return filled menu: */
     return pMenu;
 }
 
-QMenuBar* UIMachineMenuBar::createMenuBar(UIActionsPool *pActionsPool)
+QMenuBar* UIMachineMenuBar::createMenuBar(UIActionsPool *pActionsPool, UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty menubar: */
     QMenuBar *pMenuBar = new QMenuBar;
 
     /* Fill menubar with prepared items: */
-    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool))
+    foreach (QMenu *pSubMenu, prepareSubMenus(pActionsPool, fOptions))
         pMenuBar->addMenu(pSubMenu);
 
     /* Return filled menubar: */
     return pMenuBar;
 }
 
-QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool)
+QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool, UIMainMenuType fOptions /* = UIMainMenuType_All */)
 {
     /* Create empty submenu list: */
     QList<QMenu*> preparedSubMenus;
 
     /* Machine submenu: */
-    QMenu *pMenuMachine = pActionsPool->action(UIActionIndex_Menu_Machine)->menu();
-    prepareMenuMachine(pMenuMachine, pActionsPool);
-    preparedSubMenus << pMenuMachine;
+    if (fOptions & UIMainMenuType_Machine)
+    {
+        QMenu *pMenuMachine = pActionsPool->action(UIActionIndex_Menu_Machine)->menu();
+        prepareMenuMachine(pMenuMachine, pActionsPool);
+        preparedSubMenus << pMenuMachine;
+    }
+
+    /* View submenu: */
+    if (fOptions & UIMainMenuType_View)
+    {
+        QMenu *pMenuView = pActionsPool->action(UIActionIndex_Menu_View)->menu();
+        preparedSubMenus << pMenuView;
+    }
 
     /* Devices submenu: */
-    QMenu *pMenuDevices = pActionsPool->action(UIActionIndex_Menu_Devices)->menu();
-    prepareMenuDevices(pMenuDevices, pActionsPool);
-    preparedSubMenus << pMenuDevices;
+    if (fOptions & UIMainMenuType_Devices)
+    {
+        QMenu *pMenuDevices = pActionsPool->action(UIActionIndex_Menu_Devices)->menu();
+        prepareMenuDevices(pMenuDevices, pActionsPool);
+        preparedSubMenus << pMenuDevices;
+    }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
     /* Debug submenu: */
-    if (vboxGlobal().isDebuggerEnabled())
+    if (   fOptions & UIMainMenuType_Debug
+        && vboxGlobal().isDebuggerEnabled())
     {
         QMenu *pMenuDebug = pActionsPool->action(UIActionIndex_Menu_Debug)->menu();
         prepareMenuDebug(pMenuDebug, pActionsPool);
@@ -90,9 +104,12 @@ QList<QMenu*> UIMachineMenuBar::prepareSubMenus(UIActionsPool *pActionsPool)
 #endif
 
     /* Help submenu: */
-    QMenu *pMenuHelp = pActionsPool->action(UIActionIndex_Menu_Help)->menu();
-    prepareMenuHelp(pMenuHelp, pActionsPool);
-    preparedSubMenus << pMenuHelp;
+    if (fOptions & UIMainMenuType_Help)
+    {
+        QMenu *pMenuHelp = pActionsPool->action(UIActionIndex_Menu_Help)->menu();
+        prepareMenuHelp(pMenuHelp, pActionsPool);
+        preparedSubMenus << pMenuHelp;
+    }
 
     /* Return a list of prepared submenus: */
     return preparedSubMenus;

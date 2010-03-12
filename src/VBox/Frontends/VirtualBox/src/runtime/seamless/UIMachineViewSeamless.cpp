@@ -35,6 +35,7 @@
 /* Local includes */
 #include "UISession.h"
 #include "UIMachineWindow.h"
+#include "UIMachineLogic.h"
 #include "UIFrameBuffer.h"
 #include "UIMachineViewSeamless.h"
 #include "QIMainDialog.h"
@@ -274,6 +275,8 @@ void UIMachineViewSeamless::cleanupSeamless()
 
 QRect UIMachineViewSeamless::availableGeometry()
 {
+//    return machineWindowWrapper()->machineLogic()->availableGeometry(screenId());
+
     return QApplication::desktop()->availableGeometry(this);
 }
 

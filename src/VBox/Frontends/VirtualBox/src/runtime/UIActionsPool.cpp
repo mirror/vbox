@@ -510,6 +510,26 @@ protected:
     }
 };
 
+class MenuViewAction : public UIMenuAction
+{
+    Q_OBJECT;
+
+public:
+
+    MenuViewAction(QObject *pParent)
+        : UIMenuAction(pParent)
+    {
+        retranslateUi();
+    }
+
+protected:
+
+    void retranslateUi()
+    {
+        menu()->setTitle(UIActionsPool::tr("&View"));
+    }
+};
+
 class MenuDevicesAction : public UIMenuAction
 {
     Q_OBJECT;
@@ -1119,6 +1139,9 @@ void UIActionsPool::createMenus()
     if (m_actionsPool[UIActionIndex_Menu_Machine])
         delete m_actionsPool[UIActionIndex_Menu_Machine];
     m_actionsPool[UIActionIndex_Menu_Machine] = new MenuMachineAction(this);
+    if (m_actionsPool[UIActionIndex_Menu_View])
+        delete m_actionsPool[UIActionIndex_Menu_View];
+    m_actionsPool[UIActionIndex_Menu_View] = new MenuViewAction(this);
     if (m_actionsPool[UIActionIndex_Menu_MouseIntegration])
         delete m_actionsPool[UIActionIndex_Menu_MouseIntegration];
     m_actionsPool[UIActionIndex_Menu_MouseIntegration] = new MenuMouseIntegrationAction(this);

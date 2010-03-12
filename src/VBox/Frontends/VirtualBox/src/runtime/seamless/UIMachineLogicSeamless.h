@@ -28,6 +28,7 @@
 
 /* Local forwards */
 class UIActionsPool;
+class UIMultiScreenLayout;
 
 class UIMachineLogicSeamless : public UIMachineLogic
 {
@@ -44,6 +45,8 @@ protected:
     bool checkAvailability();
     void initialize();
 
+    int hostScreenForGuestScreen(int screenId) const;
+
 private:
 
     /* Prepare helpers: */
@@ -54,8 +57,11 @@ private:
     void cleanupMachineWindows();
     void cleanupActionGroups();
 
+    UIMultiScreenLayout *m_pScreenLayout;
+
     /* Friend classes: */
     friend class UIMachineLogic;
+    friend class UIMachineWindowSeamless;
 };
 
 #endif // __UIMachineLogicSeamless_h__

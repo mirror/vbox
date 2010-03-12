@@ -66,6 +66,7 @@ public:
 
     /* Main getters/setters: */
     UISession* uisession() const { return m_pSession; }
+    CSession& session();
     UIActionsPool* actionsPool() const { return m_pActionsPool; }
     UIVisualStateType visualStateType() const { return m_visualStateType; }
     QList<UIMachineWindow*>& machineWindows() { return m_machineWindowsList; }
@@ -92,9 +93,6 @@ protected:
     /* Protected getters/setters: */
     bool isMachineWindowsCreated() const { return m_fIsWindowsCreated; }
     void setMachineWindowsCreated(bool fIsWindowsCreated) { m_fIsWindowsCreated = fIsWindowsCreated; }
-
-    /* Protected wrappers: */
-    CSession& session();
 
     /* Protected members: */
     void addMachineWindow(UIMachineWindow *pMachineWindow);

@@ -67,5 +67,16 @@ enum UIViewStateType
     UIViewStateType_HostKeyPressed   = RT_BIT(1)
 };
 
+/* Main menu enum: */
+enum UIMainMenuType
+{
+    UIMainMenuType_Machine = RT_BIT(0),
+    UIMainMenuType_Devices = RT_BIT(1),
+    UIMainMenuType_View    = RT_BIT(2),
+    UIMainMenuType_Debug   = RT_BIT(3),
+    UIMainMenuType_Help    = RT_BIT(4),
+    UIMainMenuType_All     = 0xFF
+};
+
 #endif // __UIMachineDefs_h__
 

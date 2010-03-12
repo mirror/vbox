@@ -45,7 +45,7 @@ protected:
 
 private slots:
 
-    /* Windowed mode funtionality: */
+    /* Windowed mode functionality: */
     void sltPrepareNetworkAdaptersMenu();
     void sltPrepareSharedFoldersMenu();
     void sltPrepareMouseIntegrationMenu();

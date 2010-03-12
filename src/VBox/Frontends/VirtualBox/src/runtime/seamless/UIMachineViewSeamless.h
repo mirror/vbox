@@ -77,7 +77,6 @@ private:
     QRect availableGeometry();
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize() {}
-    void updateSliders() {}
     QRegion lastVisibleRegion() const { return m_lastVisibleRegion; }
 
     /* Private variables: */

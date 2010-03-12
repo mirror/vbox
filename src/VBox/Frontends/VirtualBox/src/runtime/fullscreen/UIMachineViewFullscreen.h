@@ -80,7 +80,6 @@ private:
     QRect availableGeometry();
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
-    void updateSliders() {}
 
     /* Private members: */
     bool m_bIsGuestAutoresizeEnabled : 1;

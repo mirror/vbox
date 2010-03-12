@@ -23,6 +23,9 @@
 #ifndef __UIMachineMenuBar_h__
 #define __UIMachineMenuBar_h__
 
+/* Local includes */
+#include "UIMachineDefs.h"
+
 /* Global includes */
 #include <QList>
 
@@ -36,15 +39,14 @@ class UIActionsPool;
 class UIMachineMenuBar
 {
 public:
-
     UIMachineMenuBar();
 
-    QMenu* createMenu(UIActionsPool *pActionsPool);
-    QMenuBar* createMenuBar(UIActionsPool *pActionsPool);
+    QMenu* createMenu(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
+    QMenuBar* createMenuBar(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
 
 protected:
 
-    QList<QMenu*> prepareSubMenus(UIActionsPool *pActionsPool);
+    QList<QMenu*> prepareSubMenus(UIActionsPool *pActionsPool, UIMainMenuType fOptions = UIMainMenuType_All);
     void prepareMenuMachine(QMenu *pMenu, UIActionsPool *pActionsPool);
     void prepareMenuDevices(QMenu *pMenu, UIActionsPool *pActionsPool);
 #ifdef VBOX_WITH_DEBUGGER_GUI
