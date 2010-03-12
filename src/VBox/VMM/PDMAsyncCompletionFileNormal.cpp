@@ -532,10 +532,12 @@ static int pdmacFileAioMgrNormalRangeLock(PPDMACEPFILEMGR pAioMgr,
         return VERR_NO_MEMORY;
 
     /* Init the lock. */
-    pRangeLock->Core.Key     = offStart;
-    pRangeLock->Core.KeyLast = offStart + cbRange - 1;
-    pRangeLock->cRefs        = 1;
-    pRangeLock->fReadLock    = pTask->enmTransferType == PDMACTASKFILETRANSFER_READ;
+    pRangeLock->Core.Key          = offStart;
+    pRangeLock->Core.KeyLast      = offStart + cbRange - 1;
+    pRangeLock->cRefs             = 1;
+    pRangeLock->fReadLock         = pTask->enmTransferType == PDMACTASKFILETRANSFER_READ;
+    pRangeLock->pWaitingTasksHead = NULL;
+    pRangeLock->pWaitingTasksTail = NULL;
 
     bool fInserted = RTAvlrFileOffsetInsert(pEndpoint->AioMgr.pTreeRangesLocked, &pRangeLock->Core);
     AssertMsg(fInserted, ("Range lock was not inserted!\n"));
@@ -557,6 +559,8 @@ static int pdmacFileAioMgrNormalRangeLockFree(PPDMACEPFILEMGR pAioMgr,
 
     RTAvlrFileOffsetRemove(pEndpoint->AioMgr.pTreeRangesLocked, pRangeLock->Core.Key);
     pTasksWaitingHead = pRangeLock->pWaitingTasksHead;
+    pRangeLock->pWaitingTasksHead = NULL;
+    pRangeLock->pWaitingTasksTail = NULL;
     RTMemCacheFree(pAioMgr->hMemCacheRangeLocks, pRangeLock);
 
     return pdmacFileAioMgrNormalProcessTaskList(pTasksWaitingHead, pAioMgr, pEndpoint);
