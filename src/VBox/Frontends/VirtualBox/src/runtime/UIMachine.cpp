@@ -360,8 +360,14 @@ void UIMachine::sltChangeVisualState(UIVisualStateType visualStateType)
         m_pVisualState->finishChange();
     }
     else
+    {
         /* Discard the temporary created new state: */
         delete pNewVisualState;
+
+        /* If there is no state currently created => we have to exit: */
+        if (!m_pVisualState)
+            deleteLater();
+    }
 }
 
 void UIMachine::closeVirtualMachine()
