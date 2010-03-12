@@ -526,6 +526,11 @@ static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
         pBwMgr->cbVMTransferAllowed = pBwMgr->cbVMTransferPerSecStart;
         pBwMgr->tsUpdatedLast       = RTTimeSystemNanoTS();
 
+        if (pBwMgr->cbVMTransferPerSecMax != UINT32_MAX)
+            LogRel(("AIOMgr: I/O bandwidth limited to %u bytes/sec\n", pBwMgr->cbVMTransferPerSecMax));
+        else
+            LogRel(("AIOMgr: I/O bandwidth not limited\n"));
+
         *ppBwMgr = pBwMgr;
     }
 
