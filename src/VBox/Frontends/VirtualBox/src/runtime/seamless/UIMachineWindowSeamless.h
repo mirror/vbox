@@ -31,6 +31,9 @@
 # include <X11/Xlib.h>
 #endif
 
+/* Local forwards */
+class VBoxMiniToolBar;
+
 class UIMachineWindowSeamless : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
 {
     Q_OBJECT;
@@ -48,6 +51,9 @@ private slots:
 
     /* Popup main menu: */
     void sltPopupMainMenu();
+
+    /* Update mini tool-bar mask: */
+    void sltUpdateMiniToolBarMask();
 
     /* Close window reimplementation: */
     void sltTryClose();
@@ -69,18 +75,21 @@ private:
     /* Prepare helpers: */
     void prepareSeamless();
     void prepareMenu();
+    void prepareMiniToolBar();
     void prepareMachineView();
 #ifdef Q_WS_MAC
     void loadWindowSettings();
 #endif /* Q_WS_MAC */
 
     /* Cleanup helpers: */
-#ifdef Q_WS_MAC
-    //void saveWindowSettings() {}
-#endif /* Q_WS_MAC */
+    void saveWindowSettings();
     void cleanupMachineView();
+    //void cleanupMiniToolBar() {}
     void cleanupMenu();
     //void cleanupSeamless() {}
+
+    /* Update routines: */
+    void updateAppearanceOf(int iElement);
 
     /* Other members: */
     void showSeamless();
@@ -89,6 +98,7 @@ private:
 
     /* Private variables: */
     QMenu *m_pMainMenu;
+    VBoxMiniToolBar *m_pMiniToolBar;
 #ifdef Q_WS_WIN
     QRegion m_prevRegion;
 #endif /* Q_WS_WIN */

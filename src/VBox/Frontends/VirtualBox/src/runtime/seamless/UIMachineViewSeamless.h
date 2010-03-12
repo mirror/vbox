@@ -78,6 +78,7 @@ private:
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize() {}
     void updateSliders() {}
+    QRegion lastVisibleRegion() const { return m_lastVisibleRegion; }
 
     /* Private variables: */
     bool m_fShouldWeDoResize : 1;

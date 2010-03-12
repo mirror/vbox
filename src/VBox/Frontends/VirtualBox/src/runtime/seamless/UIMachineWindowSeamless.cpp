@@ -29,11 +29,13 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
+#include "VBoxMiniToolBar.h"
 
 #ifdef Q_WS_MAC
 # include "VBoxUtils.h"
 #endif /* Q_WS_MAC */
 #include "UISession.h"
+#include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowSeamless.h"
@@ -42,6 +44,7 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
+    , m_pMiniToolBar(0)
 {
     /* "This" is machine window: */
     m_pMachineWindow = this;
@@ -62,14 +65,17 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
     /* Prepare seamless menu: */
     prepareMenu();
 
-    /* Retranslate seamless window finally: */
-    retranslateUi();
-
     /* Prepare machine view container: */
     prepareMachineViewContainer();
 
     /* Prepare seamless machine view: */
     prepareMachineView();
+
+    /* Prepare mini tool-bar: */
+    prepareMiniToolBar();
+
+    /* Retranslate fullscreen window finally: */
+    retranslateUi();
 
 #ifdef Q_WS_MAC
     /* Load seamless window settings: */
@@ -85,7 +91,10 @@ UIMachineWindowSeamless::UIMachineWindowSeamless(UIMachineLogic *pMachineLogic, 
 
 UIMachineWindowSeamless::~UIMachineWindowSeamless()
 {
-    /* Cleanup normal machine view: */
+    /* Save window settings: */
+    saveWindowSettings();
+
+    /* Cleanup machine view: */
     cleanupMachineView();
 
     /* Cleanup menu: */
@@ -102,6 +111,12 @@ void UIMachineWindowSeamless::sltPopupMainMenu()
     /* Popup main menu if present: */
     if (m_pMainMenu && !m_pMainMenu->isEmpty())
         m_pMainMenu->popup(machineWindow()->geometry().center());
+}
+
+void UIMachineWindowSeamless::sltUpdateMiniToolBarMask()
+{
+    if (m_pMiniToolBar)
+        setMask(machineView()->lastVisibleRegion());
 }
 
 void UIMachineWindowSeamless::sltTryClose()
@@ -190,6 +205,35 @@ void UIMachineWindowSeamless::prepareMenu()
     m_pMainMenu = uisession()->newMenu();
 }
 
+void UIMachineWindowSeamless::prepareMiniToolBar()
+{
+    /* Get current machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+    /* Check if mini tool-bar should present: */
+    bool fIsActive = machine.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar) != "no";
+    if (fIsActive)
+    {
+        /* Get the mini tool-bar alignment: */
+        bool fIsAtTop = machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment) == "top";
+        /* Get the mini tool-bar auto-hide feature availability: */
+        bool fIsAutoHide = machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide) != "off";
+        m_pMiniToolBar = new VBoxMiniToolBar(centralWidget(),
+                                             fIsAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
+                                             true, fIsAutoHide);
+        m_pMiniToolBar->setSeamlessMode(true);
+        m_pMiniToolBar->updateDisplay(true, true);
+        QList<QMenu*> menus;
+        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
+        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
+        *m_pMiniToolBar << menus;
+        connect(m_pMiniToolBar, SIGNAL(exitAction()),
+                uisession()->actionsPool()->action(UIActionIndex_Toggle_Seamless), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(closeAction()),
+                uisession()->actionsPool()->action(UIActionIndex_Simple_Close), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(geometryUpdated()), this, SLOT(sltUpdateMiniToolBarMask()));
+    }
+}
+
 void UIMachineWindowSeamless::prepareMachineView()
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -229,6 +273,19 @@ void UIMachineWindowSeamless::loadWindowSettings()
 }
 #endif
 
+void UIMachineWindowSeamless::saveWindowSettings()
+{
+    /* Get machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Save extra-data settings: */
+    {
+        /* Save mini tool-bar settings: */
+        if (m_pMiniToolBar)
+            machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    }
+}
+
 void UIMachineWindowSeamless::cleanupMachineView()
 {
     /* Do not cleanup machine view if it is not present: */
@@ -243,6 +300,28 @@ void UIMachineWindowSeamless::cleanupMenu()
 {
     delete m_pMainMenu;
     m_pMainMenu = 0;
+}
+
+void UIMachineWindowSeamless::updateAppearanceOf(int iElement)
+{
+    /* Base class update: */
+    UIMachineWindow::updateAppearanceOf(iElement);
+
+    /* If mini tool-bar is present: */
+    if (m_pMiniToolBar)
+    {
+        /* Get machine: */
+        CMachine machine = session().GetConsole().GetMachine();
+        /* Get snapshot(s): */
+        QString strSnapshotName;
+        if (machine.GetSnapshotCount() > 0)
+        {
+            CSnapshot snapshot = machine.GetCurrentSnapshot();
+            strSnapshotName = " (" + snapshot.GetName() + ")";
+        }
+        /* Update mini tool-bar text: */
+        m_pMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
+    }
 }
 
 void UIMachineWindowSeamless::showSeamless()
@@ -263,12 +342,10 @@ void UIMachineWindowSeamless::setMask(const QRegion &constRegion)
     region.translate(mMaskShift.width(), mMaskShift.height());
 #endif
 
-#if 0 // TODO: Add mini-toolbar support!
-    /* Including mini toolbar area */
-    QRegion toolBarRegion(mMiniToolBar->mask());
-    toolBarRegion.translate(mMiniToolBar->mapToGlobal (toolBarRegion.boundingRect().topLeft()) - QPoint (1, 0));
+    /* Including mini tool-bar area */
+    QRegion toolBarRegion(m_pMiniToolBar->mask());
+    toolBarRegion.translate(m_pMiniToolBar->mapToGlobal(toolBarRegion.boundingRect().topLeft()) - QPoint(1, 0));
     region += toolBarRegion;
-#endif
 
 #if 0 // TODO: Is it really needed now?
     /* Restrict the drawing to the available space on the screen.
