@@ -36,7 +36,6 @@
 #include "VBoxVMInformationDlg.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
-#include "UIFirstRunWzd.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 #endif /* Q_WS_MAC */
@@ -423,7 +422,6 @@ UIMachineLogic::UIMachineLogic(QObject *pParent,
     , m_pRunningActions(0)
     , m_pRunningOrPausedActions(0)
     , m_fIsWindowsCreated(false)
-    , m_fIsMachineStarted(false)
     , m_fIsPreventAutoStart(false)
     , m_fIsPreventAutoClose(false)
 #ifdef Q_WS_MAC
@@ -473,97 +471,6 @@ void UIMachineLogic::retranslateUi()
 #endif /* Q_WS_MAC */
 }
 
-void UIMachineLogic::tryToStartMachine()
-{
-    /* If we are started already => just return: */
-    if (m_fIsMachineStarted || uisession()->isRunning() || uisession()->isPaused())
-        return;
-
-    /* Prepare console powerup: */
-    prepareConsolePowerUp();
-
-    /* Get current machine/console: */
-    CMachine machine = session().GetMachine();
-    CConsole console = session().GetConsole();
-
-    /* Start VM: */
-    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
-                         console.PowerUpPaused() : console.PowerUp();
-
-#if 0 // TODO: Check immediate failure!
-    /* Check for an immediate failure: */
-    if (!console.isOk())
-    {
-        vboxProblem().cannotStartMachine(console);
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
-
-    /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
-    setPreventAutoClose(true);
-#endif
-
-    /* Show "Starting/Restoring" progress dialog: */
-    if (uisession()->isSaved())
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow(), 0);
-    else
-        vboxProblem().showModalProgressDialog(progress, machine.GetName(), defaultMachineWindow()->machineWindow());
-
-#if 0 // TODO: Check immediate failure!
-    /* Check for an progress failure */
-    if (progress.GetResultCode() != 0)
-    {
-        vboxProblem().cannotStartMachine(progress);
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
-
-    /* Enable auto-closure again: */
-    setPreventAutoClose(false);
-
-    /* Check if we missed a really quick termination after successful startup, and process it if we did: */
-    if (uisession()->isTurnedOff())
-    {
-        machineWindowWrapper()->machineWindow()->close();
-        return;
-    }
-#endif
-
-#if 0 // TODO: Rework debugger logic!
-# ifdef VBOX_WITH_DEBUGGER_GUI
-    /* Open the debugger in "full screen" mode requested by the user. */
-    else if (vboxGlobal().isDebuggerAutoShowEnabled())
-    {
-        /* console in upper left corner of the desktop. */
-        QRect rct (0, 0, 0, 0);
-        QDesktopWidget *desktop = QApplication::desktop();
-        if (desktop)
-            rct = desktop->availableGeometry(pos());
-        move (QPoint (rct.x(), rct.y()));
-
-        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
-            sltShowDebugStatistics();
-        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
-            sltShowDebugCommandLine();
-
-        if (!vboxGlobal().isStartPausedEnabled())
-            machineWindowWrapper()->machineView()->pause (false);
-    }
-# endif
-#endif
-
-#ifdef VBOX_WITH_UPDATE_REQUEST
-    /* Check for updates if necessary: */
-    vboxGlobal().showUpdateDialog(false /* force request? */);
-#endif
-
-    /* Remember what machine was started already: */
-    m_fIsMachineStarted = true;
-
-    /* Warn listeners about machine was started: */
-    emit sigMachineStarted();
-}
-
 #ifdef Q_WS_MAC
 void UIMachineLogic::updateDockOverlay()
 {
@@ -586,14 +493,11 @@ void UIMachineLogic::updateDockOverlay()
 }
 #endif /* Q_WS_MAC */
 
-void UIMachineLogic::prepareConnections()
+void UIMachineLogic::prepareSessionConnections()
 {
-    /* Connect common handlers: */
-    connect(this, SIGNAL(sigMachineStarted()), this, SLOT(sltCheckRequestedModes()));
-}
+    /* Machine power-up notifier: */
+    connect(uisession(), SIGNAL(sigMachineStarted()), this, SLOT(sltCheckRequestedModes()));
 
-void UIMachineLogic::prepareConsoleConnections()
-{
     /* Machine state-change updater: */
     connect(uisession(), SIGNAL(sigMachineStateChange()), this, SLOT(sltMachineStateChanged()));
 
@@ -610,62 +514,6 @@ void UIMachineLogic::prepareConsoleConnections()
     /* Runtime errors notifier: */
     connect(uisession(), SIGNAL(sigRuntimeError(bool, const QString &, const QString &)),
             this, SLOT(sltRuntimeError(bool, const QString &, const QString &)));
-}
-
-void UIMachineLogic::prepareActionGroups()
-{
-#ifdef Q_WS_MAC
-    /* On Mac OS X, all QMenu's are consumed by Qt after they are added to
-     * another QMenu or a QMenuBar. This means we have to recreate all QMenus
-     * when creating a new QMenuBar. */
-    uisession()->actionsPool()->createMenus();
-#endif /* Q_WS_MAC */
-
-    /* Create group for all actions that are enabled only when the VM is running.
-     * Note that only actions whose enabled state depends exclusively on the
-     * execution state of the VM are added to this group. */
-    m_pRunningActions = new QActionGroup(this);
-    m_pRunningActions->setExclusive(false);
-
-    /* Create group for all actions that are enabled when the VM is running or paused.
-     * Note that only actions whose enabled state depends exclusively on the
-     * execution state of the VM are added to this group. */
-    m_pRunningOrPausedActions = new QActionGroup(this);
-    m_pRunningOrPausedActions->setExclusive(false);
-
-    /* Move actions into running actions group: */
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCAD));
-#ifdef Q_WS_X11
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCABS));
-#endif
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Reset));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Shutdown));
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Statistics));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_CommandLine));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Logging));
-#endif
-
-    /* Move actions into running-n-paused actions group: */
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InformationDialog));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Pause));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_Close));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_OpticalDevices));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_FloppyDevices));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_USBDevices));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_NetworkAdapters));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_SharedFolders));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_VRDP));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
 }
 
 void UIMachineLogic::prepareActionConnections()
@@ -723,6 +571,62 @@ void UIMachineLogic::prepareActionConnections()
     connect(actionsPool()->action(UIActionIndex_Toggle_Logging), SIGNAL(toggled(bool)),
             this, SLOT(sltLoggingToggled(bool)));
 #endif
+}
+
+void UIMachineLogic::prepareActionGroups()
+{
+#ifdef Q_WS_MAC
+    /* On Mac OS X, all QMenu's are consumed by Qt after they are added to
+     * another QMenu or a QMenuBar. This means we have to recreate all QMenus
+     * when creating a new QMenuBar. */
+    uisession()->actionsPool()->createMenus();
+#endif /* Q_WS_MAC */
+
+    /* Create group for all actions that are enabled only when the VM is running.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    m_pRunningActions = new QActionGroup(this);
+    m_pRunningActions->setExclusive(false);
+
+    /* Create group for all actions that are enabled when the VM is running or paused.
+     * Note that only actions whose enabled state depends exclusively on the
+     * execution state of the VM are added to this group. */
+    m_pRunningOrPausedActions = new QActionGroup(this);
+    m_pRunningOrPausedActions->setExclusive(false);
+
+    /* Move actions into running actions group: */
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Fullscreen));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Seamless));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_AdjustWindow));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCAD));
+#ifdef Q_WS_X11
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_TypeCABS));
+#endif
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Reset));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Shutdown));
+#ifdef VBOX_WITH_DEBUGGER_GUI
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Statistics));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_CommandLine));
+    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Logging));
+#endif
+
+    /* Move actions into running-n-paused actions group: */
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_MouseIntegration));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InformationDialog));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Pause));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_Close));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_OpticalDevices));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_FloppyDevices));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_USBDevices));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_NetworkAdapters));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_NetworkAdaptersDialog));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_SharedFolders));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_SharedFoldersDialog));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_VRDP));
+    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
 }
 
 #ifdef Q_WS_MAC
@@ -834,20 +738,6 @@ void UIMachineLogic::prepareRequiredFeatures()
     /* Close request in case of features are not ready and user wish to close: */
     if (isPreventAutoStart())
         QTimer::singleShot(0, uisession(), SLOT(sltCloseVirtualSession()));
-}
-
-void UIMachineLogic::prepareConsolePowerUp()
-{
-    /* Notify user about mouse&keyboard auto-capturing: */
-    if (vboxGlobal().settings().autoCapture())
-        vboxProblem().remindAboutAutoCapture();
-
-    /* Shows first run wizard if necessary: */
-    if (uisession()->isFirstTimeStarted())
-    {
-        UIFirstRunWzd wzd(defaultMachineWindow()->machineWindow(), session().GetMachine());
-        wzd.exec();
-    }
 }
 
 void UIMachineLogic::sltMachineStateChanged()
@@ -1022,7 +912,7 @@ void UIMachineLogic::sltRuntimeError(bool fIsFatal, const QString &strErrorId, c
 void UIMachineLogic::sltCheckRequestedModes()
 {
     /* Do not try to enter extended mode if machine was not started yet: */
-    if (!m_fIsMachineStarted)
+    if (!uisession()->isRunning() && !uisession()->isPaused())
         return;
 
     /* If seamless mode is requested, supported and we are NOT currently in seamless mode: */

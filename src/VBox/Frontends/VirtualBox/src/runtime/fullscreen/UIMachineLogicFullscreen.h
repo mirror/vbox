@@ -55,7 +55,7 @@ private:
 
     /* Prepare helpers: */
 #ifdef Q_WS_MAC
-    void prepareConsoleConnections();
+    void prepareCommonConnections();
 #endif /* Q_WS_MAC */
     void prepareActionGroups();
     void prepareMachineWindows();
@@ -63,6 +63,9 @@ private:
     /* Cleanup helpers: */
     void cleanupMachineWindows();
     void cleanupActionGroups();
+#ifdef Q_WS_MAC
+    //void cleanupCommonConnections() {}
+#endif /* Q_WS_MAC */
 
 #ifdef Q_WS_MAC
     void setPresentationModeEnabled(bool fEnabled);

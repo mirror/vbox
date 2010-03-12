@@ -131,17 +131,19 @@ void UIMachineLogicFullscreen::initialize()
     /* If required features are ready: */
     if (!isPreventAutoStart())
     {
+#ifdef Q_WS_MAC
         /* Prepare common connections: */
-        prepareConnections();
+        prepareCommonConnections();
+#endif /* Q_WS_MAC */
 
         /* Prepare console connections: */
-        prepareConsoleConnections();
-
-        /* Prepare action groups: */
-        prepareActionGroups();
+        prepareSessionConnections();
 
         /* Prepare action connections: */
         prepareActionConnections();
+
+        /* Prepare action groups: */
+        prepareActionGroups();
 
         /* Prepare machine window: */
         prepareMachineWindows();
@@ -150,6 +152,9 @@ void UIMachineLogicFullscreen::initialize()
         /* Prepare dock: */
         prepareDock();
 #endif /* Q_WS_MAC */
+
+        /* Power up machine: */
+        uisession()->powerUp();
 
         /* Initialization: */
         sltMachineStateChanged();
@@ -162,11 +167,8 @@ void UIMachineLogicFullscreen::initialize()
 }
 
 #ifdef Q_WS_MAC
-void UIMachineLogicFullscreen::prepareConsoleConnections()
+void UIMachineLogicFullscreen::prepareCommonConnections()
 {
-    /* Base class connections: */
-    UIMachineLogic::prepareConsoleConnections();
-
     /* Presentation mode connection */
     connect (&vboxGlobal(), SIGNAL(presentationModeChanged(const VBoxChangePresentationModeEvent &)),
              this, SLOT(sltChangePresentationMode(const VBoxChangePresentationModeEvent &)));
@@ -211,9 +213,6 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
-
-    /* Check if we need to start VM: */
-    tryToStartMachine();
 }
 
 void UIMachineLogicFullscreen::cleanupMachineWindows()

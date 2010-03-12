@@ -82,10 +82,6 @@ public:
     void updateDockIcon();
 #endif /* Q_WS_MAC */
 
-signals:
-
-    void sigMachineStarted();
-
 protected:
 
     /* Machine logic constructor/destructor: */
@@ -105,7 +101,6 @@ protected:
     /* Protected members: */
     void addMachineWindow(UIMachineWindow *pMachineWindow);
     void retranslateUi();
-    void tryToStartMachine();
 #ifdef Q_WS_MAC
     bool isDockIconPreviewEnabled() const { return m_fIsDockIconEnabled; }
     void setDockIconPreviewEnabled(bool fIsDockIconPreviewEnabled) { m_fIsDockIconEnabled = fIsDockIconPreviewEnabled; }
@@ -113,26 +108,22 @@ protected:
 #endif /* Q_WS_MAC */
 
     /* Prepare helpers: */
-    virtual void prepareConnections();
-    virtual void prepareConsoleConnections();
-    virtual void prepareActionGroups();
+    virtual void prepareSessionConnections();
     virtual void prepareActionConnections();
+    virtual void prepareActionGroups();
 #ifdef Q_WS_MAC
     virtual void prepareDock();
 #endif /* Q_WS_MAC */
     virtual void prepareRequiredFeatures();
-    virtual void prepareConsolePowerUp();
 
     /* Cleanup helpers: */
-    //virtual void cleanupConsolePowerUp() {}
     //virtual void cleanupRequiredFeatures() {}
 #ifdef Q_WS_MAC
     //virtual void cleanupDock() {}
 #endif /* Q_WS_MAC */
-    //virtual void cleanupActionConnections() {}
     //virtual void cleanupActionGroups() {}
-    //virtual void cleanupConsoleConnections() {}
-    //virtual void cleanupConnections() {}
+    //virtual void cleanupActionConnections() {}
+    //virtual void cleanupSessionConnections() {}
 
 protected slots:
 
@@ -204,7 +195,6 @@ private:
     QActionGroup *m_pRunningOrPausedActions;
 
     bool m_fIsWindowsCreated : 1;
-    bool m_fIsMachineStarted : 1;
     bool m_fIsPreventAutoStart : 1;
     bool m_fIsPreventAutoClose : 1;
 
