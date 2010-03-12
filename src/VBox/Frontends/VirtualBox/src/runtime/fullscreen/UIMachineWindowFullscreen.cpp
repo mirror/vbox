@@ -29,8 +29,10 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
+#include "VBoxMiniToolBar.h"
 
 #include "UISession.h"
+#include "UIActionsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowFullscreen.h"
@@ -39,6 +41,7 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
+    , m_pMiniToolBar(0)
 {
     /* "This" is machine window: */
     m_pMachineWindow = this;
@@ -56,14 +59,17 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Prepare fullscreen menu: */
     prepareMenu();
 
-    /* Retranslate fullscreen window finally: */
-    retranslateUi();
-
     /* Prepare machine view container: */
     prepareMachineViewContainer();
 
     /* Prepare fullscreen machine view: */
     prepareMachineView();
+
+    /* Prepare mini tool-bar: */
+    prepareMiniToolBar();
+
+    /* Retranslate fullscreen window finally: */
+    retranslateUi();
 
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
@@ -79,7 +85,10 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
 
 UIMachineWindowFullscreen::~UIMachineWindowFullscreen()
 {
-    /* Cleanup normal machine view: */
+    /* Save window settings: */
+    saveWindowSettings();
+
+    /* Cleanup machine view: */
     cleanupMachineView();
 
     /* Cleanup menu: */
@@ -151,6 +160,33 @@ void UIMachineWindowFullscreen::prepareMenu()
     m_pMainMenu = uisession()->newMenu();
 }
 
+void UIMachineWindowFullscreen::prepareMiniToolBar()
+{
+    /* Get current machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+    /* Check if mini tool-bar should present: */
+    bool fIsActive = machine.GetExtraData(VBoxDefs::GUI_ShowMiniToolBar) != "no";
+    if (fIsActive)
+    {
+        /* Get the mini tool-bar alignment: */
+        bool fIsAtTop = machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAlignment) == "top";
+        /* Get the mini tool-bar auto-hide feature availability: */
+        bool fIsAutoHide = machine.GetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide) != "off";
+        m_pMiniToolBar = new VBoxMiniToolBar(centralWidget(),
+                                             fIsAtTop ? VBoxMiniToolBar::AlignTop : VBoxMiniToolBar::AlignBottom,
+                                             true, fIsAutoHide);
+        m_pMiniToolBar->updateDisplay(true, true);
+        QList<QMenu*> menus;
+        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Machine)->menu();
+        menus << uisession()->actionsPool()->action(UIActionIndex_Menu_Devices)->menu();
+        *m_pMiniToolBar << menus;
+        connect(m_pMiniToolBar, SIGNAL(exitAction()),
+                uisession()->actionsPool()->action(UIActionIndex_Toggle_Fullscreen), SLOT(trigger()));
+        connect(m_pMiniToolBar, SIGNAL(closeAction()),
+                uisession()->actionsPool()->action(UIActionIndex_Simple_Close), SLOT(trigger()));
+    }
+}
+
 void UIMachineWindowFullscreen::prepareMachineView()
 {
 #ifdef VBOX_WITH_VIDEOHWACCEL
@@ -183,6 +219,19 @@ void UIMachineWindowFullscreen::prepareMachineView()
     setAutoFillBackground(true);
 }
 
+void UIMachineWindowFullscreen::saveWindowSettings()
+{
+    /* Get machine: */
+    CMachine machine = session().GetConsole().GetMachine();
+
+    /* Save extra-data settings: */
+    {
+        /* Save mini tool-bar settings: */
+        if (m_pMiniToolBar)
+            machine.SetExtraData(VBoxDefs::GUI_MiniToolBarAutoHide, m_pMiniToolBar->isAutoHide() ? QString() : "off");
+    }
+}
+
 void UIMachineWindowFullscreen::cleanupMachineView()
 {
     /* Do not cleanup machine view if it is not present: */
@@ -197,5 +246,27 @@ void UIMachineWindowFullscreen::cleanupMenu()
 {
     delete m_pMainMenu;
     m_pMainMenu = 0;
+}
+
+void UIMachineWindowFullscreen::updateAppearanceOf(int iElement)
+{
+    /* Base class update: */
+    UIMachineWindow::updateAppearanceOf(iElement);
+
+    /* If mini tool-bar is present: */
+    if (m_pMiniToolBar)
+    {
+        /* Get machine: */
+        CMachine machine = session().GetConsole().GetMachine();
+        /* Get snapshot(s): */
+        QString strSnapshotName;
+        if (machine.GetSnapshotCount() > 0)
+        {
+            CSnapshot snapshot = machine.GetCurrentSnapshot();
+            strSnapshotName = " (" + snapshot.GetName() + ")";
+        }
+        /* Update mini tool-bar text: */
+        m_pMiniToolBar->setDisplayText(machine.GetName() + strSnapshotName);
+    }
 }
 

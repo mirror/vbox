@@ -31,6 +31,9 @@
 # include <X11/Xlib.h>
 #endif
 
+/* Local forwards */
+class VBoxMiniToolBar;
+
 class UIMachineWindowFullscreen : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
 {
     Q_OBJECT;
@@ -65,15 +68,22 @@ private:
 
     /* Prepare helpers: */
     void prepareMenu();
+    void prepareMiniToolBar();
     void prepareMachineView();
+    //void loadWindowSettings() {}
 
     /* Cleanup helpers: */
-    //void saveWindowSettings() {}
+    void saveWindowSettings();
     void cleanupMachineView();
+    //void cleanupMiniToolBar() {}
     void cleanupMenu();
+
+    /* Update routines: */
+    void updateAppearanceOf(int iElement);
 
     /* Private variables: */
     QMenu *m_pMainMenu;
+    VBoxMiniToolBar *m_pMiniToolBar;
 
     /* Factory support: */
     friend class UIMachineWindow;
