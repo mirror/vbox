@@ -54,6 +54,7 @@ UIMultiScreenLayout::~UIMultiScreenLayout()
 
 void UIMultiScreenLayout::initialize(QMenu *pMenu)
 {
+    pMenu->clear();
     for (int i = 0; i < m_cGuestScreens; ++i)
     {
         QMenu *pScreenMenu = pMenu->addMenu(tr("Virtual Screen %1").arg(i + 1));
