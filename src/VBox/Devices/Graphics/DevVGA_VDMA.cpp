@@ -487,7 +487,7 @@ DECLCALLBACK(bool) vboxVDMACommandSubmitCb(PVBOXVDMAPIPE pPipe, void *pvCallback
 
 void vboxVDMAControl(struct VBOXVDMAHOST *pVdma, PVBOXVDMA_CTL pCmd)
 {
-#if 0
+#if 1
     PHGSMIINSTANCE pIns = pVdma->pHgsmi;
 
     switch (pCmd->enmCtl)
