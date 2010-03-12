@@ -83,6 +83,8 @@ typedef struct DRVACPI
     PDMACPIPOWERSOURCE  enmPowerSource;
     /** true = one or more batteries preset, false = no battery present. */
     bool                fBatteryPresent;
+    /** No need to RTThreadPoke the poller when set.  */
+    bool volatile       fDontPokePoller;
     /** Remaining battery capacity. */
     PDMACPIBATCAPACITY  enmBatteryRemainingCapacity;
     /** Battery state. */
@@ -520,6 +522,8 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
 
     while (pThread->enmState == PDMTHREADSTATE_RUNNING)
     {
+        ASMAtomicWriteBool(&pThis->fDontPokePoller, false);
+
         /*
          * Read the status of the powerline-adapter.
          */
@@ -765,12 +769,13 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                                                         / (float)maxCapacityTotal)
                                                       * PDM_ACPI_BAT_CAPACITY_MAX);
             pThis->u32BatteryPresentRate =
-                                 (uint32_t)((  (float)presentRateTotal 
+                                 (uint32_t)((  (float)presentRateTotal
                                              / (float)maxCapacityTotal) * 1000);
         }
         RTCritSectLeave(&pThis->CritSect);
 
         /* wait a bit (e.g. Ubuntu/GNOME polls every 30 seconds) */
+        ASMAtomicWriteBool(&pThis->fDontPokePoller, true);
         rc = RTSemEventWait(pThis->hPollerSleepEvent, 20000);
     }
 
@@ -782,7 +787,8 @@ static DECLCALLBACK(int) drvACPIPollerWakeup(PPDMDRVINS pDrvIns, PPDMTHREAD pThr
     PDRVACPI pThis = PDMINS_2_DATA(pDrvIns, PDRVACPI);
 
     RTSemEventSignal(pThis->hPollerSleepEvent);
-    RTThreadPoke(pThread->Thread);
+    if (!ASMAtomicReadBool(&pThis->fDontPokePoller))
+        RTThreadPoke(pThread->Thread);
     return VINF_SUCCESS;
 }
 #endif /* RT_OS_LINUX */
