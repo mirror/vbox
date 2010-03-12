@@ -39,6 +39,15 @@ typedef struct _HGSMILIST
 } HGSMILIST;
 
 void hgsmiListAppend (HGSMILIST *pList, HGSMILISTENTRY *pEntry);
+DECLINLINE(void) hgsmiListPrepend (HGSMILIST *pList, HGSMILISTENTRY *pEntry)
+{
+    HGSMILISTENTRY * pHead = pList->pHead;
+    pList->pHead = pEntry;
+    pEntry->pNext = pHead;
+    if (!pHead)
+        pList->pTail = pEntry;
+}
+
 void hgsmiListRemove (HGSMILIST *pList, HGSMILISTENTRY *pEntry, HGSMILISTENTRY *pPrev);
 
 DECLINLINE(HGSMILISTENTRY*) hgsmiListRemoveHead (HGSMILIST *pList)
@@ -61,6 +70,47 @@ DECLINLINE(void) hgsmiListInit (HGSMILIST *pList)
 }
 
 HGSMILISTENTRY * hgsmiListRemoveAll (HGSMILIST *pList, HGSMILISTENTRY ** ppTail /* optional */);
+
+DECLINLINE(void) hgsmiListAppendAll (HGSMILIST *pList, HGSMILISTENTRY *pHead, HGSMILISTENTRY *pTail)
+{
+    if(hgsmiListIsEmpty (pList))
+    {
+        pList->pHead = pHead;
+        pList->pTail = pTail;
+    }
+    else
+    {
+        pList->pTail->pNext = pHead;
+        pList->pTail = pTail;
+    }
+}
+
+DECLINLINE(void) hgsmiListPrependAll (HGSMILIST *pList, HGSMILISTENTRY *pHead, HGSMILISTENTRY *pTail)
+{
+    HGSMILISTENTRY *pOldHead = pList->pHead;
+    if(!pOldHead)
+    {
+        pList->pHead = pHead;
+        pList->pTail = pTail;
+    }
+    else
+    {
+        pList->pHead = pHead;
+        pTail->pNext = pOldHead;
+    }
+}
+
+DECLINLINE(void) hgsmiListCat (HGSMILIST *pList, HGSMILIST *pList2)
+{
+    hgsmiListAppendAll (pList, pList2->pHead, pList2->pTail);
+    hgsmiListInit (pList2);
+}
+
+DECLINLINE(void) hgsmiListPrepCat (HGSMILIST *pList, HGSMILIST *pList2)
+{
+    hgsmiListPrependAll (pList, pList2->pHead, pList2->pTail);
+    hgsmiListInit (pList2);
+}
 
 
 #endif /* !__HGSMIHostHlp_h__*/

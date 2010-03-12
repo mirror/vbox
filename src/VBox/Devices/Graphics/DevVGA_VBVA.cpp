@@ -1298,14 +1298,14 @@ static DECLCALLBACK(int) vbvaChannelHandler (void *pvHandler, uint16_t u16Channe
         case VBVA_VDMA_CMD:
         {
             PVBOXVDMACBUF_DR pCmd = (PVBOXVDMACBUF_DR)VBoxSHGSMIBufferData ((PVBOXSHGSMIHEADER)pvBuffer);
-            vboxVDMACommand(pVGAState, pVGAState->pVdma, pCmd);
+            vboxVDMACommand(pVGAState->pVdma, pCmd);
             rc = VINF_SUCCESS;
             break;
         }
         case VBVA_VDMA_CTL:
         {
             PVBOXVDMA_CTL pCmd = (PVBOXVDMA_CTL)VBoxSHGSMIBufferData ((PVBOXSHGSMIHEADER)pvBuffer);
-            vboxVDMAControl(pVGAState, pVGAState->pVdma, pCmd);
+            vboxVDMAControl(pVGAState->pVdma, pCmd);
             rc = VINF_SUCCESS;
             break;
         }

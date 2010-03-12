@@ -18,10 +18,8 @@
 
 #include "HGSMIHost.h"
 
-int VBoxSHGSMICommandCompleteAsynch (PHGSMIINSTANCE pIns, void *pvData);
+int VBoxSHGSMICommandComplete (PHGSMIINSTANCE pIns, void *pvData);
 
 void VBoxSHGSMICommandMarkAsynchCompletion (void *pvData);
-
-int VBoxSHGSMICommandCompleteSynch (PHGSMIINSTANCE pIns, void *pvData);
 
 #endif /* #ifndef ___SHGSMIHost_h___ */
