@@ -867,6 +867,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_PERF_STATUS                0x198
 #define MSR_IA32_PERF_CTL                   0x199
 
+/** Enable misc. processor features (R/W). */
+#define MSR_IA32_MISC_ENABLE                0x1A0
+
 /** MTRR Default Range. */
 #define MSR_IA32_MTRR_DEF_TYPE              0x2FF
 
