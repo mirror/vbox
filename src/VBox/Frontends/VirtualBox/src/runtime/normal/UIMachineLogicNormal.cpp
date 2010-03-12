@@ -56,17 +56,14 @@ void UIMachineLogicNormal::initialize()
     /* If required features are ready: */
     if (!isPreventAutoStart())
     {
-        /* Prepare common connections: */
-        prepareConnections();
-
-        /* Prepare console connections: */
-        prepareConsoleConnections();
-
-        /* Prepare action groups: */
-        prepareActionGroups();
+        /* Prepare session connections: */
+        prepareSessionConnections();
 
         /* Prepare action connections: */
         prepareActionConnections();
+
+        /* Prepare action groups: */
+        prepareActionGroups();
 
         /* Prepare normal machine window: */
         prepareMachineWindows();
@@ -75,6 +72,9 @@ void UIMachineLogicNormal::initialize()
         /* Prepare dock: */
         prepareDock();
 #endif /* Q_WS_MAC */
+
+        /* Power up machine: */
+        uisession()->powerUp();
 
         /* Initialization: */
         sltMachineStateChanged();
@@ -147,9 +147,6 @@ void UIMachineLogicNormal::prepareMachineWindows()
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
-
-    /* Check if we need to start VM: */
-    tryToStartMachine();
 }
 
 void UIMachineLogicNormal::cleanupMachineWindow()

@@ -33,6 +33,7 @@
 #include "UIMachineWindow.h"
 #include "UIMachineMenuBar.h"
 #include "VBoxProblemReporter.h"
+#include "UIFirstRunWzd.h"
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -585,9 +586,97 @@ UISession::~UISession()
 #endif
 }
 
+void UISession::powerUp()
+{
+    /* Do nothing if we had started already: */
+    if (isRunning() || isPaused())
+        return;
+
+    /* Prepare powerup: */
+    preparePowerUp();
+
+    /* Get current machine/console: */
+    CMachine machine = session().GetMachine();
+    CConsole console = session().GetConsole();
+
+    /* Power UP machine: */
+    CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
+                         console.PowerUpPaused() : console.PowerUp();
+
+#if 0 // TODO: Check immediate failure!
+    /* Check for an immediate failure: */
+    if (!console.isOk())
+    {
+        vboxProblem().cannotStartMachine(console);
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+
+    /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
+    setPreventAutoClose(true);
+#endif
+
+    /* Show "Starting/Restoring" progress dialog: */
+    if (isSaved())
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow(), 0);
+    else
+        vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
+
+#if 0 // TODO: Check immediate failure!
+    /* Check for an progress failure */
+    if (progress.GetResultCode() != 0)
+    {
+        vboxProblem().cannotStartMachine(progress);
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+
+    /* Enable auto-closure again: */
+    setPreventAutoClose(false);
+
+    /* Check if we missed a really quick termination after successful startup, and process it if we did: */
+    if (uisession()->isTurnedOff())
+    {
+        machineWindowWrapper()->machineWindow()->close();
+        return;
+    }
+#endif
+
+#if 0 // TODO: Rework debugger logic!
+# ifdef VBOX_WITH_DEBUGGER_GUI
+    /* Open the debugger in "full screen" mode requested by the user. */
+    else if (vboxGlobal().isDebuggerAutoShowEnabled())
+    {
+        /* console in upper left corner of the desktop. */
+        QRect rct (0, 0, 0, 0);
+        QDesktopWidget *desktop = QApplication::desktop();
+        if (desktop)
+            rct = desktop->availableGeometry(pos());
+        move (QPoint (rct.x(), rct.y()));
+
+        if (vboxGlobal().isDebuggerAutoShowStatisticsEnabled())
+            sltShowDebugStatistics();
+        if (vboxGlobal().isDebuggerAutoShowCommandLineEnabled())
+            sltShowDebugCommandLine();
+
+        if (!vboxGlobal().isStartPausedEnabled())
+            machineWindowWrapper()->machineView()->pause (false);
+    }
+# endif
+#endif
+
+    /* Warn listeners about machine was started: */
+    emit sigMachineStarted();
+}
+
 UIActionsPool* UISession::actionsPool() const
 {
     return m_pMachine->actionsPool();
+}
+
+QWidget* UISession::mainMachineWindow() const
+{
+    return uimachine()->machineLogic()->mainMachineWindow()->machineWindow();
 }
 
 QMenu* UISession::newMenu()
@@ -968,7 +1057,7 @@ void UISession::cleanupMenuPool()
 
 WId UISession::winId() const
 {
-    return uimachine()->machineLogic()->mainMachineWindow()->machineWindow()->winId();
+    return mainMachineWindow()->winId();
 }
 
 void UISession::setPointerShape(const uchar *pShapeData, bool fHasAlpha,
@@ -1247,6 +1336,25 @@ void UISession::reinitMenuPool()
         pOpticalDevicesMenu->setVisible(iDevicesCountCD);
         pFloppyDevicesMenu->setData(iDevicesCountFD);
         pFloppyDevicesMenu->setVisible(iDevicesCountFD);
+    }
+}
+
+void UISession::preparePowerUp()
+{
+#ifdef VBOX_WITH_UPDATE_REQUEST
+    /* Check for updates if necessary: */
+    vboxGlobal().showUpdateDialog(false /* force request? */);
+#endif
+
+    /* Notify user about mouse&keyboard auto-capturing: */
+    if (vboxGlobal().settings().autoCapture())
+        vboxProblem().remindAboutAutoCapture();
+
+    /* Shows first run wizard if necessary: */
+    if (isFirstTimeStarted())
+    {
+        UIFirstRunWzd wzd(mainMachineWindow(), session().GetMachine());
+        wzd.exec();
     }
 }
 

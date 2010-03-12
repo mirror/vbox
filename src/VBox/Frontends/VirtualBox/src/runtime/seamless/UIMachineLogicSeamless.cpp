@@ -124,17 +124,14 @@ void UIMachineLogicSeamless::initialize()
     /* If required features are ready: */
     if (!isPreventAutoStart())
     {
-        /* Prepare common connections: */
-        prepareConnections();
-
         /* Prepare console connections: */
-        prepareConsoleConnections();
-
-        /* Prepare action groups: */
-        prepareActionGroups();
+        prepareSessionConnections();
 
         /* Prepare action connections: */
         prepareActionConnections();
+
+        /* Prepare action groups: */
+        prepareActionGroups();
 
         /* Prepare normal machine window: */
         prepareMachineWindows();
@@ -143,6 +140,9 @@ void UIMachineLogicSeamless::initialize()
         /* Prepare dock: */
         prepareDock();
 #endif /* Q_WS_MAC */
+
+        /* Power up machine: */
+        uisession()->powerUp();
 
         /* Initialization: */
         sltMachineStateChanged();
@@ -197,9 +197,6 @@ void UIMachineLogicSeamless::prepareMachineWindows()
 
     /* Remember what machine window(s) created: */
     setMachineWindowsCreated(true);
-
-    /* Check if we need to start VM: */
-    tryToStartMachine();
 }
 
 void UIMachineLogicSeamless::cleanupMachineWindows()

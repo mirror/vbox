@@ -75,10 +75,14 @@ public:
     UISession(UIMachine *pMachine, CSession &session);
     virtual ~UISession();
 
+    /* Common members: */
+    void powerUp();
+
     /* Common getters: */
     CSession& session() { return m_session; }
     KMachineState machineState() const { return m_machineState; }
     UIActionsPool* actionsPool() const;
+    QWidget* mainMachineWindow() const;
     QMenu* newMenu();
     QMenuBar* newMenuBar();
     QCursor cursor() const { return m_cursor; }
@@ -156,6 +160,7 @@ signals:
     void sigRuntimeError(bool bIsFatal, const QString &strErrorId, const QString &strMessage);
 
     /* Session signals: */
+    void sigMachineStarted();
     void sigMouseCapturedStatusChanged();
 
 private slots:
@@ -183,6 +188,7 @@ private:
     WId winId() const;
     void setPointerShape(const uchar *pShapeData, bool fHasAlpha, uint uXHot, uint uYHot, uint uWidth, uint uHeight);
     void reinitMenuPool();
+    void preparePowerUp();
 
     /* Private variables: */
     UIMachine *m_pMachine;

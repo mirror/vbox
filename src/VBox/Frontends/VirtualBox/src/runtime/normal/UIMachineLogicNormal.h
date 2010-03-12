@@ -58,7 +58,7 @@ private:
 
     /* Cleanup helpers: */
     void cleanupMachineWindow();
-    void cleanupActionConnections() {}
+    //void cleanupActionConnections() {}
 
     /* Friend classes: */
     friend class UIMachineLogic;
