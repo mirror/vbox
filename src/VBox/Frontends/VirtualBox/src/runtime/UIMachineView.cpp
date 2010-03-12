@@ -1121,13 +1121,12 @@ void UIMachineView::sltMachineStateChanged()
                 {
                     /* For secondary monitors we support 32 bit formats only for now. */
                     if (   m_pFrameBuffer
+                        && m_pFrameBuffer->address()
                         && m_pFrameBuffer->pixelFormat() == FramebufferPixelFormat_FOURCC_RGB
                         && m_pFrameBuffer->bitsPerPixel() == 32)
                     {
-                        BYTE *pMem;
-                        m_pFrameBuffer->GetAddress(&pMem);
                         /* Make a *real* depth copy out of the current framebuffer content. */
-                        QImage shot = QImage(pMem, m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32).copy();
+                        QImage shot = QImage(m_pFrameBuffer->address(), m_pFrameBuffer->width(), m_pFrameBuffer->height(), QImage::Format_RGB32).copy();
                         dimImage(shot);
                         m_pauseShot = QPixmap::fromImage(shot);
                         /* Fully repaint to pick up m_pauseShot: */
