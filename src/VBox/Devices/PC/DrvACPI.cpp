@@ -157,7 +157,7 @@ static DECLCALLBACK(int) drvACPIQueryPowerSource(PPDMIACPICONNECTOR pInterface,
 #elif defined (RT_OS_LINUX)
     PDRVACPI pThis = RT_FROM_MEMBER(pInterface, DRVACPI, IACPIConnector);
     RTCritSectEnter(&pThis->CritSect);
-    *pPowerSource = pThis->enmPowerSource, pPowerSource;
+    *pPowerSource = pThis->enmPowerSource;
     RTCritSectLeave(&pThis->CritSect);
 
 #elif defined (RT_OS_DARWIN)
@@ -273,7 +273,7 @@ static DECLCALLBACK(int) drvACPIQueryBatteryStatus(PPDMIACPICONNECTOR pInterface
     RTCritSectEnter(&pThis->CritSect);
     *pfPresent = pThis->fBatteryPresent;
     *penmRemainingCapacity = pThis->enmBatteryRemainingCapacity;
-    *penmBatteryState = pThis->enmBatteryState, penmBatteryState;
+    *penmBatteryState = pThis->enmBatteryState;
     *pu32PresentRate = pThis->u32BatteryPresentRate;
     RTCritSectLeave(&pThis->CritSect);
 
@@ -643,7 +643,8 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                             break;
                         if (strstr(szLine, "last full capacity:") != NULL)
                         {
-                            rc = RTStrToInt32Full(szLine + 19, 0, &maxCapacity);
+                            char *psz;
+                            rc = RTStrToInt32Ex(RTStrStripL(&szLine[19]), &psz, 0, &maxCapacity);
                             if (RT_FAILURE(rc))
                                 maxCapacity = INT32_MIN;
 
@@ -681,7 +682,8 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                             break;
                         if (strstr(szLine, "remaining capacity:") != NULL)
                         {
-                            rc = RTStrToInt32Full(szLine + 19, 0, &currentCapacity);
+                            char *psz;
+                            rc = RTStrToInt32Ex(RTStrStripL(&szLine[19]), &psz, 0, &currentCapacity);
                             if (RT_FAILURE(rc))
                                 currentCapacity = INT32_MIN;
 
@@ -714,7 +716,8 @@ static DECLCALLBACK(int) drvACPIPoller(PPDMDRVINS pDrvIns, PPDMTHREAD pThread)
                         }
                         if (strstr(szLine, "present rate:") != NULL)
                         {
-                            rc = RTStrToInt32Full(szLine + 13, 0, &presentRate);
+                            char *psz;
+                            rc = RTStrToInt32Ex(RTStrStripL(&szLine[13]), &psz, 0, &presentRate);
                             if (RT_FAILURE(rc))
                                 presentRate = 0;
                             fGotPresentRate = true;
@@ -921,4 +924,3 @@ const PDMDRVREG g_DrvACPI =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
-
