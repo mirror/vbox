@@ -141,7 +141,12 @@ enum
     MODIFYVM_TELEPORTER_ADDRESS,
     MODIFYVM_TELEPORTER_PASSWORD,
     MODIFYVM_HARDWARE_UUID,
-    MODIFYVM_HPET
+    MODIFYVM_HPET,
+    MODIFYVM_IOMGR,
+    MODIFYVM_IOBACKEND,
+    MODIFYVM_IOCACHE,
+    MODIFYVM_IOCACHESIZE,
+    MODIFYVM_IOBANDWIDTHMAX
 };
 
 static const RTGETOPTDEF g_aModifyVMOptions[] =
@@ -233,6 +238,11 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--teleporterpassword",       MODIFYVM_TELEPORTER_PASSWORD,       RTGETOPT_REQ_STRING },
     { "--hardwareuuid",             MODIFYVM_HARDWARE_UUID,             RTGETOPT_REQ_STRING },
     { "--hpet",                     MODIFYVM_HPET,                      RTGETOPT_REQ_BOOL_ONOFF },
+    { "--iomgr",                    MODIFYVM_IOMGR,                     RTGETOPT_REQ_STRING },
+    { "--iobackend",                MODIFYVM_IOBACKEND,                 RTGETOPT_REQ_STRING },
+    { "--iocache",                  MODIFYVM_IOCACHE,                   RTGETOPT_REQ_BOOL_ONOFF },
+    { "--iocachesize",              MODIFYVM_IOCACHESIZE,               RTGETOPT_REQ_UINT32 },
+    { "--iobandwidthmax",           MODIFYVM_IOBANDWIDTHMAX,            RTGETOPT_REQ_UINT32 },
 };
 
 int handleModifyVM(HandlerArg *a)
@@ -1671,6 +1681,52 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_HPET:
             {
                 CHECK_ERROR(machine, COMSETTER(HpetEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_IOMGR:
+            {
+                if (!strcmp(ValueUnion.psz, "simple"))
+                    CHECK_ERROR(machine, COMSETTER(IoMgr)(IoMgrType_Simple));
+                else if (!strcmp(ValueUnion.psz, "async"))
+                    CHECK_ERROR(machine, COMSETTER(IoMgr)(IoMgrType_Async));
+                else
+                {
+                    errorArgument("Invalid --iomgr argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_IOBACKEND:
+            {
+                if (!strcmp(ValueUnion.psz, "buffered"))
+                    CHECK_ERROR(machine, COMSETTER(IoBackend)(IoBackendType_Buffered));
+                else if (!strcmp(ValueUnion.psz, "async"))
+                    CHECK_ERROR(machine, COMSETTER(IoBackend)(IoBackendType_Unbuffered));
+                else
+                {
+                    errorArgument("Invalid --iobackend argument '%s'", ValueUnion.psz);
+                    rc = E_FAIL;
+                }
+                break;
+            }
+
+            case MODIFYVM_IOCACHE:
+            {
+                CHECK_ERROR(machine, COMSETTER(IoCacheEnabled)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_IOCACHESIZE:
+            {
+                CHECK_ERROR(machine, COMSETTER(IoCacheSize)(ValueUnion.u32));
+                break;
+            }
+
+            case MODIFYVM_IOBANDWIDTHMAX:
+            {
+                CHECK_ERROR(machine, COMSETTER(IoBandwidthMax)(ValueUnion.u32));
                 break;
             }
 
