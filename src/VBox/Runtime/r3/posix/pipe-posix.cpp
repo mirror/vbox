@@ -112,36 +112,39 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
 
     if (RT_SUCCESS(rc))
     {
-       /*
-        * Create the two handles.
-        */
-       RTPIPEINTERNAL *pThisR = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
-       if (pThisR)
-       {
-           RTPIPEINTERNAL *pThisW = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
-           if (pThisW)
-           {
-               pThisR->u32Magic = RTPIPE_MAGIC;
-               pThisW->u32Magic = RTPIPE_MAGIC;
-               pThisR->fd       = aFds[0];
-               pThisW->fd       = aFds[1];
-               pThisR->fRead    = true;
-               pThisW->fRead    = false;
-               pThisR->u32State = RTPIPE_POSIX_BLOCKING;
-               pThisW->u32State = RTPIPE_POSIX_BLOCKING;
+        /*
+         * Create the two handles.
+         */
+        RTPIPEINTERNAL *pThisR = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
+        if (pThisR)
+        {
+            RTPIPEINTERNAL *pThisW = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
+            if (pThisW)
+            {
+                pThisR->u32Magic = RTPIPE_MAGIC;
+                pThisW->u32Magic = RTPIPE_MAGIC;
+                pThisR->fd       = aFds[0];
+                pThisW->fd       = aFds[1];
+                pThisR->fRead    = true;
+                pThisW->fRead    = false;
+                pThisR->u32State = RTPIPE_POSIX_BLOCKING;
+                pThisW->u32State = RTPIPE_POSIX_BLOCKING;
 
-               *phPipeRead  = pThisR;
-               *phPipeWrite = pThisW;
+                *phPipeRead  = pThisR;
+                *phPipeWrite = pThisW;
 
-               /*
-                * Before we leave, make sure to shut up SIGPIPE.
-                */
-               signal(SIGPIPE, SIG_IGN);
-               return VINF_SUCCESS;
-           }
+                /*
+                 * Before we leave, make sure to shut up SIGPIPE.
+                 */
+                signal(SIGPIPE, SIG_IGN);
+                return VINF_SUCCESS;
+            }
 
-           RTMemFree(pThisR);
-       }
+            RTMemFree(pThisR);
+            rc = VERR_NO_MEMORY;
+        }
+        else
+            rc = VERR_NO_MEMORY;
     }
 
     close(aFds[0]);
@@ -432,7 +435,7 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                 *pcbWritten = cbWritten;
             else if (errno == EAGAIN)
             {
-                *pcbWritten = 0;;
+                *pcbWritten = 0;
                 rc = VINF_TRY_AGAIN;
             }
             else
