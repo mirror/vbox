@@ -1,10 +1,10 @@
 /* $Id$ */
 /** @file
- * IPRT - Process, Win32.
+ * IPRT - Process, Windows.
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -50,7 +50,8 @@
  * its prototypes and just assumes that _stdcall is the standard
  * calling convention.
  */
-typedef struct _PEB {
+typedef struct _PEB
+{
     BYTE Reserved1[2];
     BYTE BeingDebugged;
     BYTE Reserved2[229];
@@ -58,7 +59,8 @@ typedef struct _PEB {
     ULONG SessionId;
 } PEB, *PPEB;
 
-typedef struct _PROCESS_BASIC_INFORMATION {
+typedef struct _PROCESS_BASIC_INFORMATION
+{
     PVOID Reserved1;
     PPEB PebBaseAddress;
     PVOID Reserved2[2];
@@ -66,19 +68,19 @@ typedef struct _PROCESS_BASIC_INFORMATION {
     PVOID Reserved3;
 } PROCESS_BASIC_INFORMATION;
 
-typedef enum _PROCESSINFOCLASS {
+typedef enum _PROCESSINFOCLASS
+{
     ProcessBasicInformation = 0,
     ProcessWow64Information = 26
 } PROCESSINFOCLASS;
 
 extern "C" LONG WINAPI
-NtQueryInformationProcess (
+NtQueryInformationProcess(
     IN HANDLE ProcessHandle,
     IN PROCESSINFOCLASS ProcessInformationClass,
     OUT PVOID ProcessInformation,
     IN ULONG ProcessInformationLength,
-    OUT PULONG ReturnLength OPTIONAL
-    );
+    OUT PULONG ReturnLength OPTIONAL);
 
 /** @todo r=michael This function currently does not work correctly if the arguments
                     contain spaces. */
@@ -162,7 +164,157 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                PRTPROCESS phProcess)
 {
+#if 0 /* needs more work... dinner time. */
+    int rc;
+
+    /*
+     * Input validation
+     */
+    AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
+    AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~RTPROC_FLAGS_DAEMONIZE), VERR_INVALID_PARAMETER);
+    AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
+    AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    /** @todo search the PATH (add flag for this). */
+    AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
+
+    /*
+     * Get the file descriptors for the handles we've been passed.
+     *
+     * It seems there is no point in trying to convince a child process's CRT
+     * that any of the standard file handles is non-TEXT.  So, we don't...
+     */
+    STARTUPINFOW StartupInfo;
+    RT_ZERO(StartupInfo);
+    StartupInfo.cb = sizeof(StartupInfo);
+    StartupInfo.dwFlags   = STARTF_USESTDHANDLES;
+#if 1 /* The CRT should keep the standard handles up to date. */
+    StartupInfo.hStdIn    = GetStdHandle(STD_INPUT_HANDLE);
+    StartupInfo.hStdOut   = GetStdHandle(STD_OUTPUT_HANDLE);
+    StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+#else
+    StartupInfo.hStdIn    = _get_osfhandle(0);
+    StartupInfo.hStdOut   = _get_osfhandle(1);
+    StartupInfo.hStdError = _get_osfhandle(2);
+#endif
+    PCRTHANDLE  paHandles[3] = { phStdIn, phStdOut, phStdErr };
+    HANDLE     *aphStds[3]   = { &StartupInfo.hStdIn, &StartupInfo.hStdOut, &StartupInfo.hStdError };
+    for (int i = 0; i < 3; i++)
+    {
+        if (paHandles[i])
+        {
+            AssertPtrReturn(paHandles[i], VERR_INVALID_POINTER);
+            switch (paHandles[i]->enmType)
+            {
+                case RTHANDLETYPE_FILE:
+                    aphStds[i] = paHandles[i]->u.hFile != NIL_RTFILE
+                               ? (HANDLE)RTFileToNative(paHandles[i]->u.hFile)
+                               : INVALID_HANDLE_VALUE;
+                    break;
+
+                case RTHANDLETYPE_PIPE:
+                    aphStds[i] = paHandles[i]->u.hPipe != NIL_RTPIPE
+                               ? (HANDLE)RTPipeToNative(paHandles[i]->u.hPipe)
+                               : INVALID_HANDLE_VALUE;
+                    break;
+
+                //case RTHANDLETYPE_SOCKET:
+                //    aphStds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
+                //               ? (HANDLE)RTTcpToNative(paHandles[i]->u.hSocket)
+                //               : INVALID_HANDLE_VALUE;
+                //    break;
+
+                default:
+                    AssertMsgFailedReturn(("%d: %d\n", i, paHandles[i]->enmType), VERR_INVALID_PARAMETER);
+            }
+        }
+    }
+
+    /*
+     * Create the environment block, command line and convert the executable
+     * name.
+     */
+    PRTUTF16 pwszzBlock;
+    rc = RTEnvQueryUtf16Block(hEnv);
+    if (RT_SUCCESS(rc))
+    {
+        PRTUTF16 pwszCmdLine;
+        rc = RTGetOptArgvToUtf16String(&pwszCmdLine, papszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        if (RT_SUCCESS(rc))
+        {
+            PRTUTF16 pwszExec;
+            rc = RTStrToUtf16(pszExec, &pwszExec);
+            if (RT_SUCCESS(rc))
+            {
+                HANDLE hToken = INVALID_HANDLE_VALUE;
+                if (pszAsUser)
+                {
+                    /** @todo - Maybe use CreateProcessWithLoginW? */
+                    rc = VERR_NOT_IMPLEMENTED;
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Get going...
+                     */
+                    PROCESS_INFORMATION ProcInfo;
+                    RT_ZERO(ProcInfo);
+                    BOOL fRc;
+                    if (!pwszAsUser)
+                        fRc = CreateProcessW(pwszExec,
+                                             pwszCmdLine,
+                                             NULL,         /* pProcessAttributes */
+                                             NULL,         /* pThreadAttributes */
+                                             TRUE,         /* bInheritHandles */
+                                             CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                             pwszzBlock,
+                                             cwd,
+                                             &StartupInfo,
+                                             &ProcInfo);
+                    else
+                        fRc = CreateProcessAsUserW(hToken,
+                                                   pwszExec,
+                                                   pwszCmdLine,
+                                                   NULL,         /* pProcessAttributes */
+                                                   NULL,         /* pThreadAttributes */
+                                                   TRUE,         /* bInheritHandles */
+                                                   CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                   pwszzBlock,
+                                                   cwd,
+                                                   &StartupInfo,
+                                                   &ProcInfo);
+
+                    if (fRc)
+                    {
+                        //DWORD dwErr;
+                        //DWORD dwExitCode;
+                        //
+                        //CloseHandle(ProcInfo.hThread);
+                        //dwErr = WaitForSingleObject(ProcInfo.hProcess, INFINITE);
+                        //assert(dwErr == WAIT_OBJECT_0);
+                        //
+                        //if (GetExitCodeProcess(ProcInfo.hProcess, &dwExitCode))
+                        //{
+                        //    CloseHandle(ProcInfo.hProcess);
+                        //    _exit(dwExitCode);
+                        //}
+                        //errno = EINVAL;
+                    }
+
+                    if (hToken == INVALID_HANDLE_VALUE)
+                        CloseHandle(hToken);
+                }
+                RTUtf16Free(pwszExec);
+            }
+            RTUtf16Free(pwszCmdLine);
+        }
+        RTEnvFreeUtf16Block(pwszzBlock);
+    }
+
+    return rc;
+#else
     return VERR_NOT_IMPLEMENTED;
+#endif
 }
 
 
@@ -194,6 +346,7 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
                 DWORD dwExitCode;
                 if (GetExitCodeProcess(hProcess, &dwExitCode))
                 {
+                    /** @todo the exit code can be special statuses. */
                     if (pProcStatus)
                     {
                         pProcStatus->enmReason = RTPROCEXITREASON_NORMAL;
