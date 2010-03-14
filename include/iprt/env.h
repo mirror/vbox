@@ -88,6 +88,23 @@ RTDECL(int) RTEnvDestroy(RTENV Env);
  */
 RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env);
 
+/**
+ * Get a sorted, UTF-16 environment block for CreateProcess.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hEnv            Environment block handle.
+ * @param   ppwszzBlock     Where to return the environment block.  This must be
+ *                          freed by calling RTEnvFreeUtf16Block.
+ */
+RTDECL(int) RTEnvQueryUtf16Block(RTENV hEnv, PRTUTF16 *ppwszzBlock);
+
+/**
+ * Frees an environment block returned by RTEnvGetUtf16Block().
+ *
+ * @param   pwszzBlock      What RTEnvGetUtf16Block returned.  NULL is ignored.
+ */
+RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock);
 
 /**
  * Checks if an environment variable exists in the default environment block.
