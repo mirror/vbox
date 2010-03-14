@@ -39,6 +39,7 @@
 #include <iprt/alloc.h>
 #include <iprt/alloca.h>
 #include <iprt/string.h>
+#include <iprt/sort.h>
 #include <iprt/err.h>
 #include "internal/magics.h"
 
@@ -666,3 +667,119 @@ RTDECL(char const * const *) RTEnvGetExecEnvP(RTENV Env)
     return papszRet;
 }
 RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);
+
+
+/**
+ * RTSort callback for comparing two environment varibles.
+ *
+ * @returns -1, 0, 1. See PFNRTSORTCMP.
+ * @param   pvElement1          Variable 1.
+ * @param   pvElement2          Variable 2.
+ * @param   pvUser              Ignored.
+ */
+DECLCALLBACK(int) rtEnvSortCompare(const void *pvElement1, const void *pvElement2, void *pvUser)
+{
+    NOREF(pvUser);
+    int iDiff = strcmp((const char *)pvElement1, (const char *)pvElement2);
+    if (iDiff < 0)
+        iDiff = -1;
+    else if (iDiff > 0)
+        iDiff = 1;
+    return iDiff;
+}
+
+
+RTDECL(int) RTEnvQueryUtf16Block(RTENV hEnv, PRTUTF16 *ppwszzBlock)
+{
+    RTENV           hClone  = NIL_RTENV;
+    PRTENVINTERNAL  pIntEnv;
+    int             rc;
+
+    /*
+     * Validate / simplify input.
+     */
+    if (hEnv == RTENV_DEFAULT)
+    {
+        rc = RTEnvClone(&hClone, RTENV_DEFAULT);
+        if (RT_FAILURE(rc))
+            return rc;
+        pIntEnv = hClone;
+    }
+    else
+    {
+        pIntEnv = hEnv;
+        AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
+        AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+    }
+
+    RTENV_LOCK(pIntEnv);
+
+    /*
+     * Sort it first.
+     */
+    RTSortApvShell((void **)pIntEnv->papszEnv, pIntEnv->cVars, rtEnvSortCompare, pIntEnv);
+
+    /*
+     * Calculate the size.
+     */
+    size_t cwc;
+    size_t cwcTotal = 2;
+    for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+    {
+        rc = RTStrCalcUtf16LenEx(pIntEnv->papszEnv[iVar], RTSTR_MAX, &cwc);
+        AssertRCBreak(rc);
+        cwcTotal += cwc + 1;
+    }
+
+    PRTUTF16 pwszzBlock = NULL;
+    if (RT_SUCCESS(rc))
+    {
+        /*
+         * Perform the conversion.
+         */
+        PRTUTF16 pwszz = pwszzBlock = (PRTUTF16)RTMemAlloc(cwcTotal * sizeof(RTUTF16));
+        if (pwszz)
+        {
+            size_t cwcLeft = cwcTotal;
+            for (size_t iVar = 0; iVar < pIntEnv->cVars; iVar++)
+            {
+                rc = RTStrToUtf16Ex(pIntEnv->papszEnv[iVar], RTSTR_MAX,
+                                    &pwszz, cwcTotal - (pwszz - pwszzBlock), &cwc);
+                AssertRCBreak(rc);
+                pwszz   += cwc + 1;
+                cwcLeft -= cwc + 1;
+                AssertBreakStmt(cwcLeft >= 2, rc = VERR_INTERNAL_ERROR_3);
+            }
+            AssertStmt(cwcLeft == 2 || RT_FAILURE(rc), rc = VERR_INTERNAL_ERROR_2);
+            if (RT_SUCCESS(rc))
+            {
+                pwszz[0] = '\0';
+                pwszz[1] = '\0';
+            }
+            else
+            {
+                RTMemFree(pwszzBlock);
+                pwszzBlock = NULL;
+            }
+        }
+        else
+            rc = VERR_NO_MEMORY;
+    }
+
+    RTENV_UNLOCK(pIntEnv);
+
+    if (hClone != NIL_RTENV)
+        RTEnvDestroy(hClone);
+    if (RT_SUCCESS(rc))
+        *ppwszzBlock = pwszzBlock;
+    return rc;
+}
+RT_EXPORT_SYMBOL(RTEnvGetExecEnvP);
+
+
+RTDECL(void) RTEnvFreeUtf16Block(PRTUTF16 pwszzBlock)
+{
+    RTMemFree(pwszzBlock);
+}
+RT_EXPORT_SYMBOL(RTEnvFreeUtf16Block);
+
