@@ -401,6 +401,46 @@ RTDECL(int) RTGetOptArgvFromString(char ***ppapszArgv, int *pcArgs, const char *
  */
 RTDECL(void) RTGetOptArgvFree(char **paArgv);
 
+/**
+ * Turns an argv array into a command line string.
+ *
+ * This is useful for calling CreateProcess on Windows, but can also be used for
+ * displaying an argv array.
+ *
+ * This function aims at following the bourn shell string quoting rules.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   ppszCmdLine     Where to return the command line string.  This must
+ *                          be freed by calling RTStrFree.
+ * @param   papszArgs       The argument vector to convert.
+ * @param   fFlags          A combination of the RTGETOPTARGV_CNV_XXX flags.
+ */
+RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszArgv, uint32_t fFlags);
+
+/** @name RTGetOptArgvToString and RTGetOptArgvToUtf16String flags
+ * @{ */
+/** Quote strings according to the Microsoft CRT rules. */
+#define RTGETOPTARGV_CNV_QUOTE_MS_CRT       UINT32_C(0)
+/** Quote strings according to the Unix Bourne Shell. */
+#define RTGETOPTARGV_CNV_QUOTE_BOURNE_SH    UINT32_C(1)
+/** Mask for the quoting style. */
+#define RTGETOPTARGV_CNV_QUOTE_MASK         UINT32_C(1)
+/** @} */
+
+/**
+ * Convenience wrapper around RTGetOpArgvToString and RTStrToUtf16.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   ppwszCmdLine    Where to return the command line string.  This must
+ *                          be freed by calling RTUtf16Free.
+ * @param   papszArgs       The argument vector to convert.
+ * @param   fFlags          A combination of the RTGETOPTARGV_CNV_XXX flags.
+ */
+RTDECL(int) RTGetOptArgvToUtf16String(PRTUTF16 *ppwszCmdLine, const char * const *papszArgv, uint32_t fFlags);
+
+
 /** @} */
 
 RT_C_DECLS_END
