@@ -119,7 +119,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 
                 case RTHANDLETYPE_SOCKET:
                     aStdFds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
-                               ? (int)paHandles[i]->u.hSocket //RTPipeToNative(paHandles[i]->u.hPipe)
+                               ? (int)paHandles[i]->u.hSocket //RTTcpToNative(paHandles[i]->u.hSocket)
                                : -2 /* close it */;
                     break;
 
