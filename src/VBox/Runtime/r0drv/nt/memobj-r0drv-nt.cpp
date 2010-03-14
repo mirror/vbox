@@ -337,20 +337,30 @@ int rtR0MemObjNativeAllocLow(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecut
  * @param   fExecutable     Whether the mapping should be executable or not.
  * @param   PhysHighest     The highest physical address for the pages in allocation.
  * @param   uAlignment      The alignment of the physical memory to allocate.
- *                          Supported values are 0 (alias for PAGE_SIZE), PAGE_SIZE, _2M, _4M and _1G.
+ *                          Supported values are PAGE_SIZE, _2M, _4M and _1G.
  */
-static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest, size_t uAlignment)
+static int rtR0MemObjNativeAllocContEx(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, bool fExecutable, RTHCPHYS PhysHighest,
+                                       size_t uAlignment)
 {
     AssertMsgReturn(cb <= _1G, ("%#x\n", cb), VERR_OUT_OF_RANGE); /* for safe size_t -> ULONG */
+#ifdef TARGET_NT4
+    if (uAlignment != PAGE_SIZE)
+        return VERR_NOT_SUPPORTED;
+#endif
 
     /*
      * Allocate the memory and create an MDL for it.
      */
-    PHYSICAL_ADDRESS PhysAddrHighest, PhysAddrLowest, PhysAddrBoundary;
+    PHYSICAL_ADDRESS PhysAddrHighest;
     PhysAddrHighest.QuadPart  = PhysHighest;
+#ifndef TARGET_NT4
+    PHYSICAL_ADDRESS PhysAddrLowest, PhysAddrBoundary;
     PhysAddrLowest.QuadPart   = 0;
     PhysAddrBoundary.QuadPart = (uAlignment == PAGE_SIZE) ? 0 : uAlignment;
     void *pv = MmAllocateContiguousMemorySpecifyCache(cb, PhysAddrLowest, PhysAddrHighest, PhysAddrBoundary, MmCached);
+#else
+    void *pv = MmAllocateContiguousMemory(cb, PhysAddrHighest);
+#endif
     if (!pv)
         return VERR_NO_MEMORY;
 
