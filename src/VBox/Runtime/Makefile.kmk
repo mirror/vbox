@@ -300,6 +300,9 @@ RuntimeR3_SOURCES       = \
 	common/rand/rand.cpp \
 	common/rand/randadv.cpp \
 	common/rand/randparkmiller.cpp \
+	common/sort/RTSortIsSorted.cpp \
+	common/sort/RTSortApvIsSorted.cpp \
+	common/sort/shellsort.cpp \
 	common/string/RTStrCmp.cpp \
 	common/string/RTStrConvertHexBytes.cpp \
 	common/string/RTStrCopy.cpp \

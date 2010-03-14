@@ -102,6 +102,7 @@ PROGRAMS += \
 	tstRTSemRW \
 	tstSems \
 	tstRTSemXRoads \
+	tstRTSort \
 	tstRTStrAlloc \
 	tstRTStrCache \
 	tstRTStrFormat \
@@ -412,6 +413,9 @@ tstSems_SOURCES = tstSems.cpp
 
 tstRTSemXRoads_TEMPLATE = VBOXR3TSTEXE
 tstRTSemXRoads_SOURCES = tstRTSemXRoads.cpp
+
+tstRTSort_TEMPLATE = VBOXR3TSTEXE
+tstRTSort_SOURCES = tstRTSort.cpp
 
 tstRTStrAlloc_TEMPLATE = VBOXR3TSTEXE
 tstRTStrAlloc_SOURCES = tstRTStrAlloc.cpp
