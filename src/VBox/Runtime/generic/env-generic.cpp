@@ -710,6 +710,7 @@ RTDECL(int) RTEnvQueryUtf16Block(RTENV hEnv, PRTUTF16 *ppwszzBlock)
         pIntEnv = hEnv;
         AssertPtrReturn(pIntEnv, VERR_INVALID_HANDLE);
         AssertReturn(pIntEnv->u32Magic == RTENV_MAGIC, VERR_INVALID_HANDLE);
+        rc = VINF_SUCCESS;
     }
 
     RTENV_LOCK(pIntEnv);
