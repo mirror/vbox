@@ -54,6 +54,9 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
                     , uMonitor)
     , m_fShouldWeDoResize(false)
 {
+    /* Load machine view settings: */
+    loadMachineViewSettings();
+
     /* Prepare frame buffer: */
     prepareFrameBuffer();
 
@@ -68,9 +71,6 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
 
     /* Prepare console connections: */
     prepareConsoleConnections();
-
-    /* Load machine view settings: */
-    loadMachineViewSettings();
 
     /* Prepare seamless view: */
     prepareSeamless();
