@@ -82,6 +82,7 @@ private:
     /* Private variables: */
     bool m_fShouldWeDoResize : 1;
     QRegion m_lastVisibleRegion;
+    UIMachineViewBlocker *m_pSyncBlocker;
 
     /* Friend classes: */
     friend class UIMachineView;

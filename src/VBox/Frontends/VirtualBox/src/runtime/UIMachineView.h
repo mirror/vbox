@@ -276,13 +276,10 @@ class UIMachineViewBlocker : public QEventLoop
 
 public:
 
-    UIMachineViewBlocker(QObject *pWatchedObject)
+    UIMachineViewBlocker()
         : QEventLoop(0)
         , m_iTimerId(0)
     {
-        /* Install object event watcher: */
-        pWatchedObject->installEventFilter(this);
-
         /* Also start timer to unlock pool in case of
          * required condition doesn't happens by some reason: */
         m_iTimerId = startTimer(3000);
@@ -295,25 +292,6 @@ public:
     }
 
 protected:
-
-    bool eventFilter(QObject *pWatched, QEvent *pEvent)
-    {
-        switch (pEvent->type())
-        {
-            case VBoxDefs::ResizeEventType:
-            {
-                /* Its a specific part related to fullscreen/seamless modes.
-                 * Here we are waiting for guest resize event to be sure what
-                 * non-normal modes successfully restored previous guest size hint.
-                 * And we just unlocking the 'this' blocker afterwards: */
-                exit();
-                return false;
-            }
-            default:
-                break;
-        }
-        return QEventLoop::eventFilter(pWatched, pEvent);
-    }
 
     void timerEvent(QTimerEvent *pEvent)
     {

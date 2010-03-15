@@ -55,6 +55,7 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
                     , uMonitor)
     , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
+    , m_pSyncBlocker(0)
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -70,6 +71,9 @@ UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWind
 
     /* Prepare console connections: */
     prepareConsoleConnections();
+
+    /* Prepare fullscreen: */
+    prepareFullscreen();
 
     /* Initialization: */
     sltMachineStateChanged();
@@ -162,6 +166,14 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
                     pEvent->ignore();
             }
         }
+
+        case VBoxDefs::ResizeEventType:
+        {
+            bool fResult = UIMachineView::event(pEvent);
+            if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
+                m_pSyncBlocker->quit();
+            return fResult;
+        }
         default:
             break;
     }
@@ -237,6 +249,12 @@ void UIMachineViewFullscreen::prepareConsoleConnections()
     connect(uisession(), SIGNAL(sigAdditionsStateChange()), this, SLOT(sltAdditionsStateChanged()));
 }
 
+void UIMachineViewFullscreen::prepareFullscreen()
+{
+    /* Create sync-blocker: */
+    m_pSyncBlocker = new UIMachineViewBlocker;
+}
+
 void UIMachineViewFullscreen::cleanupFullscreen()
 {
     /* If machine still running: */
@@ -245,10 +263,13 @@ void UIMachineViewFullscreen::cleanupFullscreen()
         /* And guest supports advanced graphics management which is enabled: */
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
         {
-            /* Rollback fullscreen frame-buffer size to normal: */
-            UIMachineViewBlocker blocker(this);
+            /* Rollback seamless frame-buffer size to normal: */
+            machineWindowWrapper()->machineWindow()->hide();
             sltPerformGuestResize(guestSizeHint());
-            blocker.exec();
+            m_pSyncBlocker->exec();
+
+            /* Request to delete sync-blocker: */
+            m_pSyncBlocker->deleteLater();
         }
     }
 }

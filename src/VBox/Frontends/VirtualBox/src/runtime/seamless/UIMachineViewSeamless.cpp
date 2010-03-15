@@ -53,6 +53,7 @@ UIMachineViewSeamless::UIMachineViewSeamless(  UIMachineWindow *pMachineWindow
 #endif
                     , uMonitor)
     , m_fShouldWeDoResize(false)
+    , m_pSyncBlocker(0)
 {
     /* Load machine view settings: */
     loadMachineViewSettings();
@@ -176,6 +177,15 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
                     pEvent->ignore();
             }
         }
+
+        case VBoxDefs::ResizeEventType:
+        {
+            bool fResult = UIMachineView::event(pEvent);
+            if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
+                m_pSyncBlocker->quit();
+            return fResult;
+            break;
+        }
         default:
             break;
     }
@@ -255,6 +265,8 @@ void UIMachineViewSeamless::prepareSeamless()
 {
     /* Set seamless feature flag to the guest: */
     session().GetConsole().GetDisplay().SetSeamlessMode(true);
+    /* Create sync-blocker: */
+    m_pSyncBlocker = new UIMachineViewBlocker;
 }
 
 void UIMachineViewSeamless::cleanupSeamless()
@@ -266,9 +278,12 @@ void UIMachineViewSeamless::cleanupSeamless()
         session().GetConsole().GetDisplay().SetSeamlessMode(false);
 
         /* Rollback seamless frame-buffer size to normal: */
-        UIMachineViewBlocker blocker(this);
+        machineWindowWrapper()->machineWindow()->hide();
         sltPerformGuestResize(guestSizeHint());
-        blocker.exec();
+        m_pSyncBlocker->exec();
+
+        /* Delete sync-blocker: */
+        m_pSyncBlocker->deleteLater();
     }
 }
 
