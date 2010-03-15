@@ -1878,6 +1878,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         if (    rc == VINF_PGM_SYNC_CR3
             ||  (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL))
         {
+            Log(("PGMSyncCR3: pending pgm pool sync after MapCR3!\n"));
 #ifdef IN_RING3
             rc = pgmPoolSyncCR3(pVCpu);
 #else
