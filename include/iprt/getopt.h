@@ -440,7 +440,6 @@ RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszAr
  */
 RTDECL(int) RTGetOptArgvToUtf16String(PRTUTF16 *ppwszCmdLine, const char * const *papszArgv, uint32_t fFlags);
 
-
 /** @} */
 
 RT_C_DECLS_END

@@ -34,10 +34,87 @@
 #include <iprt/getopt.h>
 #include "internal/iprt.h"
 
+#include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+
+
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
+/**
+ * Array indexed by the quoting type and 7-bit ASCII character.
+ *
+ * We include some extra stuff here that the corresponding shell would normally
+ * require qouting of.
+ */
+static uint8_t const g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_MASK + 1][128/8] =
+{
+    { 0xfe, 0xff, 0x0f, 0x00, 0x65, 0x00, 0x00, 0x50 },
+    { 0xfe, 0xff, 0x0f, 0x00, 0xd7, 0x07, 0x00, 0xd8 },
+};
+
+
+#if 0   /* To re-generate the bitmaps. */
+#include <stdio.h>
+int main()
+{
+    RT_ZERO(g_abmQuoteChars);
+
+# define SET_ALL(ch) \
+        do { \
+            for (size_t iType = 0; iType <= RTGETOPTARGV_CNV_QUOTE_MASK; iType++) \
+                ASMBitSet(&g_abmQuoteChars[iType], (ch)); \
+        } while (0)
+# define SET(ConstSuffix, ch) \
+        ASMBitSet(&g_abmQuoteChars[RTGETOPTARGV_CNV_QUOTE_##ConstSuffix], (ch));
+
+    /* just flag all the control chars as in need of quoting. */
+    for (char ch = 1; ch < 20; ch++)
+        SET_ALL(ch);
+
+    /* ... and space of course */
+    SET_ALL(' ');
+
+    /* MS CRT / CMD.EXE: */
+    SET(MS_CRT, '"')
+    SET(MS_CRT, '&')
+    SET(MS_CRT, '>')
+    SET(MS_CRT, '<')
+    SET(MS_CRT, '|')
+    SET(MS_CRT, '%')
+
+    /* Bourne shell: */
+    SET(BOURNE_SH, '!');
+    SET(BOURNE_SH, '"');
+    SET(BOURNE_SH, '$');
+    SET(BOURNE_SH, '&');
+    SET(BOURNE_SH, '(');
+    SET(BOURNE_SH, ')');
+    SET(BOURNE_SH, '*');
+    SET(BOURNE_SH, ';');
+    SET(BOURNE_SH, '<');
+    SET(BOURNE_SH, '>');
+    SET(BOURNE_SH, '?');
+    SET(BOURNE_SH, '[');
+    SET(BOURNE_SH, '\'');
+    SET(BOURNE_SH, '\\');
+    SET(BOURNE_SH, '`');
+    SET(BOURNE_SH, '|');
+    SET(BOURNE_SH, '~');
+
+    for (size_t iType = 0; iType <= RTGETOPTARGV_CNV_QUOTE_MASK; iType++)
+    {
+        printf("    {");
+        for (size_t iByte = 0; iByte < 8; iByte++)
+            printf(iByte == 0 ? " 0x%02x" : ", 0x%02x", g_abmQuoteChars[iType][iByte]);
+        printf(" },\n");
+    }
+    return 0;
+}
+#endif /* To re-generate the bitmaps. */
 
 
 /**
@@ -251,6 +328,169 @@ RTDECL(void) RTGetOptArgvFree(char **papszArgv)
 }
 
 
-/** @todo RTGetOptArgvToString (for windows)?
- *  RTGetOptArgvSort for RTGetOptInit()? */
+/**
+ * Checks if the argument needs quoting or not.
+ *
+ * @returns true if it needs, false if it don't.
+ * @param   pszArg              The argument.
+ * @param   fFlags              Quoting style.
+ * @param   pcch                Where to store the argument length when quoting
+ *                              is not required.  (optimization)
+ */
+DECLINLINE(bool) rtGetOpArgvRequiresQuoting(const char *pszArg, uint32_t fFlags, size_t *pcch)
+{
+    char const *psz = pszArg;
+    unsigned char ch;
+    while ((ch = (unsigned char)*psz))
+    {
+        if (   ch < 128
+            && ASMBitTest(&g_abmQuoteChars[fFlags & RTGETOPTARGV_CNV_QUOTE_MASK], ch))
+            return true;
+        psz++;
+    }
+
+    *pcch = psz - pszArg;
+    return false;
+}
+
+
+/**
+ * Grows the command line string buffer.
+ *
+ * @returns VINF_SUCCESS or VERR_NO_STR_MEMORY.
+ * @param   ppszCmdLine     Pointer to the command line string pointer.
+ * @param   pcbCmdLineAlloc Pointer to the allocation length variable.
+ * @param   cchMin          The minimum size to grow with, kind of.
+ */
+static int rtGetOptArgvToStringGrow(char **ppszCmdLine, size_t *pcbCmdLineAlloc, size_t cchMin)
+{
+    size_t cb = *pcbCmdLineAlloc;
+    while (cb < cchMin)
+        cb *= 2;
+    cb *= 2;
+    *pcbCmdLineAlloc = cb;
+    return RTStrRealloc(ppszCmdLine, cb);
+}
+
+/**
+ * Checks if we have a sequence of DOS slashes followed by a double quote char.
+ *
+ * @returns true / false accordingly.
+ * @param   psz             The string.
+ */
+DECLINLINE(bool) rtGetOptArgvMsCrtIsSlashQuote(const char *psz)
+{
+    while (*psz == '\\')
+        psz++;
+    return *psz == '"';
+}
+
+
+RTDECL(int) RTGetOptArgvToString(char **ppszCmdLine, const char * const *papszArgv, uint32_t fFlags)
+{
+    AssertReturn(!(fFlags & ~RTGETOPTARGV_CNV_QUOTE_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_MS_CRT, VERR_NOT_IMPLEMENTED);
+
+#define PUT_CH(ch) \
+        if (RT_UNLIKELY(off + 1 >= cbCmdLineAlloc)) { \
+            rc = rtGetOptArgvToStringGrow(&pszCmdLine, &cbCmdLineAlloc, 1); \
+            if (RT_FAILURE(rc)) \
+                break; \
+        } \
+        pszCmdLine[off++] = (ch)
+
+#define PUT_PSZ(psz, cch) \
+        if (RT_UNLIKELY(off + (cch) >= cbCmdLineAlloc)) { \
+            rc = rtGetOptArgvToStringGrow(&pszCmdLine, &cbCmdLineAlloc, (cch)); \
+            if (RT_FAILURE(rc)) \
+                break; \
+        } \
+        memcpy(&pszCmdLine[off], (psz), (cch)); \
+        off += (cch);
+#define PUT_SZ(sz)  PUT_PSZ(sz, sizeof(sz) - 1)
+
+    /*
+     * Take the realloc approach, it requires less code and is probably more
+     * efficient than figuring out the size first.
+     */
+    int     rc              = VINF_SUCCESS;
+    size_t  off             = 0;
+    size_t  cbCmdLineAlloc  = 256;
+    char   *pszCmdLine      = RTStrAlloc(256);
+    if (!pszCmdLine)
+        return VERR_NO_STR_MEMORY;
+
+    for (size_t i = 0; papszArgv[i]; i++)
+    {
+        if (i > 0)
+        {
+            PUT_CH(' ');
+        }
+
+        /* does it need quoting? */
+        const char *pszArg = papszArgv[i];
+        size_t      cchArg;
+        if (!rtGetOpArgvRequiresQuoting(pszArg, fFlags, &cchArg))
+        {
+            /* No quoting needed, just append the argument. */
+            PUT_PSZ(pszArg, cchArg);
+        }
+        else if ((fFlags & RTGETOPTARGV_CNV_QUOTE_MASK) == RTGETOPTARGV_CNV_QUOTE_MS_CRT)
+        {
+            /*
+             * Microsoft CRT quoting.  Quote the whole argument in double
+             * quotes to make it easier to read and code.
+             */
+            PUT_CH('"');
+            char ch;
+            while ((ch = *pszArg++))
+            {
+                if (   ch == '\\'
+                    && rtGetOptArgvMsCrtIsSlashQuote(pszArg))
+                {
+                    PUT_SZ("\\\\");
+                }
+                else if (ch == '"')
+                {
+                    PUT_SZ("\\\"");
+                }
+                else
+                {
+                    PUT_CH(ch);
+                }
+            }
+            PUT_CH('"');
+        }
+        else /* bourne shell */
+        {
+            AssertFailed(/*later*/);
+        }
+    }
+
+    /* Set return value / cleanup. */
+    if (RT_SUCCESS(rc))
+    {
+        pszCmdLine[off] = '\0';
+        *ppszCmdLine    = pszCmdLine;
+    }
+    else
+        RTStrFree(pszCmdLine);
+#undef PUT_SZ
+#undef PUT_PSZ
+#undef PUT_CH
+    return rc;
+}
+
+
+RTDECL(int) RTGetOptArgvToUtf16String(PRTUTF16 *ppwszCmdLine, const char * const *papszArgv, uint32_t fFlags)
+{
+    char *pszCmdLine;
+    int rc = RTGetOptArgvToString(&pszCmdLine, papszArgv, fFlags);
+    if (RT_SUCCESS(rc))
+    {
+        rc = RTStrToUtf16(pszCmdLine, ppwszCmdLine);
+        RTStrFree(pszCmdLine);
+    }
+    return rc;
+}
 

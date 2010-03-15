@@ -40,6 +40,48 @@
 #include <iprt/test.h>
 
 
+static void tst2(void)
+{
+    RTTestISub("RTGetOptArgvToString / MS_CRT");
+
+    static const struct
+    {
+        const char * const      apszArgs[5];
+        const char             *pszCmdLine;
+    } s_aTests[] =
+    {
+        {
+            { "abcd", "a ", " b", " c ", NULL },
+            "abcd \"a \" \" b\" \" c \""
+        },
+        {
+            { "a\\\\\\b", "de fg", "h", NULL, NULL },
+            "a\\\\\\b \"de fg\" h"
+        },
+        {
+            { "a\\\"b", "c", "d", "\"", NULL },
+            "\"a\\\\\\\"b\" c d \"\\\"\""
+        },
+        {
+            { "a\\\\b c", "d", "e", NULL, NULL },
+            "\"a\\\\b c\" d e"
+        },
+    };
+
+    for (size_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    {
+        char *pszCmdLine = NULL;
+        int rc = RTGetOptArgvToString(&pszCmdLine, s_aTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+        if (strcmp(s_aTests[i].pszCmdLine, pszCmdLine))
+            RTTestIFailed("g_aTest[%i] failed:\n"
+                          " got      '%s'\n"
+                          " expected '%s'\n",
+                          i, pszCmdLine, s_aTests[i].pszCmdLine);
+        RTStrFree(pszCmdLine);
+    }
+}
+
 static void tst1(void)
 {
     RTTestISub("RTGetOptArgvFromString");
@@ -119,6 +161,7 @@ int main()
      * The test.
      */
     tst1();
+    tst2();
 
     /*
      * Summary.
