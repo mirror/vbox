@@ -246,7 +246,6 @@ void UIMachineViewFullscreen::cleanupFullscreen()
         if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
         {
             /* Rollback fullscreen frame-buffer size to normal: */
-            machineWindowWrapper()->machineWindow()->hide();
             UIMachineViewBlocker blocker(this);
             sltPerformGuestResize(guestSizeHint());
             blocker.exec();
