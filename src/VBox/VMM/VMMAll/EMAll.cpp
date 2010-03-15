@@ -2187,7 +2187,7 @@ static int emUpdateCRx(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame, uint32_t D
         {
             /* flush */
             rc = PGMFlushTLB(pVCpu, val, !(CPUMGetGuestCR4(pVCpu) & X86_CR4_PGE));
-            AssertRCReturn(rc, rc);
+            AssertRC(rc);
         }
         return rc;
 
