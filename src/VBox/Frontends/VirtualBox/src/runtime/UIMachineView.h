@@ -279,6 +279,7 @@ public:
     UIMachineViewBlocker()
         : QEventLoop(0)
         , m_iTimerId(0)
+        , m_fReallyQuit(false)
     {
         /* Also start timer to unlock pool in case of
          * required condition doesn't happens by some reason: */
@@ -289,6 +290,16 @@ public:
     {
         /* Kill the timer: */
         killTimer(m_iTimerId);
+    }
+
+public slots:
+
+    void quit()
+    {
+        if (m_fReallyQuit)
+            QEventLoop::quit();
+        else
+            m_fReallyQuit = true;
     }
 
 protected:
@@ -303,6 +314,7 @@ protected:
     }
 
     int m_iTimerId;
+    bool m_fReallyQuit;
 };
 
 #endif // !___UIMachineView_h___
