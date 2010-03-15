@@ -53,6 +53,9 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
     , m_bIsGuestAutoresizeEnabled(pMachineWindow->machineLogic()->actionsPool()->action(UIActionIndex_Toggle_GuestAutoresize)->isChecked())
     , m_fShouldWeDoResize(false)
 {
+    /* Load machine view settings: */
+    loadMachineViewSettings();
+
     /* Prepare frame buffer: */
     prepareFrameBuffer();
 
@@ -67,9 +70,6 @@ UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
 
     /* Prepare console connections: */
     prepareConsoleConnections();
-
-    /* Load machine view settings: */
-    loadMachineViewSettings();
 
     /* Initialization: */
     sltMachineStateChanged();
