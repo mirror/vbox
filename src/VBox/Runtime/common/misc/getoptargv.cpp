@@ -382,7 +382,7 @@ DECLINLINE(bool) rtGetOptArgvMsCrtIsSlashQuote(const char *psz)
 {
     while (*psz == '\\')
         psz++;
-    return *psz == '"';
+    return *psz == '"' || *psz == '\0';
 }
 
 
