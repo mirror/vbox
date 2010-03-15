@@ -1882,7 +1882,8 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
 #ifdef IN_RING3
             rc = pgmPoolSyncCR3(pVCpu);
 #else
-            pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3Old;
+            if (rc == VINF_PGM_SYNC_CR3)
+                pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3Old;
             return VINF_PGM_SYNC_CR3;
 #endif
         }
