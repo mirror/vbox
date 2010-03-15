@@ -75,12 +75,17 @@ UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLog
     /* Update all the elements: */
     updateAppearanceOf(UIVisualElement_AllStuff);
 
-    /* Make sure the window is placed on the right screen before we are going
-     * into fullscreen. */
+    /* Make sure the window is placed on valid screen
+     * before we are show fullscreen window: */
     sltPlaceOnScreen();
 
-    /* Show window: */
+    /* Show fullscreen window: */
     showFullScreen();
+
+    /* Make sure the window is placed on valid screen again
+     * after window is shown & window's decorations applied.
+     * That is required due to X11 Window Geometry Rules. */
+    sltPlaceOnScreen();
 
 #ifdef Q_WS_MAC
     /* Make sure it is really on the right place (especially on the Mac) */
@@ -106,8 +111,8 @@ void UIMachineWindowFullscreen::sltPlaceOnScreen()
     QRect r = QApplication::desktop()->screenGeometry(static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId));
     move(r.topLeft());
     resize(r.size());
+    qApp->processEvents();
 }
-
 
 void UIMachineWindowFullscreen::sltMachineStateChanged()
 {
