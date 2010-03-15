@@ -53,6 +53,56 @@
 static char g_szExecName[RTPATH_MAX];
 
 
+static const char * const g_apszArgs4[] =
+{
+    /* 0 */ "non existing non executable file",
+    /* 1 */ "--testcase-child-4",
+    /* 2 */ "a b",
+    /* 3 */ " cdef",
+    /* 4 */ "ghijkl ",
+    /* 5 */ "\"",
+    /* 6 */ "\\",
+    /* 7 */ "\\\"",
+    /* 8 */ "\\\"\\",
+    /* 9 */ "\\\\\"\\",
+    NULL
+};
+
+static int tstRTCreateProcEx4Child(int argc, char **argv)
+{
+    int rc = RTR3Init();
+    if (rc)
+        return RTMsgInitFailure(rc);
+
+    for (int i = 0; i < argc; i++)
+        if (strcmp(argv[i], g_apszArgs4[i]))
+        {
+            RTStrmPrintf(g_pStdErr,
+                         "child4: argv[%2u]='%s'\n"
+                         "child4: expected='%s'\n",
+                         i, argv[i], g_apszArgs4[i]);
+            rc++;
+        }
+    return rc;
+}
+
+static void tstRTCreateProcEx4(void)
+{
+    RTTestISub("Argument with spaces and stuff");
+
+    RTPROCESS hProc;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, g_apszArgs4, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
+                                         NULL, NULL, NULL, &hProc), VINF_SUCCESS);
+    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+    else
+        RTTestIPassed(NULL);
+}
+
+
 static int tstRTCreateProcEx3Child(void)
 {
     int rc = RTR3Init();
@@ -121,6 +171,7 @@ static void tstRTCreateProcEx3(void)
     else
         RTTestIPassed(NULL);
 }
+
 
 static int tstRTCreateProcEx2Child(void)
 {
@@ -262,6 +313,8 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx2Child();
     if (argc == 2 && !strcmp(argv[1], "--testcase-child-3"))
         return tstRTCreateProcEx3Child();
+    if (argc >= 5 && !strcmp(argv[1], "--testcase-child-4"))
+        return tstRTCreateProcEx4Child(argc, argv);
     if (argc != 1)
         return 99;
 
@@ -280,7 +333,8 @@ int main(int argc, char **argv)
     tstRTCreateProcEx1();
     tstRTCreateProcEx2();
     tstRTCreateProcEx3();
-    /** @todo Cover files, pszAsUser, arguments with spaces, ++ */
+    tstRTCreateProcEx4();
+    /** @todo Cover files, pszAsUser, ++ */
 
     /*
      * Summary.

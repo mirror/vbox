@@ -295,9 +295,13 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     if (fRc)
                     {
                         CloseHandle(ProcInfo.hThread);
-                        CloseHandle(ProcInfo.hProcess);
                         if (phProcess)
+                        {
+                            /** @todo Remember the process handle and pick it up in RTProcWait. */
                             *phProcess = ProcInfo.dwProcessId;
+                        }
+                        else
+                            CloseHandle(ProcInfo.hProcess);
                         rc = VINF_SUCCESS;
                     }
                     else
