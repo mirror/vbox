@@ -39,9 +39,15 @@
 #include <errno.h>
 
 #include <iprt/process.h>
+#include "internal/iprt.h"
+
 #include <iprt/assert.h>
+#include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/env.h>
+#include <iprt/getopt.h>
+#include <iprt/pipe.h>
+#include <iprt/string.h>
 
 
 /*
@@ -164,7 +170,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                PRTPROCESS phProcess)
 {
-#if 0 /* needs more work... dinner time. */
+#if 1 /* needs more work... dinner time. */
     int rc;
 
     /*
@@ -189,16 +195,16 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     StartupInfo.cb = sizeof(StartupInfo);
     StartupInfo.dwFlags   = STARTF_USESTDHANDLES;
 #if 1 /* The CRT should keep the standard handles up to date. */
-    StartupInfo.hStdIn    = GetStdHandle(STD_INPUT_HANDLE);
-    StartupInfo.hStdOut   = GetStdHandle(STD_OUTPUT_HANDLE);
-    StartupInfo.hStdError = GetStdHandle(STD_ERROR_HANDLE);
+    StartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
+    StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
+    StartupInfo.hStdError  = GetStdHandle(STD_ERROR_HANDLE);
 #else
-    StartupInfo.hStdIn    = _get_osfhandle(0);
-    StartupInfo.hStdOut   = _get_osfhandle(1);
-    StartupInfo.hStdError = _get_osfhandle(2);
+    StartupInfo.hStdInput  = _get_osfhandle(0);
+    StartupInfo.hStdOutput = _get_osfhandle(1);
+    StartupInfo.hStdError  = _get_osfhandle(2);
 #endif
     PCRTHANDLE  paHandles[3] = { phStdIn, phStdOut, phStdErr };
-    HANDLE     *aphStds[3]   = { &StartupInfo.hStdIn, &StartupInfo.hStdOut, &StartupInfo.hStdError };
+    HANDLE     *aphStds[3]   = { &StartupInfo.hStdInput, &StartupInfo.hStdOutput, &StartupInfo.hStdError };
     for (int i = 0; i < 3; i++)
     {
         if (paHandles[i])
@@ -207,21 +213,21 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             switch (paHandles[i]->enmType)
             {
                 case RTHANDLETYPE_FILE:
-                    aphStds[i] = paHandles[i]->u.hFile != NIL_RTFILE
-                               ? (HANDLE)RTFileToNative(paHandles[i]->u.hFile)
-                               : INVALID_HANDLE_VALUE;
+                    *aphStds[i] = paHandles[i]->u.hFile != NIL_RTFILE
+                                ? (HANDLE)RTFileToNative(paHandles[i]->u.hFile)
+                                : INVALID_HANDLE_VALUE;
                     break;
 
                 case RTHANDLETYPE_PIPE:
-                    aphStds[i] = paHandles[i]->u.hPipe != NIL_RTPIPE
-                               ? (HANDLE)RTPipeToNative(paHandles[i]->u.hPipe)
-                               : INVALID_HANDLE_VALUE;
+                    *aphStds[i] = paHandles[i]->u.hPipe != NIL_RTPIPE
+                                ? (HANDLE)RTPipeToNative(paHandles[i]->u.hPipe)
+                                : INVALID_HANDLE_VALUE;
                     break;
 
                 //case RTHANDLETYPE_SOCKET:
-                //    aphStds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
-                //               ? (HANDLE)RTTcpToNative(paHandles[i]->u.hSocket)
-                //               : INVALID_HANDLE_VALUE;
+                //    *aphStds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
+                //                ? (HANDLE)RTTcpToNative(paHandles[i]->u.hSocket)
+                //                : INVALID_HANDLE_VALUE;
                 //    break;
 
                 default:
@@ -235,7 +241,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      * name.
      */
     PRTUTF16 pwszzBlock;
-    rc = RTEnvQueryUtf16Block(hEnv);
+    rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
     if (RT_SUCCESS(rc))
     {
         PRTUTF16 pwszCmdLine;
@@ -249,7 +255,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                 HANDLE hToken = INVALID_HANDLE_VALUE;
                 if (pszAsUser)
                 {
-                    /** @todo - Maybe use CreateProcessWithLoginW? */
+                    /** @todo - Maybe use CreateProcessWithLoginW? That'll require a password, but
+                     *        we may need that anyway because it looks like LogonUserW is the only
+                     *        way to get a hToken.  FIXME */
                     rc = VERR_NOT_IMPLEMENTED;
                 }
                 if (RT_SUCCESS(rc))
@@ -260,15 +268,15 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     PROCESS_INFORMATION ProcInfo;
                     RT_ZERO(ProcInfo);
                     BOOL fRc;
-                    if (!pwszAsUser)
+                    if (hToken == INVALID_HANDLE_VALUE)
                         fRc = CreateProcessW(pwszExec,
                                              pwszCmdLine,
                                              NULL,         /* pProcessAttributes */
                                              NULL,         /* pThreadAttributes */
-                                             TRUE,         /* bInheritHandles */
+                                             TRUE,         /* fInheritHandles */
                                              CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
                                              pwszzBlock,
-                                             cwd,
+                                             NULL,          /* pCurrentDirectory */
                                              &StartupInfo,
                                              &ProcInfo);
                     else
@@ -277,29 +285,23 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                                    pwszCmdLine,
                                                    NULL,         /* pProcessAttributes */
                                                    NULL,         /* pThreadAttributes */
-                                                   TRUE,         /* bInheritHandles */
+                                                   TRUE,         /* fInheritHandles */
                                                    CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
                                                    pwszzBlock,
-                                                   cwd,
+                                                   NULL,          /* pCurrentDirectory */
                                                    &StartupInfo,
                                                    &ProcInfo);
 
                     if (fRc)
                     {
-                        //DWORD dwErr;
-                        //DWORD dwExitCode;
-                        //
-                        //CloseHandle(ProcInfo.hThread);
-                        //dwErr = WaitForSingleObject(ProcInfo.hProcess, INFINITE);
-                        //assert(dwErr == WAIT_OBJECT_0);
-                        //
-                        //if (GetExitCodeProcess(ProcInfo.hProcess, &dwExitCode))
-                        //{
-                        //    CloseHandle(ProcInfo.hProcess);
-                        //    _exit(dwExitCode);
-                        //}
-                        //errno = EINVAL;
+                        CloseHandle(ProcInfo.hThread);
+                        CloseHandle(ProcInfo.hProcess);
+                        if (phProcess)
+                            *phProcess = ProcInfo.dwProcessId;
+                        rc = VINF_SUCCESS;
                     }
+                    else
+                        rc = RTErrConvertFromWin32(GetLastError());
 
                     if (hToken == INVALID_HANDLE_VALUE)
                         CloseHandle(hToken);
