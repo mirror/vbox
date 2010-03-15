@@ -63,7 +63,7 @@ private:
     void prepareFilters();
     void prepareConnections();
     void prepareConsoleConnections();
-    //void prepareFullscreen() {}
+    void prepareFullscreen();
 
     /* Cleanup routines: */
     void cleanupFullscreen();
@@ -81,9 +81,10 @@ private:
     void calculateDesktopGeometry();
     void maybeRestrictMinimumSize();
 
-    /* Private members: */
+    /* Private variables: */
     bool m_bIsGuestAutoresizeEnabled : 1;
     bool m_fShouldWeDoResize : 1;
+    UIMachineViewBlocker *m_pSyncBlocker;
 
     /* Friend classes: */
     friend class UIMachineView;
