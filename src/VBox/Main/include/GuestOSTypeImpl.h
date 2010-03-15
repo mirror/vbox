@@ -78,6 +78,7 @@ public:
     STDMETHOD(COMGETTER(RecommendedPae)) (BOOL *aRecommendedExtHw);
     STDMETHOD(COMGETTER(RecommendedUsbHid)) (BOOL *aRecommendedUsbHid);
     STDMETHOD(COMGETTER(RecommendedHpet)) (BOOL *aRecommendedHpet);
+    STDMETHOD(COMGETTER(RecommendedUsbTablet)) (BOOL *aRecommendedUsbTablet);
 
     // public methods only for internal purposes
     const Bstr &id() const { return mID; }
