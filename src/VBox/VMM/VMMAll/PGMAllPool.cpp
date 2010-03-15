@@ -2575,8 +2575,16 @@ int pgmPoolSyncCR3(PVMCPU pVCpu)
     }
 # endif /* !IN_RING3 */
     else
+    {
         pgmPoolMonitorModifiedClearAll(pVM);
 
+        /* pgmPoolMonitorModifiedClearAll can cause a pgm pool flush (dirty page clearing), so make sure we handle this! */
+        if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)
+        {
+            Log(("pgmPoolMonitorModifiedClearAll caused a pgm flush -> call pgmPoolSyncCR3 again!\n"));
+            return pgmPoolSyncCR3(pVCpu);
+        }
+    }
     return VINF_SUCCESS;
 }
 
