@@ -213,7 +213,8 @@ INF EdkShellBinPkg/FullShell/FullShell.inf
 
 FILE FREEFORM = 7BB28B99-61BB-11D5-9A5D-0090273FC14D {
     SECTION GUIDED EE4E5898-3914-4259-9D6E-DC7BD79403CF PROCESSING_REQUIRED = TRUE { # LzmaCompress
-      SECTION RAW = VBoxPkg/VBoxLogo/VBoxLogo.bmp
+      # OSE build should use VBoxOSELogo/ose_logo.bmp
+      SECTION RAW = VBoxPkg/VBoxPUELLogo/puel_logo.bmp
     }
   }
 

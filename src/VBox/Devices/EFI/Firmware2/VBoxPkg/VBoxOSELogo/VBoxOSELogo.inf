@@ -1,7 +1,7 @@
 # $Id$
 
 #* @file
-# VBoxLogo.inf - Logo module declarations.
+# VBoxOSELogo.inf - Logo module declarations.
 #
 
 #
@@ -23,9 +23,10 @@
 #
 **/
 
+
 [Defines]
   INF_VERSION                    = 0x00010005
-  BASE_NAME                      = VBoxLogo
+  BASE_NAME                      = VBoxOSELogo
   FILE_GUID                      = 323afebe-cc60-11de-af38-4731b4e5bd74
   MODULE_TYPE                    = USER_DEFINED
   VERSION_STRING                 = 1.0
@@ -37,5 +38,5 @@
 #
 
 [Binaries.common]
-  BIN|VBoxLogo.bmp|*
+  BIN|ose_logo.bmp|*
 
