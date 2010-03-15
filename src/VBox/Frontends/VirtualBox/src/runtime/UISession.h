@@ -38,7 +38,6 @@ class QMenuBar;
 /* Local forwards */
 class UIActionsPool;
 class UIConsoleCallback;
-class UIDownloaderAdditions;
 class UIMachine;
 class UIMachineMenuBar;
 
@@ -236,8 +235,6 @@ private:
     bool m_fIsMouseIntegrated : 1;
     bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHidingHostPointer : 1;
-
-    UIDownloaderAdditions *m_pDownloaderAdditions;
 
     /* Friend classes: */
     friend class UIConsoleCallback;
