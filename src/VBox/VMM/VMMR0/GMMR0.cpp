@@ -667,7 +667,7 @@ GMMR0DECL(int) GMMR0Init(void)
         else
             SUPR0Printf("GMMR0Init: RTR0MemObjAllocPhysNC(,64K,Any) -> %d!\n", rc);
 #else
-# if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
+# if defined(RT_OS_WINDOWS) || defined(RT_OS_LINUX) || defined(RT_OS_FREEBSD)
         pGMM->fLegacyAllocationMode = false;
 #  if ARCH_BITS == 32
         /* Don't reuse possibly partial chunks because of the virtual address space limitation. */
