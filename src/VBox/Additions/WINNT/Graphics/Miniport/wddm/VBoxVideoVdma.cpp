@@ -164,39 +164,17 @@ void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr)
     VBoxSHGSMICommandFree (&pInfo->CmdHeap, pDr);
 }
 
-PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo)
+PVBOXVDMACBUF_DR vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData)
 {
-    PVBOXVDMACBUF_DR pCmdDr;
-
-    if (pBufInfo->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
-    {
-        /* data info is a pointer to the buffer to be coppied and included in the command */
-        pCmdDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, sizeof (VBOXVDMACBUF_DR) + pBufInfo->cbBuf, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
-        Assert(pCmdDr);
-        if (!pCmdDr)
-            return NULL;
-
-        void * pvData = VBOXVDMACBUF_DR_TAIL(pCmdDr, void*);
-        memcpy(pvData, (void*)pBufInfo->Location.pvBuf, pBufInfo->cbBuf);
-    }
+    uint32_t cbDr = sizeof (VBOXVDMACBUF_DR) + cbTrailingData;
+    PVBOXVDMACBUF_DR pDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, cbDr, HGSMI_CH_VBVA, VBVA_VDMA_CMD);
+    Assert(pDr);
+    if (pDr)
+        memset (pDr, 0, cbDr);
     else
-    {
-        pCmdDr = (PVBOXVDMACBUF_DR)VBoxSHGSMICommandAlloc (&pInfo->CmdHeap, sizeof (VBOXVDMACBUF_DR), HGSMI_CH_VBVA, VBVA_VDMA_CMD);
-        Assert(pCmdDr);
-        if (!pCmdDr)
-            return NULL;
+        drprintf((__FUNCTION__": VBoxSHGSMICommandAlloc returned NULL\n"));
 
-        if (!(pBufInfo->fFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET))
-            pCmdDr->Location.phBuf = pBufInfo->Location.phBuf;
-        else
-            pCmdDr->Location.offVramBuf = pBufInfo->Location.offVramBuf;
-    }
-
-    pCmdDr->fFlags = pBufInfo->fFlags;
-    pCmdDr->cbBuf = pBufInfo->cbBuf;
-    pCmdDr->u32FenceId = pBufInfo->u32FenceId;
-
-    return pCmdDr;
+    return pDr;
 }
 
 static DECLCALLBACK(void) vboxVdmaCBufDrCompletion(struct _HGSMIHEAP * pHeap, void *pvCmd, void *pvContext)
@@ -217,22 +195,35 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap,
 
     memset(&notify, 0, sizeof(DXGKARGCB_NOTIFY_INTERRUPT_DATA));
 
+    PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)pDr->u64GuestContext;
+
     if (RT_SUCCESS(pDr->rc))
     {
         notify.InterruptType = DXGK_INTERRUPT_DMA_COMPLETED;
         notify.DmaCompleted.SubmissionFenceId = pDr->u32FenceId;
-        notify.DmaCompleted.NodeOrdinal = 0; /* @todo: ? */
-        notify.DmaCompleted.EngineOrdinal = 0; /* @todo: ? */
-        pVdma->uLastCompletedCmdFenceId = pDr->u32FenceId;
+        if (pContext)
+        {
+            notify.DmaCompleted.NodeOrdinal = pContext->NodeOrdinal;
+            notify.DmaCompleted.EngineOrdinal = 0;
+            pContext->uLastCompletedCmdFenceId = pDr->u32FenceId;
+        }
+        else
+            pVdma->uLastCompletedPagingBufferCmdFenceId = pDr->u32FenceId;
         pDevExt->bSetNotifyDxDpc = TRUE;
     }
     else if (pDr->rc == VERR_INTERRUPTED)
     {
         notify.InterruptType = DXGK_INTERRUPT_DMA_PREEMPTED;
         notify.DmaPreempted.PreemptionFenceId = pDr->u32FenceId;
-        notify.DmaPreempted.LastCompletedFenceId = pVdma->uLastCompletedCmdFenceId;
-        notify.DmaPreempted.NodeOrdinal = 0; /* @todo: ? */
-        notify.DmaPreempted.EngineOrdinal = 0; /* @todo: ? */
+        if (pContext)
+        {
+            notify.DmaPreempted.LastCompletedFenceId = pContext->uLastCompletedCmdFenceId;
+            notify.DmaPreempted.NodeOrdinal = pContext->NodeOrdinal;
+            notify.DmaPreempted.EngineOrdinal = 0;
+        }
+        else
+            notify.DmaPreempted.LastCompletedFenceId = pVdma->uLastCompletedPagingBufferCmdFenceId;
+
         pDevExt->bSetNotifyDxDpc = TRUE;
     }
     else
@@ -241,8 +232,11 @@ static DECLCALLBACK(void) vboxVdmaCBufDrCompletionIrq(struct _HGSMIHEAP * pHeap,
         notify.InterruptType = DXGK_INTERRUPT_DMA_FAULTED;
         notify.DmaFaulted.FaultedFenceId = pDr->u32FenceId;
         notify.DmaFaulted.Status = STATUS_UNSUCCESSFUL; /* @todo: better status ? */
-        notify.DmaFaulted.NodeOrdinal = 0; /* @todo: ? */
-        notify.DmaFaulted.EngineOrdinal = 0; /* @todo: ? */
+        if (pContext)
+        {
+            notify.DmaFaulted.NodeOrdinal = pContext->NodeOrdinal;
+            notify.DmaFaulted.EngineOrdinal = 0;
+        }
         pDevExt->bSetNotifyDxDpc = TRUE;
     }
 
@@ -257,17 +251,3 @@ void vboxVdmaCBufDrSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOX
 {
     VBoxSHGSMICommandSubmitAsynchIrq (&pInfo->CmdHeap, pDr, vboxVdmaCBufDrCompletionIrq, pDevExt, VBOXSHGSMI_FLAG_GH_ASYNCH_FORCE);
 }
-
-int vboxVdmaCBufSubmit (PDEVICE_EXTENSION pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo)
-{
-    dfprintf((__FUNCTION__"\n"));
-
-    PVBOXVDMACBUF_DR pdr = vboxVdmaCBufDrCreate (pInfo, pBufInfo);
-    if (!pdr)
-        return VERR_OUT_OF_RESOURCES;
-
-    vboxVdmaCBufDrSubmit (pDevExt, pInfo, pdr);
-
-    return VINF_SUCCESS;
-}
-

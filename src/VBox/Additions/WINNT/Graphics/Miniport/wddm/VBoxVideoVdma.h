@@ -23,28 +23,17 @@
 typedef struct VBOXVDMAINFO
 {
     HGSMIHEAP CmdHeap;
-    UINT      uLastCompletedCmdFenceId;
+    UINT      uLastCompletedPagingBufferCmdFenceId;
     BOOL      fEnabled;
 } VBOXVDMAINFO, *PVBOXVDMAINFO;
-
-typedef struct VBOXVDMACMDBUF_INFO
-{
-    uint32_t fFlags;
-    uint32_t cbBuf;
-    union
-    {
-        RTGCPHYS phBuf;
-        ULONG offVramBuf;
-        void *pvBuf;
-    } Location;
-    uint32_t u32FenceId;
-} VBOXVDMACMDBUF_INFO, *PVBOXVDMACMDBUF_INFO;
 
 int vboxVdmaCreate (struct _DEVICE_EXTENSION* pDevExt, VBOXVDMAINFO *pInfo, ULONG offBuffer, ULONG cbBuffer);
 int vboxVdmaDisable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaEnable (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaFlush (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
 int vboxVdmaDestroy (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo);
-int vboxVdmaCBufSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACMDBUF_INFO pBufInfo);
+void vboxVdmaCBufDrSubmit (struct _DEVICE_EXTENSION* pDevExt, PVBOXVDMAINFO pInfo, PVBOXVDMACBUF_DR pDr);
+struct VBOXVDMACBUF_DR* vboxVdmaCBufDrCreate (PVBOXVDMAINFO pInfo, uint32_t cbTrailingData);
+void vboxVdmaCBufDrFree (PVBOXVDMAINFO pInfo, struct VBOXVDMACBUF_DR* pDr);
 
 #endif /* #ifndef ___VBoxVideoVdma_h___ */

@@ -1163,6 +1163,7 @@ typedef struct VBOXVDMACBUF_DR
      * VERR_INTERRUPTED - on preemption
      * VERR_xxx         - on error */
     int32_t  rc;
+    uint64_t u64GuestContext;
     union
     {
         uint64_t phBuf;
@@ -1170,7 +1171,7 @@ typedef struct VBOXVDMACBUF_DR
     } Location;
 } VBOXVDMACBUF_DR, *PVBOXVDMACBUF_DR;
 
-#define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
+#define VBOXVDMACBUF_DR_TAIL(_pCmd, _t) ( (_t*)(((uint8_t*)(_pCmd)) + sizeof (VBOXVDMACBUF_DR)) )
 
 typedef struct VBOXVDMACMD
 {
