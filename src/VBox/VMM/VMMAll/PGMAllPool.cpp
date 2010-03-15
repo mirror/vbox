@@ -3447,7 +3447,8 @@ int pgmPoolTrackFlushGCPhysPTsSlow(PVM pVM, PPGMPAGE pPhysPage)
     while (--iPage >= PGMPOOL_IDX_FIRST)
     {
         PPGMPOOLPAGE pPage = &pPool->aPages[iPage];
-        if (pPage->GCPhys != NIL_RTGCPHYS)
+        if (    pPage->GCPhys != NIL_RTGCPHYS
+            &&  pPage->cPresent)
         {
             switch (pPage->enmKind)
             {
