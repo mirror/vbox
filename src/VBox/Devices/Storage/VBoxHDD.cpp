@@ -1704,7 +1704,6 @@ VBOXDDU_DECL(int) VDCreateBase(PVBOXHDD pDisk, const char *pszBackend,
         else
         {
             /* Error detected, but image opened. Close and delete image. */
-            int rc2;
             rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, true);
             AssertRC(rc2);
             pImage->pvBackendData = NULL;
@@ -2933,7 +2932,7 @@ VBOXDDU_DECL(int) VDCloseAll(PVBOXHDD pDisk)
             /* Remove image from list of opened images. */
             vdRemoveImageFromList(pDisk, pImage);
             /* Close image. */
-            int rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
+            rc2 = pImage->Backend->pfnClose(pImage->pvBackendData, false);
             if (RT_FAILURE(rc2) && RT_SUCCESS(rc))
                 rc = rc2;
             /* Free remaining resources related to the image. */
@@ -3392,8 +3391,8 @@ VBOXDDU_DECL(int) VDSetPCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                                          pPCHSGeometry);
 
                 /* Cache new geometry values in any case. */
-                int rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
-                                                              &pDisk->PCHSGeometry);
+                rc2 = pImage->Backend->pfnGetPCHSGeometry(pImage->pvBackendData,
+                                                          &pDisk->PCHSGeometry);
                 if (RT_FAILURE(rc2))
                 {
                     pDisk->PCHSGeometry.cCylinders = 0;
@@ -3560,8 +3559,8 @@ VBOXDDU_DECL(int) VDSetLCHSGeometry(PVBOXHDD pDisk, unsigned nImage,
                                                          pLCHSGeometry);
 
                 /* Cache new geometry values in any case. */
-                int rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
-                                                              &pDisk->LCHSGeometry);
+                rc2 = pImage->Backend->pfnGetLCHSGeometry(pImage->pvBackendData,
+                                                          &pDisk->LCHSGeometry);
                 if (RT_FAILURE(rc2))
                 {
                     pDisk->LCHSGeometry.cCylinders = 0;
