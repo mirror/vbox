@@ -143,6 +143,23 @@ typedef struct DMISYSTEMINF
 } *PDMISYSTEMINF;
 AssertCompileSize(DMISYSTEMINF, 0x1b);
 
+/** DMI board (or module) information (Type 2) */
+typedef struct DMIBOARDINF
+{
+    DMIHDR          header;
+    uint8_t         u8Manufacturer;
+    uint8_t         u8Product;
+    uint8_t         u8Version;
+    uint8_t         u8SerialNumber;
+    uint8_t         u8AssetTag;
+    uint8_t         u8FeatureFlags;
+    uint8_t         u8LocationInChassis;
+    uint16_t        u16ChassisHandle;
+    uint8_t         u8BoardType;
+    uint8_t         u8cObjectHandles;
+} *PDMIBOARDINF;
+AssertCompileSize(DMIBOARDINF, 0x0f);
+
 /** DMI system enclosure or chassis type (Type 3) */
 typedef struct DMICHASSIS
 {
