@@ -66,7 +66,8 @@ void UIMachineLogicNormal::initialize()
     /* Prepare normal machine window: */
     prepareMachineWindows();
 
-    /* If there is an Additions download running show the process bar. */
+    /* If there is an Additions download running, update the parent window
+     * information. */
     if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
         pDl->setParentWidget(mainMachineWindow()->machineWindow());
 
