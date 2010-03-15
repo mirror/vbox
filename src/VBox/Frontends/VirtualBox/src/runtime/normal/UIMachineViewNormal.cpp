@@ -24,6 +24,7 @@
 /* Global includes */
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QMainWindow>
 #include <QMenuBar>
 #include <QScrollBar>
 #include <QTimer>
@@ -36,7 +37,6 @@
 #include "UIMachineWindow.h"
 #include "UIFrameBuffer.h"
 #include "UIMachineViewNormal.h"
-#include "QIMainDialog.h"
 
 UIMachineViewNormal::UIMachineViewNormal(  UIMachineWindow *pMachineWindow
                                          , VBoxDefs::RenderMode renderMode
@@ -95,8 +95,8 @@ void UIMachineViewNormal::sltPerformGuestResize(const QSize &toSize)
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
         /* Get machine window: */
-        QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                       qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+        QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                      qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
         /* If this slot is invoked directly then use the passed size otherwise get
          * the available size for the guest display. We assume here that centralWidget()
@@ -155,7 +155,7 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
                 {
                     /* Trying to get menu-bar: */
                     QMenuBar *pMenuBar = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                         qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
+                                         qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar() : 0;
 
                     /* If menu-bar is present and have actions: */
                     if (pMenuBar && !pMenuBar->actions().isEmpty())
@@ -190,8 +190,8 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
 bool UIMachineViewNormal::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Who are we watching? */
-    QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+    QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                               qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
     if (pWatched != 0 && pWatched == pMainDialog)
     {
@@ -232,7 +232,7 @@ void UIMachineViewNormal::prepareFilters()
     UIMachineView::prepareFilters();
 
     /* Menu bar filters: */
-    qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
+    qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 }
 
 void UIMachineViewNormal::prepareConnections()
@@ -332,7 +332,7 @@ void UIMachineViewNormal::calculateDesktopGeometry()
          * including window frame, title, menu bar and status bar: */
         QRect windowGeo = machineWindowWrapper()->machineWindow()->frameGeometry();
         /* The area taken up by the machine central widget, so excluding all decorations: */
-        QRect centralWidgetGeo = static_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->centralWidget()->geometry();
+        QRect centralWidgetGeo = static_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->centralWidget()->geometry();
         /* To work out how big we can make the console window while still fitting on the desktop,
          * we calculate availableGeometry() - (windowGeo - centralWidgetGeo).
          * This works because the difference between machine window and machine central widget

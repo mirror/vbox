@@ -39,7 +39,7 @@
 #include "UISession.h"
 
 UIMachineWindowFullscreen::UIMachineWindowFullscreen(UIMachineLogic *pMachineLogic, ulong uScreenId)
-    : QIWithRetranslateUI2<QIMainDialog>(0, Qt::FramelessWindowHint)
+    : QIWithRetranslateUI2<QMainWindow>(0, Qt::FramelessWindowHint)
     , UIMachineWindow(pMachineLogic, uScreenId)
     , m_pMainMenu(0)
     , m_pMiniToolBar(0)

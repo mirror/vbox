@@ -24,12 +24,12 @@
 #define __UIMachineWindowNormal_h__
 
 /* Global includes */
+#include <QMainWindow>
 #include <QLabel>
 
 /* Local includes */
 #include "VBoxDefs.h"
 #include "QIWithRetranslateUI.h"
-#include "QIMainDialog.h"
 #include "UIMachineWindow.h"
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
@@ -40,7 +40,7 @@ class CMediumAttachment;
 class UIIndicatorsPool;
 class QIStateIndicator;
 
-class UIMachineWindowNormal : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
+class UIMachineWindowNormal : public QIWithRetranslateUI2<QMainWindow>, public UIMachineWindow
 {
     Q_OBJECT;
 
