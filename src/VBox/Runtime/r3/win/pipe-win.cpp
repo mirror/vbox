@@ -714,18 +714,10 @@ RTDECL(int) RTPipeFlush(RTPIPE hPipe)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
-#if 1
-    return VERR_NOT_SUPPORTED;
-#else
 
-    if (fsync(pThis->fd))
-    {
-        if (errno == EINVAL || errno == ENOTSUP)
-            return VERR_NOT_SUPPORTED;
-        return RTErrConvertFromErrno(errno);
-    }
+    if (!FlushFileBuffers(pThis->hPipe))
+        return RTErrConvertFromWin32(GetLastError());
     return VINF_SUCCESS;
-#endif
 }
 
 

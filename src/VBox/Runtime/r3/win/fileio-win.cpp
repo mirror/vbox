@@ -477,11 +477,9 @@ RTR3DECL(int)  RTFileWrite(RTFILE File, const void *pvBuf, size_t cbToWrite, siz
 
 RTR3DECL(int)  RTFileFlush(RTFILE File)
 {
-    int rc;
-
-    if (FlushFileBuffers((HANDLE)File) == FALSE)
+    if (!FlushFileBuffers((HANDLE)File))
     {
-        rc = GetLastError();
+        int rc = GetLastError();
         Log(("FlushFileBuffers failed with %d\n", rc));
         return RTErrConvertFromWin32(rc);
     }
