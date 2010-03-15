@@ -76,11 +76,16 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
 
         case RTR0MEMOBJTYPE_CONT:
         case RTR0MEMOBJTYPE_PHYS:
-            vbi_contig_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+            vbi_phys_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
             break;
 
         case RTR0MEMOBJTYPE_PHYS_NC:
+            LogRel(("MemObjNativeFree virtAddr=%p physAddr=%#x cb=%u\n", pMemSolaris->Core.pv, vbi_va_to_pa(pMemSolaris->Core.pv), (unsigned)pMemSolaris->Core.cb));
+#if 0
             vbi_phys_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+#else
+            ddi_umem_free(pMemSolaris->Cookie);
+#endif
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
@@ -172,12 +177,13 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     if (!pMemSolaris)
         return VERR_NO_MEMORY;
 
-    if (PhysHighest == NIL_RTHCPHYS)
-        PhysHighest = UINT64_MAX - 1;
-
     /* Allocate physically non-contiguous page-aligned memory. */
     uint64_t physAddr = PhysHighest;
+#if 0
     caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
+#else
+    caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
+#endif
     if (RT_UNLIKELY(virtAddr == NULL))
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
@@ -189,6 +195,7 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     pMemSolaris->Core.u.Phys.fAllocated = true;
     pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
+    LogRel(("ddi_umem_alloc virtAddr=%p physAddr=%#x cb=%u\n", virtAddr, physAddr, (unsigned)cb));
     return VINF_SUCCESS;
 #else
     /** @todo rtR0MemObjNativeAllocPhysNC / solaris */
@@ -201,32 +208,48 @@ int rtR0MemObjNativeAllocPhys(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS Ph
 {
     AssertMsgReturn(PhysHighest >= 16 *_1M, ("PhysHigest=%RHp\n", PhysHighest), VERR_NOT_IMPLEMENTED);
 
-    /** @todo alignment, vbi currently assumes PAGE_SIZE not even less than PAGE_SIZE */
+    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_PHYS, NULL, cb);
+    if (!pMemSolaris)
+        return VERR_NO_MEMORY;
+
+    AssertCompile(NIL_RTHCPHYS == UINT64_MAX);
+
+    /* Allocate physically contiguous memory aligned as specified. */
+    uint64_t physAddr = PhysHighest;
+    caddr_t  virtAddr = vbi_phys_alloc(&physAddr, cb, uAlignment, 1 /* contiguous */);
+    if (RT_UNLIKELY(virtAddr == NULL))
+    {
+        rtR0MemObjDelete(&pMemSolaris->Core);
+        return VERR_NO_CONT_MEMORY;
+    }
+    Assert(!(physAddr & PAGE_OFFSET_MASK));
+    Assert(physAddr < PhysHighest);
+    Assert(physAddr + cb <= PhysHighest);
+#if 0
     if (uAlignment != PAGE_SIZE)
-        return VERR_NOT_SUPPORTED;
-
-     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_CONT, NULL, cb);
-     if (!pMemSolaris)
-         return VERR_NO_MEMORY;
-
-     AssertCompile(NIL_RTHCPHYS == UINT64_MAX);
-
-     /* Allocate physically contiguous memory aligned as specified. */
-     uint64_t physAddr = PhysHighest;
-     caddr_t  virtAddr = vbi_phys_alloc(&physAddr, cb, uAlignment, 1 /* contiguous */);
-     if (RT_UNLIKELY(virtAddr == NULL))
-     {
-         rtR0MemObjDelete(&pMemSolaris->Core);
-         return VERR_NO_CONT_MEMORY;
-     }
-     Assert(!(physAddr & PAGE_OFFSET_MASK));
-     Assert(physAddr < PhysHighest);
-     Assert(physAddr + cb <= PhysHighest);
-     pMemSolaris->Core.pv = virtAddr;
-     pMemSolaris->Core.u.Cont.Phys = physAddr;
-     pMemSolaris->pvHandle = NULL;
-     *ppMem = &pMemSolaris->Core;
-     return VINF_SUCCESS;
+    {
+        /* uAlignment is always a multiple of PAGE_SIZE */
+        pgcnt_t cPages = (cb + uAlignment - 1) >> PAGE_SHIFT;
+        void *pvPage = virtAddr;
+        while (cPages-- > 0)
+        {
+            uint64_t u64Page = vbi_va_to_pa(pvPage);
+            if (u64Page & (uAlignment - 1))
+            {
+                LogRel(("rtR0MemObjNativeAllocPhys: alignment mismatch! cb=%u uAlignment=%u physAddr=%#x\n", cb, uAlignment, u64Page));
+                vbi_phys_free(virtAddr, cb);
+                rtR0MemObjDelete(&pMemSolaris->Core);
+                return VERR_NO_MEMORY;
+            }
+            pvPage = (void *)((uintptr_t)pvPage + PAGE_SIZE);
+        }
+    }
+#endif
+    pMemSolaris->Core.pv = virtAddr;
+    pMemSolaris->Core.u.Cont.Phys = physAddr;
+    pMemSolaris->pvHandle = NULL;
+    *ppMem = &pMemSolaris->Core;
+    return VINF_SUCCESS;
 }
 
 
