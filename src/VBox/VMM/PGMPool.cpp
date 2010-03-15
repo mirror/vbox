@@ -601,9 +601,9 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
 {
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     STAM_PROFILE_START(&pPool->StatClearAll, c);
-    LogFlow(("pgmPoolClearAllDoIt: cUsedPages=%d\n", pPool->cUsedPages));
 
     pgmLock(pVM);
+    Log(("pgmR3PoolClearAllRendezvous: cUsedPages=%d\n", pPool->cUsedPages));
 
 #ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     pgmPoolResetDirtyPages(pVM);
