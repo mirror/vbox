@@ -72,6 +72,7 @@
 #define ATA_EVENT_STATUS_MEDIA_NEW              1    /**< new medium inserted */
 #define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
 #define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
+#define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
 
 
 /*******************************************************************************

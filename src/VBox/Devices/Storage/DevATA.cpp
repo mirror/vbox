@@ -100,6 +100,7 @@
 #define ATA_EVENT_STATUS_MEDIA_NEW              1    /**< new medium inserted */
 #define ATA_EVENT_STATUS_MEDIA_REMOVED          2    /**< medium removed */
 #define ATA_EVENT_STATUS_MEDIA_CHANGED          3    /**< medium was removed + new medium was inserted */
+#define ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED  4    /**< medium eject requested (eject button pressed) */
 
 /**
  * Length of the configurable VPD data (without termination)
@@ -2360,12 +2361,12 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
         switch (OldStatus)
         {
             case ATA_EVENT_STATUS_MEDIA_NEW:
-            /* mount */
+                /* mount */
                 ataH2BE_U16(pbBuf + 0, 6);
-                pbBuf[2] = 0x04;
-                pbBuf[3] = 0x5e;
-                pbBuf[4] = 0x02;
-                pbBuf[5] = 0x02;
+                pbBuf[2] = 0x04; /* media */
+                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[4] = 0x02; /* new medium */
+                pbBuf[5] = 0x02; /* medium present / door closed */
                 pbBuf[6] = 0x00;
                 pbBuf[7] = 0x00;
                 break;
@@ -2374,21 +2375,31 @@ static bool atapiGetEventStatusNotificationSS(ATADevState *s)
             case ATA_EVENT_STATUS_MEDIA_REMOVED:
                 /* umount */
                 ataH2BE_U16(pbBuf + 0, 6);
-                pbBuf[2] = 0x04;
-                pbBuf[3] = 0x5e;
-                pbBuf[4] = 0x03;
-                pbBuf[5] = 0x00;
+                pbBuf[2] = 0x04; /* media */
+                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
+                pbBuf[4] = 0x03; /* media removal */
+                pbBuf[5] = 0x00; /* medium absent / door closed */
                 pbBuf[6] = 0x00;
                 pbBuf[7] = 0x00;
                 if (OldStatus == ATA_EVENT_STATUS_MEDIA_CHANGED)
                     NewStatus = ATA_EVENT_STATUS_MEDIA_NEW;
                 break;
 
+            case ATA_EVENT_STATUS_MEDIA_EJECT_REQUESTED: /* currently unused */
+                ataH2BE_U16(pbBuf + 0, 6);
+                pbBuf[2] = 0x04; /* media */
+                pbBuf[3] = 0x5e; /* supported = busy|media|external|power|operational */
+                pbBuf[4] = 0x01; /* eject requested (eject button pressed) */
+                pbBuf[5] = 0x02; /* medium present / door closed */
+                pbBuf[6] = 0x00;
+                pbBuf[7] = 0x00;
+                break;
+
             case ATA_EVENT_STATUS_UNCHANGED:
             default:
                 ataH2BE_U16(pbBuf + 0, 6);
-                pbBuf[2] = 0x01;
-                pbBuf[3] = 0x5e;
+                pbBuf[2] = 0x01; /* operational change request / notification */
+                pbBuf[3] = 0x5e; /* suppored = busy|media|external|power|operational */
                 pbBuf[4] = 0x00;
                 pbBuf[5] = 0x00;
                 pbBuf[6] = 0x00;
