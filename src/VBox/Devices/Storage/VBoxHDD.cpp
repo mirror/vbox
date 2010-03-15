@@ -2206,10 +2206,10 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         PVDIMAGE pImageChild = NULL;
         if (nImageFrom < nImageTo)
         {
-            if (pImageTo->pPrev)
+            if (pImageFrom->pPrev)
             {
-                rc = pImageTo->Backend->pfnGetUuid(pImageTo->pPrev->pvBackendData,
-                                                   &Uuid);
+                rc = pImageFrom->pPrev->Backend->pfnGetUuid(pImageFrom->pPrev->pvBackendData,
+                                                            &Uuid);
                 AssertRC(rc);
             }
             else
