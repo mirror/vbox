@@ -16,7 +16,8 @@
 #ifndef ___VBoxVideoWddm_h___
 #define ___VBoxVideoWddm_h___
 
-#define VBOXWDDM_C_DMA_BUFFER_SIZE         0x10000
+/* one page size */
+#define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_ALLOC_LIST_SIZE         0xc00
 #define VBOXWDDM_C_PATH_LOCATION_LIST_SIZE 0xc00
 
@@ -119,11 +120,13 @@ typedef struct VBOXWDDM_CONTEXT
     VBOXWDDM_CONTEXT_TYPE enmType;
     UINT  NodeOrdinal;
     UINT  EngineAffinity;
+    UINT uLastCompletedCmdFenceId;
 } VBOXWDDM_CONTEXT, *PVBOXWDDM_CONTEXT;
 
 typedef struct VBOXWDDM_DMA_PRIVATE_DATA
 {
-    uint8_t Reserved[64];
+    PVBOXWDDM_CONTEXT pContext;
+    uint8_t Reserved[8];
 }VBOXWDDM_DMA_PRIVATE_DATA, *PVBOXWDDM_DMA_PRIVATE_DATA;
 
 typedef struct VBOXWDDM_OPENALLOCATION

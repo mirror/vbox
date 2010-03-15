@@ -85,8 +85,208 @@ typedef struct VBOXVDMAHOST
     HGSMILIST PendingList;
     RTTHREAD hWorkerThread;
     PHGSMIINSTANCE pHgsmi;
+    PVGASTATE pVGAState;
     VBOXVDMAPIPE_CMD_POOL CmdPool;
 } VBOXVDMAHOST, *PVBOXVDMAHOST;
+
+/* to simplify things and to avoid extra backend if modifications we assume the VBOXVDMA_RECTL is the same as VBVACMDHDR */
+AssertCompile(sizeof(VBOXVDMA_RECTL) == sizeof(VBVACMDHDR));
+AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, left) == RT_SIZEOFMEMB(VBVACMDHDR, x));
+AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, top) == RT_SIZEOFMEMB(VBVACMDHDR, y));
+AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, width) == RT_SIZEOFMEMB(VBVACMDHDR, w));
+AssertCompile(RT_SIZEOFMEMB(VBOXVDMA_RECTL, height) == RT_SIZEOFMEMB(VBVACMDHDR, h));
+AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, left) == RT_OFFSETOF(VBVACMDHDR, x));
+AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, top) == RT_OFFSETOF(VBVACMDHDR, y));
+AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, width) == RT_OFFSETOF(VBVACMDHDR, w));
+AssertCompile(RT_OFFSETOF(VBOXVDMA_RECTL, height) == RT_OFFSETOF(VBVACMDHDR, h));
+
+static int vboxVDMANotifyPrimaryUpdate (PVGASTATE pVGAState, unsigned uScreenId, const VBOXVDMA_RECTL * pRectl)
+{
+    pVGAState->pDrv->pfnVBVAUpdateBegin (pVGAState->pDrv, uScreenId);
+
+    /* Updates the rectangle and sends the command to the VRDP server. */
+    pVGAState->pDrv->pfnVBVAUpdateProcess (pVGAState->pDrv, uScreenId,
+            (const PVBVACMDHDR)pRectl /* <- see above AssertCompile's and comments */,
+            sizeof (VBOXVDMA_RECTL));
+
+    pVGAState->pDrv->pfnVBVAUpdateEnd (pVGAState->pDrv, uScreenId, pRectl->left, pRectl->top,
+                                               pRectl->width, pRectl->height);
+
+    return VINF_SUCCESS;
+}
+
+static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma,
+        uint8_t *pvDstSurf, const uint8_t *pvSrcSurf,
+        const PVBOXVDMA_SURF_DESC pDstDesc, const PVBOXVDMA_SURF_DESC pSrcDesc,
+        const VBOXVDMA_RECTL * pDstRectl, const VBOXVDMA_RECTL * pSrcRectl)
+{
+    /* we do not support color conversion */
+    Assert(pDstDesc->format == pSrcDesc->format);
+    /* we do not support stretching */
+    Assert(pDstRectl->height == pSrcRectl->height);
+    Assert(pDstRectl->width == pSrcRectl->width);
+    if (pDstDesc->format != pSrcDesc->format)
+        return VERR_INVALID_FUNCTION;
+    if (pDstDesc->width == pDstRectl->width
+            && pSrcDesc->width == pSrcRectl->width
+            && pSrcDesc->width == pDstDesc->width)
+    {
+        Assert(!pDstRectl->left);
+        Assert(!pSrcRectl->left);
+        uint32_t cbOff = pDstDesc->pitch * pDstRectl->top;
+        uint32_t cbSize = pDstDesc->pitch * pDstRectl->height;
+        memcpy(pvDstSurf + cbOff, pvSrcSurf + cbOff, cbSize);
+    }
+    else
+    {
+        uint32_t offDstStart = pDstDesc->pitch * pDstRectl->top + pDstRectl->left;
+        uint32_t cbDstLine = pDstDesc->bpp * pDstRectl->width;
+        cbDstLine = !(cbDstLine & 7) ? cbDstLine >> 3 : (cbDstLine >> 3) + 1;
+        Assert(cbDstLine <= pDstDesc->pitch);
+        uint32_t cbDstSkip = pDstDesc->pitch - cbDstLine;
+        uint8_t * pvDstStart = pvDstSurf + offDstStart;
+
+        uint32_t offSrcStart = pSrcDesc->pitch * pSrcRectl->top + pSrcRectl->left;
+        uint32_t cbSrcLine = pSrcDesc->bpp * pSrcRectl->width;
+        cbSrcLine = !(cbSrcLine & 7) ? cbSrcLine >> 3 : (cbSrcLine >> 3) + 1;
+        Assert(cbSrcLine <= pSrcDesc->pitch);
+        uint32_t cbSrcSkip = pSrcDesc->pitch - cbSrcLine;
+        const uint8_t * pvSrcStart = pvSrcSurf + offSrcStart;
+
+        Assert(cbDstLine == cbSrcLine);
+
+        for (uint32_t i = 0; ; ++i)
+        {
+            memcpy (pvDstStart, pvSrcStart, cbDstLine);
+            if (i == pDstRectl->height)
+                break;
+            pvDstStart += cbDstSkip;
+            pvSrcStart += cbSrcSkip;
+        }
+    }
+    return VINF_SUCCESS;
+}
+
+/*
+ * @return on success the number of bytes the command contained, otherwise - VERR_xxx error code
+ */
+static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESENT_BLT pBlt, uint32_t cbBuffer)
+{
+    const uint32_t cbBlt = VBOXVDMACMD_BODY_FIELD_OFFSET(uint32_t, VBOXVDMACMD_DMA_PRESENT_BLT, aDstSubRects[pBlt->cDstSubRects]);
+    Assert(cbBlt <= cbBuffer);
+    if (cbBuffer < cbBlt)
+        return VERR_INVALID_FUNCTION;
+
+    /* we do not support stretching for now */
+    Assert(pBlt->srcRectl.width == pBlt->dstRectl.width);
+    Assert(pBlt->srcRectl.height == pBlt->dstRectl.height);
+    if (pBlt->srcRectl.width != pBlt->dstRectl.width)
+        return VERR_INVALID_FUNCTION;
+    if (pBlt->srcRectl.height != pBlt->dstRectl.height)
+        return VERR_INVALID_FUNCTION;
+    Assert(pBlt->cDstSubRects);
+
+    uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
+
+    if (pBlt->cDstSubRects)
+    {
+        VBOXVDMA_RECTL dstRectl, srcRectl;
+        const VBOXVDMA_RECTL *pDstRectl, *pSrcRectl;
+        for (uint32_t i = 0; i < pBlt->cDstSubRects; ++i)
+        {
+            pDstRectl = &pBlt->aDstSubRects[i];
+            if (pBlt->dstRectl.left || pBlt->dstRectl.top)
+            {
+                dstRectl.left = pDstRectl->left + pBlt->dstRectl.left;
+                dstRectl.top = pDstRectl->top + pBlt->dstRectl.top;
+                dstRectl.width = pDstRectl->width;
+                dstRectl.height = pDstRectl->height;
+                pDstRectl = &dstRectl;
+            }
+
+            pSrcRectl = &pBlt->aDstSubRects[i];
+            if (pBlt->srcRectl.left || pBlt->srcRectl.top)
+            {
+                srcRectl.left = pSrcRectl->left + pBlt->srcRectl.left;
+                srcRectl.top = pSrcRectl->top + pBlt->srcRectl.top;
+                srcRectl.width = pSrcRectl->width;
+                srcRectl.height = pSrcRectl->height;
+                pSrcRectl = &srcRectl;
+            }
+
+            int rc = vboxVDMACmdExecBltPerform(pVdma, pvRam + pBlt->offDst, pvRam + pBlt->offSrc,
+                    &pBlt->dstDesc, &pBlt->srcDesc,
+                    pDstRectl,
+                    pSrcRectl);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+                return rc;
+        }
+    }
+    else
+    {
+        int rc = vboxVDMACmdExecBltPerform(pVdma, pvRam + pBlt->offDst, pvRam + pBlt->offSrc,
+                &pBlt->dstDesc, &pBlt->srcDesc,
+                &pBlt->dstRectl,
+                &pBlt->srcRectl);
+        AssertRC(rc);
+        if (!RT_SUCCESS(rc))
+            return rc;
+    }
+
+    int iView = 0;
+    /* @todo: fixme: check if update is needed and get iView */
+    vboxVDMANotifyPrimaryUpdate (pVdma->pVGAState, iView, &pBlt->dstRectl);
+
+    return cbBlt;
+}
+
+static int vboxVDMACmdExec(PVBOXVDMAHOST pVdma, const uint8_t *pvBuffer, uint32_t cbBuffer)
+{
+    do
+    {
+        Assert(pvBuffer);
+        Assert(cbBuffer >= VBOXVDMACMD_HEADER_SIZE());
+
+        if (!pvBuffer)
+            return VERR_INVALID_PARAMETER;
+        if (cbBuffer < VBOXVDMACMD_HEADER_SIZE())
+            return VERR_INVALID_PARAMETER;
+
+        PVBOXVDMACMD pCmd = (PVBOXVDMACMD)pvBuffer;
+        uint32_t cbCmd = 0;
+        switch (pCmd->enmType)
+        {
+            case VBOXVDMACMD_TYPE_DMA_PRESENT_BLT:
+            {
+                const PVBOXVDMACMD_DMA_PRESENT_BLT pBlt = VBOXVDMACMD_BODY(pCmd, VBOXVDMACMD_DMA_PRESENT_BLT);
+                int cbBlt = vboxVDMACmdExecBlt(pVdma, pBlt, cbBuffer);
+                Assert(cbBlt >= 0);
+                Assert((uint32_t)cbBlt <= cbBuffer);
+                if (cbBlt >= 0)
+                {
+                    if (cbBlt == cbBuffer)
+                        return VINF_SUCCESS;
+                    else
+                    {
+                        cbBuffer -= (uint32_t)cbBlt;
+                        pvBuffer -= cbBlt;
+                    }
+                }
+                else
+                    return cbBlt; /* error */
+                break;
+            }
+            default:
+                AssertBreakpoint();
+                return VERR_INVALID_FUNCTION;
+        }
+    } while (1);
+
+    /* we should not be here */
+    AssertBreakpoint();
+    return VERR_INVALID_STATE;
+}
 
 int vboxVDMAPipeConstruct(PVBOXVDMAPIPE pPipe)
 {
@@ -316,15 +516,66 @@ int vboxVDMAPipeDestruct(PVBOXVDMAPIPE pPipe)
     return VINF_SUCCESS;
 }
 
-void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd)
+static void vboxVDMACommandProcess(PVBOXVDMAHOST pVdma, PVBOXVDMACBUF_DR pCmd)
 {
     PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
-    pCmd->rc = VINF_SUCCESS;
-    int rc = VBoxSHGSMICommandComplete (pHgsmi, pCmd);
+    const uint8_t * pvBuf;
+    PGMPAGEMAPLOCK Lock;
+    int rc;
+    bool bReleaseLocked = false;
+
+    do
+    {
+        PPDMDEVINS pDevIns = pVdma->pVGAState->pDevInsR3;
+
+        if (pCmd->fFlags & VBOXVDMACBUF_FLAG_BUF_FOLLOWS_DR)
+            pvBuf = VBOXVDMACBUF_DR_TAIL(pCmd, const uint8_t);
+        else if (pCmd->fFlags & VBOXVDMACBUF_FLAG_BUF_VRAM_OFFSET)
+        {
+            uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
+            pvBuf = pvRam + pCmd->Location.offVramBuf;
+        }
+        else
+        {
+            RTGCPHYS phPage = pCmd->Location.phBuf & ~0xfffULL;
+            uint32_t offset = pCmd->Location.phBuf & 0xfff;
+            Assert(offset + pCmd->cbBuf <= 0x1000);
+            if (offset + pCmd->cbBuf > 0x1000)
+            {
+                /* @todo: more advanced mechanism of command buffer proc is actually needed */
+                rc = VERR_INVALID_PARAMETER;
+                break;
+            }
+
+            const void * pvPageBuf;
+            rc = PDMDevHlpPhysGCPhys2CCPtrReadOnly(pDevIns, phPage, 0, &pvPageBuf, &Lock);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+            {
+                /* @todo: if (rc == VERR_PGM_PHYS_PAGE_RESERVED) -> fall back on using PGMPhysRead ?? */
+                break;
+            }
+
+            pvBuf = (const uint8_t *)pvPageBuf;
+            pvBuf += offset;
+
+            bReleaseLocked = true;
+        }
+
+        rc = vboxVDMACmdExec(pVdma, pvBuf, pCmd->cbBuf);
+        AssertRC(rc);
+
+        if (bReleaseLocked)
+            PDMDevHlpPhysReleasePageMappingLock(pDevIns, &Lock);
+    } while (0);
+
+    pCmd->rc = rc;
+
+    rc = VBoxSHGSMICommandComplete (pHgsmi, pCmd);
     AssertRC(rc);
 }
 
-void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
+static void vboxVDMAControlProcess(PVBOXVDMAHOST pVdma, PVBOXVDMA_CTL pCmd)
 {
     PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
     pCmd->i32Result = VINF_SUCCESS;
@@ -339,7 +590,7 @@ typedef struct
     bool bHasCmd;
 } VBOXVDMACMD_PROCESS_CONTEXT, *PVBOXVDMACMD_PROCESS_CONTEXT;
 
-DECLCALLBACK(bool) vboxVDMACommandProcessCb(PVBOXVDMAPIPE pPipe, void *pvCallback)
+static DECLCALLBACK(bool) vboxVDMACommandProcessCb(PVBOXVDMAPIPE pPipe, void *pvCallback)
 {
     PVBOXVDMACMD_PROCESS_CONTEXT pContext = (PVBOXVDMACMD_PROCESS_CONTEXT)pvCallback;
     struct VBOXVDMAHOST *pVdma = pContext->pVdma;
@@ -358,7 +609,7 @@ DECLCALLBACK(bool) vboxVDMACommandProcessCb(PVBOXVDMAPIPE pPipe, void *pvCallbac
     return false;
 }
 
-DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
+static DECLCALLBACK(int) vboxVDMAWorkerThread(RTTHREAD ThreadSelf, void *pvUser)
 {
     PVBOXVDMAHOST pVdma = (PVBOXVDMAHOST)pvUser;
     PHGSMIINSTANCE pHgsmi = pVdma->pHgsmi;
@@ -420,7 +671,7 @@ int vboxVDMAConstruct(PVGASTATE pVGAState, struct VBOXVDMAHOST **ppVdma, uint32_
     {
         hgsmiListInit(&pVdma->PendingList);
         pVdma->pHgsmi = pVGAState->pHGSMI;
-
+        pVdma->pVGAState = pVGAState;
         rc = vboxVDMAPipeConstruct(&pVdma->Pipe);
         AssertRC(rc);
         if (RT_SUCCESS(rc))

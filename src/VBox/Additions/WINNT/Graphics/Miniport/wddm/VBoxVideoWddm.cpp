@@ -1697,31 +1697,42 @@ DxgkDdiSubmitCommand(
     vboxVDbgBreakF();
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
-    VBOXVDMACMDBUF_INFO BufInfo = {0};
 
     Assert(!pSubmitCommand->DmaBufferSegmentId);
 
     /* the DMA command buffer is located in system RAM, the host will need to pick it from there */
     //BufInfo.fFlags = 0; /* see VBOXVDMACBUF_FLAG_xx */
-    BufInfo.cbBuf =  pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
-    BufInfo.Location.phBuf = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset;
-    BufInfo.u32FenceId = pSubmitCommand->SubmissionFenceId;
-
-    int rc = vboxVdmaCBufSubmit (pDevExt, &pDevExt->u.primary.Vdma, &BufInfo);
-    AssertRC(rc);
-    if (!RT_SUCCESS(rc))
+    Assert(pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset >= sizeof (VBOXWDDM_DMA_PRIVATE_DATA));
+    if (pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset - pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset < sizeof (VBOXWDDM_DMA_PRIVATE_DATA))
     {
-        switch (rc)
-        {
-            case VERR_OUT_OF_RESOURCES:
-                /* @todo: try flushing.. */
-                Status = STATUS_INSUFFICIENT_RESOURCES;
-                break;
-            default:
-                Status = STATUS_UNSUCCESSFUL;
-                break;
-        }
+        drprintf((__FUNCTION__": DmaBufferPrivateDataSubmissionEndOffset (%d) - DmaBufferPrivateDataSubmissionStartOffset (%d) < sizeof (VBOXWDDM_DMA_PRIVATE_DATA) (%d)\n",
+                pSubmitCommand->DmaBufferPrivateDataSubmissionEndOffset,
+                pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset,
+                sizeof (VBOXWDDM_DMA_PRIVATE_DATA)));
+        return STATUS_INVALID_PARAMETER;
     }
+
+    PVBOXWDDM_DMA_PRIVATE_DATA pPrivateData = (PVBOXWDDM_DMA_PRIVATE_DATA)((uint8_t*)pSubmitCommand->pDmaBufferPrivateData + pSubmitCommand->DmaBufferPrivateDataSubmissionStartOffset);
+    Assert(pPrivateData);
+    PVBOXVDMACBUF_DR pDr = vboxVdmaCBufDrCreate (&pDevExt->u.primary.Vdma, 0);
+    if (!pDr)
+    {
+        /* @todo: try flushing.. */
+        drprintf((__FUNCTION__": vboxVdmaCBufDrCreate returned NULL\n"));
+        return STATUS_INSUFFICIENT_RESOURCES;
+    }
+    // vboxVdmaCBufDrCreate zero initializes the pDr
+    //pDr->fFlags = 0;
+    pDr->cbBuf = pSubmitCommand->DmaBufferSubmissionEndOffset - pSubmitCommand->DmaBufferSubmissionStartOffset;
+    pDr->u32FenceId = pSubmitCommand->SubmissionFenceId;
+    pDr->rc = VERR_NOT_IMPLEMENTED;
+    if (pPrivateData)
+        pDr->u64GuestContext = (uint64_t)pPrivateData->pContext;
+//    else    // vboxVdmaCBufDrCreate zero initializes the pDr
+//        pDr->u64GuestContext = NULL;
+    pDr->Location.phBuf = pSubmitCommand->DmaBufferPhysicalAddress.QuadPart + pSubmitCommand->DmaBufferSubmissionStartOffset;
+
+    vboxVdmaCBufDrSubmit (pDevExt, &pDevExt->u.primary.Vdma, pDr);
 
     dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
@@ -1767,12 +1778,12 @@ DxgkDdiBuildPagingBuffer(
     {
         case DXGK_OPERATION_TRANSFER:
         {
-            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
+//            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_TRANSFER);
             break;
         }
         case DXGK_OPERATION_FILL:
         {
-            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_FILL);
+//            pBuildPagingBuffer->pDmaBuffer = (uint8_t*)pBuildPagingBuffer->pDmaBuffer + VBOXVDMACMD_SIZE(VBOXVDMACMD_DMA_BPB_FILL);
             break;
         }
         case DXGK_OPERATION_DISCARD_CONTENT:
@@ -1917,7 +1928,7 @@ DxgkDdiIsSupportedVidPn(
     /* The DxgkDdiIsSupportedVidPn should be made pageable. */
     PAGED_CODE();
 
-    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -2008,7 +2019,7 @@ DxgkDdiIsSupportedVidPn(
     }
     pIsSupportedVidPnArg->IsVidPnSupported = bSupported;
 
-    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
 }
@@ -2082,7 +2093,7 @@ DxgkDdiEnumVidPnCofuncModality(
     /* The DxgkDdiEnumVidPnCofuncModality function should be made pageable. */
     PAGED_CODE();
 
-    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -2128,7 +2139,7 @@ DxgkDdiEnumVidPnCofuncModality(
     else
         drprintf((__FUNCTION__ ": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
 
-    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", status(0x%x), context(0x%x)\n", Status, hAdapter));
 
     return Status;
 }
@@ -2660,6 +2671,17 @@ DxgkDdiPresent(
     PVBOXWDDM_DEVICE pDevice = pContext->pDevice;
     PDEVICE_EXTENSION pDevExt = pDevice->pAdapter;
 
+    Assert(pPresent->DmaBufferPrivateDataSize >= sizeof (VBOXWDDM_DMA_PRIVATE_DATA));
+    if (pPresent->DmaBufferPrivateDataSize < sizeof (VBOXWDDM_DMA_PRIVATE_DATA))
+    {
+        drprintf((__FUNCTION__": Present->DmaBufferPrivateDataSize(%d) < sizeof VBOXWDDM_DMA_PRIVATE_DATA (%d)\n", pPresent->DmaBufferPrivateDataSize , sizeof (VBOXWDDM_DMA_PRIVATE_DATA)));
+        /* @todo: can this actually happen? what status tu return? */
+        return STATUS_INVALID_PARAMETER;
+    }
+
+    PVBOXWDDM_DMA_PRIVATE_DATA pPrivateData = (PVBOXWDDM_DMA_PRIVATE_DATA)pPresent->pDmaBufferPrivateData;
+    pPrivateData->pContext = (PVBOXWDDM_CONTEXT)hContext;
+
     if (pPresent->Flags.Blt)
     {
         Assert(pPresent->Flags.Value == 1); /* only Blt is set, we do not support anything else for now */
@@ -2721,6 +2743,7 @@ DxgkDdiPresent(
                         }
                         Assert(i);
                         pTransfer->cDstSubRects = i;
+                        pPresent->pDmaBufferPrivateData = (uint8_t*)pPresent->pDmaBufferPrivateData + sizeof(VBOXWDDM_DMA_PRIVATE_DATA);
                     }
                     else
                     {
