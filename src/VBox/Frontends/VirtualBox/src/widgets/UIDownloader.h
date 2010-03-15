@@ -1,7 +1,7 @@
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
- * VBoxDownloaderWgt class declaration
+ * UIDownloader class declaration
  */
 
 /*
@@ -20,22 +20,57 @@
  * additional information or have any questions.
  */
 
-#ifndef __VBoxDownloaderWgt_h__
-#define __VBoxDownloaderWgt_h__
+#ifndef __UIDownloader_h__
+#define __UIDownloader_h__
 
-#include "QIWithRetranslateUI.h"
-
-/* Qt includes */
+/* Global includes */
 #include <QUrl>
 #include <QWidget>
 
+/* Global forward declarations */
 class QIHttp;
 class QHttpResponseHeader;
 class QProgressBar;
 class QToolButton;
 
+class UIMiniProcessWidget : public QWidget
+{
+    Q_OBJECT;
+
+public:
+
+    UIMiniProcessWidget(QWidget *pParent = 0);
+
+    void setCancelButtonText(const QString &strText);
+    QString cancelButtonText() const;
+
+    void setCancelButtonToolTip(const QString &strText);
+    QString cancelButtonToolTip() const;
+
+    void setProgressBarToolTip(const QString &strText);
+    QString progressBarToolTip() const;
+
+    void setSource(const QString &strSource);
+    QString source() const;
+
+signals:
+
+    void sigCancel();
+
+public slots:
+
+    virtual void sltProcess(int cDone, int cTotal);
+
+private:
+
+    /* Private member vars */
+    QProgressBar *m_pProgressBar;
+    QToolButton *m_pCancelButton;
+    QString m_strSource;
+};
+
 /**
- * The VBoxDownloaderWgt class is QWidget class re-implementation which embeds
+ * The UIDownloader class is QWidget class re-implementation which embeds
  * into the Dialog's status-bar and allows background http downloading.
  * This class is not supposed to be used itself and made for sub-classing only.
  *
@@ -45,31 +80,40 @@ class QToolButton;
  * Every subclass can determine using or not those two parts and handling
  * the result of those parts itself.
  */
-class VBoxDownloaderWgt : public QIWithRetranslateUI <QWidget>
+class UIDownloader : public QObject
 {
     Q_OBJECT;
 
 public:
 
-    VBoxDownloaderWgt (const QString &aSource, const QString &aTarget);
+    UIDownloader();
 
-    virtual void start();
+    void setSource(const QString &strSource);
+    QString source() const;
+    void setTarget(const QString &strTarget);
+    QString target() const;
+
+    virtual void startDownload() = 0;
+
+signals:
+    void sigDownloadProcess(int cDone, int cTotal);
+    void sigFinished();
 
 protected slots:
 
     /* Acknowledging part */
     virtual void acknowledgeStart();
-    virtual void acknowledgeProcess (const QHttpResponseHeader &aResponse);
-    virtual void acknowledgeFinished (bool aError);
+    virtual void acknowledgeProcess(const QHttpResponseHeader &response);
+    virtual void acknowledgeFinished(bool fError);
 
     /* Downloading part */
     virtual void downloadStart();
-    virtual void downloadProcess (int aDone, int aTotal);
-    virtual void downloadFinished (bool aError);
+    virtual void downloadProcess(int cDone, int cTotal);
+    virtual void downloadFinished(bool fError);
 
     /* Common slots */
     virtual void cancelDownloading();
-    virtual void abortDownload (const QString &aError);
+    virtual void abortDownload(const QString &strError);
     virtual void suicide();
 
 protected:
@@ -80,14 +124,12 @@ protected:
 
     /* In sub-class this function will show the user which error happens
      * in context of downloading file and executing his request. */
-    virtual void warnAboutError (const QString &aError) = 0;
+    virtual void warnAboutError(const QString &strError) = 0;
 
-    QUrl mSource;
-    QString mTarget;
-    QIHttp *mHttp;
-    QProgressBar *mProgressBar;
-    QToolButton *mCancelButton;
+    QUrl m_source;
+    QString m_strTarget;
+    QIHttp *m_pHttp;
 };
 
-#endif // __VBoxDownloaderWgt_h__
+#endif // __UIDownloader_h__
 

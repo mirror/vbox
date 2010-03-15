@@ -30,12 +30,13 @@
 /* Local includes */
 #include "VBoxGlobal.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
+#include "UIDownloaderAdditions.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowNormal.h"
+#include "UISession.h"
 
 #include "QIStatusBar.h"
 #include "QIStateIndicator.h"
@@ -415,6 +416,10 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Add to statusbar: */
     statusBar()->addPermanentWidget(pIndicatorBox, 0);
 
+    /* Add the additions downloader progress bar to the status bar, if a
+     * download is actually running. */
+    prepareAdditionsDownloader();
+
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
     connect(m_pIdleTimer, SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
@@ -424,6 +429,13 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* For the status bar on Cocoa: */
     setUnifiedTitleAndToolBarOnMac(true);
 #endif
+}
+
+void UIMachineWindowNormal::prepareAdditionsDownloader()
+{
+    /* If there is an Additions download running show the process bar. */
+    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
+        statusBar()->addWidget(pDl->processWidget(this), 0);
 }
 
 void UIMachineWindowNormal::prepareConnections()

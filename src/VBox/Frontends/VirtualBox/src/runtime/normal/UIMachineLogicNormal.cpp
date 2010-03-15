@@ -29,11 +29,12 @@
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
 
-#include "UISession.h"
 #include "UIActionsPool.h"
+#include "UIDownloaderAdditions.h"
 #include "UIMachineLogicNormal.h"
-#include "UIMachineWindow.h"
 #include "UIMachineView.h"
+#include "UIMachineWindow.h"
+#include "UISession.h"
 
 #include "VBoxUtils.h"
 
@@ -64,6 +65,10 @@ void UIMachineLogicNormal::initialize()
 
     /* Prepare normal machine window: */
     prepareMachineWindows();
+
+    /* If there is an Additions download running show the process bar. */
+    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
+        pDl->setParentWidget(mainMachineWindow()->machineWindow());
 
 #ifdef Q_WS_MAC
     /* Prepare dock: */

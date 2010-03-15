@@ -356,7 +356,8 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/registration/UIRegistrationWzd.h \
 	src/widgets/VBoxApplianceEditorWgt.h \
 	src/widgets/VBoxBootTable.h \
-	src/widgets/VBoxDownloaderWgt.h \
+	src/widgets/UIDownloader.h \
+	src/widgets/UIDownloaderAdditions.h \
 	src/widgets/VBoxExportApplianceWgt.h \
 	src/widgets/VBoxFilePathSelectorWidget.h \
 	src/widgets/VBoxImportApplianceWgt.h \
@@ -484,7 +485,8 @@ VirtualBox_SOURCES = \
 	src/wizards/registration/UIRegistrationWzd.cpp \
 	src/widgets/VBoxApplianceEditorWgt.cpp \
 	src/widgets/VBoxBootTable.cpp \
-	src/widgets/VBoxDownloaderWgt.cpp \
+	src/widgets/UIDownloader.cpp \
+	src/widgets/UIDownloaderAdditions.cpp \
 	src/widgets/VBoxExportApplianceWgt.cpp \
 	src/widgets/VBoxFilePathSelectorWidget.cpp \
 	src/widgets/VBoxGuestRAMSlider.cpp \

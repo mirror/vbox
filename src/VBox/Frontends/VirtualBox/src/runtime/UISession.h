@@ -36,9 +36,10 @@ class QMenu;
 class QMenuBar;
 
 /* Local forwards */
-class UIMachine;
 class UIActionsPool;
 class UIConsoleCallback;
+class UIDownloaderAdditions;
+class UIMachine;
 class UIMachineMenuBar;
 
 /* CConsole callback event types: */
@@ -164,6 +165,10 @@ signals:
     void sigMachineStarted();
     void sigMouseCapturedStatusChanged();
 
+public slots:
+
+    void sltInstallGuestAdditionsFrom(const QString &strSource);
+
 private slots:
 
     /* Close uisession handler: */
@@ -231,6 +236,8 @@ private:
     bool m_fIsMouseIntegrated : 1;
     bool m_fIsValidPointerShapePresent : 1;
     bool m_fIsHidingHostPointer : 1;
+
+    UIDownloaderAdditions *m_pDownloaderAdditions;
 
     /* Friend classes: */
     friend class UIConsoleCallback;
