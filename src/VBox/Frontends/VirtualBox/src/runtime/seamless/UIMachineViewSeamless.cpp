@@ -266,7 +266,6 @@ void UIMachineViewSeamless::cleanupSeamless()
         session().GetConsole().GetDisplay().SetSeamlessMode(false);
 
         /* Rollback seamless frame-buffer size to normal: */
-        machineWindowWrapper()->machineWindow()->hide();
         UIMachineViewBlocker blocker(this);
         sltPerformGuestResize(guestSizeHint());
         blocker.exec();
