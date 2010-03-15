@@ -204,16 +204,14 @@ void UIMachineLogicFullscreen::prepareMachineWindows()
     setPresentationModeEnabled(true);
 #endif /* Q_WS_MAC */
 
-    /* Update the multi screen layout */
+    /* Update the multi screen layout: */
     m_pScreenLayout->update();
 
     /* Create machine window(s): */
     for (int screenId = 0; screenId < m_pScreenLayout->guestScreenCount(); ++screenId)
         addMachineWindow(UIMachineWindow::create(this, visualStateType(), screenId));
-    /* Order machine window(s): */
-    for (int screenId = m_pScreenLayout->guestScreenCount() - 1; screenId >= 0; --screenId)
-        machineWindows().at(screenId)->machineWindow()->raise();
 
+    /* Connect screen-layout change handler: */
     foreach (UIMachineWindow *pMachineWindow, machineWindows())
         connect(m_pScreenLayout, SIGNAL(screenLayoutChanged()),
                 static_cast<UIMachineWindowFullscreen*>(pMachineWindow), SLOT(sltPlaceOnScreen()));
