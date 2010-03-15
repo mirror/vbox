@@ -90,6 +90,7 @@ private:
     void prepareConsoleConnections();
     void prepareMenu();
     void prepareStatusBar();
+    void prepareAdditionsDownloader();
     void prepareConnections();
     void prepareMachineView();
     void loadWindowSettings();

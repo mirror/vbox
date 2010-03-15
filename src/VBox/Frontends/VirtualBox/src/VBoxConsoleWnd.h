@@ -106,8 +106,6 @@ public:
 
     void popupMainMenu (bool aCenter);
 
-    void installGuestAdditionsFrom (const QString &aSource);
-
     void setMask (const QRegion &aRegion);
     void clearMask();
 
@@ -185,6 +183,8 @@ private slots:
     void changeDockIconUpdate (const VBoxChangeDockIconUpdateEvent &aEvent);
     void changePresentationMode (const VBoxChangePresentationModeEvent &aEvent);
     void processGlobalSettingChange (const char *aPublicName, const char *aName);
+
+    void installGuestAdditionsFrom (const QString &aSource);
 
 #ifdef RT_OS_DARWIN /* Stupid moc doesn't recognize Q_WS_MAC */
     void sltDockPreviewModeChanged(QAction *pAction);

@@ -51,7 +51,7 @@
 #include "VBoxConsoleWnd.h"
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
-#include "VBoxDownloaderWgt.h"
+#include "UIDownloaderAdditions.h"
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxMiniToolBar.h"
@@ -101,104 +101,6 @@ public:
         : QEvent ((QEvent::Type) Type), mTip (aTip) {}
 
     QString mTip;
-};
-
-class VBoxAdditionsDownloader : public VBoxDownloaderWgt
-{
-    Q_OBJECT;
-
-public:
-
-    VBoxAdditionsDownloader (const QString &aSource, const QString &aTarget, QAction *aAction)
-        : VBoxDownloaderWgt (aSource, aTarget)
-        , mAction (aAction)
-    {
-        mAction->setEnabled (false);
-        retranslateUi();
-    }
-
-    void start()
-    {
-        acknowledgeStart();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        mCancelButton->setText (tr ("Cancel"));
-        mProgressBar->setToolTip (tr ("Downloading the VirtualBox Guest Additions "
-                                      "CD image from <nobr><b>%1</b>...</nobr>")
-                                      .arg (mSource.toString()));
-        mCancelButton->setToolTip (tr ("Cancel the VirtualBox Guest "
-                                       "Additions CD image download"));
-    }
-
-private slots:
-
-    void downloadFinished (bool aError)
-    {
-        if (aError)
-            VBoxDownloaderWgt::downloadFinished (aError);
-        else
-        {
-            QByteArray receivedData (mHttp->readAll());
-            /* Serialize the incoming buffer into the .iso image. */
-            while (true)
-            {
-                QFile file (mTarget);
-                if (file.open (QIODevice::WriteOnly))
-                {
-                    file.write (receivedData);
-                    file.close();
-                    if (vboxProblem().confirmMountAdditions (mSource.toString(),
-                        QDir::toNativeSeparators (mTarget)))
-                        vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
-                    QTimer::singleShot (0, this, SLOT (suicide()));
-                    break;
-                }
-                else
-                {
-                    vboxProblem().message (window(), VBoxProblemReporter::Error,
-                        tr ("<p>Failed to save the downloaded file as "
-                            "<nobr><b>%1</b>.</nobr></p>")
-                        .arg (QDir::toNativeSeparators (mTarget)));
-                }
-
-                QString target = QIFileDialog::getExistingDirectory (
-                    QFileInfo (mTarget).absolutePath(), this,
-                    tr ("Select folder to save Guest Additions image to"), true);
-                if (target.isNull())
-                    QTimer::singleShot (0, this, SLOT (suicide()));
-                else
-                    mTarget = QDir (target).absoluteFilePath (QFileInfo (mTarget).fileName());
-            }
-        }
-    }
-
-    void suicide()
-    {
-        QStatusBar *sb = qobject_cast <QStatusBar*> (parent());
-        Assert (sb);
-        sb->removeWidget (this);
-        mAction->setEnabled (true);
-        VBoxDownloaderWgt::suicide();
-    }
-
-private:
-
-    bool confirmDownload()
-    {
-        return vboxProblem().confirmDownloadAdditions (mSource.toString(),
-            mHttp->lastResponse().contentLength());
-    }
-
-    void warnAboutError (const QString &aError)
-    {
-        return vboxProblem().cannotDownloadGuestAdditions (mSource.toString(), aError);
-    }
-
-    QAction *mAction;
 };
 
 struct MountTarget
@@ -1122,87 +1024,6 @@ void VBoxConsoleWnd::popupMainMenu (bool aCenter)
 #ifdef Q_WS_WIN
     mMainMenu->activateWindow();
 #endif
-}
-
-void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
-{
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString uuid;
-
-    CMedium image = vbox.FindDVDImage (aSource);
-    if (image.isNull())
-    {
-        image = vbox.OpenDVDImage (aSource, uuid);
-        if (vbox.isOk())
-            uuid = image.GetId();
-    }
-    else
-        uuid = image.GetId();
-
-    if (!vbox.isOk())
-        return vboxProblem().cannotOpenMedium (this, vbox, VBoxDefs::MediumType_DVD, aSource);
-
-    Assert (!uuid.isNull());
-    CMachine m = mSession.GetMachine();
-
-    QString ctrName;
-    LONG ctrPort = -1, ctrDevice = -1;
-    /* Searching for the first suitable slot */
-    {
-        CStorageControllerVector controllers = m.GetStorageControllers();
-        int i = 0;
-        while (i < controllers.size() && ctrName.isNull())
-        {
-            CStorageController controller = controllers [i];
-            CMediumAttachmentVector attachments = m.GetMediumAttachmentsOfController (controller.GetName());
-            int j = 0;
-            while (j < attachments.size() && ctrName.isNull())
-            {
-                CMediumAttachment attachment = attachments [j];
-                if (attachment.GetType() == KDeviceType_DVD)
-                {
-                    ctrName = controller.GetName();
-                    ctrPort = attachment.GetPort();
-                    ctrDevice = attachment.GetDevice();
-                }
-                ++ j;
-            }
-            ++ i;
-        }
-    }
-
-    if (!ctrName.isNull())
-    {
-        bool isMounted = false;
-
-        /* Mount medium to the predefined port/device */
-        m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, false /* force */);
-        if (m.isOk())
-            isMounted = true;
-        else
-        {
-            /* Ask for force mounting */
-            if (vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
-            {
-                /* Force mount medium to the predefined port/device */
-                m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, true /* force */);
-                if (m.isOk())
-                    isMounted = true;
-                else
-                    vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, false /* retry? */);
-            }
-        }
-
-        /* Save medium mounted at runtime */
-        if (isMounted && mIsAutoSaveMedia)
-        {
-            m.SaveSettings();
-            if (!m.isOk())
-                vboxProblem().cannotSaveMachineSettings (m);
-        }
-    }
-    else
-        vboxProblem().cannotMountGuestAdditions (m.GetName());
 }
 
 void VBoxConsoleWnd::setMask (const QRegion &aRegion)
@@ -2260,10 +2081,20 @@ void VBoxConsoleWnd::devicesInstallGuestAdditions()
         QString target = QDir (vboxGlobal().virtualBox().GetHomeFolder())
                                .absoluteFilePath (name);
 
-        VBoxAdditionsDownloader *dl =
-            new VBoxAdditionsDownloader (source, target, mDevicesInstallGuestToolsAction);
-        statusBar()->addWidget (dl, 0);
-        dl->start();
+        UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
+        /* Configure the additions downloader. */
+        pDl->setSource(source);
+        pDl->setTarget(target);
+        pDl->setAction(mDevicesInstallGuestToolsAction);
+        pDl->setParentWidget(this);
+        /* After the download is finished the user may like to install the
+         * additions.*/
+        connect(pDl, SIGNAL(downloadFinished(const QString&)),
+                this, SLOT(installGuestAdditionsFrom(const QString&)));
+        /* Add the progress bar widget to the statusbar. */
+        statusBar()->addWidget(pDl->processWidget(this), 0);
+        /* Start the download: */
+        pDl->startDownload();
     }
 }
 
@@ -2955,6 +2786,87 @@ void VBoxConsoleWnd::changePresentationMode (const VBoxChangePresentationModeEve
 void VBoxConsoleWnd::processGlobalSettingChange (const char * /* aPublicName */, const char * /* aName */)
 {
     mHostkeyName->setText (QIHotKeyEdit::keyName (vboxGlobal().settings().hostKey()));
+}
+
+void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
+{
+    CVirtualBox vbox = vboxGlobal().virtualBox();
+    QString uuid;
+
+    CMedium image = vbox.FindDVDImage (aSource);
+    if (image.isNull())
+    {
+        image = vbox.OpenDVDImage (aSource, uuid);
+        if (vbox.isOk())
+            uuid = image.GetId();
+    }
+    else
+        uuid = image.GetId();
+
+    if (!vbox.isOk())
+        return vboxProblem().cannotOpenMedium (this, vbox, VBoxDefs::MediumType_DVD, aSource);
+
+    Assert (!uuid.isNull());
+    CMachine m = mSession.GetMachine();
+
+    QString ctrName;
+    LONG ctrPort = -1, ctrDevice = -1;
+    /* Searching for the first suitable slot */
+    {
+        CStorageControllerVector controllers = m.GetStorageControllers();
+        int i = 0;
+        while (i < controllers.size() && ctrName.isNull())
+        {
+            CStorageController controller = controllers [i];
+            CMediumAttachmentVector attachments = m.GetMediumAttachmentsOfController (controller.GetName());
+            int j = 0;
+            while (j < attachments.size() && ctrName.isNull())
+            {
+                CMediumAttachment attachment = attachments [j];
+                if (attachment.GetType() == KDeviceType_DVD)
+                {
+                    ctrName = controller.GetName();
+                    ctrPort = attachment.GetPort();
+                    ctrDevice = attachment.GetDevice();
+                }
+                ++ j;
+            }
+            ++ i;
+        }
+    }
+
+    if (!ctrName.isNull())
+    {
+        bool isMounted = false;
+
+        /* Mount medium to the predefined port/device */
+        m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, false /* force */);
+        if (m.isOk())
+            isMounted = true;
+        else
+        {
+            /* Ask for force mounting */
+            if (vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
+            {
+                /* Force mount medium to the predefined port/device */
+                m.MountMedium (ctrName, ctrPort, ctrDevice, uuid, true /* force */);
+                if (m.isOk())
+                    isMounted = true;
+                else
+                    vboxProblem().cannotRemountMedium (this, m, VBoxMedium (image, VBoxDefs::MediumType_DVD), true /* mount? */, false /* retry? */);
+            }
+        }
+
+        /* Save medium mounted at runtime */
+        if (isMounted && mIsAutoSaveMedia)
+        {
+            m.SaveSettings();
+            if (!m.isOk())
+                vboxProblem().cannotSaveMachineSettings (m);
+        }
+    }
+    else
+        vboxProblem().cannotMountGuestAdditions (m.GetName());
 }
 
 /**

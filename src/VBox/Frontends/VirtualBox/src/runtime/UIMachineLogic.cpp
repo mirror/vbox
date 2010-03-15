@@ -36,11 +36,10 @@
 #include "VBoxVMInformationDlg.h"
 #include "VBoxVMSettingsNetwork.h"
 #include "VBoxVMSettingsSF.h"
+#include "UIDownloaderAdditions.h"
 #ifdef Q_WS_MAC
 # include "DockIconPreview.h"
 #endif /* Q_WS_MAC */
-
-//#include "VBoxDownloaderWgt.h"
 
 #include "QIFileDialog.h"
 //#include "QIHttp.h"
@@ -1475,9 +1474,9 @@ void UIMachineLogic::sltInstallGuestAdditions()
 
     /* Check the standard image locations */
     if (QFile::exists(strSrc1))
-        return installGuestAdditionsFrom(strSrc1);
+        return uisession()->sltInstallGuestAdditionsFrom(strSrc1);
     else if (QFile::exists(strSrc2))
-        return installGuestAdditionsFrom(strSrc2);
+        return uisession()->sltInstallGuestAdditionsFrom(strSrc2);
 
     /* Check for the already registered image */
     CVirtualBox vbox = vboxGlobal().virtualBox();
@@ -1490,10 +1489,9 @@ void UIMachineLogic::sltInstallGuestAdditions()
         /* Compare the name part ignoring the file case */
         QString fn = QFileInfo(path).fileName();
         if (RTPathCompare(name.toUtf8().constData(), fn.toUtf8().constData()) == 0)
-            return installGuestAdditionsFrom(path);
+            return uisession()->sltInstallGuestAdditionsFrom(path);
     }
 
-#if 0 // TODO: Rework additions downloader logic...
     /* Download the required image */
     int result = vboxProblem().cannotFindGuestAdditions(QDir::toNativeSeparators(strSrc1), QDir::toNativeSeparators(strSrc2));
     if (result == QIMessageBox::Yes)
@@ -1501,11 +1499,22 @@ void UIMachineLogic::sltInstallGuestAdditions()
         QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + name;
         QString target = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(name);
 
-        //UIAdditionsDownloader *pdl = new UIAdditionsDownloader(source, target, mDevicesInstallGuestToolsAction);
-        //machineWindowWrapper()->statusBar()->addWidget(pdl, 0);
-        //pdl->start();
+        UIDownloaderAdditions *pDl = UIDownloaderAdditions::create();
+        /* Configure the additions downloader. */
+        pDl->setSource(source);
+        pDl->setTarget(target);
+        pDl->setAction(actionsPool()->action(UIActionIndex_Simple_InstallGuestTools));
+        pDl->setParentWidget(mainMachineWindow()->machineWindow());
+        /* After the download is finished the user may like to install the
+         * additions.*/
+        connect(pDl, SIGNAL(downloadFinished(const QString&)),
+                uisession(), SLOT(sltInstallGuestAdditionsFrom(const QString&)));
+        /* Some of the modes may show additional info of the download progress. */
+        foreach (UIMachineWindow *pWindow, machineWindows())
+            pWindow->prepareAdditionsDownloader();
+        /* Start the download: */
+        pDl->startDownload();
     }
-#endif
 }
 
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -1596,84 +1605,6 @@ void UIMachineLogic::sltChangeDockIconUpdate(const VBoxChangeDockIconUpdateEvent
     }
 }
 #endif /* Q_WS_MAC */
-
-void UIMachineLogic::installGuestAdditionsFrom(const QString &strSource)
-{
-    CMachine machine = session().GetMachine();
-    CVirtualBox vbox = vboxGlobal().virtualBox();
-    QString strUuid;
-
-    CMedium image = vbox.FindDVDImage(strSource);
-    if (image.isNull())
-    {
-        image = vbox.OpenDVDImage(strSource, strUuid);
-        if (vbox.isOk())
-            strUuid = image.GetId();
-    }
-    else
-        strUuid = image.GetId();
-
-    if (!vbox.isOk())
-    {
-        vboxProblem().cannotOpenMedium(0, vbox, VBoxDefs::MediumType_DVD, strSource);
-        return;
-    }
-
-    AssertMsg(!strUuid.isNull(), ("Guest Additions image UUID should be valid!\n"));
-
-    QString strCntName;
-    LONG iCntPort = -1, iCntDevice = -1;
-    /* Searching for the first suitable slot */
-    {
-        CStorageControllerVector controllers = machine.GetStorageControllers();
-        int i = 0;
-        while (i < controllers.size() && strCntName.isNull())
-        {
-            CStorageController controller = controllers[i];
-            CMediumAttachmentVector attachments = machine.GetMediumAttachmentsOfController(controller.GetName());
-            int j = 0;
-            while (j < attachments.size() && strCntName.isNull())
-            {
-                CMediumAttachment attachment = attachments[j];
-                if (attachment.GetType() == KDeviceType_DVD)
-                {
-                    strCntName = controller.GetName();
-                    iCntPort = attachment.GetPort();
-                    iCntDevice = attachment.GetDevice();
-                }
-                ++ j;
-            }
-            ++ i;
-        }
-    }
-
-    if (!strCntName.isNull())
-    {
-        bool fIsMounted = false;
-
-        /* Mount medium to the predefined port/device */
-        machine.MountMedium(strCntName, iCntPort, iCntDevice, strUuid, false /* force */);
-        if (machine.isOk())
-            fIsMounted = true;
-        else
-        {
-            /* Ask for force mounting */
-            if (vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                  true /* mount? */, true /* retry? */) == QIMessageBox::Ok)
-            {
-                /* Force mount medium to the predefined port/device */
-                machine.MountMedium(strCntName, iCntPort, iCntDevice, strUuid, true /* force */);
-                if (machine.isOk())
-                    fIsMounted = true;
-                else
-                    vboxProblem().cannotRemountMedium(0, machine, VBoxMedium(image, VBoxDefs::MediumType_DVD),
-                                                      true /* mount? */, false /* retry? */);
-            }
-        }
-    }
-    else
-        vboxProblem().cannotMountGuestAdditions(machine.GetName());
-}
 
 int UIMachineLogic::searchMaxSnapshotIndex(const CMachine &machine,
                                            const CSnapshot &snapshot,

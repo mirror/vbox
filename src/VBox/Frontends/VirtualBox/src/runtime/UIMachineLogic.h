@@ -176,7 +176,6 @@ private slots:
 private:
 
     /* Utility functions: */
-    void installGuestAdditionsFrom(const QString &strSource);
     static int searchMaxSnapshotIndex(const CMachine &machine,
                                       const CSnapshot &snapshot,
                                       const QString &strNameTemplate);

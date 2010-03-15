@@ -358,6 +358,10 @@ void UIMachineWindow::prepareConsoleConnections()
     QObject::connect(uisession(), SIGNAL(sigMachineStateChange()), machineWindow(), SLOT(sltMachineStateChanged()));
 }
 
+void UIMachineWindow::prepareAdditionsDownloader()
+{
+}
+
 void UIMachineWindow::prepareMachineViewContainer()
 {
     /* Create view container.
