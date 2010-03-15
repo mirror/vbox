@@ -478,7 +478,7 @@ remove_drivers()
     nmaskfile=/etc/netmasks
     nmaskbackupfile=$nmaskfile.vbox
     if test -f "$nmaskfile"; then
-        sed -e '/VirtualBox_SectionStart_DoNotEdit/,/VirtualBox_SectionEnd_DoNotEdit/d' $nmaskfile > $nmaskbackupfile
+        sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
         mv -f $nmaskbackupfile $nmaskfile
     fi
 
@@ -595,7 +595,7 @@ postinstall()
                 # add all vboxnet instances as static to nwam
                 inst=0
                 networkn=56
-                while test $inst -ne $MOD_VBOXNET_INST; do
+                while test $inst -ne 1; do
                     echo "vboxnet$inst	static 192.168.$networkn.1" >> $nwambackupfile
                     inst=`expr $inst + 1`
                     networkn=`expr $networkn + 1`
@@ -611,11 +611,18 @@ postinstall()
                 # add the netmask to stay persistent across host reboots
                 nmaskfile=/etc/netmasks
                 nmaskbackupfile=$nmaskfile.vbox
+                networkn=56
                 if test -f $nmaskfile; then
-                    sed -e '/VirtualBox_SectionStart_DoNotEdit/,/VirtualBox_SectionEnd_DoNotEdit/d' $nmaskfile > $nmaskbackupfile
-                    echo "VirtualBox_SectionStart_DoNotEdit" >> $nmaskbackupfile
-                    echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
-                    echo "VirtualBox_SectionEnd_DoNotEdit" >> $nmaskbackupfile
+                    sed -e '/#VirtualBox_SectionStart,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
+                    echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
+                    inst=0
+                    networkn=56
+                    while test $inst -ne 1; do
+                        echo "192.168.$networkn.0 255.255.255.0" >> $nmaskbackupfile
+                        inst=`expr $inst + 1`
+                        networkn=`expr $networkn + 1`
+                    done
+                    echo "#VirtualBox_SectionEnd" >> $nmaskbackupfile
                     mv -f $nmaskbackupfile $nmaskfile
                 fi
             else
