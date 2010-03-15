@@ -23,9 +23,11 @@
 #ifndef __UIMachineWindowSeamless_h__
 #define __UIMachineWindowSeamless_h__
 
+/* Global includes */
+#include <QMainWindow>
+
 /* Local includes */
 #include "QIWithRetranslateUI.h"
-#include "QIMainDialog.h"
 #include "UIMachineWindow.h"
 #ifdef Q_WS_X11
 # include <X11/Xlib.h>
@@ -34,7 +36,7 @@
 /* Local forwards */
 class VBoxMiniToolBar;
 
-class UIMachineWindowSeamless : public QIWithRetranslateUI2<QIMainDialog>, public UIMachineWindow
+class UIMachineWindowSeamless : public QIWithRetranslateUI2<QMainWindow>, public UIMachineWindow
 {
     Q_OBJECT;
 

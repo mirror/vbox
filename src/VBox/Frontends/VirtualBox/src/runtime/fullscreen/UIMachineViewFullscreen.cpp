@@ -24,6 +24,7 @@
 /* Global includes */
 #include <QApplication>
 #include <QDesktopWidget>
+#include <QMainWindow>
 #include <QTimer>
 #ifdef Q_WS_MAC
 #include <QMenuBar>
@@ -39,7 +40,6 @@
 #include "UIMachineWindow.h"
 #include "UIFrameBuffer.h"
 #include "UIMachineViewFullscreen.h"
-#include "QIMainDialog.h"
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
                                                  , VBoxDefs::RenderMode renderMode
@@ -94,8 +94,8 @@ void UIMachineViewFullscreen::sltPerformGuestResize(const QSize &toSize)
     if (m_bIsGuestAutoresizeEnabled && uisession()->isGuestSupportsGraphics())
     {
         /* Get machine window: */
-        QIMainDialog *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                       qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+        QMainWindow *pMachineWindow = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                                      qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
         /* If this slot is invoked directly then use the passed size otherwise get
          * the available size for the guest display. We assume here that centralWidget()
@@ -171,8 +171,8 @@ bool UIMachineViewFullscreen::event(QEvent *pEvent)
 bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
 {
     /* Who are we watching? */
-    QIMainDialog *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
-                                qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow()) : 0;
+    QMainWindow *pMainDialog = machineWindowWrapper() && machineWindowWrapper()->machineWindow() ?
+                               qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow()) : 0;
 
     if (pWatched != 0 && pWatched == pMainDialog)
     {
@@ -219,7 +219,7 @@ void UIMachineViewFullscreen::prepareFilters()
 
 #ifdef Q_WS_MAC // TODO: Is it really needed? See UIMachineViewSeamless::eventFilter(...);
     /* Menu bar filter: */
-    qobject_cast<QIMainDialog*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
+    qobject_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->menuBar()->installEventFilter(this);
 #endif
 }
 
