@@ -691,7 +691,8 @@ bool UINewVMWzdPage5::constructMachine()
     if (type.GetRecommendedUsbHid())
     {
         m_Machine.SetKeyboardHidType(KKeyboardHidType_USBKeyboard);
-        m_Machine.SetPointingHidType(KPointingHidType_USBMouse);
+        m_Machine.SetPointingHidType(type.GetRecommendedUsbTablet()  ? 
+                                     KPointingHidType_USBTablet : KPointingHidType_USBMouse);
         if (!usbController.isNull())
             usbController.SetEnabled(true);
     }

@@ -8417,6 +8417,10 @@
       <desc>Returns @c true if using HPET is recommended for this OS type.</desc>
     </attribute>
 
+    <attribute name="recommendedUsbTablet" type="boolean" readonly="yes">
+      <desc>Returns @c true if using USB Tablet recommended (only relevant if using USB HIDs).</desc>
+    </attribute>
+
   </interface>
 
   <interface
