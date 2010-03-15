@@ -611,7 +611,6 @@ postinstall()
                 # add the netmask to stay persistent across host reboots
                 nmaskfile=/etc/netmasks
                 nmaskbackupfile=$nmaskfile.vbox
-                networkn=56
                 if test -f $nmaskfile; then
                     sed -e '/#VirtualBox_SectionStart,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
                     echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
