@@ -148,14 +148,19 @@ char *XmlError::Format(xmlErrorPtr aErr)
     return finalMsg;
 }
 
-EIPRTFailure::EIPRTFailure(int aRC)
+EIPRTFailure::EIPRTFailure(int aRC, const char *pcszContext, ...)
     : RuntimeError(NULL),
       mRC(aRC)
 {
-    char *newMsg = NULL;
-    RTStrAPrintf(&newMsg, "Runtime error: %d (%s)", aRC, RTErrGetShort(aRC));
+    char *pszContext2;
+    va_list args;
+    va_start(args, pcszContext);
+    RTStrAPrintfV(&pszContext2, pcszContext, args);
+    char *newMsg;
+    RTStrAPrintf(&newMsg, "%s: %d (%s)", pszContext2, aRC, RTErrGetShort(aRC));
     setWhat(newMsg);
     RTStrFree(newMsg);
+    RTStrFree(pszContext2);
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -199,7 +204,7 @@ File::File(Mode aMode, const char *aFileName)
 
     int vrc = RTFileOpen(&m->handle, aFileName, flags);
     if (RT_FAILURE(vrc))
-        throw EIPRTFailure(vrc);
+        throw EIPRTFailure(vrc, "Runtime error opening '%s' for reading", aFileName);
 
     m->opened = true;
 }
@@ -233,14 +238,14 @@ const char* File::uri() const
 uint64_t File::pos() const
 {
     uint64_t p = 0;
-    int vrc = RTFileSeek (m->handle, 0, RTFILE_SEEK_CURRENT, &p);
-    if (RT_SUCCESS (vrc))
+    int vrc = RTFileSeek(m->handle, 0, RTFILE_SEEK_CURRENT, &p);
+    if (RT_SUCCESS(vrc))
         return p;
 
-    throw EIPRTFailure (vrc);
+    throw EIPRTFailure(vrc, "Runtime error seeking in file '%s'", m->strFileName.c_str());
 }
 
-void File::setPos (uint64_t aPos)
+void File::setPos(uint64_t aPos)
 {
     uint64_t p = 0;
     unsigned method = RTFILE_SEEK_BEGIN;
@@ -249,37 +254,37 @@ void File::setPos (uint64_t aPos)
     /* check if we overflow int64_t and move to INT64_MAX first */
     if (((int64_t) aPos) < 0)
     {
-        vrc = RTFileSeek (m->handle, INT64_MAX, method, &p);
-        aPos -= (uint64_t) INT64_MAX;
+        vrc = RTFileSeek(m->handle, INT64_MAX, method, &p);
+        aPos -= (uint64_t)INT64_MAX;
         method = RTFILE_SEEK_CURRENT;
     }
     /* seek the rest */
-    if (RT_SUCCESS (vrc))
-        vrc = RTFileSeek (m->handle, (int64_t) aPos, method, &p);
-    if (RT_SUCCESS (vrc))
+    if (RT_SUCCESS(vrc))
+        vrc = RTFileSeek(m->handle, (int64_t) aPos, method, &p);
+    if (RT_SUCCESS(vrc))
         return;
 
-    throw EIPRTFailure (vrc);
+    throw EIPRTFailure(vrc, "Runtime error seeking in file '%s'", m->strFileName.c_str());
 }
 
-int File::read (char *aBuf, int aLen)
+int File::read(char *aBuf, int aLen)
 {
     size_t len = aLen;
-    int vrc = RTFileRead (m->handle, aBuf, len, &len);
-    if (RT_SUCCESS (vrc))
+    int vrc = RTFileRead(m->handle, aBuf, len, &len);
+    if (RT_SUCCESS(vrc))
         return (int)len;
 
-    throw EIPRTFailure (vrc);
+    throw EIPRTFailure(vrc, "Runtime error reading from file '%s'", m->strFileName.c_str());
 }
 
-int File::write (const char *aBuf, int aLen)
+int File::write(const char *aBuf, int aLen)
 {
     size_t len = aLen;
     int vrc = RTFileWrite (m->handle, aBuf, len, &len);
     if (RT_SUCCESS (vrc))
         return (int)len;
 
-    throw EIPRTFailure (vrc);
+    throw EIPRTFailure(vrc, "Runtime error writing to file '%s'", m->strFileName.c_str());
 
     return -1 /* failure */;
 }
@@ -290,7 +295,7 @@ void File::truncate()
     if (RT_SUCCESS (vrc))
         return;
 
-    throw EIPRTFailure (vrc);
+    throw EIPRTFailure(vrc, "Runtime error truncating file '%s'", m->strFileName.c_str());
 }
 
 ////////////////////////////////////////////////////////////////////////////////
