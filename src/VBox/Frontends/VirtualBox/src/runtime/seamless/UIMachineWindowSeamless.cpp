@@ -36,7 +36,6 @@
 #include "UIMachineLogicSeamless.h"
 #include "UIMachineView.h"
 #include "UIMachineWindowSeamless.h"
-#include "UIMachineWindowSeamless.h"
 #include "UISession.h"
 
 #ifdef Q_WS_MAC
