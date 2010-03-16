@@ -136,9 +136,9 @@ void UIMachineViewFullscreen::sltAdditionsStateChanged()
 
     /* Check if we should resize guest to fullscreen, all the
      * required features will be tested in sltPerformGuestResize(...): */
-    if ((int)frameBuffer()->width() != availableGeometry().size().width() ||
-        (int)frameBuffer()->height() != availableGeometry().size().height())
-        sltPerformGuestResize(availableGeometry().size());
+    if ((int)frameBuffer()->width() != workingArea().size().width() ||
+        (int)frameBuffer()->height() != workingArea().size().height())
+        sltPerformGuestResize(workingArea().size());
 }
 
 void UIMachineViewFullscreen::sltDesktopResized()
@@ -197,7 +197,7 @@ bool UIMachineViewFullscreen::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Send guest-resize hint only if top window resizing to required dimension: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                if (pResizeEvent->size() != availableGeometry().size())
+                if (pResizeEvent->size() != workingArea().size())
                     break;
 
                 /* Set the "guest needs to resize" hint.
@@ -289,7 +289,7 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
     }
 }
 
-QRect UIMachineViewFullscreen::availableGeometry()
+QRect UIMachineViewFullscreen::workingArea()
 {
     return QApplication::desktop()->screenGeometry(this);
 }
@@ -301,7 +301,7 @@ void UIMachineViewFullscreen::calculateDesktopGeometry()
     /* If we are not doing automatic geometry calculation then there is nothing to do: */
     if (desktopGeometryType() == DesktopGeo_Automatic)
     {
-        m_desktopGeometry = QSize(availableGeometry().width(), availableGeometry().height());
+        m_desktopGeometry = QSize(workingArea().width(), workingArea().height());
     }
 }
 
