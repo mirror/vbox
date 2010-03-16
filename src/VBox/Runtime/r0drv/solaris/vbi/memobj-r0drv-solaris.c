@@ -80,12 +80,10 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
             break;
 
         case RTR0MEMOBJTYPE_PHYS_NC:
-            LogRel(("MemObjNativeFree virtAddr=%p physAddr=%#x cb=%u\n", pMemSolaris->Core.pv, vbi_va_to_pa(pMemSolaris->Core.pv), (unsigned)pMemSolaris->Core.cb));
 #if 0
             vbi_phys_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
-#else
-            ddi_umem_free(pMemSolaris->Cookie);
 #endif
+            ddi_umem_free(pMemSolaris->Cookie);
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
@@ -179,11 +177,14 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
 
     /* Allocate physically non-contiguous page-aligned memory. */
     uint64_t physAddr = PhysHighest;
+
 #if 0
+    /*
+     * The contig_alloc() way of allocating NC pages is broken or does not match our semantics. Refer #4716 for details.
+     */
     caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
-#else
-    caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
 #endif
+    caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
     if (RT_UNLIKELY(virtAddr == NULL))
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
@@ -195,7 +196,6 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     pMemSolaris->Core.u.Phys.fAllocated = true;
     pMemSolaris->pvHandle = NULL;
     *ppMem = &pMemSolaris->Core;
-    LogRel(("ddi_umem_alloc virtAddr=%p physAddr=%#x cb=%u\n", virtAddr, physAddr, (unsigned)cb));
     return VINF_SUCCESS;
 #else
     /** @todo rtR0MemObjNativeAllocPhysNC / solaris */
