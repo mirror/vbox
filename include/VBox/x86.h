@@ -827,6 +827,12 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** BIOS update signature (microcode). */
 #define MSR_IA32_BIOS_SIGN_ID               0x8B
 
+/** General performance counters. */
+#define MSR_IA32_PMC0                       0xC1
+#define MSR_IA32_PMC1                       0xC2
+#define MSR_IA32_PMC2                       0xC3
+#define MSR_IA32_PMC3                       0xC4
+
 /** Nehalem power control. */
 #define MSR_IA32_PLATFORM_INFO              0xCE
 
