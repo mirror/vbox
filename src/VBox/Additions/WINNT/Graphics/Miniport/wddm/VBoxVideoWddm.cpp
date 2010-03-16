@@ -1309,6 +1309,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                         if (pAllocation)
                         {
                             pAllocation->enmType = VBOXWDDM_ALLOC_TYPE_STD_SHAREDPRIMARYSURFACE;
+                            pAllocation->offVram = VBOXVIDEOOFFSET_VOID;
                             pAllocation->u.SurfInfo = pAllocInfo->u.SurfInfo;
                             PVBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE pAlloc = VBOXWDDM_ALLOCATION_BODY(pAllocation, VBOXWDDM_ALLOCATION_SHAREDPRIMARYSURFACE);
                             PVBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE pAllocI = VBOXWDDM_ALLOCINFO_BODY(pAllocInfo, VBOXWDDM_ALLOCINFO_SHAREDPRIMARYSURFACE);
@@ -1364,6 +1365,7 @@ NTSTATUS vboxWddmCreateAllocation(PDEVICE_EXTENSION pDevExt, DXGK_ALLOCATIONINFO
                     if (pAllocation)
                     {
                         pAllocation->enmType = pAllocInfo->enmType;
+                        pAllocation->offVram = VBOXVIDEOOFFSET_VOID;
                         pAllocation->u.SurfInfo = pAllocInfo->u.SurfInfo;
 
                         pAllocationInfo->pPrivateDriverData = NULL;

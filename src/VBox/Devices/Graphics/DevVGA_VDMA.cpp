@@ -169,6 +169,34 @@ static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma,
     return VINF_SUCCESS;
 }
 
+static void vboxVDMARectlUnite(VBOXVDMA_RECTL * pRectl1, const VBOXVDMA_RECTL * pRectl2)
+{
+    if (!pRectl1->width)
+        *pRectl1 = *pRectl2;
+    else
+    {
+        int16_t x21 = pRectl1->left + pRectl1->width;
+        int16_t x22 = pRectl2->left + pRectl2->width;
+        if (pRectl1->left > pRectl2->left)
+        {
+            pRectl1->left = pRectl2->left;
+            pRectl1->width = x21 < x22 ? x22 - pRectl1->left : x21 - pRectl1->left;
+        }
+        else if (x21 < x22)
+            pRectl1->width = x22 - pRectl1->left;
+
+        x21 = pRectl1->top + pRectl1->height;
+        x22 = pRectl2->top + pRectl2->height;
+        if (pRectl1->top > pRectl2->top)
+        {
+            pRectl1->top = pRectl2->top;
+            pRectl1->height = x21 < x22 ? x22 - pRectl1->top : x21 - pRectl1->top;
+        }
+        else if (x21 < x22)
+            pRectl1->height = x22 - pRectl1->top;
+    }
+}
+
 /*
  * @return on success the number of bytes the command contained, otherwise - VERR_xxx error code
  */
@@ -189,6 +217,7 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
     Assert(pBlt->cDstSubRects);
 
     uint8_t * pvRam = pVdma->pVGAState->vram_ptrR3;
+    VBOXVDMA_RECTL updateRectl = {0};
 
     if (pBlt->cDstSubRects)
     {
@@ -223,6 +252,8 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
             AssertRC(rc);
             if (!RT_SUCCESS(rc))
                 return rc;
+
+            vboxVDMARectlUnite(&updateRectl, pDstRectl);
         }
     }
     else
@@ -234,11 +265,13 @@ static int vboxVDMACmdExecBlt(PVBOXVDMAHOST pVdma, const PVBOXVDMACMD_DMA_PRESEN
         AssertRC(rc);
         if (!RT_SUCCESS(rc))
             return rc;
+
+        vboxVDMARectlUnite(&updateRectl, &pBlt->dstRectl);
     }
 
     int iView = 0;
     /* @todo: fixme: check if update is needed and get iView */
-    vboxVDMANotifyPrimaryUpdate (pVdma->pVGAState, iView, &pBlt->dstRectl);
+    vboxVDMANotifyPrimaryUpdate (pVdma->pVGAState, iView, &updateRectl);
 
     return cbBlt;
 }
