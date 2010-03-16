@@ -8347,7 +8347,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="5e02d197-dfa2-474d-bd1d-3243a1f24afb"
+    uuid="c738a1de-3616-48d1-9ac5-8efd21e2560d"
     wsmap="struct"
   >
     <desc>
