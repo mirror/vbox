@@ -62,6 +62,7 @@ private:
     /* Friend classes: */
     friend class UIMachineLogic;
     friend class UIMachineWindowSeamless;
+    friend class UIMachineViewSeamless;
 };
 
 #endif // __UIMachineLogicSeamless_h__
