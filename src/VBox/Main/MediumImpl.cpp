@@ -403,9 +403,12 @@ public:
         {
             AutoWriteLock alock(*it COMMA_LOCKVAL_SRC_POS);
             Assert((*it)->m->state == MediumState_LockedWrite ||
+                   (*it)->m->state == MediumState_LockedRead ||
                    (*it)->m->state == MediumState_Deleting);
             if ((*it)->m->state == MediumState_LockedWrite)
                 (*it)->UnlockWrite(NULL);
+            else if ((*it)->m->state == MediumState_LockedRead)
+                (*it)->UnlockRead(NULL);
             else
                 (*it)->m->state = MediumState_Created;
 
@@ -461,6 +464,20 @@ public:
 
                 mParent = aMedium->m->pParent;
             }
+
+            /* Include all images from base to source. */
+            ComObjPtr<Medium> pParent = aMedium->m->pParent;
+            while (!pParent.isNull())
+            {
+                rc = pParent->addCaller();
+                if (FAILED(rc)) return rc;
+
+                rc = pParent->LockRead(NULL);
+                if (FAILED(rc)) return rc;
+
+                push_front(pParent);
+                pParent = pParent->m->pParent;
+            }
         }
         else
         {
@@ -483,6 +500,8 @@ public:
                 mChildren.push_back(pMedium);
             }
         }
+
+        mSource = aMedium;
 
         return S_OK;
     }
@@ -513,6 +532,8 @@ public:
         }
 
         push_front(aMedium);
+
+        mTarget = aMedium;
 
         return S_OK;
     }
@@ -547,15 +568,53 @@ public:
         return S_OK;
     }
 
+    int targetIdx()
+    {
+        Assert(!mTarget.isNull());
+        int idx = 0;
+
+        for (MediaList::const_iterator it = begin(); it != end(); ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+
+            /* Do we have the target? */
+            if (pMedium == mTarget)
+                break;
+
+            idx++;
+        }
+
+        return idx;
+    }
+
+    int sourceIdx()
+    {
+        Assert(!mSource.isNull());
+        int idx = 0;
+
+        for (MediaList::const_iterator it = begin(); it != end(); ++it)
+        {
+            ComObjPtr<Medium> pMedium = *it;
+
+            /* Do we have the source? */
+            if (pMedium == mSource)
+                break;
+
+            idx++;
+        }
+
+        return idx;
+    }
+
     bool isForward() const { return mForward; }
     Medium *parent() const { return mParent; }
     const MediaList& children() const { return mChildren; }
 
     Medium *source() const
-    { AssertReturn(size() > 0, NULL); return mForward ? front() : back(); }
+    { AssertReturn(size() > 0, NULL); return mSource; }
 
     Medium *target() const
-    { AssertReturn(size() > 0, NULL); return mForward ? back() : front(); }
+    { AssertReturn(size() > 0, NULL); return mTarget; }
 
 protected:
 
@@ -621,6 +680,10 @@ private:
     ComObjPtr <Medium> mParent;
     /** Children of the source when backward merge (if any) */
     MediaList mChildren;
+    /** Source image */
+    ComObjPtr <Medium> mSource;
+    /** Target image */
+    ComObjPtr <Medium> mTarget;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -5234,53 +5297,54 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
                  it != chain->end();
                  ++it)
             {
-                /* complex sanity (sane complexity) */
-                Assert((chain->isForward() &&
-                        ((*it != chain->back() &&
-                            (*it)->m->state == MediumState_Deleting) ||
-                            (*it == chain->back() &&
-                            (*it)->m->state == MediumState_LockedWrite))) ||
-                        (!chain->isForward() &&
-                        ((*it != chain->front() &&
-                            (*it)->m->state == MediumState_Deleting) ||
-                            (*it == chain->front() &&
-                            (*it)->m->state == MediumState_LockedWrite))));
+                /*
+                 * complex sanity (sane complexity)
+                 *
+                 * The current image must be in the Deleting (image is merged)
+                 * or LockedRead (parent image) state if it is not the target.
+                 * If it is the target it must be in the LockedWrite state.
+                 */
+                Assert(   (   *it != chain->target()
+                           && (   (*it)->m->state == MediumState_Deleting
+                               || (*it)->m->state == MediumState_LockedRead))
+                       || (   *it == chain->target()
+                           && (*it)->m->state == MediumState_LockedWrite));
 
-                Assert(*it == chain->target() ||
-                        (*it)->m->backRefs.size() == 0);
+                /*
+                 * Image must be the target, in the LockedRead state
+                 * or Deleting state where it is not allowed to be attached
+                 * to a virtual machine.
+                 */
+                Assert(   *it == chain->target()
+                       || (*it)->m->state == MediumState_LockedRead
+                       || (   (*it)->m->backRefs.size() == 0
+                           && (*it)->m->state == MediumState_Deleting)
+                      );
 
-                /* open the first image with VDOPEN_FLAGS_INFO because
-                 * it's not necessarily the base one */
+                unsigned uOpenFlags = 0;
+
+                if (   (*it)->m->state == MediumState_LockedRead
+                    || (*it)->m->state == MediumState_Deleting)
+                    uOpenFlags = VD_OPEN_FLAGS_READONLY;
+
+                /* Open the image */
                 vrc = VDOpen(hdd,
                              (*it)->m->strFormat.c_str(),
                              (*it)->m->strLocationFull.c_str(),
-                             it == chain->begin() ? VD_OPEN_FLAGS_INFO : 0,
+                             uOpenFlags,
                              (*it)->m->vdDiskIfaces);
                 if (RT_FAILURE(vrc))
                     throw vrc;
             }
 
-            unsigned start = chain->isForward() ?
-                0 : (unsigned)chain->size() - 1;
-            unsigned end = chain->isForward() ?
-                (unsigned)chain->size() - 1 : 0;
-
-            vrc = VDMerge(hdd, start, end, vdOperationIfaces);
+            vrc = VDMerge(hdd, chain->sourceIdx(), chain->targetIdx(), vdOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw vrc;
 
             /* update parent UUIDs */
-            /// @todo VDMerge should be taught to do so, including the
+            /// @todo VDMerge should handle the
             /// multiple children case
-            if (chain->isForward())
-            {
-                /* target's UUID needs to be updated (note that target
-                 * is the only image in the container on success) */
-                vrc = VDSetParentUuid(hdd, 0, chain->parent()->m->id);
-                if (RT_FAILURE(vrc))
-                    throw vrc;
-            }
-            else
+            if (!chain->isForward())
             {
                 /* we need to update UUIDs of all source's children
                  * which cannot be part of the container at once so
@@ -5395,7 +5459,9 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
              it != chain->end();
             )
         {
-            if (*it == chain->target())
+            /* The target and all images not merged (readonly) are skipped */
+            if (   *it == chain->target()
+                || (*it)->m->state == MediumState_LockedRead)
             {
                 ++it;
                 continue;
