@@ -307,7 +307,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     else
                         rc = RTErrConvertFromWin32(GetLastError());
 
-                    if (hToken == INVALID_HANDLE_VALUE)
+                    if (hToken != INVALID_HANDLE_VALUE)
                         CloseHandle(hToken);
                 }
                 RTUtf16Free(pwszExec);
