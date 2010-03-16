@@ -3742,16 +3742,40 @@ QString VBoxGlobal::formatSize (quint64 aSize, uint aDecimal /* = 2 */,
  *  resolution at maximum possible screen depth in bpp.
  */
 /* static */
-quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine)
+quint64 VBoxGlobal::requiredVideoMemory (CMachine *aMachine /* = 0 */, int cMonitors /* = 1 */)
 {
     QSize desktopRes = QApplication::desktop()->screenGeometry().size();
-    /* Calculate summary required memory amount in bits */
-    quint64 needBits = (desktopRes.width() /* display width */ *
-                        desktopRes.height() /* display height */ *
-                        32 /* we will take the maximum possible bpp for now */ +
-                        8 * _1M /* current cache per screen - may be changed in future */) *
-                       (!aMachine || aMachine->isNull() ? 1 : aMachine->GetMonitorCount()) +
-                       8 * 4096 /* adapter info */;
+    QDesktopWidget *pDW = QApplication::desktop();
+    /* We create a list of the size of all available host monitors. This list
+     * is sorted by value and by starting with the biggest one, we calculate
+     * the memory requirements for every guest screen. This is of course not
+     * correct, but as we can't predict on which host screens the user will
+     * open the guest windows, this is the best assumption we can do, cause it
+     * is the worst case. */
+    QVector<int> screenSize(qMax(cMonitors, pDW->numScreens()), 0);
+    for (int i = 0; i < pDW->numScreens(); ++i)
+    {
+        QRect r = pDW->screenGeometry(i);
+        screenSize[i] = r.width() * r.height();
+    }
+    /* Now sort the vector */
+    qSort(screenSize.begin(), screenSize.end(), qGreater<int>());
+    /* For the case that there are more guest screens configured then host
+     * screens available, replace all zeros with the greatest value in the
+     * vector. */
+    for (int i = 0; i < screenSize.size(); ++i)
+        if (screenSize.at(i) == 0)
+            screenSize.replace(i, screenSize.at(0));
+
+    quint64 needBits = 0;
+    for (int i = 0; i < cMonitors; ++i)
+    {
+        /* Calculate summary required memory amount in bits */
+        needBits += (screenSize.at(i) * /* with x height */
+                     32 + /* we will take the maximum possible bpp for now */
+                     8 * _1M) + /* current cache per screen - may be changed in future */
+                    8 * 4096; /* adapter info */
+    }
     /* Translate value into megabytes with rounding to highest side */
     quint64 needMBytes = needBits % (8 * _1M) ? needBits / (8 * _1M) + 1 :
                          needBits / (8 * _1M) /* convert to megabytes */;

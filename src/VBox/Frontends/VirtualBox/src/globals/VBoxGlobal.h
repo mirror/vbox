@@ -782,7 +782,7 @@ public:
     static QString formatSize (quint64 aSize, uint aDecimal = 2,
                                VBoxDefs::FormatSize aMode = VBoxDefs::FormatSize_Round);
 
-    static quint64 requiredVideoMemory (CMachine *aMachine = 0);
+    static quint64 requiredVideoMemory (CMachine *aMachine = 0, int cMonitors = 1);
 
     static QString locationForHTML (const QString &aFileName);
 
