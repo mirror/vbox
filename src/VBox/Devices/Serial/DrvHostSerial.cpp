@@ -1,12 +1,10 @@
 /* $Id$ */
 /** @file
  * VBox stream I/O devices: Host serial driver
- *
- * Contributed by: Alexander Eichner
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,6 +64,8 @@
 #  ifndef TIOCM_LOOP
 #   define TIOCM_LOOP 0x8000
 #  endif
+/* For linux custom baudrate code we also need serial_struct */
+#  include <linux/serial.h>
 # endif /* linux */
 
 #elif defined(RT_OS_WINDOWS)
@@ -305,7 +305,23 @@ static DECLCALLBACK(int) drvHostSerialSetParameters(PPDMICHARCONNECTOR pInterfac
             baud_rate = B115200;
             break;
         default:
+#ifdef RT_OS_LINUX
+            struct serial_struct serialStruct;
+            if (ioctl(pThis->DeviceFile, TIOCGSERIAL, &serialStruct) != -1)
+            {
+                serialStruct.custom_divisor = serialStruct.baud_base / Bps;
+                if (!serialStruct.custom_divisor)
+                    serialStruct.custom_divisor = 1;
+                serialStruct.flags &= ~ASYNC_SPD_MASK;
+                serialStruct.flags |= ASYNC_SPD_CUST;
+                ioctl(pThis->DeviceFile, TIOCSSERIAL, &serialStruct);
+                baud_rate = B38400;
+            }
+            else
+                baud_rate = B9600;
+#else /* !RT_OS_LINUX */
             baud_rate = B9600;
+#endif /* !RT_OS_LINUX */
     }
 
     cfsetispeed(termiosSetup, baud_rate);
