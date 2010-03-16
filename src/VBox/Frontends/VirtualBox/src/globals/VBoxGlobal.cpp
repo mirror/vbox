@@ -93,6 +93,7 @@
 #include <X11/Xmd.h>
 #include <X11/Xlib.h>
 #include <X11/Xatom.h>
+#include <X11/extensions/Xinerama.h>
 #define BOOL PRBool
 #endif
 
@@ -965,6 +966,247 @@ bool VBoxGlobal::trayIconInstall()
 }
 
 #endif
+
+#ifdef Q_WS_X11
+QList<QRect> XGetDesktopList()
+{
+    /* Prepare empty resulting list: */
+    QList<QRect> result;
+
+    /* Get current display: */
+    Display* pDisplay = QX11Info::display();
+
+    /* If thats Xinerama desktop: */
+    if (XineramaIsActive(pDisplay))
+    {
+        /* Reading Xinerama data: */
+        int iScreens = 0;
+        XineramaScreenInfo *pScreensData = XineramaQueryScreens(pDisplay, &iScreens);
+
+        /* Fill resulting list: */
+        for (int i = 0; i < iScreens; ++ i)
+            result << QRect(pScreensData[i].x_org, pScreensData[i].y_org,
+                            pScreensData[i].width, pScreensData[i].height);
+
+        /* Free screens data: */
+        XFree(pScreensData);
+    }
+
+    /* Return resulting list: */
+    return result;
+}
+
+QList<Window> XGetWindowIDList()
+{
+    /* Get current display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Get virtual desktop window: */
+    Window window = QX11Info::appRootWindow();
+
+    /* Get 'client list' atom: */
+    Atom propNameAtom = XInternAtom(pDisplay, "_NET_CLIENT_LIST", True /* only if exists */);
+
+    /* Prepare empty resulting list: */
+    QList<Window> result;
+
+    /* If atom does not exists return empty list: */
+    if (propNameAtom == None)
+        return result;
+
+    /* Get atom value: */
+    Atom realAtomType = None;
+    int iRealFormat = 0;
+    unsigned long uItemsCount = 0;
+    unsigned long uBytesAfter = 0;
+    unsigned char *pData = 0;
+    int rc = XGetWindowProperty(pDisplay, window, propNameAtom,
+                                0, 0x7fffffff /*LONG_MAX*/, False /* delete */,
+                                XA_WINDOW, &realAtomType, &iRealFormat,
+                                &uItemsCount, &uBytesAfter, &pData);
+
+    /* If get property is failed return empty list: */
+    if (rc != Success)
+        return result;
+
+    /* Fill resulting list with win ids: */
+    Window *pWindowData = reinterpret_cast<Window*>(pData);
+    for (ulong i = 0; i < uItemsCount; ++ i)
+        result << pWindowData[i];
+
+    /* Releasing resources: */
+    XFree(pData);
+
+    /* Return resulting list: */
+    return result;
+}
+
+QList<ulong> XGetStrut(Window window)
+{
+    /* Get current display: */
+    Display *pDisplay = QX11Info::display();
+
+    /* Get 'strut' atom: */
+    Atom propNameAtom = XInternAtom(pDisplay, "_NET_WM_STRUT_PARTIAL", True /* only if exists */);
+
+    /* Prepare empty resulting list: */
+    QList<ulong> result;
+
+    /* If atom does not exists return empty list: */
+    if (propNameAtom == None)
+        return result;
+
+    /* Get atom value: */
+    Atom realAtomType = None;
+    int iRealFormat = 0;
+    ulong uItemsCount = 0;
+    ulong uBytesAfter = 0;
+    unsigned char *pData = 0;
+    int rc = XGetWindowProperty(pDisplay, window, propNameAtom,
+                                0, LONG_MAX, False /* delete */,
+                                XA_CARDINAL, &realAtomType, &iRealFormat,
+                                &uItemsCount, &uBytesAfter, &pData);
+
+    /* If get property is failed return empty list: */
+    if (rc != Success)
+        return result;
+
+    /* Fill resulting list with strut shifts: */
+    ulong *pStrutsData = reinterpret_cast<ulong*>(pData);
+    for (ulong i = 0; i < uItemsCount; ++ i)
+        result << pStrutsData[i];
+
+    /* Releasing resources: */
+    XFree(pData);
+
+    /* Return resulting list: */
+    return result;
+}
+#endif /* ifdef Q_WS_X11 */
+
+const QRect VBoxGlobal::availableGeometry(int iScreen) const
+{
+    /* Prepare empty result: */
+    QRect result;
+
+#ifdef Q_WS_X11
+
+    /* Get current display: */
+    Display* pDisplay = QX11Info::display();
+
+    /* Get current application desktop: */
+    QDesktopWidget *pDesktopWidget = QApplication::desktop();
+
+    /* If thats virtual desktop: */
+    if (pDesktopWidget->isVirtualDesktop())
+    {
+        /* If thats Xinerama desktop: */
+        if (XineramaIsActive(pDisplay))
+        {
+            /* Get desktops list: */
+            QList<QRect> desktops = XGetDesktopList();
+
+            /* Combine to get full virtual region: */
+            QRegion virtualRegion;
+            foreach (QRect desktop, desktops)
+                virtualRegion += desktop;
+            virtualRegion = virtualRegion.boundingRect();
+
+            /* Remember initial virtual desktop: */
+            QRect virtualDesktop = virtualRegion.boundingRect();
+            //AssertMsgFailed(("LOG... Virtual desktop is: %dx%dx%dx%d\n", virtualDesktop.x(), virtualDesktop.y(),
+            //                                                             virtualDesktop.width(), virtualDesktop.height()));
+
+            /* Set available geometry to screen geometry initially: */
+            result = desktops[iScreen];
+
+            /* Feat available geometry of virtual desktop to respect all the struts: */
+            QList<Window> list = XGetWindowIDList();
+            for (int i = 0; i < list.size(); ++ i)
+            {
+                /* Get window: */
+                Window wid = list[i];
+                QList<ulong> struts = XGetStrut(wid);
+
+                /* If window has strut: */
+                if (struts.size())
+                {
+                    ulong uLeftShift = struts[0];
+                    ulong uLeftFromY = struts[4];
+                    ulong uLeftToY = struts[5];
+
+                    ulong uRightShift = struts[1];
+                    ulong uRightFromY = struts[6];
+                    ulong uRightToY = struts[7];
+
+                    ulong uTopShift = struts[2];
+                    ulong uTopFromX = struts[8];
+                    ulong uTopToX = struts[9];
+
+                    ulong uBottomShift = struts[3];
+                    ulong uBottomFromX = struts[10];
+                    ulong uBottomToX = struts[11];
+
+                    if (uLeftShift)
+                    {
+                        QRect sr(QPoint(0, uLeftFromY),
+                                 QSize(uLeftShift, uLeftToY - uLeftFromY + 1));
+
+                        //AssertMsgFailed(("LOG... Subtract left strut: top-left: %dx%d, size: %dx%d\n", sr.x(), sr.y(), sr.width(), sr.height()));
+                        virtualRegion -= sr;
+                    }
+
+                    if (uRightShift)
+                    {
+                        QRect sr(QPoint(virtualDesktop.x() + virtualDesktop.width() - uRightShift, uRightFromY),
+                                 QSize(virtualDesktop.x() + virtualDesktop.width(), uRightToY - uRightFromY + 1));
+
+                        //AssertMsgFailed(("LOG... Subtract right strut: top-left: %dx%d, size: %dx%d\n", sr.x(), sr.y(), sr.width(), sr.height()));
+                        virtualRegion -= sr;
+                    }
+
+                    if (uTopShift)
+                    {
+                        QRect sr(QPoint(uTopFromX, 0),
+                                 QSize(uTopToX - uTopFromX + 1, uTopShift));
+
+                        //AssertMsgFailed(("LOG... Subtract top strut: top-left: %dx%d, size: %dx%d\n", sr.x(), sr.y(), sr.width(), sr.height()));
+                        virtualRegion -= sr;
+                    }
+
+                    if (uBottomShift)
+                    {
+                        QRect sr(QPoint(uBottomFromX, virtualDesktop.y() + virtualDesktop.height() - uBottomShift),
+                                 QSize(uBottomToX - uBottomFromX + 1, uBottomShift));
+
+                        //AssertMsgFailed(("LOG... Subtract bottom strut: top-left: %dx%d, size: %dx%d\n", sr.x(), sr.y(), sr.width(), sr.height()));
+                        virtualRegion -= sr;
+                    }
+                }
+            }
+
+            /* Get final available geometry: */
+            result = (virtualRegion & result).boundingRect();
+        }
+    }
+
+    /* If result is still NULL: */
+    if (result.isNull())
+    {
+        /* Use QT default functionality: */
+        result = pDesktopWidget->availableGeometry(iScreen);
+    }
+
+    //AssertMsgFailed(("LOG... Final geometry: %dx%dx%dx%d\n", result.x(), result.y(), result.width(), result.height()));
+
+#else /* ifdef Q_WS_X11 */
+
+    result = QApplication::desktop()->availableGeometry(iScreen);
+
+#endif /* ifndef Q_WS_X11 */
+
+    return result;
+}
 
 /**
  *  Returns the list of few guest OS types, queried from

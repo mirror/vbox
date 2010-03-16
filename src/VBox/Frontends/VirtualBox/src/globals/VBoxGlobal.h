@@ -336,6 +336,8 @@ public:
     const char *vmRenderModeStr() const { return vm_render_mode_str; }
     bool isKWinManaged() const { return mIsKWinManaged; }
 
+    const QRect availableGeometry(int iScreen = 0) const;
+
 #ifdef VBOX_WITH_DEBUGGER_GUI
     bool isDebuggerEnabled() const { return mDbgEnabled; }
     bool isDebuggerAutoShowEnabled() const { return mDbgAutoShow; }
