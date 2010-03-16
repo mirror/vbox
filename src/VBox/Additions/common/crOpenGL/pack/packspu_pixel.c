@@ -136,6 +136,19 @@ static GLboolean packspu_CheckTexImageInternalFormat(GLint internalformat)
         && internalformat!=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
 # endif
 #endif
+        /*@todo ARB_texture_float*/
+        && internalformat!=GL_RGBA32F_ARB
+        && internalformat!=GL_RGB32F_ARB
+        && internalformat!=GL_ALPHA32F_ARB
+        && internalformat!=GL_INTENSITY32F_ARB
+        && internalformat!=GL_LUMINANCE32F_ARB
+        && internalformat!=GL_LUMINANCE_ALPHA32F_ARB
+        && internalformat!=GL_RGBA16F_ARB
+        && internalformat!=GL_RGB16F_ARB
+        && internalformat!=GL_ALPHA16F_ARB
+        && internalformat!=GL_INTENSITY16F_ARB
+        && internalformat!=GL_LUMINANCE16F_ARB
+        && internalformat!=GL_LUMINANCE_ALPHA16F_ARB
         )
     {
         /*crWarning("crPackCheckTexImageInternalFormat FAILED internalformat 0x%x isn't valid", internalformat);*/
