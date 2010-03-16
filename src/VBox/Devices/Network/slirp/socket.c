@@ -1066,10 +1066,30 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         return;
     }
 
+    /*
+     * ICMP_ECHOREPLY, ICMP_TIMXCEED, ICMP_UNREACH minimal header size is 
+     * ICMP_ECHOREPLY assuming data 0
+     * icmp_{type(8), code(8), cksum(16),identifier(16),seqnum(16)}
+     */
+    if (RT_N2H_U16(ip->ip_len) < hlen + 8)
+    {
+        Log(("send_icmp_to_guest: NAT accept ICMP_{ECHOREPLY, TIMXCEED, UNREACH} the minimum size is 64 (see rfc792)\n"));
+        return;
+    } 
+
     type = icp->icmp_type;
     if (   type == ICMP_TIMXCEED
         || type == ICMP_UNREACH)
     {
+        /*
+         * ICMP_TIMXCEED, ICMP_UNREACH minimal header size is 
+         * icmp_{type(8), code(8), cksum(16),unused(32)} + IP header + 64 bit of original datagram
+         */
+        if (RT_N2H_U16(ip->ip_len) < hlen + 2*8 + sizeof(struct ip))
+        {
+            Log(("send_icmp_to_guest: NAT accept ICMP_{TIMXCEED, UNREACH} the minimum size of ipheader + 64 bit of data (see rfc792)\n"));
+            return;
+        } 
         ip = &icp->icmp_ip;
     }
 
