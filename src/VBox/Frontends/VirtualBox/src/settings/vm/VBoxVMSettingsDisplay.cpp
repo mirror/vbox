@@ -205,7 +205,7 @@ void VBoxVMSettingsDisplay::setValidator (QIWidgetValidator *aVal)
 bool VBoxVMSettingsDisplay::revalidate (QString &aWarning, QString & /* aTitle */)
 {
     /* Video RAM amount test */
-    quint64 needBytes = VBoxGlobal::requiredVideoMemory (&mMachine);
+    quint64 needBytes = VBoxGlobal::requiredVideoMemory (&mMachine, mSlMonitors->value());
     if ((quint64) mSlMemory->value() * _1M < needBytes)
     {
         aWarning = tr (
