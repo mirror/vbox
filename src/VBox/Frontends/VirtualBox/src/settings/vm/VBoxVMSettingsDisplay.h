@@ -65,6 +65,9 @@ private:
 
     CMachine mMachine;
     QIWidgetValidator *mValidator;
+
+    int m_minVRAM;
+    int m_maxVRAM;
 };
 
 #endif // __VBoxVMSettingsDisplay_h__

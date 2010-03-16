@@ -53,13 +53,13 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
 
     /* Setup constants */
     CSystemProperties sys = vboxGlobal().virtualBox().GetSystemProperties();
-    const uint MinVRAM = sys.GetMinGuestVRAM();
-    const uint MaxVRAM = sys.GetMaxGuestVRAM();
+    m_minVRAM = sys.GetMinGuestVRAM();
+    m_maxVRAM = sys.GetMaxGuestVRAM();
     const uint MinMonitors = 1;
     const uint MaxMonitors = sys.GetMaxGuestMonitors();
 
     /* Setup validators */
-    mLeMemory->setValidator (new QIntValidator (MinVRAM, MaxVRAM, this));
+    mLeMemory->setValidator (new QIntValidator (m_minVRAM, m_maxVRAM, this));
     mLeMonitors->setValidator (new QIntValidator (MinMonitors, MaxMonitors, this));
     mLeVRDPPort->setValidator (new QRegExpValidator (QRegExp ("(([0-9]{1,5}(\\-[0-9]{1,5}){0,1}),)*([0-9]{1,5}(\\-[0-9]{1,5}){0,1})"), this));
     mLeVRDPTimeout->setValidator (new QIntValidator (this));
@@ -71,20 +71,20 @@ VBoxVMSettingsDisplay::VBoxVMSettingsDisplay()
     connect (mLeMonitors, SIGNAL (textChanged (const QString&)), this, SLOT (textChangedMonitors (const QString&)));
 
     /* Setup initial values */
-    mSlMemory->setPageStep (calcPageStep (MaxVRAM));
+    mSlMemory->setPageStep (calcPageStep (m_maxVRAM));
     mSlMemory->setSingleStep (mSlMemory->pageStep() / 4);
     mSlMemory->setTickInterval (mSlMemory->pageStep());
     mSlMonitors->setPageStep (1);
     mSlMonitors->setSingleStep (1);
     mSlMonitors->setTickInterval (1);
     /* Setup the scale so that ticks are at page step boundaries */
-    mSlMemory->setMinimum ((MinVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
-    mSlMemory->setMaximum (MaxVRAM);
+    mSlMemory->setMinimum ((m_minVRAM / mSlMemory->pageStep()) * mSlMemory->pageStep());
+    mSlMemory->setMaximum (m_maxVRAM);
     mSlMemory->setSnappingEnabled (true);
     quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine) / _1M;
     mSlMemory->setErrorHint (0, 1);
     mSlMemory->setWarningHint (1, needMBytes);
-    mSlMemory->setOptimalHint (needMBytes, MaxVRAM);
+    mSlMemory->setOptimalHint (needMBytes, m_maxVRAM);
     mSlMonitors->setMinimum (MinMonitors);
     mSlMonitors->setMaximum (MaxMonitors);
     mSlMonitors->setSnappingEnabled (true);
@@ -309,5 +309,10 @@ void VBoxVMSettingsDisplay::checkMultiMonitorReqs()
     mCb2DVideo->setEnabled(cVal == 1 && VBoxGlobal::isAcceleration2DVideoAvailable());
 #endif /* VBOX_WITH_VIDEOHWACCEL */
     mCb3D->setEnabled(cVal == 1 && vboxGlobal().virtualBox().GetHost().GetAcceleration3DAvailable());
+
+    /* The memory requirements have changed too. */
+    quint64 needMBytes = VBoxGlobal::requiredVideoMemory (&mMachine, cVal) / _1M;
+    mSlMemory->setWarningHint (1, needMBytes);
+    mSlMemory->setOptimalHint (needMBytes, m_maxVRAM);
 }
 
