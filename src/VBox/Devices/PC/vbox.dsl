@@ -136,7 +136,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             UHPT,  32,
             USMC,  32,
             UFDC,  32,
-            // @todo: maybe make it bitmask instead?
+            // UCP0-UCP3 no longer used and only kept here for saved state compatibilty
             UCP0,  32,
             UCP1,  32,
             UCP2,  32,
@@ -166,8 +166,6 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
             HEX4 (USMC)
             DBG ("UFDC: ")
             HEX4 (UFDC)
-            DBG ("UCP0: ")
-            HEX4 (UCP0)
             DBG ("MEMH: ")
             HEX4 (MEMH)
         }
