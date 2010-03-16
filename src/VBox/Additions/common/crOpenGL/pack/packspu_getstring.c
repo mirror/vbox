@@ -96,7 +96,7 @@ const GLubyte * PACKSPU_APIENTRY packspu_GetString( GLenum name )
         case GL_EXTENSIONS:
             return GetExtensions();
         case GL_VERSION:
-#ifdef WINDOWS
+#if 0 && defined(WINDOWS)
             if (packspuRunningUnderWine())
             {
                 GetString(GL_REAL_VERSION, ctx->pszRealVersion);

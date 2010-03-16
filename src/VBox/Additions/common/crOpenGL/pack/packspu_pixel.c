@@ -129,6 +129,12 @@ static GLboolean packspu_CheckTexImageInternalFormat(GLint internalformat)
         && internalformat!=GL_COMPRESSED_RGBA_S3TC_DXT1_EXT
         && internalformat!=GL_COMPRESSED_RGBA_S3TC_DXT3_EXT
         && internalformat!=GL_COMPRESSED_RGBA_S3TC_DXT5_EXT
+# ifdef CR_EXT_texture_sRGB
+        && internalformat!=GL_COMPRESSED_SRGB_S3TC_DXT1_EXT
+        && internalformat!=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT1_EXT
+        && internalformat!=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT3_EXT
+        && internalformat!=GL_COMPRESSED_SRGB_ALPHA_S3TC_DXT5_EXT
+# endif
 #endif
         )
     {
