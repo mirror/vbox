@@ -56,7 +56,9 @@ public:
     UISession* uisession() const;
     CSession& session() const;
 
+    /* Public members: */
     virtual void reshow() {}
+    virtual void setMask(const QRegion &region) { machineWindow()->setMask(region); }
 
 protected:
 

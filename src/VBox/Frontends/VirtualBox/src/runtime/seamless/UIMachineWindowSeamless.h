@@ -100,7 +100,6 @@ private:
     /* Other members: */
     void showSeamless();
     void setMask(const QRegion &region);
-    void clearMask();
 
     /* Private variables: */
     QMenu *m_pMainMenu;

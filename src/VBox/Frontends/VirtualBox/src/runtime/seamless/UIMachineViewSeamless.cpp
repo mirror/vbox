@@ -157,7 +157,7 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
             if (pSetRegionEvent->region() != m_lastVisibleRegion)
             {
                 m_lastVisibleRegion = pSetRegionEvent->region();
-                machineWindowWrapper()->machineWindow()->setMask(m_lastVisibleRegion);
+                machineWindowWrapper()->setMask(m_lastVisibleRegion);
             }
             return true;
         }
