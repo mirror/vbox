@@ -168,7 +168,7 @@ RTDECL(int) RTPipeFlush(RTPIPE hPipe);
  * end).
  *
  * @returns IPRT status code.
- * @retval  VERR_TIMEOUT if the timoue was reached before the pipe because ready
+ * @retval  VERR_TIMEOUT if the timeout was reached before the pipe was ready
  *          for reading/writing.
  * @retval  VERR_NOT_SUPPORTED if not supported by the OS?
  *
