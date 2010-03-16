@@ -8,13 +8,11 @@
 #include "cr_error.h"
 #include "cr_mem.h"
 #include "cr_version.h"
+#include <math.h>
 
 #if defined(WINDOWS)
-# include <math.h>
 # include <float.h>
 # define isnan(x) _isnan(x)
-#else
-# include <cmath>
 #endif
 
 /**
