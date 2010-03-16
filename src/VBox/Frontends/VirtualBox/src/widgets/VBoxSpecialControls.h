@@ -48,9 +48,11 @@ public:
 
     void setText (const QString &aText) { mButton->setText (aText); }
     void setToolTip (const QString &aTip) { mButton->setToolTip (aTip); }
+    void removeBorder() {}
 
 protected:
     void paintEvent (QPaintEvent * /* aEvent */) {}
+    void resizeEvent(QResizeEvent *pEvent);
 
 private:
     VBoxCocoaButton *mButton;
@@ -129,6 +131,7 @@ class VBoxMiniCancelButton: public QIWithRetranslateUI<QIToolButton>
 
 public:
     VBoxMiniCancelButton (QWidget *aParent = 0);
+    void removeBorder();
 
 protected:
     void retranslateUi() {};

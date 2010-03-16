@@ -1,3 +1,4 @@
+/* $Id$ */
 /** @file
  *
  * VBox frontends: Qt GUI ("VirtualBox"):
@@ -203,6 +204,7 @@ NSRect darwinCenterRectVerticalTo (NSRect aRect, const NSRect& aToRect)
 VBoxCocoaButton::VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent /* = 0 */)
   : QMacCocoaViewContainer (0, aParent)
 {
+    setContentsMargins(0, 0, 0, 0);
     switch (aType)
     {
         case HelpButton:
@@ -247,6 +249,14 @@ QSize VBoxCocoaButton::sizeHint() const
 {
     NSRect frame = [mNativeRef frame];
     return QSize (frame.size.width, frame.size.height);
+}
+
+void VBoxCocoaButton::resizeEvent(QResizeEvent * /* pEvent */)
+{
+    NSRect frame = [mNativeRef frame];
+    frame.size.width = width();
+    frame.size.height = height();
+    [mNativeRef setFrame:frame];
 }
 
 void VBoxCocoaButton::setText (const QString& aText)
