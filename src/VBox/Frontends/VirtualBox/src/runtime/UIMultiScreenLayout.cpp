@@ -26,6 +26,8 @@
 #include "COMDefs.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
+#include "UISession.h"
+#include "VBoxProblemReporter.h"
 
 /* Global includes */
 #include <QApplication>
@@ -128,6 +130,11 @@ int UIMultiScreenLayout::hostScreenForGuestScreen(int screenId) const
     return m_pScreenMap->value(screenId, 0);
 }
 
+quint64 UIMultiScreenLayout::memoryRequirements() const
+{
+    return memoryRequirements(m_pScreenMap);
+}
+
 void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
 {
     int a = pAction->data().toInt();
@@ -135,14 +142,43 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
     int cHostScreen = RT_HIWORD(a);
 
     CMachine machine = m_pMachineLogic->session().GetMachine();
+    QMap<int,int> *pTmpMap = new QMap<int,int>(*m_pScreenMap);
     /* Search for the virtual screen which is currently displayed on the
      * requested host screen. When there is one found, we swap both. */
-    int r = m_pScreenMap->key(cHostScreen, -1);
+    int r = pTmpMap->key(cHostScreen, -1);
     if (r != -1)
-        m_pScreenMap->insert(r, m_pScreenMap->value(cGuestScreen));
+        pTmpMap->insert(r, pTmpMap->value(cGuestScreen));
     /* Set the new host screen */
-    m_pScreenMap->insert(cGuestScreen, cHostScreen);
+    pTmpMap->insert(cGuestScreen, cHostScreen);
 
+    bool fSuccess = true;
+    if (m_pMachineLogic->uisession()->isGuestAdditionsActive())
+    {
+        quint64 availBits = machine.GetVRAMSize() /* VRAM */
+            * _1M /* MB to bytes */
+            * 8; /* to bits */
+        quint64 usedBits = memoryRequirements(pTmpMap);
+
+        fSuccess = availBits >= usedBits;
+        if (!fSuccess)
+        {
+            /* We have to little video memory for the new layout, so say it to the
+             * user and revert all changes. */
+            if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
+                vboxProblem().cannotSwitchScreenInSeamless((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
+            else
+                fSuccess = vboxProblem().cannotSwitchScreenInFullscreen((((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M) != QIMessageBox::Cancel;
+        }
+    }
+    if (fSuccess)
+    {
+        /* Swap the temporary with the previous map. */
+        delete m_pScreenMap;
+        m_pScreenMap = pTmpMap;
+    }
+
+    /* Update the menu items. Even if we can't switch we have to revert the
+     * menu items. */
     QList<QAction*> actions = m_pMachineLogic->actionsPool()->action(UIActionIndex_Menu_View)->menu()->actions();
     /* Update the settings. */
     for (int i = 0; i < m_cGuestScreens; ++i)
@@ -159,6 +195,24 @@ void UIMultiScreenLayout::sltScreenLayoutChanged(QAction *pAction)
         }
     }
 
-    emit screenLayoutChanged();
+    /* On success inform the observer. */
+    if (fSuccess)
+        emit screenLayoutChanged();
+}
+
+quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLayout) const
+{
+    int guestBpp = m_pMachineLogic->uisession()->session().GetConsole().GetDisplay().GetBitsPerPixel();
+    quint64 usedBits = 0;
+    for (int i = 0; i < m_cGuestScreens; ++ i)
+    {
+        QRect screen = QApplication::desktop()->availableGeometry(pScreenLayout->value(i, 0));
+        usedBits += screen.width() * /* display width */
+                    screen.height() * /* display height */
+                    guestBpp + /* guest bits per pixel */
+                    _1M * 8; /* current cache per screen - may be changed in future */
+    }
+    usedBits += 4096 * 8; /* adapter info */
+    return usedBits;
 }
 

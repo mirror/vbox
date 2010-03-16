@@ -225,6 +225,8 @@ public:
                                   ULONG aBpp, ULONG64 aMinVRAM);
     int cannotEnterFullscreenMode (ULONG aWidth, ULONG aHeight,
                                    ULONG aBpp, ULONG64 aMinVRAM);
+    void cannotSwitchScreenInSeamless(quint64 minVRAM);
+    int cannotSwitchScreenInFullscreen(quint64 minVRAM);
 
     int cannotEnterFullscreenMode();
     int cannotEnterSeamlessMode();
