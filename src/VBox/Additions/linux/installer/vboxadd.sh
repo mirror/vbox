@@ -400,6 +400,9 @@ setup()
 
     # Put mount.vboxsf in the right place
     ln -sf "$lib_path/$PACKAGE/mount.vboxsf" /sbin
+    # At least Fedora 11 and Fedora 12 demand on the correct security context when
+    # executing this command from service scripts. Shouldn't hurt for other distributions.
+    chcon -u system_u -t mount_exec_t "$lib_path/$PACKAGE/mount.vboxsf" > /dev/null 2>&1
 
     succ_msg
     if running_vboxguest || running_vboxadd; then
