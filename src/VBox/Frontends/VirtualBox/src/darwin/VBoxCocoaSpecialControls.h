@@ -56,6 +56,9 @@ public:
 signals:
     void clicked (bool checked = false);
 
+protected:
+    void resizeEvent(QResizeEvent *pEvent);
+
 private:
     /* Private member vars */
     NativeNSButtonRef mNativeRef;

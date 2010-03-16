@@ -27,11 +27,13 @@
 #include <QUrl>
 #include <QWidget>
 
-/* Global forward declarations */
+/* Local forward declarations */
 class QIHttp;
+class VBoxMiniCancelButton;
+
+/* Global forward declarations */
 class QHttpResponseHeader;
 class QProgressBar;
-class QToolButton;
 
 class UIMiniProcessWidget : public QWidget
 {
@@ -65,7 +67,8 @@ private:
 
     /* Private member vars */
     QProgressBar *m_pProgressBar;
-    QToolButton *m_pCancelButton;
+    VBoxMiniCancelButton *m_pCancelButton;
+
     QString m_strSource;
 };
 

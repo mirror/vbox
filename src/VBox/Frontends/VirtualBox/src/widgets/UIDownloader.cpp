@@ -26,6 +26,7 @@
 #include "QIHttp.h"
 #include "VBoxGlobal.h"
 #include "VBoxProblemReporter.h"
+#include "VBoxSpecialControls.h"
 
 /* Global includes */
 #include <QFile>
@@ -34,7 +35,7 @@
 UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
     : QWidget(pParent)
     , m_pProgressBar(new QProgressBar(this))
-    , m_pCancelButton(new QToolButton(this))
+    , m_pCancelButton(new VBoxMiniCancelButton(this))
 {
     /* Progress Bar setup */
     m_pProgressBar->setFixedWidth(100);
@@ -42,19 +43,32 @@ UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
     m_pProgressBar->setValue(0);
 
     /* Cancel Button setup */
-    m_pCancelButton->setAutoRaise(true);
     m_pCancelButton->setFocusPolicy(Qt::TabFocus);
+    m_pCancelButton->removeBorder();
     connect(m_pCancelButton, SIGNAL(clicked()),
             this, SIGNAL(sigCancel()));
 
-    /* Layout setup */
+    setContentsMargins(0, 0, 0, 0);
     setFixedHeight(16);
+
+    /* Layout setup */
     QHBoxLayout *pMainLayout = new QHBoxLayout(this);
-    pMainLayout->setSpacing(0);
     VBoxGlobal::setLayoutMargin(pMainLayout, 0);
-    pMainLayout->addWidget(m_pProgressBar);
-    pMainLayout->addWidget(m_pCancelButton);
+
+#ifdef Q_WS_MAC
+    pMainLayout->setSpacing(2);
+    m_pProgressBar->setFixedHeight(14);
+    m_pCancelButton->setFixedHeight(11);
+    pMainLayout->addWidget(m_pProgressBar, 0, Qt::AlignTop);
+    pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignBottom);
+#else /* Q_WS_MAC */
+    pMainLayout->setSpacing(0);
+    pMainLayout->addWidget(m_pProgressBar, 0, Qt::AlignCenter);
+    pMainLayout->addWidget(m_pCancelButton, 0, Qt::AlignCenter);
+#endif /* !Q_WS_MAC */
+
     pMainLayout->addStretch(1);
+
 }
 
 void UIMiniProcessWidget::setCancelButtonText(const QString &strText)

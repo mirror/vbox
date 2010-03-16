@@ -44,6 +44,11 @@ VBoxMiniCancelButton::VBoxMiniCancelButton (QWidget *aParent /* = 0 */)
     setFixedSize (mButton->size());
 }
 
+void VBoxMiniCancelButton::resizeEvent(QResizeEvent * /* pEvent */)
+{
+    mButton->resize(size());
+}
+
 /********************************************************************************
  *
  * A help button in the native Cocoa version.
@@ -102,6 +107,11 @@ VBoxMiniCancelButton::VBoxMiniCancelButton (QWidget *aParent /* = 0 */)
         cancelIcon = VBoxGlobal::iconSet (":/delete_16px.png",
                                           ":/delete_dis_16px.png");
     setIcon (cancelIcon);
+}
+
+void VBoxMiniCancelButton::removeBorder()
+{
+    setStyleSheet("QToolButton { border: 0px }");
 }
 
 /********************************************************************************
