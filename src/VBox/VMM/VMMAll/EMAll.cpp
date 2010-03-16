@@ -2885,6 +2885,14 @@ static const char *emMSRtoString(uint32_t uMsr)
         return "Unsupported MSR_K7_PERFCTR2";
     case MSR_K7_PERFCTR3:
         return "Unsupported MSR_K7_PERFCTR3";
+    case MSR_IA32_PMC0:
+        return "Unsupported MSR_IA32_PMC0";
+    case MSR_IA32_PMC1:
+        return "Unsupported MSR_IA32_PMC1";
+    case MSR_IA32_PMC2:
+        return "Unsupported MSR_IA32_PMC2";
+    case MSR_IA32_PMC3:
+        return "Unsupported MSR_IA32_PMC3";
     }
     return "Unknown MSR";
 }
