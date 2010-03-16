@@ -65,7 +65,6 @@ bool UIMachineLogicSeamless::checkAvailability()
 
     /* Temporary get a machine object: */
     const CMachine &machine = uisession()->session().GetMachine();
-    const CConsole &console = uisession()->session().GetConsole();
 
     int cHostScreens = m_pScreenLayout->hostScreenCount();
     int cGuestScreens = m_pScreenLayout->guestScreenCount();
@@ -81,28 +80,13 @@ bool UIMachineLogicSeamless::checkAvailability()
 //    if (uisession()->session().GetConsole().isAutoresizeGuestActive())
     if (uisession()->isGuestAdditionsActive())
     {
-        ULONG64 availBits = machine.GetVRAMSize() /* VRAM */
-                          * _1M /* MB to bytes */
-                          * 8; /* to bits */
-        ULONG guestBpp = console.GetDisplay().GetBitsPerPixel();
-        ULONG64 usedBits = 0;
-        for (int i = 0; i < cGuestScreens; ++ i)
-        {
-            // TODO_NEW_CORE: really take the screen geometry into account the
-            // different fb will be displayed. */
-            QRect screen = QApplication::desktop()->availableGeometry(i);
-            usedBits += screen.width() /* display width */
-                      * screen.height() /* display height */
-                      * guestBpp
-                      + _1M * 8; /* current cache per screen - may be changed in future */
-        }
-        usedBits += 4096 * 8; /* adapter info */
-
+        quint64 availBits = machine.GetVRAMSize() /* VRAM */
+                            * _1M /* MB to bytes */
+                            * 8; /* to bits */
+        quint64 usedBits = m_pScreenLayout->memoryRequirements();
         if (availBits < usedBits)
         {
-//          vboxProblem().cannotEnterSeamlessMode(screen.width(), screen.height(), guestBpp,
-//                                                (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
-            vboxProblem().cannotEnterSeamlessMode(0, 0, guestBpp,
+            vboxProblem().cannotEnterSeamlessMode(0, 0, 0,
                                                   (((usedBits + 7) / 8 + _1M - 1) / _1M) * _1M);
             return false;
         }

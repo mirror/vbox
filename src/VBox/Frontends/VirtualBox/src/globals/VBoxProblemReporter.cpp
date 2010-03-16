@@ -978,6 +978,31 @@ int VBoxProblemReporter::cannotEnterFullscreenMode (ULONG /* aWidth */,
              QIMessageBox::Cancel | QIMessageBox::Escape);
 }
 
+void VBoxProblemReporter::cannotSwitchScreenInSeamless(quint64 minVRAM)
+{
+    message(mainMachineWindowShown(), Error,
+            tr("<p>Could not change the guest screen to this host screen "
+               "due to insufficient guest video memory.</p>"
+               "<p>You should configure the virtual machine to have at "
+               "least <b>%1</b> of video memory.</p>")
+            .arg(VBoxGlobal::formatSize(minVRAM)));
+}
+
+int VBoxProblemReporter::cannotSwitchScreenInFullscreen(quint64 minVRAM)
+{
+    return message(mainMachineWindowShown(), Warning,
+                   tr("<p>Could not change the guest screen to this host screen "
+                      "due to insufficient guest video memory.</p>"
+                      "<p>You should configure the virtual machine to have at "
+                      "least <b>%1</b> of video memory.</p>"
+                      "<p>Press <b>Ignore</b> to switch the screen anyway "
+                      "or press <b>Cancel</b> to cancel the operation.</p>")
+                   .arg(VBoxGlobal::formatSize(minVRAM)),
+                   0, /* aAutoConfirmId */
+                   QIMessageBox::Ignore | QIMessageBox::Default,
+                   QIMessageBox::Cancel | QIMessageBox::Escape);
+}
+
 int VBoxProblemReporter::cannotEnterFullscreenMode()
 {
     return message(mainMachineWindowShown(), Error,

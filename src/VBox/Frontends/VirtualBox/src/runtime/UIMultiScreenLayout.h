@@ -45,6 +45,7 @@ public:
     int hostScreenCount() const;
     int guestScreenCount() const;
     int hostScreenForGuestScreen(int screenId) const;
+    quint64 memoryRequirements() const;
 
 signals:
     void screenLayoutChanged();
@@ -54,6 +55,8 @@ private slots:
     void sltScreenLayoutChanged(QAction *pAction);
 
 private:
+
+    quint64 memoryRequirements(const QMap<int, int> *pScreenLayout) const;
 
     /* Private member vars */
     UIMachineLogic *m_pMachineLogic;
