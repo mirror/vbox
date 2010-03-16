@@ -1052,6 +1052,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     struct icmp_msg *icm;
     uint8_t proto;
     int type = 0;
+    int m_room;
 
     ip = (struct ip *)buff;
     hlen = (ip->ip_hl << 2);
@@ -1104,7 +1105,15 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
     original_hlen = ip->ip_hl << 2;
     /* saves original ip header and options */
-    memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
+    /* m_room space in the saved m buffer */
+    m_room = m->m_len + M_TRAILINGSPACE(m) - original_hlen;
+    if (m_room >= len - hlen)
+        memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
+    else 
+    {
+        m_inc(m, len); /*increase the room of the mbuf up to len*/
+        memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
+    }
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_len = len - hlen + original_hlen;
     ip->ip_len = m->m_len;
@@ -1270,44 +1279,28 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
     socklen_t addrlen = sizeof(struct sockaddr_in);
+    struct ip ip;
     char *buff;
     int len = 0;
-    int rc = 0;
-    static int signalled = 0;
 
-    rc = ioctlsocket(so->s, FIONREAD, &len);
-    if (   rc == -1
+    /* 1- step: read the ip header */
+    len = recvfrom(so->s, &ip, sizeof(struct ip), MSG_PEEK,
+                   (struct sockaddr *)&addr, &addrlen);
+    if (   len < 0
         && (   errno == EAGAIN
             || errno == EWOULDBLOCK
             || errno == EINPROGRESS
             || errno == ENOTCONN))
     {
+        Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm (would block)\n"));
         return;
     }
-    if (rc == -1 && signalled == 0)
-    {
-        signalled = 1;
-        LogRel(("NAT: fetching number of bits has been failed for ICMP socket (%d: %s)\n",
-            errno, strerror(errno)));
-        return;
-    }
-    len = (len != 0 && rc != -1 ? len : 1500);
-    buff = RTMemAlloc(len);
-    len = recvfrom(so->s, buff, len, 0,
-                   (struct sockaddr *)&addr, &addrlen);
-    /* XXX Check if reply is "correct"? */
 
-    if (len == -1 || len == 0)
+    if (   len < sizeof(struct ip)
+        || len < 0
+        || len == 0)
     {
         u_char code;
-        if (   len == -1
-            && (errno == EAGAIN
-            || errno == EWOULDBLOCK
-            || errno == EINPROGRESS
-            || errno == ENOTCONN))
-        {
-            return;
-        }
         code = ICMP_UNREACH_PORT;
 
         if (errno == EHOSTUNREACH)
@@ -1319,11 +1312,51 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
                     errno, strerror(errno)));
         icmp_error(pData, so->so_m, ICMP_UNREACH, code, 0, strerror(errno));
         so->so_m = NULL;
+        Log(("sorecvfrom_icmp_unix: 1 - step can't read IP datagramm \n"));
+        return;
     }
-    else
+    /* basic check of IP header */
+    if (   ip.ip_v != IPVERSION
+        || ip.ip_p != IPPROTO_ICMP)
     {
-        send_icmp_to_guest(pData, buff, len, so, &addr);
+        Log(("sorecvfrom_icmp_unix: 1 - step IP isn't IPv4 \n"));
+        return;
     }
+
+    len = RT_N2H_U16(ip.ip_len);
+    buff = RTMemAlloc(len);
+    if (buff == NULL)
+    {
+        Log(("sorecvfrom_icmp_unix: 1 - step can't allocate enought room for datagram\n"));
+        return;
+    }
+    /* 2 - step: we're reading rest of the datagramm to the buffer */
+    addrlen = sizeof(struct sockaddr_in);
+    memset(&addr, 0, addrlen);
+    len = recvfrom(so->s, buff, len, 0,
+                   (struct sockaddr *)&addr, &addrlen);
+    if (   len < 0
+        && (   errno == EAGAIN
+            || errno == EWOULDBLOCK
+            || errno == EINPROGRESS
+            || errno == ENOTCONN))
+    {
+        Log(("sorecvfrom_icmp_unix: 2 - step can't read IP body (would block expected:%d)\n", 
+            RT_N2H_U16(ip.ip_len)));
+        RTMemFree(buff);
+        return;
+    }
+    if (   len < 0 
+        || len < (RT_N2H_U16(ip.ip_len))
+        || len == 0)
+    {
+        Log(("sorecvfrom_icmp_unix: 2 - step read of the rest of datagramm is fallen (errno:%d, len:%d expected: %d)\n",
+             errno, len, (RT_N2H_U16(ip.ip_len) - sizeof(struct ip))));
+        RTMemFree(buff);
+        return;
+    }
+    /* len is modified in 2nd read, when the rest of the datagramm was read */
+    send_icmp_to_guest(pData, buff, len, so, &addr);
     RTMemFree(buff);
 }
 #endif /* !RT_OS_WINDOWS */
