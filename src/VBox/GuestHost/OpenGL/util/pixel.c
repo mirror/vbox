@@ -1,4 +1,4 @@
-/* Copyright (c) 2001, Stanford University
+/* Cop(c) 2001, Stanford University
  * All rights reserved
  *
  * See the file LICENSE.txt for information on redistributing this software.
@@ -9,6 +9,13 @@
 #include "cr_mem.h"
 #include "cr_version.h"
 
+#if defined(WINDOWS)
+# include <math.h>
+# include <float.h>
+# define isnan(x) _isnan(x)
+#else
+# include <cmath>
+#endif
 
 /**
  * Maybe export this someday.
@@ -115,13 +122,25 @@ int crPixelSize( GLenum format, GLenum type )
         case GL_ALPHA:
         case GL_LUMINANCE:
         case GL_INTENSITY:
+#ifdef CR_EXT_texture_sRGB
+        case GL_SLUMINANCE_EXT:
+        case GL_SLUMINANCE8_EXT:
+#endif
             break;
         case GL_LUMINANCE_ALPHA:
+#ifdef CR_EXT_texture_sRGB
+        case GL_SLUMINANCE_ALPHA_EXT:
+        case GL_SLUMINANCE8_ALPHA8_EXT:
+#endif
             bytes *= 2;
             break;
         case GL_RGB:
 #ifdef CR_OPENGL_VERSION_1_2
         case GL_BGR:
+#endif
+#ifdef CR_EXT_texture_sRGB
+        case GL_SRGB_EXT:
+        case GL_SRGB8_EXT:
 #endif
             bytes *= 3;
             break;
@@ -131,6 +150,10 @@ int crPixelSize( GLenum format, GLenum type )
 #endif
 #ifdef CR_OPENGL_VERSION_1_2
         case GL_BGRA:
+#endif
+#ifdef CR_EXT_texture_sRGB
+        case GL_SRGB_ALPHA_EXT:
+        case GL_SRGB8_ALPHA8_EXT:
 #endif
             bytes *= 4;
             break;
@@ -161,6 +184,36 @@ int crPixelSize( GLenum format, GLenum type )
 #define UINT_TO_FLOAT(i)  ((i) * (1.0F / 4294967295.0F))
 #define FLOAT_TO_UINT(f)  ((GLuint) ((f) * 4294967295.0))
 
+
+static float SRGBF_TO_RGBF(float f)
+{
+    if (isnan(f)) return 0.f;
+
+    if (f<=0.04045f)
+    {
+        return f/12.92f;
+    }
+    else
+    {
+        return pow((f+0.055f)/1.055f, 2.4f);
+    }
+}
+
+static float RGBF_TO_SRGBF(float f)
+{
+    if (isnan(f)) return 0.f;
+    if (f>1.f) return 1.f;
+    if (f<0.f) return 0.f;
+
+    if (f<0.0031308f)
+    {
+        return f*12.92f;
+    }
+    else
+    {
+        return 1.055f*pow(f, 0.41666f) - 0.055f;
+    }
+}
 
 #ifdef _MSC_VER
 /** @todo bird: MSC takes 5..20 mins to compile get_row and/or put_row with global
@@ -267,7 +320,7 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
         }
     }
     else if (srcFormat == GL_RED || srcFormat == GL_GREEN ||
-                     srcFormat == GL_BLUE || srcFormat == GL_ALPHA) {
+             srcFormat == GL_BLUE || srcFormat == GL_ALPHA) {
         int dst;
         if (srcFormat == GL_RED)
             dst = 0;
@@ -320,7 +373,12 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
                 crError("unexpected type in get_row in pixel.c");
         }
     }
-    else if (srcFormat == GL_LUMINANCE) {
+    else if (srcFormat == GL_LUMINANCE 
+#ifdef CR_EXT_texture_sRGB
+             || srcFormat == GL_SLUMINANCE_EXT
+             || srcFormat == GL_SLUMINANCE8_EXT
+#endif
+            ) {
         switch (srcType) {
             case GL_BYTE:
                 for (i = 0; i < width; i++) {
@@ -426,7 +484,12 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
                 crError("unexpected type in get_row in pixel.c");
         }
     }
-    else if (srcFormat == GL_LUMINANCE_ALPHA) {
+    else if (srcFormat == GL_LUMINANCE_ALPHA
+#ifdef CR_EXT_texture_sRGB
+             || srcFormat == GL_SLUMINANCE_ALPHA_EXT
+             || srcFormat == GL_SLUMINANCE8_ALPHA8_EXT
+#endif
+            ) {
         switch (srcType) {
             case GL_BYTE:
                 for (i = 0; i < width; i++) {
@@ -489,11 +552,20 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
     }
     else if (srcFormat == GL_RGB
 #ifdef CR_OPENGL_VERSION_1_2
-                     || srcFormat == GL_BGR
+             || srcFormat == GL_BGR
+#endif
+#ifdef CR_EXT_texture_sRGB
+             || srcFormat == GL_SRGB_EXT
+             || srcFormat == GL_SRGB8_EXT
 #endif
                      ) {
         int r, b;
-        if (srcFormat == GL_RGB) {
+        if (srcFormat == GL_RGB
+#ifdef CR_EXT_texture_sRGB
+            || srcFormat == GL_SRGB_EXT
+            || srcFormat == GL_SRGB8_EXT
+#endif
+           ) {
             r = 0; b = 2;
         }
         else {
@@ -604,11 +676,21 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
     }
     else if (srcFormat == GL_RGBA
 #ifdef CR_OPENGL_VERSION_1_2
-                     || srcFormat == GL_BGRA
+             || srcFormat == GL_BGRA
 #endif
-                     ) {
+#ifdef CR_EXT_texture_sRGB
+             || srcFormat == GL_SRGB_ALPHA_EXT
+             || srcFormat == GL_SRGB8_ALPHA8_EXT
+#endif
+             ) {
         int r, b;
-        if (srcFormat == GL_RGB) {
+        if (srcFormat == GL_RGBA
+#ifdef CR_EXT_texture_sRGB
+            || srcFormat == GL_SRGB_ALPHA_EXT
+            || srcFormat == GL_SRGB8_ALPHA8_EXT
+#endif
+           )
+        {
             r = 0; b = 2;
         }
         else {
@@ -752,11 +834,31 @@ get_row(const char *src, GLenum srcFormat, GLenum srcType,
     else{
         crError("unexpected source format in get_row in pixel.c");
     }
+
+#ifdef CR_EXT_texture_sRGB
+    if (srcFormat == GL_SRGB_EXT
+        || srcFormat == GL_SRGB8_EXT
+        || srcFormat == GL_SRGB_ALPHA_EXT
+        || srcFormat == GL_SRGB8_ALPHA8_EXT
+        || srcFormat == GL_SLUMINANCE_ALPHA_EXT
+        || srcFormat == GL_SLUMINANCE8_ALPHA8_EXT
+        || srcFormat == GL_SLUMINANCE_EXT
+        || srcFormat == GL_SLUMINANCE8_EXT
+       )
+    {
+        for (i=0; i<width; ++i)
+        {
+            tmpRow[i*4+0] = SRGBF_TO_RGBF(tmpRow[i*4+0]);
+            tmpRow[i*4+1] = SRGBF_TO_RGBF(tmpRow[i*4+1]);
+            tmpRow[i*4+2] = SRGBF_TO_RGBF(tmpRow[i*4+2]);
+        }
+    }
+#endif
 }
 
 
 static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
-                                        GLsizei width, const GLfloat *tmpRow)
+                    GLsizei width, GLfloat *tmpRow)
 {
     GLbyte *bDst = (GLbyte *) dst;
     GLubyte *ubDst = (GLubyte *) dst;
@@ -767,6 +869,26 @@ static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
     GLfloat *fDst = (GLfloat *) dst;
     GLdouble *dDst = (GLdouble *) dst;
     int i;
+
+#ifdef CR_EXT_texture_sRGB
+    if (dstFormat == GL_SRGB_EXT
+        || dstFormat == GL_SRGB8_EXT
+        || dstFormat == GL_SRGB_ALPHA_EXT
+        || dstFormat == GL_SRGB8_ALPHA8_EXT
+        || dstFormat == GL_SLUMINANCE_ALPHA_EXT
+        || dstFormat == GL_SLUMINANCE8_ALPHA8_EXT
+        || dstFormat == GL_SLUMINANCE_EXT
+        || dstFormat == GL_SLUMINANCE8_EXT
+       )
+    {
+        for (i=0; i<width; ++i)
+        {
+            tmpRow[i*4+0] = RGBF_TO_SRGBF(tmpRow[i*4+0]);
+            tmpRow[i*4+1] = RGBF_TO_SRGBF(tmpRow[i*4+1]);
+            tmpRow[i*4+2] = RGBF_TO_SRGBF(tmpRow[i*4+2]);
+        }
+    }
+#endif
 
     if (dstFormat == GL_COLOR_INDEX || dstFormat == GL_STENCIL_INDEX) {
         switch (dstType) {
@@ -845,12 +967,22 @@ static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
         }
     }
     else if (dstFormat == GL_RED || dstFormat == GL_GREEN ||
-                     dstFormat == GL_BLUE || dstFormat == GL_ALPHA ||
-                     dstFormat == GL_LUMINANCE || dstFormat == GL_INTENSITY) {
+             dstFormat == GL_BLUE || dstFormat == GL_ALPHA ||
+             dstFormat == GL_LUMINANCE || dstFormat == GL_INTENSITY
+#ifdef CR_EXT_texture_sRGB
+             || dstFormat == GL_SLUMINANCE_EXT
+             || dstFormat == GL_SLUMINANCE8_EXT
+#endif
+             ) {
         int index;
         if (dstFormat == GL_RED)
             index = 0;
-        else if (dstFormat == GL_LUMINANCE)
+        else if (dstFormat == GL_LUMINANCE 
+#ifdef CR_EXT_texture_sRGB
+                 || dstFormat == GL_SLUMINANCE_EXT
+                 || dstFormat == GL_SLUMINANCE8_EXT
+#endif
+                )
             index = 0;
         else if (dstFormat == GL_INTENSITY)
             index = 0;
@@ -897,7 +1029,12 @@ static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
                 crError("unexpected type in put_row in pixel.c");
         }
     }
-    else if (dstFormat == GL_LUMINANCE_ALPHA) {
+    else if (dstFormat == GL_LUMINANCE_ALPHA
+#ifdef CR_EXT_texture_sRGB
+             || dstFormat == GL_SLUMINANCE_ALPHA_EXT
+             || dstFormat == GL_SLUMINANCE8_ALPHA8_EXT
+#endif
+            ) {
         switch (dstType) {
             case GL_BYTE:
                 for (i = 0; i < width; i++) {
@@ -953,11 +1090,20 @@ static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
     }
     else if (dstFormat == GL_RGB
 #ifdef CR_OPENGL_VERSION_1_2
-                     || dstFormat == GL_BGR
+             || dstFormat == GL_BGR
+#endif
+#ifdef CR_EXT_texture_sRGB
+             || dstFormat == GL_SRGB_EXT
+             || dstFormat == GL_SRGB8_EXT
 #endif
                      ) {
         int r, b;
-        if (dstFormat == GL_RGB) {
+        if (dstFormat == GL_RGB
+#ifdef CR_EXT_texture_sRGB
+            || dstFormat == GL_SRGB_EXT
+            || dstFormat == GL_SRGB8_EXT
+#endif
+           ) {
             r = 0; b = 2;
         }
         else {
@@ -1060,11 +1206,20 @@ static void put_row(char *dst, GLenum dstFormat, GLenum dstType,
     }
     else if (dstFormat == GL_RGBA
 #ifdef CR_OPENGL_VERSION_1_2
-                     || dstFormat == GL_BGRA
+             || dstFormat == GL_BGRA
+#endif
+#ifdef CR_EXT_texture_sRGB
+             || dstFormat == GL_SRGB_ALPHA_EXT
+             || dstFormat == GL_SRGB8_ALPHA8_EXT
 #endif
                      ) {
         int r, b;
-        if (dstFormat == GL_RGB) {
+        if (dstFormat == GL_RGBA
+#ifdef CR_EXT_texture_sRGB
+            || dstFormat == GL_SRGB_ALPHA_EXT
+            || dstFormat == GL_SRGB8_ALPHA8_EXT
+#endif
+           ) {
             r = 0; b = 2;
         }
         else {

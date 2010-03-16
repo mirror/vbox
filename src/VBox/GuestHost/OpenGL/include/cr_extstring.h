@@ -208,7 +208,10 @@ static const char *crExtensions =
     "GL_ARB_vertex_shader "
 #endif
 #ifdef CR_ARB_fragment_shader
-    "GL_ARB_fragment_shader"
+    "GL_ARB_fragment_shader "
+#endif
+#ifdef CR_EXT_texture_sRGB
+    "CR_EXT_texture_sRGB "
 #endif
 	"";
 

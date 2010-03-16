@@ -381,12 +381,22 @@ crStateTextureInitTextureFormat( CRTextureLevel *tl, GLenum internalFormat )
 	case 4:
 	case GL_RGBA:
 	case GL_COMPRESSED_RGBA_ARB:
+#ifdef CR_EXT_texture_sRGB
+    case GL_SRGB_ALPHA_EXT:
+    case GL_SRGB8_ALPHA8_EXT:
+    case GL_COMPRESSED_SRGB_ALPHA_EXT:
+#endif
 		tl->texFormat = &_texformat_rgba8888;
 		break;
 
 	case 3:
 	case GL_RGB:
 	case GL_COMPRESSED_RGB_ARB:
+#ifdef CR_EXT_texture_sRGB
+    case GL_SRGB_EXT:
+    case GL_SRGB8_EXT:
+    case GL_COMPRESSED_SRGB_EXT:
+#endif
 		tl->texFormat = &_texformat_rgb888;
 		break;
 
@@ -428,6 +438,11 @@ crStateTextureInitTextureFormat( CRTextureLevel *tl, GLenum internalFormat )
 	case GL_LUMINANCE12:
 	case GL_LUMINANCE16:
 	case GL_COMPRESSED_LUMINANCE_ARB:
+#ifdef CR_EXT_texture_sRGB
+    case GL_SLUMINANCE_EXT:
+    case GL_SLUMINANCE8_EXT:
+    case GL_COMPRESSED_SLUMINANCE_EXT:
+#endif
 		tl->texFormat = &_texformat_l8;
 		break;
 
@@ -440,6 +455,11 @@ crStateTextureInitTextureFormat( CRTextureLevel *tl, GLenum internalFormat )
 	case GL_LUMINANCE12_ALPHA12:
 	case GL_LUMINANCE16_ALPHA16:
 	case GL_COMPRESSED_LUMINANCE_ALPHA_ARB:
+#ifdef CR_EXT_texture_sRGB
+    case GL_SLUMINANCE_ALPHA_EXT:
+    case GL_SLUMINANCE8_ALPHA8_EXT:
+    case GL_COMPRESSED_SLUMINANCE_ALPHA_EXT:
+#endif
 		tl->texFormat = &_texformat_al88;
 		break;
 
