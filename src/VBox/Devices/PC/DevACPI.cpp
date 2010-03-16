@@ -152,10 +152,6 @@ enum
     SYSTEM_INFO_INDEX_HPET_STATUS       = 2,
     SYSTEM_INFO_INDEX_SMC_STATUS        = 3,
     SYSTEM_INFO_INDEX_FDC_STATUS        = 4,
-    SYSTEM_INFO_INDEX_CPU0_STATUS       = 5,
-    SYSTEM_INFO_INDEX_CPU1_STATUS       = 6,
-    SYSTEM_INFO_INDEX_CPU2_STATUS       = 7,
-    SYSTEM_INFO_INDEX_CPU3_STATUS       = 8,
     SYSTEM_INFO_INDEX_HIGH_MEMORY_LENGTH= 9,
     SYSTEM_INFO_INDEX_RTC_STATUS        = 10,
     SYSTEM_INFO_INDEX_CPU_LOCKED        = 11, /**< Contains a flag indicating whether the CPU is locked or not */
@@ -1502,22 +1498,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                        : 0;
                     break;
 
-                case SYSTEM_INFO_INDEX_CPU0_STATUS:
-                case SYSTEM_INFO_INDEX_CPU1_STATUS:
-                case SYSTEM_INFO_INDEX_CPU2_STATUS:
-                case SYSTEM_INFO_INDEX_CPU3_STATUS:
-                    *pu32 = (   s->fShowCpu
-                             && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
-                             && VMCPUSET_IS_PRESENT(&s->CpuSetAttached,
-                                                    s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS))
-                                        ? (  STA_DEVICE_PRESENT_MASK
-                                           | STA_DEVICE_ENABLED_MASK
-                                           | STA_DEVICE_SHOW_IN_UI_MASK
-                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                                        : 0;
-                    break;
-
-                 case SYSTEM_INFO_INDEX_RTC_STATUS:
+                case SYSTEM_INFO_INDEX_RTC_STATUS:
                     *pu32 = s->fShowRtc ? (  STA_DEVICE_PRESENT_MASK
                                            | STA_DEVICE_ENABLED_MASK
                                            | STA_DEVICE_SHOW_IN_UI_MASK
