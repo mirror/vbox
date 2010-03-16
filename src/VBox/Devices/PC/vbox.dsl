@@ -700,7 +700,7 @@ DefinitionBlock ("DSDT.aml", "DSDT", 1, "VBOX  ", "VBOXBIOS", 2)
                     })
                     Method (_STA, 0, NotSerialized)
                     {
-                       Return (0x0f)
+                       Return (URTC)
                     }
                 }
 

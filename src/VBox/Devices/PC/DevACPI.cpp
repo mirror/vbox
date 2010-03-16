@@ -1483,7 +1483,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                            | STA_DEVICE_ENABLED_MASK
                                            | STA_DEVICE_SHOW_IN_UI_MASK
                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                            : 0;
+                                        : 0;
                     break;
 
                 case SYSTEM_INFO_INDEX_SMC_STATUS:
@@ -1491,7 +1491,7 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                           | STA_DEVICE_ENABLED_MASK
                                           /* no need to show this device in the UI */
                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                            : 0;
+                                       : 0;
                     break;
 
                 case SYSTEM_INFO_INDEX_FDC_STATUS:
@@ -1499,30 +1499,30 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                           | STA_DEVICE_ENABLED_MASK
                                           | STA_DEVICE_SHOW_IN_UI_MASK
                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                            : 0;
+                                       : 0;
                     break;
-
 
                 case SYSTEM_INFO_INDEX_CPU0_STATUS:
                 case SYSTEM_INFO_INDEX_CPU1_STATUS:
                 case SYSTEM_INFO_INDEX_CPU2_STATUS:
                 case SYSTEM_INFO_INDEX_CPU3_STATUS:
-                  *pu32 = s->fShowCpu
-                    && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
-                    && VMCPUSET_IS_PRESENT(&s->CpuSetAttached, s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS)
-                    ?
-                      STA_DEVICE_PRESENT_MASK
-                    | STA_DEVICE_ENABLED_MASK
-                    | STA_DEVICE_SHOW_IN_UI_MASK
-                    | STA_DEVICE_FUNCTIONING_PROPERLY_MASK
-                    : 0;
+                    *pu32 = (   s->fShowCpu
+                             && s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS < s->cCpus
+                             && VMCPUSET_IS_PRESENT(&s->CpuSetAttached,
+                                                    s->uSystemInfoIndex - SYSTEM_INFO_INDEX_CPU0_STATUS))
+                                        ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                                        : 0;
+                    break;
 
                  case SYSTEM_INFO_INDEX_RTC_STATUS:
                     *pu32 = s->fShowRtc ? (  STA_DEVICE_PRESENT_MASK
                                            | STA_DEVICE_ENABLED_MASK
                                            | STA_DEVICE_SHOW_IN_UI_MASK
                                            | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
-                            : 0;
+                                        : 0;
                     break;
 
                 case SYSTEM_INFO_INDEX_CPU_LOCKED:
@@ -1542,16 +1542,12 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                 }
 
                 case SYSTEM_INFO_INDEX_CPU_EVENT_TYPE:
-                {
                     *pu32 = s->u32CpuEventType;
                     break;
-                }
 
                 case SYSTEM_INFO_INDEX_CPU_EVENT:
-                {
                     *pu32 = s->u32CpuEvent;
                     break;
-                }
 
                 /* Solaris 9 tries to read from this index */
                 case SYSTEM_INFO_INDEX_INVALID:
