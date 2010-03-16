@@ -209,7 +209,7 @@ bool UIMachineViewSeamless::eventFilter(QObject *pWatched, QEvent *pEvent)
             {
                 /* Send guest-resize hint only if top window resizing to required dimension: */
                 QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-                if (pResizeEvent->size() != availableGeometry().size())
+                if (pResizeEvent->size() != workingArea().size())
                     break;
 
                 /* Set the "guest needs to resize" hint.
@@ -290,10 +290,8 @@ void UIMachineViewSeamless::cleanupSeamless()
     }
 }
 
-QRect UIMachineViewSeamless::availableGeometry()
+QRect UIMachineViewSeamless::workingArea()
 {
-//    return machineWindowWrapper()->machineLogic()->availableGeometry(screenId());
-
     return QApplication::desktop()->availableGeometry(this);
 }
 
@@ -304,7 +302,7 @@ void UIMachineViewSeamless::calculateDesktopGeometry()
     /* If we are not doing automatic geometry calculation then there is nothing to do: */
     if (desktopGeometryType() == DesktopGeo_Automatic)
     {
-        m_desktopGeometry = QSize(availableGeometry().width(), availableGeometry().height());
+        m_desktopGeometry = QSize(workingArea().width(), workingArea().height());
     }
 }
 

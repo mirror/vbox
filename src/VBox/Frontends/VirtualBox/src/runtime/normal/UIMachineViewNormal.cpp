@@ -316,7 +316,7 @@ void UIMachineViewNormal::normalizeGeometry(bool bAdjustPosition)
     pTopLevelWidget->setGeometry(frameGeo.left() + dl, frameGeo.top() + dt, frameGeo.width() - dl - dr, frameGeo.height() - dt - db);
 }
 
-QRect UIMachineViewNormal::availableGeometry()
+QRect UIMachineViewNormal::workingArea()
 {
     return QApplication::desktop()->availableGeometry(this);
 }
@@ -334,11 +334,11 @@ void UIMachineViewNormal::calculateDesktopGeometry()
         /* The area taken up by the machine central widget, so excluding all decorations: */
         QRect centralWidgetGeo = static_cast<QMainWindow*>(machineWindowWrapper()->machineWindow())->centralWidget()->geometry();
         /* To work out how big we can make the console window while still fitting on the desktop,
-         * we calculate availableGeometry() - (windowGeo - centralWidgetGeo).
+         * we calculate workingArea() - (windowGeo - centralWidgetGeo).
          * This works because the difference between machine window and machine central widget
          * (or at least its width and height) is a constant. */
-        m_desktopGeometry = QSize(availableGeometry().width() - (windowGeo.width() - centralWidgetGeo.width()),
-                                  availableGeometry().height() - (windowGeo.height() - centralWidgetGeo.height()));
+        m_desktopGeometry = QSize(workingArea().width() - (windowGeo.width() - centralWidgetGeo.width()),
+                                  workingArea().height() - (windowGeo.height() - centralWidgetGeo.height()));
     }
 }
 

@@ -127,7 +127,7 @@ protected:
 #ifdef Q_WS_WIN32
     void updateMouseCursorClipping();
 #endif
-    virtual QRect availableGeometry() = 0;
+    virtual QRect workingArea() = 0;
     virtual void calculateDesktopGeometry() = 0;
     virtual void maybeRestrictMinimumSize() = 0;
     virtual void updateSliders();
