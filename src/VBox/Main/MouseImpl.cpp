@@ -388,7 +388,8 @@ STDMETHODIMP Mouse::PutMouseEvent(LONG dx, LONG dy, LONG dz, LONG dw, LONG butto
 }
 
 /**
- * Convert an X value in screen co-ordinates to a value from 0 to 0xffff
+ * Convert an X value in screen co-ordinates (starting from 1) to a value
+ * from 0 to 0xffff.
  *
  * @returns   COM status value
  */
@@ -407,7 +408,8 @@ HRESULT Mouse::convertDisplayWidth(LONG x, uint32_t *pcX)
 }
 
 /**
- * Convert a Y value in screen co-ordinates to a value from 0 to 0xffff
+ * Convert a Y value in screen co-ordinates (starting from 1) to a value
+ * from 0 to 0xffff.
  *
  * @returns   COM status value
  */
@@ -431,8 +433,8 @@ HRESULT Mouse::convertDisplayHeight(LONG y, uint32_t *pcY)
  * when the required guest support has been installed.
  *
  * @returns COM status code
- * @param x          X position (pixel)
- * @param y          Y position (pixel)
+ * @param x          X position (pixel), starting from 1
+ * @param y          Y position (pixel), starting from 1
  * @param dz         Z movement
  * @param buttonState The mouse button state
  */
