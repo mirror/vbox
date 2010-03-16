@@ -206,7 +206,11 @@ quint64 UIMultiScreenLayout::memoryRequirements(const QMap<int, int> *pScreenLay
     quint64 usedBits = 0;
     for (int i = 0; i < m_cGuestScreens; ++ i)
     {
-        QRect screen = QApplication::desktop()->availableGeometry(pScreenLayout->value(i, 0));
+        QRect screen;
+        if (m_pMachineLogic->visualStateType() == UIVisualStateType_Seamless)
+            screen = QApplication::desktop()->availableGeometry(pScreenLayout->value(i, 0));
+        else
+            screen = QApplication::desktop()->screenGeometry(pScreenLayout->value(i, 0));
         usedBits += screen.width() * /* display width */
                     screen.height() * /* display height */
                     guestBpp + /* guest bits per pixel */
