@@ -233,10 +233,10 @@ static int pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs(PVM pVM, PPGMPHYSHANDL
         i++;
     }
 
-    if (fFlushTLBs && rc == VINF_SUCCESS)
+    if (fFlushTLBs && RT_SUCCESS(rc))
     {
         PGM_INVL_ALL_VCPU_TLBS(pVM);
-        Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: flushing guest TLBs\n"));
+        Log(("pgmHandlerPhysicalSetRamFlagsAndFlushShadowPTs: flushing guest TLBs; rc=%d\n", rc));
     }
     else
     {
