@@ -771,7 +771,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
 {
     dfprintf(("==> "__FUNCTION__ ", context(0x%p), msg(0x%x)\n", MiniportDeviceContext, MessageNumber));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
     BOOLEAN bOur = FALSE;
@@ -900,7 +900,7 @@ VOID DxgkDdiDpcRoutine(
 {
     dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)MiniportDeviceContext;
 
@@ -1480,7 +1480,7 @@ DxgkDdiDescribeAllocation(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     PVBOXWDDM_ALLOCATION pAllocation = (PVBOXWDDM_ALLOCATION)pDescribeAllocation->hAllocation;
     pDescribeAllocation->Width = pAllocation->u.SurfInfo.width;
@@ -1652,7 +1652,7 @@ DxgkDdiPatch(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     /* Value == 2 is Present
      * Value == 4 is RedirectedPresent
@@ -1694,7 +1694,7 @@ DxgkDdiSubmitCommand(
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
@@ -1767,7 +1767,7 @@ DxgkDdiBuildPagingBuffer(
     /* DxgkDdiBuildPagingBuffer should be made pageable. */
     PAGED_CODE();
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
 
@@ -2154,7 +2154,7 @@ DxgkDdiSetVidPnSourceAddress(
     /* The DxgkDdiSetVidPnSourceAddress function should be made pageable. */
     PAGED_CODE();
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
@@ -2221,7 +2221,7 @@ DxgkDdiSetVidPnSourceVisibility(
     /* DxgkDdiSetVidPnSourceVisibility should be made pageable. */
     PAGED_CODE();
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
@@ -2273,7 +2273,7 @@ DxgkDdiCommitVidPn(
 
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
     NTSTATUS Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pCommitVidPnArg->hFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
@@ -2664,7 +2664,7 @@ DxgkDdiPresent(
 
     dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
-    vboxVDbgBreakF();
+    vboxVDbgBreakFv();
 
     NTSTATUS Status = STATUS_SUCCESS;
     PVBOXWDDM_CONTEXT pContext = (PVBOXWDDM_CONTEXT)hContext;

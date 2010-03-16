@@ -139,16 +139,18 @@ static int vboxVDMACmdExecBltPerform(PVBOXVDMAHOST pVdma,
     }
     else
     {
-        uint32_t offDstStart = pDstDesc->pitch * pDstRectl->top + pDstRectl->left;
-        uint32_t cbDstLine = pDstDesc->bpp * pDstRectl->width;
-        cbDstLine = !(cbDstLine & 7) ? cbDstLine >> 3 : (cbDstLine >> 3) + 1;
+        uint32_t offDstLineStart = pDstRectl->left * pDstDesc->bpp >> 3;
+        uint32_t offDstLineEnd = ((pDstRectl->left * pDstDesc->bpp + 7) >> 3) + ((pDstDesc->bpp * pDstRectl->width + 7) >> 3);
+        uint32_t cbDstLine = offDstLineEnd - offDstLineStart;
+        uint32_t offDstStart = pDstDesc->pitch * pDstRectl->top + offDstLineStart;
         Assert(cbDstLine <= pDstDesc->pitch);
         uint32_t cbDstSkip = pDstDesc->pitch;
         uint8_t * pvDstStart = pvDstSurf + offDstStart;
 
-        uint32_t offSrcStart = pSrcDesc->pitch * pSrcRectl->top + pSrcRectl->left;
-        uint32_t cbSrcLine = pSrcDesc->bpp * pSrcRectl->width;
-        cbSrcLine = !(cbSrcLine & 7) ? cbSrcLine >> 3 : (cbSrcLine >> 3) + 1;
+        uint32_t offSrcLineStart = pSrcRectl->left * pSrcDesc->bpp >> 3;
+        uint32_t offSrcLineEnd = ((pSrcRectl->left * pSrcDesc->bpp + 7) >> 3) + ((pSrcDesc->bpp * pSrcRectl->width + 7) >> 3);
+        uint32_t cbSrcLine = offSrcLineEnd - offSrcLineStart;
+        uint32_t offSrcStart = pSrcDesc->pitch * pSrcRectl->top + offSrcLineStart;
         Assert(cbSrcLine <= pSrcDesc->pitch);
         uint32_t cbSrcSkip = pSrcDesc->pitch;
         const uint8_t * pvSrcStart = pvSrcSurf + offSrcStart;
