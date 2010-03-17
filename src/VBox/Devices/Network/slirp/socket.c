@@ -1056,6 +1056,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
 
     ip = (struct ip *)buff;
     hlen = (ip->ip_hl << 2);
+    if (RT_N2H_U16(ip->ip_len) < hlen + ICMP_MINLEN)
+    {
+        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
+       return; 
+    }
     icp = (struct icmp *)((char *)ip + hlen);
 
     Log(("ICMP:received msg(t:%d, c:%d)\n", icp->icmp_type, icp->icmp_code));
