@@ -106,6 +106,8 @@ VBoxMiniToolBar::VBoxMiniToolBar (QWidget *aParent, Alignment aAlignment, bool a
 
     /* Right margin of tool-bar */
     mMargins << widgetForAction (addWidget (new QWidget (this)));
+
+    aParent->installEventFilter(this);
 }
 
 VBoxMiniToolBar& VBoxMiniToolBar::operator<< (QList <QMenu*> aMenus)
@@ -414,5 +416,15 @@ QPoint VBoxMiniToolBar::mapFromScreen (const QPoint &aPoint)
                                  QApplication::desktop()->screenGeometry (window());
     QPoint shiftToReal (realArea.topLeft() - fullArea.topLeft());
     return globalPosition + shiftToReal;
+}
+
+bool VBoxMiniToolBar::eventFilter(QObject *pObj, QEvent *pEvent)
+{
+    if (pEvent->type() == QEvent::Resize)
+    {
+        moveToBase();
+        return true;
+    }
+    return VBoxToolBar::eventFilter(pObj, pEvent);
 }
 
