@@ -1110,6 +1110,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     Assert(m != NULL);
 
     src = addr->sin_addr.s_addr;
+#if 0
+    /* @todo: check why it's too strict. */
     if (type == ICMP_ECHOREPLY)
     {
         struct ip *ip0 = mtod(m, struct ip *);
@@ -1126,6 +1128,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             return;
         }
     }
+#endif
 
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
