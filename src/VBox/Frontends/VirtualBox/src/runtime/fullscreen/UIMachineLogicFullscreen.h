@@ -79,6 +79,7 @@ private:
     /* Friend classes: */
     friend class UIMachineLogic;
     friend class UIMachineWindowFullscreen;
+    friend class UIMachineViewFullscreen;
 };
 
 #endif // __UIMachineLogicFullscreen_h__

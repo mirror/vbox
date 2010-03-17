@@ -39,6 +39,7 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIFrameBuffer.h"
+#include "UIMachineLogicFullscreen.h"
 #include "UIMachineViewFullscreen.h"
 
 UIMachineViewFullscreen::UIMachineViewFullscreen(  UIMachineWindow *pMachineWindow
@@ -291,7 +292,10 @@ void UIMachineViewFullscreen::setGuestAutoresizeEnabled(bool fEnabled)
 
 QRect UIMachineViewFullscreen::workingArea()
 {
-    return QApplication::desktop()->screenGeometry(this);
+    /* Get corresponding screen: */
+    int iScreen = static_cast<UIMachineLogicFullscreen*>(machineLogic())->hostScreenForGuestScreen(screenId());
+    /* Return available geometry for that screen: */
+    return QApplication::desktop()->screenGeometry(iScreen);
 }
 
 void UIMachineViewFullscreen::calculateDesktopGeometry()
