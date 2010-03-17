@@ -1535,6 +1535,10 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     Assert(rc == VINF_SUCCESS);
     pPage->fDirty = false;
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    uint32_t iPrevSubset = PGMDynMapPushAutoSubset(VMMGetCpu(pVM));
+#endif
+
 #ifdef VBOX_STRICT
     uint64_t fFlags = 0;
     RTHCPHYS HCPhys;
@@ -1580,6 +1584,10 @@ static void pgmPoolFlushDirtyPage(PVM pVM, PPGMPOOL pPool, unsigned idxSlot, boo
     }
     else
         Log(("Removed dirty page %RGp cMods=%d cChanges=%d\n", pPage->GCPhys, pPage->cModifications, cChanges));
+
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE_IN_R0
+    PGMDynMapPopAutoSubset(VMMGetCpu(pVM), iPrevSubset);
+#endif
 }
 
 # ifndef IN_RING3
