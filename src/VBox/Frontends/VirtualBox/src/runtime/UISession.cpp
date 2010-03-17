@@ -24,6 +24,7 @@
 /* Global inclues */
 #include <QApplication>
 #include <QWidget>
+#include <QTimer>
 
 /* Local includes */
 #include "UISession.h"
@@ -603,18 +604,14 @@ void UISession::powerUp()
     CProgress progress = vboxGlobal().isStartPausedEnabled() || vboxGlobal().isDebuggerAutoShowEnabled() ?
                          console.PowerUpPaused() : console.PowerUp();
 
-#if 0 // TODO: Check immediate failure!
-    /* Check for an immediate failure: */
+    /* Check for immediate failure: */
     if (!console.isOk())
     {
-        vboxProblem().cannotStartMachine(console);
-        machineWindowWrapper()->machineWindow()->close();
+        if (vboxGlobal().showStartVMErrors())
+            vboxProblem().cannotStartMachine(console);
+        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
         return;
     }
-
-    /* Disable auto-closure because we want to have a chance to show the error dialog on startup failure: */
-    setPreventAutoClose(true);
-#endif
 
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
@@ -622,25 +619,21 @@ void UISession::powerUp()
     else
         vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
 
-#if 0 // TODO: Check immediate failure!
-    /* Check for an progress failure */
+    /* Check for a progress failure: */
     if (progress.GetResultCode() != 0)
     {
-        vboxProblem().cannotStartMachine(progress);
-        machineWindowWrapper()->machineWindow()->close();
+        if (vboxGlobal().showStartVMErrors())
+            vboxProblem().cannotStartMachine(progress);
+        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
         return;
     }
-
-    /* Enable auto-closure again: */
-    setPreventAutoClose(false);
 
     /* Check if we missed a really quick termination after successful startup, and process it if we did: */
-    if (uisession()->isTurnedOff())
+    if (isTurnedOff())
     {
-        machineWindowWrapper()->machineWindow()->close();
+        QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
         return;
     }
-#endif
 
 #if 0 // TODO: Rework debugger logic!
 # ifdef VBOX_WITH_DEBUGGER_GUI
