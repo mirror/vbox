@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Motorola MC146818 RTC/CMOS Device.
+ * Motorola MC146818 RTC/CMOS Device with PIIX4 extensions.
  */
 
 /*
@@ -116,9 +116,12 @@ RT_C_DECLS_END
 
 
 /** The saved state version. */
-#define RTC_SAVED_STATE_VERSION             3
+#define RTC_SAVED_STATE_VERSION             4
+/** The saved state version used by VirtualBox pre-3.2.
+ * This does not include the second 128-byte bank. */
+#define RTC_SAVED_STATE_VERSION_VBOX_32PRE  3
 /** The saved state version used by VirtualBox 3.1 and earlier.
- * This does not include disabled by HPET state.  */
+ * This does not include disabled by HPET state. */
 #define RTC_SAVED_STATE_VERSION_VBOX_31     2
 /** The saved state version used by VirtualBox 3.0 and earlier.
  * This does not include the configuration.  */
@@ -143,9 +146,9 @@ struct my_tm
 
 
 struct RTCState {
-    uint8_t cmos_data[128];
-    uint8_t cmos_index;
-    uint8_t Alignment0[7];
+    uint8_t cmos_data[256];
+    uint8_t cmos_index[2];
+    uint8_t Alignment0[6];
     struct my_tm current_tm;
     /** The configured IRQ. */
     int32_t irq;
@@ -257,16 +260,19 @@ static void rtc_periodic_timer(void *opaque)
 static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
 {
     RTCState *s = (RTCState*)opaque;
+    uint32_t bank;
 
+    bank = (addr >> 1) & 1;
     if ((addr & 1) == 0) {
-        s->cmos_index = data & 0x7f;
+        s->cmos_index[bank] = (data & 0x7f) + (bank * 128);
     } else {
-        Log(("CMOS: Write idx %#04x: %#04x (old %#04x)\n", s->cmos_index, data, s->cmos_data[s->cmos_index]));
-        switch(s->cmos_index) {
+        Log(("CMOS: Write bank %d idx %#04x: %#04x (old %#04x)\n", bank, 
+             s->cmos_index[bank], data, s->cmos_data[s->cmos_index[bank]]));
+        switch(s->cmos_index[bank]) {
         case RTC_SECONDS_ALARM:
         case RTC_MINUTES_ALARM:
         case RTC_HOURS_ALARM:
-            s->cmos_data[s->cmos_index] = data;
+            s->cmos_data[s->cmos_index[0]] = data;
             break;
         case RTC_SECONDS:
         case RTC_MINUTES:
@@ -275,7 +281,7 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
         case RTC_DAY_OF_MONTH:
         case RTC_MONTH:
         case RTC_YEAR:
-            s->cmos_data[s->cmos_index] = data;
+            s->cmos_data[s->cmos_index[0]] = data;
             /* if in set mode, do not update the time */
             if (!(s->cmos_data[RTC_REG_B] & REG_B_SET)) {
                 rtc_set_time(s);
@@ -308,7 +314,7 @@ static void cmos_ioport_write(void *opaque, uint32_t addr, uint32_t data)
             /* cannot write to them */
             break;
         default:
-            s->cmos_data[s->cmos_index] = data;
+            s->cmos_data[s->cmos_index[bank]] = data;
             break;
         }
     }
@@ -487,10 +493,13 @@ static uint32_t cmos_ioport_read(void *opaque, uint32_t addr)
 {
     RTCState *s = (RTCState*)opaque;
     int ret;
+    unsigned bank;
+
+    bank = (addr >> 1) & 1;
     if ((addr & 1) == 0) {
         return 0xff;
     } else {
-        switch(s->cmos_index) {
+        switch(s->cmos_index[bank]) {
         case RTC_SECONDS:
         case RTC_MINUTES:
         case RTC_HOURS:
@@ -498,21 +507,21 @@ static uint32_t cmos_ioport_read(void *opaque, uint32_t addr)
         case RTC_DAY_OF_MONTH:
         case RTC_MONTH:
         case RTC_YEAR:
-            ret = s->cmos_data[s->cmos_index];
+            ret = s->cmos_data[s->cmos_index[0]];
             break;
         case RTC_REG_A:
-            ret = s->cmos_data[s->cmos_index];
+            ret = s->cmos_data[s->cmos_index[0]];
             break;
         case RTC_REG_C:
-            ret = s->cmos_data[s->cmos_index];
+            ret = s->cmos_data[s->cmos_index[0]];
             rtc_raise_irq(s, 0);
             s->cmos_data[RTC_REG_C] = 0x00;
             break;
         default:
-            ret = s->cmos_data[s->cmos_index];
+            ret = s->cmos_data[s->cmos_index[bank]];
             break;
         }
-        Log(("CMOS: Read idx %#04x: %#04x\n", s->cmos_index, ret));
+        Log(("CMOS: Read bank %d idx %#04x: %#04x\n", bank, s->cmos_index[bank], ret));
         return ret;
     }
 }
@@ -644,7 +653,7 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 
     /* The state. */
     SSMR3PutMem(pSSM, pThis->cmos_data, 128);
-    SSMR3PutU8(pSSM, pThis->cmos_index);
+    SSMR3PutU8(pSSM, pThis->cmos_index[0]);
 
     SSMR3PutS32(pSSM, pThis->current_tm.tm_sec);
     SSMR3PutS32(pSSM, pThis->current_tm.tm_min);
@@ -662,7 +671,10 @@ static DECLCALLBACK(int) rtcSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer), pSSM);
     TMR3TimerSave(pThis->CTX_SUFF(pSecondTimer2), pSSM);
 
-    return SSMR3PutBool(pSSM, pThis->fDisabledByHpet);
+    SSMR3PutBool(pSSM, pThis->fDisabledByHpet);
+
+    SSMR3PutMem(pSSM, &pThis->cmos_data[128], 128);
+    return SSMR3PutU8(pSSM, pThis->cmos_index[1]);
 }
 
 
@@ -675,6 +687,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
     int         rc;
 
     if (    uVersion != RTC_SAVED_STATE_VERSION
+        &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_32PRE
         &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_31
         &&  uVersion != RTC_SAVED_STATE_VERSION_VBOX_30)
         return VERR_SSM_UNSUPPORTED_DATA_UNIT_VERSION;
@@ -703,7 +716,7 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     /* The state. */
     SSMR3GetMem(pSSM, pThis->cmos_data, 128);
-    SSMR3GetU8(pSSM, &pThis->cmos_index);
+    SSMR3GetU8(pSSM, &pThis->cmos_index[0]);
 
     SSMR3GetS32(pSSM, &pThis->current_tm.tm_sec);
     SSMR3GetS32(pSSM, &pThis->current_tm.tm_min);
@@ -723,6 +736,13 @@ static DECLCALLBACK(int) rtcLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
 
     if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_31)
          SSMR3GetBool(pSSM, &pThis->fDisabledByHpet);
+
+    if (uVersion > RTC_SAVED_STATE_VERSION_VBOX_32PRE)
+    {
+        /* Second CMOS bank. */
+        SSMR3GetMem(pSSM, &pThis->cmos_data[128], 128);
+        SSMR3GetU8(pSSM, &pThis->cmos_index[1]);
+    }
 
     int period_code = pThis->cmos_data[RTC_REG_A] & 0x0f;
     if (    period_code != 0
@@ -766,7 +786,7 @@ static void rtcCalcCRC(RTCState *pThis)
  *
  * @returns VBox status code.
  * @param   pDevIns     Device instance of the RTC.
- * @param   iReg        The CMOS register index.
+ * @param   iReg        The CMOS register index; bit 8 determines bank.
  * @param   u8Value     The CMOS register value.
  */
 static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t u8Value)
@@ -793,7 +813,7 @@ static DECLCALLBACK(int) rtcCMOSWrite(PPDMDEVINS pDevIns, unsigned iReg, uint8_t
  *
  * @returns VBox status code.
  * @param   pDevIns     Device instance of the RTC.
- * @param   iReg        The CMOS register index.
+ * @param   iReg        The CMOS register index; bit 8 determines bank.
  * @param   pu8Value    Where to store the CMOS register value.
  */
 static DECLCALLBACK(int) rtcCMOSRead(PPDMDEVINS pDevIns, unsigned iReg, uint8_t *pu8Value)
@@ -850,7 +870,8 @@ static DECLCALLBACK(int)  rtcInitComplete(PPDMDEVINS pDevIns)
      */
     rtcCalcCRC(pThis);
 
-    Log(("CMOS: \n%16.128Rhxd\n", pThis->cmos_data));
+    Log(("CMOS bank 0: \n%16.128Rhxd\n", &pThis->cmos_data[0]));
+    Log(("CMOS bank 1: \n%16.128Rhxd\n", &pThis->cmos_data[128]));
     return VINF_SUCCESS;
 }
 
@@ -999,20 +1020,20 @@ static DECLCALLBACK(int)  rtcConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return rc;
 
-    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 2, NULL,
+    rc = PDMDevHlpIOPortRegister(pDevIns, pThis->IOPortBase, 4, NULL,
                                  rtcIOPortWrite, rtcIOPortRead, NULL, NULL, "MC146818 RTC/CMOS");
     if (RT_FAILURE(rc))
         return rc;
     if (fGCEnabled)
     {
-        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 2, 0,
+        rc = PDMDevHlpIOPortRegisterRC(pDevIns, pThis->IOPortBase, 4, 0,
                                        "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
     }
     if (fR0Enabled)
     {
-        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 2, 0,
+        rc = PDMDevHlpIOPortRegisterR0(pDevIns, pThis->IOPortBase, 4, 0,
                                        "rtcIOPortWrite", "rtcIOPortRead", NULL, NULL, "MC146818 RTC/CMOS");
         if (RT_FAILURE(rc))
             return rc;
