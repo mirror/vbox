@@ -2997,11 +2997,13 @@ ResumeExecution:
                 rc = DBGFRZTrap01Handler(pVM, pVCpu, CPUMCTX2CORE(pCtx), uDR6);
                 if (rc == VINF_EM_RAW_GUEST_TRAP)
                 {
-                    /** @todo this isn't working, but we'll never get here normally. */
-
                     /* Update DR6 here. */
                     pCtx->dr[6]  = uDR6;
 
+                    /* Resync DR6 if the debug state is active. */
+                    if (CPUMIsGuestDebugStateActive(pVCpu))
+                        ASMSetDR6(pCtx->dr[6]);
+                        
                     /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
                     pCtx->dr[7] &= ~X86_DR7_GD;
 
