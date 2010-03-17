@@ -1250,6 +1250,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_POLL_HANDLE_ID_EXISTS              (-951)
 /** The handle ID was not found in the set. */
 #define VERR_POLL_HANDLE_ID_NOT_FOUND           (-952)
+/** The poll set is full. */
+#define VERR_POLL_SET_IS_FULL                   (-953)
 /** @} */
 
 /* SED-END */

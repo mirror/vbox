@@ -43,10 +43,19 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/string.h>
+#include <iprt/poll.h>
 #include <iprt/process.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+#include "internal/pipe.h"
 #include "internal/magics.h"
+
+
+/*******************************************************************************
+*   Defined Constants And Macros                                               *
+*******************************************************************************/
+/** The pipe buffer size we prefere. */
+#define RTPIPE_NT_SIZE      _64K
 
 
 /*******************************************************************************
@@ -62,6 +71,12 @@ typedef struct RTPIPEINTERNAL
     bool                fRead;
     /** Set if there is already pending I/O. */
     bool                fIOPending;
+    /** Set if the zero byte read that the poll code using is pending. */
+    bool                fZeroByteRead;
+    /** Set if the pipe is broken. */
+    bool                fBrokenPipe;
+    /** Set if we've promised that the handle is writable. */
+    bool                fPromisedWritable;
     /** The number of users of the current mode. */
     uint32_t            cModeUsers;
     /** The overlapped I/O structure we use. */
@@ -72,10 +87,75 @@ typedef struct RTPIPEINTERNAL
     size_t              cbBounceBufUsed;
     /** Amount of allocated buffer space. */
     size_t              cbBounceBufAlloc;
+    /** The handle of the poll set currently polling on this pipe.
+     *  We can only have one poller at the time (lazy bird). */
+    RTPOLLSET           hPollSet;
+    /** The number of references to the handle in hPollSet. */
+    uint32_t            cPolls;
     /** Critical section protecting the above members.
      * (Taking the lazy/simple approach.) */
     RTCRITSECT          CritSect;
+    /** Buffer for the zero byte read. */
+    uint8_t             abBuf[8];
 } RTPIPEINTERNAL;
+
+
+/* from ntdef.h */
+typedef LONG NTSTATUS;
+
+/* from ntddk.h */
+typedef struct _IO_STATUS_BLOCK {
+    union {
+        NTSTATUS Status;
+        PVOID Pointer;
+    };
+    ULONG_PTR Information;
+} IO_STATUS_BLOCK, *PIO_STATUS_BLOCK;
+
+typedef enum _FILE_INFORMATION_CLASS {
+    FilePipeInformation = 23,
+    FilePipeLocalInformation = 24,
+    FilePipeRemoteInformation = 25,
+} FILE_INFORMATION_CLASS, *PFILE_INFORMATION_CLASS;
+
+/* from ntifs.h */
+typedef struct _FILE_PIPE_LOCAL_INFORMATION {
+     ULONG NamedPipeType;
+     ULONG NamedPipeConfiguration;
+     ULONG MaximumInstances;
+     ULONG CurrentInstances;
+     ULONG InboundQuota;
+     ULONG ReadDataAvailable;
+     ULONG OutboundQuota;
+     ULONG WriteQuotaAvailable;
+     ULONG NamedPipeState;
+     ULONG NamedPipeEnd;
+} FILE_PIPE_LOCAL_INFORMATION, *PFILE_PIPE_LOCAL_INFORMATION;
+
+#define FILE_PIPE_DISCONNECTED_STATE    0x00000001
+#define FILE_PIPE_LISTENING_STATE       0x00000002
+#define FILE_PIPE_CONNECTED_STATE       0x00000003
+#define FILE_PIPE_CLOSING_STATE         0x00000004
+
+
+extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, LONG, FILE_INFORMATION_CLASS);
+
+
+/**
+ * Wrapper for getting FILE_PIPE_LOCAL_INFORMATION via the NT API.
+ *
+ * @returns Success inidicator (true/false).
+ * @param   pThis               The pipe.
+ * @param   pInfo               The info structure.
+ */
+static bool rtPipeQueryInfo(RTPIPEINTERNAL *pThis, FILE_PIPE_LOCAL_INFORMATION *pInfo)
+{
+    IO_STATUS_BLOCK Ios;
+    RT_ZERO(Ios);
+    RT_ZERO(*pInfo);
+    NTSTATUS rcNt = NtQueryInformationFile(pThis->hPipe, &Ios, pInfo, sizeof(*pInfo), FilePipeLocalInformation);
+    return rcNt >= 0;
+}
 
 
 RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFlags)
@@ -117,13 +197,13 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
         dwPipeMode |= PIPE_REJECT_REMOTE_CLIENTS;
 #endif
 
-        hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, _64K,  _64K,
+        hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, RTPIPE_NT_SIZE, RTPIPE_NT_SIZE,
                                   NMPWAIT_USE_DEFAULT_WAIT, pSecurityAttributes);
 #ifdef PIPE_REJECT_REMOTE_CLIENTS
         if (hPipeR == INVALID_HANDLE_VALUE && GetLastError() == ERROR_INVALID_PARAMETER)
         {
             dwPipeMode &= ~PIPE_REJECT_REMOTE_CLIENTS;
-            hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, _64K,  _64K,
+            hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, RTPIPE_NT_SIZE, RTPIPE_NT_SIZE,
                                       NMPWAIT_USE_DEFAULT_WAIT, pSecurityAttributes);
         }
 #endif
@@ -131,7 +211,7 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
         if (hPipeR == INVALID_HANDLE_VALUE && GetLastError() == ERROR_INVALID_PARAMETER)
         {
             dwOpenMode &= ~FILE_FLAG_FIRST_PIPE_INSTANCE;
-            hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, _64K,  _64K,
+            hPipeR = CreateNamedPipeA(szName, dwOpenMode, dwPipeMode, 1 /*nMaxInstances*/, RTPIPE_NT_SIZE, RTPIPE_NT_SIZE,
                                       NMPWAIT_USE_DEFAULT_WAIT, pSecurityAttributes);
         }
 #endif
@@ -200,8 +280,14 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                             pThisW->hPipe           = hPipeW;
                             pThisR->fRead           = true;
                             pThisW->fRead           = false;
-                            pThisR->fIOPending      = false;
-                            pThisW->fIOPending      = false;
+                            //pThisR->fIOPending      = false;
+                            //pThisW->fIOPending      = false;
+                            //pThisR->fZeroByteRead   = false;
+                            //pThisW->fZeroByteRead   = false;
+                            //pThisR->fBrokenPipe     = false;
+                            //pThisW->fBrokenPipe     = false;
+                            //pThisW->fPromisedWritable= false;
+                            //pThisR->fPromisedWritable= false;
                             //pThisR->cModeUsers      = 0;
                             //pThisW->cModeUsers      = 0;
                             //pThisR->pbBounceBuf     = NULL;
@@ -210,6 +296,10 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                             //pThisW->cbBounceBufUsed = 0;
                             //pThisR->cbBounceBufAlloc= 0;
                             //pThisW->cbBounceBufAlloc= 0;
+                            pThisR->hPollSet        = NIL_RTPOLLSET;
+                            pThisW->hPollSet        = NIL_RTPOLLSET;
+                            //pThisW->cPolls          = 0;
+                            //pThisR->cPolls          = 0;
 
                             *phPipeRead  = pThisR;
                             *phPipeWrite = pThisW;
@@ -277,6 +367,8 @@ static int rtPipeWriteCheckCompletion(RTPIPEINTERNAL *pThis)
                             rc = VERR_BROKEN_PIPE;
                         else
                             rc = RTErrConvertFromWin32(GetLastError());
+                        if (rc == VERR_BROKEN_PIPE)
+                            pThis->fBrokenPipe = true;
                     }
                     break;
                 }
@@ -407,6 +499,8 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
             }
             else
                 rc = RTErrConvertFromWin32(GetLastError());
+            if (rc == VERR_BROKEN_PIPE)
+                pThis->fBrokenPipe = true;
 
             pThis->cModeUsers--;
         }
@@ -473,6 +567,9 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_
                 pvBuf        = (uint8_t *)pvBuf + cbRead;
             }
 
+            if (rc == VERR_BROKEN_PIPE)
+                pThis->fBrokenPipe = true;
+
             if (pcbRead)
             {
                 *pcbRead = cbTotalRead;
@@ -518,12 +615,32 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
             {
                 Assert(!pThis->fIOPending);
 
+                /* Adjust the number of bytes to write to fit into the current
+                   buffer quota, unless we've promissed stuff in RTPipeSelectOne.
+                   WriteQuotaAvailable better not be zero when it shouldn't!! */
+                FILE_PIPE_LOCAL_INFORMATION Info;
+                if (   !pThis->fPromisedWritable
+                    && cbToWrite > 0
+                    && rtPipeQueryInfo(pThis, &Info))
+                {
+                    if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
+                        rc = VERR_BROKEN_PIPE;
+                    else if (   cbToWrite >= Info.WriteQuotaAvailable
+                             && Info.OutboundQuota != 0)
+                    {
+                        cbToWrite = Info.WriteQuotaAvailable;
+                        if (!cbToWrite)
+                            rc = VINF_TRY_AGAIN;
+                    }
+                }
+                pThis->fPromisedWritable = false;
+
                 /* Do the bounce buffering. */
                 if (    pThis->cbBounceBufAlloc < cbToWrite
-                    &&  pThis->cbBounceBufAlloc < _64K)
+                    &&  pThis->cbBounceBufAlloc < RTPIPE_NT_SIZE)
                 {
-                    if (cbToWrite > _64K)
-                        cbToWrite = _64K;
+                    if (cbToWrite > RTPIPE_NT_SIZE)
+                        cbToWrite = RTPIPE_NT_SIZE;
                     void *pv = RTMemRealloc(pThis->pbBounceBuf, RT_ALIGN_Z(cbToWrite, _1K));
                     if (pv)
                     {
@@ -533,8 +650,8 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
                     else
                         rc = VERR_NO_MEMORY;
                 }
-                else if (cbToWrite > _64K)
-                    cbToWrite = _64K;
+                else if (cbToWrite > RTPIPE_NT_SIZE)
+                    cbToWrite = RTPIPE_NT_SIZE;
                 if (RT_SUCCESS(rc) && cbToWrite)
                 {
                     memcpy(pThis->pbBounceBuf, pvBuf, cbToWrite);
@@ -565,6 +682,9 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
             }
             else if (RT_SUCCESS(rc))
                 *pcbWritten = 0;
+
+            if (rc == VERR_BROKEN_PIPE)
+                pThis->fBrokenPipe = true;
 
             pThis->cModeUsers--;
         }
@@ -611,6 +731,7 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
             if (RT_SUCCESS(rc))
             {
                 Assert(!pThis->fIOPending);
+                pThis->fPromisedWritable = false;
 
                 /*
                  * Try write everything.
@@ -661,6 +782,9 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
                         rc = VINF_SUCCESS;
                 }
             }
+
+            if (rc == VERR_BROKEN_PIPE)
+                pThis->fBrokenPipe = true;
 
             pThis->cModeUsers--;
         }
@@ -716,7 +840,12 @@ RTDECL(int) RTPipeFlush(RTPIPE hPipe)
     AssertReturn(!pThis->fRead, VERR_ACCESS_DENIED);
 
     if (!FlushFileBuffers(pThis->hPipe))
-        return RTErrConvertFromWin32(GetLastError());
+    {
+        int rc = RTErrConvertFromWin32(GetLastError());
+        if (rc == VERR_BROKEN_PIPE)
+            pThis->fBrokenPipe = true;
+        return rc;
+    }
     return VINF_SUCCESS;
 }
 
@@ -734,9 +863,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
         return rc;
     for (unsigned iLoop = 0;; iLoop++)
     {
-        uint8_t abBuf[4];
-        bool    fPendingRead  = false;
-        HANDLE  hWait         = INVALID_HANDLE_VALUE;
+        HANDLE  hWait = INVALID_HANDLE_VALUE;
         if (pThis->fRead)
         {
             if (pThis->fIOPending)
@@ -761,7 +888,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 AssertBreakStmt(pThis->cModeUsers == 0, rc = VERR_INTERNAL_ERROR_5);
                 rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
                 DWORD cbRead = 0;
-                if (ReadFile(pThis->hPipe, &abBuf[0], 0, &cbRead, &pThis->Overlapped))
+                if (ReadFile(pThis->hPipe, pThis->abBuf, 0, &cbRead, &pThis->Overlapped))
                 {
                     rc = VINF_SUCCESS;
                     if (iLoop > 10)
@@ -771,7 +898,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 {
                     pThis->cModeUsers++;
                     pThis->fIOPending = true;
-                    fPendingRead = true;
+                    pThis->fZeroByteRead = true;
                     hWait = pThis->Overlapped.hEvent;
                 }
                 else
@@ -781,13 +908,48 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
         else
         {
             if (pThis->fIOPending)
+            {
+                rc = rtPipeWriteCheckCompletion(pThis);
+                if (RT_FAILURE(rc))
+                    break;
+            }
+            if (pThis->fIOPending)
                 hWait = pThis->Overlapped.hEvent;
             else
             {
-                /* If nothing pending, the next write will succeed because
-                   we buffer it and pretend that it does... */
-                rc = VINF_SUCCESS;
-                break;
+                FILE_PIPE_LOCAL_INFORMATION Info;
+                if (rtPipeQueryInfo(pThis, &Info))
+                {
+                    /* Check for broken pipe. */
+                    if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
+                    {
+                        rc = VERR_BROKEN_PIPE;
+                        break;
+                    }
+                    /* Check for available write buffer space. */
+                    else if (Info.WriteQuotaAvailable > 0)
+                    {
+                        pThis->fPromisedWritable = false;
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                    /* delayed buffer alloc or timeout: phony promise
+                       later: See if we still can associate a semaphore with
+                              the pipe, like on OS/2. */
+                    else if (   Info.OutboundQuota == 0
+                             || cMillies)
+                    {
+                        pThis->fPromisedWritable = true;
+                        rc = VINF_SUCCESS;
+                        break;
+                    }
+                }
+                else
+                {
+                    pThis->fPromisedWritable = true;
+                    rc = VINF_SUCCESS;
+                    break;
+                }
             }
         }
         if (RT_FAILURE(rc))
@@ -832,7 +994,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 return rc;
 
             RTCritSectEnter(&pThis->CritSect);
-            if (fPendingRead)
+            if (pThis->fZeroByteRead)
             {
                 pThis->cModeUsers--;
                 pThis->fIOPending = false;
@@ -846,7 +1008,242 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
         }
     }
 
+    if (rc == VERR_BROKEN_PIPE)
+        pThis->fBrokenPipe = true;
+
     RTCritSectLeave(&pThis->CritSect);
     return rc;
+}
+
+
+/**
+ * Internal RTPollSetAdd helper that returns one or two handles that should be
+ * added to the pollset.
+ *
+ * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
+ * @param   hPipe               The pipe handle.
+ * @param   fEvents             The events we're polling for.
+ * @param   ph1                 wher to put the primary handle.
+ * @param   ph2                 Where to optionally return a 2nd handle.
+ */
+int rtPipePollGetHandles(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph1, PHANDLE ph2)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, VERR_INVALID_HANDLE);
+
+    AssertReturn(!(fEvents & RTPOLL_EVT_READ) || pThis->fRead, VERR_INVALID_PARAMETER);
+    AssertReturn(!(fEvents & RTPOLL_EVT_WRITE) || !pThis->fRead, VERR_INVALID_PARAMETER);
+
+    *ph1 = pThis->Overlapped.hEvent;
+    /* Later: Try register an event handle with the pipe like on OS/2, there is
+       a file control for doing this obviously intended for the OS/2 subsys.
+       The question is whether this still exists on Vista and W7. */
+    *ph2 = INVALID_HANDLE_VALUE;
+    return VINF_SUCCESS;
+}
+
+
+/**
+ * Checks for pending events.
+ *
+ * @returns Event mask or 0.
+ * @param   pThis               The pipe handle.
+ * @param   fEvents             The desired events.
+ */
+static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents)
+{
+    uint32_t fRetEvents = 0;
+    if (pThis->fBrokenPipe)
+        fRetEvents |= RTPOLL_EVT_ERROR;
+    else if (pThis->fRead)
+    {
+        if (!pThis->fIOPending)
+        {
+            DWORD cbAvailable;
+            if (PeekNamedPipe(pThis->hPipe, NULL, 0, NULL, &cbAvailable, NULL))
+            {
+                if (   (fEvents & RTPOLL_EVT_READ)
+                    && cbAvailable > 0)
+                    fRetEvents |= RTPOLL_EVT_READ;
+            }
+            else
+            {
+                if (GetLastError() == ERROR_BROKEN_PIPE)
+                    pThis->fBrokenPipe = true;
+                fRetEvents |= RTPOLL_EVT_ERROR;
+            }
+        }
+    }
+    else
+    {
+        if (pThis->fIOPending)
+        {
+            rtPipeWriteCheckCompletion(pThis);
+            if (pThis->fBrokenPipe)
+                fRetEvents |= RTPOLL_EVT_ERROR;
+        }
+        if (   !pThis->fIOPending
+            && !fRetEvents)
+        {
+            FILE_PIPE_LOCAL_INFORMATION Info;
+            if (rtPipeQueryInfo(pThis, &Info))
+            {
+                /* Check for broken pipe. */
+                if (Info.NamedPipeState == FILE_PIPE_CLOSING_STATE)
+                {
+                    fRetEvents = RTPOLL_EVT_ERROR;
+                    pThis->fBrokenPipe = true;
+                }
+
+                /* Check if there is available buffer space. */
+                if (   !fRetEvents
+                    && (   Info.WriteQuotaAvailable > 0
+                        || Info.OutboundQuota == 0)
+                    )
+                    fRetEvents |= RTPOLL_EVT_WRITE;
+            }
+            else if (   !fRetEvents
+                && (fEvents & RTPOLL_EVT_WRITE))
+                fRetEvents |= RTPOLL_EVT_WRITE;
+        }
+    }
+
+    return fRetEvents;
+}
+
+
+/**
+ * Internal RTPoll helper that polls the pipe handle and, if @a fNoWait is
+ * clear, starts whatever actions we've got running during the poll call.
+ *
+ * @returns 0 if no pending events, actions initiated if @a fNoWait is clear.
+ *          Event mask (in @a fEvents) and no actions if the handle is ready
+ *          already.
+ *          UINT32_MAX (asserted) if the pipe handle is busy in I/O or a
+ *          different poll set.
+ *
+ * @param   hPipe               The pipe handle.
+ * @param   hPollSet            The poll set handle (for access checks).
+ * @param   fEvents             The events we're polling for.
+ * @param   fNoWait             Set if it's a zero-wait poll call.  Clear if
+ *                              we'll wait for an event to occur.
+ */
+uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fNoWait)
+{
+    /** @todo All this polling code could be optimized to make fewer system
+     *        calls; like for instance the ResetEvent calls. */
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, UINT32_MAX);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, UINT32_MAX);
+
+    /* Check that this is the only current use of this pipe. */
+    uint32_t fRetEvents;
+    if (   (   pThis->cPolls == 0
+            && pThis->cModeUsers == 0)
+        || pThis->hPollSet == hPollSet
+       )
+    {
+        /* Check what the current events are. */
+        fRetEvents = rtPipePollCheck(pThis, fEvents);
+        if (   !fRetEvents
+            && !fNoWait)
+        {
+            /* Make sure the event semaphore has been reset. */
+            if (!pThis->fIOPending)
+            {
+                rc = ResetEvent(pThis->Overlapped.hEvent);
+                Assert(rc == TRUE);
+            }
+
+            /* Kick off the zero byte read thing if applicable. */
+            if (   !pThis->fIOPending
+                && pThis->fRead
+                && (fEvents & RTPOLL_EVT_READ)
+               )
+            {
+                DWORD cbRead = 0;
+                if (ReadFile(pThis->hPipe, pThis->abBuf, 0, &cbRead, &pThis->Overlapped))
+                    fRetEvents = rtPipePollCheck(pThis, fEvents);
+                else if (GetLastError() == ERROR_IO_PENDING)
+                {
+                    pThis->fIOPending    = true;
+                    pThis->fZeroByteRead = true;
+                }
+                else
+                    fRetEvents = RTPOLL_EVT_ERROR;
+            }
+
+            /* If we're still set for the waiting, record the poll set and
+               mark the pipe used. */
+            if (!fRetEvents)
+            {
+                pThis->cPolls++;
+                pThis->cModeUsers++;
+                pThis->hPollSet = hPollSet;
+            }
+        }
+    }
+    else
+    {
+        AssertFailed();
+        fRetEvents = UINT32_MAX;
+    }
+
+    RTCritSectLeave(&pThis->CritSect);
+    return fRetEvents;
+}
+
+
+/**
+ * Called after a WaitForMultipleObjects returned in order to check for pending
+ * events and stop whatever actions that rtPipePollStart() initiated.
+ *
+ * @returns Event mask or 0.
+ *
+ * @param   hPipe               The pipe handle.
+ * @param   fEvents             The events we're polling for.
+ */
+uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents)
+{
+    RTPIPEINTERNAL *pThis = hPipe;
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, 0);
+
+    int rc = RTCritSectEnter(&pThis->CritSect);
+    AssertRCReturn(rc, 0);
+
+    Assert(pThis->cPolls > 0);
+    Assert(pThis->cModeUsers > 0);
+
+
+    /* Cancel the zero byte read. */
+    uint32_t fRetEvents = 0;
+    if (pThis->fZeroByteRead)
+    {
+        CancelIo(pThis->hPipe);
+        DWORD cbRead = 0;
+        if (   !GetOverlappedResult(pThis->hPipe, &pThis->Overlapped, &cbRead, TRUE /*fWait*/)
+            && GetLastError() != ERROR_OPERATION_ABORTED)
+            fRetEvents = RTPOLL_EVT_ERROR;
+
+        pThis->fIOPending    = false;
+        pThis->fZeroByteRead = false;
+    }
+
+    /* harvest events. */
+    fRetEvents |= rtPipePollCheck(pThis, fEvents);
+
+    /* update counters. */
+    pThis->cPolls--;
+    if (!pThis->cPolls)
+        pThis->hPollSet = NIL_RTPOLLSET;
+    pThis->cModeUsers--;
+
+    RTCritSectLeave(&pThis->CritSect);
+    return fRetEvents;
 }
 
