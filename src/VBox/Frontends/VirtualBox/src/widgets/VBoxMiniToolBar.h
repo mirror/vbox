@@ -71,6 +71,7 @@ protected:
     void timerEvent (QTimerEvent *aEvent);
     void showEvent (QShowEvent *aEvent);
     void paintEvent (QPaintEvent *aEvent);
+    bool eventFilter(QObject *pObj, QEvent *pEvent);
 
 private slots:
 
