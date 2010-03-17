@@ -129,12 +129,6 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
             RTPrintf("LookupAccountName(2) failed with last error=%ld\n", GetLastError());
             return VERR_AUTHENTICATION_FAILURE;
         }
-        else
-        {
-            RTPrintf("NameSamCompatible: %s\n"
-                     "DomainName: %s\n", 
-                     pszDomain, szUser);
-        }
         RTMemFree(pSid);
         RTMemFree(pszDomain);
     }
@@ -146,7 +140,7 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
 
 static void tstRTCreateProcEx5(void)
 {
-    RTTestISub("Impersonation (as user)");
+    RTTestISub("Impersonation (as user \"test\")");
 
     const char * apszArgs[3] =
     {
@@ -157,7 +151,7 @@ static void tstRTCreateProcEx5(void)
 
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, NULL, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, "testcase", "test", &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -192,7 +186,7 @@ static void tstRTCreateProcEx4(void)
 
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, g_apszArgs4, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, NULL, &hProc), VINF_SUCCESS);
+                                         NULL, NULL, NULL, NULL, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -235,7 +229,7 @@ static void tstRTCreateProcEx3(void)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         &Handle, &Handle, NULL, &hProc), VINF_SUCCESS);
+                                         &Handle, &Handle, NULL, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];
@@ -302,7 +296,7 @@ static void tstRTCreateProcEx2(void)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, &Handle, NULL, &hProc), VINF_SUCCESS);
+                                         NULL, &Handle, NULL, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];
@@ -368,7 +362,7 @@ static void tstRTCreateProcEx1(void)
     Handle.u.hPipe = hPipeW;
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         &Handle, NULL, NULL, &hProc), VINF_SUCCESS);
+                                         &Handle, NULL, NULL, NULL, &hProc), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 
     char    szOutput[_4K];

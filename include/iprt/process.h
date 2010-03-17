@@ -163,6 +163,8 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  *                      guest.
  * @param   pszAsUser   User to run the process as.  Pass NULL to use the same
  *                      user as the current process.
+ * @param   pszPassword Password for user account to run the process as.
+ *                      Pass NULL to use the same user as the current process.
  * @param   phProcess   Where to store the process handle on successful return.
  *                      The content is not changed on failure.  NULL is allowed.
  *
@@ -171,7 +173,7 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  */
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                               PRTPROCESS phProcess);
+                               const char *pszPassword, PRTPROCESS phProcess);
 
 /** @name RTProcCreate and RTProcCreateEx flags
  * @{ */

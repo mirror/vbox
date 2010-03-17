@@ -168,7 +168,7 @@ RTR3DECL(int) RTProcCreate(const char *pszExec, const char * const *papszArgs, R
 
 RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArgs, RTENV hEnv, uint32_t fFlags,
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
-                               PRTPROCESS phProcess)
+                               const char *pszPassword, PRTPROCESS phProcess)
 {
 #if 1 /* needs more work... dinner time. */
     int rc;
@@ -182,7 +182,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     /** @todo search the PATH (add flag for this). */
-    AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
 
     /*
      * Get the file descriptors for the handles we've been passed.
@@ -252,64 +251,119 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             rc = RTStrToUtf16(pszExec, &pwszExec);
             if (RT_SUCCESS(rc))
             {
-                HANDLE hToken = INVALID_HANDLE_VALUE;
-                if (pszAsUser)
+                /*
+                 * Get going...
+                 */
+                PROCESS_INFORMATION ProcInfo;
+                RT_ZERO(ProcInfo);
+                BOOL fRc;
+                if (pszAsUser == NULL)
+                    fRc = CreateProcessW(pwszExec,
+                                         pwszCmdLine,
+                                         NULL,         /* pProcessAttributes */
+                                         NULL,         /* pThreadAttributes */
+                                         TRUE,         /* fInheritHandles */
+                                         CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                         pwszzBlock,
+                                         NULL,          /* pCurrentDirectory */
+                                         &StartupInfo,
+                                         &ProcInfo);
+                else
                 {
-                    /** @todo - Maybe use CreateProcessWithLoginW? That'll require a password, but
-                     *        we may need that anyway because it looks like LogonUserW is the only
-                     *        way to get a hToken.  FIXME */
-                    rc = VERR_NOT_IMPLEMENTED;
-                }
-                if (RT_SUCCESS(rc))
-                {
-                    /*
-                     * Get going...
-                     */
-                    PROCESS_INFORMATION ProcInfo;
-                    RT_ZERO(ProcInfo);
-                    BOOL fRc;
-                    if (hToken == INVALID_HANDLE_VALUE)
-                        fRc = CreateProcessW(pwszExec,
-                                             pwszCmdLine,
-                                             NULL,         /* pProcessAttributes */
-                                             NULL,         /* pThreadAttributes */
-                                             TRUE,         /* fInheritHandles */
-                                             CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                             pwszzBlock,
-                                             NULL,          /* pCurrentDirectory */
-                                             &StartupInfo,
-                                             &ProcInfo);
-                    else
-                        fRc = CreateProcessAsUserW(hToken,
-                                                   pwszExec,
-                                                   pwszCmdLine,
-                                                   NULL,         /* pProcessAttributes */
-                                                   NULL,         /* pThreadAttributes */
-                                                   TRUE,         /* fInheritHandles */
-                                                   CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                                   pwszzBlock,
-                                                   NULL,          /* pCurrentDirectory */
-                                                   &StartupInfo,
-                                                   &ProcInfo);
+                    HANDLE hToken = INVALID_HANDLE_VALUE;
+                    PRTUTF16 pwszUser;
 
-                    if (fRc)
+                    rc = RTStrToUtf16(pszAsUser, &pwszUser);                    
+                    if (RT_SUCCESS(rc))
                     {
-                        CloseHandle(ProcInfo.hThread);
-                        if (phProcess)
+                        PRTUTF16 pwszPassword;
+                        rc = RTStrToUtf16(pszPassword, &pwszPassword);   
+                        if (RT_SUCCESS(rc))
                         {
-                            /** @todo Remember the process handle and pick it up in RTProcWait. */
-                            *phProcess = ProcInfo.dwProcessId;
+                            /* 
+                             * User needs to be specified in UPN format because we
+                             * don't fill a domain name. 
+                             */
+
+                            /*
+                             * The following rights are needed in order to use
+                             * LogonUserW and CreateProcessAsUserW:
+                             *
+                             * - SE_ASSIGNPRIMARYTOKEN_NAME
+                             * - SE_INCREASE_QUOTA_NAME 
+                             * - SE_TCB_NAME
+                             */
+                            fRc = LogonUserW(pwszUser,
+                                             NULL,      /* lpDomain */
+                                             pszPassword ? pwszPassword : L"",
+                                             LOGON32_LOGON_INTERACTIVE,
+                                             LOGON32_PROVIDER_DEFAULT,
+                                             &hToken);
+                            if (fRc)
+                            {
+                                fRc = CreateProcessAsUserW(hToken,
+                                                           pwszExec,
+                                                           pwszCmdLine,
+                                                           NULL,         /* pProcessAttributes */
+                                                           NULL,         /* pThreadAttributes */
+                                                           TRUE,         /* fInheritHandles */
+                                                           CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                           pwszzBlock,
+                                                           NULL,         /* pCurrentDirectory */
+                                                           &StartupInfo,
+                                                           &ProcInfo);
+                                if (!fRc)
+                                {
+/* CreateProcessWithLogonW is not available on NT4 ... so enabling the following code
+* would blow up compatibility but is a legitim fallback if the above method isn't working. */
+#if 0
+                                    DWORD dwErr = GetLastError();
+        
+                                    /*
+                                     * If we don't hold enough priviledges to spawn a new
+                                     * process with different credentials we have to use 
+                                     * CreateProcessWithLogonW here.
+                                     *
+                                     * @todo Use fFlags to either use this feature or just fail.
+                                     */
+                                    if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
+                                    {
+                                        fRc = CreateProcessWithLogonW(pwszUser,
+                                                                      NULL,                 /* lpDomain*/
+                                                                      pwszPassword,
+                                                                      LOGON_WITH_PROFILE,   /* dwLogonFlags */
+                                                                      pwszExec,
+                                                                      pwszCmdLine,
+                                                                      CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                                      pwszzBlock,
+                                                                      NULL,                 /* pCurrentDirectory */
+                                                                      &StartupInfo,
+                                                                      &ProcInfo);
+                                    }
+#endif
+                                }
+                                CloseHandle(hToken);
+                            }
+                            RTUtf16Free(pwszPassword);
                         }
-                        else
-                            CloseHandle(ProcInfo.hProcess);
-                        rc = VINF_SUCCESS;
+                        RTUtf16Free(pwszUser);
+                    }
+                }
+
+                if (fRc)
+                {
+                    CloseHandle(ProcInfo.hThread);
+                    if (phProcess)
+                    {
+                        /** @todo Remember the process handle and pick it up in RTProcWait. */
+                        *phProcess = ProcInfo.dwProcessId;
                     }
                     else
-                        rc = RTErrConvertFromWin32(GetLastError());
-
-                    if (hToken != INVALID_HANDLE_VALUE)
-                        CloseHandle(hToken);
+                        CloseHandle(ProcInfo.hProcess);
+                    rc = VINF_SUCCESS;
                 }
+                else
+                    rc = RTErrConvertFromWin32(GetLastError());
                 RTUtf16Free(pwszExec);
             }
             RTUtf16Free(pwszCmdLine);
