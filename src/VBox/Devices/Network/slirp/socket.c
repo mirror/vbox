@@ -1149,7 +1149,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     /* m_room space in the saved m buffer */
     m_room = M_ROOM(m);
     if (m_room < len - hlen + original_hlen)
-    else
     {
         /* we need involve ether header length into new buffer buffer calculation */
         m_inc(m, if_maxlinkhdr + len - hlen + original_hlen);
