@@ -118,6 +118,7 @@ INCX11="/usr/local/include"
 LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 LIBXCURSOR="-lXcursor"
 LIBXMU="-lXmu"
+LIBXINERAMA="-lXinerama"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
@@ -1223,6 +1224,7 @@ extern "C" int main(void)
   win      = XCreateWindow(dpy, RootWindowOfScreen(scrn), 0, 0, 100, 100,
                            0, 16, InputOutput, CopyFromParent, 0, NULL);
   XDestroyWindow(dpy, win);
+  XCloseDisplay(dpy);
 }
 EOF
   [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
@@ -1255,6 +1257,35 @@ EOF
     cnf_append "VBOX_XCURSOR_LIBS" "`strip_l "$LIBXCURSOR"`"
   fi
 }
+
+
+#
+# Check for the Xinerama library, needed by the Qt GUI
+#
+check_xinerama()
+{
+  test_header Xinerama
+  cat > $ODIR.tmp_src.cc << EOF
+#include <X11/Xlib.h>
+#include <X11/extensions/Xinerama.h>
+extern "C" int main(void)
+{
+  Display *dpy;
+  Bool flag;
+  dpy = XOpenDisplay(NULL);
+  if (dpy)
+  {
+    flag = XineramaIsActive(dpy);
+    XCloseDisplay(dpy);
+  }
+}
+EOF
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $LIBXINERAMA $I_INCX11" Xinerama Xinerama; then
+    log_success "found"
+  fi
+}
+
 
 #
 # Check for OpenGL
@@ -1299,6 +1330,7 @@ extern "C" int main(void)
     Status status = XmuLookupStandardColormap(dpy, RootWindowOfScreen(scrn), 0,
                     24, XA_RGB_DEFAULT_MAP, False, True);
     printf("Status = %x\n", status);
+    XCloseDisplay(dpy);
   }
   return 0;
 }
@@ -1334,6 +1366,7 @@ extern "C" int main(void)
       printf("found version %u.%u, OK.\n", major, minor);
       return 0;
     }
+    XCloseDisplay(dpy);
   }
   printf("found (inactive), OK.\n");
   return 0;
@@ -2355,6 +2388,7 @@ check_curl
 # TODO check for xcomposite-dev (X11/extensions/Xcomposite.h, additions only)
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
 [ $WITH_X11    -eq 1 ] && check_xcursor
+[ $WITH_X11    -eq 1 ] && check_xinerama
 [ $WITH_OPENGL -eq 1 ] && check_opengl
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 ] && check_python
