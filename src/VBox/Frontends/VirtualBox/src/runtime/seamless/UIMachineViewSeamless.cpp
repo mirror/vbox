@@ -181,14 +181,12 @@ bool UIMachineViewSeamless::event(QEvent *pEvent)
         }
 
         case VBoxDefs::ResizeEventType:
-        case VBoxDefs::RepaintEventType:
         {
-            /* Unlock on guest resize & repaint events: */
+            /* Unlock after processing guest resize event: */
             bool fResult = UIMachineView::event(pEvent);
             if (m_pSyncBlocker && m_pSyncBlocker->isRunning())
                 m_pSyncBlocker->quit();
             return fResult;
-            break;
         }
 
         default:
