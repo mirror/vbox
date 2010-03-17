@@ -468,6 +468,8 @@
 #define VINF_PGM_POOL_FLUSH_PENDING             (1644)
 /** Unable to use the range for a large page. */
 #define VERR_PGM_INVALID_LARGE_PAGE_RANGE       (-1645)
+/** Don't mess around with ballooned pages. */
+#define VERR_PGM_PHYS_PAGE_BALLOONED            (-1646)
 /** @} */
 
 
