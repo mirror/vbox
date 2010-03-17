@@ -42,6 +42,8 @@
 #include "DevPcBios.h"
 #include "DevFwCommon.h"
 
+#define NET_BOOT_DEVS   4
+
 
 /** @page pg_devbios_cmos_assign    CMOS Assignments (BIOS)
  *
@@ -49,6 +51,7 @@
  * It is currently used as follows:
  *
  * @verbatim
+  First CMOS bank (offsets 0x00 to 0x7f):
     Base memory:
          0x15
          0x16
@@ -94,6 +97,14 @@
          0x60
     RAM above 4G in 64KB units:
          0x61 - 0x65
+
+  Second CMOS bank (offsets 0x80 to 0xff):
+    Reserved for future use:
+         0x80 - 0x81
+    First net boot device PCI bus/dev/fn:
+         0x82 - 0x83
+    Second to third net boot devices:
+         0x84 - 0x89
 @endverbatim
  *
  * @todo Mark which bits are compatible with which BIOSes and
@@ -165,6 +176,8 @@ typedef struct DEVPCBIOS
     uint8_t         u8IOAPIC;
     /** PXE debug logging enabled? */
     uint8_t         u8PXEDebug;
+    /** PXE boot PCI bus/dev/fn list. */
+    uint16_t        au16NetBootDev[NET_BOOT_DEVS];
     /** Number of logical CPUs in guest */
     uint16_t        cCpus;
 } DEVPCBIOS, *PDEVPCBIOS;
@@ -460,6 +473,15 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
      * PXE debug option.
      */
     pcbiosCmosWrite(pDevIns, 0x3f, pThis->u8PXEDebug);
+
+    /*
+     * Network boot device list.
+     */
+    for (i = 0; i < NET_BOOT_DEVS; ++i) 
+    {
+        pcbiosCmosWrite(pDevIns, 0x82 + i * 2, pThis->au16NetBootDev[i] & 0xff);
+        pcbiosCmosWrite(pDevIns, 0x83 + i * 2, pThis->au16NetBootDev[i] >> 8);
+    }
 
     /*
      * Floppy drive type.
@@ -1042,6 +1064,46 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Querying \"PXEDebug\" as integer failed"));
+
+    /* Clear the net boot device list. All bits set invokes old behavior,
+     * as if no second CMOS bank was present.
+     */
+    memset(&pThis->au16NetBootDev, 0xff, sizeof(pThis->au16NetBootDev));
+
+    /*
+     * Determine the network boot order.
+     */
+    PCFGMNODE pCfgNetBoot = CFGMR3GetChild(pCfg, "NetBoot");
+    if (pCfgNetBoot == NULL)
+    {
+        /* Do nothing. */
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        PCFGMNODE   pCfgNetBootDevice;
+        uint16_t    u16BusDevFn;
+        char        szIndex[] = "?";
+        int         i;
+
+        Assert(pCfgNetBoot);
+        for (i = 0; i < NET_BOOT_DEVS; ++i)
+        {
+            szIndex[0] = '0' + i;
+            pCfgNetBootDevice = CFGMR3GetChild(pCfgNetBoot, szIndex);
+            rc = CFGMR3QueryU16(pCfgNetBootDevice, "BusDevFn", &u16BusDevFn);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            {
+                /* Do nothing and stop iterating. */
+                rc = VINF_SUCCESS;
+                break;
+            }
+            else if (RT_FAILURE(rc))
+                return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("Configuration error: Querying \"Netboot/x/BusDevFn\" as integer failed"));
+            pThis->au16NetBootDev[i] = u16BusDevFn;
+        }
+    }
 
     /*
      * Get the system BIOS ROM file name.
