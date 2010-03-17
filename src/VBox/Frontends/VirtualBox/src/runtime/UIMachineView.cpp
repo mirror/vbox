@@ -675,6 +675,10 @@ void UIMachineView::cleanupFrameBuffer()
 {
     if (m_pFrameBuffer)
     {
+        /* Process pending frame-buffer resize events: */
+        QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
+        /* Warn framebuffer about its no more necessary: */
+        m_pFrameBuffer->setDeleted(true);
         /* Detach framebuffer from Display: */
         CDisplay display = session().GetConsole().GetDisplay();
         display.SetFramebuffer(m_uScreenId, CFramebuffer(NULL));
