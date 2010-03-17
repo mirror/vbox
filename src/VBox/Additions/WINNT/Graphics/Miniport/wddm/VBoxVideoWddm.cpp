@@ -769,7 +769,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
     IN ULONG MessageNumber
     )
 {
-    dfprintf(("==> "__FUNCTION__ ", context(0x%p), msg(0x%x)\n", MiniportDeviceContext, MessageNumber));
+//    dfprintf(("==> "__FUNCTION__ ", context(0x%p), msg(0x%x)\n", MiniportDeviceContext, MessageNumber));
 
     vboxVDbgBreakFv();
 
@@ -864,7 +864,7 @@ BOOLEAN DxgkDdiInterruptRoutine(
         }
     }
 
-    dfprintf(("<== "__FUNCTION__ ", context(0x%p), bOur(0x%x)\n", MiniportDeviceContext, (ULONG)bOur));
+//    dfprintf(("<== "__FUNCTION__ ", context(0x%p), bOur(0x%x)\n", MiniportDeviceContext, (ULONG)bOur));
 
     return bOur;
 }
@@ -898,7 +898,7 @@ VOID DxgkDdiDpcRoutine(
     IN CONST PVOID  MiniportDeviceContext
     )
 {
-    dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+//    dfprintf(("==> "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 
     vboxVDbgBreakFv();
 
@@ -933,7 +933,7 @@ VOID DxgkDdiDpcRoutine(
     if (context.data.bNotifyDpc)
         pDevExt->u.primary.DxgkInterface.DxgkCbNotifyDpc(pDevExt->u.primary.DxgkInterface.DeviceHandle);
 
-    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
+//    dfprintf(("<== "__FUNCTION__ ", context(0x%p)\n", MiniportDeviceContext));
 }
 
 NTSTATUS DxgkDdiQueryChildRelations(
@@ -1694,7 +1694,7 @@ DxgkDdiSubmitCommand(
     /* DxgkDdiSubmitCommand runs at dispatch, should not be pageable. */
     NTSTATUS Status = STATUS_SUCCESS;
 
-    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -1736,7 +1736,7 @@ DxgkDdiSubmitCommand(
 
     vboxVdmaCBufDrSubmit (pDevExt, &pDevExt->u.primary.Vdma, pDr);
 
-    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", context(0x%x)\n", hAdapter));
 
     return Status;
 }
@@ -1790,7 +1790,7 @@ DxgkDdiBuildPagingBuffer(
         }
         case DXGK_OPERATION_DISCARD_CONTENT:
         {
-            AssertBreakpoint();
+//            AssertBreakpoint();
             break;
         }
         default:
@@ -1832,7 +1832,7 @@ DxgkDdiSetPointerPosition(
 {
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakFv();
     /* @todo: fixme: implement */
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
@@ -1846,12 +1846,12 @@ DxgkDdiSetPointerShape(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_SETPOINTERSHAPE*  pSetPointerShape)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    vboxVDbgBreakFv();
     /* @todo: fixme: implement */
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_NOT_SUPPORTED;
 }
@@ -2664,7 +2664,7 @@ DxgkDdiPresent(
 {
     PAGED_CODE();
 
-    dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
+//    dfprintf(("==> "__FUNCTION__ ", hContext(0x%x)\n", hContext));
 
     vboxVDbgBreakFv();
 
@@ -2782,7 +2782,7 @@ DxgkDdiPresent(
         AssertBreakpoint();
     }
 
-    dfprintf(("<== "__FUNCTION__ ", hContext(0x%x), Status(0x%x)\n", hContext, Status));
+//    dfprintf(("<== "__FUNCTION__ ", hContext(0x%x), Status(0x%x)\n", hContext, Status));
 
     return Status;
 }
