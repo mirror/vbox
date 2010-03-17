@@ -5403,8 +5403,8 @@ BX_DEBUG_INT74("int74_function: make_farcall=1\n");
 #if BX_USE_ATADRV
 
   void
-int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
-  Bit16u EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
+int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
+  Bit16u EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
 {
   Bit32u lba;
   Bit16u ebda_seg=read_word(0x0040,0x000E);
@@ -6647,8 +6647,8 @@ ASM_END
 }
 
   void
-int13_harddisk(EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
-  Bit16u EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
+int13_harddisk(EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS)
+  Bit16u EHBX, EHAX, DS, ES, DI, SI, BP, ELDX, BX, DX, CX, AX, IP, CS, FLAGS;
 {
   Bit8u    drive, num_sectors, sector, head, status, mod;
   Bit8u    drive_map;
@@ -9090,10 +9090,14 @@ int13_notcdrom:
 #endif
 
 int13_disk:
-  ;; int13_harddisk modifies high word of EAX
+  ;; int13_harddisk modifies high word of EAX and EBX
   shr   eax, #16
   push  ax
+  shr   ebx, #16
+  push  bx
   call  _int13_harddisk
+  pop   bx
+  shl   ebx, #16
   pop   ax
   shl   eax, #16
 
