@@ -584,7 +584,7 @@ void icmp_error(PNATState pData, struct mbuf *msrc, u_char type, u_char code, in
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_pkthdr.header = mtod(m, void *);
 #else
-    new_m_size = sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
+    new_m_size = if_maxlinkhdr + sizeof(struct ip) + ICMP_MINLEN + msrc->m_len + ICMP_MAXDATALEN;
     if (new_m_size > m->m_size)
     {
         m_inc(m, new_m_size);
