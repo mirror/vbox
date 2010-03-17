@@ -4214,6 +4214,7 @@ VMMR0DECL(int) VMXR0Leave(PVM pVM, PVMCPU pVCpu, PCPUMCTX pCtx)
     if (CPUMIsHyperDebugStateActive(pVCpu))
     {
         CPUMR0LoadHostDebugState(pVM, pVCpu);
+        Assert(pVCpu->hwaccm.s.vmx.proc_ctls & VMX_VMCS_CTRL_PROC_EXEC_CONTROLS_MOV_DR_EXIT);
     }
     else
 #endif
