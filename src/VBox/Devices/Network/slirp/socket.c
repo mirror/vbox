@@ -1110,6 +1110,22 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     Assert(m != NULL);
 
     src = addr->sin_addr.s_addr;
+    if (type == ICMP_ECHOREPLY)
+    {
+        struct ip *ip0 = mtod(m, struct ip *);
+        struct icmp *icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
+        if (icp0->icmp_type != ICMP_ECHO)
+        {
+            Log(("NAT: we haven't found echo for this reply\n"));
+            return;
+        }
+        if (   (RT_N2H_U16(ip->ip_len) - hlen )
+            != (ip0->ip_len - (ip0->ip_hl << 2))) /* the IP header in the list is in host format */
+        {
+            Log(("NAT: ECHO lenght doesn't match ECHOREPLY\n"));
+            return;
+        }
+    }
 
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
@@ -1137,7 +1153,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     else 
     {
         int size = m->m_size;
-        m_inc(m, len); /*increase the room of the mbuf up to len*/
+        /* we need involve ether header lenght into new buffer buffer calculation */
+        m_inc(m, if_maxlinkhdr + len - hlen + original_hlen); 
         if (size == m->m_size)
         {
             Log(("send_icmp_to_guest: extending buffer was failed (packet is dropped)\n"));
