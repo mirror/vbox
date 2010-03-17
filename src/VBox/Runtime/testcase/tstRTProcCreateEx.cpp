@@ -38,6 +38,7 @@
 #include <iprt/env.h>
 #include <iprt/err.h>
 #include <iprt/initterm.h>
+#include <iprt/mem.h>
 #include <iprt/message.h>
 #include <iprt/param.h>
 #include <iprt/pipe.h>
@@ -46,6 +47,11 @@
 #include <iprt/test.h>
 #include <iprt/thread.h>
 
+#ifdef RT_OS_WINDOWS
+# define SECURITY_WIN32
+# include <windows.h>
+# include <Security.h>
+#endif
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -67,6 +73,100 @@ static const char * const g_apszArgs4[] =
     /* 9 */ "\\\\\"\\",
     NULL
 };
+
+static int tstRTCreateProcEx5Child(int argc, char **argv)
+{
+    int rc = RTR3Init();
+    if (rc)
+        return RTMsgInitFailure(rc);
+
+#ifdef RT_OS_WINDOWS
+    char szUser[_1K];
+    DWORD cbLen = sizeof(szUser);
+    /** @todo Does not yet handle ERROR_MORE_DATA for user names longer than 32767. */
+    if (!GetUserNameEx(NameSamCompatible, szUser, &cbLen))
+    {
+        RTPrintf("GetUserNameEx failed with last error=%ld\n", GetLastError());
+        return VERR_AUTHENTICATION_FAILURE;
+    }
+    else
+    {
+        DWORD cbSid = 0;
+        DWORD cbDomain = 0;
+        SID_NAME_USE sidUse;
+        /* First try to figure out how much space for SID + domain name we need. */
+        BOOL bRet = LookupAccountName(NULL /* current system*/,
+                                      szUser,
+                                      NULL,
+                                      &cbSid,
+                                      NULL,
+                                      &cbDomain,
+                                      &sidUse);
+        if (!bRet)
+        {
+            DWORD dwErr = GetLastError();
+            if (dwErr != ERROR_INSUFFICIENT_BUFFER)
+            {
+                RTPrintf("LookupAccountName(1) failed with last error=%ld\n", dwErr);
+                return VERR_AUTHENTICATION_FAILURE;
+            }
+        }
+
+        /* Now try getting the real SID + domain name. */
+        SID *pSid = (SID *)RTMemAlloc(cbSid);
+        AssertPtr(pSid);
+        char *pszDomain = (char *)RTMemAlloc(cbDomain); /* Size in TCHAR! */
+        AssertPtr(pszDomain);
+    
+        if (!LookupAccountName(NULL /* Current system */,
+                               szUser,
+                               pSid,
+                               &cbSid,
+                               pszDomain,
+                               &cbDomain,
+                               &sidUse))
+        {
+            RTPrintf("LookupAccountName(2) failed with last error=%ld\n", GetLastError());
+            return VERR_AUTHENTICATION_FAILURE;
+        }
+        else
+        {
+            RTPrintf("NameSamCompatible: %s\n"
+                     "DomainName: %s\n", 
+                     pszDomain, szUser);
+        }
+        RTMemFree(pSid);
+        RTMemFree(pszDomain);
+    }
+#else
+    /** @todo Lookup UID/effective UID, maybe GID? */
+#endif
+    return rc;
+}
+
+static void tstRTCreateProcEx5(void)
+{
+    RTTestISub("Impersonation (as user)");
+
+    const char * apszArgs[3] =
+    {
+        "test", /* user name */
+        "--testcase-child-5",
+        NULL
+    };
+
+    RTPROCESS hProc;
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
+                                         NULL, NULL, NULL, &hProc), VINF_SUCCESS);
+    RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
+    RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+
+    if (ProcStatus.enmReason != RTPROCEXITREASON_NORMAL || ProcStatus.iStatus != 0)
+        RTTestIFailed("enmReason=%d iStatus=%d", ProcStatus.enmReason, ProcStatus.iStatus);
+    else
+        RTTestIPassed(NULL);
+}
+
 
 static int tstRTCreateProcEx4Child(int argc, char **argv)
 {
@@ -315,6 +415,8 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx3Child();
     if (argc >= 5 && !strcmp(argv[1], "--testcase-child-4"))
         return tstRTCreateProcEx4Child(argc, argv);
+    if (argc == 2 && !strcmp(argv[1], "--testcase-child-5"))
+        return tstRTCreateProcEx5Child(argc, argv);
     if (argc != 1)
         return 99;
 
@@ -334,7 +436,9 @@ int main(int argc, char **argv)
     tstRTCreateProcEx2();
     tstRTCreateProcEx3();
     tstRTCreateProcEx4();
-    /** @todo Cover files, pszAsUser, ++ */
+    /** @todo Do not run tstRTCreateProcEx5 on NT4, may not work (?) */
+    tstRTCreateProcEx5();
+    /** @todo Cover files, ++ */
 
     /*
      * Summary.
