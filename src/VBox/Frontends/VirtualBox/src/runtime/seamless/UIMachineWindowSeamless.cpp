@@ -141,13 +141,6 @@ void UIMachineWindowSeamless::retranslateUi()
 {
     /* Translate parent class: */
     UIMachineWindow::retranslateUi();
-
-#ifdef Q_WS_MAC
-    // TODO_NEW_CORE
-//    m_pDockSettingsMenu->setTitle(tr("Dock Icon"));
-//    m_pDockDisablePreview->setText(tr("Show Application Icon"));
-//    m_pDockEnablePreviewMonitor->setText(tr("Show Monitor Preview"));
-#endif /* Q_WS_MAC */
 }
 
 #ifdef Q_WS_MAC
