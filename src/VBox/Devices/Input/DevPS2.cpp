@@ -684,17 +684,14 @@ static void kbd_mouse_send_rel3_packet(KBDState *s, bool fToCmdQueue)
     int dy1 = s->mouse_dy < 0 ? RT_MAX(s->mouse_dy, -256)
                               : RT_MIN(s->mouse_dy, 255);
     unsigned int b;
-    unsigned fButtonsPacked;
-    unsigned fButtonsLow = s->mouse_buttons & 0x03;
+    unsigned fButtonsLow = s->mouse_buttons & 0x07;
     s->mouse_dx -= dx1;
     s->mouse_dy -= dy1;
-    kbd_mouse_set_reported_buttons(s, fButtonsLow, 0x03);
-    fButtonsPacked = (s->mouse_buttons & 0x04 ? 0x04 : 0);
-    kbd_mouse_set_reported_buttons(s, s->mouse_buttons, 0x04);
-    LogRel3(("%s: dx1=%d, dy1=%d, fButtonsLow=0x%x, fButtonsPacked=0x%x\n",
-             __PRETTY_FUNCTION__, dx1, dy1, fButtonsLow, fButtonsPacked));
-    b = 0x08 | ((dx1 < 0) << 4) | ((dy1 < 0) << 5) | fButtonsLow
-             | (fButtonsPacked & 4) | ((fButtonsPacked & 3) << 6);
+    kbd_mouse_set_reported_buttons(s, fButtonsLow, 0x07);
+    LogRel3(("%s: dx1=%d, dy1=%d, fButtonsLow=0x%x\n",
+             __PRETTY_FUNCTION__, dx1, dy1, fButtonsLow));
+    b = 0x08 | ((dx1 < 0 ? 1 : 0) << 4) | ((dy1 < 0 ? 1 : 0) << 5)
+             | fButtonsLow;
     kbd_queue(s, b, aux);
     kbd_queue(s, dx1 & 0xff, aux);
     kbd_queue(s, dy1 & 0xff, aux);
@@ -706,6 +703,7 @@ static void kbd_mouse_send_imps2_byte4(KBDState *s, bool fToCmdQueue)
 
     int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -127)
                               : RT_MIN(s->mouse_dz, 127);
+    LogRel3(("%s: dz1=%d\n", __PRETTY_FUNCTION__, dz1));
     s->mouse_dz -= dz1;
     kbd_queue(s, dz1 & 0xff, aux);
 }
@@ -718,6 +716,7 @@ static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
     {
         int dw1 = s->mouse_dw < 0 ? RT_MAX(s->mouse_dw, -31)
                                   : RT_MIN(s->mouse_dw, 32);
+        LogRel3(("%s: dw1=%d\n", __PRETTY_FUNCTION__, dw1));
         s->mouse_dw -= dw1;
         kbd_queue(s, 0x40 | (dw1 & 0x3f), aux);
     }
@@ -725,6 +724,7 @@ static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
     {
         int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -31)
                                   : RT_MIN(s->mouse_dz, 32);
+        LogRel3(("%s: dz1=%d\n", __PRETTY_FUNCTION__, dz1));
         s->mouse_dz -= dz1;
         kbd_queue(s, 0x80 | (dz1 & 0x3f), aux);
     }
@@ -732,9 +732,12 @@ static void kbd_mouse_send_imex_byte4(KBDState *s, bool fToCmdQueue)
     {
         int dz1 = s->mouse_dz < 0 ? RT_MAX(s->mouse_dz, -7)
                                   : RT_MIN(s->mouse_dz, 8);
+        unsigned fButtonsHigh = s->mouse_buttons & 0x18;
+        LogRel3(("%s: dz1=%d fButtonsHigh=0x%x\n",
+                 __PRETTY_FUNCTION__, dz1, fButtonsHigh));
         s->mouse_dz -= dz1;
-        kbd_mouse_set_reported_buttons(s, s->mouse_buttons, 0x18);
-        kbd_queue(s, (dz1 & 0x0f) | ((s->mouse_buttons & 0x18) << 1), aux);
+        kbd_mouse_set_reported_buttons(s, fButtonsHigh, 0x18);
+        kbd_queue(s, (dz1 & 0x0f) | (fButtonsHigh << 1), aux);
     }
 }
 
@@ -784,7 +787,9 @@ static void pc_kbd_mouse_event(void *opaque, int dx, int dy, int dz, int dw,
 
     s->mouse_dx += dx;
     s->mouse_dy -= dy;
-    s->mouse_dz += dz;
+    if (   (s->mouse_type == MOUSE_PROT_IMPS2)
+        || (s->mouse_type == MOUSE_PROT_IMEX))
+        s->mouse_dz += dz;
     if (   (   (s->mouse_type == MOUSE_PROT_IMEX)
             && s->mouse_flags & MOUSE_REPORT_HORIZONTAL))
         s->mouse_dw += dw;
@@ -985,7 +990,7 @@ static int kbd_write_mouse(KBDState *s, int val)
         case 4:
             if (val == 40)
             {
-                LogFlowFunc(("enabling IMEX horizontal scrolling reporting\n"));
+                LogRelFlowFunc(("enabling IMEX horizontal scrolling reporting\n"));
                 s->mouse_flags |= MOUSE_REPORT_HORIZONTAL;
             }
             s->mouse_detect_state = 0;
