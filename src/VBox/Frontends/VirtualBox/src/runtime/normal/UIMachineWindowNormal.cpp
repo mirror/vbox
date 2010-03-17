@@ -223,13 +223,6 @@ void UIMachineWindowNormal::retranslateUi()
     /* Translate parent class: */
     UIMachineWindow::retranslateUi();
 
-#ifdef Q_WS_MAC
-    // TODO_NEW_CORE
-//    m_pDockSettingsMenu->setTitle(tr("Dock Icon"));
-//    m_pDockDisablePreview->setText(tr("Show Application Icon"));
-//    m_pDockEnablePreviewMonitor->setText(tr("Show Monitor Preview"));
-#endif /* Q_WS_MAC */
-
     m_pNameHostkey->setToolTip(
         tr("Shows the currently assigned Host key.<br>"
            "This key, when pressed alone, toggles the keyboard and mouse "
