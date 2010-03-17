@@ -1058,7 +1058,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     hlen = (ip->ip_hl << 2);
     if (RT_N2H_U16(ip->ip_len) < hlen + ICMP_MINLEN)
     {
-        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
+       Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
        return; 
     }
     icp = (struct icmp *)((char *)ip + hlen);
@@ -1136,7 +1136,13 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
     else 
     {
+        int size = m->m_size;
         m_inc(m, len); /*increase the room of the mbuf up to len*/
+        if (size == m->m_size)
+        {
+            Log(("send_icmp_to_guest: extending buffer was failed (packet is dropped)\n"));
+            return;
+        }
         memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
     }
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
