@@ -128,6 +128,8 @@ public:
     UIFrameBuffer(UIMachineView *aView);
     virtual ~UIFrameBuffer();
 
+    void setDeleted(bool fIsDeleted) { m_fIsDeleted = fIsDeleted; }
+
     NS_DECL_ISUPPORTS
 
 #if defined (Q_OS_WIN32)
@@ -235,6 +237,7 @@ protected:
     int m_width;
     int m_height;
     uint64_t m_uWinId;
+    bool m_fIsDeleted;
 
 #if defined (Q_OS_WIN32)
 private:

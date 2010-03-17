@@ -43,6 +43,7 @@ NS_IMPL_THREADSAFE_ISUPPORTS1_CI (UIFrameBuffer, IFramebuffer)
 UIFrameBuffer::UIFrameBuffer(UIMachineView *pMachineView)
     : m_pMachineView(pMachineView)
     , m_width(0), m_height(0)
+    , m_fIsDeleted(false)
 #if defined (Q_OS_WIN32)
     , m_iRefCnt(0)
 #endif
@@ -157,6 +158,9 @@ STDMETHODIMP UIFrameBuffer::RequestResize(ULONG uScreenId, ULONG uPixelFormat,
                                           ULONG uWidth, ULONG uHeight,
                                           BOOL *pbFinished)
 {
+    if (m_fIsDeleted)
+        return E_FAIL;
+
     NOREF(uScreenId);
     QApplication::postEvent (m_pMachineView,
                              new UIResizeEvent(uPixelFormat, pVRAM, uBitsPerPixel,
