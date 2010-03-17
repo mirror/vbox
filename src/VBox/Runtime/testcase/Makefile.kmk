@@ -393,7 +393,7 @@ tstRTFsQueries_SOURCES = tstRTFsQueries.cpp
 
 tstRTProcCreateEx_TEMPLATE = VBOXR3TSTEXE
 tstRTProcCreateEx_SOURCES = tstRTProcCreateEx.cpp
-tstRTProcCreateEx_LIBS += Secur32.lib
+tstRTProcCreateEx_LIBS.win += Secur32.lib
 
 tstRTProcWait_SOURCES = tstRTProcWait.cpp
 
