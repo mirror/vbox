@@ -1059,7 +1059,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     if (RT_N2H_U16(ip->ip_len) < hlen + ICMP_MINLEN)
     {
        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
-       return; 
+       return;
     }
     icp = (struct icmp *)((char *)ip + hlen);
 
@@ -1072,7 +1072,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     }
 
     /*
-     * ICMP_ECHOREPLY, ICMP_TIMXCEED, ICMP_UNREACH minimal header size is 
+     * ICMP_ECHOREPLY, ICMP_TIMXCEED, ICMP_UNREACH minimal header size is
      * ICMP_ECHOREPLY assuming data 0
      * icmp_{type(8), code(8), cksum(16),identifier(16),seqnum(16)}
      */
@@ -1080,21 +1080,21 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     {
         Log(("send_icmp_to_guest: NAT accept ICMP_{ECHOREPLY, TIMXCEED, UNREACH} the minimum size is 64 (see rfc792)\n"));
         return;
-    } 
+    }
 
     type = icp->icmp_type;
     if (   type == ICMP_TIMXCEED
         || type == ICMP_UNREACH)
     {
         /*
-         * ICMP_TIMXCEED, ICMP_UNREACH minimal header size is 
+         * ICMP_TIMXCEED, ICMP_UNREACH minimal header size is
          * icmp_{type(8), code(8), cksum(16),unused(32)} + IP header + 64 bit of original datagram
          */
         if (RT_N2H_U16(ip->ip_len) < hlen + 2*8 + sizeof(struct ip))
         {
             Log(("send_icmp_to_guest: NAT accept ICMP_{TIMXCEED, UNREACH} the minimum size of ipheader + 64 bit of data (see rfc792)\n"));
             return;
-        } 
+        }
         ip = &icp->icmp_ip;
     }
 
@@ -1147,21 +1147,19 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     original_hlen = ip->ip_hl << 2;
     /* saves original ip header and options */
     /* m_room space in the saved m buffer */
-    m_room = m->m_len + M_TRAILINGSPACE(m) - original_hlen;
-    if (m_room >= len - hlen)
-        memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
-    else 
+    m_room = M_ROOM(m);
+    if (m_room < len - hlen + original_hlen)
+    else
     {
-        int size = m->m_size;
-        /* we need involve ether header lenght into new buffer buffer calculation */
-        m_inc(m, if_maxlinkhdr + len - hlen + original_hlen); 
-        if (size == m->m_size)
+        /* we need involve ether header length into new buffer buffer calculation */
+        m_inc(m, if_maxlinkhdr + len - hlen + original_hlen);
+        if (m->m_size < if_maxlinkhdr + len - hlen + original_hlen)
         {
             Log(("send_icmp_to_guest: extending buffer was failed (packet is dropped)\n"));
             return;
         }
-        memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
     }
+    memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
 #ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_len = len - hlen + original_hlen;
     ip->ip_len = m->m_len;
@@ -1389,12 +1387,12 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
             || errno == EINPROGRESS
             || errno == ENOTCONN))
     {
-        Log(("sorecvfrom_icmp_unix: 2 - step can't read IP body (would block expected:%d)\n", 
+        Log(("sorecvfrom_icmp_unix: 2 - step can't read IP body (would block expected:%d)\n",
             RT_N2H_U16(ip.ip_len)));
         RTMemFree(buff);
         return;
     }
-    if (   len < 0 
+    if (   len < 0
         || len < (RT_N2H_U16(ip.ip_len))
         || len == 0)
     {

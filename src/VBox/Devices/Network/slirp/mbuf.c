@@ -401,18 +401,4 @@ void slirp_ext_m_free(PNATState pData, struct mbuf *m)
     m_free(pData, m);
 }
 
-void slirp_ext_m_append(PNATState pData, struct mbuf *m, uint8_t *pu8Buf, size_t cbBuf)
-{
-    char *c;
-    if (cbBuf > M_FREEROOM(m))
-    {
-        m_inc(m, cbBuf);
-        if (RT_UNLIKELY(cbBuf > M_FREEROOM(m)))
-            cbBuf = M_FREEROOM(m);
-    }
-    c = mtod(m, char *);
-    memcpy(c, pu8Buf, cbBuf);
-    m->m_len = cbBuf;
-}
-
 #endif /* VBOX_WITH_SLIRP_BSD_MBUF */
