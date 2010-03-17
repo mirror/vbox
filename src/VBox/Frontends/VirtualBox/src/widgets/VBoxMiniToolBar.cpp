@@ -224,8 +224,8 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
         {
             case AlignTop:
             {
-                if (((mPositionY == screen.y()) && mSlideToScreen) ||
-                    ((mPositionY == screen.y() - height() + 1) && !mSlideToScreen))
+                if (((mPositionY == 0) && mSlideToScreen) ||
+                    ((mPositionY == - height() + 1) && !mSlideToScreen))
                 {
                     mScrollTimer.stop();
                     if (mHideAfterSlide)
@@ -240,8 +240,8 @@ void VBoxMiniToolBar::timerEvent (QTimerEvent *aEvent)
             }
             case AlignBottom:
             {
-                if (((mPositionY == screen.y() + screen.height() - height()) && mSlideToScreen) ||
-                    ((mPositionY == screen.y() + screen.height() - 1) && !mSlideToScreen))
+                if (((mPositionY == screen.height() - height()) && mSlideToScreen) ||
+                    ((mPositionY == screen.height() - 1) && !mSlideToScreen))
                 {
                     mScrollTimer.stop();
                     if (mHideAfterSlide)
@@ -391,12 +391,12 @@ void VBoxMiniToolBar::moveToBase()
     {
         case AlignTop:
         {
-            mPositionY = screen.y() - height() + 1;
+            mPositionY = - height() + 1;
             break;
         }
         case AlignBottom:
         {
-            mPositionY = screen.y() + screen.height() - 1;
+            mPositionY = screen.height() - 1;
             break;
         }
         default:
