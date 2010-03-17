@@ -121,10 +121,10 @@ RT_C_DECLS_BEGIN
  *  Currently #NM and #PF only
  */
 #ifdef VBOX_STRICT
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_BP) | RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_DE) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF) | RT_BIT(X86_XCPT_UD) | RT_BIT(X86_XCPT_NP) | RT_BIT(X86_XCPT_SS) | RT_BIT(X86_XCPT_GP) | RT_BIT(X86_XCPT_MF)
 #define HWACCM_SVM_TRAP_MASK                HWACCM_VMX_TRAP_MASK
 #else
-#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
+#define HWACCM_VMX_TRAP_MASK                RT_BIT(X86_XCPT_DB) | RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #define HWACCM_SVM_TRAP_MASK                RT_BIT(X86_XCPT_NM) | RT_BIT(X86_XCPT_PF)
 #endif
 /* All exceptions have to be intercept in emulated real-mode (minues NM & PF as they are always intercepted. */
