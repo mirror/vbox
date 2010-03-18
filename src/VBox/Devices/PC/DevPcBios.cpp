@@ -1084,7 +1084,6 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         PCFGMNODE   pCfgNetBootDevice;
         uint16_t    u16BusDevFn;
         char        szIndex[] = "?";
-        int         i;
 
         Assert(pCfgNetBoot);
         for (i = 0; i < NET_BOOT_DEVS; ++i)
