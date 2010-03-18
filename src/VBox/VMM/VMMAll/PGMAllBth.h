@@ -799,7 +799,8 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                  * to physical monitored regions, that are no longer valid.
                  * Assume for now it only applies to the read/write flag.
                  */
-                if (RT_SUCCESS(rc) && (uErr & X86_TRAP_PF_RW))
+                if (    RT_SUCCESS(rc) 
+                    &&  (uErr & X86_TRAP_PF_RW))
                 {
                     if (PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                     {
@@ -1839,7 +1840,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                     /** @todo r=bird: figure out why we need this here, SyncPT should've taken care of this already.
                      * As for invlpg, it simply frees the whole shadow PT.
                      * ...It's possibly because the guest clears it and the guest doesn't really tell us... */
-                    if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
+                    if (    !PdeSrc.b.u1Dirty 
+                        &&  PdeSrc.b.u1Write)
                     {
                         STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageBig));
                         PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
@@ -2369,8 +2371,10 @@ PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPde
                         if (RT_LIKELY(pPage))
                         {
                             if (PGM_PAGE_HAS_ACTIVE_HANDLERS(pPage))
+                            {
                                 /* Assuming write handlers here as the PTE is present (otherwise we wouldn't be here). */
                                 PteDst.n.u1Write = 0;
+                            }
                             else
                             {
                                 if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
@@ -2610,7 +2614,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                 PdeDst.u = pShwPage->Core.Key
                          | (PdeSrc.u & ~(GST_PDE_PG_MASK | X86_PDE_AVL_MASK | X86_PDE_PCD | X86_PDE_PWT | X86_PDE_PS | X86_PDE4M_G | X86_PDE4M_D));
                 /* (see explanation and assumptions further down.) */
-                if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
+                if (    !PdeSrc.b.u1Dirty 
+                    &&  PdeSrc.b.u1Write)
                 {
                     STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageBig));
                     PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
@@ -2758,7 +2763,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
              */
             /** @todo move the above stuff to a section in the PGM documentation. */
             Assert(!(PdeDst.u & PGM_PDFLAGS_TRACK_DIRTY));
-            if (!PdeSrc.b.u1Dirty && PdeSrc.b.u1Write)
+            if (    !PdeSrc.b.u1Dirty 
+                &&  PdeSrc.b.u1Write)
             {
                 STAM_COUNTER_INC(&pVCpu->pgm.s.CTX_MID_Z(Stat,DirtyPageBig));
                 PdeDst.u |= PGM_PDFLAGS_TRACK_DIRTY;
