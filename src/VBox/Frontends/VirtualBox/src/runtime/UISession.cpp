@@ -613,11 +613,19 @@ void UISession::powerUp()
         return;
     }
 
+    /* Guard progressbar warnings from auto-closing: */
+    if (uimachine()->machineLogic())
+        uimachine()->machineLogic()->setPreventAutoClose(true);
+
     /* Show "Starting/Restoring" progress dialog: */
     if (isSaved())
         vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow(), 0);
     else
         vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
+
+    /* Allow further auto-closing: */
+    if (uimachine()->machineLogic())
+        uimachine()->machineLogic()->setPreventAutoClose(false);
 
     /* Check for a progress failure: */
     if (progress.GetResultCode() != 0)
