@@ -35,6 +35,10 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
+#ifdef RT_OS_LINUX
+# include <sys/mman.h>
+#endif
+
 
 
 /*******************************************************************************
@@ -46,8 +50,104 @@ static uint32_t g_cMemBalloonChunks = 0;
 /** The semaphore we're blocking on. */
 static RTSEMEVENTMULTI  g_MemBalloonEvent = NIL_RTSEMEVENTMULTI;
 
-/** The array holding the R3 pointers of the balloon */
+/** The array holding the R3 pointers of the balloon. */
 static void **g_pavBalloon = NULL;
+
+/** True = madvise(MADV_DONTFORK) works, false otherwise. */
+static bool g_fSysMadviseWorks;
+
+
+/**
+ * Check weather madvise() works.
+ */
+static void VBoxServiceBalloonInitMadvise(void)
+{
+#ifdef RT_OS_LINUX
+    void *pv = RTMemPageAlloc(PAGE_SIZE);
+    g_fSysMadviseWorks = madvise(pv, PAGE_SIZE, MADV_DONTFORK) == 0;
+    RTMemPageFree(pv);
+#endif
+}
+
+
+/**
+ * Allocate a chunk of the balloon. Fulfil the prerequisite that we can lock this memory
+ * and protect it against fork() in R0. See also suplibOsPageAlloc().
+ */
+static void* VBoxServiceBalloonAllocChunk(void)
+{
+    size_t cb = VMMDEV_MEMORY_BALLOON_CHUNK_SIZE;
+    char *pu8;
+
+#ifdef RT_OS_LINUX
+    if (!g_fSysMadviseWorks)
+        cb += 2 * PAGE_SIZE;
+
+    pu8 = (char*)mmap(NULL, cb, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+    if (pu8 == MAP_FAILED)
+        return NULL;
+
+    if (g_fSysMadviseWorks)
+    {
+        /*
+         * It is not fatal if we fail here but a forked child (e.g. the ALSA sound server)
+         * could crash. Linux < 2.6.16 does not implement madvise(MADV_DONTFORK) but the
+         * kernel seems to split bigger VMAs and that is all that we want -- later we set the
+         * VM_DONTCOPY attribute in supdrvOSLockMemOne().
+         */
+        madvise(pu8, cb, MADV_DONTFORK);
+    }
+    else
+    {
+        /*
+         * madvise(MADV_DONTFORK) is not available (most probably Linux 2.4). Enclose any
+         * mmapped region by two unmapped pages to guarantee that there is exactly one VM
+         * area struct of the very same size as the mmap area.
+         */
+        RTMemProtect(pu8, PAGE_SIZE, RTMEM_PROT_NONE);
+        RTMemProtect(pu8 + cb - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_NONE);
+        pu8 += PAGE_SIZE;
+    }
+
+#else
+
+    pu8 = (char*)RTMemPageAlloc(cb);
+    if (!pu8)
+        return pu8;
+
+#endif
+
+    memset(pu8, 0, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
+    return pu8;
+}
+
+
+/**
+ * Free an allocated chunk undoing VBoxServiceBalloonAllocChunk().
+ */
+static void VBoxServiceBalloonFreeChunk(void *pv)
+{
+    char *pu8 = (char*)pv;
+    size_t cb = VMMDEV_MEMORY_BALLOON_CHUNK_SIZE;
+
+#ifdef RT_OS_LINUX
+
+    if (!g_fSysMadviseWorks)
+    {
+        cb += 2 * PAGE_SIZE;
+        pu8 -= PAGE_SIZE;
+        /* This is not really necessary */
+        RTMemProtect(pu8, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+        RTMemProtect(pu8 + cb - PAGE_SIZE, PAGE_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
+    }
+    munmap(pu8, cb);
+
+#else
+
+    RTMemPageFree(pu8);
+
+#endif
+}
 
 
 /**
@@ -70,11 +170,9 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
         uint32_t i;
         for (i = g_cMemBalloonChunks; i < cNewChunks; i++)
         {
-/** @todo r=bird: this isn't safe on linux. See suplibOsPageAlloc in
- *        SUPLib-linux.cpp. We should probably just fail outright here if
- *        linux, just in case...
- *        frank: To be more specific, the problem is fork(). */
-            void *pv = RTMemPageAlloc(VMMDEV_MEMORY_BALLOON_CHUNK_SIZE);
+            void *pv = VBoxServiceBalloonAllocChunk();
+            if (!pv)
+                break;
             rc = VbglR3MemBalloonChange(pv, /* inflate=*/ true);
             if (RT_SUCCESS(rc))
             {
@@ -82,8 +180,9 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
 #ifndef RT_OS_SOLARIS
                 /*
                  * Protect against access by dangling pointers (ignore errors as it may fail).
-                 * On Solaris it corrupts the address space leaving the process unkillable. This could
-                 * perhaps be related to what the underlying segment driver does; currently just disable it.
+                 * On Solaris it corrupts the address space leaving the process unkillable. This
+                 * could perhaps be related to what the underlying segment driver does; currently
+                 * just disable it.
                  */
                 RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_NONE);
 #endif
@@ -91,7 +190,7 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
             }
             else
             {
-                RTMemPageFree(pv);
+                VBoxServiceBalloonFreeChunk(pv);
                 break;
             }
         }
@@ -111,7 +210,7 @@ static int VBoxServiceBalloonSetUser(uint32_t cNewChunks)
                 /* unprotect */
                 RTMemProtect(pv, VMMDEV_MEMORY_BALLOON_CHUNK_SIZE, RTMEM_PROT_READ | RTMEM_PROT_WRITE);
 #endif
-                RTMemPageFree(g_pavBalloon[i]);
+                VBoxServiceBalloonFreeChunk(pv);
                 g_pavBalloon[i] = NULL;
                 g_cMemBalloonChunks--;
             }
@@ -150,6 +249,8 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
 
     int rc = RTSemEventMultiCreate(&g_MemBalloonEvent);
     AssertRCReturn(rc, rc);
+
+    VBoxServiceBalloonInitMadvise();
 
     g_cMemBalloonChunks = 0;
     uint32_t cNewChunks = 0;
