@@ -231,7 +231,7 @@ static int biosGuessDiskLCHS(PPDMIBLOCK pBlock, PPDMMEDIAGEOMETRY pLCHSGeometry)
  */
 static void pcbiosCmosWrite(PPDMDEVINS pDevIns, int off, uint32_t u32Val)
 {
-    Assert(off < 128);
+    Assert(off < 256);
     Assert(u32Val < 256);
 
 #if 1
