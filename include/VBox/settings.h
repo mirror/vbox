@@ -373,8 +373,8 @@ struct SerialPort
     SerialPort()
         : ulSlot(0),
           fEnabled(false),
-          ulIOBase(4),
-          ulIRQ(0x3f8),
+          ulIOBase(0x3f8),
+          ulIRQ(4),
           portMode(PortMode_Disconnected),
           fServer(false)
     {}
