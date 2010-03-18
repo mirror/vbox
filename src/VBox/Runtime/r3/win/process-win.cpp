@@ -34,6 +34,7 @@
 *******************************************************************************/
 #define LOG_GROUP RTLOGGROUP_PROCESS
 
+#include <Userenv.h>
 #include <Windows.h>
 #include <process.h>
 #include <errno.h>
@@ -46,6 +47,7 @@
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/getopt.h>
+#include <iprt/ldr.h>
 #include <iprt/pipe.h>
 #include <iprt/string.h>
 
@@ -79,6 +81,20 @@ typedef enum _PROCESSINFOCLASS
     ProcessBasicInformation = 0,
     ProcessWow64Information = 26
 } PROCESSINFOCLASS;
+
+typedef WINADVAPI BOOL WINAPI CREATEPROCESSWITHLOGON(LPCWSTR,
+                                                     LPCWSTR,
+                                                     LPCWSTR,
+                                                     DWORD,
+                                                     LPCWSTR,
+                                                     LPWSTR,
+                                                     DWORD,
+                                                     LPVOID,
+                                                     LPCWSTR,
+                                                     LPSTARTUPINFOW,
+                                                     LPPROCESS_INFORMATION);
+
+typedef CREATEPROCESSWITHLOGON *PCREATEPROCESSWITHLOGON;
 
 extern "C" LONG WINAPI
 NtQueryInformationProcess(
@@ -193,6 +209,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     RT_ZERO(StartupInfo);
     StartupInfo.cb = sizeof(StartupInfo);
     StartupInfo.dwFlags   = STARTF_USESTDHANDLES;
+    /* Use WTSEnumerateSessions() for getting a list of sessions (WTS_SESSION_INFO array),
+     * get wanted user with WTSQuerySessionInformation() and get session ID token with
+     * WTSQueryUserToken() to use with CreateProcessAsUser(). */ 
+    StartupInfo.lpDesktop = L"Winsta0\\Default";
 #if 1 /* The CRT should keep the standard handles up to date. */
     StartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
     StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -301,46 +321,83 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                              &hToken);
                             if (fRc)
                             {
-                                fRc = CreateProcessAsUserW(hToken,
-                                                           pwszExec,
-                                                           pwszCmdLine,
-                                                           NULL,         /* pProcessAttributes */
-                                                           NULL,         /* pThreadAttributes */
-                                                           TRUE,         /* fInheritHandles */
-                                                           CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                                           pwszzBlock,
-                                                           NULL,         /* pCurrentDirectory */
-                                                           &StartupInfo,
-                                                           &ProcInfo);
-                                if (!fRc)
+                                PROFILEINFOW profileInfo;
+                                RT_ZERO(profileInfo);
+                                profileInfo.dwSize = sizeof(PROFILEINFOW);
+                                profileInfo.lpUserName = pwszUser;
+                                fRc = LoadUserProfileW(hToken, &profileInfo);
+                                if (fRc)
                                 {
-/* CreateProcessWithLogonW is not available on NT4 ... so enabling the following code
-* would blow up compatibility but is a legitim fallback if the above method isn't working. */
-#if 0
-                                    DWORD dwErr = GetLastError();
-        
-                                    /*
-                                     * If we don't hold enough priviledges to spawn a new
-                                     * process with different credentials we have to use 
-                                     * CreateProcessWithLogonW here.
-                                     *
-                                     * @todo Use fFlags to either use this feature or just fail.
-                                     */
-                                    if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
+                                    fRc = CreateProcessAsUserW(hToken,
+                                                               pwszExec,
+                                                               pwszCmdLine,
+                                                               NULL,         /* pProcessAttributes */
+                                                               NULL,         /* pThreadAttributes */
+                                                               TRUE,         /* fInheritHandles */
+                                                               CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                               pwszzBlock,
+                                                               NULL,         /* pCurrentDirectory */
+                                                               &StartupInfo,
+                                                               &ProcInfo);
+                                    if (!fRc)
                                     {
-                                        fRc = CreateProcessWithLogonW(pwszUser,
-                                                                      NULL,                 /* lpDomain*/
-                                                                      pwszPassword,
-                                                                      LOGON_WITH_PROFILE,   /* dwLogonFlags */
-                                                                      pwszExec,
-                                                                      pwszCmdLine,
-                                                                      CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                                                      pwszzBlock,
-                                                                      NULL,                 /* pCurrentDirectory */
-                                                                      &StartupInfo,
-                                                                      &ProcInfo);
-                                    }
+                                        DWORD dwErr = GetLastError();
+            
+                                        /*
+                                         * If we don't hold enough priviledges to spawn a new
+                                         * process with different credentials we have to use 
+                                         * CreateProcessWithLogonW here.
+                                         *
+                                         * Note that NT4 does *not* support this API, thus we have
+                                         * to load it dynamically (W2K+) to not blow up things.
+                                         *
+                                         * @todo Use fFlags to either use this feature or just fail.
+                                         */
+                                        if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
+                                        {
+#if 0
+                                            RTLDRMOD modAdvAPI32;
+                                            rc = RTLdrLoad("Advapi32.dll", &modAdvAPI32);
+                                            PCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
+                                            if (RT_SUCCESS(rc))
+                                            {
+                                                rc = RTLdrGetSymbol(modAdvAPI32, "CreateProcessWithLogonW", (void**)&pfnCreateProcessWithLogonW);
+                                                if (RT_SUCCESS(rc))
+                                                {
 #endif
+                                                    fRc = ImpersonateLoggedOnUser(hToken);
+                                                    if (fRc)
+                                                    {
+                                                        fRc = CreateProcessW(pwszExec,
+                                                                             pwszCmdLine,
+                                                                             NULL,         /* pProcessAttributes */
+                                                                             NULL,         /* pThreadAttributes */
+                                                                             TRUE,         /* fInheritHandles */
+                                                                             CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                                             pwszzBlock,
+                                                                             NULL,          /* pCurrentDirectory */
+                                                                             &StartupInfo,
+                                                                             &ProcInfo);
+                                                        RevertToSelf();
+                                                    }
+#if 0
+                                                    fRc = pfnCreateProcessWithLogonW(pwszUser,
+                                                                                     NULL,                       /* lpDomain*/
+                                                                                     pwszPassword,
+                                                                                     0 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                                                     pwszExec,
+                                                                                     pwszCmdLine,
+                                                                                     CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                                                     pwszzBlock,
+                                                                                     NULL,                       /* pCurrentDirectory */
+                                                                                     &StartupInfo,
+                                                                                     &ProcInfo);
+                                                }
+                                                RTLdrClose(modAdvAPI32);
+                                            }
+#endif
+                                        }
+                                    }
                                 }
                                 CloseHandle(hToken);
                             }
