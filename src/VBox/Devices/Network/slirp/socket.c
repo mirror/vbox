@@ -1125,10 +1125,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             Log(("NAT: we haven't found echo for this reply\n"));
             return;
         }
-#if 0
-        /* 
-         * @todo ip0 seems have different byte order on different OSes, e.g. on Solaris it's required
-         * to N2H, but on Linux no convertaion required.
+        /*
+         * while combining buffer to send (see ip_icmp.c) we control ICMP header only, 
+         * IP header combined by OS network stack, our local copy of IP header contians values 
+         * in host byte order so no byte order conversion is required. IP headers fields are converting
+         * in ip_output0 routine only.   
          */
         if (   (ip->ip_len - hlen )
             != (ip0->ip_len - (ip0->ip_hl << 2))) 
@@ -1137,7 +1138,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
                 (ip->ip_len - hlen ), (ip0->ip_len - (ip0->ip_hl << 2))));
             return;
         }
-#endif
     }
 
     /* ip points on origianal ip header */
