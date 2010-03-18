@@ -194,7 +194,7 @@ RTR3DECL(int) RTTcpClientClose(RTSOCKET Sock);
 RTR3DECL(int)  RTTcpRead(RTSOCKET Sock, void *pvBuffer, size_t cbBuffer, size_t *pcbRead);
 
 /**
- * Send data from a socket.
+ * Send data to a socket.
  *
  * @returns iprt status code.
  * @retval  VERR_INTERRUPTED if interrupted before anything was written.
