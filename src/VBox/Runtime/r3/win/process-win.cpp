@@ -302,15 +302,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 
                             /*
                              * The following rights are needed in order to use
-                             * LogonUserW and CreateProcessAsUserW:
-                             * - SE_ASSIGNPRIMARYTOKEN_NAME
-                             * - SE_INCREASE_QUOTA_NAME 
-                             * - SE_TCB_NAME
-                             *
-                             * So the local policy has to be modified to:
-                             * - Act as part of the operating system
-                             * - Create a token object
-                             * - Log on as a batch job
+                             * LogonUserW and CreateProcessAsUserW,
+                             * so the local policy has to be modified to:
+                             * - SE_TCB_NAME = Act as part of the operating system
+                             * - SE_ASSIGNPRIMARYTOKEN_NAME = Create/replace a token object
+                             * - SE_INCREASE_QUOTA_NAME
                              */
                             fRc = LogonUserW(pwszUser,
                                              NULL,      /* lpDomain */
@@ -332,48 +328,51 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                                            NULL,         /* pCurrentDirectory */
                                                            &StartupInfo,
                                                            &ProcInfo);
-                                if (!fRc)
+                                CloseHandle(hToken);
+                            }
+
+                            /* If call above failed (ERROR_PRIVILEGE_NOT_HELD or else, might happen on W2K),
+                             * try a newer method. */
+                            if (!fRc)
+                            {
+                                DWORD dwErr = GetLastError();
+    
+                                /*
+                                 * If we don't hold enough priviledges to spawn a new
+                                 * process with different credentials we have to use 
+                                 * CreateProcessWithLogonW here.
+                                 *
+                                 * Note that NT4 does *not* support this API, thus we have
+                                 * to load it dynamically (W2K+) to not blow up things.
+                                 *
+                                 * @todo Use fFlags to either use this feature or just fail.
+                                 */
+                                if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
                                 {
-                                    DWORD dwErr = GetLastError();
-        
-                                    /*
-                                     * If we don't hold enough priviledges to spawn a new
-                                     * process with different credentials we have to use 
-                                     * CreateProcessWithLogonW here.
-                                     *
-                                     * Note that NT4 does *not* support this API, thus we have
-                                     * to load it dynamically (W2K+) to not blow up things.
-                                     *
-                                     * @todo Use fFlags to either use this feature or just fail.
-                                     */
-                                    if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
+                                    RTLDRMOD modAdvAPI32;
+                                    rc = RTLdrLoad("Advapi32.dll", &modAdvAPI32);
+                                    PCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
+                                    if (RT_SUCCESS(rc))
                                     {
-                                        RTLDRMOD modAdvAPI32;
-                                        rc = RTLdrLoad("Advapi32.dll", &modAdvAPI32);
-                                        PCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
+                                        /* This may fail on too old (NT4) platforms. */
+                                        rc = RTLdrGetSymbol(modAdvAPI32, "CreateProcessWithLogonW", (void**)&pfnCreateProcessWithLogonW);
                                         if (RT_SUCCESS(rc))
                                         {
-                                            /* This may fail on too old (NT4) platforms. */
-                                            rc = RTLdrGetSymbol(modAdvAPI32, "CreateProcessWithLogonW", (void**)&pfnCreateProcessWithLogonW);
-                                            if (RT_SUCCESS(rc))
-                                            {
-                                                fRc = pfnCreateProcessWithLogonW(pwszUser,
-                                                                                 NULL,                       /* lpDomain*/
-                                                                                 pwszPassword,
-                                                                                 1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
-                                                                                 pwszExec,
-                                                                                 pwszCmdLine,
-                                                                                 CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                                                                 pwszzBlock,
-                                                                                 NULL,                       /* pCurrentDirectory */
-                                                                                 &StartupInfo,
-                                                                                 &ProcInfo);
-                                            }
-                                            RTLdrClose(modAdvAPI32);
+                                            fRc = pfnCreateProcessWithLogonW(pwszUser,
+                                                                             NULL,                       /* lpDomain*/
+                                                                             pwszPassword,
+                                                                             1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                                             pwszExec,
+                                                                             pwszCmdLine,
+                                                                             CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                                             pwszzBlock,
+                                                                             NULL,                       /* pCurrentDirectory */
+                                                                             &StartupInfo,
+                                                                             &ProcInfo);
                                         }
+                                        RTLdrClose(modAdvAPI32);
                                     }
                                 }
-                                CloseHandle(hToken);
                             }
                             RTUtf16Free(pwszPassword);
                         }
