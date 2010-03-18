@@ -37,6 +37,9 @@
 
 #ifdef RT_OS_LINUX
 # include <sys/mman.h>
+# ifndef MADV_DONTFORK
+#  define MADV_DONTFORK 10
+# endif
 #endif
 
 
