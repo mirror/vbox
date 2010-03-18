@@ -1011,7 +1011,8 @@ DECLINLINE(RTSOCKET) rtTcpAtomicXchgSock(RTSOCKET volatile *pSock, const RTSOCKE
 {
     switch (sizeof(RTSOCKET))
     {
-        case 4: return (RTSOCKET)ASMAtomicXchgS32((int32_t volatile *)pSock, (int32_t)Sock);
+        case 4: return (RTSOCKET)ASMAtomicXchgS32((int32_t volatile *)pSock, (int32_t)(uintptr_t)Sock);
+        case 8: return (RTSOCKET)ASMAtomicXchgS64((int64_t volatile *)pSock, (int64_t)(uintptr_t)Sock);
         default:
             AssertReleaseFailed();
             return NIL_RTSOCKET;
