@@ -40,6 +40,7 @@
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/pipe.h>
+#include <iprt/socket.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -299,13 +300,13 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
     {
         case RTHANDLETYPE_PIPE:
             if (pHandle->u.hPipe != NIL_RTPIPE)
-                fd = RTPipeToNative(pHandle->u.hPipe);
+                fd = (int)RTPipeToNative(pHandle->u.hPipe);
             break;
 
-        //case RTHANDLETYPE_SOCKET:
-        //    if (pHandle->u.hSocket != NIL_RTSOCKET)
-       //         fd = (int)pHandle->u.hSocket; //fd = RTTcpToNative(pHandle->u.hSocket);
-       //     break;
+        case RTHANDLETYPE_SOCKET:
+            if (pHandle->u.hSocket != NIL_RTSOCKET)
+                fd = (int)RTSocketToNative(pHandle->u.hSocket);
+            break;
 
         case RTHANDLETYPE_FILE:
             AssertMsgFailed(("Files are always ready for reading/writing and thus not pollable. Use native APIs for special devices.\n"));
