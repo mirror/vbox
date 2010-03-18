@@ -126,6 +126,10 @@
 #define RTSEMXROADS_MAGIC               UINT32_C(0x19350917)
 /** RTSEMXROADSINTERNAL::u32Magic value after RTSemXRoadsDestroy. */
 #define RTSEMXROADS_MAGIC_DEAD          UINT32_C(0x20011110)
+/** The magic value for RTSOCKETINT::u32Magic. (Stanislaw Lem) */
+#define RTSOCKET_MAGIC                  UINT32_C(0x19210912)
+/** The magic value for RTSOCKETINT::u32Magic after destruction. */
+#define RTSOCKET_MAGIC_DEAD             UINT32_C(0x20060326)
 /** Magic value for RTSPINLOCKINTERNAL::u32Magic. (Terry Pratchett) */
 #define RTSPINLOCK_MAGIC                UINT32_C(0x19480428)
 /** Magic value for RTSTRCACHE::u32Magic. (Sir Arthur Charles Clarke) */

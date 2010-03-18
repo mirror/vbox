@@ -1248,11 +1248,11 @@ typedef RTSPINLOCK                                 *PRTSPINLOCK;
 #define NIL_RTSPINLOCK                              0
 
 /** Socket handle. */
-typedef int RTSOCKET;
+typedef R3R0PTRTYPE(struct RTSOCKETINT *)           RTSOCKET;
 /** Pointer to socket handle. */
-typedef RTSOCKET *PRTSOCKET;
+typedef RTSOCKET                                   *PRTSOCKET;
 /** Nil socket handle. */
-#define NIL_RTSOCKET                                (~(RTSOCKET)0)
+#define NIL_RTSOCKET                                ((RTSOCKET)0)
 
 /** Thread handle.*/
 typedef R3R0PTRTYPE(struct RTTHREADINT *)           RTTHREAD;

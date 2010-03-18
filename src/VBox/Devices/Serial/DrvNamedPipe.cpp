@@ -85,9 +85,9 @@ typedef struct DRVNAMEDPIPE
     RTSEMEVENT          ListenSem;
 #else /* !RT_OS_WINDOWS */
     /** Socket handle of the local socket for server. */
-    RTSOCKET            LocalSocketServer;
+    int                 LocalSocketServer;
     /** Socket handle of the local socket. */
-    RTSOCKET            LocalSocket;
+    int                 LocalSocket;
 #endif /* !RT_OS_WINDOWS */
     /** Thread for listening for new connections. */
     RTTHREAD            ListenThread;
@@ -169,14 +169,14 @@ static DECLCALLBACK(int) drvNamedPipeRead(PPDMISTREAM pInterface, void *pvBuf, s
         *pcbRead = (size_t)cbReallyRead;
     }
 #else /* !RT_OS_WINDOWS */
-    if (pThis->LocalSocket != NIL_RTSOCKET)
+    if (pThis->LocalSocket != -1)
     {
         ssize_t cbReallyRead;
         cbReallyRead = recv(pThis->LocalSocket, pvBuf, *pcbRead, 0);
         if (cbReallyRead == 0)
         {
-            RTSOCKET tmp = pThis->LocalSocket;
-            pThis->LocalSocket = NIL_RTSOCKET;
+            int tmp = pThis->LocalSocket;
+            pThis->LocalSocket = -1;
             close(tmp);
         }
         else if (cbReallyRead == -1)
@@ -255,14 +255,14 @@ static DECLCALLBACK(int) drvNamedPipeWrite(PPDMISTREAM pInterface, const void *p
         *pcbWrite = cbWritten;
     }
 #else /* !RT_OS_WINDOWS */
-    if (pThis->LocalSocket != NIL_RTSOCKET)
+    if (pThis->LocalSocket != -1)
     {
         ssize_t cbWritten;
         cbWritten = send(pThis->LocalSocket, pvBuf, *pcbWrite, 0);
         if (cbWritten == 0)
         {
-            RTSOCKET tmp = pThis->LocalSocket;
-            pThis->LocalSocket = NIL_RTSOCKET;
+            int tmp = pThis->LocalSocket;
+            pThis->LocalSocket = -1;
             close(tmp);
         }
         else if (cbWritten == -1)
@@ -364,7 +364,7 @@ static DECLCALLBACK(int) drvNamedPipeListenLoop(RTTHREAD ThreadSelf, void *pvUse
         }
         else
         {
-            if (pThis->LocalSocket != NIL_RTSOCKET)
+            if (pThis->LocalSocket != -1)
             {
                 LogRel(("NamedPipe%d: only single connection supported\n", pThis->pDrvIns->iInstance));
                 close(s);
@@ -421,15 +421,21 @@ static DECLCALLBACK(void) drvNamedPipePowerOff(PPDMDRVINS pDrvIns)
 #else /* !RT_OS_WINDOWS */
     if (pThis->fIsServer)
     {
-        if (pThis->LocalSocketServer != NIL_RTSOCKET)
+        if (pThis->LocalSocketServer != -1)
+        {
             close(pThis->LocalSocketServer);
+            pThis->LocalSocketServer = -1;
+        }
         if (pThis->pszLocation)
             RTFileDelete(pThis->pszLocation);
     }
     else
     {
-        if (pThis->LocalSocket != NIL_RTSOCKET)
+        if (pThis->LocalSocket != -1)
+        {
             close(pThis->LocalSocket);
+            pThis->LocalSocket = -1;
+        }
     }
 #endif /* !RT_OS_WINDOWS */
 }
@@ -481,8 +487,8 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
 #ifdef RT_OS_WINDOWS
     pThis->NamedPipe                    = INVALID_HANDLE_VALUE;
 #else /* !RT_OS_WINDOWS */
-    pThis->LocalSocketServer            = NIL_RTSOCKET;
-    pThis->LocalSocket                  = NIL_RTSOCKET;
+    pThis->LocalSocketServer            = -1;
+    pThis->LocalSocket                  = -1;
 #endif /* !RT_OS_WINDOWS */
     pThis->ListenThread                 = NIL_RTTHREAD;
     pThis->fShutdown                    = false;

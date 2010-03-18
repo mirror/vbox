@@ -610,6 +610,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_NOT_POWER_OF_TWO               (-90)
 /** Status code, typically given as a parameter, that isn't supposed to be used. */
 #define VERR_IGNORED                        (-91)
+/** Concurrent access to the object is not allowed. */
+#define VERR_CONCURRENT_ACCESS              (-92)
 /** @} */
 
 
