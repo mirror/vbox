@@ -36,18 +36,10 @@
 # include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
-# include <sys/stat.h>
-# include <sys/socket.h>
 # include <netinet/in.h>
 # include <netinet/tcp.h>
 # include <arpa/inet.h>
-# ifdef IPRT_WITH_TCPIP_V6
-#  include <netinet6/in6.h>
-# endif
-# include <sys/un.h>
 # include <netdb.h>
-# include <unistd.h>
-# include <fcntl.h>
 #endif /* !RT_OS_WINDOWS */
 #include <limits.h>
 
