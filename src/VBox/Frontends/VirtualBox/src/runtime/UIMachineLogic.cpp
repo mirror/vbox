@@ -631,11 +631,6 @@ void UIMachineLogic::prepareActionGroups()
 #endif
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Reset));
     m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Shutdown));
-#ifdef VBOX_WITH_DEBUGGER_GUI
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_Statistics));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Simple_CommandLine));
-    m_pRunningActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Logging));
-#endif
 
     /* Move actions into running-n-paused actions group: */
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_MouseIntegration));
@@ -643,7 +638,6 @@ void UIMachineLogic::prepareActionGroups()
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_TakeSnapshot));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_InformationDialog));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Toggle_Pause));
-    m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Simple_Close));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_OpticalDevices));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_FloppyDevices));
     m_pRunningOrPausedActions->addAction(actionsPool()->action(UIActionIndex_Menu_USBDevices));
