@@ -40,7 +40,7 @@ VBOX_WITH_UPDATE_REQUEST := 1
 
 # Build new VirtualBox FE/Qt4 GUI runtime core.
 # Currently its not used, you can build it for developing purposes.
-#VBOX_WITH_NEW_RUNTIME_CORE := 1
+VBOX_WITH_NEW_RUNTIME_CORE := 1
 # Force the usage of the new runtime core for the single monitor case also.
 #VBOX_FORCE_NEW_RUNTIME_CORE_ALWAYS := 1
 
