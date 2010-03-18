@@ -208,10 +208,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     RT_ZERO(StartupInfo);
     StartupInfo.cb = sizeof(StartupInfo);
     StartupInfo.dwFlags   = STARTF_USESTDHANDLES;
-    /* Use WTSEnumerateSessions() for getting a list of sessions (WTS_SESSION_INFO array),
-     * get wanted user with WTSQuerySessionInformation() and get session ID token with
-     * WTSQueryUserToken() to use with CreateProcessAsUser(). */ 
-    StartupInfo.lpDesktop = L"Winsta0\\Default";
 #if 1 /* The CRT should keep the standard handles up to date. */
     StartupInfo.hStdInput  = GetStdHandle(STD_INPUT_HANDLE);
     StartupInfo.hStdOutput = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -307,10 +303,14 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                             /*
                              * The following rights are needed in order to use
                              * LogonUserW and CreateProcessAsUserW:
-                             *
                              * - SE_ASSIGNPRIMARYTOKEN_NAME
                              * - SE_INCREASE_QUOTA_NAME 
                              * - SE_TCB_NAME
+                             *
+                             * So the local policy has to be modified to:
+                             * - Act as part of the operating system
+                             * - Create a token object
+                             * - Log on as a batch job
                              */
                             fRc = LogonUserW(pwszUser,
                                              NULL,      /* lpDomain */
@@ -318,6 +318,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                              LOGON32_LOGON_INTERACTIVE,
                                              LOGON32_PROVIDER_DEFAULT,
                                              &hToken);
+                            /** @todo Add SecureZeroMemory() here for wiping the password? */
                             if (fRc)
                             {
                                 fRc = CreateProcessAsUserW(hToken,
@@ -347,42 +348,19 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                      */
                                     if (ERROR_PRIVILEGE_NOT_HELD == dwErr)
                                     {
-#if 0
-                                        PROFILEINFOW profileInfo;
-                                        RT_ZERO(profileInfo);
-                                        profileInfo.dwSize = sizeof(PROFILEINFOW);
-                                        profileInfo.lpUserName = pwszUser;
-                                        fRc = LoadUserProfileW(hToken, &profileInfo);
-
                                         RTLDRMOD modAdvAPI32;
                                         rc = RTLdrLoad("Advapi32.dll", &modAdvAPI32);
                                         PCREATEPROCESSWITHLOGON pfnCreateProcessWithLogonW;
                                         if (RT_SUCCESS(rc))
                                         {
+                                            /* This may fail on too old (NT4) platforms. */
                                             rc = RTLdrGetSymbol(modAdvAPI32, "CreateProcessWithLogonW", (void**)&pfnCreateProcessWithLogonW);
                                             if (RT_SUCCESS(rc))
                                             {
-#endif
-                                                fRc = ImpersonateLoggedOnUser(hToken);
-                                                if (fRc)
-                                                {
-                                                    fRc = CreateProcessW(pwszExec,
-                                                                         pwszCmdLine,
-                                                                         NULL,         /* pProcessAttributes */
-                                                                         NULL,         /* pThreadAttributes */
-                                                                         TRUE,         /* fInheritHandles */
-                                                                         CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
-                                                                         pwszzBlock,
-                                                                         NULL,          /* pCurrentDirectory */
-                                                                         &StartupInfo,
-                                                                         &ProcInfo);
-                                                    RevertToSelf();
-                                                }
-#if 0
                                                 fRc = pfnCreateProcessWithLogonW(pwszUser,
                                                                                  NULL,                       /* lpDomain*/
                                                                                  pwszPassword,
-                                                                                 0 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
+                                                                                 1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
                                                                                  pwszExec,
                                                                                  pwszCmdLine,
                                                                                  CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
@@ -393,7 +371,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                             }
                                             RTLdrClose(modAdvAPI32);
                                         }
-#endif
                                     }
                                 }
                                 CloseHandle(hToken);
