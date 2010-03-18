@@ -477,27 +477,13 @@ EOF
         test -n "$udevmouse" &&
             if [ -d /etc/udev/rules.d ]
             then
-                udev_call=""
-                udev_app=`which udevadm 2> /dev/null`
-                if [ $? -eq 0 ]; then
-                    udev_call="${udev_app} version 2> /dev/null"
-                else
-                    udev_app=`which udevinfo 2> /dev/null`
-                    if [ $? -eq 0 ]; then
-                        udev_call="${udev_app} -V 2> /dev/null"
-                    fi
-                fi
-                udev_fix="="
-                if [ "${udev_call}" != "" ]; then
-                    udev_out=`${udev_call}`
-                    udev_ver=`expr "$udev_out" : '[^0-9]*\([0-9]*\)'`
-                    if [ "$udev_ver" = "" -o "$udev_ver" -lt 55 ]; then
-                       udev_fix=""
-                    fi
-                fi
-                echo "KERNEL=${udev_fix}\"vboxguest\",ENV{ID_INPUT}=\"1\"" > /etc/udev/rules.d/70-xorg-vboxmouse.rules
-                echo "KERNEL=${udev_fix}\"vboxguest\",ENV{ID_INPUT_MOUSE}=\"1\"" >> /etc/udev/rules.d/70-xorg-vboxmouse.rules
-                echo "KERNEL=${udev_fix}\"vboxguest\",ENV{x11_driver}=\"vboxmouse\"" >> /etc/udev/rules.d/70-xorg-vboxmouse.rules
+                echo "KERNEL==\"vboxguest\",ENV{ID_INPUT}=\"1\"" > /etc/udev/rules.d/70-xorg-vboxmouse.rules
+                echo "KERNEL==\"vboxguest\",ENV{ID_INPUT_MOUSE}=\"1\"" >> /etc/udev/rules.d/70-xorg-vboxmouse.rules
+                echo "KERNEL==\"vboxguest\",ENV{x11_driver}=\"vboxmouse\"" >> /etc/udev/rules.d/70-xorg-vboxmouse.rules
+                # This is normally silent.  I have purposely not redirected
+                # error output as I want to know if something goes wrong,
+                # particularly if the command syntax ever changes.
+                udevadm trigger --action=change
             fi
         succ_msg
         test -n "$generated" &&
@@ -629,6 +615,7 @@ EOF
     # Remove other files
     rm /etc/hal/fdi/policy/90-vboxguest.fdi 2>/dev/null
     rm /etc/udev/rules.d/70-xorg-vboxmouse.rules 2>/dev/null
+    udevadm trigger --action=change 2>/dev/null
     rm /usr/share/xserver-xorg/pci/vboxvideo.ids 2>/dev/null
 }
 
