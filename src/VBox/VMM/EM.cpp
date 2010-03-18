@@ -299,8 +299,8 @@ VMMR3DECL(int) EMR3Init(PVM pVM)
         EM_REG_COUNTER_USED(&pStats->StatR3FailedXor,            "/EM/CPU%d/R3/Interpret/Failed/Xor",        "The number of times XOR was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatRZFailedMonitor,        "/EM/CPU%d/RZ/Interpret/Failed/Monitor",    "The number of times MONITOR was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatR3FailedMonitor,        "/EM/CPU%d/R3/Interpret/Failed/Monitor",    "The number of times MONITOR was not interpreted.");
-        EM_REG_COUNTER_USED(&pStats->StatRZFailedMWait,          "/EM/CPU%d/RZ/Interpret/Failed/MWait",      "The number of times MONITOR was not interpreted.");
-        EM_REG_COUNTER_USED(&pStats->StatR3FailedMWait,          "/EM/CPU%d/R3/Interpret/Failed/MWait",      "The number of times MONITOR was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatRZFailedMWait,          "/EM/CPU%d/RZ/Interpret/Failed/MWait",      "The number of times MWAIT was not interpreted.");
+        EM_REG_COUNTER_USED(&pStats->StatR3FailedMWait,          "/EM/CPU%d/R3/Interpret/Failed/MWait",      "The number of times MWAIT was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatRZFailedRdtsc,          "/EM/CPU%d/RZ/Interpret/Failed/Rdtsc",      "The number of times RDTSC was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatR3FailedRdtsc,          "/EM/CPU%d/R3/Interpret/Failed/Rdtsc",      "The number of times RDTSC was not interpreted.");
         EM_REG_COUNTER_USED(&pStats->StatRZFailedRdpmc,          "/EM/CPU%d/RZ/Interpret/Failed/Rdpmc",      "The number of times RDPMC was not interpreted.");
