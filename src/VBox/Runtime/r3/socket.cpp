@@ -33,7 +33,8 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
-# include <winsock.h>
+//# include <winsock.h>
+# include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/stat.h>
@@ -73,6 +74,8 @@
 #ifndef MSG_NOSIGNAL
 # define MSG_NOSIGNAL           0
 #endif
+
+/* Windows has different names for SHUT_XXX. */
 #ifndef SHUT_RDWR
 # ifdef SD_BOTH
 #  define SHUT_RDWR             SD_BOTH
@@ -85,6 +88,13 @@
 #  define SHUT_WR               SD_SEND
 # else
 #  define SHUT_WR               1
+# endif
+#endif
+#ifndef SHUT_RD
+# ifdef SD_RECEIVE
+#  define SHUT_RD               SD_RECEIVE
+# else
+#  define SHUT_RD               0
 # endif
 #endif
 
@@ -116,7 +126,7 @@ typedef struct RTSOCKETINT
     /** The native socket handle. */
     SOCKET              hNative;
     /** The event semaphore we've associated with the socket handle.
-     * This is INVALID_HANDLE_VALUE if not done. */
+     * This is WSA_INVALID_EVENT if not done. */
     WSAEVENT            hEvent;
     /** The pollset currently polling this socket.  This is NIL if no one is
      * polling. */
@@ -251,8 +261,8 @@ int rtSocketCreateForNative(RTSOCKETINT **ppSocket,
     pThis->cUsers       = 0;
     pThis->hNative      = hNative;
 #ifdef RT_OS_WINDOWS
-    pThis->hEvent       = INVALID_HANDLE_VALUE;
-    pThis->hPollSet     = 0;
+    pThis->hEvent       = WSA_INVALID_EVENT;
+    pThis->hPollSet     = NIL_RTPOLLSET;
     pThis->fPollEvts    = 0;
 #endif
     *ppSocket = pThis;
@@ -317,13 +327,13 @@ RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
      */
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
-    if (pThis->hEvent == INVALID_HANDLE_VALUE)
+    if (pThis->hEvent == WSA_INVALID_EVENT)
     {
-        CloseHandle(pThis->hEvent);
-        pThis->hEvent = INVALID_HANDLE_VALUE;
+        WSACloseEvent(pThis->hEvent);
+        pThis->hEvent = WSA_INVALID_EVENT;
     }
 
-    if (pThis->hNative != INVALID_HANDLE_VALUE)
+    if (pThis->hNative != INVALID_SOCKET)
     {
         rc = closesocket(pThis->hNative);
         if (!rc)
@@ -333,7 +343,7 @@ RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
             rc = rtSocketError();
             AssertMsgFailed(("\"%s\": closesocket(%p) -> %Rrc\n", pThis->hNative, rc));
         }
-        pThis->hNative = INVALID_HANDLE_VALUE;
+        pThis->hNative = INVALID_SOCKET;
     }
 
 #else
@@ -370,7 +380,7 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
 
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
-    if (!SetHandleInformation(pThis->hNative, HANDLE_FLAG_INHERIT, fInheritable ? HANDLE_FLAG_INHERIT : 0))
+    if (!SetHandleInformation((HANDLE)pThis->hNative, HANDLE_FLAG_INHERIT, fInheritable ? HANDLE_FLAG_INHERIT : 0))
         rc = RTErrConvertFromWin32(GetLastError());
 #else
     if (fcntl(pThis->hNative, F_SETFD, fInheritable ? 0 : FD_CLOEXEC) < 0)
