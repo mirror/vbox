@@ -806,7 +806,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     {
                         Log(("PGM #PF: Make writable: %RGp %R[pgmpage] pvFault=%RGp uErr=%#x\n",
                              GCPhys, pPage, pvFault, uErr));
-                        rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                         if (rc != VINF_SUCCESS)
                         {
                             AssertMsg(rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("%Rrc\n", rc));
@@ -1409,7 +1409,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
 # endif
                 &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
             {
-                rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
+                rc = pgmPhysPageMakeWritable(pVM, pPage, PteSrc.u & GST_PTE_PG_MASK);
                 AssertRC(rc);
             }
 #endif
@@ -1796,7 +1796,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 #  endif
                         &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
                     {
-                        rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                         AssertRC(rc);
                     }
 # endif
@@ -2380,7 +2380,7 @@ PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPde
                                 if (   PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_WRITE_MONITORED
                                     && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
                                 {
-                                    rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, pPteSrc->u & GST_PTE_PG_MASK);
+                                    rc = pgmPhysPageMakeWritable(pVM, pPage, pPteSrc->u & GST_PTE_PG_MASK);
                                     AssertRC(rc);
                                 }
                                 if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
@@ -2813,7 +2813,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 # endif
                             &&  PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
                         {
-                            rc = pgmPhysPageMakeWritableUnlocked(pVM, pPage, GCPhys);
+                            rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                             AssertRCReturn(rc, rc);
                             if (VM_FF_ISPENDING(pVM, VM_FF_PGM_NO_MEMORY))
                                 break;

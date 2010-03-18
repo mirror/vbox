@@ -714,6 +714,8 @@ typedef PPGMPAGE *PPPGMPAGE;
 /** The page is shared, aka. copy-on-write.
  * This is a page that's shared with other VMs. */
 #define PGM_PAGE_STATE_SHARED           3
+/** The page is ballooned, so no longer available for this VM. */
+#define PGM_PAGE_STATE_BALLOONED        4
 /** @} */
 
 
@@ -818,6 +820,12 @@ typedef PPGMPAGE *PPPGMPAGE;
  */
 #define PGM_PAGE_IS_SHARED(pPage)           ( (pPage)->uStateY == PGM_PAGE_STATE_SHARED )
 
+/**
+ * Checks if the page is ballooned.
+ * @returns true/false.
+ * @param   pPage       Pointer to the physical guest page tracking structure.
+ */
+#define PGM_PAGE_IS_BALLOONED(pPage)            ( (pPage)->uStateY == PGM_PAGE_STATE_BALLOONED )
 
 /**
  * Marks the page as written to (for GMM change monitoring).
@@ -3349,7 +3357,6 @@ int             pgmPhysPageLoadIntoTlb(PPGM pPGM, RTGCPHYS GCPhys);
 int             pgmPhysPageLoadIntoTlbWithPage(PPGM pPGM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 void            pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage);
 int             pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
-int             pgmPhysPageMakeWritableUnlocked(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys);
 int             pgmPhysPageMakeWritableAndMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
 int             pgmPhysPageMap(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void **ppv);
 int             pgmPhysPageMapReadOnly(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void const **ppv);

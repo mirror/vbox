@@ -651,6 +651,7 @@ void pgmPhysPageMakeWriteMonitoredWritable(PVM pVM, PPGMPAGE pPage)
  */
 int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
 {
+    Assert(PGMIsLockOwner(pVM));
     switch (PGM_PAGE_GET_STATE(pPage))
     {
         case PGM_PAGE_STATE_WRITE_MONITORED:
@@ -672,30 +673,6 @@ int pgmPhysPageMakeWritable(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
         case PGM_PAGE_STATE_SHARED:
             return pgmPhysAllocPage(pVM, pPage, GCPhys);
     }
-}
-
-
-/**
- * Wrapper for pgmPhysPageMakeWritable which enters the critsect.
- *
- * @returns VBox strict status code.
- * @retval  VINF_SUCCESS on success.
- * @retval  VINF_PGM_SYNC_CR3 on success and a page pool flush is pending.
- * @retval  VERR_PGM_PHYS_PAGE_RESERVED it it's a valid page but has no physical backing.
- *
- * @param   pVM         The VM address.
- * @param   pPage       The physical page tracking structure.
- * @param   GCPhys      The address of the page.
- */
-int pgmPhysPageMakeWritableUnlocked(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys)
-{
-    int rc = pgmLock(pVM);
-    if (RT_SUCCESS(rc))
-    {
-        rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
-        pgmUnlock(pVM);
-    }
-    return rc;
 }
 
 
