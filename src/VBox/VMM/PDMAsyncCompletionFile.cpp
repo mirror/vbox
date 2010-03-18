@@ -779,6 +779,9 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
                          ? RTFILE_O_READ      | RTFILE_O_OPEN | RTFILE_O_DENY_NONE
                          : RTFILE_O_READWRITE | RTFILE_O_OPEN | RTFILE_O_DENY_WRITE;
 
+    if (enmMgrType == PDMACEPFILEMGRTYPE_ASYNC)
+        fFileFlags |= RTFILE_O_ASYNC_IO;
+
     if (enmEpBackend == PDMACFILEEPBACKEND_NON_BUFFERED)
     {
         /*
