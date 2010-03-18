@@ -578,6 +578,8 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
         return VERR_NO_MEMORY;
     }
     pVmdkFile->fOpen = fOpen;
+
+#ifndef VBOX_WITH_NEW_IO_CODE
     if ((pImage->uOpenFlags & VD_OPEN_FLAGS_ASYNC_IO) && (fAsyncIO))
     {
         rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
@@ -595,6 +597,16 @@ static int vmdkFileOpen(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile,
         rc = RTFileOpen(&pVmdkFile->File, pszFilename, fOpen);
         pVmdkFile->fAsyncIO = false;
     }
+#else
+    rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
+                                                        pszFilename,
+                                                        pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY
+                                                        ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY
+                                                        : 0,
+                                                        NULL,
+                                                        pImage->pVDIfsDisk,
+                                                        &pVmdkFile->pStorage);
+#endif
     if (RT_SUCCESS(rc))
     {
         pVmdkFile->uReferences = 1;
@@ -644,6 +656,7 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
         else
             pImage->pFiles = pNext;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
         if (pVmdkFile->fAsyncIO)
         {
             rc = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
@@ -653,6 +666,10 @@ static int vmdkFileClose(PVMDKIMAGE pImage, PVMDKFILE *ppVmdkFile, bool fDelete)
         {
             rc = RTFileClose(pVmdkFile->File);
         }
+#else
+        rc = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
+                                                          pVmdkFile->pStorage);
+#endif
         if (RT_SUCCESS(rc) && pVmdkFile->fDelete)
             rc = RTFileDelete(pVmdkFile->pszFilename);
         RTStrFree((char *)(void *)pVmdkFile->pszFilename);
@@ -672,12 +689,18 @@ DECLINLINE(int) vmdkFileReadAt(PVMDKFILE pVmdkFile,
 {
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
         return pImage->pInterfaceAsyncIOCallbacks->pfnReadSync(pImage->pInterfaceAsyncIO->pvUser,
                                                                pVmdkFile->pStorage, uOffset,
                                                                cbToRead, pvBuf, pcbRead);
     else
         return RTFileReadAt(pVmdkFile->File, uOffset, pvBuf, cbToRead, pcbRead);
+#else
+    return pImage->pInterfaceAsyncIOCallbacks->pfnReadSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                               pVmdkFile->pStorage, uOffset,
+                                                               cbToRead, pvBuf, pcbRead);
+#endif
 }
 
 /**
@@ -689,12 +712,18 @@ DECLINLINE(int) vmdkFileWriteAt(PVMDKFILE pVmdkFile,
 {
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
         return pImage->pInterfaceAsyncIOCallbacks->pfnWriteSync(pImage->pInterfaceAsyncIO->pvUser,
                                                                 pVmdkFile->pStorage, uOffset,
                                                                 cbToWrite, pvBuf, pcbWritten);
     else
         return RTFileWriteAt(pVmdkFile->File, uOffset, pvBuf, cbToWrite, pcbWritten);
+#else
+        return pImage->pInterfaceAsyncIOCallbacks->pfnWriteSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                                pVmdkFile->pStorage, uOffset,
+                                                                cbToWrite, pvBuf, pcbWritten);
+#endif
 }
 
 /**
@@ -704,6 +733,7 @@ DECLINLINE(int) vmdkFileGetSize(PVMDKFILE pVmdkFile, uint64_t *pcbSize)
 {
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
     {
         return pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
@@ -712,6 +742,11 @@ DECLINLINE(int) vmdkFileGetSize(PVMDKFILE pVmdkFile, uint64_t *pcbSize)
     }
     else
         return RTFileGetSize(pVmdkFile->File, pcbSize);
+#else
+    return pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pVmdkFile->pStorage,
+                                                            pcbSize);
+#endif
 }
 
 /**
@@ -721,6 +756,7 @@ DECLINLINE(int) vmdkFileSetSize(PVMDKFILE pVmdkFile, uint64_t cbSize)
 {
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
     {
         return pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
@@ -729,6 +765,11 @@ DECLINLINE(int) vmdkFileSetSize(PVMDKFILE pVmdkFile, uint64_t cbSize)
     }
     else
         return RTFileSetSize(pVmdkFile->File, cbSize);
+#else
+    return pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
+                                                          pVmdkFile->pStorage,
+                                                          cbSize);
+#endif
 }
 
 /**
@@ -738,11 +779,16 @@ DECLINLINE(int) vmdkFileFlush(PVMDKFILE pVmdkFile)
 {
     PVMDKIMAGE pImage = pVmdkFile->pImage;
 
+#ifndef VBOX_WITH_NEW_IO_CODE
     if (pVmdkFile->fAsyncIO)
         return pImage->pInterfaceAsyncIOCallbacks->pfnFlushSync(pImage->pInterfaceAsyncIO->pvUser,
                                                                 pVmdkFile->pStorage);
     else
         return RTFileFlush(pVmdkFile->File);
+#else
+    return pImage->pInterfaceAsyncIOCallbacks->pfnFlushSync(pImage->pInterfaceAsyncIO->pvUser,
+                                                            pVmdkFile->pStorage);
+#endif
 }
 
 
