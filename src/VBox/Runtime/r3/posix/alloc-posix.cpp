@@ -72,8 +72,6 @@ typedef struct RTMEMEXECHDR
 
 
 
-#ifdef IN_RING3
-
 /**
  * Allocates memory which may contain code.
  *
@@ -273,5 +271,3 @@ RTDECL(int) RTMemProtect(void *pv, size_t cb, unsigned fProtect) RT_NO_THROW
         return rc;
     return RTErrConvertFromErrno(errno);
 }
-
-#endif
