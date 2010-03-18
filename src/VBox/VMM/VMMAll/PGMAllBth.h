@@ -1499,6 +1499,8 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
                 &&  PteDst.n.u1Present
                 &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
             {
+                /* Still applies to shared pages. */
+                Assert(!PGM_PAGE_IS_ZERO(pPage));
                 PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet. */
                 Log3(("SyncPageWorker: write-protecting %RGp pPage=%R[pgmpage]at iPTDst=%d\n", (RTGCPHYS)(PteSrc.u & X86_PTE_PAE_PG_MASK), pPage, iPTDst));
             }
@@ -1832,6 +1834,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                         &&  PteDst.n.u1Present
                         &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                     {
+                        /* Still applies to shared pages. */
+                        Assert(!PGM_PAGE_IS_ZERO(pPage));
                         PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
                         Log3(("SyncPage: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, GCPtrPage));
                     }
@@ -2393,9 +2397,15 @@ PGM_BTH_DECL(int, CheckDirtyPageFault)(PVMCPU pVCpu, uint32_t uErr, PSHWPDE pPde
                                     AssertRC(rc);
                                 }
                                 if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ALLOCATED)
+                                {
                                     PteDst.n.u1Write = 1;
+                                }
                                 else
+                                {
+                                    /* Still applies to shared pages. */
+                                    Assert(!PGM_PAGE_IS_ZERO(pPage));
                                     PteDst.n.u1Write = 0;
+                                }
                             }
                         }
                         else
@@ -2861,6 +2871,8 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                             &&  PteDst.n.u1Present
                             &&  PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED)
                         {
+                            /* Still applies to shared pages. */
+                            Assert(!PGM_PAGE_IS_ZERO(pPage));
                             PteDst.n.u1Write = 0;   /** @todo this isn't quite working yet... */
                             Log3(("SyncPT: write-protecting %RGp pPage=%R[pgmpage] at %RGv\n", GCPhys, pPage, (RTGCPTR)(GCPtr | (iPTDst << SHW_PT_SHIFT))));
                         }
