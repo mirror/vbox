@@ -304,8 +304,6 @@ void UIMachineViewSeamless::calculateDesktopGeometry()
     Assert((desktopGeometryType() != DesktopGeo_Invalid));
     /* If we are not doing automatic geometry calculation then there is nothing to do: */
     if (desktopGeometryType() == DesktopGeo_Automatic)
-    {
-        m_desktopGeometry = QSize(workingArea().width(), workingArea().height());
-    }
+        m_desktopGeometry = workingArea().size();
 }
 
