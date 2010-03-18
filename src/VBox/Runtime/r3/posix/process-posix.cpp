@@ -117,11 +117,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                : -2 /* close it */;
                     break;
 
-                case RTHANDLETYPE_SOCKET:
-                    aStdFds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
-                               ? (int)paHandles[i]->u.hSocket //RTTcpToNative(paHandles[i]->u.hSocket)
-                               : -2 /* close it */;
-                    break;
+                //case RTHANDLETYPE_SOCKET:
+                //    aStdFds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
+                //               ? (int)paHandles[i]->u.hSocket //RTTcpToNative(paHandles[i]->u.hSocket)
+                //               : -2 /* close it */;
+                //    break;
 
                 default:
                     AssertMsgFailedReturn(("%d: %d\n", i, paHandles[i]->enmType), VERR_INVALID_PARAMETER);
