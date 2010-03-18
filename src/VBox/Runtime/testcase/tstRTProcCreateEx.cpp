@@ -117,7 +117,7 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
         AssertPtr(pSid);
         char *pszDomain = (char *)RTMemAlloc(cbDomain); /* Size in TCHAR! */
         AssertPtr(pszDomain);
-    
+
         if (!LookupAccountName(NULL /* Current system */,
                                szUser,
                                pSid,

@@ -58,7 +58,7 @@ static void tstRTPoll2(void)
     RTTESTI_CHECK_RC(RTPollSetAdd(hSetInvl, &Handle, RTPOLL_EVT_ERROR, 1), VERR_INVALID_HANDLE);
     RTTESTI_CHECK_RC(RTPollSetRemove(hSetInvl, 1), VERR_INVALID_HANDLE);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSetInvl, 1, NULL), VERR_INVALID_HANDLE);
-    RTTESTI_CHECK(RTPollSetCount(hSetInvl) == UINT32_MAX);
+    RTTESTI_CHECK(RTPollSetGetCount(hSetInvl) == UINT32_MAX);
     RTTESTI_CHECK_RC(RTPoll(hSetInvl, 0, NULL, NULL),  VERR_INVALID_HANDLE);
     RTTESTI_CHECK_RC(RTPollNoResume(hSetInvl, 0, NULL, NULL),  VERR_INVALID_HANDLE);
 
@@ -124,14 +124,14 @@ static void tstRTPoll1(void)
     RTTESTI_CHECK_RC_RETV(RTPollSetCreate(&hSet), VINF_SUCCESS);
     RTTESTI_CHECK_RETV(hSet != NIL_RTPOLLSET);
 
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 0);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 0);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 0, NULL), VERR_POLL_HANDLE_ID_NOT_FOUND);
 
     RTTESTI_CHECK_RC(RTPollSetAddPipe(hSet, NIL_RTPIPE, RTPOLL_EVT_READ, 1 /*id*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 0);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 0);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 1 /*id*/, NULL), VERR_POLL_HANDLE_ID_NOT_FOUND);
     RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 0), VERR_POLL_HANDLE_ID_NOT_FOUND);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 0);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 0);
 
     RTTESTI_CHECK_RC(RTPollSetDestroy(hSet), VINF_SUCCESS);
 
@@ -148,7 +148,7 @@ static void tstRTPoll1(void)
 
     /* add the read pipe */
     RTTESTI_CHECK_RC_RETV(RTPollSetAddPipe(hSet, hPipeR, RTPOLL_EVT_READ, 1 /*id*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 1);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 1);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 1 /*id*/, NULL), VINF_SUCCESS);
     RTHANDLE Handle;
     RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 1 /*id*/, &Handle), VINF_SUCCESS);
@@ -161,7 +161,7 @@ static void tstRTPoll1(void)
 
     /* add the write pipe */
     RTTESTI_CHECK_RC(RTPollSetAddPipe(hSet, hPipeW, RTPOLL_EVT_WRITE, 10 /*id*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 2);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 2);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 10 /*id*/, NULL), VINF_SUCCESS);
 
     RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 10 /*id*/, &Handle), VINF_SUCCESS);
@@ -275,7 +275,7 @@ static void tstRTPoll1(void)
 
     /* Remove the read pipe, do a quick poll check. */
     RTTESTI_CHECK_RC_RETV(RTPollSetRemove(hSet, 1), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 1);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 1);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 1 /*id*/, NULL), VERR_POLL_HANDLE_ID_NOT_FOUND);
     RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 10 /*id*/, &Handle), VINF_SUCCESS);
     RTTESTI_CHECK(Handle.enmType == RTHANDLETYPE_PIPE);
@@ -288,7 +288,7 @@ static void tstRTPoll1(void)
     RTTESTI_CHECK_RC_RETV(RTPoll(hSet, 0, NULL, NULL), VINF_SUCCESS);
 
     RTTESTI_CHECK_RC_RETV(RTPollSetAddPipe(hSet, hPipeR, RTPOLL_EVT_READ, 1 /*id*/), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 2);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 2);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 1 /*id*/, NULL), VINF_SUCCESS);
 
     RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 1 /*id*/, &Handle), VINF_SUCCESS);
@@ -307,7 +307,7 @@ static void tstRTPoll1(void)
 
     /* Remove it again and break the pipe by closing the read end. */
     RTTESTI_CHECK_RC_RETV(RTPollSetRemove(hSet, 1), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(RTPollSetCount(hSet) == 1);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 1);
     RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 1 /*id*/, NULL), VERR_POLL_HANDLE_ID_NOT_FOUND);
     RTTESTI_CHECK_RC_RETV(RTPollSetQueryHandle(hSet, 10 /*id*/, &Handle), VINF_SUCCESS);
     RTTESTI_CHECK(Handle.enmType == RTHANDLETYPE_PIPE);

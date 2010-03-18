@@ -1017,16 +1017,15 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
 
 
 /**
- * Internal RTPollSetAdd helper that returns one or two handles that should be
- * added to the pollset.
+ * Internal RTPollSetAdd helper that returns the handle that should be added to
+ * the pollset.
  *
  * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
  * @param   hPipe               The pipe handle.
  * @param   fEvents             The events we're polling for.
- * @param   ph1                 wher to put the primary handle.
- * @param   ph2                 Where to optionally return a 2nd handle.
+ * @param   ph                  wher to put the primary handle.
  */
-int rtPipePollGetHandles(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph1, PHANDLE ph2)
+int rtPipePollGetHandle(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
@@ -1035,11 +1034,10 @@ int rtPipePollGetHandles(RTPIPE hPipe, uint32_t fEvents, PHANDLE ph1, PHANDLE ph
     AssertReturn(!(fEvents & RTPOLL_EVT_READ) || pThis->fRead, VERR_INVALID_PARAMETER);
     AssertReturn(!(fEvents & RTPOLL_EVT_WRITE) || !pThis->fRead, VERR_INVALID_PARAMETER);
 
-    *ph1 = pThis->Overlapped.hEvent;
     /* Later: Try register an event handle with the pipe like on OS/2, there is
        a file control for doing this obviously intended for the OS/2 subsys.
        The question is whether this still exists on Vista and W7. */
-    *ph2 = INVALID_HANDLE_VALUE;
+    *ph = pThis->Overlapped.hEvent;
     return VINF_SUCCESS;
 }
 
@@ -1126,10 +1124,13 @@ static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents)
  * @param   hPipe               The pipe handle.
  * @param   hPollSet            The poll set handle (for access checks).
  * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.
  * @param   fNoWait             Set if it's a zero-wait poll call.  Clear if
  *                              we'll wait for an event to occur.
  */
-uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fNoWait)
+uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait)
 {
     /** @todo All this polling code could be optimized to make fewer system
      *        calls; like for instance the ResetEvent calls. */
@@ -1206,8 +1207,14 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
  *
  * @param   hPipe               The pipe handle.
  * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.  Only keep in mind that
+ *                              this method is called in reverse order, so the
+ *                              first call will have this set (when the entire
+ *                              set was processed).
  */
-uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents)
+uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry)
 {
     RTPIPEINTERNAL *pThis = hPipe;
     AssertPtrReturn(pThis, 0);

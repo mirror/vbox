@@ -183,7 +183,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT || cMillies == 0)
@@ -223,7 +223,7 @@ RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
 
@@ -259,7 +259,7 @@ RTDECL(int)  RTPollSetDestroy(RTPOLLSET hPollSet)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPOLLSET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTPOLLSET_MAGIC);
     RTMemFree(pThis->paPollFds);
@@ -292,7 +292,7 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int rc = VINF_SUCCESS;
     int fd = -1;
@@ -406,7 +406,7 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
     uint32_t    i  = pThis->cHandles;
@@ -443,7 +443,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
     uint32_t    i  = pThis->cHandles;
@@ -464,7 +464,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
 }
 
 
-RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet)
+RTDECL(uint32_t) RTPollSetGetCount(RTPOLLSET hPollSet)
 {
     /*
      * Validate the input.

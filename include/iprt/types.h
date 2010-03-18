@@ -1403,6 +1403,10 @@ typedef union RTHANDLEUNION
     RTPIPE          hPipe;              /**< Pipe handle. */
     RTSOCKET        hSocket;            /**< Socket handle. */
     RTTHREAD        hThread;            /**< Thread handle. */
+    /** Generic integer handle value.
+     * Note that RTFILE is not yet pointer sized, so accessing it via this member
+     * isn't necessarily safe or fully portable. */
+    RTHCUINTPTR     uInt;
 } RTHANDLEUNION;
 /** Pointer to a handle union. */
 typedef RTHANDLEUNION *PRTHANDLEUNION;
