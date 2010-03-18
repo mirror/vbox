@@ -1056,7 +1056,13 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
 
     ip = (struct ip *)buff;
     hlen = (ip->ip_hl << 2);
-    if (RT_N2H_U16(ip->ip_len) < hlen + ICMP_MINLEN)
+    /* Note: ip->ip_len in host byte order */
+    ip->ip_len = RT_N2H_U16(ip->ip_len);
+#ifdef RT_OS_SOLARIS
+    /* Solaris doesn't pass raw IP datagram, ip_len is size of payload only */
+    ip->ip_len += hlen;
+#endif
+    if (ip->ip_len < hlen + ICMP_MINLEN)
     {
        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
        return;
@@ -1076,7 +1082,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
      * ICMP_ECHOREPLY assuming data 0
      * icmp_{type(8), code(8), cksum(16),identifier(16),seqnum(16)}
      */
-    if (RT_N2H_U16(ip->ip_len) < hlen + 8)
+    if (ip->ip_len < hlen + 8)
     {
         Log(("send_icmp_to_guest: NAT accept ICMP_{ECHOREPLY, TIMXCEED, UNREACH} the minimum size is 64 (see rfc792)\n"));
         return;
@@ -1090,7 +1096,7 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
          * ICMP_TIMXCEED, ICMP_UNREACH minimal header size is
          * icmp_{type(8), code(8), cksum(16),unused(32)} + IP header + 64 bit of original datagram
          */
-        if (RT_N2H_U16(ip->ip_len) < hlen + 2*8 + sizeof(struct ip))
+        if (ip->ip_len < hlen + 2*8 + sizeof(struct ip))
         {
             Log(("send_icmp_to_guest: NAT accept ICMP_{TIMXCEED, UNREACH} the minimum size of ipheader + 64 bit of data (see rfc792)\n"));
             return;
@@ -1110,8 +1116,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     Assert(m != NULL);
 
     src = addr->sin_addr.s_addr;
-#if 0
-    /* @todo: check why it's too strict. */
     if (type == ICMP_ECHOREPLY)
     {
         struct ip *ip0 = mtod(m, struct ip *);
@@ -1121,15 +1125,22 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             Log(("NAT: we haven't found echo for this reply\n"));
             return;
         }
-        if (   (RT_N2H_U16(ip->ip_len) - hlen )
-            != (ip0->ip_len - (ip0->ip_hl << 2))) /* the IP header in the list is in host format */
+#if 0
+        /* 
+         * @todo ip0 seems have different byte order on different OSes, e.g. on Solaris it's required
+         * to N2H, but on Linux no convertaion required.
+         */
+        if (   (ip->ip_len - hlen )
+            != (ip0->ip_len - (ip0->ip_hl << 2))) 
         {
-            Log(("NAT: ECHO lenght doesn't match ECHOREPLY\n"));
+            Log(("NAT: ECHO(%d) lenght doesn't match ECHOREPLY(%d)\n",
+                (ip->ip_len - hlen ), (ip0->ip_len - (ip0->ip_hl << 2))));
             return;
         }
-    }
 #endif
+    }
 
+    /* ip points on origianal ip header */
     ip = mtod(m, struct ip *);
     proto = ip->ip_p;
     /* Now ip is pointing on header we've sent from guest */
@@ -1372,6 +1383,9 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     }
 
     len = RT_N2H_U16(ip.ip_len);
+#ifdef RT_OS_SOLARIS
+    len += (ip.ip_hl << 2); /* Solaris: reports only payload length */
+#endif
     buff = RTMemAlloc(len);
     if (buff == NULL)
     {
@@ -1395,7 +1409,11 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
         return;
     }
     if (   len < 0
+#ifndef RT_OS_SOLARIS
         || len < (RT_N2H_U16(ip.ip_len))
+#else
+        || len < ((RT_N2H_U16(ip.ip_len)) + (ip.ip_hl << 2))
+#endif
         || len == 0)
     {
         Log(("sorecvfrom_icmp_unix: 2 - step read of the rest of datagramm is fallen (errno:%d, len:%d expected: %d)\n",
