@@ -945,6 +945,9 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
     }
 #endif
 
+    if (RT_SUCCESS(rc))
+        LogRel(("AIOMgr: Endpoint for file '%s' (flags %08x) created successfully\n", pszUri, pEpFile->fFlags));
+
     return rc;
 }
 
