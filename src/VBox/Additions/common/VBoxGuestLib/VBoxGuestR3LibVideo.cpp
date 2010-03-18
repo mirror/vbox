@@ -148,7 +148,7 @@ VBGLR3DECL(int) VbglR3SetPointerShapeReq(VMMDevReqMousePointer *pReq)
  */
 VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits, uint32_t *piDisplay, bool fAck)
 {
-    VMMDevDisplayChangeRequest2 Req = { { 0 } };
+    VMMDevDisplayChangeRequest2 Req;
 
 #ifndef VBOX_VBGLR3_XFREE86
     AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
@@ -156,6 +156,7 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint
     AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
     AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
 #endif
+    RT_ZERO(Req);
     vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
     if (fAck)
         Req.eventAck = VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST;
