@@ -33,17 +33,19 @@
 
 #include <iprt/cdefs.h>
 #include <iprt/types.h>
+/* Currently requires a bunch of socket headers. */
 
 
 RT_C_DECLS_BEGIN
 
+#ifndef IPRT_INTERNAL_SOCKET_POLLING_ONLY
 int rtSocketResolverError(void);
 int rtSocketCreateForNative(RTSOCKETINT **ppSocket,
-#ifdef RT_OS_WINDOWS
+# ifdef RT_OS_WINDOWS
                             SOCKET hNative
-#else
+# else
                             int hNative
-#endif
+# endif
                             );
 int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol);
 int rtSocketBind(RTSOCKET hSocket, const struct sockaddr *pAddr, int cbAddr);
@@ -51,6 +53,13 @@ int rtSocketListen(RTSOCKET hSocket, int cMaxPending);
 int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr, size_t *pcbAddr);
 int rtSocketConnect(RTSOCKET hSocket, const struct sockaddr *pAddr, int cbAddr);
 int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValue, int cbValue);
+#endif /* IPRT_INTERNAL_SOCKET_POLLING_ONLY */
+
+#ifdef RT_OS_WINDOWS
+int         rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph);
+uint32_t    rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait);
+uint32_t    rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry);
+#endif /* RT_OS_WINDOWS */
 
 RT_C_DECLS_END
 

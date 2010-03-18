@@ -1,6 +1,8 @@
 /* $Id$ */
 /** @file
  * IPRT - Polling I/O Handles, Windows Implementation.
+ *
+ * @todo merge poll-win.cpp and poll-posix.cpp, there is lots of common code.
  */
 
 /*
@@ -45,7 +47,10 @@
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
+
 #include "internal/pipe.h"
+#define IPRT_INTERNAL_SOCKET_POLLING_ONLY
+#include "internal/socket.h"
 #include "internal/magics.h"
 
 
@@ -63,6 +68,10 @@ typedef struct RTPOLLSETHNDENT
     uint32_t        id;
     /** The events we're waiting for here. */
     uint32_t        fEvents;
+    /** Set if this is the final entry for this handle.
+     * If the handle is entered more than once, this will be clear for all but
+     * the last entry. */
+    bool            fFinalEntry;
     /** The handle union. */
     RTHANDLEUNION   u;
 } RTPOLLSETHNDENT;
@@ -122,7 +131,13 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         switch (pThis->aHandles[i].enmType)
         {
             case RTHANDLETYPE_PIPE:
-                fEvents = rtPipePollStart(pThis->aHandles[i].u.hPipe, pThis, pThis->aHandles[i].fEvents, fNoWait);
+                fEvents = rtPipePollStart(pThis->aHandles[i].u.hPipe, pThis, pThis->aHandles[i].fEvents,
+                                          pThis->aHandles[i].fFinalEntry, fNoWait);
+                break;
+
+            case RTHANDLETYPE_SOCKET:
+                fEvents = rtSocketPollStart(pThis->aHandles[i].u.hSocket, pThis, pThis->aHandles[i].fEvents,
+                                            pThis->aHandles[i].fFinalEntry, fNoWait);
                 break;
 
             default:
@@ -154,8 +169,15 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
                 switch (pThis->aHandles[i].enmType)
                 {
                     case RTHANDLETYPE_PIPE:
-                        rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents);
+                        rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
+                                       pThis->aHandles[i].fFinalEntry);
                         break;
+
+                    case RTHANDLETYPE_SOCKET:
+                        rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
+                                         pThis->aHandles[i].fFinalEntry);
+                        break;
+
                     default:
                         AssertFailed();
                         break;
@@ -197,8 +219,15 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
         switch (pThis->aHandles[i].enmType)
         {
             case RTHANDLETYPE_PIPE:
-                fEvents = rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents);
+                rtPipePollDone(pThis->aHandles[i].u.hPipe, pThis->aHandles[i].fEvents,
+                               pThis->aHandles[i].fFinalEntry);
                 break;
+
+            case RTHANDLETYPE_SOCKET:
+                rtSocketPollDone(pThis->aHandles[i].u.hSocket, pThis->aHandles[i].fEvents,
+                                 pThis->aHandles[i].fFinalEntry);
+                break;
+
             default:
                 AssertFailed();
                 break;
@@ -229,7 +258,7 @@ RTDECL(int) RTPoll(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *pfEvents
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int rc;
     if (cMillies == RT_INDEFINITE_WAIT || cMillies == 0)
@@ -269,7 +298,7 @@ RTDECL(int) RTPollNoResume(RTPOLLSET hPollSet, RTMSINTERVAL cMillies, uint32_t *
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int rc = rtPollNoResumeWorker(pThis, cMillies, pfEvents, pid);
 
@@ -304,7 +333,7 @@ RTDECL(int) RTPollSetDestroy(RTPOLLSET hPollSet)
         return VINF_SUCCESS;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTPOLLSET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     ASMAtomicWriteU32(&pThis->u32Magic, ~RTPOLLSET_MAGIC);
     RTMemFree(pThis);
@@ -333,21 +362,24 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
-    int     rc       = VINF_SUCCESS;
-    HANDLE  hNative  = INVALID_HANDLE_VALUE;
-    HANDLE  hNative2 = INVALID_HANDLE_VALUE;
+    int             rc       = VINF_SUCCESS;
+    HANDLE          hNative  = INVALID_HANDLE_VALUE;
+    RTHANDLEUNION   uh;
+    uh.uInt = 0;
     switch (pHandle->enmType)
     {
         case RTHANDLETYPE_PIPE:
-            if (pHandle->u.hPipe != NIL_RTPIPE)
-                rc = rtPipePollGetHandles(pHandle->u.hPipe, fEvents, &hNative, &hNative2);
+            uh.hPipe = pHandle->u.hPipe;
+            if (uh.hPipe != NIL_RTPIPE)
+                rc = rtPipePollGetHandle(uh.hPipe, fEvents, &hNative);
             break;
 
         case RTHANDLETYPE_SOCKET:
-            if (pHandle->u.hSocket != NIL_RTSOCKET)
-                rc = VERR_NOT_IMPLEMENTED;
+            uh.hSocket = pHandle->u.hSocket;
+            if (uh.hSocket != NIL_RTSOCKET)
+                rc = rtSocketPollGetHandle(uh.hSocket, fEvents, &hNative);
             break;
 
         case RTHANDLETYPE_FILE:
@@ -371,33 +403,39 @@ RTDECL(int) RTPollSetAdd(RTPOLLSET hPollSet, PCRTHANDLE pHandle, uint32_t fEvent
         uint32_t const i = pThis->cHandles;
 
         /* Check that the handle ID doesn't exist already. */
-        uint32_t j = i;
+        uint32_t iPrev = UINT32_MAX;
+        uint32_t j     = i;
         while (j-- > 0)
+        {
             if (pThis->aHandles[j].id == id)
             {
                 rc = VERR_POLL_HANDLE_ID_EXISTS;
                 break;
             }
+            if (   pThis->aHandles[j].enmType == pHandle->enmType
+                && pThis->aHandles[j].u.uInt  == uh.uInt)
+                iPrev = j;
+        }
 
         /* Check that we won't overflow the poll set now. */
         if (    RT_SUCCESS(rc)
-            &&  i + 1 + (hNative2 != INVALID_HANDLE_VALUE) > RT_ELEMENTS(pThis->ahNative))
+            &&  i + 1 > RT_ELEMENTS(pThis->ahNative))
             rc = VERR_POLL_SET_IS_FULL;
         if (RT_SUCCESS(rc))
         {
             /* Add the handles to the two parallel arrays. */
-            pThis->ahNative[i]         = hNative;
-            pThis->aHandles[i].enmType = pHandle->enmType;
-            pThis->aHandles[i].u       = pHandle->u;
-            pThis->aHandles[i].id      = id;
-            pThis->aHandles[i].fEvents = fEvents;
-            if (hNative2 == INVALID_HANDLE_VALUE)
-                pThis->cHandles = i + 1;
-            else
+            pThis->ahNative[i]             = hNative;
+            pThis->aHandles[i].enmType     = pHandle->enmType;
+            pThis->aHandles[i].u           = uh;
+            pThis->aHandles[i].id          = id;
+            pThis->aHandles[i].fEvents     = fEvents;
+            pThis->aHandles[i].fFinalEntry = true;
+            pThis->cHandles = i + 1;
+
+            if (iPrev != UINT32_MAX)
             {
-                pThis->ahNative[i + 1] = hNative2;
-                pThis->aHandles[i + 1] = pThis->aHandles[i];
-                pThis->cHandles = i + 2;
+                Assert(pThis->aHandles[i].fFinalEntry);
+                pThis->aHandles[i].fFinalEntry = false;
             }
 
             rc = VINF_SUCCESS;
@@ -422,13 +460,19 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
     uint32_t    i  = pThis->cHandles;
     while (i-- > 0)
         if (pThis->aHandles[i].id == id)
         {
+            /* Save some details for the duplicate searching. */
+            bool            fFinalEntry = pThis->aHandles[i].fFinalEntry;
+            RTHANDLETYPE    enmType     = pThis->aHandles[i].enmType;
+            RTHANDLEUNION   uh          = pThis->aHandles[i].u;
+
+            /* Remove the entry. */
             pThis->cHandles--;
             size_t const cToMove = pThis->cHandles - i;
             if (cToMove)
@@ -436,7 +480,20 @@ RTDECL(int) RTPollSetRemove(RTPOLLSET hPollSet, uint32_t id)
                 memmove(&pThis->aHandles[i], &pThis->aHandles[i + 1], cToMove * sizeof(pThis->aHandles[i]));
                 memmove(&pThis->ahNative[i], &pThis->ahNative[i + 1], cToMove * sizeof(pThis->ahNative[i]));
             }
+
+            /* Check for duplicate and set the fFinalEntry flag. */
+            if (fFinalEntry)
+                while (i-- > 0)
+                    if (   pThis->aHandles[i].u.uInt  == uh.uInt
+                        && pThis->aHandles[i].enmType == enmType)
+                    {
+                        Assert(!pThis->aHandles[i].fFinalEntry);
+                        pThis->aHandles[i].fFinalEntry = true;
+                        break;
+                    }
+
             rc = VINF_SUCCESS;
+            break;
         }
 
     ASMAtomicWriteBool(&pThis->fBusy, false);
@@ -458,7 +515,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
     /*
      * Set the busy flag and do the job.
      */
-    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_WRONG_ORDER);
+    AssertReturn(ASMAtomicCmpXchgBool(&pThis->fBusy, true,  false), VERR_CONCURRENT_ACCESS);
 
     int         rc = VERR_POLL_HANDLE_ID_NOT_FOUND;
     uint32_t    i  = pThis->cHandles;
@@ -479,7 +536,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
 }
 
 
-RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet)
+RTDECL(uint32_t) RTPollSetGetCount(RTPOLLSET hPollSet)
 {
     /*
      * Validate the input.
@@ -497,5 +554,4 @@ RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet)
 
     return cHandles;
 }
-
 

@@ -180,7 +180,7 @@ RTDECL(int) RTPollSetQueryHandle(RTPOLLSET hPollSet, uint32_t id, PRTHANDLE pHan
  *
  * @param   hPollSet            The poll set.
  */
-RTDECL(uint32_t) RTPollSetCount(RTPOLLSET hPollSet);
+RTDECL(uint32_t) RTPollSetGetCount(RTPOLLSET hPollSet);
 
 /**
  * Adds a pipe handle to the set.
@@ -199,6 +199,7 @@ DECLINLINE(int) RTPollSetAddPipe(RTPOLLSET hPollSet, RTPIPE hPipe, uint32_t fEve
 {
     RTHANDLE Handle;
     Handle.enmType = RTHANDLETYPE_PIPE;
+    Handle.u.uInt  = 0;
     Handle.u.hPipe = hPipe;
     return RTPollSetAdd(hPollSet, &Handle, fEvents, id);
 }
@@ -217,6 +218,7 @@ DECLINLINE(int) RTPollSetAddSocket(RTPOLLSET hPollSet, RTSOCKET hSocket, uint32_
 {
     RTHANDLE Handle;
     Handle.enmType   = RTHANDLETYPE_SOCKET;
+    Handle.u.uInt    = 0;
     Handle.u.hSocket = hSocket;
     return RTPollSetAdd(hPollSet, &Handle, fEvents, id);
 }

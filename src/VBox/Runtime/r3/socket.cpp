@@ -59,6 +59,7 @@
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
+#include <iprt/poll.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
 #include <iprt/time.h>
@@ -133,6 +134,9 @@ typedef struct RTSOCKETINT
     RTPOLLSET           hPollSet;
     /** The events we're polling for. */
     uint32_t            fPollEvts;
+    /** The events we're currently subscribing to with WSAEventSelect.
+     * This is ZERO if we're currently not subscribing to anything. */
+    uint32_t            fSubscribedEvts;
 #else
     /** The native socket handle. */
     int                 hNative;
@@ -257,13 +261,14 @@ int rtSocketCreateForNative(RTSOCKETINT **ppSocket,
     RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
-    pThis->u32Magic     = RTSOCKET_MAGIC;
-    pThis->cUsers       = 0;
-    pThis->hNative      = hNative;
+    pThis->u32Magic         = RTSOCKET_MAGIC;
+    pThis->cUsers           = 0;
+    pThis->hNative          = hNative;
 #ifdef RT_OS_WINDOWS
-    pThis->hEvent       = WSA_INVALID_EVENT;
-    pThis->hPollSet     = NIL_RTPOLLSET;
-    pThis->fPollEvts    = 0;
+    pThis->hEvent           = WSA_INVALID_EVENT;
+    pThis->hPollSet         = NIL_RTPOLLSET;
+    pThis->fPollEvts        = 0;
+    pThis->fSubscribedEvts  = 0;
 #endif
     *ppSocket = pThis;
     return VINF_SUCCESS;
@@ -869,3 +874,223 @@ int rtSocketSetOpt(RTSOCKET hSocket, int iLevel, int iOption, void const *pvValu
     return rc;
 }
 
+#ifdef RT_OS_WINDOWS
+
+/**
+ * Internal RTPollSetAdd helper that returns the handle that should be added to
+ * the pollset.
+ *
+ * @returns Valid handle on success, INVALID_HANDLE_VALUE on failure.
+ * @param   hSocket             The socket handle.
+ * @param   fEvents             The events we're polling for.
+ * @param   ph                  wher to put the primary handle.
+ */
+int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph)
+{
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    int rc = VINF_SUCCESS;
+    if (pThis->hEvent != WSA_INVALID_EVENT)
+        *ph = pThis->hEvent;
+    else
+    {
+        *ph = pThis->hEvent = WSACreateEvent();
+        if (pThis->hEvent == WSA_INVALID_EVENT)
+            rc = rtSocketError();
+    }
+
+    rtSocketUnlock(pThis);
+    return rc;
+}
+
+
+/**
+ * Updates the mask of events we're subscribing to.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The socket handle.
+ * @param   fEvents             The events we want to subscribe to.
+ */
+static int rtSocketPollUpdateEvents(RTSOCKETINT *pThis, uint32_t fEvents)
+{
+    LONG fNetworkEvents = 0;
+    if (fEvents & RTPOLL_EVT_READ)
+        fNetworkEvents |= FD_READ;
+    if (fEvents & RTPOLL_EVT_WRITE)
+        fNetworkEvents |= FD_WRITE;
+    if (fEvents & RTPOLL_EVT_ERROR)
+        fNetworkEvents |= FD_CLOSE;
+    if (WSAEventSelect(pThis->hNative, pThis->hEvent, fNetworkEvents) == 0)
+    {
+        pThis->fSubscribedEvts = fEvents;
+
+        u_long fNonBlocking = 0;
+        if (ioctlsocket(pThis->hNative, FIONBIO, &fNonBlocking))
+            AssertMsgFailed(("%Rrc\n", rtSocketError()));
+
+        return VINF_SUCCESS;
+    }
+
+    int rc = rtSocketError();
+    AssertMsgFailed(("fNetworkEvents=%#x rc=%Rrc\n", fNetworkEvents, rtSocketError()));
+    return rc;
+}
+
+
+/**
+ * Checks for pending events.
+ *
+ * @returns Event mask or 0.
+ * @param   pThis               The socket handle.
+ * @param   fEvents             The desired events.
+ */
+static uint32_t rtSocketPollCheck(RTSOCKETINT *pThis, uint32_t fEvents)
+{
+    int         rc         = VINF_SUCCESS;
+    uint32_t    fRetEvents = 0;
+
+    /* Make sure WSAEnumNetworkEvents returns what we want. */
+    if ((pThis->fSubscribedEvts & fEvents) != fEvents)
+        rc = rtSocketPollUpdateEvents(pThis, pThis->fSubscribedEvts | fEvents);
+
+    /* Get the event mask, ASSUMES that WSAEnumNetworkEvents doesn't clear stuff.  */
+    WSANETWORKEVENTS NetEvts;
+    RT_ZERO(NetEvts);
+    if (WSAEnumNetworkEvents(pThis->hNative, pThis->hEvent, &NetEvts) == 0)
+    {
+        if (    (NetEvts.lNetworkEvents & FD_READ)
+            &&  (fEvents & RTPOLL_EVT_READ)
+            &&  NetEvts.iErrorCode[FD_READ_BIT] == 0)
+            fRetEvents |= RTPOLL_EVT_READ;
+
+        if (    (NetEvts.lNetworkEvents & FD_WRITE)
+            &&  (fEvents & RTPOLL_EVT_WRITE)
+            &&  NetEvts.iErrorCode[FD_WRITE_BIT] == 0)
+            fRetEvents |= RTPOLL_EVT_WRITE;
+
+        if (fEvents & RTPOLL_EVT_ERROR)
+        {
+            if (NetEvts.lNetworkEvents & FD_CLOSE)
+                fRetEvents |= RTPOLL_EVT_ERROR;
+            else
+                for (uint32_t i = 0; i < FD_MAX_EVENTS; i++)
+                    if (    (NetEvts.lNetworkEvents & (1L << i))
+                        &&  NetEvts.iErrorCode[i] != 0)
+                        fRetEvents |= RTPOLL_EVT_ERROR;
+        }
+    }
+    else
+        rc = rtSocketError();
+
+    /* Fall back on select if we hit an error above. */
+    if (RT_FAILURE(rc))
+    {
+        /** @todo  */
+    }
+
+    return fRetEvents;
+}
+
+
+/**
+ * Internal RTPoll helper that polls the socket handle and, if @a fNoWait is
+ * clear, starts whatever actions we've got running during the poll call.
+ *
+ * @returns 0 if no pending events, actions initiated if @a fNoWait is clear.
+ *          Event mask (in @a fEvents) and no actions if the handle is ready
+ *          already.
+ *          UINT32_MAX (asserted) if the socket handle is busy in I/O or a
+ *          different poll set.
+ *
+ * @param   hSocket             The socket handle.
+ * @param   hPollSet            The poll set handle (for access checks).
+ * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.
+ * @param   fNoWait             Set if it's a zero-wait poll call.  Clear if
+ *                              we'll wait for an event to occur.
+ *
+ * @remarks There is a potential race wrt duplicate handles when @a fNoWait is
+ *          @c true, we don't currently care about that oddity...
+ */
+uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvents, bool fFinalEntry, bool fNoWait)
+{
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, UINT32_MAX);
+    if (rtSocketTryLock(pThis))
+        pThis->hPollSet = hPollSet;
+    else
+    {
+        AssertReturn(pThis->hPollSet == hPollSet, UINT32_MAX);
+        ASMAtomicIncU32(&pThis->cUsers);
+    }
+
+    /* (rtSocketPollCheck will reset the event object). */
+    uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
+    if (   !fRetEvents
+        && !fNoWait)
+    {
+        pThis->fPollEvts |= fEvents;
+        if (   fFinalEntry
+            && pThis->fSubscribedEvts != pThis->fPollEvts)
+        {
+            int rc = rtSocketPollUpdateEvents(pThis, pThis->fPollEvts);
+            if (RT_FAILURE(rc))
+            {
+                pThis->fPollEvts = 0;
+                fRetEvents       = UINT32_MAX;
+            }
+        }
+    }
+
+    if (fRetEvents || fNoWait)
+    {
+        if (pThis->cUsers == 1)
+            pThis->hPollSet = NIL_RTPOLLSET;
+        ASMAtomicDecU32(&pThis->cUsers);
+    }
+
+    return fRetEvents;
+}
+
+
+/**
+ * Called after a WaitForMultipleObjects returned in order to check for pending
+ * events and stop whatever actions that rtSocketPollStart() initiated.
+ *
+ * @returns Event mask or 0.
+ *
+ * @param   hSocket             The socket handle.
+ * @param   fEvents             The events we're polling for.
+ * @param   fFinalEntry         Set if this is the final entry for this handle
+ *                              in this poll set.  This can be used for dealing
+ *                              with duplicate entries.  Only keep in mind that
+ *                              this method is called in reverse order, so the
+ *                              first call will have this set (when the entire
+ *                              set was processed).
+ */
+uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry)
+{
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, 0);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, 0);
+    Assert(pThis->cUsers > 0);
+    Assert(pThis->hPollSet != NIL_RTPOLLSET);
+
+    /* Harvest events and clear the event mask for the next round of polling. */
+    uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
+    pThis->fPollEvts = 0;
+
+    /* unlock the socket. */
+    if (pThis->cUsers == 1)
+        pThis->hPollSet = NIL_RTPOLLSET;
+    ASMAtomicDecU32(&pThis->cUsers);
+    return fRetEvents;
+}
+
+#endif /* RT_OS_WINDOWS */
