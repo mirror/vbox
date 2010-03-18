@@ -33,7 +33,7 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
-# include <winsock.h>
+# include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
 # include <sys/stat.h>
@@ -102,50 +102,6 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
-/**
- * Socket handle data.
- *
- * This is mainly required for implementing RTPollSet on Windows.
- */
-typedef struct RTSOCKETINT
-{
-    /** Magic number (RTTCPSOCKET_MAGIC). */
-    uint32_t            u32Magic;
-    /** Usage count.  This is used to prevent two threads from accessing the
-     *  handle concurrently. */
-    uint32_t volatile   cUsers;
-#ifdef RT_OS_WINDOWS
-    /** The native socket handle. */
-    SOCKET              hNative;
-    /** The event semaphore we've associated with the socket handle.
-     * This is INVALID_HANDLE_VALUE if not done. */
-    WSAEVENT            hEvent;
-    /** The pollset currently polling this socket.  This is NIL if no one is
-     * polling. */
-    RTPOLLSET           hPollSet;
-    /** The events we're polling for. */
-    uint32_t            fPollEvts;
-#else
-    /** The native socket handle. */
-    int                 hNative;
-#endif
-} RTSOCKETINT;
-
-
-/**
- * Address union used internally for things like getpeername and getsockname.
- */
-typedef union RTSOCKADDRUNION
-{
-    struct sockaddr     Addr;
-    struct sockaddr_in  Ipv4;
-#ifdef IPRT_WITH_TCPIP_V6
-    struct sockaddr_in6 Ipv6;
-#endif
-} RTSOCKADDRUNION;
-
-
-
 /**
  * TCP Server state.
  */
