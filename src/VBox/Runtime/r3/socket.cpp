@@ -123,9 +123,9 @@ typedef struct RTSOCKETINT
     /** Usage count.  This is used to prevent two threads from accessing the
      *  handle concurrently. */
     uint32_t volatile   cUsers;
-#ifdef RT_OS_WINDOWS
     /** The native socket handle. */
-    SOCKET              hNative;
+    RTSOCKETNATIVE      hNative;
+#ifdef RT_OS_WINDOWS
     /** The event semaphore we've associated with the socket handle.
      * This is WSA_INVALID_EVENT if not done. */
     WSAEVENT            hEvent;
@@ -137,10 +137,7 @@ typedef struct RTSOCKETINT
     /** The events we're currently subscribing to with WSAEventSelect.
      * This is ZERO if we're currently not subscribing to anything. */
     uint32_t            fSubscribedEvts;
-#else
-    /** The native socket handle. */
-    int                 hNative;
-#endif
+#endif /* RT_OS_WINDOWS */
 } RTSOCKETINT;
 
 
@@ -245,13 +242,7 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
  * @param   ppSocket        Where to return the IPRT socket handle.
  * @param   hNative         The native handle.
  */
-int rtSocketCreateForNative(RTSOCKETINT **ppSocket,
-#ifdef RT_OS_WINDOWS
-                            SOCKET hNative
-#else
-                            int hNative
-#endif
-                            )
+int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 {
     RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemAlloc(sizeof(*pThis));
     if (!pThis)
@@ -285,15 +276,9 @@ int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
     /*
      * Create the socket.
      */
-#ifdef RT_OS_WINDOWS
-    SOCKET  hNative = socket(iDomain, iType, iProtocol);
-    if (hNative == INVALID_SOCKET)
+    RTSOCKETNATIVE hNative = socket(iDomain, iType, iProtocol);
+    if (hNative == NIL_RTSOCKETNATIVE)
         return rtSocketError();
-#else
-    int     hNative = socket(iDomain, iType, iProtocol);
-    if (hNative == -1)
-        return rtSocketError();
-#endif
 
     /*
      * Wrap it.
@@ -332,31 +317,25 @@ RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
         WSACloseEvent(pThis->hEvent);
         pThis->hEvent = WSA_INVALID_EVENT;
     }
-
-    if (pThis->hNative != INVALID_SOCKET)
-    {
-        rc = closesocket(pThis->hNative);
-        if (!rc)
-            rc = VINF_SUCCESS;
-        else
-        {
-            rc = rtSocketError();
-            AssertMsgFailed(("\"%s\": closesocket(%p) -> %Rrc\n", pThis->hNative, rc));
-        }
-        pThis->hNative = INVALID_SOCKET;
-    }
-
-#else
-    if (pThis->hNative != -1)
-    {
-        if (close(pThis->hNative))
-        {
-            rc = rtSocketError();
-            AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", pThis->hNative, rc));
-        }
-        pThis->hNative = -1;
-    }
 #endif
+
+    if (pThis->hNative != NIL_RTSOCKETNATIVE)
+    {
+#ifdef RT_OS_WINDOWS
+        if (closesocket(pThis->hNative))
+#else
+        if (close(pThis->hNative))
+#endif
+        {
+            rc = rtSocketError();
+#ifdef RT_OS_WINDOWS
+            AssertMsgFailed(("\"%s\": closesocket(%p) -> %Rrc\n", (uintptr_t)pThis->hNative, rc));
+#else
+            AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", pThis->hNative, rc));
+#endif
+        }
+        pThis->hNative = NIL_RTSOCKETNATIVE;
+    }
 
     return rc;
 }
@@ -568,13 +547,13 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
 RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
 {
     /*
-     * Validate input.
+     * Validate input, don't lock it because we might want to interrupt a call
+     * active on a different thread.
      */
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
-    //AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
     /*
      * Do the job.
@@ -590,7 +569,6 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     if (shutdown(pThis->hNative, fHow) == -1)
         rc = rtSocketError();
 
-    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -769,11 +747,17 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
 {
     /*
      * Validate input.
+     * Only lock the socket temporarily while we get the native handle, so that
+     * we can safely shutdown and destroy the socket from a different thread.
      */
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+
+    rtSocketUnlock(pThis);
+
 
     /*
      * Call accept().
@@ -782,13 +766,11 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
     int         rc      = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
     int         cbAddr  = (int)*pcbAddr;
-    SOCKET      hNative = accept(pThis->hNative, pAddr, &cbAddr);
-    if (hNative != INVALID_SOCKET)
 #else
     socklen_t   cbAddr  = *pcbAddr;
-    int         hNative = accept(pThis->hNative, pAddr, &cbAddr);
-    if (hNative != -1)
 #endif
+    RTSOCKETNATIVE hNative = accept(pThis->hNative, pAddr, &cbAddr);
+    if (hNative != NIL_RTSOCKETNATIVE)
     {
         *pcbAddr = cbAddr;
 
@@ -807,8 +789,6 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
     }
     else
         rc = rtSocketError();
-
-    rtSocketUnlock(pThis);
     return rc;
 }
 
