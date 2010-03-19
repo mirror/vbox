@@ -29,6 +29,7 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
+#include "VBoxUtils.h"
 
 #include "UIActionsPool.h"
 #include "UIDownloaderAdditions.h"
@@ -259,7 +260,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         case QEvent::Resize:
         {
             QResizeEvent *pResizeEvent = static_cast<QResizeEvent*>(pEvent);
-            if (!isMaximized())
+            if (!isMaximizedChecked())
             {
                 m_normalGeometry.setSize(pResizeEvent->size());
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -271,7 +272,7 @@ bool UIMachineWindowNormal::event(QEvent *pEvent)
         }
         case QEvent::Move:
         {
-            if (!isMaximized())
+            if (!isMaximizedChecked())
             {
                 m_normalGeometry.moveTo(geometry().x(), geometry().y());
 #ifdef VBOX_WITH_DEBUGGER_GUI
@@ -558,12 +559,13 @@ void UIMachineWindowNormal::saveWindowSettings()
 {
     CMachine machine = session().GetMachine();
 
+    printf("bla\n");
     /* Save extra-data settings: */
     {
         QString strWindowPosition = QString("%1,%2,%3,%4")
                                     .arg(m_normalGeometry.x()).arg(m_normalGeometry.y())
                                     .arg(m_normalGeometry.width()).arg(m_normalGeometry.height());
-        if (isMaximized())
+        if (isMaximizedChecked())
             strWindowPosition += QString(",%1").arg(VBoxDefs::GUI_LastWindowPosition_Max);
         QString strPositionAddress = m_uScreenId == 0 ? QString("%1").arg(VBoxDefs::GUI_LastWindowPosition) :
                                      QString("%1%2").arg(VBoxDefs::GUI_LastWindowPosition).arg(m_uScreenId);
@@ -592,5 +594,15 @@ void UIMachineWindowNormal::showSimple()
 {
     /* Just show window: */
     show();
+}
+
+bool UIMachineWindowNormal::isMaximizedChecked()
+{
+#ifdef Q_WS_MAC
+    /* On the Mac the WindowStateChange signal doesn't seems to be delivered
+     * when the user get out of the maximized state. So check this ourself. */
+    return ::darwinIsWindowMaximized(this);
+#endif /* !Q_WS_MAC */
+    return isMaximized();
 }
 

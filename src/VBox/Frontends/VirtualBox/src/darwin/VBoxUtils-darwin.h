@@ -92,6 +92,8 @@ void darwinWindowAnimateResizeImpl (NativeWindowRef aWindow, int x, int y, int w
 void darwinWindowInvalidateShapeImpl (NativeWindowRef aWindow);
 void darwinWindowInvalidateShadowImpl (NativeWindowRef aWindow);
 int  darwinWindowToolBarHeight (NativeWindowRef aWindow);
+bool darwinIsWindowMaximized(NativeWindowRef aWindow);
+
 float darwinSmallFontSize();
 bool darwinSetFrontMostProcess();
 uint64_t darwinGetCurrentProcessId();
@@ -171,6 +173,7 @@ void darwinWindowAnimateResize (QWidget *aWidget, const QRect &aTarget);
 void darwinWindowInvalidateShape (QWidget *aWidget);
 void darwinWindowInvalidateShadow (QWidget *aWidget);
 int  darwinWindowToolBarHeight (QWidget *aWidget);
+bool darwinIsWindowMaximized(QWidget *aWidget);
 QString darwinSystemLanguage (void);
 QPixmap darwinCreateDragPixmap (const QPixmap& aPixmap, const QString &aText);
 

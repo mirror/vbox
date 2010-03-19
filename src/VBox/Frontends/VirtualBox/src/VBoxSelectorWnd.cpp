@@ -733,7 +733,11 @@ VBoxSelectorWnd::~VBoxSelectorWnd()
         QString winPos = QString ("%1,%2,%3,%4")
             .arg (mNormalGeo.x()).arg (y)
             .arg (mNormalGeo.width()).arg (mNormalGeo.height());
+#ifdef Q_WS_MAC
+        if (::darwinIsWindowMaximized(this))
+#else /* Q_WS_MAC */
         if (isMaximized())
+#endif /* !Q_WS_MAC */
             winPos += QString (",%1").arg (VBoxDefs::GUI_LastWindowPosition_Max);
 
         vbox.SetExtraData (VBoxDefs::GUI_LastWindowPosition, winPos);

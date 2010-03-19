@@ -41,6 +41,7 @@
 # include <VBox/dbggui.h>
 #endif
 #ifdef Q_WS_MAC
+# include "VBoxUtils.h"
 # include <ApplicationServices/ApplicationServices.h>
 # ifndef QT_MAC_USE_COCOA
 #  include <Carbon/Carbon.h>
@@ -73,13 +74,13 @@ public:
     VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent = 0, Qt::WindowFlags aFlags = Qt::Window);
     virtual ~VBoxConsoleWnd();
 
-    bool isWindowMaximized() const
+    bool isWindowMaximized()
     {
 #ifdef Q_WS_MAC
         /* On Mac OS X we didn't really jump to the fullscreen mode but
          * maximize the window. This situation has to be considered when
          * checking for maximized or fullscreen mode. */
-        return !isTrueSeamless() && QMainWindow::isMaximized();
+        return !isTrueSeamless() && ::darwinIsWindowMaximized(this);
 #else /* Q_WS_MAC */
         return QMainWindow::isMaximized();
 #endif /* Q_WS_MAC */
