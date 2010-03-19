@@ -806,6 +806,7 @@ PGM_BTH_DECL(int, Trap0eHandler)(PVMCPU pVCpu, RTGCUINT uErr, PCPUMCTXCORE pRegF
                     {
                         Log(("PGM #PF: Make writable: %RGp %R[pgmpage] pvFault=%RGp uErr=%#x\n", GCPhys, pPage, pvFault, uErr));
                         Assert(!PGM_PAGE_IS_ZERO(pPage));
+                        AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhys));
 
                         rc = pgmPhysPageMakeWritable(pVM, pPage, GCPhys);
                         if (rc != VINF_SUCCESS)
@@ -1401,6 +1402,10 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
         int rc = pgmPhysGetPageEx(&pVM->pgm.s, PteSrc.u & GST_PTE_PG_MASK, &pPage);
         if (RT_SUCCESS(rc))
         {
+            /* Ignore ballooned pages. Don't return errors or use a fatal assert here as part of a shadow sync range might included ballooned pages. */
+            if (PGM_PAGE_IS_BALLOONED(pPage))
+                return;
+
 #ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
             /* Try to make the page writable if necessary. */
             if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
@@ -1410,7 +1415,7 @@ DECLINLINE(void) PGM_BTH_NAME(SyncPageWorker)(PVMCPU pVCpu, PSHWPTE pPteDst, GST
 # ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                          && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
 # endif
-                         && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                        )
                      )
                )
             {
@@ -1794,6 +1799,8 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                 int rc = pgmPhysGetPageEx(&pVM->pgm.s, GCPhys, &pPage);
                 if (RT_SUCCESS(rc))
                 {
+                    AssertFatalMsg(!PGM_PAGE_IS_BALLOONED(pPage), ("Unexpected ballooned page at %RGp\n", GCPhys));
+
 # ifndef VBOX_WITH_NEW_LAZY_PAGE_ALLOC
                     /* Try to make the page writable if necessary. */
                     if (    PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM
@@ -1803,7 +1810,7 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                                  && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
 #  endif
-                                 && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                                 )
                              )
                        )
                     {
@@ -1825,8 +1832,10 @@ PGM_BTH_DECL(int, SyncPage)(PVMCPU pVCpu, GSTPDE PdeSrc, RTGCPTR GCPtrPage, unsi
                         else
                             PteDst.u = 0;
                     }
+
                     const unsigned iPTDst = (GCPtrPage >> SHW_PT_SHIFT) & SHW_PT_MASK;
-                    if (PteDst.n.u1Present && !pPTDst->a[iPTDst].n.u1Present)
+                    if (    PteDst.n.u1Present 
+                        &&  !pPTDst->a[iPTDst].n.u1Present)
                         PGM_BTH_NAME(SyncPageWorkerTrackAddref)(pVCpu, pShwPage, PGM_PAGE_GET_TRACKING(pPage), pPage, iPTDst);
 
                     /* Make sure only allocated pages are mapped writable. */
@@ -2832,7 +2841,7 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
 #  ifdef VBOX_WITH_REAL_WRITE_MONITORED_PAGES
                                      && PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_WRITE_MONITORED
 #  endif
-                                     && PGM_PAGE_GET_TYPE(pPage)  == PGMPAGETYPE_RAM)
+                                     && !PGM_PAGE_IS_BALLOONED(pPage))
                                  )
                            )
                         {
@@ -2852,6 +2861,12 @@ PGM_BTH_DECL(int, SyncPT)(PVMCPU pVCpu, unsigned iPDSrc, PGSTPD pPDSrc, RTGCPTR 
                             }
                             else
                                 PteDst.u = 0;
+                        }
+                        else
+                        if (PGM_PAGE_IS_BALLOONED(pPage))
+                        {
+                            /* Skip ballooned pages. */
+                            PteDst.u = 0;
                         }
 # ifndef IN_RING0
                         /*
