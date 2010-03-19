@@ -409,25 +409,12 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 
             ComObjPtr<HostNetworkInterface> IfObj;
             IfObj.createObject();
-            try
-            {
-#ifdef DEBUG
-                printf("IF '%s'\n", pNew->szName);
-#endif /* DEBUG */
-                if (SUCCEEDED(IfObj->init(Bstr(pNew->szName), enmType, pNew)))
-                    /* Make sure the default interface gets to the beginning. */
-                    if (pIfMsg->ifm_index == u16DefaultIface)
-                        list.push_front(IfObj);
-                    else
-                        list.push_back(IfObj);
-            }
-            catch(...)
-            {
-#ifdef DEBUG
-                printf("Throw happens\n");
-#endif /* DEBUG */
-            }
-
+            if (SUCCEEDED(IfObj->init(Bstr(pNew->szName), enmType, pNew)))
+                /* Make sure the default interface gets to the beginning. */
+                if (pIfMsg->ifm_index == u16DefaultIface)
+                    list.push_front(IfObj);
+                else
+                    list.push_back(IfObj);
         }
         RTMemFree(pNew);
     }
