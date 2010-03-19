@@ -5636,11 +5636,19 @@ static int vmdkSetModificationUuid(void *pBackendData, PCRTUUID pUuid)
     {
         if (!(pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY))
         {
-            pImage->ModificationUuid = *pUuid;
-            rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
-                                    VMDK_DDB_MODIFICATION_UUID, pUuid);
-            if (RT_FAILURE(rc))
-                return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing modification UUID in descriptor in '%s'"), pImage->pszFilename);
+            /*
+             * Only change the modification uuid if it changed.
+             * Avoids a lot of unneccessary 1-byte writes during
+             * vmdkFlush.
+             */
+            if (RTUuidCompare(&pImage->ModificationUuid, pUuid))
+            {
+                pImage->ModificationUuid = *pUuid;
+                rc = vmdkDescDDBSetUuid(pImage, &pImage->Descriptor,
+                                        VMDK_DDB_MODIFICATION_UUID, pUuid);
+                if (RT_FAILURE(rc))
+                    return vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: error storing modification UUID in descriptor in '%s'"), pImage->pszFilename);
+            }
             rc = VINF_SUCCESS;
         }
         else
