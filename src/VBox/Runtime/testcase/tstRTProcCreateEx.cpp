@@ -74,6 +74,7 @@ static const char * const g_apszArgs4[] =
     NULL
 };
 
+
 static int tstRTCreateProcEx5Child(int argc, char **argv)
 {
     int rc = RTR3Init();
@@ -138,9 +139,9 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
     return rc;
 }
 
-static void tstRTCreateProcEx5(void)
+static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
 {
-    RTTestISub("Impersonation (as user \"test\")");
+    RTTestISubF("As user \"%s\" with password \"%s\"", pszUser, pszPassword);
 
     const char * apszArgs[3] =
     {
@@ -151,7 +152,7 @@ static void tstRTCreateProcEx5(void)
 
     RTPROCESS hProc;
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
-                                         NULL, NULL, "testcase", "test", &hProc), VINF_SUCCESS);
+                                         NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
     RTTESTI_CHECK_RC(RTProcWait(hProc, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
 
@@ -411,8 +412,15 @@ int main(int argc, char **argv)
         return tstRTCreateProcEx4Child(argc, argv);
     if (argc == 2 && !strcmp(argv[1], "--testcase-child-5"))
         return tstRTCreateProcEx5Child(argc, argv);
+    const char *pszAsUser   = NULL;
+    const char *pszPassword = NULL;
     if (argc != 1)
-        return 99;
+    {
+        if (argc != 4 || strcmp(argv[1], "--as-user"))
+            return 99;
+        pszAsUser   = argv[2];
+        pszPassword = argv[4];
+    }
 
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstRTProcCreateEx", &hTest);
@@ -430,8 +438,11 @@ int main(int argc, char **argv)
     tstRTCreateProcEx2();
     tstRTCreateProcEx3();
     tstRTCreateProcEx4();
-    /** @todo Do not run tstRTCreateProcEx5 on NT4, may not work (?) */
-    tstRTCreateProcEx5();
+    if (pszAsUser)
+    {
+        /** @todo Do not run tstRTCreateProcEx5 on NT4, may not work (?) */
+        tstRTCreateProcEx5(pszAsUser, pszPassword);
+    }
     /** @todo Cover files, ++ */
 
     /*
