@@ -56,11 +56,7 @@
 #ifndef _VBOXVIDEO_H_
 #define _VBOXVIDEO_H_
 
-#ifdef DEBUG_michael
-# define DEBUG_VIDEO 1
-#endif
-
-#ifdef DEBUG_VIDEO
+#ifdef DEBUG
 
 #define TRACE_ENTRY() \
 do { \
@@ -81,14 +77,22 @@ do { \
 { \
     ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
     } while(0)
-
-#else  /* DEBUG_VIDEO not defined */
+# define XF86ASSERT(expr, out) \
+if (!(expr)) \
+{ \
+    ErrorF ("\nAssertion failed!\n\n"); \
+    ErrorF ("%s\n", #expr); \
+    ErrorF ("at %s (%s:%d)\n", __PRETTY_FUNCTION__, __FILE__, __LINE__); \
+    ErrorF out; \
+    FatalError("Aborting"); \
+}
+#else  /* !DEBUG */
 
 #define TRACE_ENTRY()  do { } while(0)
 #define TRACE_EXIT()   do { } while(0)
 #define TRACE_LOG(...) do { } while(0)
 
-#endif  /* DEBUG_VIDEO not defined */
+#endif  /* !DEBUG */
 
 #define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
 
@@ -201,9 +205,6 @@ typedef struct _VBOXRec
     CARD32 *savedPal;
     CARD8 *fonts;
     vgaRegRec vgaRegs;  /* Space for saving VGA information */
-    /* DGA info */
-    DGAModePtr pDGAMode;
-    int nDGAMode;
     CloseScreenProcPtr CloseScreen;
     /** Default X server procedure for enabling and disabling framebuffer access */
     xf86EnableDisableFBAccessProc *EnableDisableFBAccess;
@@ -211,6 +212,10 @@ typedef struct _VBOXRec
     Bool accessEnabled;
     OptionInfoPtr Options;
     IOADDRESS ioBase;
+    /** The width of the last resolution set, used to avoid resetting modes */
+    int cLastWidth;
+    /** The height of the last resolution set */
+    int cLastHeight;
     VMMDevReqMousePointer *reqp;
     xf86CursorInfoPtr pCurs;
     size_t pointerHeaderSize;

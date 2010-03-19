@@ -51,35 +51,6 @@
  * Authors: Paulo César Pereira de Andrade <pcpa@conectiva.com.br>
  */
 
-#ifdef DEBUG_michael
-# define DEBUG_VIDEO 1
-#endif
-#ifdef DEBUG_VIDEO
-
-#define TRACE \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": entering\n"); \
-} while(0)
-#define TRACE2 \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, ": leaving\n"); \
-} while(0)
-#define TRACE3(...) \
-do { \
-    xf86Msg(X_INFO, __PRETTY_FUNCTION__); \
-    xf86Msg(X_INFO, __VA_ARGS__); \
-} while(0)
-
-#else  /* DEBUG_VIDEO not defined */
-
-#define TRACE       do { } while(0)
-#define TRACE2      do { } while(0)
-#define TRACE3(...) do { } while(0)
-
-#endif  /* DEBUG_VIDEO not defined */
-
 #ifdef XORG_7X
 # include "xorg-server.h"
 #endif
@@ -131,10 +102,8 @@ static void SaveFonts(ScrnInfoPtr pScrn);
 static void RestoreFonts(ScrnInfoPtr pScrn);
 static Bool VBOXSaveRestore(ScrnInfoPtr pScrn,
                             vbeSaveRestoreFunction function);
-
-/* Initialise DGA */
-
-static Bool VBOXDGAInit(ScrnInfoPtr pScrn, ScreenPtr pScreen);
+static void vboxWriteHostModes(ScrnInfoPtr pScrn, DisplayModePtr pCurrent);
+static bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, DisplayModePtr pMode);
 
 /*
  * This contains the functions needed by the server after loading the
@@ -386,6 +355,315 @@ VBOXFreeRec(ScrnInfoPtr pScrn)
     pScrn->driverPrivate = NULL;
 }
 
+/**
+ * Fills a display mode M with a built-in mode of name pszName and dimensions
+ * cx and cy.
+ */
+static void vboxFillDisplayMode(DisplayModePtr m, const char *pszName,
+                                unsigned cx, unsigned cy)
+{
+    TRACE_LOG("pszName=%s, cx=%u, cy=%u\n", pszName, cx, cy);
+    m->status        = MODE_OK;
+    m->type          = M_T_BUILTIN;
+    /* VBox only supports screen widths which are a multiple of 8 */
+    m->HDisplay      = cx & ~7;
+    m->HSyncStart    = m->HDisplay + 2;
+    m->HSyncEnd      = m->HDisplay + 4;
+    m->HTotal        = m->HDisplay + 6;
+    m->VDisplay      = cy;
+    m->VSyncStart    = m->VDisplay + 2;
+    m->VSyncEnd      = m->VDisplay + 4;
+    m->VTotal        = m->VDisplay + 6;
+    m->Clock         = m->HTotal * m->VTotal * 60 / 1000; /* kHz */
+    if (pszName)
+    {
+        if (m->name)
+            xfree(m->name);
+        m->name      = xnfstrdup(pszName);
+    }
+}
+
+/** vboxvideo's list of standard video modes */
+struct
+{
+    /** mode width */
+    uint32_t cx;
+    /** mode height */
+    uint32_t cy;    
+} vboxStandardModes[] =
+{
+    { 1600, 1200 },
+    { 1440, 1050 },
+    { 1280, 960 },
+    { 1024, 768 },
+    { 800, 600 },
+    { 640, 480 },
+    { 0, 0 }
+};
+enum
+{
+    vboxNumStdModes = sizeof(vboxStandardModes) / sizeof(vboxStandardModes[0])
+};
+
+/**
+ * Returns a standard mode which the host likes.  Can be called multiple
+ * times with the index returned by the previous call to get a list of modes.
+ * @returns  the index of the mode in the list, or 0 if no more modes are
+ *           available
+ * @param    pScrn   the screen information structure
+ * @param    pScrn->bitsPerPixel
+ *                   if this is non-null, only modes with this BPP will be
+ *                   returned
+ * @param    cIndex  the index of the last mode queried, or 0 to query the
+ *                   first mode available.  Note: the first index is 1
+ * @param    pcx     where to store the mode's width
+ * @param    pcy     where to store the mode's height
+ * @param    pcBits  where to store the mode's BPP
+ */
+static unsigned vboxNextStandardMode(ScrnInfoPtr pScrn, unsigned cIndex,
+                                     uint32_t *pcx, uint32_t *pcy,
+                                     uint32_t *pcBits)
+{
+    XF86ASSERT(cIndex < vboxNumStdModes,
+               ("cIndex = %d, vboxNumStdModes = %d\n", cIndex,
+                vboxNumStdModes));
+    for (unsigned i = cIndex; i < vboxNumStdModes - 1; ++i)
+    {
+        uint32_t cBits = pScrn->bitsPerPixel;
+        uint32_t cx = vboxStandardModes[i].cx;
+        uint32_t cy = vboxStandardModes[i].cy;
+
+        if (cBits != 0 && !vboxHostLikesVideoMode(pScrn, cx, cy, cBits))
+            continue;
+        if (vboxHostLikesVideoMode(pScrn, cx, cy, 32))
+            cBits = 32;
+        else if (vboxHostLikesVideoMode(pScrn, cx, cy, 16))
+            cBits = 16;
+        else
+            continue;
+        if (pcx)
+            *pcx = cx;
+        if (pcy)
+            *pcy = cy;
+        if (pcBits)
+            *pcBits = cBits;
+        return i + 1;
+    }
+    return 0;
+}
+
+/**
+ * Returns the preferred video mode.  The current order of preference is
+ * (from highest to least preferred):
+ *  - The mode corresponding to the last size hint from the host
+ *  - The video mode saved from the last session
+ *  - The largest standard mode which the host likes, falling back to
+ *    640x480x32 as a worst case
+ *  - If the host can't be contacted at all, we return 1024x768x32
+ *
+ * The return type is void as we guarantee we will return some mode.
+ */
+static void vboxGetPreferredMode(ScrnInfoPtr pScrn, uint32_t *pcx,
+                                 uint32_t *pcy, uint32_t *pcBits)
+{
+    /* Query the host for the preferred resolution and colour depth */
+    uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 32;
+    VBOXPtr pVBox = pScrn->driverPrivate;
+
+    TRACE_ENTRY();
+    if (pVBox->useDevice)
+    {
+        bool found = vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay);
+        if ((cx == 0) || (cy == 0))
+            found = false;
+        if (!found)
+            found = vboxRetrieveVideoMode(pScrn, &cx, &cy, &cBits);
+        if ((cx == 0) || (cy == 0))
+            found = false;
+        if (found)
+            /* Adjust to a multiple of eight */
+            cx -= cx % 8;
+        if (!found)
+            found = (vboxNextStandardMode(pScrn, 0, &cx, &cy, &cBits) != 0);
+        if (!found)
+        {
+            /* Last resort */
+            cx = 640;
+            cy = 480;
+            cBits = 32;
+        }
+    }
+    else
+    {
+        cx = 1024;
+        cy = 768;
+    }
+    if (pcx)
+        *pcx = cx;
+    if (pcy)
+        *pcy = cy;
+    if (pcx)
+        *pcBits = cBits;
+}
+
+/* Move a screen mode found to the end of the list, so that RandR will give
+ * it the highest priority when a mode switch is requested.  Returns the mode
+ * that was previously before the mode in the list in order to allow the
+ * caller to continue walking the list. */
+static DisplayModePtr vboxMoveModeToFront(ScrnInfoPtr pScrn,
+                                          DisplayModePtr pMode)
+{
+    DisplayModePtr pPrev = pMode->prev;
+    if (pMode != pScrn->modes)
+    {
+        pMode->prev->next = pMode->next;
+        pMode->next->prev = pMode->prev;
+        pMode->next = pScrn->modes;
+        pMode->prev = pScrn->modes->prev;
+        pMode->next->prev = pMode;
+        pMode->prev->next = pMode;
+        pScrn->modes = pMode;
+    }
+    return pPrev;
+}
+
+/**
+ * Rewrites the first dynamic mode found which is not the current screen mode
+ * to contain the host's currently preferred screen size, then moves that
+ * mode to the front of the screen information structure's mode list. 
+ * Additionally, if the current mode is not dynamic, the second dynamic mode
+ * will be set to match the current mode and also added to the front.  This
+ * ensures that the user can always reset the current size to kick the driver
+ * to update its mode list.
+ */
+static void vboxWriteHostModes(ScrnInfoPtr pScrn, DisplayModePtr pCurrent)
+{
+    uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 0;
+    DisplayModePtr pMode;
+    bool found = false;
+
+    TRACE_ENTRY();
+    vboxGetPreferredMode(pScrn, &cx, &cy, &cBits);
+#ifdef DEBUG
+    /* Count the number of modes for sanity */
+    unsigned cModes = 1, cMode = 0;
+    DisplayModePtr pCount;
+    for (pCount = pScrn->modes; ; pCount = pCount->next, ++cModes)
+        if (pCount->next == pScrn->modes)
+            break;
+#endif
+    for (pMode = pScrn->modes; ; pMode = pMode->next)
+    {
+#ifdef DEBUG
+        XF86ASSERT (cMode++ < cModes, (NULL));
+#endif
+        if (   pMode != pCurrent
+            && !strcmp(pMode->name, "VBoxDynamicMode"))
+        {
+            if (!found)
+                vboxFillDisplayMode(pMode, NULL, cx, cy);
+            else if (pCurrent)
+                vboxFillDisplayMode(pMode, NULL, pCurrent->HDisplay,
+                                    pCurrent->VDisplay);
+            found = true;
+            pMode = vboxMoveModeToFront(pScrn, pMode);
+        }
+        if (pMode->next == pScrn->modes)
+            break;
+    }
+    XF86ASSERT (found,
+                ("vboxvideo: no free dynamic mode found.  Exiting.\n"));
+    XF86ASSERT (   (pScrn->modes->HDisplay == (long) cx)
+                || (   (pScrn->modes->HDisplay == pCurrent->HDisplay)
+                    && (pScrn->modes->next->HDisplay == (long) cx)),
+                ("pScrn->modes->HDisplay=%u, pScrn->modes->next->HDisplay=%u\n",
+                 pScrn->modes->HDisplay, pScrn->modes->next->HDisplay));
+    XF86ASSERT (   (pScrn->modes->VDisplay == (long) cy)
+                || (   (pScrn->modes->VDisplay == pCurrent->VDisplay)
+                    && (pScrn->modes->next->VDisplay == (long) cy)),
+                ("pScrn->modes->VDisplay=%u, pScrn->modes->next->VDisplay=%u\n",
+                 pScrn->modes->VDisplay, pScrn->modes->next->VDisplay));
+}
+
+/**
+ * Allocates an empty display mode and links it into the doubly linked list of
+ * modes pointed to by pScrn->modes.  Returns a pointer to the newly allocated
+ * memory.
+ */
+static DisplayModePtr vboxAddEmptyScreenMode(ScrnInfoPtr pScrn)
+{
+    DisplayModePtr pMode = xnfcalloc(sizeof(DisplayModeRec), 1);
+
+    TRACE_ENTRY();
+    if (!pScrn->modes)
+    {
+        pScrn->modes = pMode;
+        pMode->next = pMode;
+        pMode->prev = pMode;
+    }
+    else
+    {
+        pMode->next = pScrn->modes;
+        pMode->prev = pScrn->modes->prev;
+        pMode->next->prev = pMode;
+        pMode->prev->next = pMode;
+    }
+    return pMode;
+}
+
+/**
+ * Create display mode entries in the screen information structure for each
+ * of the initial graphics modes that we wish to support.  This includes:
+ *  - An initial mode, of the size requested by the caller
+ *  - Two dynamic modes, one of which will be updated to match the last size
+ *    hint from the host on each mode switch, but initially also of the
+ *    requested size
+ *  - Several standard modes, if possible ones that the host likes
+ *  - Any modes that the user requested in xorg.conf/XFree86Config
+ */
+static void
+vboxAddModes(ScrnInfoPtr pScrn, uint32_t cxInit, uint32_t cyInit)
+{
+    unsigned cx = 0, cy = 0, cIndex = 0;
+    /* For reasons related to the way RandR 1.1 is implemented, we need to
+     * make sure that the initial mode (more precisely, a mode equal to the
+     * initial virtual resolution) is always present in the mode list.  RandR
+     * has the assumption build in that there will either be a mode of that
+     * size present at all times, or that the first mode in the list will
+     * always be smaller than the initial virtual resolution.  Since our
+     * approach to dynamic resizing isn't quite the way RandR was intended to
+     * be, and breaks the second assumption, we guarantee the first. */
+    DisplayModePtr pMode = vboxAddEmptyScreenMode(pScrn);
+    vboxFillDisplayMode(pMode, "VBoxInitialMode", cxInit, cyInit);
+    /* Create our two dynamic modes. */
+    pMode = vboxAddEmptyScreenMode(pScrn);
+    vboxFillDisplayMode(pMode, "VBoxDynamicMode", cxInit, cyInit);
+    pMode = vboxAddEmptyScreenMode(pScrn);
+    vboxFillDisplayMode(pMode, "VBoxDynamicMode", cxInit, cyInit);
+    /* Add standard modes supported by the host */
+    for ( ; ; )
+    {
+        char szName[256];
+        cIndex = vboxNextStandardMode(pScrn, cIndex, &cx, &cy, NULL);
+        if (cIndex == 0)
+            break;
+        sprintf(szName, "VBox-%ux%u", cx, cy);
+        pMode = vboxAddEmptyScreenMode(pScrn);
+        vboxFillDisplayMode(pMode, szName, cx, cy);
+    }
+    /* And finally any modes specified by the user.  We assume here that
+     * the mode names reflect the mode sizes. */
+    for (unsigned i = 0;    pScrn->display->modes != NULL
+                         && pScrn->display->modes[i] != NULL; i++)
+    {
+        if (sscanf(pScrn->display->modes[i], "%ux%u", &cx, &cy) == 2)
+        {
+            pMode = vboxAddEmptyScreenMode(pScrn);
+            vboxFillDisplayMode(pMode, pScrn->display->modes[i], cx, cy);
+        }
+    }
+}
+
 /*
  * QUOTE from the XFree86 DESIGN document:
  *
@@ -416,11 +694,11 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     VBOXPtr pVBox;
     Gamma gzeros = {0.0, 0.0, 0.0};
     rgb rzeros = {0, 0, 0};
-    ClockRange *clockRanges;
     int i;
-    DisplayModePtr m_prev;
-    char szHostModeName[256] = "";
+    DisplayModePtr pMode;
+    enum { MODE_MIN_SIZE = 64 };
 
+    TRACE_ENTRY();
     /* Are we really starting the server, or is this just a dummy run? */
     if (flags & PROBE_DETECT)
         return (FALSE);
@@ -492,30 +770,24 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
     pScrn->videoRam = inl(VBE_DISPI_IOPORT_DATA) / 1024;
 
     /* Set up clock information that will support all modes we need. */
-    clockRanges = xnfcalloc(sizeof(ClockRange), 1);
-    clockRanges->next = NULL;
-    clockRanges->minClock = 1000;
-    clockRanges->maxClock = 1000000000;
-    clockRanges->clockIndex = -1;
-    clockRanges->ClockMulFactor = 1;
-    clockRanges->ClockDivFactor = 1;
+    pScrn->clockRanges = xnfcalloc(sizeof(ClockRange), 1);
+    pScrn->clockRanges->minClock = 1000;
+    pScrn->clockRanges->maxClock = 1000000000;
+    pScrn->clockRanges->clockIndex = -1;
+    pScrn->clockRanges->ClockMulFactor = 1;
+    pScrn->clockRanges->ClockDivFactor = 1;
 
-    /* Query the host for the preferred resolution and colour depth */
+    /* Determine the preferred size and colour depth and setup video modes */
     {
-        uint32_t cx = 0, cy = 0, iDisplay = 0, cBits = 24;
+        uint32_t cx = 0, cy = 0, cBits = 0;
 
-        if (vboxGetDisplayChangeRequest(pScrn, &cx, &cy, &cBits, &iDisplay))
-        {
-            /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
-            if (cBits != 16)
-                cBits = 24;
-            if ((0 != cx) && (0 != cy)) {
-                cx -= cx % 8;
-                xf86sprintf(szHostModeName, "%dx%d", cx, cy);
-            }
-        }
+        vboxGetPreferredMode(pScrn, &cx, &cy, &cBits);
+        /* We only support 16 and 24 bits depth (i.e. 16 and 32bpp) */
+        if (cBits != 16)
+            cBits = 24;
         if (!xf86SetDepthBpp(pScrn, cBits, 0, 0, Support32bppFb))
             return FALSE;
+        vboxAddModes(pScrn, cx, cy);
     }
     if (pScrn->bitsPerPixel != 32 && pScrn->bitsPerPixel != 16)
     {
@@ -524,92 +796,6 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
         return FALSE;
     }
     xf86PrintDepthBpp(pScrn);
-
-    /* To get around the problem of SUSE specifying a single, invalid mode in their
-     * Xorg.conf by default, we add additional modes to the end of the user specified
-     * list. This means that if all user modes are invalid, X will try our mode before
-     * falling back to its standard mode list. */
-    if (pScrn->display->modes == NULL)
-    {
-        i = 0;
-        /* The user specified no modes at all. */
-        pScrn->display->modes = xnfalloc(5 * sizeof(char*));
-    }
-    else
-    {
-        for (i = 0; pScrn->display->modes[i] != NULL; i++);
-        pScrn->display->modes =   xnfrealloc(pScrn->display->modes, (i + 5)
-                                * sizeof(char *));
-    }
-    /* Add additional modes to the end of the mode list in case the others are
-       all invalid. */
-    if (szHostModeName[0])
-    {
-        pScrn->display->modes[i] = szHostModeName;
-        ++i;
-    }
-    if (vboxHostLikesVideoMode(pScrn, 1600, 1200, pScrn->bitsPerPixel))
-    {
-        pScrn->display->modes[i] = "1600x1200";
-        ++i;
-    }
-    if (vboxHostLikesVideoMode(pScrn, 1440, 1050, pScrn->bitsPerPixel))
-    {
-        pScrn->display->modes[i] = "1440x1050";
-        ++i;
-    }
-    if (vboxHostLikesVideoMode(pScrn, 1280, 960, pScrn->bitsPerPixel))
-    {
-        pScrn->display->modes[i] = "1280x960";
-        ++i;
-    }
-    if (vboxHostLikesVideoMode(pScrn, 1024, 768, pScrn->bitsPerPixel))
-    {
-        pScrn->display->modes[i] = "1024x768";
-        ++i;
-    }
-    if (vboxHostLikesVideoMode(pScrn, 800, 600, pScrn->bitsPerPixel))
-    {
-        pScrn->display->modes[i] = "800x600";
-        ++i;
-    }
-    /* A mode of last resort */
-    pScrn->display->modes[i] = "640x480";
-    ++i;
-    pScrn->display->modes[i] = NULL;
-
-    /* Create a builtin mode for every specified mode. This allows to specify arbitrary
-     * screen resolutions */
-    m_prev = NULL;
-    for (i = 0; pScrn->display->modes[i] != NULL; i++)
-    {
-        DisplayModePtr m;
-        int x = 0, y = 0;
-
-        if (sscanf(pScrn->display->modes[i], "%dx%d", &x, &y) == 2)
-        {
-            m                = xnfcalloc(sizeof(DisplayModeRec), 1);
-            m->status        = MODE_OK;
-            m->type          = M_T_BUILTIN;
-            /* VBox only supports screen widths which are a multiple of 8 */
-            m->HDisplay      = (x + 7) & ~7;
-            m->HSyncStart    = m->HDisplay + 2;
-            m->HSyncEnd      = m->HDisplay + 4;
-            m->HTotal        = m->HDisplay + 6;
-            m->VDisplay      = y;
-            m->VSyncStart    = m->VDisplay + 2;
-            m->VSyncEnd      = m->VDisplay + 4;
-            m->VTotal        = m->VDisplay + 6;
-            m->Clock         = m->HTotal * m->VTotal * 60 / 1000; /* kHz */
-            m->name          = strdup(pScrn->display->modes[i]);
-            if (!m_prev)
-                pScrn->modePool = m;
-            else
-                m_prev->next = m;
-            m->prev = m_prev;
-            m_prev  = m;
-        }
-    }
 
     /* Colour weight - we always call this, since we are always in
        truecolour. */
@@ -622,49 +808,21 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     xf86SetGamma(pScrn, gzeros);
 
-    /* Set a sane minimum mode size and the maximum allowed by the available VRAM */
-    {
-        unsigned maxSize, trySize = 512;
-
-        do {
-            maxSize = trySize;
-            trySize += 128;
-        } while (trySize * trySize * pScrn->bitsPerPixel / 8 < (unsigned)pScrn->videoRam * 1024);
-
-        /* I don't know exactly what these are for (and they are only used in a couple
-           of places in the X server code). */
-        pScrn->display->virtualX = maxSize;
-        pScrn->display->virtualY = maxSize;
-        xf86DrvMsg(pScrn->scrnIndex, X_INFO,
-                   "The maximum supported resolution is currently %dx%d\n", maxSize, maxSize);
-    }
-
-    /* Filter out video modes not supported by the virtual hardware
-       we described. */
-    i = xf86ValidateModes(pScrn, pScrn->monitor->Modes,
-                          pScrn->display->modes,
-                          clockRanges, NULL, 64, pScrn->display->virtualX, 1,
-                          64, pScrn->display->virtualY, 0, 0,
-                          pScrn->videoRam * 1024, LOOKUP_BEST_REFRESH);
-
-    if (i <= 0) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No usable graphics modes found.\n");
-        return (FALSE);
-    }
-    xf86PruneDriverModes(pScrn);
+    /* We don't validate with xf86ValidateModes and xf86PruneModes as we
+     * already know what we like and what we don't. */
 
     pScrn->currentMode = pScrn->modes;
+
+    /* Set the right virtual resolution. */
+    pScrn->virtualX = pScrn->currentMode->HDisplay;
+    pScrn->virtualY = pScrn->currentMode->VDisplay;
+
     pScrn->displayWidth = pScrn->virtualX;
 
     xf86PrintModes(pScrn);
 
-    /* Set display resolution.  Perhaps we should read this from the host. */
+    /* Set the DPI.  Perhaps we should read this from the host? */
     xf86SetDpi(pScrn, 96, 96);
-
-    if (pScrn->modes == NULL) {
-        xf86DrvMsg(pScrn->scrnIndex, X_ERROR, "No graphics modes available\n");
-        return (FALSE);
-    }
 
     /* options */
     xf86CollectOptions(pScrn, NULL);
@@ -675,6 +833,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
 
     /* Framebuffer-related setup */
     pScrn->bitmapBitOrder = BITMAP_BIT_ORDER;
+    TRACE_EXIT();
     return (TRUE);
 }
 
@@ -690,7 +849,7 @@ VBOXPreInit(ScrnInfoPtr pScrn, int flags)
  * Save the video card state. (...) Initialise the initial video
  * mode.
  *
- * End QUOTE.Initialise the initial video mode.
+ * End QUOTE.
  */
 static Bool
 VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
@@ -700,6 +859,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     VisualPtr visual;
     unsigned flags;
 
+    TRACE_ENTRY();
     /* We make use of the X11 VBE code to save and restore text mode, in
        order to keep our code simple. */
     if ((pVBox->pVbe = VBEExtendedInit(NULL, pVBox->pEnt->index,
@@ -723,10 +883,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     VBOXSaveRestore(pScrn, MODE_SAVE);
     pVBox->savedPal = VBESetGetPaletteData(pVBox->pVbe, FALSE, 0, 256,
                                            NULL, FALSE, FALSE);
-
-    /* set first video mode */
-    if (!VBOXSetMode(pScrn, pScrn->currentMode))
-        return FALSE;
 
     /* set the viewport */
     VBOXAdjustFrame(scrnIndex, pScrn->frameX0, pScrn->frameY0, 0);
@@ -768,8 +924,6 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     /* must be after RGB ordering fixed */
     fbPictureInit(pScreen, 0, 0);
 
-    VBOXDGAInit(pScrn, pScreen);
-
     xf86SetBlackWhitePixels(pScreen);
     miInitializeBackingStore(pScreen);
     xf86SetBackingStore(pScreen);
@@ -800,6 +954,13 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
     if (serverGeneration == 1)
         xf86ShowUnusedOptions(pScrn->scrnIndex, pScrn->options);
 
+    /* set first video mode */
+    if (!VBOXSetMode(pScrn, pScrn->currentMode))
+        return FALSE;
+    /* And make sure that a non-current dynamic mode is at the front of the
+     * list */
+    vboxWriteHostModes(pScrn, pScrn->currentMode);
+
     if (vbox_open (pScrn, pScreen, pVBox)) {
         if (vbox_cursor_init(pScreen) != TRUE)
             xf86DrvMsg(scrnIndex, X_ERROR,
@@ -808,6 +969,7 @@ VBOXScreenInit(int scrnIndex, ScreenPtr pScreen, int argc, char **argv)
             xf86DrvMsg(scrnIndex, X_INFO,
                       "The VBox video extensions are now enabled.\n");
     }
+    TRACE_EXIT();
     return (TRUE);
 }
 
@@ -851,11 +1013,6 @@ VBOXCloseScreen(int scrnIndex, ScreenPtr pScreen)
 				 pVBox->savedPal, FALSE, TRUE);
 	VBOXUnmapVidMem(pScrn);
     }
-    if (pVBox->pDGAMode) {
-	xfree(pVBox->pDGAMode);
-	pVBox->pDGAMode = NULL;
-	pVBox->nDGAMode = 0;
-    }
     pScrn->vtSema = FALSE;
 
     pScreen->CloseScreen = pVBox->CloseScreen;
@@ -875,6 +1032,12 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
             return FALSE;
     if (VBOXSetMode(pScrn, pMode) != TRUE)
         return FALSE;
+    if (VBOXAdjustScreenPixmap(pScrn, pMode) != TRUE)
+        return FALSE;
+    vboxSaveVideoMode(pScrn, pMode->HDisplay, pMode->VDisplay,
+                      pScrn->bitsPerPixel);
+    vboxWriteHostModes(pScrn, pMode);
+    xf86PrintModes(pScrn);
     if (pVBox->useVbva == TRUE)
         if (vboxEnableVbva(pScrn) != TRUE)  /* Bad but not fatal */
             pVBox->useVbva = FALSE;
@@ -885,8 +1048,8 @@ VBOXSwitchMode(int scrnIndex, DisplayModePtr pMode, int flags)
 static Bool
 VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
 {
+    TRACE_ENTRY();
     int bpp = pScrn->depth == 24 ? 32 : 16;
-    int xRes = pMode->HDisplay;
     VBOXPtr pVBox = VBOXGetRec(pScrn);
 
     if (pScrn->virtualX * pScrn->virtualY * bpp / 8
@@ -897,24 +1060,11 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
                    pScrn->virtualX, pScrn->virtualY, pScrn->videoRam);
         return FALSE;
     }
-    /* We only support horizontal resolutions which are a multiple of 8.  Round down if
-       necessary. */
-    if (xRes % 8 != 0)
-    {
-        xf86DrvMsg(pScrn->scrnIndex, X_WARNING,
-                   "VirtualBox only supports screen widths which are a multiple of 8.  Rounding down from %d to %d\n",
-                   xRes, xRes - (xRes % 8));
-        xRes = xRes - (xRes % 8);
-    }
-
-    /* We force a software cursor if the guests virtual resolution is different
-     * to it's actual resolution, as in this case host and guest will disagree
-     * about the pointer position. */
-    if (   (pScrn->virtualX - xRes >= 8)
-        || (pScrn->virtualY - pMode->VDisplay >= 8))
-        pVBox->forceSWCursor = TRUE;
-    else
-        pVBox->forceSWCursor = FALSE;
+    /* Do not reset the current mode - we use this as a way of kicking
+     * the driver */
+    if (   (pMode->HDisplay == pVBox->cLastWidth)
+        && (pMode->VDisplay == pVBox->cLastHeight))
+        return TRUE;
 
     pScrn->vtSema = TRUE;
     /* Disable linear framebuffer mode before making changes to the resolution. */
@@ -928,7 +1078,7 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     /* HDisplay and VDisplay are actually monitor information about
        the display part of the scanlines. */
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_XRES);
-    outw(VBE_DISPI_IOPORT_DATA, xRes);
+    outw(VBE_DISPI_IOPORT_DATA, pMode->HDisplay);
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_YRES);
     outw(VBE_DISPI_IOPORT_DATA, pMode->VDisplay);
     /* Enable linear framebuffer mode. */
@@ -938,8 +1088,30 @@ VBOXSetMode(ScrnInfoPtr pScrn, DisplayModePtr pMode)
     /* Set the virtual resolution.  We are still using VESA to control
        the virtual offset. */
     outw(VBE_DISPI_IOPORT_INDEX, VBE_DISPI_INDEX_VIRT_WIDTH);
-    outw(VBE_DISPI_IOPORT_DATA, pScrn->displayWidth);
+    outw(VBE_DISPI_IOPORT_DATA, pMode->HDisplay);
+    pVBox->cLastWidth = pMode->HDisplay;
+    pVBox->cLastHeight = pMode->VDisplay;
+    TRACE_EXIT();
     return (TRUE);
+}
+
+static bool VBOXAdjustScreenPixmap(ScrnInfoPtr pScrn, DisplayModePtr pMode)
+{
+    ScreenPtr pScreen = pScrn->pScreen;
+    PixmapPtr pPixmap = pScreen->GetScreenPixmap(pScreen);
+    VBOXPtr pVBox = VBOXGetRec(pScrn);
+    int bpp = pScrn->depth == 24 ? 32 : 16;
+    if (!pPixmap) {
+        xf86DrvMsg(pScrn->scrnIndex, X_ERROR,
+                   "Failed to get the screen pixmap.\n");
+        return FALSE;
+    }
+    pScreen->ModifyPixmapHeader(pPixmap, pMode->HDisplay, pMode->VDisplay,
+                                pScrn->depth, bpp, pMode->HDisplay * bpp / 8,
+                                pVBox->base);
+    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, FALSE);
+    pScrn->EnableDisableFBAccess(pScrn->scrnIndex, TRUE);
+    return TRUE;
 }
 
 static void
@@ -1320,142 +1492,3 @@ VBOXDisplayPowerManagementSet(ScrnInfoPtr pScrn, int mode,
     /* VBox is always power efficient... */
 }
 
-
-
-
-/***********************************************************************
- * DGA stuff
- ***********************************************************************/
-static Bool VBOXDGAOpenFramebuffer(ScrnInfoPtr pScrn, char **DeviceName,
-				   unsigned char **ApertureBase,
-				   int *ApertureSize, int *ApertureOffset,
-				   int *flags);
-static Bool VBOXDGASetMode(ScrnInfoPtr pScrn, DGAModePtr pDGAMode);
-static void VBOXDGASetViewport(ScrnInfoPtr pScrn, int x, int y, int flags);
-
-static Bool
-VBOXDGAOpenFramebuffer(ScrnInfoPtr pScrn, char **DeviceName,
-		       unsigned char **ApertureBase, int *ApertureSize,
-		       int *ApertureOffset, int *flags)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-
-    *DeviceName = NULL;		/* No special device */
-    *ApertureBase = (unsigned char *)(long)(pVBox->mapPhys);
-    *ApertureSize = pVBox->mapSize;
-    *ApertureOffset = pVBox->mapOff;
-    *flags = DGA_NEED_ROOT;
-
-    return (TRUE);
-}
-
-static Bool
-VBOXDGASetMode(ScrnInfoPtr pScrn, DGAModePtr pDGAMode)
-{
-    DisplayModePtr pMode;
-    int scrnIdx = pScrn->pScreen->myNum;
-    int frameX0, frameY0;
-
-    if (pDGAMode) {
-	pMode = pDGAMode->mode;
-	frameX0 = frameY0 = 0;
-    }
-    else {
-	if (!(pMode = pScrn->currentMode))
-	    return (TRUE);
-
-	frameX0 = pScrn->frameX0;
-	frameY0 = pScrn->frameY0;
-    }
-
-    if (!(*pScrn->SwitchMode)(scrnIdx, pMode, 0))
-	return (FALSE);
-    (*pScrn->AdjustFrame)(scrnIdx, frameX0, frameY0, 0);
-
-    return (TRUE);
-}
-
-static void
-VBOXDGASetViewport(ScrnInfoPtr pScrn, int x, int y, int flags)
-{
-    (*pScrn->AdjustFrame)(pScrn->pScreen->myNum, x, y, flags);
-}
-
-static int
-VBOXDGAGetViewport(ScrnInfoPtr pScrn)
-{
-    return (0);
-}
-
-static DGAFunctionRec VBOXDGAFunctions =
-{
-    VBOXDGAOpenFramebuffer,
-    NULL,       /* CloseFramebuffer */
-    VBOXDGASetMode,
-    VBOXDGASetViewport,
-    VBOXDGAGetViewport,
-    NULL,       /* Sync */
-    NULL,       /* FillRect */
-    NULL,       /* BlitRect */
-    NULL,       /* BlitTransRect */
-};
-
-static void
-VBOXDGAAddModes(ScrnInfoPtr pScrn)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-    DisplayModePtr pMode = pScrn->modes;
-    DGAModePtr pDGAMode;
-
-    do {
-	pDGAMode = xrealloc(pVBox->pDGAMode,
-			    (pVBox->nDGAMode + 1) * sizeof(DGAModeRec));
-	if (!pDGAMode)
-	    break;
-
-	pVBox->pDGAMode = pDGAMode;
-	pDGAMode += pVBox->nDGAMode;
-	(void)memset(pDGAMode, 0, sizeof(DGAModeRec));
-
-	++pVBox->nDGAMode;
-	pDGAMode->mode = pMode;
-	pDGAMode->flags = DGA_CONCURRENT_ACCESS | DGA_PIXMAP_AVAILABLE;
-	pDGAMode->byteOrder = pScrn->imageByteOrder;
-	pDGAMode->depth = pScrn->depth;
-	pDGAMode->bitsPerPixel = pScrn->bitsPerPixel;
-	pDGAMode->red_mask = pScrn->mask.red;
-	pDGAMode->green_mask = pScrn->mask.green;
-	pDGAMode->blue_mask = pScrn->mask.blue;
-        pDGAMode->visualClass = TrueColor;
-	pDGAMode->xViewportStep = 1;
-	pDGAMode->yViewportStep = 1;
-	pDGAMode->viewportWidth = pMode->HDisplay;
-	pDGAMode->viewportHeight = pMode->VDisplay;
-
-	pDGAMode->bytesPerScanline = pVBox->maxBytesPerScanline;
-	pDGAMode->imageWidth = pMode->HDisplay;
-	pDGAMode->imageHeight =  pMode->VDisplay;
-	pDGAMode->pixmapWidth = pDGAMode->imageWidth;
-	pDGAMode->pixmapHeight = pDGAMode->imageHeight;
-	pDGAMode->maxViewportX = pScrn->virtualX -
-				    pDGAMode->viewportWidth;
-	pDGAMode->maxViewportY = pScrn->virtualY -
-				    pDGAMode->viewportHeight;
-
-	pDGAMode->address = pVBox->base;
-
-	pMode = pMode->next;
-    } while (pMode != pScrn->modes);
-}
-
-static Bool
-VBOXDGAInit(ScrnInfoPtr pScrn, ScreenPtr pScreen)
-{
-    VBOXPtr pVBox = VBOXGetRec(pScrn);
-
-    if (!pVBox->nDGAMode)
-	VBOXDGAAddModes(pScrn);
-
-    return (DGAInit(pScreen, &VBOXDGAFunctions,
-	    pVBox->pDGAMode, pVBox->nDGAMode));
-}

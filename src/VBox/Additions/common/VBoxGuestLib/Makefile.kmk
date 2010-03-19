@@ -147,6 +147,7 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	$(if $(VBOX_WITH_GUEST_PROPS),VBoxGuestR3LibGuestProp.cpp,) \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
+	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibVideo.cpp
 VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common/ \

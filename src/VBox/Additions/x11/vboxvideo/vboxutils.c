@@ -47,17 +47,10 @@
 
 /* #define DEBUG_POINTER */
 
-#define BOOL_STR(a) ((a) ? "TRUE" : "FALSE")
-
-#ifdef DEBUG_VIDEO
-# define TRACE_LINE() do \
-    { \
-        ErrorF ("%s: line %d\n", __FUNCTION__, __LINE__); \
-    } while(0)
+#ifdef DEBUG
 # define PUT_PIXEL(c) ErrorF ("%c", c)
 #else /* DEBUG_VIDEO not defined */
 # define PUT_PIXEL(c) do { } while(0)
-# define TRACE_LINE() do { } while(0)
 #endif /* DEBUG_VIDEO not defined */
 
 /** Macro to printf an error message and return from a function */
@@ -471,7 +464,6 @@ vbox_vmm_hide_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    TRACE_ENTRY();
     pVBox->reqp->fFlags = 0;
     rc = VbglR3SetPointerShapeReq(pVBox->reqp);
     if (RT_FAILURE(rc))
@@ -489,7 +481,6 @@ vbox_vmm_show_cursor(ScrnInfoPtr pScrn, VBOXPtr pVBox)
 {
     int rc;
 
-    TRACE_ENTRY();
     if (vbox_host_uses_hwcursor(pScrn)) {
         pVBox->reqp->fFlags = VBOX_MOUSE_POINTER_VISIBLE;
         rc = VbglR3SetPointerShapeReq(pVBox->reqp);
@@ -511,7 +502,6 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
     VMMDevReqMousePointer *reqp;
     reqp = (VMMDevReqMousePointer *)image;
 
-    TRACE_LOG("w=%d h=%d size=%d\n", reqp->width, reqp->height, reqp->header.size);
 #ifdef DEBUG_POINTER
     vbox_show_shape(reqp->width, reqp->height, 0, image);
 #endif
@@ -529,8 +519,6 @@ vbox_vmm_load_cursor_image(ScrnInfoPtr pScrn, VBOXPtr pVBox,
 static void
 vbox_set_cursor_colors(ScrnInfoPtr pScrn, int bg, int fg)
 {
-    TRACE_ENTRY();
-
     NOREF(pScrn);
     NOREF(bg);
     NOREF(fg);
@@ -553,8 +541,6 @@ vbox_hide_cursor(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY();
-
     vbox_vmm_hide_cursor(pScrn, pVBox);
 }
 
@@ -563,8 +549,6 @@ vbox_show_cursor(ScrnInfoPtr pScrn)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
 
-    TRACE_ENTRY();
-
     vbox_vmm_show_cursor(pScrn, pVBox);
 }
 
@@ -572,8 +556,6 @@ static void
 vbox_load_cursor_image(ScrnInfoPtr pScrn, unsigned char *image)
 {
     VBOXPtr pVBox = pScrn->driverPrivate;
-
-    TRACE_ENTRY();
 
     vbox_vmm_load_cursor_image(pScrn, pVBox, image);
 }
@@ -603,7 +585,6 @@ vbox_realize_cursor(xf86CursorInfoPtr infoPtr, CursorPtr pCurs)
     int rc, scrnIndex = infoPtr->pScrn->scrnIndex;
     VMMDevReqMousePointer *reqp;
 
-    TRACE_ENTRY();
     pVBox = infoPtr->pScrn->driverPrivate;
     bitsp = pCurs->bits;
     w = bitsp->width;
@@ -727,7 +708,6 @@ vbox_use_hw_cursor_argb(ScreenPtr pScreen, CursorPtr pCurs)
     ScrnInfoPtr pScrn = xf86Screens[pScreen->myNum];
     Bool rc = TRUE;
 
-    TRACE_ENTRY();
     if (!vbox_host_uses_hwcursor(pScrn))
         rc = FALSE;
     if (   rc
