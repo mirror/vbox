@@ -371,8 +371,9 @@ def teleport(ctx,session,console,args):
         passwd = ""
 
     port = int(port)
+    maxDowntime = 250
     print "Teleporting to %s:%d..." %(host,port)
-    progress = console.teleport(host, port, passwd)
+    progress = console.teleport(host, port, passwd, maxDowntime)
     progressBar(ctx, progress, 100)
     completed = progress.completed
     rc = int(progress.resultCode)
