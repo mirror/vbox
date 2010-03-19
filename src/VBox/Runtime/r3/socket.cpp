@@ -574,7 +574,7 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
-    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+    //AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
     /*
      * Do the job.
