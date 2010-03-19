@@ -1846,7 +1846,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
         }
         else
         {
-#ifndef VBOX_WITH_IO_READ_CACHE
+#ifdef VBOX_WITH_IO_READ_CACHE
             /* No entry found for this offset. Create a new entry and fetch the data to the cache. */
             PPDMACFILECACHEENTRY pEntryNew = pdmacFileEpCacheEntryCreate(pEndpoint,
                                                                          pEndpointCache,
