@@ -1846,6 +1846,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
         }
         else
         {
+#ifndef VBOX_WITH_IO_READ_CACHE
             /* No entry found for this offset. Create a new entry and fetch the data to the cache. */
             PPDMACFILECACHEENTRY pEntryNew = pdmacFileEpCacheEntryCreate(pEndpoint,
                                                                          pEndpointCache,
@@ -1871,12 +1872,13 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
             }
             else
+#endif
             {
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
                  */
-                LogFlow(("Couldn't evict %u bytes from the cache. Remaining request will be passed through\n", cbToRead));
+                //LogFlow(("Couldn't evict %u bytes from the cache. Remaining request will be passed through\n", cbToRead));
 
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToRead,
