@@ -559,7 +559,6 @@ void UIMachineWindowNormal::saveWindowSettings()
 {
     CMachine machine = session().GetMachine();
 
-    printf("bla\n");
     /* Save extra-data settings: */
     {
         QString strWindowPosition = QString("%1,%2,%3,%4")
@@ -602,7 +601,8 @@ bool UIMachineWindowNormal::isMaximizedChecked()
     /* On the Mac the WindowStateChange signal doesn't seems to be delivered
      * when the user get out of the maximized state. So check this ourself. */
     return ::darwinIsWindowMaximized(this);
-#endif /* !Q_WS_MAC */
+#else /* Q_WS_MAC */
     return isMaximized();
+#endif /* !Q_WS_MAC */
 }
 
