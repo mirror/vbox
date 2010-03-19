@@ -50,6 +50,7 @@
 #include <iprt/ldr.h>
 #include <iprt/pipe.h>
 #include <iprt/string.h>
+#include <iprt/socket.h>
 
 
 /*
@@ -185,7 +186,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                const char *pszPassword, PRTPROCESS phProcess)
 {
-#if 1 /* needs more work... dinner time. */
     int rc;
 
     /*
@@ -219,6 +219,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 #endif
     PCRTHANDLE  paHandles[3] = { phStdIn, phStdOut, phStdErr };
     HANDLE     *aphStds[3]   = { &StartupInfo.hStdInput, &StartupInfo.hStdOutput, &StartupInfo.hStdError };
+    DWORD       afInhStds[3] = { 0xffffffff, 0xffffffff, 0xffffffff };
     for (int i = 0; i < 3; i++)
     {
         if (paHandles[i])
@@ -238,24 +239,50 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                 : INVALID_HANDLE_VALUE;
                     break;
 
-                //case RTHANDLETYPE_SOCKET:
-                //    *aphStds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
-                //                ? (HANDLE)RTTcpToNative(paHandles[i]->u.hSocket)
-                //                : INVALID_HANDLE_VALUE;
-                //    break;
+                case RTHANDLETYPE_SOCKET:
+                    *aphStds[i] = paHandles[i]->u.hSocket != NIL_RTSOCKET
+                                ? (HANDLE)RTSocketToNative(paHandles[i]->u.hSocket)
+                                : INVALID_HANDLE_VALUE;
+                    break;
 
                 default:
                     AssertMsgFailedReturn(("%d: %d\n", i, paHandles[i]->enmType), VERR_INVALID_PARAMETER);
             }
+
+            /* Get the inheritability of the handle. */
+            if (*aphStds[i] != INVALID_HANDLE_VALUE)
+            {
+                if (!GetHandleInformation(*aphStds[i], &afInhStds[i]))
+                {
+                    rc = RTErrConvertFromWin32(GetLastError());
+                    AssertMsgFailedReturn(("%Rrc %p\n", rc, *aphStds[i]), rc);
+                }
+            }
         }
     }
+
+    /*
+     * Set the inheritability any handles we're handing the child.
+     */
+    rc = VINF_SUCCESS;
+    for (int i = 0; i < 3; i++)
+        if (    (afInhStds[i] != 0xffffffff)
+            &&  !(afInhStds[i] & HANDLE_FLAG_INHERIT))
+        {
+            if (!SetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, HANDLE_FLAG_INHERIT))
+            {
+                rc = RTErrConvertFromWin32(GetLastError());
+                AssertMsgFailedBreak(("%Rrc %p\n", rc, *aphStds[i]));
+            }
+        }
 
     /*
      * Create the environment block, command line and convert the executable
      * name.
      */
     PRTUTF16 pwszzBlock;
-    rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
+    if (RT_SUCCESS(rc))
+        rc = RTEnvQueryUtf16Block(hEnv, &pwszzBlock);
     if (RT_SUCCESS(rc))
     {
         PRTUTF16 pwszCmdLine;
@@ -288,16 +315,16 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     HANDLE hToken = INVALID_HANDLE_VALUE;
                     PRTUTF16 pwszUser;
 
-                    rc = RTStrToUtf16(pszAsUser, &pwszUser);                    
+                    rc = RTStrToUtf16(pszAsUser, &pwszUser);
                     if (RT_SUCCESS(rc))
                     {
                         PRTUTF16 pwszPassword;
-                        rc = RTStrToUtf16(pszPassword, &pwszPassword);   
+                        rc = RTStrToUtf16(pszPassword, &pwszPassword);
                         if (RT_SUCCESS(rc))
                         {
-                            /* 
+                            /*
                              * User needs to be specified in UPN format because we
-                             * don't fill a domain name. 
+                             * don't fill a domain name.
                              */
 
                             /*
@@ -336,10 +363,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                             if (!fRc)
                             {
                                 DWORD dwErr = GetLastError();
-    
+
                                 /*
                                  * If we don't hold enough priviledges to spawn a new
-                                 * process with different credentials we have to use 
+                                 * process with different credentials we have to use
                                  * CreateProcessWithLogonW here.
                                  *
                                  * Note that NT4 does *not* support this API, thus we have
@@ -401,10 +428,16 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
         RTEnvFreeUtf16Block(pwszzBlock);
     }
 
+    /* Undo any handle inherit changes. */
+    for (int i = 0; i < 3; i++)
+        if (    (afInhStds[i] != 0xffffffff)
+            &&  !(afInhStds[i] & HANDLE_FLAG_INHERIT))
+        {
+            if (!SetHandleInformation(*aphStds[i], HANDLE_FLAG_INHERIT, 0))
+                AssertMsgFailed(("%Rrc %p\n", RTErrConvertFromWin32(GetLastError()), *aphStds[i]));
+        }
+
     return rc;
-#else
-    return VERR_NOT_IMPLEMENTED;
-#endif
 }
 
 
