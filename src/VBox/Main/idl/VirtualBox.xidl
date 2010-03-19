@@ -3285,17 +3285,17 @@
     <desc>
         Represents a platform-independent appliance in OVF format. An instance of this is returned
         by <link to="IVirtualBox::createAppliance" />, which can then be used to import and export
-        appliances with VirtualBox.
+        virtual machines within an appliance with VirtualBox.
 
         The OVF standard suggests two different physical file formats:
 
         <ol>
-            <li>If the OVF is distributed as a set of files, then @a file must be a fully qualified
-                path name to an existing OVF descriptor file with an <tt>.ovf</tt> file extension. If
-                this descriptor file references other files, as OVF appliances distributed as a set of
-                files most likely do, those files must be in the same directory as the descriptor file.</li>
+            <li>If the appliance is distributed as a set of files, there must be at least one XML descriptor
+                file that conforms to the OVF standard and carries an <tt>.ovf</tt> file extension. If
+                this descriptor file references other files such as disk images, as OVF appliances typically
+                do, those additional files must be in the same directory as the descriptor file.</li>
 
-            <li>If the OVF is distributed as a single file, it must be in TAR format and have the
+              <li>If the appliance is distributed as a single file, it must be in TAR format and have the
                 <tt>.ova</tt> file extension. This TAR file must then contain at least the OVF descriptor
                 files and optionally other files.
 
@@ -3369,7 +3369,7 @@
       <desc>
         Array of virtual disk definitions. One such description exists for each
         disk definition in the OVF; each string array item represents one such piece of
-        disk information, with the information fields separated by tab (\\t) characters.
+        disk information, with the information fields separated by tab (\t) characters.
 
         The caller should be prepared for additional fields being appended to
         this string in future versions of VirtualBox and therefore check for
