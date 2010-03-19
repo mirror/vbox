@@ -3380,7 +3380,8 @@ int pgmPoolTrackUpdateGCPhys(PVM pVM, RTGCPHYS GCPhysPage, PPGMPAGE pPhysPage, b
          * is defined, zero pages won't normally be mapped. Some kind of solution
          * will be needed for this problem of course, but it will have to wait...
          */
-        if (PGM_PAGE_IS_ZERO(pPhysPage))
+        if (    PGM_PAGE_IS_ZERO(pPhysPage)
+            ||  PGM_PAGE_IS_BALLOONED(pPhysPage))
             rc = VINF_PGM_GCPHYS_ALIASED;
         else
         {
