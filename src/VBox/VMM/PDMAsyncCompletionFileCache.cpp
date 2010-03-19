@@ -1872,18 +1872,38 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                 pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
             }
             else
-#endif
             {
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
                  */
-                //LogFlow(("Couldn't evict %u bytes from the cache. Remaining request will be passed through\n", cbToRead));
+                LogFlow(("Couldn't evict %u bytes from the cache. Remaining request will be passed through\n", cbToRead));
 
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToRead,
                                                    PDMACTASKFILETRANSFER_READ);
             }
+#else
+            /* Clip read size if neccessary. */
+            PPDMACFILECACHEENTRY pEntryAbove;
+            pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off,
+                                                         &pEntryAbove, NULL);
+
+            if (pEntryAbove)
+            {
+                if (off + (RTFOFF)cbRead > pEntryAbove->Core.Key)
+                    cbToRead = pEntryAbove->Core.Key - off;
+                else
+                    cbToRead = cbRead;
+
+                pdmacFileEpCacheEntryRelease(pEntryAbove);
+            }
+
+            cbRead -= cbToRead;
+            pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
+                                                &IoMemCtx, off, cbToRead,
+                                                PDMACTASKFILETRANSFER_READ);
+#endif
         }
         off += cbToRead;
     }
