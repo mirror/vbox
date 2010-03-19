@@ -1898,6 +1898,8 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
                 pdmacFileEpCacheEntryRelease(pEntryAbove);
             }
+            else
+                cbToRead = cbRead;
 
             cbRead -= cbToRead;
             pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
