@@ -77,8 +77,8 @@ typedef struct RTPIPEINTERNAL
     bool                fBrokenPipe;
     /** Set if we've promised that the handle is writable. */
     bool                fPromisedWritable;
-    /** The number of users of the current mode. */
-    uint32_t            cModeUsers;
+    /** Usage counter. */
+    uint32_t            cUsers;
     /** The overlapped I/O structure we use. */
     OVERLAPPED          Overlapped;
     /** Bounce buffer for writes. */
@@ -90,8 +90,6 @@ typedef struct RTPIPEINTERNAL
     /** The handle of the poll set currently polling on this pipe.
      *  We can only have one poller at the time (lazy bird). */
     RTPOLLSET           hPollSet;
-    /** The number of references to the handle in hPollSet. */
-    uint32_t            cPolls;
     /** Critical section protecting the above members.
      * (Taking the lazy/simple approach.) */
     RTCRITSECT          CritSect;
@@ -288,8 +286,8 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                             //pThisW->fBrokenPipe     = false;
                             //pThisW->fPromisedWritable= false;
                             //pThisR->fPromisedWritable= false;
-                            //pThisR->cModeUsers      = 0;
-                            //pThisW->cModeUsers      = 0;
+                            //pThisR->cUsers          = 0;
+                            //pThisW->cUsers          = 0;
                             //pThisR->pbBounceBuf     = NULL;
                             //pThisW->pbBounceBuf     = NULL;
                             //pThisR->cbBounceBufUsed = 0;
@@ -298,8 +296,6 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
                             //pThisW->cbBounceBufAlloc= 0;
                             pThisR->hPollSet        = NIL_RTPOLLSET;
                             pThisW->hPollSet        = NIL_RTPOLLSET;
-                            //pThisW->cPolls          = 0;
-                            //pThisR->cPolls          = 0;
 
                             *phPipeRead  = pThisR;
                             *phPipeWrite = pThisW;
@@ -409,7 +405,7 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
      */
     AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, ~RTPIPE_MAGIC, RTPIPE_MAGIC), VERR_INVALID_HANDLE);
     RTCritSectEnter(&pThis->CritSect);
-    Assert(pThis->cModeUsers == 0);
+    Assert(pThis->cUsers == 0);
 
     if (!pThis->fRead && pThis->fIOPending)
         rtPipeWriteCheckCompletion(pThis);
@@ -455,9 +451,9 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
     if (RT_SUCCESS(rc))
     {
         /* No concurrent readers, sorry. */
-        if (pThis->cModeUsers == 0)
+        if (pThis->cUsers == 0)
         {
-            pThis->cModeUsers++;
+            pThis->cUsers++;
 
             /*
              * Kick of a an overlapped read.  It should return immedately if
@@ -502,7 +498,7 @@ RTDECL(int) RTPipeRead(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_t *pcbRe
             if (rc == VERR_BROKEN_PIPE)
                 pThis->fBrokenPipe = true;
 
-            pThis->cModeUsers--;
+            pThis->cUsers--;
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -524,9 +520,9 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_
     if (RT_SUCCESS(rc))
     {
         /* No concurrent readers, sorry. */
-        if (pThis->cModeUsers == 0)
+        if (pThis->cUsers == 0)
         {
-            pThis->cModeUsers++;
+            pThis->cUsers++;
 
             size_t cbTotalRead = 0;
             while (cbToRead > 0)
@@ -579,7 +575,7 @@ RTDECL(int) RTPipeReadBlocking(RTPIPE hPipe, void *pvBuf, size_t cbToRead, size_
                     rc = VINF_SUCCESS;
             }
 
-            pThis->cModeUsers--;
+            pThis->cUsers--;
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -602,9 +598,9 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
     if (RT_SUCCESS(rc))
     {
         /* No concurrent readers, sorry. */
-        if (pThis->cModeUsers == 0)
+        if (pThis->cUsers == 0)
         {
-            pThis->cModeUsers++;
+            pThis->cUsers++;
 
             /* If I/O is pending, check if it has completed. */
             if (pThis->fIOPending)
@@ -686,7 +682,7 @@ RTDECL(int) RTPipeWrite(RTPIPE hPipe, const void *pvBuf, size_t cbToWrite, size_
             if (rc == VERR_BROKEN_PIPE)
                 pThis->fBrokenPipe = true;
 
-            pThis->cModeUsers--;
+            pThis->cUsers--;
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -709,9 +705,9 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
     if (RT_SUCCESS(rc))
     {
         /* No concurrent readers, sorry. */
-        if (pThis->cModeUsers == 0)
+        if (pThis->cUsers == 0)
         {
-            pThis->cModeUsers++;
+            pThis->cUsers++;
 
             /*
              * If I/O is pending, wait for it to complete.
@@ -735,7 +731,7 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
 
                 /*
                  * Try write everything.
-                 * No bounce buffering, cModeUsers protects us.
+                 * No bounce buffering, cUsers protects us.
                  */
                 size_t cbTotalWritten = 0;
                 while (cbToWrite > 0)
@@ -786,7 +782,7 @@ RTDECL(int) RTPipeWriteBlocking(RTPIPE hPipe, const void *pvBuf, size_t cbToWrit
             if (rc == VERR_BROKEN_PIPE)
                 pThis->fBrokenPipe = true;
 
-            pThis->cModeUsers--;
+            pThis->cUsers--;
         }
         else
             rc = VERR_WRONG_ORDER;
@@ -885,7 +881,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                     rc = VERR_TIMEOUT;
                     break;
                 }
-                AssertBreakStmt(pThis->cModeUsers == 0, rc = VERR_INTERNAL_ERROR_5);
+                AssertBreakStmt(pThis->cUsers == 0, rc = VERR_INTERNAL_ERROR_5);
                 rc = ResetEvent(pThis->Overlapped.hEvent); Assert(rc == TRUE);
                 DWORD cbRead = 0;
                 if (ReadFile(pThis->hPipe, pThis->abBuf, 0, &cbRead, &pThis->Overlapped))
@@ -896,7 +892,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
                 }
                 else if (GetLastError() == ERROR_IO_PENDING)
                 {
-                    pThis->cModeUsers++;
+                    pThis->cUsers++;
                     pThis->fIOPending = true;
                     pThis->fZeroByteRead = true;
                     hWait = pThis->Overlapped.hEvent;
@@ -996,7 +992,7 @@ RTDECL(int) RTPipeSelectOne(RTPIPE hPipe, RTMSINTERVAL cMillies)
             RTCritSectEnter(&pThis->CritSect);
             if (pThis->fZeroByteRead)
             {
-                pThis->cModeUsers--;
+                pThis->cUsers--;
                 pThis->fIOPending = false;
                 if (rc != VINF_SUCCESS)
                     CancelIo(pThis->hPipe);
@@ -1143,10 +1139,8 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
 
     /* Check that this is the only current use of this pipe. */
     uint32_t fRetEvents;
-    if (   (   pThis->cPolls == 0
-            && pThis->cModeUsers == 0)
-        || pThis->hPollSet == hPollSet
-       )
+    if (   pThis->cUsers   == 0
+        || pThis->hPollSet == hPollSet)
     {
         /* Check what the current events are. */
         fRetEvents = rtPipePollCheck(pThis, fEvents);
@@ -1182,8 +1176,7 @@ uint32_t rtPipePollStart(RTPIPE hPipe, RTPOLLSET hPollSet, uint32_t fEvents, boo
                mark the pipe used. */
             if (!fRetEvents)
             {
-                pThis->cPolls++;
-                pThis->cModeUsers++;
+                pThis->cUsers++;
                 pThis->hPollSet = hPollSet;
             }
         }
@@ -1223,8 +1216,7 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry)
     int rc = RTCritSectEnter(&pThis->CritSect);
     AssertRCReturn(rc, 0);
 
-    Assert(pThis->cPolls > 0);
-    Assert(pThis->cModeUsers > 0);
+    Assert(pThis->cUsers > 0);
 
 
     /* Cancel the zero byte read. */
@@ -1245,10 +1237,9 @@ uint32_t rtPipePollDone(RTPIPE hPipe, uint32_t fEvents, bool fFinalEntry)
     fRetEvents |= rtPipePollCheck(pThis, fEvents);
 
     /* update counters. */
-    pThis->cPolls--;
-    if (!pThis->cPolls)
+    pThis->cUsers--;
+    if (!pThis->cUsers)
         pThis->hPollSet = NIL_RTPOLLSET;
-    pThis->cModeUsers--;
 
     RTCritSectLeave(&pThis->CritSect);
     return fRetEvents;
