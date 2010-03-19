@@ -1166,9 +1166,11 @@ void UIActionsPool::createMenus()
         delete m_actionsPool[UIActionIndex_Menu_SharedFolders];
     m_actionsPool[UIActionIndex_Menu_SharedFolders] = new MenuSharedFoldersAction(this);
 
+#ifdef VBOX_WITH_DEBUGGER_GUI
     if (m_actionsPool[UIActionIndex_Menu_Debug])
         delete m_actionsPool[UIActionIndex_Menu_Debug];
     m_actionsPool[UIActionIndex_Menu_Debug] = new MenuDebugAction(this);
+#endif /* VBOX_WITH_DEBUGGER_GUI */
 
     if (m_actionsPool[UIActionIndex_Menu_Help])
         delete m_actionsPool[UIActionIndex_Menu_Help];
