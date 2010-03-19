@@ -1702,7 +1702,7 @@ int handleModifyVM(HandlerArg *a)
             {
                 if (!strcmp(ValueUnion.psz, "buffered"))
                     CHECK_ERROR(machine, COMSETTER(IoBackend)(IoBackendType_Buffered));
-                else if (!strcmp(ValueUnion.psz, "async"))
+                else if (!strcmp(ValueUnion.psz, "unbuffered"))
                     CHECK_ERROR(machine, COMSETTER(IoBackend)(IoBackendType_Unbuffered));
                 else
                 {
