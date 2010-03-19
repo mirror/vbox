@@ -549,6 +549,13 @@ def getFirmwareType(type):
         return "Unknown"
 
 
+def asEnumElem(ctx,enum,elem):
+    all = ctx['ifaces'].all_values(enum)
+    for e in all.keys():
+        if elem == all[e]:
+            return e
+    return "<unknown>"
+
 def infoCmd(ctx,args):
     if (len(args) < 2):
         print "usage: info [vmname|uuid]"
@@ -588,6 +595,8 @@ def infoCmd(ctx,args):
     print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
     print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
+    print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
+    print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
     print "  VRDP server [VRDPServer.enabled]: %s" %(asState(mach.VRDPServer.enabled))
 
