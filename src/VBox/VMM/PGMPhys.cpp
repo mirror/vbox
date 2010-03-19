@@ -823,6 +823,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
                 AssertLogRelRC(rc);
                 return rc;
             }
+            Assert(PGM_PAGE_IS_ZERO(pPage));
+            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_BALLOONED);
         }
 
         if (cPendingPages)
@@ -1262,6 +1264,7 @@ int pgmR3PhysRamPreAllocate(PVM pVM)
                         break;
                     }
 
+                    case PGM_PAGE_STATE_BALLOONED:
                     case PGM_PAGE_STATE_ALLOCATED:
                     case PGM_PAGE_STATE_WRITE_MONITORED:
                     case PGM_PAGE_STATE_SHARED:
@@ -1335,7 +1338,8 @@ int pgmR3PhysRamReset(PVM pVM)
                             ASMMemZeroPage(pvPage);
                         }
                         else
-                        if (!PGM_PAGE_IS_ZERO(pPage))
+                        if (    !PGM_PAGE_IS_ZERO(pPage)
+                            &&  !PGM_PAGE_IS_BALLOONED(pPage))
                         {
                             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                             AssertLogRelRCReturn(rc, rc);
@@ -1369,10 +1373,18 @@ int pgmR3PhysRamReset(PVM pVM)
                         {
                             case PGM_PAGE_STATE_ZERO:
                                 break;
+
+                            case PGM_PAGE_STATE_BALLOONED:
+                                /* Turn into a zero page; the balloon status is lost when the VM reboots. */
+                                PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
+                                break;
+
                             case PGM_PAGE_STATE_SHARED:
                             case PGM_PAGE_STATE_WRITE_MONITORED:
                                 rc = pgmPhysPageMakeWritable(pVM, pPage, pRam->GCPhys + ((RTGCPHYS)iPage << PAGE_SHIFT));
                                 AssertLogRelRCReturn(rc, rc);
+                                /* no break */
+
                             case PGM_PAGE_STATE_ALLOCATED:
                             {
                                 void *pvPage;
@@ -2780,7 +2792,8 @@ int pgmR3PhysRomReset(PVM pVM)
                 AssertRCReturn(rc, rc);
 
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
-                    if (PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO)
+                    if (    !PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow)
+                        &&  !PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow))
                     {
                         Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) == PGM_PAGE_STATE_ALLOCATED);
                         rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, &pRom->aPages[iPage].Shadow, pRom->GCPhys + (iPage << PAGE_SHIFT));
@@ -2799,7 +2812,7 @@ int pgmR3PhysRomReset(PVM pVM)
                 /* clear all the shadow pages. */
                 for (uint32_t iPage = 0; iPage < cPages; iPage++)
                 {
-                    Assert(PGM_PAGE_GET_STATE(&pRom->aPages[iPage].Shadow) != PGM_PAGE_STATE_ZERO);
+                    Assert(!PGM_PAGE_IS_ZERO(&pRom->aPages[iPage].Shadow) && !PGM_PAGE_IS_BALLOONED(&pRom->aPages[iPage].Shadow));
                     void *pvDstPage;
                     const RTGCPHYS GCPhys = pRom->GCPhys + (iPage << PAGE_SHIFT);
                     rc = pgmPhysPageMakeWritableAndMap(pVM, &pRom->aPages[iPage].Shadow, GCPhys, &pvDstPage);
@@ -3479,7 +3492,8 @@ static int pgmPhysFreePage(PVM pVM, PGMMFREEPAGESREQ pReq, uint32_t *pcPendingPa
         return VMSetError(pVM, VERR_PGM_PHYS_NOT_RAM, RT_SRC_POS, "GCPhys=%RGp type=%d", GCPhys, PGM_PAGE_GET_TYPE(pPage));
     }
 
-    if (PGM_PAGE_GET_STATE(pPage) == PGM_PAGE_STATE_ZERO)
+    if (    PGM_PAGE_IS_ZERO(pPage)
+        ||  PGM_PAGE_IS_BALLOONED(pPage))
         return VINF_SUCCESS;
 
     const uint32_t idPage = PGM_PAGE_GET_PAGEID(pPage);
@@ -3619,6 +3633,9 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                 switch (PGM_PAGE_GET_STATE(pPage))
                 {
                     case PGM_PAGE_STATE_ALLOCATED:
+                        break;
+                    case PGM_PAGE_STATE_BALLOONED:
+                        AssertFailed();
                         break;
                     case PGM_PAGE_STATE_ZERO:
                     case PGM_PAGE_STATE_SHARED:

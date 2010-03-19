@@ -4267,7 +4267,8 @@ static DECLCALLBACK(int) pgmR3CmdPhysToFile(PCDBGCCMD pCmd, PDBGCCMDHLP pCmdHlp,
         PCPGMPAGE pPage = &pRam->aPages[0];
         while (GCPhys < pRam->GCPhysLast && RT_SUCCESS(rc))
         {
-            if (PGM_PAGE_IS_ZERO(pPage))
+            if (    PGM_PAGE_IS_ZERO(pPage)
+                ||  PGM_PAGE_IS_BALLOONED(pPage))
             {
                 if (fIncZeroPgs)
                 {

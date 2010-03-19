@@ -606,6 +606,7 @@ VMMR3DECL(int) PGMR3DbgScanPhysical(PVM pVM, RTGCPHYS GCPhys, RTGCPHYS cbRange, 
                 PPGMPAGE pPage = &pRam->aPages[iPage];
                 if (    (   !PGM_PAGE_IS_ZERO(pPage)
                          || fAllZero)
+                    &&  !PGM_PAGE_IS_BALLOONED(pPage)
                     &&  !PGM_PAGE_IS_MMIO(pPage))
                 {
                     void const     *pvPage;
@@ -746,6 +747,7 @@ VMMR3DECL(int) PGMR3DbgScanVirtual(PVM pVM, PVMCPU pVCpu, RTGCPTR GCPtr, RTGCPTR
             if (    pPage
                 &&  (   !PGM_PAGE_IS_ZERO(pPage)
                      || fAllZero)
+                &&  !PGM_PAGE_IS_BALLOONED(pPage)
                 &&  !PGM_PAGE_IS_MMIO(pPage))
             {
                 void const *pvPage;
