@@ -378,13 +378,13 @@ int handleModifyVM(HandlerArg *a)
 
             case MODIFYVM_PAE:
             {
-                CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_PAE, ValueUnion.f));
+                CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_PAE, ValueUnion.f));
                 break;
             }
 
             case MODIFYVM_SYNTHCPU:
             {
-                CHECK_ERROR(machine, SetCpuProperty(CpuPropertyType_Synthetic, ValueUnion.f));
+                CHECK_ERROR(machine, SetCPUProperty(CPUPropertyType_Synthetic, ValueUnion.f));
                 break;
             }
 
@@ -414,19 +414,19 @@ int handleModifyVM(HandlerArg *a)
                                            GetOptState.pDef->pszLong);
                     aValue[i] = ValueUnion.u32;
                 }
-                CHECK_ERROR(machine, SetCpuIdLeaf(id, aValue[0], aValue[1], aValue[2], aValue[3]));
+                CHECK_ERROR(machine, SetCPUIDLeaf(id, aValue[0], aValue[1], aValue[2], aValue[3]));
                 break;
             }
 
             case MODIFYVM_DELCPUID:
             {
-                CHECK_ERROR(machine, RemoveCpuIdLeaf(ValueUnion.u32));
+                CHECK_ERROR(machine, RemoveCPUIDLeaf(ValueUnion.u32));
                 break;
             }
 
             case MODIFYVM_DELALLCPUID:
             {
-                CHECK_ERROR(machine, RemoveAllCpuIdLeafs());
+                CHECK_ERROR(machine, RemoveAllCPUIDLeaves());
                 break;
             }
 

@@ -939,7 +939,7 @@ STDMETHODIMP Host::GetProcessorFeature(ProcessorFeature_T aFeature, BOOL *aSuppo
  * @param   aValECX             Where to return ECX.
  * @param   aValEDX             Where to return EDX.
  */
-STDMETHODIMP Host::GetProcessorCpuIdLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
+STDMETHODIMP Host::GetProcessorCPUIDLeaf(ULONG aCpuId, ULONG aLeaf, ULONG aSubLeaf,
                                          ULONG *aValEAX, ULONG *aValEBX, ULONG *aValECX, ULONG *aValEDX)
 {
     CheckComArgOutPointerValid(aValEAX);

@@ -806,12 +806,12 @@
   </enum>
 
   <enum
-    name="CpuPropertyType"
-    uuid="af7bb668-eeb1-4404-b77f-a114b30c92d6"
+    name="CPUPropertyType"
+    uuid="24d356a6-2f45-4abd-b977-1cbe9c4701f5"
   >
     <desc>
       Virtual CPU property type. This enumeration represents possible values of the
-      IMachine get- and setCpuProperty methods.
+      IMachine get- and setCPUProperty methods.
     </desc>
     <const name="Null"                  value="0">
       <desc>Null value (never used by the API).</desc>
@@ -4266,7 +4266,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="8d8f6fbb-54c1-4604-b68e-17619d458611"
+     uuid="254f7fd0-a99b-4ea9-992f-794624e67882"
      wsmap="managed"
      >
     <desc>
@@ -5370,7 +5370,7 @@
       </param>
     </method>
 
-    <method name="getCpuProperty" const="yes">
+    <method name="getCPUProperty" const="yes">
       <desc>
         Returns the virtual CPU boolean value of the specified property.
 
@@ -5379,7 +5379,7 @@
         </result>
 
       </desc>
-      <param name="property" type="CpuPropertyType" dir="in">
+      <param name="property" type="CPUPropertyType" dir="in">
         <desc>
           Property type to query.
         </desc>
@@ -5391,7 +5391,7 @@
       </param>
     </method>
 
-    <method name="setCpuProperty">
+    <method name="setCPUProperty">
       <desc>
         Sets the virtual CPU boolean value of the specified property.
 
@@ -5400,7 +5400,7 @@
         </result>
 
       </desc>
-      <param name="property" type="CpuPropertyType" dir="in">
+      <param name="property" type="CPUPropertyType" dir="in">
         <desc>
           Property type to query.
         </desc>
@@ -5412,7 +5412,7 @@
       </param>
     </method>
 
-    <method name="getCpuIdLeaf" const="yes">
+    <method name="getCPUIDLeaf" const="yes">
       <desc>
         Returns the virtual CPU cpuid information for the specified leaf.
 
@@ -5429,32 +5429,32 @@
       </desc>
       <param name="id" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf index.
+          CPUID leaf index.
         </desc>
       </param>
       <param name="valEax" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register eax.
+          CPUID leaf value for register eax.
         </desc>
       </param>
       <param name="valEbx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register ebx.
+          CPUID leaf value for register ebx.
         </desc>
       </param>
       <param name="valEcx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register ecx.
+          CPUID leaf value for register ecx.
         </desc>
       </param>
       <param name="valEdx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register edx.
+          CPUID leaf value for register edx.
         </desc>
       </param>
     </method>
 
-    <method name="setCpuIdLeaf" const="yes">
+    <method name="setCPUIDLeaf" const="yes">
       <desc>
         Sets the virtual CPU cpuid information for the specified leaf. Note that these values
         are not passed unmodified. VirtualBox clears features that it doesn't support.
@@ -5475,32 +5475,32 @@
       </desc>
       <param name="id" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf index.
+          CPUID leaf index.
         </desc>
       </param>
       <param name="valEax" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf value for register eax.
+          CPUID leaf value for register eax.
         </desc>
       </param>
       <param name="valEbx" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf value for register ebx.
+          CPUID leaf value for register ebx.
         </desc>
       </param>
       <param name="valEcx" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf value for register ecx.
+          CPUID leaf value for register ecx.
         </desc>
       </param>
       <param name="valEdx" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf value for register edx.
+          CPUID leaf value for register edx.
         </desc>
       </param>
     </method>
 
-    <method name="removeCpuIdLeaf" const="yes">
+    <method name="removeCPUIDLeaf" const="yes">
       <desc>
         Removes the virtual CPU cpuid leaf for the specified index
 
@@ -5511,14 +5511,14 @@
       </desc>
       <param name="id" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf index.
+          CPUID leaf index.
         </desc>
       </param>
     </method>
 
-    <method name="removeAllCpuIdLeafs" const="yes">
+    <method name="removeAllCPUIDLeaves" const="yes">
       <desc>
-        Removes all the virtual CPU cpuid leafs
+        Removes all the virtual CPU cpuid leaves
       </desc>
     </method>
 
@@ -6091,7 +6091,7 @@
       </param>
     </method>
 
-    <method name="HotPlugCPU">
+    <method name="hotPlugCPU">
       <desc>
         Plugs a CPU into the machine.
       </desc>
@@ -6102,7 +6102,7 @@
       </param>
     </method>
 
-    <method name="HotUnplugCPU">
+    <method name="hotUnplugCPU">
       <desc>
         Removes a CPU from the machine.
       </desc>
@@ -6113,7 +6113,7 @@
       </param>
     </method>
 
-    <method name="GetCPUStatus">
+    <method name="getCPUStatus">
       <desc>
         Plugs a CPU into the machine.
       </desc>
@@ -7683,7 +7683,7 @@
       </param>
     </method>
 
-    <method name="getProcessorCpuIdLeaf">
+    <method name="getProcessorCPUIDLeaf">
       <desc>
         Returns the CPU cpuid information for the specified leaf.
       </desc>
@@ -7698,34 +7698,34 @@
       </param>
       <param name="leaf" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf index (eax).
+          CPUID leaf index (eax).
         </desc>
       </param>
       <param name="subLeaf" type="unsigned long" dir="in">
         <desc>
-          Cpuid leaf sub index (ecx).  This currently only applies to cache
+          CPUID leaf sub index (ecx).  This currently only applies to cache
           information on Intel CPUs.  Use 0 if retriving values for
-          <link to="IMachine::setCpuIdLeaf"/>.
+          <link to="IMachine::setCPUIDLeaf"/>.
         </desc>
       </param>
       <param name="valEax" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register eax.
+          CPUID leaf value for register eax.
         </desc>
       </param>
       <param name="valEbx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register ebx.
+          CPUID leaf value for register ebx.
         </desc>
       </param>
       <param name="valEcx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register ecx.
+          CPUID leaf value for register ecx.
         </desc>
       </param>
       <param name="valEdx" type="unsigned long" dir="out">
         <desc>
-          Cpuid leaf value for register edx.
+          CPUID leaf value for register edx.
         </desc>
       </param>
     </method>
@@ -13371,7 +13371,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
   <interface
     name="IStorageController" extends="$unknown"
-    uuid="6bf8335b-d14a-44a5-9b45-ddc49ce7d5b2"
+    uuid="ce37b7a9-d895-4ee8-b9f8-9579bfc85813"
     wsmap="managed"
   >
     <desc>
@@ -13454,7 +13454,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
 
-    <method name="GetIDEEmulationPort">
+    <method name="getIDEEmulationPort">
       <desc>
         Gets the corresponding port number which is emulated as an IDE device.
         Works only with SATA controllers.
@@ -13471,7 +13471,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <param name="portNumber" type="long" dir="return"/>
     </method>
 
-    <method name="SetIDEEmulationPort">
+    <method name="setIDEEmulationPort">
       <desc>
         Sets the port number which is emulated as an IDE device.
         Works only with SATA controllers.

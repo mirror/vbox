@@ -185,7 +185,7 @@ void VBoxVMSettingsSystem::getFrom (const CMachine &aMachine)
     bool fPAESupported = vboxGlobal().virtualBox().GetHost()
                          .GetProcessorFeature (KProcessorFeature_PAE);
     mCbPae->setEnabled (fPAESupported);
-    mCbPae->setChecked (aMachine.GetCpuProperty(KCpuPropertyType_PAE));
+    mCbPae->setChecked (aMachine.GetCPUProperty(KCPUPropertyType_PAE));
 
     /* VT-x/AMD-V */
     mCbVirt->setEnabled (fVTxAMDVSupported);
@@ -245,7 +245,7 @@ void VBoxVMSettingsSystem::putBackTo()
     mMachine.SetCPUCount (mSlCPU->value());
 
     /* PAE/NX */
-    mMachine.SetCpuProperty(KCpuPropertyType_PAE, mCbPae->isChecked());
+    mMachine.SetCPUProperty(KCPUPropertyType_PAE, mCbPae->isChecked());
 
     /* VT-x/AMD-V */
     mMachine.SetHWVirtExProperty(KHWVirtExPropertyType_Enabled,

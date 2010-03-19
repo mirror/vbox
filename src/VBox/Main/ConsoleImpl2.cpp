@@ -329,7 +329,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     ComPtr<IGuestOSType> guestOSType;
     hrc = virtualBox->GetGuestOSType(osTypeId, guestOSType.asOutParam());           H();
-    
+
     Bstr guestTypeFamilyId;
     hrc = guestOSType->COMGETTER(FamilyId)(guestTypeFamilyId.asOutParam());       H();
     BOOL fOsXGuest = guestTypeFamilyId == Bstr("MacOS");
@@ -369,7 +369,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
         for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
         {
             ULONG ulEax, ulEbx, ulEcx, ulEdx;
-            hrc = pMachine->GetCpuIdLeaf(uLeaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
+            hrc = pMachine->GetCPUIDLeaf(uLeaf, &ulEax, &ulEbx, &ulEcx, &ulEdx);
             if (SUCCEEDED(hrc))
             {
                 PCFGMNODE pLeaf;
@@ -496,12 +496,12 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     /* Physical Address Extension (PAE) */
     BOOL fEnablePAE = false;
-    hrc = pMachine->GetCpuProperty(CpuPropertyType_PAE, &fEnablePAE);               H();
+    hrc = pMachine->GetCPUProperty(CPUPropertyType_PAE, &fEnablePAE);               H();
     rc = CFGMR3InsertInteger(pRoot, "EnablePAE", fEnablePAE);                       RC_CHECK();
 
     /* Synthetic CPU */
     BOOL fSyntheticCpu = false;
-    hrc = pMachine->GetCpuProperty(CpuPropertyType_Synthetic, &fSyntheticCpu);      H();
+    hrc = pMachine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);      H();
     rc = CFGMR3InsertInteger(pRoot, "SyntheticCpu", fSyntheticCpu);                 RC_CHECK();
 
     BOOL fPXEDebug;

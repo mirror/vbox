@@ -453,13 +453,13 @@ int handleList(HandlerArg *a)
             for (unsigned i = 0; i < RT_ELEMENTS(s_auCpuIdRanges); i += 2)
             {
                 ULONG uEAX, uEBX, uECX, uEDX, cLeafs;
-                CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, s_auCpuIdRanges[i], 0, &cLeafs, &uEBX, &uECX, &uEDX));
+                CHECK_ERROR(Host, GetProcessorCPUIDLeaf(uCpuNo, s_auCpuIdRanges[i], 0, &cLeafs, &uEBX, &uECX, &uEDX));
                 if (cLeafs < s_auCpuIdRanges[i] || cLeafs > s_auCpuIdRanges[i+1])
                     continue;
                 cLeafs++;
                 for (ULONG iLeaf = s_auCpuIdRanges[i]; iLeaf <= cLeafs; iLeaf++)
                 {
-                    CHECK_ERROR(Host, GetProcessorCpuIdLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
+                    CHECK_ERROR(Host, GetProcessorCPUIDLeaf(uCpuNo, iLeaf, 0, &uEAX, &uEBX, &uECX, &uEDX));
                     RTPrintf("%08x  %08x %08x %08x %08x\n", iLeaf, uEAX, uEBX, uECX, uEDX);
                 }
             }

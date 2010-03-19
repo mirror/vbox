@@ -466,12 +466,12 @@ public:
     STDMETHOD(GetExtraDataKeys)(ComSafeArrayOut(BSTR, aKeys));
     STDMETHOD(GetExtraData)(IN_BSTR aKey, BSTR *aValue);
     STDMETHOD(SetExtraData)(IN_BSTR aKey, IN_BSTR aValue);
-    STDMETHOD(GetCpuProperty)(CpuPropertyType_T property, BOOL *aVal);
-    STDMETHOD(SetCpuProperty)(CpuPropertyType_T property, BOOL aVal);
-    STDMETHOD(GetCpuIdLeaf)(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx);
-    STDMETHOD(SetCpuIdLeaf)(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx);
-    STDMETHOD(RemoveCpuIdLeaf)(ULONG id);
-    STDMETHOD(RemoveAllCpuIdLeafs)();
+    STDMETHOD(GetCPUProperty)(CPUPropertyType_T property, BOOL *aVal);
+    STDMETHOD(SetCPUProperty)(CPUPropertyType_T property, BOOL aVal);
+    STDMETHOD(GetCPUIDLeaf)(ULONG id, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx);
+    STDMETHOD(SetCPUIDLeaf)(ULONG id, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx);
+    STDMETHOD(RemoveCPUIDLeaf)(ULONG id);
+    STDMETHOD(RemoveAllCPUIDLeaves)();
     STDMETHOD(GetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL *aVal);
     STDMETHOD(SetHWVirtExProperty)(HWVirtExPropertyType_T property, BOOL aVal);
     STDMETHOD(SaveSettings)();
