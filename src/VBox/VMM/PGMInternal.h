@@ -633,7 +633,7 @@ typedef struct PGMPAGE
      */
     RTUINT16U   u16MiscY;
     /** The page state.
-     * Only 2 bits are really needed for this. */
+     * Only 3 bits are really needed for this. */
     uint8_t     uStateY;
     /** The page type (PGMPAGETYPE).
      * Only 3 bits are really needed for this. */
