@@ -106,6 +106,17 @@ void darwinSetShowsResizeIndicator (QWidget *aWidget, bool aEnabled)
     ::darwinSetShowsResizeIndicatorImpl (::darwinToNativeWindow (aWidget), aEnabled);
 }
 
+bool darwinIsWindowMaximized(QWidget *aWidget)
+{
+#ifdef QT_MAC_USE_COCOA
+    /* Currently only necessary in the Cocoa version */
+    return ::darwinIsWindowMaximized(::darwinToNativeWindow(aWidget));
+#else /* QT_MAC_USE_COCOA */
+    NOREF (aWidget);
+    return false;
+#endif /* !QT_MAC_USE_COCOA */
+}
+
 QString darwinSystemLanguage (void)
 {
     /* Get the locales supported by our bundle */

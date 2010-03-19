@@ -105,6 +105,7 @@ private:
 
     /* Other members: */
     void showSimple();
+    bool isMaximizedChecked();
 
     /* Indicators pool: */
     UIIndicatorsPool *m_pIndicatorsPool;
