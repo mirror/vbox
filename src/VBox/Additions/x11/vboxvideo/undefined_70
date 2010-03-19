@@ -143,3 +143,5 @@ __moddi3
 __divdi3
 xf86sprintf
 _GLOBAL_OFFSET_TABLE_
+XNFstrdup
+FatalError

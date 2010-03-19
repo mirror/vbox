@@ -49,6 +49,7 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11/extensions \
+	$(VBOX_PATH_X11_XFREE_4_3)/include/extensions \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/fonts \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/afb \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
@@ -72,6 +73,7 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/mi \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/miext/shadow \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
+	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
  else
   vboxvideo_drv_INCS = \
