@@ -99,6 +99,10 @@ VMMR3DECL(int) PGMR3HandlerPhysicalRegister(PVM pVM, PGMPHYSHANDLERTYPE enmType,
         pszModRC = VMMGC_MAIN_MODULE_NAME;
     if (!pszModR0)
         pszModR0 = VMMR0_MAIN_MODULE_NAME;
+    if (!pszHandlerR0)
+        pszHandlerR0 = "pgmPhysHandlerRedirectToHC";
+    if (!pszHandlerRC)
+        pszHandlerRC = "pgmPhysHandlerRedirectToHC";
     AssertPtrReturn(pfnHandlerR3, VERR_INVALID_POINTER);
     AssertPtrReturn(pszHandlerR0, VERR_INVALID_POINTER);
     AssertPtrReturn(pszHandlerRC, VERR_INVALID_POINTER);

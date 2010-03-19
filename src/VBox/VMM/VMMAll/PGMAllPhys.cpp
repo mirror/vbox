@@ -54,6 +54,24 @@
 #ifndef IN_RING3
 
 /**
+ * \#PF Handler callback for physical memory accesses without a RC/R0 handler.
+ * This simply pushes everything to the HC handler.
+ *
+ * @returns VBox status code (appropritate for trap handling and GC return).
+ * @param   pVM         VM Handle.
+ * @param   uErrorCode  CPU Error code.
+ * @param   pRegFrame   Trap register frame.
+ * @param   pvFault     The fault address (cr2).
+ * @param   GCPhysFault The GC physical address corresponding to pvFault.
+ * @param   pvUser      User argument.
+ */
+VMMDECL(int) pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
+{
+    return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
+}
+
+
+/**
  * \#PF Handler callback for Guest ROM range write access.
  * We simply ignore the writes or fall back to the recompiler if we don't support the instruction.
  *
