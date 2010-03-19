@@ -140,6 +140,9 @@ void UIMachineViewNormal::sltDesktopResized()
 
 bool UIMachineViewNormal::event(QEvent *pEvent)
 {
+    /* We don't want this on the Mac, cause there the menu bar isn't within the
+     * window and popping up a menu there looks really ugly. */
+#ifndef Q_WS_MAC
     switch (pEvent->type())
     {
         case QEvent::KeyPress:
@@ -184,6 +187,7 @@ bool UIMachineViewNormal::event(QEvent *pEvent)
         default:
             break;
     }
+#endif /* !Q_WS_MAC */
     return UIMachineView::event(pEvent);
 }
 
