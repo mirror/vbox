@@ -88,9 +88,10 @@ if (!(expr)) \
 }
 #else  /* !DEBUG */
 
-#define TRACE_ENTRY()  do { } while(0)
-#define TRACE_EXIT()   do { } while(0)
-#define TRACE_LOG(...) do { } while(0)
+#define TRACE_ENTRY()         do { } while (0)
+#define TRACE_EXIT()          do { } while (0)
+#define TRACE_LOG(...)        do { } while (0)
+#define XF86ASSERT(expr, out) do { } while (0)
 
 #endif  /* !DEBUG */
 
