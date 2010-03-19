@@ -2498,14 +2498,12 @@ static int vmdkWriteDescriptor(PVMDKIMAGE pImage)
                 char *pszDescriptorNew = NULL;
                 LogFlow(("Increasing descriptor cache\n"));
 
-                pszDescriptorNew = (char *)RTMemAllocZ(cbDescriptor + cb + 4 * _1K);
+                pszDescriptorNew = (char *)RTMemRealloc(pszDescriptor, cbDescriptor + cb + 4 * _1K);
                 if (!pszDescriptorNew)
                 {
                     rc = VERR_NO_MEMORY;
                     break;
                 }
-                memcpy(pszDescriptorNew, pszDescriptor, cbDescriptor);
-                RTMemFree(pszDescriptor);
                 pszDescriptorNew = pszDescriptor;
                 cbDescriptor += cb + 4 * _1K;
             }
