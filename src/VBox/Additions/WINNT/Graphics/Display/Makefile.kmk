@@ -91,19 +91,8 @@ VBoxDispD3D_SDKS     = WINDDKWLH
 
  ifeq ($(KBUILD_TARGET_ARCH), amd64)
 DLLS += VBoxDispD3D64
- if defined(VBOX_SIGNING_MODE)
-VBoxDispD3D64_NOINST = true
- endif
-VBoxDispD3D64_TEMPLATE = VBOXGUESTR3DLL
-VBoxDispD3D64_DEFS     = UNICODE _UNICODE
-VBoxDispD3D64_SOURCES  = \
-	wddm/VBoxDispD3D.cpp \
-	wddm/VBoxDispD3D64.def \
-	wddm/VBoxDispD3D.rc
-VBoxDispD3D64_LIBS     = \
-	$(VBOX_LIB_IPRT_GUEST_R3) \
-	$(VBOX_LIB_VBGL_R3)
-VBoxDispD3D64_SDKS     = WINDDKWLH
+VBoxDispD3D64_EXTENDS  = VBoxDispD3D
+VBoxDispD3D64_SOURCES  = $(subst VBoxDispD3D.def,VBoxDispD3D64.def,$(VBoxDispD3D_SOURCES))
  endif
 endif
 

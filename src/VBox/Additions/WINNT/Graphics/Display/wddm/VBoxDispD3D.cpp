@@ -88,23 +88,63 @@ BOOL WINAPI DllMain(HINSTANCE hInstance,
 static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GETCAPS* pData)
 {
     vboxVDbgPrint(("==> "__FUNCTION__", hAdapter(0x%p), caps type(%d)\n", hAdapter, pData->Type));
-    AssertBreakpoint();
+
+    HRESULT hr = S_OK;
 
     switch (pData->Type)
     {
         case D3DDDICAPS_DDRAW:
+            Assert(pData->DataSize >= sizeof (DDRAW_CAPS));
+            if (pData->DataSize >= sizeof (DDRAW_CAPS))
+                memset(pData->pData, 0, sizeof (DDRAW_CAPS));
+            else
+                hr = E_INVALIDARG;
+            break;
         case D3DDDICAPS_DDRAW_MODE_SPECIFIC:
+            Assert(pData->DataSize >= sizeof (DDRAW_MODE_SPECIFIC_CAPS));
+            if (pData->DataSize >= sizeof (DDRAW_MODE_SPECIFIC_CAPS))
+                memset(pData->pData, 0, sizeof (DDRAW_MODE_SPECIFIC_CAPS));
+            else
+                hr = E_INVALIDARG;
+            break;
         case D3DDDICAPS_GETFORMATCOUNT:
+            *((uint32_t*)pData->pData) = 0;
+            break;
         case D3DDDICAPS_GETFORMATDATA:
-        case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
+            /* TODO: fill the array of FORMATOP structures of size reported with D3DDDICAPS_GETFORMATCOUNT (currently 0) */
+            break;
         case D3DDDICAPS_GETD3DQUERYCOUNT:
-        case D3DDDICAPS_GETD3DQUERYDATA:
+            *((uint32_t*)pData->pData) = 0;
+            break;
         case D3DDDICAPS_GETD3D3CAPS:
+            Assert(pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA));
+            if (pData->DataSize >= sizeof (D3DHAL_GLOBALDRIVERDATA))
+                memset (pData->pData, 0, sizeof (D3DHAL_GLOBALDRIVERDATA));
+            else
+                hr = E_INVALIDARG;
+            break;
+        case D3DDDICAPS_GETD3D7CAPS:
+            Assert(pData->DataSize >= sizeof (D3DHAL_D3DEXTENDEDCAPS));
+            if (pData->DataSize >= sizeof (D3DHAL_D3DEXTENDEDCAPS))
+                memset(pData->pData, 0, sizeof (D3DHAL_D3DEXTENDEDCAPS));
+            else
+                hr = E_INVALIDARG;
+            break;
+        case D3DDDICAPS_GETD3D9CAPS:
+            Assert(pData->DataSize >= sizeof (D3DCAPS9));
+            if (pData->DataSize >= sizeof (D3DCAPS9))
+                memset(pData->pData, 0, sizeof (D3DCAPS9));
+            else
+                hr = E_INVALIDARG;
+            break;
+        case D3DDDICAPS_GETGAMMARAMPCAPS:
+            *((uint32_t*)pData->pData) = 0;
+            break;
+        case D3DDDICAPS_GETMULTISAMPLEQUALITYLEVELS:
+        case D3DDDICAPS_GETD3DQUERYDATA:
         case D3DDDICAPS_GETD3D5CAPS:
         case D3DDDICAPS_GETD3D6CAPS:
-        case D3DDDICAPS_GETD3D7CAPS:
         case D3DDDICAPS_GETD3D8CAPS:
-        case D3DDDICAPS_GETD3D9CAPS:
         case D3DDDICAPS_GETDECODEGUIDCOUNT:
         case D3DDDICAPS_GETDECODEGUIDS:
         case D3DDDICAPS_GETDECODERTFORMATCOUNT:
@@ -125,11 +165,13 @@ static HRESULT APIENTRY vboxWddmDispGetCaps (HANDLE hAdapter, CONST D3DDDIARG_GE
         case D3DDDICAPS_GETEXTENSIONGUIDCOUNT:
         case D3DDDICAPS_GETEXTENSIONGUIDS:
         case D3DDDICAPS_GETEXTENSIONCAPS:
-        case D3DDDICAPS_GETGAMMARAMPCAPS:
+            vboxVDbgPrint((__FUNCTION__": unimplemented caps type(%d)\n", pData->Type));
+            AssertBreakpoint();
             if (pData->pData && pData->DataSize)
                 memset(pData->pData, 0, pData->DataSize);
             break;
         default:
+            vboxVDbgPrint((__FUNCTION__": unknown caps type(%d)\n", pData->Type));
             AssertBreakpoint();
     }
 
