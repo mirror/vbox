@@ -538,7 +538,7 @@ static bool pdmacFileCacheReclaim(PPDMACFILECACHEGLOBAL pCache, size_t cbData, b
              * we don't need to evict that much data
              */
             if (!cbRemoved)
-                cbRemoved += pdmacFileCacheEvictPagesFrom(pCache, cbData - cbRemoved, &pCache->LruFrequentlyUsed,
+                cbRemoved += pdmacFileCacheEvictPagesFrom(pCache, cbData, &pCache->LruFrequentlyUsed,
                                                           NULL, fReuseBuffer, ppbBuffer);
             else
                 cbRemoved += pdmacFileCacheEvictPagesFrom(pCache, cbData - cbRemoved, &pCache->LruFrequentlyUsed,
@@ -1211,22 +1211,42 @@ static PPDMACFILECACHEENTRY pdmacFileEpCacheGetCacheEntryByOffset(PPDMACFILEENDP
     return pEntry;
 }
 
-static PPDMACFILECACHEENTRY pdmacFileEpCacheGetCacheBestFitEntryByOffset(PPDMACFILEENDPOINTCACHE pEndpointCache, RTFOFF off)
+/**
+ * Return the best fit cache entries for the given offset.
+ *
+ * @returns nothing.
+ * @param   pEndpointCache    The endpoint cache.
+ * @param   off               The offset.
+ * @param   pEntryAbove       Where to store the pointer to the best fit entry above the
+ *                            the given offset. NULL if not required.
+ * @param   pEntryBelow       Where to store the pointer to the best fit entry below the
+ *                            the given offset. NULL if not required.
+ */
+static void pdmacFileEpCacheGetCacheBestFitEntryByOffset(PPDMACFILEENDPOINTCACHE pEndpointCache, RTFOFF off,
+                                                         PPDMACFILECACHEENTRY *ppEntryAbove,
+                                                         PPDMACFILECACHEENTRY *ppEntryBelow)
 {
     PPDMACFILECACHEGLOBAL pCache = pEndpointCache->pCache;
-    PPDMACFILECACHEENTRY pEntry = NULL;
 
     STAM_PROFILE_ADV_START(&pCache->StatTreeGet, Cache);
 
     RTSemRWRequestRead(pEndpointCache->SemRWEntries, RT_INDEFINITE_WAIT);
-    pEntry = (PPDMACFILECACHEENTRY)RTAvlrFileOffsetGetBestFit(pEndpointCache->pTree, off, true /*fAbove*/);
-    if (pEntry)
-        pdmacFileEpCacheEntryRef(pEntry);
+    if (ppEntryAbove)
+    {
+        *ppEntryAbove = (PPDMACFILECACHEENTRY)RTAvlrFileOffsetGetBestFit(pEndpointCache->pTree, off, true /*fAbove*/);
+        if (*ppEntryAbove)
+            pdmacFileEpCacheEntryRef(*ppEntryAbove);
+    }
+
+    if (ppEntryBelow)
+    {
+        *ppEntryBelow = (PPDMACFILECACHEENTRY)RTAvlrFileOffsetGetBestFit(pEndpointCache->pTree, off, false /*fAbove*/);
+        if (*ppEntryBelow)
+            pdmacFileEpCacheEntryRef(*ppEntryBelow);
+    }
     RTSemRWReleaseRead(pEndpointCache->SemRWEntries);
 
     STAM_PROFILE_ADV_STOP(&pCache->StatTreeGet, Cache);
-
-    return pEntry;
 }
 
 static void pdmacFileEpCacheInsertEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILECACHEENTRY pEntry)
@@ -1486,6 +1506,179 @@ static void pdmacFileEpCacheRequestPassthrough(PPDMASYNCCOMPLETIONENDPOINTFILE p
 }
 
 /**
+ * Calculate aligned offset and size for a new cache entry
+ * which do not intersect with an already existing entry and the
+ * file end.
+ *
+ * @returns The number of bytes the entry can hold of the requested amount
+ *          of byte.
+ * @param   pEndpoint        The endpoint.
+ * @param   pEndpointCache   The endpoint cache.
+ * @param   off              The start offset.
+ * @param   cb               The number of bytes the entry needs to hold at least.
+ * @param   uAlignment       Alignment of the boundary sizes.
+ * @param   poffAligned      Where to store the aligned offset.
+ * @param   pcbAligned       Where to store the aligned size of the entry.
+ */
+static size_t pdmacFileEpCacheEntryBoundariesCalc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                  PPDMACFILEENDPOINTCACHE pEndpointCache,
+                                                  RTFOFF off, size_t cb,
+                                                  unsigned uAlignment,
+                                                  RTFOFF *poffAligned, size_t *pcbAligned)
+{
+    size_t cbAligned;
+    size_t cbInEntry = 0;
+    RTFOFF offAligned;
+    PPDMACFILECACHEENTRY pEntryAbove = NULL;
+    PPDMACFILECACHEENTRY pEntryBelow = NULL;
+
+    /* Get the best fit entries around the offset */
+    pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off,
+                                                 &pEntryAbove, &pEntryBelow);
+
+    /* Log the info */
+    LogFlow(("%sest fit entry below off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
+             pEntryBelow ? "B" : "No b",
+             off,
+             pEntryBelow ? pEntryBelow->Core.Key : 0,
+             pEntryBelow ? pEntryBelow->Core.KeyLast : 0,
+             pEntryBelow ? pEntryBelow->cbData : 0));
+
+    LogFlow(("%sest fit entry above off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
+             pEntryAbove ? "B" : "No b",
+             off,
+             pEntryAbove ? pEntryAbove->Core.Key : 0,
+             pEntryAbove ? pEntryAbove->Core.KeyLast : 0,
+             pEntryAbove ? pEntryAbove->cbData : 0));
+
+    /* Align the offset first. */
+    offAligned = off & ~(RTFOFF)(512-1);
+    if (   pEntryBelow
+        && offAligned <= pEntryBelow->Core.KeyLast)
+        offAligned = pEntryBelow->Core.KeyLast;
+
+    if (    pEntryAbove
+        &&  off + (RTFOFF)cb > pEntryAbove->Core.Key)
+    {
+        cbInEntry = pEntryAbove->Core.Key - off;
+        cbAligned = pEntryAbove->Core.Key - offAligned;
+    }
+    else
+    {
+        /*
+         * Align the size to a 4KB boundary.
+         * Memory size is aligned to a page boundary
+         * and memory is wasted if the size is rather small.
+         * (For example reads with a size of 512 bytes).
+         */
+        cbInEntry = cb;
+        cbAligned = RT_ALIGN_Z(cb + (off - offAligned), uAlignment);
+
+        /*
+         * Clip to file size if the original request doesn't
+         * exceed the file (not an appending write)
+         */
+        uint64_t cbReq = off + (RTFOFF)cb;
+        if (cbReq >= pEndpoint->cbFile)
+            cbAligned = cbReq - offAligned;
+        else
+            cbAligned = RT_MIN(pEndpoint->cbFile - offAligned, cbAligned);
+        if (pEntryAbove)
+        {
+            Assert(pEntryAbove->Core.Key >= off);
+            cbAligned = RT_MIN(cbAligned, (uint64_t)pEntryAbove->Core.Key - offAligned);
+        }
+    }
+
+    /* A few sanity checks */
+    AssertMsg(!pEntryBelow || pEntryBelow->Core.KeyLast < offAligned,
+              ("Aligned start offset intersects with another cache entry\n"));
+    AssertMsg(!pEntryAbove || (offAligned + (RTFOFF)cbAligned) <= pEntryAbove->Core.Key,
+              ("Aligned size intersects with another cache entry\n"));
+    Assert(cbInEntry <= cbAligned);
+    AssertMsg(   (   offAligned + (RTFOFF)cbAligned <= (RTFOFF)pEndpoint->cbFile
+                  && off + (RTFOFF)cb <= (RTFOFF)pEndpoint->cbFile)
+              || (offAligned + (RTFOFF)cbAligned <= off + (RTFOFF)cb),
+               ("Unwanted file size increase\n"));
+
+    if (pEntryBelow)
+        pdmacFileEpCacheEntryRelease(pEntryBelow);
+    if (pEntryAbove)
+        pdmacFileEpCacheEntryRelease(pEntryAbove);
+
+    LogFlow(("offAligned=%RTfoff cbAligned=%u\n", offAligned, cbAligned));
+
+    *poffAligned = offAligned;
+    *pcbAligned  = cbAligned;
+
+    return cbInEntry;
+}
+
+/**
+ * Create a new cache entry evicting data from the cache if required.
+ *
+ * @returns Pointer to the new cache entry or NULL
+ *          if not enough bytes could be evicted from the cache.
+ * @param   pEndpoint         The endpoint.
+ * @param   pEndpointCache    The endpoint cache.
+ * @param   off               The offset.
+ * @param   cb                Number of bytes the cache entry should have.
+ * @param   uAlignment        Alignment the size of the entry should have.
+ * @param   pcbData           Where to store the number of bytes the new
+ *                            entry can hold. May be lower than actually requested
+ *                            due to another entry intersecting the access range.
+ */
+static PPDMACFILECACHEENTRY pdmacFileEpCacheEntryCreate(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
+                                                        PPDMACFILEENDPOINTCACHE pEndpointCache,
+                                                        RTFOFF off, size_t cb,
+                                                        unsigned uAlignment,
+                                                        size_t *pcbData)
+{
+    RTFOFF offStart = 0;
+    size_t cbEntry = 0;
+    PPDMACFILECACHEENTRY pEntryNew = NULL;
+    PPDMACFILECACHEGLOBAL pCache = pEndpointCache->pCache;
+    uint8_t *pbBuffer = NULL;
+
+    *pcbData = pdmacFileEpCacheEntryBoundariesCalc(pEndpoint,
+                                                   pEndpointCache,
+                                                   off, cb,
+                                                   uAlignment,
+                                                   &offStart, &cbEntry);
+
+    pdmacFileCacheLockEnter(pCache);
+    bool fEnough = pdmacFileCacheReclaim(pCache, cbEntry, true, &pbBuffer);
+
+    if (fEnough)
+    {
+        LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbEntry));
+
+        pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint,
+                                             offStart, cbEntry,
+                                             pbBuffer);
+        if (RT_LIKELY(pEntryNew))
+        {
+            pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
+            pdmacFileCacheAdd(pCache, cbEntry);
+            pdmacFileCacheLockLeave(pCache);
+
+            pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
+
+            AssertMsg(   (off >= pEntryNew->Core.Key)
+                      && (off + (RTFOFF)cb <= pEntryNew->Core.Key + pEntryNew->Core.KeyLast + 1),
+                      ("Overflow in calculation off=%RTfoff OffsetAligned=%RTfoff\n",
+                       off, pEntryNew->Core.Key));
+        }
+        else
+            pdmacFileCacheLockLeave(pCache);
+    }
+    else
+        pdmacFileCacheLockLeave(pCache);
+
+    return pEntryNew;
+}
+
+/**
  * Reads the specified data from the endpoint using the cache if possible.
  *
  * @returns VBox status code.
@@ -1653,85 +1846,32 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
         }
         else
         {
-            /* No entry found for this offset. Get best fit entry and fetch the data to the cache. */
-            size_t cbToReadAligned;
-            PPDMACFILECACHEENTRY pEntryBestFit = pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off);
-
-            LogFlow(("%sbest fit entry for off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
-                     pEntryBestFit ? "" : "No ",
-                     off,
-                     pEntryBestFit ? pEntryBestFit->Core.Key : 0,
-                     pEntryBestFit ? pEntryBestFit->Core.KeyLast : 0,
-                     pEntryBestFit ? pEntryBestFit->cbData : 0));
-
-            if (    pEntryBestFit
-                &&  off + (RTFOFF)cbRead > pEntryBestFit->Core.Key)
-            {
-                cbToRead = pEntryBestFit->Core.Key - off;
-                pdmacFileEpCacheEntryRelease(pEntryBestFit);
-                cbToReadAligned = cbToRead;
-            }
-            else
-            {
-                /*
-                 * Align the size to a 4KB boundary.
-                 * Memory size is aligned to a page boundary
-                 * and memory is wasted if the size is rahter small.
-                 * (For example reads with a size of 512 bytes.
-                 */
-                cbToRead = cbRead;
-                cbToReadAligned = RT_ALIGN_Z(cbRead, PAGE_SIZE);
-
-                /* Clip read to file size */
-                cbToReadAligned = RT_MIN(pEndpoint->cbFile - off, cbToReadAligned);
-                if (pEntryBestFit)
-                {
-                    Assert(pEntryBestFit->Core.Key >= off);
-                    cbToReadAligned = RT_MIN(cbToReadAligned, (uint64_t)pEntryBestFit->Core.Key - off);
-                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
-                }
-            }
+            /* No entry found for this offset. Create a new entry and fetch the data to the cache. */
+            PPDMACFILECACHEENTRY pEntryNew = pdmacFileEpCacheEntryCreate(pEndpoint,
+                                                                         pEndpointCache,
+                                                                         off, cbRead,
+                                                                         PAGE_SIZE,
+                                                                         &cbToRead);
 
             cbRead -= cbToRead;
 
-            if (!cbRead)
-                STAM_COUNTER_INC(&pCache->cMisses);
-            else
-                STAM_COUNTER_INC(&pCache->cPartialHits);
-
-            uint8_t *pbBuffer = NULL;
-
-            pdmacFileCacheLockEnter(pCache);
-            bool fEnough = pdmacFileCacheReclaim(pCache, cbToReadAligned, true, &pbBuffer);
-
-            if (fEnough)
+            if (pEntryNew)
             {
-                LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbToReadAligned));
-
-                PPDMACFILECACHEENTRY pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToReadAligned, pbBuffer);
-                AssertPtr(pEntryNew);
-
-                pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
-                pdmacFileCacheAdd(pCache, cbToReadAligned);
-                pdmacFileCacheLockLeave(pCache);
-
-                pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
-
-                AssertMsg(   (off >= pEntryNew->Core.Key)
-                          && (off + (RTFOFF)cbToRead <= pEntryNew->Core.Key + pEntryNew->Core.KeyLast + 1),
-                          ("Overflow in calculation off=%RTfoff OffsetAligned=%RTfoff\n",
-                           off, pEntryNew->Core.Key));
+                if (!cbRead)
+                    STAM_COUNTER_INC(&pCache->cMisses);
+                else
+                    STAM_COUNTER_INC(&pCache->cPartialHits);
 
                 pdmacFileEpCacheEntryWaitersAdd(pEntryNew, pTask,
-                                                &IoMemCtx, 0, cbToRead,
+                                                &IoMemCtx,
+                                                off - pEntryNew->Core.Key,
+                                                cbToRead,
                                                 false /* fWrite */);
                 pdmacFileCacheReadFromEndpoint(pEntryNew);
                 pdmacFileEpCacheEntryRelease(pEntryNew); /* it is protected by the I/O in progress flag now. */
             }
             else
             {
-                pdmacFileCacheLockLeave(pCache);
-
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
@@ -1993,67 +2133,51 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
              * No entry found. Try to create a new cache entry to store the data in and if that fails
              * write directly to the file.
              */
-            PPDMACFILECACHEENTRY pEntryBestFit = pdmacFileEpCacheGetCacheBestFitEntryByOffset(pEndpointCache, off);
-
-            LogFlow(("%sest fit entry for off=%RTfoff (BestFit=%RTfoff BestFitEnd=%RTfoff BestFitSize=%u)\n",
-                     pEntryBestFit ? "B" : "No b",
-                     off,
-                     pEntryBestFit ? pEntryBestFit->Core.Key : 0,
-                     pEntryBestFit ? pEntryBestFit->Core.KeyLast : 0,
-                     pEntryBestFit ? pEntryBestFit->cbData : 0));
-
-            if (pEntryBestFit && ((off + (RTFOFF)cbWrite) > pEntryBestFit->Core.Key))
-            {
-                cbToWrite = pEntryBestFit->Core.Key - off;
-                pdmacFileEpCacheEntryRelease(pEntryBestFit);
-            }
-            else
-            {
-                if (pEntryBestFit)
-                    pdmacFileEpCacheEntryRelease(pEntryBestFit);
-
-                cbToWrite = cbWrite;
-            }
+            PPDMACFILECACHEENTRY pEntryNew = pdmacFileEpCacheEntryCreate(pEndpoint,
+                                                                         pEndpointCache,
+                                                                         off, cbWrite,
+                                                                         512,
+                                                                         &cbToWrite);
 
             cbWrite -= cbToWrite;
 
             STAM_COUNTER_INC(&pCache->cMisses);
 
-            uint8_t *pbBuffer = NULL;
-
-            pdmacFileCacheLockEnter(pCache);
-            bool fEnough = pdmacFileCacheReclaim(pCache, cbToWrite, true, &pbBuffer);
-
-            if (fEnough)
+            if (pEntryNew)
             {
-                LogFlow(("Evicted enough bytes (%u requested). Creating new cache entry\n", cbToWrite));
+                RTFOFF offDiff = off - pEntryNew->Core.Key;
 
-                PPDMACFILECACHEENTRY pEntryNew;
+                /*
+                 * Check if it is possible to just write the data without waiting
+                 * for it to get fetched first.
+                 */
+                if (!offDiff && pEntryNew->cbData == cbToWrite)
+                {
+                    pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
+                                                     pEntryNew->pbData,
+                                                     cbToWrite);
+                    ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
 
-                pEntryNew = pdmacFileCacheEntryAlloc(pCache, pEndpoint, off, cbToWrite, pbBuffer);
-                AssertPtr(pEntryNew);
+                    bool fCommit = pdmacFileCacheAddDirtyEntry(pEndpointCache, pEntryNew);
+                    if (fCommit)
+                        pdmacFileCacheCommitDirtyEntries(pCache);
+                    STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
+                }
+                else
+                {
+                    /* Defer the write and fetch the data from the endpoint. */
+                    pdmacFileEpCacheEntryWaitersAdd(pEntryNew, pTask,
+                                                    &IoMemCtx,
+                                                    offDiff, cbToWrite,
+                                                    true /* fWrite */);
+                    STAM_COUNTER_INC(&pEndpointCache->StatWriteDeferred);
+                    pdmacFileCacheReadFromEndpoint(pEntryNew);
+                }
 
-                pdmacFileCacheEntryAddToList(&pCache->LruRecentlyUsedIn, pEntryNew);
-                pdmacFileCacheAdd(pCache, cbToWrite);
-                pdmacFileCacheLockLeave(pCache);
-
-                pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
-
-                pdmacFileEpCacheCopyFromIoMemCtx(&IoMemCtx,
-                                                 pEntryNew->pbData,
-                                                 cbToWrite);
-                ASMAtomicSubS32(&pTask->cbTransferLeft, cbToWrite);
-
-                bool fCommit = pdmacFileCacheAddDirtyEntry(pEndpointCache, pEntryNew);
-                if (fCommit)
-                    pdmacFileCacheCommitDirtyEntries(pCache);
                 pdmacFileEpCacheEntryRelease(pEntryNew);
-                STAM_COUNTER_ADD(&pCache->StatWritten, cbToWrite);
             }
             else
             {
-                pdmacFileCacheLockLeave(pCache);
-
                 /*
                  * There is not enough free space in the cache.
                  * Pass the request directly to the I/O manager.
