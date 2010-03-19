@@ -254,7 +254,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("Number of CPUs:  %u\n", numCpus);
 
     BOOL fSyntheticCpu;
-    machine->GetCpuProperty(CpuPropertyType_Synthetic, &fSyntheticCpu);
+    machine->GetCPUProperty(CPUPropertyType_Synthetic, &fSyntheticCpu);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("synthcpu=\"%s\"\n", fSyntheticCpu ? "on" : "off");
     else
@@ -272,7 +272,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         for (uint32_t uLeaf = s_auCpuIdRanges[i]; uLeaf < s_auCpuIdRanges[i + 1]; uLeaf++)
         {
             ULONG uEAX, uEBX, uECX, uEDX;
-            rc = machine->GetCpuIdLeaf(uLeaf, &uEAX, &uEBX, &uECX, &uEDX);
+            rc = machine->GetCPUIDLeaf(uLeaf, &uEAX, &uEBX, &uECX, &uEDX);
             if (SUCCEEDED(rc))
             {
                 if (details == VMINFO_MACHINEREADABLE)
@@ -391,7 +391,7 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         RTPrintf("IOAPIC:          %s\n", ioapicEnabled ? "on" : "off");
 
     BOOL PAEEnabled;
-    machine->GetCpuProperty(CpuPropertyType_PAE, &PAEEnabled);
+    machine->GetCPUProperty(CPUPropertyType_PAE, &PAEEnabled);
     if (details == VMINFO_MACHINEREADABLE)
         RTPrintf("pae=\"%s\"\n", PAEEnabled ? "on" : "off");
     else

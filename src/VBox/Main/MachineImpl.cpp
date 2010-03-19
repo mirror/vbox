@@ -1422,7 +1422,7 @@ STDMETHODIMP Machine::COMGETTER(BIOSSettings)(IBIOSSettings **biosSettings)
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
+STDMETHODIMP Machine::GetCPUProperty(CPUPropertyType_T property, BOOL *aVal)
 {
     if (!aVal)
         return E_POINTER;
@@ -1434,11 +1434,11 @@ STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
 
     switch(property)
     {
-    case CpuPropertyType_PAE:
+    case CPUPropertyType_PAE:
         *aVal = mHWData->mPAEEnabled;
         break;
 
-    case CpuPropertyType_Synthetic:
+    case CPUPropertyType_Synthetic:
         *aVal = mHWData->mSyntheticCpu;
         break;
 
@@ -1448,7 +1448,7 @@ STDMETHODIMP Machine::GetCpuProperty(CpuPropertyType_T property, BOOL *aVal)
     return S_OK;
 }
 
-STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
+STDMETHODIMP Machine::SetCPUProperty(CPUPropertyType_T property, BOOL aVal)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1460,13 +1460,13 @@ STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
 
     switch(property)
     {
-    case CpuPropertyType_PAE:
+    case CPUPropertyType_PAE:
         setModified(IsModified_MachineData);
         mHWData.backup();
         mHWData->mPAEEnabled = !!aVal;
         break;
 
-    case CpuPropertyType_Synthetic:
+    case CPUPropertyType_Synthetic:
         setModified(IsModified_MachineData);
         mHWData.backup();
         mHWData->mSyntheticCpu = !!aVal;
@@ -1478,7 +1478,7 @@ STDMETHODIMP Machine::SetCpuProperty(CpuPropertyType_T property, BOOL aVal)
     return S_OK;
 }
 
-STDMETHODIMP Machine::GetCpuIdLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
+STDMETHODIMP Machine::GetCPUIDLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, ULONG *aValEcx, ULONG *aValEdx)
 {
     CheckComArgOutPointerValid(aValEax);
     CheckComArgOutPointerValid(aValEbx);
@@ -1538,7 +1538,7 @@ STDMETHODIMP Machine::GetCpuIdLeaf(ULONG aId, ULONG *aValEax, ULONG *aValEbx, UL
     return S_OK;
 }
 
-STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
+STDMETHODIMP Machine::SetCPUIDLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULONG aValEcx, ULONG aValEdx)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1600,7 +1600,7 @@ STDMETHODIMP Machine::SetCpuIdLeaf(ULONG aId, ULONG aValEax, ULONG aValEbx, ULON
     return S_OK;
 }
 
-STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
+STDMETHODIMP Machine::RemoveCPUIDLeaf(ULONG aId)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1656,7 +1656,7 @@ STDMETHODIMP Machine::RemoveCpuIdLeaf(ULONG aId)
     return S_OK;
 }
 
-STDMETHODIMP Machine::RemoveAllCpuIdLeafs()
+STDMETHODIMP Machine::RemoveAllCPUIDLeaves()
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
