@@ -157,11 +157,6 @@ typedef union RTSOCKADDRUNION
 } RTSOCKADDRUNION;
 
 
-/*******************************************************************************
-*   Internal Functions                                                         *
-*******************************************************************************/
-
-
 /**
  * Get the last error as an iprt status code.
  *
@@ -908,6 +903,39 @@ int rtSocketPollGetHandle(RTSOCKET hSocket, uint32_t fEvents, PHANDLE ph)
 
 
 /**
+ * Undos the harm done by WSAEventSelect.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The socket handle.
+ */
+static int rtSocketPollClearEventAndMakeBlocking(RTSOCKETINT *pThis)
+{
+    int rc = VINF_SUCCESS;
+    if (pThis->fSubscribedEvts)
+    {
+        if (WSAEventSelect(pThis->hNative, WSA_INVALID_EVENT, 0) == 0)
+        {
+            pThis->fSubscribedEvts = 0;
+
+            u_long fNonBlocking = 0;
+            int rc2 = ioctlsocket(pThis->hNative, FIONBIO, &fNonBlocking);
+            if (rc2 != 0)
+            {
+                rc = rtSocketError();
+                AssertMsgFailed(("%Rrc; rc2=%d\n", rc, rc2));
+            }
+        }
+        else
+        {
+            rc = rtSocketError();
+            AssertMsgFailed(("%Rrc\n", rc));
+        }
+    }
+    return rc;
+}
+
+
+/**
  * Updates the mask of events we're subscribing to.
  *
  * @returns IPRT status code.
@@ -926,11 +954,6 @@ static int rtSocketPollUpdateEvents(RTSOCKETINT *pThis, uint32_t fEvents)
     if (WSAEventSelect(pThis->hNative, pThis->hEvent, fNetworkEvents) == 0)
     {
         pThis->fSubscribedEvts = fEvents;
-
-        u_long fNonBlocking = 0;
-        if (ioctlsocket(pThis->hNative, FIONBIO, &fNonBlocking))
-            AssertMsgFailed(("%Rrc\n", rtSocketError()));
-
         return VINF_SUCCESS;
     }
 
@@ -1051,7 +1074,10 @@ uint32_t rtSocketPollStart(RTSOCKET hSocket, RTPOLLSET hPollSet, uint32_t fEvent
     if (fRetEvents || fNoWait)
     {
         if (pThis->cUsers == 1)
+        {
+            rtSocketPollClearEventAndMakeBlocking(pThis);
             pThis->hPollSet = NIL_RTPOLLSET;
+        }
         ASMAtomicDecU32(&pThis->cUsers);
     }
 
@@ -1086,9 +1112,12 @@ uint32_t rtSocketPollDone(RTSOCKET hSocket, uint32_t fEvents, bool fFinalEntry)
     uint32_t fRetEvents = rtSocketPollCheck(pThis, fEvents);
     pThis->fPollEvts = 0;
 
-    /* unlock the socket. */
+    /* Make the socket blocking again and unlock the handle. */
     if (pThis->cUsers == 1)
+    {
+        rtSocketPollClearEventAndMakeBlocking(pThis);
         pThis->hPollSet = NIL_RTPOLLSET;
+    }
     ASMAtomicDecU32(&pThis->cUsers);
     return fRetEvents;
 }

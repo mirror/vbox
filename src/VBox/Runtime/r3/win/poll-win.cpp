@@ -196,7 +196,7 @@ static int rtPollNoResumeWorker(RTPOLLSETINTERNAL *pThis, RTMSINTERVAL cMillies,
                                           TRUE /*fAlertable*/);
     if (    dwRc >= WAIT_OBJECT_0
         &&  dwRc <  WAIT_OBJECT_0 + cHandles)
-        rc = VINF_SUCCESS;
+        rc = VERR_INTERRUPTED;
     else if (dwRc == WAIT_TIMEOUT)
         rc = VERR_TIMEOUT;
     else if (dwRc == WAIT_IO_COMPLETION)
