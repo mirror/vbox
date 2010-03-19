@@ -339,7 +339,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
             if (   !strncmp(pSdl->sdl_data, pNIC->szBSDName, pSdl->sdl_nlen)
                 && pNIC->szBSDName[pSdl->sdl_nlen] == '\0')
             {
-                cbNameLen = strlen(pEtherNICs->szName) + 1;
+                cbNameLen = strlen(pNIC->szName) + 1;
                 break;
             }
         PNETIFINFO pNew = (PNETIFINFO)RTMemAllocZ(RT_OFFSETOF(NETIFINFO, szName[cbNameLen]));
