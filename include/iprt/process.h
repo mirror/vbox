@@ -163,10 +163,15 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
  *                      guest.
  * @param   pszAsUser   User to run the process as.  Pass NULL to use the same
  *                      user as the current process.
+ *                      Windows: Use user@domain format to specify a domain.
  * @param   pszPassword Password for user account to run the process as.
  *                      Pass NULL to use the same user as the current process.
  * @param   phProcess   Where to store the process handle on successful return.
  *                      The content is not changed on failure.  NULL is allowed.
+ *
+ * @remarks The handles does not have to be created as inheritable, but it
+ *          doesn't hurt if they are as it may avoid race conditions on some
+ *          platforms.
  *
  * @remarks The as-user feature isn't supported/implemented on all platforms and
  *          will cause a-yet-to-be-determined-error-status on these.
