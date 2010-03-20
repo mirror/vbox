@@ -178,7 +178,7 @@ static void tstRTPipe1(void)
        POSIX systems). */
     cbWritten = ~(size_t)2;
     RTTESTI_CHECK_RC_RETV(RTPipeWrite(hPipeW, "42", 2, &cbWritten), VINF_SUCCESS);
-    RTTESTI_CHECK_RETV(cbWritten == 2);
+    RTTESTI_CHECK_MSG_RETV(cbWritten == 2, ("cbWritten=%zu\n", cbWritten));
     cbWritten = ~(size_t)2;
     RTTESTI_CHECK_RC_RETV(RTPipeWrite(hPipeW, "!", 1, &cbWritten), VINF_SUCCESS);
     RTTESTI_CHECK_RETV(cbWritten == 1);
