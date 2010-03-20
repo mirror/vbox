@@ -800,8 +800,8 @@ Drivers_DEFS            = IN_IDE_R3
 ifdef VBOX_WITH_NETFLT
 Drivers_DEFS           += VBOX_WITH_NETFLT
 endif
-ifdef VBOX_WITH_FAULT_INJECTION
-Drivers_DEFS           += VBOX_WITH_FAULT_INJECTION
+ifdef VBOX_WITH_DRV_DISK_INTEGRITY
+Drivers_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
 endif
 
 Drivers_INCS      := \
@@ -828,7 +828,6 @@ Drivers_SOURCES    = \
 	Storage/DrvRawImage.cpp \
 	Storage/Debug.cpp \
 	Storage/DrvVD.cpp \
-	Storage/DrvDiskIntegrity.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 
@@ -929,6 +928,11 @@ define def_vbox_slirp_bsd_cflags
 endef
 $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_cflags, Network)))
 $(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_bsd_cflags, Network)))
+endif
+
+ifdef VBOX_WITH_DRV_DISK_INTEGRITY
+Drivers_SOURCES += \
+	Storage/DrvDiskIntegrity.cpp
 endif
 
 # -- OS specific --

@@ -118,7 +118,9 @@ extern const PDMDRVREG g_DrvNamedPipe;
 extern const PDMDRVREG g_DrvRawFile;
 extern const PDMDRVREG g_DrvHostParallel;
 extern const PDMDRVREG g_DrvHostSerial;
+#ifdef VBOX_WITH_DRV_DISK_INTEGRITY
 extern const PDMDRVREG g_DrvDiskIntegrity;
+#endif
 
 #ifdef VBOX_WITH_USB
 extern const PDMUSBREG g_UsbDevProxy;
