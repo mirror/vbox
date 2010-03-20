@@ -157,6 +157,8 @@ typedef enum LOGGROUP
     LOG_GROUP_DRV_BLOCK,
     /** Char driver group. */
     LOG_GROUP_DRV_CHAR,
+    /** Disk integrity driver group. */
+    LOG_GROUP_DRV_DISK_INTEGRITY,
     /** Floppy media driver group. */
     LOG_GROUP_DRV_FLOPPY,
     /** Host Base block driver group. */
@@ -401,6 +403,7 @@ typedef enum LOGGROUP
     "DRV_ACPI",     \
     "DRV_BLOCK",    \
     "DRV_CHAR",     \
+    "DRV_DISK_INTEGRITY", \
     "DRV_FLOPPY",   \
     "DRV_HOST_BASE", \
     "DRV_HOST_DVD", \
