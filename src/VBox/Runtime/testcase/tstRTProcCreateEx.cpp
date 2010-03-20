@@ -82,6 +82,7 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
 #ifdef RT_OS_WINDOWS
+# if 0 /** @todo Something here drags in Secur32.dll and prevents the testcase from being run on NT4. Add this stuff to IPRT and dynamically resolve the problematic bits, please. */
     char szUser[_1K];
     DWORD cbLen = sizeof(szUser);
     /** @todo Does not yet handle ERROR_MORE_DATA for user names longer than 32767. */
@@ -133,6 +134,7 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
         RTMemFree(pSid);
         RTMemFree(pszDomain);
     }
+# endif
 #else
     /** @todo Lookup UID/effective UID, maybe GID? */
 #endif
