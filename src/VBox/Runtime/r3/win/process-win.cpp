@@ -43,54 +43,23 @@
 #include "internal/iprt.h"
 
 #include <iprt/assert.h>
+#include <iprt/critsect.h>
 #include <iprt/file.h>
 #include <iprt/err.h>
 #include <iprt/env.h>
 #include <iprt/getopt.h>
+#include <iprt/initterm.h>
 #include <iprt/ldr.h>
+#include <iprt/mem.h>
+#include <iprt/once.h>
 #include <iprt/pipe.h>
 #include <iprt/string.h>
 #include <iprt/socket.h>
 
 
-/*
- * This is from Winternl.h. It has been copied here
- * because the header does not define a calling convention for
- * its prototypes and just assumes that _stdcall is the standard
- * calling convention.
- */
-typedef struct _PEB
-{
-    BYTE Reserved1[2];
-    BYTE BeingDebugged;
-    BYTE Reserved2[229];
-    PVOID Reserved3[59];
-    ULONG SessionId;
-} PEB, *PPEB;
-
-typedef struct _PROCESS_BASIC_INFORMATION
-{
-    PVOID Reserved1;
-    PPEB PebBaseAddress;
-    PVOID Reserved2[2];
-    ULONG_PTR UniqueProcessId;
-    PVOID Reserved3;
-} PROCESS_BASIC_INFORMATION;
-
-typedef enum _PROCESSINFOCLASS
-{
-    ProcessBasicInformation = 0,
-    ProcessWow64Information = 26
-} PROCESSINFOCLASS;
-
-extern "C" LONG WINAPI
-NtQueryInformationProcess(
-    IN HANDLE ProcessHandle,
-    IN PROCESSINFOCLASS ProcessInformationClass,
-    OUT PVOID ProcessInformation,
-    IN ULONG ProcessInformationLength,
-    OUT PULONG ReturnLength OPTIONAL);
-
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef WINADVAPI BOOL WINAPI FNCREATEPROCESSWITHLOGON(LPCWSTR,
                                                        LPCWSTR,
                                                        LPCWSTR,
@@ -105,7 +74,161 @@ typedef WINADVAPI BOOL WINAPI FNCREATEPROCESSWITHLOGON(LPCWSTR,
 typedef FNCREATEPROCESSWITHLOGON *PFNCREATEPROCESSWITHLOGON;
 
 
-#if 0  /** @todo Andy, could you enable and test this, please?  It should work, but I don't have a full windows install to test it on. */
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+/** Init once structure. */
+static RTONCE       g_rtProcWinInitOnce = RTONCE_INITIALIZER;
+/** Critical section protecting the process array. */
+static RTCRITSECT   g_CritSect;
+/** The number of processes in the array. */
+static uint32_t     g_cProcesses;
+/** The current allocation size. */
+static uint32_t     g_cProcessesAlloc;
+/** Array containing the live or non-reaped child processes. */
+static struct RTPROCWINENTRY
+{
+    /** The process ID. */
+    ULONG_PTR       pid;
+    /** The process handle. */
+    HANDLE          hProcess;
+}                  *g_paProcesses;
+
+
+/**
+ * Clean up the globals.
+ *
+ * @param   enmReason           Ignored.
+ * @param   iStatus             Ignored.
+ * @param   pvUser              Ignored.
+ */
+static DECLCALLBACK(void) rtProcWinTerm(RTTERMREASON enmReason, int32_t iStatus, void *pvUser)
+{
+    NOREF(pvUser); NOREF(iStatus); NOREF(enmReason);
+
+    RTCritSectDelete(&g_CritSect);
+
+    size_t i = g_cProcesses;
+    while (i-- > 0)
+    {
+        CloseHandle(g_paProcesses[i].hProcess);
+        g_paProcesses[i].hProcess = NULL;
+    }
+    RTMemFree(g_paProcesses);
+
+    g_paProcesses     = NULL;
+    g_cProcesses      = 0;
+    g_cProcessesAlloc = 0;
+}
+
+
+/**
+ * Initialize the globals.
+ *
+ * @returns IPRT status code.
+ * @param   pvUser1             Ignored.
+ * @param   pvUser2             Ignored.
+ */
+static DECLCALLBACK(int32_t) rtProcWinInitOnce(void *pvUser1, void *pvUser2)
+{
+    NOREF(pvUser1); NOREF(pvUser2);
+
+    g_cProcesses        = 0;
+    g_cProcessesAlloc   = 0;
+    g_paProcesses       = NULL;
+    int rc = RTCritSectInit(&g_CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        /** @todo init once, terminate once - this is a generic thing which should
+         *        have some kind of static and simpler setup!  */
+        rc = RTTermRegisterCallback(rtProcWinTerm, NULL);
+        if (RT_SUCCESS(rc))
+            return rc;
+        RTCritSectDelete(&g_CritSect);
+    }
+    return rc;
+}
+
+
+/**
+ * Gets the process handle for a process from g_paProcesses.
+ *
+ * @returns Process handle if found, NULL if not.
+ * @param   pid                 The process to remove (pid).
+ */
+static HANDLE rtProcWinFindPid(RTPROCESS pid)
+{
+    HANDLE hProcess = NULL;
+
+    RTCritSectEnter(&g_CritSect);
+    uint32_t i = g_cProcesses;
+    while (i-- > 0)
+        if (g_paProcesses[i].pid == pid)
+        {
+            hProcess = g_paProcesses[i].hProcess;
+            break;
+        }
+    RTCritSectLeave(&g_CritSect);
+
+    return hProcess;
+}
+
+
+/**
+ * Removes a process from g_paProcesses.
+ *
+ * @param   pid                 The process to remove (pid).
+ */
+static void rtProcWinRemovePid(RTPROCESS pid)
+{
+    RTCritSectEnter(&g_CritSect);
+    uint32_t i = g_cProcesses;
+    while (i-- > 0)
+        if (g_paProcesses[i].pid == pid)
+        {
+            g_cProcesses--;
+            uint32_t cToMove = g_cProcesses - i;
+            if (cToMove)
+                memmove(&g_paProcesses[i], &g_paProcesses[i + 1], cToMove * sizeof(g_paProcesses[0]));
+            break;
+        }
+    RTCritSectLeave(&g_CritSect);
+}
+
+
+/**
+ * Adds a process to g_paProcesses.
+ *
+ * @returns IPRT status code.
+ * @param   pid                 The process id.
+ * @param   hProcess            The process handle.
+ */
+static int rtProcWinAddPid(RTPROCESS pid, HANDLE hProcess)
+{
+    RTCritSectEnter(&g_CritSect);
+
+    uint32_t i = g_cProcesses;
+    if (i >= g_cProcessesAlloc)
+    {
+        void *pvNew = RTMemRealloc(g_paProcesses, (i + 16) * sizeof(g_paProcesses[0]));
+        if (RT_UNLIKELY(!pvNew))
+        {
+            RTCritSectLeave(&g_CritSect);
+            return VERR_NO_MEMORY;
+        }
+        g_paProcesses     = (struct RTPROCWINENTRY *)pvNew;
+        g_cProcessesAlloc = i + 16;
+    }
+
+    g_paProcesses[i].pid      = pid;
+    g_paProcesses[i].hProcess = hProcess;
+    g_cProcesses = i + 1;
+
+    RTCritSectLeave(&g_CritSect);
+    return VINF_SUCCESS;
+}
+
+
 RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
 {
     return RTProcCreateEx(pszExec, papszArgs, Env, fFlags,
@@ -113,84 +236,6 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
                           NULL /*pszAsUser*/, NULL /* pszPassword*/,
                           pProcess);
 }
-#else
-/** @todo r=michael This function currently does not work correctly if the arguments
-                    contain spaces. */
-RTR3DECL(int) RTProcCreate(const char *pszExec, const char * const *papszArgs, RTENV Env, unsigned fFlags, PRTPROCESS pProcess)
-{
-    /*
-     * Validate input.
-     */
-    AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
-    AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!fFlags, VERR_INVALID_PARAMETER);
-    AssertReturn(Env != NIL_RTENV, VERR_INVALID_PARAMETER);
-    const char * const *papszEnv = RTEnvGetExecEnvP(Env);
-    AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
-    AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
-    AssertPtrReturn(*papszArgs, VERR_INVALID_PARAMETER);
-    /* later: path searching. */
-
-    /*
-     * Spawn the child.
-     */
-    /** @todo utf-8 considerations! */
-    HANDLE hProcess = (HANDLE)_spawnve(_P_NOWAITO, pszExec, papszArgs, papszEnv);
-    if (hProcess != 0 && hProcess != INVALID_HANDLE_VALUE)
-    {
-        if (pProcess)
-        {
-            /*
-             * GetProcessId requires XP SP1 or later
-             */
-#if defined(RT_ARCH_AMD64)
-            *pProcess = GetProcessId(hProcess);
-#else /* !RT_ARCH_AMD64 */
-            static bool           fInitialized = false;
-            static DWORD (WINAPI *pfnGetProcessId)(HANDLE Thread) = NULL;
-            if (!fInitialized)
-            {
-                HMODULE hmodKernel32 = GetModuleHandle("KERNEL32.DLL");
-                if (hmodKernel32)
-                    pfnGetProcessId = (DWORD (WINAPI*)(HANDLE))GetProcAddress(hmodKernel32, "GetProcessId");
-                fInitialized = true;
-            }
-            if (pfnGetProcessId)
-            {
-                *pProcess = pfnGetProcessId(hProcess);
-                if (!*pProcess)
-                {
-                    int rc = RTErrConvertFromWin32(GetLastError());
-                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Rrc\n", hProcess, rc));
-                    return rc;
-                }
-            }
-            else
-            {
-                /*
-                 * Fall back to the NT api for older versions.
-                 */
-                PROCESS_BASIC_INFORMATION ProcInfo = {0};
-                ULONG Status = NtQueryInformationProcess(hProcess, ProcessBasicInformation,
-                                                         &ProcInfo, sizeof(ProcInfo), NULL);
-                if (Status != 0)
-                {
-                    int rc = ERROR_INTERNAL_ERROR; /* (we don't have a valid conversion here, but this shouldn't happen anyway.) */
-                    AssertMsgFailed(("failed to get pid from hProcess=%#x rc=%Rrc Status=%#x\n", hProcess, rc, Status));
-                    return rc;
-                }
-                *pProcess = ProcInfo.UniqueProcessId;
-            }
-#endif  /* !RT_ARCH_AMD64 */
-        }
-        return VINF_SUCCESS;
-    }
-
-    int rc = RTErrConvertFromErrno(errno);
-    AssertMsgFailed(("spawn/exec failed rc=%Rrc\n", rc)); /* this migth be annoying... */
-    return rc;
-}
-#endif
 
 
 static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
@@ -234,7 +279,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     else
         dwErr = GetLastError();
 
-#ifndef IPRT_TARGET_NT4 /* We could dispense with the tediuos dynamic loading here if we wanted. */
+#ifndef IPRT_TARGET_NT4
     /*
      * If we don't hold enough priviledges to spawn a new process with
      * different credentials we have to use CreateProcessWithLogonW here.  This
@@ -284,8 +329,6 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                PCRTHANDLE phStdIn, PCRTHANDLE phStdOut, PCRTHANDLE phStdErr, const char *pszAsUser,
                                const char *pszPassword, PRTPROCESS phProcess)
 {
-    int rc;
-
     /*
      * Input validation
      */
@@ -295,6 +338,12 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     /** @todo search the PATH (add flag for this). */
+
+    /*
+     * Initialize the globals.
+     */
+    int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL, NULL);
+    AssertRCReturn(rc, rc);
 
     /*
      * Get the file descriptors for the handles we've been passed.
@@ -440,7 +489,11 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                     CloseHandle(ProcInfo.hThread);
                     if (phProcess)
                     {
-                        /** @todo Remember the process handle and pick it up in RTProcWait. */
+                        /*
+                         * Add the process to the child process list so
+                         * RTProcWait can reuse and close the process handle.
+                         */
+                        rtProcWinAddPid(ProcInfo.dwProcessId, ProcInfo.hProcess);
                         *phProcess = ProcInfo.dwProcessId;
                     }
                     else
@@ -471,11 +524,16 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProcStatus)
 {
     AssertReturn(!(fFlags & ~(RTPROCWAIT_FLAGS_BLOCK | RTPROCWAIT_FLAGS_NOBLOCK)), VERR_INVALID_PARAMETER);
+    int rc = RTOnce(&g_rtProcWinInitOnce, rtProcWinInitOnce, NULL, NULL);
+    AssertRCReturn(rc, rc);
 
     /*
-     * Open the process.
+     * Try find the process among the ones we've spawned, otherwise, attempt
+     * opening the specified process.
      */
-    HANDLE hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, Process);
+    HANDLE hProcess = rtProcWinFindPid(Process);
+    if (hProcess == NULL)
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | SYNCHRONIZE, FALSE, Process);
     if (hProcess != NULL)
     {
         /*
@@ -501,6 +559,7 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
                         pProcStatus->enmReason = RTPROCEXITREASON_NORMAL;
                         pProcStatus->iStatus = (int)dwExitCode;
                     }
+                    rtProcWinRemovePid(Process);
                     return VINF_SUCCESS;
                 }
                 break;
@@ -526,6 +585,8 @@ RTR3DECL(int) RTProcWait(RTPROCESS Process, unsigned fFlags, PRTPROCSTATUS pProc
         }
     }
     DWORD dwErr = GetLastError();
+    if (dwErr == ERROR_INVALID_PARAMETER)
+        return VERR_PROCESS_NOT_FOUND;
     return RTErrConvertFromWin32(dwErr);
 }
 
