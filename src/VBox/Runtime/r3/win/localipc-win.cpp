@@ -192,10 +192,17 @@ static DWORD rtLocalIpcServerWinCreatePipeInstance(PHANDLE phNmPipe, const char 
      */
     DWORD err;
     PSECURITY_DESCRIPTOR pSecDesc = NULL;
+#if 0 /** @todo dynamically resolve this as it is the only thing that prevents
+       * loading IPRT on NT4. */
     if (ConvertStringSecurityDescriptorToSecurityDescriptor(RTLOCALIPC_WIN_SDDL,
                                                             SDDL_REVISION_1,
                                                             &pSecDesc,
                                                             NULL))
+#else
+    AssertFatalFailed();
+    SetLastError(-1);
+    if (0)
+#endif
     {
         SECURITY_ATTRIBUTES SecAttrs;
         SecAttrs.nLength = sizeof(SecAttrs);
