@@ -481,7 +481,7 @@ DECLCALLBACK(int) VBoxServiceVMInfoWorker(bool volatile *pfShutdown)
 
 #ifdef RT_OS_WINDOWS
     WSACleanup();
-#endif /* !RT_OS_WINDOWS */
+#endif
 
     RTSemEventMultiDestroy(g_VMInfoEvent);
     g_VMInfoEvent = NIL_RTSEMEVENTMULTI;
