@@ -828,6 +828,7 @@ Drivers_SOURCES    = \
 	Storage/DrvRawImage.cpp \
 	Storage/Debug.cpp \
 	Storage/DrvVD.cpp \
+	Storage/DrvDiskIntegrity.cpp \
 	Network/DrvNetSniffer.cpp \
 	Network/Pcap.cpp
 
