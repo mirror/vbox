@@ -1665,7 +1665,7 @@ static PPDMACFILECACHEENTRY pdmacFileEpCacheEntryCreate(PPDMASYNCCOMPLETIONENDPO
             pdmacFileEpCacheInsertEntry(pEndpointCache, pEntryNew);
 
             AssertMsg(   (off >= pEntryNew->Core.Key)
-                      && (off + (RTFOFF)cb <= pEntryNew->Core.Key + pEntryNew->Core.KeyLast + 1),
+                      && (off + (RTFOFF)*pcbData <= pEntryNew->Core.KeyLast + 1),
                       ("Overflow in calculation off=%RTfoff OffsetAligned=%RTfoff\n",
                        off, pEntryNew->Core.Key));
         }
@@ -2165,11 +2165,11 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
             cbWrite -= cbToWrite;
 
-            STAM_COUNTER_INC(&pCache->cMisses);
-
             if (pEntryNew)
             {
                 RTFOFF offDiff = off - pEntryNew->Core.Key;
+
+                STAM_COUNTER_INC(&pCache->cHits);
 
                 /*
                  * Check if it is possible to just write the data without waiting
@@ -2207,6 +2207,8 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                  * Pass the request directly to the I/O manager.
                  */
                 LogFlow(("Couldn't evict %u bytes from the cache. Remaining request will be passed through\n", cbToWrite));
+
+                STAM_COUNTER_INC(&pCache->cMisses);
 
                 pdmacFileEpCacheRequestPassthrough(pEndpoint, pTask,
                                                    &IoMemCtx, off, cbToWrite,

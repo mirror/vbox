@@ -517,8 +517,15 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     unsigned                               fFlags;
     /** File handle. */
     RTFILE                                 File;
-    /** Size of the underlying file.
-     * Updated while data is appended. */
+    /** Size of the endpoint.
+     * Updated while data is appended even if it is
+     * only in the cache yet and not written to the file.
+     */
+    volatile uint64_t                      cbEndpoint;
+    /**
+     * Real size of the file. Only updated if
+     * data is appended.
+     */
     volatile uint64_t                      cbFile;
     /** Flag whether caching is enabled for this file. */
     bool                                   fCaching;
