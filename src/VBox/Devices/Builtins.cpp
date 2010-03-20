@@ -294,6 +294,9 @@ extern "C" DECLEXPORT(int) VBoxDriversRegister(PCPDMDRVREGCB pCallbacks, uint32_
         return rc;
 # endif
 
+#endif
+
+#ifdef VBOX_WITH_DRV_DISK_INTEGRITY
     rc = pCallbacks->pfnRegister(pCallbacks, &g_DrvDiskIntegrity);
     if (RT_FAILURE(rc))
         return rc;
