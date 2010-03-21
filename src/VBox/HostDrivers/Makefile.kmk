@@ -39,6 +39,9 @@ if !defined(VBOX_ONLY_DOCS) && !defined(VBOX_ONLY_TESTSUITE)
    include $(PATH_SUB_CURRENT)/VBoxNetAdp/Makefile.kmk
   endif
  endif
+ ifeq ($(KBUILD_TARGET),darwin)
+  include $(PATH_SUB_CURRENT)/darwin/Makefile.kmk
+ endif
 
  if1of ($(KBUILD_TARGET),linux freebsd)
   #
