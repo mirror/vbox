@@ -4976,58 +4976,62 @@ static DECLCALLBACK(int) vgaPortTakeScreenshot(PPDMIDISPLAYPORT pInterface, uint
      */
     size_t cbRequired = pThis->last_scr_width * 4 * pThis->last_scr_height;
 
-    uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbRequired);
-    if (pu8Data == NULL)
+    if (cbRequired)
     {
-        rc = VERR_NO_MEMORY;
-    }
-    else
-    {
-        /*
-         * Only 3 methods, assigned below, will be called during the screenshot update.
-         * All other are already set to NULL.
-         */
+        uint8_t *pu8Data = (uint8_t *)RTMemAlloc(cbRequired);
 
-        Connector.pu8Data       = pu8Data;
-        Connector.cBits         = 32;
-        Connector.cx            = pThis->last_scr_width;
-        Connector.cy            = pThis->last_scr_height;
-        Connector.cbScanline    = Connector.cx * 4;
-        Connector.pfnRefresh    = vgaDummyRefresh;
-        Connector.pfnResize     = vgaDummyResize;
-        Connector.pfnUpdateRect = vgaDummyUpdateRect;
-
-        /* Save & replace state data. */
-        PPDMIDISPLAYCONNECTOR pConnectorSaved = pThis->pDrv;
-        int32_t graphic_mode_saved = pThis->graphic_mode;
-        bool fRenderVRAMSaved = pThis->fRenderVRAM;
-
-        pThis->pDrv = &Connector;
-        pThis->graphic_mode = -1;           /* force a full refresh. */
-        pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
-
-        /* Make the screenshot.
-         *
-         * The second parameter is 'false' because the current display state, already updated by the
-         * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
-         * That is if display is blanked, we expect a black screen in the external buffer.
-         */
-        rc = vga_update_display(pThis, false);
-
-        /* Restore. */
-        pThis->pDrv = pConnectorSaved;
-        pThis->graphic_mode = graphic_mode_saved;
-        pThis->fRenderVRAM = fRenderVRAMSaved;
-
-        if (rc == VINF_SUCCESS)
+        if (pu8Data == NULL)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+        else
         {
             /*
-             * Return the result.
+             * Only 3 methods, assigned below, will be called during the screenshot update.
+             * All other are already set to NULL.
              */
-            *ppu8Data = pu8Data;
-            *pcbData = cbRequired;
-            *pcx = Connector.cx;
-            *pcy = Connector.cy;
+
+            Connector.pu8Data       = pu8Data;
+            Connector.cBits         = 32;
+            Connector.cx            = pThis->last_scr_width;
+            Connector.cy            = pThis->last_scr_height;
+            Connector.cbScanline    = Connector.cx * 4;
+            Connector.pfnRefresh    = vgaDummyRefresh;
+            Connector.pfnResize     = vgaDummyResize;
+            Connector.pfnUpdateRect = vgaDummyUpdateRect;
+
+            /* Save & replace state data. */
+            PPDMIDISPLAYCONNECTOR pConnectorSaved = pThis->pDrv;
+            int32_t graphic_mode_saved = pThis->graphic_mode;
+            bool fRenderVRAMSaved = pThis->fRenderVRAM;
+
+            pThis->pDrv = &Connector;
+            pThis->graphic_mode = -1;           /* force a full refresh. */
+            pThis->fRenderVRAM = 1;             /* force the guest VRAM rendering to the given buffer. */
+
+            /* Make the screenshot.
+             *
+             * The second parameter is 'false' because the current display state, already updated by the
+             * pfnUpdateDisplayAll call above, is being rendered to an external buffer using a fake connector.
+             * That is if display is blanked, we expect a black screen in the external buffer.
+             */
+            rc = vga_update_display(pThis, false);
+
+            /* Restore. */
+            pThis->pDrv = pConnectorSaved;
+            pThis->graphic_mode = graphic_mode_saved;
+            pThis->fRenderVRAM = fRenderVRAMSaved;
+
+            if (rc == VINF_SUCCESS)
+            {
+                /*
+                 * Return the result.
+                 */
+                *ppu8Data = pu8Data;
+                *pcbData = cbRequired;
+                *pcx = Connector.cx;
+                *pcy = Connector.cy;
+            }
         }
     }
 

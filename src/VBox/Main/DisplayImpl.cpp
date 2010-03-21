@@ -432,8 +432,14 @@ Display::displaySSMSaveScreenshot(PSSMHANDLE pSSM, void *pvUser)
         int rc = that->mpDrv->pUpPort->pfnTakeScreenshot (that->mpDrv->pUpPort, &pu8Data, &cbData, &cx, &cy);
 #endif /* !VBOX_WITH_OLD_VBVA_LOCK */
 
-        if (RT_SUCCESS(rc))
+        /*
+         * It is possible that success is returned but everything is 0 or NULL.
+         * (no display attached if a VM is running with VBoxHeadless on OSE for example)
+         */
+        if (RT_SUCCESS(rc) && pu8Data)
         {
+            Assert(cx && cy);
+
             /* Prepare a small thumbnail and a PNG screenshot. */
             displayMakeThumbnail(pu8Data, cx, cy, &pu8Thumbnail, &cbThumbnail, &cxThumbnail, &cyThumbnail);
             displayMakePNG(pu8Data, cx, cy, &pu8PNG, &cbPNG, &cxPNG, &cyPNG);
