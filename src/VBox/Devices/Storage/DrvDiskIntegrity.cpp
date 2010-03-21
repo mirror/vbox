@@ -30,6 +30,7 @@
 #include <iprt/uuid.h>
 #include <iprt/avl.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
 
 #include "Builtins.h"
 
@@ -37,6 +38,19 @@
 /*******************************************************************************
 *   Structures and Typedefs                                                    *
 *******************************************************************************/
+
+/**
+ * I/O log entry.
+ */
+typedef struct IOLOGENT
+{
+    /** Start offset */
+    uint64_t         off;
+    /** Write size */
+    size_t           cbWrite;
+    /** Number of references to this entry. */
+    unsigned         cRefs;
+} IOLOGENT, *PIOLOGENT;
 
 /**
  * Disk segment.
@@ -49,6 +63,10 @@ typedef struct DRVDISKSEGMENT
     size_t           cbSeg;
     /** Data for this segment */
     uint8_t         *pbSeg;
+    /** Numbner of entries in the I/O array. */
+    unsigned         cIoLogEntries;
+    /** Array of I/O log references. */
+    PIOLOGENT        apIoLog[1];
 } DRVDISKSEGMENT, *PDRVDISKSEGMENT;
 
 /**
@@ -89,6 +107,9 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
     if (RT_FAILURE(rc))
         return rc;
 
+    Assert(off % 512 == 0);
+    Assert(cbRead % 512 == 0);
+
     /* Compare read data */
     size_t cbLeft   = cbRead;
     RTFOFF offCurr  = (RTFOFF)off;
@@ -119,7 +140,7 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
         {
             fCmp    = true;
             offSeg  = offCurr - pSeg->Core.Key;
-            cbRange = RT_MIN(cbLeft, pSeg->cbSeg - offCurr);
+            cbRange = RT_MIN(cbLeft, (size_t)(pSeg->Core.KeyLast + 1 - offCurr));
         }
 
         if (   fCmp
@@ -128,8 +149,19 @@ static DECLCALLBACK(int) drvdiskintRead(PPDMIMEDIA pInterface,
             unsigned offWrong = 0;
             for (offWrong = 0; offWrong < cbRange; offWrong++)
                 if (pbBuf[offWrong] != pSeg->pbSeg[offSeg + offWrong])
-                    AssertMsgFailed(("Corrupted disk at offset %llu (%u bytes in the current read buffer)!\n",
-                                     offCurr + offWrong, offWrong));
+                {
+                    /* Corrupted disk, print I/O log entry of the last write which accessed this range. */
+                    uint32_t cSector = (offSeg + offWrong) / 512;
+                    AssertMsg(cSector < pSeg->cIoLogEntries, ("Internal bug!\n"));
+
+                    RTMsgError("Corrupted disk at offset %llu (%u bytes in the current read buffer)!\n",
+                               offCurr + offWrong, offWrong);
+                    RTMsgError("Last write to this sector started at offset %llu with %u bytes (%u references to this log entry)\n",
+                               pSeg->apIoLog[cSector]->off,
+                               pSeg->apIoLog[cSector]->cbWrite,
+                               pSeg->apIoLog[cSector]->cRefs);
+                    RTAssertDebugBreak();
+                }
         }
 
         offCurr += cbRange;
@@ -154,6 +186,13 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
     size_t cbLeft   = cbWrite;
     RTFOFF offCurr  = (RTFOFF)off;
     uint8_t *pbBuf  = (uint8_t *)pvBuf;
+    PIOLOGENT pIoLogEnt = (PIOLOGENT)RTMemAllocZ(sizeof(IOLOGENT));
+    if (!pIoLogEnt)
+        return VERR_NO_MEMORY;
+
+    pIoLogEnt->off     = off;
+    pIoLogEnt->cbWrite = cbWrite;
+    pIoLogEnt->cRefs   = 0;
 
     while (cbLeft)
     {
@@ -172,14 +211,17 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
             else
                 cbRange = pSeg->Core.Key - offCurr;
 
+            Assert(cbRange % 512 == 0);
+
             /* Create new segment */
-            pSeg = (PDRVDISKSEGMENT)RTMemAllocZ(sizeof(DRVDISKSEGMENT));
+            pSeg = (PDRVDISKSEGMENT)RTMemAllocZ(RT_OFFSETOF(DRVDISKSEGMENT, apIoLog[cbRange / 512]));
             if (pSeg)
             {
-                pSeg->Core.Key     = offCurr;
-                pSeg->Core.KeyLast = offCurr + (RTFOFF)cbRange - 1;
-                pSeg->cbSeg        = cbRange;
-                pSeg->pbSeg        = (uint8_t *)RTMemAllocZ(cbRange);
+                pSeg->Core.Key      = offCurr;
+                pSeg->Core.KeyLast  = offCurr + (RTFOFF)cbRange - 1;
+                pSeg->cbSeg         = cbRange;
+                pSeg->pbSeg         = (uint8_t *)RTMemAllocZ(cbRange);
+                pSeg->cIoLogEntries = cbRange / 512;
                 if (!pSeg->pbSeg)
                     RTMemFree(pSeg);
                 else
@@ -194,13 +236,37 @@ static DECLCALLBACK(int) drvdiskintWrite(PPDMIMEDIA pInterface,
         {
             fSet    = true;
             offSeg  = offCurr - pSeg->Core.Key;
-            cbRange = RT_MIN(cbLeft, pSeg->cbSeg - offCurr);
+            cbRange = RT_MIN(cbLeft, (size_t)(pSeg->Core.KeyLast + 1 - offCurr));
         }
 
         if (fSet)
         {
             AssertPtr(pSeg);
             memcpy(pSeg->pbSeg + offSeg, pbBuf, cbRange);
+
+            /* Update the I/O log pointers */
+            Assert(offSeg % 512 == 0);
+            Assert(cbRange % 512 == 0);
+            while (offSeg < cbRange)
+            {
+                uint32_t uSector = offSeg / 512;
+                PIOLOGENT pIoLogOld = NULL;
+
+                AssertMsg(uSector < pSeg->cIoLogEntries, ("Internal bug!\n"));
+
+                pIoLogOld = pSeg->apIoLog[uSector];
+                if (pIoLogOld)
+                {
+                    pIoLogOld->cRefs--;
+                    if (!pIoLogOld->cRefs)
+                        RTMemFree(pIoLogOld);
+                }
+
+                pSeg->apIoLog[uSector] = pIoLogEnt;
+                pIoLogEnt->cRefs++;
+
+                offSeg += 512;
+            }
         }
 
         offCurr += cbRange;
@@ -368,7 +434,7 @@ static DECLCALLBACK(int) drvdiskintConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg,
     if (!pThis->pTreeSegments)
         rc = VERR_NO_MEMORY;
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 
