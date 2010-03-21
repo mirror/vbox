@@ -186,8 +186,8 @@ endif
 ifdef VBOX_WITH_EFI
  VBoxDD_DEFS           += VBOX_WITH_EFI
 endif
-ifdef VBOX_WITH_FAULT_INJECTION
- VBoxDD_DEFS           += VBOX_WITH_FAULT_INJECTION
+ifdef VBOX_WITH_DRV_DISK_INTEGRITY
+ VBoxDD_DEFS           += VBOX_WITH_DRV_DISK_INTEGRITY
 endif
 
 VBoxDD_LIBS             = \
