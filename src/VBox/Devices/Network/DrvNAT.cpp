@@ -987,14 +987,17 @@ static DECLCALLBACK(void) drvNATDestruct(PPDMDRVINS pDrvIns)
     LogFlow(("drvNATDestruct:\n"));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
 
-    slirp_term(pThis->pNATState);
-    slirp_deregister_statistics(pThis->pNATState, pDrvIns);
-    pThis->pNATState = NULL;
+    if (pThis->pNATState)
+    {
+        slirp_term(pThis->pNATState);
+        slirp_deregister_statistics(pThis->pNATState, pDrvIns);
 #ifdef VBOX_WITH_STATISTICS
 # define DRV_PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name, pThis)
 # define DRV_COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name, pThis)
 # include "counters.h"
 #endif
+        pThis->pNATState = NULL;
+    }
 }
 
 
