@@ -1921,6 +1921,9 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         /* BIOS Settings holder */
         CBIOSSettings biosSettings = aMachine.GetBIOSSettings();
 
+        /* System details row count: */
+        int iRowCount = 2; /* Memory & CPU details rows initially. */
+
         /* Boot order */
         QString bootOrder;
         for (ulong i = 1; i <= mVBox.GetSystemProperties().GetMaxBootPosition(); ++ i)
@@ -1934,6 +1937,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         }
         if (bootOrder.isEmpty())
             bootOrder = toString (KDeviceType_Null);
+
+        iRowCount += 1; /* Boot-order row. */
 
 #ifdef VBOX_WITH_FULL_DETAILS_REPORT
         /* ACPI */
@@ -1950,6 +1955,8 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString pae = aMachine.GetCpuProperty(KCpuPropertyType_PAE)
             ? tr ("Enabled", "details report (PAE/NX)")
             : tr ("Disabled", "details report (PAE/NX)");
+
+        iRowCount += 3; /* Full report rows. */
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
 
         /* VT-x/AMD-V */
@@ -1961,6 +1968,12 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
         QString nested = aMachine.GetHWVirtExProperty(KHWVirtExPropertyType_NestedPaging)
             ? tr ("Enabled", "details report (Nested Paging)")
             : tr ("Disabled", "details report (Nested Paging)");
+
+        /* VT-x/AMD-V availability: */
+        bool fVTxAMDVSupported = virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+
+        if (fVTxAMDVSupported)
+            iRowCount += 2; /* VT-x/AMD-V items. */
 
         QString item = QString (sSectionItemTpl2).arg (tr ("Base Memory", "details report"),
                                                        tr ("<nobr>%1 MB</nobr>", "details report"))
@@ -1974,16 +1987,14 @@ QString VBoxGlobal::detailsReport (const CMachine &aMachine, bool aWithLinks)
                      + QString (sSectionItemTpl2).arg (tr ("IO APIC", "details report"), ioapic)
                      + QString (sSectionItemTpl2).arg (tr ("PAE/NX", "details report"), pae)
 #endif /* VBOX_WITH_FULL_DETAILS_REPORT */
-                     + QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
-                     + QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested)
                      ;
 
+        if (fVTxAMDVSupported)
+                item += QString (sSectionItemTpl2).arg (tr ("VT-x/AMD-V", "details report"), virt)
+                     +  QString (sSectionItemTpl2).arg (tr ("Nested Paging", "details report"), nested);
+
         report += sectionTpl
-#ifdef VBOX_WITH_FULL_DETAILS_REPORT
-                  .arg (2 + 8) /* rows */
-#else
-                  .arg (2 + 5) /* rows */
-#endif /* VBOX_WITH_FULL_DETAILS_REPORT */
+                  .arg (2 + iRowCount) /* rows */
                   .arg (":/chipset_16px.png", /* icon */
                         "#system", /* link */
                         tr ("System", "details report"), /* title */

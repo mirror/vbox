@@ -405,7 +405,7 @@
          <item>
           <widget class="QIAdvancedSlider" name="mSlCPU">
            <property name="whatsThis">
-            <string>Controls the number of virtual CPUs in the virtual machine.</string>
+            <string>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</string>
            </property>
            <property name="maximum">
             <number>4096</number>
@@ -478,7 +478,7 @@
           </sizepolicy>
          </property>
          <property name="whatsThis">
-          <string>Controls the number of virtual CPUs in the virtual machine.</string>
+          <string>Controls the number of virtual CPUs in the virtual machine. You need hardware virtualization support on your host system to use more than one virtual CPU.</string>
          </property>
         </widget>
        </item>
