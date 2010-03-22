@@ -184,7 +184,7 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     if (zone->cur_items >= zone->max_items)
         LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
 
-    allocated:
+allocated:
     if (zone->pfInit)
         zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
     RTCritSectLeave(&zone->csZone);
@@ -208,7 +208,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 }
 
 uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
-    ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
+                       ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
     uma_zone_t zone = RTMemAllocZ(sizeof(struct uma_zone) + size);
     Assert((pData));
@@ -236,9 +236,8 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
 #endif
     zone = RTMemAllocZ(sizeof(struct uma_zone));
     if (zone == NULL)
-    {
         return NULL;
-    }
+
     Assert((master && master->pData));
     zone->magic = ZONE_MAGIC;
     zone->pData = master->pData;
@@ -253,14 +252,17 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     RTCritSectInit(&zone->csZone);
     return zone;
 }
+
 void uma_zone_set_max(uma_zone_t zone, int max)
 {
     zone->max_items = max;
 }
+
 void uma_zone_set_allocf(uma_zone_t zone, uma_alloc_t pfAlloc)
 {
    zone->pfAlloc = pfAlloc;
 }
+
 void uma_zone_set_freef(uma_zone_t zone, uma_free_t pfFree)
 {
    zone->pfFree = pfFree;
@@ -277,6 +279,7 @@ uint32_t *uma_find_refcnt(uma_zone_t zone, void *mem)
     Assert(it[-1].magic == ITEM_MAGIC);
     return &it[-1].ref_count;
 }
+
 void *uma_zalloc_arg(uma_zone_t zone, void *args, int how)
 {
     void *mem;
@@ -302,6 +305,7 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     Assert(zone->magic == ZONE_MAGIC);
     if (zone->pfFree == NULL)
         return;
+
     Assert((mem));
     RTCritSectEnter(&zone->csZone);
     it = &((struct item *)mem)[-1];
@@ -319,10 +323,12 @@ void uma_zfree_arg(uma_zone_t zone, void *mem, void *flags)
     zone->pfFree(mem,  0, 0);
     RTCritSectLeave(&zone->csZone);
 }
+
 int uma_zone_exhausted_nolock(uma_zone_t zone)
 {
     return 0;
 }
+
 void zone_drain(uma_zone_t zone)
 {
 }
@@ -388,6 +394,7 @@ static void zone_destroy(uma_zone_t zone)
     RTCritSectDelete(&zone->csZone);
     RTMemFree(zone);
 }
+
 void m_fini(PNATState pData)
 {
     zone_destroy(pData->zone_mbuf);
