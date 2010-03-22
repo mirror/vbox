@@ -47,8 +47,8 @@ RT_C_DECLS_BEGIN
 #define EM_SAVED_STATE_VERSION_PRE_SMP                  2
 
 
-/** 
- * MWait state flags. 
+/**
+ * MWait state flags.
  */
 /* MWait activated. */
 #define EMMWAIT_FLAG_ACTIVE             RT_BIT(0)
@@ -65,9 +65,14 @@ typedef struct CLISTAT
 {
     /** The key is the cli address. */
     AVLGCPTRNODECORE        Core;
+#if HC_ARCH_BITS == 32 && !defined(RT_OS_WINDOWS)
+    /** Padding. */
+    uint32_t                u32Padding;
+#endif
     /** Occurrences. */
     STAMCOUNTER             Counter;
 } CLISTAT, *PCLISTAT;
+AssertCompileMemberAlignment(CLISTAT, Counter, 8);
 
 
 /**
