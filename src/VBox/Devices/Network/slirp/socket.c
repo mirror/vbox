@@ -1055,13 +1055,15 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     int m_room;
 
     ip = (struct ip *)buff;
-    hlen = (ip->ip_hl << 2);
-    /* Note: ip->ip_len in host byte order */
+#ifndef RT_OS_DARWIN
+    /* Darwin: send IP.IP_LEN in host format (payload only) */
     ip->ip_len = RT_N2H_U16(ip->ip_len);
-#ifdef RT_OS_SOLARIS
-    /* Solaris doesn't pass raw IP datagram, ip_len is size of payload only */
-    ip->ip_len += hlen;
 #endif
+    /* Note: ip->ip_len in host byte order (all OS) */
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+    ip->ip_len += (ip->ip_hl << 2); /* Solaris: reports only payload length */
+#endif
+    hlen = (ip->ip_hl << 2);
     if (ip->ip_len < hlen + ICMP_MINLEN)
     {
        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
@@ -1160,6 +1162,10 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     ip = mtod(m, struct ip *); /* ip is from mbuf we've overrided */
     original_hlen = ip->ip_hl << 2;
     /* saves original ip header and options */
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
+    m_copyback(pData, m, original_hlen, len - hlen, buff + hlen);
+    ip->ip_len = m_length(m, NULL);
+#else
     /* m_room space in the saved m buffer */
     m_room = M_ROOM(m);
     if (m_room < len - hlen + original_hlen)
@@ -1173,11 +1179,8 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
         }
     }
     memcpy(m->m_data + original_hlen, buff + hlen, len - hlen);
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
     m->m_len = len - hlen + original_hlen;
     ip->ip_len = m->m_len;
-#else
-    ip->ip_len = m_length(m, NULL);
 #endif
     ip->ip_p = IPPROTO_ICMP; /* the original package could be whatever, but we're response via ICMP*/
 
@@ -1376,16 +1379,23 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     }
     /* basic check of IP header */
     if (   ip.ip_v != IPVERSION
-        || ip.ip_p != IPPROTO_ICMP)
+#ifndef RT_OS_DARWIN
+        || ip.ip_p != IPPROTO_ICMP
+#endif
+    )
     {
         Log(("sorecvfrom_icmp_unix: 1 - step IP isn't IPv4 \n"));
         return;
     }
-
-    len = RT_N2H_U16(ip.ip_len);
-#ifdef RT_OS_SOLARIS
-    len += (ip.ip_hl << 2); /* Solaris: reports only payload length */
+#ifndef RT_OS_DARWIN
+    /* Darwin reports IP header in host format */
+    ip.ip_len = RT_N2H_U16(ip.ip_len);
 #endif
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+    ip.ip_len += (ip.ip_hl << 2); /* Solaris: reports only payload length */
+#endif
+    /* Note: ip->ip_len in host byte order (all OS) */
+    len = ip.ip_len;
     buff = RTMemAlloc(len);
     if (buff == NULL)
     {
@@ -1404,20 +1414,15 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
             || errno == ENOTCONN))
     {
         Log(("sorecvfrom_icmp_unix: 2 - step can't read IP body (would block expected:%d)\n",
-            RT_N2H_U16(ip.ip_len)));
+            ip.ip_len));
         RTMemFree(buff);
         return;
     }
     if (   len < 0
-#ifndef RT_OS_SOLARIS
-        || len < (RT_N2H_U16(ip.ip_len))
-#else
-        || len < ((RT_N2H_U16(ip.ip_len)) + (ip.ip_hl << 2))
-#endif
         || len == 0)
     {
         Log(("sorecvfrom_icmp_unix: 2 - step read of the rest of datagramm is fallen (errno:%d, len:%d expected: %d)\n",
-             errno, len, (RT_N2H_U16(ip.ip_len) - sizeof(struct ip))));
+             errno, len, (ip.ip_len - sizeof(struct ip))));
         RTMemFree(buff);
         return;
     }
