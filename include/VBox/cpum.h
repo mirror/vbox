@@ -247,7 +247,9 @@ typedef struct CPUMCTX
         uint32_t        esp;
         uint64_t        rsp;
     };
-    /* Note: lss esp, [] in the switcher needs some space, so we reserve it here instead of relying on the exact esp & ss layout as before (prevented us from using a union with rsp). */
+    /** @note lss esp, [] in the switcher needs some space, so we reserve it here
+     *        instead of relying on the exact esp & ss layout as before (prevented
+     *        us from using a union with rsp). */
     uint32_t            lss_esp;
     RTSEL               ss;
     RTSEL               ssPadding;
@@ -335,12 +337,12 @@ typedef struct CPUMCTX
     /** System MSRs.
      * @{ */
     uint64_t        msrEFER;
-    uint64_t        msrSTAR;        /* legacy syscall eip, cs & ss */
+    uint64_t        msrSTAR;            /**< Legacy syscall eip, cs & ss. */
     uint64_t        msrPAT;
-    uint64_t        msrLSTAR;       /* 64 bits mode syscall rip */
-    uint64_t        msrCSTAR;       /* compatibility mode syscall rip */
-    uint64_t        msrSFMASK;      /* syscall flag mask */
-    uint64_t        msrKERNELGSBASE;/* swapgs exchange value */
+    uint64_t        msrLSTAR;           /**< 64 bits mode syscall rip. */
+    uint64_t        msrCSTAR;           /**< Compatibility mode syscall rip. */
+    uint64_t        msrSFMASK;          /**< syscall flag mask. */
+    uint64_t        msrKERNELGSBASE;    /**< swapgs exchange value. */
     /** @} */
 
     /** Hidden selector registers.
@@ -350,7 +352,7 @@ typedef struct CPUMCTX
     /** @} */
 
 #if 0
-    /*& Padding to align the size on a 64 byte boundrary. */
+    /** Padding to align the size on a 64 byte boundrary. */
     uint32_t        padding[6];
 #endif
 } CPUMCTX;
@@ -425,7 +427,8 @@ typedef struct CPUMCTX_VER1_6
         uint32_t        ecx;
         uint64_t        rcx;
     };
-    /* Note: we rely on the exact layout, because we use lss esp, [] in the switcher */
+    /** @note We rely on the exact layout, because we use lss esp, [] in the
+     *        switcher. */
     uint32_t        esp;
     RTSEL           ss;
     RTSEL           ssPadding;
@@ -441,7 +444,7 @@ typedef struct CPUMCTX_VER1_6
     RTSEL           ds;
     RTSEL           dsPadding;
     RTSEL           cs;
-    RTSEL           csPadding[3];  /* 3 words to force 8 byte alignment for the remainder */
+    RTSEL           csPadding[3];   /**< 3 words to force 8 byte alignment for the remainder. */
 
     union
     {
@@ -537,19 +540,22 @@ typedef struct CPUMCTX_VER1_6
     CPUMSELREGHID_VER1_6   trHid;
     /** @} */
 
-    /* padding to get 32byte aligned size */
+    /** padding to get 32byte aligned size. */
     uint32_t        padding[2];
 } CPUMCTX_VER1_6;
 #pragma pack()
 
-/* Guest MSR state. */
+/**
+ * Guest MSR state.
+ *
+ * @note    Never change the order here because of saved stated!
+ */
 typedef union CPUMCTXMSR
 {
     struct
     {
-        /* Never ever change the order here because of saved states!. */
-        uint64_t        tscAux;         /* MSR_K8_TSC_AUX */
-        uint64_t        miscEnable;     /* MSR_IA32_MISC_ENABLE */
+        uint64_t        tscAux;         /**< MSR_K8_TSC_AUX */
+        uint64_t        miscEnable;     /**< MSR_IA32_MISC_ENABLE */
     } msr;
     uint64_t    au64[64];
 } CPUMCTXMSR;
