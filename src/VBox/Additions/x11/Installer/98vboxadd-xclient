@@ -48,4 +48,5 @@ fi
 /usr/bin/VBoxClient --checkhostversion
 test -z "$no_display" &&
     /usr/bin/VBoxClient --display
-/usr/bin/VBoxClient --seamless
+test -z "$no_display" &&
+    /usr/bin/VBoxClient --seamless
