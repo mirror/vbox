@@ -1585,15 +1585,8 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-#if 1 /** @todo Temporarily hacked so that it won't trigger lock validator errors
-       *        and deadlock. */
-    /* VirtualBox::saveSettings() needs a write lock and we access mParent & children() */
-    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
-    AutoMultiWriteLock2 alockGrossHack(&m->pVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
-#else
-    /* VirtualBox::saveSettings() needs a write lock */
-    AutoMultiWriteLock2 alock(m->pVirtualBox, this COMMA_LOCKVAL_SRC_POS);
-#endif
+    // we access mParent and members
+    AutoMultiWriteLock2 mlock(&m->pVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
 
     switch (m->state)
     {
@@ -1609,11 +1602,6 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
         /* Nothing to do */
         return S_OK;
     }
-
-#if 0 /** @todo temporary hack above. */
-    /* we access mParent & children() */
-    AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
-#endif
 
     /* cannot change the type of a differencing hard disk */
     if (m->pParent)
@@ -1652,11 +1640,12 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 
     m->type = aType;
 
-#if 1 /** @todo remove this gross hack! Just need to get this code working again. */
-    alockGrossHack.leave();
-#endif
+    // saveSettings needs vbox lock
+    ComObjPtr<VirtualBox> pVirtualBox(m->pVirtualBox);
+    mlock.leave();
+    AutoWriteLock alock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = m->pVirtualBox->saveSettings();
+    HRESULT rc = pVirtualBox->saveSettings();
 
     return rc;
 }
