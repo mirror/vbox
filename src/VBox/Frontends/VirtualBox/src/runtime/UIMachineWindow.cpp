@@ -157,8 +157,7 @@ void UIMachineWindow::closeEvent(QCloseEvent *pEvent)
             QStringList restictedActionsList = machine.GetExtraData(VBoxDefs::GUI_RestrictedCloseActions).split(',');
             bool fIsStateSavingAllowed = !restictedActionsList.contains("SaveState", Qt::CaseInsensitive);
             bool fIsACPIShutdownAllowed = !restictedActionsList.contains("Shutdown", Qt::CaseInsensitive);
-            bool fIsPowerOffAllowed = (uisession()->machineState() == KMachineState_Stuck) ||
-                                      (!restictedActionsList.contains("PowerOff", Qt::CaseInsensitive));
+            bool fIsPowerOffAllowed = !restictedActionsList.contains("PowerOff", Qt::CaseInsensitive);
             bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && restictedActionsList.contains("Restore", Qt::CaseInsensitive);
 
             /* Make Save State button visible/hidden depending on restriction: */
