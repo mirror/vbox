@@ -3613,6 +3613,8 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
                 if (fWritable)
                     rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
             }
+            else if (PGM_PAGE_IS_BALLOONED(pPage))
+                rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
             else
             {
                 /* Temporarily disabled physical handler(s), since the recompiler
