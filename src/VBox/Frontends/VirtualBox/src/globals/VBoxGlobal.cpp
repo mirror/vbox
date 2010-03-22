@@ -63,6 +63,7 @@
 #include <QTimer>
 #include <QDir>
 #include <QHelpEvent>
+#include <QLocale>
 
 #include <math.h>
 
