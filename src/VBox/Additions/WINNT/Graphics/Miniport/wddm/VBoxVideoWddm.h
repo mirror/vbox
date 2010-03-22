@@ -21,6 +21,11 @@
 #define VBOXWDDM_C_ALLOC_LIST_SIZE         0xc00
 #define VBOXWDDM_C_PATH_LOCATION_LIST_SIZE 0xc00
 
+#define VBOXWDDM_C_POINTER_MAX_WIDTH  64
+#define VBOXWDDM_C_POINTER_MAX_HEIGHT 64
+
+#define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
+
 typedef enum
 {
     VBOXWDDM_ALLOC_TYPE_UNEFINED = 0,
