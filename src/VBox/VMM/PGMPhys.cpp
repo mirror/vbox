@@ -816,6 +816,8 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
                 break;
             }
 
+            LogFlow(("balloon page: %RGp\n", paPhysPage[i]));
+
             rc = pgmPhysFreePage(pVM, pReq, &cPendingPages, pPage, paPhysPage[i]);
             if (RT_FAILURE(rc))
             {
@@ -3606,7 +3608,7 @@ VMMR3DECL(int) PGMR3PhysTlbGCPhys2Ptr(PVM pVM, RTGCPHYS GCPhys, bool fWritable, 
     if (RT_SUCCESS(rc))
     {
         if (PGM_PAGE_IS_BALLOONED(pPage))
-            rc = VERR_PGM_PHYS_TLB_CATCH_ALL;
+            rc = VINF_PGM_PHYS_TLB_CATCH_WRITE;
         else if (!PGM_PAGE_HAS_ANY_HANDLERS(pPage))
             rc = VINF_SUCCESS;
         else
