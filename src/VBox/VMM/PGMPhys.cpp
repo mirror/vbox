@@ -857,6 +857,10 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
     }
 
     pgmUnlock(pVM);
+
+    /* Flush the recompiler's TLB as well. */
+    REMFlushTBs(pVM);
+
     AssertLogRelRC(rc);
     return rc;
 }
