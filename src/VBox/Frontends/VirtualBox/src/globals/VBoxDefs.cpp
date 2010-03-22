@@ -38,6 +38,7 @@ const char* VBoxDefs::GUI_ShowMiniToolBar = "GUI/ShowMiniToolBar";
 const char* VBoxDefs::GUI_MiniToolBarAlignment = "GUI/MiniToolBarAlignment";
 const char* VBoxDefs::GUI_MiniToolBarAutoHide = "GUI/MiniToolBarAutoHide";
 const char* VBoxDefs::GUI_LastCloseAction = "GUI/LastCloseAction";
+const char* VBoxDefs::GUI_RestrictedCloseActions = "GUI/RestrictedCloseActions";
 const char* VBoxDefs::GUI_SuppressMessages = "GUI/SuppressMessages";
 const char* VBoxDefs::GUI_PermanentSharedFoldersAtRuntime = "GUI/PermanentSharedFoldersAtRuntime";
 #ifdef Q_WS_X11
