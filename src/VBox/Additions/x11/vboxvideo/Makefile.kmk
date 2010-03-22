@@ -43,9 +43,7 @@ if1of ($(KBUILD_TARGET), linux)
  	IN_MODULE XFree86Module
  vboxvideo_drv_CFLAGS.linux := \
  	-Wno-conversion -Wno-unused-parameter $(VBOX_GCC_Wno-variadic-macros)
- ARGB_CURSORS=1
- ifdef ARGB_CURSORS
-  vboxvideo_drv_INCS = \
+ vboxvideo_drv_INCS = \
 	$(VBOX_PATH_X11_XFREE_4_3)/include \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11 \
 	$(VBOX_PATH_X11_XFREE_4_3)/include/X11/extensions \
@@ -75,35 +73,6 @@ if1of ($(KBUILD_TARGET), linux)
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/render \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/randr \
 	$(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/Xext
- else
-  vboxvideo_drv_INCS = \
-	$(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11 \
-	$(VBOX_PATH_X11_XFREE_4_2)/include \
-	$(VBOX_PATH_X11_XFREE_4_2)/include/extensions \
-	$(VBOX_PATH_X11_XFREE_4_2)/include/fonts \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/afb \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/include \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/fb \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/ddc \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/int10 \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/i2c \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/bus \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support/vbe \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/rac \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/ramdac \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/shadowfb \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/vgahw \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf1bpp \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf24_32bpp \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/xf4bpp \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mfb \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/mi \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/miext/shadow \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/render \
-	$(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/Xext
- endif
  vboxvideo_drv_SOURCES = \
 	vboxvideo_70.c \
 	vboxutils.c
