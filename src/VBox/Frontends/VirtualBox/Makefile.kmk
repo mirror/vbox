@@ -230,7 +230,6 @@ VBOX_GUI_INC_DIRS = \
 	./src/wizards/firstrun \
 	./src/wizards/exportappliance \
 	./src/wizards/importappliance \
-	./src/wizards/registration \
 	./src/widgets \
 	./src/X11 \
 	./src/darwin
@@ -240,6 +239,11 @@ VBOX_GUI_INC_DIRS += \
 	./src/runtime/normal \
 	./src/runtime/fullscreen \
 	./src/runtime/seamless
+endif
+
+ifdef VBOX_WITH_REGISTRATION
+ VBOX_GUI_INC_DIRS += \
+	./src/wizards/registration
 endif
 
 VirtualBox_INCS = \
@@ -365,7 +369,6 @@ VirtualBox_QT_MOCHDRS = \
 	src/wizards/firstrun/UIFirstRunWzd.h \
 	src/wizards/exportappliance/UIExportApplianceWzd.h \
 	src/wizards/importappliance/UIImportApplianceWzd.h \
-	src/wizards/registration/UIRegistrationWzd.h \
 	src/widgets/VBoxApplianceEditorWgt.h \
 	src/widgets/VBoxBootTable.h \
 	src/widgets/UIDownloader.h \
@@ -401,12 +404,16 @@ VirtualBox_QT_MOCHDRS += \
 	src/runtime/seamless/UIMachineViewSeamless.h
 endif
 
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox_QT_MOCHDRS += \
+	src/wizards/registration/UIRegistrationWzd.h
+endif
+
 # Sources containing local definitions of classes that use the Q_OBJECT macro.
 VirtualBox_QT_MOCSRCS = \
 	src/VBoxSelectorWnd.cpp \
 	src/VBoxConsoleWnd.cpp \
-	src/VBoxMediaManagerDlg.cpp \
-	src/wizards/registration/UIRegistrationWzd.cpp
+	src/VBoxMediaManagerDlg.cpp
 ifdef VBOX_WITH_NEW_RUNTIME_CORE
 VirtualBox_QT_MOCSRCS += \
 	src/runtime/UIActionsPool.cpp \
@@ -421,6 +428,11 @@ endif
 ifeq ($(KBUILD_TARGET),win)
 VirtualBox_QT_MOCSRCS += \
 	src/extensions/QIFileDialog.cpp
+endif
+
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox_QT_MOCSRCS += \
+	src/wizards/registration/UIRegistrationWzd.cpp
 endif
 
 VirtualBox_SOURCES = \
@@ -494,7 +506,6 @@ VirtualBox_SOURCES = \
 	src/wizards/firstrun/UIFirstRunWzd.cpp \
 	src/wizards/exportappliance/UIExportApplianceWzd.cpp \
 	src/wizards/importappliance/UIImportApplianceWzd.cpp \
-	src/wizards/registration/UIRegistrationWzd.cpp \
 	src/widgets/VBoxApplianceEditorWgt.cpp \
 	src/widgets/VBoxBootTable.cpp \
 	src/widgets/UIDownloader.cpp \
@@ -563,6 +574,11 @@ else
  	src/VBoxLicenseViewer.cpp
 endif
 
+ifdef VBOX_WITH_REGISTRATION
+ VirtualBox_SOURCES += \
+	src/wizards/registration/UIRegistrationWzd.cpp
+endif
+
 VirtualBox_SOURCES.win += \
 	src/VBoxFBDDRAW.cpp \
 	src/win/VirtualBox.rc
@@ -609,7 +625,7 @@ endif
 
 # Import QDesigner UI sources and translations from VBoxUI.pro.
 ifndef VBOX_WITH_REGISTRATION
- FORMS := $(filter-out src/VBoxRegistrationDlg.ui,$(FORMS))
+ FORMS := $(filter-out src/wizards/registration/UIRegistrationWzdPage1.ui,$(FORMS))
 endif
 $(eval VirtualBox_SOURCES += $(FORMS))
 
