@@ -2416,7 +2416,10 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
                     void *pvDst;
                     int rc = pgmPhysGCPhys2CCPtrInternal(pVM, pPage, pRam->GCPhys + off, &pvDst);
                     if (RT_SUCCESS(rc))
+                    {
+                        Assert(!PGM_PAGE_IS_BALLOONED(pPage));
                         memcpy(pvDst, pvBuf, cb);
+                    }
                     else
                     /* Ignore writes to ballooned pages. */
                     if (!PGM_PAGE_IS_BALLOONED(pPage))
