@@ -9604,7 +9604,8 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         Assert(mData->mSession.mProgress.isNull());
         ComObjPtr<Progress> progress;
         progress.createObject();
-        progress->init(mParent, mPeer,
+        ComPtr<IUnknown> pPeer(mPeer);
+        progress->init(mParent, pPeer,
                        Bstr(tr("Closing session")), FALSE /* aCancelable */);
         progress.queryInterfaceTo(aProgress);
         mData->mSession.mProgress = progress;
