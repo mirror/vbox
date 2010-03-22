@@ -844,6 +844,22 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
         /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
         pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
     }
+    else
+    {
+        /* Iterate the pages. */
+        for (unsigned i = 0; i < cPages; i++)
+        {
+            PPGMPAGE pPage = pgmPhysGetPage(&pVM->pgm.s, paPhysPage[i]);
+            AssertBreak(pPage && pPage->uTypeY == PGMPAGETYPE_RAM);
+
+            LogFlow(("Free ballooned page: %RGp\n", paPhysPage[i]));
+
+            Assert(PGM_PAGE_IS_BALLOONED(pPage));
+
+            /* Change back to zero page. */
+            PGM_PAGE_SET_STATE(pPage, PGM_PAGE_STATE_ZERO);
+        }
+    }
 
     /* Notify GMM about the balloon change. */
     rc = GMMR3BalloonedPages(pVM, (fInflate) ? GMMBALLOONACTION_INFLATE : GMMBALLOONACTION_DEFLATE, cPages);
