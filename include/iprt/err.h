@@ -612,6 +612,8 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IGNORED                        (-91)
 /** Concurrent access to the object is not allowed. */
 #define VERR_CONCURRENT_ACCESS              (-92)
+/** Invalid login data given. */
+#define VERR_LOGON_FAILURE                  (-93)
 /** @} */
 
 

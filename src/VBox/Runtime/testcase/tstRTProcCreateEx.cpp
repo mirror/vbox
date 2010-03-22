@@ -82,17 +82,18 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
         return RTMsgInitFailure(rc);
 
 #ifdef RT_OS_WINDOWS
-# if 0 /** @todo Something here drags in Secur32.dll and prevents the testcase from being run on NT4. Add this stuff to IPRT and dynamically resolve the problematic bits, please. */
     char szUser[_1K];
     DWORD cbLen = sizeof(szUser);
     /** @todo Does not yet handle ERROR_MORE_DATA for user names longer than 32767. */
-    if (!GetUserNameEx(NameSamCompatible, szUser, &cbLen))
+    if (!GetUserName(szUser, &cbLen))
     {
-        RTPrintf("GetUserNameEx failed with last error=%ld\n", GetLastError());
+        RTPrintf("GetUserName failed with last error=%ld\n", GetLastError());
         return VERR_AUTHENTICATION_FAILURE;
     }
     else
     {
+/* Does not work on NT4 (yet). */
+#if 0
         DWORD cbSid = 0;
         DWORD cbDomain = 0;
         SID_NAME_USE sidUse;
@@ -133,8 +134,8 @@ static int tstRTCreateProcEx5Child(int argc, char **argv)
         }
         RTMemFree(pSid);
         RTMemFree(pszDomain);
+#endif
     }
-# endif
 #else
     /** @todo Lookup UID/effective UID, maybe GID? */
 #endif
@@ -153,6 +154,14 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     };
 
     RTPROCESS hProc;
+
+    /* Test for invalid logons. */
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
+                                         NULL, NULL, "not-existing-user", "wrong-password", &hProc), VERR_LOGON_FAILURE);
+    /* Test for invalid application. */
+    RTTESTI_CHECK_RC_RETV(RTProcCreateEx("not-existing-app", apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
+                                         NULL, NULL, NULL, NULL, &hProc), VERR_PATH_NOT_FOUND);
+    /* Test a (hopefully) valid user/password logon (given by parameters of this function). */
     RTTESTI_CHECK_RC_RETV(RTProcCreateEx(g_szExecName, apszArgs, RTENV_DEFAULT, 0 /*fFlags*/, NULL,
                                          NULL, NULL, pszUser, pszPassword, &hProc), VINF_SUCCESS);
     RTPROCSTATUS ProcStatus = { -1, RTPROCEXITREASON_ABEND };
@@ -163,7 +172,7 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     else
         RTTestIPassed(NULL);
 }
-
+    
 
 static int tstRTCreateProcEx4Child(int argc, char **argv)
 {
@@ -421,7 +430,7 @@ int main(int argc, char **argv)
         if (argc != 4 || strcmp(argv[1], "--as-user"))
             return 99;
         pszAsUser   = argv[2];
-        pszPassword = argv[4];
+        pszPassword = argv[3];
     }
 
     RTTEST hTest;
@@ -441,10 +450,7 @@ int main(int argc, char **argv)
     tstRTCreateProcEx3();
     tstRTCreateProcEx4();
     if (pszAsUser)
-    {
-        /** @todo Do not run tstRTCreateProcEx5 on NT4, may not work (?) */
         tstRTCreateProcEx5(pszAsUser, pszPassword);
-    }
     /** @todo Cover files, ++ */
 
     /*
