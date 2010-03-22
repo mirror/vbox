@@ -175,3 +175,6 @@ xf86MapPciMem
 xf86GetPciVideoInfo
 pciFindFirst
 pciTag
+xf86sprintf
+sprintf
+FatalError

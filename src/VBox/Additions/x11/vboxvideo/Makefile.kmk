@@ -160,7 +160,7 @@ vboxvideo_drv_71_SOURCES  = \
 DLLS += vboxvideo_drv_13
 vboxvideo_drv_13_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_13_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
-vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS)
+vboxvideo_drv_13_DEFS := $(vboxvideo_drv_70_DEFS) VBOXVIDEO_13
 vboxvideo_drv_13_INCS = \
 	$(VBOX_PATH_X11_XORG_1_3) \
 	$(VBOX_PATH_X11_XORG_1_3)/X11 \
@@ -183,7 +183,7 @@ vboxvideo_drv_13_SOURCES = \
 DLLS += vboxvideo_drv_14
 vboxvideo_drv_14_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_14_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
-vboxvideo_drv_14_DEFS := $(vboxvideo_drv_70_DEFS)
+vboxvideo_drv_14_DEFS := $(vboxvideo_drv_13_DEFS)
 vboxvideo_drv_14_INCS = \
 	$(VBOX_PATH_X11_XORG_1_4) \
 	$(VBOX_PATH_X11_XORG_1_4)/X11 \
@@ -203,7 +203,7 @@ vboxvideo_drv_14_SOURCES  = \
 DLLS += vboxvideo_drv_15
 vboxvideo_drv_15_TEMPLATE = VBOXGUESTR3XORGMOD
 vboxvideo_drv_15_CFLAGS := $(vboxvideo_drv_70_CFLAGS)
-vboxvideo_drv_15_DEFS := $(vboxvideo_drv_70_DEFS) NO_ANSIC PCIACCESS \
+vboxvideo_drv_15_DEFS := $(vboxvideo_drv_13_DEFS) NO_ANSIC PCIACCESS \
                          VBOX_NO_LOW_COLOUR
 if1of ($(KBUILD_TARGET), linux solaris)
  vboxvideo_drv_15_DEFS += VBOX_DRI
