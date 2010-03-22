@@ -72,7 +72,9 @@ typedef struct CLISTAT
     /** Occurrences. */
     STAMCOUNTER             Counter;
 } CLISTAT, *PCLISTAT;
+#ifdef IN_RING3
 AssertCompileMemberAlignment(CLISTAT, Counter, 8);
+#endif
 
 
 /**
