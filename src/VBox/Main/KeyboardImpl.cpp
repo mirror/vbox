@@ -57,7 +57,14 @@ typedef struct DRVMAINKEYBOARD
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (Keyboard)
+Keyboard::Keyboard()
+    : mParent(NULL)
+{
+}
+
+Keyboard::~Keyboard()
+{
+}
 
 HRESULT Keyboard::FinalConstruct()
 {
