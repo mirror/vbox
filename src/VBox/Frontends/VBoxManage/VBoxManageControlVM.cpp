@@ -790,8 +790,7 @@ int handleControlVM(HandlerArg *a)
             if (SUCCEEDED(rc))
                 CHECK_ERROR(guest, COMSETTER(MemoryBalloonSize)(uVal));
         }
-        else if (   !strcmp(a->argv[1], "--gueststatisticsinterval")
-                 || !strcmp(a->argv[1], "-gueststatisticsinterval"))
+        else if (!strcmp(a->argv[1], "gueststatisticsinterval"))
         {
             if (a->argc != 3)
             {
