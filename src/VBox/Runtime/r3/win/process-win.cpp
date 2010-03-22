@@ -282,6 +282,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
     else
         dwErr = GetLastError();
 
+#ifndef IPRT_TARGET_NT4
     /*
      * If we don't hold enough priviledges to spawn a new process with
      * different credentials we have to use CreateProcessWithLogonW here.  This
