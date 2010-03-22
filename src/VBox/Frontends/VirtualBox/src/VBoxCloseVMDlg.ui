@@ -83,7 +83,7 @@
        <item>
         <layout class="QGridLayout" >
          <item row="0" column="0" >
-          <widget class="QLabel" name="mTxSave_2" >
+          <widget class="QLabel" name="mTxSave" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
@@ -109,7 +109,7 @@
           </widget>
          </item>
          <item row="1" column="0" >
-          <widget class="QLabel" name="mTxShutDown_2" >
+          <widget class="QLabel" name="mTxShutdown" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
@@ -135,7 +135,7 @@
           </widget>
          </item>
          <item row="2" column="0" >
-          <widget class="QLabel" name="mTxPowerOff_2" >
+          <widget class="QLabel" name="mTxPowerOff" >
            <property name="sizePolicy" >
             <sizepolicy vsizetype="Fixed" hsizetype="Fixed" >
              <horstretch>0</horstretch>
