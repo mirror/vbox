@@ -296,7 +296,9 @@ static int pgmR3LoadRomRanges(PVM pVM, PSSMHANDLE pSSM)
         if (id == UINT8_MAX)
         {
             for (PPGMROMRANGE pRom = pVM->pgm.s.pRomRangesR3; pRom; pRom = pRom->pNextR3)
-                AssertLogRelMsg(pRom->idSavedState != UINT8_MAX, ("%s\n", pRom->pszDesc));
+                AssertLogRelMsg(pRom->idSavedState != UINT8_MAX,
+                                ("The \"%s\" ROM was not found in the saved state. Probably due to some misconfiguration\n",
+                                 pRom->pszDesc));
             return VINF_SUCCESS;        /* the end */
         }
         AssertLogRelReturn(id != 0, VERR_SSM_DATA_UNIT_FORMAT_CHANGED);
