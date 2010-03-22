@@ -36,7 +36,14 @@
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (NetworkAdapter)
+NetworkAdapter::NetworkAdapter()
+    : mParent(NULL)
+{
+}
+
+NetworkAdapter::~NetworkAdapter()
+{
+}
 
 HRESULT NetworkAdapter::FinalConstruct()
 {
@@ -173,8 +180,8 @@ void NetworkAdapter::uninit()
 
     mData.free();
 
-    unconst(mPeer).setNull();
-    unconst(mParent).setNull();
+    unconst(mPeer) = NULL;
+    unconst(mParent) = NULL;
 }
 
 // INetworkAdapter properties

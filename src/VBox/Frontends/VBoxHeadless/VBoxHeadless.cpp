@@ -78,8 +78,8 @@ using namespace com;
 ////////////////////////////////////////////////////////////////////////////////
 
 /* global weak references (for event handlers) */
-static ComPtr <ISession, ComWeakRef> gSession;
-static ComPtr <IConsole, ComWeakRef> gConsole;
+static ISession *gSession = NULL;
+static IConsole *gConsole = NULL;
 static EventQueue *gEventQ = NULL;
 
 ////////////////////////////////////////////////////////////////////////////////

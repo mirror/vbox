@@ -94,7 +94,7 @@ private:
     const Guid mGuid;
     HostNetworkInterfaceType_T mIfType;
 
-    ComObjPtr<VirtualBox, ComWeakRef> mVBox;
+    VirtualBox * const  mVBox;
 
     struct Data
     {

@@ -42,15 +42,16 @@
 struct SerialPort::Data
 {
     Data()
-        : fModified(false)
+        : fModified(false),
+          pMachine(NULL)
     { }
 
-    bool                                    fModified;
+    bool                                fModified;
 
-    const ComObjPtr<Machine, ComWeakRef>    pMachine;
-    const ComObjPtr<SerialPort>             pPeer;
+    Machine * const                     pMachine;
+    const ComObjPtr<SerialPort>         pPeer;
 
-    Backupable<settings::SerialPort>        bd;
+    Backupable<settings::SerialPort>    bd;
 };
 
 // constructor / destructor
@@ -188,8 +189,8 @@ void SerialPort::uninit()
 
     m->bd.free();
 
-    unconst(m->pPeer).setNull();
-    unconst(m->pMachine).setNull();
+    unconst(m->pPeer) = NULL;
+    unconst(m->pMachine) = NULL;
 
     delete m;
     m = NULL;

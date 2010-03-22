@@ -96,12 +96,12 @@ protected:
 
 private:
 
-    VirtualBoxBase *const mParent;
+    VirtualBoxBase * const  mParent;
 
     /* weak parents (only one of them is not null) */
-    const ComObjPtr<Machine, ComWeakRef> mMachine;
-    const ComObjPtr<Console, ComWeakRef> mConsole;
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+    Machine * const         mMachine;
+    Console * const         mConsole;
+    VirtualBox * const      mVirtualBox;
 
     Data m;
 };

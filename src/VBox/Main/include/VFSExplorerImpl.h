@@ -74,7 +74,7 @@ class ATL_NO_VTABLE VFSExplorer :
 
 private:
     /* Private member vars */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+    VirtualBox * const  mVirtualBox;
 
     struct TaskVFSExplorer;  /* Worker thread helper */
     struct Data;

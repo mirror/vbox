@@ -33,7 +33,14 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (DHCPServer)
+DHCPServer::DHCPServer()
+    : mVirtualBox(NULL)
+{
+}
+
+DHCPServer::~DHCPServer()
+{
+}
 
 HRESULT DHCPServer::FinalConstruct()
 {
@@ -52,7 +59,7 @@ void DHCPServer::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(mVirtualBox).setNull();
+    unconst(mVirtualBox) = NULL;
 }
 
 HRESULT DHCPServer::init(VirtualBox *aVirtualBox, IN_BSTR aName)

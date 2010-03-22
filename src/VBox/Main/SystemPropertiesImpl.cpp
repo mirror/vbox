@@ -46,7 +46,15 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (SystemProperties)
+SystemProperties::SystemProperties()
+    : mParent(NULL)
+{
+}
+
+SystemProperties::~SystemProperties()
+{
+}
+
 
 HRESULT SystemProperties::FinalConstruct()
 {
@@ -169,7 +177,7 @@ void SystemProperties::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
 }
 
 // ISystemProperties properties

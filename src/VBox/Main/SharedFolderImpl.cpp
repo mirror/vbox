@@ -35,7 +35,10 @@
 /////////////////////////////////////////////////////////////////////////////
 
 SharedFolder::SharedFolder()
-    : mParent (NULL)
+    : mParent(NULL),
+      mMachine(NULL),
+      mConsole(NULL),
+      mVirtualBox(NULL)
 {
 }
 
@@ -247,9 +250,9 @@ void SharedFolder::uninit()
 
     unconst(mParent) = NULL;
 
-    unconst(mMachine).setNull();
-    unconst(mConsole).setNull();
-    unconst(mVirtualBox).setNull();
+    unconst(mMachine) = NULL;
+    unconst(mConsole) = NULL;
+    unconst(mVirtualBox) = NULL;
 }
 
 // ISharedFolder properties

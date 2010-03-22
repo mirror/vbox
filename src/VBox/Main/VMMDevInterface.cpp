@@ -88,9 +88,10 @@ typedef struct DRVMAINVMMDEV
 //
 // constructor / destructor
 //
-VMMDev::VMMDev(Console *console) : mpDrv(NULL)
+VMMDev::VMMDev(Console *console)
+    : mpDrv(NULL),
+      mParent(console)
 {
-    mParent = console;
     int rc = RTSemEventCreate(&mCredentialsEvent);
     AssertRC(rc);
 #ifdef VBOX_WITH_HGCM

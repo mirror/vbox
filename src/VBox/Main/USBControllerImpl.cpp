@@ -61,15 +61,19 @@ struct BackupableUSBData
 
 struct USBController::Data
 {
-    Data() {};
-    ~Data() {};
+    Data()
+        : pParent(NULL)
+    {};
+
+    ~Data()
+    {};
 
     /** Parent object. */
-    const ComObjPtr<Machine, ComWeakRef> pParent;
+    Machine * const                 pParent;
     /** Peer object. */
-    const ComObjPtr<USBController> pPeer;
+    const ComObjPtr<USBController>  pPeer;
 
-    Backupable<BackupableUSBData>  bd;
+    Backupable<BackupableUSBData>   bd;
 #ifdef VBOX_WITH_USB
     // the following fields need special backup/rollback/commit handling,
     // so they cannot be a part of BackupableData
@@ -249,8 +253,8 @@ void USBController::uninit()
 #endif
     m->bd.free();
 
-    unconst(m->pPeer).setNull();
-    unconst(m->pParent).setNull();
+    unconst(m->pPeer) = NULL;
+    unconst(m->pParent) = NULL;
 
     delete m;
     m = NULL;

@@ -317,7 +317,14 @@ STDMETHODIMP VirtualBox::CreateAppliance(IAppliance** anAppliance)
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(Appliance)
+Appliance::Appliance()
+    : mVirtualBox(NULL)
+{
+}
+
+Appliance::~Appliance()
+{
+}
 
 /**
  * Appliance COM initializer.

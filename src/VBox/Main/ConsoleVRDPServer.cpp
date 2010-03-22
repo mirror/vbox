@@ -2169,7 +2169,7 @@ void RemoteDisplayInfo::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
 }
 
 // IRemoteDisplayInfo properties

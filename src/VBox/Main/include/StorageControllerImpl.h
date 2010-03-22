@@ -97,7 +97,7 @@ public:
     void unshare();
 
     /** @note this doesn't require a read lock since mParent is constant. */
-    const ComObjPtr<Machine, ComWeakRef>& getMachine();
+    Machine* getMachine();
 
     ComObjPtr<StorageController> getPeer();
 

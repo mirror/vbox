@@ -67,9 +67,10 @@ typedef struct DRVAUDIOSNIFFER
 //
 // constructor / destructor
 //
-AudioSniffer::AudioSniffer(Console *console) : mpDrv(NULL)
+AudioSniffer::AudioSniffer(Console *console)
+    : mpDrv(NULL),
+      mParent(console)
 {
-    mParent = console;
 }
 
 AudioSniffer::~AudioSniffer()

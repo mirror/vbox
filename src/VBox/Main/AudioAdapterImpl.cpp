@@ -33,7 +33,14 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (AudioAdapter)
+AudioAdapter::AudioAdapter()
+    : mParent(NULL)
+{
+}
+
+AudioAdapter::~AudioAdapter()
+{
+}
 
 HRESULT AudioAdapter::FinalConstruct()
 {
@@ -42,7 +49,7 @@ HRESULT AudioAdapter::FinalConstruct()
 
 void AudioAdapter::FinalRelease()
 {
-    uninit ();
+    uninit();
 }
 
 // public initializer/uninitializer for internal purposes only
@@ -168,8 +175,8 @@ void AudioAdapter::uninit()
 
     mData.free();
 
-    unconst(mPeer).setNull();
-    unconst(mParent).setNull();
+    unconst(mPeer) = NULL;
+    unconst(mParent) = NULL;
 }
 
 // IAudioAdapter properties

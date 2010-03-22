@@ -74,36 +74,6 @@ namespace com
 }
 
 /**
- *  Strong referencing operators. Used as a second argument to ComPtr<>/ComObjPtr<>.
- */
-template <class C>
-class ComStrongRef
-{
-protected:
-
-    static void addref(C *p)
-    {
-        p->AddRef();
-    }
-    static void release(C *p)
-    {
-        p->Release();
-    }
-};
-
-/**
- *  Weak referencing operators. Used as a second argument to ComPtr<>/ComObjPtr<>.
- */
-template <class C>
-class ComWeakRef
-{
-protected:
-
-    static void addref(C * /* p */) {}
-    static void release(C * /* p */) {}
-};
-
-/**
  *  Returns @c true if two interface pointers are equal.
  *
  *  According to the COM Identity Rule, interface pointers are considered to be
@@ -168,8 +138,8 @@ inline bool ComPtrEquals<IUnknown, IUnknown>(IUnknown *aThis, IUnknown *aThat)
 /**
  *  Base template for smart COM pointers. Not intended to be used directly.
  */
-template <class C, template <class> class RefOps = ComStrongRef>
-class ComPtrBase : protected RefOps <C>
+template <class C>
+class ComPtrBase
 {
 public:
 
@@ -189,21 +159,36 @@ public:
 
 protected:
 
-    ComPtrBase () : p (NULL) {}
-    ComPtrBase (const ComPtrBase &that) : p (that.p) { addref(); }
-    ComPtrBase (C *that_p) : p (that_p) { addref(); }
+    ComPtrBase()
+        : p(NULL)
+    {}
 
-    ~ComPtrBase() { release(); }
-
-    ComPtrBase &operator= (const ComPtrBase &that)
+    ComPtrBase(const ComPtrBase &that)
+        : p(that.p)
     {
-        safe_assign (that.p);
+        addref();
+    }
+
+    ComPtrBase(C *that_p)
+        : p(that_p)
+    {
+        addref();
+    }
+
+    ~ComPtrBase()
+    {
+        release();
+    }
+
+    ComPtrBase &operator=(const ComPtrBase &that)
+    {
+        safe_assign(that.p);
         return *this;
     }
 
-    ComPtrBase &operator= (C *that_p)
+    ComPtrBase &operator=(C *that_p)
     {
-        safe_assign (that_p);
+        safe_assign(that_p);
         return *this;
     }
 
@@ -220,44 +205,44 @@ public:
         return (p == NULL);
     }
 
-    bool operator! () const { return isNull(); }
+    bool operator!() const { return isNull(); }
 
-    bool operator< (C* that_p) const { return p < that_p; }
-    bool operator== (C* that_p) const { return p == that_p; }
+    bool operator<(C* that_p) const { return p < that_p; }
+    bool operator==(C* that_p) const { return p == that_p; }
 
     template <class I>
-    bool equalsTo (I *aThat) const
+    bool equalsTo(I *aThat) const
     {
-        return ComPtrEquals (p, aThat);
+        return ComPtrEquals(p, aThat);
     }
 
     template <class OC>
-    bool equalsTo (const ComPtrBase <OC> &oc) const
+    bool equalsTo(const ComPtrBase <OC> &oc) const
     {
-        return equalsTo ((OC *) oc);
+        return equalsTo((OC*)oc);
     }
 
     /** Intended to pass instances as in parameters to interface methods */
-    operator C* () const { return p; }
+    operator C*() const { return p; }
 
     /**
      *  Dereferences the instance (redirects the -> operator to the managed
      *  pointer).
      */
-    NoAddRefRelease <C> *operator-> () const
+    NoAddRefRelease<C>* operator->() const
     {
-        AssertMsg (p, ("Managed pointer must not be null\n"));
-        return (NoAddRefRelease <C> *) p;
+        AssertMsg(p, ("Managed pointer must not be null\n"));
+        return (NoAddRefRelease<C>*)p;
     }
 
     template <class I>
-    HRESULT queryInterfaceTo (I **pp) const
+    HRESULT queryInterfaceTo(I **pp) const
     {
         if (pp)
         {
             if (p)
             {
-                return p->QueryInterface (COM_IIDOF (I), (void **) pp);
+                return p->QueryInterface(COM_IIDOF(I), (void**)pp);
             }
             else
             {
@@ -281,20 +266,20 @@ private:
     void addref()
     {
         if (p)
-            RefOps <C>::addref (p);
+            p->AddRef();
     }
 
     void release()
     {
         if (p)
-            RefOps <C>::release (p);
+            p->Release();
     }
 
     void safe_assign (C *that_p)
     {
         /* be aware of self-assignment */
         if (that_p)
-            RefOps <C>::addref (that_p);
+            that_p->AddRef();
         release();
         p = that_p;
     }
@@ -308,35 +293,35 @@ private:
  *
  *  @param I    COM interface class
  */
-template <class I, template <class> class RefOps = ComStrongRef>
-class ComPtr : public ComPtrBase <I, RefOps>
+template <class I>
+class ComPtr : public ComPtrBase<I>
 {
-    typedef ComPtrBase <I, RefOps> Base;
+    typedef ComPtrBase<I> Base;
 
 public:
 
-    ComPtr () : Base() {}
-    ComPtr (const ComPtr &that) : Base (that) {}
-    ComPtr &operator= (const ComPtr &that)
+    ComPtr() : Base() {}
+    ComPtr(const ComPtr &that) : Base(that) {}
+    ComPtr& operator=(const ComPtr &that)
     {
         Base::operator= (that);
         return *this;
     }
 
     template <class OI>
-    ComPtr (OI *that_p) : Base () { operator= (that_p); }
+    ComPtr(OI *that_p) : Base() { operator=(that_p); }
 
     /* specialization for I */
-    ComPtr (I *that_p) : Base (that_p) {}
+    ComPtr(I *that_p) : Base(that_p) {}
 
     template <class OC>
-    ComPtr (const ComPtr <OC, RefOps> &oc) : Base () { operator= ((OC *) oc); }
+    ComPtr(const ComPtr<OC> &oc) : Base() { operator=((OC*)oc); }
 
     template <class OI>
-    ComPtr &operator= (OI *that_p)
+    ComPtr &operator=(OI *that_p)
     {
         if (that_p)
-            that_p->QueryInterface (COM_IIDOF (I), (void **) Base::asOutParam());
+            that_p->QueryInterface(COM_IIDOF(I), (void**)Base::asOutParam());
         else
             Base::setNull();
         return *this;
@@ -345,14 +330,14 @@ public:
     /* specialization for I */
     ComPtr &operator=(I *that_p)
     {
-        Base::operator= (that_p);
+        Base::operator=(that_p);
         return *this;
     }
 
     template <class OC>
-    ComPtr &operator= (const ComPtr <OC, RefOps> &oc)
+    ComPtr &operator=(const ComPtr<OC> &oc)
     {
-        return operator= ((OC *) oc);
+        return operator=((OC*)oc);
     }
 
     /**
@@ -364,17 +349,17 @@ public:
         HRESULT rc;
         I *obj = NULL;
 #if !defined (VBOX_WITH_XPCOM)
-        rc = CoCreateInstance (clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF (I),
-                               (void **) &obj);
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_INPROC_SERVER, _ATL_IIDOF(I),
+                              (void**)&obj);
 #else /* !defined (VBOX_WITH_XPCOM) */
-        nsCOMPtr <nsIComponentManager> manager;
-        rc = NS_GetComponentManager (getter_AddRefs (manager));
-        if (SUCCEEDED (rc))
-            rc = manager->CreateInstance (clsid, nsnull, NS_GET_IID (I),
-                                          (void **) &obj);
+        nsCOMPtr<nsIComponentManager> manager;
+        rc = NS_GetComponentManager(getter_AddRefs(manager));
+        if (SUCCEEDED(rc))
+            rc = manager->CreateInstance(clsid, nsnull, NS_GET_IID(I),
+                                         (void **) &obj);
 #endif /* !defined (VBOX_WITH_XPCOM) */
         *this = obj;
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             obj->Release();
         return rc;
     }
@@ -388,19 +373,19 @@ public:
      *  redirect all object requests to that process). For this reason, this
      *  method is fully equivalent to #createInprocObject() for now.
      */
-    HRESULT createLocalObject (const CLSID &clsid)
+    HRESULT createLocalObject(const CLSID &clsid)
     {
 #if !defined (VBOX_WITH_XPCOM)
         HRESULT rc;
         I *obj = NULL;
-        rc = CoCreateInstance (clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF (I),
-                               (void **) &obj);
+        rc = CoCreateInstance(clsid, NULL, CLSCTX_LOCAL_SERVER, _ATL_IIDOF(I),
+                              (void**)&obj);
         *this = obj;
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             obj->Release();
         return rc;
 #else /* !defined (VBOX_WITH_XPCOM) */
-        return createInprocObject (clsid);
+        return createInprocObject(clsid);
 #endif /* !defined (VBOX_WITH_XPCOM) */
     }
 
@@ -411,26 +396,25 @@ public:
      *
      *  @param serverName   Name of the server to create an object within.
      */
-    HRESULT createObjectOnServer (const CLSID &clsid, const char *serverName)
+    HRESULT createObjectOnServer(const CLSID &clsid, const char *serverName)
     {
         HRESULT rc;
         I *obj = NULL;
-        nsCOMPtr <ipcIService> ipcServ = do_GetService (IPC_SERVICE_CONTRACTID, &rc);
-        if (SUCCEEDED (rc))
+        nsCOMPtr<ipcIService> ipcServ = do_GetService(IPC_SERVICE_CONTRACTID, &rc);
+        if (SUCCEEDED(rc))
         {
             PRUint32 serverID = 0;
-            rc = ipcServ->ResolveClientName (serverName, &serverID);
+            rc = ipcServ->ResolveClientName(serverName, &serverID);
             if (SUCCEEDED (rc))
             {
-                nsCOMPtr <ipcIDConnectService> dconServ =
-                    do_GetService (IPC_DCONNECTSERVICE_CONTRACTID, &rc);
-                if (SUCCEEDED (rc))
-                    rc = dconServ->CreateInstance (serverID, clsid, NS_GET_IID (I),
-                                                   (void **) &obj);
+                nsCOMPtr<ipcIDConnectService> dconServ = do_GetService(IPC_DCONNECTSERVICE_CONTRACTID, &rc);
+                if (SUCCEEDED(rc))
+                    rc = dconServ->CreateInstance(serverID, clsid, NS_GET_IID(I),
+                                                  (void**)&obj);
             }
         }
         *this = obj;
-        if (SUCCEEDED (rc))
+        if (SUCCEEDED(rc))
             obj->Release();
         return rc;
     }
@@ -442,41 +426,41 @@ public:
  *  by always doing QueryInterface() when constructing or assigning from
  *  another interface pointer disregarding its type.
  */
-template <template <class> class RefOps>
-class ComPtr <IUnknown, RefOps> : public ComPtrBase <IUnknown, RefOps>
+template<>
+class ComPtr<IUnknown> : public ComPtrBase<IUnknown>
 {
-    typedef ComPtrBase <IUnknown, RefOps> Base;
+    typedef ComPtrBase<IUnknown> Base;
 
 public:
 
-    ComPtr () : Base() {}
-    ComPtr (const ComPtr &that) : Base (that) {}
-    ComPtr &operator= (const ComPtr &that)
+    ComPtr() : Base() {}
+    ComPtr(const ComPtr &that) : Base (that) {}
+    ComPtr& operator=(const ComPtr &that)
     {
-        Base::operator= (that);
+        Base::operator=(that);
         return *this;
     }
 
     template <class OI>
-    ComPtr (OI *that_p) : Base () { operator= (that_p); }
+    ComPtr(OI *that_p) : Base() { operator=(that_p); }
 
     template <class OC>
-    ComPtr (const ComPtr <OC, RefOps> &oc) : Base () { operator= ((OC *) oc); }
+    ComPtr(const ComPtr<OC> &oc) : Base() { operator=((OC*)oc); }
 
     template <class OI>
-    ComPtr &operator= (OI *that_p)
+    ComPtr &operator=(OI *that_p)
     {
         if (that_p)
-            that_p->QueryInterface (COM_IIDOF (IUnknown), (void **) Base::asOutParam());
+            that_p->QueryInterface(COM_IIDOF(IUnknown), (void**)Base::asOutParam());
         else
             Base::setNull();
         return *this;
     }
 
     template <class OC>
-    ComPtr &operator= (const ComPtr <OC, RefOps> &oc)
+    ComPtr &operator=(const ComPtr<OC> &oc)
     {
-        return operator= ((OC *) oc);
+        return operator=((OC*)oc);
     }
 };
 
@@ -488,26 +472,26 @@ public:
  *
  *  @param C    class that implements some COM interface
  */
-template <class C, template <class> class RefOps = ComStrongRef>
-class ComObjPtr : public ComPtrBase <C, RefOps>
+template <class C>
+class ComObjPtr : public ComPtrBase<C>
 {
-    typedef ComPtrBase <C, RefOps> Base;
+    typedef ComPtrBase<C> Base;
 
 public:
 
-    ComObjPtr () : Base() {}
-    ComObjPtr (const ComObjPtr &that) : Base (that) {}
-    ComObjPtr (C *that_p) : Base (that_p) {}
+    ComObjPtr() : Base() {}
+    ComObjPtr(const ComObjPtr &that) : Base(that) {}
+    ComObjPtr(C *that_p) : Base(that_p) {}
 
-    ComObjPtr &operator= (const ComObjPtr &that)
+    ComObjPtr& operator=(const ComObjPtr &that)
     {
-        Base::operator= (that);
+        Base::operator=(that);
         return *this;
     }
 
-    ComObjPtr &operator= (C *that_p)
+    ComObjPtr& operator=(C *that_p)
     {
-        Base::operator= (that_p);
+        Base::operator=(that_p);
         return *this;
     }
 
@@ -529,7 +513,7 @@ public:
         HRESULT rc;
 #if !defined (VBOX_WITH_XPCOM)
 #   ifdef VBOX_COM_OUTOFPROC_MODULE
-        CComObjectNoLock <C> *obj = new CComObjectNoLock <C>();
+        CComObjectNoLock<C> *obj = new CComObjectNoLock<C>();
         if (obj)
         {
             obj->InternalFinalConstructAddRef();
@@ -539,11 +523,11 @@ public:
         else
             rc = E_OUTOFMEMORY;
 #   else
-        CComObject <C> *obj = NULL;
-        rc = CComObject <C>::CreateInstance (&obj);
+        CComObject<C> *obj = NULL;
+        rc = CComObject<C>::CreateInstance(&obj);
 #   endif
 #else /* !defined (VBOX_WITH_XPCOM) */
-        CComObject <C> *obj = new CComObject <C>();
+        CComObject<C> *obj = new CComObject<C>();
         if (obj)
             rc = obj->FinalConstruct();
         else

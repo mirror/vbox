@@ -137,7 +137,7 @@ private:
 #ifdef VBOXBFE_WITHOUT_COM
     Console *mParent;
 #else
-    const ComObjPtr<Console, ComWeakRef> mParent;
+    Console * const         mParent;
 #endif
     /** Pointer to the associated mouse driver. */
     struct DRVMAINMOUSE    *mpDrv[MOUSE_MAX_DEVICES];

@@ -47,7 +47,17 @@
 // constructor / destructor
 ////////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (ProgressBase)
+ProgressBase::ProgressBase()
+#if !defined (VBOX_COM_INPROC)
+    : mParent(NULL)
+#endif
+{
+}
+
+ProgressBase::~ProgressBase()
+{
+}
+
 
 /**
  * Subclasses must call this method from their FinalConstruct() implementations.
@@ -91,7 +101,7 @@ HRESULT ProgressBase::FinalConstruct()
  * @param aInitiator    Initiator of the task (for server-side objects. Can be
  *                      NULL which means initiator = parent, otherwise must not
  *                      be NULL).
- * @param aDescription  Task description.
+ * @param aDescription  ask description.
  * @param aID           Address of result GUID structure (optional).
  *
  * @return              COM result indicator.
@@ -126,8 +136,12 @@ HRESULT ProgressBase::protectedInit (AutoInitSpan &aAutoInitSpan,
     /* assign (and therefore addref) initiator only if it is not VirtualBox
      * (to avoid cycling); otherwise mInitiator will remain null which means
      * that it is the same as the parent */
-    if (aInitiator && !mParent.equalsTo (aInitiator))
-        unconst(mInitiator) = aInitiator;
+    if (aInitiator)
+    {
+        ComObjPtr<VirtualBox> pVirtualBox(mParent);
+        if (!pVirtualBox.equalsTo(aInitiator))
+            unconst(mInitiator) = aInitiator;
+    }
 #else
     unconst(mInitiator) = aInitiator;
 #endif
@@ -190,7 +204,7 @@ void ProgressBase::protectedUninit (AutoUninitSpan &aAutoUninitSpan)
         if (aAutoUninitSpan.initFailed() && !mId.isEmpty())
             mParent->removeProgress (mId);
 
-        unconst(mParent).setNull();
+        unconst(mParent) = NULL;
     }
 #endif
 }
@@ -237,7 +251,10 @@ STDMETHODIMP ProgressBase::COMGETTER(Initiator) (IUnknown **aInitiator)
     if (mInitiator)
         mInitiator.queryInterfaceTo(aInitiator);
     else
-        mParent.queryInterfaceTo(aInitiator);
+    {
+        ComObjPtr<VirtualBox> pVirtualBox(mParent);
+        pVirtualBox.queryInterfaceTo(aInitiator);
+    }
 #else
     mInitiator.queryInterfaceTo(aInitiator);
 #endif
