@@ -66,7 +66,15 @@ struct VFSExplorer::Data
     std::list<DirEntry> entryList;
 };
 
-DEFINE_EMPTY_CTOR_DTOR(VFSExplorer)
+VFSExplorer::VFSExplorer()
+    : mVirtualBox(NULL)
+{
+}
+
+VFSExplorer::~VFSExplorer()
+{
+}
+
 
 /**
  * VFSExplorer COM initializer.

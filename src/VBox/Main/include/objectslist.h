@@ -49,7 +49,7 @@ template<typename T>
 class ObjectsList
 {
 public:
-    typedef ComObjPtr<T, ComStrongRef> MyType;
+    typedef ComObjPtr<T> MyType;
     typedef std::list<MyType> MyList;
 
     typedef typename MyList::iterator iterator;

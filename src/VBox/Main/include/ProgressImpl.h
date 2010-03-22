@@ -98,10 +98,10 @@ protected:
 
 #if !defined (VBOX_COM_INPROC)
     /** Weak parent. */
-    const ComObjPtr<VirtualBox, ComWeakRef> mParent;
+    VirtualBox * const      mParent;
 #endif
 
-    const ComPtr<IUnknown> mInitiator;
+    const ComPtr<IUnknown>  mInitiator;
 
     const Guid mId;
     const Bstr mDescription;

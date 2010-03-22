@@ -303,7 +303,7 @@ private:
     static DECLCALLBACK(void)  displaySSMSave(PSSMHANDLE pSSM, void *pvUser);
     static DECLCALLBACK(int)   displaySSMLoad(PSSMHANDLE pSSM, void *pvUser, uint32_t uVersion, uint32_t uPass);
 
-    const ComObjPtr<Console, ComWeakRef> mParent;
+    Console * const         mParent;
     /** Pointer to the associated display driver. */
     struct DRVMAINDISPLAY  *mpDrv;
     /** Pointer to the device instance for the VMM Device. */

@@ -87,7 +87,7 @@ public:
 
 private:
     /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+    VirtualBox * const      mVirtualBox;
 
     const Bstr mName;
 

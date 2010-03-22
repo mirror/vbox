@@ -135,7 +135,7 @@ private:
      *  Note that this is a weak ref -- the CallbackEvent handler thread
      *  is bound to the lifetime of the VirtualBox instance, so it's safe.
      */
-    ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+    VirtualBox        *mVirtualBox;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -4344,7 +4344,7 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
  */
 void *VirtualBox::CallbackEvent::handler()
 {
-    if (mVirtualBox.isNull())
+    if (!mVirtualBox)
         return NULL;
 
     AutoCaller autoCaller(mVirtualBox);
@@ -4354,7 +4354,7 @@ void *VirtualBox::CallbackEvent::handler()
                          "the callback event is discarded!\n",
                          autoCaller.state()));
         /* We don't need mVirtualBox any more, so release it */
-        mVirtualBox.setNull();
+        mVirtualBox = NULL;
         return NULL;
     }
 
@@ -4364,7 +4364,7 @@ void *VirtualBox::CallbackEvent::handler()
         AutoReadLock alock(mVirtualBox COMMA_LOCKVAL_SRC_POS);
         callbacks = mVirtualBox->m->llCallbacks;
         /* We don't need mVirtualBox any more, so release it */
-        mVirtualBox.setNull();
+        mVirtualBox = NULL;
     }
 
     for (CallbackList::const_iterator it = callbacks.begin();

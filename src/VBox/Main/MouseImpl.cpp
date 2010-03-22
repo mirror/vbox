@@ -62,7 +62,15 @@ struct DRVMAINMOUSE
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (Mouse)
+Mouse::Mouse()
+    : mParent(NULL)
+{
+}
+
+Mouse::~Mouse()
+{
+}
+
 
 HRESULT Mouse::FinalConstruct()
 {
@@ -137,7 +145,7 @@ void Mouse::uninit()
 #ifdef VBOXBFE_WITHOUT_COM
     mParent = NULL;
 #else
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
 #endif
 }
 

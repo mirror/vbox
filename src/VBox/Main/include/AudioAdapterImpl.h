@@ -92,10 +92,10 @@ public:
 
 private:
 
-    const ComObjPtr<Machine, ComWeakRef> mParent;
+    Machine * const     mParent;
     const ComObjPtr<AudioAdapter> mPeer;
 
-    Backupable<Data> mData;
+    Backupable<Data>    mData;
 };
 
 #endif // ____H_AUDIOADAPTER

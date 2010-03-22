@@ -156,8 +156,7 @@ struct Host::Data
 #endif
     {};
 
-    ComObjPtr<VirtualBox, ComWeakRef>
-                            pParent;
+    VirtualBox              *pParent;
 
 #ifdef VBOX_WITH_USB
     WriteLockHandle         usbListsLock;               // protects the below two lists

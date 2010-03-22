@@ -48,7 +48,14 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (MachineDebugger)
+MachineDebugger::MachineDebugger()
+    : mParent(NULL)
+{
+}
+
+MachineDebugger::~MachineDebugger()
+{
+}
 
 HRESULT MachineDebugger::FinalConstruct()
 {
@@ -110,7 +117,7 @@ void MachineDebugger::uninit()
     if (autoUninitSpan.uninitDone())
         return;
 
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
     mFlushMode = false;
 }
 

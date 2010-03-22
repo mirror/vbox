@@ -84,7 +84,7 @@ public:
     /* private instance data */
 private:
     /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> mVirtualBox;
+    VirtualBox* const   mVirtualBox;
 
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;

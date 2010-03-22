@@ -137,11 +137,11 @@ private:
     void detach();
     void generateMACAddress();
 
-    const ComObjPtr<Machine, ComWeakRef> mParent;
+    Machine * const     mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
 
-    bool m_fModified;
-    Backupable<Data> mData;
+    bool                m_fModified;
+    Backupable<Data>    mData;
 };
 
 #endif // ____H_NETWORKADAPTER

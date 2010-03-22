@@ -60,10 +60,11 @@ struct BackupableMediumAttachmentData
 struct MediumAttachment::Data
 {
     Data()
+        : pMachine(NULL)
     { }
 
     /** Reference to Machine object, for checking mutable state. */
-    const ComObjPtr<Machine, ComWeakRef> pMachine;
+    Machine * const pMachine;
     /* later: const ComObjPtr<MediumAttachment> mPeer; */
 
     Backupable<BackupableMediumAttachmentData> bd;
@@ -163,7 +164,7 @@ void MediumAttachment::uninit()
 
     m->bd.free();
 
-    unconst(m->pMachine).setNull();
+    unconst(m->pMachine) = NULL;
 
     delete m;
     m = NULL;

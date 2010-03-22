@@ -75,7 +75,15 @@ static int stam = 0;
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR(Display)
+Display::Display()
+    : mParent(NULL)
+{
+}
+
+Display::~Display()
+{
+}
+
 
 HRESULT Display::FinalConstruct()
 {
@@ -662,7 +670,7 @@ void Display::uninit()
     if (mParent)
         mParent->UnregisterCallback (this);
 
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
 
     if (mpDrv)
         mpDrv->pDisplay = NULL;

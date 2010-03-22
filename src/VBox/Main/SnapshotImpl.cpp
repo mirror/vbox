@@ -76,6 +76,7 @@ typedef std::list< ComObjPtr<Snapshot> > SnapshotsList;
 struct Snapshot::Data
 {
     Data()
+        : pVirtualBox(NULL)
     {
         RTTimeSpecSetMilli(&timeStamp, 0);
     };
@@ -90,7 +91,7 @@ struct Snapshot::Data
     ComObjPtr<SnapshotMachine>  pMachine;
 
     /** weak VirtualBox parent */
-    const ComObjPtr<VirtualBox, ComWeakRef> pVirtualBox;
+    VirtualBox * const          pVirtualBox;
 
     // pParent and llChildren are protected by Machine::snapshotsTreeLockHandle()
     ComObjPtr<Snapshot>         pParent;
@@ -1048,8 +1049,8 @@ void SnapshotMachine::uninit()
     /* free the essential data structure last */
     mData.free();
 
-    unconst(mParent).setNull();
-    unconst(mPeer).setNull();
+    unconst(mParent) = NULL;
+    unconst(mPeer) = NULL;
 
     LogFlowThisFuncLeave();
 }
@@ -1060,7 +1061,7 @@ void SnapshotMachine::uninit()
  */
 RWLockHandle *SnapshotMachine::lockHandle() const
 {
-    AssertReturn(!mPeer.isNull(), NULL);
+    AssertReturn(mPeer != NULL, NULL);
     return mPeer->lockHandle();
 }
 

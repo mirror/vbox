@@ -95,7 +95,7 @@ private:
     static DECLCALLBACK(int)    drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uint32_t fFlags);
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
 
-    const ComObjPtr<Console, ComWeakRef> mParent;
+    Console * const         mParent;
     /** Pointer to the associated keyboard driver. */
     struct DRVMAINKEYBOARD *mpDrv;
     /** Pointer to the device instance for the VMM Device. */

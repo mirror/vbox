@@ -541,7 +541,7 @@ public:
      * used by ready Machine children (whose readiness is bound to the parent's
      * one) or after doing addCaller() manually.
      */
-    const ComObjPtr<VirtualBox, ComWeakRef>& getVirtualBox() const { return mParent; }
+    VirtualBox* getVirtualBox() const { return mParent; }
 
     /**
      * Returns this machine ID.
@@ -684,7 +684,7 @@ protected:
 
     HRESULT checkStateDependency(StateDependency aDepType);
 
-    inline Machine *getMachine();
+    Machine *getMachine();
 
     void ensureNoStateDependencies();
 
@@ -775,9 +775,9 @@ protected:
     void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
-    const ComObjPtr<Machine, ComWeakRef> mPeer;
+    Machine* const          mPeer;
 
-    const ComObjPtr<VirtualBox, ComWeakRef> mParent;
+    VirtualBox* const       mParent;
 
     uint32_t                m_flModifications;
 
@@ -1069,23 +1069,6 @@ inline const Guid &Machine::getSnapshotId() const
     return getClassID() != clsidSnapshotMachine
                 ? Guid::Empty
                 : static_cast<const SnapshotMachine*>(this)->getSnapshotId();
-}
-
-////////////////////////////////////////////////////////////////////////////////
-
-/**
- *  Returns a pointer to the Machine object for this machine that acts like a
- *  parent for complex machine data objects such as shared folders, etc.
- *
- *  For primary Machine objects and for SnapshotMachine objects, returns this
- *  object's pointer itself. For SessoinMachine objects, returns the peer
- *  (primary) machine pointer.
- */
-inline Machine *Machine::getMachine()
-{
-    if (getClassID() == clsidSessionMachine)
-        return mPeer;
-    return this;
 }
 
 

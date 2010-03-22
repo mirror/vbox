@@ -63,7 +63,7 @@ private:
     static DECLCALLBACK(void)   drvDestruct(PPDMDRVINS pDrvIns);
     static DECLCALLBACK(void)   drvReset(PPDMDRVINS pDrvIns);
 
-    ComObjPtr<Console, ComWeakRef> mParent;
+    Console * const         mParent;
 
     RTSEMEVENT mCredentialsEvent;
     uint32_t mu32CredentialsFlags;

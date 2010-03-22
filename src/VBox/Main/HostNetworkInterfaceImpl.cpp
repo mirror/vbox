@@ -33,7 +33,14 @@
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (HostNetworkInterface)
+HostNetworkInterface::HostNetworkInterface()
+    : mVBox(NULL)
+{
+}
+
+HostNetworkInterface::~HostNetworkInterface()
+{
+}
 
 HRESULT HostNetworkInterface::FinalConstruct()
 {
@@ -549,7 +556,7 @@ HRESULT HostNetworkInterface::setVirtualBox(VirtualBox *pVBox)
     HRESULT hrc;
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-    mVBox = pVBox;
+    unconst(mVBox) = pVBox;
 
     /* If IPv4 address hasn't been initialized */
     if (m.IPAddress == 0)

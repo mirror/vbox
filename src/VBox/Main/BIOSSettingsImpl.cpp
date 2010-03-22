@@ -39,10 +39,11 @@
 struct BIOSSettings::Data
 {
     Data()
+        : pMachine(NULL)
     { }
 
-    ComObjPtr<Machine, ComWeakRef>  pMachine;
-    ComObjPtr<BIOSSettings>         pPeer;
+    Machine * const             pMachine;
+    ComObjPtr<BIOSSettings>     pPeer;
 
     // use the XML settings structure in the members for simplicity
     Backupable<settings::BIOSSettings> bd;
@@ -114,7 +115,7 @@ HRESULT BIOSSettings::init(Machine *aParent, BIOSSettings *that)
 
     m = new Data();
 
-    m->pMachine = aParent;
+    unconst(m->pMachine) = aParent;
     m->pPeer = that;
 
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
@@ -144,7 +145,7 @@ HRESULT BIOSSettings::initCopy(Machine *aParent, BIOSSettings *that)
 
     m = new Data();
 
-    m->pMachine = aParent;
+    unconst(m->pMachine) = aParent;
     // mPeer is left null
 
     AutoWriteLock thatlock(that COMMA_LOCKVAL_SRC_POS);
@@ -171,8 +172,8 @@ void BIOSSettings::uninit()
 
     m->bd.free();
 
-    m->pPeer.setNull();
-    m->pMachine.setNull();
+    unconst(m->pPeer) = NULL;
+    unconst(m->pMachine) = NULL;
 
     delete m;
     m = NULL;

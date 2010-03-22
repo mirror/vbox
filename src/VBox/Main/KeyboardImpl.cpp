@@ -119,7 +119,7 @@ void Keyboard::uninit()
     mpVMMDev = NULL;
     mfVMMDevInited = true;
 
-    unconst(mParent).setNull();
+    unconst(mParent) = NULL;
 }
 
 /**

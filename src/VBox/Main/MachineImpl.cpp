@@ -237,6 +237,7 @@ Machine::MediaData::~MediaData()
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Machine()
+    : mPeer(NULL), mParent(NULL)
 {}
 
 Machine::~Machine()
@@ -606,7 +607,8 @@ STDMETHODIMP Machine::COMGETTER(Parent)(IVirtualBox **aParent)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     /* mParent is constant during life time, no need to lock */
-    mParent.queryInterfaceTo(aParent);
+    ComObjPtr<VirtualBox> pVirtualBox(mParent);
+    pVirtualBox.queryInterfaceTo(aParent);
 
     return S_OK;
 }
@@ -6049,6 +6051,21 @@ void Machine::uninitDataAndChildObjects()
 }
 
 /**
+ *  Returns a pointer to the Machine object for this machine that acts like a
+ *  parent for complex machine data objects such as shared folders, etc.
+ *
+ *  For primary Machine objects and for SnapshotMachine objects, returns this
+ *  object's pointer itself. For SessoinMachine objects, returns the peer
+ *  (primary) machine pointer.
+ */
+Machine* Machine::getMachine()
+{
+    if (getClassID() == clsidSessionMachine)
+        return (Machine*)mPeer;
+    return this;
+}
+
+/**
  * Makes sure that there are no machine state dependants. If necessary, waits
  * for the number of dependants to drop to zero.
  *
@@ -9083,8 +9100,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 #endif
         uninitDataAndChildObjects();
         mData.free();
-        unconst(mParent).setNull();
-        unconst(mPeer).setNull();
+        unconst(mParent) = NULL;
+        unconst(mPeer) = NULL;
         LogFlowThisFuncLeave();
         return;
     }
@@ -9278,8 +9295,8 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     /* leave the exclusive lock before setting the below two to NULL */
     alock.leave();
 
-    unconst(mParent).setNull();
-    unconst(mPeer).setNull();
+    unconst(mParent) = NULL;
+    unconst(mPeer) = NULL;
 
     LogFlowThisFuncLeave();
 }
@@ -9293,7 +9310,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
  */
 RWLockHandle *SessionMachine::lockHandle() const
 {
-    AssertReturn(!mPeer.isNull(), NULL);
+    AssertReturn(mPeer != NULL, NULL);
     return mPeer->lockHandle();
 }
 
@@ -9587,7 +9604,7 @@ STDMETHODIMP SessionMachine::OnSessionEnd(ISession *aSession,
         Assert(mData->mSession.mProgress.isNull());
         ComObjPtr<Progress> progress;
         progress.createObject();
-        progress->init(mParent, static_cast<IMachine *>(mPeer),
+        progress->init(mParent, mPeer,
                        Bstr(tr("Closing session")), FALSE /* aCancelable */);
         progress.queryInterfaceTo(aProgress);
         mData->mSession.mProgress = progress;
