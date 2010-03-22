@@ -2120,7 +2120,15 @@ bool ConsoleVRDPServer::loadVRDPLibrary (void)
 // constructor / destructor
 /////////////////////////////////////////////////////////////////////////////
 
-DEFINE_EMPTY_CTOR_DTOR (RemoteDisplayInfo)
+RemoteDisplayInfo::RemoteDisplayInfo()
+    : mParent(NULL)
+{
+}
+
+RemoteDisplayInfo::~RemoteDisplayInfo()
+{
+}
+
 
 HRESULT RemoteDisplayInfo::FinalConstruct()
 {
