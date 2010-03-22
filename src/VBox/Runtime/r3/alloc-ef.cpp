@@ -295,7 +295,7 @@ void *rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller
     /* Alignment decreases fence accuracy, but this is at least partially
      * counteracted by filling and checking the alignment padding. When the
      * fence is in front then then no extra alignment is needed. */
-    size_t cbAlign = RT_ALIGN_Z(cb, RTALLOC_EFENCE_ALIGNMENT);
+    size_t cbAligned = RT_ALIGN_Z(cb, RTALLOC_EFENCE_ALIGNMENT);
 #endif
 
 #ifdef RTALLOC_EFENCE_TRACE
@@ -324,16 +324,16 @@ void *rtMemAlloc(const char *pszOp, RTMEMTYPE enmType, size_t cb, void *pvCaller
         #ifdef RTALLOC_EFENCE_IN_FRONT
         void *pvEFence = pvBlock;
         void *pv = (char *)pvEFence + RTALLOC_EFENCE_SIZE;
-#ifdef RTALLOC_EFENCE_NOMAN_FILLER
+# ifdef RTALLOC_EFENCE_NOMAN_FILLER
         memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cb);
-#endif
+# endif
         #else
         void *pvEFence = (char *)pvBlock + (cbBlock - RTALLOC_EFENCE_SIZE);
-        void *pv = (char *)pvEFence - cbAlign;
-#ifdef RTALLOC_EFENCE_NOMAN_FILLER
-        memset(pvBlock, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbAlign);
-        memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbAlign - cb);
-#endif
+        void *pv = (char *)pvEFence - cbAligned;
+# ifdef RTALLOC_EFENCE_NOMAN_FILLER
+        memset(pvBlock, RTALLOC_EFENCE_NOMAN_FILLER, cbBlock - RTALLOC_EFENCE_SIZE - cbAligned);
+        memset((char *)pv + cb, RTALLOC_EFENCE_NOMAN_FILLER, cbAligned - cb);
+# endif
         #endif
 
 #ifdef RTALLOC_EFENCE_FENCE_FILLER
@@ -401,22 +401,22 @@ void rtMemFree(const char *pszOp, RTMEMTYPE enmType, void *pv, void *pvCaller, u
          * Check whether the no man's land is untouched.
          */
 # ifdef RTALLOC_EFENCE_IN_FRONT
-        void *p = ASMMemIsAll8((char *)pv + pBlock->cb,
-                               RT_ALIGN_Z(pBlock->cb, PAGE_SIZE) - pBlock->cb,
-                               RTALLOC_EFENCE_NOMAN_FILLER);
+        void *pvWrong = ASMMemIsAll8((char *)pv + pBlock->cb,
+                                     RT_ALIGN_Z(pBlock->cb, PAGE_SIZE) - pBlock->cb,
+                                     RTALLOC_EFENCE_NOMAN_FILLER);
 # else
         /* Alignment must match allocation alignment in rtMemAlloc(). */
-        size_t cbAlign = RT_ALIGN_Z(pBlock->cb, RTALLOC_EFENCE_ALIGNMENT);
-        void *p = ASMMemIsAll8((char *)pv + pBlock->cb,
-                               cbAlign - pBlock->cb,
-                               RTALLOC_EFENCE_NOMAN_FILLER);
-        if (p)
+        size_t cbAligned = RT_ALIGN_Z(pBlock->cb, RTALLOC_EFENCE_ALIGNMENT);
+        void  *pvWrong   = ASMMemIsAll8((char *)pv + pBlock->cb,
+                                        cbAligned - pBlock->cb,
+                                        RTALLOC_EFENCE_NOMAN_FILLER);
+        if (pvWrong)
             RTAssertDoPanic();
-        p = ASMMemIsAll8((void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK),
-                         RT_ALIGN_Z(cbAlign, PAGE_SIZE) - cbAlign,
-                         RTALLOC_EFENCE_NOMAN_FILLER);
+        pvWrong = ASMMemIsAll8((void *)((uintptr_t)pv & ~PAGE_OFFSET_MASK),
+                               RT_ALIGN_Z(cbAligned, PAGE_SIZE) - cbAligned,
+                               RTALLOC_EFENCE_NOMAN_FILLER);
 # endif
-        if (p)
+        if (pvWrong)
             RTAssertDoPanic();
 #endif
 
