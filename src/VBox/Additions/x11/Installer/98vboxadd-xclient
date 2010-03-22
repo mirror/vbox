@@ -26,7 +26,26 @@ for i in $HOME/.vboxclient-*.pid; do
   fi
 done
 
+# Check whether the display we are running on running a known buggy version
+# of X.Org which might crash when we resize.
+no_display=
+xorgbin=Xorg
+found=`which Xorg | grep "no Xorg"`
+if test ! -z "$found"; then
+    if test -f "/usr/X11/bin/Xorg"; then
+        xorgbin=/usr/X11/bin/Xorg
+    else
+        exit 1
+    fi
+fi
+xout=`$xorgbin -version 2>&1`
+if echo "$xout" | grep "1\.4\.99\.90[12345]" > /dev/null
+then
+    no_display=1
+fi
+
 /usr/bin/VBoxClient --clipboard
 /usr/bin/VBoxClient --checkhostversion
-/usr/bin/VBoxClient --display
+test -z "$no_display" &&
+    /usr/bin/VBoxClient --display
 /usr/bin/VBoxClient --seamless

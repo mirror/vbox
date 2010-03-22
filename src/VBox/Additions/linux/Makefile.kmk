@@ -109,8 +109,7 @@ VBOX_ADD_STRIP_BIN.linux += \
 	VBoxClient
 
 VBOX_ADD_BIN.linux += \
-	VBoxClient-all \
-	VBoxRandR
+	VBoxClient-all
 
 VBOX_ADD_STRIP_SBIN += \
 	VBoxService
@@ -374,7 +373,6 @@ ifndef VBOX_OSE
  LnxAdd-Nostrip-Bin_INST    = $(subst $(PATH_TARGET),obj,$(VBOX_LNX_ADD_INST_BIN_DIR))
  LnxAdd-Nostrip-Bin_MODE    = a+rx,u+w
  LnxAdd-Nostrip-Bin_SOURCES = \
-	$(VBOX_REL_X11_ADD_INST)VBoxRandR.sh=>VBoxRandR \
 	$(VBOX_REL_X11_ADD_INST)98vboxadd-xclient=>VBoxClient-all
 
 

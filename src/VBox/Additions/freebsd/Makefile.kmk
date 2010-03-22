@@ -134,7 +134,6 @@ INSTALLS += $(if $(VBOX_OSE),, fbsd_add_inst-nobin)
 fbsd_add_inst-nobin_INST = obj/Additions/Installer/freebsd
 fbsd_add_inst-nobin_MODE = a+r,u+w
 fbsd_add_inst-nobin_SOURCES = \
-		../x11/Installer/VBoxRandR.sh \
 		../x11/Installer/98vboxadd-xclient \
 		../x11/Installer/vboxclient.desktop \
 		../x11/Installer/vboxvideo.ids \
