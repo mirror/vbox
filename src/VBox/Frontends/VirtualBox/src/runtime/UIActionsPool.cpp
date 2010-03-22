@@ -909,6 +909,7 @@ protected:
     }
 };
 
+#ifdef VBOX_WITH_REGISTRATION
 class PerformRegisterAction : public UISimpleAction
 {
     Q_OBJECT;
@@ -932,6 +933,7 @@ protected:
         setStatusTip(UIActionsPool::tr("Open VirtualBox registration form"));
     }
 };
+#endif /* VBOX_WITH_REGISTRATION */
 
 class PerformUpdateAction : public UISimpleAction
 {
@@ -1099,7 +1101,9 @@ UIActionsPool::UIActionsPool(QObject *pParent)
     m_actionsPool[UIActionIndex_Simple_Help] = new ShowHelpAction(this);
     m_actionsPool[UIActionIndex_Simple_Web] = new ShowWebAction(this);
     m_actionsPool[UIActionIndex_Simple_ResetWarnings] = new PerformResetWarningsAction(this);
+#ifdef VBOX_WITH_REGISTRATION
     m_actionsPool[UIActionIndex_Simple_Register] = new PerformRegisterAction(this);
+#endif /* VBOX_WITH_REGISTRATION */
     m_actionsPool[UIActionIndex_Simple_Update] = new PerformUpdateAction(this);
     m_actionsPool[UIActionIndex_Simple_About] = new ShowAboutAction(this);
 
