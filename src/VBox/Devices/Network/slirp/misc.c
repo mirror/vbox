@@ -378,7 +378,7 @@ static void zone_destroy(uma_zone_t zone)
         LIST_REMOVE(it, list);
         RTMemFree(it);
     }
-    while (zone->master_zone == NULL && !LIST_EMPTY(&zone->used_items))
+    while (zone->master_zone != NULL && !LIST_EMPTY(&zone->used_items))
     {
         it = LIST_FIRST(&zone->used_items);
         LIST_REMOVE(it, list);
