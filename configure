@@ -119,6 +119,7 @@ LIBX11="-L/usr/X11R6/lib -L/usr/X11R6/lib64 -L/usr/local/lib -lXext -lX11"
 LIBXCURSOR="-lXcursor"
 LIBXMU="-lXmu"
 LIBXINERAMA="-lXinerama"
+LIBXRANDR="-lXrandr"
 MESA="-lGL"
 INCZ=""
 LIBZ="-lz"
@@ -1288,6 +1289,35 @@ EOF
 
 
 #
+# Check for the Xinerama library, needed by the Qt GUI
+#
+check_xrandr()
+{
+  test_header Xrandr
+  cat > $ODIR.tmp_src.cc << EOF
+#include <X11/Xlib.h>
+#include <X11/extensions/Xrandr.h>
+extern "C" int main(void)
+{
+  Display *dpy;
+  Bool flag;
+  int major, minor;
+  dpy = XOpenDisplay(NULL);
+  if (dpy)
+  {
+    flag = XRRQueryVersion(dpy, &major, &minor);
+    XCloseDisplay(dpy);
+  }
+}
+EOF
+  [ -n "$INCX11" ] && I_INCX11=`prefix_I "$INCX11"`
+  if test_compile "$LIBX11 $LIBXRANDR $I_INCX11" Xrandr Xrandr; then
+    log_success "found"
+  fi
+}
+
+
+#
 # Check for OpenGL
 #
 check_opengl()
@@ -2389,6 +2419,7 @@ check_curl
 # TODO check for libxdamange-dev (X11/extensions/Xdamage.h, additions only)
 [ $WITH_X11    -eq 1 ] && check_xcursor
 [ $WITH_X11    -eq 1 ] && check_xinerama
+[ $WITH_X11    -eq 1 ] && check_xrandr
 [ $WITH_OPENGL -eq 1 ] && check_opengl
 [ $WITH_QT4    -eq 1 ] && check_qt4
 [ $WITH_PYTHON -eq 1 ] && check_python
