@@ -31,7 +31,6 @@ so_init()
 {
 }
 
-
 struct socket *
 solookup(struct socket *head, struct in_addr laddr,
          u_int lport, struct in_addr faddr, u_int fport)
@@ -133,7 +132,7 @@ soread(PNATState pData, struct socket *so)
     QSOCKET_UNLOCK(tcb);
 
     DEBUG_CALL("soread");
-    DEBUG_ARG("so = %lx", (long )so);
+    DEBUG_ARG("so = %lx", (long)so);
 
     /*
      * No need to check if there's enough room to read.
@@ -203,7 +202,7 @@ soread(PNATState pData, struct socket *so)
 #endif
     if (nn <= 0)
     {
-#if defined(RT_OS_WINDOWS)
+#ifdef RT_OS_WINDOWS
         /*
          * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
          * _could_ mean that the connection is closed. But we will receive an
@@ -1055,15 +1054,16 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     int m_room;
 
     ip = (struct ip *)buff;
+    /* Fix ip->ip_len to  contain the total packet length including the header
+     * in _host_ byte order for all OSes. On Darwin, that value already is in
+     * host byte order. Solaris and Darwin report only the payload. */
 #ifndef RT_OS_DARWIN
-    /* Darwin: send IP.IP_LEN in host format (payload only) */
     ip->ip_len = RT_N2H_U16(ip->ip_len);
 #endif
-    /* Note: ip->ip_len in host byte order (all OS) */
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
-    ip->ip_len += (ip->ip_hl << 2); /* Solaris: reports only payload length */
-#endif
     hlen = (ip->ip_hl << 2);
+#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+    ip->ip_len += hlen;
+#endif
     if (ip->ip_len < hlen + ICMP_MINLEN)
     {
        Log(("send_icmp_to_guest: ICMP header is too small to understand which type/subtype of the datagram\n"));
@@ -1107,7 +1107,6 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
     }
 
     icm = icmp_find_original_mbuf(pData, ip);
-
     if (icm == NULL)
     {
         Log(("NAT: Can't find the corresponding packet for the received ICMP\n"));
@@ -1133,11 +1132,11 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
          * in host byte order so no byte order conversion is required. IP headers fields are converting
          * in ip_output0 routine only.   
          */
-        if (   (ip->ip_len - hlen )
+        if (   (ip->ip_len - hlen)
             != (ip0->ip_len - (ip0->ip_hl << 2))) 
         {
             Log(("NAT: ECHO(%d) lenght doesn't match ECHOREPLY(%d)\n",
-                (ip->ip_len - hlen ), (ip0->ip_len - (ip0->ip_hl << 2))));
+                (ip->ip_len - hlen), (ip0->ip_len - (ip0->ip_hl << 2))));
             return;
         }
     }
@@ -1266,11 +1265,11 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
                 so->so_m = NULL;
                 break;
             case IP_SUCCESS: /* echo replied */
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+# ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 m = m_get(pData);
-#else
+# else
                 m = m_gethdr(pData, M_NOWAIT, MT_HEADER);
-#endif
+# endif
                 m->m_data += if_maxlinkhdr;
                 ip = mtod(m, struct ip *);
                 ip->ip_src.s_addr = icr[i].Address;
@@ -1288,12 +1287,12 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
 
                 data_len += ICMP_MINLEN;
 
-#ifndef VBOX_WITH_SLIRP_BSD_MBUF
+# ifndef VBOX_WITH_SLIRP_BSD_MBUF
                 nbytes = (data_len + icr[i].DataSize > m->m_size? m->m_size - data_len: icr[i].DataSize);
                 memcpy(icp->icmp_data, icr[i].Data, nbytes);
-#else
+# else
                 AssertMsgFailed(("ICMP"));
-#endif
+# endif
 
                 data_len += icr[i].DataSize;
 
@@ -1336,7 +1335,7 @@ sorecvfrom_icmp_win(PNATState pData, struct socket *so)
         }
     }
 }
-#else /* RT_OS_WINDOWS */
+#else /* !RT_OS_WINDOWS */
 static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
 {
     struct sockaddr_in addr;
@@ -1379,21 +1378,22 @@ static void sorecvfrom_icmp_unix(PNATState pData, struct socket *so)
     }
     /* basic check of IP header */
     if (   ip.ip_v != IPVERSION
-#ifndef RT_OS_DARWIN
+# ifndef RT_OS_DARWIN
         || ip.ip_p != IPPROTO_ICMP
-#endif
-    )
+# endif
+        )
     {
         Log(("sorecvfrom_icmp_unix: 1 - step IP isn't IPv4 \n"));
         return;
     }
-#ifndef RT_OS_DARWIN
-    /* Darwin reports IP header in host format */
+# ifndef RT_OS_DARWIN
+    /* Darwin reports the IP length already in host byte order. */
     ip.ip_len = RT_N2H_U16(ip.ip_len);
-#endif
-#if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
-    ip.ip_len += (ip.ip_hl << 2); /* Solaris: reports only payload length */
-#endif
+# endif
+# if defined(RT_OS_SOLARIS) || defined(RT_OS_DARWIN)
+    /* Solaris and Darwin report the payload only */
+    ip.ip_len += (ip.ip_hl << 2);
+# endif
     /* Note: ip->ip_len in host byte order (all OS) */
     len = ip.ip_len;
     buff = RTMemAlloc(len);
