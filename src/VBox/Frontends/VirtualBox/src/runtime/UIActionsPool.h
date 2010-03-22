@@ -104,7 +104,9 @@ enum UIActionIndex
     UIActionIndex_Simple_Help,
     UIActionIndex_Simple_Web,
     UIActionIndex_Simple_ResetWarnings,
+#ifdef VBOX_WITH_REGISTRATION
     UIActionIndex_Simple_Register,
+#endif /* VBOX_WITH_REGISTRATION */
     UIActionIndex_Simple_Update,
     UIActionIndex_Simple_About,
 
