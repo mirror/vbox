@@ -3247,6 +3247,7 @@ typedef struct PGMCPU
     STAMCOUNTER StatRZPageOutOfSyncSupervisor;      /**< RC/R0: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatRZPageOutOfSyncUserWrite;       /**< RC/R0: The number of times user page is out of sync was detected in \#PF. */
     STAMCOUNTER StatRZPageOutOfSyncSupervisorWrite; /**< RC/R0: The number of times supervisor page is out of sync was detected in in \#PF. */
+    STAMCOUNTER StatRZPageOutOfSyncBallloon;        /**< RC/R0: The number of times a ballooned page was accessed (read). */
     STAMPROFILE StatRZPrefetch;                     /**< RC/R0: PGMPrefetchPage. */
     STAMPROFILE StatRZFlushTLB;                     /**< RC/R0: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatRZFlushTLBNewCR3;               /**< RC/R0: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */
@@ -3293,6 +3294,7 @@ typedef struct PGMCPU
     STAMCOUNTER StatR3PageOutOfSyncSupervisor;      /**< R3: The number of times supervisor page is out of sync was detected in in \#PF or VerifyAccessSyncPage. */
     STAMCOUNTER StatR3PageOutOfSyncUserWrite;       /**< R3: The number of times user page is out of sync was detected in \#PF. */
     STAMCOUNTER StatR3PageOutOfSyncSupervisorWrite; /**< R3: The number of times supervisor page is out of sync was detected in in \#PF. */
+    STAMCOUNTER StatR3PageOutOfSyncBallloon;        /**< R3: The number of times a ballooned page was accessed (read). */
     STAMPROFILE StatR3Prefetch;                     /**< R3: PGMPrefetchPage. */
     STAMPROFILE StatR3FlushTLB;                     /**< R3: Profiling of the PGMFlushTLB() body. */
     STAMCOUNTER StatR3FlushTLBNewCR3;               /**< R3: The number of times PGMFlushTLB was called with a new CR3, non-global. (switch) */

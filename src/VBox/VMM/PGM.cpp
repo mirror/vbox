@@ -1862,7 +1862,9 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncSupervisor,     "/PGM/CPU%u/RZ/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncUser,           "/PGM/CPU%u/RZ/OutOfSync/User",             "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncSupervisorWrite,"/PGM/CPU%u/RZ/OutOfSync/SuperVisorWrite",  "Number of traps due to pages out of sync (RW) and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncUser,           "/PGM/CPU%u/RZ/OutOfSync/User",             "Number of traps due to pages out of sync (P) and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncUserWrite,      "/PGM/CPU%u/RZ/OutOfSync/UserWrite",        "Number of traps due to pages out of sync (RW) and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPgmCpu->StatRZPageOutOfSyncBallloon,       "/PGM/CPU%u/RZ/OutOfSync/Balloon",          "The number of times a ballooned page was accessed (read).");
         PGM_REG_PROFILE(&pPgmCpu->StatRZPrefetch,                    "/PGM/CPU%u/RZ/Prefetch",                   "PGMPrefetchPage profiling.");
         PGM_REG_PROFILE(&pPgmCpu->StatRZFlushTLB,                    "/PGM/CPU%u/RZ/FlushTLB",                   "Profiling of the PGMFlushTLB() body.");
         PGM_REG_COUNTER(&pPgmCpu->StatRZFlushTLBNewCR3,              "/PGM/CPU%u/RZ/FlushTLB/NewCR3",            "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");
@@ -1907,6 +1909,7 @@ static void pgmR3InitStats(PVM pVM)
         PGM_REG_COUNTER(&pPgmCpu->StatR3InvalidatePageSkipped,       "/PGM/CPU%u/R3/InvalidatePage/Skipped",     "The number of times PGMInvalidatePage() was skipped due to not present shw or pending pending SyncCR3.");
         PGM_REG_COUNTER(&pPgmCpu->StatR3PageOutOfSyncSupervisor,     "/PGM/CPU%u/R3/OutOfSync/SuperVisor",       "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
         PGM_REG_COUNTER(&pPgmCpu->StatR3PageOutOfSyncUser,           "/PGM/CPU%u/R3/OutOfSync/User",             "Number of traps due to pages out of sync and times VerifyAccessSyncPage calls SyncPage.");
+        PGM_REG_COUNTER(&pPgmCpu->StatR3PageOutOfSyncBallloon,       "/PGM/CPU%u/R3/OutOfSync/Balloon",          "The number of times a ballooned page was accessed (read).");
         PGM_REG_PROFILE(&pPgmCpu->StatR3Prefetch,                    "/PGM/CPU%u/R3/Prefetch",                   "PGMPrefetchPage profiling.");
         PGM_REG_PROFILE(&pPgmCpu->StatR3FlushTLB,                    "/PGM/CPU%u/R3/FlushTLB",                   "Profiling of the PGMFlushTLB() body.");
         PGM_REG_COUNTER(&pPgmCpu->StatR3FlushTLBNewCR3,              "/PGM/CPU%u/R3/FlushTLB/NewCR3",            "The number of times PGMFlushTLB was called with a new CR3, non-global. (switch)");
