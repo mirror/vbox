@@ -150,10 +150,10 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibSeamless.cpp \
 	VBoxGuestR3LibVideo.cpp
 VBoxGuestR3LibXFree86_INCS     = \
-        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/common/ \
-        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/hw/xfree86/os-support \
-        $(VBOX_PATH_X11_XFREE_4_2)/programs/Xserver/include \
-        $(VBOX_PATH_X11_XFREE_4_2)/exports/include/X11
+        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common/ \
+        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
+        $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
+        $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
 
 
 include	$(KBUILD_PATH)/subfooter.kmk
