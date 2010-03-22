@@ -539,7 +539,6 @@ NTSTATUS vboxWddmPickResources(PDEVICE_EXTENSION pContext, PDXGK_DEVICE_INFO pDe
 }
 
 /* driver callbacks */
-
 NTSTATUS DxgkDdiAddDevice(
     IN CONST PDEVICE_OBJECT PhysicalDeviceObject,
     OUT PVOID *MiniportDeviceContext
@@ -562,7 +561,7 @@ NTSTATUS DxgkDdiAddDevice(
     }
     else
     {
-        Status  = STATUS_INSUFFICIENT_RESOURCES;
+        Status  = STATUS_NO_MEMORY;
         drprintf(("VBoxVideoWddm: ERROR, failed to create context\n"));
     }
 
@@ -1134,8 +1133,8 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             pCaps->HighestAcceptableAddress.LowPart = 0xffffffffUL;
             pCaps->MaxAllocationListSlotId = 16;
             pCaps->ApertureSegmentCommitLimit = 0;
-            pCaps->MaxPointerWidth = 64;
-            pCaps->MaxPointerHeight = 64;
+            pCaps->MaxPointerWidth  = VBOXWDDM_C_POINTER_MAX_WIDTH;
+            pCaps->MaxPointerHeight = VBOXWDDM_C_POINTER_MAX_HEIGHT;
             pCaps->PointerCaps.Value = 3; /* Monochrome , Color*/ /* MaskedColor == Value | 4, dosable for now */
             pCaps->InterruptMessageNumber = 0;
             pCaps->NumberOfSwizzlingRanges = 0;
@@ -1824,6 +1823,255 @@ DxgkDdiSetPalette(
     return STATUS_SUCCESS;
 }
 
+BOOL vboxWddmPointerCopyColorData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape, PVIDEO_POINTER_ATTRIBUTES pPointerAttributes)
+{
+    /* Format of "hardware" pointer is:
+     * 1 bpp AND mask with byte aligned scanlines,
+     * B G R A bytes of XOR mask that starts on the next 4 byte aligned offset after AND mask.
+     *
+     * If fl & SPS_ALPHA then A bytes contain alpha channel information.
+     * Otherwise A bytes are undefined (but will be 0).
+     *
+     */
+    PBYTE pjSrcAnd = NULL;
+    PBYTE pjSrcXor = NULL;
+
+    ULONG cy = 0;
+
+    PBYTE pjDstAnd = pPointerAttributes->Pixels;
+    ULONG cjAnd = 0;
+    PBYTE pjDstXor = pPointerAttributes->Pixels;
+
+    ULONG cxSrc = pSetPointerShape->Width;
+    ULONG cySrc = pSetPointerShape->Width;
+
+    // Make sure the new pointer isn't too big to handle,
+    // strip the size to 64x64 if necessary
+    if (cxSrc > VBOXWDDM_C_POINTER_MAX_WIDTH)
+        cxSrc = VBOXWDDM_C_POINTER_MAX_WIDTH;
+
+    if (cySrc > VBOXWDDM_C_POINTER_MAX_HEIGHT)
+        cySrc = VBOXWDDM_C_POINTER_MAX_HEIGHT;
+
+    /* Size of AND mask in bytes */
+    cjAnd = ((cxSrc + 7) / 8) * cySrc;
+
+    /* Pointer to XOR mask is 4-bytes aligned */
+    pjDstXor += (cjAnd + 3) & ~3;
+
+    pPointerAttributes->Width = cxSrc;
+    pPointerAttributes->Height = cySrc;
+    pPointerAttributes->WidthInBytes = cxSrc * 4;
+
+    uint32_t cbData = ((cjAnd + 3) & ~3) + pPointerAttributes->Height*pPointerAttributes->WidthInBytes;
+    uint32_t cbPointerAttributes = RT_OFFSETOF(VIDEO_POINTER_ATTRIBUTES, Pixels[cbData]);
+    Assert(VBOXWDDM_POINTER_ATTRIBUTES_SIZE >= cbPointerAttributes);
+    if (VBOXWDDM_POINTER_ATTRIBUTES_SIZE < cbPointerAttributes)
+    {
+        drprintf((__FUNCTION__": VBOXWDDM_POINTER_ATTRIBUTES_SIZE(%d) < cbPointerAttributes(%d)\n", VBOXWDDM_POINTER_ATTRIBUTES_SIZE, cbPointerAttributes));
+        return FALSE;
+    }
+
+    /* Init AND mask to 1 */
+    RtlFillMemory (pjDstAnd, cjAnd, 0xFF);
+
+    PBYTE pjSrcAlpha = (PBYTE)pSetPointerShape->pPixels;
+
+    /*
+     * Emulate AND mask to provide viewable mouse pointer for
+     * hardware which does not support alpha channel.
+     */
+
+    for (cy = 0; cy < cySrc; cy++)
+    {
+        ULONG cx;
+
+        UCHAR bitmask = 0x80;
+
+        for (cx = 0; cx < cxSrc; cx++, bitmask >>= 1)
+        {
+            if (bitmask == 0)
+            {
+                bitmask = 0x80;
+            }
+
+            if (pjSrcAlpha[cx * 4 + 3] > 0x7f)
+            {
+               pjDstAnd[cx / 8] &= ~bitmask;
+            }
+        }
+
+        // Point to next source and dest scans
+        pjSrcAlpha += pSetPointerShape->Pitch;
+        pjDstAnd += (cxSrc + 7) / 8;
+    }
+
+    /*
+     * pso is 32 bit BGRX bitmap. Copy it to Pixels
+     */
+    pjSrcXor = (PBYTE)pSetPointerShape->pPixels;
+    for (cy = 0; cy < cySrc; cy++)
+    {
+        /* 32 bit bitmap is being copied */
+        RtlCopyMemory (pjDstXor, pjSrcXor, cxSrc * 4);
+
+        /* Point to next source and dest scans */
+        pjSrcXor += pSetPointerShape->Pitch;
+        pjDstXor += pPointerAttributes->WidthInBytes;
+    }
+
+    return TRUE;
+}
+
+BOOL vboxWddmPointerCopyMonoData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape, PVIDEO_POINTER_ATTRIBUTES pPointerAttributes)
+{
+    PBYTE pjSrc = NULL;
+
+    ULONG cy = 0;
+
+    PBYTE pjDstAnd = pPointerAttributes->Pixels;
+    ULONG cjAnd = 0;
+    PBYTE pjDstXor = pPointerAttributes->Pixels;
+
+    ULONG cxSrc = pSetPointerShape->Width;
+    ULONG cySrc = pSetPointerShape->Height / 2; /* /2 because both masks are in there */
+
+    // Make sure the new pointer isn't too big to handle,
+    // strip the size to 64x64 if necessary
+    if (cxSrc > VBOXWDDM_C_POINTER_MAX_WIDTH)
+        cxSrc = VBOXWDDM_C_POINTER_MAX_WIDTH;
+
+    if (cySrc > VBOXWDDM_C_POINTER_MAX_HEIGHT)
+        cySrc = VBOXWDDM_C_POINTER_MAX_HEIGHT;
+
+    /* Size of AND mask in bytes */
+    cjAnd = ((cxSrc + 7) / 8) * cySrc;
+
+    /* Pointer to XOR mask is 4-bytes aligned */
+    pjDstXor += (cjAnd + 3) & ~3;
+
+    pPointerAttributes->Width = cxSrc;
+    pPointerAttributes->Height = cySrc;
+    pPointerAttributes->WidthInBytes = cxSrc * 4;
+
+    /* Init AND mask to 1 */
+    RtlFillMemory (pjDstAnd, cjAnd, 0xFF);
+
+    /*
+     * Copy AND mask.
+     */
+    pjSrc = (PBYTE)pSetPointerShape->pPixels;
+
+    for (cy = 0; cy < cySrc; cy++)
+    {
+        RtlCopyMemory (pjDstAnd, pjSrc, (cxSrc + 7) / 8);
+
+        // Point to next source and dest scans
+        pjSrc += pSetPointerShape->Pitch;
+        pjDstAnd += (cxSrc + 7) / 8;
+    }
+
+    for (cy = 0; cy < cySrc; ++cy)
+    {
+        ULONG cx;
+
+        UCHAR bitmask = 0x80;
+
+        for (cx = 0; cx < cxSrc; cx++, bitmask >>= 1)
+        {
+            if (bitmask == 0)
+            {
+                bitmask = 0x80;
+            }
+
+            if (pjSrc[cx / 8] & bitmask)
+            {
+                *(ULONG *)&pjDstXor[cx * 4] = 0x00FFFFFF;
+            }
+            else
+            {
+                *(ULONG *)&pjDstXor[cx * 4] = 0;
+            }
+        }
+
+        // Point to next source and dest scans
+        pjSrc += pSetPointerShape->Pitch;
+        pjDstXor += cxSrc * 4;
+    }
+
+    return TRUE;
+}
+
+static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape, PVBOXWDDM_POINTER_INFO pPointerInfo)
+{
+    PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
+    /* pPointerAttributes maointains the visibility state, clear all except visibility */
+    pPointerAttributes->Enable &= 0xffff0000 | VBOX_MOUSE_POINTER_VISIBLE;
+
+    Assert(pSetPointerShape->Flags.Value == 1 || pSetPointerShape->Flags.Value == 2);
+    if (pSetPointerShape->Flags.Color)
+    {
+        if (vboxWddmPointerCopyColorData(pSetPointerShape, pPointerAttributes))
+        {
+            pPointerAttributes->Flags = VIDEO_MODE_COLOR_POINTER;
+            pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_ALPHA;
+        }
+        else
+        {
+            drprintf((__FUNCTION__": vboxWddmPointerCopyColorData failed\n"));
+            AssertBreakpoint();
+            return FALSE;
+        }
+
+    }
+    else if (pSetPointerShape->Flags.Monochrome)
+    {
+        if (vboxWddmPointerCopyMonoData(pSetPointerShape, pPointerAttributes))
+        {
+            pPointerAttributes->Flags = VIDEO_MODE_MONO_POINTER;
+        }
+        else
+        {
+            drprintf((__FUNCTION__": vboxWddmPointerCopyMonoData failed\n"));
+            AssertBreakpoint();
+            return FALSE;
+        }
+    }
+    else
+    {
+        drprintf((__FUNCTION__": unsupported pointer type Flags.Value(0x%x)\n", pSetPointerShape->Flags.Value));
+        AssertBreakpoint();
+        return FALSE;
+    }
+
+    pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_SHAPE;
+    //
+    // Initialize Pointer attributes and position
+    //
+    if (pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE)
+    {
+        /* New coordinates of pointer's hot spot */
+        pPointerAttributes->Column = (SHORT)(pPointerInfo->xPos) - (SHORT)(pSetPointerShape->YHot);
+        pPointerAttributes->Row    = (SHORT)(pPointerInfo->yPos) - (SHORT)(pSetPointerShape->YHot);
+    }
+    else
+    {
+        /* Pointer should be created invisible */
+        pPointerAttributes->Column = -1;
+        pPointerAttributes->Row    = -1;
+    }
+
+    /* VBOX: We have to pass to miniport hot spot coordinates and alpha flag.
+     * They will be encoded in the pPointerAttributes::Enable field.
+     * High word will contain hot spot info and low word - flags.
+     */
+
+    pPointerAttributes->Enable |= (pSetPointerShape->YHot & 0xFF) << 24;
+    pPointerAttributes->Enable |= (pSetPointerShape->XHot & 0xFF) << 16;
+
+    return TRUE;
+}
+
 NTSTATUS
 APIENTRY
 DxgkDdiSetPointerPosition(
@@ -1833,7 +2081,18 @@ DxgkDdiSetPointerPosition(
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
-    /* @todo: fixme: implement */
+
+    /* mouse integration is ON */
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerPosition->VidPnSourceId].PointerInfo;
+    PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
+    if (pSetPointerPosition->Flags.Visible)
+        pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
+    else
+        pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
+
+    pPointerInfo->xPos = pSetPointerPosition->X;
+    pPointerInfo->yPos = pSetPointerPosition->Y;
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
@@ -1849,11 +2108,26 @@ DxgkDdiSetPointerShape(
 //    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
-    /* @todo: fixme: implement */
+
+    NTSTATUS Status = STATUS_NOT_SUPPORTED;
+
+    if (vboxQueryHostWantsAbsolute())
+    {
+        /* mouse integration is ON */
+        PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+        PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerShape->VidPnSourceId].PointerInfo;
+        if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
+        {
+            if (vboxUpdatePointerShape (pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
+                Status = STATUS_SUCCESS;
+            else
+                drprintf((__FUNCTION__": vboxUpdatePointerShape failed\n"));
+        }
+    }
 
 //    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    return STATUS_NOT_SUPPORTED;
+    return Status;
 }
 
 NTSTATUS
