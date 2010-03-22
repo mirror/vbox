@@ -5375,8 +5375,13 @@ void helper_hlt(int next_eip_addend)
 
 void helper_monitor(target_ulong ptr)
 {
+#ifdef VBOX
+    if ((uint32_t)ECX > 1)
+        raise_exception(EXCP0D_GPF);
+#else
     if ((uint32_t)ECX != 0)
         raise_exception(EXCP0D_GPF);
+#endif
     /* XXX: store address ? */
     helper_svm_check_intercept_param(SVM_EXIT_MONITOR, 0);
 }
