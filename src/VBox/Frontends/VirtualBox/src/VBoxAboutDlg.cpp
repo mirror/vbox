@@ -95,13 +95,13 @@ void VBoxAboutDlg::paintEvent (QPaintEvent * /* aEvent */)
     if (!sColor.isEmpty())
         painter.setPen (QColor(sColor).name());
     else
-        painter.setPen (Qt::white);
+        painter.setPen (Qt::black);
 #if VBOX_OSE
     painter.drawText (QRect (0, 400, 600, 32),
                       Qt::AlignCenter | Qt::AlignVCenter | Qt::TextWordWrap,
                       mAboutText);
 #else /* VBOX_OSE */
-    painter.drawText (QRect (290, 370, 360, 72),
+    painter.drawText (QRect (271, 370, 360, 72),
                       Qt::AlignLeft | Qt::AlignBottom | Qt::TextWordWrap,
                       mAboutText);
 #endif /* VBOX_OSE */
