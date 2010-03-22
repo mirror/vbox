@@ -191,6 +191,8 @@ RTR3DECL(int)  RTErrConvertFromWin32(unsigned uNativeCode)
         case ERROR_CANCELLED:               return VERR_CANCELLED;
         case ERROR_DIRECTORY:               return VERR_NOT_A_DIRECTORY;
 
+        case ERROR_LOGON_FAILURE:           return VERR_LOGON_FAILURE;
+
         /*
          * Winsocket errors are mostly BSD errno.h wrappers.
          * This is copied from RTErrConvertFromErrno() and checked against winsock.h.
