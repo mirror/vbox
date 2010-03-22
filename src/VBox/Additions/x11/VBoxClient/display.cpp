@@ -28,6 +28,7 @@
 
 #include <X11/Xlib.h>
 #include <X11/cursorfont.h>
+#include <X11/extensions/Xrandr.h>
 
 #include <iprt/assert.h>
 #include <iprt/err.h>
@@ -38,24 +39,15 @@
 
 #include "VBoxClient.h"
 
-static int initDisplay()
+static int initDisplay(Display *pDisplay)
 {
     int rc = VINF_SUCCESS;
-    int rcSystem, rcErrno;
     uint32_t fMouseFeatures = 0;
 
-    LogFlowFunc(("enabling dynamic resizing\n"));
-    rcSystem = system("VBoxRandR --test");
-    if (-1 == rcSystem)
-    {
-        rcErrno = errno;
-        rc = RTErrConvertFromErrno(rcErrno);
-    }
-    if (RT_SUCCESS(rc))
-    {
-        if (0 != WEXITSTATUS(rcSystem))
-            rc = VERR_NOT_SUPPORTED;
-    }
+    LogFlowFunc(("testing dynamic resizing\n"));
+    int iDummy;
+    if (!XRRQueryExtension(pDisplay, &iDummy, &iDummy))
+        rc = VERR_NOT_SUPPORTED;
     if (RT_SUCCESS(rc))
         rc = VbglR3CtlFilterMask(VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, 0);
     else
@@ -115,18 +107,60 @@ static int x11ConnectionMonitor(RTTHREAD, void *)
 }
 
 /**
+ * This method first resets the current resolution using RandR to wake up
+ * the graphics driver, then sets the resolution requested if it is among
+ * those offered by the driver.
+ */
+static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
+{
+    XRRScreenConfiguration *pConfig;
+    XRRScreenSize *pSizes;
+    int cSizes;
+    pConfig = XRRGetScreenInfo(pDisplay, DefaultRootWindow(pDisplay));
+    /* Reset the current mode */
+    LogFlowFunc(("Setting size %ux%u\n", cx, cy));
+    if (pConfig)
+    {
+        pSizes = XRRConfigSizes(pConfig, &cSizes);
+        unsigned uDist = UINT32_MAX;
+        int iMode = -1;
+        for (int i = 0; i < cSizes; ++i)
+        {
+#define VBCL_SQUARE(x) (x) * (x)
+            unsigned uThisDist =   VBCL_SQUARE(pSizes[i].width - cx)
+                                 + VBCL_SQUARE(pSizes[i].height - cy);
+            LogFlowFunc(("Found size %dx%d, distance %u\n", pSizes[i].width,
+                         pSizes[i].height, uThisDist));
+#undef VBCL_SQUARE
+            if (uThisDist < uDist)
+            {
+                uDist = uThisDist;
+                iMode = i;
+            }
+        }
+        if (iMode >= 0)
+        {
+            Time config_timestamp = 0;
+            XRRConfigTimes(pConfig, &config_timestamp);
+            LogFlowFunc(("Setting new size %d\n", iMode));
+            XRRSetScreenConfig(pDisplay, pConfig,
+                               DefaultRootWindow(pDisplay), iMode,
+                               RR_Rotate_0, config_timestamp);
+        }
+        XRRFreeScreenConfigInfo(pConfig);
+    }
+}
+
+/**
  * Display change request monitor thread function.
  * Before entering the loop, we re-read the last request
  * received, and if the first one received inside the
  * loop is identical we ignore it, because it is probably
  * stale.
  */
-int runDisplay()
+static int runDisplay(Display *pDisplay)
 {
     LogFlowFunc(("\n"));
-    Display *pDisplay = XOpenDisplay(NULL);
-    if (pDisplay == NULL)
-        return VERR_NOT_FOUND;
     Cursor hClockCursor = XCreateFontCursor(pDisplay, XC_watch);
     Cursor hArrowCursor = XCreateFontCursor(pDisplay, XC_left_ptr);
     int rc = RTThreadCreate(NULL, x11ConnectionMonitor, NULL, 0,
@@ -139,6 +173,19 @@ int runDisplay()
         rc = VbglR3WaitEvent(  VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
                              | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED,
                              RT_INDEFINITE_WAIT, &fEvents);
+        /* Jiggle the mouse pointer to wake up the driver. */
+        XGrabPointer(pDisplay,
+                     DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
+                     GrabModeAsync, None, hClockCursor, CurrentTime);
+        XFlush(pDisplay);
+        XGrabPointer(pDisplay,
+                     DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
+                     GrabModeAsync, None, hArrowCursor, CurrentTime);
+        XFlush(pDisplay);
+        XUngrabPointer(pDisplay, CurrentTime);
+        XFlush(pDisplay);
+        /* And if it is a size hint, set the new size now that the video
+         * driver has had a chance to update its list. */
         if (RT_SUCCESS(rc) && (fEvents & VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST))
         {
             int rc2 = VbglR3GetDisplayChangeRequest(&cx, &cy, &cBits,
@@ -148,21 +195,7 @@ int runDisplay()
             if (RT_FAILURE(rc2))
                 RTThreadYield();
             else
-                system("VBoxRandR");
-        }
-        if (   RT_SUCCESS(rc)
-            && (fEvents & VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED))
-        {
-            XGrabPointer(pDisplay,
-                         DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
-                         GrabModeAsync, None, hClockCursor, CurrentTime);
-            XFlush(pDisplay);
-            XGrabPointer(pDisplay,
-                         DefaultRootWindow(pDisplay), true, 0, GrabModeAsync,
-                         GrabModeAsync, None, hArrowCursor, CurrentTime);
-            XFlush(pDisplay);
-            XUngrabPointer(pDisplay, CurrentTime);
-            XFlush(pDisplay);
+                setSize(pDisplay, cx, cy);
         }
     }
     LogFlowFunc(("returning VINF_SUCCESS\n"));
@@ -178,9 +211,13 @@ public:
     }
     virtual int run(bool fDaemonised /* = false */)
     {
-        int rc = initDisplay();
+        Display *pDisplay = XOpenDisplay(NULL);
+        if (!pDisplay)
+            return VERR_NOT_FOUND;
+        int rc = initDisplay(pDisplay);
         if (RT_SUCCESS(rc))
-            rc = runDisplay();
+            rc = runDisplay(pDisplay);
+        XCloseDisplay(pDisplay);
         return rc;
     }
     virtual void cleanup()

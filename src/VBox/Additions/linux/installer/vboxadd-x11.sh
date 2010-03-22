@@ -296,8 +296,6 @@ setup()
     # We need to tell our xorg.conf hacking script whether /dev/psaux exists
     nopsaux="--nopsaux"
     test -c /dev/psaux && nopsaux=""
-    # And on newer servers, we want to test whether dynamic resizing will work
-    testrandr="true"
     # The video driver to install for X.Org 6.9+
     vboxvideo_src=
     # The mouse driver to install for X.Org 6.9+
@@ -377,14 +375,12 @@ setup()
             vboxvideo_src=vboxvideo_drv_71.so
             vboxmouse_src=vboxmouse_drv_71.so
             automouse=""
-            testrandr=""
             ;;
         6.9.* | 7.0.* )
             begin "Installing X.Org 6.9/7.0 modules"
             vboxvideo_src=vboxvideo_drv_70.so
             vboxmouse_src=vboxmouse_drv_70.so
             automouse=""
-            testrandr=""
             ;;
         6.7* | 6.8.* | 4.2.* | 4.3.* )
             # Assume X.Org post-fork or XFree86
@@ -394,7 +390,6 @@ setup()
             ln -s "$lib_dir/vboxvideo_drv.o" "$modules_dir/drivers/vboxvideo_drv.o"
             ln -s "$lib_dir/vboxmouse_drv.o" "$modules_dir/input/vboxmouse_drv.o"
             automouse=""
-            testrandr=""
             succ_msg
             ;;
         * )
@@ -409,18 +404,6 @@ setup()
         ln -s "$lib_dir/$vboxvideo_src" "$modules_dir/drivers/vboxvideo_drv.so"
         ln -s "$lib_dir/$vboxmouse_src" "$modules_dir/input/vboxmouse_drv.so" &&
         succ_msg
-    fi
-    if test -n "$testrandr"; then
-        # Run VBoxRandR in test mode as it prints out useful information if
-        # dynamic resizing can't be used.  Don't fail here though.
-        /usr/bin/VBoxRandR --test 1>&2
-    else
-        cat << EOF
-
-You appear to be running an older version of the X Window system in your
-guest.  Seamless mode and dynamic resizing will not work!
-
-EOF
     fi
 
     if test -n "$dox11config"; then
