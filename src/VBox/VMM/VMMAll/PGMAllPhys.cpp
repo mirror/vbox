@@ -54,24 +54,6 @@
 #ifndef IN_RING3
 
 /**
- * \#PF Handler callback for physical memory accesses without a RC/R0 handler.
- * This simply pushes everything to the HC handler.
- *
- * @returns VBox status code (appropritate for trap handling and GC return).
- * @param   pVM         VM Handle.
- * @param   uErrorCode  CPU Error code.
- * @param   pRegFrame   Trap register frame.
- * @param   pvFault     The fault address (cr2).
- * @param   GCPhysFault The GC physical address corresponding to pvFault.
- * @param   pvUser      User argument.
- */
-VMMDECL(int) pgmPhysHandlerRedirectToHC(PVM pVM, RTGCUINT uErrorCode, PCPUMCTXCORE pRegFrame, RTGCPTR pvFault, RTGCPHYS GCPhysFault, void *pvUser)
-{
-    return (uErrorCode & X86_TRAP_PF_RW) ? VINF_IOM_HC_MMIO_WRITE : VINF_IOM_HC_MMIO_READ;
-}
-
-
-/**
  * \#PF Handler callback for Guest ROM range write access.
  * We simply ignore the writes or fall back to the recompiler if we don't support the instruction.
  *
@@ -1266,7 +1248,7 @@ VMMDECL(int) PGMPhysGCPhys2CCPtr(PVM pVM, RTGCPHYS GCPhys, void **ppv, PPGMPAGEM
     {
         /*
          * If the page is shared, the zero page, or being write monitored
-         * it must be converted to an page that's writable if possible.
+         * it must be converted to a page that's writable if possible.
          */
         PPGMPAGE pPage = pTlbe->pPage;
         if (RT_UNLIKELY(PGM_PAGE_GET_STATE(pPage) != PGM_PAGE_STATE_ALLOCATED))
@@ -2367,7 +2349,7 @@ static int pgmPhysWriteHandler(PVM pVM, PPGMPAGE pPage, RTGCPHYS GCPhys, void co
 /**
  * Write to physical memory.
  *
- * This API respects access handlers and MMIO. Use PGMPhysSimpleReadGCPhys() if you
+ * This API respects access handlers and MMIO. Use PGMPhysSimpleWriteGCPhys() if you
  * want to ignore those.
  *
  * @returns VBox status code. Can be ignored in ring-3.
@@ -2436,8 +2418,10 @@ VMMDECL(int) PGMPhysWrite(PVM pVM, RTGCPHYS GCPhys, const void *pvBuf, size_t cb
                     if (RT_SUCCESS(rc))
                         memcpy(pvDst, pvBuf, cb);
                     else
+                    /* Ignore writes to ballooned pages. */
+                    if (!PGM_PAGE_IS_BALLOONED(pPage))
                         AssertLogRelMsgFailed(("pgmPhysGCPhys2CCPtrInternal failed on %RGp / %R[pgmpage] -> %Rrc\n",
-                                               pRam->GCPhys + off, pPage, rc));
+                                                pRam->GCPhys + off, pPage, rc));
                 }
 
                 /* next page */
