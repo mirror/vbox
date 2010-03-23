@@ -89,7 +89,8 @@ static int VBoxServiceCpuHotPlugGetACPIDevicePath(char **ppszPath, uint32_t idCp
                     RTDIRENTRY DirFolderContent;
                     while (RT_SUCCESS(RTDirRead(pDirAcpiContainer, &DirFolderContent, NULL))) /* Assumption that szName has always enough space */
                     {
-                        if (!strncmp(DirFolderContent.szName, "LNXCPU", 6))
+                        if (   !strncmp(DirFolderContent.szName, "LNXCPU", 6)
+                            || !strncmp(DirFolderContent.szName, "ACPI_CPU", 8))
                         {
                             /* Get the sysdev */
                             uint32_t idCore    = RTLinuxSysFsReadIntFile(10, "%s/%s/sysdev/topology/core_id",
