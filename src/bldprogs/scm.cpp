@@ -1152,9 +1152,9 @@ static const char *ScmStreamGetLine(PSCMSTREAM pStream, size_t *pcchLine, PSCMEO
  */
 static int ScmStreamRead(PSCMSTREAM pStream, void *pvBuf, size_t cbToRead)
 {
-    AssertReturn(!pStream->fWriteOrRead, NULL);
+    AssertReturn(!pStream->fWriteOrRead, VERR_PERMISSION_DENIED);
     if (RT_FAILURE(pStream->rc))
-        return NULL;
+        return pStream->rc;
 
     /* If there isn't enough stream left, fail already. */
     if (RT_UNLIKELY(pStream->cb - pStream->cb < cbToRead))
