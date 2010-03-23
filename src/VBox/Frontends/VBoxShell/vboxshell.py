@@ -410,12 +410,12 @@ def guestStats(ctx,console,args):
 def plugCpu(ctx,machine,session,args):
     cpu = int(args)
     print "Adding CPU %d..." %(cpu)
-    machine.HotPlugCPU(cpu)
+    machine.hotPlugCPU(cpu)
 
 def unplugCpu(ctx,machine,session,args):
     cpu = int(args)
     print "Removing CPU %d..." %(cpu)
-    machine.HotUnplugCPU(cpu)
+    machine.hotUnplugCPU(cpu)
 
 def cmdExistingVm(ctx,mach,cmd,args):
     mgr=ctx['mgr']
