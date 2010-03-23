@@ -6115,7 +6115,7 @@
 
     <method name="getCPUStatus">
       <desc>
-        Plugs a CPU into the machine.
+        Returns the current status of the given CPU.
       </desc>
       <param name="cpu" type="unsigned long" dir="in">
         <desc>
