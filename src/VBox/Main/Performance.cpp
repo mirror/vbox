@@ -92,9 +92,7 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
         }
     }
 
-    // @todo Replace 'if' with 'AssertReturn' when done debugging
-    //AssertReturn(cCpus, VERR_NOT_IMPLEMENTED);
-    if (cCpus == 0) return VERR_NOT_IMPLEMENTED;
+    AssertReturn(cCpus, VERR_NOT_IMPLEMENTED);
     *mhz = (ULONG)(u64TotalMHz / cCpus);
 
     return VINF_SUCCESS;
