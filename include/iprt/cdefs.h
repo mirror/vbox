@@ -1669,7 +1669,7 @@
 #ifdef __GNUC__
 # if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
 #  if !defined(__L4ENV__)
-#   define RT_BREAKPOINT()      __asm__ __volatile__("int $3\n\tnope\n\t")
+#   define RT_BREAKPOINT()      __asm__ __volatile__("int $3\n\tnop\n\t")
 #  else
 #   define RT_BREAKPOINT()      __asm__ __volatile__("int3; jmp 1f; 1:\n\t")
 #  endif
