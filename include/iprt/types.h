@@ -171,8 +171,13 @@ typedef __uint128_t uint128_t;
 #else
 typedef struct uint128_s
 {
+# ifdef RT_BIG_ENDIAN
+    uint64_t    Hi;
+    uint64_t    Lo;
+# else
     uint64_t    Lo;
     uint64_t    Hi;
+# endif
 } uint128_t;
 #endif
 
@@ -185,8 +190,13 @@ typedef __int128_t int128_t;
 #else
 typedef struct int128_s
 {
-    uint64_t    lo;
-    int64_t     hi;
+# ifdef RT_BIG_ENDIAN
+    int64_t     Hi;
+    uint64_t    Lo;
+# else
+    uint64_t    Lo;
+    int64_t     Hi;
+# endif
 } int128_t;
 #endif
 
@@ -206,8 +216,13 @@ typedef union RTUINT16U
     /** 16-bit hi/lo view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint8_t    Hi;
+        uint8_t    Lo;
+#else
         uint8_t    Lo;
         uint8_t    Hi;
+#endif
     } s;
 } RTUINT16U;
 /** Pointer to a 16-bit unsigned integer union. */
@@ -226,14 +241,24 @@ typedef union RTUINT32U
     /** Hi/Low view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint16_t    Hi;
+        uint16_t    Lo;
+#else
         uint16_t    Lo;
         uint16_t    Hi;
+#endif
     } s;
     /** Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint16_t    w1;
+        uint16_t    w0;
+#else
         uint16_t    w0;
         uint16_t    w1;
+#endif
     } Words;
 
     /** 32-bit view. */
@@ -259,22 +284,39 @@ typedef union RTUINT64U
     /** Hi/Low view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint32_t    Hi;
+        uint32_t    Lo;
+#else
         uint32_t    Lo;
         uint32_t    Hi;
+#endif
     } s;
     /** Double-Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint32_t    dw1;
+        uint32_t    dw0;
+#else
         uint32_t    dw0;
         uint32_t    dw1;
+#endif
     } DWords;
     /** Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint16_t    w3;
+        uint16_t    w2;
+        uint16_t    w1;
+        uint16_t    w0;
+#else
         uint16_t    w0;
         uint16_t    w1;
         uint16_t    w2;
         uint16_t    w3;
+#endif
     } Words;
 
     /** 64-bit view. */
@@ -303,26 +345,53 @@ typedef union RTUINT128U
     /** Hi/Low view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint64_t    Hi;
+        uint64_t    Lo;
+#else
         uint64_t    Lo;
         uint64_t    Hi;
+#endif
     } s;
     /** Quad-Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint64_t    qw1;
+        uint64_t    qw0;
+#else
         uint64_t    qw0;
         uint64_t    qw1;
+#endif
     } QWords;
     /** Double-Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint32_t    dw3;
+        uint32_t    dw2;
+        uint32_t    dw1;
+        uint32_t    dw0;
+#else
         uint32_t    dw0;
         uint32_t    dw1;
         uint32_t    dw2;
         uint32_t    dw3;
+#endif
     } DWords;
     /** Word view. */
     struct
     {
+#ifdef RT_BIG_ENDIAN
+        uint16_t    w7;
+        uint16_t    w6;
+        uint16_t    w5;
+        uint16_t    w4;
+        uint16_t    w3;
+        uint16_t    w2;
+        uint16_t    w1;
+        uint16_t    w0;
+#else
         uint16_t    w0;
         uint16_t    w1;
         uint16_t    w2;
@@ -331,6 +400,7 @@ typedef union RTUINT128U
         uint16_t    w5;
         uint16_t    w6;
         uint16_t    w7;
+#endif
     } Words;
 
     /** 64-bit view. */

@@ -474,7 +474,7 @@ RTDECL(void) RTLogPrintfEx(void *pvInstance, unsigned fFlags, unsigned iGroup, c
  * Governs the use of variadic macros.
  */
 #ifndef LOG_USE_C99
-# if defined(RT_ARCH_AMD64) || defined(RT_OS_DARWIN)
+# if defined(RT_ARCH_AMD64) || defined(RT_OS_DARWIN) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 #  define LOG_USE_C99
 # endif
 #endif

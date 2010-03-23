@@ -242,22 +242,9 @@ RT_C_DECLS_END
 /** @def RTAssertDebugBreak()
  * Debugger breakpoint instruction.
  *
- * @remarks In the gnu world we add a nop instruction after the int3 to
- *          force gdb to remain at the int3 source line.
- * @remarks The L4 kernel will try make sense of the breakpoint, thus the jmp.
  * @remarks This macro does not depend on RT_STRICT.
  */
-#ifdef __GNUC__
-# ifndef __L4ENV__
-#  define RTAssertDebugBreak()  do { __asm__ __volatile__ ("int3\n\tnop"); } while (0)
-# else
-#  define RTAssertDebugBreak()  do { __asm__ __volatile__ ("int3; jmp 1f; 1:"); } while (0)
-# endif
-#elif defined(_MSC_VER) || defined(DOXYGEN_RUNNING)
-# define RTAssertDebugBreak()   do { __debugbreak(); } while (0)
-#else
-# error "Unknown compiler"
-#endif
+#define RTAssertDebugBreak()    do { RT_BREAKPOINT(); } while (0)
 
 
 

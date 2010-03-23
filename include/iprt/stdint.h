@@ -66,7 +66,7 @@
 #  define UINT32_C(Value)   (Value ## U)
 # endif /* 64-bit darwin kludge. */
 
-#elif defined(RT_OS_FREEBSD) && defined(_KERNEL) \
+#elif defined(RT_OS_FREEBSD) && defined(_KERNEL)
 
 # ifndef __STDC_CONSTANT_MACROS
 #  define __STDC_CONSTANT_MACROS
@@ -101,7 +101,7 @@
 # endif
 
     /* x-bit types */
-#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
 #   if !defined(_INT8_T_DECLARED)   && !defined(_INT8_T)
 typedef signed char         int8_t;
 #   endif
