@@ -2005,8 +2005,8 @@ BOOL vboxWddmPointerCopyMonoData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape
 static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape, PVBOXWDDM_POINTER_INFO pPointerInfo)
 {
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
-    /* pPointerAttributes maointains the visibility state, clear all except visibility */
-    pPointerAttributes->Enable &= 0xffff0000 | VBOX_MOUSE_POINTER_VISIBLE;
+    /* pPointerAttributes maintains the visibility state, clear all except visibility */
+    pPointerAttributes->Enable &= VBOX_MOUSE_POINTER_VISIBLE;
 
     Assert(pSetPointerShape->Flags.Value == 1 || pSetPointerShape->Flags.Value == 2);
     if (pSetPointerShape->Flags.Color)
@@ -2045,27 +2045,11 @@ static BOOLEAN vboxVddmPointerShapeToAttributes(CONST DXGKARG_SETPOINTERSHAPE* p
     }
 
     pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_SHAPE;
-    //
-    // Initialize Pointer attributes and position
-    //
-    if (pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE)
-    {
-        /* New coordinates of pointer's hot spot */
-        pPointerAttributes->Column = (SHORT)(pPointerInfo->xPos) - (SHORT)(pSetPointerShape->YHot);
-        pPointerAttributes->Row    = (SHORT)(pPointerInfo->yPos) - (SHORT)(pSetPointerShape->YHot);
-    }
-    else
-    {
-        /* Pointer should be created invisible */
-        pPointerAttributes->Column = -1;
-        pPointerAttributes->Row    = -1;
-    }
 
-    /* VBOX: We have to pass to miniport hot spot coordinates and alpha flag.
-     * They will be encoded in the pPointerAttributes::Enable field.
+    /*
+     * The hot spot coordinates and alpha flag will be encoded in the pPointerAttributes::Enable field.
      * High word will contain hot spot info and low word - flags.
      */
-
     pPointerAttributes->Enable |= (pSetPointerShape->YHot & 0xFF) << 24;
     pPointerAttributes->Enable |= (pSetPointerShape->XHot & 0xFF) << 16;
 
@@ -2078,7 +2062,7 @@ DxgkDdiSetPointerPosition(
     CONST HANDLE  hAdapter,
     CONST DXGKARG_SETPOINTERPOSITION*  pSetPointerPosition)
 {
-    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     vboxVDbgBreakFv();
 
@@ -2098,8 +2082,8 @@ DxgkDdiSetPointerPosition(
         pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
     }
 
-    pPointerInfo->xPos = pSetPointerPosition->X;
-    pPointerInfo->yPos = pSetPointerPosition->Y;
+    pPointerAttributes->Column = pSetPointerPosition->X;
+    pPointerAttributes->Row = pSetPointerPosition->Y;
 
     if (bNotifyVisibility && vboxQueryHostWantsAbsolute())
     {
@@ -2115,7 +2099,7 @@ DxgkDdiSetPointerPosition(
         Assert(bResult);
     }
 
-    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
+//    dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
     return STATUS_SUCCESS;
 }
@@ -2137,6 +2121,8 @@ DxgkDdiSetPointerShape(
         /* mouse integration is ON */
         PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
         PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerShape->VidPnSourceId].PointerInfo;
+        /* @todo: to avoid extra data copy and extra heap allocation,
+         *  need to maintain the pre-allocated HGSMI buffer and convert the data directly to it */
         if (vboxVddmPointerShapeToAttributes(pSetPointerShape, pPointerInfo))
         {
             if (vboxUpdatePointerShape (pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
