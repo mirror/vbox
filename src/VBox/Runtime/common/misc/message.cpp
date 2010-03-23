@@ -122,6 +122,25 @@ RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat
 RT_EXPORT_SYMBOL(RTMsgErrorExitV);
 
 
+RTDECL(int) RTMsgErrorRc(int rcRet, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    RTMsgErrorV(pszFormat, va);
+    va_end(va);
+    return rcRet;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorRcV);
+
+
+RTDECL(int) RTMsgErrorRcV(int rcRet, const char *pszFormat, va_list va)
+{
+    RTMsgErrorV(pszFormat, va);
+    return rcRet;
+}
+RT_EXPORT_SYMBOL(RTMsgErrorRcV);
+
+
 RTDECL(RTEXITCODE) RTMsgInitFailure(int rcRTR3Init)
 {
     if (   g_offrtProcName
