@@ -7252,6 +7252,9 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
  *  - SaveS_InformCallbacksAnyway: Callbacks will be informed even if
  *    #isReallyModified() returns false. This is necessary for cases when we
  *    change machine data directly, not through the backup()/commit() mechanism.
+ *  - SaveS_Force: settings will be saved without doing a deep compare of the
+ *    settings structures. This is used when this is called because snapshots
+ *    have changed to avoid the overhead of the deep compare.
  *
  * @note Must be called from under this object's write lock. Locks children for
  * writing.
@@ -7354,8 +7357,12 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
 
         if (aFlags & SaveS_ResetCurStateModified)
         {
-            // this gets set by restoreSnapshot()
+            // this gets set by takeSnapshot() (if offline snapshot) and restoreSnapshot()
             mData->mCurrentStateModified = FALSE;
+            fNeedsWrite = true;     // always, no need to compare
+        }
+        else if (aFlags & SaveS_Force)
+        {
             fNeedsWrite = true;     // always, no need to compare
         }
         else

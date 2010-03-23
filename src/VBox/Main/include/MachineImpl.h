@@ -724,9 +724,7 @@ protected:
         /* flags for #saveSettings() */
         SaveS_ResetCurStateModified = 0x01,
         SaveS_InformCallbacksAnyway = 0x02,
-        /* flags for #saveSnapshotSettings() */
-        SaveSS_CurStateModified = 0x40,
-        SaveSS_CurrentId = 0x80,
+        SaveS_Force = 0x04,
         /* flags for #saveStateSettings() */
         SaveSTS_CurStateModified = 0x20,
         SaveSTS_StateFilePath = 0x40,

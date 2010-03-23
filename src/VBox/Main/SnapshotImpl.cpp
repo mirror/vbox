@@ -1455,12 +1455,14 @@ STDMETHODIMP SessionMachine::EndTakingSnapshot(BOOL aSuccess)
         if (!mData->mFirstSnapshot)
             mData->mFirstSnapshot = mData->mCurrentSnapshot;
 
+        int flSaveSettings = SaveS_Force;       // do not do a deep compare in machine settings,
+                                                // snapshots change, so we know we need to save
         if (!fOnline)
             /* the machine was powered off or saved when taking a snapshot, so
              * reset the mCurrentStateModified flag */
-            mData->mCurrentStateModified = FALSE;
+            flSaveSettings |= SaveS_ResetCurStateModified;
 
-        rc = saveSettings(NULL);
+        rc = saveSettings(NULL, flSaveSettings);
                 // no need to change for whether VirtualBox.xml needs saving since
                 // we'll save the global settings below anyway
     }
