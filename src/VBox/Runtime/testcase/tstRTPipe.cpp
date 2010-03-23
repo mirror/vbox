@@ -34,10 +34,174 @@
 *******************************************************************************/
 #include <iprt/pipe.h>
 
+#include <iprt/env.h>
 #include <iprt/err.h>
+#include <iprt/initterm.h>
 #include <iprt/mem.h>
+#include <iprt/message.h>
+#include <iprt/param.h>
+#include <iprt/process.h>
 #include <iprt/string.h>
 #include <iprt/test.h>
+
+
+/*******************************************************************************
+*   Global Variables                                                           *
+*******************************************************************************/
+static const char g_szTest4Message[] = "This is test #4, everything is working fine.\n\r";
+static const char g_szTest5Message[] = "This is test #5, everything is working fine.\n\r";
+
+
+static RTEXITCODE tstRTPipe5Child(const char *pszPipe)
+{
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    int64_t iNative;
+    rc = RTStrToInt64Full(pszPipe, 10, &iNative);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrToUInt64Full(%s) -> %Rrc\n", pszPipe, rc);
+
+    RTPIPE hPipe;
+    rc = RTPipeFromNative(&hPipe, (RTHCINTPTR)iNative, RTPIPE_N_READ);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeFromNative(,%s,READ) -> %Rrc\n", pszPipe, rc);
+
+    ///
+    char    szTmp[1024];
+    size_t  cbRead = 0;
+    rc = RTPipeReadBlocking(hPipe, szTmp, sizeof(szTmp) - 1, &cbRead);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeReadBlocking() -> %Rrc\n", rc);
+    szTmp[cbRead] = '\0';
+
+    size_t cbRead2;
+    char szTmp2[4];
+    rc = RTPipeReadBlocking(hPipe, szTmp2, sizeof(szTmp2), &cbRead2);
+    if (rc != VERR_BROKEN_PIPE)
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeReadBlocking() -> %Rrc instead of VERR_BROKEN_PIPE\n", rc);
+
+    rc = RTPipeClose(hPipe);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeClose() -> %Rrc\n", rc);
+
+    if (memcmp(szTmp, g_szTest5Message, sizeof(g_szTest5Message)))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "Message mismatch.\n:Expected '%s'\nGot     '%s'\n", g_szTest5Message, szTmp);
+
+    return RTEXITCODE_SUCCESS;
+}
+
+static void tstRTPipe5(void)
+{
+    RTTestISub("Inherit non-standard pipe handle, read end");
+
+    char    szPathSelf[RTPATH_MAX];
+    RTTESTI_CHECK_RETV(RTProcGetExecutableName(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
+
+    RTPIPE  hPipeR;
+    RTPIPE  hPipeW;
+    RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, RTPIPE_C_INHERIT_READ), VINF_SUCCESS);
+
+    RTHCINTPTR hNative = RTPipeToNative(hPipeR);
+    RTTESTI_CHECK_RETV(hNative != -1);
+
+    char szNative[64];
+    RTStrPrintf(szNative, sizeof(szNative), "%RHi", hNative);
+    const char *papszArgs[4] = { szPathSelf, "--child-5", szNative, NULL };
+
+    RTPROCESS hChild;
+    RTTESTI_CHECK_RC_RETV(RTProcCreate(szPathSelf, papszArgs, RTENV_DEFAULT, 0 /*fFlags*/, &hChild), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeR), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(RTPipeWriteBlocking(hPipeW, g_szTest5Message, sizeof(g_szTest5Message) - 1, NULL), VINF_SUCCESS);
+    int rc;
+    RTTESTI_CHECK_RC(rc = RTPipeClose(hPipeW), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        RTTESTI_CHECK_RC(RTProcTerminate(hChild), VINF_SUCCESS);
+
+    RTPROCSTATUS ProcStatus;
+    RTTESTI_CHECK_RC(rc = RTProcWait(hChild, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return;
+    RTTESTI_CHECK(   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+                  && ProcStatus.iStatus   == 0);
+}
+
+
+static RTEXITCODE tstRTPipe4Child(const char *pszPipe)
+{
+    int rc = RTR3Init();
+    if (RT_FAILURE(rc))
+        return RTMsgInitFailure(rc);
+
+    int64_t iNative;
+    rc = RTStrToInt64Full(pszPipe, 10, &iNative);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTStrToUInt64Full(%s) -> %Rrc\n", pszPipe, rc);
+
+    RTPIPE hPipe;
+    rc = RTPipeFromNative(&hPipe, (RTHCINTPTR)iNative, RTPIPE_N_WRITE);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeFromNative(,%s,WRITE) -> %Rrc\n", pszPipe, rc);
+
+    rc = RTPipeWriteBlocking(hPipe, g_szTest4Message, sizeof(g_szTest4Message) - 1, NULL);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeWriteBlocking() -> %Rrc\n", rc);
+
+    rc = RTPipeClose(hPipe);
+    if (RT_FAILURE(rc))
+        return RTMsgErrorExit(RTEXITCODE_FAILURE, "RTPipeClose() -> %Rrc\n", rc);
+    return RTEXITCODE_SUCCESS;
+}
+
+static void tstRTPipe4(void)
+{
+    RTTestISub("Inherit non-standard pipe handle, write end");
+
+    char    szPathSelf[RTPATH_MAX];
+    RTTESTI_CHECK_RETV(RTProcGetExecutableName(szPathSelf, sizeof(szPathSelf)) == szPathSelf);
+
+    RTPIPE  hPipeR;
+    RTPIPE  hPipeW;
+    RTTESTI_CHECK_RC_RETV(RTPipeCreate(&hPipeR, &hPipeW, RTPIPE_C_INHERIT_WRITE), VINF_SUCCESS);
+
+    RTHCINTPTR hNative = RTPipeToNative(hPipeW);
+    RTTESTI_CHECK_RETV(hNative != -1);
+
+    char szNative[64];
+    RTStrPrintf(szNative, sizeof(szNative), "%RHi", hNative);
+    const char *papszArgs[4] = { szPathSelf, "--child-4", szNative, NULL };
+
+    RTPROCESS hChild;
+    RTTESTI_CHECK_RC_RETV(RTProcCreate(szPathSelf, papszArgs, RTENV_DEFAULT, 0 /*fFlags*/, &hChild), VINF_SUCCESS);
+    RTTESTI_CHECK_RC_RETV(RTPipeClose(hPipeW), VINF_SUCCESS);
+
+    char    szTmp[1024];
+    size_t  cbRead = 0;
+    int     rc;
+    RTTESTI_CHECK_RC(rc = RTPipeReadBlocking(hPipeR, szTmp, sizeof(szTmp) - 1, &cbRead), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        cbRead = 0;
+    RTTESTI_CHECK_RETV(cbRead < sizeof(szTmp));
+    szTmp[cbRead] = '\0';
+
+    size_t cbRead2;
+    char szTmp2[4];
+    RTTESTI_CHECK_RC(RTPipeReadBlocking(hPipeR, szTmp2, sizeof(szTmp2), &cbRead2), VERR_BROKEN_PIPE);
+    RTTESTI_CHECK_RC(rc = RTPipeClose(hPipeR), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        RTTESTI_CHECK_RC(RTProcTerminate(hChild), VINF_SUCCESS);
+
+    RTPROCSTATUS ProcStatus;
+    RTTESTI_CHECK_RC(rc = RTProcWait(hChild, RTPROCWAIT_FLAGS_BLOCK, &ProcStatus), VINF_SUCCESS);
+    if (RT_FAILURE(rc))
+        return;
+    RTTESTI_CHECK(   ProcStatus.enmReason == RTPROCEXITREASON_NORMAL
+                  && ProcStatus.iStatus   == 0);
+    if (memcmp(szTmp, g_szTest4Message, sizeof(g_szTest4Message)))
+        RTTestIFailed("Message mismatch.\n:Expected '%s'\nGot     '%s'\n", g_szTest4Message, szTmp);
+}
 
 
 static void tstRTPipe3(void)
@@ -300,8 +464,13 @@ static void tstRTPipe1(void)
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
 }
 
-int main()
+int main(int argc, char **argv)
 {
+    if (argc == 3 && !strcmp(argv[1], "--child-4"))
+        return tstRTPipe4Child(argv[2]);
+    if (argc == 3 && !strcmp(argv[1], "--child-5"))
+        return tstRTPipe5Child(argv[2]);
+
     RTTEST hTest;
     int rc = RTTestInitAndCreate("tstRTPipe", &hTest);
     if (rc)
@@ -323,6 +492,8 @@ int main()
         RTAssertSetMayPanic(fMayPanic);
 
         tstRTPipe3();
+        tstRTPipe4();
+        tstRTPipe5();
     }
 
     /*

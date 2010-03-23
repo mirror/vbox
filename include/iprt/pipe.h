@@ -69,9 +69,40 @@ RTDECL(int)  RTPipeCreate(PRTPIPE phPipeRead, PRTPIPE phPipeWrite, uint32_t fFla
 RTDECL(int)  RTPipeClose(RTPIPE hPipe);
 
 /**
+ * Creates an IPRT pipe handle from a native one.
+ *
+ * Do NOT use the native handle after passing it to this function, IPRT owns it
+ * and might even have closed in some cases (in order to gain some query
+ * information access on Windows).
+ *
+ * @returns IPRT status code.
+ * @param   phPipe          Where to return the pipe handle.
+ * @param   hNativePipe     The native pipe handle.
+ * @param   fFlags          Pipe flags, RTPIPE_N_XXX.
+ */
+RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags);
+
+/** @name RTPipeFromNative flags.
+ * @{ */
+/** The read end. */
+#define RTPIPE_N_READ               RT_BIT(0)
+/** The write end. */
+#define RTPIPE_N_WRITE              RT_BIT(1)
+/** Make sure the pipe is inheritable if set and not inheritable when clear. */
+#define RTPIPE_N_INHERIT            RT_BIT(2)
+/** Mask of valid flags. */
+#define RTPIPE_N_VALID_MASK         UINT32_C(0x00000003)
+/** @} */
+
+/**
  * Gets the native handle for an IPRT pipe handle.
  *
- * @returns The native handle.
+ * This is mainly for passing a pipe to a child and then closing the parent
+ * handle.  IPRT also uses it internally to implement RTProcCreatEx and
+ * RTPollSetAdd on some platforms.  Do NOT expect sane API behavior if used
+ * for any other purpose.
+ *
+ * @returns The native handle. -1 on failure.
  * @param   hPipe           The IPRT pipe handle.
  */
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe);
