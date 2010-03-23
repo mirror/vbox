@@ -612,7 +612,7 @@ postinstall()
                 nmaskfile=/etc/netmasks
                 nmaskbackupfile=$nmaskfile.vbox
                 if test -f $nmaskfile; then
-                    sed -e '/#VirtualBox_SectionStart,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
+                    sed -e '/#VirtualBox_SectionStart/,/#VirtualBox_SectionEnd/d' $nmaskfile > $nmaskbackupfile
                     echo "#VirtualBox_SectionStart" >> $nmaskbackupfile
                     inst=0
                     networkn=56
