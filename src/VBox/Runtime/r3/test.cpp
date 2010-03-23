@@ -38,10 +38,12 @@
 #include <iprt/critsect.h>
 #include <iprt/env.h>
 #include <iprt/err.h>
+#include <iprt/file.h>
 #include <iprt/initterm.h>
 #include <iprt/mem.h>
 #include <iprt/once.h>
 #include <iprt/param.h>
+#include <iprt/pipe.h>
 #include <iprt/string.h>
 #include <iprt/stream.h>
 
@@ -103,7 +105,7 @@ typedef struct RTTESTINT
     bool                fNewLine;
 
 
-    /** Critical section seralizing access to the members following it. */
+    /** Critical section serializing access to the members following it. */
     RTCRITSECT          Lock;
 
     /** The list of guarded memory allocations. */
@@ -123,6 +125,21 @@ typedef struct RTTESTINT
     /** The number of sub tests that failed. */
     uint32_t            cSubTestsFailed;
 
+    /** Set if XML output is enabled. */
+    bool                fXmlEnabled;
+    enum {
+        kXmlPos_ValueStart,
+        kXmlPos_Value,
+        kXmlPos_ElementEnd
+    }                   eXmlState;
+    /** Test pipe for the XML output stream going to the server. */
+    RTPIPE              hXmlPipe;
+    /** File where the XML output stream might be directed.  */
+    RTFILE              hXmlFile;
+    /** The number of XML elements on the stack. */
+    size_t              cXmlElements;
+    /** XML element stack. */
+    const char         *apszXmlElements[10];
 } RTTESTINT;
 /** Pointer to a test instance. */
 typedef RTTESTINT *PRTTESTINT;
@@ -166,7 +183,16 @@ typedef RTTESTINT *PRTTESTINT;
 *   Internal Functions                                                         *
 *******************************************************************************/
 static void rtTestGuardedFreeOne(PRTTESTGUARDEDMEM pMem);
-static int rtTestPrintf(PRTTESTINT pTest, const char *pszFormat, ...);
+static int  rtTestPrintf(PRTTESTINT pTest, const char *pszFormat, ...);
+static void rtTestXmlStart(PRTTESTINT pTest, const char *pszTest);
+static void rtTestXmlElemV(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, va_list va);
+static void rtTestXmlElem(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...);
+static void rtTestXmlElemStartV(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, va_list va);
+static void rtTestXmlElemStart(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...);
+static void rtTestXmlElemValueV(PRTTESTINT pTest, const char *pszFormat, va_list va);
+static void rtTestXmlElemValue(PRTTESTINT pTest, const char *pszFormat, ...);
+static void rtTestXmlElemEnd(PRTTESTINT pTest, const char *pszTag);
+static void rtTestXmlEnd(PRTTESTINT pTest);
 
 
 /*******************************************************************************
@@ -235,13 +261,18 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
     pTest->cSubTests        = 0;
     pTest->cSubTestsFailed  = 0;
 
+    pTest->fXmlEnabled      = false;
+    pTest->eXmlState        = RTTESTINT::kXmlPos_ElementEnd;
+    pTest->hXmlPipe         = NIL_RTPIPE;
+    pTest->hXmlFile         = NIL_RTFILE;
+    pTest->cXmlElements     = 0;
+
     rc = RTCritSectInit(&pTest->Lock);
     if (RT_SUCCESS(rc))
     {
         rc = RTCritSectInit(&pTest->OutputLock);
         if (RT_SUCCESS(rc))
         {
-
             /*
              * Associate it with our TLS entry unless there is already
              * an instance there.
@@ -251,13 +282,13 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * Finally, pick up overrides from the environment.
+                 * Pick up overrides from the environment.
                  */
-                char szMaxLevel[80];
-                rc = RTEnvGetEx(RTENV_DEFAULT, "IPRT_TEST_MAX_LEVEL", szMaxLevel, sizeof(szMaxLevel), NULL);
+                char szEnvVal[RTPATH_MAX];
+                rc = RTEnvGetEx(RTENV_DEFAULT, "IPRT_TEST_MAX_LEVEL", szEnvVal, sizeof(szEnvVal), NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    char *pszMaxLevel = RTStrStrip(szMaxLevel);
+                    char *pszMaxLevel = RTStrStrip(szEnvVal);
                     if (!strcmp(pszMaxLevel, "all"))
                         pTest->enmMaxLevel = RTTESTLVL_DEBUG;
                     if (!strcmp(pszMaxLevel, "quiet"))
@@ -271,6 +302,59 @@ RTR3DECL(int) RTTestCreate(const char *pszTest, PRTTEST phTest)
                     else if (!strcmp(pszMaxLevel, "failure"))
                         pTest->enmMaxLevel = RTTESTLVL_FAILURE;
                 }
+
+                /*
+                 * Any test driver we are connected or should connect to?
+                 */
+                rc = RTEnvGetEx(RTENV_DEFAULT, "IPRT_TEST_PIPE", szEnvVal, sizeof(szEnvVal), NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    RTHCINTPTR  hNative = -1;
+#if ARCH_BITS == 64
+                    rc =  RTStrToInt64Full(szEnvVal, 0, &hNative);
+#else
+                    rc =  RTStrToInt32Full(szEnvVal, 0, &hNative);
+#endif
+                    if (RT_SUCCESS(rc))
+                    {
+                        rc = RTPipeFromNative(&pTest->hXmlPipe, hNative, RTPIPE_N_WRITE);
+                        if (RT_SUCCESS(rc))
+                            pTest->fXmlEnabled = true;
+                        else
+                        {
+                            RTStrmPrintf(g_pStdErr, "%s: test pipe error: RTPipeFromNative(,\"%s\",WRITE) -> %Rrc\n", pszTest, szEnvVal, rc);
+                            pTest->hXmlPipe = NIL_RTPIPE;
+                        }
+                    }
+                    else
+                        RTStrmPrintf(g_pStdErr, "%s: test pipe error: RTStrToInt32Full(\"%s\") -> %Rrc\n", pszTest, szEnvVal, rc);
+                }
+                else if (rc != VERR_ENV_VAR_NOT_FOUND)
+                    RTStrmPrintf(g_pStdErr, "%s: test pipe error: RTEnvGetEx(IPRT_TEST_PIPE) -> %Rrc\n", pszTest, rc);
+
+                /*
+                 * Any test file we should write the test report to?
+                 */
+                rc = RTEnvGetEx(RTENV_DEFAULT, "IPRT_TEST_FILE", szEnvVal, sizeof(szEnvVal), NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    rc = RTFileOpen(&pTest->hXmlFile, szEnvVal, RTFILE_O_WRITE | RTFILE_O_DENY_WRITE | RTFILE_O_CREATE_REPLACE);
+                    if (RT_SUCCESS(rc))
+                        pTest->fXmlEnabled = true;
+                    else
+                    {
+                        RTStrmPrintf(g_pStdErr, "%s: test file error: RTFileOpen(,\"%s\",) -> %Rrc\n", pszTest, szEnvVal, rc);
+                        pTest->hXmlFile = NIL_RTFILE;
+                    }
+                }
+                else if (rc != VERR_ENV_VAR_NOT_FOUND)
+                    RTStrmPrintf(g_pStdErr, "%s: test file error: RTEnvGetEx(IPRT_TEST_FILE) -> %Rrc\n", pszTest, rc);
+
+
+                /*
+                 * Tell the test driver that we're up.
+                 */
+                rtTestXmlStart(pTest, pszTest);
 
                 *phTest = pTest;
                 return VINF_SUCCESS;
@@ -293,13 +377,13 @@ RTR3DECL(RTEXITCODE) RTTestInitAndCreate(const char *pszTest, PRTTEST phTest)
     int rc = RTR3Init();
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3Init failed with rc=%Rrc\n",  pszTest, rc);
+        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTR3Init failed with rc=%Rrc\n", pszTest, rc);
         return RTEXITCODE_INIT;
     }
     rc = RTTestCreate(pszTest, phTest);
     if (RT_FAILURE(rc))
     {
-        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTTestCreate failed with rc=%Rrc\n",  pszTest, rc);
+        RTStrmPrintf(g_pStdErr, "%s: fatal error: RTTestCreate failed with rc=%Rrc\n", pszTest, rc);
         return RTEXITCODE_INIT;
     }
     return RTEXITCODE_SUCCESS;
@@ -323,10 +407,11 @@ RTR3DECL(int) RTTestDestroy(RTTEST hTest)
     RTTEST_VALID_RETURN(pTest);
 
     /*
-     * Make sure we end with a new line.
+     * Make sure we end with a new line and have finished up the XML.
      */
     if (!pTest->fNewLine)
         rtTestPrintf(pTest, "\n");
+    rtTestXmlEnd(pTest);
 
     /*
      * Clean up.
@@ -549,6 +634,291 @@ RTR3DECL(int) RTTestGuardedFree(RTTEST hTest, void *pv)
 
 
 /**
+ * Outputs the formatted XML.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszFormat           The format string.
+ * @param   va                  The format arguments.
+ */
+static void rtTestXmlOutputV(PRTTESTINT pTest, const char *pszFormat, va_list va)
+{
+    if (pTest->fXmlEnabled)
+    {
+        char *pszStr;
+        ssize_t cchStr = RTStrAPrintfV(&pszStr, pszFormat, va);
+        if (pszStr)
+        {
+            if (pTest->hXmlPipe != NIL_RTPIPE)
+                RTPipeWriteBlocking(pTest->hXmlPipe, pszStr, cchStr,  NULL);
+            if (pTest->hXmlFile != NIL_RTFILE)
+                RTFileWrite(pTest->hXmlFile, pszStr, cchStr, NULL);
+            RTStrFree(pszStr);
+        }
+    }
+}
+
+
+/**
+ * Outputs the formatted XML.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszFormat           The format string.
+ * @param   ...                 The format arguments.
+ */
+static void rtTestXmlOutput(PRTTESTINT pTest, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    rtTestXmlOutputV(pTest, pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Starts the XML stream.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszTest             The test name.
+ */
+static void rtTestXmlStart(PRTTESTINT pTest, const char *pszTest)
+{
+    pTest->cXmlElements = 0;
+    if (pTest->fXmlEnabled)
+    {
+        rtTestXmlOutput(pTest, "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n");
+        pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
+        rtTestXmlElemStart(pTest, "Test", "name=%RMas", pszTest);
+    }
+}
+
+/**
+ * Emit an XML element that doesn't have any value and instead ends immediately.
+ *
+ * The caller must own the instance lock.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszTag              The element tag.
+ * @param   pszAttrFmt          The element attributes as a format string. Use
+ *                              NULL if none.
+ * @param   va                  Format string arguments.
+ */
+static void rtTestXmlElemV(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, va_list va)
+{
+    if (pTest->fXmlEnabled)
+    {
+        RTTIMESPEC  TimeSpec;
+        RTTIME      Time;
+        char        szTS[80];
+        RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&TimeSpec)), szTS, sizeof(szTS));
+
+        if (pTest->eXmlState != RTTESTINT::kXmlPos_ElementEnd)
+            rtTestXmlOutput(pTest, "\n");
+
+        if (!pszAttrFmt || !*pszAttrFmt)
+            rtTestXmlOutput(pTest, "%*s<%s timestamp=%RMas/>\n",
+                            pTest->cXmlElements * 2, "", pszTag, szTS);
+        else
+        {
+            va_list va2;
+            va_copy(va2, va);
+            rtTestXmlOutput(pTest, "%*s<%s timestamp=%RMas %N/>\n",
+                            pTest->cXmlElements * 2, "", pszTag, szTS, pszAttrFmt, &va2);
+            va_end(va2);
+        }
+        pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
+    }
+}
+
+/**
+ * Wrapper around rtTestXmlElemV.
+ */
+static void rtTestXmlElem(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...)
+{
+    va_list va;
+    va_start(va, pszAttrFmt);
+    rtTestXmlElemV(pTest, pszTag, pszAttrFmt, va);
+    va_end(va);
+}
+
+
+/**
+ * Starts a new XML element.
+ *
+ * The caller must own the instance lock.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszTag              The element tag.
+ * @param   pszAttrFmt          The element attributes as a format string. Use
+ *                              NULL if none.
+ * @param   va                  Format string arguments.
+ */
+static void rtTestXmlElemStartV(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, va_list va)
+{
+    /* Push it onto the stack. */
+    size_t i = pTest->cXmlElements;
+    AssertReturnVoid(i < RT_ELEMENTS(pTest->apszXmlElements));
+    pTest->apszXmlElements[i] = pszTag;
+    pTest->cXmlElements       = i + 1;
+
+    if (pTest->fXmlEnabled)
+    {
+        RTTIMESPEC  TimeSpec;
+        RTTIME      Time;
+        char        szTS[80];
+        RTTimeToString(RTTimeExplode(&Time, RTTimeNow(&TimeSpec)), szTS, sizeof(szTS));
+
+        if (pTest->eXmlState != RTTESTINT::kXmlPos_ElementEnd)
+            rtTestXmlOutput(pTest, "\n");
+
+        if (!pszAttrFmt || !*pszAttrFmt)
+            rtTestXmlOutput(pTest, "%*s<%s timestamp=%RMas>",
+                            i * 2, "", pszTag, szTS);
+        else
+        {
+            va_list va2;
+            va_copy(va2, va);
+            rtTestXmlOutput(pTest, "%*s<%s timestamp=%RMas %N>",
+                            i * 2, "", pszTag, szTS, pszAttrFmt, &va2);
+            va_end(va2);
+        }
+        pTest->eXmlState = RTTESTINT::kXmlPos_ValueStart;
+    }
+}
+
+
+/**
+ * Wrapper around rtTestXmlElemStartV.
+ */
+static void rtTestXmlElemStart(PRTTESTINT pTest, const char *pszTag, const char *pszAttrFmt, ...)
+{
+    va_list va;
+    va_start(va, pszAttrFmt);
+    rtTestXmlElemStartV(pTest, pszTag, pszAttrFmt, va);
+    va_end(va);
+}
+
+
+/**
+ * Writes an element value, or a part of one, taking care of all the escaping.
+ *
+ * The caller must own the instance lock.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszFormat           The value format string.
+ * @param   va                  The format arguments.
+ */
+static void rtTestXmlElemValueV(PRTTESTINT pTest, const char *pszFormat, va_list va)
+{
+    if (pTest->fXmlEnabled)
+    {
+        char *pszValue;
+        RTStrAPrintfV(&pszValue, pszFormat, va);
+        if (pszValue)
+        {
+            rtTestXmlOutput(pTest, "%RMes", pszValue);
+            RTStrFree(pszValue);
+        }
+        pTest->eXmlState = RTTESTINT::kXmlPos_Value;
+    }
+}
+
+
+/**
+ * Wrapper around rtTestXmlElemValueV.
+ */
+static void rtTestXmlElemValue(PRTTESTINT pTest, const char *pszFormat, ...)
+{
+    va_list va;
+    va_start(va, pszFormat);
+    rtTestXmlElemValueV(pTest, pszFormat, va);
+    va_end(va);
+}
+
+
+/**
+ * Ends the current element.
+ *
+ * The caller must own the instance lock.
+ *
+ * @param   pTest               The test instance.
+ * @param   pszTag              The tag we're ending (chiefly for sanity
+ *                              checking).
+ */
+static void rtTestXmlElemEnd(PRTTESTINT pTest, const char *pszTag)
+{
+    /* pop the element */
+    size_t i = pTest->cXmlElements;
+    AssertReturnVoid(i > 0);
+    i--;
+    AssertReturnVoid(!strcmp(pszTag, pTest->apszXmlElements[i]));
+    pTest->cXmlElements = i;
+
+    /* Do the closing. */
+    if (pTest->fXmlEnabled)
+    {
+        if (pTest->eXmlState == RTTESTINT::kXmlPos_ValueStart)
+            rtTestXmlOutput(pTest, "\n%*s</%s>\n", i * 2, "", pszTag);
+        else if (pTest->eXmlState == RTTESTINT::kXmlPos_ElementEnd)
+            rtTestXmlOutput(pTest, "%*s</%s>\n", i * 2, "", pszTag);
+        else
+            rtTestXmlOutput(pTest, "</%s>\n", pszTag);
+        pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
+    }
+}
+
+
+/**
+ * Ends the XML stream, closing all open elements.
+ *
+ * The caller must own the instance lock.
+ *
+ * @param   pTest               The test instance.
+ */
+static void rtTestXmlEnd(PRTTESTINT pTest)
+{
+    if (pTest->fXmlEnabled)
+    {
+        /*
+         * Close all the elements and add the final TestEnd one to get a
+         * final timestamp and some certainty that the XML is valid.
+         */
+        size_t i = pTest->cXmlElements;
+        AssertReturnVoid(i > 0);
+        while (i-- > 1)
+        {
+            const char *pszTag = pTest->apszXmlElements[pTest->cXmlElements];
+            if (pTest->eXmlState == RTTESTINT::kXmlPos_ValueStart)
+                rtTestXmlOutput(pTest, "\n%*s</%s>\n", i * 2, "", pszTag);
+            else if (pTest->eXmlState == RTTESTINT::kXmlPos_ElementEnd)
+                rtTestXmlOutput(pTest, "%*s</%s>\n", i * 2, "", pszTag);
+            else
+                rtTestXmlOutput(pTest, "</%s>\n", pszTag);
+            pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
+        }
+        rtTestXmlElem(pTest, "End", "SubTests=\"%u\" SubTestsFailed=\"%u\" errors=\"%u\"",
+                      pTest->cSubTests, pTest->cSubTestsFailed, pTest->cErrors);
+        rtTestXmlOutput(pTest, "</Test>\n");
+
+        /*
+         * Close the XML outputs.
+         */
+        if (pTest->hXmlPipe != NIL_RTPIPE)
+        {
+            RTPipeClose(pTest->hXmlPipe);
+            pTest->hXmlPipe = NIL_RTPIPE;
+        }
+        if (pTest->hXmlFile != NIL_RTFILE)
+        {
+            RTFileClose(pTest->hXmlFile);
+            pTest->hXmlFile = NIL_RTFILE;
+        }
+        pTest->fXmlEnabled = false;
+        pTest->eXmlState = RTTESTINT::kXmlPos_ElementEnd;
+    }
+    pTest->cXmlElements = 0;
+}
+
+/**
  * Output callback.
  *
  * @returns number of bytes written.
@@ -763,10 +1133,16 @@ static int rtTestSubTestReport(PRTTESTINT pTest)
         pTest->fSubTestReported = true;
         uint32_t cErrors = ASMAtomicUoReadU32(&pTest->cErrors) - pTest->cSubTestAtErrors;
         if (!cErrors)
+        {
+            rtTestXmlElem(pTest, "Passed", NULL);
+            rtTestXmlElemEnd(pTest, "SubTest");
             cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-50s: PASSED\n", pTest->pszSubTest);
+        }
         else
         {
             pTest->cSubTestsFailed++;
+            rtTestXmlElem(pTest, "Failed", "errors=\"%u\"", cErrors);
+            rtTestXmlElemEnd(pTest, "SubTest");
             cch += RTTestPrintfNl(pTest, RTTESTLVL_SUB_TEST, "%-50s: FAILED (%u errors)\n",
                                   pTest->pszSubTest, cErrors);
         }
@@ -901,6 +1277,8 @@ RTR3DECL(int) RTTestSub(RTTEST hTest, const char *pszSubTest)
     if (pTest->enmMaxLevel >= RTTESTLVL_DEBUG)
         cch = RTTestPrintfNl(hTest, RTTESTLVL_DEBUG, "debug: Starting sub-test '%s'\n", pszSubTest);
 
+    rtTestXmlElemStart(pTest, "SubTest", "name=%RMas", pszSubTest);
+
     RTCritSectLeave(&pTest->Lock);
 
     return cch;
@@ -1027,6 +1405,94 @@ RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...)
     va_end(va);
 
     return cch;
+}
+
+
+/**
+ * Gets the unit name.
+ *
+ * @returns Unit name.
+ * @param   enmUnit             The unit.
+ */
+static const char *rtTestUnitName(RTTESTUNIT enmUnit)
+{
+    switch (enmUnit)
+    {
+        case RTTESTUNIT_PCT:                    return "%";
+        case RTTESTUNIT_BYTES:                  return "bytes";
+        case RTTESTUNIT_BYTES_PER_SEC:          return "bytes/s";
+        case RTTESTUNIT_KILOBYTES:              return "KB";
+        case RTTESTUNIT_KILOBYTES_PER_SEC:      return "KB/s";
+        case RTTESTUNIT_MEGABYTES:              return "MB";
+        case RTTESTUNIT_MEGABYTES_PER_SEC:      return "MB/s";
+        case RTTESTUNIT_PACKETS:                return "packets";
+        case RTTESTUNIT_PACKETS_PER_SEC:        return "packets/s";
+        case RTTESTUNIT_FRAMES:                 return "frames";
+        case RTTESTUNIT_FRAMES_PER_SEC:         return "frames/";
+        case RTTESTUNIT_OCCURRENCES:            return "occurences";
+        case RTTESTUNIT_OCCURRENCES_PER_SEC:    return "occurences/s";
+        case RTTESTUNIT_ROUND_TRIP:             return "roundtrips";
+        case RTTESTUNIT_CALLS:                  return "calls";
+        case RTTESTUNIT_CALLS_PER_SEC:          return "calls/s";
+        case RTTESTUNIT_SECS:                   return "s";
+        case RTTESTUNIT_MS:                     return "ms";
+        case RTTESTUNIT_NS:                     return "ns";
+        case RTTESTUNIT_NS_PER_CALL:            return "ns/call";
+        case RTTESTUNIT_NS_PER_FRAME:           return "ns/frame";
+        case RTTESTUNIT_NS_PER_OCCURRENCE:      return "ns/occurences";
+        case RTTESTUNIT_NS_PER_PACKET:          return "ns/packet";
+        case RTTESTUNIT_NS_PER_ROUND_TRIP:      return "ns/roundtrips";
+
+        /* No default so gcc helps us keep this up to date. */
+        case RTTESTUNIT_INVALID:
+        case RTTESTUNIT_END:
+            break;
+    }
+    AssertMsgFailed(("%d\n", enmUnit));
+    return "unknown";
+}
+
+
+RTR3DECL(int) RTTestValue(RTTEST hTest, const char *pszName, uint64_t u64Value, RTTESTUNIT enmUnit)
+{
+    PRTTESTINT pTest = hTest;
+    RTTEST_GET_VALID_RETURN(pTest);
+
+    const char *pszUnit = rtTestUnitName(enmUnit);
+
+    RTCritSectEnter(&pTest->Lock);
+    rtTestXmlElemStart(pTest, "Value", "name=%RMas unit=%RMas", pszName, pszUnit);
+    rtTestXmlElemValue(pTest, "%llu", u64Value);
+    rtTestXmlElemEnd(pTest, "Value");
+    RTCritSectLeave(&pTest->Lock);
+
+    RTCritSectEnter(&pTest->OutputLock);
+    rtTestPrintf(pTest, "  %-48s: %'12llu %s\n", pszName, u64Value, pszUnit);
+    RTCritSectLeave(&pTest->OutputLock);
+
+    return VINF_SUCCESS;
+}
+
+
+RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...)
+{
+    va_list va;
+    va_start(va, pszNameFmt);
+    int rc = RTTestValueV(hTest, u64Value, enmUnit, pszNameFmt, va);
+    va_end(va);
+    return rc;
+}
+
+
+RTR3DECL(int) RTTestValueV(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va)
+{
+    char *pszName;
+    RTStrAPrintfV(&pszName, pszNameFmt, va);
+    if (!pszName)
+        return VERR_NO_MEMORY;
+    int rc = RTTestValue(hTest, pszName, u64Value, enmUnit);
+    RTStrFree(pszName);
+    return rc;
 }
 
 
