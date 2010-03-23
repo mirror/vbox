@@ -92,6 +92,12 @@ VBoxDDU_SOURCES          = \
 	Storage/VmdkHDDCore.cpp \
 	Storage/RawHDDCore.cpp \
 	Storage/ParallelsHDDCore.cpp \
+	Storage/VSCSI/VSCSIDevice.cpp \
+	Storage/VSCSI/VSCSILun.cpp \
+	Storage/VSCSI/VSCSILunSbc.cpp \
+	Storage/VSCSI/VSCSISense.cpp \
+	Storage/VSCSI/VSCSISgBuf.cpp \
+	Storage/VSCSI/VSCSIIoReq.cpp \
 	VBoxDDUDeps.cpp
 ifdef VBOX_WITH_USB
  VBoxDDU_INCS.os2       += \
