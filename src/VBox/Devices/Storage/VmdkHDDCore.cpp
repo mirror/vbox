@@ -476,7 +476,7 @@ typedef struct VMDKIMAGE
 typedef struct VMDKINFLATESTATE
 {
     /* File where the data is stored. */
-    RTFILE File;
+    PVMDKFILE File;
     /* Total size of the data to read. */
     size_t cbSize;
     /* Offset in the file to read. */
@@ -489,7 +489,7 @@ typedef struct VMDKINFLATESTATE
 typedef struct VMDKDEFLATESTATE
 {
     /* File where the data is to be stored. */
-    RTFILE File;
+    PVMDKFILE File;
     /* Offset in the file to write at. */
     uint64_t uFileOffset;
     /* Current write position. */
@@ -811,7 +811,7 @@ static DECLCALLBACK(int) vmdkFileInflateHelper(void *pvUser, void *pvBuf, size_t
         return VINF_SUCCESS;
     }
     cbBuf = RT_MIN(cbBuf, pInflateState->cbSize);
-    int rc = RTFileReadAt(pInflateState->File, pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
+    int rc = vmdkFileReadAt(pInflateState->File, pInflateState->uFileOffset, pvBuf, cbBuf, NULL);
     if (RT_FAILURE(rc))
         return rc;
     pInflateState->uFileOffset += cbBuf;
@@ -848,7 +848,7 @@ DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
 
         if (uMarker == VMDK_MARKER_IGNORE)
             cbMarker -= sizeof(Marker.uType);
-        rc = RTFileReadAt(pVmdkFile->File, uOffset, &Marker, cbMarker, NULL);
+        rc = vmdkFileReadAt(pVmdkFile, uOffset, &Marker, cbMarker, NULL);
         if (RT_FAILURE(rc))
             return rc;
         Marker.uSector = RT_LE2H_U64(Marker.uSector);
@@ -890,7 +890,7 @@ DECLINLINE(int) vmdkFileInflateAt(PVMDKFILE pVmdkFile,
                 return VERR_VD_VMDK_INVALID_FORMAT;
             }
         }
-        InflateState.File = pVmdkFile->File;
+        InflateState.File = pVmdkFile;
         InflateState.cbSize = cbComp;
         InflateState.uFileOffset = uCompOffset;
         InflateState.iOffset = -1;
@@ -925,7 +925,7 @@ static DECLCALLBACK(int) vmdkFileDeflateHelper(void *pvUser, const void *pvBuf, 
     }
     if (!cbBuf)
         return VINF_SUCCESS;
-    int rc = RTFileWriteAt(pDeflateState->File, pDeflateState->uFileOffset, pvBuf, cbBuf, NULL);
+    int rc = vmdkFileWriteAt(pDeflateState->File, pDeflateState->uFileOffset, pvBuf, cbBuf, NULL);
     if (RT_FAILURE(rc))
         return rc;
     pDeflateState->uFileOffset += cbBuf;
@@ -968,7 +968,7 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
             /** @todo implement creating the other marker types */
             return VERR_NOT_IMPLEMENTED;
         }
-        DeflateState.File = pVmdkFile->File;
+        DeflateState.File = pVmdkFile;
         DeflateState.uFileOffset = uCompOffset;
         DeflateState.iOffset = -1;
 
@@ -987,13 +987,13 @@ DECLINLINE(int) vmdkFileDeflateAt(PVMDKFILE pVmdkFile,
              * rewritten. Cannot cause data loss as the code calling this
              * guarantees that data gets only appended. */
             Assert(DeflateState.uFileOffset > uCompOffset);
-            rc = RTFileSetSize(pVmdkFile->File, DeflateState.uFileOffset);
+            rc = vmdkFileSetSize(pVmdkFile, DeflateState.uFileOffset);
 
             if (uMarker == VMDK_MARKER_IGNORE)
             {
                 /* Compressed grain marker. */
                 Marker.cbSize = RT_H2LE_U32(DeflateState.iOffset);
-                rc = RTFileWriteAt(pVmdkFile->File, uOffset, &Marker, 12, NULL);
+                rc = vmdkFileWriteAt(pVmdkFile, uOffset, &Marker, 12, NULL);
                 if (RT_FAILURE(rc))
                     return rc;
             }
@@ -1028,12 +1028,8 @@ static int vmdkFileCheckAllClose(PVMDKIMAGE pImage)
             rc2 = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
                                                                pVmdkFile->pStorage);
         else
-            rc2 = RTFileClose(pVmdkFile->File);
+            rc2 = vmdkFileClose(pImage, &pVmdkFile, pVmdkFile->fDelete);
 
-        if (RT_SUCCESS(rc) && pVmdkFile->fDelete)
-            rc2 = RTFileDelete(pVmdkFile->pszFilename);
-        RTStrFree((char *)(void *)pVmdkFile->pszFilename);
-        RTMemFree(pVmdkFile);
         if (RT_SUCCESS(rc))
             rc = rc2;
     }
