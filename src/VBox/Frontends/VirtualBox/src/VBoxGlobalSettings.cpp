@@ -120,7 +120,7 @@ static struct
 }
 gPropertyMap[] =
 {
-    { "GUI/Input/HostKey",                         "hostKey",                 "\\d*[1-9]\\d*", true },
+    { "GUI/Input/HostKey",                         "hostKey",                 "0|\\d*[1-9]\\d*", true },
     { "GUI/Input/AutoCapture",                     "autoCapture",             "true|false", true },
     { "GUI/Customizations",                        "guiFeatures",             "\\S+", true },
     { "GUI/LanguageID",                            "languageId",              gVBoxLangIDRegExp, true },
