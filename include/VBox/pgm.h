@@ -398,7 +398,7 @@ VMMDECL(void)       PGMDynCheckLocks(PVM pVM);
 #  endif
 # endif
 VMMDECL(void)       PGMDynMapStartAutoSet(PVMCPU pVCpu);
-VMMDECL(bool)       PGMDynMapStartOrMigrateAutoSet(PVMCPU pVCpu)
+VMMDECL(bool)       PGMDynMapStartOrMigrateAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapReleaseAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapFlushAutoSet(PVMCPU pVCpu);
 VMMDECL(void)       PGMDynMapMigrateAutoSet(PVMCPU pVCpu);
