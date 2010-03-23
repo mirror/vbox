@@ -569,7 +569,7 @@ def infoCmd(ctx,args):
     print "  Name [name]: %s" %(mach.name)
     print "  ID [n/a]: %s" %(mach.id)
     print "  OS Type [n/a]: %s" %(os.description)
-    print "  Firmware [firmwareType]: %s (%s)" %(getFirmwareType(mach.firmwareType),mach.firmwareType)
+    print "  Firmware [firmwareType]: %s (%s)" %(asEnumElem(ctx,"FirmwareType", mach.firmwareType),mach.firmwareType)
     print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
     print "  RAM [memorySize]: %dM" %(mach.memorySize)
@@ -596,6 +596,8 @@ def infoCmd(ctx,args):
     print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
     print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
+    print "  CPU hotplugging [CPUHotPlugEnabled]: %s" %(asState(mach.CPUHotPlugEnabled))
+
     print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
     print "  Pointing device [pointingHidType]: %s (%s)" %(asEnumElem(ctx,"PointingHidType", mach.pointingHidType), mach.pointingHidType)
     print "  Last changed [n/a]: " + time.asctime(time.localtime(long(mach.lastStateChange)/1000))
