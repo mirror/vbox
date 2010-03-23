@@ -439,7 +439,6 @@ RuntimeR3_SOURCES.win = \
 	generic/RTSemEventMultiWait-generic.cpp \
 	generic/RTSemMutexRequest-generic.cpp \
 	generic/RTSemMutexRequestDebug-generic.cpp \
-	generic/RTSystemQueryDmiString-generic.cpp \
 	generic/mppresent-generic.cpp \
 	generic/semrw-$(if-expr defined(VBOX_WITH_LOCKLESS_SEMRW),lockless-,)generic.cpp \
 	generic/uuid-generic.cpp \
@@ -448,6 +447,7 @@ RuntimeR3_SOURCES.win = \
 	nt/RTErrConvertFromNtStatus.cpp \
 	r3/posix/env-posix.cpp \
 	r3/win/RTSystemQueryOSInfo-win.cpp \
+	r3/win/RTSystemQueryDmiString-win.cpp \
 	r3/win/alloc-win.cpp \
 	r3/win/dir-win.cpp \
 	r3/win/fileio-win.cpp \
