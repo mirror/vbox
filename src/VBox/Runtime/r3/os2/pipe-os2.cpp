@@ -51,9 +51,15 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 }
 
 
+RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
+
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
 {
-    return (RTHCINTPTR)(unsigned int)-1;
+    return -1;
 }
 
 

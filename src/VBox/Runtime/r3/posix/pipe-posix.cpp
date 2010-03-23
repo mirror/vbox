@@ -181,12 +181,17 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
     return VINF_SUCCESS;
 }
 
+RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
+{
+    return VERR_NOT_IMPLEMENTED;
+}
+
 
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
 {
     RTPIPEINTERNAL *pThis = hPipe;
-    AssertPtrReturn(pThis, (RTHCINTPTR)(unsigned int)-1);
-    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, (RTHCINTPTR)(unsigned int)-1);
+    AssertPtrReturn(pThis, -1);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, -1);
 
     return pThis->fd;
 }

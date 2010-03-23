@@ -135,6 +135,12 @@ typedef struct _FILE_PIPE_LOCAL_INFORMATION {
 #define FILE_PIPE_CONNECTED_STATE       0x00000003
 #define FILE_PIPE_CLOSING_STATE         0x00000004
 
+#define FILE_PIPE_INBOUND               0x00000000
+#define FILE_PIPE_OUTBOUND              0x00000001
+#define FILE_PIPE_FULL_DUPLEX           0x00000002
+
+#define FILE_PIPE_CLIENT_END            0x00000000
+#define FILE_PIPE_SERVER_END            0x00000001
 
 extern "C" NTSYSAPI NTSTATUS WINAPI NtQueryInformationFile(HANDLE, PIO_STATUS_BLOCK, PVOID, LONG, FILE_INFORMATION_CLASS);
 
@@ -428,11 +434,135 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 }
 
 
+RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
+{
+    AssertReturn(!(fFlags & ~RTPIPE_N_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!!(fFlags & RTPIPE_N_READ) != !!(fFlags & RTPIPE_N_WRITE), VERR_INVALID_PARAMETER);
+
+    /*
+     * Get and validate the pipe handle info.
+     */
+    HANDLE hNative = (HANDLE)hNativePipe;
+    AssertReturn(GetFileType(hNative) == FILE_TYPE_PIPE, VERR_INVALID_HANDLE);
+
+    DWORD cMaxInstances;
+    DWORD fInfo;
+    if (!GetNamedPipeInfo(hNative, &fInfo, NULL, NULL, &cMaxInstances))
+        return RTErrConvertFromWin32(GetLastError());
+    AssertReturn(!(fInfo & PIPE_TYPE_MESSAGE), VERR_INVALID_HANDLE);
+    AssertReturn(cMaxInstances == 1, VERR_INVALID_HANDLE);
+
+    DWORD cInstances;
+    DWORD fState;
+    if (!GetNamedPipeHandleState(hNative, &fState, &cInstances, NULL, NULL, NULL, 0))
+        return RTErrConvertFromWin32(GetLastError());
+    AssertReturn(!(fState & PIPE_NOWAIT), VERR_INVALID_HANDLE);
+    AssertReturn(!(fState & PIPE_READMODE_MESSAGE), VERR_INVALID_HANDLE);
+    AssertReturn(cInstances <= 1, VERR_INVALID_HANDLE);
+
+    /*
+     * Looks kind of OK, create a handle so we can try rtPipeQueryInfo on it
+     * and see if we need to duplicate it to make that call work.
+     */
+    RTPIPEINTERNAL *pThis = (RTPIPEINTERNAL *)RTMemAllocZ(sizeof(RTPIPEINTERNAL));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+    int rc = RTCritSectInit(&pThis->CritSect);
+    if (RT_SUCCESS(rc))
+    {
+        pThis->Overlapped.hEvent = CreateEvent(NULL, TRUE /*fManualReset*/,
+                                               TRUE /*fInitialState*/, NULL /*pName*/);
+        if (pThis->Overlapped.hEvent != NULL)
+        {
+            pThis->u32Magic        = RTPIPE_MAGIC;
+            pThis->hPipe           = hNative;
+            pThis->fRead           = !!(fFlags & RTPIPE_N_READ);
+            //pThis->fIOPending      = false;
+            //pThis->fZeroByteRead   = false;
+            //pThis->fBrokenPipe     = false;
+            //pThisR->fPromisedWritable= false;
+            //pThis->cUsers          = 0;
+            //pThis->pbBounceBuf     = NULL;
+            //pThis->cbBounceBufUsed = 0;
+            //pThis->cbBounceBufAlloc= 0;
+            pThis->hPollSet        = NIL_RTPOLLSET;
+
+            HANDLE  hNative2 = INVALID_HANDLE_VALUE;
+            FILE_PIPE_LOCAL_INFORMATION Info;
+            if (rtPipeQueryInfo(pThis, &Info))
+                rc = VINF_SUCCESS;
+            else
+            {
+                if (DuplicateHandle(GetCurrentProcess() /*hSrcProcess*/, hNative /*hSrcHandle*/,
+                                    GetCurrentProcess() /*hDstProcess*/, &hNative2 /*phDstHandle*/,
+                                    pThis->fRead ? GENERIC_READ : GENERIC_WRITE | FILE_READ_ATTRIBUTES /*dwDesiredAccess*/,
+                                    !!(fFlags & RTPIPE_N_INHERIT) /*fInheritHandle*/,
+                                    0 /*dwOptions*/))
+                {
+                    pThis->hPipe = hNative2;
+                    if (rtPipeQueryInfo(pThis, &Info))
+                        rc = VINF_SUCCESS;
+                    else
+                    {
+                        rc = VERR_ACCESS_DENIED;
+                        CloseHandle(hNative2);
+                    }
+                }
+                else
+                    hNative2 = INVALID_HANDLE_VALUE;
+            }
+            if (RT_SUCCESS(rc))
+            {
+                /*
+                 * Verify the pipe state and correct the inheritability.
+                 */
+                AssertStmt(   Info.NamedPipeState == FILE_PIPE_CONNECTED_STATE
+                           || Info.NamedPipeState == FILE_PIPE_CLOSING_STATE
+                           || Info.NamedPipeState == FILE_PIPE_DISCONNECTED_STATE,
+                           VERR_INVALID_HANDLE);
+                AssertStmt(   Info.NamedPipeConfiguration
+                           == (   Info.NamedPipeEnd == FILE_PIPE_SERVER_END
+                               ? (pThis->fRead ? FILE_PIPE_INBOUND  : FILE_PIPE_OUTBOUND)
+                               : (pThis->fRead ? FILE_PIPE_OUTBOUND : FILE_PIPE_INBOUND) ),
+                           VERR_INVALID_HANDLE);
+                if (   RT_SUCCESS(rc)
+                    && hNative2 == INVALID_HANDLE_VALUE
+                    && !SetHandleInformation(hNative,
+                                             HANDLE_FLAG_INHERIT /*dwMask*/,
+                                             fFlags & RTPIPE_N_INHERIT ? HANDLE_FLAG_INHERIT : 0))
+                {
+                    rc = RTErrConvertFromWin32(GetLastError());
+                    AssertMsgFailed(("%Rrc\n", rc));
+                }
+                if (RT_SUCCESS(rc))
+                {
+                    /*
+                     * Ok, we're good!
+                     */
+                    if (hNative2 != INVALID_HANDLE_VALUE)
+                        CloseHandle(hNative);
+                    *phPipe = pThis;
+                    return VINF_SUCCESS;
+                }
+            }
+
+            /* Bail out. */
+            if (hNative2 != INVALID_HANDLE_VALUE)
+                CloseHandle(hNative2);
+            CloseHandle(pThis->Overlapped.hEvent);
+        }
+        RTCritSectDelete(&pThis->CritSect);
+    }
+    RTMemFree(pThis);
+    return rc;
+}
+
+
 RTDECL(RTHCINTPTR) RTPipeToNative(RTPIPE hPipe)
 {
     RTPIPEINTERNAL *pThis = hPipe;
-    AssertPtrReturn(pThis, (RTHCINTPTR)(unsigned int)-1);
-    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, (RTHCINTPTR)(unsigned int)-1);
+    AssertPtrReturn(pThis, -1);
+    AssertReturn(pThis->u32Magic == RTPIPE_MAGIC, -1);
 
     return (RTHCINTPTR)pThis->hPipe;
 }
