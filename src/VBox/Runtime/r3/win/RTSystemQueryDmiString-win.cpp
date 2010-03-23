@@ -32,6 +32,10 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
+#define _WIN32_DCOM
+#include <Windows.h>
+#include <WbemCli.h>
+
 #include <iprt/system.h>
 #include "internal/iprt.h"
 
@@ -39,62 +43,99 @@
 #include <iprt/assert.h>
 #include <iprt/string.h>
 
-#define _WIN32_DCOM
-#include <comdef.h>
-#include <Wbemidl.h>
 
-
-HRESULT rtSystemInitializeDmiLookup()
+/**
+ * Initialize COM.
+ *
+ * @returns COM status code.
+ */
+static HRESULT rtSystemDmiWinInitialize(void)
 {
-    HRESULT hr = CoInitializeEx(0, COINIT_MULTITHREADED);
-    if (SUCCEEDED(hr))
+    HRESULT hrc = CoInitializeEx(0, COINIT_MULTITHREADED);
+    if (SUCCEEDED(hrc))
     {
-        hr = CoInitializeSecurity(NULL,
-                                  -1,                          /* COM authentication. */
-                                  NULL,                        /* Which authentication services. */
-                                  NULL,                        /* Reserved. */
-                                  RPC_C_AUTHN_LEVEL_DEFAULT,   /* Default authentication. */
-                                  RPC_C_IMP_LEVEL_IMPERSONATE, /* Default impersonation. */
-                                  NULL,                        /* Authentication info. */
-                                  EOAC_NONE,                   /* Additional capabilities. */
-                                  NULL);                       /* Reserved. */
+        hrc = CoInitializeSecurity(NULL,
+                                   -1,                          /* COM authentication. */
+                                   NULL,                        /* Which authentication services. */
+                                   NULL,                        /* Reserved. */
+                                   RPC_C_AUTHN_LEVEL_DEFAULT,   /* Default authentication. */
+                                   RPC_C_IMP_LEVEL_IMPERSONATE, /* Default impersonation. */
+                                   NULL,                        /* Authentication info. */
+                                   EOAC_NONE,                   /* Additional capabilities. */
+                                   NULL);                       /* Reserved. */
     }
-    return hr;
+    return hrc;
 }
 
 
-void rtSystemShutdownDmiLookup()
+/**
+ * Undo what rtSystemDmiWinInitialize did.
+ */
+static void rtSystemDmiWinTerminate(void)
 {
     CoUninitialize();
 }
 
 
-HRESULT rtSystemConnectToDmiServer(IWbemLocator *pLocator, const char *pszServer, IWbemServices **ppServices)
+/**
+ * Convert a UTF-8 string to a BSTR.
+ *
+ * @returns BSTR pointer.
+ * @param   psz                 The UTF-8 string.
+ */
+static BSTR rtSystemWinBstrFromUtf8(const char *psz)
+{
+    PRTUTF16 pwsz = NULL;
+    int rc = RTStrToUtf16(psz, &pwsz);
+    if (RT_FAILURE(rc))
+        return NULL;
+    BSTR pBStr = SysAllocString((const OLECHAR *)pwsz);
+    RTUtf16Free(pwsz);
+    return pBStr;
+}
+
+
+/**
+ * Connect to the DMI server.
+ *
+ * @returns COM status code.
+ * @param   pLocator            The locator.
+ * @param   pszServer           The server name.
+ * @param   ppServices          Where to return the services interface.
+ */
+static HRESULT rtSystemDmiWinConnectToServer(IWbemLocator *pLocator, const char *pszServer, IWbemServices **ppServices)
 {
     AssertPtr(pLocator);
     AssertPtrNull(pszServer);
     AssertPtr(ppServices);
 
-    HRESULT hr = pLocator->ConnectServer(_bstr_t(TEXT(pszServer)),
-                                         NULL,
-                                         NULL,
-                                         0,
-                                         NULL,
-                                         0,
-                                         0,
-                                         ppServices);
-    if (SUCCEEDED(hr))
+    BSTR pBStrServer = rtSystemWinBstrFromUtf8(pszServer);
+    if (!pBStrServer)
+        return E_OUTOFMEMORY;
+
+    HRESULT hrc = pLocator->ConnectServer(pBStrServer,
+                                          NULL,
+                                          NULL,
+                                          0,
+                                          NULL,
+                                          0,
+                                          0,
+                                          ppServices);
+    if (SUCCEEDED(hrc))
     {
-        hr = CoSetProxyBlanket(*ppServices,
-                               RPC_C_AUTHN_WINNT,
-                               RPC_C_AUTHZ_NONE,
-                               NULL,
-                               RPC_C_AUTHN_LEVEL_CALL,
-                               RPC_C_IMP_LEVEL_IMPERSONATE,
-                               NULL,
-                               EOAC_NONE);
+        hrc = CoSetProxyBlanket(*ppServices,
+                                RPC_C_AUTHN_WINNT,
+                                RPC_C_AUTHZ_NONE,
+                                NULL,
+                                RPC_C_AUTHN_LEVEL_CALL,
+                                RPC_C_IMP_LEVEL_IMPERSONATE,
+                                NULL,
+                                EOAC_NONE);
+        if (FAILED(hrc))
+            (*ppServices)->Release();
     }
-    return hr;
+    SysFreeString(pBStrServer);
+    return hrc;
 }
 
 
@@ -105,74 +146,107 @@ RTDECL(int) RTSystemQueryDmiString(RTSYSDMISTR enmString, char *pszBuf, size_t c
     *pszBuf = '\0';
     AssertReturn(enmString > RTSYSDMISTR_INVALID && enmString < RTSYSDMISTR_END, VERR_INVALID_PARAMETER);
 
-    HRESULT hr = rtSystemInitializeDmiLookup();
-    if (FAILED(hr))
-        return VERR_NOT_SUPPORTED;
-
-    IWbemLocator *pLoc;
-    hr = CoCreateInstance(CLSID_WbemLocator,
-                          0,
-                          CLSCTX_INPROC_SERVER,
-                          IID_IWbemLocator, (LPVOID *)&pLoc);
-    int rc = VINF_SUCCESS;
-    if (SUCCEEDED(hr))
+    /*
+     * Figure the property name before we start.
+     */
+    const char *pszPropName;
+    switch (enmString)
     {
-        IWbemServices *pServices;
-        hr = rtSystemConnectToDmiServer(pLoc, "ROOT\\CIMV2", &pServices);
-        if (SUCCEEDED(hr))
-        {
-            IEnumWbemClassObject *pEnum;
-            hr = pServices->CreateInstanceEnum(L"Win32_ComputerSystemProduct", 0, NULL, &pEnum);
-            if (SUCCEEDED(hr))
-            {
-                IWbemClassObject *pObj;
-                ULONG uCount;
-
-                do
-                {
-                    hr = pEnum->Next(WBEM_INFINITE,
-                                     1,
-                                     &pObj,
-                                     &uCount);
-                    if (   SUCCEEDED(hr)
-                        && uCount > 0)
-                    {
-                        const char *pszPropName;
-                        switch (enmString)
-                        {
-                            case RTSYSDMISTR_PRODUCT_NAME:      pszPropName = "Name"; break;
-                            case RTSYSDMISTR_PRODUCT_VERSION:   pszPropName = "Version"; break;
-                            case RTSYSDMISTR_PRODUCT_UUID:      pszPropName = "UUID"; break;
-                            case RTSYSDMISTR_PRODUCT_SERIAL:    pszPropName = "IdentifyingNumber"; break;
-                            default:
-                                rc = VERR_NOT_SUPPORTED;
-                        }
-
-                        if (RT_SUCCESS(rc))
-                        {
-                            _variant_t v;
-                            hr = pObj->Get(_bstr_t(TEXT(pszPropName)), 0, &v, 0, 0);
-                            if (   SUCCEEDED(hr)
-                                && V_VT(&v) == VT_BSTR)
-                            {
-                                RTStrPrintf(pszBuf, cbBuf, "%s", (char*)_bstr_t(v.bstrVal));
-                                VariantClear(&v);
-                            }
-                        }
-                        pObj->Release();
-                    }
-                } while(hr != WBEM_S_FALSE);
-                pEnum->Release();
-            }
-            pServices->Release();
-        }
-        pLoc->Release();
+        case RTSYSDMISTR_PRODUCT_NAME:      pszPropName = "Name"; break;
+        case RTSYSDMISTR_PRODUCT_VERSION:   pszPropName = "Version"; break;
+        case RTSYSDMISTR_PRODUCT_UUID:      pszPropName = "UUID"; break;
+        case RTSYSDMISTR_PRODUCT_SERIAL:    pszPropName = "IdentifyingNumber"; break;
+        default:
+            return VERR_NOT_SUPPORTED;
     }
 
-    rtSystemShutdownDmiLookup();
-    if (FAILED(hr))
-        rc = VERR_NOT_FOUND; /** @todo Find a better error, since neither of the RTErrConvert* can do the conversion here. */
+    /*
+     * Before we do anything with COM, we have to initalize it.
+     */
+    HRESULT hrc = rtSystemDmiWinInitialize();
+    if (FAILED(hrc))
+        return VERR_NOT_SUPPORTED;
+
+    int rc = VERR_NOT_SUPPORTED;
+    BSTR pBstrPropName = rtSystemWinBstrFromUtf8(pszPropName);
+    if (pBstrPropName)
+    {
+        /*
+         * Instantiate the IWbemLocator, whatever that is and connect to the
+         * DMI serve.
+         */
+        IWbemLocator *pLoc;
+        hrc = CoCreateInstance(CLSID_WbemLocator,
+                               0,
+                               CLSCTX_INPROC_SERVER,
+                               IID_IWbemLocator,
+                               (LPVOID *)&pLoc);
+        if (SUCCEEDED(hrc))
+        {
+            IWbemServices *pServices;
+            hrc = rtSystemDmiWinConnectToServer(pLoc, "ROOT\\CIMV2", &pServices);
+            if (SUCCEEDED(hrc))
+            {
+                /*
+                 * Enumerate whatever it is we're looking at and try get
+                 * the desired property.
+                 */
+                BSTR pBstrFilter = rtSystemWinBstrFromUtf8("Win32_ComputerSystemProduct");
+                if (pBstrFilter)
+                {
+                    IEnumWbemClassObject *pEnum;
+                    hrc = pServices->CreateInstanceEnum(pBstrFilter, 0, NULL, &pEnum);
+                    if (SUCCEEDED(hrc))
+                    {
+                        do
+                        {
+                            IWbemClassObject *pObj;
+                            ULONG cObjRet;
+                            hrc = pEnum->Next(WBEM_INFINITE, 1, &pObj, &cObjRet);
+                            if (   SUCCEEDED(hrc)
+                                && cObjRet >= 1)
+                            {
+                                VARIANT Var;
+                                VariantInit(&Var);
+                                hrc = pObj->Get(pBstrPropName, 0, &Var, 0, 0);
+                                if (   SUCCEEDED(hrc)
+                                    && V_VT(&Var) == VT_BSTR)
+                                {
+                                    /*
+                                     * Convert the BSTR to UTF-8 and copy it
+                                     * into the return buffer.
+                                     */
+                                    char *pszValue;
+                                    rc = RTUtf16ToUtf8(Var.bstrVal, &pszValue);
+                                    if (RT_SUCCESS(rc))
+                                    {
+                                        rc = RTStrCopy(pszBuf, cbBuf, pszValue);
+                                        RTStrFree(pszValue);
+                                        hrc = WBEM_S_FALSE;
+                                    }
+                                }
+                                VariantClear(&Var);
+                                pObj->Release();
+                            }
+                        } while (hrc != WBEM_S_FALSE);
+
+                        pEnum->Release();
+                    }
+                    SysFreeString(pBstrFilter);
+                }
+                else
+                    hrc = E_OUTOFMEMORY;
+                pServices->Release();
+            }
+            pLoc->Release();
+        }
+        SysFreeString(pBstrPropName);
+    }
+    else
+        hrc = E_OUTOFMEMORY;
+    rtSystemDmiWinTerminate();
+    if (FAILED(hrc) && rc == VERR_NOT_SUPPORTED)
+        rc = VERR_NOT_SUPPORTED;
     return rc;
 }
-RT_EXPORT_SYMBOL(RTSystemQueryDmiString);
 
