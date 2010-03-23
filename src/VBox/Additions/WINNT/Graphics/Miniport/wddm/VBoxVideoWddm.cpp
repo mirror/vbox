@@ -2086,13 +2086,34 @@ DxgkDdiSetPointerPosition(
     PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
     PVBOXWDDM_POINTER_INFO pPointerInfo = &pDevExt->aSources[pSetPointerPosition->VidPnSourceId].PointerInfo;
     PVIDEO_POINTER_ATTRIBUTES pPointerAttributes = &pPointerInfo->Attributes.data;
+    BOOLEAN bNotifyVisibility;
     if (pSetPointerPosition->Flags.Visible)
+    {
+        bNotifyVisibility = !(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE);
         pPointerAttributes->Enable |= VBOX_MOUSE_POINTER_VISIBLE;
+    }
     else
+    {
+        bNotifyVisibility = !!(pPointerAttributes->Enable & VBOX_MOUSE_POINTER_VISIBLE);
         pPointerAttributes->Enable &= ~VBOX_MOUSE_POINTER_VISIBLE;
+    }
 
     pPointerInfo->xPos = pSetPointerPosition->X;
     pPointerInfo->yPos = pSetPointerPosition->Y;
+
+    if (bNotifyVisibility && vboxQueryHostWantsAbsolute())
+    {
+        // tell the host to use the guest's pointer
+        VIDEO_POINTER_ATTRIBUTES PointerAttributes;
+
+        /* Visible and No Shape means Show the pointer.
+         * It is enough to init only this field.
+         */
+        PointerAttributes.Enable = pSetPointerPosition->Flags.Visible ? VBOX_MOUSE_POINTER_VISIBLE : 0;
+
+        BOOLEAN bResult = vboxUpdatePointerShape(pDevExt, &PointerAttributes, sizeof (PointerAttributes));
+        Assert(bResult);
+    }
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
@@ -2121,7 +2142,10 @@ DxgkDdiSetPointerShape(
             if (vboxUpdatePointerShape (pDevExt, &pPointerInfo->Attributes.data, VBOXWDDM_POINTER_ATTRIBUTES_SIZE))
                 Status = STATUS_SUCCESS;
             else
+            {
+                AssertBreakpoint();
                 drprintf((__FUNCTION__": vboxUpdatePointerShape failed\n"));
+            }
         }
     }
 
