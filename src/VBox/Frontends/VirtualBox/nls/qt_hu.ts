@@ -13,7 +13,7 @@
     </message>
     <message>
         <source>Revert back to device &apos;%1&apos;</source>
-        <translation type="unfinished"></translation>
+        <translation>Visszaállás a(z) &apos;%1&apos; eszközre</translation>
     </message>
 </context>
 <context>
@@ -1301,7 +1301,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Demi</source>
-        <translation type="unfinished">Fél</translation>
+        <translation>Fél</translation>
     </message>
     <message>
         <source>Light</source>
@@ -1329,7 +1329,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Cyrillic</source>
-        <translation type="unfinished">Cirill</translation>
+        <translation>Cirill</translation>
     </message>
     <message>
         <source>Armenian</source>
@@ -1994,7 +1994,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>%1: Unknown error %2</source>
-        <translation>%1: A kívánt socket művelet nem támogatott</translation>
+        <translation>%1: Ismeretlen hiba: %2</translation>
     </message>
 </context>
 <context>
@@ -2196,7 +2196,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>&lt;h3&gt;About Qt&lt;/h3&gt;%1&lt;p&gt;Qt is a C++ toolkit for cross-platform application development.&lt;/p&gt;&lt;p&gt;Qt provides single-source portability across MS&amp;nbsp;Windows, Mac&amp;nbsp;OS&amp;nbsp;X, Linux, and all major commercial Unix variants. Qt is also available for embedded devices as Qt for Embedded Linux and Qt for Windows CE.&lt;/p&gt;&lt;p&gt;Qt is a Nokia product. See &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; for more information.&lt;/p&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;h3&gt;A Qt névjegye&lt;/h3&gt;%1&lt;p&gt;A Qt egy C++ eszközkészlet a kereszt-platformos alkalmazásfejlesztéshez.&lt;/p&gt;&lt;p&gt;A Qt egy-forrású hordozhatóságot biztosít az MS&amp;nbsp;Windows, a Mac&amp;nbsp;OS&amp;nbsp;X, a Linux, és az összes nagyobb kereskedelmi Unix változat között. A Qt mobileszközökhöz is elérhető, pl. Qtopia Core.&lt;/p&gt;&lt;p&gt;A Qt a Trolltech terméke. További információk: &lt;a href=&quot;http://www.trolltech.com/qt/&quot;&gt;www.trolltech.com/qt/&lt;/a&gt; .&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
@@ -2436,7 +2436,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Unable to execute select statement</source>
-        <translation type="unfinished"></translation>
+        <translation>A SELECT utasítás nem végrehajtható</translation>
     </message>
     <message>
         <source>Unable to execute statement</source>
@@ -2451,7 +2451,7 @@ Biztosan törlöd?</translation>
     </message>
     <message>
         <source>Unable to connect - Driver doesn&apos;t support all needed functionality</source>
-        <translation type="unfinished"></translation>
+        <translation>Nem sikerült kapcsolódni - A driver nem támogat minden szükséges szolgáltatást</translation>
     </message>
     <message>
         <source>Unable to disable autocommit</source>
@@ -2884,7 +2884,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Next page</source>
-        <translation type="unfinished">Következő oldal</translation>
+        <translation>Következő oldal</translation>
     </message>
     <message>
         <source>Previous page</source>
@@ -2936,7 +2936,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Nyomtatás</translation>
+        <translation>Nyomtatás</translation>
     </message>
     <message>
         <source>Page setup</source>
@@ -3084,14 +3084,14 @@ Válassz másik fájlnevet.</translation>
     <name>QProgressDialog</name>
     <message>
         <source>Cancel</source>
-        <translation type="unfinished">Mégsem</translation>
+        <translation>Mégsem</translation>
     </message>
 </context>
 <context>
     <name>QPushButton</name>
     <message>
         <source>Open</source>
-        <translation type="unfinished">Megnyitás</translation>
+        <translation>Megnyitás</translation>
     </message>
 </context>
 <context>
@@ -3248,15 +3248,15 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Page up</source>
-        <translation type="unfinished">Oldal felfelé</translation>
+        <translation>Oldal felfelé</translation>
     </message>
     <message>
         <source>Page right</source>
-        <translation type="unfinished">Oldal jobbra</translation>
+        <translation>Oldal jobbra</translation>
     </message>
     <message>
         <source>Page down</source>
-        <translation type="unfinished">Oldal lefelé</translation>
+        <translation>Oldal lefelé</translation>
     </message>
     <message>
         <source>Scroll left</source>
@@ -3358,55 +3358,55 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Esc</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Tab</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Backtab</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Backspace</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Return</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Enter</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Ins</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Del</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished">Szünet</translation>
+        <translation></translation>
     </message>
     <message>
         <source>Print</source>
-        <translation type="unfinished">Nyomtatás</translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>SysReq</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Home</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>End</source>
-        <translation type="unfinished"></translation>
+        <translation></translation>
     </message>
     <message>
         <source>Left</source>
@@ -3853,7 +3853,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Private key does not certificate public key, %1</source>
-        <translation type="unfinished"></translation>
+        <translation>A privát és a publikus kulcs nem illik össze: %1</translation>
     </message>
 </context>
 <context>
@@ -3972,35 +3972,35 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>ZWJ Zero width joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWJ Nulla szélességű egyesítő jelölő</translation>
     </message>
     <message>
         <source>ZWNJ Zero width non-joiner</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWN Nulla szélességű nem-egyesítő jelölő</translation>
     </message>
     <message>
         <source>ZWSP Zero width space</source>
-        <translation type="unfinished"></translation>
+        <translation>ZWSP Nulla szélességű szóköz</translation>
     </message>
     <message>
         <source>LRE Start of left-to-right embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>LRE balról-jobbra beágyazás kezdete</translation>
     </message>
     <message>
         <source>RLE Start of right-to-left embedding</source>
-        <translation type="unfinished"></translation>
+        <translation>RLE jobbról-balra beágyazás kezdete</translation>
     </message>
     <message>
         <source>LRO Start of left-to-right override</source>
-        <translation type="unfinished"></translation>
+        <translation>LRO balról-jobbra felülbírálás kezdete</translation>
     </message>
     <message>
         <source>RLO Start of right-to-left override</source>
-        <translation type="unfinished"></translation>
+        <translation>RLO Jobbról-balra felülbírálás kezdete</translation>
     </message>
     <message>
         <source>PDF Pop directional formatting</source>
-        <translation type="unfinished"></translation>
+        <translation>PDF normál irányú formázási jelölő</translation>
     </message>
     <message>
         <source>Insert Unicode control character</source>
@@ -4173,7 +4173,7 @@ Válassz másik fájlnevet.</translation>
     <message>
         <source>Ignore</source>
         <comment>Ignore Grammar context menu item</comment>
-        <translation type="unfinished">Kihagyás</translation>
+        <translation>Kihagyás</translation>
     </message>
     <message>
         <source>Spelling</source>
@@ -4398,7 +4398,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Close</source>
-        <translation type="unfinished">Bezárás</translation>
+        <translation>Bezárás</translation>
     </message>
     <message>
         <source>&amp;Unshade</source>
@@ -4413,7 +4413,7 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>error triggered by consumer</source>
-        <translation type="unfinished"></translation>
+        <translation>feldolgozó által kiváltott hiba</translation>
     </message>
     <message>
         <source>unexpected end of file</source>
@@ -4481,11 +4481,11 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in attribute value</source>
-        <translation type="unfinished"></translation>
+        <translation>külső feldolgozású általános entitáshivatkozás nem engedélyezett attribútum értékében</translation>
     </message>
     <message>
         <source>external parsed general entity reference not allowed in DTD</source>
-        <translation type="unfinished"></translation>
+        <translation>külső feldolgozású általános entitáshivatkozás nem engedélyezett a DTD-ben</translation>
     </message>
     <message>
         <source>unparsed entity reference in wrong context</source>
@@ -4624,23 +4624,23 @@ Válassz másik fájlnevet.</translation>
     </message>
     <message>
         <source>Reference to external entity &apos;%1&apos; in attribute value.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hivatkozás &apos;%1&apos; külső entitásra attribútum értékben.</translation>
     </message>
     <message>
         <source>Invalid character reference.</source>
-        <translation type="unfinished"></translation>
+        <translation>Érvénytelen karakterhivatkozás.</translation>
     </message>
     <message>
         <source>Encountered incorrectly encoded content.</source>
-        <translation type="unfinished"></translation>
+        <translation>Hibás kódolású tartalom.</translation>
     </message>
     <message>
         <source>The standalone pseudo attribute must appear after the encoding.</source>
-        <translation type="unfinished"></translation>
+        <translation>Az egyedülálló pszeudo-attribútumnak a kódolás után kell szerepelnie.</translation>
     </message>
     <message>
         <source>%1 is an invalid PUBLIC identifier.</source>
-        <translation type="unfinished">%1 egy érvénytelen publikus azonosító.</translation>
+        <translation>%1 egy érvénytelen publikus azonosító.</translation>
     </message>
 </context>
 <context>

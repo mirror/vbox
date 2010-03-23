@@ -45,7 +45,7 @@
     </message>
     <message>
         <source>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;html&gt;&lt;b&gt;%1 (rc=%2)&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;</translation>
     </message>
     <message>
         <source>Please try reinstalling VirtualBox.</source>
@@ -158,127 +158,127 @@
     </message>
     <message>
         <source>Alt Gr</source>
-        <translation type="unfinished"></translation>
+        <translation>Alt Gr</translation>
     </message>
     <message>
         <source>Caps Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Caps Lock</translation>
     </message>
     <message>
         <source>Scroll Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Scroll Lock</translation>
     </message>
     <message>
         <source>&lt;key_%1&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;key_%1&gt;</translation>
     </message>
     <message>
         <source>Pause</source>
-        <translation type="unfinished"></translation>
+        <translation>Pause</translation>
     </message>
     <message>
         <source>Print Screen</source>
-        <translation type="unfinished"></translation>
+        <translation>Print Screen</translation>
     </message>
     <message>
         <source>F1</source>
-        <translation type="unfinished"></translation>
+        <translation>F1</translation>
     </message>
     <message>
         <source>F2</source>
-        <translation type="unfinished"></translation>
+        <translation>F2</translation>
     </message>
     <message>
         <source>F3</source>
-        <translation type="unfinished"></translation>
+        <translation>F3</translation>
     </message>
     <message>
         <source>F4</source>
-        <translation type="unfinished"></translation>
+        <translation>F4</translation>
     </message>
     <message>
         <source>F5</source>
-        <translation type="unfinished"></translation>
+        <translation>F5</translation>
     </message>
     <message>
         <source>F6</source>
-        <translation type="unfinished"></translation>
+        <translation>F6</translation>
     </message>
     <message>
         <source>F7</source>
-        <translation type="unfinished"></translation>
+        <translation>F7</translation>
     </message>
     <message>
         <source>F8</source>
-        <translation type="unfinished"></translation>
+        <translation>F8</translation>
     </message>
     <message>
         <source>F9</source>
-        <translation type="unfinished"></translation>
+        <translation>F9</translation>
     </message>
     <message>
         <source>F10</source>
-        <translation type="unfinished"></translation>
+        <translation>F10</translation>
     </message>
     <message>
         <source>F11</source>
-        <translation type="unfinished"></translation>
+        <translation>F11</translation>
     </message>
     <message>
         <source>F12</source>
-        <translation type="unfinished"></translation>
+        <translation>F12</translation>
     </message>
     <message>
         <source>F13</source>
-        <translation type="unfinished"></translation>
+        <translation>F13</translation>
     </message>
     <message>
         <source>F14</source>
-        <translation type="unfinished"></translation>
+        <translation>F14</translation>
     </message>
     <message>
         <source>F15</source>
-        <translation type="unfinished"></translation>
+        <translation>F15</translation>
     </message>
     <message>
         <source>F16</source>
-        <translation type="unfinished"></translation>
+        <translation>F16</translation>
     </message>
     <message>
         <source>F17</source>
-        <translation type="unfinished"></translation>
+        <translation>F17</translation>
     </message>
     <message>
         <source>F18</source>
-        <translation type="unfinished"></translation>
+        <translation>F18</translation>
     </message>
     <message>
         <source>F19</source>
-        <translation type="unfinished"></translation>
+        <translation>F19</translation>
     </message>
     <message>
         <source>F20</source>
-        <translation type="unfinished"></translation>
+        <translation>F20</translation>
     </message>
     <message>
         <source>F21</source>
-        <translation type="unfinished"></translation>
+        <translation>F21</translation>
     </message>
     <message>
         <source>F22</source>
-        <translation type="unfinished"></translation>
+        <translation>F22</translation>
     </message>
     <message>
         <source>F23</source>
-        <translation type="unfinished"></translation>
+        <translation>F23</translation>
     </message>
     <message>
         <source>F24</source>
-        <translation type="unfinished"></translation>
+        <translation>F24</translation>
     </message>
     <message>
         <source>Num Lock</source>
-        <translation type="unfinished"></translation>
+        <translation>Num Lock</translation>
     </message>
     <message>
         <source>Forward</source>
@@ -437,15 +437,15 @@
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation>客體 OS 類型</translation>
+        <translation>客體作業系統類型</translation>
     </message>
     <message>
         <source>CPU</source>
-        <translation type="unfinished"></translation>
+        <translation>CPU</translation>
     </message>
     <message>
         <source>RAM</source>
-        <translation type="unfinished"></translation>
+        <translation>RAM</translation>
     </message>
     <message>
         <source>Hard Disk Controller (IDE)</source>
@@ -461,7 +461,7 @@
     </message>
     <message>
         <source>DVD</source>
-        <translation type="unfinished"></translation>
+        <translation>DVD</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -489,7 +489,7 @@
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&lt;b&gt;Original Value:&lt;/b&gt; %1</source>
@@ -812,7 +812,7 @@
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>Indicates the status of the hardware virtualization features used by this virtual machine:&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%3:&lt;/b&gt;&amp;nbsp;%4&lt;/nobr&gt;</source>
@@ -822,7 +822,7 @@
     <message>
         <source>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</source>
         <comment>Virtualization Stuff LED</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;br&gt;&lt;nobr&gt;&lt;b&gt;%1:&lt;/b&gt;&amp;nbsp;%2&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source> EXPERIMENTAL build %1r%2 - %3</source>
@@ -1040,11 +1040,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun &amp;Cloud</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun &amp;Cloud</translation>
     </message>
     <message>
         <source>&amp;Simple Storage System (S3)</source>
-        <translation>簡單儲存系統 (S3)(&amp;S)</translation>
+        <translation>簡單存放系統 (S3)(&amp;S)</translation>
     </message>
     <message>
         <source>&amp;Username:</source>
@@ -1142,11 +1142,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>VirtualBox - %1</source>
-        <translation type="unfinished"></translation>
+        <translation>VirtualBox - %1</translation>
     </message>
     <message>
         <source>Network</source>
@@ -1259,7 +1259,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Id</source>
-        <translation type="unfinished"></translation>
+        <translation>Id</translation>
     </message>
     <message>
         <source>Language</source>
@@ -1620,12 +1620,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>ACPI</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>ACPI</translation>
     </message>
     <message>
         <source>IO APIC</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>IO APIC</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -1765,7 +1765,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>CD/DVD-ROM</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Hard Disk</source>
@@ -1840,12 +1840,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Windows DirectSound</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Windows DirectSound</translation>
     </message>
     <message>
         <source>CoreAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>CoreAudio</translation>
     </message>
     <message>
         <source>Not attached</source>
@@ -1855,7 +1855,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>NAT</source>
         <comment>NetworkAttachmentType</comment>
-        <translation type="unfinished"></translation>
+        <translation>NAT</translation>
     </message>
     <message>
         <source>Internal Network</source>
@@ -1930,7 +1930,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -1970,12 +1970,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>VT-x/AMD-V</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>VT-x/AMD-V</translation>
     </message>
     <message>
         <source>PAE/NX</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>PAE/NX</translation>
     </message>
     <message>
         <source>Enabled</source>
@@ -2025,7 +2025,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>USB</source>
         <comment>DeviceType</comment>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folder</source>
@@ -2035,12 +2035,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>IDE</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>IDE</translation>
     </message>
     <message>
         <source>SATA</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SATA</translation>
     </message>
     <message>
         <source>Primary</source>
@@ -2075,37 +2075,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>PulseAudio</source>
         <comment>AudioDriverType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PulseAudio</translation>
     </message>
     <message>
         <source>ICH AC97</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH AC97</translation>
     </message>
     <message>
         <source>SoundBlaster 16</source>
         <comment>AudioControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>SoundBlaster 16</translation>
     </message>
     <message>
         <source>PCnet-PCI II (Am79C970A)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-PCI II (Am79C970A)</translation>
     </message>
     <message>
         <source>PCnet-FAST III (Am79C973)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PCnet-FAST III (Am79C973)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 MT Desktop (82540EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Desktop (82540EM)</translation>
     </message>
     <message>
         <source>Intel PRO/1000 T Server (82543GC)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 T Server (82543GC)</translation>
     </message>
     <message>
         <source>&lt;nobr&gt;Vendor ID: %1&lt;/nobr&gt;</source>
@@ -2210,37 +2210,37 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>SCSI</source>
         <comment>StorageBus</comment>
-        <translation type="unfinished"></translation>
+        <translation>SCSI</translation>
     </message>
     <message>
         <source>PIIX3</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX3</translation>
     </message>
     <message>
         <source>PIIX4</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>PIIX4</translation>
     </message>
     <message>
         <source>ICH6</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>ICH6</translation>
     </message>
     <message>
         <source>AHCI</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>AHCI</translation>
     </message>
     <message>
         <source>Lsilogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Lsilogic</translation>
     </message>
     <message>
         <source>BusLogic</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>BusLogic</translation>
     </message>
     <message>
         <source>Bridged adapter, %1</source>
@@ -2255,7 +2255,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Intel PRO/1000 MT Server (82545EM)</source>
         <comment>NetworkAdapterType</comment>
-        <translation type="unfinished"></translation>
+        <translation>Intel PRO/1000 MT Server (82545EM)</translation>
     </message>
     <message>
         <source>Bridged Adapter</source>
@@ -2270,7 +2270,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1 MB&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Processor(s)</source>
@@ -2280,7 +2280,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;nobr&gt;%1&lt;/nobr&gt;</source>
         <comment>details report</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;nobr&gt;%1&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>System</source>
@@ -2335,7 +2335,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Storage</source>
         <comment>details report</comment>
-        <translation>儲存</translation>
+        <translation>存放裝置</translation>
     </message>
     <message>
         <source>Teleported</source>
@@ -2345,7 +2345,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Guru Meditation</source>
         <comment>MachineState</comment>
-        <translation type="unfinished"></translation>
+        <translation>Guru Meditation</translation>
     </message>
     <message>
         <source>Teleporting</source>
@@ -2425,7 +2425,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>I82078</source>
         <comment>StorageControllerType</comment>
-        <translation type="unfinished"></translation>
+        <translation>I82078</translation>
     </message>
     <message>
         <source>Empty</source>
@@ -2450,7 +2450,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;p&gt;Attached to:  %1&lt;/p&gt;</source>
         <comment>image</comment>
-        <translation>&lt;p&gt;附加至:  %1&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;附加到:  %1&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;i&gt;Not Attached&lt;/i&gt;</source>
@@ -2502,43 +2502,43 @@ p, li { white-space: pre-wrap; }
     </message>
     <message numerus="yes">
         <source>%n year(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 年</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n month(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 月</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n day(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 日</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n hour(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 小時</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n minute(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 分鐘</numerusform>
         </translation>
     </message>
     <message numerus="yes">
         <source>%n second(s)</source>
-        <translation>
-            <numerusform></numerusform>
+        <translation type="unfinished">
+            <numerusform>%n 秒</numerusform>
         </translation>
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>(CD/DVD)</translation>
     </message>
 </context>
 <context>
@@ -2821,7 +2821,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Select a CD/DVD-ROM disk image file</source>
-        <translation>選取一個 CD/DVD-ROM 映像檔</translation>
+        <translation>選取一個 CD/DVD-ROM 光碟映像檔</translation>
     </message>
     <message>
         <source>Floppy images (*.img);;All files (*)</source>
@@ -2838,7 +2838,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>--</source>
         <comment>no info</comment>
-        <translation type="unfinished"></translation>
+        <translation>--</translation>
     </message>
     <message>
         <source>Virtual Media Manager</source>
@@ -2922,7 +2922,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Virtual Disk Location and Size</source>
-        <translation>虛擬磁碟位置和大小</translation>
+        <translation>虛擬磁碟位置與大小</translation>
     </message>
     <message>
         <source>Summary</source>
@@ -2970,7 +2970,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>Bytes</source>
         <comment>summary</comment>
-        <translation type="unfinished"></translation>
+        <translation>Bytes</translation>
     </message>
     <message>
         <source>Cancel</source>
@@ -2982,27 +2982,27 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Hard Disk Storage Type</source>
-        <translation>硬碟儲存類型</translation>
+        <translation>硬碟存放類型</translation>
     </message>
     <message>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;選擇您要建立的虛擬硬碟類型。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;動態延伸儲存&lt;/b&gt;最初在您的實體硬碟佔用非常少的空間。 它將會動態成長 (直到指定的大小) 作為客體作業系統索取的磁碟空間。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;固定大小儲存&lt;/b&gt;不會成長。 它儲存在與虛擬硬碟大小大約相同的檔案大小。 固定大小儲存可能需要長時間的建立，取決於儲存大小與您硬碟的寫入性能。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;選擇您要建立的虛擬硬碟類型。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;動態延伸存放&lt;/b&gt;最初在您的實體硬碟佔用非常少的空間。 它將會動態成長 (直到指定的大小) 作為客體作業系統索取的磁碟空間。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;固定大小存放&lt;/b&gt;不會成長。 它儲存在與虛擬硬碟大小大約相同的檔案大小。 固定大小存放可能需要長時間的建立，取決於存放大小與您硬碟的寫入性能。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Storage Type</source>
-        <translation>儲存類型</translation>
+        <translation>存放裝置類型</translation>
     </message>
     <message>
         <source>&amp;Dynamically expanding storage</source>
-        <translation>動態延伸儲存(&amp;D)</translation>
+        <translation>動態延伸存放(&amp;D)</translation>
     </message>
     <message>
         <source>&amp;Fixed-size storage</source>
-        <translation>固定大小儲存(&amp;F)</translation>
+        <translation>固定大小存放(&amp;F)</translation>
     </message>
     <message>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;按下 [&lt;b&gt;選取&lt;/b&gt;] 按鈕以選取儲存硬碟資料的檔案位置或在欄位中輸入檔案名稱。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;按下 [&lt;b&gt;選取&lt;/b&gt;] 按鈕選取儲存硬碟資料的檔案位置或在欄位中輸入檔案名稱。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Location</source>
@@ -3010,7 +3010,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;以 MB 為單位選取虛擬硬碟的大小。這個大小將回報給客體 OS 為硬碟的最大容量。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;以 MB 為單位選取虛擬硬碟的大小。這個大小將回報至客體作業系統作為硬碟的最大容量。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Size</source>
@@ -3018,11 +3018,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
-        <translation>您要使用以下參數新建虛擬硬碟:</translation>
+        <translation>您即將使用以下參數新建虛擬硬碟:</translation>
     </message>
     <message>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
-        <translation>如果上方設定值正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將建立新硬碟。</translation>
+        <translation>如果上方設定值正確，按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下後，將建立新硬碟。</translation>
     </message>
 </context>
 <context>
@@ -3057,7 +3057,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Memory</source>
@@ -3101,7 +3101,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;如果以上正確按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下，將新建虛擬機器。 &lt;/p&gt;&lt;p&gt;請注意您可以通過主視窗的功能表存取 &lt;b&gt;設定值&lt;/b&gt; 對話方塊，隨時變更建立虛擬機器的這些和所有其它設定值。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;如果以上正確按下 [&lt;b&gt;完成&lt;/b&gt;] 按鈕。 一旦您按下後，將新建虛擬機器。 &lt;/p&gt;&lt;p&gt;請注意您可以通過主視窗的功能表存取 &lt;b&gt;設定值&lt;/b&gt; 對話方塊，隨時變更建立虛擬機器的這些和所有其它設定值。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&amp;Finish</source>
@@ -3110,7 +3110,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>MB</source>
         <comment>megabytes</comment>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Name</source>
@@ -3314,7 +3314,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS does not support &lt;b&gt;mouse pointer integration&lt;/b&gt; in the current video mode. You need to capture the mouse (by clicking over the VM display or pressing the host key) in order to use the mouse inside the guest OS.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器回報在目前的視訊模式中，客體作業系統不支援&lt;b&gt;滑鼠游標整合&lt;/b&gt;。 為了在客體作業系統之內使用滑鼠，您需要擷取滑鼠 (在虛擬機器顯示上方按一下或按下 Host 鍵) 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;虛擬機器回報在目前的視訊模式中，客體作業系統不支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 為了在客體作業系統之內使用滑鼠，您需要擷取滑鼠 (在虛擬機器顯示上方按一下或按下 Host 鍵) 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine is currently in the &lt;b&gt;Paused&lt;/b&gt; state and not able to see any keyboard or mouse input. If you want to continue to work inside the VM, you need to resume it by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
@@ -3574,7 +3574,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The Virtual Machine reports that the guest OS supports &lt;b&gt;mouse pointer integration&lt;/b&gt;. This means that you do not need to &lt;i&gt;capture&lt;/i&gt; the mouse pointer to be able to use it in your guest OS -- all mouse actions you perform when the mouse pointer is over the Virtual Machine&apos;s display are directly sent to the guest OS. If the mouse is currently captured, it will be automatically uncaptured.&lt;/p&gt;&lt;p&gt;The mouse icon on the status bar will look like&amp;nbsp;&lt;img src=:/mouse_seamless_16px.png/&gt;&amp;nbsp;to inform you that mouse pointer integration is supported by the guest OS and is currently turned on.&lt;/p&gt;&lt;p&gt;&lt;b&gt;Note&lt;/b&gt;: Some applications may behave incorrectly in mouse pointer integration mode. You can always disable it for the current session (and enable it again) by selecting the corresponding action from the menu bar.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;虛擬機器回報客體 OS 支援&lt;b&gt;滑鼠游標整合&lt;/b&gt;。 這意味著您不需要在客體 OS 中使用&lt;i&gt;擷取&lt;/i&gt;滑鼠游標來使用它 -- 當滑鼠游標位於虛擬機器的顯示上方時，所有您執行的滑鼠動作將直接傳送到客體作業系統。 如果目前已擷取滑鼠，將會自動取消擷取。&lt;/p&gt;&lt;p&gt;狀態列的滑鼠圖示將看起來像&amp;nbsp;&lt; img src=:/mouse_seamless_16px.png/ &gt;&amp;nbsp;以通知您客體作業系統支援滑鼠游標整合並且目前已開啟。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 某些應用程式可能在滑鼠游標整合模式下的行為不正確。 您可以從功能表列中選取相對應的動作於目前工作階段始終停用它 (與再次啟用) 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;虛擬機器回報客體作業系統支援&lt;b&gt;滑鼠指標整合&lt;/b&gt;。 這意味著您不需要在客體作業系統中使用&lt;i&gt;擷取&lt;/i&gt;滑鼠指標來使用它 -- 當滑鼠指標位於虛擬機器的顯示上方時，所有您執行的滑鼠動作將直接傳送到客體作業系統。 如果目前已擷取滑鼠，將會自動取消擷取。&lt;/p&gt;&lt;p&gt;狀態列的滑鼠圖示將看起來像&amp;nbsp;&lt; img src=:/mouse_seamless_16px.png/ &gt;&amp;nbsp;以通知您客體作業系統支援滑鼠指標整合並且目前已開啟。 &lt;/p&gt;&lt;p&gt;&lt;b&gt;注意&lt;/b&gt;: 某些應用程式可能在滑鼠指標整合模式下的行為不正確。 您可以從功能表列中選取相對應的動作於目前工作階段一律停用它 (與再次啟用) 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;The virtual machine window will be now switched to &lt;b&gt;fullscreen&lt;/b&gt; mode. You can go back to windowed mode at any time by pressing &lt;b&gt;%1&lt;/b&gt;. Note that the &lt;i&gt;Host&lt;/i&gt; key is currently defined as &lt;b&gt;%2&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;Note that the main menu bar is hidden in fullscreen mode. You can access it by pressing &lt;b&gt;Host+Home&lt;/b&gt;.&lt;/p&gt;</source>
@@ -3606,7 +3606,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Go back to showing all suppressed warnings and messages</source>
-        <translation>返回以顯示所有禁止抑制的警告與訊息</translation>
+        <translation>返回以顯示所有抑制的警告與訊息</translation>
     </message>
     <message>
         <source>R&amp;egister VirtualBox...</source>
@@ -3655,11 +3655,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The next dialog will let you choose whether you also want to delete the storage unit of this hard disk or keep it for later usage.</source>
-        <translation>下一個對話方塊會讓您選擇是否也要刪除這個硬碟儲存單元或保留它供以後使用。</translation>
+        <translation>下一個對話方塊會讓您選擇是否也要刪除這個硬碟存放單元或保留它供以後使用。</translation>
     </message>
     <message>
         <source>&lt;p&gt;Note that the storage unit of this medium will not be deleted and that it will be possible to add it to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;請注意，這個媒體的儲存單元將不會刪除且這將有可能再次將其加入到清單中。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;請注意，這個媒體的存放單元將不會刪除且這將有可能稍後再次將其加入到清單中。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Remove</source>
@@ -3668,11 +3668,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;The hard disk storage unit at location &lt;b&gt;%1&lt;/b&gt; already exists. You cannot create a new virtual hard disk that uses this location because it can be already used by another virtual hard disk.&lt;/p&gt;&lt;p&gt;Please specify a different location.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;硬碟儲存單元於位置 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您不能使用這個位置新建虛擬硬碟因為另一個虛擬硬碟已經使用中。&lt;/p&gt;&lt;p&gt;請指定不同的位置。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;硬碟存放單元於位置 &lt;b&gt;%1&lt;/b&gt; 已經存在。 您不能使用這個位置新建虛擬硬碟因為另一個虛擬硬碟已經使用中。&lt;/p&gt;&lt;p&gt;請指定不同的位置。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Do you want to delete the storage unit of the hard disk &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;?&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Delete&lt;/b&gt; then the specified storage unit will be permanently deleted. This operation &lt;b&gt;cannot be undone&lt;/b&gt;.&lt;/p&gt;&lt;p&gt;If you select &lt;b&gt;Keep&lt;/b&gt; then the hard disk will be only removed from the list of known hard disks, but the storage unit will be left untouched which makes it possible to add this hard disk to the list later again.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;您要刪除硬碟的儲存單元 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;刪除&lt;/b&gt;] 將永久刪除指定的儲存單元。 這個操作&lt;b&gt;無法復原&lt;/b&gt;。 &lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;保留&lt;/b&gt;] 硬碟將只從未知硬碟清單中移除，但儲存單元將保持未接觸，使得稍後可以再次加入這個硬碟到清單。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;您要刪除硬碟的存放單元 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;&lt;/nobr&gt;嗎?&lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;刪除&lt;/b&gt;] 將永久刪除指定的存放單元。 這個操作&lt;b&gt;無法復原&lt;/b&gt;。 &lt;/p&gt;&lt;p&gt;如果您選取 [&lt;b&gt;保留&lt;/b&gt;] 硬碟將只從未知硬碟清單中移除，但存放單元將保持未接觸，使得稍後可以再次加入這個硬碟到清單。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Delete</source>
@@ -3686,11 +3686,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Failed to delete the storage unit of the hard disk &lt;b&gt;%1&lt;/b&gt;.</source>
-        <translation>刪除硬碟 &lt;b&gt;%1&lt;/b&gt; 的儲存單元時失敗。</translation>
+        <translation>刪除硬碟 &lt;b&gt;%1&lt;/b&gt; 的存放單元時失敗。</translation>
     </message>
     <message>
         <source>Failed to create the hard disk storage &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt;.&lt;/nobr&gt;</source>
-        <translation>建立硬碟儲存 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;</translation>
+        <translation>建立硬碟存放 &lt;nobr&gt;&lt;b&gt;%1&lt;/b&gt; 失敗。&lt;/nobr&gt;</translation>
     </message>
     <message>
         <source>Failed to open the %1 &lt;nobr&gt;&lt;b&gt;%2&lt;/b&gt;&lt;/nobr&gt;.</source>
@@ -3742,7 +3742,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Your 64-bit guest will fail to detect a 64-bit CPU and will not be able to boot.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是未操作。 您的 64-bit 客體將偵測 64-bit CPU 失敗且將無法開機。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 您的 64-bit 客體將偵測 64-bit CPU 失敗且將無法開機。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>Close VM</source>
@@ -3815,7 +3815,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;VT-x/AMD-V hardware acceleration has been enabled, but is not operational. Certain guests (e.g. OS/2 and QNX) require this feature.&lt;/p&gt;&lt;p&gt;Please ensure that you have enabled VT-x/AMD-V properly in the BIOS of your host computer.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是未操作。 某些客體 (例如 OS/2 與 QNX) 需要這個功能。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;VT-x/AMD-V 硬體加速已啟用，但是不可操作。 某些客體 (例如 OS/2 與 QNX) 需要這個功能。&lt;/p&gt;&lt;p&gt;請確認在您主機電腦的 BIOS 中已正確啟用 VT-x/AMD-V 。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>&lt;p&gt;Invalid e-mail address or password specified.&lt;/p&gt;</source>
@@ -3917,7 +3917,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;p&gt;Could not insert the VirtualBox Guest Additions installer CD image into the virtual machine &lt;b&gt;%1&lt;/b&gt;, as the machine has no CD/DVD-ROM drives. Please add a drive using the storage page of the virtual machine settings dialog.&lt;/p&gt;</source>
-        <translation>&lt;p&gt;無法插入 VirtualBox Guest Additions 安裝程式 CD 映像至虛擬機器 &lt;b&gt;%1&lt;/b&gt;，由於機器沒有 CD/DVD-ROM 光碟機。 請使用虛擬機器設定對話方塊的儲存頁面加入一個光碟機。&lt;/p&gt;</translation>
+        <translation>&lt;p&gt;無法插入 VirtualBox Guest Additions 安裝程式 CD 映像至虛擬機器 &lt;b&gt;%1&lt;/b&gt;，由於機器沒有 CD/DVD-ROM 光碟機。 請使用虛擬機器設定對話方塊的存放裝置頁面加入一個光碟機。&lt;/p&gt;</translation>
     </message>
     <message>
         <source>E&amp;xit</source>
@@ -3936,7 +3936,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>CD/DVD</source>
         <comment>failed to mount ... host-drive</comment>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD</translation>
     </message>
     <message>
         <source>CD/DVD image</source>
@@ -4258,7 +4258,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Sun VirtualBox</source>
-        <translation type="unfinished"></translation>
+        <translation>Sun VirtualBox</translation>
     </message>
     <message>
         <source>&amp;Import Appliance...</source>
@@ -4285,7 +4285,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSettingsDialog</name>
     <message>
         <source>&lt;i&gt;Select a settings category from the list on the left-hand side and move the mouse over a settings item to get more information&lt;/i&gt;.</source>
-        <translation>&lt;i&gt;請從左手邊的清單選取設定值分類並將滑鼠移至設定項目上方以取得更多資訊&lt;/i&gt;。</translation>
+        <translation>&lt;i&gt;請從左手邊的清單選取設定分類並將滑鼠移至設定項目上方以取得更多資訊&lt;/i&gt;。</translation>
     </message>
     <message>
         <source>Invalid settings detected</source>
@@ -4335,7 +4335,7 @@ p, li { white-space: pre-wrap; }
     <name>VBoxSnapshotsWgt</name>
     <message>
         <source>VBoxSnapshotsWgt</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxSnapshotsWgt</translation>
     </message>
     <message>
         <source>Current State (changed)</source>
@@ -4407,7 +4407,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source> (%1)</source>
-        <translation type="unfinished"></translation>
+        <translation>(%1)</translation>
     </message>
     <message>
         <source>&amp;Restore Snapshot</source>
@@ -4803,11 +4803,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Guest Additions</source>
-        <translation type="unfinished"></translation>
+        <translation>Guest Additions</translation>
     </message>
     <message>
         <source>Guest OS Type</source>
-        <translation>客體 OS 類型</translation>
+        <translation>客體作業系統類型</translation>
     </message>
     <message>
         <source>No Network Adapters</source>
@@ -4829,7 +4829,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>VBoxVMInformationDlg</source>
-        <translation type="unfinished"></translation>
+        <translation>VBoxVMInformationDlg</translation>
     </message>
     <message>
         <source>Not Available</source>
@@ -4838,11 +4838,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage Statistics</source>
-        <translation>儲存統計</translation>
+        <translation>存放裝置統計</translation>
     </message>
     <message>
         <source>No Storage Devices</source>
-        <translation>無儲存裝置</translation>
+        <translation>無存放裝置</translation>
     </message>
     <message>
         <source>Network Statistics</source>
@@ -4968,7 +4968,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Video</source>
@@ -4984,7 +4984,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>Extended Features:</source>
@@ -5004,7 +5004,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the VM will act as a Remote Desktop Protocol (RDP) server, allowing remote clients to connect and operate the VM (when it is running) using a standard RDP client.</source>
-        <translation>勾選時，虛擬機器將扮演遠端桌面協定 (RDP) 伺服器，允許遠端用戶端使用標準的 RDP 用戶端從遠端連線與操作虛擬機器 (如果它在執行中)。</translation>
+        <translation>勾選時，虛擬機器將作為遠端桌面協定 (RDP) 伺服器，允許遠端用戶端使用標準的 RDP 用戶端連線與操作虛擬機器 (當它正在執行時)。</translation>
     </message>
     <message>
         <source>&amp;Enable Server</source>
@@ -5044,7 +5044,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The VRDP Server port number. You may specify &lt;tt&gt;0&lt;/tt&gt; (zero), to select port 3389, the standard port for RDP.</source>
-        <translation>VRDP 伺服器連接埠號。 您應指定 &lt;tt&gt;0&lt;/tt&gt; (零)，來選擇連接埠 3389， RDP 的標準連接埠。</translation>
+        <translation>VRDP 伺服器連接埠號。 您可以指定 &lt;tt&gt;0&lt;/tt&gt; (零)，來選擇連接埠 3389， RDP 的標準連接埠。</translation>
     </message>
 </context>
 <context>
@@ -5055,7 +5055,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Storage</source>
-        <translation>儲存</translation>
+        <translation>存放裝置</translation>
     </message>
     <message>
         <source>Hard Disks</source>
@@ -5063,7 +5063,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>CD/DVD-ROM</source>
-        <translation type="unfinished"></translation>
+        <translation>CD/DVD-ROM</translation>
     </message>
     <message>
         <source>Floppy</source>
@@ -5091,7 +5091,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>USB</source>
-        <translation type="unfinished"></translation>
+        <translation>USB</translation>
     </message>
     <message>
         <source>Shared Folders</source>
@@ -5099,7 +5099,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>%1 - %2</source>
-        <translation type="unfinished"></translation>
+        <translation>%1 - %2</translation>
     </message>
     <message>
         <source>System</source>
@@ -5111,11 +5111,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. As such guests require hardware virtualization (VT-x/AMD-V), this feature will be enabled automatically.</source>
-        <translation>您已選取 64 位元的客體 OS 類型對於這個 VM 。 如此的來賓需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
+        <translation>您已針對這個 VM 選取 64 位元的客體作業系統類型。 如此的客體需要硬體虛擬化 (VT-x/AMD-V)，這個功能將會自動啟用。</translation>
     </message>
     <message>
         <source>you have selected a 64-bit guest OS type for this VM. VirtualBox does not currently support more than one virtual CPU for 64-bit guests executed on 32-bit hosts.</source>
-        <translation>您已選取 64 位元的客體 OS 類型對於這個 VM 。 VirtualBox 目前不支援多個虛擬 CPU 的 64 位元來賓執行在 32 位元主機。</translation>
+        <translation>您已針對這個 VM 選取 64 位元的客體作業系統類型。 VirtualBox 目前不支援在 32 位元主機執行多個虛擬 CPU 的 64 位元客體。</translation>
     </message>
     <message>
         <source>you have 2D Video Acceleration enabled. As 2D Video Acceleration is supported for Windows guests only, this feature will be disabled.</source>
@@ -5277,19 +5277,19 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds a new controller to the end of the Storage Tree.</source>
-        <translation>新增控制器至儲存樹的結尾。</translation>
+        <translation>新增控制器至存放裝置樹的結尾。</translation>
     </message>
     <message>
         <source>Removes the controller highlighted in the Storage Tree.</source>
-        <translation>移除儲存樹中反白的控制器。</translation>
+        <translation>移除存放裝置樹中反白的控制器。</translation>
     </message>
     <message>
         <source>Adds a new attachment to the Storage Tree using currently selected controller as parent.</source>
-        <translation>使用目前選取的控制器新增附件至儲存樹為上層。</translation>
+        <translation>使用目前選取的控制器新增附件至存放裝置樹為上層。</translation>
     </message>
     <message>
         <source>Removes the attachment highlighted in the Storage Tree.</source>
-        <translation>移除儲存樹中反白的附件。</translation>
+        <translation>移除存放裝置樹中反白的附件。</translation>
     </message>
     <message>
         <source>IDE Controller</source>
@@ -5321,11 +5321,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Storage Tree</source>
-        <translation>儲存樹(&amp;S)</translation>
+        <translation>存放裝置樹(&amp;S)</translation>
     </message>
     <message>
         <source>Contains all storage controllers for this machine and the virtual images and host drives attached to them.</source>
-        <translation>包含這個機器的所有儲存控制器與附加到它們的虛擬機器及主機裝置。</translation>
+        <translation>包含這個機器的所有存放控制器與附加到它們的虛擬機器及主機裝置。</translation>
     </message>
     <message>
         <source>Information</source>
@@ -5333,7 +5333,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>The Storage Tree can contain several controllers of different types. This machine currently has no controllers.</source>
-        <translation>儲存樹能包含數個不同類型的控制器。 這個機器目前沒有控制器。</translation>
+        <translation>存放裝置樹能包含數個不同類型的控制器。 這個機器目前沒有控制器。</translation>
     </message>
     <message>
         <source>Attributes</source>
@@ -5345,7 +5345,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Changes the name of the storage controller currently selected in the Storage Tree.</source>
-        <translation>變更目前在儲存樹選取的儲存控制器名稱。</translation>
+        <translation>變更目前在存放裝置樹選取的儲存控制器名稱。</translation>
     </message>
     <message>
         <source>&amp;Type:</source>
@@ -5353,7 +5353,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the sub-type of the storage controller currently selected in the Storage Tree.</source>
-        <translation>選取目前在儲存樹選取的儲存控制器的子類型。</translation>
+        <translation>選取目前在存放裝置樹選取的存放控制器的子類型。</translation>
     </message>
     <message>
         <source>S&amp;lot:</source>
@@ -5361,7 +5361,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Selects the slot on the storage controller used by this attachment. The available slots depend on the type of the controller and other attachments on it.</source>
-        <translation>選取這個附件所使用的儲存控制器的插槽。 可用插槽根據控制器的類型與其它的附加而定。</translation>
+        <translation>選取這個附件所使用的存放控制器的插槽。 可用插槽根據控制器的類型與其它附加的附件而定。</translation>
     </message>
     <message>
         <source>Selects the virtual disk image or the host drive used by this attachment.</source>
@@ -5517,7 +5517,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -5634,7 +5634,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Dialog</source>
-        <translation type="unfinished"></translation>
+        <translation>Dialog</translation>
     </message>
     <message>
         <source>Folder Path:</source>
@@ -5686,7 +5686,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;IRQ:</source>
-        <translation type="unfinished"></translation>
+        <translation>&amp;IRQ:</translation>
     </message>
     <message>
         <source>I/O Po&amp;rt:</source>
@@ -5698,7 +5698,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Controls the working mode of this serial port. If you select &lt;b&gt;Disconnected&lt;/b&gt;, the guest OS will detect the serial port but will not be able to operate it.</source>
-        <translation>控制這個序列埠的工作模式。如果您選取 &lt;b&gt;已離線&lt;/b&gt;，客體作業系統將會偵測到序列埠但無法操作它。</translation>
+        <translation>控制這個序列埠的工作模式。如果您選取&lt;b&gt;已中斷連接&lt;/b&gt;，客體作業系統將會偵測到序列埠但無法操作它。</translation>
     </message>
     <message>
         <source>If checked, the pipe specified in the &lt;b&gt;Port Path&lt;/b&gt; field will be created by the virtual machine when it starts. Otherwise, the virtual machine will assume that the pipe exists and try to use it.</source>
@@ -5710,7 +5710,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Displays the path to the serial port&apos;s pipe on the host when the port is working in &lt;b&gt;Host Pipe&lt;/b&gt; mode, or the host serial device name when the port is working in &lt;b&gt;Host Device&lt;/b&gt; mode.</source>
-        <translation>顯示主機中序列埠管線的路徑當連接埠工作在&lt;b&gt;主機管線&lt;/b&gt;模式時，或主機序列裝置名稱當連接埠工作在&lt;b&gt;主機裝置&lt;/b&gt;模式時。</translation>
+        <translation>當連接埠工作在&lt;b&gt;主機管線&lt;/b&gt;模式時顯示主機中序列埠管線的路徑，或者當連接埠工作在&lt;b&gt;主機裝置&lt;/b&gt;模式時顯示主機序列裝置名稱。</translation>
     </message>
     <message>
         <source>Port/File &amp;Path:</source>
@@ -5764,16 +5764,16 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>you have assigned more than one virtual CPU to this VM. This will not work unless hardware virtualization (VT-x/AMD-V) is also enabled. This will be done automatically when you accept the VM Settings by pressing the OK button.</source>
-        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非也啟用硬體虛擬化 (VT-x/AMD-V) 這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將自動完成。</translation>
+        <translation>您已指派一個以上虛擬 CPU 到此 VM。 除非也啟用硬體虛擬化 (VT-x/AMD-V) 否則這將不會動作。 當您按下 [確定] 按鈕接受 VM 設定值這將自動完成。</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</source>
         <comment>%1 is 1 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPU&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>&amp;Motherboard</source>
@@ -5789,7 +5789,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>MB</source>
-        <translation type="unfinished"></translation>
+        <translation>MB</translation>
     </message>
     <message>
         <source>&amp;Boot Order:</source>
@@ -5857,7 +5857,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the host CPU&apos;s hardware virtualization extensions such as Intel VT-x and AMD-V.</source>
-        <translation>勾選時，虛擬機器將儘量使用主機 CPU 的硬體虛擬化擴充如 Intel VT-x 和 AMD-V 。</translation>
+        <translation>勾選時，虛擬機器將嘗試使用主機 CPU 的硬體虛擬化擴充比如 Intel VT-x 和 AMD-V 。</translation>
     </message>
     <message>
         <source>Enable &amp;VT-x/AMD-V</source>
@@ -5865,7 +5865,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>When checked, the virtual machine will try to make use of the nested paging extension of Intel VT-x and AMD-V.</source>
-        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的巢狀分頁延伸。</translation>
+        <translation>勾選時，虛擬機器將嘗試使用 Intel VT-x 和 AMD-V 的巢狀分頁擴充。</translation>
     </message>
     <message>
         <source>Enable Nested Pa&amp;ging</source>
@@ -5874,7 +5874,7 @@ p, li { white-space: pre-wrap; }
     <message>
         <source>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</source>
         <comment>%1 is host cpu count * 2 for now</comment>
-        <translation type="unfinished"></translation>
+        <translation>&lt;qt&gt;%1&amp;nbsp;CPUs&lt;/qt&gt;</translation>
     </message>
     <message>
         <source>When checked, the guest will support the Extended Firmware Interface (EFI), which is required to boot certain guest OSes. Non-EFI aware OSes will not be able to boot if this option is activated.</source>
@@ -5913,11 +5913,11 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Adds a new USB filter with all fields initially set to empty strings. Note that such a filter will match any attached USB device.</source>
-        <translation>加入一個新的 USB 篩選器與最初設定為空字串的所有欄位。 請注意這些篩選器會符合任何附加的 USB 裝置。</translation>
+        <translation>加入一個新的 USB 篩選器與最初設定為空字串的所有欄位。 請注意，這些篩選器會符合任何附加的 USB 裝置。</translation>
     </message>
     <message>
         <source>Adds a new USB filter with all fields set to the values of the selected USB device attached to the host PC.</source>
-        <translation>加入一個新的 USB 篩選器所有欄位設定為選取 USB 裝置附加到主機 PC 的值。</translation>
+        <translation>加入一個新的 USB 篩選器，其所有欄位設定為選取 USB 裝置附加到主機 PC 的值。</translation>
     </message>
     <message>
         <source>Edits the selected USB filter.</source>
@@ -6000,7 +6000,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the vendor ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>定義供應商 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將與任何值相符。</translation>
+        <translation>定義供應商 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>&amp;Product ID:</source>
@@ -6008,7 +6008,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the product ID filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;XXXX&lt;/tt&gt; where &lt;tt&gt;X&lt;/tt&gt; is a hexadecimal digit. An empty string will match any value.</source>
-        <translation>定義產品 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將與任何值相符。</translation>
+        <translation>定義產品 ID 篩選器。 &lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;XXXX&lt;/tt&gt; 其中 &lt;tt&gt;X&lt;/tt&gt; 是十六進位數字。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>&amp;Revision:</source>
@@ -6016,7 +6016,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the revision number filter. The &lt;i&gt;exact match&lt;/i&gt; string format is &lt;tt&gt;IIFF&lt;/tt&gt; where &lt;tt&gt;I&lt;/tt&gt; is a decimal digit of the integer part and &lt;tt&gt;F&lt;/tt&gt; is a decimal digit of the fractional part. An empty string will match any value.</source>
-        <translation>定義修訂號篩選器。&lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;IIFF&lt;/tt&gt; 其中 &lt;tt&gt;I&lt;/tt&gt; 是十進位數字的整數部分 &lt;tt&gt;F&lt;/tt&gt; 是十進位數字的小數部分。 空字串將與任何值相符。</translation>
+        <translation>定義修訂號篩選器。&lt;i&gt;完全相符&lt;/i&gt; 字串格式為 &lt;tt&gt;IIFF&lt;/tt&gt; 其中 &lt;tt&gt;I&lt;/tt&gt; 是十進位數字的整數部分 &lt;tt&gt;F&lt;/tt&gt; 是十進位數字的小數部分。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>&amp;Manufacturer:</source>
@@ -6024,7 +6024,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the manufacturer filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義製造商篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將與任何值相符。</translation>
+        <translation>定義製造商篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>Pro&amp;duct:</source>
@@ -6032,7 +6032,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the product name filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義產品名稱篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將與任何值相符。</translation>
+        <translation>定義產品名稱篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>&amp;Serial No.:</source>
@@ -6040,7 +6040,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the serial number filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義產序號篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將與任何值相符。</translation>
+        <translation>定義產序號篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>Por&amp;t:</source>
@@ -6048,7 +6048,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines the host USB port filter as an &lt;i&gt;exact match&lt;/i&gt; string. An empty string will match any value.</source>
-        <translation>定義主機 USB 篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將與任何值相符。</translation>
+        <translation>定義主機 USB 連接埠篩選器為 &lt;i&gt;完全相符&lt;/i&gt; 字串。 空字串將符合任何值。</translation>
     </message>
     <message>
         <source>R&amp;emote:</source>
@@ -6064,7 +6064,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>Defines an action performed by the host computer when a matching device is attached: give it up to the host OS (&lt;i&gt;Ignore&lt;/i&gt;) or grab it for later usage by virtual machines (&lt;i&gt;Hold&lt;/i&gt;).</source>
-        <translation>定義當附加相符的裝置時主機電腦執行的動作: 提供它至主機作業系統 (&lt;i&gt;忽略&lt;/i&gt;) 或以虛擬機器獲取它作為之後使用 (&lt;i&gt;保留&lt;/i&gt;)。</translation>
+        <translation>定義當附加相符的裝置時主機電腦執行的動作: 在主機作業系統放棄 (&lt;i&gt;忽略&lt;/i&gt;) 或由虛擬機器擷取它作為之後使用 (&lt;i&gt;保留&lt;/i&gt;)。</translation>
     </message>
     <message>
         <source>USB Filter Details</source>
