@@ -90,6 +90,8 @@
 #define Breakpoint
 #define RT_NO_DEPRECATED_MACROS
 #define RT_EXCEPTIONS_ENABLED
+#define RT_BIG_ENDIAN
+#define RT_LITTLE_ENDIAN
 #endif /* DOXYGEN_RUNNING */
 
 /** @def RT_ARCH_X86
@@ -99,16 +101,39 @@
 /** @def RT_ARCH_AMD64
  * Indicates that we're compiling for the AMD64 architecture.
  */
-#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64)
+
+/** @def RT_ARCH_SPARC
+ * Indicates that we're compiling for the SPARC V8 architecture (32-bit).
+ */
+
+/** @def RT_ARCH_SPARC64
+ * Indicates that we're compiling for the SPARC V9 architecture (64-bit).
+ */
+#if !defined(RT_ARCH_X86) && !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_SPARC64)
 # if defined(__amd64__) || defined(__x86_64__) || defined(_M_X64) || defined(__AMD64__)
 #  define RT_ARCH_AMD64
 # elif defined(__i386__) || defined(_M_IX86) || defined(__X86__)
 #  define RT_ARCH_X86
+# elif defined(__sparc64__)
+#  define RT_ARCH_SPARC64
+# elif defined(__sparc__)
+#  define RT_ARCH_SPARC
 # else /* PORTME: append test for new archs. */
 #  error "Check what predefined macros your compiler uses to indicate architecture."
 # endif
-#elif defined(RT_ARCH_X86) && defined(RT_ARCH_AMD64) /* PORTME: append new archs. */
+/* PORTME: append new archs checks. */
+#elif defined(RT_ARCH_X86) && defined(RT_ARCH_AMD64)
 # error "Both RT_ARCH_X86 and RT_ARCH_AMD64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_X86) && defined(RT_ARCH_SPARC)
+# error "Both RT_ARCH_X86 and RT_ARCH_SPARC cannot be defined at the same time!"
+#elif defined(RT_ARCH_X86) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_X86 and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_AMD64) && defined(RT_ARCH_SPARC)
+# error "Both RT_ARCH_AMD64 and RT_ARCH_SPARC cannot be defined at the same time!"
+#elif defined(RT_ARCH_AMD64) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_AMD64 and RT_ARCH_SPARC64 cannot be defined at the same time!"
+#elif defined(RT_ARCH_SPARC) && defined(RT_ARCH_SPARC64)
+# error "Both RT_ARCH_SPARC and RT_ARCH_SPARC64 cannot be defined at the same time!"
 #endif
 
 
@@ -121,7 +146,7 @@
  * Indicates that we're compiling for the AMD64 architecture.
  * @deprecated
  */
-#if !defined(__X86__) && !defined(__AMD64__)
+#if !defined(__X86__) && !defined(__AMD64__) && !defined(RT_ARCH_SPARC) && !defined(RT_ARCH_SPARC64)
 # if defined(RT_ARCH_AMD64)
 #  define __AMD64__
 # elif defined(RT_ARCH_X86)
@@ -136,6 +161,22 @@
 #elif defined(__AMD64__) && !defined(RT_ARCH_AMD64)
 # error "Both __AMD64__ without RT_ARCH_AMD64!"
 #endif
+
+/** @def RT_BIG_ENDIAN
+ * Defined if the architecture is big endian.  */
+/** @def RT_LITTLE_ENDIAN
+ * Defined if the architecture is little endian.  */
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+# define RT_LITTLE_ENDIAN
+#elif defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
+# define RT_BIG_ENDIAN
+#else
+# error "PORTME: architecture endianess"
+#endif
+#if defined(RT_BIG_ENDIAN) && defined(RT_LITTLE_ENDIAN)
+# error "Both RT_BIG_ENDIAN and RT_LITTLE_ENDIAN are defined"
+#endif
+
 
 /** @def IN_RING0
  * Used to indicate that we're compiling code which is running
@@ -165,7 +206,7 @@
  * Defines the bit count of the current context.
  */
 #if !defined(ARCH_BITS) || defined(DOXYGEN_RUNNING)
-# if defined(RT_ARCH_AMD64)
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
 #  define ARCH_BITS 64
 # else
 #  define ARCH_BITS 32
@@ -539,7 +580,10 @@
  */
 #ifdef _MSC_VER
 # define RTCALL     __cdecl
-#elif defined(__GNUC__) && defined(IN_RING0) && !(defined(RT_OS_OS2) || defined(RT_ARCH_AMD64)) /* the latter is kernel/gcc */
+#elif defined(RT_OS_OS2)
+# define RTCALL     __cdecl
+#elif defined(__GNUC__) && defined(IN_RING0) \
+  && !(defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)) /* the latter is kernel/gcc */
 # define RTCALL     __attribute__((cdecl,regparm(0)))
 #else
 # define RTCALL
@@ -1177,20 +1221,36 @@
 #define RT_HIBYTE(a)                            ( (a) >> 8 )
 
 /** @def RT_BYTE1
- * Gets first byte of something. */
+ * Gets the first byte of something. */
 #define RT_BYTE1(a)                             ( (a) & 0xff )
 
 /** @def RT_BYTE2
- * Gets second byte of something. */
+ * Gets the second byte of something. */
 #define RT_BYTE2(a)                             ( ((a) >> 8) & 0xff )
 
 /** @def RT_BYTE3
- * Gets second byte of something. */
+ * Gets the second byte of something. */
 #define RT_BYTE3(a)                             ( ((a) >> 16) & 0xff )
 
 /** @def RT_BYTE4
- * Gets fourth byte of something. */
+ * Gets the fourth byte of something. */
 #define RT_BYTE4(a)                             ( ((a) >> 24) & 0xff )
+
+/** @def RT_BYTE5
+ * Gets the fifth byte of something. */
+#define RT_BYTE5(a)                             (((a) >> 32) & 0xff)
+
+/** @def RT_BYTE6
+ * Gets the sixth byte of something. */
+#define RT_BYTE6(a)                             (((a) >> 40) & 0xff)
+
+/** @def RT_BYTE7
+ * Gets the seventh byte of something. */
+#define RT_BYTE7(a)                             (((a) >> 48) & 0xff)
+
+/** @def RT_BYTE8
+ * Gets the eight byte of something. */
+#define RT_BYTE8(a)                             (((a) >> 56) & 0xff)
 
 
 /** @def RT_MAKE_U64
@@ -1598,23 +1658,35 @@
  */
 #define NOREF(var)               (void)(var)
 
-/** @def Breakpoint
+/** @def RT_BREAKPOINT
  * Emit a debug breakpoint instruction.
  *
- * Use this for instrumenting a debugging session only!
- * No committed code shall use Breakpoint().
+ * @remarks In the x86/amd64 gnu world we add a nop instruction after the int3
+ *          to force gdb to remain at the int3 source line.
+ * @remarks The L4 kernel will try make sense of the breakpoint, thus the jmp on
+ *          x86/amd64.
  */
 #ifdef __GNUC__
-# define Breakpoint()           __asm__ __volatile__("int $3\n\t")
+# if defined(RT_ARCH_AMD64) || defined(RT_ARCH_X86)
+#  if !defined(__L4ENV__)
+#   define RT_BREAKPOINT()      __asm__ __volatile__("int $3\n\tnope\n\t")
+#  else
+#   define RT_BREAKPOINT()      __asm__ __volatile__("int3; jmp 1f; 1:\n\t")
+#  endif
+# elif defined(RT_ARCH_SPARC64)
+#  define RT_BREAKPOINT()       __asm__ __volatile__("illtrap $0\n\t")  /** @todo Sparc64: this is just a wild guess. */
+# elif defined(RT_ARCH_SPARC)
+#  define RT_BREAKPOINT()       __asm__ __volatile__("unimp 0\n\t")     /** @todo Sparc: this is just a wild guess (same as Sparc64, just different name). */
+# endif
 #endif
 #ifdef _MSC_VER
-# define Breakpoint()           __asm int 3
+# define RT_BREAKPOINT()        __debugbreak()
 #endif
 #if defined(__IBMC__) || defined(__IBMCPP__)
-# define Breakpoint()           __interrupt(3)
+# define RT_BREAKPOINT()        __interrupt(3)
 #endif
-#ifndef Breakpoint
-# error "This compiler is not supported!"
+#ifndef RT_BREAKPOINT
+# error "This compiler/arch is not supported!"
 #endif
 
 
@@ -1731,14 +1803,51 @@
                                  && (   ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0xffff800000000000ULL \
                                      || ((uintptr_t)(ptr) & 0xffff800000000000ULL) == 0) )
 # endif /* !IN_RING3 */
+
 #elif defined(RT_ARCH_X86)
 # define RT_VALID_PTR(ptr)      ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+
+#elif defined(RT_ARCH_SPARC64)
+# ifdef IN_RING3
+#  if defined(RT_OS_SOLARIS)
+/** Sparc64 user mode: According to Figure 9.4 in solaris internals */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x80004000U >= 0x80004000U + 0x100000000ULL )
+#  else
+#   error "Port me"
+#  endif
+# else  /* !IN_RING3 */
+#  if defined(RT_OS_SOLARIS)
+/** @todo Sparc64 kernel mode: This is according to Figure 11.1 in solaris
+ *        internals. Verify in sources. */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) >= 0x01000000U )
+#  else
+#   error "Port me"
+#  endif
+# endif /* !IN_RING3 */
+
+#elif defined(RT_ARCH_SPARC)
+# ifdef IN_RING3
+#  ifdef RT_OS_SOLARIS
+/** Sparc user mode: According to Figure 9.4 (sun4u) in solaris internals. */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x414000U >= 0x414000U + 0x10000U )
+#  else
+#   error "Port me"
+#  endif
+# else  /* !IN_RING3 */
+#  ifdef RT_OS_SOLARIS
+/** @todo Sparc kernel mode: Check the sources! */
+#   define RT_VALID_PTR(ptr)    ( (uintptr_t)(ptr) + 0x1000U >= 0x2000U )
+#  else
+#   error "Port me"
+#  endif
+# endif /* !IN_RING3 */
+
 #else
 # error "Architecture identifier missing / not implemented."
 #endif
 
 /** Old name for RT_VALID_PTR.  */
-#define VALID_PTR(ptr)      RT_VALID_PTR(ptr)
+#define VALID_PTR(ptr)          RT_VALID_PTR(ptr)
 
 /** @def RT_VALID_ALIGNED_PTR
  * Pointer validation macro that also checks the alignment.

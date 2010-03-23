@@ -112,9 +112,9 @@
  *          used.
  * @{
  */
-#ifdef RT_ARCH_AMD64
+#if defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC64)
 # define VBOXGUEST_IOCTL_FLAG     128
-#elif defined(RT_ARCH_X86)
+#elif defined(RT_ARCH_X86) || defined(RT_ARCH_SPARC)
 # define VBOXGUEST_IOCTL_FLAG     0
 #else
 # error "dunno which arch this is!"
