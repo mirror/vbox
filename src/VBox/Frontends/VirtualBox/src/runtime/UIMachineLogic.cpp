@@ -363,29 +363,6 @@ UIMachineLogic* UIMachineLogic::create(QObject *pParent,
 
 bool UIMachineLogic::checkAvailability()
 {
-    /* Get current console: */
-    CConsole console = session().GetConsole();
-
-    /* Check if the required virtualization features are active: */
-    bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
-    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
-    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
-    bool fIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
-    if (fRecommendVirtEx && !fIsVirtEnabled)
-    {
-        bool fShouldWeClose;
-
-        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
-
-        if (fIs64BitsGuest)
-            fShouldWeClose = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
-        else
-            fShouldWeClose = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
-
-        return !fShouldWeClose;
-    }
-
-    /* True to confirm success: */
     return true;
 }
 
