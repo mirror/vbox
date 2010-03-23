@@ -159,6 +159,17 @@ static void tstRTPoll1(void)
     RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
     RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
 
+    /* add the write pipe with error detection only, check that poll still times out. remove it again. */
+    RTTESTI_CHECK_RC(RTPollSetAddPipe(hSet, hPipeW, RTPOLL_EVT_ERROR, 11 /*id*/), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 2);
+    RTTESTI_CHECK_RC(RTPollSetQueryHandle(hSet, 11 /*id*/, NULL), VINF_SUCCESS);
+
+    RTTESTI_CHECK_RC(RTPoll(hSet, 0, NULL,  NULL), VERR_TIMEOUT);
+    RTTESTI_CHECK_RC(RTPoll(hSet, 1, NULL,  NULL), VERR_TIMEOUT);
+
+    RTTESTI_CHECK_RC(RTPollSetRemove(hSet, 11), VINF_SUCCESS);
+    RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 1);
+
     /* add the write pipe */
     RTTESTI_CHECK_RC(RTPollSetAddPipe(hSet, hPipeW, RTPOLL_EVT_WRITE, 10 /*id*/), VINF_SUCCESS);
     RTTESTI_CHECK_RETV(RTPollSetGetCount(hSet) == 2);
@@ -321,7 +332,8 @@ static void tstRTPoll1(void)
     id      = UINT32_MAX;
     RTTESTI_CHECK_RC(RTPollNoResume(hSet, 0, &fEvents, &id), VINF_SUCCESS);
     RTTESTI_CHECK(id == 10);
-    RTTESTI_CHECK(fEvents == RTPOLL_EVT_ERROR);
+    RTTESTI_CHECK_MSG(   fEvents == RTPOLL_EVT_ERROR \
+                      || fEvents == (RTPOLL_EVT_ERROR | RTPOLL_EVT_WRITE), ("%#x\n", fEvents));
 
     RTTESTI_CHECK_RC(RTPollSetDestroy(hSet), VINF_SUCCESS);
     RTTESTI_CHECK_RC(RTPipeClose(hPipeW), VINF_SUCCESS);
