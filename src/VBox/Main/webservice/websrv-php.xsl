@@ -44,20 +44,82 @@
   <xsl:param name="safearray" />
 
   <xsl:choose>
-    <xsl:when test="$type='wstring' or $type='uuid'">(string)<xsl:value-of select="$value" /></xsl:when>
-    <xsl:when test="$type='boolean'">(bool)<xsl:value-of select="$value" /></xsl:when>
-    <xsl:when test="$type='long' or $type='unsigned long' or $type='long long' or $type='short' or $type='unsigned short' or $type='unsigned long long' or $type='result'">(int)<xsl:value-of select="$value" /></xsl:when>
-    <xsl:when test="$type='double' or $type='float'">(float)<xsl:value-of select="$value" /></xsl:when>
-    <xsl:when test="$type='octet'"><xsl:value-of select="$value" /></xsl:when>
+    <xsl:when test="$type='wstring' or $type='uuid'">
+      <xsl:call-template name="emitPrimitive">
+        <xsl:with-param name="type">string</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="$type='boolean'">
+      <xsl:call-template name="emitPrimitive">
+        <xsl:with-param name="type">bool</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="$type='long' or $type='unsigned long' or $type='long long' or $type='short' or $type='unsigned short' or $type='unsigned long long' or $type='result'">
+      <xsl:call-template name="emitPrimitive">
+        <xsl:with-param name="type">int</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="$type='double' or $type='float'">
+      <xsl:call-template name="emitPrimitive">
+        <xsl:with-param name="type">float</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="$type='octet'">
+      <xsl:call-template name="emitPrimitive">
+        <xsl:with-param name="type">octet</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template>
+    </xsl:when>
+    <xsl:when test="$type='$unknown'">
+      <xsl:call-template name="emitObject">
+        <xsl:with-param name="type">VBox_ManagedObject</xsl:with-param>
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template> 
+   </xsl:when>
     <xsl:otherwise>
-        <xsl:choose>
-            <xsl:when test="$safearray='yes'">
-                <xsl:text>new </xsl:text><xsl:value-of select="$type" />Collection ($this->connection, <xsl:value-of select="$value"/><xsl:text>)</xsl:text>
-            </xsl:when>
-            <xsl:otherwise>
-                <xsl:text>new </xsl:text><xsl:value-of select="$type" /> ($this->connection, <xsl:value-of select="$value"/><xsl:text>)</xsl:text>
-            </xsl:otherwise>
-        </xsl:choose>
+      <xsl:call-template name="emitObject">
+        <xsl:with-param name="type" select="$type" />
+        <xsl:with-param name="value" select="$value" />
+        <xsl:with-param name="safearray" select="$safearray"/>
+      </xsl:call-template> 
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template name="emitObject">
+  <xsl:param name="type" />
+  <xsl:param name="value" />
+  <xsl:param name="safearray" />
+  <xsl:choose>
+    <xsl:when test="$safearray='yes'">
+      <xsl:text>new </xsl:text><xsl:value-of select="$type" />Collection ($this->connection, (array)<xsl:value-of select="$value"/><xsl:text>)</xsl:text>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>new </xsl:text><xsl:value-of select="$type" /> ($this->connection, <xsl:value-of select="$value"/><xsl:text>)</xsl:text>
+    </xsl:otherwise>
+  </xsl:choose>
+</xsl:template>
+
+<xsl:template name="emitPrimitive">
+  <xsl:param name="type" />
+  <xsl:param name="value" />
+  <xsl:param name="safearray" />
+  <xsl:choose>
+    <xsl:when test="$safearray='yes'">
+      <xsl:text>(array)</xsl:text><xsl:value-of select="$value"/>
+    </xsl:when>
+    <xsl:otherwise>
+      <xsl:text>(</xsl:text><xsl:value-of select="$type" /><xsl:text>)</xsl:text><xsl:value-of select="$value"/>
     </xsl:otherwise>
   </xsl:choose>
 </xsl:template>
@@ -88,7 +150,7 @@
   <xsl:param name="attrsafearray" />
   <xsl:variable name="fname"><xsl:call-template name="makeSetterName"><xsl:with-param name="attrname" select="$attrname"/></xsl:call-template></xsl:variable>
    public function <xsl:value-of select="$fname"/>($value) {
-       $request = stdClass();
+       $request = new stdClass();
        $request->_this = $this->handle;
        if (is_int($value) || is_string($value) || is_bool($value)) {
             $request-><xsl:value-of select="$attrname"/> = $value;
@@ -186,15 +248,21 @@ class <xsl:value-of select="$ifname"/> extends VBox_Struct {
     <xsl:for-each select="attribute">
        protected $<xsl:value-of select="@name"/>;
     </xsl:for-each>
-    public function __construct($connection, $handle) {
+    public function __construct($connection, $values) {
+       $this->connection = $connection;
     <xsl:for-each select="attribute">
-       $this-><xsl:value-of select="@name"/> = $handle-><xsl:value-of select="@name"/><xsl:text>;</xsl:text>
+       $this-><xsl:value-of select="@name"/> = $values-><xsl:value-of select="@name"/><xsl:text>;</xsl:text>
     </xsl:for-each>
     }
 
     <xsl:for-each select="attribute">
     public function <xsl:call-template name="makeGetterName"><xsl:with-param name="attrname" select="@name"/></xsl:call-template>() {
-       return $this-><xsl:value-of select="@name"/>;
+        <xsl:text>return </xsl:text>
+        <xsl:call-template name="emitOutParam">
+           <xsl:with-param name="type" select="@type" />
+           <xsl:with-param name="value" select="concat('$this->',@name)" />
+           <xsl:with-param name="safearray" select="@safearray"/>
+         </xsl:call-template>;
     }
     </xsl:for-each>
 
@@ -286,7 +354,7 @@ class <xsl:value-of select="@name"/> extends VBox_Enum {
 * This file is autogenerated from VirtualBox.xidl, DO NOT EDIT!
 */
 
-abstract class VBox_ManagedObject
+class VBox_ManagedObject
 {
     protected $connection;
     protected $handle;
@@ -325,6 +393,15 @@ abstract class VBox_ManagedObject
        return $this->handle;
    }
 
+   public function cast($class)
+   {
+       if (is_subclass_of($class, 'VBox_ManagedObject'))
+       {
+           return new $class($this->connection, $this->handle);
+       }
+       throw new Exception('Cannot cast VBox_ManagedObject to non-child class VBox_ManagedObject');
+   }
+
    public function releaseRemote()
    {
        try
@@ -336,7 +413,7 @@ abstract class VBox_ManagedObject
    }
 }
 
-abstract class VBox_ManagedObjectCollection implements Iterator {
+class VBox_ManagedObjectCollection implements Iterator, Countable {
     protected $connection;
     protected $handles;
     protected $_interfaceName = null;
@@ -373,9 +450,15 @@ abstract class VBox_ManagedObjectCollection implements Iterator {
         $handle = $this->current() !== false;
         return $handle;
     }
+
+    public function count() {
+        return count($this->handles);
+    }
 }
 
 abstract class VBox_Struct {
+    protected $connection;
+
     public function __get($attr)
     {
         $methodName = "get" . $attr;
@@ -414,6 +497,7 @@ abstract class VBox_Enum {
   </xsl:for-each>
   <xsl:for-each select="//enum">
        <xsl:call-template name="enum"/>
+       <xsl:call-template name="collection"/>
   </xsl:for-each>
 
 </xsl:template>
