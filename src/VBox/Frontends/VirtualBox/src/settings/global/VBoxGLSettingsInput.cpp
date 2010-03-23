@@ -50,7 +50,8 @@ void VBoxGLSettingsInput::putBackTo (CSystemProperties &,
 void VBoxGLSettingsInput::setOrderAfter (QWidget *aWidget)
 {
     setTabOrder (aWidget, mHeHostKey);
-    setTabOrder (mHeHostKey, mCbAutoGrab);
+    setTabOrder (mHeHostKey, mTbResetHostKey);
+    setTabOrder (mTbResetHostKey, mCbAutoGrab);
 }
 
 void VBoxGLSettingsInput::retranslateUi()
