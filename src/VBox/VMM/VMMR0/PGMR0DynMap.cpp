@@ -1517,6 +1517,29 @@ VMMDECL(void) PGMDynMapStartAutoSet(PVMCPU pVCpu)
 
 
 /**
+ * Starts or migrates the autoset of a virtual CPU.
+ *
+ * This is used by HWACCMR0Enter.  When we've longjumped out of the HWACCM
+ * execution loop with the set open, we'll migrate it when re-entering.  While
+ * under normal circumstances, we'll start it so VMXR0LoadGuestState can access
+ * guest memory.
+ *
+ * @returns @c true if started, @c false if migrated.
+ * @param   pVCpu       The shared data for the current virtual CPU.
+ * @thread  EMT
+ */
+VMMDECL(bool) PGMDynMapStartOrMigrateAutoSet(PVMCPU pVCpu)
+{
+    bool fStartIt = pVCpu->pgm.s.AutoSet.cEntries == PGMMAPSET_CLOSED;
+    if (fStartIt)
+        PGMDynMapStartAutoSet(pVCpu);
+    else
+        PGMDynMapMigrateAutoSet(pVCpu);
+    return fStartIt;
+}
+
+
+/**
  * Worker that performs the actual flushing of the set.
  *
  * @param   pSet        The set to flush.

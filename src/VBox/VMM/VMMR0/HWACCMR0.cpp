@@ -1095,6 +1095,10 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
         AssertRCReturn(rc, rc);
     }
 
+#ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
+    bool fStartedSet = PGMDynMapStartOrMigrateAutoSet(pVCpu);
+#endif
+
     rc  = HWACCMR0Globals.pfnEnterSession(pVM, pVCpu, pCpu);
     AssertRC(rc);
     /* We must save the host context here (VT-x) as we might be rescheduled on a different cpu after a long jump back to ring 3. */
@@ -1103,14 +1107,13 @@ VMMR0DECL(int) HWACCMR0Enter(PVM pVM, PVMCPU pVCpu)
     rc |= HWACCMR0Globals.pfnLoadGuestState(pVM, pVCpu, pCtx);
     AssertRC(rc);
 
-    /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
-    if (RT_SUCCESS(rc))
-    {
 #ifdef VBOX_WITH_2X_4GB_ADDR_SPACE
-        PGMDynMapMigrateAutoSet(pVCpu);
+    if (fStartedSet)
+        PGMDynMapReleaseAutoSet(pVCpu);
 #endif
-    }
-    else
+
+    /* keep track of the CPU owning the VMCS for debugging scheduling weirdness and ring-3 calls. */
+    if (RT_FAILURE(rc))
         pVCpu->hwaccm.s.idEnteredCpu = NIL_RTCPUID;
     return rc;
 }
