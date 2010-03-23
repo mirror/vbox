@@ -1533,7 +1533,7 @@ int main()
     GEN_CHECK_OFF(HpetState, pDevInsRC);
     GEN_CHECK_OFF(HpetState, u64HpetOffset);
     GEN_CHECK_OFF(HpetState, u64Capabilities);
-    GEN_CHECK_OFF(HpetState, u64Config);
+    GEN_CHECK_OFF(HpetState, u64HpetConfig);
     GEN_CHECK_OFF(HpetState, u64Isr);
     GEN_CHECK_OFF(HpetState, u64HpetCounter);
 
