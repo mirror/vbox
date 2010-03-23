@@ -1934,7 +1934,7 @@ BOOL vboxWddmPointerCopyMonoData(CONST DXGKARG_SETPOINTERSHAPE* pSetPointerShape
     PBYTE pjDstXor = pPointerAttributes->Pixels;
 
     ULONG cxSrc = pSetPointerShape->Width;
-    ULONG cySrc = pSetPointerShape->Height / 2; /* /2 because both masks are in there */
+    ULONG cySrc = pSetPointerShape->Height;
 
     // Make sure the new pointer isn't too big to handle,
     // strip the size to 64x64 if necessary
