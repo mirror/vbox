@@ -59,6 +59,8 @@ typedef struct VDSNAPTEST
     uint32_t    uChangeSegChance;
     /** Numer of allocated blocks in the base image in percent */
     uint32_t    uAllocatedBlocks;
+    /** Merge direction */
+    bool        fForward;
 } VDSNAPTEST, *PVDSNAPTEST;
 
 /**
@@ -337,7 +339,10 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
                      uEndMerge - uStartMerge,
                      uStartMerge,
                      uEndMerge);
-            rc = VDMerge(pVD, uStartMerge, uEndMerge, NULL);
+            if (pTest->fForward)
+                rc = VDMerge(pVD, uStartMerge, uEndMerge, NULL);
+            else
+                rc = VDMerge(pVD, uEndMerge, uStartMerge, NULL);
             CHECK("VDMerge()");
 
             cDiffs -= uEndMerge - uStartMerge;
@@ -408,6 +413,11 @@ int main(int argc, char *argv[])
     Test.uCreateDiffChance    = 50; /* % */
     Test.uChangeSegChance     = 50; /* % */
     Test.uAllocatedBlocks     = 50; /* 50% allocated */
+    Test.fForward             = true;
+    tstVDOpenCreateWriteMerge(&Test);
+
+    /* Same test with backwards merge */
+    Test.fForward             = false;
     tstVDOpenCreateWriteMerge(&Test);
 
     rc = VDShutdown();
