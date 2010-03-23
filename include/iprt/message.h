@@ -92,6 +92,28 @@ RTDECL(RTEXITCODE) RTMsgErrorExit(RTEXITCODE enmExitcode, const char *pszFormat,
 RTDECL(RTEXITCODE) RTMsgErrorExitV(RTEXITCODE enmExitCode, const char *pszFormat, va_list va);
 
 /**
+ * Same as RTMsgError() except for the return value.
+ *
+ * @returns @a rcRet
+ * @param   rcRet           What IPRT status to return. This is mainly for
+ *                          saving some vertical space in the source file.
+ * @param   pszFormat       The message format string.
+ * @param   ...             Format arguments.
+ */
+RTDECL(int) RTMsgErrorRc(int rc, const char *pszFormat, ...);
+
+/**
+ * Same as RTMsgErrorV() except for the return value.
+ *
+ * @returns @a rcRet
+ * @param   rcRet           What IPRT status to return. This is mainly for
+ *                          saving some vertical space in the source file.
+ * @param   pszFormat       The message format string.
+ * @param   va              Format arguments.
+ */
+RTDECL(int) RTMsgErrorRcV(int rc, const char *pszFormat, va_list va);
+
+/**
  * Print an error message for a RTR3Init failure and suggest an exit code.
  *
  * @code
