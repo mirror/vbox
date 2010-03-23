@@ -1035,6 +1035,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 break;
             }
 
+#ifdef IN_RING3
             /*
              * Group 5, XML / HTML escapers.
              */
@@ -1114,6 +1115,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 }
                 break;
             }
+#endif /* IN_RING3 */
 
             /*
              * Invalid/Unknown. Bitch about it.
