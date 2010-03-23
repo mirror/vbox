@@ -1517,6 +1517,21 @@
 #define VINF_AIO_TASK_PENDING                       4800
 /** @} */
 
+/** @name VBox Virtual SCSI Status Codes
+ * @{
+ */
+/** LUN type is not supported */
+#define VERR_VSCSI_LUN_TYPE_NOT_SUPPORTED           (-4900)
+/** LUN is already/still attached to a device */
+#define VERR_VSCSI_LUN_ATTACHED_TO_DEVICE           (-4901)
+/** The specified LUN is invalid */
+#define VERR_VSCSI_LUN_INVALID                      (-4902)
+/** The LUN is not attached to the device */
+#define VERR_VSCSI_LUN_NOT_ATTACHED                 (-4903)
+/** The LUN is still busy. */
+#define VERR_VSCSI_LUN_BUSY                         (-4904)
+/** @} */
+
 /* SED-END */
 
 /** @} */
