@@ -645,6 +645,55 @@ void UISession::powerUp()
         return;
     }
 
+    /* Check if the required virtualization features are active. We get this
+     * info only when the session is active. */
+    bool fIs64BitsGuest = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetIs64Bit();
+    bool fRecommendVirtEx = vboxGlobal().virtualBox().GetGuestOSType(console.GetGuest().GetOSTypeId()).GetRecommendedVirtEx();
+    AssertMsg(!fIs64BitsGuest || fRecommendVirtEx, ("Virtualization support missed for 64bit guest!\n"));
+//    bool fIsVirtEnabled = console.GetDebugger().GetHWVirtExEnabled();
+    bool fIsVirtEnabled = false;
+    if (fRecommendVirtEx && !fIsVirtEnabled)
+    {
+        bool fShouldWeClose;
+
+        bool fVTxAMDVSupported = vboxGlobal().virtualBox().GetHost().GetProcessorFeature(KProcessorFeature_HWVirtEx);
+
+        QApplication::processEvents();
+        setPause(true);
+
+        if (fIs64BitsGuest)
+            fShouldWeClose = vboxProblem().warnAboutVirtNotEnabled64BitsGuest(fVTxAMDVSupported);
+        else
+            fShouldWeClose = vboxProblem().warnAboutVirtNotEnabledGuestRequired(fVTxAMDVSupported);
+
+        if (fShouldWeClose)
+        {
+            /* At this point the console is powered up. So we have to close
+             * this session again. */
+            CProgress progress = console.PowerDown();
+            if (console.isOk())
+            {
+                /* Guard progressbar warnings from auto-closing: */
+                if (uimachine()->machineLogic())
+                    uimachine()->machineLogic()->setPreventAutoClose(true);
+                /* Show the power down progress dialog */
+                vboxProblem().showModalProgressDialog(progress, machine.GetName(), mainMachineWindow());
+                if (progress.GetResultCode() != 0)
+                    vboxProblem().cannotStopMachine(progress);
+                /* Allow further auto-closing: */
+                if (uimachine()->machineLogic())
+                    uimachine()->machineLogic()->setPreventAutoClose(false);
+            }
+            else
+                vboxProblem().cannotStopMachine(console);
+            /* Now signal the destruction of the rest. */
+            QTimer::singleShot(0, this, SLOT(sltCloseVirtualSession()));
+            return;
+        }
+        else
+            setPause(false);
+    }
+
 #if 0 // TODO: Rework debugger logic!
 # ifdef VBOX_WITH_DEBUGGER_GUI
     /* Open the debugger in "full screen" mode requested by the user. */
