@@ -436,6 +436,7 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 
 RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
 {
+    AssertPtrReturn(phPipe, VERR_INVALID_POINTER);
     AssertReturn(!(fFlags & ~RTPIPE_N_VALID_MASK), VERR_INVALID_PARAMETER);
     AssertReturn(!!(fFlags & RTPIPE_N_READ) != !!(fFlags & RTPIPE_N_WRITE), VERR_INVALID_PARAMETER);
 

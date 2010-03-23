@@ -48,6 +48,7 @@
 #include <limits.h>
 #include <unistd.h>
 #include <sys/poll.h>
+#include <sys/stat.h>
 #include <signal.h>
 
 
@@ -183,7 +184,47 @@ RTDECL(int)  RTPipeClose(RTPIPE hPipe)
 
 RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t fFlags)
 {
-    return VERR_NOT_IMPLEMENTED;
+    AssertPtrReturn(phPipe, VERR_INVALID_POINTER);
+    AssertReturn(!(fFlags & ~RTPIPE_N_VALID_MASK), VERR_INVALID_PARAMETER);
+    AssertReturn(!!(fFlags & RTPIPE_N_READ) != !!(fFlags & RTPIPE_N_WRITE), VERR_INVALID_PARAMETER);
+
+    /*
+     * Get and validate the pipe handle info.
+     */
+    int hNative = (int)hNativePipe;
+    struct stat st;
+    AssertReturn(fstat(hNative, &st) == 0, RTErrConvertFromErrno(errno));
+    AssertMsgReturn(S_ISFIFO(st.st_mode) || S_ISSOCK(st.st_mode), ("%#x (%o)\n", st.st_mode, st.st_mode), VERR_INVALID_HANDLE);
+
+    int fFd = fcntl(hNative, F_GETFL, 0);
+    AssertReturn(fFd != -1, VERR_INVALID_HANDLE);
+    AssertMsgReturn((fFd & O_ACCMODE) == (fFlags & RTPIPE_N_READ ? O_RDONLY : O_WRONLY), ("%#x\n", fFd), VERR_INVALID_HANDLE);
+
+    /*
+     * Create the handle.
+     */
+    RTPIPEINTERNAL *pThis = (RTPIPEINTERNAL *)RTMemAlloc(sizeof(RTPIPEINTERNAL));
+    if (!pThis)
+        return VERR_NO_MEMORY;
+
+    pThis->u32Magic = RTPIPE_MAGIC;
+    pThis->fd       = hNative;
+    pThis->fRead    = !!(fFlags & RTPIPE_N_READ);
+    pThis->u32State = fFd & O_NONBLOCK ? 0 : RTPIPE_POSIX_BLOCKING;
+
+    /*
+     * Fix up inheritability and shut up SIGPIPE and we're done.
+     */
+    if (fcntl(hNative, F_SETFD, fFlags & RTPIPE_N_INHERIT ? 0 : FD_CLOEXEC) == 0)
+    {
+        signal(SIGPIPE, SIG_IGN);
+        *phPipe = pThis;
+        return VINF_SUCCESS;
+    }
+
+    int rc = RTErrConvertFromErrno(errno);
+    RTMemFree(pThis);
+    return rc;
 }
 
 
