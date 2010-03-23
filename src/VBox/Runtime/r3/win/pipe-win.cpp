@@ -1223,13 +1223,13 @@ static uint32_t rtPipePollCheck(RTPIPEINTERNAL *pThis, uint32_t fEvents)
 
                 /* Check if there is available buffer space. */
                 if (   !fRetEvents
+                    && (fEvents & RTPOLL_EVT_WRITE)
                     && (   Info.WriteQuotaAvailable > 0
                         || Info.OutboundQuota == 0)
                     )
                     fRetEvents |= RTPOLL_EVT_WRITE;
             }
-            else if (   !fRetEvents
-                && (fEvents & RTPOLL_EVT_WRITE))
+            else if (fEvents & RTPOLL_EVT_WRITE)
                 fRetEvents |= RTPOLL_EVT_WRITE;
         }
     }
