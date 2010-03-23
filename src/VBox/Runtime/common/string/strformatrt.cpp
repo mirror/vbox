@@ -1053,7 +1053,7 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                         static const char   s_szElemEscape[] = "<>&'\"";
                         const char *pszEscape = fAttr ?             s_szAttrEscape      :             s_szElemEscape;
                         int         cchEscape = fAttr ? RT_ELEMENTS(s_szAttrEscape) - 1 : RT_ELEMENTS(s_szElemEscape) - 1;
-                        int         cchOutput = 0;
+                        size_t      cchOutput = 0;
                         const char *pszStr    = va_arg(*pArgs, char *);
                         int         cchStr;
                         int         offCur;
