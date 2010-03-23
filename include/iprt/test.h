@@ -332,6 +332,109 @@ RTR3DECL(int) RTTestPassedV(RTTEST hTest, const char *pszFormat, va_list va);
  */
 RTR3DECL(int) RTTestPassed(RTTEST hTest, const char *pszFormat, ...);
 
+/**
+ * Value units.
+ */
+typedef enum RTTESTUNIT
+{
+    /** The usual invalid value. */
+    RTTESTUNIT_INVALID = 0,
+    /** Percentage. */
+    RTTESTUNIT_PCT,
+    /** Bytes. */
+    RTTESTUNIT_BYTES,
+    /** Bytes per second. */
+    RTTESTUNIT_BYTES_PER_SEC,
+    /** Kilobytes. */
+    RTTESTUNIT_KILOBYTES,
+    /** Kilobytes per second. */
+    RTTESTUNIT_KILOBYTES_PER_SEC,
+    /** Megabytes. */
+    RTTESTUNIT_MEGABYTES,
+    /** Megabytes per second. */
+    RTTESTUNIT_MEGABYTES_PER_SEC,
+    /** Packets. */
+    RTTESTUNIT_PACKETS,
+    /** Packets per second. */
+    RTTESTUNIT_PACKETS_PER_SEC,
+    /** Frames. */
+    RTTESTUNIT_FRAMES,
+    /** Frames per second. */
+    RTTESTUNIT_FRAMES_PER_SEC,
+    /** Occurrences. */
+    RTTESTUNIT_OCCURRENCES,
+    /** Occurrences per second. */
+    RTTESTUNIT_OCCURRENCES_PER_SEC,
+    /** Calls. */
+    RTTESTUNIT_CALLS,
+    /** Calls per second. */
+    RTTESTUNIT_CALLS_PER_SEC,
+    /** Round trips. */
+    RTTESTUNIT_ROUND_TRIP,
+    /** Seconds. */
+    RTTESTUNIT_SECS,
+    /** Milliseconds. */
+    RTTESTUNIT_MS,
+    /** Nanoseconds. */
+    RTTESTUNIT_NS,
+    /** Nanoseconds per call. */
+    RTTESTUNIT_NS_PER_CALL,
+    /** Nanoseconds per frame. */
+    RTTESTUNIT_NS_PER_FRAME,
+    /** Nanoseconds per occurrence. */
+    RTTESTUNIT_NS_PER_OCCURRENCE,
+    /** Nanoseconds per frame. */
+    RTTESTUNIT_NS_PER_PACKET,
+    /** Nanoseconds per round trip. */
+    RTTESTUNIT_NS_PER_ROUND_TRIP,
+    /** The end of valid units. */
+    RTTESTUNIT_END
+} RTTESTUNIT;
+
+/**
+ * Report a named test result value.
+ *
+ * This is typically used for benchmarking but can be used for other purposes
+ * like reporting limits of some implementation.  The value gets associated with
+ * the current sub test, the name must be unique within the sub test.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   pszName     The value name.
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ */
+RTR3DECL(int) RTTestValue(RTTEST hTest, const char *pszName, uint64_t u64Value, RTTESTUNIT enmUnit);
+
+/**
+ * Same as RTTestValue, except that the name is now a format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ * @param   pszNameFmt  The value name format string.
+ * @param   ...         String arguments.
+ */
+RTR3DECL(int) RTTestValueF(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...);
+
+/**
+ * Same as RTTestValue, except that the name is now a format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   hTest       The test handle. If NIL_RTTEST we'll use the one
+ *                      associated with the calling thread.
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ * @param   pszNameFmt  The value name format string.
+ * @param   va_list     String arguments.
+ */
+RTR3DECL(int) RTTestValueV(RTTEST hTest, uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va);
 
 /**
  * Increments the error counter.
@@ -701,6 +804,45 @@ RTR3DECL(int) RTTestIPassedV(const char *pszFormat, va_list va);
 RTR3DECL(int) RTTestIPassed(const char *pszFormat, ...);
 
 /**
+ * Report a named test result value.
+ *
+ * This is typically used for benchmarking but can be used for other purposes
+ * like reporting limits of some implementation.  The value gets associated with
+ * the current sub test, the name must be unique within the sub test.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   pszName     The value name.
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ */
+RTR3DECL(int) RTTestIValue(const char *pszName, uint64_t u64Value, RTTESTUNIT enmUnit);
+
+/**
+ * Same as RTTestValue, except that the name is now a format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ * @param   pszNameFmt  The value name format string.
+ * @param   ...         String arguments.
+ */
+RTR3DECL(int) RTTestIValueF(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, ...);
+
+/**
+ * Same as RTTestValue, except that the name is now a format string.
+ *
+ * @returns IPRT status code.
+ *
+ * @param   u64Value    The value.
+ * @param   enmUnit     The value unit.
+ * @param   pszNameFmt  The value name format string.
+ * @param   va_list     String arguments.
+ */
+RTR3DECL(int) RTTestIValueV(uint64_t u64Value, RTTESTUNIT enmUnit, const char *pszNameFmt, va_list va);
+
+/**
  * Increments the error counter.
  *
  * @returns IPRT status code.
@@ -731,6 +873,34 @@ RTR3DECL(int) RTTestIFailedV(const char *pszFormat, va_list va);
  * @param   ...         The arguments.
  */
 RTR3DECL(int) RTTestIFailed(const char *pszFormat, ...);
+
+/**
+ * Increments the error counter, prints a failure message and returns the
+ * specified status code.
+ *
+ * This is mainly a convenience method for saving vertical space in the source
+ * code.
+ *
+ * @returns @a rcRet
+ * @param   rcRet       The IPRT status code to return.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   va          The arguments.
+ */
+RTR3DECL(int) RTTestIFailedRcV(int rcRet, const char *pszFormat, va_list va);
+
+/**
+ * Increments the error counter, prints a failure message and returns the
+ * specified status code.
+ *
+ * This is mainly a convenience method for saving vertical space in the source
+ * code.
+ *
+ * @returns @a rcRet
+ * @param   rcRet       The IPRT status code to return.
+ * @param   pszFormat   The message. No trailing newline.
+ * @param   ...         The arguments.
+ */
+RTR3DECL(int) RTTestIFailedRc(int rcRet, const char *pszFormat, ...);
 
 /**
  * Same as RTTestIPrintfV with RTTESTLVL_FAILURE.
