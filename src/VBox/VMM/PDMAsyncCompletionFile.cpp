@@ -806,6 +806,11 @@ static int pdmacFileEpInitialize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
             {
                 /* Downgrade to the buffered backend */
                 enmEpBackend = PDMACFILEEPBACKEND_BUFFERED;
+
+#ifdef RT_OS_LINUX
+                fFileFlags &= ~RTFILE_O_ASYNC_IO;
+                enmMgrType   = PDMACEPFILEMGRTYPE_SIMPLE;
+#endif
             }
             RTFileClose(File);
         }
