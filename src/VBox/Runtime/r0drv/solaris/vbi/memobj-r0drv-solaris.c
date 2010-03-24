@@ -82,8 +82,12 @@ int rtR0MemObjNativeFree(RTR0MEMOBJ pMem)
         case RTR0MEMOBJTYPE_PHYS_NC:
 #if 0
             vbi_phys_free(pMemSolaris->Core.pv, pMemSolaris->Core.cb);
+#else
+            if (pMemSolaris->Core.u.Phys.fAllocated == true)
+                ddi_umem_free(pMemSolaris->Cookie);
+            else
+                vbi_pages_free(pMemSolaris->pvHandle, pMemSolaris->Core.cb);
 #endif
-            ddi_umem_free(pMemSolaris->Cookie);
             break;
 
         case RTR0MEMOBJTYPE_PAGE:
@@ -182,19 +186,32 @@ int rtR0MemObjNativeAllocPhysNC(PPRTR0MEMOBJINTERNAL ppMem, size_t cb, RTHCPHYS 
     /*
      * The contig_alloc() way of allocating NC pages is broken or does not match our semantics. Refer #4716 for details.
      */
-    caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */);
-#endif
+    /* caddr_t virtAddr  = vbi_phys_alloc(&physAddr, cb, PAGE_SIZE, 0 /* non-contiguous */); */
     caddr_t virtAddr = ddi_umem_alloc(cb, DDI_UMEM_SLEEP, &pMemSolaris->Cookie);
     if (RT_UNLIKELY(virtAddr == NULL))
     {
         rtR0MemObjDelete(&pMemSolaris->Core);
         return VERR_NO_MEMORY;
     }
-    Assert(!(physAddr & PAGE_OFFSET_MASK));
     pMemSolaris->Core.pv = virtAddr;
     pMemSolaris->Core.u.Phys.PhysBase = physAddr;
     pMemSolaris->Core.u.Phys.fAllocated = true;
     pMemSolaris->pvHandle = NULL;
+#else
+    void *pvPages = vbi_pages_alloc(&physAddr, cb);
+    if (!pvPages)
+    {
+        LogRel(("rtR0MemObjNativeAllocPhysNC: vbi_pages_alloc failed.\n"));
+        rtR0MemObjDelete(&pMemSolaris->Core);
+        return VERR_NO_MEMORY;
+    }
+    Assert(!(physAddr & PAGE_OFFSET_MASK));
+    pMemSolaris->Core.pv = NULL;
+    pMemSolaris->Core.u.Phys.PhysBase = physAddr;
+    pMemSolaris->Core.u.Phys.fAllocated = false;
+    pMemSolaris->pvHandle = pvPages;
+#endif
+
     *ppMem = &pMemSolaris->Core;
     return VINF_SUCCESS;
 #else
@@ -386,21 +403,47 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
 
     /* Create the mapping object */
     PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)rtR0MemObjNew(sizeof(*pMemSolaris), RTR0MEMOBJTYPE_MAPPING, pv, cb);
-    if (!pMemSolaris)
+    if (RT_UNLIKELY(!pMemSolaris))
         return VERR_NO_MEMORY;
 
     uint64_t *paPhysAddrs = kmem_zalloc(sizeof(uint64_t) * cPages, KM_SLEEP);
-    for (pgcnt_t iPage = 0; iPage < cPages; iPage++)
+    if (RT_UNLIKELY(!paPhysAddrs))
+        return VERR_NO_MEMORY;
+
+    if (   pMemToMapSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS_NC
+        && pMemSolaris->Core.u.Phys.fAllocated == false)
     {
-        paPhysAddrs[iPage] = vbi_va_to_pa(pv);
-        if (RT_UNLIKELY(paPhysAddrs[iPage] == -(uint64_t)1))
+        /*
+         * The PhysNC object has no kernel mapping backing it. The call to vbi_pages_premap()
+         * prepares the physical pages to be mapped into user or kernel space.
+         */
+        LogRel(("calling premap\n"));
+        int rc = vbi_pages_premap(pMemToMapSolaris->pvHandle, cb, paPhysAddrs);
+        if (rc)
         {
-            LogRel(("rtR0MemObjNativeMapUser: no page to map.\n"));
+            LogRel(("rtR0MemObjNativeMapUser: vbi_pages_premap failed. rc=%d\n", rc));
             kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
             rtR0MemObjDelete(&pMemSolaris->Core);
             return VERR_MAP_FAILED;
         }
-        pv = (void *)((uintptr_t)pv + PAGE_SIZE);
+    }
+    else
+    {
+        /*
+         * All other memory object types have allocated memory with kernel mappings.
+         */
+        for (pgcnt_t iPage = 0; iPage < cPages; iPage++)
+        {
+            paPhysAddrs[iPage] = vbi_va_to_pa(pv);
+            if (RT_UNLIKELY(paPhysAddrs[iPage] == -(uint64_t)1))
+            {
+                LogRel(("rtR0MemObjNativeMapUser: no page to map.\n"));
+                kmem_free(paPhysAddrs, sizeof(uint64_t) * cPages);
+                rtR0MemObjDelete(&pMemSolaris->Core);
+                return VERR_MAP_FAILED;
+            }
+            pv = (void *)((uintptr_t)pv + PAGE_SIZE);
+        }
     }
 
     caddr_t virtAddr = NULL;
@@ -464,7 +507,7 @@ RTHCPHYS rtR0MemObjNativeGetPagePhysAddr(PRTR0MEMOBJINTERNAL pMem, size_t iPage)
                 uint8_t *pb = (uint8_t *)pMemSolaris->Core.pv + ((size_t)iPage << PAGE_SHIFT);
                 return vbi_va_to_pa(pb);
             }
-            return pMemSolaris->Core.u.Phys.PhysBase + (iPage << PAGE_SHIFT);
+            return vbi_page_to_pa(pMemSolaris->pvHandle, iPage);
 
         case RTR0MEMOBJTYPE_RES_VIRT:
         default:

@@ -112,7 +112,7 @@ typedef struct vbi_cpuset {
  */
 #if 0
 static struct modlmisc vbi_modlmisc = {
-	&mod_miscops, "VirtualBox Interfaces V6"
+	&mod_miscops, "VirtualBox Interfaces V8"
 };
 
 static struct modlinkage vbi_modlinkage = {
@@ -1203,11 +1203,8 @@ vbi_poke_cpu(int c)
 }
 
 /*
- * This is revision 5 of the interface. As more functions are added,
- * they should go after this point in the file and the revision level
- * increased. Also change vbi_modlmisc at the top of the file.
+ * This is revision 5 of the interface.
  */
-uint_t vbi_revision_level = 7;
 
 void *
 vbi_lowmem_alloc(uint64_t phys, size_t size)
@@ -1248,4 +1245,148 @@ vbi_phys_free(void *va, size_t size)
 {
 	p_contig_free(va, size);
 }
+
+
+/*
+ * This is revision 8 of the interface.
+ */
+ 
+page_t **
+vbi_pages_alloc(uint64_t *phys, size_t size)
+{
+	/*
+	 * the page freelist and cachelist both hold pages that are not mapped into any address space.
+	 * the cachelist is not really free pages but when memory is exhausted they'll be moved to the
+	 * free lists.
+	 * it's the total of the free+cache list that we see on the 'free' column in vmstat.
+	 */
+	page_t **pp_pages = NULL;
+	pgcnt_t npages = (size + PAGESIZE - 1) >> PAGESHIFT;
+
+	/* reserve available memory for pages */
+	int rc = page_resv(npages, KM_NOSLEEP);
+	if (rc)
+	{
+		/* create the pages */
+		rc = page_create_wait(npages, 0 /* flags */);
+		if (rc)
+		{
+			/* alloc space for page_t pointer array */
+			size_t pp_size = npages * sizeof(page_t *);
+			pp_pages = kmem_zalloc(pp_size, KM_SLEEP);
+			if (pp_pages)
+			{
+				/* get pages from kseg, the 'virtAddr' here is only for colouring (optimizing  */
+				seg_t kernseg;
+				kernseg.s_as = &kas;
+				caddr_t virtAddr = NULL;
+				for (pgcnt_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
+				{
+					/* get a page from the freelist */
+					page_t *ppage = page_get_freelist(&kvp, 0 /* offset */, &kernseg, virtAddr,
+										PAGESIZE, 0 /* flags */, NULL /* local group */);
+					if (!ppage)
+					{
+						/* try from the cachelist */
+						ppage = page_get_cachelist(&kvp, 0 /* offset */, &kernseg, virtAddr,
+										0 /* flags */, NULL /* local group */);
+						if (!ppage)
+						{
+							/* damn */
+							page_create_putback(npages - i);
+							while (--i >= 0)
+								page_free(pp_pages[i], 0 /* don't need, move to tail */);
+							kmem_free(pp_pages, pp_size);
+							page_unresv(npages);
+							return NULL;
+						}
+
+						/* remove association with the vnode for pages from the cachelist */
+						if (!PP_ISAGED(ppage))
+							page_hashout(ppage, NULL /* mutex */);
+					}
+
+					PP_CLRFREE(ppage);
+					PP_CLRAGED(ppage);
+					pp_pages[i] = ppage;
+				}
+
+				/*
+				 * we now have the pages locked exclusively, before they are mapped in
+				 * we must downgrade the lock.
+				 */
+				*phys = (uint64_t)page_pptonum(pp_pages[0]) << PAGESHIFT;
+				return pp_pages;
+			}
+
+			page_create_putback(npages);
+		}
+
+		page_unresv(npages);
+	}
+
+	return NULL;
+}
+
+
+void
+vbi_pages_free(page_t **pp_pages, size_t size)
+{
+	pgcnt_t npages = (size + PAGESIZE - 1) >> PAGESHIFT;
+	size_t pp_size = npages * sizeof(page_t *);
+	for (pgcnt_t i = 0; i < npages; i++)
+	{
+		/* we need to exclusive lock the pages before freeing them */
+		int rc = page_tryupgrade(pp_pages[i]);
+		if (!rc)
+		{
+			page_unlock(pp_pages[i]);
+			while (!page_lock(pp_pages[i], SE_EXCL, NULL /* mutex */, P_RECLAIM))
+				;
+		}
+
+		page_free(pp_pages[i], 0 /* don't need, move to tail */);
+	}
+
+	kmem_free(pp_pages, pp_size);
+	page_unresv(npages);
+}
+
+
+int
+vbi_pages_premap(page_t **pp_pages, size_t size, uint64_t *pphysaddrs)
+{
+	if (!pphysaddrs)
+		return -1;
+
+	pgcnt_t npages = (size + PAGESIZE - 1) >> PAGESHIFT;
+	for (pgcnt_t i = 0; i < npages; i++)
+	{
+		/*
+		 * prepare pages for mapping into kernel/user space, we need to
+		 * downgrade the exclusive page lock to a shared lock.
+		 */
+		page_downgrade(pp_pages[i]);
+		pphysaddrs[i] = vbi_page_to_pa(pp_pages, i);
+	}
+
+	return 0;
+}
+
+
+uint64_t
+vbi_page_to_pa(page_t **pp_pages, pgcnt_t i)
+{
+	pfn_t pfn = page_pptonum(pp_pages[i]);
+	if (pfn == PFN_INVALID)
+		panic("vbi_page_to_pa: page_pptonum() failed\n");
+	return (uint64_t)pfn << PAGESHIFT;
+}
+
+/*
+ * As more functions are added, they should start with a comment indicating
+ * the revision and above this point in the file and the revision level should
+ * be increased. Also change vbi_modlmisc at the top of the file.
+ */
+uint_t vbi_revision_level = 8;
 
