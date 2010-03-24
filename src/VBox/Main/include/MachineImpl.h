@@ -353,6 +353,7 @@ public:
                  InitMode aMode,
                  CBSTR aName = NULL,
                  GuestOSType *aOsType = NULL,
+                 BOOL aOverride = FALSE,
                  BOOL aNameSync = TRUE,
                  const Guid *aId = NULL);
     void uninit();
