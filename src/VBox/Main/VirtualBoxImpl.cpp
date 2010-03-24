@@ -515,7 +515,8 @@ HRESULT VirtualBox::initMachines()
                                 Machine::Init_Registered,
                                 NULL,
                                 NULL,
-                                FALSE,
+                                FALSE, /* aOverride */
+                                FALSE, /* aNameSync */
                                 &uuid);
             if (SUCCEEDED(rc))
                 rc = registerMachine(pMachine);
