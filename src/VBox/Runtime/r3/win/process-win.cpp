@@ -340,6 +340,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertReturn(!(fFlags & ~RTPROC_FLAGS_DAEMONIZE), VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
+    AssertReturn(!pszAsUser || *pszAsUser, VERR_INVALID_PARAMETER);
+    AssertReturn(!pszPassword || pszAsUser, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszPassword, VERR_INVALID_POINTER);
     /** @todo search the PATH (add flag for this). */
 
     /*

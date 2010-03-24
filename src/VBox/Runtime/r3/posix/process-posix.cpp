@@ -93,6 +93,9 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     /** @todo search the PATH (add flag for this). */
     AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
+    AssertReturn(!pszAsUser || *pszAsUser, VERR_INVALID_PARAMETER);
+    AssertReturn(!pszPassword || pszAsUser, VERR_INVALID_PARAMETER);
+    AssertPtrNullReturn(pszPassword, VERR_INVALID_POINTER);
 
     /*
      * Get the file descriptors for the handles we've been passed.
