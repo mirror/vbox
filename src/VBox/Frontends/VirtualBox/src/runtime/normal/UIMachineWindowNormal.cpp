@@ -143,6 +143,13 @@ void UIMachineWindowNormal::sltTryClose()
     UIMachineWindow::sltTryClose();
 }
 
+void UIMachineWindowNormal::sltDownloaderAdditionsEmbed()
+{
+    /* If there is an additions download running show the process bar: */
+    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
+        statusBar()->addWidget(pDl->processWidget(this), 0);
+}
+
 void UIMachineWindowNormal::sltUpdateIndicators()
 {
     CConsole console = session().GetConsole();
@@ -410,9 +417,9 @@ void UIMachineWindowNormal::prepareStatusBar()
     /* Add to statusbar: */
     statusBar()->addPermanentWidget(pIndicatorBox, 0);
 
-    /* Add the additions downloader progress bar to the status bar, if a
-     * download is actually running. */
-    prepareAdditionsDownloader();
+    /* Add the additions downloader progress bar to the status bar,
+     * if a download is actually running: */
+    sltDownloaderAdditionsEmbed();
 
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
@@ -425,18 +432,13 @@ void UIMachineWindowNormal::prepareStatusBar()
 #endif
 }
 
-void UIMachineWindowNormal::prepareAdditionsDownloader()
-{
-    /* If there is an Additions download running show the process bar. */
-    if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
-        statusBar()->addWidget(pDl->processWidget(this), 0);
-}
-
 void UIMachineWindowNormal::prepareConnections()
 {
     /* Setup global settings change updater: */
     connect(&vboxGlobal().settings(), SIGNAL(propertyChanged(const char *, const char *)),
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
+    /* Setup additions downloader listener: */
+    connect(machineLogic(), SIGNAL(sigDownloaderAdditionsCreated()), this, SLOT(sltDownloaderAdditionsEmbed()));
 }
 
 void UIMachineWindowNormal::prepareMachineView()
