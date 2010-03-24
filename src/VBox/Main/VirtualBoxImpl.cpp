@@ -1073,8 +1073,8 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     if (id.isEmpty())
         id.create();
 
-    GuestOSType *osType;
-    rc = findGuestOSType(aOsTypeId, osType);
+    GuestOSType *osType = NULL;
+    rc = findGuestOSType(Bstr(aOsTypeId), osType);
     if (FAILED(rc)) return rc;
 
     /* initialize the machine object */
@@ -1128,8 +1128,8 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
     if (id.isEmpty())
         id.create();
 
-    GuestOSType *osType;
-    rc = findGuestOSType(aOsTypeId, osType);
+    GuestOSType *osType = NULL;
+    rc = findGuestOSType(Bstr(aOsTypeId), osType);
     if (FAILED(rc)) return rc;
 
     /* initialize the machine object */
@@ -3034,14 +3034,14 @@ HRESULT VirtualBox::findFloppyImage(const Guid *aId,
     return rc;
 }
 
-HRESULT VirtualBox::findGuestOSType(CBSTR bstrOSType,
+HRESULT VirtualBox::findGuestOSType(const Bstr &bstrOSType,
                                     GuestOSType*& pGuestOSType)
 {
     /* Look for a GuestOSType object */
     AssertMsg(m->ollGuestOSTypes.size() != 0,
               ("Guest OS types array must be filled"));
 
-    if (bstrOSType == NULL)
+    if (bstrOSType.isEmpty())
     {
         pGuestOSType = NULL;
         return S_OK;
@@ -3061,7 +3061,7 @@ HRESULT VirtualBox::findGuestOSType(CBSTR bstrOSType,
 
     return setError(VBOX_E_OBJECT_NOT_FOUND,
                     tr("Guest OS type '%ls' is invalid"),
-                    bstrOSType);
+                    bstrOSType.raw());
 }
 
 const ComObjPtr<Host>& VirtualBox::host() const

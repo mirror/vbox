@@ -252,7 +252,7 @@ public:
     HRESULT findFloppyImage(const Guid *aId, CBSTR aLocation,
                             bool aSetError, ComObjPtr<Medium> *aImage = NULL);
 
-    HRESULT findGuestOSType(CBSTR bstrOSType,
+    HRESULT findGuestOSType(const Bstr &bstrOSType,
                             GuestOSType*& pGuestOSType);
 
     const ComObjPtr<Host>& host() const;
