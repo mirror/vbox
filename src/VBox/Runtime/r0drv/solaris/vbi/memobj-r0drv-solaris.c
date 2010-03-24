@@ -417,7 +417,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
          * The PhysNC object has no kernel mapping backing it. The call to vbi_pages_premap()
          * prepares the physical pages to be mapped into user or kernel space.
          */
-        LogRel(("calling premap\n"));
         int rc = vbi_pages_premap(pMemToMapSolaris->pvHandle, cb, paPhysAddrs);
         if (rc)
         {
