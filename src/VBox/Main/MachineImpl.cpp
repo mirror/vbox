@@ -4713,6 +4713,14 @@ STDMETHODIMP Machine::GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached)
     return S_OK;
 }
 
+STDMETHODIMP Machine::ReadLog(ULONG /*aIdx*/, ULONG64 /*aOffset*/, ULONG64 /*aSize*/, ComSafeArrayOut(BYTE, aData))
+{
+    CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
+
+    ReturnComNotImplemented();
+}
+
+
 // public methods for internal purposes
 /////////////////////////////////////////////////////////////////////////////
 

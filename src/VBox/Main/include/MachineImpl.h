@@ -505,6 +505,7 @@ public:
     STDMETHOD(HotPlugCPU(ULONG aCpu));
     STDMETHOD(HotUnplugCPU(ULONG aCpu));
     STDMETHOD(GetCPUStatus(ULONG aCpu, BOOL *aCpuAttached));
+    STDMETHOD(ReadLog(ULONG aIdx, ULONG64 aOffset, ULONG64 aSize, ComSafeArrayOut(BYTE, aData)));
 
     // public methods only for internal purposes
 
