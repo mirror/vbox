@@ -109,9 +109,12 @@ void UIMachineWindowSeamless::sltPlaceOnScreen()
     int iScreen = static_cast<UIMachineLogicSeamless*>(machineLogic())->hostScreenForGuestScreen(m_uScreenId);
     /* Calculate working area: */
     QRect workingArea = vboxGlobal().availableGeometry(iScreen);
-    /* Move & resize to the appropriate values: */
+    /* Move to the appropriate position: */
     move(workingArea.topLeft());
+    /* Resize to the appropriate size: */
     resize(workingArea.size());
+    /* Process pending move & resize events: */
+    qApp->processEvents();
 }
 
 void UIMachineWindowSeamless::sltMachineStateChanged()
