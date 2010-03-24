@@ -739,7 +739,10 @@ typedef struct _VBOXVHWACMD_SURF_OVERLAY_SETPOSITION
 
 typedef struct _VBOXVHWACMD_HH_CONSTRUCT
 {
-    void * pVM;
+    void    *pVM;
+    /* VRAM info for the backend to be able to properly translate VRAM offsets */
+    void    *pvVRAM;
+    uint32_t cbVRAM;
 } VBOXVHWACMD_HH_CONSTRUCT;
 
 typedef DECLCALLBACK(void) FNVBOXVHWA_HH_CALLBACK(void*);

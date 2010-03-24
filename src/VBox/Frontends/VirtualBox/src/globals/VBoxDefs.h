@@ -82,7 +82,7 @@ struct VBoxDefs
     enum RenderMode
     {
         InvalidRenderMode, TimerMode, QImageMode, SDLMode, DDRAWMode, Quartz2DMode
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_GUI_USE_QGLFB
         , QGLMode
 #endif
     };

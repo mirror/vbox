@@ -36,6 +36,7 @@
 #include "UIFrameBufferQImage.h"
 #include "UIFrameBufferQuartz2D.h"
 #include "UIFrameBufferSDL.h"
+#include "VBoxFBOverlay.h"
 #include "UISession.h"
 #include "UIActionsPool.h"
 #include "UIMachineLogic.h"
@@ -462,7 +463,7 @@ void UIMachineView::updateSliders()
 void UIMachineView::prepareFrameBuffer()
 {
     /* Prepare viewport: */
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_GUI_USE_QGLFB
     QWidget *pViewport;
     switch (mode())
     {
@@ -485,21 +486,23 @@ void UIMachineView::prepareFrameBuffer()
     {
 #ifdef VBOX_GUI_USE_QIMAGE
         case VBoxDefs::QImageMode:
-//# ifdef VBOX_WITH_VIDEOHWACCEL
-//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQImage(this);
-//# else
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            /* these two additional template args is a workaround to this [VBox|UI] duplication
+             * @todo: they are to be removed once VBox stuff is gone */
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferQImage(this);
+# else
             m_pFrameBuffer = new UIFrameBufferQImage(this);
-//# endif
+# endif
             break;
 #endif /* VBOX_GUI_USE_QIMAGE */
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_GUI_USE_QGLFB
         case VBoxDefs::QGLMode:
             m_pFrameBuffer = new UIFrameBufferQGL(this);
             break;
 //        case VBoxDefs::QGLOverlayMode:
 //            m_pFrameBuffer = new UIQGLOverlayFrameBuffer(this);
 //            break;
-#endif /* VBOX_GUI_USE_QGL */
+#endif /* VBOX_GUI_USE_QGLFB */
 #ifdef VBOX_GUI_USE_SDL
         case VBoxDefs::SDLMode:
             /* Indicate that we are doing all drawing stuff ourself: */
@@ -509,11 +512,13 @@ void UIMachineView::prepareFrameBuffer()
             /* This is somehow necessary to prevent strange X11 warnings on i386 and segfaults on x86_64: */
             XFlush(QX11Info::display());
 # endif
-//# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UISDLFrameBuffer> (this, &machineWindowWrapper()->session()) : new UISDLFrameBuffer(this);
-//# else
+# if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
+            /* these two additional template args is a workaround to this [VBox|UI] duplication
+             * @todo: they are to be removed once VBox stuff is gone */
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent> (this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferSDL(this);
+# else
             m_pFrameBuffer = new UIFrameBufferSDL(this);
-//# endif
+# endif
             /* Disable scrollbars because we cannot correctly draw in a scrolled window using SDL: */
             horizontalScrollBar()->setEnabled(false);
             verticalScrollBar()->setEnabled(false);
@@ -537,11 +542,13 @@ void UIMachineView::prepareFrameBuffer()
         case VBoxDefs::Quartz2DMode:
             /* Indicate that we are doing all drawing stuff ourself: */
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
-//# ifdef VBOX_WITH_VIDEOHWACCEL
-//            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
-//# else
+# ifdef VBOX_WITH_VIDEOHWACCEL
+            /* these two additional template args is a workaround to this [VBox|UI] duplication
+             * @todo: they are to be removed once VBox stuff is gone */
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer, UIMachineView, UIResizeEvent>(this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+# else
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
-//# endif
+# endif
             break;
 #endif /* VBOX_GUI_USE_QUARTZ2D */
         default:

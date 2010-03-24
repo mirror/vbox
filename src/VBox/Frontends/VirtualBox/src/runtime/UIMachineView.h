@@ -263,6 +263,9 @@ private:
     friend class UIFrameBufferQImage;
     friend class UIFrameBufferQuartz2D;
     friend class UIFrameBufferQGL;
+    template<class UIFrameBufferQImage, class UIMachineView, class UIResizeEvent> friend class VBoxOverlayFrameBuffer;
+    template<class UIFrameBufferQuartz2D, class UIMachineView, class UIResizeEvent> friend class VBoxOverlayFrameBuffer;
+    template<class UIFrameBufferSDL, class UIMachineView, class UIResizeEvent> friend class VBoxOverlayFrameBuffer;
 };
 
 /* This maintenance class is a part of future roll-back mechanism.
