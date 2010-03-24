@@ -102,7 +102,7 @@ static bool vscsiDeviceReqProcess(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVS
         }
         case SCSI_TEST_UNIT_READY:
         {
-            vscsiReqSenseOkSet(pVScsiReq);
+            rcReq = vscsiReqSenseOkSet(pVScsiReq);
             break;
         }
         default:
