@@ -32,19 +32,9 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#ifdef VBOX_VBGLR3_XFREE86
-/* Rather than try to resolve all the header file conflicts, I will just
-   prototype what we need here. */
-# define xalloc(size) Xalloc((unsigned long)(size))
-# define xfree(ptr) Xfree((pointer)(ptr))
-typedef void *pointer;
-extern "C" pointer Xalloc(unsigned long /*amount*/);
-extern "C" void Xfree(pointer /*ptr*/);
-#else
-# include <iprt/mem.h>
-# include <iprt/assert.h>
-# include <iprt/string.h>
-#endif
+#include <iprt/mem.h>
+#include <iprt/assert.h>
+#include <iprt/string.h>
 #include <iprt/err.h>
 #include "VBGLR3Internal.h"
 
@@ -53,15 +43,11 @@ int vbglR3GRAlloc(VMMDevRequestHeader **ppReq, uint32_t cb, VMMDevRequestType en
 {
     VMMDevRequestHeader *pReq;
 
-#ifdef VBOX_VBGLR3_XFREE86
-    pReq = (VMMDevRequestHeader *)xalloc(cb);
-#else
     AssertPtrReturn(ppReq, VERR_INVALID_PARAMETER);
     AssertMsgReturn(cb >= sizeof(VMMDevRequestHeader), ("%#x vs %#zx\n", cb, sizeof(VMMDevRequestHeader)),
                     VERR_INVALID_PARAMETER);
 
     pReq = (VMMDevRequestHeader *)RTMemTmpAlloc(cb);
-#endif
     if (RT_UNLIKELY(!pReq))
         return VERR_NO_MEMORY;
 
@@ -86,10 +72,6 @@ VBGLR3DECL(int) vbglR3GRPerform(VMMDevRequestHeader *pReq)
 
 void vbglR3GRFree(VMMDevRequestHeader *pReq)
 {
-#ifdef VBOX_VBGLR3_XFREE86
-    xfree(pReq);
-#else
     RTMemTmpFree(pReq);
-#endif
 }
 

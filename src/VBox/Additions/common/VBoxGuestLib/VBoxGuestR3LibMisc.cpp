@@ -69,7 +69,7 @@ VBGLR3DECL(int) VbglR3SetGuestCaps(uint32_t fOr, uint32_t fNot)
     Req.u32OrMask = fOr;
     Req.u32NotMask = fNot;
     int rc = vbglR3GRPerform(&Req.header);
-#if defined(DEBUG) && !defined(VBOX_VBGLR3_XFREE86)
+#if defined(DEBUG)
     if (RT_SUCCESS(rc))
         LogRel(("Successfully changed guest capabilities: or mask 0x%x, not mask 0x%x.\n", fOr, fNot));
     else
