@@ -98,9 +98,7 @@ static uint32_t volatile g_cInits = 0;
 static int vbglR3Init(const char *pszDeviceName)
 {
     uint32_t cInits = ASMAtomicIncU32(&g_cInits);
-#ifndef VBOX_VBGLR3_XFREE86
     Assert(cInits > 0);
-#endif
     if (cInits > 1)
     {
         /*

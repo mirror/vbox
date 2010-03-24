@@ -38,6 +38,15 @@
 #include <VBox/VBoxGuest.h>
 #include <VBox/VBoxGuestLib.h>
 
+#ifdef VBOX_VBGLR3_XFREE86
+/* Rather than try to resolve all the header file conflicts, I will just
+   prototype what we need here. */
+typedef unsigned long xf86size_t;
+extern "C" xf86size_t xf86strlen(const char*);
+# undef strlen
+# define strlen xf86strlen
+#endif /* VBOX_VBGLR3_XFREE86 */
+
 RT_C_DECLS_BEGIN
 
 int     vbglR3DoIOCtl(unsigned iFunction, void *pvData, size_t cbData);

@@ -150,12 +150,10 @@ VBGLR3DECL(int) VbglR3GetDisplayChangeRequest(uint32_t *pcx, uint32_t *pcy, uint
 {
     VMMDevDisplayChangeRequest2 Req;
 
-#ifndef VBOX_VBGLR3_XFREE86
     AssertPtrReturn(pcx, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcy, VERR_INVALID_PARAMETER);
     AssertPtrReturn(pcBits, VERR_INVALID_PARAMETER);
     AssertPtrReturn(piDisplay, VERR_INVALID_PARAMETER);
-#endif
     RT_ZERO(Req);
     vmmdevInitRequest(&Req.header, VMMDevReq_GetDisplayChangeRequest2);
     if (fAck)
@@ -211,7 +209,7 @@ VBGLR3DECL(bool) VbglR3HostLikesVideoMode(uint32_t cx, uint32_t cy, uint32_t cBi
  */
 VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t cy, uint32_t cBits)
 {
-#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_VBGLR3_XFREE86)
+#if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
 
     char szModeName[MAX_NAME_LEN];
@@ -225,9 +223,9 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
     if (u32ClientId != 0)
         VbglR3GuestPropDisconnect(u32ClientId);  /* Return value ignored, because what can we do anyway? */
     return rc;
-#else /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
+#else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_IMPLEMENTED;
-#endif /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
+#endif /* !VBOX_WITH_GUEST_PROPS */
 }
 
 
@@ -242,7 +240,7 @@ VBGLR3DECL(int) VbglR3SaveVideoMode(const char *pszName, uint32_t cx, uint32_t c
  */
 VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint32_t *pcy, uint32_t *pcBits)
 {
-#if defined(VBOX_WITH_GUEST_PROPS) && !defined(VBOX_VBGLR3_XFREE86)
+#if defined(VBOX_WITH_GUEST_PROPS)
     using namespace guestProp;
 
 /*
@@ -303,7 +301,7 @@ VBGLR3DECL(int) VbglR3RetrieveVideoMode(const char *pszName, uint32_t *pcx, uint
         *pcBits = cBits;
     }
     return rc;
-#else /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
+#else /* !VBOX_WITH_GUEST_PROPS */
     return VERR_NOT_IMPLEMENTED;
-#endif /* !VBOX_WITH_GUEST_PROPS || VBOX_VBGLR3_XFREE86 */
+#endif /* !VBOX_WITH_GUEST_PROPS */
 }

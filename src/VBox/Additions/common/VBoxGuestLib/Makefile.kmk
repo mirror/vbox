@@ -148,11 +148,14 @@ VBoxGuestR3LibXFree86_SOURCES  = \
 	VBoxGuestR3LibMouse.cpp \
 	VBoxGuestR3LibMisc.cpp \
 	VBoxGuestR3LibSeamless.cpp \
-	VBoxGuestR3LibVideo.cpp
+	VBoxGuestR3LibVideo.cpp \
+	VBoxGuestR3LibRuntimeXF86.cpp
+VBoxGuestR3LibRuntimeXF86.cpp_CXXFLAGS = -Wno-shadow
 VBoxGuestR3LibXFree86_INCS     = \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/common/ \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/hw/xfree86/os-support \
         $(VBOX_PATH_X11_XFREE_4_3)/programs/Xserver/include \
+        $(VBOX_PATH_X11_XFREE_4_3)/include \
         $(VBOX_PATH_X11_XFREE_4_3)/exports/include/X11
 
 

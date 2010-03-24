@@ -66,9 +66,7 @@ VBGLR3DECL(int) VbglR3SeamlessWaitEvent(VMMDevSeamlessMode *pMode)
     VBoxGuestWaitEventInfo waitEvent;
     int rc;
 
-#if !defined(VBOX_VBGLR3_XFREE86)
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
-#endif
     waitEvent.u32TimeoutIn = RT_INDEFINITE_WAIT;
     waitEvent.u32EventMaskIn = VMMDEV_EVENT_SEAMLESS_MODE_CHANGE_REQUEST;
     waitEvent.u32Result = VBOXGUEST_WAITEVENT_ERROR;
@@ -110,9 +108,7 @@ VBGLR3DECL(int) VbglR3SeamlessGetLastEvent(VMMDevSeamlessMode *pMode)
     VMMDevSeamlessChangeRequest seamlessChangeRequest;
     int rc;
 
-#if !defined(VBOX_VBGLR3_XFREE86)
     AssertPtrReturn(pMode, VERR_INVALID_PARAMETER);
-#endif
 
     /* get the seamless change request */
     vmmdevInitRequest(&seamlessChangeRequest.header, VMMDevReq_GetSeamlessChangeRequest);

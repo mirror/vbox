@@ -145,3 +145,7 @@ xf86sprintf
 _GLOBAL_OFFSET_TABLE_
 XNFstrdup
 FatalError
+xf86vsnprintf
+xf86strtoul
+xf86errno
+xf86isspace
