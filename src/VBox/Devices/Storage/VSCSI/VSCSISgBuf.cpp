@@ -34,7 +34,7 @@ void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCPDMDATASEG paDataSeg, size_t 
         pIoMemCtx->cSegments = 0;
         pIoMemCtx->iSegIdx   = 0;
         pIoMemCtx->pbBuf     = NULL;
-        pIoMemCtx->cbBufLeft = NULL;
+        pIoMemCtx->cbBufLeft = 0;
     }
     else
     {
