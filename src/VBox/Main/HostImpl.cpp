@@ -1739,6 +1739,7 @@ HRESULT Host::getFloppyDrives(MediaList &list)
                     list.push_back(hostFloppyDriveObj);
             }
 #else
+    NOREF(list);
     /* PORTME */
 #endif
     }

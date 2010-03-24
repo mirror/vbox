@@ -215,9 +215,7 @@ int CollectorSolaris::getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *avail
 int CollectorSolaris::getProcessMemoryUsage(RTPROCESS process, ULONG *used)
 {
     int rc = VINF_SUCCESS;
-    char *pszName;
-    pid_t pid2;
-    char buf[80]; /* @todo: this should be tied to max allowed proc name. */
+    char *pszName = NULL;
     psinfo_t psinfo;
 
     RTStrAPrintf(&pszName, "/proc/%d/psinfo", process);
