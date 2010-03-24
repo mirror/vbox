@@ -1438,7 +1438,7 @@ static int lsilogicScatterGatherListAllocate(PLSILOGICTASKSTATE pTaskState, uint
 
         Log(("%s: Allocating buffer for unaligned segments cbUnaligned=%u\n", __FUNCTION__, cbUnaligned));
 
-        pTaskState->pvBufferUnaligned = RTMemAllocZ(cbUnaligned);
+        pTaskState->pvBufferUnaligned = RTMemPageAlloc(cbUnaligned);
         if (!pTaskState->pvBufferUnaligned)
             return VERR_NO_MEMORY;
 
