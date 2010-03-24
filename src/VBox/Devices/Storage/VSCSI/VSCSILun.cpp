@@ -99,7 +99,7 @@ VBOXDDU_DECL(int) VSCSILunDestroy(VSCSILUN hVScsiLun)
 
     AssertPtrReturn(pVScsiLun, VERR_INVALID_HANDLE);
     AssertReturn(!pVScsiLun->pVScsiDevice, VERR_VSCSI_LUN_ATTACHED_TO_DEVICE);
-    AssertReturn(vscsiIoReqOutstandingCountGet(pVScsiLun) != 0, VERR_VSCSI_LUN_BUSY);
+    AssertReturn(vscsiIoReqOutstandingCountGet(pVScsiLun) == 0, VERR_VSCSI_LUN_BUSY);
 
     int rc = pVScsiLun->pVScsiLunDesc->pfnVScsiLunDestroy(pVScsiLun);
     if (RT_FAILURE(rc))
