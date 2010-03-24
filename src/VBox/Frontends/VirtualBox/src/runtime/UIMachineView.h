@@ -259,7 +259,6 @@ private:
 
     /* Friend classes: */
     friend class UIMachineLogic;
-    friend class UIMachineWindowFullscreen;
     friend class UIFrameBuffer;
     friend class UIFrameBufferQImage;
     friend class UIFrameBufferQuartz2D;
