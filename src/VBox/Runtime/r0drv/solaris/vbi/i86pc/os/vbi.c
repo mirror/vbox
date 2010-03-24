@@ -1276,7 +1276,10 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 			pp_pages = kmem_zalloc(pp_size, KM_SLEEP);
 			if (pp_pages)
 			{
-				/* get pages from kseg, the 'virtAddr' here is only for colouring (optimizing  */
+				/*
+				 * get pages from kseg, the 'virtAddr' here is only for colouring but unforuntately
+				 * we dont' have the 'virtAddr' to which this memory may be mapped.
+				 */
 				seg_t kernseg;
 				kernseg.s_as = &kas;
 				caddr_t virtAddr = NULL;
