@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1030,6 +1030,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
                                        IN_BSTR aOsTypeId,
                                        IN_BSTR aBaseFolder,
                                        IN_BSTR aId,
+                                       BOOL aOverride,
                                        IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
@@ -1083,6 +1084,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
                        Machine::Init_New,
                        aName,
                        osType,
+                       aOverride,
                        TRUE /* aNameSync */,
                        &id);
     if (SUCCEEDED(rc))
@@ -1138,6 +1140,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
                        Machine::Init_New,
                        aName,
                        osType,
+                       FALSE /* aOverride */,
                        FALSE /* aNameSync */,
                        &id);
     if (SUCCEEDED(rc))
@@ -4308,6 +4311,8 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
 
     AssertReturn(pvUser, VERR_INVALID_POINTER);
 
+    com::Initialize();
+
     // create an event queue for the current thread
     EventQueue *eventQ = new EventQueue();
     AssertReturn(eventQ, VERR_NO_MEMORY);
@@ -4326,6 +4331,8 @@ DECLCALLBACK(int) VirtualBox::AsyncEventHandler (RTTHREAD thread, void *pvUser)
     AssertReturn(ok, VERR_GENERAL_FAILURE);
 
     delete eventQ;
+
+    com::Shutdown();
 
     LogFlowFuncLeave();
 
