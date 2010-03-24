@@ -99,6 +99,8 @@ typedef struct DRVSCSI
     STAMCOUNTER             StatBytesWritten;
     /** Release statistics: number of bytes read. */
     STAMCOUNTER             StatBytesRead;
+    /** Release statistics: Current I/O depth. */
+    volatile uint32_t       StatIoDepth;
 } DRVSCSI, *PDRVSCSI;
 
 /** Converts a pointer to DRVSCSI::ISCSIConnector to a PDRVSCSI. */
@@ -173,6 +175,7 @@ static int drvscsiProcessRequestOne(PDRVSCSI pThis, VSCSIIOREQ hVScsiIoReq)
             AssertMsgFailed(("Invalid transfer direction %d\n", enmTxDir));
     }
 
+    ASMAtomicDecU32(&pThis->StatIoDepth);
     VSCSIIoReqCompleted(hVScsiIoReq, rc);
 
     return VINF_SUCCESS;
@@ -200,6 +203,7 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     else
         AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
 
+    ASMAtomicDecU32(&pThis->StatIoDepth);
     VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS);
 
     return VINF_SUCCESS;
@@ -211,6 +215,8 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
 {
     int rc = VINF_SUCCESS;
     PDRVSCSI pThis = (PDRVSCSI)pvScsiLunUser;
+
+    ASMAtomicIncU32(&pThis->StatIoDepth);
 
     if (pThis->pDrvBlockAsync)
     {
@@ -640,6 +646,12 @@ static DECLCALLBACK(int) drvscsiConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, ui
     PDMDrvHlpSTAMRegisterF(pDrvIns, &pThis->StatBytesWritten, STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,
                             "Amount of data written.", "/Devices/SCSI0/%d/WrittenBytes", pDrvIns->iInstance);
 
+    pThis->StatIoDepth = 0;
+
+    PDMDrvHlpSTAMRegisterF(pDrvIns, (void *)&pThis->StatIoDepth, STAMTYPE_U32, STAMVISIBILITY_ALWAYS, STAMUNIT_COUNT,
+                            "Number of active tasks.", "/Devices/SCSI0/%d/IoDepth", pDrvIns->iInstance);
+
+
     /* Create I/O thread. */
     rc = PDMDrvHlpPDMThreadCreate(pDrvIns, &pThis->pAsyncIOThread, pThis, drvscsiAsyncIOLoop,
                                   drvscsiAsyncIOLoopWakeup, 0, RTTHREADTYPE_IO, "SCSI async IO");
@@ -698,3 +710,4 @@ const PDMDRVREG g_DrvSCSI =
     /* u32EndVersion */
     PDM_DRVREG_VERSION
 };
+
