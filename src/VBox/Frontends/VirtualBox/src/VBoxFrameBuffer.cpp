@@ -449,7 +449,7 @@ void VBoxQImageFrameBuffer::resizeEvent (VBoxResizeEvent *re)
 // VBoxQGLFrameBuffer class
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (VBOX_GUI_USE_QGL)
+#if defined (VBOX_GUI_USE_QGLFB)
 
 /* The class is defined in VBoxFBQGL.cpp */
 

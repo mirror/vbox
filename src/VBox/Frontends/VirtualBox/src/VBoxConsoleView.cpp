@@ -755,7 +755,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
     /* No frame around the view */
     setFrameStyle (QFrame::NoFrame);
 
-#ifdef VBOX_GUI_USE_QGL
+#ifdef VBOX_GUI_USE_QGLFB
     QWidget *pViewport;
     switch (mode)
     {
@@ -805,7 +805,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 
     switch (mode)
     {
-#if defined (VBOX_GUI_USE_QGL)
+#if defined (VBOX_GUI_USE_QGLFB)
         case VBoxDefs::QGLMode:
             mFrameBuf = new VBoxQGLFrameBuffer (this);
             break;
@@ -817,7 +817,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
         case VBoxDefs::QImageMode:
             mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer> (this, &mainWnd->session()) :
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
 #endif
                     new VBoxQImageFrameBuffer (this);
             break;
@@ -834,7 +836,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 # endif
             mFrameBuf =
 #if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer> (this, &mainWnd->session()) :
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
 #endif
                     new VBoxSDLFrameBuffer (this);
             /*
@@ -857,7 +861,9 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
             pViewport->setAttribute (Qt::WA_PaintOnScreen);
             mFrameBuf =
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer> (this, &mainWnd->session()) :
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
 #endif
                     new VBoxQuartz2DFrameBuffer (this);
             break;

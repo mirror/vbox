@@ -25,7 +25,7 @@
 
 /* Global includes */
 #include "UIFrameBuffer.h"
-#if defined (VBOX_GUI_USE_QGL)
+#if defined (VBOX_GUI_USE_QGLFB)
 #include "VBoxFBOverlay.h"
 
 class UIFrameBufferQGL : public UIFrameBuffer

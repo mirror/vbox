@@ -1089,6 +1089,8 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
         PVM pVM = PDMDevHlpGetVM(pDevIns);
 
         pBody->pVM = pVM;
+        pBody->pvVRAM = pVGAState->vram_ptrR3;
+        pBody->cbVRAM = pVGAState->vram_size;
 
         int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
         AssertRC(rc);

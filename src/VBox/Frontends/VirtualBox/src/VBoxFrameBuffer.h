@@ -295,7 +295,7 @@ private:
 
 /////////////////////////////////////////////////////////////////////////////
 
-#if defined (VBOX_GUI_USE_QGL)
+#if defined (VBOX_GUI_USE_QGLFB)
 
 class VBoxQGLFrameBuffer : public VBoxFrameBuffer
 {
