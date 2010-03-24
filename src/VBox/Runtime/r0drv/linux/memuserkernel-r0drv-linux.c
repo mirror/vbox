@@ -75,9 +75,14 @@ RTR0DECL(bool) RTR0MemKernelIsValidAddr(void *pv)
 # endif
 
 #elif defined(RT_ARCH_AMD64)
-# ifdef KERNEL_IMAGE_START
-    return (uintptr_t)pv >= KERNEL_IMAGE_START;
+# if LINUX_VERSION_CODE >= KERNEL_VERSION(2, 6, 11)
+    /* Linux 2.6.0 ... 2.6.10 set PAGE_OFFSET to 0x0000010000000000.
+     * Linux 2.6.11 sets PAGE_OFFSET to 0xffff810000000000.
+     * Linux 2.6.33 sets PAGE_OFFSET to 0xffff880000000000. */
+    return (uintptr_t)pv >= PAGE_OFFSET;
 # else
+    /* Not correct (KERNEL_TEXT_START=0xffffffff80000000),
+     * VMALLOC_START (0xffffff0000000000) would be better */
     return (uintptr_t)pv >= KERNEL_TEXT_START;
 # endif
 
