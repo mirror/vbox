@@ -78,7 +78,6 @@ protected:
     /* Prepare helpers: */
     virtual void prepareWindowIcon();
     virtual void prepareConsoleConnections();
-    virtual void prepareAdditionsDownloader();
     virtual void prepareMachineViewContainer();
     //virtual void loadWindowSettings() {}
 

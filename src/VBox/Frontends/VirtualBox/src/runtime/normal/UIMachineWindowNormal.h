@@ -68,6 +68,9 @@ private slots:
     /* Close window reimplementation: */
     void sltTryClose();
 
+    /* Downloader listeners: */
+    void sltDownloaderAdditionsEmbed();
+
 private:
 
     /* Translate routine: */
@@ -90,7 +93,6 @@ private:
     void prepareConsoleConnections();
     void prepareMenu();
     void prepareStatusBar();
-    void prepareAdditionsDownloader();
     void prepareConnections();
     void prepareMachineView();
     void loadWindowSettings();
