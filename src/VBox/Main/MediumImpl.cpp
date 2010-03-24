@@ -1243,7 +1243,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
                        med);              // child data
         if (FAILED(rc)) break;
 
-        rc = m->pVirtualBox->registerHardDisk(pHD, false /* aSaveRegistry */);
+        rc = m->pVirtualBox->registerHardDisk(pHD, NULL /*pfNeedsSaveSettings*/);
         if (FAILED(rc)) break;
     }
 
