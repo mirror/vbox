@@ -1207,15 +1207,17 @@ static void buslogicDataBufferFree(PBUSLOGICTASKSTATE pTaskState)
  *
  * @returns nothing.
  * @param   pTaskState   Pointer to the task state.
+ * @param   fCopy        If sense data should be copied to guest memory.
  */
-static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState)
+static void buslogicSenseBufferFree(PBUSLOGICTASKSTATE pTaskState, bool fCopy)
 {
     PPDMDEVINS pDevIns = pTaskState->CTX_SUFF(pTargetDevice)->CTX_SUFF(pBusLogic)->CTX_SUFF(pDevIns);
     RTGCPHYS GCPhysAddrSenseBuffer = (RTGCPHYS)pTaskState->CommandControlBlockGuest.u32PhysAddrSenseData;
     uint32_t cbSenseBuffer = pTaskState->CommandControlBlockGuest.cbSenseData;
 
     /* Copy into guest memory. */
-    PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
+    if (fCopy)
+        PDMDevHlpPhysWrite(pDevIns, GCPhysAddrSenseBuffer, pTaskState->pbSenseBuffer, cbSenseBuffer);
 
     RTMemFree(pTaskState->pbSenseBuffer);
     pTaskState->pbSenseBuffer = NULL;
@@ -1977,7 +1979,7 @@ static DECLCALLBACK(int) buslogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
         buslogicDataBufferFree(pTaskState);
 
         if (pTaskState->pbSenseBuffer)
-            buslogicSenseBufferFree(pTaskState);
+            buslogicSenseBufferFree(pTaskState, (rcCompletion != SCSI_STATUS_OK));
 
         buslogicSendIncomingMailbox(pBusLogic, pTaskState,
                                     BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_CMD_COMPLETED,
@@ -2068,7 +2070,7 @@ static int buslogicProcessMailboxNext(PBUSLOGIC pBusLogic)
             buslogicDataBufferFree(pTaskState);
 
             if (pTaskState->pbSenseBuffer)
-                buslogicSenseBufferFree(pTaskState);
+                buslogicSenseBufferFree(pTaskState, true);
 
             buslogicSendIncomingMailbox(pBusLogic, pTaskState,
                                         BUSLOGIC_MAILBOX_INCOMING_ADAPTER_STATUS_SCSI_SELECTION_TIMEOUT,
