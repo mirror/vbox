@@ -545,7 +545,7 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             /* these two additional template args is a workaround to this [VBox|UI] duplication
              * @todo: they are to be removed once VBox stuff is gone */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer, UIMachineView, UIResizeEvent>(this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
 # else
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # endif
