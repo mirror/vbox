@@ -4269,7 +4269,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="254f7fd0-a99b-4ea9-992f-794624e67882"
+     uuid="07862b34-c068-4667-be7d-1d722f496f20"
      wsmap="managed"
      >
     <desc>
@@ -6131,7 +6131,35 @@
         </desc>
       </param>
     </method>
-</interface>
+
+    <method name="readLog">
+      <desc>
+        Reads the VM log file. The chunk size is limited, so even if you
+        ask for a big piece there might be less data returned.
+      </desc>
+      <param name="idx" type="unsigned long" dir="in">
+        <desc>
+          Which log file to read. 0=current log file.
+        </desc>
+      </param>
+      <param name="offset" type="unsigned long long" dir="in">
+        <desc>
+          Offset in the log file.
+        </desc>
+      </param>
+      <param name="size" type="unsigned long long" dir="in">
+        <desc>
+          Chunk size to read in the log file.
+        </desc>
+      </param>
+      <param name="data" type="octet" dir="return" safearray="yes">
+        <desc>
+          Data read from the log file. A data size of 0 means end of file
+          if the requested chunk size was not 0.
+        </desc>
+      </param>
+    </method>
+  </interface>
 
   <!--
   // IConsole
