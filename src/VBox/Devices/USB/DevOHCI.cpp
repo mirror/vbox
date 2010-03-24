@@ -4523,31 +4523,31 @@ static int HcRhPortStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
     Log2(("\n"));
 #endif
 
-
     /* Write to clear any of the change bits: CSC, PESC, PSSC, OCIC and PRSC */
-    if ( val & OHCI_PORT_W_CLEAR_CHANGE_MASK )
+    if (val & OHCI_PORT_W_CLEAR_CHANGE_MASK)
         p->fReg &= ~(val & OHCI_PORT_W_CLEAR_CHANGE_MASK);
 
-    if ( val & OHCI_PORT_W_CLEAR_ENABLE )
+    if (val & OHCI_PORT_W_CLEAR_ENABLE)
     {
         p->fReg &= ~OHCI_PORT_R_ENABLE_STATUS;
         Log2(("HcRhPortStatus_w(): port %u: DISABLE\n", i));
     }
 
-    if ( rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_ENABLE) )
+    if (rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_ENABLE))
         Log2(("HcRhPortStatus_w(): port %u: ENABLE\n", i));
 
-    if ( rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_SUSPEND) )
+    if (rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_SUSPEND))
         Log2(("HcRhPortStatus_w(): port %u: SUSPEND - not implemented correctly!!!\n", i));
 
-    if (val & OHCI_PORT_W_SET_RESET) {
-        if ( rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_RESET) )
+    if (val & OHCI_PORT_W_SET_RESET)
+    {
+        if (rhport_set_if_connected(&pOhci->RootHub, i, val & OHCI_PORT_W_SET_RESET))
         {
             PVM pVM = PDMDevHlpGetVM(pOhci->CTX_SUFF(pDevIns));
             p->fReg &= ~OHCI_PORT_R_RESET_STATUS_CHANGE;
             VUSBIDevReset(p->pDev, false /* don't reset on linux */, uchi_port_reset_done, pOhci, pVM);
         }
-        else if ( p->fReg & OHCI_PORT_R_RESET_STATUS )
+        else if (p->fReg & OHCI_PORT_R_RESET_STATUS)
         {
             /* the guest is getting impatient. */
             Log2(("HcRhPortStatus_w(): port %u: Impatient guest!\n"));
@@ -4555,27 +4555,27 @@ static int HcRhPortStatus_w(POHCI pOhci, uint32_t iReg, uint32_t val)
         }
     }
 
-    if ( !(pOhci->RootHub.desc_a & OHCI_RHA_NPS) )
+    if (!(pOhci->RootHub.desc_a & OHCI_RHA_NPS))
     {
         /** @todo To implement per-device power-switching
          * we need to check PortPowerControlMask to make
          * sure it isn't gang powered
          */
-        if ( val & OHCI_PORT_W_CLEAR_POWER )
+        if (val & OHCI_PORT_W_CLEAR_POWER)
             rhport_power(&pOhci->RootHub, i, false /* power down */);
-        if ( val & OHCI_PORT_W_SET_POWER )
+        if (val & OHCI_PORT_W_SET_POWER)
             rhport_power(&pOhci->RootHub, i, true /* power up */);
     }
 
     /** @todo r=frank:  ClearSuspendStatus. Timing? */
-    if ( val & OHCI_PORT_W_CLEAR_SUSPEND_STATUS )
+    if (val & OHCI_PORT_W_CLEAR_SUSPEND_STATUS)
     {
         rhport_power(&pOhci->RootHub, i, true /* power up */);
         pOhci->RootHub.aPorts[i].fReg &= ~OHCI_PORT_R_SUSPEND_STATUS;
         pOhci->RootHub.aPorts[i].fReg |= OHCI_PORT_R_SUSPEND_STATUS_CHANGE;
     }
 
-    if ( p->fReg != old_state )
+    if (p->fReg != old_state)
     {
         uint32_t res = p->fReg;
         uint32_t chg = res ^ old_state; NOREF(chg);
@@ -5279,6 +5279,7 @@ static DECLCALLBACK(int) ohciR3Construct(PPDMDEVINS pDevIns, int iInstance, PCFG
     pOhci->PciDev.config[0x0a] = 0x3;
     pOhci->PciDev.config[0x0b] = 0xc;
     pOhci->PciDev.config[0x3d] = 0x01;
+    pOhci->RootHub.pOhci                         = pOhci;
     pOhci->RootHub.IBase.pfnQueryInterface       = ohciRhQueryInterface;
     pOhci->RootHub.IRhPort.pfnGetAvailablePorts  = ohciRhGetAvailablePorts;
     pOhci->RootHub.IRhPort.pfnGetUSBVersions     = ohciRhGetUSBVersions;
