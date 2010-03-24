@@ -196,6 +196,8 @@ static int drvscsiTransferCompleteNotify(PPDMIBLOCKASYNCPORT pInterface, void *p
     VSCSIIOREQ hVScsiIoReq = (VSCSIIOREQ)pvUser;
     VSCSIIOREQTXDIR enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
 
+    LogFlowFunc(("Request hVScsiIoReq=%#p completed\n", hVScsiIoReq));
+
     if (enmTxDir == VSCSIIOREQTXDIR_READ)
         pThis->pLed->Actual.s.fReading = 0;
     else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
@@ -223,6 +225,8 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
         /* asnyc I/O path. */
         VSCSIIOREQTXDIR enmTxDir;
 
+        LogFlowFunc(("Enqueuing hVScsiIoReq=%#p\n", hVScsiIoReq));
+
         enmTxDir = VSCSIIoReqTxDirGet(hVScsiIoReq);
 
         switch (enmTxDir)
@@ -230,6 +234,7 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
             case VSCSIIOREQTXDIR_FLUSH:
             {
                 /** @todo Flush callback for the async I/O interface. */
+                ASMAtomicDecU32(&pThis->StatIoDepth);
                 VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS);
                 break;
             }
@@ -254,7 +259,7 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                                                              hVScsiIoReq);
                     if (RT_FAILURE(rc))
                         AssertMsgFailed(("%s: Failed to read data %Rrc\n", __FUNCTION__, rc));
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbSeg);
+                    STAM_REL_COUNTER_ADD(&pThis->StatBytesRead, cbTransfer);
                 }
                 else
                 {
@@ -264,7 +269,19 @@ static int drvscsiReqTransferEnqueue(VSCSILUN hVScsiLun,
                                                               hVScsiIoReq);
                     if (RT_FAILURE(rc))
                         AssertMsgFailed(("%s: Failed to write data %Rrc\n", __FUNCTION__, rc));
-                    STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbSeg);
+                    STAM_REL_COUNTER_ADD(&pThis->StatBytesWritten, cbTransfer);
+                }
+
+                if (rc == VINF_VD_ASYNC_IO_FINISHED)
+                {
+                    if (enmTxDir == VSCSIIOREQTXDIR_READ)
+                        pThis->pLed->Actual.s.fReading = 0;
+                    else if (enmTxDir == VSCSIIOREQTXDIR_WRITE)
+                        pThis->pLed->Actual.s.fWriting = 0;
+                    else
+                        AssertMsgFailed(("Invalid transfer direction %u\n", enmTxDir));
+                    ASMAtomicDecU32(&pThis->StatIoDepth);
+                    VSCSIIoReqCompleted(hVScsiIoReq, VINF_SUCCESS);
                 }
 
                 break;
