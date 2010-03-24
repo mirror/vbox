@@ -87,6 +87,8 @@ static int vscsiLunSbcReqProcess(PVSCSILUNINT pVScsiLun, PVSCSIREQINT pVScsiReq)
             ScsiInquiryReply.u5PeripheralDeviceType = SCSI_INQUIRY_DATA_PERIPHERAL_DEVICE_TYPE_DIRECT_ACCESS;
             ScsiInquiryReply.u3PeripheralQualifier  = SCSI_INQUIRY_DATA_PERIPHERAL_QUALIFIER_CONNECTED;
             ScsiInquiryReply.u3AnsiVersion          = 0x05; /* SPC-4 compliant */
+            ScsiInquiryReply.fCmdQue                = 1;    /* Command queuing supported. */
+            ScsiInquiryReply.fWBus16                = 1;
             vscsiPadStr(ScsiInquiryReply.achVendorId, "VBOX", 8);
             vscsiPadStr(ScsiInquiryReply.achProductId, "HARDDISK", 16);
             vscsiPadStr(ScsiInquiryReply.achProductLevel, "1.0", 4);
