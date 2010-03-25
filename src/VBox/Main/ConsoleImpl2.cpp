@@ -3245,7 +3245,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 if (fAttachDetach)
                 {
                     rc = PDMR3DriverAttach(pVM, pszDevice, uInstance, uLun, 0 /*fFlags*/, NULL /* ppBase */);
-                    AssertRC(rc);
+                    //AssertRC(rc);
                 }
 
                 {
