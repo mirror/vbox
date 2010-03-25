@@ -198,7 +198,9 @@ RTDECL(int)  RTPipeFromNative(PRTPIPE phPipe, RTHCINTPTR hNativePipe, uint32_t f
 
     int fFd = fcntl(hNative, F_GETFL, 0);
     AssertReturn(fFd != -1, VERR_INVALID_HANDLE);
-    AssertMsgReturn((fFd & O_ACCMODE) == (fFlags & RTPIPE_N_READ ? O_RDONLY : O_WRONLY), ("%#x\n", fFd), VERR_INVALID_HANDLE);
+    AssertMsgReturn(   (fFd & O_ACCMODE) == (fFlags & RTPIPE_N_READ ? O_RDONLY : O_WRONLY)
+                    || (fFd & O_ACCMODE) == O_RDWR /* Solaris creates bi-directional pipes. */
+                    , ("%#x\n", fFd), VERR_INVALID_HANDLE);
 
     /*
      * Create the handle.
