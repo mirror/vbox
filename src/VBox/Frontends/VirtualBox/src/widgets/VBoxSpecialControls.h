@@ -60,6 +60,30 @@ private:
 
 /********************************************************************************
  *
+ * A reset button in the native Cocoa version.
+ *
+ ********************************************************************************/
+class UIResetButton: public QAbstractButton
+{
+    Q_OBJECT;
+
+public:
+    UIResetButton(QWidget *pParent = 0);
+
+    void setText(const QString &strText) { m_pButton->setText(strText); }
+    void setToolTip(const QString &strTip) { m_pButton->setToolTip(strTip); }
+    void removeBorder() {}
+
+protected:
+    void paintEvent(QPaintEvent * /* pEvent */) {}
+    void resizeEvent(QResizeEvent *pEvent);
+
+private:
+    VBoxCocoaButton *m_pButton;
+};
+
+/********************************************************************************
+ *
  * A help button in the native Cocoa version.
  *
  ********************************************************************************/
@@ -135,6 +159,20 @@ public:
 
 protected:
     void retranslateUi() {};
+};
+
+/********************************************************************************
+ *
+ * A reset button for the other OS's (same as the cancel button for now)
+ *
+ ********************************************************************************/
+class UIResetButton: public VBoxMiniCancelButton
+{
+    Q_OBJECT;
+
+public:
+    UIResetButton(QWidget *pParent = 0)
+      : VBoxMiniCancelButton(pParent) {}
 };
 
 /********************************************************************************

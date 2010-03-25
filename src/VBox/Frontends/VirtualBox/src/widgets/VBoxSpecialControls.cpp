@@ -51,6 +51,25 @@ void VBoxMiniCancelButton::resizeEvent(QResizeEvent * /* pEvent */)
 
 /********************************************************************************
  *
+ * A rest button in the native Cocoa version.
+ *
+ ********************************************************************************/
+UIResetButton::UIResetButton(QWidget *pParent /* = 0 */)
+  : QAbstractButton(pParent)
+{
+    m_pButton = new VBoxCocoaButton(VBoxCocoaButton::ResetButton, this);
+    connect(m_pButton, SIGNAL(clicked()),
+            this, SIGNAL(clicked()));
+    setFixedSize(m_pButton->size());
+}
+
+void UIResetButton::resizeEvent(QResizeEvent * /* pEvent */)
+{
+    m_pButton->resize(size());
+}
+
+/********************************************************************************
+ *
  * A help button in the native Cocoa version.
  *
  ********************************************************************************/
