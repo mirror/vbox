@@ -307,10 +307,10 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     return S_OK;
 }
 
-STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags, 
-                                   ComSafeArrayIn(BSTR, aArguments), ComSafeArrayIn(BSTR, aEnvironment), 
+STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
+                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
-                                   IN_BSTR aUserName, IN_BSTR aPassword, 
+                                   IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG* aPID)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
