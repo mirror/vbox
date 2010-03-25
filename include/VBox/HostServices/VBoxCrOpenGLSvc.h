@@ -37,9 +37,10 @@
 #include <VBox/hgcmsvc.h>
 
 /* crOpenGL host functions */
-#define SHCRGL_HOST_FN_SET_FRAMEBUFFER (1)
+#define SHCRGL_HOST_FN_SET_CONSOLE (1)
 #define SHCRGL_HOST_FN_SET_VISIBLE_REGION (5)
 #define SHCRGL_HOST_FN_SET_VM (7)
+#define SHCRGL_HOST_FN_SCREEN_CHANGED (8)
 /* crOpenGL guest functions */
 #define SHCRGL_GUEST_FN_WRITE       (2)
 #define SHCRGL_GUEST_FN_READ        (3)
@@ -47,13 +48,14 @@
 #define SHCRGL_GUEST_FN_SET_VERSION (6)
 
 /* Parameters count */
-#define SHCRGL_CPARMS_SET_FRAMEBUFFER (1)
+#define SHCRGL_CPARMS_SET_CONSOLE (1)
 #define SHCRGL_CPARMS_SET_VM (1)
 #define SHCRGL_CPARMS_SET_VISIBLE_REGION (2)
 #define SHCRGL_CPARMS_WRITE      (1)
 #define SHCRGL_CPARMS_READ       (2)
 #define SHCRGL_CPARMS_WRITE_READ (3)
 #define SHCRGL_CPARMS_SET_VERSION (2)
+#define SHCRGL_CPARMS_SCREEN_CHANGED (1)
 
 /**
  * SHCRGL_GUEST_FN_WRITE

@@ -314,11 +314,16 @@ extern GLint RENDER_APIENTRY renderspuCreateContext( const char *dpyname, GLint 
 extern void RENDER_APIENTRY renderspuMakeCurrent(GLint crWindow, GLint nativeWindow, GLint ctx);
 extern void RENDER_APIENTRY renderspuSwapBuffers( GLint window, GLint flags );
 
+#if defined(WINDOWS) || defined(GLX)
+extern void renderspu_SystemReparentWindow(WindowInfo *window);
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 DECLEXPORT(void) renderspuSetWindowId(uint64_t winId);
 DECLEXPORT(void) renderspuSetRootVisibleRegion(GLint cRects, GLint *pRects);
+DECLEXPORT(void) renderspuReparentWindow(GLint window);
 #ifdef __cplusplus
 }
 #endif

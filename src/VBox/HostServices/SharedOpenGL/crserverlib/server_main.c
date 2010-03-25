@@ -14,6 +14,7 @@
 #include "cr_hash.h"
 #include "server_dispatch.h"
 #include "state/cr_texture.h"
+#include "render/renderspu.h"
 #include <signal.h>
 #include <stdlib.h>
 #define DEBUG_FP_EXCEPTIONS 0
@@ -1002,3 +1003,92 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
     return VINF_SUCCESS;
 }
 
+#define SCREEN(i) (cr_server.screen[i])
+#define MAPPED(screen) ((screen).winID != 0)
+
+static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *pMI = (CRMuralInfo*) data1;
+    int *sIndex = (int*) data2;
+
+    if (pMI->screenId == *sIndex)
+    {
+        renderspuReparentWindow(pMI->spuWindow);
+    }
+}
+
+DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
+{
+    int i;
+
+    if (sCount>CR_MAX_GUEST_MONITORS)
+        return VERR_INVALID_PARAMETER;
+
+    /*Shouldn't happen yet, but to be safe in future*/
+    for (i=0; i<cr_server.screenCount; ++i)
+    {
+        if (MAPPED(SCREEN(i)))
+            crWarning("Screen count is changing, but screen[%i] is still mapped", i);
+        return VERR_NOT_IMPLEMENTED;
+    }
+
+    cr_server.screenCount = sCount;
+
+    for (i=0; i<sCount; ++i)
+    {
+        SCREEN(i).winID = 0;
+    }
+
+    return VINF_SUCCESS;
+}
+
+DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex)
+{
+    if (sIndex<0 || sIndex>=cr_server.screenCount)
+        return VERR_INVALID_PARAMETER;
+
+    if (MAPPED(SCREEN(sIndex)))
+    {
+        SCREEN(sIndex).winID = 0;
+        renderspuSetWindowId(0);
+
+        crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
+    }
+
+    renderspuSetWindowId(SCREEN(0).winID);
+    return VINF_SUCCESS;
+}
+
+DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID)
+{
+    if (sIndex<0 || sIndex>=cr_server.screenCount)
+        return VERR_INVALID_PARAMETER;
+
+    if (winID==0)
+        return VERR_INVALID_PARAMETER;
+
+    if (MAPPED(SCREEN(sIndex)))
+    {
+        crWarning("Mapped screen[%i] is being remapped.", sIndex);
+    }
+
+    SCREEN(sIndex).winID = winID;
+    SCREEN(sIndex).x = x;
+    SCREEN(sIndex).y = y;
+    SCREEN(sIndex).w = w;
+    SCREEN(sIndex).h = h;
+
+    renderspuSetWindowId(SCREEN(sIndex).winID);
+
+    crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
+
+    renderspuSetWindowId(SCREEN(0).winID);
+    return VINF_SUCCESS;
+}
+
+DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects)
+{
+    renderspuSetRootVisibleRegion(cRects, pRects);
+
+    return VINF_SUCCESS;
+}

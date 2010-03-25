@@ -1038,6 +1038,23 @@ renderspuGetString(GLenum pname)
         return NULL;
 }
 
+DECLEXPORT(void) renderspuReparentWindow(GLint window)
+{
+    WindowInfo *pWindow;
+    CRASSERT(window >= 0);
+
+    pWindow = (WindowInfo *) crHashtableSearch(render_spu.windowTable, window);
+
+    if (!pWindow)
+    {
+        crDebug("Render SPU: Attempt to reparent invalid window (%d)", window);
+        return;
+    }
+
+#if defined(WINDOWS) || defined(GLX)
+    renderspu_SystemReparentWindow(pWindow);
+#endif
+}
 
 #if defined(DARWIN)
 # ifdef VBOX_WITH_COCOA_QT
