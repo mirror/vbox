@@ -384,6 +384,9 @@ int main(int argc, char *argv[])
 #ifdef VBOX_WITH_GUEST_PROPS
         { "guestproperty",    handleGuestProperty },
 #endif
+#ifdef VBOX_WITH_GUEST_CONTROL
+        { "guestcontrol",     handleGuestControl },
+#endif
         { "metrics",          handleMetrics },
         { "import",           handleImportAppliance },
         { "export",           handleExportAppliance },

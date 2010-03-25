@@ -41,9 +41,7 @@ ifdef VBOX_WITH_GUEST_PROPS
   VBoxService_DEFS       += VBOX_WITH_HGCM VBOXSERVICE_EXEC
  endif
 ifdef VBOX_WITH_GUEST_CONTROL
- if1of ($(KBUILD_TARGET), win)
-  VBoxService_DEFS       += VBOXSERVICE_CONTROL
- endif
+  VBoxService_DEFS       += VBOX_WITH_GUEST_CONTROL
 endif
 endif
 if1of ($(KBUILD_TARGET), linux)
@@ -57,10 +55,8 @@ VBoxService_SOURCES       = \
 	VBoxServiceBalloon.cpp \
 	VBoxServiceStats.cpp
 ifdef VBOX_WITH_GUEST_CONTROL
- if1of ($(KBUILD_TARGET), win)
-  VBoxService_SOURCES    += \
+ VBoxService_SOURCES    += \
 	VBoxServiceControl.cpp
- endif
 endif
 ifdef VBOX_WITH_GUEST_PROPS
  VBoxService_SOURCES.win  = \
