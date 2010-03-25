@@ -659,8 +659,11 @@ ifeq ($(KBUILD_TARGET),darwin)
  # We'll use the native html/help viewer.
  VBOX_WITH_KCHMVIEWER=
  VBOX_WITH_VRDP_RDESKTOP=
+ # Permanent (no working SDL).
  VBOX_WITH_VBOXSDL=
- VBOX_WITH_VBOXBFE=
+ ifeq ($(KBUILD_TARGET_ARCH),amd64)
+  VBOX_WITH_VBOXBFE=
+ endif
 endif
 
 ifeq ($(KBUILD_TARGET),freebsd)
