@@ -4302,6 +4302,7 @@ ASM_END
     case 0xec: /* AMD64 target operating mode callback */
       if (regs.u.r8.al != 0) 
           goto undecoded;
+      regs.u.r8.al = 0;
       if (regs.u.r8.bl >= 1 && regs.u.r8.bl <= 3)
           CLEAR_CF();   /* Accepted value. */
       else
