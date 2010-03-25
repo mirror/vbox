@@ -245,10 +245,10 @@ STDMETHODIMP DHCPServer::Start(IN_BSTR aNetworkName, IN_BSTR aTrunkName, IN_BSTR
     m.dhcp.setOption(DHCPCFG_TRUNKTYPE, Utf8Str(aTrunkType), true);
     //temporary hack for testing
     //    DHCPCFG_NAME
-    char strMAC[13];
+    char strMAC[32];
     Guid guid;
     guid.create();
-    RTStrPrintf (strMAC, sizeof(strMAC), "080027%02X%02X%02X",
+    RTStrPrintf (strMAC, sizeof(strMAC), "08:00:27:%02X:%02X:%02X",
                  guid.ptr()->au8[0], guid.ptr()->au8[1], guid.ptr()->au8[2]);
     m.dhcp.setOption(DHCPCFG_MACADDRESS, strMAC, true);
     m.dhcp.setOption(DHCPCFG_IPADDRESS,  Utf8Str(m.IPAddress), true);
