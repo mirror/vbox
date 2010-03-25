@@ -44,7 +44,7 @@ static int initDisplay(Display *pDisplay)
     int rc = VINF_SUCCESS;
     uint32_t fMouseFeatures = 0;
 
-    LogFlowFunc(("testing dynamic resizing\n"));
+    LogRelFlowFunc(("testing dynamic resizing\n"));
     int iDummy;
     if (!XRRQueryExtension(pDisplay, &iDummy, &iDummy))
         rc = VERR_NOT_SUPPORTED;
@@ -54,9 +54,9 @@ static int initDisplay(Display *pDisplay)
         VbglR3CtlFilterMask(0, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
     /* Log and ignore the return value, as there is not much we can do with
      * it. */
-    LogFlowFunc(("dynamic resizing: result %Rrc\n", rc));
+    LogRelFlowFunc(("dynamic resizing: result %Rrc\n", rc));
     /* Enable support for switching between hardware and software cursors */
-    LogFlowFunc(("enabling relative mouse re-capturing support\n"));
+    LogRelFlowFunc(("enabling relative mouse re-capturing support\n"));
     rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
     if (RT_SUCCESS(rc))
     {
@@ -78,21 +78,21 @@ static int initDisplay(Display *pDisplay)
         VbglR3SetMouseStatus(  fMouseFeatures
                              | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
     }
-    LogFlowFunc(("mouse re-capturing support: result %Rrc\n", rc));
+    LogRelFlowFunc(("mouse re-capturing support: result %Rrc\n", rc));
     return VINF_SUCCESS;
 }
 
 void cleanupDisplay(void)
 {
     uint32_t fMouseFeatures = 0;
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     VbglR3CtlFilterMask(0,   VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST
                            | VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
     int rc = VbglR3GetMouseStatus(&fMouseFeatures, NULL, NULL);
     if (RT_SUCCESS(rc))
         VbglR3SetMouseStatus(  fMouseFeatures
                              | VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR);
-    LogFlowFunc(("returning\n"));
+    LogRelFlowFunc(("returning\n"));
 }
 
 /** This thread just runs a dummy X11 event loop to be sure that we get
@@ -118,7 +118,7 @@ static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
     int cSizes;
     pConfig = XRRGetScreenInfo(pDisplay, DefaultRootWindow(pDisplay));
     /* Reset the current mode */
-    LogFlowFunc(("Setting size %ux%u\n", cx, cy));
+    LogRelFlowFunc(("Setting size %ux%u\n", cx, cy));
     if (pConfig)
     {
         pSizes = XRRConfigSizes(pConfig, &cSizes);
@@ -129,7 +129,7 @@ static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
 #define VBCL_SQUARE(x) (x) * (x)
             unsigned uThisDist =   VBCL_SQUARE(pSizes[i].width - cx)
                                  + VBCL_SQUARE(pSizes[i].height - cy);
-            LogFlowFunc(("Found size %dx%d, distance %u\n", pSizes[i].width,
+            LogRelFlowFunc(("Found size %dx%d, distance %u\n", pSizes[i].width,
                          pSizes[i].height, uThisDist));
 #undef VBCL_SQUARE
             if (uThisDist < uDist)
@@ -142,7 +142,7 @@ static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
         {
             Time config_timestamp = 0;
             XRRConfigTimes(pConfig, &config_timestamp);
-            LogFlowFunc(("Setting new size %d\n", iMode));
+            LogRelFlowFunc(("Setting new size %d\n", iMode));
             XRRSetScreenConfig(pDisplay, pConfig,
                                DefaultRootWindow(pDisplay), iMode,
                                RR_Rotate_0, config_timestamp);
@@ -160,7 +160,7 @@ static void setSize(Display *pDisplay, uint32_t cx, uint32_t cy)
  */
 static int runDisplay(Display *pDisplay)
 {
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     Cursor hClockCursor = XCreateFontCursor(pDisplay, XC_watch);
     Cursor hArrowCursor = XCreateFontCursor(pDisplay, XC_left_ptr);
     int rc = RTThreadCreate(NULL, x11ConnectionMonitor, NULL, 0,
@@ -198,7 +198,7 @@ static int runDisplay(Display *pDisplay)
                 setSize(pDisplay, cx, cy);
         }
     }
-    LogFlowFunc(("returning VINF_SUCCESS\n"));
+    LogRelFlowFunc(("returning VINF_SUCCESS\n"));
     return VINF_SUCCESS;
 }
 

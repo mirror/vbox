@@ -125,14 +125,14 @@ public:
      */
     int init(VBoxGuestSeamlessObserver *pObserver)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (mObserver != 0)  /* Assertion */
         {
             LogRel(("VBoxClient: ERROR: attempt to initialise seamless host object twice!\n"));
             return VERR_INTERNAL_ERROR;
         }
         mObserver = pObserver;
-        LogFlowThisFunc(("returning VINF_SUCCESS\n"));
+        LogRelFlowFunc(("returning VINF_SUCCESS\n"));
         return VINF_SUCCESS;
     }
 
@@ -167,7 +167,7 @@ public:
 
     ~VBoxGuestSeamlessHost()
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (mRunning)  /* Assertion */
         {
             LogRel(("VBoxClient: seamless host object still running!  Stopping...\n"));
@@ -177,7 +177,7 @@ public:
             }
             catch(...) {}
         }
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
     }
 };
 

@@ -94,13 +94,13 @@ public:
      */
     int init(void)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         int rc = mThreadFunction.init();
         if (RT_SUCCESS(rc))
             rc = mThread.start();
         if (RT_SUCCESS(rc))
             mInit = true;
-        LogFlowThisFunc(("returning %Rrc\n", rc));
+        LogRelFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }
     /**
@@ -109,10 +109,10 @@ public:
      */
     void uninit(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (mInit)
             mThread.stop(cMillies, NULL);
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
     }
 
     VBoxGuestClipboard() : mThread(&mThreadFunction, 0, RTTHREADTYPE_MSG_PUMP,
@@ -120,12 +120,12 @@ public:
     { mInit = false; }
     ~VBoxGuestClipboard()
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (mInit)
             try {
                 uninit(2000);
             } catch (...) { }
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
     }
 };
 

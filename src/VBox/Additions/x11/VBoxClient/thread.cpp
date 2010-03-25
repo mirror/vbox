@@ -29,7 +29,7 @@ int VBoxGuestThread::stop(RTMSINTERVAL cMillies, int *prc)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowThisFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     if (NIL_RTTHREAD == mSelf)  /* Assertion */
     {
         LogRelThisFunc(("Attempted to stop thread %s which is not running!\n", mName));
@@ -49,14 +49,14 @@ int VBoxGuestThread::stop(RTMSINTERVAL cMillies, int *prc)
             LogRelThisFunc(("Failed to stop thread %s!\n", mName));
         }
     }
-    LogFlowThisFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
 /** Destroy the class, stopping the thread if necessary. */
 VBoxGuestThread::~VBoxGuestThread(void)
 {
-    LogFlowThisFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     if (NIL_RTTHREAD != mSelf)
     {
         LogRelThisFunc(("Warning!  Stopping thread %s, as it is still running!\n", mName));
@@ -66,7 +66,7 @@ VBoxGuestThread::~VBoxGuestThread(void)
         }
         catch(...) {}
     }
-    LogFlowThisFunc(("returning\n"));
+    LogRelFlowFunc(("returning\n"));
 }
 
 /** Start the thread. */
@@ -74,7 +74,7 @@ int VBoxGuestThread::start(void)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowThisFunc(("returning\n"));
+    LogRelFlowFunc(("returning\n"));
     if (NIL_RTTHREAD != mSelf)  /* Assertion */
     {
         LogRelThisFunc(("Attempted to start thead %s twice!\n", mName));
@@ -83,7 +83,7 @@ int VBoxGuestThread::start(void)
     mExit = false;
     rc = RTThreadCreate(&mSelf, threadFunction, reinterpret_cast<void *>(this),
                           mStack, mType, mFlags, mName);
-    LogFlowThisFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
 
@@ -98,7 +98,7 @@ int VBoxGuestThread::threadFunction(RTTHREAD self, void *pvUser)
 {
     int rc = VINF_SUCCESS;
 
-    LogFlowFunc(("\n"));
+    LogRelFlowFunc(("\n"));
     PSELF pSelf = reinterpret_cast<PSELF>(pvUser);
     pSelf->mRunning = true;
     try
@@ -116,6 +116,6 @@ int VBoxGuestThread::threadFunction(RTTHREAD self, void *pvUser)
         rc = VERR_UNRESOLVED_ERROR;
     }
     pSelf->mRunning = false;
-    LogFlowFunc(("returning %Rrc\n", rc));
+    LogRelFlowFunc(("returning %Rrc\n", rc));
     return rc;
 }
