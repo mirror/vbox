@@ -1302,6 +1302,7 @@ public:
     void completeCurrentEvent();
     class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
+    void updatePostEventObject(QObject *m_pObject) { m_pParent = m_pObject; }
 private:
     RTCRITSECT mCritSect;
     class VBoxVHWACommandProcessEvent *mpFirstEvent;
@@ -1676,7 +1677,7 @@ public:
             delete mpShareWgt;
     }
 
-    void updateViewport(QWidget *pViewport);
+    void updateAttachment(QWidget *pViewport, QObject *pPostEventObject);
 
     int onVHWACommand (struct _VBOXVHWACMD * pCommand);
 
@@ -1821,21 +1822,27 @@ template <class T, class V, class R>
 class VBoxOverlayFrameBuffer : public T
 {
 public:
+    VBoxOverlayFrameBuffer (V *pView, VBoxQGLOverlay *pOverlay, CSession * aSession)
+        : T (pView),
+          mpOverlay (pOverlay),
+          mpView (pView)
+    {}
+
     VBoxOverlayFrameBuffer (V *pView, QWidget *pWidget, CSession * aSession)
         : T (pView),
-          mOverlay (pWidget, pView, aSession),
+          mpOverlay (new VBoxQGLOverlay(pWidget, pView, aSession)),
           mpView (pView)
     {}
 
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
-        return mOverlay.onVHWACommand ((struct _VBOXVHWACMD*)pCommand);
+        return mpOverlay->onVHWACommand ((struct _VBOXVHWACMD*)pCommand);
     }
 
     void doProcessVHWACommand (QEvent * pEvent)
     {
-        mOverlay.onVHWACommandEvent (pEvent);
+        mpOverlay->onVHWACommandEvent (pEvent);
     }
 
     STDMETHOD(RequestResize) (ULONG aScreenId, ULONG aPixelFormat,
@@ -1843,7 +1850,7 @@ public:
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished)
    {
-        if (mOverlay.onRequestResize (aScreenId, aPixelFormat,
+        if (mpOverlay->onRequestResize (aScreenId, aPixelFormat,
                 aVRAM, aBitsPerPixel, aBytesPerLine,
                 aWidth, aHeight,
                 aFinished))
@@ -1859,7 +1866,7 @@ public:
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH)
     {
-        if (mOverlay.onNotifyUpdate (aX, aY, aW, aH))
+        if (mpOverlay->onNotifyUpdate (aX, aY, aW, aH))
             return S_OK;
         return T::NotifyUpdate (aX, aY, aW, aH);
     }
@@ -1867,23 +1874,23 @@ public:
     void resizeEvent (R *re)
     {
         T::resizeEvent (re);
-        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(re),
+        mpOverlay->onResizeEventPostprocess (VBoxFBSizeInfo(re),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
 
     void viewportResized (QResizeEvent * re)
     {
-        mOverlay.onViewportResized (re);
+        mpOverlay->onViewportResized (re);
         T::viewportResized (re);
     }
 
     void viewportScrolled (int dx, int dy)
     {
-        mOverlay.onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
+        mpOverlay->onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
         T::viewportScrolled (dx, dy);
     }
 private:
-    VBoxQGLOverlay mOverlay;
+    VBoxQGLOverlay *mpOverlay;
     V *mpView;
 };
 
