@@ -752,23 +752,26 @@ static DECLCALLBACK(void) drvR3IntNetDestruct(PPDMDRVINS pDrvIns)
     RTMemCacheDestroy(pThis->hSgCache);
     pThis->hSgCache = NIL_RTMEMCACHE;
 
-    /*
-     * Deregister statistics in case we're being detached.
-     */
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cStatFrames);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cOverflows);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cStatFrames);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cbStatWritten);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cOverflows);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsOk);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
+    if (pThis->pBufR3)
+    {
+        /*
+         * Deregister statistics in case we're being detached.
+         */
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cStatFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cbStatWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Recv.cOverflows);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cStatFrames);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cbStatWritten);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->Send.cOverflows);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsOk);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatYieldsNok);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatLost);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->pBufR3->cStatBadFrames);
 #ifdef VBOX_WITH_STATISTICS
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
-    PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatReceive);
+        PDMDrvHlpSTAMDeregister(pDrvIns, &pThis->StatTransmit);
 #endif
+    }
 }
 
 
