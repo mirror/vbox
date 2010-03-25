@@ -35,6 +35,9 @@
 #include "UIMachineMenuBar.h"
 #include "VBoxProblemReporter.h"
 #include "UIFirstRunWzd.h"
+#ifdef VBOX_WITH_VIDEOHWACCEL
+# include "VBoxFBOverlay.h"
+#endif
 
 #ifdef Q_WS_X11
 # include <QX11Info>
@@ -1487,3 +1490,16 @@ void UISession::preparePowerUp()
     }
 }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+/* 2D video overlay state + API */
+class VBoxQGLOverlay* UISession::overlayForScreen(ulong screenId)
+{
+    /* durty hack to fill the list as needed */
+    if (m_OverlaysList.size() <= (int)screenId)
+    {
+        for (int i = m_OverlaysList.size(); i <= (int)screenId; ++i)
+            m_OverlaysList.append(new VBoxQGLOverlay((QWidget *)NULL, (QObject *)NULL, &m_session));
+    }
+    return m_OverlaysList.at((int)screenId);
+}
+#endif

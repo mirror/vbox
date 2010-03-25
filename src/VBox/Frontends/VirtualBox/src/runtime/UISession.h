@@ -139,6 +139,11 @@ public:
     void setMouseCaptured(bool fIsMouseCaptured) { m_fIsMouseCaptured = fIsMouseCaptured; emit sigMouseCapturedStatusChanged(); }
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D video overlay state + API */
+    class VBoxQGLOverlay* overlayForScreen(ulong screenId);
+#endif
+
 signals:
 
     /* Console callback signals: */
@@ -201,6 +206,13 @@ private:
     const CConsoleCallback m_callback;
 
     UIMachineMenuBar *m_pMenuPool;
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    /* 2D video overlay state + API
+     * this does not get re-created on mode change
+     * Each screen has its own Overlay state */
+    QList<class VBoxQGLOverlay*> m_OverlaysList;
+#endif
 
     /* Common variables: */
     KMachineState m_machineState;

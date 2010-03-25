@@ -4183,6 +4183,20 @@ void VBoxQGLOverlay::initGl()
     mpOverlayWgt->setMouseTracking (true);
 }
 
+void VBoxQGLOverlay::updateAttachment(QWidget *pViewport, QObject *pPostEventObject)
+{
+    mCmdPipe.updatePostEventObject(pPostEventObject);
+    if (mpViewport != pViewport)
+    {
+        mpViewport = pViewport;
+        mpOverlayWgt = NULL;
+        mOverlayWidgetVisible = false;
+        initGl();
+        vboxDoCheckUpdateViewport();
+        mGlCurrent = false;
+    }
+}
+
 int VBoxQGLOverlay::reset()
 {
     VBoxVHWACommandElement * pHead, * pTail;
