@@ -1929,7 +1929,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Náhľad v systémovej oblasti</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

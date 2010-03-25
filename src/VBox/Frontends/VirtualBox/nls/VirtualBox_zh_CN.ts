@@ -2115,7 +2115,7 @@ p, li { white-space: pre-wrap; }
         <translation>托盘图标实时预览(&amp;D)</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

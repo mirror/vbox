@@ -1377,7 +1377,7 @@ p, li { white-space: pre-wrap; }
         <translation>Actueel voorbeeld &amp;Dock ikoon</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Automatische Dock laten zien &amp;&amp; Menubarlk bij schermvullend</translation>
     </message>
 </context>

@@ -2171,7 +2171,7 @@ Acest director este folosit, dacă nu este explicit specificat altfel, atunci c�
         <translation>Previzualizare în timp re&amp;al</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

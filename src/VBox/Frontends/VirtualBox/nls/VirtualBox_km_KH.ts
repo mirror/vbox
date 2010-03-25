@@ -1211,7 +1211,7 @@ p, li { white-space: pre-wrap; }
       <translation>មើល​រូបតំណាង​ចូលផែ Realtime ជា​មុន</translation>
     </message>
     <message>
-      <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+      <source>&amp;Auto show Dock and Menubar in fullscreen</source>
       <translation>បង្ហាញ​ចត​ដោយ​ស្វ័យ​ប្រវត្តិ​ និងរបារ​ម៉ឺនុយ​​អេក្រង់​ពេញ​</translation>
     </message>
   </context>

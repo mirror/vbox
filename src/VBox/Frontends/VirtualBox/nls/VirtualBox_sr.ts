@@ -1397,7 +1397,7 @@ p, li { white-space: pre-wrap; }
         <translation>Dock икона реални преглед</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>Ауто покажи Dock траку у пуном-екрану</translation>
     </message>
 </context>

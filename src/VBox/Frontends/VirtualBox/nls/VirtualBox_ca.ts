@@ -1965,7 +1965,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Mostra la icona a la safata del sistema</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Mostra el dock automàticament i la barra de menú al mode de pantalla completa</translation>
     </message>
 </context>

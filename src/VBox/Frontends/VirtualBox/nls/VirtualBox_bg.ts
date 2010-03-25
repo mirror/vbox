@@ -1374,7 +1374,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Преглед в реално време от иконата в панела</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Автоматично показване на лентата и менюто при цял екран</translation>
     </message>
 </context>

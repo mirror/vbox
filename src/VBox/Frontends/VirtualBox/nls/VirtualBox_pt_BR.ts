@@ -2110,7 +2110,7 @@ p, li { white-space: pre-wrap; }
         <translation>Atualização em Tempo Real do Ícone da Barra (&amp;D)</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translatorcomment>Mostrar Dock e Barra de Menus &amp;automaticamente em tela cheia</translatorcomment>
         <translation></translation>
     </message>

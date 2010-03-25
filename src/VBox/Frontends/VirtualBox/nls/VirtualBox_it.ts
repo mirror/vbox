@@ -2060,7 +2060,7 @@ p, li { white-space: pre-wrap; }
         <translation>Anteprima in tempo reale &amp;dell&apos;icona del pannello</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>Mostr&amp;a automaticamente il pannello e la barra dei menu a schermo intero</translation>
     </message>
 </context>
