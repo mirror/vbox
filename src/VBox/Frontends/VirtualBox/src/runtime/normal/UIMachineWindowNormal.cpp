@@ -29,10 +29,12 @@
 
 /* Local includes */
 #include "VBoxGlobal.h"
+#include "VBoxProblemReporter.h"
 #include "VBoxUtils.h"
 
 #include "UIActionsPool.h"
 #include "UIDownloaderAdditions.h"
+#include "UIDownloaderUserManual.h"
 #include "UIIndicatorsPool.h"
 #include "UIMachineLogic.h"
 #include "UIMachineView.h"
@@ -147,6 +149,13 @@ void UIMachineWindowNormal::sltDownloaderAdditionsEmbed()
 {
     /* If there is an additions download running show the process bar: */
     if (UIDownloaderAdditions *pDl = UIDownloaderAdditions::current())
+        statusBar()->addWidget(pDl->processWidget(this), 0);
+}
+
+void UIMachineWindowNormal::sltDownloaderUserManualEmbed()
+{
+    /* If there is an additions download running show the process bar: */
+    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
         statusBar()->addWidget(pDl->processWidget(this), 0);
 }
 
@@ -421,6 +430,10 @@ void UIMachineWindowNormal::prepareStatusBar()
      * if a download is actually running: */
     sltDownloaderAdditionsEmbed();
 
+    /* Add the user manual progress bar to the status bar,
+     * if a download is actually running: */
+    sltDownloaderUserManualEmbed();
+
     /* Create & start timer to update LEDs: */
     m_pIdleTimer = new QTimer(this);
     connect(m_pIdleTimer, SIGNAL(timeout()), this, SLOT(sltUpdateIndicators()));
@@ -439,6 +452,8 @@ void UIMachineWindowNormal::prepareConnections()
             this, SLOT(sltProcessGlobalSettingChange(const char *, const char *)));
     /* Setup additions downloader listener: */
     connect(machineLogic(), SIGNAL(sigDownloaderAdditionsCreated()), this, SLOT(sltDownloaderAdditionsEmbed()));
+    /* Setup user manual downloader listener: */
+    connect(&vboxProblem(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltDownloaderUserManualEmbed()));
 }
 
 void UIMachineWindowNormal::prepareMachineView()

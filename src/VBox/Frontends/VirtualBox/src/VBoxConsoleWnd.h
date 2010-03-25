@@ -187,6 +187,8 @@ private slots:
 
     void installGuestAdditionsFrom (const QString &aSource);
 
+    void sltDownloaderUserManualEmbed();
+
 #ifdef RT_OS_DARWIN /* Stupid moc doesn't recognize Q_WS_MAC */
     void sltDockPreviewModeChanged(QAction *pAction);
 #endif /* RT_OS_DARWIN */

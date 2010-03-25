@@ -311,6 +311,12 @@ public:
     void warnAboutOldAdditions (QWidget *, const QString &, const QString &);
     void warnAboutNewAdditions (QWidget *, const QString &, const QString &);
 
+    bool askAboutUserManualDownload(const QString &strMissedLocation);
+    bool confirmUserManualDownload(const QString &strURL, ulong uSize);
+    void warnAboutUserManualCantBeDownloaded(const QString &strURL, const QString &strReason);
+    void warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget);
+    void warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget);
+
     void cannotConnectRegister (QWidget *aParent,
                                 const QString &aURL,
                                 const QString &aReason);
@@ -386,12 +392,17 @@ public:
         return formatErrorInfo (aRC.errorInfo(), aRC.rc());
     }
 
+signals:
+
+    void sigDownloaderUserManualCreated();
+
 public slots:
 
     void showHelpWebDialog();
     void showHelpAboutDialog();
     void showHelpHelpDialog();
     void resetSuppressedMessages();
+    void sltShowUserManual(const QString &strLocation);
 
 private:
 

@@ -27,6 +27,7 @@
 #include "VBoxSelectorWnd.h"
 #include "VBoxConsoleWnd.h"
 #include "VBoxProgressDialog.h"
+#include "UIDownloaderUserManual.h"
 #ifdef VBOX_WITH_NEW_RUNTIME_CORE
 # include "UIMachine.h"
 #endif
@@ -40,6 +41,7 @@
 #endif
 
 /* Qt includes */
+#include <QDir>
 #include <QDesktopWidget>
 #include <QFileInfo>
 #ifdef Q_WS_MAC
@@ -1682,6 +1684,57 @@ void VBoxProblemReporter::warnAboutNewAdditions (QWidget *aParent,
         "warnAboutNewAdditions");
 }
 
+bool VBoxProblemReporter::askAboutUserManualDownload(const QString &strMissedLocation)
+{
+    return messageOkCancel(mainWindowShown(), Question,
+                           tr("<p>Could not find the VirtualBox User Manual "
+                              "<nobr><b>%1</b>.</nobr></p><p>Do you wish to "
+                              "download this file from the Internet?</p>")
+                              .arg(strMissedLocation),
+                           0, /* Auto-confirm Id */
+                           tr ("Download", "additions"));
+}
+
+bool VBoxProblemReporter::confirmUserManualDownload(const QString &strURL, ulong uSize)
+{
+    return messageOkCancel(mainWindowShown(), Question,
+                           tr ("<p>Are you sure you want to download the VirtualBox "
+                               "User Manual from "
+                               "<nobr><a href=\"%1\">%2</a></nobr> "
+                               "(size %3 bytes)?</p>").arg(strURL).arg(strURL).arg(uSize),
+                           0, /* Auto-confirm Id */
+                           tr ("Download", "additions"));
+}
+
+void VBoxProblemReporter::warnAboutUserManualCantBeDownloaded(const QString &strURL, const QString &strReason)
+{
+    message(mainWindowShown(), Error,
+            tr("<p>Failed to download the VirtualBox User Manual "
+               "from <nobr><a href=\"%1\">%2</a>.</nobr></p><p>%3</p>")
+               .arg(strURL).arg(strURL).arg(strReason));
+}
+
+void VBoxProblemReporter::warnAboutUserManualDownloaded(const QString &strURL, const QString &strTarget)
+{
+    message(mainWindowShown(), Warning,
+            tr("<p>The VirtualBox User Manual has been "
+               "successfully downloaded from "
+               "<nobr><a href=\"%1\">%2</a></nobr> "
+               "and saved locally as <nobr><b>%3</b>.</nobr></p>")
+               .arg(strURL).arg(strURL).arg(strTarget));
+}
+
+void VBoxProblemReporter::warnAboutUserManualCantBeSaved(const QString &strURL, const QString &strTarget)
+{
+    message(mainWindowShown(), Error,
+            tr("<p>The VirtualBox User Manual has been "
+               "successfully downloaded from "
+               "<nobr><a href=\"%1\">%2</a></nobr> "
+               "but can't be saved locally as <nobr><b>%3</b>.</nobr></p>"
+               "<p>Please choose another location for that file.</p>")
+               .arg(strURL).arg(strURL).arg(strTarget));
+}
+
 void VBoxProblemReporter::cannotConnectRegister (QWidget *aParent,
                                                  const QString &aURL,
                                                  const QString &aReason)
@@ -2510,28 +2563,62 @@ void VBoxProblemReporter::showHelpAboutDialog()
 void VBoxProblemReporter::showHelpHelpDialog()
 {
 #ifndef VBOX_OSE
-    QString manual = vboxGlobal().helpFile();
-# if defined (Q_WS_WIN32)
-    HtmlHelp (GetDesktopWindow(), manual.utf16(),
-              HH_DISPLAY_TOPIC, NULL);
-# elif defined (Q_WS_X11)
-    char szViewerPath[RTPATH_MAX];
-    int rc;
+    /* For non-OSE version we just open it: */
+    sltShowUserManual(vboxGlobal().helpFile());
+#else /* #endif for #ifndef VBOX_OSE */
+    /* For OSE version we have to check if it present first: */
+    QString strUserManualFileName1 = vboxGlobal().helpFile();
+    QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
+    QString strUserManualFileName2 = QDir(vboxGlobal().virtualBox().GetHomeFolder()).absoluteFilePath(strShortFileName);
+    if (QFile::exists(strUserManualFileName1))
+    {
+        sltShowUserManual(strUserManualFileName1);
+    }
+    else if (QFile::exists(strUserManualFileName2))
+    {
+        sltShowUserManual(strUserManualFileName2);
+    }
+    else if (!UIDownloaderUserManual::current() && askAboutUserManualDownload(strUserManualFileName1))
+    {
+        /* Initialize variables: */
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        // TODO: QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + strName;
+        QString source = QString("http://download.virtualbox.org/virtualbox/") + strShortFileName;
 
-    rc = RTPathAppPrivateArch (szViewerPath, sizeof (szViewerPath));
-    AssertRC (rc);
-
-    QProcess::startDetached (QString(szViewerPath) + "/kchmviewer",
-                             QStringList (manual));
-# elif defined (Q_WS_MAC)
-    vboxGlobal().openURL ("file://" + manual);
-# endif
-#endif /* VBOX_OSE */
+        /* Create User Manual downloader: */
+        UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
+        /* Configure User Manual downloader: */
+        pDl->setSource(source);
+        pDl->setTarget(strUserManualFileName2);
+        pDl->setParentWidget(mainWindowShown());
+        /* After the download is finished => show the document: */
+        connect(pDl, SIGNAL(downloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
+        /* Notify listeners: */
+        emit sigDownloaderUserManualCreated();
+        /* Start the downloader: */
+        pDl->startDownload();
+    }
+#endif /* #endif for #ifdef VBOX_OSE */
 }
 
 void VBoxProblemReporter::resetSuppressedMessages()
 {
     CVirtualBox vbox = vboxGlobal().virtualBox();
     vbox.SetExtraData (VBoxDefs::GUI_SuppressMessages, QString::null);
+}
+
+void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
+{
+#if defined (Q_WS_WIN32)
+    HtmlHelp (GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
+#elif defined (Q_WS_X11)
+    char szViewerPath[RTPATH_MAX];
+    int rc;
+    rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
+    AssertRC(rc);
+    QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
+#elif defined (Q_WS_MAC)
+    vboxGlobal().openURL ("file://" + strLocation);
+#endif
 }
 

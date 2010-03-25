@@ -52,6 +52,7 @@
 #include "VBoxConsoleView.h"
 #include "VBoxCloseVMDlg.h"
 #include "UIDownloaderAdditions.h"
+#include "UIDownloaderUserManual.h"
 #include "VBoxGlobal.h"
 #include "VBoxMediaManagerDlg.h"
 #include "VBoxMiniToolBar.h"
@@ -670,6 +671,7 @@ VBoxConsoleWnd::VBoxConsoleWnd (VBoxConsoleWnd **aSelf, QWidget* aParent, Qt::Wi
     /* Watch global settings changes */
     connect (&vboxGlobal().settings(), SIGNAL (propertyChanged (const char *, const char *)),
              this, SLOT (processGlobalSettingChange (const char *, const char *)));
+    connect(&vboxProblem(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltDownloaderUserManualEmbed()));
 #ifdef Q_WS_MAC
     connect(pDockPreviewModeGroup, SIGNAL(triggered(QAction*)),
             this, SLOT(sltDockPreviewModeChanged(QAction*)));
@@ -2910,6 +2912,13 @@ void VBoxConsoleWnd::installGuestAdditionsFrom (const QString &aSource)
     }
     else
         vboxProblem().cannotMountGuestAdditions (m.GetName());
+}
+
+void VBoxConsoleWnd::sltDownloaderUserManualEmbed()
+{
+    /* If there is User Manual downloader created => show the process bar: */
+    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+        statusBar()->addWidget(pDl->processWidget(this), 0);
 }
 
 /**
