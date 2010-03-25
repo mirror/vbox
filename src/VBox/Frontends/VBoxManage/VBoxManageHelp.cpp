@@ -587,6 +587,11 @@ void printUsage(USAGECATEGORY u64Cmd)
         usageGuestProperty();
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    if (u64Cmd & USAGE_GUESTCONTROL)
+        usageGuestControl();
+#endif /* VBOX_WITH_GUEST_CONTROL defined */
+
     if (u64Cmd & USAGE_METRICS)
     {
         RTPrintf("VBoxManage metrics          list [*|host|<vmname> [<metric_list>]]\n"

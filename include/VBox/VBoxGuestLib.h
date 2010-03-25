@@ -507,11 +507,14 @@ VBGLR3DECL(int)     VbglR3HostVersionLastCheckedStore(uint32_t u32ClientId, cons
 /** @}  */
 # endif /* VBOX_WITH_GUEST_PROPS defined */
 
+# ifdef VBOX_WITH_GUEST_CONTROL
 /** @name Guest control
  * @{ */
 VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
+VBGLR3DECL(int)     VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *pMsg, void **ppvData, uint32_t *pcbData);
 /** @}  */
+# endif /* VBOX_WITH_GUEST_CONTROL defined */
 
 /** @name User credentials handling
  * @{ */

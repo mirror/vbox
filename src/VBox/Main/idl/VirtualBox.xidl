@@ -8456,7 +8456,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="d8556fca-81bc-12af-fca3-365528fa38ca"
+     uuid="9576d333-deb9-4c65-0f06-6a1eb6a833e7"
      wsmap="managed"
      >
     <desc>
@@ -8569,6 +8569,50 @@
       <param name="statVal" type="unsigned long" dir="return">
         <desc>Statistics value</desc>
       </param>
+    </method>
+
+    <method name="executeProgram">
+      <desc>
+        Executes an existing program inside the guest VM.
+
+        <result name="E_NOTIMPL">
+          Not implemented yet.
+        </result>
+
+      </desc>
+      <param name="execName" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="flags" type="unsigned long" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="arguments" type="wstring" safearray="yes" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="environment" type="wstring" safearray="yes" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="stdIn" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="stdOut" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="stdErr" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="userName" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>
+      <param name="password" type="wstring" dir="in">
+        <desc>Foobar</desc> 
+      </param>  
+      <param name="timeoutMS" type="unsigned long" dir="in">
+        <desc>Foobar</desc> 
+      </param>  
+      <param name="pid" type="unsigned long" dir="out">
+        <desc>Foobar</desc> 
+      </param>  
     </method>
 
   </interface>

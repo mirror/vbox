@@ -93,6 +93,9 @@
 #define USAGE_DUMPHDINFO            RT_BIT_64(48)
 #define USAGE_STORAGEATTACH         RT_BIT_64(49)
 #define USAGE_STORAGECONTROLLER     RT_BIT_64(50)
+#ifdef VBOX_WITH_GUEST_CONTROL
+#define USAGE_GUESTCONTROL          RT_BIT_64(51)
+#endif  /* VBOX_WITH_GUEST_CONTROL defined */
 #define USAGE_ALL                   (~(uint64_t)0)
 /** @} */
 
@@ -167,6 +170,10 @@ int handleModifyVM(HandlerArg *a);
 extern void usageGuestProperty(void);
 #ifndef VBOX_ONLY_DOCS
 extern int handleGuestProperty(HandlerArg *a);
+
+/* VBoxManageGuestCtrl.cpp */
+extern int handleGuestControl(HandlerArg *a);
+extern void usageGuestControl(void);
 
 /* VBoxManageVMInfo.cpp */
 void showSnapshots(ComPtr<ISnapshot> &rootSnapshot,

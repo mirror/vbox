@@ -71,6 +71,11 @@ public:
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
+    STDMETHOD(ExecuteProgram)(IN_BSTR aExecName, ULONG aFlags, 
+                              ComSafeArrayIn(BSTR, aArguments), ComSafeArrayIn(BSTR, aEnvironment),  
+                              IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
+                              IN_BSTR aUserName, IN_BSTR aPassword, 
+                              ULONG aTimeoutMS, ULONG* aPID);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);
