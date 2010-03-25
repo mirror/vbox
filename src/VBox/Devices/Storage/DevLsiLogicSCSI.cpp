@@ -576,9 +576,6 @@ static void lsilogicFinishContextReply(PLSILOGICSCSI pLsiLogic, uint32_t u32Mess
     pLsiLogic->uReplyPostQueueNextEntryFreeWrite %= pLsiLogic->cReplyQueueEntries;
 
     PDMCritSectLeave(&pLsiLogic->ReplyPostQueueCritSect);
-
-    /* Set interrupt. */
-    lsilogicSetInterrupt(pLsiLogic, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
 }
 #endif /* IN_RING3 */
 
@@ -1958,8 +1955,9 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
     PLSILOGICTASKSTATE pTaskState      = (PLSILOGICTASKSTATE)pSCSIRequest->pvUser;
     PLSILOGICDEVICE    pLsiLogicDevice = pTaskState->pTargetDevice;
     PLSILOGICSCSI      pLsiLogic       = pLsiLogicDevice->CTX_SUFF(pLsiLogic);
+    uint32_t           cOutstanding    = 0;
 
-    ASMAtomicDecU32(&pLsiLogicDevice->cOutstandingRequests);
+    cOutstanding = ASMAtomicDecU32(&pLsiLogicDevice->cOutstandingRequests);
 
     if (RT_UNLIKELY(pTaskState->fBIOS))
     {
@@ -1986,7 +1984,11 @@ static DECLCALLBACK(int) lsilogicDeviceSCSIRequestCompleted(PPDMISCSIPORT pInter
 
 
         if (RT_LIKELY(rcCompletion == SCSI_STATUS_OK))
+        {
             lsilogicFinishContextReply(pLsiLogic, pTaskState->GuestRequest.SCSIIO.u32MessageContext);
+            if (!cOutstanding)
+                lsilogicSetInterrupt(pLsiLogic, LSILOGIC_REG_HOST_INTR_STATUS_REPLY_INTR);
+        }
         else
         {
             /* The SCSI target encountered an error during processing post a reply. */
