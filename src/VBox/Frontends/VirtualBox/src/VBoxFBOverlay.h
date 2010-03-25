@@ -1164,6 +1164,10 @@ typedef struct VBOXVHWAFUNCCALLBACKINFO
 class VBoxVHWACommandElement
 {
 public:
+    VBoxVHWACommandElement() :
+        bNewEvent(false)
+    {}
+
     void setVHWACmd(struct _VBOXVHWACMD * pCmd)
     {
         mType = VBOXVHWA_PIPECMD_VHWA;
@@ -1201,6 +1205,9 @@ public:
         }
     }
 
+    void setNewEventFlag() {bNewEvent = true;}
+    bool isNewEvent() const { return bNewEvent; }
+
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
     const QRect & rect() const {return mRect;}
     struct _VBOXVHWACMD * vhwaCmd() const {return u.mpCmd;}
@@ -1215,6 +1222,7 @@ private:
         VBOXVHWAFUNCCALLBACKINFO mFuncCallback;
     }u;
     QRect                 mRect;
+    bool bNewEvent;
 };
 
 class VBoxVHWACommandElementPipe
@@ -1227,7 +1235,7 @@ public:
 
     void put(VBoxVHWACommandElement *pCmd)
     {
-        if(mpLast)
+        if (mpLast)
         {
             Assert(mpFirst);
             mpLast->mpNext = pCmd;
@@ -1243,17 +1251,72 @@ public:
 
     }
 
-    VBoxVHWACommandElement * detachList()
+    void setFrom(VBoxVHWACommandElementPipe *pOther)
     {
-        if(mpLast)
+        mpFirst = pOther->detachList(&mpLast);
+    }
+
+    void set(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
+    {
+        mpFirst = pFirst;
+        mpLast = pLast;
+        mpLast->mpNext = NULL;
+    }
+
+    void prepend(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
+    {
+        if (!mpFirst)
+            set(pFirst, pLast);
+        else if (pLast)
+        {
+            pLast->mpNext = mpFirst;
+            mpFirst = pFirst;
+        }
+    }
+
+    void prependFrom(VBoxVHWACommandElementPipe *pOther)
+    {
+        VBoxVHWACommandElement *pFirst;
+        VBoxVHWACommandElement *pLast;
+        pFirst = pOther->detachList(&pLast);
+        prepend(pFirst, pLast);
+    }
+
+    void append(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
+    {
+        if (!mpLast)
+            set(pFirst, pLast);
+        else if (pLast)
+        {
+            mpLast->mpNext = pFirst;
+            mpLast = pLast;
+        }
+    }
+
+    VBoxVHWACommandElement * detachList(VBoxVHWACommandElement **ppLast)
+    {
+        if (mpLast)
         {
             VBoxVHWACommandElement * pHead = mpFirst;
+            if (ppLast)
+                *ppLast = mpLast;
             mpFirst = NULL;
             mpLast = NULL;
             return pHead;
         }
+        if (ppLast)
+            *ppLast = NULL;
         return NULL;
     }
+
+    const VBoxVHWACommandElement * contentsRo (const VBoxVHWACommandElement **ppLast) const
+    {
+        if (ppLast)
+            *ppLast = mpLast;
+        return mpFirst;
+    }
+
+    bool isEmpty() const { return !mpLast; }
 private:
     VBoxVHWACommandElement *mpFirst;
     VBoxVHWACommandElement *mpLast;
@@ -1300,31 +1363,20 @@ public:
     ~VBoxVHWACommandElementProcessor();
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
     void completeCurrentEvent();
-    class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
+    class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement ** ppLast,
+            class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
+    void putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
+            class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
-    void updatePostEventObject(QObject *m_pObject) { m_pParent = m_pObject; }
+    void updatePostEventObject(QObject *m_pObject);
 private:
     RTCRITSECT mCritSect;
-    class VBoxVHWACommandProcessEvent *mpFirstEvent;
-    class VBoxVHWACommandProcessEvent *mpLastEvent;
+    VBoxVHWACommandElementPipe m_CmdPipe;
     QObject *m_pParent;
     bool mbNewEvent;
     bool mbProcessingList;
     VBoxVHWACommandElementStack mFreeElements;
     VBoxVHWACommandElement mElementsBuffer[2048];
-};
-
-class VBoxVHWACommandsQueue
-{
-public:
-    void enqueue(PFNVBOXQGLFUNC pfn, void* pContext1, void* pContext2);
-
-    VBoxVHWACommandElement * detachList();
-
-    void freeList(VBoxVHWACommandElement * pList);
-
-private:
-    VBoxVHWACommandElementPipe mCmds;
 };
 
 /* added to workaround this ** [VBox|UI] duplication */
@@ -1400,8 +1452,6 @@ public:
 
     int reset(VHWACommandList * pCmdList);
 
-//    ulong vboxBitsPerPixel() { return mDisplay.getVGA()->bitsPerPixel(); }
-//    ulong vboxBytesPerLine() { return mDisplay.getVGA() ? mDisplay.getVGA()->bytesPerLine() : 0; }
     int vboxFbWidth() {return mDisplay.getVGA()->width(); }
     int vboxFbHeight() {return mDisplay.getVGA()->height(); }
     bool isInitialized() {return mDisplay.getVGA() != NULL; }
@@ -1444,8 +1494,6 @@ public:
         return bForce;
     }
 
-//    VHWACommandList &onResizeCmdList() { return mOnResizeCmdList; }
-
     static void pushSettingsAndSetupViewport(const QSize &display, const QRect &viewport)
     {
         glPushAttrib(GL_ALL_ATTRIB_BITS);
@@ -1472,9 +1520,6 @@ private:
     void vboxDoTestSurfaces(void *context);
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
-//    void vboxDoVHWACmdExec(void *cmd);
-//    void vboxDoVHWACmdAndFree(void *cmd);
-//    void vboxDoVHWACmd(void *cmd);
 
     void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
@@ -1499,10 +1544,6 @@ private:
 
     VBoxVHWADisplay mDisplay;
 
-//    void vboxDoProcessVHWACommands(void *pContext);
-
-//    class VBoxVHWACommandElement * processCmdList(class VBoxVHWACommandElement * pCmd);
-
     VBoxVHWASurfaceBase* handle2Surface(uint32_t h)
     {
         VBoxVHWASurfaceBase* pSurf = (VBoxVHWASurfaceBase*)mSurfHandleTable.get(h);
@@ -1518,10 +1559,6 @@ private:
 
     VBoxVHWASurfList *mConstructingList;
     int32_t mcRemaining2Contruct;
-
-    /* this is used in saved state restore to postpone surface restoration
-     * till the framebuffer size is restored */
-//    VHWACommandList mOnResizeCmdList;
 
     class VBoxVHWAGlProgramMngr *mpMngr;
 
@@ -1778,7 +1815,7 @@ private:
     void vboxDoVHWACmd (void *cmd);
     void addMainDirtyRect (const QRect & aRect);
     void vboxCheckUpdateOverlay (const QRect & rect);
-    VBoxVHWACommandElement * processCmdList (VBoxVHWACommandElement * pCmd);
+    VBoxVHWACommandElement * processCmdList (VBoxVHWACommandElement * pCmd, bool bFirst);
 
     int vhwaConstruct (struct _VBOXVHWACMD_HH_CONSTRUCT *pCmd);
 

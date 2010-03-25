@@ -205,16 +205,9 @@ static const VBoxVHWAInfo & vboxVHWAGetSupportInfo(const QGLContext *pContext)
 class VBoxVHWACommandProcessEvent : public QEvent
 {
 public:
-    VBoxVHWACommandProcessEvent (VBoxVHWACommandElement *pEl)
+    VBoxVHWACommandProcessEvent ()
         : QEvent ((QEvent::Type) VBoxDefs::VHWACommandProcessType)
-    {
-        mCmdPipe.put(pEl);
-    }
-    VBoxVHWACommandElementPipe & pipe() { return mCmdPipe; }
-
-    VBoxVHWACommandProcessEvent *mpNext;
-private:
-    VBoxVHWACommandElementPipe mCmdPipe;
+    {}
 };
 
 
@@ -2026,49 +2019,6 @@ void VBoxVHWAImage::setupMatricies(const QSize &display, bool bInverted)
     glLoadIdentity();
 }
 
-//VBoxVHWACommandElement * VBoxVHWAImage::processCmdList(VBoxVHWACommandElement * pCmd)
-//{
-//    VBoxVHWACommandElement * pCur;
-//    do
-//    {
-//        pCur = pCmd;
-//        switch(pCmd->type())
-//        {
-//        case VBOXVHWA_PIPECMD_PAINT:
-//            vboxDoUpdateRect(&pCmd->rect());
-//            break;
-//#ifdef VBOX_WITH_VIDEOHWACCEL
-//        case VBOXVHWA_PIPECMD_VHWA:
-//            vboxDoVHWACmd(pCmd->vhwaCmd());
-//            break;
-//        case VBOXVHWA_PIPECMD_FUNC:
-//        {
-//            const VBOXVHWAFUNCCALLBACKINFO & info = pCmd->func();
-//            info.pfnCallback(info.pContext1, info.pContext2);
-//            break;
-//        }
-//#endif
-//        default:
-//            Assert(0);
-//        }
-//        pCmd = pCmd->mpNext;
-//    } while(pCmd);
-//
-//    return pCur;
-//}
-//
-//void VBoxVHWAImage::vboxDoProcessVHWACommands(void *pContext)
-//{
-//    VBoxVHWACommandElementProcessor * pPipe = (VBoxVHWACommandElementProcessor*)pContext;
-//    VBoxVHWACommandElement * pFirst = pPipe->detachCmdList(NULL, NULL);
-//    do
-//    {
-//        VBoxVHWACommandElement * pLast = processCmdList(pFirst);
-//
-//        pFirst = pPipe->detachCmdList(pFirst, pLast);
-//    } while(pFirst);
-//}
-
 int VBoxVHWAImage::reset(VHWACommandList * pCmdList)
 {
     VBOXVHWACMD * pCmd;
@@ -2123,104 +2073,6 @@ int VBoxVHWAImage::reset(VHWACommandList * pCmdList)
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-//void VBoxVHWAImage::vboxDoVHWACmd(void *cmd)
-//{
-//    vboxDoVHWACmdExec(cmd);
-//
-//    CDisplay display = m_console.GetDisplay();
-//    Assert (!display.isNull());
-//
-//    display.CompleteVHWACommand((BYTE*)cmd);
-//}
-//
-//void VBoxVHWAImage::vboxDoVHWACmdAndFree(void *cmd)
-//{
-//    vboxDoVHWACmdExec(cmd);
-//
-//    free(cmd);
-//}
-//
-//void VBoxVHWAImage::vboxDoVHWACmdExec(void *cmd)
-//{
-//    struct _VBOXVHWACMD * pCmd = (struct _VBOXVHWACMD *)cmd;
-//    switch(pCmd->enmCmd)
-//    {
-//        case VBOXVHWACMD_TYPE_SURF_CANCREATE:
-//        {
-//            VBOXVHWACMD_SURF_CANCREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CANCREATE);
-//            pCmd->rc = vhwaSurfaceCanCreate(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_CREATE:
-//        {
-//            VBOXVHWACMD_SURF_CREATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_CREATE);
-//            pCmd->rc = vhwaSurfaceCreate(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_DESTROY:
-//        {
-//            VBOXVHWACMD_SURF_DESTROY * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_DESTROY);
-//            pCmd->rc = vhwaSurfaceDestroy(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_LOCK:
-//        {
-//            VBOXVHWACMD_SURF_LOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_LOCK);
-//            pCmd->rc = vhwaSurfaceLock(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_UNLOCK:
-//        {
-//            VBOXVHWACMD_SURF_UNLOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_UNLOCK);
-//            pCmd->rc = vhwaSurfaceUnlock(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_BLT:
-//        {
-//            VBOXVHWACMD_SURF_BLT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_BLT);
-//            pCmd->rc = vhwaSurfaceBlt(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_FLIP:
-//        {
-//            VBOXVHWACMD_SURF_FLIP * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_FLIP);
-//            pCmd->rc = vhwaSurfaceFlip(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_OVERLAY_UPDATE:
-//        {
-//            VBOXVHWACMD_SURF_OVERLAY_UPDATE * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_UPDATE);
-//            pCmd->rc = vhwaSurfaceOverlayUpdate(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_OVERLAY_SETPOSITION:
-//        {
-//            VBOXVHWACMD_SURF_OVERLAY_SETPOSITION * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_OVERLAY_SETPOSITION);
-//            pCmd->rc = vhwaSurfaceOverlaySetPosition(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_SURF_COLORKEY_SET:
-//        {
-//            VBOXVHWACMD_SURF_COLORKEY_SET * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_COLORKEY_SET);
-//            pCmd->rc = vhwaSurfaceColorkeySet(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_QUERY_INFO1:
-//        {
-//            VBOXVHWACMD_QUERYINFO1 * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO1);
-//            pCmd->rc = vhwaQueryInfo1(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_QUERY_INFO2:
-//        {
-//            VBOXVHWACMD_QUERYINFO2 * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_QUERYINFO2);
-//            pCmd->rc = vhwaQueryInfo2(pBody);
-//        } break;
-//        case VBOXVHWACMD_TYPE_ENABLE:
-//        case VBOXVHWACMD_TYPE_DISABLE:
-//            pCmd->rc = VINF_SUCCESS;
-//            break;
-//        case VBOXVHWACMD_TYPE_HH_CONSTRUCT:
-//        {
-//            VBOXVHWACMD_HH_CONSTRUCT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
-//            pCmd->rc = vhwaConstruct(pBody);
-//        } break;
-//        default:
-//            Assert(0);
-//            pCmd->rc = VERR_NOT_IMPLEMENTED;
-//            break;
-//    }
-//}
-
 int VBoxVHWAImage::vhwaSurfaceCanCreate(struct _VBOXVHWACMD_SURF_CANCREATE *pCmd)
 {
     VBOXQGLLOG_ENTER(("\n"));
@@ -4185,16 +4037,20 @@ void VBoxQGLOverlay::initGl()
 
 void VBoxQGLOverlay::updateAttachment(QWidget *pViewport, QObject *pPostEventObject)
 {
-    mCmdPipe.updatePostEventObject(pPostEventObject);
     if (mpViewport != pViewport)
     {
         mpViewport = pViewport;
-        mpOverlayWgt = NULL;
-        mOverlayWidgetVisible = false;
-        initGl();
-        vboxDoCheckUpdateViewport();
+        if (mpOverlayWgt)
+        {
+            mpOverlayWgt = NULL;
+            mOverlayWidgetVisible = false;
+            initGl();
+            Assert(!mOverlayVisible);
+//            vboxDoCheckUpdateViewport();
+        }
         mGlCurrent = false;
     }
+    mCmdPipe.updatePostEventObject(pPostEventObject);
 }
 
 int VBoxQGLOverlay::reset()
@@ -4233,7 +4089,7 @@ int VBoxQGLOverlay::reset()
             }
         }
 
-        VBoxVHWACommandElement *pTest = mCmdPipe.detachCmdList(pHead, pTail);
+        VBoxVHWACommandElement *pTest = mCmdPipe.detachCmdList(NULL, pHead, pTail);
         Assert(!pTest);
         NOREF(pTest);
     }
@@ -4302,13 +4158,24 @@ void VBoxQGLOverlay::onVHWACommandEvent(QEvent * pEvent)
     mProcessingCommands = true;
     Assert(!mGlCurrent);
     mGlCurrent = false; /* just a fall-back */
-    VBoxVHWACommandElement * pFirst = mCmdPipe.detachCmdList(NULL, NULL);
+    bool bFirstCmd = true;
+    VBoxVHWACommandElement *pLast;
+    VBoxVHWACommandElement * pFirst = mCmdPipe.detachCmdList(&pLast, NULL, NULL);
     while(pFirst) /* pFirst can be zero right after reset when all pending commands are flushed,
                    * while events for those commands may still come along */
     {
-        VBoxVHWACommandElement * pLast = processCmdList(pFirst);
+        VBoxVHWACommandElement * pLastProcessed = processCmdList(pFirst, bFirstCmd);
 
-        pFirst = mCmdPipe.detachCmdList(pFirst, pLast);
+        if (pLastProcessed == pLast)
+        {
+            pFirst = mCmdPipe.detachCmdList(&pLast, pFirst, pLastProcessed);
+            bFirstCmd = false;
+        }
+        else
+        {
+            mCmdPipe.putBack(pLastProcessed->mpNext, pLast, pFirst, pLastProcessed);
+            break;
+        }
     }
 
     mProcessingCommands = false;
@@ -4772,7 +4639,7 @@ quint64 VBoxQGLOverlay::required2DOffscreenVideoMemory()
     return _1M * 12;
 }
 
-VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement * pCmd)
+VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement * pCmd, bool bFirst)
 {
     VBoxVHWACommandElement * pCur;
     do
@@ -4797,16 +4664,25 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
         default:
             Assert(0);
         }
+
         pCmd = pCmd->mpNext;
-    } while(pCmd);
+        if (!pCmd)
+            break;
+
+        if (!bFirst)
+        {
+            if (pCmd->isNewEvent())
+                break;
+        }
+        else
+            bFirst = false;
+    } while(1);
 
     return pCur;
 }
 
 
 VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pParent) :
-    mpFirstEvent (NULL),
-    mpLastEvent (NULL),
     m_pParent(pParent),
     mbNewEvent (false),
     mbProcessingList (false)
@@ -4834,6 +4710,7 @@ void VBoxVHWACommandElementProcessor::completeCurrentEvent()
 
 void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags)
 {
+    bool bNeedNewEvent = false;
     /* 1. lock*/
     RTCritSectEnter(&mCritSect);
     VBoxVHWACommandElement * pCmd = mFreeElements.pop();
@@ -4850,92 +4727,86 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     pCmd->setData(aType, pvData);
 
     if((flags & VBOXVHWACMDPIPEC_NEWEVENT) != 0)
-    {
         mbNewEvent = true;
-    }
 
     /* 2. if can add to current*/
-    if(!mbNewEvent)
+    if(mbNewEvent || (!mbProcessingList && m_CmdPipe.isEmpty()))
     {
-        /* 3. if event is being processed (event != 0) */
-        if(mpLastEvent)
-        {
-            /* 3.a add cmd to event */
-            mpLastEvent->pipe().put(pCmd);
-            /* 3.b unlock and return */
-            if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
-            {
-                mbNewEvent = true;
-            }
-            RTCritSectLeave(&mCritSect);
-            return;
-        }
+        pCmd->setNewEventFlag();
+        bNeedNewEvent = true;
+        mbNewEvent = false;
     }
 
-    /* we're here because the cmd was NOT be added to the current event queue */
-    /* 4. unlock*/
-    RTCritSectLeave(&mCritSect);
-    /* 5. create & initialize new Event */
-    VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent(pCmd);
-    pCurrentEvent->mpNext = NULL;
+    m_CmdPipe.put(pCmd);
 
-    /* 6. lock */
-    RTCritSectEnter(&mCritSect);
-    /* 7. if no current event set event as current */
-    if(!mpLastEvent)
-    {
-        Assert(!mpFirstEvent);
-        mpFirstEvent = pCurrentEvent;
-        mpLastEvent = pCurrentEvent;
-    }
-    else
-    {
-        mpLastEvent->mpNext = pCurrentEvent;
-        mpLastEvent = pCurrentEvent;
-    }
-    /* 8. reset blocking events counter */
-    mbNewEvent = ((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0);
-    /* 9. unlock */
+    if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
+        mbNewEvent = true;
+
     RTCritSectLeave(&mCritSect);
-    /* 10. post event */
-    QApplication::postEvent (m_pParent, pCurrentEvent);
+
+    if (bNeedNewEvent)
+    {
+        VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
+        QApplication::postEvent (m_pParent, pCurrentEvent);
+    }
 }
 
-VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
+void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
+        class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
 {
     VBoxVHWACommandElement * pList = NULL;
     RTCritSectEnter(&mCritSect);
-    if(pFirst2Free)
+    if (pFirst2Free)
+        mFreeElements.pusha(pFirst2Free, pLast2Free);
+    m_CmdPipe.prepend(pFirst2Put, pLast2Put);
+    mbProcessingList = false;
+    RTCritSectLeave(&mCritSect);
+}
+
+void VBoxVHWACommandElementProcessor::updatePostEventObject(QObject *m_pObject)
+{
+    int cEventsNeeded = 0;
+    const VBoxVHWACommandElement * pFirst;
+    RTCritSectEnter(&mCritSect);
+    m_pParent = m_pObject;
+
+    pFirst = m_CmdPipe.contentsRo(NULL);
+    for (; pFirst; pFirst = pFirst->mpNext)
+    {
+        if (pFirst->isNewEvent())
+            ++cEventsNeeded;
+    }
+    RTCritSectLeave(&mCritSect);
+
+    for (int i = 0; i < cEventsNeeded; ++i)
+    {
+        VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
+        QApplication::postEvent (m_pParent, pCurrentEvent);
+    }
+}
+
+VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWACommandElement **ppLast,
+        VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
+{
+    VBoxVHWACommandElement * pList = NULL;
+    RTCritSectEnter(&mCritSect);
+    if (pFirst2Free)
     {
         mFreeElements.pusha(pFirst2Free, pLast2Free);
     }
-    if(mpFirstEvent)
+    pList = m_CmdPipe.detachList(ppLast);
+    if (pList)
     {
-        pList = mpFirstEvent->pipe().detachList();
-        if(pList)
-        {
-            /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
-            mbProcessingList = true;
-            RTCritSectLeave(&mCritSect);
-            return pList;
-        }
-        else
-        {
-            VBoxVHWACommandProcessEvent *pNext = mpFirstEvent->mpNext;
-            if(pNext)
-            {
-                mpFirstEvent = pNext;
-            }
-            else
-            {
-                mpFirstEvent = NULL;
-                mpLastEvent = NULL;
-            }
-        }
+        /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
+        mbProcessingList = true;
+        RTCritSectLeave(&mCritSect);
+        return pList;
+    }
+    else
+    {
+        mbProcessingList = false;
     }
 
-    /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
-    mbProcessingList = false;
     RTCritSectLeave(&mCritSect);
     return NULL;
 }
@@ -4943,15 +4814,10 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
 /* it is currently assumed no one sends any new commands while reset is in progress */
 void VBoxVHWACommandElementProcessor::reset(VBoxVHWACommandElement ** ppHead, VBoxVHWACommandElement ** ppTail)
 {
-    VBoxVHWACommandElement * pHead = NULL;
-    VBoxVHWACommandElement * pTail = NULL;
-    VBoxVHWACommandProcessEvent * pFirst;
-    VBoxVHWACommandProcessEvent * pLast;
+    VBoxVHWACommandElementPipe pipe;
     RTCritSectEnter(&mCritSect);
-    pFirst = mpFirstEvent;
-    pLast = mpLastEvent;
-    mpFirstEvent = NULL;
-    mpLastEvent = NULL;
+
+    pipe.setFrom(&m_CmdPipe);
 
     if(mbProcessingList)
     {
@@ -4961,8 +4827,6 @@ void VBoxVHWACommandElementProcessor::reset(VBoxVHWACommandElement ** ppHead, VB
             RTThreadSleep(2000); /* 2 ms */
             RTCritSectEnter(&mCritSect);
             /* it is assumed no one sends any new commands while reset is in progress */
-            Assert(!mpFirstEvent);
-            Assert(!mpLastEvent);
             if(!mbProcessingList)
             {
                 break;
@@ -4970,63 +4834,15 @@ void VBoxVHWACommandElementProcessor::reset(VBoxVHWACommandElement ** ppHead, VB
         }
     }
 
-    if(pFirst)
+    pipe.prependFrom(&m_CmdPipe);
+
+    if(!pipe.isEmpty())
     {
-        Assert(pLast);
-        VBoxVHWACommandElement * pCurHead;
-        for(VBoxVHWACommandProcessEvent * pCur = pFirst; pCur ; pCur = pCur->mpNext)
-        {
-            pCurHead = pCur->pipe().detachList();
-            if(!pCurHead)
-                continue;
-            if(!pHead)
-                pHead = pCurHead;
-            if(pTail)
-                pTail->mpNext = pCurHead;
-
-            for(VBoxVHWACommandElement * pCurEl = pCurHead; pCurEl; pCurEl = pCurEl->mpNext)
-            {
-                pTail = pCurEl;
-            }
-        }
-
-        if(!pTail)
-            pTail = pHead;
-    }
-
-    if(pHead)
         mbProcessingList = true;
+        *ppHead = pipe.detachList(ppTail);
+    }
 
     RTCritSectLeave(&mCritSect);
-
-    *ppHead = pHead;
-    *ppTail = pTail;
-}
-
-void VBoxVHWACommandsQueue::enqueue(PFNVBOXQGLFUNC pfn, void* pContext1, void* pContext2)
-{
-    VBoxVHWACommandElement *pCmd = new VBoxVHWACommandElement();
-    VBOXVHWAFUNCCALLBACKINFO info;
-    info.pfnCallback = pfn;
-    info.pContext1 = pContext1;
-    info.pContext2 = pContext2;
-    pCmd->setFunc(info);
-    mCmds.put(pCmd);
-}
-
-VBoxVHWACommandElement * VBoxVHWACommandsQueue::detachList()
-{
-    return mCmds.detachList();
-}
-
-void VBoxVHWACommandsQueue::freeList(VBoxVHWACommandElement * pList)
-{
-    while(pList)
-    {
-        VBoxVHWACommandElement * pCur = pList;
-        pList = pCur->mpNext;
-        delete pCur;
-    }
 }
 
 VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
