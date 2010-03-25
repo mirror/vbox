@@ -71,10 +71,10 @@ public:
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
-    STDMETHOD(ExecuteProgram)(IN_BSTR aExecName, ULONG aFlags, 
-                              ComSafeArrayIn(BSTR, aArguments), ComSafeArrayIn(BSTR, aEnvironment),  
+    STDMETHOD(ExecuteProgram)(IN_BSTR aExecName, ULONG aFlags,
+                              ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
-                              IN_BSTR aUserName, IN_BSTR aPassword, 
+                              IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID);
 
     // public methods that are not in IDL
