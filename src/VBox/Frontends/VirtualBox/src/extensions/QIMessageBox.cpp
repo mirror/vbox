@@ -42,9 +42,10 @@
 #include <QToolButton>
 #include <QKeyEvent>
 
-#ifdef VBOX_WITH_NEW_RUNTIME_CORE
-# include "UIMachineWindowNormal.h"
-#endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
+#if defined(VBOX_WITH_NEW_RUNTIME_CORE) && defined(Q_WS_MAC)
+# include "UIMachineWindowFullscreen.h"
+# include "UIMachineWindowSeamless.h"
+#endif /* defined(VBOX_WITH_NEW_RUNTIME_CORE) && defined(Q_WS_MAC) */
 
 /** @class QIMessageBox
  *
@@ -66,28 +67,22 @@ QIMessageBox::QIMessageBox (const QString &aCaption, const QString &aText,
     , mWasPolished (false)
 {
 #ifdef Q_WS_MAC
+    VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
 # ifdef VBOX_WITH_NEW_RUNTIME_CORE
     /* No sheets in another mode than normal for now. Firstly it looks ugly and
      * secondly in some cases it is broken. */
-    UIMachineWindowNormal *pWnd = qobject_cast<UIMachineWindowNormal*>(aParent);
-    if (pWnd)
+    if (   !(   qobject_cast<UIMachineWindowFullscreen*>(aParent)
+             || qobject_cast<UIMachineWindowSeamless*>(aParent))
+        && !cwnd)
         setWindowFlags (Qt::Sheet);
     else
-    {
-        /* In the selector window ofc. */
-        VBoxSelectorWnd *pSWnd = qobject_cast<VBoxSelectorWnd*>(aParent);
-        if (pSWnd)
-            setWindowFlags(Qt::Sheet);
-    }
-# else /* VBOX_WITH_NEW_RUNTIME_CORE */
+# endif /* VBOX_WITH_NEW_RUNTIME_CORE */
     /* Sheets are broken if the window is in fullscreen mode. So make it a
      * normal window in that case. */
-    VBoxConsoleWnd *cwnd = qobject_cast<VBoxConsoleWnd*> (aParent);
     if (cwnd == NULL ||
         (!cwnd->isTrueFullscreen() &&
          !cwnd->isTrueSeamless()))
         setWindowFlags (Qt::Sheet);
-# endif /* !VBOX_WITH_NEW_RUNTIME_CORE */
 #endif /* Q_WS_MAC */
 
     setWindowTitle (aCaption);
