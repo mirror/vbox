@@ -830,7 +830,6 @@ int handleList(HandlerArg *a)
             Bstr str;
             ULONG ulValue;
             ULONG64 ul64Value;
-            BOOL flag;
 
             systemProperties->COMGETTER(MinGuestRAM)(&ulValue);
             RTPrintf("Minimum guest RAM size:          %u Megabytes\n", ulValue);
