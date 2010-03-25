@@ -2684,7 +2684,7 @@ void VBoxConsoleView::fixModifierState (LONG *codes, uint *count)
  */
 void VBoxConsoleView::toggleFSMode (const QSize &aSize)
 {
-    if ((mGuestSupportsGraphics && mAutoresizeGuest) ||
+    if (mAutoresizeGuest ||
         mMainWnd->isTrueSeamless() ||
         mMainWnd->isTrueFullscreen())
     {
@@ -4021,7 +4021,7 @@ void VBoxConsoleView::dimImage (QImage &img)
 
 void VBoxConsoleView::doResizeHint (const QSize &aToSize)
 {
-    if (mGuestSupportsGraphics && mAutoresizeGuest)
+    if (mAutoresizeGuest)
     {
         /* If this slot is invoked directly then use the passed size
          * otherwise get the available size for the guest display.
