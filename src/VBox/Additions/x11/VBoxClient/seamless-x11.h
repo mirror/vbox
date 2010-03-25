@@ -145,9 +145,9 @@ public:
     VBoxGuestX11Display(void) { mDisplay = NULL; }
     bool init(char *name = NULL)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         mDisplay = XOpenDisplay(name);
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
         return (mDisplay != NULL);
     }
     operator Display *() { return mDisplay; }
@@ -155,10 +155,10 @@ public:
     bool isValid(void) { return (mDisplay != NULL); }
     int close(void)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         int rc = XCloseDisplay(mDisplay);
         mDisplay = NULL;
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
         return rc;
     }
     ~VBoxGuestX11Display()
@@ -243,23 +243,23 @@ public:
     void addWindow(Window hWin, bool isMapped, int x, int y, int w, int h, int cRects,
                    VBoxGuestX11Pointer<XRectangle> rects)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         VBoxGuestWinInfo *pInfo = new VBoxGuestWinInfo(isMapped, x, y, w, h, cRects,
                                                        rects);
         mWindows.insert(std::pair<Window, VBoxGuestWinInfo *>(hWin, pInfo));
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
     }
 
     void removeWindow(iterator it)
     {
-        LogFlowThisFunc(("called\n"));
+        LogRelFlowFunc(("called\n"));
         delete it->second;
         mWindows.erase(it);
     }
 
     void removeWindow(Window hWin)
     {
-        LogFlowThisFunc(("called\n"));
+        LogRelFlowFunc(("called\n"));
         removeWindow(find(hWin));
     }
 };

@@ -58,7 +58,7 @@ public:
     {
         int rc = VINF_SUCCESS;
 
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         rc = mGuest->start();
         if (RT_SUCCESS(rc))
         {
@@ -68,7 +68,7 @@ public:
             }
             mGuest->stop();
         }
-        LogFlowThisFunc(("returning %Rrc\n", rc));
+        LogRelFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }
     /**
@@ -147,7 +147,7 @@ public:
     {
         int rc = VINF_SUCCESS;
 
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (isInitialised)  /* Assertion */
         {
             LogRelFunc(("error: called a second time! (VBoxClient)\n"));
@@ -171,15 +171,15 @@ public:
         }
         if (RT_FAILURE(rc))
         {
-            LogFunc(("returning %Rrc (VBoxClient)\n", rc));
+            LogRelFunc(("returning %Rrc (VBoxClient)\n", rc));
         }
-        LogFlowThisFunc(("returning %Rrc\n", rc));
+        LogRelFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }
 
     void uninit(RTMSINTERVAL cMillies = RT_INDEFINITE_WAIT)
     {
-        LogFlowThisFunc(("\n"));
+        LogRelFlowFunc(("\n"));
         if (isInitialised)
         {
             mHost.stop(cMillies);
@@ -187,7 +187,7 @@ public:
             mGuest.uninit();
             isInitialised = false;
         }
-        LogFlowThisFunc(("returning\n"));
+        LogRelFlowFunc(("returning\n"));
     }
 
     VBoxGuestSeamless() : mGuestFunction(&mGuest, &mGuestObs),

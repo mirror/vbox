@@ -51,7 +51,7 @@ public:
         conn = dbus_bus_get (DBUS_BUS_SESSON, NULL);
         if (conn == NULL)
         {
-            LogFlow(("Could not retrieve D-BUS session bus!\n"));
+            LogRelFlowFunc(("Could not retrieve D-BUS session bus!\n"));
             rc = VERR_INVALID_HANDLE;
         }
         else
@@ -62,7 +62,7 @@ public:
                                                "Notify");
             if (msg == NULL)
             {
-                Log(("Could not create D-BUS message!\n"));
+                LogRel(("Could not create D-BUS message!\n"));
                 rc = VERR_INVALID_HANDLE;
             }
         else
@@ -108,7 +108,7 @@ public:
                 30 * 1000 /* 30 seconds timeout */, &err);
             if (dbus_error_is_set(&err))
             {
-                Log(("D-BUS returned an error while sending the notification: %s", err.message));
+                LogRel(("D-BUS returned an error while sending the notification: %s", err.message));
             }
             else if (reply)
             {
@@ -132,7 +132,7 @@ public:
     virtual int run(bool fDaemonised /* = false */)
     {
         int rc;
-        LogFlowFunc(("\n"));
+        LogRelFlowFunc(("\n"));
 
         /* Because we need desktop notifications to be displayed, wait
          * some time to make the desktop environment load (as a work around). */
@@ -153,7 +153,7 @@ public:
         {
             rc = VbglR3GuestPropConnect(&uGuestPropSvcClientID);
             if (RT_FAILURE(rc))
-                Log(("Cannot connect to guest property service! rc = %Rrc\n", rc));
+                LogRel(("Cannot connect to guest property service! rc = %Rrc\n", rc));
         }
 
         if (RT_SUCCESS(rc))
@@ -178,7 +178,7 @@ public:
                     rc = showNotify(szTitle, szMsg);
                     LogRel(("VBoxClient: VirtualBox Guest Additions update available!"));
                     if (RT_FAILURE(rc))
-                        Log(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
+                        LogRel(("VBoxClient: Could not show version notifier tooltip! rc = %d\n", rc));
                 }
 
                 /* Store host version to not notify again */
@@ -190,7 +190,7 @@ public:
             VbglR3GuestPropDisconnect(uGuestPropSvcClientID);
         }
 # endif /* VBOX_WITH_GUEST_PROPS */
-        LogFlowFunc(("returning %Rrc\n", rc));
+        LogRelFlowFunc(("returning %Rrc\n", rc));
         return rc;
     }
 
