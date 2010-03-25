@@ -43,7 +43,7 @@ UIMiniProcessWidget::UIMiniProcessWidget(QWidget *pParent /* = 0 */)
     m_pProgressBar->setValue(0);
 
     /* Cancel Button setup */
-    m_pCancelButton->setFocusPolicy(Qt::TabFocus);
+    m_pCancelButton->setFocusPolicy(Qt::NoFocus);
     m_pCancelButton->removeBorder();
     connect(m_pCancelButton, SIGNAL(clicked()),
             this, SIGNAL(sigCancel()));
