@@ -8581,38 +8581,38 @@
 
       </desc>
       <param name="execName" type="wstring" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="arguments" type="wstring" safearray="yes" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="environment" type="wstring" safearray="yes" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="stdIn" type="wstring" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="stdOut" type="wstring" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="stdErr" type="wstring" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="userName" type="wstring" dir="in">
-        <desc>Foobar</desc> 
+        <desc>Foobar</desc>
       </param>
       <param name="password" type="wstring" dir="in">
-        <desc>Foobar</desc> 
-      </param>  
+        <desc>Foobar</desc>
+      </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>Foobar</desc> 
-      </param>  
-      <param name="pid" type="unsigned long" dir="out">
-        <desc>Foobar</desc> 
-      </param>  
+        <desc>Foobar</desc>
+      </param>
+      <param name="pid" type="unsigned long" dir="return">
+        <desc>Foobar</desc>
+      </param>
     </method>
 
   </interface>

@@ -316,6 +316,8 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
 #else  /* VBOX_WITH_GUEST_CONTROL */
+    CheckComArgStrNotEmptyOrNull(aExecName);
+    CheckComArgOutPointerValid(aPID);
     return E_NOTIMPL;
 #endif
 }
