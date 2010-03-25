@@ -1818,7 +1818,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>&amp;Auto show Dock and Menubar in fullscreen</source>
-        <translation type="unfinished"></translation>
+        <translation>Démasquer &amp;automatiquement le Dock et la barre des menu en mode plein écran</translation>
     </message>
 </context>
 <context>
@@ -3441,7 +3441,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <source>(CD/DVD)</source>
-        <translation type="unfinished"></translation>
+        <translation>(périphérique optique)</translation>
     </message>
 </context>
 <context>
