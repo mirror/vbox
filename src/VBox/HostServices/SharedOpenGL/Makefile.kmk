@@ -60,10 +60,9 @@ VBoxSharedCrOpenGL_INTERMEDIATES = \
 VBoxSharedCrOpenGL_INCS.win = \
 	$(PATH_TOOL_$(VBOX_VCC_TOOL)_ATLMFC_INC) \
 	$(VBOX_PATH_SDK)/bindings/mscom/include \
-	$(PATH_VBoxCOM)
 VBoxSharedCrOpenGL_INCS = \
-	. \
-	$(PATH_VBoxSVC)
+	$(PATH_VBoxSVC) \
+	$(PATH_VBoxCOM)
 ifdef VBOX_WITH_XPCOM
  VBoxSharedCrOpenGL_INCS += \
  	$(VBOX_XPCOM_INCS)
@@ -78,6 +77,7 @@ VBoxSharedCrOpenGL_LIBS = \
 	$(PATH_LIB)/VBoxOGLhostcrpacker$(VBOX_SUFF_LIB) \
 	$(PATH_LIB)/VBoxOGLhostspuload$(VBOX_SUFF_LIB) \
 	$(VBOX_LIB_OGL_HOSTCRUTIL) \
+	$(PATH_LIB)/VBoxCOM$(VBOX_SUFF_LIB) \
 	$(LIB_RUNTIME) \
 	$(LIB_VMM)
 VBoxSharedCrOpenGL_LIBS.darwin = \
@@ -96,6 +96,7 @@ endif
 #
 VBoxOGLcrserverlib_TEMPLATE = VBOXCROGLR3HOSTLIB
 VBoxOGLcrserverlib_INCS  = \
+	. \
 	crserverlib
 VBoxOGLcrserverlib_INTERMEDIATES = \
 	$(VBOX_PATH_CROGL_GENFILES)/spu_dispatch_table.h \

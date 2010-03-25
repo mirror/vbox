@@ -40,6 +40,10 @@
 # include <VBox/VBoxVideo.h>
 #endif
 
+#ifdef VBOX_WITH_CROGL
+# include <VBox/HostServices/VBoxCrOpenGLSvc.h>
+#endif
+
 #include <VBox/com/array.h>
 #include <png.h>
 
@@ -2049,6 +2053,29 @@ STDMETHODIMP Display::SetFramebuffer (ULONG aScreenId,
         alock.enter ();
 
         ComAssertRCRet (vrc, E_FAIL);
+
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+        {
+            BOOL is3denabled;
+            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+            if (is3denabled)
+            {
+                VBOXHGCMSVCPARM parm;
+
+                parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+                parm.u.uint32 = aScreenId;
+
+                alock.leave ();
+
+                vrc = mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
+                                                         SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+                /*ComAssertRCRet (vrc, E_FAIL);*/
+
+                alock.enter ();
+            }
+        }
+#endif /* VBOX_WITH_CROGL */
     }
     else
     {

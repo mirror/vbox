@@ -1672,3 +1672,13 @@ renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
         render_spu.ws.glXSwapBuffers( w->visual->dpy, w->window );
     }
 }
+
+void renderspu_SystemReparentWindow(WindowInfo *window)
+{
+    Window parent;
+
+    parent = render_spu_parent_window_id>0 ? render_spu_parent_window_id : 
+                                             RootWindow(window->visual->dpy, window->visual->visual->screen);
+
+    XReparentWindow(window->visual->dpy, window->window, parent, window->x, window->y);
+}

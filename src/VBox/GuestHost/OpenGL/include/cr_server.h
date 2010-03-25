@@ -28,6 +28,9 @@ extern "C" {
 #define CR_MAX_WINDOWS 100
 #define CR_MAX_CLIENTS 20
 
+/*@todo must match MaxGuestMonitors from SchemaDefs.h*/
+#define CR_MAX_GUEST_MONITORS 8
+
 typedef struct {
     CRrecti imagewindow;    /**< coordinates in mural space */
     CRrectf bounds;         /**< normalized coordinates in [-1,-1] x [1,1] */
@@ -61,6 +64,8 @@ typedef struct {
     GLboolean viewportValidated;
 
     int spuWindow;                     /**< the SPU's corresponding window ID */
+
+    int screenId;
 } CRMuralInfo;
 
 /**
@@ -103,7 +108,16 @@ typedef struct {
 } CRServerFreeIDsPool_t;
 
 typedef struct {
+    int32_t    x, y;
+    uint32_t   w, h;
+    uint64_t   winID;
+} CRScreenInfo;
+
+typedef struct {
     unsigned short tcpip_port;
+
+    CRScreenInfo screen[CR_MAX_GUEST_MONITORS];
+    int          screenCount;
 
     int numClients;
     CRClient *clients[CR_MAX_CLIENTS];  /**< array [numClients] */
@@ -220,6 +234,12 @@ extern DECLEXPORT(int32_t) crVBoxServerClientSetVersion(uint32_t u32ClientID, ui
 
 extern DECLEXPORT(int32_t) crVBoxServerSaveState(PSSMHANDLE pSSM);
 extern DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version);
+
+extern DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount);
+extern DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex);
+extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID);
+
+extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects);
 #ifdef __cplusplus
 }
 #endif

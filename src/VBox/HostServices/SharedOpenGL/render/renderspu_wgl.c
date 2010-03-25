@@ -85,6 +85,10 @@ MainWndProc( HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam )
             exit( 0 );
             break;
 
+        case WM_DESTROY:
+            crDebug( "Render SPU: caught WM_DESTROY for our window" );
+            break;
+
         case WM_NCHITTEST:
             crDebug("WM_NCHITTEST");
             return HTNOWHERE;
@@ -479,6 +483,7 @@ GLboolean renderspu_SystemCreateWindow( VisualInfo *visual, GLboolean showIt, Wi
     if (showIt) {
         /* NO ERROR CODE FOR SHOWWINDOW */
         crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemCreateWindow: showwindow: %x", window->hWnd);
         ShowWindow( window->hWnd, SW_SHOWNORMAL );
     }
 
@@ -723,6 +728,7 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
     if (showIt) {
         /* NO ERROR CODE FOR SHOWWINDOW */
         crDebug( "Render SPU: Showing the window" );
+        crDebug("renderspu_SystemVBoxCreateWindow: showwindow: %x", window->hWnd);
         ShowWindow( window->hWnd, SW_SHOWNORMAL );
     }
 
@@ -757,9 +763,15 @@ GLboolean renderspu_SystemVBoxCreateWindow( VisualInfo *visual, GLboolean showIt
 void renderspu_SystemShowWindow( WindowInfo *window, GLboolean showIt )
 {
     if (showIt)
+    {
+        crDebug("SHOW renderspu_SystemShowWindow: %x", window->hWnd);
         ShowWindow( window->hWnd, SW_SHOWNORMAL );
+    }
     else
+    {
+        crDebug("HIDE renderspu_SystemShowWindow: %x", window->hWnd);
         ShowWindow( window->hWnd, SW_HIDE );
+    }
 }
 
 GLboolean renderspu_SystemCreateContext( VisualInfo *visual, ContextInfo *context, ContextInfo *sharedContext )
@@ -858,6 +870,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 }
             }
 
+            crDebug("MakeCurrent 0x%x, 0x%x", window->device_context, context->hRC);
             if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
             {
                 DWORD err = GetLastError();
@@ -1042,4 +1055,9 @@ void renderspu_SystemSwapBuffers( WindowInfo *w, GLint flags )
 
         crWarning( "wglSwapBuffers failed: return value of %d!", return_value);
     }
+}
+
+void renderspu_SystemReparentWindow(WindowInfo *window)
+{
+    SetParent(window->hWnd, render_spu_parent_window_id);
 }

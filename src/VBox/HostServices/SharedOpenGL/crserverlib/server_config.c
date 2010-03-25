@@ -53,6 +53,8 @@ setDefaults(void)
     cr_server.idsPool.freeWindowID = 1;
     cr_server.idsPool.freeContextID = 1;
     cr_server.idsPool.freeClientID = 1;
+
+    cr_server.screenCount = 0;
 }
 
 void crServerSetVBoxConfiguration()

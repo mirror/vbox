@@ -2137,16 +2137,18 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 VBOXHGCMSVCPARM parm;
                 parm.type = VBOX_HGCM_SVC_PARM_PTR;
 
-                parm.u.pointer.addr = pConsole->getDisplay()->getFramebuffer();
-                parm.u.pointer.size = sizeof(IFramebuffer *);
+                parm.u.pointer.addr = (IConsole*) (Console*) pConsole;
+                parm.u.pointer.size = sizeof(IConsole *);
 
-                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_FRAMEBUFFER, 1, &parm);
+                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_CONSOLE,
+                                                     SHCRGL_CPARMS_SET_CONSOLE, &parm);
                 if (!RT_SUCCESS(rc))
-                    AssertMsgFailed(("SHCRGL_HOST_FN_SET_FRAMEBUFFER failed with %Rrc\n", rc));
+                    AssertMsgFailed(("SHCRGL_HOST_FN_SET_CONSOLE failed with %Rrc\n", rc));
 
                 parm.u.pointer.addr = pVM;
                 parm.u.pointer.size = sizeof(pVM);
-                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM, 1, &parm);
+                rc = pConsole->mVMMDev->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SET_VM,
+                                                     SHCRGL_CPARMS_SET_VM, &parm);
                 if (!RT_SUCCESS(rc))
                     AssertMsgFailed(("SHCRGL_HOST_FN_SET_VM failed with %Rrc\n", rc));
             }

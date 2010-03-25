@@ -53,43 +53,22 @@
 #include "cr_server.h"
 #define LOG_GROUP LOG_GROUP_SHARED_CROPENGL
 #include <VBox/log.h>
-#endif
+#include <VBox/com/ErrorInfo.h>
+#endif /* RT_OS_WINDOWS */
 
-#include "render/renderspu.h"
+#include <VBox/com/errorprint.h>
 
 PVBOXHGCMSVCHELPERS g_pHelpers;
-static IFramebuffer* g_pFrameBuffer;
+static IConsole* g_pConsole = NULL;
 static PVM g_pVM = NULL;
-static ULONG64 g_winId = 0;
 
 #ifndef RT_OS_WINDOWS
 #define DWORD int
 #define WINAPI
 #endif
 
-#define CR_USE_HGCM
-
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 15
-
-typedef struct
-{
-    DWORD dwThreadID;
-
-} VBOXOGLCTX, *PVBOXOGLCTX;
-
-/*@todo remove this workaround for crstate "unshareable" data*/
-static int crIsThreadWorking=0;
-
-static DWORD WINAPI crServerProc(void* pv)
-{
-    uint64_t winId = *((uint64_t*)pv);
-    renderspuSetWindowId(winId);
-    CRServerMain(0, NULL);
-    crIsThreadWorking = 0;
-    return 0;
-}
-
+#define SHCROGL_SSM_VERSION 16
 
 static DECLCALLBACK(int) svcUnload (void *)
 {
@@ -97,7 +76,6 @@ static DECLCALLBACK(int) svcUnload (void *)
 
     Log(("SHARED_CROPENGL svcUnload\n"));
 
-    //vboxglGlobalUnload();
     crVBoxServerTearDown();
 
     return rc;
@@ -107,33 +85,11 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 {
     int rc = VINF_SUCCESS;
 
-    NOREF(u32ClientID);
-    VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
-    Assert(pClient);
+    NOREF(pvClient);
 
     Log(("SHARED_CROPENGL svcConnect: u32ClientID = %d\n", u32ClientID));
 
-#ifndef CR_USE_HGCM
-    if (!crIsThreadWorking)
-    {
-        HANDLE h;
-        Assert(g_pFrameBuffer);
-
-        g_pFrameBuffer->COMGETTER(WinId)(&g_winId);
-        //CHECK_ERROR_RET(g_piConsole, COMGETTER(Display)(display.asOutParam()), rc);
-
-        //vboxglConnect((PVBOXOGLCTX)pvClient);
-        crIsThreadWorking=1;
-        h = CreateThread(NULL, 0, crServerProc, (void*)&g_winId, 0, &pClient->dwThreadID);
-        if (!h) rc = VERR_MAX_THRDS_REACHED;
-    }
-    else
-        rc = VERR_MAX_THRDS_REACHED;
-#else
-    g_pFrameBuffer->COMGETTER(WinId)(&g_winId);
-    renderspuSetWindowId(g_winId);
     rc = crVBoxServerAddClient(u32ClientID);
-#endif
 
     return rc;
 }
@@ -141,30 +97,23 @@ static DECLCALLBACK(int) svcConnect (void *, uint32_t u32ClientID, void *pvClien
 static DECLCALLBACK(int) svcDisconnect (void *, uint32_t u32ClientID, void *pvClient)
 {
     int rc = VINF_SUCCESS;
-    VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
-    Assert(pClient);
+
+    NOREF(pvClient);
 
     Log(("SHARED_CROPENGL svcDisconnect: u32ClientID = %d\n", u32ClientID));
 
-#ifndef CR_USE_HGCM
-    if (crIsThreadWorking && pClient->dwThreadID)
-        PostThreadMessage(pClient->dwThreadID, WM_QUIT, 0, 0);
-#else
     crVBoxServerRemoveClient(u32ClientID);
-#endif
-    //vboxglDisconnect((PVBOXOGLCTX)pvClient);
+
     return rc;
 }
 
 static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
-    VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
+    int rc = VINF_SUCCESS;
 
-    NOREF(pClient);
+    NOREF(pvClient);
 
     Log(("SHARED_CROPENGL svcSaveState: u32ClientID = %d\n", u32ClientID));
-
-    int rc;
 
     /* Start*/
     rc = SSMR3PutStrZ(pSSM, gszVBoxOGLSSMMagic);
@@ -187,15 +136,13 @@ static DECLCALLBACK(int) svcSaveState(void *, uint32_t u32ClientID, void *pvClie
 
 static DECLCALLBACK(int) svcLoadState(void *, uint32_t u32ClientID, void *pvClient, PSSMHANDLE pSSM)
 {
-    VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
+    int rc = VINF_SUCCESS;
 
-    NOREF(pClient);
-    NOREF(pSSM);
+    NOREF(pvClient);
 
     Log(("SHARED_CROPENGL svcLoadState: u32ClientID = %d\n", u32ClientID));
 
     char psz[2000];
-    int rc;
     uint32_t ui32;
 
     /* Start of data */
@@ -252,9 +199,9 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
 {
     int rc = VINF_SUCCESS;
 
-    Log(("SHARED_CROPENGL svcCall: u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n", u32ClientID, u32Function, cParms, paParms));
+    NOREF(pvClient);
 
-    VBOXOGLCTX *pClient = (VBOXOGLCTX *)pvClient;
+    Log(("SHARED_CROPENGL svcCall: u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n", u32ClientID, u32Function, cParms, paParms));
 
 #ifdef DEBUG
     uint32_t i;
@@ -454,12 +401,12 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
     switch (u32Function)
     {
-        case SHCRGL_HOST_FN_SET_FRAMEBUFFER:
+        case SHCRGL_HOST_FN_SET_CONSOLE:
         {
-            Log(("svcCall: SHCRGL_HOST_FN_SET_FRAMEBUFFER\n"));
+            Log(("svcCall: SHCRGL_HOST_FN_SET_DISPLAY\n"));
 
             /* Verify parameter count and types. */
-            if (cParms != SHCRGL_CPARMS_SET_FRAMEBUFFER)
+            if (cParms != SHCRGL_CPARMS_SET_CONSOLE)
             {
                 rc = VERR_INVALID_PARAMETER;
             }
@@ -470,18 +417,55 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
             else
             {
                 /* Fetch parameters. */
-                IFramebuffer* pFrameBuffer = (IFramebuffer*)paParms[0].u.pointer.addr;
+                IConsole* pConsole = (IConsole*)paParms[0].u.pointer.addr;
                 uint32_t  cbData = paParms[0].u.pointer.size;
 
                 /* Verify parameters values. */
-                if (cbData != sizeof (IFramebuffer*))
+                if (cbData != sizeof (IConsole*))
                 {
                     rc = VERR_INVALID_PARAMETER;
                 }
-                else
+                else if (!pConsole)
                 {
-                    /* Execute the function. */
-                    g_pFrameBuffer = pFrameBuffer;
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else /* Execute the function. */
+                {
+                    ComPtr<IMachine> pMachine;
+                    ComPtr<IDisplay> pDisplay;
+                    ComPtr<IFramebuffer> pFramebuffer;
+                    LONG xo, yo;
+                    ULONG64 winId = 0;
+                    ULONG monitorCount, i, w, h;
+
+                    CHECK_ERROR_BREAK(pConsole, COMGETTER(Machine)(pMachine.asOutParam()));
+                    CHECK_ERROR_BREAK(pMachine, COMGETTER(MonitorCount)(&monitorCount));
+                    CHECK_ERROR_BREAK(pConsole, COMGETTER(Display)(pDisplay.asOutParam()));
+
+                    rc = crVBoxServerSetScreenCount(monitorCount);
+                    AssertRCReturn(rc, rc);
+
+                    for (i=0; i<monitorCount; ++i)
+                    {
+                        CHECK_ERROR_RET(pDisplay, GetFramebuffer(i, pFramebuffer.asOutParam(), &xo, &yo), rc);
+
+                        if (!pDisplay)
+                        {
+                            rc = crVBoxServerUnmapScreen(i);
+                            AssertRCReturn(rc, rc);
+                        }
+                        else
+                        {
+                            CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
+                            CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
+                            CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
+
+                            rc = crVBoxServerMapScreen(i, xo, yo, w, h, winId);
+                            AssertRCReturn(rc, rc);
+                        }
+                    }
+
+                    g_pConsole = pConsole;
                     rc = VINF_SUCCESS;
                 }
             }
@@ -540,7 +524,55 @@ static DECLCALLBACK(int) svcHostCall (void *, uint32_t u32Function, uint32_t cPa
 
             Assert(sizeof(RTRECT)==4*sizeof(GLint));
 
-            renderspuSetRootVisibleRegion(paParms[1].u.uint32, (GLint*)paParms[0].u.pointer.addr);
+            rc = crVBoxServerSetRootVisibleRegion(paParms[1].u.uint32, (GLint*)paParms[0].u.pointer.addr);
+            break;
+        }
+        case SHCRGL_HOST_FN_SCREEN_CHANGED:
+        {
+            Log(("svcCall: SHCRGL_HOST_FN_SCREEN_CHANGED\n"));
+
+            /* Verify parameter count and types. */
+            if (cParms != SHCRGL_CPARMS_SCREEN_CHANGED)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else if (paParms[0].type != VBOX_HGCM_SVC_PARM_32BIT)
+            {
+                rc = VERR_INVALID_PARAMETER;
+            }
+            else
+            {
+                /* Fetch parameters. */
+                uint32_t screenId = paParms[0].u.uint32;
+
+                /* Execute the function. */
+                ComPtr<IDisplay> pDisplay;
+                ComPtr<IFramebuffer> pFramebuffer;
+                LONG xo, yo;
+                ULONG64 winId = 0;
+                ULONG w, h;
+
+                Assert(g_pConsole);
+                CHECK_ERROR_RET(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()), rc);
+                CHECK_ERROR_RET(pDisplay, GetFramebuffer(screenId, pFramebuffer.asOutParam(), &xo, &yo), rc);
+
+                if (!pFramebuffer)
+                {
+                    rc = crVBoxServerUnmapScreen(screenId);
+                    AssertRCReturn(rc, rc);
+                }
+                else
+                {
+                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(WinId)(&winId), rc);
+                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(Width)(&w), rc);
+                    CHECK_ERROR_RET(pFramebuffer, COMGETTER(Height)(&h), rc);
+
+                    rc = crVBoxServerMapScreen(screenId, xo, yo, w, h, winId);
+                    AssertRCReturn(rc, rc);
+                }
+
+                rc = VINF_SUCCESS;
+            }
             break;
         }
         default:
@@ -575,7 +607,7 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
         {
             g_pHelpers = ptable->pHelpers;
 
-            ptable->cbClient = sizeof (VBOXOGLCTX);
+            ptable->cbClient = sizeof (void*);
 
             ptable->pfnUnload     = svcUnload;
             ptable->pfnConnect    = svcConnect;
@@ -585,12 +617,12 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
             ptable->pfnSaveState  = svcSaveState;
             ptable->pfnLoadState  = svcLoadState;
             ptable->pvService     = NULL;
-#ifdef CR_USE_HGCM
+
             if (!crVBoxServerInit())
                 return VERR_NOT_SUPPORTED;
-#endif
         }
     }
 
     return rc;
 }
+
