@@ -2626,7 +2626,13 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             char *pszColon = (char *)memchr(szTrunk, ':', sizeof(szTrunk));
             if (!pszColon)
             {
-                hrc = aNetworkAdapter->Detach();                        H();
+                /*
+                 * Dynamic changing of attachment causes an attempt to configure
+                 * network with invalid host adapter (as it is must be changed before
+                 * the attachment), calling Detach here will cause a deadlock.
+                 * See #4750.
+                 * hrc = aNetworkAdapter->Detach();                        H();
+                 */
                 return VMSetError(pVM, VERR_INTERNAL_ERROR, RT_SRC_POS,
                                   N_("Malformed host interface networking name '%ls'"),
                                   HifName.raw());
