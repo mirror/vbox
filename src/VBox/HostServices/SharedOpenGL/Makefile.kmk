@@ -90,6 +90,10 @@ else
  VBoxSharedCrOpenGL_LIBS += \
 	$(PATH_BIN)/VBoxOGLrenderspu$(VBOX_SUFF_DLL)
 endif
+ifdef VBOX_WITH_XPCOM
+ VBoxSharedCrOpenGL_LIBS += \
+	$(LIB_XPCOM)
+endif
 
 #
 # VBoxOGLcrserverlib
