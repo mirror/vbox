@@ -1082,6 +1082,8 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
     else
     {
         PCFGMNODE   pCfgNetBootDevice;
+        uint8_t     u8PciDev;
+        uint8_t     u8PciFn;
         uint16_t    u16BusDevFn;
         char        szIndex[] = "?";
 
@@ -1090,7 +1092,7 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
         {
             szIndex[0] = '0' + i;
             pCfgNetBootDevice = CFGMR3GetChild(pCfgNetBoot, szIndex);
-            rc = CFGMR3QueryU16(pCfgNetBootDevice, "BusDevFn", &u16BusDevFn);
+            rc = CFGMR3QueryU8(pCfgNetBootDevice, "PCIDeviceNo", &u8PciDev);
             if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
             {
                 /* Do nothing and stop iterating. */
@@ -1099,7 +1101,18 @@ static DECLCALLBACK(int)  pcbiosConstruct(PPDMDEVINS pDevIns, int iInstance, PCF
             }
             else if (RT_FAILURE(rc))
                 return PDMDEV_SET_ERROR(pDevIns, rc,
-                                        N_("Configuration error: Querying \"Netboot/x/BusDevFn\" as integer failed"));
+                                        N_("Configuration error: Querying \"Netboot/x/PCIDeviceNo\" as integer failed"));
+            rc = CFGMR3QueryU8(pCfgNetBootDevice, "PCIFunctionNo", &u8PciFn);
+            if (rc == VERR_CFGM_VALUE_NOT_FOUND || rc == VERR_CFGM_NO_PARENT)
+            {
+                /* Do nothing and stop iterating. */
+                rc = VINF_SUCCESS;
+                break;
+            }
+            else if (RT_FAILURE(rc))
+                return PDMDEV_SET_ERROR(pDevIns, rc,
+                                        N_("Configuration error: Querying \"Netboot/x/PCIFunctionNo\" as integer failed"));
+            u16BusDevFn = ((u8PciDev & 0x1F) << 3) | (u8PciFn & 0x7);
             pThis->au16NetBootDev[i] = u16BusDevFn;
         }
     }
