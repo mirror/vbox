@@ -1399,7 +1399,7 @@ p, li { white-space: pre-wrap; }
         <translation>실시간으로 독 아이콘 갱신하기(&amp;D)</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

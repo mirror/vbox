@@ -2050,7 +2050,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Podgląd na żywo wewnątrz ikony w obszarze Dock</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Automatycznie pokazuj Dock oraz pasek menu w trybie pełnoekranowym</translation>
     </message>
 </context>

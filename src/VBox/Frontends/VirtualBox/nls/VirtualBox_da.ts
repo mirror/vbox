@@ -1379,7 +1379,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Dock-ikon viser indhold af VM</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Automatisk visning af Dok &amp;&amp; Menubjælke i fuldskærm</translation>
     </message>
 </context>

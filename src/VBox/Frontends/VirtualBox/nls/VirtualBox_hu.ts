@@ -2056,7 +2056,7 @@ p, li { white-space: pre-wrap; }
         <translation>Valós idejű &amp;dock ikon</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>A dock és a menüsor &amp;automatikus megjelenítése teljes képernyőn</translation>
     </message>
 </context>

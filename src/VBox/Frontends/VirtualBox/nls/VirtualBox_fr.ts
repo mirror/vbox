@@ -1817,7 +1817,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Icône Dock aperçu temps réel</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation type="unfinished"></translation>
     </message>
 </context>

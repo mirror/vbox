@@ -1403,7 +1403,7 @@ p, li { white-space: pre-wrap; }
         <translation>Обновлять иконку &amp;дока</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Показывать Док и Менюбар в режиме полного экрана</translation>
     </message>
 </context>

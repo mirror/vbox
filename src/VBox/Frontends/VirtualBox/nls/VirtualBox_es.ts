@@ -2150,7 +2150,7 @@ p, li { white-space: pre-wrap; }
         <translation>&amp;Mostrar icono en el área de notificación</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Automostrar Dock &amp;&amp; Barra de menú a pantalla completa</translation>
     </message>
 </context>

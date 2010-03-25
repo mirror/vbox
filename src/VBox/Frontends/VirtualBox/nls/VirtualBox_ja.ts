@@ -2383,7 +2383,7 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../src/settings/global/VBoxGLSettingsGeneral.ui" line="159"/>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>フルスクリーンモード時にドックとメニューバーを自動的に表示(&amp;A)</translation>
     </message>
 </context>

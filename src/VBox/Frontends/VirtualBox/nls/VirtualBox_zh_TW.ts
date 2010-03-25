@@ -1196,7 +1196,7 @@ p, li { white-space: pre-wrap; }
         <translation>停駐圖示即時預覽(&amp;D)</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>在全螢幕自動顯示停駐 &amp;&amp; 功能表列(&amp;A)</translation>
     </message>
 </context>

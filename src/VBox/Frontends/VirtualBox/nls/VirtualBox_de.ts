@@ -1196,7 +1196,7 @@ p, li { white-space: pre-wrap; }
         <translation>Echtzeit-Vorschau im &amp;Dock-Icon</translation>
     </message>
     <message>
-        <source>&amp;Auto show Dock &amp;&amp; Menubar in fullscreen</source>
+        <source>&amp;Auto show Dock and Menubar in fullscreen</source>
         <translation>&amp;Automatisch zeige Dock &amp;&amp; Menubar im Fullscreen-Modus</translation>
     </message>
 </context>
