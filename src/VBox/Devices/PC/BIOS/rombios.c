@@ -4299,6 +4299,14 @@ ASM_END
       SET_CF();
       regs.u.r8.ah = UNSUPPORTED_FUNCTION;
       break;
+    case 0xec: /* AMD64 target operating mode callback */
+      if (regs.u.r8.al != 0) 
+          goto undecoded;
+      if (regs.u.r8.bl >= 1 && regs.u.r8.bl <= 3)
+          CLEAR_CF();   /* Accepted value. */
+      else
+          SET_CF();     /* Reserved, error. */
+      break;
 undecoded:
 #endif /* VBOX */
     default:
