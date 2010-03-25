@@ -42,7 +42,8 @@ public:
     enum CocoaButtonType
     {
         HelpButton,
-        CancelButton
+        CancelButton,
+        ResetButton
     };
 
     VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent = 0);

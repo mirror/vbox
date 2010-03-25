@@ -1,6 +1,7 @@
-<ui version="4.0" >
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
  <comment>
- VBox frontends: Qt4 GUI ("VirtualBox"):
+ VBox frontends: Qt4 GUI (&quot;VirtualBox&quot;):
 
      Copyright (C) 2008 Sun Microsystems, Inc.
 
@@ -8,7 +9,7 @@
      available from http://www.virtualbox.org. This file is free software;
      you can redistribute it and/or modify it under the terms of the GNU
      General Public License (GPL) as published by the Free Software
-     Foundation, in version 2 as it comes in the "COPYING" file of the
+     Foundation, in version 2 as it comes in the &quot;COPYING&quot; file of the
      VirtualBox OSE distribution. VirtualBox OSE is distributed in the
      hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
 
@@ -17,8 +18,8 @@
      additional information or have any questions.
  </comment>
  <class>VBoxGLSettingsInput</class>
- <widget class="QWidget" name="VBoxGLSettingsInput" >
-  <property name="geometry" >
+ <widget class="QWidget" name="VBoxGLSettingsInput">
+  <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
@@ -26,28 +27,19 @@
     <height>91</height>
    </rect>
   </property>
-  <layout class="QGridLayout" >
-   <property name="leftMargin" >
+  <layout class="QGridLayout">
+   <property name="margin">
     <number>0</number>
    </property>
-   <property name="topMargin" >
-    <number>0</number>
-   </property>
-   <property name="rightMargin" >
-    <number>0</number>
-   </property>
-   <property name="bottomMargin" >
-    <number>0</number>
-   </property>
-   <item rowspan="2" row="0" column="0" >
+   <item row="0" column="0" rowspan="2">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeType" >
+     <property name="sizeType">
       <enum>QSizePolicy::Fixed</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>40</width>
        <height>20</height>
@@ -55,48 +47,45 @@
      </property>
     </spacer>
    </item>
-   <item row="0" column="1" >
-    <widget class="QLabel" name="mLbHostKey" >
-     <property name="text" >
+   <item row="0" column="1">
+    <widget class="QLabel" name="mLbHostKey">
+     <property name="text">
       <string>Host &amp;Key:</string>
      </property>
-     <property name="buddy" >
+     <property name="buddy">
       <cstring>mHeHostKey</cstring>
      </property>
     </widget>
    </item>
-   <item row="0" column="2" >
-    <widget class="QIHotKeyEdit" name="mHeHostKey" >
-     <property name="whatsThis" >
+   <item row="0" column="2">
+    <widget class="QIHotKeyEdit" name="mHeHostKey">
+     <property name="whatsThis">
       <string>Displays the key used as a Host Key in the VM window. Activate the entry field and press a new Host Key. Note that alphanumeric, cursor movement and editing keys cannot be used.</string>
      </property>
     </widget>
    </item>
-   <item row="0" column="3" >
-    <widget class="QIToolButton" name="mTbResetHostKey" >
+   <item row="0" column="3">
+    <widget class="UIResetButton" name="mTbResetHostKey">
      <property name="focusPolicy">
       <enum>Qt::StrongFocus</enum>
      </property>
      <property name="toolTip">
       <string>Reset Host Key</string>
      </property>
-     <property name="whatsThis" >
+     <property name="whatsThis">
       <string>Resets the key used as a Host Key in the VM window.</string>
      </property>
      <property name="icon">
-      <iconset resource="../VirtualBox1.qrc" >:/delete_16px.png</iconset>
-     </property>
-     <property name="autoRaise">
-      <bool>true</bool>
+      <iconset><normaloff>:/delete_16px.png</normaloff>:/delete_16px.png</iconset>
      </property>
     </widget>
    </item>
-   <item row="0" column="4" >
+   <item row="0" column="4">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>0</width>
        <height>20</height>
@@ -104,22 +93,22 @@
      </property>
     </spacer>
    </item>
-   <item row="1" column="2" colspan="3" >
-    <widget class="QCheckBox" name="mCbAutoGrab" >
-     <property name="whatsThis" >
+   <item row="1" column="2" colspan="3">
+    <widget class="QCheckBox" name="mCbAutoGrab">
+     <property name="whatsThis">
       <string>When checked, the keyboard is automatically captured every time the VM window is activated. When the keyboard is captured, all keystrokes (including system ones like Alt-Tab) are directed to the VM.</string>
      </property>
-     <property name="text" >
+     <property name="text">
       <string>&amp;Auto Capture Keyboard</string>
      </property>
     </widget>
    </item>
-   <item row="2" column="3" >
+   <item row="2" column="3">
     <spacer>
-     <property name="orientation" >
+     <property name="orientation">
       <enum>Qt::Vertical</enum>
      </property>
-     <property name="sizeHint" >
+     <property name="sizeHint" stdset="0">
       <size>
        <width>121</width>
        <height>271</height>
@@ -136,12 +125,14 @@
    <header>QIHotKeyEdit.h</header>
   </customwidget>
   <customwidget>
-   <class>QIToolButton</class>
-   <extends>QToolButton</extends>
-   <header>QIToolButton.h</header>
+   <class>UIResetButton</class>
+   <extends>QAbstractButton</extends>
+   <header>VBoxSpecialControls.h</header>
   </customwidget>
  </customwidgets>
- <resources/>
+ <resources>
+  <include location="../VirtualBox1.qrc"/>
+ </resources>
  <connections>
   <connection>
    <sender>mTbResetHostKey</sender>
@@ -149,11 +140,11 @@
    <receiver>mHeHostKey</receiver>
    <slot>clear()</slot>
    <hints>
-    <hint type="sourcelabel" >
+    <hint type="sourcelabel">
      <x>111</x>
      <y>19</y>
     </hint>
-    <hint type="destinationlabel" >
+    <hint type="destinationlabel">
      <x>124</x>
      <y>61</y>
     </hint>

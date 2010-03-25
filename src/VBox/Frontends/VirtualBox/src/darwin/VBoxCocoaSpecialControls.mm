@@ -231,6 +231,17 @@ VBoxCocoaButton::VBoxCocoaButton (CocoaButtonType aType, QWidget *aParent /* = 0
             [[mNativeRef cell] setImageScaling: NSImageScaleProportionallyDown];
             break;
         }
+        case ResetButton:
+        {
+            mNativeRef = [[NSButton alloc] initWithFrame: NSMakeRect(0, 0, 13, 13)];
+            [mNativeRef setTitle: @""];
+            [mNativeRef setBezelStyle:NSShadowlessSquareBezelStyle];
+            [mNativeRef setButtonType:NSMomentaryChangeButton];
+            [mNativeRef setImage: [NSImage imageNamed: NSImageNameRefreshFreestandingTemplate]];
+            [mNativeRef setBordered: NO];
+            [[mNativeRef cell] setImageScaling: NSImageScaleProportionallyDown];
+            break;
+        }
     }
 
     NSButtonTarget *bt = [[NSButtonTarget alloc] initWithObject:this];
