@@ -39,6 +39,8 @@
 #include "VBoxGlobal.h"
 #include "VBoxUtils.h"
 
+#include "UIDownloaderUserManual.h"
+
 #ifdef Q_WS_X11
 #include <iprt/env.h>
 #endif
@@ -711,6 +713,9 @@ VBoxSelectorWnd (VBoxSelectorWnd **aSelf, QWidget* aParent,
     connect (&vboxGlobal(), SIGNAL (trayIconChanged (const VBoxChangeTrayIconEvent &)),
              this, SLOT (trayIconChanged (const VBoxChangeTrayIconEvent &)));
 #endif
+
+    /* Listen to potential downloaders signals: */
+    connect(&vboxProblem(), SIGNAL(sigDownloaderUserManualCreated()), this, SLOT(sltDownloaderUserManualEmbed()));
 
     /* bring the VM list to the focus */
     mVMListView->setFocus();
@@ -2149,5 +2154,12 @@ void VBoxTrayIcon::vmShowLogs()
 }
 
 #endif // VBOX_GUI_WITH_SYSTRAY
+
+void VBoxSelectorWnd::sltDownloaderUserManualEmbed()
+{
+    /* If there is User Manual downloader created => show the process bar: */
+    if (UIDownloaderUserManual *pDl = UIDownloaderUserManual::current())
+        statusBar()->addWidget(pDl->processWidget(this), 0);
+}
 
 #include "VBoxSelectorWnd.moc"

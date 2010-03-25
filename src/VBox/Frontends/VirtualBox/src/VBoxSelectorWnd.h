@@ -140,6 +140,8 @@ private slots:
     void trayIconChanged (const VBoxChangeTrayIconEvent &e);
 #endif
 
+    void sltDownloaderUserManualEmbed();
+
 private:
 
     /* Main menus */

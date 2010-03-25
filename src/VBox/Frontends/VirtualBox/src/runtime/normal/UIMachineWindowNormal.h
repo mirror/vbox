@@ -70,6 +70,7 @@ private slots:
 
     /* Downloader listeners: */
     void sltDownloaderAdditionsEmbed();
+    void sltDownloaderUserManualEmbed();
 
 private:
 
