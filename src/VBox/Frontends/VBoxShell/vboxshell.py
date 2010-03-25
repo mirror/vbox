@@ -369,9 +369,13 @@ def teleport(ctx,session,console,args):
         passwd = args[1]
     else:
         passwd = ""
+    
+    if len(args) > 2:
+        maxDowntime  = int(args[2])
+    else:
+        maxDowntime = 250
 
     port = int(port)
-    maxDowntime = 250
     print "Teleporting to %s:%d..." %(host,port)
     progress = console.teleport(host, port, passwd, maxDowntime)
     progressBar(ctx, progress, 100)
@@ -1235,7 +1239,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'shell':['Execute external shell command: shell "ls /etc/rc*"', shellCmd, 0],
             'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
             'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
-            'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd>', teleportCmd, 0],
+            'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd> <maxDowntime>', teleportCmd, 0],
             'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
             'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0],
             'getextra':['Get extra data, empty key lists all: getextra <vm|global> <key>', getExtraDataCmd, 0],
