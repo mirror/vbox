@@ -1826,8 +1826,8 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
     }
     pszEnd++;
 
-    int rc;
-    long PPA;
+    int rc = VERR_GENERAL_FAILURE;
+    long PPA = -1;
     if (   pszEnd
         && ddi_strtol(pszEnd, NULL, 10, &PPA) == 0)
     {
@@ -1852,6 +1852,7 @@ static int vboxNetFltSolarisOpenStyle2(PVBOXNETFLTINS pThis, ldi_ident_t *pDevId
             }
 
             ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
+            pThis->u.s.hIface = NULL;
             LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStyle2 dl_attach failed. rc=%d szDev=%s PPA=%d rc=%d\n", rc, szDev, PPA));
         }
         else
@@ -1951,6 +1952,7 @@ static int vboxNetFltSolarisOpenStream(PVBOXNETFLTINS pThis)
         LogRel((DEVICE_NAME ":vboxNetFltSolarisOpenStream Failed to search for filter in interface '%s'.\n", pThis->szName));
 
     ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
+    pThis->u.s.hIface = NULL;
 
     return VERR_INTNET_FLT_IF_FAILED;
 }
@@ -1965,7 +1967,11 @@ static void vboxNetFltSolarisCloseStream(PVBOXNETFLTINS pThis)
 {
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisCloseStream pThis=%p\n"));
 
-    ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
+    if (pThis->u.s.hIface)
+    {
+        ldi_close(pThis->u.s.hIface, FREAD | FWRITE, kcred);
+        pThis->u.s.hIface = NULL;
+    }
 }
 
 
@@ -2483,7 +2489,7 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
 {
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling pThis=%p\n", pThis));
 
-    int rc = VINF_SUCCESS;
+    int rc = VERR_GENERAL_FAILURE;
     vboxnetflt_promisc_stream_t *pPromiscStream = ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pvPromiscStream);
     if (RT_LIKELY(pPromiscStream))
     {
@@ -2497,7 +2503,7 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
             {
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Invalid polling interval %d. Expected between 1 and 120 secs.\n",
                                     Interval));
-                return VINF_SUCCESS;
+                return VERR_INVALID_PARAMETER;
             }
 
             /*
@@ -2514,7 +2520,10 @@ static int vboxNetFltSolarisSetupIp6Polling(PVBOXNETFLTINS pThis)
                 LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Failed to create timer. rc=%d\n", rc));
         }
         else
+        {
             LogRel((DEVICE_NAME ":vboxNetFltSolarisSetupIp6Polling: Polling already started.\n"));
+            rc = VINF_SUCCESS;
+        }
     }
     return rc;
 }
@@ -2571,24 +2580,39 @@ static int vboxNetFltSolarisAttachToInterface(PVBOXNETFLTINS pThis)
         rc = vboxNetFltSolarisAttachIp4(pThis, true /* fAttach */);
         if (RT_SUCCESS(rc))
         {
+            /*
+             * Ipv6 attaching is optional and can fail. We don't bother to bring down the whole
+             * attach process just if Ipv6 interface is unavailable.
+             */
             int rc2 = vboxNetFltSolarisAttachIp6(pThis, true /* fAttach */);
+
 #ifdef VBOXNETFLT_SOLARIS_IPV6_POLLING
+            /*
+             * If Ip6 interface is not plumbed and an Ip6 polling interval is specified, we need
+             * to begin polling to attach on the Ip6 interface whenver it comes up.
+             */
             if (   rc2 == VERR_INTNET_FLT_IF_NOT_FOUND
                 && g_VBoxNetFltSolarisPollInterval != -1)
             {
-                rc = vboxNetFltSolarisSetupIp6Polling(pThis);
-                if (RT_FAILURE(rc))
+                int rc3 = vboxNetFltSolarisSetupIp6Polling(pThis);
+                if (RT_FAILURE(rc3))
                 {
-                    ASMAtomicUoWritePtr((void * volatile *)&pThis->u.s.pvIp6Stream, NULL);
-                    vboxNetFltSolarisDetachFromInterface(pThis);
+                    /*
+                     * If we failed to setup Ip6 polling, warn in the release log and continue.
+                     */
+                    LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface IPv6 polling inactive. rc=%Rrc\n", rc3));
                 }
             }
-            else
 #endif
-                ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+
+            /*
+             * Ipv4 is successful, and maybe Ipv6, we're ready for transfers.
+             */
+            ASMAtomicWriteBool(&pThis->fDisconnectedFromHost, false);
+            return VINF_SUCCESS;
         }
-        else
-            vboxNetFltSolarisCloseStream(pThis);
+
+        vboxNetFltSolarisCloseStream(pThis);
     }
     else
         LogRel((DEVICE_NAME ":vboxNetFltSolarisAttachToInterface vboxNetFltSolarisOpenStream failed rc=%Rrc\n", rc));
@@ -3548,6 +3572,7 @@ int vboxNetFltOsPreInitInstance(PVBOXNETFLTINS pThis)
     /*
      * Init. the solaris specific data.
      */
+    pThis->u.s.hIface = NULL;
     pThis->u.s.pvIp4Stream = NULL;
     pThis->u.s.pvIp6Stream = NULL;
     pThis->u.s.pvArpStream = NULL;
