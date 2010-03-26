@@ -3379,12 +3379,20 @@ void VBoxGlobal::loadLanguage (const QString &aLangId)
 
 QString VBoxGlobal::helpFile() const
 {
-#if defined (Q_WS_WIN32) || defined (Q_WS_X11)
+#if defined (Q_WS_WIN32)
     const QString name = "VirtualBox";
     const QString suffix = "chm";
 #elif defined (Q_WS_MAC)
     const QString name = "UserManual";
     const QString suffix = "pdf";
+#elif defined (Q_WS_X11)
+# if defined VBOX_OSE
+    const QString name = "UserManual";
+    const QString suffix = "pdf";
+# else
+    const QString name = "VirtualBox";
+    const QString suffix = "chm";
+# endif
 #endif
     /* Where are the docs located? */
     char szDocsPath[RTPATH_MAX];

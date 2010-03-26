@@ -36,8 +36,15 @@ class UIMiniProcessWidgetUserManual : public QIWithRetranslateUI<UIMiniProcessWi
 
 public:
 
-    UIMiniProcessWidgetUserManual(const QString &strSource, QWidget *pParent = 0)
+    UIMiniProcessWidgetUserManual(QWidget *pParent = 0)
         : QIWithRetranslateUI<UIMiniProcessWidget>(pParent)
+    {
+        retranslateUi();
+    }
+
+protected slots:
+
+    void sltSetSource(const QString &strSource)
     {
         setSource(strSource);
         retranslateUi();
@@ -49,9 +56,9 @@ protected:
     {
         setCancelButtonText(tr("Cancel"));
         setCancelButtonToolTip(tr("Cancel the VirtualBox User Manual download"));
-        setProgressBarToolTip((tr("Downloading the VirtualBox User Manual "
-                                  "<nobr><b>%1</b>...</nobr>")
-                               .arg(source())));
+        QString strProgressBarTip = source().isEmpty() ? tr("Downloading the VirtualBox User Manual") :
+            tr("Downloading the VirtualBox User Manual <nobr><b>%1</b>...</nobr>").arg(source());
+        setProgressBarToolTip(strProgressBarTip);
     }
 };
 
@@ -65,6 +72,9 @@ public:
     static UIDownloaderUserManual* current();
     static void destroy();
 
+    void setSource(const QString &strSource);
+    void addSource(const QString &strSource);
+
     void setParentWidget(QWidget *pParent);
     QWidget *parentWidget() const;
 
@@ -73,10 +83,12 @@ public:
 
 signals:
 
-    void downloadFinished(const QString &strFile);
+    void sigSourceChanged(const QString &strSource);
+    void sigDownloadFinished(const QString &strFile);
 
 private slots:
 
+    void acknowledgeFinished(bool fError);
     void downloadFinished(bool fError);
     void suicide();
 
@@ -93,6 +105,9 @@ private:
     /* We use QPointer here, cause these items could be deleted in the life of this object.
      * QPointer guarantees that the ptr itself is zero in that case. */
     QPointer<QWidget> m_pParent;
+
+    /* List of sources to try to download from: */
+    QList<QString> m_sourcesList;
 };
 
 #endif // __UIDownloaderUserManual_h__
