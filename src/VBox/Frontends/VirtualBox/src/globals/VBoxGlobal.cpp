@@ -887,7 +887,7 @@ void VBoxGlobal::trayIconShowSelector()
 # ifdef RT_OS_WINDOWS
     rc = RTProcCreate (path, args, env, 0, &pid);
 # else
-    rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE, &pid);
+    rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE_DEPRECATED, &pid);
 # endif
     if (RT_FAILURE (rc))
         LogRel(("Systray: Failed to start new selector window! Path=%s, rc=%Rrc\n", path, rc));
@@ -935,11 +935,11 @@ bool VBoxGlobal::trayIconInstall()
         Assert (sz >= sizeof (VirtualBox_exe));
         strcpy (cmd, VirtualBox_exe);
         const char * args[] = {path, "-systray", 0 };
-    # ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
+# ifdef RT_OS_WINDOWS /** @todo drop this once the RTProcCreate bug has been fixed */
         rc = RTProcCreate (path, args, env, 0, &pid);
-    # else
-        rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE, &pid);
-    # endif
+# else
+        rc = RTProcCreate (path, args, env, RTPROC_FLAGS_DAEMONIZE_DEPRECATED, &pid);
+# endif
 
         if (RT_FAILURE (rc))
         {

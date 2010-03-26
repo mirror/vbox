@@ -653,8 +653,7 @@ int main(int argc, char* argv[])
 #if defined(RT_OS_DARWIN) || defined(RT_OS_LINUX) || defined (RT_OS_SOLARIS) || defined(RT_OS_FREEBSD)
     if (g_fDaemonize)
     {
-        rc = RTProcDaemonize(false /* fNoChDir */, false /* fNoClose */,
-                             NULL);
+        rc = RTProcDaemonizeUsingFork(false /* fNoChDir */, false /* fNoClose */, NULL);
         if (RT_FAILURE(rc))
         {
             RTStrmPrintf(g_pStdErr, "vboxwebsrv: failed to daemonize, rc=%Rrc. exiting.\n", rc);

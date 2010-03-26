@@ -183,9 +183,17 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
 
 /** @name RTProcCreate and RTProcCreateEx flags
  * @{ */
+/** Detach the child process from the parents process tree and process group,
+ * session or/and console (depends on the platform what's done applicable).
+ *
+ * The new process will not be a direct decendent of the parent and it will not
+ * be possible to wait for it, i.e. @a phProcess shall be NULL. */
+#define RTPROC_FLAGS_DETACHED               RT_BIT(0)
+
 /** Daemonize the child process, without changing the directory.
- * @remarks Not implemented on all platforms yet... */
-#define RTPROC_FLAGS_DAEMONIZE          RT_BIT(0)
+ * @deprecated Dont use this for new code, it is not portable.  Use
+ *             RTProcDaemonize instead. */
+#define RTPROC_FLAGS_DAEMONIZE_DEPRECATED   RT_BIT(1)
 /** @}  */
 
 
@@ -287,17 +295,41 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask(void);
 RTR3DECL(char *) RTProcGetExecutableName(char *pszExecName, size_t cchExecName);
 
 /**
+ * Daemonize the current process, making it a background process.
+ *
+ * The way this work is that it will spawn a detached / backgrounded /
+ * daemonized / call-it-what-you-want process that isn't a direct child of the
+ * current process.  The spawned will have the same arguments a the caller,
+ * except that the @a pszDaemonizedOpt is appended to prevent that the new
+ * process calls this API again.
+ *
+ * The new process will have the standard handles directed to/from the
+ * bitbucket.
+ *
+ * @returns IPRT status code.  On success it is normal for the caller to exit
+ *          the process by returning from main().
+ *
+ * @param   papszArgs       The argument vector of the calling process.
+ * @param   pszDaemonized   The daemonized option.  This is appended to the end
+ *                          of the parameter list of the daemonized process.
+ */
+RTR3DECL(int)   RTProcDaemonize(const char * const *papszArgs, const char *pszDaemonizedOpt);
+
+/**
  * Daemonize the current process, making it a background process. The current
  * process will exit if daemonizing is successful.
  *
- * @returns iprt status code.
+ * @returns IPRT status code.   On success it will only return in the child
+ *          process, the parent will exit.  On failure, it will return in the
+ *          parent process and no child has been spawned.
+ *
  * @param   fNoChDir    Pass false to change working directory to "/".
  * @param   fNoClose    Pass false to redirect standard file streams to the null device.
  * @param   pszPidfile  Path to a file to write the process id of the daemon
  *                      process to. Daemonizing will fail if this file already
  *                      exists or cannot be written. May be NULL.
  */
-RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPidfile);
+RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const char *pszPidfile);
 
 /**
  * Check if the given process is running on the system.

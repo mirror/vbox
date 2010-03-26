@@ -44,9 +44,9 @@ int main(int argc, char *argv[])
     }
 
     /* Daemonize... */
-    RTProcDaemonize(false /* fNoChDir */,
-                    false /* fNoClose */,
-                    NULL /* pszPidfile */);
+    RTProcDaemonizeUsingFork(false /* fNoChDir */,
+                             false /* fNoClose */,
+                             NULL /* pszPidfile */);
 
     /* Open the device */
     hDevice = open(DEVICE_NAME, O_RDWR, 0);
