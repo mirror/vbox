@@ -3092,10 +3092,12 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
          * in case new entries need to be added to the descriptor. Never
          * alocate more than 128K, because that's no valid descriptor file
          * and will result in the correct "truncated read" error handling. */
-        uint64_t cbSize;
-        rc = vmdkFileGetSize(pFile, &cbSize);
+        uint64_t cbFileSize;
+        rc = vmdkFileGetSize(pFile, &cbFileSize);
         if (RT_FAILURE(rc))
             goto out;
+
+        uint64_t cbSize = cbFileSize;
         if (cbSize % VMDK_SECTOR2BYTE(10))
             cbSize += VMDK_SECTOR2BYTE(20) - cbSize % VMDK_SECTOR2BYTE(10);
         else
@@ -3111,7 +3113,8 @@ static int vmdkOpenImage(PVMDKIMAGE pImage, unsigned uOpenFlags)
 
         size_t cbRead;
         rc = vmdkFileReadAt(pImage->pFile, 0, pImage->pDescData,
-                            pImage->cbDescAlloc, &cbRead);
+                            RT_MIN(pImage->cbDescAlloc, cbFileSize),
+                            &cbRead);
         if (RT_FAILURE(rc))
         {
             rc = vmdkError(pImage, rc, RT_SRC_POS, N_("VMDK: read error for descriptor in '%s'"), pImage->pszFilename);
