@@ -244,6 +244,8 @@ public:
     virtual void viewportResized(QResizeEvent * /*re*/){}
 
     virtual void viewportScrolled(int /*dx*/, int /*dy*/){}
+
+    virtual void setView(VBoxConsoleView * pView) { mView = pView; }
 #endif
 
 protected:

@@ -536,6 +536,9 @@ UISession::UISession(UIMachine *pMachine, CSession &sessionReference)
     , m_callback(CConsoleCallback(new UIConsoleCallback(this)))
     /* Common variables: */
     , m_pMenuPool(0)
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    , m_FrameBufferVector(sessionReference.GetMachine().GetMonitorCount())
+#endif
     , m_machineState(KMachineState_Null)
 #if defined(Q_WS_WIN)
     , m_alphaCursor(0)
@@ -1491,15 +1494,22 @@ void UISession::preparePowerUp()
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-/* 2D video overlay state + API */
-class VBoxQGLOverlay* UISession::overlayForScreen(ulong screenId)
+class UIFrameBuffer* UISession::persistedBrameBuffer(ulong screenId)
 {
-    /* durty hack to fill the list as needed */
-    if (m_OverlaysList.size() <= (int)screenId)
+    Assert (screenId < (ulong)m_FrameBufferVector.size());
+    if (screenId < (ulong)m_FrameBufferVector.size())
+        return m_FrameBufferVector[((int)screenId)];
+    return NULL;
+}
+
+int UISession::setPersistedBrameBuffer(ulong screenId, class UIFrameBuffer* pFrameBuffer)
+{
+    Assert (screenId < (ulong)m_FrameBufferVector.size());
+    if (screenId < (ulong)m_FrameBufferVector.size())
     {
-        for (int i = m_OverlaysList.size(); i <= (int)screenId; ++i)
-            m_OverlaysList.append(new VBoxQGLOverlay((QWidget *)NULL, (QObject *)NULL, &m_session));
+        m_FrameBufferVector[(int)screenId] = pFrameBuffer;
+        return VINF_SUCCESS;
     }
-    return m_OverlaysList.at((int)screenId);
+    return VERR_INVALID_PARAMETER;
 }
 #endif

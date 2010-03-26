@@ -228,6 +228,8 @@ public:
     virtual void viewportResized(QResizeEvent * /* pEvent */) {}
 
     virtual void viewportScrolled(int /* iX */, int /* iY */) {}
+
+    virtual void setView(UIMachineView * pView) { m_pMachineView = pView; }
 #endif
 
 protected:

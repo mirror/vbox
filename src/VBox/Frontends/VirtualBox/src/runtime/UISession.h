@@ -140,8 +140,12 @@ public:
     void setMouseIntegrated(bool fIsMouseIntegrated) { m_fIsMouseIntegrated = fIsMouseIntegrated; }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* 2D video overlay state + API */
-    class VBoxQGLOverlay* overlayForScreen(ulong screenId);
+    /* return a persisted framebuffer for the given screen
+     * see comment below for the m_FrameBufferVector field */
+    class UIFrameBuffer* persistedBrameBuffer(ulong screenId);
+    /* @return VINF_SUCCESS - on success
+     * VERR_INVALID_PARAMETER - if screenId is invalid */
+    int setPersistedBrameBuffer(ulong screenId, class UIFrameBuffer* pFrameBuffer);
 #endif
 
 signals:
@@ -208,10 +212,10 @@ private:
     UIMachineMenuBar *m_pMenuPool;
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-    /* 2D video overlay state + API
-     * this does not get re-created on mode change
-     * Each screen has its own Overlay state */
-    QList<class VBoxQGLOverlay*> m_OverlaysList;
+    /* When 2D is enabled we do not re-create Framebuffers. This is done
+     * 1. to avoid 2D command loss during the time slot when no framebuffer is assigned to the display
+     * 2. to make it easier to preserve the current 2D state */
+    QVector<class UIFrameBuffer*> m_FrameBufferVector;
 #endif
 
     /* Common variables: */

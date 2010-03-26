@@ -819,7 +819,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQImageFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, &mainWnd->session()) :
 #endif
                     new VBoxQImageFrameBuffer (this);
             break;
@@ -838,7 +838,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxSDLFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, &mainWnd->session()) :
 #endif
                     new VBoxSDLFrameBuffer (this);
             /*
@@ -863,7 +863,7 @@ VBoxConsoleView::VBoxConsoleView (VBoxConsoleWnd *mainWnd,
 #ifdef VBOX_WITH_VIDEOHWACCEL
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
-                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, viewport(), &mainWnd->session()) :
+                    mAccelerate2DVideo ? new VBoxOverlayFrameBuffer<VBoxQuartz2DFrameBuffer, VBoxConsoleView, VBoxResizeEvent> (this, &mainWnd->session()) :
 #endif
                     new VBoxQuartz2DFrameBuffer (this);
             break;

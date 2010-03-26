@@ -489,11 +489,17 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             if (m_fAccelerate2DVideo)
             {
-                class VBoxQGLOverlay* pOverlay = uisession()->overlayForScreen(screenId());
-                pOverlay->updateAttachment(viewport(), this);
-                /* these two additional template args is a workaround to this [VBox|UI] duplication
-                 * @todo: they are to be removed once VBox stuff is gone */
-                m_pFrameBuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, pOverlay, &machineWindowWrapper()->session());
+                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
+                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
             }
             else
                 m_pFrameBuffer = new UIFrameBufferQImage(this);
@@ -522,7 +528,7 @@ void UIMachineView::prepareFrameBuffer()
 # if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
             /* these two additional template args is a workaround to this [VBox|UI] duplication
              * @todo: they are to be removed once VBox stuff is gone */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent> (this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferSDL(this);
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent> (this, &machineWindowWrapper()->session()) : new UIFrameBufferSDL(this);
 # else
             m_pFrameBuffer = new UIFrameBufferSDL(this);
 # endif
@@ -552,7 +558,7 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             /* these two additional template args is a workaround to this [VBox|UI] duplication
              * @todo: they are to be removed once VBox stuff is gone */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, viewport(), &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
 # else
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # endif
@@ -691,6 +697,18 @@ void UIMachineView::cleanupFrameBuffer()
     {
         /* Process pending frame-buffer resize events: */
         QApplication::sendPostedEvents(this, VBoxDefs::ResizeEventType);
+#ifdef VBOX_WITH_VIDEOHWACCEL
+        if (m_fAccelerate2DVideo)
+        {
+            /* When 2D is enabled we do not re-create Framebuffers. This is done to
+             * 1. avoid 2D command loss during the time slot when no framebuffer is assigned to the display
+             * 2. make it easier to preserve the current 2D state */
+            Assert (m_pFrameBuffer == uisession()->persistedBrameBuffer(screenId()));
+            m_pFrameBuffer->setView(NULL);
+        }
+        else
+#endif
+        {
         /* Warn framebuffer about its no more necessary: */
         m_pFrameBuffer->setDeleted(true);
         /* Detach framebuffer from Display: */
@@ -700,6 +718,7 @@ void UIMachineView::cleanupFrameBuffer()
         m_pFrameBuffer->Release();
 //        delete m_pFrameBuffer; // TODO_NEW_CORE: possibly necessary to really cleanup
         m_pFrameBuffer = NULL;
+        }
     }
 }
 
