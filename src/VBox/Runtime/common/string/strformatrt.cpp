@@ -1050,10 +1050,10 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                 {
                     case 's':
                     {
-                        static const char   s_szAttrEscape[] = "\n\""; /* more? */
-                        static const char   s_szElemEscape[] = "<>&'\"";
-                        const char *pszEscape = fAttr ?             s_szAttrEscape      :             s_szElemEscape;
-                        size_t      cchEscape = fAttr ? RT_ELEMENTS(s_szAttrEscape) - 1 : RT_ELEMENTS(s_szElemEscape) - 1;
+                        static const char   s_szElemEscape[] = "<>&\"'";
+                        static const char   s_szAttrEscape[] = "<>&\"\n\r"; /* more? */
+                        const char * const  pszEscape =  fAttr ?             s_szAttrEscape  :             s_szElemEscape;
+                        size_t       const  cchEscape = (fAttr ? RT_ELEMENTS(s_szAttrEscape) : RT_ELEMENTS(s_szElemEscape)) - 1;
                         size_t      cchOutput = 0;
                         const char *pszStr    = va_arg(*pArgs, char *);
                         ssize_t     cchStr;
@@ -1077,25 +1077,18 @@ size_t rtstrFormatRt(PFNRTSTROUTPUT pfnOutput, void *pvArgOutput, const char **p
                             {
                                 if (offLast < offCur)
                                     cchOutput += pfnOutput(pvArgOutput, &pszStr[offLast], offCur - offLast);
-                                if (fAttr)
-                                    switch (pszStr[offCur])
-                                    {
-                                        case '\n':  cchOutput += pfnOutput(pvArgOutput, "\\\n", 2); break;
-                                        case '"':   cchOutput += pfnOutput(pvArgOutput, "\\\"", 2); break;
-                                        default:
-                                            AssertFailed();
-                                    }
-                                else
-                                    switch (pszStr[offCur])
-                                    {
-                                        case '<':   cchOutput += pfnOutput(pvArgOutput, "&lt;", 4); break;
-                                        case '>':   cchOutput += pfnOutput(pvArgOutput, "&gt;", 4); break;
-                                        case '&':   cchOutput += pfnOutput(pvArgOutput, "&amp;", 5); break;
-                                        case '\'':  cchOutput += pfnOutput(pvArgOutput, "&apos;", 6); break;
-                                        case '"':   cchOutput += pfnOutput(pvArgOutput, "&qout;", 6); break;
-                                        default:
-                                            AssertFailed();
-                                    }
+                                switch (pszStr[offCur])
+                                {
+                                    case '<':   cchOutput += pfnOutput(pvArgOutput, "&lt;", 4); break;
+                                    case '>':   cchOutput += pfnOutput(pvArgOutput, "&gt;", 4); break;
+                                    case '&':   cchOutput += pfnOutput(pvArgOutput, "&amp;", 5); break;
+                                    case '\'':  cchOutput += pfnOutput(pvArgOutput, "&apos;", 6); break;
+                                    case '"':   cchOutput += pfnOutput(pvArgOutput, "&qout;", 6); break;
+                                    case '\n':  cchOutput += pfnOutput(pvArgOutput, "&#xA;", 5); break;
+                                    case '\r':  cchOutput += pfnOutput(pvArgOutput, "&#xD;", 5); break;
+                                    default:
+                                        AssertFailed();
+                                }
                                 offLast = offCur + 1;
                             }
                             offCur++;
