@@ -91,14 +91,15 @@ public:
 
     UIDownloader();
 
-    void setSource(const QString &strSource);
-    QString source() const;
-    void setTarget(const QString &strTarget);
-    QString target() const;
+    virtual void setSource(const QString &strSource);
+    virtual QString source() const;
+    virtual void setTarget(const QString &strTarget);
+    virtual QString target() const;
 
     virtual void startDownload() = 0;
 
 signals:
+
     void sigDownloadProcess(int cDone, int cTotal);
     void sigFinished();
 
