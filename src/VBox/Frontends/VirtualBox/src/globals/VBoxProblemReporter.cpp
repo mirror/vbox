@@ -283,13 +283,13 @@ QWidget* VBoxProblemReporter::mainWindowShown() const
     }
     else
     {
-        if (vboxGlobal().vmWindow() && vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+        if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
             return &vboxGlobal().selectorWnd(); /* return that window */
     }
 #else
     if (vboxGlobal().vmWindow() && vboxGlobal().vmWindow().isVisible()) /* VM window is visible */
         return &vboxGlobal().vmWindow(); /* return that window */
-    if (vboxGlobal().vmWindow() && vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
+    if (vboxGlobal().selectorWnd().isVisible()) /* VM selector is visible */
         return &vboxGlobal().selectorWnd(); /* return that window */
 #endif
 
