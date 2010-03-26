@@ -1879,12 +1879,12 @@ public:
             delete mpOverlay;
         else
         {
-            HRESULT hr = Lock();
+            HRESULT hr = T::Lock();
             Assert(hr == S_OK);
             if (SUCCEEDED(hr))
             {
                 mpOverlay->updateAttachment(NULL, NULL);
-                hr = Unlock();
+                hr = T::Unlock();
                 Assert(hr == S_OK);
             }
         }
