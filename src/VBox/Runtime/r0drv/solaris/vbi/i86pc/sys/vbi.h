@@ -32,6 +32,13 @@ extern "C" {
 #endif
 
 /*
+ * Must be the called to initialize the VBI structures and code paths.
+ *
+ * return value is 0 on success, non-zero on failure.
+ */
+int vbi_init(void);
+
+/*
  * Private interfaces for VirtualBox access to Solaris kernel internal
  * facilities. The interface uses limited types when crossing the kernel
  * to hypervisor boundary. (void *) is for handles and function and other
