@@ -265,8 +265,6 @@ void Machine::FinalRelease()
  *  @param aName        name for the machine when aMode is Init_New
  *                      (ignored otherwise)
  *  @param aOsType      OS Type of this machine
- *  @param aOverride    |TRUE| to override VM config file existence checks.
- *                      |FALSE| refuses to overwrite existing VM configs.
  *  @param aNameSync    |TRUE| to automatically sync settings dir and file
  *                      name with the machine name. |FALSE| is used for legacy
  *                      machines where the file name is specified by the
@@ -285,7 +283,6 @@ HRESULT Machine::init(VirtualBox *aParent,
                       InitMode aMode,
                       CBSTR aName /* = NULL */,
                       GuestOSType *aOsType /* = NULL */,
-                      BOOL aOverride /* = FALSE */,
                       BOOL aNameSync /* = TRUE */,
                       const Guid *aId /* = NULL */)
 {
@@ -353,12 +350,9 @@ HRESULT Machine::init(VirtualBox *aParent,
                  || vrc == VERR_SHARING_VIOLATION
                )
             {
-                if (!aOverride)
-                {
-                    rc = setError(VBOX_E_FILE_ERROR,
-                                  tr("Machine settings file '%s' already exists"),
-                                  mData->m_strConfigFileFull.raw());
-                }
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Machine settings file '%s' already exists"),
+                              mData->m_strConfigFileFull.raw());
                 if (RT_SUCCESS(vrc))
                     RTFileClose(f);
             }

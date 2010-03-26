@@ -1689,7 +1689,7 @@
 
   <interface
     name="IVirtualBox" extends="$dispatched"
-    uuid="3f36e024-7fed-4f20-a02c-9158a82b44e6"
+    uuid="2158464a-f706-414b-a8c4-fb589dfc6b62"
     wsmap="managed"
   >
     <desc>
@@ -1918,9 +1918,6 @@
       </param>
       <param name="id" type="uuid" mod="string" dir="in">
         <desc>Machine UUID (optional).</desc>
-      </param>
-      <param name="override" type="boolean" dir="in">
-        <desc>Create the VM even if there are conflicting files.</desc>
       </param>
       <param name="machine" type="IMachine" dir="return">
         <desc>Created machine object.</desc>
