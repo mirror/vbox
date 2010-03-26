@@ -301,7 +301,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 		if (parms.Result == SHFL_PATH_NOT_FOUND ||
 		    parms.Result == SHFL_FILE_NOT_FOUND) {
 			kmem_free(str, size);
-			return ENOENT;
+			return (ENOENT);
 		}
 		parms.CreateFlags =
 		    SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
@@ -312,7 +312,7 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 		}
 		if (parms.Handle == SHFL_HANDLE_NIL) {
 			kmem_free(str, size);
-			return RTErrConvertToErrno(rc);
+			return (ENOENT);
 		}
 	}
 	newfp = kmem_alloc(sizeof(sfp_file_t), KM_SLEEP);
