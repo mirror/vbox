@@ -1254,7 +1254,7 @@ void VBoxConsoleWnd::closeEvent (QCloseEvent *aEvent)
             bool fIsStateSavingAllowed = !restictedActionsList.contains("SaveState", Qt::CaseInsensitive);
             bool fIsACPIShutdownAllowed = !restictedActionsList.contains("Shutdown", Qt::CaseInsensitive);
             bool fIsPowerOffAllowed = !restictedActionsList.contains("PowerOff", Qt::CaseInsensitive);
-            bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && restictedActionsList.contains("Restore", Qt::CaseInsensitive);
+            bool fIsPowerOffAndRestoreAllowed = fIsPowerOffAllowed && !restictedActionsList.contains("Restore", Qt::CaseInsensitive);
 
             /* Make Save State button visible/hidden depending on restriction: */
             dlg.mRbSave->setVisible(fIsStateSavingAllowed);
