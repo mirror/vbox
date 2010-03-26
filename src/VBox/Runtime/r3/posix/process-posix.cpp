@@ -86,7 +86,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~RTPROC_FLAGS_DAEMONIZE), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     const char * const *papszEnv = RTEnvGetExecEnvP(hEnv);
     AssertPtrReturn(papszEnv, VERR_INVALID_HANDLE);
@@ -174,7 +175,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     pid_t pid = -1;
 #ifdef HAVE_POSIX_SPAWN
-    if (   !(fFlags & RTPROC_FLAGS_DAEMONIZE)
+    if (   !(fFlags & (RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED))
         && uid == ~(uid_t)0
         && gid == ~(gid_t)0
         )
@@ -302,14 +303,18 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
             /*
              * Daemonize the process if requested.
              */
-            if (fFlags & RTPROC_FLAGS_DAEMONIZE)
+            if (fFlags & (RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED))
             {
-                rc = RTProcDaemonize(true /* fNoChDir */, false /* fNoClose */, NULL /* pszPidFile */);
+                rc = RTProcDaemonizeUsingFork(true /*fNoChDir*/,
+                                              !(fFlags & RTPROC_FLAGS_DAEMONIZE_DEPRECATED) /*fNoClose*/,
+                                              NULL /* pszPidFile */);
                 if (RT_FAILURE(rc))
                 {
+                    /* parent */
                     AssertReleaseMsgFailed(("RTProcDaemonize returns %Rrc errno=%d\n", rc, errno));
                     exit(127);
                 }
+                /* daemonized child */
             }
 
             /*
@@ -423,18 +428,7 @@ RTR3DECL(uint64_t) RTProcGetAffinityMask()
 }
 
 
-/**
- * Daemonize the current process, making it a background process. The current
- * process will exit if daemonizing is successful.
- *
- * @returns iprt status code.
- * @param   fNoChDir    Pass false to change working directory to "/".
- * @param   fNoClose    Pass false to redirect standard file streams to the null device.
- * @param   pszPidfile  Path to a file to write the process id of the daemon
- *                      process to. Daemonizing will fail if this file already
- *                      exists or cannot be written. May be NULL.
- */
-RTR3DECL(int)   RTProcDaemonize(bool fNoChDir, bool fNoClose, const char *pszPidfile)
+RTR3DECL(int)   RTProcDaemonizeUsingFork(bool fNoChDir, bool fNoClose, const char *pszPidfile)
 {
     /*
      * Fork the child process in a new session and quit the parent.

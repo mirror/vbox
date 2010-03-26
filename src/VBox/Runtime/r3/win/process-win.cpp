@@ -239,7 +239,8 @@ RTR3DECL(int)   RTProcCreate(const char *pszExec, const char * const *papszArgs,
 
 
 static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUTF16 pwszExec, PRTUTF16 pwszCmdLine,
-                                 PRTUTF16 pwszzBlock, STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo)
+                                 PRTUTF16 pwszzBlock, DWORD dwCreationFlags,
+                                 STARTUPINFOW *pStartupInfo, PROCESS_INFORMATION *pProcInfo)
 {
     /** @todo On NT4 we need to enable the SeTcbPrivilege to act as part of the operating system. Otherwise
       *       we will get error 1314 (priviledge not held) as a response. */
@@ -270,7 +271,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                    NULL,         /* pProcessAttributes */
                                    NULL,         /* pThreadAttributes */
                                    TRUE,         /* fInheritHandles */
-                                   CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                   dwCreationFlags,
                                    pwszzBlock,
                                    NULL,         /* pCurrentDirectory */
                                    pStartupInfo,
@@ -306,7 +307,7 @@ static int rtProcCreateAsUserHlp(PRTUTF16 pwszUser, PRTUTF16 pwszPassword, PRTUT
                                                  1 /*LOGON_WITH_PROFILE*/,   /* dwLogonFlags */
                                                  pwszExec,
                                                  pwszCmdLine,
-                                                 CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                                 dwCreationFlags,
                                                  pwszzBlock,
                                                  NULL,                       /* pCurrentDirectory */
                                                  pStartupInfo,
@@ -337,7 +338,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     AssertPtrReturn(pszExec, VERR_INVALID_POINTER);
     AssertReturn(*pszExec, VERR_INVALID_PARAMETER);
-    AssertReturn(!(fFlags & ~RTPROC_FLAGS_DAEMONIZE), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & ~(RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED)), VERR_INVALID_PARAMETER);
+    AssertReturn(!(fFlags & RTPROC_FLAGS_DETACHED) || !phProcess, VERR_INVALID_PARAMETER);
     AssertReturn(hEnv != NIL_RTENV, VERR_INVALID_PARAMETER);
     AssertPtrReturn(papszArgs, VERR_INVALID_PARAMETER);
     AssertPtrNullReturn(pszAsUser, VERR_INVALID_POINTER);
@@ -450,6 +452,10 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                 /*
                  * Get going...
                  */
+                DWORD               dwCreationFlags = CREATE_UNICODE_ENVIRONMENT;
+                if (fFlags & RTPROC_FLAGS_DETACHED)
+                    dwCreationFlags |= DETACHED_PROCESS;
+
                 PROCESS_INFORMATION ProcInfo;
                 RT_ZERO(ProcInfo);
                 if (pszAsUser == NULL)
@@ -459,7 +465,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                                        NULL,         /* pProcessAttributes */
                                        NULL,         /* pThreadAttributes */
                                        TRUE,         /* fInheritHandles */
-                                       CREATE_UNICODE_ENVIRONMENT, /* dwCreationFlags */
+                                       dwCreationFlags,
                                        pwszzBlock,
                                        NULL,          /* pCurrentDirectory */
                                        &StartupInfo,
@@ -483,7 +489,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                         if (RT_SUCCESS(rc))
                         {
                             rc = rtProcCreateAsUserHlp(pwszUser, pwszPassword,
-                                                       pwszExec, pwszCmdLine, pwszzBlock,
+                                                       pwszExec, pwszCmdLine, pwszzBlock, dwCreationFlags
                                                        &StartupInfo, &ProcInfo);
 
                             RTUtf16Free(pwszPassword);
