@@ -4040,10 +4040,10 @@ void VBoxQGLOverlay::updateAttachment(QWidget *pViewport, QObject *pPostEventObj
     if (mpViewport != pViewport)
     {
         mpViewport = pViewport;
-        if (mpOverlayWgt)
+        mpOverlayWgt = NULL;
+        mOverlayWidgetVisible = false;
+        if (mOverlayImage.hasSurfaces())
         {
-            mpOverlayWgt = NULL;
-            mOverlayWidgetVisible = false;
             Assert(!mOverlayVisible);
             if (pViewport)
             {
@@ -4051,11 +4051,10 @@ void VBoxQGLOverlay::updateAttachment(QWidget *pViewport, QObject *pPostEventObj
 //            vboxDoCheckUpdateViewport();
             }
             Assert(!mOverlayVisible);
-
         }
         mGlCurrent = false;
     }
-    mCmdPipe.updatePostEventObject(pPostEventObject);
+    mCmdPipe.setNotifyObject(pPostEventObject);
 }
 
 int VBoxQGLOverlay::reset()
@@ -4687,8 +4686,8 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
 }
 
 
-VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pParent) :
-    m_pParent(pParent),
+VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pNotifyObject) :
+    m_pNotifyObject(pNotifyObject),
     mbNewEvent (false),
     mbProcessingList (false)
 {
@@ -4703,6 +4702,8 @@ VBoxVHWACommandElementProcessor::VBoxVHWACommandElementProcessor(QObject *pParen
 
 VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
 {
+    Assert(!m_NotifyObjectRefs.refs());
+    Assert(!m_CmdPipe.isEmpty());
     RTCritSectDelete(&mCritSect);
 }
 
@@ -4716,6 +4717,7 @@ void VBoxVHWACommandElementProcessor::completeCurrentEvent()
 void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags)
 {
     bool bNeedNewEvent = false;
+    QObject *pNotifyObject = NULL;
     /* 1. lock*/
     RTCritSectEnter(&mCritSect);
     VBoxVHWACommandElement * pCmd = mFreeElements.pop();
@@ -4747,12 +4749,22 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
         mbNewEvent = true;
 
-    RTCritSectLeave(&mCritSect);
-
     if (bNeedNewEvent)
     {
+        if (m_pNotifyObject)
+        {
+            m_NotifyObjectRefs.inc(); /* ensure the parent does not get destroyed while we are using it */
+            pNotifyObject = m_pNotifyObject;
+        }
+    }
+
+    RTCritSectLeave(&mCritSect);
+
+    if (pNotifyObject)
+    {
         VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
-        QApplication::postEvent (m_pParent, pCurrentEvent);
+        QApplication::postEvent (pNotifyObject, pCurrentEvent);
+        m_NotifyObjectRefs.dec();
     }
 }
 
@@ -4768,28 +4780,64 @@ void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFi
     RTCritSectLeave(&mCritSect);
 }
 
-void VBoxVHWACommandElementProcessor::updatePostEventObject(QObject *pObject)
+void VBoxVHWACommandElementProcessor::setNotifyObject(QObject *pNotifyObject)
 {
     int cEventsNeeded = 0;
     const VBoxVHWACommandElement * pFirst;
     RTCritSectEnter(&mCritSect);
-    m_pParent = pObject;
-
-    pFirst = m_CmdPipe.contentsRo(NULL);
-    for (; pFirst; pFirst = pFirst->mpNext)
+    if (m_pNotifyObject == pNotifyObject)
     {
-        if (pFirst->isNewEvent())
-            ++cEventsNeeded;
+        RTCritSectLeave(&mCritSect);
+        return;
     }
+
+    if (m_pNotifyObject)
+    {
+        m_pNotifyObject = NULL;
+        RTCritSectLeave(&mCritSect);
+
+        m_NotifyObjectRefs.wait0();
+
+        RTCritSectEnter(&mCritSect);
+    }
+    else
+    {
+        /* NULL can not be references */
+        Assert (!m_NotifyObjectRefs.refs());
+    }
+
+    if (pNotifyObject)
+    {
+        m_pNotifyObject = pNotifyObject;
+
+        pFirst = m_CmdPipe.contentsRo(NULL);
+        for (; pFirst; pFirst = pFirst->mpNext)
+        {
+            if (pFirst->isNewEvent())
+                ++cEventsNeeded;
+        }
+
+        if (cEventsNeeded)
+            m_NotifyObjectRefs.inc();
+    }
+    else
+    {
+        /* should be zeroed already */
+        Assert(!m_pNotifyObject);
+    }
+
     RTCritSectLeave(&mCritSect);
 
-    if (pObject)
+    if (cEventsNeeded)
     {
+        /* cEventsNeeded can only be != 0 if pNotifyObject is valid */
+        Assert (pNotifyObject);
         for (int i = 0; i < cEventsNeeded; ++i)
         {
             VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
-            QApplication::postEvent (m_pParent, pCurrentEvent);
+            QApplication::postEvent(pNotifyObject, pCurrentEvent);
         }
+        m_NotifyObjectRefs.dec();
     }
 }
 

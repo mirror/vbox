@@ -32,6 +32,8 @@
 #include <QGLWidget>
 #include <iprt/assert.h>
 #include <iprt/critsect.h>
+#include <iprt/asm.h>
+#include <iprt/err.h>
 
 #include <VBox/VBoxGL2D.h>
 #include "VBoxFBOverlayCommon.h"
@@ -1355,12 +1357,52 @@ private:
     VBoxVHWACommandElement *mpFirst;
 };
 
+class VBoxVHWARefCounter
+{
+#define VBOXVHWA_INIFITE_WAITCOUNT (~0U)
+public:
+    VBoxVHWARefCounter() : m_cRefs(0) {}
+    void inc() { ASMAtomicIncU32(&m_cRefs); }
+    uint32_t dec()
+    {
+        uint32_t cRefs = ASMAtomicDecU32(&m_cRefs);
+        Assert(cRefs < UINT32_MAX / 2);
+        return cRefs;
+    }
+
+    uint32_t refs() { return ASMAtomicReadU32(&m_cRefs); }
+
+    int wait0(RTMSINTERVAL ms = 1000, uint32_t cWaits = VBOXVHWA_INIFITE_WAITCOUNT)
+    {
+        int rc = VINF_SUCCESS;
+        do
+        {
+            if (!refs())
+                break;
+            if (!cWaits)
+            {
+                rc = VERR_TIMEOUT;
+                break;
+            }
+            if (cWaits != VBOXVHWA_INIFITE_WAITCOUNT)
+                --cWaits;
+            rc = RTThreadSleep(ms);
+            AssertRC(rc);
+            if (!RT_SUCCESS(rc))
+                break;
+        } while(1);
+        return rc;
+    }
+private:
+    volatile uint32_t m_cRefs;
+};
+
 #define VBOXVHWACMDPIPEC_NEWEVENT      0x00000001
 #define VBOXVHWACMDPIPEC_COMPLETEEVENT 0x00000002
 class VBoxVHWACommandElementProcessor
 {
 public:
-    VBoxVHWACommandElementProcessor(QObject *pParent);
+    VBoxVHWACommandElementProcessor(QObject *pNotifyObject);
     ~VBoxVHWACommandElementProcessor();
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
     void completeCurrentEvent();
@@ -1369,11 +1411,12 @@ public:
     void putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
             class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
-    void updatePostEventObject(QObject *m_pObject);
+    void setNotifyObject(QObject *pNotifyObject);
 private:
     RTCRITSECT mCritSect;
     VBoxVHWACommandElementPipe m_CmdPipe;
-    QObject *m_pParent;
+    QObject *m_pNotifyObject;
+    VBoxVHWARefCounter m_NotifyObjectRefs;
     bool mbNewEvent;
     bool mbProcessingList;
     VBoxVHWACommandElementStack mFreeElements;
@@ -1860,45 +1903,20 @@ template <class T, class V, class R>
 class VBoxOverlayFrameBuffer : public T
 {
 public:
-    VBoxOverlayFrameBuffer (V *pView, VBoxQGLOverlay *pOverlay, CSession * aSession)
+    VBoxOverlayFrameBuffer (V *pView, CSession * aSession)
         : T (pView),
-          mpOverlay (pOverlay),
-          mpView (pView),
-          mbDestroyOverlay (false)
+          mOverlay(pView->viewport(), pView, aSession),
+          mpView (pView)
     {}
-
-    VBoxOverlayFrameBuffer (V *pView, QWidget *pWidget, CSession * aSession)
-        : T (pView),
-          mpOverlay (new VBoxQGLOverlay(pWidget, pView, aSession)),
-          mpView (pView),
-          mbDestroyOverlay (true)
-    {}
-
-    virtual ~VBoxOverlayFrameBuffer()
-    {
-        if (mbDestroyOverlay)
-            delete mpOverlay;
-        else
-        {
-            HRESULT hr = T::Lock();
-            Assert(hr == S_OK);
-            if (SUCCEEDED(hr))
-            {
-                mpOverlay->updateAttachment(NULL, NULL);
-                hr = T::Unlock();
-                Assert(hr == S_OK);
-            }
-        }
-    }
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
-        return mpOverlay->onVHWACommand ((struct _VBOXVHWACMD*)pCommand);
+        return mOverlay.onVHWACommand ((struct _VBOXVHWACMD*)pCommand);
     }
 
     void doProcessVHWACommand (QEvent * pEvent)
     {
-        mpOverlay->onVHWACommandEvent (pEvent);
+        mOverlay.onVHWACommandEvent (pEvent);
     }
 
     STDMETHOD(RequestResize) (ULONG aScreenId, ULONG aPixelFormat,
@@ -1906,7 +1924,7 @@ public:
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished)
    {
-        if (mpOverlay->onRequestResize (aScreenId, aPixelFormat,
+        if (mOverlay.onRequestResize (aScreenId, aPixelFormat,
                 aVRAM, aBitsPerPixel, aBytesPerLine,
                 aWidth, aHeight,
                 aFinished))
@@ -1922,7 +1940,7 @@ public:
     STDMETHOD(NotifyUpdate) (ULONG aX, ULONG aY,
                              ULONG aW, ULONG aH)
     {
-        if (mpOverlay->onNotifyUpdate (aX, aY, aW, aH))
+        if (mOverlay.onNotifyUpdate (aX, aY, aW, aH))
             return S_OK;
         return T::NotifyUpdate (aX, aY, aW, aH);
     }
@@ -1930,25 +1948,39 @@ public:
     void resizeEvent (R *re)
     {
         T::resizeEvent (re);
-        mpOverlay->onResizeEventPostprocess (VBoxFBSizeInfo(re),
+        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(re),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
 
     void viewportResized (QResizeEvent * re)
     {
-        mpOverlay->onViewportResized (re);
+        mOverlay.onViewportResized (re);
         T::viewportResized (re);
     }
 
     void viewportScrolled (int dx, int dy)
     {
-        mpOverlay->onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
+        mOverlay.onViewportScrolled (QPoint(mpView->contentsX(), mpView->contentsY()));
         T::viewportScrolled (dx, dy);
     }
+
+    void setView(V * pView)
+    {
+        /* lock to ensure we do not collide with the EMT thread passing commands to us */
+        HRESULT hr = T::Lock();
+        Assert(hr == S_OK);
+        if (SUCCEEDED(hr))
+        {
+            T::setView(pView);
+            mpView = pView;
+            mOverlay.updateAttachment(pView ? pView->viewport() : NULL, pView);
+            hr = T::Unlock();
+            Assert(hr == S_OK);
+        }
+    }
 private:
-    VBoxQGLOverlay *mpOverlay;
+    VBoxQGLOverlay mOverlay;
     V *mpView;
-    bool mbDestroyOverlay;
 };
 
 #endif
