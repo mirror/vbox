@@ -4707,11 +4707,15 @@ VBoxVHWACommandElementProcessor::~VBoxVHWACommandElementProcessor()
     RTCritSectDelete(&mCritSect);
 }
 
-void VBoxVHWACommandElementProcessor::completeCurrentEvent()
+bool VBoxVHWACommandElementProcessor::completeCurrentEvent()
 {
+    bool bActive = true;
     RTCritSectEnter(&mCritSect);
     mbNewEvent = true;
+    if (!m_pNotifyObject)
+        bActive = false;
     RTCritSectLeave(&mCritSect);
+    return bActive;
 }
 
 void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags)

@@ -1405,7 +1405,7 @@ public:
     VBoxVHWACommandElementProcessor(QObject *pNotifyObject);
     ~VBoxVHWACommandElementProcessor();
     void postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags);
-    void completeCurrentEvent();
+    bool completeCurrentEvent();
     class VBoxVHWACommandElement * detachCmdList(class VBoxVHWACommandElement ** ppLast,
             class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
@@ -1780,13 +1780,19 @@ public:
      * to be called on RequestResize framebuffer call
      * @return true if the request was processed & should not be forwarded to the framebuffer
      * false - otherwise */
-    bool onRequestResize (ULONG /*aScreenId*/, ULONG /*aPixelFormat*/,
-                          BYTE * /*aVRAM*/, ULONG /*aBitsPerPixel*/, ULONG /*aBytesPerLine*/,
-                          ULONG /*aWidth*/, ULONG /*aHeight*/,
-                          BOOL * /*aFinished*/)
+    bool onRequestResize (ULONG aScreenId, ULONG uPixelFormat,
+                          BYTE * pVRAM, ULONG uBitsPerPixel, ULONG uBytesPerLine,
+                          ULONG uWidth, ULONG uHeight,
+                          HRESULT *pResult,
+                          BOOL * pbFinished)
     {
-        mCmdPipe.completeCurrentEvent();
-        return false;
+        if (mCmdPipe.completeCurrentEvent())
+            return false;
+
+        /* TODO: more graceful resize handling */
+        *pResult = E_FAIL;
+
+        return true;
     }
 
     void onResizeEventPostprocess (const VBoxFBSizeInfo &re, const QPoint & topLeft);
@@ -1897,6 +1903,7 @@ private:
     CSession * mpSession;
 
     VBoxFBSizeInfo mSizeInfo;
+    VBoxFBSizeInfo mPostponedResize;
     QPoint mContentsTopLeft;
 
     QGLWidget *mpShareWgt;
@@ -1932,12 +1939,14 @@ public:
                               ULONG aWidth, ULONG aHeight,
                               BOOL *aFinished)
    {
+        HRESULT result;
         if (mOverlay.onRequestResize (aScreenId, aPixelFormat,
                 aVRAM, aBitsPerPixel, aBytesPerLine,
                 aWidth, aHeight,
+                &result,
                 aFinished))
         {
-            return S_OK;
+            return result;
         }
         return T::RequestResize (aScreenId, aPixelFormat,
                 aVRAM, aBitsPerPixel, aBytesPerLine,
@@ -1951,6 +1960,27 @@ public:
         if (mOverlay.onNotifyUpdate (aX, aY, aW, aH))
             return S_OK;
         return T::NotifyUpdate (aX, aY, aW, aH);
+    }
+
+    STDMETHOD(VideoModeSupported) (ULONG uWidth, ULONG uHeight, ULONG uBPP,
+                                       BOOL *pbSupported)
+    {
+        /* TODO: tmp workaround: the lock should be moved to the calling code??
+         * otherwise we may end up calling a null View */
+        /* Todo: can we call VideoModeSupported with the lock held?
+         * if not we can introduce a ref counting for the mpView usage
+         * to ensure it stays alive till we need it*/
+        HRESULT hr = T::Lock();
+        HRESULT retHr = S_OK;
+        Assert(hr == S_OK);
+        if (SUCCEEDED(hr))
+        {
+            if (mpView)
+                retHr = T::VideoModeSupported(uWidth, uHeight, uBPP, pbSupported);
+            hr = T::Unlock();
+            Assert(hr == S_OK);
+        }
+        return retHr;
     }
 
     void resizeEvent (R *re)
