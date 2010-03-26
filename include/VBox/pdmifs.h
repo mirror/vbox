@@ -550,9 +550,23 @@ typedef struct PDMIDISPLAYPORT
      */
     DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 
+    /**
+     * Render a rectangle from guest VRAM to Framebuffer.
+     *
+     * @param   pInterface          Pointer to this interface.
+     * @param   x                   The upper left corner x coordinate of the rectangle to be updated.
+     * @param   y                   The upper left corner y coordinate of the rectangle to be updated.
+     * @param   cx                  The width of the rectangle to be updated.
+     * @param   cy                  The height of the rectangle to be updated.
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(void, pfnUpdateDisplayRectEx,(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y, uint32_t cx, uint32_t cy,
+                                                       const uint8_t *pu8SrcVRAM, uint32_t u32SrcWidth, uint32_t u32SrcHeight, uint32_t u32SrcLineSize, uint32_t u32SrcBitsPerPixel,
+                                                       uint8_t *pu8DstBuffer, uint32_t u32DstWidth, uint32_t u32DstHeight, uint32_t u32DstLineSize, uint32_t u32DstBitsPerPixel));
+
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
-#define PDMIDISPLAYPORT_IID                     "48bbcb6b-ba43-449b-9248-b8bb09929771"
+#define PDMIDISPLAYPORT_IID                     "14433cdc-f7cc-4385-b280-287d447f026e"
 
 
 typedef struct _VBOXVHWACMD *PVBOXVHWACMD; /**< @todo r=bird: _VBOXVHWACMD -> VBOXVHWACMD; avoid using 1 or 2 leading underscores. Also, a line what it is to make doxygen happy. */
