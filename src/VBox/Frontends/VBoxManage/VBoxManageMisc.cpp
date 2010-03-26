@@ -246,7 +246,7 @@ int handleCreateVM(HandlerArg *a)
 
         if (settingsFile.isEmpty())
             CHECK_ERROR_BREAK(a->virtualBox,
-                CreateMachine(name, osTypeId, baseFolder, Guid(id).toUtf16(), FALSE, machine.asOutParam()));
+                CreateMachine(name, osTypeId, baseFolder, Guid(id).toUtf16(), machine.asOutParam()));
         else
             CHECK_ERROR_BREAK(a->virtualBox,
                 CreateLegacyMachine(name, osTypeId, settingsFile, Guid(id).toUtf16(), machine.asOutParam()));

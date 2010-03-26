@@ -7,7 +7,7 @@
  */
 
 /*
- * Copyright (C) 2006-2010 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2007 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -194,7 +194,7 @@ void createVM(IVirtualBox *virtualBox)
      */
     nsCOMPtr <IMachine> machine;
     rc = virtualBox->CreateMachine(NS_LITERAL_STRING("A brand new name").get(),
-                                   nsnull, nsnull, nsnull, false, getter_AddRefs(machine));
+                                   nsnull, nsnull, nsnull, getter_AddRefs(machine));
     if (NS_FAILED(rc))
     {
         printf("Error: could not create machine! rc=%08X\n", rc);
