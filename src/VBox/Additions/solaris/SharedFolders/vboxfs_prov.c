@@ -287,33 +287,32 @@ sfprov_open(sfp_mount_t *mnt, char *path, sfp_file_t **fp)
 	 * First we attempt to open it read/write. If that fails we
 	 * try read only.
 	 */
+	bzero(&parms, sizeof(parms));
 	str = sfprov_string(path, &size);
-	parms.Handle = 0;
+	parms.Handle = SHFL_HANDLE_NIL;
 	parms.Info.cbObject = 0;
 	parms.CreateFlags = SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READWRITE;
 	rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
-
-	if (RT_FAILURE(rc)) {
+	if (RT_FAILURE(rc) && rc != VERR_ACCESS_DENIED) {
 		kmem_free(str, size);
-		return (EINVAL);
+		return RTErrConvertToErrno(rc);
 	}
 	if (parms.Handle == SHFL_HANDLE_NIL) {
-		if (parms.Result == SHFL_NO_RESULT ||
-		    parms.Result == SHFL_PATH_NOT_FOUND ||
+		if (parms.Result == SHFL_PATH_NOT_FOUND ||
 		    parms.Result == SHFL_FILE_NOT_FOUND) {
 			kmem_free(str, size);
-			return (ENOENT);
+			return ENOENT;
 		}
 		parms.CreateFlags =
 		    SHFL_CF_ACT_FAIL_IF_NEW | SHFL_CF_ACCESS_READ;
 		rc = vboxCallCreate(&vbox_client, &mnt->map, str, &parms);
 		if (RT_FAILURE(rc)) {
 			kmem_free(str, size);
-			return (EINVAL);
+			return RTErrConvertToErrno(rc);
 		}
 		if (parms.Handle == SHFL_HANDLE_NIL) {
 			kmem_free(str, size);
-			return (ENOENT);
+			return RTErrConvertToErrno(rc);
 		}
 	}
 	newfp = kmem_alloc(sizeof(sfp_file_t), KM_SLEEP);
