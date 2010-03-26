@@ -489,7 +489,6 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             if (m_fAccelerate2DVideo)
             {
-                Assert(0);
                 class VBoxQGLOverlay* pOverlay = uisession()->overlayForScreen(screenId());
                 pOverlay->updateAttachment(viewport(), this);
                 /* these two additional template args is a workaround to this [VBox|UI] duplication
