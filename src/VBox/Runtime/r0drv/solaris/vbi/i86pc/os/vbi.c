@@ -1250,7 +1250,8 @@ vbi_phys_free(void *va, size_t size)
 /*
  * This is revision 8 of the interface.
  */
- 
+static vnode_t vbipagevp;
+
 page_t **
 vbi_pages_alloc(uint64_t *phys, size_t size)
 {
@@ -1286,12 +1287,12 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 				for (pgcnt_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
 				{
 					/* get a page from the freelist */
-					page_t *ppage = page_get_freelist(&kvp, 0 /* offset */, &kernseg, virtAddr,
+					page_t *ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
 										PAGESIZE, 0 /* flags */, NULL /* local group */);
 					if (!ppage)
 					{
 						/* try from the cachelist */
-						ppage = page_get_cachelist(&kvp, 0 /* offset */, &kernseg, virtAddr,
+						ppage = page_get_cachelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
 										0 /* flags */, NULL /* local group */);
 						if (!ppage)
 						{
@@ -1309,8 +1310,8 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 							page_hashout(ppage, NULL /* mutex */);
 					}
 
-					PP_CLRFREE(ppage);
-					PP_CLRAGED(ppage);
+					PP_CLRFREE(ppage);		/* Page is not free */
+					PP_CLRAGED(ppage);		/* Page is not hashed in */
 					pp_pages[i] = ppage;
 				}
 
