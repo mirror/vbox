@@ -37,6 +37,7 @@
 #include "UIFirstRunWzd.h"
 #ifdef VBOX_WITH_VIDEOHWACCEL
 # include "VBoxFBOverlay.h"
+# include "UIFrameBuffer.h"
 #endif
 
 #ifdef Q_WS_X11
@@ -592,6 +593,23 @@ UISession::~UISession()
     /* Destroy alpha cursor: */
     if (m_alphaCursor)
         DestroyIcon(m_alphaCursor);
+#endif
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+    for (int i = m_FrameBufferVector.size() - 1; i >= 0; --i)
+    {
+        UIFrameBuffer *pFb = m_FrameBufferVector[i];
+        if (pFb)
+        {
+            /* Warn framebuffer about its no more necessary: */
+            pFb->setDeleted(true);
+            /* Detach framebuffer from Display: */
+            CDisplay display = session().GetConsole().GetDisplay();
+            display.SetFramebuffer(i, CFramebuffer(NULL));
+            /* Release the reference: */
+            pFb->Release();
+        }
+    }
 #endif
 }
 

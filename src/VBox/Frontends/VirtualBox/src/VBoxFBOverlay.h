@@ -1428,21 +1428,25 @@ class VBoxFBSizeInfo
 {
 public:
     VBoxFBSizeInfo() {}
-    template<class T> VBoxFBSizeInfo(T * e) :
-        mPixelFormat(e->pixelFormat()), mVRAM(e->VRAM()), mBitsPerPixel(e->bitsPerPixel()),
-        mBytesPerLine(e->bytesPerLine()), mWidth(e->width()), mHeight(e->height()) {}
+    template<class T> VBoxFBSizeInfo(T * fb) :
+        mPixelFormat(fb->pixelFormat()), mVRAM(fb->address()), mBitsPerPixel(fb->bitsPerPixel()),
+        mBytesPerLine(fb->bytesPerLine()), mWidth(fb->width()), mHeight(fb->height()),
+        mUsesGuestVram(fb->usesGuestVRAM()) {}
 
     VBoxFBSizeInfo(ulong aPixelFormat, uchar *aVRAM,
                      ulong aBitsPerPixel, ulong aBytesPerLine,
-                     ulong aWidth, ulong aHeight) :
+                     ulong aWidth, ulong aHeight,
+                     bool bUsesGuestVram) :
         mPixelFormat (aPixelFormat), mVRAM (aVRAM), mBitsPerPixel (aBitsPerPixel),
-        mBytesPerLine (aBytesPerLine), mWidth (aWidth), mHeight (aHeight) {}
+        mBytesPerLine (aBytesPerLine), mWidth (aWidth), mHeight (aHeight),
+        mUsesGuestVram(bUsesGuestVram) {}
     ulong pixelFormat() const { return mPixelFormat; }
     uchar *VRAM() const { return mVRAM; }
     ulong bitsPerPixel() const { return mBitsPerPixel; }
     ulong bytesPerLine() const { return mBytesPerLine; }
     ulong width() const { return mWidth; }
     ulong height() const { return mHeight; }
+    bool usesGuestVram() const {return mUsesGuestVram;}
 
 private:
     ulong mPixelFormat;
@@ -1451,6 +1455,7 @@ private:
     ulong mBytesPerLine;
     ulong mWidth;
     ulong mHeight;
+    bool mUsesGuestVram;
 };
 
 class VBoxVHWAImage
@@ -1907,7 +1912,10 @@ public:
         : T (pView),
           mOverlay(pView->viewport(), pView, aSession),
           mpView (pView)
-    {}
+    {
+        /* synch with framebuffer */
+        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this), QPoint(mpView->contentsX(), mpView->contentsY()));
+    }
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
@@ -1948,7 +1956,7 @@ public:
     void resizeEvent (R *re)
     {
         T::resizeEvent (re);
-        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(re),
+        mOverlay.onResizeEventPostprocess (VBoxFBSizeInfo(this),
                 QPoint(mpView->contentsX(), mpView->contentsY()));
     }
 

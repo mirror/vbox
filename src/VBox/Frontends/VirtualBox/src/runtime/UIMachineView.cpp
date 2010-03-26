@@ -526,9 +526,22 @@ void UIMachineView::prepareFrameBuffer()
             XFlush(QX11Info::display());
 # endif
 # if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
-            /* these two additional template args is a workaround to this [VBox|UI] duplication
-             * @todo: they are to be removed once VBox stuff is gone */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent> (this, &machineWindowWrapper()->session()) : new UIFrameBufferSDL(this);
+            if (m_fAccelerate2DVideo)
+            {
+                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
+                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
+            }
+            else
+                m_pFrameBuffer = new UIFrameBufferSDL(this);
 # else
             m_pFrameBuffer = new UIFrameBufferSDL(this);
 # endif
@@ -556,9 +569,22 @@ void UIMachineView::prepareFrameBuffer()
             /* Indicate that we are doing all drawing stuff ourself: */
             viewport()->setAttribute(Qt::WA_PaintOnScreen);
 # ifdef VBOX_WITH_VIDEOHWACCEL
-            /* these two additional template args is a workaround to this [VBox|UI] duplication
-             * @todo: they are to be removed once VBox stuff is gone */
-            m_pFrameBuffer = m_fAccelerate2DVideo ? new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session()) : new UIFrameBufferQuartz2D(this);
+            if (m_fAccelerate2DVideo)
+            {
+                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                if (pFramebuffer)
+                    pFramebuffer->setView(this);
+                else
+                {
+                    /* these two additional template args is a workaround to this [VBox|UI] duplication
+                     * @todo: they are to be removed once VBox stuff is gone */
+                    pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
+                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                }
+                m_pFrameBuffer = pFramebuffer;
+            }
+            else
+                m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # else
             m_pFrameBuffer = new UIFrameBufferQuartz2D(this);
 # endif
