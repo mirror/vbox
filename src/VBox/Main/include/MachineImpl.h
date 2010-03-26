@@ -299,6 +299,7 @@ public:
         typedef std::list<GuestProperty> GuestPropertyList;
         GuestPropertyList    mGuestProperties;
         BOOL                 mPropertyServiceActive;
+        BOOL                 mGuestPropertiesModified;
         Utf8Str              mGuestPropertyNotificationPatterns;
 
         FirmwareType_T       mFirmwareType;

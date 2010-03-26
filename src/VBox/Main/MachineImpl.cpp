@@ -183,6 +183,7 @@ Machine::HWData::HWData()
 #endif
     mSyntheticCpu = false;
     mPropertyServiceActive = false;
+    mGuestPropertiesModified = false;
     mHpetEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
@@ -7662,6 +7663,13 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         {
             HWData::GuestProperty property = *it;
 
+            /* Remove transient guest properties at shutdown unless we
+             * are saving state */
+            if (   (   mData->mMachineState == MachineState_PoweredOff
+                    || mData->mMachineState == MachineState_Aborted
+                    || mData->mMachineState == MachineState_Teleported)
+                && property.mFlags & guestProp::TRANSIENT)
+                continue;
             settings::GuestProperty prop;
             prop.strName = property.strName;
             prop.strValue = property.strValue;
@@ -7674,6 +7682,8 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         }
 
         data.strNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
+        /* I presume this doesn't require a backup(). */
+        mHWData->mGuestPropertiesModified = false;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
     }
     catch(std::bad_alloc &)
@@ -9962,12 +9972,14 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
             if (utf8Name == iter->strName)
             {
                 mHWData->mGuestProperties.erase(iter);
+                mHWData->mGuestPropertiesModified = true;
                 break;
             }
         if (aValue != NULL)
         {
             HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
             mHWData->mGuestProperties.push_back(property);
+            mHWData->mGuestPropertiesModified = true;
         }
 
         /*
@@ -10790,6 +10802,31 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
         /* the saved state file was adopted */
         Assert(!mSSData->mStateFilePath.isEmpty());
         stsFlags |= SaveSTS_StateFilePath;
+    }
+
+    if (   aMachineState == MachineState_PoweredOff
+        || aMachineState == MachineState_Aborted
+        || aMachineState == MachineState_Teleported)
+    {
+        /* Make sure any transient guest properties get removed from the
+         * property store on shutdown. */
+        
+        HWData::GuestPropertyList::iterator it;
+        BOOL fNeedsSaving = mHWData->mGuestPropertiesModified;
+        if (!fNeedsSaving)
+            for (it = mHWData->mGuestProperties.begin();
+                 it != mHWData->mGuestProperties.end(); ++it)
+                if (it->mFlags & guestProp::TRANSIENT)
+                {
+                    fNeedsSaving = true;
+                    break;
+                }
+        if (fNeedsSaving)
+        {
+            mData->mCurrentStateModified = TRUE;
+            stsFlags |= SaveSTS_CurStateModified;
+            SaveSettings();
+        }
     }
 
     rc = saveStateSettings(stsFlags);
