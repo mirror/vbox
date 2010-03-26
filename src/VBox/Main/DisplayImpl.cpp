@@ -3186,6 +3186,7 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
     if(id < mcMonitors)
     {
         IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
+        Assert (pFramebuffer);
 
         if (pFramebuffer != NULL)
         {

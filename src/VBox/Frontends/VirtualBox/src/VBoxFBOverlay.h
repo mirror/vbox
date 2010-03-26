@@ -1862,15 +1862,33 @@ public:
     VBoxOverlayFrameBuffer (V *pView, VBoxQGLOverlay *pOverlay, CSession * aSession)
         : T (pView),
           mpOverlay (pOverlay),
-          mpView (pView)
+          mpView (pView),
+          mbDestroyOverlay (false)
     {}
 
     VBoxOverlayFrameBuffer (V *pView, QWidget *pWidget, CSession * aSession)
         : T (pView),
           mpOverlay (new VBoxQGLOverlay(pWidget, pView, aSession)),
-          mpView (pView)
+          mpView (pView),
+          mbDestroyOverlay (true)
     {}
 
+    virtual ~VBoxOverlayFrameBuffer()
+    {
+        if (mbDestroyOverlay)
+            delete mpOverlay;
+        else
+        {
+            HRESULT hr = Lock();
+            Assert(hr == S_OK);
+            if (SUCCEEDED(hr))
+            {
+                mpOverlay->updateAttachment(NULL, NULL);
+                hr = Unlock();
+                Assert(hr == S_OK);
+            }
+        }
+    }
 
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand)
     {
@@ -1929,6 +1947,7 @@ public:
 private:
     VBoxQGLOverlay *mpOverlay;
     V *mpView;
+    bool mbDestroyOverlay;
 };
 
 #endif
