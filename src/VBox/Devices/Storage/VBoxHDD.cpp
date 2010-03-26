@@ -4517,6 +4517,9 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
         AssertRC(rc2);
     }
 
+    if (rc == VINF_SUCCESS)
+        rc = VINF_VD_ASYNC_IO_FINISHED;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -4583,6 +4586,10 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
         rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
     }
+
+    if (rc == VINF_SUCCESS)
+        rc = VINF_VD_ASYNC_IO_FINISHED;
+
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 
