@@ -489,7 +489,7 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
                         if (RT_SUCCESS(rc))
                         {
                             rc = rtProcCreateAsUserHlp(pwszUser, pwszPassword,
-                                                       pwszExec, pwszCmdLine, pwszzBlock, dwCreationFlags
+                                                       pwszExec, pwszCmdLine, pwszzBlock, dwCreationFlags,
                                                        &StartupInfo, &ProcInfo);
 
                             RTUtf16Free(pwszPassword);
