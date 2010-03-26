@@ -4044,9 +4044,14 @@ void VBoxQGLOverlay::updateAttachment(QWidget *pViewport, QObject *pPostEventObj
         {
             mpOverlayWgt = NULL;
             mOverlayWidgetVisible = false;
-            initGl();
             Assert(!mOverlayVisible);
+            if (pViewport)
+            {
+                initGl();
 //            vboxDoCheckUpdateViewport();
+            }
+            Assert(!mOverlayVisible);
+
         }
         mGlCurrent = false;
     }
@@ -4763,12 +4768,12 @@ void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFi
     RTCritSectLeave(&mCritSect);
 }
 
-void VBoxVHWACommandElementProcessor::updatePostEventObject(QObject *m_pObject)
+void VBoxVHWACommandElementProcessor::updatePostEventObject(QObject *pObject)
 {
     int cEventsNeeded = 0;
     const VBoxVHWACommandElement * pFirst;
     RTCritSectEnter(&mCritSect);
-    m_pParent = m_pObject;
+    m_pParent = pObject;
 
     pFirst = m_CmdPipe.contentsRo(NULL);
     for (; pFirst; pFirst = pFirst->mpNext)
@@ -4778,10 +4783,13 @@ void VBoxVHWACommandElementProcessor::updatePostEventObject(QObject *m_pObject)
     }
     RTCritSectLeave(&mCritSect);
 
-    for (int i = 0; i < cEventsNeeded; ++i)
+    if (pObject)
     {
-        VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
-        QApplication::postEvent (m_pParent, pCurrentEvent);
+        for (int i = 0; i < cEventsNeeded; ++i)
+        {
+            VBoxVHWACommandProcessEvent *pCurrentEvent = new VBoxVHWACommandProcessEvent();
+            QApplication::postEvent (m_pParent, pCurrentEvent);
+        }
     }
 }
 
