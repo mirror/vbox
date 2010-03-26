@@ -91,6 +91,12 @@ public:
 
 private:
 
+    HRESULT prepareExecuteArgs(ComSafeArrayIn(IN_BSTR, aArguments),
+                               char **ppszArgv, uint32_t *pcbList, uint32_t *pcArgs);
+
+    HRESULT prepareExecuteEnv(ComSafeArrayIn(IN_BSTR, aEnvironment),
+                              void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
+
     struct Data
     {
         Data() : mAdditionsActive (FALSE), mSupportsSeamless (FALSE),
