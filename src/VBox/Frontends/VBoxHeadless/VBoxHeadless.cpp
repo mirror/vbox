@@ -528,6 +528,11 @@ static void show_usage()
 {
     RTPrintf("Usage:\n"
              "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
+#ifdef VBOX_WITH_VNC
+             "   -n, -vnc                              Enable the built in VNC server\n"
+             "   -m, -vncport                          TCP port number to use for the VNC server\n"
+             "   -o, -vncpass <pw>                     Set the VNC server password\n"
+#endif
 #ifdef VBOX_WITH_VRDP
              "   -v, -vrdp, --vrdp on|off|config       Enable (default) or disable the VRDP\n"
              "                                         server or don't change the setting\n"
@@ -604,6 +609,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
     const char *vrdpAddress = NULL;
     const char *vrdpEnabled = NULL;
 #endif
+#ifdef VBOX_WITH_VNC
+    bool        fVNCEnable      = false;
+    unsigned    uVNCPort        = 0;          /* default port */
+    char       *pszVNCPassword  = NULL;       /* no password */
+#endif
     unsigned fRawR0 = ~0U;
     unsigned fRawR3 = ~0U;
     unsigned fPATM  = ~0U;
@@ -661,6 +671,11 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "-vrdp", 'v', RTGETOPT_REQ_STRING },
         { "--vrdp", 'v', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VRDP defined */
+#ifdef VBOX_WITH_VNC
+        { "-vncport", 'm', RTGETOPT_REQ_INT32 },
+        { "-vncpass", 'o', RTGETOPT_REQ_STRING },
+        { "-vnc", 'n', 0 },
+#endif /* VBOX_WITH_VNC */
         { "-rawr0", OPT_RAW_R0, 0 },
         { "--rawr0", OPT_RAW_R0, 0 },
         { "-norawr0", OPT_NO_RAW_R0, 0 },
@@ -715,6 +730,17 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 vrdpEnabled = ValueUnion.psz;
                 break;
 #endif /* VBOX_WITH_VRDP defined */
+#ifdef VBOX_WITH_VNC
+            case 'n': 
+                fVNCEnable = true; 
+                break;
+            case 'm': 
+                uVNCPort = ValueUnion.i32; 
+                break;
+            case 'o': 
+                pszVNCPassword = (char*)ValueUnion.psz; 
+                break;
+#endif /* VBOX_WITH_VNC */
             case OPT_RAW_R0:
                 fRawR0 = true;
                 break;
@@ -932,7 +958,29 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
             break;
         }
 #endif /* defined(VBOX_FFMPEG) */
+#ifdef VBOX_WITH_VNC
+	    if (fVNCEnable) 
+        {
+            VNCFB           *pFramebuffer;
+            RTLDRMOD         hLdrVNC;
+	        PFNREGISTERVNCFB pfnRegisterVNCFB;
 
+        	pFramebuffer = new VNCFB(console, uVNCPort, pszVNCPassword);
+        	rc = pFramebuffer->init();
+        	if (rc != S_OK) 
+            {
+                LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rrc);
+             	delete pFramebuffer;
+                break;
+        	}
+
+            Log2(("VBoxHeadless: Registering VNC framebuffer\n"));
+            pFramebuffer->AddRef();
+            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
+        }
+        if (rc != S_OK)
+            break;
+#endif
         ULONG cMonitors = 1;
         machine->COMGETTER(MonitorCount)(&cMonitors);
 
