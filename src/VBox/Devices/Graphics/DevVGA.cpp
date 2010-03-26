@@ -5302,6 +5302,149 @@ static DECLCALLBACK(void) vgaPortUpdateDisplayRect (PPDMIDISPLAYPORT pInterface,
 #endif /* DEBUG_sunlover */
 }
 
+static DECLCALLBACK(void) vgaPortUpdateDisplayRectEx (PPDMIDISPLAYPORT pInterface,
+                                                      int32_t x,
+                                                      int32_t y,
+                                                      uint32_t w,
+                                                      uint32_t h,
+                                                      const uint8_t *pu8SrcVRAM,
+                                                      uint32_t u32SrcWidth,
+                                                      uint32_t u32SrcHeight,
+                                                      uint32_t u32SrcLineSize,
+                                                      uint32_t u32SrcBitsPerPixel,
+                                                      uint8_t *pu8DstBuffer,
+                                                      uint32_t u32DstWidth,
+                                                      uint32_t u32DstHeight,
+                                                      uint32_t u32DstLineSize,
+                                                      uint32_t u32DstBitsPerPixel)
+{
+    NOREF(u32DstWidth);
+    NOREF(u32DstHeight);
+
+    uint32_t v;
+    vga_draw_line_func *vga_draw_line;
+
+    uint32_t cbPixelDst;
+    uint32_t cbLineDst;
+    uint8_t *pu8Dst;
+
+    uint32_t cbPixelSrc;
+    uint32_t cbLineSrc;
+    const uint8_t *pu8Src;
+
+    uint32_t u32OffsetSrc, u32Dummy;
+
+    PVGASTATE s = IDISPLAYPORT_2_VGASTATE(pInterface);
+
+#ifdef DEBUG_sunlover
+    LogFlow(("vgaPortUpdateDisplayRectEx: %d,%d %dx%d\n", x, y, w, h));
+#endif /* DEBUG_sunlover */
+
+    Assert(pInterface);
+    Assert(s->pDrv);
+
+    int rc = PDMCritSectEnter(&s->lock, VERR_SEM_BUSY);
+    AssertRC(rc);
+
+    /* Correct negative x and y coordinates. */
+    if (x < 0)
+    {
+        x += w; /* Compute xRight which is also the new width. */
+        w = (x < 0) ? 0 : x;
+        x = 0;
+    }
+
+    if (y < 0)
+    {
+        y += h; /* Compute yBottom, which is also the new height. */
+        h = (y < 0) ? 0 : y;
+        y = 0;
+    }
+
+    /* Also check if coords are greater than the display resolution. */
+    if (x + w > u32SrcWidth)
+    {
+        // x < 0 is not possible here
+        w = u32SrcWidth > (uint32_t)x? u32SrcWidth - x: 0;
+    }
+
+    if (y + h > u32SrcHeight)
+    {
+        // y < 0 is not possible here
+        h = u32SrcHeight > (uint32_t)y? u32SrcHeight - y: 0;
+    }
+
+#ifdef DEBUG_sunlover
+    LogFlow(("vgaPortUpdateDisplayRectEx: %d,%d %dx%d (corrected coords)\n", x, y, w, h));
+#endif /* DEBUG_sunlover */
+
+    /* Check if there is something to do at all. */
+    if (w == 0 || h == 0)
+    {
+        /* Empty rectangle. */
+#ifdef DEBUG_sunlover
+        LogFlow(("vgaPortUpdateDisplayRectEx: nothing to do: %dx%d\n", w, h));
+#endif /* DEBUG_sunlover */
+        PDMCritSectLeave(&s->lock);
+        return;
+    }
+
+    /* Choose the rendering function. */
+    switch(u32SrcBitsPerPixel)
+    {
+        default:
+        case 0:
+            /* Nothing to do, just return. */
+            return;
+        case 8:
+            v = VGA_DRAW_LINE8;
+            break;
+        case 15:
+            v = VGA_DRAW_LINE15;
+            break;
+        case 16:
+            v = VGA_DRAW_LINE16;
+            break;
+        case 24:
+            v = VGA_DRAW_LINE24;
+            break;
+        case 32:
+            v = VGA_DRAW_LINE32;
+            break;
+    }
+
+    vga_draw_line = vga_draw_line_table[v * 4 + get_depth_index(u32DstBitsPerPixel)];
+
+    /* Compute source and destination addresses and pitches. */
+    cbPixelDst = (u32DstBitsPerPixel + 7) / 8;
+    cbLineDst  = u32DstLineSize;
+    pu8Dst     = pu8DstBuffer + y * cbLineDst + x * cbPixelDst;
+
+    cbPixelSrc = (u32SrcBitsPerPixel + 7) / 8;
+    cbLineSrc = u32SrcLineSize;
+
+    pu8Src = pu8SrcVRAM;
+    pu8Src += y * cbLineSrc + x * cbPixelSrc;
+
+    /* Render VRAM to the buffer. */
+
+#ifdef DEBUG_sunlover
+    LogFlow(("vgaPortUpdateDisplayRectEx: dst: %p, %d, %d. src: %p, %d, %d\n", pu8Dst, cbLineDst, cbPixelDst, pu8Src, cbLineSrc, cbPixelSrc));
+#endif /* DEBUG_sunlover */
+
+    while (h-- > 0)
+    {
+        vga_draw_line (s, pu8Dst, pu8Src, w);
+        pu8Dst += cbLineDst;
+        pu8Src += cbLineSrc;
+    }
+    PDMCritSectLeave(&s->lock);
+
+#ifdef DEBUG_sunlover
+    LogFlow(("vgaPortUpdateDisplayRectEx: completed.\n"));
+#endif /* DEBUG_sunlover */
+}
+
 static DECLCALLBACK(void) vgaPortSetRenderVRAM(PPDMIDISPLAYPORT pInterface, bool fRender)
 {
     PVGASTATE s = IDISPLAYPORT_2_VGASTATE(pInterface);
@@ -5972,6 +6115,7 @@ static DECLCALLBACK(int)   vgaR3Construct(PPDMDEVINS pDevIns, int iInstance, PCF
     pThis->IPort.pfnFreeScreenshot      = vgaPortFreeScreenshot;
     pThis->IPort.pfnDisplayBlt          = vgaPortDisplayBlt;
     pThis->IPort.pfnUpdateDisplayRect   = vgaPortUpdateDisplayRect;
+    pThis->IPort.pfnUpdateDisplayRectEx = vgaPortUpdateDisplayRectEx;
     pThis->IPort.pfnSetRenderVRAM       = vgaPortSetRenderVRAM;
 
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)

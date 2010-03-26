@@ -321,9 +321,6 @@ typedef struct VGAState {
     PDMIBASE                    IBase;
     /** LUN\#0: The display port interface. */
     PDMIDISPLAYPORT             IPort;
-# if HC_ARCH_BITS == 32
-    uint32_t                    Padding8;
-# endif
 #if defined(VBOX_WITH_HGSMI) && defined(VBOX_WITH_VIDEOHWACCEL)
     /** LUN\#0: VBVA callbacks interface */
     PDMIDISPLAYVBVACALLBACKS    IVBVACallbacks;

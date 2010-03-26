@@ -926,6 +926,14 @@ void Display::handleResizeCompletedEMT (void)
 
             mpDrv->pUpPort->pfnSetRenderVRAM (mpDrv->pUpPort, pFBInfo->fDefaultFormat);
         }
+        else if (!pFBInfo->pFramebuffer.isNull())
+        {
+            BOOL usesGuestVRAM = FALSE;
+            pFBInfo->pFramebuffer->COMGETTER(UsesGuestVRAM) (&usesGuestVRAM);
+
+            pFBInfo->fDefaultFormat = (usesGuestVRAM == FALSE);
+        }
+        LogFlow(("[%d]: default format %d\n", uScreenId, pFBInfo->fDefaultFormat));
 
 #ifdef DEBUG_sunlover
         if (!stam)
@@ -3307,7 +3315,25 @@ DECLCALLBACK(void) Display::displayVBVAUpdateProcess(PPDMIDISPLAYCONNECTOR pInte
     {
         if (pFBInfo->fDefaultFormat)
         {
-            pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
+            if (uScreenId == VBOX_VIDEO_PRIMARY_SCREEN)
+            {
+                pDrv->pUpPort->pfnUpdateDisplayRect (pDrv->pUpPort, pCmd->x, pCmd->y, pCmd->w, pCmd->h);
+            }
+            else if (!pFBInfo->pFramebuffer.isNull())
+            {
+                /* Render VRAM content to the framebuffer. */
+                BYTE *address = NULL;
+                HRESULT hrc = pFBInfo->pFramebuffer->COMGETTER(Address) (&address);
+                if (SUCCEEDED(hrc) && address != NULL)
+                {
+                    pDrv->pUpPort->pfnUpdateDisplayRectEx (pDrv->pUpPort,
+                                                           pCmd->x - pFBInfo->xOrigin, pCmd->y - pFBInfo->yOrigin, pCmd->w, pCmd->h,
+                                                           pFBInfo->pu8FramebufferVRAM, pFBInfo->w, pFBInfo->h,
+                                                           pFBInfo->u32LineSize, pFBInfo->u16BitsPerPixel,
+                                                           address, pFBInfo->w, pFBInfo->h,
+                                                           pFBInfo->w * 4, 32);
+                }
+            }
             pThis->handleDisplayUpdate (pCmd->x + pFBInfo->xOrigin,
                                         pCmd->y + pFBInfo->yOrigin, pCmd->w, pCmd->h);
         }
