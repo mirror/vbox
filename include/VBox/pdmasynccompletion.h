@@ -305,6 +305,21 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoi
                                              uint64_t *pcbSize);
 
 /**
+ * Sets the size of an endpoint.
+ * Not that some endpoints may not support this and will return an error
+ * (sockets for example).
+ *
+ * @returns VBox status code.
+ * @retval  VERR_NOT_SUPPORTED if the endpoint does not support this operation.
+ * @param   pEndpoint       The file endpoint.
+ * @param   cbSize          The size to set.
+ *
+ * @note PDMR3AsyncCompletionEpFlush should be called before this operation is executed.
+ */
+VMMR3DECL(int) PDMR3AsyncCompletionEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                             uint64_t cbSize);
+
+/**
  * Cancels a async completion task.
  *
  * If you want to use this method, you have to take great create to make sure

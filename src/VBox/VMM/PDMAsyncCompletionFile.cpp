@@ -1107,6 +1107,14 @@ static int pdmacFileEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t *p
     return VINF_SUCCESS;
 }
 
+static int pdmacFileEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, uint64_t cbSize)
+{
+    PPDMASYNCCOMPLETIONENDPOINTFILE pEpFile = (PPDMASYNCCOMPLETIONENDPOINTFILE)pEndpoint;
+
+    ASMAtomicWriteU64(&pEpFile->cbEndpoint, cbSize);
+    return RTFileSetSize(pEpFile->File, cbSize);
+}
+
 const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile =
 {
     /* u32Version */
@@ -1137,6 +1145,8 @@ const PDMASYNCCOMPLETIONEPCLASSOPS g_PDMAsyncCompletionEndpointClassFile =
     pdmacFileEpFlush,
     /* pfnEpGetSize */
     pdmacFileEpGetSize,
+    /* pfnEpSetSize */
+    pdmacFileEpSetSize,
     /* u32VersionEnd */
     PDMAC_EPCLASS_OPS_VERSION
 };

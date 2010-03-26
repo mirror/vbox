@@ -1022,7 +1022,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
                                      STAMVISIBILITY_USED,
                                      STAMUNIT_OCCURENCES,
                                      "Nanosecond resolution runtime statistics",
-                                     "/PDM/AsyncCompletion/File/%s/TaskRunNs-%u-%u",
+                                     "/PDM/AsyncCompletion/File/%s/TaskRun1Ns-%u-%u",
                                      RTPathFilename(pEndpoint->pszUri),
                                      i*100, i*100+100-1);
                 if (RT_FAILURE(rc))
@@ -1037,7 +1037,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
                                          STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES,
                                          "Microsecond resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRunMicroSec-%u-%u",
+                                         "/PDM/AsyncCompletion/File/%s/TaskRun2MicroSec-%u-%u",
                                          RTPathFilename(pEndpoint->pszUri),
                                         i*100, i*100+100-1);
                     if (RT_FAILURE(rc))
@@ -1053,7 +1053,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
                                          STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES,
                                          "Milliseconds resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRunMs-%u-%u",
+                                         "/PDM/AsyncCompletion/File/%s/TaskRun3Ms-%u-%u",
                                          RTPathFilename(pEndpoint->pszUri),
                                         i*100, i*100+100-1);
                     if (RT_FAILURE(rc))
@@ -1069,7 +1069,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpCreateForFile(PPPDMASYNCCOMPLETIONENDPOINT 
                                          STAMVISIBILITY_USED,
                                          STAMUNIT_OCCURENCES,
                                          "Second resolution runtime statistics",
-                                         "/PDM/AsyncCompletion/File/%s/TaskRunSec-%u-%u",
+                                         "/PDM/AsyncCompletion/File/%s/TaskRun4Sec-%u-%u",
                                          RTPathFilename(pEndpoint->pszUri),
                                         i*10, i*10+10-1);
                     if (RT_FAILURE(rc))
@@ -1347,7 +1347,21 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpGetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoi
     AssertReturn(VALID_PTR(pEndpoint), VERR_INVALID_POINTER);
     AssertReturn(VALID_PTR(pcbSize), VERR_INVALID_POINTER);
 
-    return pEndpoint->pEpClass->pEndpointOps->pfnEpGetSize(pEndpoint, pcbSize);
+    if (pEndpoint->pEpClass->pEndpointOps->pfnEpGetSize)
+        return pEndpoint->pEpClass->pEndpointOps->pfnEpGetSize(pEndpoint, pcbSize);
+    else
+        return VERR_NOT_SUPPORTED;
+}
+
+VMMR3DECL(int) PDMR3AsyncCompletionEpSetSize(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
+                                             uint64_t cbSize)
+{
+    AssertReturn(VALID_PTR(pEndpoint), VERR_INVALID_POINTER);
+
+    if (pEndpoint->pEpClass->pEndpointOps->pfnEpSetSize)
+        return pEndpoint->pEpClass->pEndpointOps->pfnEpSetSize(pEndpoint, cbSize);
+    else
+        return VERR_NOT_SUPPORTED;
 }
 
 VMMR3DECL(int) PDMR3AsyncCompletionTaskCancel(PPDMASYNCCOMPLETIONTASK pTask)
