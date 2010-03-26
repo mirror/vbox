@@ -52,6 +52,10 @@ typedef struct _DISPLAYFBINFO
     ULONG w;
     ULONG h;
 
+    uint16_t u16BitsPerPixel;
+    uint8_t *pu8FramebufferVRAM;
+    uint32_t u32LineSize;
+
     VBOXVIDEOINFOHOSTEVENTS *pHostEvents;
 
     volatile uint32_t u32ResizeStatus;
