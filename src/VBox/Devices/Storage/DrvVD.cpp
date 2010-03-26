@@ -350,22 +350,6 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
     return VINF_SUCCESS;;
 }
 
-static DECLCALLBACK(int) drvvdAsyncIOGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
-{
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
-    PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
-
-    return PDMR3AsyncCompletionEpGetSize(pStorageBackend->pEndpoint, pcbSize);
-}
-
-static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
-{
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
-    PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
-
-    return VERR_NOT_SUPPORTED;
-}
-
 static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                               size_t cbRead, void *pvBuf, size_t *pcbRead)
 {
@@ -487,6 +471,26 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushAsync(void *pvUser, void *pStorage,
 
     return PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, pvCompletion,
                                        (PPPDMASYNCCOMPLETIONTASK)ppTask);
+}
+
+static DECLCALLBACK(int) drvvdAsyncIOGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
+{
+    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+
+    return PDMR3AsyncCompletionEpGetSize(pStorageBackend->pEndpoint, pcbSize);
+}
+
+static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint64_t cbSize)
+{
+    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
+
+    int rc = drvvdAsyncIOFlushSync(pvUser, pStorage);
+    if (RT_SUCCESS(rc))
+        rc = PDMR3AsyncCompletionEpSetSize(pStorageBackend->pEndpoint, cbSize);
+
+    return rc;
 }
 
 #endif /* VBOX_WITH_PDM_ASYNC_COMPLETION */
