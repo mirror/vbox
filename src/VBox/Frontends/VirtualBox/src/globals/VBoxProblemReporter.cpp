@@ -2565,7 +2565,7 @@ void VBoxProblemReporter::showHelpHelpDialog()
 #ifndef VBOX_OSE
     /* For non-OSE version we just open it: */
     sltShowUserManual(vboxGlobal().helpFile());
-#else /* #endif for #ifndef VBOX_OSE */
+#else /* #ifndef VBOX_OSE */
     /* For OSE version we have to check if it present first: */
     QString strUserManualFileName1 = vboxGlobal().helpFile();
     QString strShortFileName = QFileInfo(strUserManualFileName1).fileName();
@@ -2580,25 +2580,22 @@ void VBoxProblemReporter::showHelpHelpDialog()
     }
     else if (!UIDownloaderUserManual::current() && askAboutUserManualDownload(strUserManualFileName1))
     {
-        /* Initialize variables: */
-        CVirtualBox vbox = vboxGlobal().virtualBox();
-        // TODO: QString source = QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + strName;
-        QString source = QString("http://download.virtualbox.org/virtualbox/") + strShortFileName;
-
         /* Create User Manual downloader: */
         UIDownloaderUserManual *pDl = UIDownloaderUserManual::create();
         /* Configure User Manual downloader: */
-        pDl->setSource(source);
+        CVirtualBox vbox = vboxGlobal().virtualBox();
+        pDl->addSource(QString("http://download.virtualbox.org/virtualbox/%1/").arg(vbox.GetVersion().remove("_OSE")) + strShortFileName);
+        pDl->addSource(QString("http://download.virtualbox.org/virtualbox/") + strShortFileName);
         pDl->setTarget(strUserManualFileName2);
         pDl->setParentWidget(mainWindowShown());
         /* After the download is finished => show the document: */
-        connect(pDl, SIGNAL(downloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
+        connect(pDl, SIGNAL(sigDownloadFinished(const QString&)), this, SLOT(sltShowUserManual(const QString&)));
         /* Notify listeners: */
         emit sigDownloaderUserManualCreated();
         /* Start the downloader: */
         pDl->startDownload();
     }
-#endif /* #endif for #ifdef VBOX_OSE */
+#endif /* #ifdef VBOX_OSE */
 }
 
 void VBoxProblemReporter::resetSuppressedMessages()
@@ -2610,15 +2607,25 @@ void VBoxProblemReporter::resetSuppressedMessages()
 void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
 {
 #if defined (Q_WS_WIN32)
-    HtmlHelp (GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
+    HtmlHelp(GetDesktopWindow(), strLocation.utf16(), HH_DISPLAY_TOPIC, NULL);
 #elif defined (Q_WS_X11)
+# ifndef VBOX_OSE
     char szViewerPath[RTPATH_MAX];
     int rc;
     rc = RTPathAppPrivateArch(szViewerPath, sizeof(szViewerPath));
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
+# else /* #ifndef VBOX_OSE */
+    /* In OSE case we do NOT know which of PDF viewers are installed,
+     * so we will just try few of them: */
+    QStringList viewers;
+    viewers << "evince" << "okular";
+    foreach (const QString &viewer, viewers)
+        if (QProcess::startDetached(viewer, QStringList(strLocation)))
+            break;
+# endif /* #ifdef VBOX_OSE */
 #elif defined (Q_WS_MAC)
-    vboxGlobal().openURL ("file://" + strLocation);
+    vboxGlobal().openURL("file://" + strLocation);
 #endif
 }
 

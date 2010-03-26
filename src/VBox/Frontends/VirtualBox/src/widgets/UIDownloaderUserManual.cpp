@@ -53,6 +53,20 @@ void UIDownloaderUserManual::destroy()
     m_pInstance = 0;
 }
 
+void UIDownloaderUserManual::setSource(const QString &strSource)
+{
+    /* Erase the list first: */
+    m_sourcesList.clear();
+    /* And add there passed value: */
+    addSource(strSource);
+}
+
+void UIDownloaderUserManual::addSource(const QString &strSource)
+{
+    /* Append passed value: */
+    m_sourcesList << strSource;
+}
+
 void UIDownloaderUserManual::setParentWidget(QWidget *pParent)
 {
     m_pParent = pParent;
@@ -65,10 +79,12 @@ QWidget* UIDownloaderUserManual::parentWidget() const
 
 UIMiniProcessWidgetUserManual* UIDownloaderUserManual::processWidget(QWidget *pParent /* = 0 */) const
 {
-    UIMiniProcessWidgetUserManual *pWidget = new UIMiniProcessWidgetUserManual(m_source.toString(), pParent);
+    UIMiniProcessWidgetUserManual *pWidget = new UIMiniProcessWidgetUserManual(pParent);
 
     /* Connect the cancel signal: */
     connect(pWidget, SIGNAL(sigCancel()), this, SLOT(cancelDownloading()));
+    /* Connect the signal to notify about source changed: */
+    connect(this, SIGNAL(sigSourceChanged(const QString&)), pWidget, SLOT(sltSetSource(const QString&)));
     /* Connect the signal to notify about the download process: */
     connect(this, SIGNAL(sigDownloadProcess(int, int)), pWidget, SLOT(sltProcess(int, int)));
     /* Make sure the widget is destroyed when this class is deleted: */
@@ -79,7 +95,26 @@ UIMiniProcessWidgetUserManual* UIDownloaderUserManual::processWidget(QWidget *pP
 
 void UIDownloaderUserManual::startDownload()
 {
-    acknowledgeStart();
+    /* If at least one source to try left: */
+    if (!m_sourcesList.isEmpty())
+    {
+        /* Set the first of left sources as current one: */
+        UIDownloader::setSource(m_sourcesList.takeFirst());
+        /* Warn process-bar(s) about source was changed: */
+        emit sigSourceChanged(source());
+        /* Try to download: */
+        acknowledgeStart();
+    }
+}
+
+void UIDownloaderUserManual::acknowledgeFinished(bool fError)
+{
+    /* If current source was wrong but other is present
+     * we will try other source else we should finish: */
+    if (fError && !m_sourcesList.isEmpty())
+        startDownload();
+    else
+        UIDownloader::acknowledgeFinished(fError);
 }
 
 void UIDownloaderUserManual::downloadFinished(bool fError)
@@ -104,7 +139,7 @@ void UIDownloaderUserManual::downloadFinished(bool fError)
                 /* Warn user about User Manual document loaded and saved: */
                 vboxProblem().warnAboutUserManualDownloaded(m_source.toString(), QDir::toNativeSeparators(m_strTarget));
                 /* Warn listener about User Manual was downloaded: */
-                emit downloadFinished(m_strTarget);
+                emit sigDownloadFinished(m_strTarget);
                 /* Close the downloader: */
                 QTimer::singleShot(0, this, SLOT(suicide()));
                 break;
