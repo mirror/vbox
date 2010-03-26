@@ -72,6 +72,8 @@
  *
  * @param   fNoChDir    Pass false to change working directory to root.
  * @param   fNoClose    Pass false to redirect standard file streams to /dev/null.
+ *
+ * @todo    Use RTProcDaemonize instead of this.
  */
 VBGLR3DECL(int) VbglR3Daemonize(bool fNoChDir, bool fNoClose)
 {
