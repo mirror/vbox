@@ -311,6 +311,7 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
     return S_OK;
 }
 
+#ifdef VBOX_WITH_GUEST_CONTROL
 HRESULT Guest::prepareExecuteArgs(ComSafeArrayIn(IN_BSTR, aArguments),
                                   char **ppszArgv, uint32_t *pcbList, uint32_t *pcArgs)
 {
@@ -360,6 +361,7 @@ HRESULT Guest::prepareExecuteEnv(ComSafeArrayIn(IN_BSTR, aEnvironment),
 
     return S_OK;
 }
+#endif /* VBOX_WITH_GUEST_CONTROL */
 
 STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
                                    ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
