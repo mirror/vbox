@@ -1260,7 +1260,8 @@ public:
     {
         mpFirst = pFirst;
         mpLast = pLast;
-        mpLast->mpNext = NULL;
+        if (mpLast)
+            mpLast->mpNext = NULL;
     }
 
     void prepend(VBoxVHWACommandElement *pFirst, VBoxVHWACommandElement *pLast)
