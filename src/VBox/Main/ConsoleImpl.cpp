@@ -1333,84 +1333,6 @@ HRESULT Console::doEnumerateGuestProperties(CBSTR aPatterns,
     return S_OK;
 }
 
-/**
- * Helper that is used by powerDown to move the guest properties to VBoxSVC.
- *
- * @param   fSaving         Whether we're saving a machine state and should
- *                          therefore save transient properties as well.
- *
- * @returns COM status code.
- *
- * @remarks This is called without holding the console lock.
- */
-HRESULT Console::doMoveGuestPropertiesOnPowerOff(bool fSaving)
-{
-    /*
-     * First, flush any pending notifications.
-     */
-    VBOXHGCMSVCPARM parm[1];
-    parm[0].setUInt32(20*1000/*ms*/);
-    int vrc = mVMMDev->hgcmHostCall("VBoxGuestPropSvc", guestProp::FLUSH_NOTIFICATIONS_HOST, 1, &parm[0]);
-    if (RT_FAILURE(vrc))
-        LogRelFunc(("Flushing notifications failed with rc=%Rrc\n", vrc));
-
-    /*
-     * Enumerate the properties and
-     */
-    HRESULT                 hrc;
-    com::SafeArray<BSTR>    namesOut;
-    com::SafeArray<BSTR>    valuesOut;
-    com::SafeArray<ULONG64> timestampsOut;
-    com::SafeArray<BSTR>    flagsOut;
-    try
-    {
-        Bstr pattern;
-        hrc = doEnumerateGuestProperties(pattern,
-                                         ComSafeArrayAsOutParam(namesOut),
-                                         ComSafeArrayAsOutParam(valuesOut),
-                                         ComSafeArrayAsOutParam(timestampsOut),
-                                         ComSafeArrayAsOutParam(flagsOut));
-        if (SUCCEEDED(hrc))
-        {
-            std::vector<BSTR>      names;
-            std::vector<BSTR>      values;
-            std::vector<ULONG64>   timestamps;
-            std::vector<BSTR>      flags;
-            for (size_t i = 0; i < namesOut.size(); ++i)
-            {
-                uint32_t fFlags = guestProp::NILFLAG;
-                vrc = guestProp::validateFlags(Utf8Str(flagsOut[i]).raw(), &fFlags); AssertRC(vrc);
-                if (   fSaving
-                    || !(fFlags & guestProp::TRANSIENT))
-                {
-                    names.push_back(namesOut[i]);
-                    values.push_back(valuesOut[i]);
-                    timestamps.push_back(timestampsOut[i]);
-                    flags.push_back(flagsOut[i]);
-                }
-            }
-            com::SafeArray<BSTR>    namesIn(names);
-            com::SafeArray<BSTR>    valuesIn(values);
-            com::SafeArray<ULONG64> timestampsIn(timestamps);
-            com::SafeArray<BSTR>    flagsIn(flags);
-            /* PushGuestProperties() calls DiscardSettings(), which calls us back */
-            mControl->PushGuestProperties(ComSafeArrayAsInParam(namesIn),
-                                          ComSafeArrayAsInParam(valuesIn),
-                                          ComSafeArrayAsInParam(timestampsIn),
-                                          ComSafeArrayAsInParam(flagsIn));
-        }
-    }
-    catch (...)
-    {
-        hrc = Console::handleUnexpectedExceptions(RT_SRC_POS);
-    }
-    if (FAILED(hrc))
-        LogRelFunc(("Failed with hrc=%Rhrc\n", hrc));
-    return hrc;
-}
-
-
-
 #endif /* VBOX_WITH_GUEST_PROPS */
 
 
@@ -5429,24 +5351,6 @@ HRESULT Console::powerDown(Progress *aProgress /*= NULL*/)
         aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
 
 #ifdef VBOX_WITH_HGCM
-# ifdef VBOX_WITH_GUEST_PROPS
-    /*
-     * Save all guest property store entries to the machine XML file
-     * and hand controll over to VBoxSVC.  Ignoring failure for now.
-     */
-    LogFlowThisFunc(("Moving Guest Properties to XML/VBoxSVC...\n"));
-    bool fIsSaving = mMachineState == MachineState_Saving
-                  || mMachineState == MachineState_LiveSnapshotting;
-    alock.leave();
-    doMoveGuestPropertiesOnPowerOff(fIsSaving);
-    alock.enter();
-
-    /* advance percent count */
-    if (aProgress)
-        aProgress->SetCurrentOperationProgress(99 * (++ step) / StepCount );
-
-# endif /* VBOX_WITH_GUEST_PROPS defined */
-
     /* Shutdown HGCM services before destroying the VM. */
     if (mVMMDev)
     {

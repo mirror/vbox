@@ -510,7 +510,6 @@ private:
 
 #ifdef VBOX_WITH_GUEST_PROPS
     static DECLCALLBACK(int)    doGuestPropNotification(void *pvExtension, uint32_t, void *pvParms, uint32_t cbParms);
-    HRESULT                     doMoveGuestPropertiesOnPowerOff(bool fSaving);
     HRESULT                     doEnumerateGuestProperties(CBSTR aPatterns,
                                                            ComSafeArrayOut(BSTR, aNames),
                                                            ComSafeArrayOut(BSTR, aValues),
