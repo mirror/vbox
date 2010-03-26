@@ -175,6 +175,8 @@ RTR3DECL(int)   RTProcCreateEx(const char *pszExec, const char * const *papszArg
      */
     pid_t pid = -1;
 #ifdef HAVE_POSIX_SPAWN
+    /** @todo OS/2: implement DETACHED (BACKGROUND stuff), see VbglR3Daemonize.  */
+    /** @todo Try do the detach thing with posix spawn.  */
     if (   !(fFlags & (RTPROC_FLAGS_DAEMONIZE_DEPRECATED | RTPROC_FLAGS_DETACHED))
         && uid == ~(uid_t)0
         && gid == ~(gid_t)0
