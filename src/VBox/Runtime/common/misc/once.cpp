@@ -119,7 +119,7 @@ RTDECL(int) RTOnce(PRTONCE pOnce, PFNRTONCE pfnOnce, void *pvUser1, void *pvUser
                  * the init code, if it isn't valid just do the yield/sleep thing.
                  */
                 RTSEMEVENTMULTI hEventMulti;
-                ASMAtomicUoReadSize(&pOnce->hEventMulti, &hEventMulti);
+                ASMAtomicUoReadHandle(&pOnce->hEventMulti, &hEventMulti);
                 if (hEventMulti != NIL_RTSEMEVENTMULTI)
                 {
                     fYieldSleep = false;
