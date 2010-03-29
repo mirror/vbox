@@ -27,6 +27,7 @@
 #include <VBox/VBoxHDD.h>
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmasynccompletion.h>
+#include <iprt/asm.h>
 #include <iprt/alloc.h>
 #include <iprt/assert.h>
 #include <iprt/uuid.h>
@@ -144,6 +145,10 @@ typedef struct VBOXDISK
     VDINTERFACE        VDIAsyncIO;
     /** Callback table for async I/O interface. */
     VDINTERFACEASYNCIO VDIAsyncIOCallbacks;
+    /** Common structure for the supported thread synchronization interface. */
+    VDINTERFACE        VDIThreadSync;
+    /** Callback table for thread synchronization interface. */
+    VDINTERFACETHREADSYNC VDIThreadSyncCallbacks;
     /** Callback table for the configuration information interface. */
     VDINTERFACECONFIG  VDIConfigCallbacks;
     /** Flag whether opened disk suppports async I/O operations. */
@@ -154,6 +159,16 @@ typedef struct VBOXDISK
     PPDMIMEDIAASYNCPORT      pDrvMediaAsyncPort;
     /** Pointer to the list of data we need to keep per image. */
     PVBOXIMAGE               pImages;
+    /** Flag whether a merge operation has been set up. */
+    bool                fMergePending;
+    /** Synchronization to prevent destruction before merge finishes. */
+    RTSEMFASTMUTEX      MergeCompleteMutex;
+    /** Synchronization between merge and other image accesses. */
+    RTSEMRW             MergeLock;
+    /** Source image index for merging. */
+    unsigned            uMergeSource;
+    /** Target image index for merging. */
+    unsigned            uMergeTarget;
 } VBOXDISK, *PVBOXDISK;
 
 
@@ -192,6 +207,29 @@ static void drvvdFreeImages(PVBOXDISK pThis)
         pThis->pImages = pThis->pImages->pNext;
         RTMemFree(p);
     }
+}
+
+
+/**
+ * Make the image temporarily read-only.
+ *
+ * @returns VBox status code.
+ * @param   pThis               The driver instance data.
+ */
+static int drvvdSetReadonly(PVBOXDISK pThis)
+{
+    int rc = VINF_SUCCESS;
+    if (!VDIsReadOnly(pThis->pDisk))
+    {
+        unsigned uOpenFlags;
+        rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
+        AssertRC(rc);
+        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
+        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
+        AssertRC(rc);
+        pThis->fTempReadOnly = true;
+    }
+    return rc;
 }
 
 
@@ -292,7 +330,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                           PVDINTERFACE pVDIfsDisk,
                                           void **ppStorage)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)RTMemAllocZ(sizeof(DRVVDSTORAGEBACKEND));
     int rc = VINF_SUCCESS;
 
@@ -310,7 +348,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
         rc = RTSemEventCreate(&pStorageBackend->EventSem);
         if (RT_SUCCESS(rc))
         {
-            rc = PDMDrvHlpPDMAsyncCompletionTemplateCreate(pDrvVD->pDrvIns, &pStorageBackend->pTemplate,
+            rc = PDMDrvHlpPDMAsyncCompletionTemplateCreate(pThis->pDrvIns, &pStorageBackend->pTemplate,
                                                            drvvdAsyncTaskCompleted, pStorageBackend, "AsyncTaskCompleted");
             if (RT_SUCCESS(rc))
             {
@@ -339,7 +377,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
 
 static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
     PDMR3AsyncCompletionEpClose(pStorageBackend->pEndpoint);
@@ -353,7 +391,7 @@ static DECLCALLBACK(int) drvvdAsyncIOClose(void *pvUser, void *pStorage)
 static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                               size_t cbRead, void *pvBuf, size_t *pcbRead)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
     PDMDATASEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
@@ -385,7 +423,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
 static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
                                                size_t cbWrite, const void *pvBuf, size_t *pcbWritten)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
     PDMDATASEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
@@ -416,7 +454,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
 
 static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
     PPDMASYNCCOMPLETIONTASK pTask;
 
@@ -444,7 +482,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uin
                                                size_t cbRead, void *pvCompletion,
                                                void **ppTask)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
     return PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbRead,
@@ -456,7 +494,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, ui
                                                 size_t cbWrite, void *pvCompletion,
                                                 void **ppTask)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
     return PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbWrite,
@@ -466,7 +504,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, ui
 static DECLCALLBACK(int) drvvdAsyncIOFlushAsync(void *pvUser, void *pStorage,
                                                 void *pvCompletion, void **ppTask)
 {
-    PVBOXDISK pDrvVD = (PVBOXDISK)pvUser;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
     return PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, pvCompletion,
@@ -494,6 +532,39 @@ static DECLCALLBACK(int) drvvdAsyncIOSetSize(void *pvUser, void *pStorage, uint6
 }
 
 #endif /* VBOX_WITH_PDM_ASYNC_COMPLETION */
+
+
+/*******************************************************************************
+*   VD Thread Synchronization interface implementation                         *
+*******************************************************************************/
+
+static DECLCALLBACK(int) drvvdThreadStartRead(void *pvUser)
+{
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
+
+    return RTSemRWRequestRead(pThis->MergeLock, RT_INDEFINITE_WAIT);
+}
+
+static DECLCALLBACK(int) drvvdThreadFinishRead(void *pvUser)
+{
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
+
+    return RTSemRWReleaseRead(pThis->MergeLock);
+}
+
+static DECLCALLBACK(int) drvvdThreadStartWrite(void *pvUser)
+{
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
+
+    return RTSemRWRequestWrite(pThis->MergeLock, RT_INDEFINITE_WAIT);
+}
+
+static DECLCALLBACK(int) drvvdThreadFinishWrite(void *pvUser)
+{
+    PVBOXDISK pThis = (PVBOXDISK)pvUser;
+
+    return RTSemRWReleaseWrite(pThis->MergeLock);
+}
 
 
 /*******************************************************************************
@@ -778,6 +849,44 @@ static DECLCALLBACK(int) drvvdFlush(PPDMIMEDIA pInterface)
     return rc;
 }
 
+/** @copydoc PDMIMEDIA::pfnMerge */
+static DECLCALLBACK(int) drvvdMerge(PPDMIMEDIA pInterface,
+                                    PFNSIMPLEPROGRESS pfnProgress,
+                                    void *pvUser)
+{
+    LogFlow(("%s:\n", __FUNCTION__));
+    PVBOXDISK pThis = PDMIMEDIA_2_VBOXDISK(pInterface);
+    int rc = VINF_SUCCESS;
+
+    /* Note: There is an unavoidable race between destruction and another
+     * thread invoking this function. This is handled safely and gracefully by
+     * atomically invalidating the lock handle in drvvdDestruct. */
+    int rc2 = RTSemFastMutexRequest(pThis->MergeCompleteMutex);
+    AssertRC(rc2);
+    if (RT_SUCCESS(rc2) && pThis->fMergePending)
+    {
+        /* Take shortcut: PFNSIMPLEPROGRESS is exactly the same type as
+         * PFNVDPROGRESS, so there's no need for a conversion function. */
+        /** @todo maybe introduce a conversion which limits update frequency. */
+        PVDINTERFACE pVDIfsOperation = NULL;
+        VDINTERFACE VDIProgress;
+        VDINTERFACEPROGRESS VDIProgressCallbacks;
+        VDIProgressCallbacks.cbSize       = sizeof(VDINTERFACEPROGRESS);
+        VDIProgressCallbacks.enmInterface = VDINTERFACETYPE_PROGRESS;
+        VDIProgressCallbacks.pfnProgress  = pfnProgress;
+        rc2 = VDInterfaceAdd(&VDIProgress, "DrvVD_VDIProgress", VDINTERFACETYPE_PROGRESS,
+                             &VDIProgressCallbacks, pvUser, &pVDIfsOperation);
+        AssertRC(rc2);
+        pThis->fMergePending = false;
+        rc = VDMerge(pThis->pDisk, pThis->uMergeSource,
+                     pThis->uMergeTarget, pVDIfsOperation);
+    }
+    rc2 = RTSemFastMutexRelease(pThis->MergeCompleteMutex);
+    AssertRC(rc2);
+    LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
+    return rc;
+}
+
 /** @copydoc PDMIMEDIA::pfnGetSize */
 static DECLCALLBACK(uint64_t) drvvdGetSize(PPDMIMEDIA pInterface)
 {
@@ -1016,16 +1125,7 @@ static DECLCALLBACK(void) drvvdSuspend(PPDMDRVINS pDrvIns)
 {
     LogFlow(("%s:\n", __FUNCTION__));
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
-    if (!VDIsReadOnly(pThis->pDisk))
-    {
-        unsigned uOpenFlags;
-        int rc = VDGetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, &uOpenFlags);
-        AssertRC(rc);
-        uOpenFlags |= VD_OPEN_FLAGS_READONLY;
-        rc = VDSetOpenFlags(pThis->pDisk, VD_LAST_IMAGE, uOpenFlags);
-        AssertRC(rc);
-        pThis->fTempReadOnly = true;
-    }
+    drvvdSetReadonly(pThis);
 }
 
 /**
@@ -1053,6 +1153,27 @@ static DECLCALLBACK(void) drvvdDestruct(PPDMDRVINS pDrvIns)
     PVBOXDISK pThis = PDMINS_2_DATA(pDrvIns, PVBOXDISK);
     LogFlow(("%s:\n", __FUNCTION__));
     PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns);
+
+    RTSEMFASTMUTEX mutex = (RTSEMFASTMUTEX)ASMAtomicXchgPtr((void **)&pThis->MergeCompleteMutex,
+                                                            (void *)NIL_RTSEMFASTMUTEX);
+    if (mutex != NIL_RTSEMFASTMUTEX)
+    {
+        /* Request the semaphore to wait until a potentially running merge
+         * operation has been finished. */
+        int rc = RTSemFastMutexRequest(mutex);
+        AssertRC(rc);
+        pThis->fMergePending = false;
+        rc = RTSemFastMutexRelease(mutex);
+        AssertRC(rc);
+        rc = RTSemFastMutexDestroy(mutex);
+        AssertRC(rc);
+    }
+    if (pThis->MergeLock != NIL_RTSEMRW)
+    {
+        int rc = RTSemRWDestroy(pThis->MergeLock);
+        AssertRC(rc);
+        pThis->MergeLock = NIL_RTSEMRW;
+    }
 
     if (VALID_PTR(pThis->pDisk))
     {
@@ -1088,11 +1209,16 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     pThis->fTempReadOnly                = false;
     pThis->pDisk                        = NULL;
     pThis->fAsyncIOSupported            = false;
+    pThis->fMergePending                = false;
+    pThis->MergeCompleteMutex           = NIL_RTSEMFASTMUTEX;
+    pThis->uMergeSource                 = VD_LAST_IMAGE;
+    pThis->uMergeTarget                 = VD_LAST_IMAGE;
 
     /* IMedia */
     pThis->IMedia.pfnRead               = drvvdRead;
     pThis->IMedia.pfnWrite              = drvvdWrite;
     pThis->IMedia.pfnFlush              = drvvdFlush;
+    pThis->IMedia.pfnMerge              = drvvdMerge;
     pThis->IMedia.pfnGetSize            = drvvdGetSize;
     pThis->IMedia.pfnIsReadOnly         = drvvdIsReadOnly;
     pThis->IMedia.pfnBiosGetPCHSGeometry = drvvdBiosGetPCHSGeometry;
@@ -1151,13 +1277,14 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             fValid = CFGMR3AreValuesValid(pCurNode,
                                           "Format\0Path\0"
                                           "ReadOnly\0TempReadOnly\0HonorZeroWrites\0"
-                                          "HostIPStack\0UseNewIo\0");
+                                          "HostIPStack\0UseNewIo\0SetupMerge\0");
         }
         else
         {
             /* All other image configurations only contain image name and
              * the format information. */
-            fValid = CFGMR3AreValuesValid(pCurNode, "Format\0Path\0");
+            fValid = CFGMR3AreValuesValid(pCurNode, "Format\0Path\0"
+                                                    "MergeSource\0MergeTarget\0");
         }
         if (!fValid)
         {
@@ -1201,7 +1328,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             }
             if (fReadOnly && pThis->fTempReadOnly)
             {
-                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
                                       N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"TempReadOnly\" are set"));
                 break;
             }
@@ -1210,6 +1337,19 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             {
                 rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                       N_("DrvVD: Configuration error: Querying \"UseNewIo\" as boolean failed"));
+                break;
+            }
+            rc = CFGMR3QueryBoolDef(pCurNode, "SetupMerge", &pThis->fMergePending, false);
+            if (RT_FAILURE(rc))
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Configuration error: Querying \"SetupMerge\" as boolean failed"));
+                break;
+            }
+            if (fReadOnly && pThis->fMergePending)
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                      N_("DrvVD: Configuration error: Both \"ReadOnly\" and \"MergePending\" are set"));
                 break;
             }
         }
@@ -1222,7 +1362,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     }
 
     /*
-     * Open the images.
+     * Create the image container and the necessary interfaces.
      */
     if (RT_SUCCESS(rc))
     {
@@ -1292,13 +1432,29 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 #endif /* !VBOX_WITH_PDM_ASYNC_COMPLETION */
         }
 
-        /** @todo implement and set up the thread synchronization interface
-         * if enabled by some CFGM key. If this is enabled then there also
-         * needs to be a way for the console object to query the pDisk pointer
-         * (so that it can perform the merge in parallel), or alternatively
-         * some code needs to be added here which does the merge. The latter
-         * might be preferred, as a running merge must block the destruction
-         * of the disk, or things will go really wrong. */
+        if (RT_SUCCESS(rc) && pThis->fMergePending)
+        {
+            rc = RTSemFastMutexCreate(&pThis->MergeCompleteMutex);
+            if (RT_SUCCESS(rc))
+                rc = RTSemRWCreate(&pThis->MergeLock);
+            if (RT_SUCCESS(rc))
+            {
+                pThis->VDIThreadSyncCallbacks.cbSize        = sizeof(VDINTERFACETHREADSYNC);
+                pThis->VDIThreadSyncCallbacks.enmInterface  = VDINTERFACETYPE_THREADSYNC;
+                pThis->VDIThreadSyncCallbacks.pfnStartRead  = drvvdThreadStartRead;
+                pThis->VDIThreadSyncCallbacks.pfnFinishRead = drvvdThreadFinishRead;
+                pThis->VDIThreadSyncCallbacks.pfnStartWrite = drvvdThreadStartWrite;
+                pThis->VDIThreadSyncCallbacks.pfnFinishWrite = drvvdThreadFinishWrite;
+
+                rc = VDInterfaceAdd(&pThis->VDIThreadSync, "DrvVD_ThreadSync", VDINTERFACETYPE_THREADSYNC,
+                                    &pThis->VDIThreadSyncCallbacks, pThis, &pThis->pVDIfsDisk);
+            }
+            else
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                      N_("DrvVD: Failed to create semaphores for \"MergePending\""));
+            }
+        }
 
         if (RT_SUCCESS(rc))
         {
@@ -1310,6 +1466,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
     if (pThis->pDrvMediaAsyncPort)
         pThis->fAsyncIOSupported = true;
 
+    unsigned iImageIdx = 0;
     while (pCurNode && RT_SUCCESS(rc))
     {
         /* Allocate per-image data. */
@@ -1337,6 +1494,46 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
             rc = PDMDRV_SET_ERROR(pDrvIns, rc,
                                   N_("DrvVD: Configuration error: Querying \"Format\" as string failed"));
             break;
+        }
+
+        bool fMergeSource;
+        rc = CFGMR3QueryBoolDef(pCurNode, "MergeSource", &fMergeSource, false);
+        if (RT_FAILURE(rc))
+        {
+            rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                  N_("DrvVD: Configuration error: Querying \"MergeSource\" as boolean failed"));
+            break;
+        }
+        if (fMergeSource)
+        {
+            if (pThis->uMergeSource == VD_LAST_IMAGE)
+                pThis->uMergeSource = iImageIdx;
+            else
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                      N_("DrvVD: Configuration error: Multiple \"MergeSource\" occurrences"));
+                break;
+            }
+        }
+
+        bool fMergeTarget;
+        rc = CFGMR3QueryBoolDef(pCurNode, "MergeTarget", &fMergeTarget, false);
+        if (RT_FAILURE(rc))
+        {
+            rc = PDMDRV_SET_ERROR(pDrvIns, rc,
+                                  N_("DrvVD: Configuration error: Querying \"MergeTarget\" as boolean failed"));
+            break;
+        }
+        if (fMergeTarget)
+        {
+            if (pThis->uMergeTarget == VD_LAST_IMAGE)
+                pThis->uMergeTarget = iImageIdx;
+            else
+            {
+                rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                                      N_("DrvVD: Configuration error: Multiple \"MergeTarget\" occurrences"));
+                break;
+            }
         }
 
         PCFGMNODE pCfgVDConfig = CFGMR3GetChild(pCurNode, "VDConfig");
@@ -1398,7 +1595,17 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
 
         /* next */
         iLevel--;
+        iImageIdx--;
         pCurNode = CFGMR3GetParent(pCurNode);
+    }
+
+    if (   RT_SUCCESS(rc)
+        && pThis->fMergePending
+        && (   pThis->uMergeSource == VD_LAST_IMAGE
+            || pThis->uMergeTarget == VD_LAST_IMAGE))
+    {
+        rc = PDMDRV_SET_ERROR(pDrvIns, VERR_PDM_DRIVER_INVALID_PROPERTIES,
+                              N_("DrvVD: Configuration error: Inconsistent image merge data"));
     }
 
     /*
