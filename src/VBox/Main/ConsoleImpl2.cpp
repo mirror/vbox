@@ -2165,6 +2165,14 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     rc = configGuestProperties(pConsole);
 #endif /* VBOX_WITH_GUEST_PROPS defined */
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+    /*
+     * Guest control service
+     */
+
+    rc = configGuestControl(pConsole);
+#endif /* VBOX_WITH_GUEST_CONTROL defined */
+
     /*
      * ACPI
      */
@@ -3518,3 +3526,29 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
     return VERR_NOT_SUPPORTED;
 #endif /* !VBOX_WITH_GUEST_PROPS */
 }
+
+/**
+ * Set up the Guest Control service.
+ */
+/* static */ int Console::configGuestControl(void *pvConsole)
+{
+#ifdef VBOX_WITH_GUEST_CONTROL
+    AssertReturn(pvConsole, VERR_GENERAL_FAILURE);
+    ComObjPtr<Console> pConsole = static_cast <Console *> (pvConsole);
+
+    /* Load the service */
+    int rc = pConsole->mVMMDev->hgcmLoadService ("VBoxGuestControlSvc", "VBoxGuestControlSvc");
+
+    if (RT_FAILURE(rc))
+    {
+        LogRel(("VBoxGuestControlSvc is not available. rc = %Rrc\n", rc));
+        /* That is not a fatal failure. */
+        rc = VINF_SUCCESS;
+    }
+
+    return VINF_SUCCESS;
+#else /* !VBOX_WITH_GUEST_CONTROL */
+    return VERR_NOT_SUPPORTED;
+#endif /* !VBOX_WITH_GUEST_CONTROL */
+}
+
