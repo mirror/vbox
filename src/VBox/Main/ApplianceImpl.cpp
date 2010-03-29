@@ -68,8 +68,13 @@ struct Appliance::LocationInfo
 // opaque private instance data of Appliance class
 struct Appliance::Data
 {
+    enum ApplianceState { ApplianceIdle, ApplianceImporting, ApplianceExporting };
+
     Data()
-      : pReader(NULL) {}
+      : state(ApplianceIdle),
+        pReader(NULL)
+    {
+    }
 
     ~Data()
     {
@@ -80,16 +85,21 @@ struct Appliance::Data
         }
     }
 
-    LocationInfo locInfo; /* The location info for the currently processed OVF */
+    ApplianceState  state;
 
-    OVFReader *pReader;
+    LocationInfo    locInfo;       // location info for the currently processed OVF
 
-    list< ComObjPtr<VirtualSystemDescription> > virtualSystemDescriptions;
+    OVFReader       *pReader;
 
-    list<Utf8Str> llWarnings;
+    bool            fBusyWriting;          // state protection; while this is true nobody else can call methods
 
-    ULONG ulWeightPerOperation;
-    Utf8Str strOVFSHA1Digest;
+    list< ComObjPtr<VirtualSystemDescription> >
+                    virtualSystemDescriptions;
+
+    list<Utf8Str>   llWarnings;
+
+    ULONG           ulWeightPerOperation;
+    Utf8Str         strOVFSHA1Digest;
 };
 
 struct VirtualSystemDescription::Data
@@ -369,6 +379,32 @@ void Appliance::uninit()
 // Appliance private methods
 //
 ////////////////////////////////////////////////////////////////////////////////
+
+/**
+ * Returns true if the appliance is in "idle" state. This should always be the
+ * case unless an import or export is currently in progress. Similar to machine
+ * states, this permits the Appliance implementation code to let go of the
+ * Appliance object lock while a time-consuming disk conversion is in progress
+ * without exposing the appliance to conflicting calls.
+ *
+ * This sets an error on "this" (the appliance) and returns false if the appliance
+ * is busy. The caller should then return E_ACCESSDENIED.
+ *
+ * Must be called from under the object lock!
+ *
+ * @return
+ */
+bool Appliance::isApplianceIdle() const
+{
+    if (m->state == Data::ApplianceImporting)
+        setError(VBOX_E_INVALID_OBJECT_STATE, "The appliance is busy importing files");
+    else if (m->state == Data::ApplianceExporting)
+        setError(VBOX_E_INVALID_OBJECT_STATE, "The appliance is busy exporting files");
+    else
+        return true;
+
+    return false;
+}
 
 HRESULT Appliance::searchUniqueVMName(Utf8Str& aName) const
 {
@@ -884,7 +920,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportOVF(RTTHREAD /* aThread */, void *p
 
     HRESULT rc = S_OK;
 
-    switch(task->taskType)
+    switch (task->taskType)
     {
         case TaskImportOVF::Read:
         {
@@ -1102,6 +1138,15 @@ int Appliance::importFS(TaskImportOVF *pTask)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return VERR_ACCESS_DENIED;
+
+    // Change the appliance state so we can safely leave the lock while doing time-consuming
+    // disk imports; also the below method calls do all kinds of locking which conflicts with
+    // the appliance object lock
+    m->state = Data::ApplianceImporting;
+    appLock.release();
 
     HRESULT rc = S_OK;
 
@@ -1905,6 +1950,10 @@ int Appliance::importFS(TaskImportOVF *pTask)
         }
     }
 
+    // restore the appliance state
+    appLock.acquire();
+    m->state = Data::ApplianceIdle;
+
     pTask->rc = rc;
 
     if (!pTask->progress.isNull())
@@ -2256,12 +2305,12 @@ int Appliance::writeFS(TaskExportOVF *pTask)
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
-
     HRESULT rc = S_OK;
 
     try
     {
+        AutoMultiWriteLock2 multiLock(&mVirtualBox->getMediaTreeLockHandle(), this->lockHandle() COMMA_LOCKVAL_SRC_POS);
+
         xml::Document doc;
         xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
@@ -2934,7 +2983,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             } // for (size_t uLoop = 0; ...
         }
 
-        // finally, fill in the network section we set up empty above according
+        // now, fill in the network section we set up empty above according
         // to the networks we found with the hardware items
         map<Utf8Str, bool>::const_iterator itN;
         for (itN = mapNetworks.begin();
@@ -2946,6 +2995,14 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             pelmNetwork->setAttribute("ovf:name", strNetwork.c_str());
             pelmNetwork->createChild("Description")->addContent("Logical network used by this appliance.");
         }
+
+        // Finally, write out the disks!
+
+        // This can take a very long time so leave the locks; in particular, we have the media tree
+        // lock which Medium::CloneTo() will request, and that would deadlock. Instead, protect
+        // the appliance by resetting its state so we can safely leave the lock
+        m->state = Data::ApplianceExporting;
+        multiLock.release();
 
         list<Utf8Str> diskList;
         map<Utf8Str, const VirtualSystemDescriptionEntry*>::const_iterator itS;
@@ -3002,7 +3059,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 // advance to the next operation
                 if (!pTask->progress.isNull())
                     pTask->progress->SetNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
-                                                     pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
                 waitForAsyncProgress(pTask->progress, pProgress2);
@@ -3078,6 +3135,10 @@ int Appliance::writeFS(TaskExportOVF *pTask)
     {
         rc = aRC;
     }
+
+    AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
+    // reset the state so others can call methods again
+    m->state = Data::ApplianceIdle;
 
     pTask->rc = rc;
 
@@ -3277,6 +3338,9 @@ STDMETHODIMP Appliance::COMGETTER(Path)(BSTR *aPath)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
+
     Bstr bstrPath(m->locInfo.strPath);
     bstrPath.cloneTo(aPath);
 
@@ -3296,6 +3360,9 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     if (m->pReader) // OVFReader instantiated?
     {
@@ -3355,6 +3422,9 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
+
     SafeIfaceArray<IVirtualSystemDescription> sfaVSD(m->virtualSystemDescriptions);
     sfaVSD.detachTo(ComSafeArrayOutArg(aVirtualSystemDescriptions));
 
@@ -3375,6 +3445,9 @@ STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     if (m->pReader)
     {
@@ -3422,6 +3495,9 @@ STDMETHODIMP Appliance::Interpret()
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
+
     HRESULT rc = S_OK;
 
     /* Clear any previous virtual system descriptions */
@@ -3438,6 +3514,12 @@ STDMETHODIMP Appliance::Interpret()
     if (!m->pReader)
         return setError(E_FAIL,
                         tr("Cannot interpret appliance without reading it first (call read() before interpret())"));
+
+    // Change the appliance state so we can safely leave the lock while doing time-consuming
+    // disk imports; also the below method calls do all kinds of locking which conflicts with
+    // the appliance object lock
+    m->state = Data::ApplianceImporting;
+    alock.release();
 
     /* Try/catch so we can clean up on error */
     try
@@ -3852,6 +3934,10 @@ STDMETHODIMP Appliance::Interpret()
         rc = aRC;
     }
 
+    // reset the appliance state
+    alock.acquire();
+    m->state = Data::ApplianceIdle;
+
     return rc;
 }
 
@@ -3868,6 +3954,9 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     if (!m->pReader)
         return setError(E_FAIL,
@@ -3899,6 +3988,9 @@ STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     ComObjPtr<VFSExplorer> explorer;
     HRESULT rc = S_OK;
@@ -3933,6 +4025,9 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     // see if we can handle this file; for now we insist it has an ".ovf" extension
     Utf8Str strPath = path;
@@ -3983,6 +4078,9 @@ STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (!isApplianceIdle())
+        return E_ACCESSDENIED;
 
     com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
 
@@ -4405,8 +4503,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
-
     ComObjPtr<VirtualSystemDescription> pNewDesc;
 
     try
@@ -4422,6 +4518,22 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
         ComPtr<IUSBController> pUsbController;
         ComPtr<IAudioAdapter> pAudioAdapter;
+
+        // first, call the COM methods, as they request locks
+        rc = COMGETTER(USBController)(pUsbController.asOutParam());
+        if (FAILED(rc))
+            fUSBEnabled = false;
+        else
+            rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
+
+        // request the machine lock while acessing internal members
+        AutoReadLock alock1(this COMMA_LOCKVAL_SRC_POS);
+
+        pAudioAdapter = mAudioAdapter;
+        rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
+        if (FAILED(rc)) throw rc;
+        rc = pAudioAdapter->COMGETTER(AudioController)(&audioController);
+        if (FAILED(rc)) throw rc;
 
         // get name
         bstrName1 = mUserData->mName;
@@ -4442,19 +4554,6 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
         // PAEEnabled?
         // snapshotFolder?
         // VRDPServer?
-
-        // this is more tricky so use the COM method
-        rc = COMGETTER(USBController)(pUsbController.asOutParam());
-        if (FAILED(rc))
-            fUSBEnabled = false;
-        else
-            rc = pUsbController->COMGETTER(Enabled)(&fUSBEnabled);
-
-        pAudioAdapter = mAudioAdapter;
-        rc = pAudioAdapter->COMGETTER(Enabled)(&fAudioEnabled);
-        if (FAILED(rc)) throw rc;
-        rc = pAudioAdapter->COMGETTER(AudioController)(&audioController);
-        if (FAILED(rc)) throw rc;
 
         // create a new virtual system
         rc = pNewDesc.createObject();
