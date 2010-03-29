@@ -135,6 +135,7 @@ Machine::UserData::UserData()
     mNameSync = TRUE;
     mTeleporterEnabled = FALSE;
     mTeleporterPort = 0;
+    mRTCUseUTC = FALSE;
 
     /* mName, mOSTypeId, mSnapshotFolder, mSnapshotFolderFull are initialized in
      * Machine::init() */
