@@ -89,6 +89,8 @@ private:
     struct Data;            // opaque, defined in ApplianceImpl.cpp
     Data *m;
 
+    bool isApplianceIdle() const;
+
     HRESULT searchUniqueVMName(Utf8Str& aName) const;
     HRESULT searchUniqueDiskImageFilePath(Utf8Str& aName) const;
     void waitForAsyncProgress(ComObjPtr<Progress> &pProgressThis, ComPtr<IProgress> &pProgressAsync);
