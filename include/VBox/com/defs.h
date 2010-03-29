@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -263,6 +263,10 @@ typedef const OLECHAR *CBSTR;
 #define ULONG   PRUint32
 #define LONG64  PRInt64
 #define ULONG64 PRUint64
+/* XPCOM has only 64bit floats */
+#define FLOAT   PRFloat64
+#define DOUBLE  PRFloat64
+#define 
 
 #define FALSE   PR_FALSE
 #define TRUE    PR_TRUE
