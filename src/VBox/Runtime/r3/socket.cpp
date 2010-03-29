@@ -420,7 +420,7 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -574,7 +574,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 
     /*
      * Set up the file descriptor sets and do the select.
@@ -615,7 +615,7 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
 
     /*
@@ -685,7 +685,7 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 
     /*
      * Get the address and convert it.
@@ -715,7 +715,7 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= (pThis->cUsers ? 2U : 1U), VERR_CALLER_NO_REFERENCE);
 
     /*
      * Get the address and convert it.
