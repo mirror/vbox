@@ -404,6 +404,7 @@ freeit:
 #ifndef RT_OS_WINDOWS
                 if (pData->icmp_socket.s != -1)
                 {
+                    ssize_t rc;
                     m->m_so = &pData->icmp_socket;
                     icmp_attach(pData, m);
                     ttl = ip->ip_ttl;
@@ -413,13 +414,17 @@ freeit:
                     if (status < 0)
                         LogRel(("NAT: Error (%s) occurred while setting TTL attribute of IP packet\n",
                                 strerror(errno)));
-                    if (sendto(pData->icmp_socket.s, icp, icmplen, 0,
-                              (struct sockaddr *)&addr, sizeof(addr)) == -1)
+                    rc = sendto(pData->icmp_socket.s, icp, icmplen, 0,
+                              (struct sockaddr *)&addr, sizeof(addr));
+                    if (rc < 0)
                     {
                         LogRel((dfd,"icmp_input udp sendto tx errno = %d-%s\n",
                                     errno, strerror(errno)));
                         icmp_error(pData, m, ICMP_UNREACH, ICMP_UNREACH_NET, 0, strerror(errno));
                     }
+                    else
+                        slirp_arm_fast_timer(pData->pvUser);
+                        
                 }
                 else
                 {
