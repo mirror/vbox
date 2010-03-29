@@ -8453,7 +8453,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="9576d333-deb9-4c65-0f06-6a1eb6a833e7"
+     uuid="a910034a-f95e-bc2c-6bae-eabc3ccd9c73"
      wsmap="managed"
      >
     <desc>
@@ -8583,7 +8583,7 @@
       <param name="flags" type="unsigned long" dir="in">
         <desc>Foobar</desc>
       </param>
-      <param name="arguments" type="wstring" safearray="yes" dir="in">
+      <param name="arguments" type="wstring" dir="in">
         <desc>Foobar</desc>
       </param>
       <param name="environment" type="wstring" safearray="yes" dir="in">

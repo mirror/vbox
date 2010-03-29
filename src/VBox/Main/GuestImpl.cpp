@@ -36,6 +36,7 @@
 # include <VBox/com/array.h>
 #endif
 #include <iprt/cpp/utils.h>
+#include <iprt/getopt.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -312,59 +313,103 @@ STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, 
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL
-HRESULT Guest::prepareExecuteArgs(ComSafeArrayIn(IN_BSTR, aArguments),
-                                  char **ppszArgv, uint32_t *pcbList, uint32_t *pcArgs)
+/**
+ * Creates the argument list as an array used for executing a program.
+ *
+ * @returns VBox status code.
+ *
+ * @todo
+ *
+ * @todo Respect spaces when quoting for arguments, e.g. "c:\\program files\\".
+ * @todo Handle empty ("") argguments.
+ */
+int Guest::prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcbList, uint32_t *pcArgs)
 {
-    com::SafeArray<IN_BSTR> args(ComSafeArrayInArg(aArguments));
-    char *pszArgs;
-    const char *pszCurArg;
-
-    HRESULT rc = S_OK;
-    int vrc = VINF_SUCCESS;
-
-    for (unsigned i = 0; i < args.size(); ++i)
-    {
-        if (i > 0) /* Insert space as delimiter. */
-            vrc = RTStrAAppendN(&pszArgs, " ", 1);
-        if (RT_SUCCESS(vrc))
-        {
-            pszCurArg = Utf8Str(args[i]).raw();
-            vrc = RTStrAAppendN(&pszArgs, pszCurArg, strlen(pszCurArg));
-        }
-        if (RT_FAILURE(vrc))
-            break;
-    }
-
+    char **ppaArg;
+    int iArgs;
+    int rc = RTGetOptArgvFromString(&ppaArg, &iArgs, pszArgs, NULL);
     if (RT_SUCCESS(rc))
     {
-        *ppszArgv = pszArgs;
-        *pcArgs = args.size();
-        *pcbList = strlen(pszArgs) + 1; /* Include zero termination. */
-    }
-    else
-    {
-        rc = setError(E_UNEXPECTED,
-                              tr("The service call failed with the error %Rrc"),
-                              vrc);
+        char *pszTemp = NULL;
+        *pcbList = 0;
+        for (int i=0; i<iArgs; i++)
+        {
+            if (i > 0) /* Insert space as delimiter. */
+                rc = RTStrAAppendN(&pszTemp, " ", 1);
+
+            if (RT_FAILURE(rc))
+                break;
+            else
+            {
+                rc = RTStrAAppendN(&pszTemp, ppaArg[i], strlen(ppaArg[i]));
+                if (RT_FAILURE(rc))
+                    break;
+            }
+        }
+        RTGetOptArgvFree(ppaArg);
+        if (RT_SUCCESS(rc))
+        {
+            *ppvList = pszTemp;
+            *pcArgs = iArgs;
+            *pcbList = strlen(pszTemp) + 1; /* Include zero termination. */
+        }
+        else
+            RTStrFree(pszTemp);
     }
     return rc;
 }
 
-HRESULT Guest::prepareExecuteEnv(ComSafeArrayIn(IN_BSTR, aEnvironment),
-                                 void **ppvList, uint32_t *pcbList, uint32_t *pcEnv)
+/**
+ * Appends environment variables to the environment block. Each var=value pair is separated
+ * by NULL (\0) sequence. The whole block will be stored in one blob and disassembled on the
+ * guest side later to fit into the HGCM param structure.
+ *
+ * @returns VBox status code.
+ *
+ * @todo
+ *
+ */
+int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t *pcEnv)
 {
-    com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
-    const char *pszCurEnv;
-    for (unsigned i = 0; i < env.size(); ++i)
+    int rc = VINF_SUCCESS;
+    uint32_t cbLen = strlen(pszEnv);
+    if (*ppvList)
     {
+        uint32_t cbNewLen = *pcbList + cbLen + 1; /* Include zero termination. */
+        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);        
+        if (NULL == pvTmp)
+        {
+            rc = VERR_NO_MEMORY;
+        }
+        else
+        {
+            memcpy(pvTmp + *pcbList, pszEnv, cbLen);
+            pvTmp[cbNewLen - 1] = '\0'; /* Add zero termination. */
+            *ppvList = (void**)pvTmp;
+        }
     }
-
-    return S_OK;
+    else
+    {
+        char *pcTmp;
+        if (RTStrAPrintf(&pcTmp, "%s", pszEnv) > 0)
+        {
+            *ppvList = (void**)pcTmp;
+            /* Reset counters. */
+            *pcEnv = 0;
+            *pcbList = 0;
+        }
+    }
+    if (RT_SUCCESS(rc))
+    {
+        *pcbList += cbLen + 1; /* Include zero termination. */
+        *pcEnv += 1;           /* Increase env pairs count. */
+    }
+    return rc;
 }
 #endif /* VBOX_WITH_GUEST_CONTROL */
 
-STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
-                                   ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
+                                   IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                                    IN_BSTR aUserName, IN_BSTR aPassword,
                                    ULONG aTimeoutMS, ULONG* aPID)
@@ -374,7 +419,7 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
 #else  /* VBOX_WITH_GUEST_CONTROL */
     using namespace guestControl;
 
-    CheckComArgStrNotEmptyOrNull(aExecName);
+    CheckComArgStrNotEmptyOrNull(aCommand);
     CheckComArgOutPointerValid(aPID);
     /* Flags are not supported at the moment. */
     if (aFlags != 0)
@@ -396,19 +441,33 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
         using namespace guestControl;
     
         int vrc = VINF_SUCCESS; 
-        Utf8Str Utf8ExecName(aExecName);
+        Utf8Str Utf8Command(aCommand);
 
-        /* Prepare arguments. */
-        char *pszArgs;
-        uint32_t cNumArgs;
+        /* Prepare arguments. */        
+        void *pvArgs;
+        uint32_t uNumArgs;
         uint32_t cbArgs;
-        rc = prepareExecuteArgs(aArguments,
-                                &pszArgs, &cbArgs, &cNumArgs);
-        if (SUCCEEDED(rc))
+
+        const char *pszCurArg = Utf8Str(aArguments).raw();
+        vrc = prepareExecuteArgs(pszCurArg, 
+                                 &pvArgs, &cbArgs, &uNumArgs);
+        if (RT_SUCCESS(vrc))
         {
             /* Prepare environment. */
-            /** @todo */
-            if (SUCCEEDED(rc))
+            void *pvEnv = NULL;
+            uint32_t uNumEnv;
+            uint32_t cbEnv;
+
+            com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
+            for (unsigned i = 0; i < env.size(); ++i)
+            {
+                const char *pszCurEnv = Utf8Str(env[i]).raw();
+                vrc = prepareExecuteEnv(pszCurEnv, &pvEnv, &cbEnv, &uNumEnv);
+                if (RT_FAILURE(vrc))
+                    break;
+            }
+
+            if (RT_SUCCESS(vrc))
             {
                 Utf8Str Utf8StdIn(aStdIn);
                 Utf8Str Utf8StdOut(aStdOut);
@@ -416,24 +475,33 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aExecName, ULONG aFlags,
                 Utf8Str Utf8UserName(aUserName);
                 Utf8Str Utf8Password(aPassword);
             
-                /* Call the stub which does the actual work. */
-                if (RT_SUCCESS(vrc))
-                {
-                    VBOXHGCMSVCPARM paParms[13];
-                    uint32_t cParms = 13;
+                VBOXHGCMSVCPARM paParms[13];
+                paParms[0].setUInt32(HOST_EXEC_CMD);
+                paParms[1].setUInt32(aFlags);
+                paParms[2].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
+                paParms[3].setUInt32(uNumArgs);
+                paParms[4].setPointer((void*)pvArgs, cbArgs);
+                paParms[5].setUInt32(uNumEnv);
+                paParms[6].setPointer((void*)pvEnv, cbEnv);
+                paParms[7].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
+                paParms[8].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);
+                paParms[9].setPointer((void*)Utf8StdErr.raw(), (uint32_t)strlen(Utf8StdErr.raw()) + 1);
+                paParms[10].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
+                paParms[11].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
+                paParms[12].setUInt32(aTimeoutMS);
 
-                    /* Forward the information to the VMM device. */
-                    AssertPtr(mParent);
-                    VMMDev *vmmDev = mParent->getVMMDev();
-                    if (vmmDev)
-                    {
-                        vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
-                                                   cParms, &paParms[0]);
-                    }
+                /* Forward the information to the VMM device. */
+                AssertPtr(mParent);
+                VMMDev *vmmDev = mParent->getVMMDev();
+                if (vmmDev)
+                {
+                    vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
+                                               13, &paParms[0]);
+                    /** @todo Get the PID. */
                 }
-                //RTMemFree(pszEnv);
+                RTMemFree(pvEnv);
             }
-            RTStrFree(pszArgs);
+            RTMemFree(pvArgs);
         }
         if (RT_SUCCESS(vrc))
             rc = S_OK;
