@@ -34,7 +34,12 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
-#elif defined(RT_OS_FREEBSD)
+# include <errno.h>
+# include <netinet/in.h>
+# include <netinet/tcp.h>
+# include <arpa/inet.h>
+# include <netdb.h>
+#else
 # include <sys/types.h>
 # include <sys/socket.h>
 # include <errno.h>
@@ -42,13 +47,7 @@
 # include <netinet/tcp.h>
 # include <arpa/inet.h>
 # include <netdb.h>
-#else /* !RT_OS_FREEBSD */
-# include <errno.h>
-# include <netinet/in.h>
-# include <netinet/tcp.h>
-# include <arpa/inet.h>
-# include <netdb.h>
-#endif /* !RT_OS_FREEBSD */
+#endif
 #include <limits.h>
 
 #include "internal/iprt.h"
