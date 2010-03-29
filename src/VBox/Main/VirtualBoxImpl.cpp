@@ -5,7 +5,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -515,6 +515,7 @@ HRESULT VirtualBox::initMachines()
                                 Machine::Init_Registered,
                                 NULL,
                                 NULL,
+                                FALSE, /* aOverride */
                                 FALSE, /* aNameSync */
                                 &uuid);
             if (SUCCEEDED(rc))
@@ -1030,6 +1031,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
                                        IN_BSTR aOsTypeId,
                                        IN_BSTR aBaseFolder,
                                        IN_BSTR aId,
+                                       BOOL aOverride,
                                        IMachine **aMachine)
 {
     LogFlowThisFuncEnter();
@@ -1083,6 +1085,7 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
                        Machine::Init_New,
                        aName,
                        osType,
+                       aOverride,
                        TRUE /* aNameSync */,
                        &id);
     if (SUCCEEDED(rc))
@@ -1138,6 +1141,7 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
                        Machine::Init_New,
                        aName,
                        osType,
+                       FALSE /* aOverride */,
                        FALSE /* aNameSync */,
                        &id);
     if (SUCCEEDED(rc))
