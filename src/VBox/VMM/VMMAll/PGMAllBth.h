@@ -3460,9 +3460,6 @@ PGM_BTH_DECL(int, VerifyAccessSyncPage)(PVMCPU pVCpu, RTGCPTR GCPtrPage, unsigne
 #endif /* PGM_GST_TYPE != PGM_TYPE_32BIT */
 }
 
-#undef MY_STAM_COUNTER_INC
-#define MY_STAM_COUNTER_INC(a) do { } while (0)
-
 
 /**
  * Syncs the paging hierarchy starting at CR3.
