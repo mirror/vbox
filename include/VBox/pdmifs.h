@@ -57,8 +57,8 @@ RT_C_DECLS_BEGIN
  * In most interface descriptions the orientation of the interface is given as
  * 'down' or 'up'.  This refers to a model with the device on the top and the
  * drivers stacked below it.  Sometimes there is mention of 'main' or 'external'
- * which normally means the same, i.e. the Main or VBoxBFE API.  Pickture the
- * orientation of 'main' as horisontal.
+ * which normally means the same, i.e. the Main or VBoxBFE API.  Picture the
+ * orientation of 'main' as horizontal.
  *
  * @{
  */
@@ -808,6 +808,18 @@ typedef PDMIBLOCKPORT *PPDMIBLOCKPORT;
 
 
 /**
+ * Callback which provides progress information.
+ *
+ * @return  VBox status code.
+ * @param   pvUser          Opaque user data.
+ * @param   uPercent        Completion percentage.
+ */
+typedef DECLCALLBACK(int) FNSIMPLEPROGRESS(void *pvUser, unsigned uPercentage);
+/** Pointer to FNSIMPLEPROGRESS() */
+typedef FNSIMPLEPROGRESS *PFNSIMPLEPROGRESS;
+
+
+/**
  * Block drive type.
  */
 typedef enum PDMBLOCKTYPE
@@ -900,6 +912,17 @@ typedef struct PDMIBLOCK
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnSendCmd,(PPDMIBLOCK pInterface, const uint8_t *pbCmd, PDMBLOCKTXDIR enmTxDir, void *pvBuf, uint32_t *pcbBuf, uint8_t *pabSense, size_t cbSense, uint32_t cTimeoutMillies));
+
+    /**
+     * Merge medium contents during a live snapshot deletion.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pfnProgress     Function pointer for progress notification.
+     * @param   pvUser          Opaque user data for progress notification.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMerge,(PPDMIBLOCK pInterface, PFNSIMPLEPROGRESS pfnProgress, void *pvUser));
 
     /**
      * Check if the media is readonly or not.
@@ -1106,6 +1129,19 @@ typedef struct PDMIMEDIA
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnFlush,(PPDMIMEDIA pInterface));
+
+    /**
+     * Merge medium contents during a live snapshot deletion. All details
+     * must have been configured through CFGM or this will fail.
+     * This method is optional (i.e. the function pointer may be NULL).
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pfnProgress     Function pointer for progress notification.
+     * @param   pvUser          Opaque user data for progress notification.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnMerge,(PPDMIMEDIA pInterface, PFNSIMPLEPROGRESS pfnProgress, void *pvUser));
 
     /**
      * Get the media size in bytes.

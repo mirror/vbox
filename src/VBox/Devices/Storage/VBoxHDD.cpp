@@ -2006,7 +2006,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
         AssertPtrBreakStmt(pDisk, rc = VERR_INVALID_PARAMETER);
         AssertMsg(pDisk->u32Signature == VBOXHDDDISK_SIGNATURE, ("u32Signature=%08x\n", pDisk->u32Signature));
 
-        rc2 = vdThreadStartRead(pDisk);
+        /* For simplicity reasons lock for writing as the image reopen below
+         * might need it. After all the reopen is usually needed. */
+        rc2 = vdThreadStartWrite(pDisk);
         AssertRC(rc2);
         fLockRead = true;
         PVDIMAGE pImageFrom = vdGetImageByNumber(pDisk, nImageFrom);
@@ -2031,7 +2033,7 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
         /* Get size of destination image. */
         uint64_t cbSize = pImageTo->Backend->pfnGetSize(pImageTo->pvBackendData);
-        rc2 = vdThreadFinishRead(pDisk);
+        rc2 = vdThreadFinishWrite(pDisk);
         AssertRC(rc2);
         fLockRead = false;
 
@@ -2105,6 +2107,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 if (pCbProgress && pCbProgress->pfnProgress)
                 {
+                    /** @todo r=klaus: this can update the progress to the same
+                     * percentage over and over again if the image format makes
+                     * relatively small increments. */
                     rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
                                                   uOffset * 99 / cbSize);
                     if (RT_FAILURE(rc))
@@ -2187,6 +2192,9 @@ VBOXDDU_DECL(int) VDMerge(PVBOXHDD pDisk, unsigned nImageFrom,
 
                 if (pCbProgress && pCbProgress->pfnProgress)
                 {
+                    /** @todo r=klaus: this can update the progress to the same
+                     * percentage over and over again if the image format makes
+                     * relatively small increments. */
                     rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
                                                   uOffset * 99 / cbSize);
                     if (RT_FAILURE(rc))
@@ -2588,6 +2596,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
 
             if (pCbProgress && pCbProgress->pfnProgress)
             {
+                /** @todo r=klaus: this can update the progress to the same
+                 * percentage over and over again if the image format makes
+                 * relatively small increments. */
                 rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
                                               uOffset * 99 / cbSize);
                 if (RT_FAILURE(rc))
@@ -2595,6 +2606,9 @@ VBOXDDU_DECL(int) VDCopy(PVBOXHDD pDiskFrom, unsigned nImage, PVBOXHDD pDiskTo,
             }
             if (pDstCbProgress && pDstCbProgress->pfnProgress)
             {
+                /** @todo r=klaus: this can update the progress to the same
+                 * percentage over and over again if the image format makes
+                 * relatively small increments. */
                 rc = pDstCbProgress->pfnProgress(pDstIfProgress->pvUser,
                                                  uOffset * 99 / cbSize);
                 if (RT_FAILURE(rc))
