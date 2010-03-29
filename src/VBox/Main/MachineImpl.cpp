@@ -4719,7 +4719,9 @@ STDMETHODIMP Machine::ReadLog(ULONG /*aIdx*/, ULONG64 /*aOffset*/, ULONG64 /*aSi
 {
     CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
+#ifdef VBOX_WITH_XPCOM
     NOREF(aDataSize);
+#endif
 
     ReturnComNotImplemented();
 }
