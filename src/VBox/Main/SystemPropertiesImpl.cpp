@@ -6,7 +6,7 @@
  */
 
 /*
- * Copyright (C) 2006-2008 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -63,7 +63,7 @@ HRESULT SystemProperties::FinalConstruct()
 
 void SystemProperties::FinalRelease()
 {
-    uninit ();
+    uninit();
 }
 
 // public methods only for internal purposes
@@ -74,7 +74,7 @@ void SystemProperties::FinalRelease()
  *
  * @returns COM result indicator
  */
-HRESULT SystemProperties::init (VirtualBox *aParent)
+HRESULT SystemProperties::init(VirtualBox *aParent)
 {
     LogFlowThisFunc(("aParent=%p\n", aParent));
 
@@ -101,12 +101,9 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     /// @todo NEWMEDIA VDBackendInfo needs to be improved to let us enumerate
     /// any number of backends
 
-    /// @todo We currently leak memory because it's not actually clear what to
-    /// free in structures returned by VDBackendInfo. Must be fixed ASAP!
-
     VDBACKENDINFO aVDInfo[100];
     unsigned cEntries;
-    int vrc = VDBackendInfo(RT_ELEMENTS (aVDInfo), aVDInfo, &cEntries);
+    int vrc = VDBackendInfo(RT_ELEMENTS(aVDInfo), aVDInfo, &cEntries);
     AssertRC(vrc);
     if (RT_SUCCESS(vrc))
     {
@@ -124,34 +121,34 @@ HRESULT SystemProperties::init (VirtualBox *aParent)
     }
 
     /* Driver defaults which are OS specific */
-#if defined (RT_OS_WINDOWS)
+#if defined(RT_OS_WINDOWS)
 # ifdef VBOX_WITH_WINMM
     mDefaultAudioDriver = AudioDriverType_WinMM;
 # else /* VBOX_WITH_WINMM */
     mDefaultAudioDriver = AudioDriverType_DirectSound;
 # endif /* !VBOX_WITH_WINMM */
-#elif defined (RT_OS_SOLARIS)
+#elif defined(RT_OS_SOLARIS)
     mDefaultAudioDriver = AudioDriverType_SolAudio;
-#elif defined (RT_OS_LINUX)
-# if defined (VBOX_WITH_PULSE)
+#elif defined(RT_OS_LINUX)
+# if defined(VBOX_WITH_PULSE)
     /* Check for the pulse library & that the pulse audio daemon is running. */
-    if (RTProcIsRunningByName ("pulseaudio") &&
-        RTLdrIsLoadable ("libpulse.so.0"))
+    if (RTProcIsRunningByName("pulseaudio") &&
+        RTLdrIsLoadable("libpulse.so.0"))
         mDefaultAudioDriver = AudioDriverType_Pulse;
     else
 # endif /* VBOX_WITH_PULSE */
-# if defined (VBOX_WITH_ALSA)
+# if defined(VBOX_WITH_ALSA)
         /* Check if we can load the ALSA library */
-        if (RTLdrIsLoadable ("libasound.so.2"))
+        if (RTLdrIsLoadable("libasound.so.2"))
             mDefaultAudioDriver = AudioDriverType_ALSA;
         else
 # endif /* VBOX_WITH_ALSA */
             mDefaultAudioDriver = AudioDriverType_OSS;
-#elif defined (RT_OS_DARWIN)
+#elif defined(RT_OS_DARWIN)
     mDefaultAudioDriver = AudioDriverType_CoreAudio;
-#elif defined (RT_OS_OS2)
+#elif defined(RT_OS_OS2)
     mDefaultAudioDriver = AudioDriverType_MMP;
-#elif defined (RT_OS_FREEBSD)
+#elif defined(RT_OS_FREEBSD)
     mDefaultAudioDriver = AudioDriverType_OSS;
 #else
     mDefaultAudioDriver = AudioDriverType_Null;
@@ -186,8 +183,7 @@ void SystemProperties::uninit()
 
 STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
 {
-    if (!minRAM)
-        return E_POINTER;
+    CheckComArgOutPointerValid(minRAM);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -201,8 +197,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestRAM)(ULONG *minRAM)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
 {
-    if (!maxRAM)
-        return E_POINTER;
+    CheckComArgOutPointerValid(maxRAM);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -225,8 +220,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestRAM)(ULONG *maxRAM)
 
 STDMETHODIMP SystemProperties::COMGETTER(MinGuestVRAM)(ULONG *minVRAM)
 {
-    if (!minVRAM)
-        return E_POINTER;
+    CheckComArgOutPointerValid(minVRAM);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -239,8 +233,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestVRAM)(ULONG *minVRAM)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
 {
-    if (!maxVRAM)
-        return E_POINTER;
+    CheckComArgOutPointerValid(maxVRAM);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -253,8 +246,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestVRAM)(ULONG *maxVRAM)
 
 STDMETHODIMP SystemProperties::COMGETTER(MinGuestCPUCount)(ULONG *minCPUCount)
 {
-    if (!minCPUCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(minCPUCount);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -267,8 +259,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MinGuestCPUCount)(ULONG *minCPUCount)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
 {
-    if (!maxCPUCount)
-        return E_POINTER;
+    CheckComArgOutPointerValid(maxCPUCount);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -281,8 +272,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestCPUCount)(ULONG *maxCPUCount)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
 {
-    if (!maxMonitors)
-        return E_POINTER;
+    CheckComArgOutPointerValid(maxMonitors);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -295,8 +285,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxGuestMonitors)(ULONG *maxMonitors)
 
 STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
 {
-    if (!maxVDISize)
-        return E_POINTER;
+    CheckComArgOutPointerValid(maxVDISize);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -318,8 +307,7 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxVDISize)(ULONG64 *maxVDISize)
 
 STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(count);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -332,8 +320,7 @@ STDMETHODIMP SystemProperties::COMGETTER(NetworkAdapterCount)(ULONG *count)
 
 STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(count);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -346,8 +333,7 @@ STDMETHODIMP SystemProperties::COMGETTER(SerialPortCount)(ULONG *count)
 
 STDMETHODIMP SystemProperties::COMGETTER(ParallelPortCount)(ULONG *count)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(count);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -371,7 +357,8 @@ STDMETHODIMP SystemProperties::COMGETTER(MaxBootPosition)(ULONG *aMaxBootPositio
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus (StorageBus_T aBus, ULONG *aMaxDevicesPerPort)
+STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus(StorageBus_T aBus,
+                                                                 ULONG *aMaxDevicesPerPort)
 {
     CheckComArgOutPointerValid(aMaxDevicesPerPort);
 
@@ -404,7 +391,8 @@ STDMETHODIMP SystemProperties::GetMaxDevicesPerPortForStorageBus (StorageBus_T a
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus (StorageBus_T aBus, ULONG *aMinPortCount)
+STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus(StorageBus_T aBus,
+                                                            ULONG *aMinPortCount)
 {
     CheckComArgOutPointerValid(aMinPortCount);
 
@@ -446,7 +434,8 @@ STDMETHODIMP SystemProperties::GetMinPortCountForStorageBus (StorageBus_T aBus, 
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, ULONG *aMaxPortCount)
+STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus(StorageBus_T aBus,
+                                                            ULONG *aMaxPortCount)
 {
     CheckComArgOutPointerValid(aMaxPortCount);
 
@@ -488,7 +477,8 @@ STDMETHODIMP SystemProperties::GetMaxPortCountForStorageBus (StorageBus_T aBus, 
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, ULONG *aMaxInstances)
+STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus,
+                                                           ULONG *aMaxInstances)
 {
     CheckComArgOutPointerValid(aMaxInstances);
 
@@ -516,7 +506,7 @@ STDMETHODIMP SystemProperties::GetMaxInstancesOfStorageBus(StorageBus_T aBus, UL
 }
 
 STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
-                                 ComSafeArrayOut(DeviceType_T, aDeviceTypes))
+                                                           ComSafeArrayOut(DeviceType_T, aDeviceTypes))
 {
     CheckComArgOutSafeArrayPointerValid(aDeviceTypes);
 
@@ -557,7 +547,7 @@ STDMETHODIMP SystemProperties::GetDeviceTypesForStorageBus(StorageBus_T aBus,
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMachineFolder)
+STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder)(BSTR *aDefaultMachineFolder)
 {
     CheckComArgOutPointerValid(aDefaultMachineFolder);
 
@@ -571,7 +561,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultMachineFolder) (BSTR *aDefaultMa
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (IN_BSTR aDefaultMachineFolder)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder)(IN_BSTR aDefaultMachineFolder)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -579,14 +569,14 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultMachineFolder) (IN_BSTR aDefault
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = setDefaultMachineFolder (aDefaultMachineFolder);
+    HRESULT rc = setDefaultMachineFolder(aDefaultMachineFolder);
     if (SUCCEEDED(rc))
         rc = mParent->saveSettings();
 
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultHardDiskFolder)
+STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder)(BSTR *aDefaultHardDiskFolder)
 {
     CheckComArgOutPointerValid(aDefaultHardDiskFolder);
 
@@ -600,7 +590,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFolder) (BSTR *aDefaultH
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaultHardDiskFolder)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder)(IN_BSTR aDefaultHardDiskFolder)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -608,31 +598,29 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFolder) (IN_BSTR aDefaul
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = setDefaultHardDiskFolder (aDefaultHardDiskFolder);
+    HRESULT rc = setDefaultHardDiskFolder(aDefaultHardDiskFolder);
     if (SUCCEEDED(rc))
         rc = mParent->saveSettings();
 
     return rc;
 }
 
-STDMETHODIMP SystemProperties::
-COMGETTER(MediumFormats) (ComSafeArrayOut(IMediumFormat *, aMediumFormats))
+STDMETHODIMP SystemProperties::COMGETTER(MediumFormats)(ComSafeArrayOut(IMediumFormat *, aMediumFormats))
 {
-    if (ComSafeArrayOutIsNull(aMediumFormats))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aMediumFormats);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    SafeIfaceArray<IMediumFormat> mediumFormats (mMediumFormats);
+    SafeIfaceArray<IMediumFormat> mediumFormats(mMediumFormats);
     mediumFormats.detachTo(ComSafeArrayOutArg(aMediumFormats));
 
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultHardDiskFormat)
+STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat)(BSTR *aDefaultHardDiskFormat)
 {
     CheckComArgOutPointerValid(aDefaultHardDiskFormat);
 
@@ -646,7 +634,7 @@ STDMETHODIMP SystemProperties::COMGETTER(DefaultHardDiskFormat) (BSTR *aDefaultH
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (IN_BSTR aDefaultHardDiskFormat)
+STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat)(IN_BSTR aDefaultHardDiskFormat)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -654,14 +642,62 @@ STDMETHODIMP SystemProperties::COMSETTER(DefaultHardDiskFormat) (IN_BSTR aDefaul
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = setDefaultHardDiskFormat (aDefaultHardDiskFormat);
+    HRESULT rc = setDefaultHardDiskFormat(aDefaultHardDiskFormat);
     if (SUCCEEDED(rc))
         rc = mParent->saveSettings();
 
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemoteDisplayAuthLibrary)
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceWarning)(ULONG64 *aFreeSpace)
+{
+    CheckComArgOutPointerValid(aFreeSpace);
+
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceWarning)(ULONG64 aFreeSpace)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpacePercentWarning)(ULONG *aFreeSpacePercent)
+{
+    CheckComArgOutPointerValid(aFreeSpacePercent);
+
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentWarning)(ULONG aFreeSpacePercent)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceError)(ULONG64 *aFreeSpace)
+{
+    CheckComArgOutPointerValid(aFreeSpace);
+
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceError)(ULONG64 aFreeSpace)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpacePercentError)(ULONG *aFreeSpacePercent)
+{
+    CheckComArgOutPointerValid(aFreeSpacePercent);
+
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentError)(ULONG aFreeSpacePercent)
+{
+    ReturnComNotImplemented();
+}
+
+STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary)(BSTR *aRemoteDisplayAuthLibrary)
 {
     CheckComArgOutPointerValid(aRemoteDisplayAuthLibrary);
 
@@ -675,7 +711,7 @@ STDMETHODIMP SystemProperties::COMGETTER(RemoteDisplayAuthLibrary) (BSTR *aRemot
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (IN_BSTR aRemoteDisplayAuthLibrary)
+STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary)(IN_BSTR aRemoteDisplayAuthLibrary)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -683,14 +719,14 @@ STDMETHODIMP SystemProperties::COMSETTER(RemoteDisplayAuthLibrary) (IN_BSTR aRem
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = setRemoteDisplayAuthLibrary (aRemoteDisplayAuthLibrary);
+    HRESULT rc = setRemoteDisplayAuthLibrary(aRemoteDisplayAuthLibrary);
     if (SUCCEEDED(rc))
         rc = mParent->saveSettings();
 
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServiceAuthLibrary)
+STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary)(BSTR *aWebServiceAuthLibrary)
 {
     CheckComArgOutPointerValid(aWebServiceAuthLibrary);
 
@@ -704,7 +740,7 @@ STDMETHODIMP SystemProperties::COMGETTER(WebServiceAuthLibrary) (BSTR *aWebServi
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebServiceAuthLibrary)
+STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary)(IN_BSTR aWebServiceAuthLibrary)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -712,17 +748,16 @@ STDMETHODIMP SystemProperties::COMSETTER(WebServiceAuthLibrary) (IN_BSTR aWebSer
     /* VirtualBox::saveSettings() needs a write lock */
     AutoMultiWriteLock2 alock(mParent, this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT rc = setWebServiceAuthLibrary (aWebServiceAuthLibrary);
+    HRESULT rc = setWebServiceAuthLibrary(aWebServiceAuthLibrary);
     if (SUCCEEDED(rc))
         rc = mParent->saveSettings();
 
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
+STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount)(ULONG *count)
 {
-    if (!count)
-        return E_POINTER;
+    CheckComArgOutPointerValid(count);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -734,7 +769,7 @@ STDMETHODIMP SystemProperties::COMGETTER(LogHistoryCount) (ULONG *count)
     return S_OK;
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
+STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount)(ULONG count)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -749,10 +784,9 @@ STDMETHODIMP SystemProperties::COMSETTER(LogHistoryCount) (ULONG count)
     return rc;
 }
 
-STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver) (AudioDriverType_T *aAudioDriver)
+STDMETHODIMP SystemProperties::COMGETTER(DefaultAudioDriver)(AudioDriverType_T *aAudioDriver)
 {
-    if (!aAudioDriver)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aAudioDriver);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
