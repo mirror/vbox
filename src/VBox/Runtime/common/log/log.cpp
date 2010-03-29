@@ -278,7 +278,9 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
     pLogger = (PRTLOGGER)RTMemAllocZ(cb);
     if (pLogger)
     {
+#if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
         uint8_t *pu8Code;
+#endif
 
         pLogger->u32Magic    = RTLOGGER_MAGIC;
         pLogger->papszGroups = papszGroups;
