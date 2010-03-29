@@ -162,7 +162,8 @@ enum
     SYSTEM_INFO_INDEX_CPU_LOCK_CHECK    = 12, /**< For which CPU the lock status should be checked */
     SYSTEM_INFO_INDEX_CPU_EVENT_TYPE    = 13, /**< Type of the CPU hot-plug event */
     SYSTEM_INFO_INDEX_CPU_EVENT         = 14, /**< The CPU id the event is for */
-    SYSTEM_INFO_INDEX_END               = 15,
+    SYSTEM_INFO_INDEX_NIC_STATUS        = 15, /**< If show NIC in ACPI */
+    SYSTEM_INFO_INDEX_END               = 16,
     SYSTEM_INFO_INDEX_INVALID           = 0x80,
     SYSTEM_INFO_INDEX_VALID             = 0x200
 };
@@ -255,8 +256,10 @@ typedef struct ACPIState
     uint32_t            u32CpuEvent;
     /** Flag whether CPU hot plugging is enabled */
     bool                fCpuHotPlug;
+    /** If NIC ACPI object to be shown */
+    bool                fShowNic;
     /** Aligning IBase. */
-    bool                afAlignment[4];
+    bool                afAlignment[3];
 
     /** ACPI port base interface. */
     PDMIBASE            IBase;
@@ -1503,6 +1506,14 @@ PDMBOTHCBDECL(int) acpiSysInfoDataRead(PPDMDEVINS pDevIns, void *pvUser, RTIOPOR
                                        : 0;
                     break;
 
+                case SYSTEM_INFO_INDEX_NIC_STATUS:
+                    *pu32 = s->fShowNic ? (  STA_DEVICE_PRESENT_MASK
+                                           | STA_DEVICE_ENABLED_MASK
+                                           | STA_DEVICE_SHOW_IN_UI_MASK
+                                           | STA_DEVICE_FUNCTIONING_PROPERLY_MASK)
+                                       : 0;
+                    break;
+
                 /* This is only for compatability with older saved states that
                    may include ACPI code that read these values.  Legacy is
                    a wonderful thing, isn't it? :-) */
@@ -2347,6 +2358,7 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
                               "FdcEnabled\0"
                               "ShowRtc\0"
                               "ShowCpu\0"
+                              "ShowNic\0"
                               "CpuHotPlug\0"
                               "AmlFilePath\0"
                               ))
@@ -2394,6 +2406,12 @@ static DECLCALLBACK(int) acpiConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMN
     if (RT_FAILURE(rc))
         return PDMDEV_SET_ERROR(pDevIns, rc,
                                 N_("Configuration error: Failed to read \"ShowCpu\""));
+
+    /* query whether we are supposed to present NIC object */
+    rc = CFGMR3QueryBoolDef(pCfg, "ShowNic", &s->fShowNic, false);
+    if (RT_FAILURE(rc))
+        return PDMDEV_SET_ERROR(pDevIns, rc,
+                                N_("Configuration error: Failed to read \"ShowNic\""));
 
     /* query whether we are allow CPU hot plugging */
     rc = CFGMR3QueryBoolDef(pCfg, "CpuHotPlug", &s->fCpuHotPlug, false);
