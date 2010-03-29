@@ -2449,7 +2449,8 @@ int VBoxVHWAImage::vhwaSurfaceDestroy(struct _VBOXVHWACMD_SURF_DESTROY *pCmd)
                          it != surfaces.end(); ++ it)
                 {
                     VBoxVHWASurfaceBase *pCurSurf = (*it);
-                    if(pCurSurf != pSurf)
+                    Assert(pCurSurf);
+                    if (pCurSurf != pSurf)
                     {
                         mDisplay.updateVGA(pCurSurf);
                         pList->setCurrentVisible(pCurSurf);
@@ -2726,10 +2727,10 @@ int VBoxVHWAImage::vhwaSurfaceOverlaySetPosition(struct _VBOXVHWACMD_SURF_OVERLA
     Assert(pDstSurf == mDisplay.getVGA());
     Assert(mDisplay.getVGA() == mDisplay.getPrimary());
 #endif
-    if(pSrcSurf->getComplexList()->current() != NULL)
+    if (pSrcSurf->getComplexList()->current() != NULL)
     {
         Assert(pDstSurf);
-        if(pDstSurf != mDisplay.getPrimary())
+        if (pDstSurf != mDisplay.getPrimary())
         {
             mDisplay.updateVGA(pDstSurf);
             pDstSurf->getComplexList()->setCurrentVisible(pDstSurf);
@@ -2758,22 +2759,22 @@ int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET 
 
     mRepaintNeeded = true;
 
-    if(pCmd->u.in.flags & VBOXVHWA_CKEY_DESTBLT)
+    if (pCmd->u.in.flags & VBOXVHWA_CKEY_DESTBLT)
     {
         VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
         pSurf->setDstBltCKey(&ckey);
     }
-    if(pCmd->u.in.flags & VBOXVHWA_CKEY_DESTOVERLAY)
+    if (pCmd->u.in.flags & VBOXVHWA_CKEY_DESTOVERLAY)
     {
         VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
         pSurf->setDefaultDstOverlayCKey(&ckey);
     }
-    if(pCmd->u.in.flags & VBOXVHWA_CKEY_SRCBLT)
+    if (pCmd->u.in.flags & VBOXVHWA_CKEY_SRCBLT)
     {
         VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
         pSurf->setSrcBltCKey(&ckey);
     }
-    if(pCmd->u.in.flags & VBOXVHWA_CKEY_SRCOVERLAY)
+    if (pCmd->u.in.flags & VBOXVHWA_CKEY_SRCOVERLAY)
     {
         VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
         pSurf->setDefaultSrcOverlayCKey(&ckey);
