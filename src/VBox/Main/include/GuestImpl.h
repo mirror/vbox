@@ -71,8 +71,8 @@ public:
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
-    STDMETHOD(ExecuteProgram)(IN_BSTR aExecName, ULONG aFlags,
-                              ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
+    STDMETHOD(ExecuteProgram)(IN_BSTR aCommand, ULONG aFlags,
+                              IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID);
@@ -92,11 +92,11 @@ public:
 private:
 
 # ifdef VBOX_WITH_GUEST_CONTROL
-    HRESULT prepareExecuteArgs(ComSafeArrayIn(IN_BSTR, aArguments),
-                               char **ppszArgv, uint32_t *pcbList, uint32_t *pcArgs);
+    int prepareExecuteArgs(const char *pszArgs, void **ppvList, 
+                           uint32_t *pcbList, uint32_t *pcArgs);
 
-    HRESULT prepareExecuteEnv(ComSafeArrayIn(IN_BSTR, aEnvironment),
-                              void **ppvList, uint32_t *pcbList, uint32_t *pcEnv);
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList, 
+                          uint32_t *pcbList, uint32_t *pcEnv);
 # endif
 
     struct Data
