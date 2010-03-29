@@ -98,18 +98,15 @@ static int vdiFileOpen(PVDIIMAGEDESC pImage, bool fReadonly, bool fCreate)
 
     rc = RTFileOpen(&pImage->File, pImage->pszFilename, fOpen);
 #else
-
     unsigned uOpenFlags = fReadonly ? VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY : 0;
 
     if (fCreate)
         uOpenFlags |= VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE;
 
-    rc = pImage->pInterfaceAsyncIOCallbacks->pfnOpen(pImage->pInterfaceAsyncIO->pvUser,
-                                                     pImage->pszFilename,
-                                                     uOpenFlags,
-                                                     NULL,
-                                                     pImage->pVDIfsDisk,
-                                                     &pImage->pvStorage);
+    rc = pImage->pInterfaceIOCallbacks->pfnOpen(pImage->pInterfaceIO->pvUser,
+                                                pImage->pszFilename,
+                                                uOpenFlags,
+                                                &pImage->pStorage);
 #endif
 
     return rc;
@@ -125,11 +122,10 @@ static int vdiFileClose(PVDIIMAGEDESC pImage)
 
     pImage->File = NIL_RTFILE;
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnClose(pImage->pInterfaceAsyncIO->pvUser,
-                                                          pImage->pvStorage);
+    rc = pImage->pInterfaceIOCallbacks->pfnClose(pImage->pInterfaceIO->pvUser,
+                                                 pImage->pStorage);
 
-    pImage->pvStorage = NULL;
+    pImage->pStorage = NULL;
 #endif
 
     return rc;
@@ -142,9 +138,8 @@ static int vdiFileFlushSync(PVDIIMAGEDESC pImage)
 #ifndef VBOX_WITH_NEW_IO_CODE
     rc = RTFileFlush(pImage->File);
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnFlushSync(pImage->pInterfaceAsyncIO->pvUser,
-                                                              pImage->pvStorage);
+    rc = pImage->pInterfaceIOCallbacks->pfnFlushSync(pImage->pInterfaceIO->pvUser,
+                                                     pImage->pStorage);
 #endif
 
     return rc;
@@ -157,10 +152,9 @@ static int vdiFileGetSize(PVDIIMAGEDESC pImage, uint64_t *pcbSize)
 #ifndef VBOX_WITH_NEW_IO_CODE
     rc = RTFileGetSize(pImage->File, pcbSize);
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnGetSize(pImage->pInterfaceAsyncIO->pvUser,
-                                                            pImage->pvStorage,
-                                                            pcbSize);
+    rc = pImage->pInterfaceIOCallbacks->pfnGetSize(pImage->pInterfaceIO->pvUser,
+                                                   pImage->pStorage,
+                                                   pcbSize);
 #endif
 
     return rc;
@@ -173,10 +167,9 @@ static int vdiFileSetSize(PVDIIMAGEDESC pImage, uint64_t cbSize)
 #ifndef VBOX_WITH_NEW_IO_CODE
     rc = RTFileSetSize(pImage->File, cbSize);
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnSetSize(pImage->pInterfaceAsyncIO->pvUser,
-                                                            pImage->pvStorage,
-                                                            cbSize);
+    rc = pImage->pInterfaceIOCallbacks->pfnSetSize(pImage->pInterfaceIO->pvUser,
+                                                   pImage->pStorage,
+                                                   cbSize);
 #endif
 
     return rc;
@@ -189,11 +182,10 @@ static int vdiFileWriteSync(PVDIIMAGEDESC pImage, uint64_t off, const void *pcvB
 #ifndef VBOX_WITH_NEW_IO_CODE
     rc = RTFileWriteAt(pImage->File, off, pcvBuf, cbWrite, pcbWritten);
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnWriteSync(pImage->pInterfaceAsyncIO->pvUser,
-                                                              pImage->pvStorage,
-                                                              off, cbWrite, pcvBuf,
-                                                              pcbWritten);
+    rc = pImage->pInterfaceIOCallbacks->pfnWriteSync(pImage->pInterfaceIO->pvUser,
+                                                     pImage->pStorage,
+                                                     off, cbWrite, pcvBuf,
+                                                     pcbWritten);
 #endif
 
     return rc;
@@ -206,11 +198,10 @@ static int vdiFileReadSync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf, size
 #ifndef VBOX_WITH_NEW_IO_CODE
     rc = RTFileReadAt(pImage->File, off, pvBuf, cbRead, pcbRead);
 #else
-    if (pImage->pvStorage)
-        rc = pImage->pInterfaceAsyncIOCallbacks->pfnReadSync(pImage->pInterfaceAsyncIO->pvUser,
-                                                             pImage->pvStorage,
-                                                             off, cbRead, pvBuf,
-                                                             pcbRead);
+    rc = pImage->pInterfaceIOCallbacks->pfnReadSync(pImage->pInterfaceIO->pvUser,
+                                                    pImage->pStorage,
+                                                    off, cbRead, pvBuf,
+                                                    pcbRead);
 #endif
 
     return rc;
@@ -221,7 +212,7 @@ static bool vdiFileOpened(PVDIIMAGEDESC pImage)
 #ifndef VBOX_WITH_NEW_IO_CODE
     return pImage->File != NIL_RTFILE;
 #else
-    return pImage->pvStorage != NULL;
+    return pImage->pStorage != NULL;
 #endif
 }
 
@@ -523,11 +514,11 @@ static int vdiCreateImage(PVDIIMAGEDESC pImage, uint64_t cbSize,
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
 #ifdef VBOX_WITH_NEW_IO_CODE
-    /* Try to get async I/O interface. */
-    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
-    AssertPtr(pImage->pInterfaceAsyncIO);
-    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
-    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+    /* Try to get I/O interface. */
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    AssertPtr(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtr(pImage->pInterfaceIOCallbacks);
 #endif
 
     vdiInitPreHeader(&pImage->PreHeader);
@@ -712,11 +703,11 @@ static int vdiOpenImage(PVDIIMAGEDESC pImage, unsigned uOpenFlags)
         pImage->pInterfaceErrorCallbacks = VDGetInterfaceError(pImage->pInterfaceError);
 
 #ifdef VBOX_WITH_NEW_IO_CODE
-    /* Try to get async I/O interface. */
-    pImage->pInterfaceAsyncIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_ASYNCIO);
-    AssertPtr(pImage->pInterfaceAsyncIO);
-    pImage->pInterfaceAsyncIOCallbacks = VDGetInterfaceAsyncIO(pImage->pInterfaceAsyncIO);
-    AssertPtr(pImage->pInterfaceAsyncIOCallbacks);
+    /* Try to get I/O interface. */
+    pImage->pInterfaceIO = VDInterfaceGet(pImage->pVDIfsDisk, VDINTERFACETYPE_IO);
+    AssertPtr(pImage->pInterfaceIO);
+    pImage->pInterfaceIOCallbacks = VDGetInterfaceIO(pImage->pInterfaceIO);
+    AssertPtr(pImage->pInterfaceIOCallbacks);
 #endif
 
     /*
@@ -935,7 +926,7 @@ static int vdiCheckIfValid(const char *pszFilename, PVDINTERFACE pVDIfsDisk)
 #ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
 #else
-    pImage->pvStorage = NULL;
+    pImage->pStorage = NULL;
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
@@ -983,7 +974,7 @@ static int vdiOpen(const char *pszFilename, unsigned uOpenFlags,
 #ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
 #else
-    pImage->pvStorage = NULL;
+    pImage->pStorage = NULL;
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
@@ -1061,7 +1052,7 @@ static int vdiCreate(const char *pszFilename, uint64_t cbSize,
 #ifndef VBOX_WITH_NEW_IO_CODE
     pImage->File = NIL_RTFILE;
 #else
-    pImage->pvStorage = NULL;
+    pImage->pStorage = NULL;
 #endif
     pImage->paBlocks = NULL;
     pImage->pVDIfsDisk = pVDIfsDisk;
@@ -1893,7 +1884,7 @@ static void vdiDump(void *pBackendData)
                 pImage->pszFilename,
                 (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY) ? "r/o" : "r/w",
                 pImage->uOpenFlags,
-                pImage->pvStorage);
+                pImage->pStorage);
 #endif
     pImage->pInterfaceErrorCallbacks->pfnMessage(pImage->pInterfaceError->pvUser, "Header: Version=%08X Type=%X Flags=%X Size=%llu\n",
                 pImage->PreHeader.u32Version,
@@ -1987,16 +1978,25 @@ static bool vdiIsAsyncIOSupported(void *pBackendData)
     return false;
 }
 
-static int vdiAsyncRead(void *pBackendData, uint64_t uOffset, size_t cbRead,
-                        PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+                        PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
-static int vdiAsyncWrite(void *pBackendData, uint64_t uOffset, size_t cbWrite,
-                         PPDMDATASEG paSeg, unsigned cSeg, void *pvUser)
+static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+                         PVDIOCTX pIoCtx,
+                         size_t *pcbWriteProcess, size_t *pcbPreRead,
+                         size_t *pcbPostRead, unsigned fWrite)
+{
+    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("returns %Rrc\n", rc));
+    return rc;
+}
+
+static int vdiAsyncFlush(void *pvBackendData, PVDIOCTX pIoCtx)
 {
     int rc = VERR_NOT_IMPLEMENTED;
     LogFlowFunc(("returns %Rrc\n", rc));
@@ -2327,6 +2327,8 @@ VBOXHDDBACKEND g_VDIBackend =
     vdiAsyncRead,
     /* pfnAsyncWrite */
     vdiAsyncWrite,
+    /* pfnAsyncFlush */
+    vdiAsyncFlush,
     /* pfnComposeLocation */
     genericFileComposeLocation,
     /* pfnComposeName */

@@ -485,8 +485,12 @@ static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uin
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    return PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbRead,
-                                      pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMR3AsyncCompletionEpRead(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbRead,
+                                        pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    if (rc == VINF_AIO_TASK_PENDING)
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, uint64_t uOffset,
@@ -497,8 +501,12 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, ui
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    return PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbWrite,
-                                       pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMR3AsyncCompletionEpWrite(pStorageBackend->pEndpoint, uOffset, paSegments, cSegments, cbWrite,
+                                         pvCompletion, (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    if (rc == VINF_AIO_TASK_PENDING)
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOFlushAsync(void *pvUser, void *pStorage,
@@ -507,8 +515,12 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushAsync(void *pvUser, void *pStorage,
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
 
-    return PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, pvCompletion,
-                                       (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    int rc = PDMR3AsyncCompletionEpFlush(pStorageBackend->pEndpoint, pvCompletion,
+                                         (PPPDMASYNCCOMPLETIONTASK)ppTask);
+    if (rc == VINF_AIO_TASK_PENDING)
+        rc = VERR_VD_ASYNC_IO_IN_PROGRESS;
+
+    return rc;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOGetSize(void *pvUser, void *pStorage, uint64_t *pcbSize)
@@ -983,6 +995,15 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 *   Async Media interface methods                                              *
 *******************************************************************************/
 
+static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2)
+{
+    PVBOXDISK pThis = (PVBOXDISK)pThis;
+
+    int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
+                                                                  pvUser2);
+    AssertRC(rc);
+}
+
 static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
                                         PPDMDATASEG paSeg, unsigned cSeg,
                                         size_t cbRead, void *pvUser)
@@ -990,7 +1011,8 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p", __FUNCTION__,
              uOffset, paSeg, cSeg, cbRead, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-    int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg, pvUser);
+    int rc = VDAsyncRead(pThis->pDisk, uOffset, cbRead, paSeg, cSeg,
+                         drvvdAsyncReqComplete, pThis, pvUser);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
 }
@@ -1002,18 +1024,10 @@ static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uO
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d\n pvUser=%#p", __FUNCTION__,
              uOffset, paSeg, cSeg, cbWrite, pvUser));
     PVBOXDISK pThis = PDMIMEDIAASYNC_2_VBOXDISK(pInterface);
-    int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg, pvUser);
+    int rc = VDAsyncWrite(pThis->pDisk, uOffset, cbWrite, paSeg, cSeg,
+                          drvvdAsyncReqComplete, pThis, pvUser);
     LogFlow(("%s: returns %Rrc\n", __FUNCTION__, rc));
     return rc;
-}
-
-/*******************************************************************************
-*   Async transport port interface methods                                     *
-*******************************************************************************/
-
-static DECLCALLBACK(int) drvvdTasksCompleteNotify(PPDMDRVINS pDrvIns, void *pvUser)
-{
-    return VERR_NOT_IMPLEMENTED;
 }
 
 
@@ -1463,8 +1477,12 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
     }
 
+#if 0 /* Temporary disabled. WIP
     if (pThis->pDrvMediaAsyncPort)
         pThis->fAsyncIOSupported = true;
+#else
+    pThis->fAsyncIOSupported = false;
+#endif
 
     unsigned iImageIdx = 0;
     while (pCurNode && RT_SUCCESS(rc))
