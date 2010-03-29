@@ -528,7 +528,7 @@ void UIMachineView::prepareFrameBuffer()
 # if defined(VBOX_WITH_VIDEOHWACCEL) && defined(DEBUG_misha) /* not tested yet */
             if (m_fAccelerate2DVideo)
             {
-                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                class UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
                 if (pFramebuffer)
                     pFramebuffer->setView(this);
                 else
@@ -536,7 +536,7 @@ void UIMachineView::prepareFrameBuffer()
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
                     pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferSDL, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
-                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
                 }
                 m_pFrameBuffer = pFramebuffer;
             }
@@ -571,7 +571,7 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             if (m_fAccelerate2DVideo)
             {
-                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
                 if (pFramebuffer)
                     pFramebuffer->setView(this);
                 else
@@ -579,7 +579,7 @@ void UIMachineView::prepareFrameBuffer()
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
                     pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQuartz2D, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
-                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
                 }
                 m_pFrameBuffer = pFramebuffer;
             }
