@@ -34,11 +34,6 @@
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
 # include <winsock2.h>
-# include <errno.h>
-# include <netinet/in.h>
-# include <netinet/tcp.h>
-# include <arpa/inet.h>
-# include <netdb.h>
 #else
 # include <sys/types.h>
 # include <sys/socket.h>
