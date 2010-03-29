@@ -62,7 +62,7 @@ static void tst1(void)
     RTStrFree(psz);
 
     /* RTStrAllocEx */
-    psz = "asdfasdf";
+    psz = (char*)"asdfasdf";
     RTTESTI_CHECK_RC(RTStrAllocEx(&psz, 0), VINF_SUCCESS);
     RTTESTI_CHECK(psz && !*psz);
     RTStrFree(psz);
@@ -130,7 +130,7 @@ static void tst1(void)
     if (RT_SUCCESS(rc))
         RTStrFree(psz);
 
-    psz = "asdfasdfasdfasdf";
+    psz = (char*)"asdfasdfasdfasdf";
     RTTESTI_CHECK_RC(rc = RTStrDupEx(&psz, "abcdefghijklmnop"), VINF_SUCCESS);
     RTTESTI_CHECK(RT_FAILURE(rc) || !RTStrCmp(psz, "abcdefghijklmnop"));
     if (RT_SUCCESS(rc))
