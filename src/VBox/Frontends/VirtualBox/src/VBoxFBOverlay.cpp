@@ -207,10 +207,26 @@ class VBoxVHWACommandProcessEvent : public QEvent
 public:
     VBoxVHWACommandProcessEvent ()
         : QEvent ((QEvent::Type) VBoxDefs::VHWACommandProcessType)
-    {}
+    {
+#ifdef DEBUG_misha
+        g_EventCounter.inc();
+#endif
+    }
+#ifdef DEBUG_misha
+    ~VBoxVHWACommandProcessEvent()
+    {
+        g_EventCounter.dec();
+    }
+
+    static uint32_t cPending() { return g_EventCounter.refs(); }
+private:
+    static VBoxVHWARefCounter g_EventCounter;
+#endif
 };
 
-
+#ifdef DEBUG_misha
+VBoxVHWARefCounter VBoxVHWACommandProcessEvent::g_EventCounter;
+#endif
 
 VBoxVHWAHandleTable::VBoxVHWAHandleTable(uint32_t initialSize)
 {
@@ -4679,7 +4695,10 @@ VBoxVHWACommandElement * VBoxQGLOverlay::processCmdList(VBoxVHWACommandElement *
                 break;
         }
         else
+        {
+            Assert(pCur->isNewEvent());
             bFirst = false;
+        }
     } while(1);
 
     return pCur;
@@ -4720,7 +4739,6 @@ bool VBoxVHWACommandElementProcessor::completeCurrentEvent()
 
 void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void * pvData, uint32_t flags)
 {
-    bool bNeedNewEvent = false;
     QObject *pNotifyObject = NULL;
     /* 1. lock*/
     RTCritSectEnter(&mCritSect);
@@ -4743,24 +4761,36 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     /* 2. if can add to current*/
     if(mbNewEvent || (!mbProcessingList && m_CmdPipe.isEmpty()))
     {
-        pCmd->setNewEventFlag();
-        bNeedNewEvent = true;
+        pCmd->setNewEvent(true);
         mbNewEvent = false;
-    }
-
-    m_CmdPipe.put(pCmd);
-
-    if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
-        mbNewEvent = true;
-
-    if (bNeedNewEvent)
-    {
         if (m_pNotifyObject)
         {
             m_NotifyObjectRefs.inc(); /* ensure the parent does not get destroyed while we are using it */
             pNotifyObject = m_pNotifyObject;
+#ifdef DEBUG_misha
+            checkConsistence();
+#endif
         }
     }
+    else
+    {
+        pCmd->setNewEvent(false);
+#ifdef DEBUG_misha
+        if (m_pNotifyObject)
+            checkConsistence();
+#endif
+    }
+
+    m_CmdPipe.put(pCmd);
+#ifdef DEBUG_misha
+    if (m_pNotifyObject)
+    {
+        checkConsistence(1);
+    }
+#endif
+
+    if((flags & VBOXVHWACMDPIPEC_COMPLETEEVENT) != 0)
+        mbNewEvent = true;
 
     RTCritSectLeave(&mCritSect);
 
@@ -4772,6 +4802,25 @@ void VBoxVHWACommandElementProcessor::postCmd(VBOXVHWA_PIPECMD_TYPE aType, void 
     }
 }
 
+#ifdef DEBUG_misha
+void VBoxVHWACommandElementProcessor::checkConsistence(uint32_t cEvents2Submit, const VBoxVHWACommandElementPipe *pPipe)
+{
+    const VBoxVHWACommandElement *pLast;
+    const VBoxVHWACommandElement *pFirst = pPipe ? pPipe->contentsRo(&pLast) : m_CmdPipe.contentsRo(&pLast);
+    uint32_t cEvents = 0;
+
+    for (const VBoxVHWACommandElement * pCur = pFirst; pCur; pCur = pCur->mpNext)
+    {
+        if (pCur->isNewEvent())
+        {
+            ++cEvents;
+            Assert(cEvents <= VBoxVHWACommandProcessEvent::cPending() + cEvents2Submit);
+        }
+    }
+//    Assert(cEvents == VBoxVHWACommandProcessEvent::cPending());
+}
+#endif
+
 void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
         class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
 {
@@ -4781,6 +4830,16 @@ void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFi
         mFreeElements.pusha(pFirst2Free, pLast2Free);
     m_CmdPipe.prepend(pFirst2Put, pLast2Put);
     mbProcessingList = false;
+    Assert(pFirst2Put->isNewEvent());
+#ifdef DEBUG_misha
+    Assert(VBoxVHWACommandProcessEvent::cPending());
+    const VBoxVHWACommandElement *pLast;
+    const VBoxVHWACommandElement *pFirst = m_CmdPipe.contentsRo(&pLast);
+    Assert(pFirst);
+    Assert(pLast);
+    Assert(pFirst == pFirst2Put);
+    checkConsistence();
+#endif
     RTCritSectLeave(&mCritSect);
 }
 
@@ -4830,6 +4889,10 @@ void VBoxVHWACommandElementProcessor::setNotifyObject(QObject *pNotifyObject)
         Assert(!m_pNotifyObject);
     }
 
+#ifdef DEBUG_misha
+    checkConsistence(cEventsNeeded);
+#endif
+
     RTCritSectLeave(&mCritSect);
 
     if (cEventsNeeded)
@@ -4854,7 +4917,13 @@ VBoxVHWACommandElement * VBoxVHWACommandElementProcessor::detachCmdList(VBoxVHWA
     {
         mFreeElements.pusha(pFirst2Free, pLast2Free);
     }
+
+#ifdef DEBUG_misha
+    checkConsistence();
+#endif
+
     pList = m_CmdPipe.detachList(ppLast);
+
     if (pList)
     {
         /* assume the caller atimically calls detachCmdList to free the elements obtained now those and reset the state */
@@ -4894,15 +4963,16 @@ void VBoxVHWACommandElementProcessor::reset(VBoxVHWACommandElement ** ppHead, VB
         }
     }
 
+    Assert(!mbProcessingList);
+
     pipe.prependFrom(&m_CmdPipe);
 
     if(!pipe.isEmpty())
-    {
         mbProcessingList = true;
-        *ppHead = pipe.detachList(ppTail);
-    }
 
     RTCritSectLeave(&mCritSect);
+
+    *ppHead = pipe.detachList(ppTail);
 }
 
 VBoxVHWATextureImage::VBoxVHWATextureImage(const QRect &size, const VBoxVHWAColorFormat &format, class VBoxVHWAGlProgramMngr * aMgr, VBOXVHWAIMG_TYPE flags) :
