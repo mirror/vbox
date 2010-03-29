@@ -1512,17 +1512,17 @@ void UISession::preparePowerUp()
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-class UIFrameBuffer* UISession::persistedBrameBuffer(ulong screenId)
+UIFrameBuffer* UISession::frameBuffer(ulong screenId) const
 {
-    Assert (screenId < (ulong)m_FrameBufferVector.size());
+    Assert(screenId < (ulong)m_FrameBufferVector.size());
     if (screenId < (ulong)m_FrameBufferVector.size())
-        return m_FrameBufferVector[((int)screenId)];
+        return m_FrameBufferVector.at((int)screenId);
     return NULL;
 }
 
-int UISession::setPersistedBrameBuffer(ulong screenId, class UIFrameBuffer* pFrameBuffer)
+int UISession::setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer)
 {
-    Assert (screenId < (ulong)m_FrameBufferVector.size());
+    Assert(screenId < (ulong)m_FrameBufferVector.size());
     if (screenId < (ulong)m_FrameBufferVector.size())
     {
         m_FrameBufferVector[(int)screenId] = pFrameBuffer;
