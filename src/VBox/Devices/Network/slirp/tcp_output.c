@@ -80,7 +80,9 @@ tcp_output(PNATState pData, register struct tcpcb *tp)
     u_char opt[MAX_TCPOPTLEN];
     unsigned optlen, hdrlen;
     int idle, sendalot;
+#ifdef VBOX_WITH_SLIRP_BSD_MBUF
     int size;
+#endif
 
     DEBUG_CALL("tcp_output");
     DEBUG_ARG("tp = %lx", (long )tp);

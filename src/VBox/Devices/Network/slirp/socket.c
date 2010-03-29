@@ -567,7 +567,6 @@ sorecvfrom(PNATState pData, struct socket *so)
     {
         /* A "normal" UDP packet */
         struct mbuf *m;
-        struct ethhdr *eh;
         ssize_t len;
         u_long n = 0;
 #ifdef VBOX_WITH_SLIRP_BSD_MBUF

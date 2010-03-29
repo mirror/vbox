@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -135,20 +135,18 @@ struct VMTask
 {
     VMTask(Console *aConsole, bool aUsesVMPtr)
         : mConsole(aConsole),
-          mCallerAdded(false),
+          mConsoleCaller(aConsole),
           mVMCallerAdded(false)
     {
         AssertReturnVoid(aConsole);
-        mRC = aConsole->addCaller();
-        if (SUCCEEDED(mRC))
+        mRC = mConsoleCaller.rc();
+        if (FAILED(mRC))
+            return;
+        if (aUsesVMPtr)
         {
-            mCallerAdded = true;
-            if (aUsesVMPtr)
-            {
-                mRC = aConsole->addVMCaller();
-                if (SUCCEEDED(mRC))
-                    mVMCallerAdded = true;
-            }
+            mRC = aConsole->addVMCaller();
+            if (SUCCEEDED(mRC))
+                mVMCallerAdded = true;
         }
     }
 
@@ -156,20 +154,10 @@ struct VMTask
     {
         if (mVMCallerAdded)
             mConsole->releaseVMCaller();
-        if (mCallerAdded)
-            mConsole->releaseCaller();
     }
 
     HRESULT rc() const { return mRC; }
     bool isOk() const { return SUCCEEDED(rc()); }
-
-    /** Releases the Console caller before destruction. Not normally necessary. */
-    void releaseCaller()
-    {
-        AssertReturnVoid(mCallerAdded);
-        mConsole->releaseCaller();
-        mCallerAdded = false;
-    }
 
     /** Releases the VM caller before destruction. Not normally necessary. */
     void releaseVMCaller()
@@ -180,11 +168,11 @@ struct VMTask
     }
 
     const ComObjPtr<Console> mConsole;
+    AutoCaller mConsoleCaller;
 
 private:
 
     HRESULT mRC;
-    bool mCallerAdded : 1;
     bool mVMCallerAdded : 1;
 };
 

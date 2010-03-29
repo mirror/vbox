@@ -9,7 +9,7 @@
  */
 
 /*
- * Copyright (C) 2008-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2008-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -154,7 +154,7 @@ int main(int argc, char *argv[])
                 RTThreadSleep(100);
 
                 int fReadPass = true;
-                uint64_t cbSrc, cbLeft;
+                uint64_t cbSrc;
                 size_t   offSrc = 0;
                 size_t   offDst = 0;
                 uint32_t cTasksUsed = 0;

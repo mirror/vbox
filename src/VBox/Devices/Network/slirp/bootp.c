@@ -339,7 +339,6 @@ static int dhcp_send_nack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, 
 
 static int dhcp_send_ack(PNATState pData, struct bootp_t *bp, BOOTPClient *bc, struct mbuf *m, int fDhcpRequest)
 {
-    struct bootp_t *rbp;
     int offReply = 0; /* boot_reply will fill general options and add END before sending response */
 
     dhcp_create_msg(pData, bp, m, DHCPACK);
@@ -383,7 +382,6 @@ static int dhcp_decode_request(PNATState pData, struct bootp_t *bp, const uint8_
     BOOTPClient *bc = NULL;
     struct in_addr daddr;
     int offReply;
-    uint8_t *opt;
     uint8_t *req_ip = NULL;
     uint8_t *server_ip = NULL;
     uint32_t ui32;
@@ -618,7 +616,6 @@ static void dhcp_decode(PNATState pData, struct bootp_t *bp, const uint8_t *buf,
     int pmsg_type;
     struct in_addr req_ip;
     int fDhcpDiscover = 0;
-    int len, tag;
     struct mbuf *m = NULL;
 
     pmsg_type = 0;

@@ -42,8 +42,8 @@
  * VirtualBoxBase::releaseCaller() for more details about object callers.
  *
  * @param aLimited  |false| if this template should use
- *                  VirtualiBoxBase::addCaller() calls to add callers, or
- *                  |true| if VirtualiBoxBase::addLimitedCaller() should be
+ *                  VirtualBoxBase::addCaller() calls to add callers, or
+ *                  |true| if VirtualBoxBase::addLimitedCaller() should be
  *                  used.
  *
  * @note It is preferable to use the AutoCaller and AutoLimitedCaller

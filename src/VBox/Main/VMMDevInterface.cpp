@@ -257,8 +257,8 @@ DECLCALLBACK(void) vmmdevUpdateMouseCapabilities(PPDMIVMMDEVCONNECTOR pInterface
     Mouse *pMouse = pDrv->pVMMDev->getParent()->getMouse();
     if (pMouse)  /** @todo and if not?  Can that actually happen? */
     {
-        pMouse->onVMMDevCanAbsChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE));
-        pMouse->onVMMDevNeedsHostChange(BOOL (newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
+        pMouse->onVMMDevCanAbsChange(!!(newCapabilities & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE));
+        pMouse->onVMMDevNeedsHostChange(!!(newCapabilities & VMMDEV_MOUSE_GUEST_NEEDS_HOST_CURSOR));
     }
 }
 

@@ -136,7 +136,8 @@ recheck_zone:
         if (rc == 0)
             goto recheck_zone;
         AssertMsgFailed(("No mbufs on free list\n"));
-        return NULL;
+        m = NULL;
+        goto end_error;
 #else
         m = (struct mbuf *)RTMemAlloc(msize);
         if (m == NULL)

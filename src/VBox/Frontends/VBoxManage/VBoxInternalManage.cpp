@@ -8,7 +8,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -1575,14 +1575,14 @@ static int CmdConvertToRaw(int argc, char **argv, ComPtr<IVirtualBox> aVirtualBo
     uint64_t cbSize = VDGetSize(pDisk, VD_LAST_IMAGE);
     uint64_t offFile = 0;
 #define RAW_BUFFER_SIZE _128K
-    uint64_t cbBuf = RAW_BUFFER_SIZE;
+    size_t cbBuf = RAW_BUFFER_SIZE;
     void *pvBuf = RTMemAlloc(cbBuf);
     if (pvBuf)
     {
         RTPrintf("Converting image \"%s\" with size %RU64 bytes (%RU64MB) to raw...\n", Utf8Str(src).raw(), cbSize, (cbSize + _1M - 1) / _1M);
         while (offFile < cbSize)
         {
-            size_t cb = cbSize - offFile >= (uint64_t)cbBuf ? cbBuf : (size_t)(cbSize - offFile);
+            size_t cb = (size_t)RT_MIN(cbSize - offFile, cbBuf);
             vrc = VDRead(pDisk, offFile, pvBuf, cb);
             if (RT_FAILURE(vrc))
                 break;

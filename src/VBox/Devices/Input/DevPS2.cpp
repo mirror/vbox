@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -806,7 +806,7 @@ static void pc_kbd_mouse_event(void *opaque, int dx, int dy, int dz, int dw,
 static void kbd_mouse_update_downstream_status(KBDState *pThis)
 {
     PPDMIMOUSECONNECTOR pDrv = pThis->Mouse.pDrv;
-    bool fEnabled = pThis->mouse_status & MOUSE_STATUS_ENABLED;
+    bool fEnabled = !!(pThis->mouse_status & MOUSE_STATUS_ENABLED);
     pDrv->pfnReportModes(pDrv, fEnabled, false);
 }
 #endif /* IN_RING3 */
