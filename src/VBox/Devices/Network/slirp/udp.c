@@ -445,7 +445,7 @@ udp_attach(PNATState pData, struct socket *so, int service_port)
     QSOCKET_UNLOCK(udb);
     return so->s;
 error:
-    LogRel(("NAT: can't create datagramm socket\n"));
+    Log2(("NAT: can't create datagramm socket\n"));
     return -1;
 }
 
