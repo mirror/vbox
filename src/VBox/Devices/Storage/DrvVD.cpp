@@ -997,7 +997,7 @@ static DECLCALLBACK(int) drvvdGetUuid(PPDMIMEDIA pInterface, PRTUUID pUuid)
 
 static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2)
 {
-    PVBOXDISK pThis = (PVBOXDISK)pThis;
+    PVBOXDISK pThis = (PVBOXDISK)pvUser1;
 
     int rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort,
                                                                   pvUser2);
