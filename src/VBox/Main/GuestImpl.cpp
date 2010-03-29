@@ -412,7 +412,7 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                                    IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
                                    IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                                    IN_BSTR aUserName, IN_BSTR aPassword,
-                                   ULONG aTimeoutMS, ULONG* aPID)
+                                   ULONG aTimeoutMS, ULONG *aPID)
 {
 #ifndef VBOX_WITH_GUEST_CONTROL
     ReturnComNotImplemented();
