@@ -177,197 +177,351 @@ struct Medium::Data
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
- * Asynchronous task thread parameter bucket.
+ * Medium::Task class for asynchronous operations.
  *
- * Note that instances of this class must be created using new() because the
- * task thread function will delete them when the task is complete!
+ * @note Instances of this class must be created using new() because the
+ *       task thread function will delete them when the task is complete.
  *
  * @note The constructor of this class adds a caller on the managed Medium
  *       object which is automatically released upon destruction.
  */
-struct Medium::Task : public com::SupportErrorInfoBase
+class Medium::Task
 {
-    enum Operation { CreateBase,
-                     CreateDiff,
-                     Merge,
-                     Clone,
-                     Delete,
-                     Reset,
-                     Compact
-                   };
+public:
+    Task(Medium *aMedium, Progress *aProgress)
+        : mMedium(aMedium),
+          mMediumCaller(aMedium),
+          mThread(NIL_RTTHREAD),
+          mProgress(aProgress),
+          mVDOperationIfaces(NULL),
+          m_pfNeedsSaveSettings(NULL)
+    {
+        AssertReturnVoidStmt(aMedium, mRC = E_FAIL);
+        mRC = mMediumCaller.rc();
+        if (FAILED(mRC))
+            return;
 
-    Medium *that;
-    AutoCaller m_autoCaller;
+        /* Set up a per-operation progress interface, can be used freely (for
+         * binary operations you can use it either on the source or target). */
+        mVDIfCallsProgress.cbSize = sizeof(VDINTERFACEPROGRESS);
+        mVDIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
+        mVDIfCallsProgress.pfnProgress = vdProgressCall;
+        int vrc = VDInterfaceAdd(&mVDIfProgress,
+                                "Medium::Task::vdInterfaceProgress",
+                                VDINTERFACETYPE_PROGRESS,
+                                &mVDIfCallsProgress,
+                                mProgress,
+                                &mVDOperationIfaces);
+        AssertRC(vrc);
+        if (RT_FAILURE(vrc))
+            mRC = E_FAIL;
+    }
 
-    ComObjPtr<Progress> m_pProgress;
-    Operation m_operation;
+    // Make all destructors virtual. Just in case.
+    virtual ~Task()
+    {}
 
-    /** Where to save the result when executed using #runNow(). */
-    HRESULT m_rc;
+    HRESULT rc() const { return mRC; }
+    bool isOk() const { return SUCCEEDED(rc()); }
+
+    static int fntMediumTask(RTTHREAD aThread, void *pvUser);
+
+    bool isAsync() { return mThread != NIL_RTTHREAD; }
+
+    const ComObjPtr<Medium> mMedium;
+    AutoCaller mMediumCaller;
 
     // Whether the caller needs to call VirtualBox::saveSettings() after
     // the task function returns. Only used in synchronous (wait) mode;
     // otherwise the task will save the settings itself.
     bool *m_pfNeedsSaveSettings;
 
-    Task(Medium *aThat,
-         Progress *aProgress,
-         Operation aOperation)
-        : that(aThat),
-          m_autoCaller(aThat),
-          m_pProgress(aProgress),
-          m_operation(aOperation),
-          m_rc(S_OK),
-          m_pfNeedsSaveSettings(NULL)
-    { }
+    PVDINTERFACE mVDOperationIfaces;
 
-    ~Task();
+protected:
+    HRESULT mRC;
+    RTTHREAD mThread;
 
-    void setData(Medium *aTarget)
+private:
+    virtual HRESULT handler() = 0;
+
+    const ComObjPtr<Progress> mProgress;
+
+    static DECLCALLBACK(int) vdProgressCall(void *pvUser, unsigned uPercent);
+
+    VDINTERFACE mVDIfProgress;
+    VDINTERFACEPROGRESS mVDIfCallsProgress;
+};
+
+class Medium::CreateBaseTask : public Medium::Task
+{
+public:
+    CreateBaseTask(Medium *aMedium,
+                   Progress *aProgress,
+                   uint64_t aSize,
+                   MediumVariant_T aVariant)
+        : Medium::Task(aMedium, aProgress),
+          mSize(aSize),
+          mVariant(aVariant)
+    {}
+
+    uint64_t mSize;
+    MediumVariant_T mVariant;
+
+private:
+    virtual HRESULT handler();
+};
+
+class Medium::CreateDiffTask : public Medium::Task
+{
+public:
+    CreateDiffTask(Medium *aMedium,
+                   Progress *aProgress,
+                   Medium *aTarget,
+                   MediumVariant_T aVariant)
+        : Medium::Task(aMedium, aProgress),
+          mTarget(aTarget),
+          mTargetCaller(aTarget),
+          mVariant(aVariant)
     {
-        d.target = aTarget;
-        HRESULT rc = d.target->addCaller();
-        AssertComRC(rc);
+        AssertReturnVoidStmt(aTarget != NULL, mRC = E_FAIL);
+        mRC = mTargetCaller.rc();
+        if (FAILED(mRC))
+            return;
     }
 
-    void setData(Medium *aTarget, Medium *aParent)
+    const ComObjPtr<Medium> mTarget;
+    MediumVariant_T mVariant;
+
+private:
+    virtual HRESULT handler();
+
+    AutoCaller mTargetCaller;
+};
+
+class Medium::CloneTask : public Medium::Task
+{
+public:
+    CloneTask(Medium *aMedium,
+              Progress *aProgress,
+              Medium *aTarget,
+              Medium *aParent,
+              ImageChain *aSourceChain,
+              ImageChain *aParentChain,
+              MediumVariant_T aVariant)
+        : Medium::Task(aMedium, aProgress),
+          mTarget(aTarget),
+          mTargetCaller(aTarget),
+          mParent(aParent),
+          mParentCaller(aParent),
+          mSourceChain(aSourceChain),
+          mParentChain(aParentChain),
+          mVariant(aVariant)
     {
-        d.target = aTarget;
-        HRESULT rc = d.target->addCaller();
-        AssertComRC(rc);
-        d.parentDisk = aParent;
-        if (aParent)
+        AssertReturnVoidStmt(aTarget != NULL, mRC = E_FAIL);
+        mRC = mTargetCaller.rc();
+        if (FAILED(mRC))
+            return;
+        /* aParent may be NULL */
+        mRC = mParentCaller.rc();
+        if (FAILED(mRC))
+            return;
+        AssertReturnVoidStmt(aSourceChain != NULL, mRC = E_FAIL);
+        AssertReturnVoidStmt(aParentChain != NULL, mRC = E_FAIL);
+    }
+
+    const ComObjPtr<Medium> mTarget;
+    const ComObjPtr<Medium> mParent;
+    std::auto_ptr<ImageChain> mSourceChain;
+    std::auto_ptr<ImageChain> mParentChain;
+    MediumVariant_T mVariant;
+
+private:
+    virtual HRESULT handler();
+
+    AutoCaller mTargetCaller;
+    AutoCaller mParentCaller;
+};
+
+class Medium::CompactTask : public Medium::Task
+{
+public:
+    CompactTask(Medium *aMedium,
+                Progress *aProgress,
+                ImageChain *aImageChain)
+        : Medium::Task(aMedium, aProgress),
+          mImageChain(aImageChain)
+    {
+        AssertReturnVoidStmt(aImageChain != NULL, mRC = E_FAIL);
+    }
+
+    std::auto_ptr<ImageChain> mImageChain;
+
+private:
+    virtual HRESULT handler();
+};
+
+class Medium::ResetTask : public Medium::Task
+{
+public:
+    ResetTask(Medium *aMedium,
+              Progress *aProgress)
+        : Medium::Task(aMedium, aProgress)
+    {}
+
+private:
+    virtual HRESULT handler();
+};
+
+class Medium::DeleteTask : public Medium::Task
+{
+public:
+    DeleteTask(Medium *aMedium,
+               Progress *aProgress)
+        : Medium::Task(aMedium, aProgress)
+    {}
+
+private:
+    virtual HRESULT handler();
+};
+
+class Medium::MergeTask : public Medium::Task
+{
+public:
+    MergeTask(Medium *aMedium,
+              Progress *aProgress,
+              MergeChain *aMergeChain)
+        : Medium::Task(aMedium, aProgress),
+          mMergeChain(aMergeChain)
+    {
+        AssertReturnVoidStmt(aMergeChain != NULL, mRC = E_FAIL);
+    }
+
+    std::auto_ptr<MergeChain> mMergeChain;
+
+private:
+    virtual HRESULT handler();
+};
+
+/**
+ * Thread function for time-consuming medium tasks.
+ *
+ * @param pvUser    Pointer to the std::auto_ptr<Medium::Task> instance.
+ */
+/* static */
+DECLCALLBACK(int) Medium::Task::fntMediumTask(RTTHREAD aThread, void *pvUser)
+{
+    LogFlowFuncEnter();
+    /* pvUser is a pointer to a std::auto_ptr<Medium::Task>, which is so
+     * hard to understand that we just clear this situation now by copying
+     * it. This means the old object loses ownership, and task owns it. */
+    AssertReturn(pvUser, (int)E_INVALIDARG);
+    std::auto_ptr<Medium::Task> *pTask =
+        static_cast<std::auto_ptr<Medium::Task> *>(pvUser);
+    std::auto_ptr<Medium::Task> task(pTask->release());
+    AssertReturn(task.get(), (int)E_INVALIDARG);
+
+    task->mThread = aThread;
+
+    HRESULT rc = task->handler();
+
+    /* complete the progress if run asynchronously */
+    if (task->isAsync())
+    {
+        if (!task->mProgress.isNull())
+            task->mProgress->notifyComplete(rc);
+    }
+
+    LogFlowFunc(("rc=%Rhrc\n", rc));
+    LogFlowFuncLeave();
+
+    return (int)rc;
+}
+
+/**
+ * PFNVDPROGRESS callback handler for Task operations.
+ *
+ * @param pvUser      Pointer to the Progress instance.
+ * @param uPercent    Completetion precentage (0-100).
+ */
+/*static*/
+DECLCALLBACK(int) Medium::Task::vdProgressCall(void *pvUser, unsigned uPercent)
+{
+    Progress *that = static_cast<Progress *>(pvUser);
+
+    if (that != NULL)
+    {
+        /* update the progress object, capping it at 99% as the final percent
+         * is used for additional operations like setting the UUIDs and similar. */
+        HRESULT rc = that->SetCurrentOperationProgress(uPercent * 99 / 100);
+        if (FAILED(rc))
         {
-            rc = d.parentDisk->addCaller();
-            AssertComRC(rc);
+            if (rc == E_FAIL)
+                return VERR_CANCELLED;
+            else
+                return VERR_INVALID_STATE;
         }
     }
 
-    void setData(MergeChain *aChain)
-    {
-        AssertReturnVoid(aChain != NULL);
-        d.chain.reset(aChain);
-    }
-
-    void setData(ImageChain *aSrcChain, ImageChain *aParentChain)
-    {
-        AssertReturnVoid(aSrcChain != NULL);
-        AssertReturnVoid(aParentChain != NULL);
-        d.source.reset(aSrcChain);
-        d.parent.reset(aParentChain);
-    }
-
-    void setData(ImageChain *aImgChain)
-    {
-        AssertReturnVoid(aImgChain != NULL);
-        d.images.reset(aImgChain);
-    }
-
-    HRESULT startThread();
-    HRESULT runNow(bool *pfNeedsSaveSettings);
-
-    struct Data
-    {
-        Data() : size(0) {}
-
-        /* CreateBase */
-
-        uint64_t size;
-
-        /* CreateBase, CreateDiff, Clone */
-
-        MediumVariant_T variant;
-
-        /* CreateDiff, Clone */
-
-        ComObjPtr<Medium> target;
-
-        /* Clone */
-
-        /** Media to open, in {parent,child} order */
-        std::auto_ptr<ImageChain> source;
-        /** Media which are parent of target, in {parent,child} order */
-        std::auto_ptr<ImageChain> parent;
-        /** The to-be parent medium object */
-        ComObjPtr<Medium> parentDisk;
-
-        /* Merge */
-
-        /** Media to merge, in {parent,child} order */
-        std::auto_ptr<MergeChain> chain;
-
-        /* Compact */
-
-        /** Media to open, in {parent,child} order */
-        std::auto_ptr<ImageChain> images;
-    } d;
-
-protected:
-
-    // SupportErrorInfoBase interface
-    const GUID &mainInterfaceID() const { return COM_IIDOF(IMedium); }
-    const char *componentName() const { return Medium::ComponentName(); }
-};
-
-Medium::Task::~Task()
-{
-    /* remove callers added by setData() */
-    if (!d.target.isNull())
-        d.target->releaseCaller();
+    return VINF_SUCCESS;
 }
 
 /**
- * Starts a new thread driven by the Medium::taskThread() function and passes
- * this Task instance as an argument.
- *
- * Note that if this method returns success, this Task object becomes an ownee
- * of the started thread and will be automatically deleted when the thread
- * terminates.
- *
- * @note When the task is executed by this method, IProgress::notifyComplete()
- *       is automatically called for the progress object associated with this
- *       task when the task is finished to signal the operation completion for
- *       other threads asynchronously waiting for it.
+ * Implementation code for the "create base" task.
  */
-HRESULT Medium::Task::startThread()
+HRESULT Medium::CreateBaseTask::handler()
 {
-    int vrc = RTThreadCreate(NULL, Medium::taskThread, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Medium::Task");
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create Medium::Task thread (%Rrc)\n", vrc),
-                      E_FAIL);
-
-    return S_OK;
+    return mMedium->taskThreadCreateBase(*this);
 }
 
 /**
- * Runs Medium::taskThread() by passing it this Task instance as an argument
- * on the current thread instead of creating a new one.
- *
- * This call implies that it is made on another temporary thread created for
- * some asynchronous task. Avoid calling it from a normal thread since the task
- * operatinos are potentially lengthy and will block the calling thread in this
- * case.
- *
- * Note that this Task object will be deleted by taskThread() when this method
- * returns!
- *
- * @note When the task is executed by this method, IProgress::notifyComplete()
- *       is not called for the progress object associated with this task when
- *       the task is finished. Instead, the result of the operation is returned
- *       by this method directly and it's the caller's responsibility to
- *       complete the progress object in this case.
+ * Implementation code for the "create diff" task.
  */
-HRESULT Medium::Task::runNow(bool *pfNeedsSaveSettings)
+HRESULT Medium::CreateDiffTask::handler()
 {
-    m_pfNeedsSaveSettings = pfNeedsSaveSettings;
-
-    /* NIL_RTTHREAD indicates synchronous call. */
-    Medium::taskThread(NIL_RTTHREAD, this);
-
-    return m_rc;
+    return mMedium->taskThreadCreateDiff(*this);
 }
+
+/**
+ * Implementation code for the "clone" task.
+ */
+HRESULT Medium::CloneTask::handler()
+{
+    return mMedium->taskThreadClone(*this);
+}
+
+/**
+ * Implementation code for the "compact" task.
+ */
+HRESULT Medium::CompactTask::handler()
+{
+    return mMedium->taskThreadCompact(*this);
+}
+
+/**
+ * Implementation code for the "reset" task.
+ */
+HRESULT Medium::ResetTask::handler()
+{
+    return mMedium->taskThreadReset(*this);
+}
+
+/**
+ * Implementation code for the "delete" task.
+ */
+HRESULT Medium::DeleteTask::handler()
+{
+    return mMedium->taskThreadDelete(*this);
+}
+
+/**
+ * Implementation code for the "merge" task.
+ */
+HRESULT Medium::MergeTask::handler()
+{
+    return mMedium->taskThreadMerge(*this);
+}
+
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -1554,8 +1708,7 @@ STDMETHODIMP Medium::COMGETTER(Size)(ULONG64 *aSize)
 
 STDMETHODIMP Medium::COMGETTER(Format)(BSTR *aFormat)
 {
-    if (aFormat == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aFormat);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1568,8 +1721,7 @@ STDMETHODIMP Medium::COMGETTER(Format)(BSTR *aFormat)
 
 STDMETHODIMP Medium::COMGETTER(Type)(MediumType_T *aType)
 {
-    if (aType == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aType);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1653,8 +1805,7 @@ STDMETHODIMP Medium::COMSETTER(Type)(MediumType_T aType)
 
 STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
 {
-    if (aParent == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aParent);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1669,8 +1820,7 @@ STDMETHODIMP Medium::COMGETTER(Parent)(IMedium **aParent)
 
 STDMETHODIMP Medium::COMGETTER(Children)(ComSafeArrayOut(IMedium *, aChildren))
 {
-    if (ComSafeArrayOutIsNull(aChildren))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aChildren);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1686,8 +1836,7 @@ STDMETHODIMP Medium::COMGETTER(Children)(ComSafeArrayOut(IMedium *, aChildren))
 
 STDMETHODIMP Medium::COMGETTER(Base)(IMedium **aBase)
 {
-    if (aBase == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aBase);
 
     /* base() will do callers/locking */
 
@@ -1698,8 +1847,7 @@ STDMETHODIMP Medium::COMGETTER(Base)(IMedium **aBase)
 
 STDMETHODIMP Medium::COMGETTER(ReadOnly)(BOOL *aReadOnly)
 {
-    if (aReadOnly == NULL)
-        return E_POINTER;
+    CheckComArgOutPointerValid(aReadOnly);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -1796,8 +1944,7 @@ STDMETHODIMP Medium::COMGETTER(LastAccessError)(BSTR *aLastAccessError)
 
 STDMETHODIMP Medium::COMGETTER(MachineIds)(ComSafeArrayOut(BSTR,aMachineIds))
 {
-    if (ComSafeGUIDArrayOutIsNull(aMachineIds))
-        return E_POINTER;
+    CheckComArgOutSafeArrayPointerValid(aMachineIds);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -2312,7 +2459,6 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
 
     ComObjPtr <Progress> progress;
     progress.createObject();
-    /// @todo include fixed/dynamic
     HRESULT rc = progress->init(m->pVirtualBox,
                                 static_cast<IMedium*>(this),
                                 (aVariant & MediumVariant_Fixed)
@@ -2321,26 +2467,17 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
                                 TRUE /* aCancelable */);
     if (FAILED(rc)) return rc;
 
-    /* setup task object and thread to carry out the operation
-     * asynchronously */
+    /* setup task object to carry out the operation asynchronously */
+    std::auto_ptr<Medium::Task> task(new CreateBaseTask(this, progress,
+                                                        aLogicalSize,
+                                                        aVariant));
+    AssertComRCReturnRC(task->rc());
 
-    std::auto_ptr <Task> task(new Task(this, progress, Task::CreateBase));
-    AssertComRCReturnRC(task->m_autoCaller.rc());
-
-    task->d.size = aLogicalSize;
-    task->d.variant = aVariant;
-
-    rc = task->startThread();
+    rc = startThread(task);
     if (FAILED(rc)) return rc;
 
     /* go to Creating state on success */
     m->state = MediumState_Creating;
-
-    /* task is now owned by taskThread() so release it */
-    task.release();
-
-    /* return progress to the caller */
-    progress.queryInterfaceTo(aProgress);
 
     return S_OK;
 }
@@ -2395,7 +2532,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
     {
         HRESULT rc2 = UnlockRead(NULL);
         AssertComRC(rc2);
-        /* Note: on success, taskThread() will unlock this */
+        /* Note: on success, the task will unlock this */
     }
     else
     {
@@ -2449,20 +2586,20 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
          * logically this belongs into Medium functionality. */
 
         /* Build the source chain and lock images in the proper order. */
-        std::auto_ptr <ImageChain> srcChain(new ImageChain());
+        std::auto_ptr<ImageChain> sourceChain(new ImageChain());
 
         for (Medium *hd = this;
              hd;
              hd = hd->m->pParent)
         {
-            rc = srcChain->addImage(hd);
+            rc = sourceChain->addImage(hd);
             if (FAILED(rc)) throw rc;
         }
-        rc = srcChain->lockImagesRead();
+        rc = sourceChain->lockImagesRead();
         if (FAILED(rc)) throw rc;
 
         /* Build the parent chain and lock images in the proper order. */
-        std::auto_ptr <ImageChain> parentChain(new ImageChain());
+        std::auto_ptr<ImageChain> parentChain(new ImageChain());
 
         for (Medium *hd = parent;
              hd;
@@ -2493,17 +2630,15 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
                             TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
-        /* setup task object and thread to carry out the operation
-         * asynchronously */
+        /* setup task object to carry out the operation asynchronously */
+        std::auto_ptr<Medium::Task> task(new CloneTask(this, progress,
+                                                       target, parent,
+                                                       sourceChain.release(),
+                                                       parentChain.release(),
+                                                       aVariant));
+        AssertComRCReturnRC(task->rc());
 
-        std::auto_ptr<Task> task(new Task(this, progress, Task::Clone));
-        AssertComRCThrowRC(task->m_autoCaller.rc());
-
-        task->setData(target, parent);
-        task->d.variant = aVariant;
-        task->setData(srcChain.release(), parentChain.release());
-
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) throw rc;
 
         if (target->m->state == MediumState_NotCreated)
@@ -2511,9 +2646,6 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
             /* go to Creating state before leaving the lock */
             target->m->state = MediumState_Creating;
         }
-
-        /* task is now owned (or already deleted) by taskThread() so release it */
-        task.release();
     }
     catch (HRESULT aRC)
     {
@@ -2547,7 +2679,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
          * logically this belongs into Medium functionality. */
 
         /* Build the image chain and lock images in the proper order. */
-        std::auto_ptr <ImageChain> imgChain(new ImageChain());
+        std::auto_ptr<ImageChain> imgChain(new ImageChain());
 
         /* we walk the image tree */
         AutoReadLock srcTreeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
@@ -2568,19 +2700,13 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
                             TRUE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
-        /* setup task object and thread to carry out the operation
-         * asynchronously */
+        /* setup task object to carry out the operation asynchronously */
+        std::auto_ptr<Medium::Task> task(new CompactTask(this, progress,
+                                                         imgChain.release()));
+        AssertComRCReturnRC(task->rc());
 
-        std::auto_ptr <Task> task(new Task(this, progress, Task::Compact));
-        AssertComRCThrowRC(task->m_autoCaller.rc());
-
-        task->setData(imgChain.release());
-
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) throw rc;
-
-        /* task is now owned (or already deleted) by taskThread() so release it */
-        task.release();
     }
     catch (HRESULT aRC)
     {
@@ -2644,16 +2770,12 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
                             FALSE /* aCancelable */);
         if (FAILED(rc)) throw rc;
 
-        /* setup task object and thread to carry out the operation
-         * asynchronously */
-        std::auto_ptr<Task> task(new Task(this, progress, Task::Reset));
-        AssertComRCThrowRC(task->m_autoCaller.rc());
+        /* setup task object to carry out the operation asynchronously */
+        std::auto_ptr<Medium::Task> task(new ResetTask(this, progress));
+        AssertComRCReturnRC(task->rc());
 
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) throw rc;
-
-        /* task is now owned (or already deleted) by taskThread() so release it */
-        task.release();
     }
     catch (HRESULT aRC)
     {
@@ -2664,7 +2786,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
     {
         HRESULT rc2 = UnlockWrite(NULL);
         AssertComRC(rc2);
-        /* Note: on success, taskThread() will unlock this */
+        /* Note: on success, the task will unlock this */
     }
     else
     {
@@ -3952,7 +4074,7 @@ HRESULT Medium::queryInfo()
                     }
 
                     /// @todo NEWMEDIA what to do if the parent is not
-                    /// accessible while the diff is? Probably, nothing. The
+                    /// accessible while the diff is? Probably nothing. The
                     /// real code will detect the mismatch anyway.
                 }
             }
@@ -4207,27 +4329,25 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
         }
     }
 
-    std::auto_ptr<Task> task(new Task(this, progress, Task::Delete));
-    AssertComRCReturnRC(task->m_autoCaller.rc());
+    /* setup task object to carry out the operation asynchronously */
+    std::auto_ptr<Medium::Task> task(new DeleteTask(this, progress));
+    AssertComRCReturnRC(task->rc());
 
     if (aWait)
     {
         /* go to Deleting state before starting the task */
         m->state = MediumState_Deleting;
 
-        rc = task->runNow(NULL /* pfNeedsSaveSettings*/ );        // there is no save settings to do in taskThreadDelete()
+        rc = runNow(task, NULL /* pfNeedsSaveSettings*/ );        // there is no save settings to do in taskThreadDelete()
     }
     else
     {
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) return rc;
 
         /* go to Deleting state before leaving the lock */
         m->state = MediumState_Deleting;
     }
-
-    /* task is now owned (or already deleted) by taskThread() so release it */
-    task.release();
 
     if (aProgress != NULL)
     {
@@ -4244,7 +4364,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
  *
  * As opposed to the CreateDiffStorage() method, this method doesn't try to lock
  * this hard disk for reading assuming that the caller has already done so. This
- * is used when taking an online snaopshot (where all original hard disks are
+ * is used when taking an online snapshot (where all original hard disks are
  * locked for writing and must remain such). Note however that if @a aWait is
  * @c false and this method returns a success then the thread started by
  * this method will unlock the hard disk (unless it is in
@@ -4349,14 +4469,10 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         }
     }
 
-    /* set up task object and thread to carry out the operation
-     * asynchronously */
-
-    std::auto_ptr<Task> task(new Task(this, progress, Task::CreateDiff));
-    AssertComRCReturnRC(task->m_autoCaller.rc());
-
-    task->setData(aTarget);
-    task->d.variant = aVariant;
+    /* setup task object to carry out the operation asynchronously */
+    std::auto_ptr<Medium::Task> task(new CreateDiffTask(this, progress,
+                                                        aTarget, aVariant));
+    AssertComRCReturnRC(task->rc());
 
     /* register a task (it will deregister itself when done) */
     ++m->numCreateDiffTasks;
@@ -4372,19 +4488,16 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         // their states; we have asserted above that *this* is locked read or write!
         alock.release();
 
-        rc = task->runNow(pfNeedsSaveSettings);
+        rc = runNow(task, pfNeedsSaveSettings);
     }
     else
     {
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) return rc;
 
         /* go to Creating state before leaving the lock */
         aTarget->m->state = MediumState_Creating;
     }
-
-    /* task is now owned (or already deleted) by taskThread() so release it */
-    task.release();
 
     if (aProgress != NULL)
     {
@@ -4469,8 +4582,8 @@ HRESULT Medium::prepareMergeTo(Medium *aTarget,
     }
 
     /* build the chain (will do necessary checks and state changes) */
-    std::auto_ptr <MergeChain> chain(new MergeChain(forward,
-                                                      aIgnoreAttachments));
+    std::auto_ptr<MergeChain> chain(new MergeChain(forward,
+                                                   aIgnoreAttachments));
     {
         Medium *last = forward ? aTarget : this;
         Medium *first = forward ? this : aTarget;
@@ -4607,13 +4720,9 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
         }
     }
 
-    /* setup task object and thread to carry out the operation
-     * asynchronously */
-
-    std::auto_ptr <Task> task(new Task(this, progress, Task::Merge));
-    AssertComRCReturnRC(task->m_autoCaller.rc());
-
-    task->setData(aChain);
+    /* setup task object to carry out the operation asynchronously */
+    std::auto_ptr<Medium::Task> task(new MergeTask(this, progress, aChain));
+    AssertComRCReturnRC(task->rc());
 
     /* Note: task owns aChain (will delete it when not needed) in all cases
      * except when @a aWait is @c true and runNow() fails -- in this case
@@ -4622,16 +4731,13 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
 
     if (aWait)
     {
-        rc = task->runNow(pfNeedsSaveSettings);
+        rc = runNow(task, pfNeedsSaveSettings);
     }
     else
     {
-        rc = task->startThread();
+        rc = startThread(task);
         if (FAILED(rc)) return rc;
     }
-
-    /* task is now owned (or already deleted) by taskThread() so release it */
-    task.release();
 
     if (aProgress != NULL)
     {
@@ -4847,34 +4953,6 @@ DECLCALLBACK(void) Medium::vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                        Utf8StrFmtVA(pszFormat, va).raw(), rc);
 }
 
-/**
- * PFNVDPROGRESS callback handler for Task operations.
- *
- * @param pvUser      Pointer to the Progress instance.
- * @param uPercent    Completetion precentage (0-100).
- */
-/*static*/
-DECLCALLBACK(int) Medium::vdProgressCall(void *pvUser, unsigned uPercent)
-{
-    Progress *that = static_cast<Progress *>(pvUser);
-
-    if (that != NULL)
-    {
-        /* update the progress object, capping it at 99% as the final percent
-         * is used for additional operations like setting the UUIDs and similar. */
-        HRESULT rc = that->SetCurrentOperationProgress(uPercent * 99 / 100);
-        if (FAILED(rc))
-        {
-            if (rc == E_FAIL)
-                return VERR_CANCELLED;
-            else
-                return VERR_INVALID_STATE;
-        }
-    }
-
-    return VINF_SUCCESS;
-}
-
 /* static */
 DECLCALLBACK(bool) Medium::vdConfigAreKeysValid(void *pvUser,
                                                 const char * /* pszzValid */)
@@ -4938,21 +5016,69 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "create base" task.
+ * Starts a new thread driven by the appropriate Medium::Task::handler() method.
+ *
+ * @note if this method returns success, this Medium::Task object becomes owned
+ *       by the started thread and will be automatically deleted when the
+ *       thread terminates.
+ *
+ * @note When the task is executed by this method, IProgress::notifyComplete()
+ *       is automatically called for the progress object associated with this
+ *       task when the task is finished to signal the operation completion for
+ *       other threads asynchronously waiting for it.
+ */
+HRESULT Medium::startThread(std::auto_ptr<Medium::Task> task)
+{
+    /// @todo use a more descriptive task name
+    int vrc = RTThreadCreate(NULL, Medium::Task::fntMediumTask, &task,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Medium::Task");
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create Medium::Task thread (%Rrc)\n", vrc),
+                      E_FAIL);
+
+    return S_OK;
+}
+
+/**
+ * Runs Medium::Task::handler() on the current thread instead of creating
+ * a new one.
+ *
+ * This call implies that it is made on another temporary thread created for
+ * some asynchronous task. Avoid calling it from a normal thread since the task
+ * operations are potentially lengthy and will block the calling thread in this
+ * case.
+ *
+ * @note This Medium::Task object will be deleted when this method returns.
+ *
+ * @note When the task is executed by this method, IProgress::notifyComplete()
+ *       is not called for the progress object associated with this task when
+ *       the task is finished. Instead, the result of the operation is returned
+ *       by this method directly and it's the caller's responsibility to
+ *       complete the progress object in this case.
+ */
+HRESULT Medium::runNow(std::auto_ptr<Medium::Task> task,
+                       bool *pfNeedsSaveSettings)
+{
+    task->m_pfNeedsSaveSettings = pfNeedsSaveSettings;
+
+    /* NIL_RTTHREAD indicates synchronous call. */
+    return (HRESULT)Medium::Task::fntMediumTask(NIL_RTTHREAD, &task);
+}
+
+/**
+ * Implementation code for the "create base" task.
  *
  * This only gets started from Medium::CreateBaseStorage() and always runs
- * asynchronously. As a result, we always save the VirtualBox.xml file when we're
- * done here.
+ * asynchronously. As a result, we always save the VirtualBox.xml file when
+ * we're done here.
  *
  * @param task
- * @param pvdOperationIfaces
  * @return
  */
-HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
+HRESULT Medium::taskThreadCreateBase(CreateBaseTask &task)
 {
     HRESULT rc = S_OK;
-
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
 
     /* these parameters we need after creation */
     uint64_t size = 0, logicalSize = 0;
@@ -4998,15 +5124,15 @@ HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
             vrc = VDCreateBase(hdd,
                                format.c_str(),
                                location.c_str(),
-                               task.d.size * _1M,
-                               task.d.variant,
+                               task.mSize * _1M,
+                               task.mVariant,
                                NULL,
                                &geo,
                                &geo,
                                id.raw(),
                                VD_OPEN_FLAGS_NORMAL,
                                NULL,
-                               vdOperationIfaces);
+                               task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
             {
                 throw setError(E_FAIL,
@@ -5064,27 +5190,24 @@ HRESULT Medium::taskThreadCreateBase(Task &task, void *pvdOperationIfaces)
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "create diff" task.
+ * Implementation code for the "create diff" task.
  *
  * This task always gets started from Medium::createDiffStorage() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to that
- * function. If we run synchronously, the caller expects the bool *pfNeedsSaveSettings
- * to be set before returning; otherwise (in asynchronous mode), we save the settings
- * ourselves.
+ * synchronously or asynchrously depending on the "wait" parameter passed to
+ * that function. If we run synchronously, the caller expects the bool
+ * *pfNeedsSaveSettings to be set before returning; otherwise (in asynchronous
+ * mode), we save the settings ourselves.
  *
  * @param task
- * @param pvdOperationIfaces
  * @return
  */
-HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool fIsAsync)
+HRESULT Medium::taskThreadCreateDiff(CreateDiffTask &task)
 {
     HRESULT rc = S_OK;
 
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
-
     bool fNeedsSaveSettings = false;
 
-    ComObjPtr<Medium> &pTarget = task.d.target;
+    const ComObjPtr<Medium> &pTarget = task.mTarget;
 
     uint64_t size = 0, logicalSize = 0;
     bool fGenerateUuid = false;
@@ -5145,18 +5268,16 @@ HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool 
             rc = VirtualBox::ensureFilePathExists(targetLocation);
             if (FAILED(rc)) throw rc;
 
-            /** @todo add VD_IMAGE_FLAGS_DIFF to the image flags, to
-                * be on the safe side. */
             vrc = VDCreateDiff(hdd,
                                targetFormat.c_str(),
                                targetLocation.c_str(),
-                               task.d.variant,
+                               task.mVariant | VD_IMAGE_FLAGS_DIFF,
                                NULL,
                                targetId.raw(),
                                id.raw(),
                                VD_OPEN_FLAGS_NORMAL,
                                pTarget->m->vdDiskIfaces,
-                               vdOperationIfaces);
+                               task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
                                 tr("Could not create the differencing hard disk storage unit '%s'%s"),
@@ -5219,7 +5340,7 @@ HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool 
             unconst(pTarget->m->id).clear();
     }
 
-    if (fIsAsync)
+    if (task.isAsync())
     {
         /* unlock ourselves when done (unless in MediumState_LockedWrite
          * state because of taking the online snapshot*/
@@ -5252,23 +5373,20 @@ HRESULT Medium::taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool 
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "merge" task.
+ * Implementation code for the "merge" task.
  *
  * This task always gets started from Medium::mergeTo() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to that
- * function. If we run synchronously, the caller expects the bool *pfNeedsSaveSettings
- * to be set before returning; otherwise (in asynchronous mode), we save the settings
- * ourselves.
+ * synchronously or asynchrously depending on the "wait" parameter passed to
+ * that function. If we run synchronously, the caller expects the bool
+ * *pfNeedsSaveSettings to be set before returning; otherwise (in asynchronous
+ * mode), we save the settings ourselves.
  *
  * @param task
- * @param pvdOperationIfaces
  * @return
  */
-HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAsync)
+HRESULT Medium::taskThreadMerge(MergeTask &task)
 {
     HRESULT rc = S_OK;
-
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
 
     /* The lock is also used as a signal from the task initiator (which
      * releases it only after RTThreadCreate()) that we can start the
@@ -5279,7 +5397,7 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
         AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
     }
 
-    MergeChain *chain = task.d.chain.get();
+    MergeChain *chain = task.mMergeChain.get();
 
     try
     {
@@ -5339,13 +5457,12 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
                     throw vrc;
             }
 
-            vrc = VDMerge(hdd, chain->sourceIdx(), chain->targetIdx(), vdOperationIfaces);
+            vrc = VDMerge(hdd, chain->sourceIdx(), chain->targetIdx(),
+                          task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw vrc;
 
             /* update parent UUIDs */
-            /// @todo VDMerge should handle the
-            /// multiple children case
             if (!chain->isForward())
             {
                 /* we need to update UUIDs of all source's children
@@ -5485,21 +5602,21 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
              * and therefore we cannot uninit() it (it's therefore
              * the caller's responsibility) */
             if (*it == this)
-                task.m_autoCaller.release();
+                task.mMediumCaller.release();
 
             /* release the caller added by MergeChain before uninit() */
             (*it)->releaseCaller();
 
-            if (fIsAsync || *it != this)
+            if (task.isAsync() || *it != this)
                 (*it)->uninit();
 
             /* delete (to prevent uninitialization in MergeChain
-                * dtor) and advance to the next item */
+             * dtor) and advance to the next item */
             it = chain->erase(it);
         }
     }
 
-    if (fIsAsync)
+    if (task.isAsync())
     {
         // in asynchronous mode, save settings now
         AutoWriteLock vboxlock(m->pVirtualBox COMMA_LOCKVAL_SRC_POS);
@@ -5523,30 +5640,28 @@ HRESULT Medium::taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAs
          * in the mergeTo() docs. The latter also implies that we
          * don't own the merge chain, so release it in this case. */
 
-        if (!fIsAsync)
-            task.d.chain.release();
+        if (!task.isAsync())
+            task.mMergeChain.release();
     }
 
     return rc;
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "clone" task.
+ * Implementation code for the "clone" task.
+ *
  * This only gets started from Medium::CloneTo() and always runs asynchronously.
  * As a result, we always save the VirtualBox.xml file when we're done here.
  *
  * @param task
- * @param pvdOperationIfaces
  * @return
  */
-HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
+HRESULT Medium::taskThreadClone(CloneTask &task)
 {
     HRESULT rc = S_OK;
 
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
-
-    ComObjPtr<Medium> &pTarget = task.d.target;
-    ComObjPtr<Medium> &pParent = task.d.parentDisk;
+    const ComObjPtr<Medium> &pTarget = task.mTarget;
+    const ComObjPtr<Medium> &pParent = task.mParent;
 
     bool fCreatingTarget = false;
 
@@ -5562,8 +5677,8 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
 
         fCreatingTarget = pTarget->m->state == MediumState_Creating;
 
-        ImageChain *srcChain = task.d.source.get();
-        ImageChain *parentChain = task.d.parent.get();
+        ImageChain *sourceChain = task.mSourceChain.get();
+        ImageChain *parentChain = task.mParentChain.get();
 
         /* The object may request a specific UUID (through a special form of
          * the setLocation() argument). Otherwise we have to generate it */
@@ -5583,8 +5698,8 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
         try
         {
             /* Open all hard disk images in the source chain. */
-            for (MediaList::const_iterator it = srcChain->begin();
-                 it != srcChain->end();
+            for (MediaList::const_iterator it = sourceChain->begin();
+                 it != sourceChain->end();
                  ++it)
             {
                 /* sanity check */
@@ -5656,11 +5771,11 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
                              (fCreatingTarget) ? targetLocation.raw() : (char *)NULL,
                              false,
                              0,
-                             task.d.variant,
+                             task.mVariant,
                              targetId.raw(),
                              NULL,
                              pTarget->m->vdDiskIfaces,
-                             vdOperationIfaces);
+                             task.mVDOperationIfaces);
                 if (RT_FAILURE(vrc))
                     throw setError(E_FAIL,
                                     tr("Could not create the clone hard disk '%s'%s"),
@@ -5744,21 +5859,22 @@ HRESULT Medium::taskThreadClone(Task &task, void *pvdOperationIfaces)
     /* Make sure the source chain is released early. It could happen
      * that we get a deadlock in Appliance::Import when Medium::Close
      * is called & the source chain is released at the same time. */
-    task.d.source.reset();
+    task.mSourceChain.reset();
 
     return rc;
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "delete" task.
+ * Implementation code for the "delete" task.
  *
  * This task always gets started from Medium::deleteStorage() and can run
- * synchronously or asynchrously depending on the "wait" parameter passed to that
- * function.
+ * synchronously or asynchrously depending on the "wait" parameter passed to
+ * that function.
  *
+ * @param task
  * @return
  */
-HRESULT Medium::taskThreadDelete()
+HRESULT Medium::taskThreadDelete(DeleteTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5816,19 +5932,16 @@ HRESULT Medium::taskThreadDelete()
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "reset" task.
+ * Implementation code for the "reset" task.
  *
  * This always gets started asynchronously from Medium::Reset().
  *
  * @param task
- * @param pvdOperationIfaces
  * @return
  */
-HRESULT Medium::taskThreadReset(void *pvdOperationIfaces, bool fIsAsync)
+HRESULT Medium::taskThreadReset(ResetTask &task)
 {
     HRESULT rc = S_OK;
-
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
 
     uint64_t size = 0, logicalSize = 0;
 
@@ -5897,7 +6010,7 @@ HRESULT Medium::taskThreadReset(void *pvdOperationIfaces, bool fIsAsync)
                                parentId.raw(),
                                VD_OPEN_FLAGS_NORMAL,
                                m->vdDiskIfaces,
-                               vdOperationIfaces);
+                               task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
                                 tr("Could not create the differencing hard disk storage unit '%s'%s"),
@@ -5917,7 +6030,7 @@ HRESULT Medium::taskThreadReset(void *pvdOperationIfaces, bool fIsAsync)
     m->size = size;
     m->logicalSize = logicalSize;
 
-    if (fIsAsync)
+    if (task.isAsync())
     {
         /* unlock ourselves when done */
         HRESULT rc2 = UnlockWrite(NULL);
@@ -5931,22 +6044,21 @@ HRESULT Medium::taskThreadReset(void *pvdOperationIfaces, bool fIsAsync)
 }
 
 /**
- * Implementation code called from Medium::taskThread for the "compact" task.
- * @param pvdOperationIfaces
+ * Implementation code for the "compact" task.
+ *
+ * @param task
  * @return
  */
-HRESULT Medium::taskThreadCompact(Task &task, void *pvdOperationIfaces)
+HRESULT Medium::taskThreadCompact(CompactTask &task)
 {
     HRESULT rc = S_OK;
-
-    PVDINTERFACE vdOperationIfaces = (PVDINTERFACE)pvdOperationIfaces;
 
     /* Lock all in {parent,child} order. The lock is also used as a
      * signal from the task initiator (which releases it only after
      * RTThreadCreate()) that we can start the job. */
     AutoWriteLock thisLock(this COMMA_LOCKVAL_SRC_POS);
 
-    ImageChain *imgChain = task.d.images.get();
+    ImageChain *imgChain = task.mImageChain.get();
 
     try
     {
@@ -5989,7 +6101,7 @@ HRESULT Medium::taskThreadCompact(Task &task, void *pvdOperationIfaces)
             /* unlock before the potentially lengthy operation */
             thisLock.leave();
 
-            vrc = VDCompact(hdd, VD_LAST_IMAGE, vdOperationIfaces);
+            vrc = VDCompact(hdd, VD_LAST_IMAGE, task.mVDOperationIfaces);
             if (RT_FAILURE(vrc))
             {
                 if (vrc == VERR_NOT_SUPPORTED)
@@ -6017,104 +6129,6 @@ HRESULT Medium::taskThreadCompact(Task &task, void *pvdOperationIfaces)
      * as the task destruction also destroys the image chain. */
 
     return rc;
-}
-
-
-/**
- * Thread function for time-consuming tasks.
- *
- * The Task structure passed to @a pvUser must be allocated using new and will
- * be freed by this method before it returns.
- *
- * @param pvUser    Pointer to the Task instance.
- */
-/* static */
-DECLCALLBACK(int) Medium::taskThread(RTTHREAD thread, void *pvUser)
-{
-    std::auto_ptr<Task> task(static_cast<Task*>(pvUser));
-    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
-
-    bool fIsAsync = thread != NIL_RTTHREAD;
-
-    Medium *that = task->that;
-
-    /* Set up a per-operation progress interface, can be used freely (for
-     * binary operations you can use it either on the source or target). */
-    VDINTERFACEPROGRESS vdIfCallsProgress;
-    vdIfCallsProgress.cbSize = sizeof(VDINTERFACEPROGRESS);
-    vdIfCallsProgress.enmInterface = VDINTERFACETYPE_PROGRESS;
-    vdIfCallsProgress.pfnProgress = Medium::vdProgressCall;
-    VDINTERFACE vdIfProgress;
-    PVDINTERFACE vdOperationIfaces = NULL;
-    int vrc1 = VDInterfaceAdd(&vdIfProgress,
-                             "Medium::vdInterfaceProgress",
-                             VDINTERFACETYPE_PROGRESS,
-                             &vdIfCallsProgress,
-                             task->m_pProgress,
-                             &vdOperationIfaces);
-    AssertRCReturn(vrc1, E_FAIL);
-
-    /* Note: no need in AutoCaller because Task does that */
-
-    LogFlowFuncEnter();
-    LogFlowFunc(("{%p}: operation=%d\n", that, task->m_operation));
-
-    HRESULT rc = S_OK;
-
-    switch (task->m_operation)
-    {
-        ////////////////////////////////////////////////////////////////////////
-
-        case Task::CreateBase:
-            rc = that->taskThreadCreateBase(*task, (void*)vdOperationIfaces);
-        break;
-
-        case Task::CreateDiff:
-            rc = that->taskThreadCreateDiff(*task, (void*)vdOperationIfaces, fIsAsync);
-        break;
-
-        case Task::Merge:
-            rc = that->taskThreadMerge(*task, (void*)vdOperationIfaces, fIsAsync);
-        break;
-
-        case Task::Clone:
-            rc = that->taskThreadClone(*task, (void*)vdOperationIfaces);
-        break;
-
-        case Task::Delete:
-            rc = that->taskThreadDelete();
-        break;
-
-        case Task::Reset:
-            rc = that->taskThreadReset((void*)vdOperationIfaces, fIsAsync);
-        break;
-
-        case Task::Compact:
-            rc = that->taskThreadCompact(*task, (void*)vdOperationIfaces);
-        break;
-
-        default:
-            AssertFailedReturn(VERR_GENERAL_FAILURE);
-    }
-
-    /* complete the progress if run asynchronously */
-    if (fIsAsync)
-    {
-        if (!task->m_pProgress.isNull())
-            task->m_pProgress->notifyComplete(rc);
-    }
-    else
-    {
-        task->m_rc = rc;
-    }
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
-
-    /// @todo ugly hack, fix ComAssert... later
-    #undef setError
 }
 
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
