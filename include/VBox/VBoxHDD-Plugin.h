@@ -470,12 +470,11 @@ typedef struct VBOXHDDBACKEND
      * @param   pvBackendData   Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to read from.
      * @param   cbRead          How many bytes to read.
-     * @param   paSeg           Pointer to the segment array.
-     * @param   cSeg            Number of segments.
-     * @param   pvUser          Opaque user data.
+     * @param   pIoCtx          I/O context associated with this request.
+     * @param   pcbActuallyRead Pointer to returned number of bytes read.
      */
     DECLR3CALLBACKMEMBER(int, pfnAsyncRead, (void *pvBackendData, uint64_t uOffset, size_t cbRead,
-                                             PPDMDATASEG paSeg, unsigned cSeg, void *pvUser));
+                                             PVDIOCTX pIoCtx, size_t *pcbActuallyRead));
 
     /**
      * Start an asynchronous write request.
@@ -484,12 +483,33 @@ typedef struct VBOXHDDBACKEND
      * @param   pvBackendData   Opaque state data for this image.
      * @param   uOffset         The offset of the virtual disk to write to.
      * @param   cbWrite         How many bytes to write.
-     * @param   paSeg           Pointer to the segment array.
-     * @param   cSeg            Number of segments.
-     * @param   pvUser          Oaque user data-
+     * @param   pIoCtx          I/O context associated with this request.
+     * @param   pcbWriteProcess Pointer to returned number of bytes that could
+     *                          be processed. In case the function returned
+     *                          VERR_VD_BLOCK_FREE this is the number of bytes
+     *                          that could be written in a full block write,
+     *                          when prefixed/postfixed by the appropriate
+     *                          amount of (previously read) padding data.
+     * @param   pcbPreRead      Pointer to the returned amount of data that must
+     *                          be prefixed to perform a full block write.
+     * @param   pcbPostRead     Pointer to the returned amount of data that must
+     *                          be postfixed to perform a full block write.
+     * @param   fWrite          Flags which affect write behavior. Combination
+     *                          of the VD_WRITE_* flags.
      */
     DECLR3CALLBACKMEMBER(int, pfnAsyncWrite, (void *pvBackendData, uint64_t uOffset, size_t cbWrite,
-                                              PPDMDATASEG paSeg, unsigned cSeg, void *pvUser));
+                                              PVDIOCTX pIoCtx,
+                                              size_t *pcbWriteProcess, size_t *pcbPreRead,
+                                              size_t *pcbPostRead, unsigned fWrite));
+
+    /**
+     * Flush data to disk.
+     *
+     * @returns VBox status code.
+     * @param   pvBackendData   Opaque state data for this image.
+     * @param   pIoCtx          I/O context associated with this request.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnAsyncFlush, (void *pvBackendData, PVDIOCTX pIoCtx));
 
     /** Returns a human readable hard disk location string given a
      *  set of hard disk configuration keys. The returned string is an
