@@ -1284,7 +1284,7 @@ vbi_pages_alloc(uint64_t *phys, size_t size)
 				seg_t kernseg;
 				kernseg.s_as = &kas;
 				caddr_t virtAddr = NULL;
-				for (pgcnt_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
+				for (int64_t i = 0; i < npages; i++, virtAddr += PAGESIZE)
 				{
 					/* get a page from the freelist */
 					page_t *ppage = page_get_freelist(&vbipagevp, 0 /* offset */, &kernseg, virtAddr,
