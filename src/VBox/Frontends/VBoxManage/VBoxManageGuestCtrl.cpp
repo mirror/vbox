@@ -60,8 +60,10 @@ using namespace com;
 
 void usageGuestControl(void)
 {
-    RTPrintf("VBoxManage guestcontrol     exec <vmname>|<uuid>\n"
-             "                            <program> <arguments>\n"
+    RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
+             "                            <path to program> [--args <arguments>] [--env NAME=VALUE]\n"
+             "                            [--flags <flags>] [--user <name> [--password <password>]]\n"
+             "                            [--timeout <milliseconds>]\n"
              "\n");
 }
 
@@ -73,31 +75,23 @@ static int handleExecProgram(HandlerArg *a)
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
      */
-    bool usageOK = true;
-    const char *pszName = NULL;
-    const char *pszValue = NULL;
-    const char *pszFlags = NULL;
-    if (a->argc == 3)
-        pszValue = a->argv[2];
-    else if (a->argc == 4)
-        usageOK = false;
-    else if (a->argc == 5)
-    {
-        pszValue = a->argv[2];
-        if (   strcmp(a->argv[3], "--flags")
-            && strcmp(a->argv[3], "-flags"))
-            usageOK = false;
-        pszFlags = a->argv[4];
-    }
-    else if (a->argc != 2)
-        usageOK = false;
-    if (!usageOK)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
-    /* This is always needed. */
-    pszName = a->argv[1];
+    /** @todo */
+    if (a->argc < 2)
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+    const char *pszCmd = a->argv[1];
+    uint32_t uFlags = 0;
+    const char *pszArgs;
+    com::SafeArray <BSTR> env;
+    const char *pszStdIn = NULL;
+    const char *pszStdOut = NULL;
+    const char *pszStdErr = NULL;
+    const char *pszUserName = NULL;
+    const char *pszPassword = NULL;
+    uint32_t uTimeoutMS = 0;
 
+    /* lookup VM. */
     ComPtr<IMachine> machine;
-    /* assume it's a UUID */
+    /* assume it's an UUID */
     rc = a->virtualBox->GetMachine(Bstr(a->argv[0]), machine.asOutParam());
     if (FAILED(rc) || !machine)
     {
@@ -106,19 +100,32 @@ static int handleExecProgram(HandlerArg *a)
     }
     if (machine)
     {
-        Bstr uuid;
-        machine->COMGETTER(Id)(uuid.asOutParam());
+        do
+        {
+            Bstr uuid;
+            machine->COMGETTER(Id)(uuid.asOutParam());
+    
+            /* open an existing session for VM - so the VM has to be running */
+            CHECK_ERROR_BREAK(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+    
+            /* get the mutable session machine */
+            a->session->COMGETTER(Machine)(machine.asOutParam());
+    
+            /* get the associated console */
+            ComPtr<IConsole> console;
+            CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
+    
+            ComPtr<IGuest> guest;
+            CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
 
-        /* open a session for the VM - new or existing */
-        if (FAILED (a->virtualBox->OpenSession(a->session, uuid)))
-            CHECK_ERROR_RET (a->virtualBox, OpenExistingSession(a->session, uuid), 1);
-
-        /* get the mutable session machine */
-        a->session->COMGETTER(Machine)(machine.asOutParam());
-
-        /** @todo */
-
-        a->session->Close();
+            ULONG uPID = 0;
+            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(pszCmd), uFlags, 
+                                                    Bstr(pszArgs), ComSafeArrayAsInParam(env), 
+                                                    Bstr(pszStdIn), Bstr(pszStdOut), Bstr(pszStdErr),
+                                                    Bstr(pszUserName), Bstr(pszPassword), uTimeoutMS,
+                                                    &uPID));
+            a->session->Close();
+        } while (0);
     }
     return SUCCEEDED(rc) ? 0 : 1;
 }
@@ -136,12 +143,12 @@ int handleGuestControl(HandlerArg *a)
     arg.argv = a->argv + 1;
 
     if (a->argc == 0)
-        return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 
     /* switch (cmd) */
     if (strcmp(a->argv[0], "exec") == 0)
         return handleExecProgram(&arg);
 
     /* default: */
-    return errorSyntax(USAGE_GUESTPROPERTY, "Incorrect parameters");
+    return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
 }
