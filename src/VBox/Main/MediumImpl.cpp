@@ -2430,13 +2430,16 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     if (aParent)
         parent = static_cast<Medium*>(aParent);
 
-    AutoMultiWriteLock3 alock(this, target, parent COMMA_LOCKVAL_SRC_POS);
-
     ComObjPtr<Progress> progress;
     HRESULT rc = S_OK;
 
     try
     {
+        // locking: we need the tree lock first because we access parent pointers
+        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
+        // and we need to write-lock the images involved
+        AutoMultiWriteLock3 alock(this, target, parent COMMA_LOCKVAL_SRC_POS);
+
         if (    target->m->state != MediumState_NotCreated
             &&  target->m->state != MediumState_Created)
             throw target->setStateError();
@@ -2448,8 +2451,6 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         /* Build the source chain and lock images in the proper order. */
         std::auto_ptr <ImageChain> srcChain(new ImageChain());
 
-        /* we walk the source tree */
-        AutoReadLock treeLock(m->pVirtualBox->getMediaTreeLockHandle() COMMA_LOCKVAL_SRC_POS);
         for (Medium *hd = this;
              hd;
              hd = hd->m->pParent)
@@ -2520,10 +2521,8 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     }
 
     if (SUCCEEDED(rc))
-    {
         /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
-    }
 
     return rc;
 }
