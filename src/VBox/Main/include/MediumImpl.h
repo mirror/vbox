@@ -293,8 +293,6 @@ private:
     static DECLCALLBACK(void) vdErrorCall(void *pvUser, int rc, RT_SRC_POS_DECL,
                                           const char *pszFormat, va_list va);
 
-    static DECLCALLBACK(int) vdProgressCall(void *pvUser, unsigned uPercent);
-
     static DECLCALLBACK(bool) vdConfigAreKeysValid(void *pvUser,
                                                    const char *pszzValid);
     static DECLCALLBACK(int) vdConfigQuerySize(void *pvUser, const char *pszName,
@@ -302,18 +300,33 @@ private:
     static DECLCALLBACK(int) vdConfigQuery(void *pvUser, const char *pszName,
                                            char *pszValue, size_t cchValue);
 
-    struct Task;
-    friend struct Task;
+    class Task;
+    class CreateBaseTask;
+    class CreateDiffTask;
+    class CloneTask;
+    class CompactTask;
+    class ResetTask;
+    class DeleteTask;
+    class MergeTask;
+    friend class Task;
+    friend class CreateBaseTask;
+    friend class CreateDiffTask;
+    friend class CloneTask;
+    friend class CompactTask;
+    friend class ResetTask;
+    friend class DeleteTask;
+    friend class MergeTask;
 
-    HRESULT taskThreadCreateBase(Task &task, void *pvdOperationIfaces);
-    HRESULT taskThreadCreateDiff(Task &task, void *pvdOperationIfaces, bool fIsAsync);
-    HRESULT taskThreadMerge(Task &task, void *pvdOperationIfaces, bool fIsAsync);
-    HRESULT taskThreadClone(Task &task, void *pvdOperationIfaces);
-    HRESULT taskThreadDelete();
-    HRESULT taskThreadReset(void *pvdOperationIfaces, bool fIsAsync);
-    HRESULT taskThreadCompact(Task &task, void *pvdOperationIfaces);
+    HRESULT startThread(std::auto_ptr<Task> task);
+    HRESULT runNow(std::auto_ptr<Task> task, bool *pfNeedsSaveSettings);
 
-    static DECLCALLBACK(int) taskThread(RTTHREAD thread, void *pvUser);
+    HRESULT taskThreadCreateBase(CreateBaseTask &task);
+    HRESULT taskThreadCreateDiff(CreateDiffTask &task);
+    HRESULT taskThreadMerge(MergeTask &task);
+    HRESULT taskThreadClone(CloneTask &task);
+    HRESULT taskThreadDelete(DeleteTask &task);
+    HRESULT taskThreadReset(ResetTask &task);
+    HRESULT taskThreadCompact(CompactTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;
