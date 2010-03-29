@@ -489,7 +489,7 @@ void UIMachineView::prepareFrameBuffer()
 # ifdef VBOX_WITH_VIDEOHWACCEL
             if (m_fAccelerate2DVideo)
             {
-                class UIFrameBuffer* pFramebuffer = uisession()->persistedBrameBuffer(screenId());
+                UIFrameBuffer* pFramebuffer = uisession()->frameBuffer(screenId());
                 if (pFramebuffer)
                     pFramebuffer->setView(this);
                 else
@@ -497,7 +497,7 @@ void UIMachineView::prepareFrameBuffer()
                     /* these two additional template args is a workaround to this [VBox|UI] duplication
                      * @todo: they are to be removed once VBox stuff is gone */
                     pFramebuffer = new VBoxOverlayFrameBuffer<UIFrameBufferQImage, UIMachineView, UIResizeEvent>(this, &machineWindowWrapper()->session());
-                    uisession()->setPersistedBrameBuffer(screenId(), pFramebuffer);
+                    uisession()->setFrameBuffer(screenId(), pFramebuffer);
                 }
                 m_pFrameBuffer = pFramebuffer;
             }
@@ -743,7 +743,7 @@ void UIMachineView::cleanupFrameBuffer()
             /* When 2D is enabled we do not re-create Framebuffers. This is done to
              * 1. avoid 2D command loss during the time slot when no framebuffer is assigned to the display
              * 2. make it easier to preserve the current 2D state */
-            Assert (m_pFrameBuffer == uisession()->persistedBrameBuffer(screenId()));
+            Assert(m_pFrameBuffer == uisession()->frameBuffer(screenId()));
             m_pFrameBuffer->setView(NULL);
         }
         else

@@ -38,6 +38,7 @@ class QMenuBar;
 /* Local forwards */
 class UIActionsPool;
 class UIConsoleCallback;
+class UIFrameBuffer;
 class UIMachine;
 class UIMachineMenuBar;
 
@@ -142,10 +143,10 @@ public:
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* return a persisted framebuffer for the given screen
      * see comment below for the m_FrameBufferVector field */
-    class UIFrameBuffer* persistedBrameBuffer(ulong screenId);
+    UIFrameBuffer* frameBuffer(ulong screenId) const;
     /* @return VINF_SUCCESS - on success
      * VERR_INVALID_PARAMETER - if screenId is invalid */
-    int setPersistedBrameBuffer(ulong screenId, class UIFrameBuffer* pFrameBuffer);
+    int setFrameBuffer(ulong screenId, UIFrameBuffer* pFrameBuffer);
 #endif
 
 signals:
@@ -213,9 +214,10 @@ private:
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
     /* When 2D is enabled we do not re-create Framebuffers. This is done
-     * 1. to avoid 2D command loss during the time slot when no framebuffer is assigned to the display
+     * 1. to avoid 2D command loss during the time slot when no framebuffer is
+     *    assigned to the display
      * 2. to make it easier to preserve the current 2D state */
-    QVector<class UIFrameBuffer*> m_FrameBufferVector;
+    QVector<UIFrameBuffer*> m_FrameBufferVector;
 #endif
 
     /* Common variables: */
