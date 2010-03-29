@@ -3478,19 +3478,11 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 {
     PVM pVM = pVCpu->CTX_SUFF(pVM);
 
-    if (VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3))
-        fGlobal = true; /* Change this CR3 reload to be a global one. */
-
-    LogFlow(("SyncCR3 %d\n", fGlobal));
+    LogFlow(("SyncCR3 fGlobal=%d\n", !!VMCPU_FF_ISSET(pVCpu, VMCPU_FF_PGM_SYNC_CR3)));
 
 #if PGM_SHW_TYPE != PGM_TYPE_NESTED && PGM_SHW_TYPE != PGM_TYPE_EPT
 
     pgmLock(pVM);
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    if (pPool->cDirtyPages)
-        pgmPoolResetDirtyPages(pVM);
-# endif
 
     /*
      * Update page access handlers.
@@ -3511,8 +3503,6 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
     /*
      * Nested / EPT - almost no work.
      */
-    /** @todo check if this is really necessary; the call does it as well... */
-    HWACCMFlushTLB(pVCpu);
     Assert(!pgmMapAreMappingsEnabled(&pVM->pgm.s));
     return VINF_SUCCESS;
 
