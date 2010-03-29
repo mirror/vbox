@@ -135,16 +135,11 @@ RTR3DECL(int) RTTcpServerListen(PRTTCPSERVER pServer, PFNRTTCPSERVE pfnServe, vo
  * @retval  VERR_INTERRUPTED if the listening was interrupted.
  *
  * @param   pServer         The server handle as returned from RTTcpServerCreateEx().
- * @param   pSockClient     Where to return the socket handle to the client
- *                          connection (on success only).  Use
- *                          RTTcpServerDisconnectClient() to clean it, this must
- *                          be done before the next call to RTTcpServerListen2.
- *
- * @todo    This can easily be extended to support multiple connections by
- *          adding a new state and a RTTcpServerDisconnectClient variant for
- *          closing client sockets.
+ * @param   phClientSocket  Where to return the socket handle to the client
+ *                          connection (on success only).  This must be closed
+ *                          by calling RTTcpServerDisconnectClient2().
  */
-RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient);
+RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET phClientSocket);
 
 /**
  * Terminate the open connection to the server.
@@ -153,6 +148,16 @@ RTR3DECL(int) RTTcpServerListen2(PRTTCPSERVER pServer, PRTSOCKET pSockClient);
  * @param   pServer         Handle to the server.
  */
 RTR3DECL(int) RTTcpServerDisconnectClient(PRTTCPSERVER pServer);
+
+/**
+ * Terminates an open client connect when using RTTcpListen2
+ *
+ * @returns IPRT status code.
+ * @param   hClientSocket   The client socket handle.  This will be invalid upon
+ *                          return, whether successful or not.  NIL is quietly
+ *                          ignored (VINF_SUCCESS).
+ */
+RTR3DECL(int) RTTcpServerDisconnectClient2(RTSOCKET hClientSocket);
 
 /**
  * Shuts down the server, leaving client connections open.

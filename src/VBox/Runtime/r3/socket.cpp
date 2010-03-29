@@ -33,7 +33,6 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #ifdef RT_OS_WINDOWS
-//# include <winsock.h>
 # include <winsock2.h>
 #else /* !RT_OS_WINDOWS */
 # include <errno.h>
@@ -58,7 +57,7 @@
 #include <iprt/asm.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
-#include <iprt/mem.h>
+#include <iprt/mempool.h>
 #include <iprt/poll.h>
 #include <iprt/string.h>
 #include <iprt/thread.h>
@@ -118,13 +117,17 @@
  */
 typedef struct RTSOCKETINT
 {
-    /** Magic number (RTTCPSOCKET_MAGIC). */
+    /** Magic number (RTSOCKET_MAGIC). */
     uint32_t            u32Magic;
-    /** Usage count.  This is used to prevent two threads from accessing the
-     *  handle concurrently. */
+    /** Exclusive user count.
+     * This is used to prevent two threads from accessing the handle concurrently.
+     * It can be higher than 1 if this handle is reference multiple times in a
+     * polling set (Windows). */
     uint32_t volatile   cUsers;
     /** The native socket handle. */
     RTSOCKETNATIVE      hNative;
+    /** Indicates whether the handle has been closed or not. */
+    bool volatile       fClosed;
 #ifdef RT_OS_WINDOWS
     /** The event semaphore we've associated with the socket handle.
      * This is WSA_INVALID_EVENT if not done. */
@@ -244,12 +247,13 @@ DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
  */
 int rtSocketCreateForNative(RTSOCKETINT **ppSocket, RTSOCKETNATIVE hNative)
 {
-    RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemAlloc(sizeof(*pThis));
+    RTSOCKETINT *pThis = (RTSOCKETINT *)RTMemPoolAlloc(RTMEMPOOL_DEFAULT, sizeof(*pThis));
     if (!pThis)
         return VERR_NO_MEMORY;
     pThis->u32Magic         = RTSOCKET_MAGIC;
     pThis->cUsers           = 0;
     pThis->hNative          = hNative;
+    pThis->fClosed          = false;
 #ifdef RT_OS_WINDOWS
     pThis->hEvent           = WSA_INVALID_EVENT;
     pThis->hPollSet         = NIL_RTPOLLSET;
@@ -296,7 +300,95 @@ int rtSocketCreate(PRTSOCKET phSocket, int iDomain, int iType, int iProtocol)
 }
 
 
-RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
+RTDECL(uint32_t) RTSocketRetain(RTSOCKET hSocket)
+{
+    RTSOCKETINT *pThis = hSocket;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, UINT32_MAX);
+    return RTMemPoolRetain(pThis);
+}
+
+
+/**
+ * Worker for RTSocketRelease and RTSocketClose.
+ *
+ * @returns IPRT status code.
+ * @param   pThis               The socket handle instance data.
+ * @param   fDestroy            Whether we're reaching ref count zero.
+ */
+static int rtSocketCloseIt(RTSOCKETINT *pThis, bool fDestroy)
+{
+    /*
+     * Invalidate the handle structure on destroy.
+     */
+    if (fDestroy)
+    {
+        Assert(ASMAtomicReadU32(&pThis->u32Magic) == RTSOCKET_MAGIC);
+        ASMAtomicWriteU32(&pThis->u32Magic, RTSOCKET_MAGIC_DEAD);
+    }
+
+    int rc = VINF_SUCCESS;
+    if (ASMAtomicCmpXchgBool(&pThis->fClosed, true, false))
+    {
+        /*
+         * Close the native handle.
+         */
+        RTSOCKETNATIVE hNative = pThis->hNative;
+        if (hNative != NIL_RTSOCKETNATIVE)
+        {
+            pThis->hNative = NIL_RTSOCKETNATIVE;
+
+#ifdef RT_OS_WINDOWS
+            if (closesocket(hNative))
+#else
+            if (close(hNative))
+#endif
+            {
+                rc = rtSocketError();
+#ifdef RT_OS_WINDOWS
+                AssertMsgFailed(("\"%s\": closesocket(%p) -> %Rrc\n", (uintptr_t)hNative, rc));
+#else
+                AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", hNative, rc));
+#endif
+            }
+        }
+
+#ifdef RT_OS_WINDOWS
+        /*
+         * Close the event.
+         */
+        WSAEVENT hEvent = pThis->hEvent;
+        if (hEvent == WSA_INVALID_EVENT)
+        {
+            pThis->hEvent = WSA_INVALID_EVENT;
+            WSACloseEvent(hEvent);
+        }
+#endif
+    }
+
+    return rc;
+}
+
+
+RTDECL(uint32_t) RTSocketRelease(RTSOCKET hSocket)
+{
+    RTSOCKETINT *pThis = hSocket;
+    if (pThis == NIL_RTSOCKET)
+        return 0;
+    AssertPtrReturn(pThis, UINT32_MAX);
+    AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, UINT32_MAX);
+
+    /* get the refcount without killing it... */
+    uint32_t cRefs = RTMemPoolRefCount(pThis);
+    AssertReturn(cRefs != UINT32_MAX, UINT32_MAX);
+    if (cRefs == 1)
+        rtSocketCloseIt(pThis, true);
+
+    return RTMemPoolRelease(RTMEMPOOL_DEFAULT, pThis);
+}
+
+
+RTDECL(int) RTSocketClose(RTSOCKET hSocket)
 {
     RTSOCKETINT *pThis = hSocket;
     if (pThis == NIL_RTSOCKET)
@@ -304,39 +396,12 @@ RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
 
-    Assert(pThis->cUsers == 0);
-    AssertReturn(ASMAtomicCmpXchgU32(&pThis->u32Magic, RTSOCKET_MAGIC_DEAD, RTSOCKET_MAGIC), VERR_INVALID_HANDLE);
+    uint32_t cRefs = RTMemPoolRefCount(pThis);
+    AssertReturn(cRefs != UINT32_MAX, UINT32_MAX);
 
-    /*
-     * Do the cleanup.
-     */
-    int rc = VINF_SUCCESS;
-#ifdef RT_OS_WINDOWS
-    if (pThis->hEvent == WSA_INVALID_EVENT)
-    {
-        WSACloseEvent(pThis->hEvent);
-        pThis->hEvent = WSA_INVALID_EVENT;
-    }
-#endif
+    int rc = rtSocketCloseIt(pThis, cRefs == 1);
 
-    if (pThis->hNative != NIL_RTSOCKETNATIVE)
-    {
-#ifdef RT_OS_WINDOWS
-        if (closesocket(pThis->hNative))
-#else
-        if (close(pThis->hNative))
-#endif
-        {
-            rc = rtSocketError();
-#ifdef RT_OS_WINDOWS
-            AssertMsgFailed(("\"%s\": closesocket(%p) -> %Rrc\n", (uintptr_t)pThis->hNative, rc));
-#else
-            AssertMsgFailed(("\"%s\": close(%d) -> %Rrc\n", pThis->hNative, rc));
-#endif
-        }
-        pThis->hNative = NIL_RTSOCKETNATIVE;
-    }
-
+    RTMemPoolRelease(RTMEMPOOL_DEFAULT, pThis);
     return rc;
 }
 
@@ -355,7 +420,7 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
 
     int rc = VINF_SUCCESS;
 #ifdef RT_OS_WINDOWS
@@ -365,9 +430,7 @@ RTDECL(int) RTSocketSetInheritance(RTSOCKET hSocket, bool fInheritable)
     if (fcntl(pThis->hNative, F_SETFD, fInheritable ? 0 : FD_CLOEXEC) < 0)
         rc = RTErrConvertFromErrno(errno);
 #endif
-    AssertRC(rc); /// @todo remove later.
 
-    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -511,7 +574,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
 
     /*
      * Set up the file descriptor sets and do the select.
@@ -539,7 +602,6 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     else
         rc = rtSocketError();
 
-    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -553,6 +615,7 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
+    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
 
     /*
@@ -622,7 +685,7 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
 
     /*
      * Get the address and convert it.
@@ -640,7 +703,6 @@ RTDECL(int) RTSocketGetLocalAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     else
         rc = rtSocketError();
 
-    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -653,7 +715,7 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
+    AssertReturn(RTMemPoolRefCount(pThis) >= 1 + !!pThis->cUsers, VERR_CALLER_NO_REFERENCE);
 
     /*
      * Get the address and convert it.
@@ -671,7 +733,6 @@ RTDECL(int) RTSocketGetPeerAddress(RTSOCKET hSocket, PRTNETADDR pAddr)
     else
         rc = rtSocketError();
 
-    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -753,11 +814,7 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-
     AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
-
-    rtSocketUnlock(pThis);
-
 
     /*
      * Call accept().
@@ -769,26 +826,28 @@ int rtSocketAccept(RTSOCKET hSocket, PRTSOCKET phClient, struct sockaddr *pAddr,
 #else
     socklen_t   cbAddr  = *pcbAddr;
 #endif
-    RTSOCKETNATIVE hNative = accept(pThis->hNative, pAddr, &cbAddr);
-    if (hNative != NIL_RTSOCKETNATIVE)
+    RTSOCKETNATIVE hNativeClient = accept(pThis->hNative, pAddr, &cbAddr);
+    if (hNativeClient != NIL_RTSOCKETNATIVE)
     {
         *pcbAddr = cbAddr;
 
         /*
          * Wrap the client socket.
          */
-        rc = rtSocketCreateForNative(phClient, hNative);
+        rc = rtSocketCreateForNative(phClient, hNativeClient);
         if (RT_FAILURE(rc))
         {
 #ifdef RT_OS_WINDOWS
-            closesocket(hNative);
+            closesocket(hNativeClient);
 #else
-            close(hNative);
+            close(hNativeClient);
 #endif
         }
     }
     else
         rc = rtSocketError();
+
+    rtSocketUnlock(pThis);
     return rc;
 }
 

@@ -48,8 +48,33 @@ RT_C_DECLS_BEGIN
  */
 
 /**
- * Destroys the specified handle, freeing associated resources and closing the
- * socket.
+ * Retains a reference to the socket handle.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hSocket         The socket handle.
+ */
+RTDECL(uint32_t) RTSocketRetain(RTSOCKET hSocket);
+
+/**
+ * Release a reference to the socket handle.
+ *
+ * When the reference count reaches zero, the socket handle is shut down and
+ * destroyed.  This will not be graceful shutdown, use the protocol specific
+ * close method if this is desired.
+ *
+ * @returns New reference count, UINT32_MAX on invalid handle (asserted).
+ *
+ * @param   hSocket         The socket handle.  The NIL handle is quietly
+ *                          ignored and 0 is returned.
+ */
+RTDECL(uint32_t) RTSocketRelease(RTSOCKET hSocket);
+
+/**
+ * Shuts down the socket, close it and then release one handle reference.
+ *
+ * This is slightly different from RTSocketRelease which will first do the
+ * shutting down and closing when the reference count reaches zero.
  *
  * @returns IPRT status code.
  * @param   hSocket         The socket handle.  NIL is ignored.
@@ -58,7 +83,7 @@ RT_C_DECLS_BEGIN
  *          just destroy it.  Use the protocol specific close method if this is
  *          desired.
  */
-RTDECL(int) RTSocketDestroy(RTSOCKET hSocket);
+RTDECL(int) RTSocketClose(RTSOCKET hSocket);
 
 /**
  * Gets the native socket handle.
