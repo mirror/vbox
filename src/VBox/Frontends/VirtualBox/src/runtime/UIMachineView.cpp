@@ -1793,9 +1793,9 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
 
             QPoint cpnt = viewportToContents(aPos);
             if (cpnt.x() < 0) cpnt.setX(0);
-            else if (cpnt.x() > cw) cpnt.setX(cw);
+            else if (cpnt.x() > cw - 1) cpnt.setX(cw - 1);
             if (cpnt.y() < 0) cpnt.setY(0);
-            else if (cpnt.y() > ch) cpnt.setY(ch);
+            else if (cpnt.y() > ch - 1) cpnt.setY(ch - 1);
 
             // TODO: Where to put that actually?
             /* Get & Setup absolute-event shift: */
@@ -1807,7 +1807,7 @@ bool UIMachineView::mouseEvent(int aType, const QPoint &aPos, const QPoint &aGlo
 
             CMouse mouse = session().GetConsole().GetMouse();
             // AssertMsgFailed(("x=%d, y=%d", cpnt.x(), cpnt.y())); // this shows what absolute coordinates are correct!
-            mouse.PutMouseEventAbsolute(cpnt.x(), cpnt.y(), wheelVertical, wheelHorizontal, state);
+            mouse.PutMouseEventAbsolute(cpnt.x() + 1, cpnt.y() + 1, wheelVertical, wheelHorizontal, state);
             return true;
         }
         else
