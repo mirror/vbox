@@ -7532,7 +7532,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         }
 
         data.cCPUs       = mHWData->mCPUCount;
-        data.fCpuHotPlug = mHWData->mCPUHotPlugEnabled;
+        data.fCpuHotPlug = !!mHWData->mCPUHotPlugEnabled;
 
         data.llCpus.clear();
         if (data.fCpuHotPlug)
@@ -7559,7 +7559,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         data.keyboardHidType = mHWData->mKeyboardHidType;
 
         // HPET
-        data.fHpetEnabled = mHWData->mHpetEnabled;
+        data.fHpetEnabled = !!mHWData->mHpetEnabled;
 
         // boot order
         data.mapBootOrder.clear();
@@ -7659,7 +7659,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
         // IO settings
         data.ioSettings.ioMgrType = mHWData->mIoMgrType;
         data.ioSettings.ioBackendType = mHWData->mIoBackendType;
-        data.ioSettings.fIoCacheEnabled = mHWData->mIoCacheEnabled;
+        data.ioSettings.fIoCacheEnabled = !!mHWData->mIoCacheEnabled;
         data.ioSettings.ulIoCacheSize = mHWData->mIoCacheSize;
         data.ioSettings.ulIoBandwidthMax = mHWData->mIoBandwidthMax;
 

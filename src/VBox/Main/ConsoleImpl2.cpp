@@ -219,7 +219,6 @@ static int findEfiRom(IVirtualBox* vbox, FirmwareType_T aFirmwareType, Utf8Str& 
 
 static int getSmcDeviceKey(IMachine* pMachine, BSTR * aKey)
 {
-
 # if defined(RT_OS_DARWIN) && !defined(VBOX_OSE)
     int rc;
     char aKeyBuf[65];
@@ -1033,7 +1032,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
     PCFGMNODE aCtrlNodes[StorageControllerType_LsiLogicSas + 1] = {};
     hrc = pMachine->COMGETTER(StorageControllers)(ComSafeArrayAsOutParam(ctrls));               H();
 
-    for (size_t i = 0; i < ctrls.size(); ++ i)
+    for (size_t i = 0; i < ctrls.size(); ++i)
     {
         DeviceType_T *paLedDevType = NULL;
 
@@ -2267,18 +2266,17 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
     // build a combined list from global keys...
     std::list<Utf8Str> llExtraDataKeys;
-    size_t i;
 
-    for (i = 0; i < aGlobalExtraDataKeys.size(); ++i)
+    for (size_t i = 0; i < aGlobalExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aGlobalExtraDataKeys[i]));
     // ... and machine keys
-    for (i = 0; i < aMachineExtraDataKeys.size(); ++i)
+    for (size_t i = 0; i < aMachineExtraDataKeys.size(); ++i)
         llExtraDataKeys.push_back(Utf8Str(aMachineExtraDataKeys[i]));
 
-    i = 0;
+    size_t i2 = 0;
     for (std::list<Utf8Str>::const_iterator it = llExtraDataKeys.begin();
          it != llExtraDataKeys.end();
-         ++it, ++i)
+         ++it, ++i2)
     {
         const Utf8Str &strKey = *it;
 
@@ -2292,7 +2290,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         // get the value
         Bstr strExtraDataValue;
-        if (i < cGlobalValues)
+        if (i2 < cGlobalValues)
             // this is still one of the global values:
             hrc = virtualBox->GetExtraData(Bstr(strKey), strExtraDataValue.asOutParam());
         else

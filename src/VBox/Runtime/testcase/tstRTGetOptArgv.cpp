@@ -146,8 +146,6 @@ static void tst1(void)
 
 int main()
 {
-    char szPath[RTPATH_MAX];
-
     /*
      * Init RT+Test.
      */

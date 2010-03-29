@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -57,7 +57,7 @@
 #define VERR_CFG_INVALID_FORMAT             (-1005)
 /** No configuration value exists. */
 #define VERR_CFG_NO_VALUE                   (-1006)
-/** Not selector not present. */
+/** Selector not present. */
 #define VERR_SELECTOR_NOT_PRESENT           (-1007)
 /** Not code selector. */
 #define VERR_NOT_CODE_SELECTOR              (-1008)

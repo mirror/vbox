@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -223,7 +223,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (m->bd->fEnabled != aEnabled)
+    if (m->bd->fEnabled != !!aEnabled)
     {
         if (aEnabled &&
             m->bd->strPath.isEmpty())
@@ -232,7 +232,7 @@ STDMETHODIMP ParallelPort::COMSETTER(Enabled) (BOOL aEnabled)
                             m->bd->ulSlot);
 
         m->bd.backup();
-        m->bd->fEnabled = aEnabled;
+        m->bd->fEnabled = !!aEnabled;
 
         m->fModified = true;
         // leave the lock before informing callbacks

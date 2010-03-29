@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -223,7 +223,6 @@ static int tstVDOpenCreateWriteMerge(PVDSNAPTEST pTest)
 {
     int rc;
     PVBOXHDD pVD = NULL;
-    char *pszFormat;
     PDMMEDIAGEOMETRY PCHS = { 0, 0, 0 };
     PDMMEDIAGEOMETRY LCHS = { 0, 0, 0 };
     PVDINTERFACE     pVDIfs = NULL;

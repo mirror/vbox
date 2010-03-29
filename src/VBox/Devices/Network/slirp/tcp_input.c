@@ -430,7 +430,9 @@ findso:
         || so->so_laddr.s_addr != ti->ti_src.s_addr
         || so->so_faddr.s_addr != ti->ti_dst.s_addr)
     {
+#ifdef VBOX_WITH_SLIRP_MT
         struct socket *sonxt;
+#endif
         QSOCKET_UNLOCK(tcb);
         /* @todo fix SOLOOKUP macrodefinition to be usable here */
 #ifndef VBOX_WITH_SLIRP_MT
