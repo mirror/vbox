@@ -40,7 +40,7 @@
 
 RTDECL(RTCPUID) RTMpCpuId(void)
 {
-#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64)
+#if defined(RT_ARCH_X86) || defined(RT_ARCH_AMD64) || defined(RT_ARCH_SPARC) || defined(RT_ARCH_SPARC64)
     return ASMGetApicId();
 #else
 # error "Not ported to this architecture."
