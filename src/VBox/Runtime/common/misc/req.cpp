@@ -820,7 +820,7 @@ static int  rtReqProcessOne(PRTREQ pReq)
                 DECLCALLBACKMEMBER(int, pfn12)(uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t, uintptr_t);
             } u;
             u.pfn = pReq->u.Internal.pfn;
-#ifdef RT_ARCH_AMD64
+#ifndef RT_ARCH_X86
             switch (pReq->u.Internal.cArgs)
             {
                 case 0:  rcRet = u.pfn00(); break;
@@ -841,7 +841,7 @@ static int  rtReqProcessOne(PRTREQ pReq)
                     rcRet = rcReq = VERR_INTERNAL_ERROR;
                     break;
             }
-#else /* x86: */
+#else /* RT_ARCH_X86 */
             size_t cbArgs = pReq->u.Internal.cArgs * sizeof(uintptr_t);
 # ifdef __GNUC__
             __asm__ __volatile__("movl  %%esp, %%edx\n\t"
@@ -878,7 +878,7 @@ static int  rtReqProcessOne(PRTREQ pReq)
                 mov     rcRet, eax
             }
 # endif
-#endif /* x86 */
+#endif /* RT_ARCH_X86 */
             if ((pReq->fFlags & (RTREQFLAGS_RETURN_MASK)) == RTREQFLAGS_VOID)
                 rcRet = VINF_SUCCESS;
             rcReq = rcRet;

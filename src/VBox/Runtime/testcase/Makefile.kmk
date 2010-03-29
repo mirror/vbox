@@ -71,9 +71,6 @@ PROGRAMS += \
 	tstRTHeapSimple \
 	tstInlineAsm \
 	tstLdr \
-	tstLdr-2 \
-	tstLdr-3 \
-	tstLdr-4 \
 	tstLdrLoad \
 	tstRTList \
 	tstRTLockValidator \
@@ -85,7 +82,6 @@ PROGRAMS += \
 	tstRTR0MemUserKernelDriver \
 	tstMove \
 	tstMp-1 \
-	tstNoCrt-1 \
 	tstOnce \
 	tstRTPath \
 	tstRTPipe \
@@ -95,7 +91,6 @@ PROGRAMS += \
 	tstRand \
 	tstRTFsQueries \
 	tstR0ThreadPreemptionDriver \
-	tstRTS3 \
 	tstSemEvent \
 	tstSemMutex \
 	tstSemPingPong \
@@ -140,16 +135,27 @@ PROGRAMS.l4 += \
 	tstIoCtl
 PROGRAMS.darwin += \
 	tstDarwinSched
-SYSMODS += \
-	tstLdrObjR0 \
-	tstRTR0MemUserKernel \
-	tstR0ThreadPreemption
-ifdef VBOX_WITH_RAW_MODE
- SYSMODS += tstLdrObj
+ifdef VBOX_WITH_LIBCURL
+ PROGRAMS += \
+	tstRTS3
+endif
+ifn1of ($(KBUILD_TARGET_ARCH), sparc32 sparc64)
+ PROGRAMS += \
+ 	tstLdr-2 \
+ 	tstLdr-3 \
+ 	tstLdr-4 \
+ 	tstNoCrt-1
+ SYSMODS += \
+ 	tstLdrObjR0 \
+ 	tstRTR0MemUserKernel \
+ 	tstR0ThreadPreemption
+ ifdef VBOX_WITH_RAW_MODE
+  SYSMODS += tstLdrObj
+ endif
 endif
 if1of ($(VBOX_LDR_FMT)), lx pe)
-LIBRARIES += \
-	tstLdr-4Imp
+ LIBRARIES += \
+ 	tstLdr-4Imp
 endif
 
 

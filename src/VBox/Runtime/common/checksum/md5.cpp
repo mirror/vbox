@@ -56,6 +56,9 @@
 #include "internal/iprt.h"
 
 #include <iprt/string.h>		 /* for memcpy() */
+#if defined(RT_BIG_ENDIAN)
+# include <iprt/asm.h>                   /* RT_LE2H_U32 uses ASMByteSwapU32. */
+#endif
 
 
 /*******************************************************************************
@@ -195,7 +198,7 @@ static void rtMd5ByteReverse(uint32_t *buf, unsigned int longs)
 {
     uint32_t t;
     do {
-	t = *buf
+	t = *buf;
         t = RT_LE2H_U32(t);
 	*buf = t;
 	buf++;

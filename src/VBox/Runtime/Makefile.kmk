@@ -367,7 +367,6 @@ RuntimeR3_SOURCES       = \
 	generic/RTLogWriteStdErr-generic.cpp \
 	generic/RTLogWriteStdOut-generic.cpp \
 	generic/RTLogWriteUser-generic.cpp \
-	generic/RTMpGetDescription-generic.cpp \
 	generic/RTTimerLRCreate-generic.cpp \
 	generic/mempool-generic.cpp \
 	generic/semfastmutex-generic.cpp \
@@ -395,6 +394,15 @@ RuntimeR3_SOURCES       = \
 #else
  RuntimeR3_SOURCES += common/time/timesupref.cpp
 #endif
+
+RuntimeR3_SOURCES.x86 += \
+	generic/RTMpGetDescription-generic-stub.cpp
+RuntimeR3_SOURCES.amd64 += \
+	generic/RTMpGetDescription-generic-stub.cpp
+RuntimeR3_SOURCES.sparc32 += \
+	generic/RTMpGetDescription-generic.cpp
+RuntimeR3_SOURCES.sparc64 += \
+	generic/RTMpGetDescription-generic.cpp
 
 ifdef IPRT_WITH_LZJB
  RuntimeR3_SOURCES += common/misc/lzjb.c
@@ -743,8 +751,15 @@ RuntimeR3_SOURCES.solaris = \
 	r3/posix/utf8-posix.cpp \
 	r3/solaris/alloc-solaris.cpp \
 	r3/solaris/mp-solaris.cpp \
-	r3/solaris/RTSystemQueryDmiString-solaris.cpp \
 	r3/solaris/rtProcInitExePath-solaris.cpp
+RuntimeR3_SOURCES.solaris.amd64 = \
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp
+RuntimeR3_SOURCES.solaris.x86 = \
+	r3/solaris/RTSystemQueryDmiString-solaris.cpp
+RuntimeR3_SOURCES.solaris.sparc32 = \
+	generic/RTSystemQueryDmiString-generic.cpp
+RuntimeR3_SOURCES.solaris.sparc64 = \
+	generic/RTSystemQueryDmiString-generic.cpp
 
 ## PORTME: Porters add their selection of platform specific files for Ring-3 here.
 
@@ -961,7 +976,10 @@ RuntimeLnxHostR3_INCS          = \
 # VBoxRT - Shared Object / DLL version.
 #
 VBoxRT_TEMPLATE                = VBoxR3Dll
-VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_LIBCURL VBOX_BOOST
+VBoxRT_SDKS                    = VBOX_OPENSSL VBOX_LIBXML2 VBOX_BOOST
+ifdef VBOX_WITH_LIBCURL
+VBoxRT_SDKS                   += VBOX_LIBCURL
+endif
 VBoxRT_SDKS.win                = WINPSDK W2K3DDK VBOX_NTDLL
 if1of ($(KBUILD_TARGET)$(VBOX_WITH_HARDENING), darwin win)
 VBoxRT_INST                    = $(INST_DLL) $(INST_TESTCASE)
@@ -972,7 +990,6 @@ VBoxRT_SOURCES                 = \
 	VBox/VBoxRTDeps.cpp \
 	$(filter-out common/checksum/crc32.cpp, $(RuntimeR3_SOURCES))
 VBoxRT_SOURCES                += \
-	common/misc/s3.cpp \
 	r3/xml.cpp \
 	common/checksum/RTSha1Digest.cpp \
 	common/checksum/crc32-zlib.cpp \
@@ -983,6 +1000,9 @@ VBoxRT_SOURCES                += \
 	common/checksum/sha256str.cpp \
 	common/checksum/sha512.cpp \
 	common/checksum/sha512str.cpp
+ifdef VBOX_WITH_LIBCURL
+ VBoxRT_SOURCES               += common/misc/s3.cpp
+endif
 VBoxRT_SOURCES.$(KBUILD_TARGET) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET))
 VBoxRT_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET).$(KBUILD_TARGET_ARCH))
 VBoxRT_SOURCES.$(KBUILD_TARGET_ARCH) = $(RuntimeR3_SOURCES.$(KBUILD_TARGET_ARCH))
@@ -1026,7 +1046,11 @@ VBoxRT_LIBS.freebsd            = \
 	iconv \
 	rt
 VBoxRT_LIBS.solaris            = \
-	kstat smbios
+	kstat
+ifn1of ($(KBUILD_TARGET_ARCH),sparc32 sparc64)
+ # SMBIOS not available on Solaris SPARC.
+ VBoxRT_LIBS.solaris += smbios
+endif
 VBoxRT_LIBS.win                = \
 	$(PATH_SDK_W2K3DDK_LIB)/vccomsup.lib \
 	$(PATH_SDK_W2K3DDK_LIB)/wbemuuid.lib

@@ -292,21 +292,14 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
         if (pszGroupSettings)
             RTLogGroupSettings(pLogger, pszGroupSettings);
 
+#if defined(RT_ARCH_X86) && (!defined(LOG_USE_C99) || !defined(RT_WITHOUT_EXEC_ALLOC))
         /*
          * Emit wrapper code.
          */
-#if defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC)
-        pu8Code = (uint8_t *)RTMemAlloc(64);
-#else
         pu8Code = (uint8_t *)RTMemExecAlloc(64);
-#endif
         if (pu8Code)
         {
             pLogger->pfnLogger = *(PFNRTLOGGER*)&pu8Code;
-#if defined(RT_ARCH_AMD64) || (defined(LOG_USE_C99) && defined(RT_WITHOUT_EXEC_ALLOC))
-            /* this wrapper will not be used on AMD64, we will be requiring C99 compilers there. */
-            *pu8Code++ = 0xcc;
-#else
             *pu8Code++ = 0x68;          /* push imm32 */
             *(void **)pu8Code = pLogger;
             pu8Code += sizeof(void *);
@@ -318,11 +311,21 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
             *pu8Code++ = 0x24;
             *pu8Code++ = 0x04;
             *pu8Code++ = 0xc3;          /* ret near */
-#endif
             AssertMsg((uintptr_t)pu8Code - (uintptr_t)pLogger->pfnLogger <= 64,
                       ("Wrapper assembly is too big! %d bytes\n", (uintptr_t)pu8Code - (uintptr_t)pLogger->pfnLogger));
-
-
+            rc = VINF_SUCCESS;
+        }
+        else
+        {
+# ifdef RT_OS_LINUX
+            if (pszErrorMsg) /* Most probably SELinux causing trouble since the larger RTMemAlloc succeeded. */
+                RTStrPrintf(pszErrorMsg, cchErrorMsg, "mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?");
+# endif
+            rc = VERR_NO_MEMORY;
+        }
+        if (RT_SUCCESS(rc))
+#endif /* X86 wrapper code*/
+        {
 #ifdef IN_RING3 /* files and env.vars. are only accessible when in R3 at the present time. */
             /*
              * Format the filename.
@@ -434,17 +437,6 @@ RTDECL(int) RTLogCreateExV(PRTLOGGER *ppLogger, uint32_t fFlags, const char *psz
 #else
             RTMemExecFree(*(void **)&pLogger->pfnLogger);
 #endif
-        }
-        else
-        {
-#ifdef RT_OS_LINUX
-            /*
-             * RTMemAlloc() succeeded but RTMemExecAlloc() failed -- most probably an SELinux problem.
-             */
-            if (pszErrorMsg)
-                RTStrPrintf(pszErrorMsg, cchErrorMsg, "mmap(PROT_WRITE | PROT_EXEC) failed -- SELinux?");
-#endif /* RT_OS_LINUX */
-            rc = VERR_NO_MEMORY;
         }
         RTMemFree(pLogger);
     }
