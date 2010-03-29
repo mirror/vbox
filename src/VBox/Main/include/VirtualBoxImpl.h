@@ -45,6 +45,8 @@ class SystemProperties;
 class DHCPServer;
 class PerformanceCollector;
 
+typedef std::list< ComObjPtr<SessionMachine> > SessionMachinesList;
+
 #ifdef RT_OS_WINDOWS
 class SVCHlpClient;
 #endif
@@ -69,7 +71,6 @@ class ATL_NO_VTABLE VirtualBox :
 public:
 
     typedef std::list< ComPtr<IVirtualBoxCallback> > CallbackList;
-    typedef std::list< ComObjPtr<SessionMachine> > SessionMachineList;
     typedef std::list< ComPtr<IInternalSessionControl> > InternalControlList;
 
     class CallbackEvent;
@@ -234,7 +235,7 @@ public:
 
     ComObjPtr<GuestOSType> getUnknownOSType();
 
-    void getOpenedMachines(SessionMachineList &aMachines,
+    void getOpenedMachines(SessionMachinesList &aMachines,
                            InternalControlList *aControls = NULL);
 
     bool isMachineIdValid(const Guid &aId)

@@ -2720,7 +2720,7 @@ ComObjPtr<GuestOSType> VirtualBox::getUnknownOSType()
  *
  * @note Locks objects for reading.
  */
-void VirtualBox::getOpenedMachines(SessionMachineList &aMachines,
+void VirtualBox::getOpenedMachines(SessionMachinesList &aMachines,
                                    InternalControlList *aControls /*= NULL*/)
 {
     AutoCaller autoCaller(this);
@@ -2730,7 +2730,7 @@ void VirtualBox::getOpenedMachines(SessionMachineList &aMachines,
     if (aControls)
         aControls->clear();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    AutoReadLock alock(m->ollMachines.getLockHandle() COMMA_LOCKVAL_SRC_POS);
 
     for (MachinesOList::iterator it = m->ollMachines.begin();
          it != m->ollMachines.end();

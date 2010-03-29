@@ -747,8 +747,9 @@ Utf8Str Appliance::manifestFileName(Utf8Str aPath) const
 struct Appliance::TaskOVF
 {
     TaskOVF(Appliance *aThat)
-      : pAppliance(aThat)
-      , rc(S_OK) {}
+      : pAppliance(aThat),
+        rc(S_OK)
+    {}
 
     static int updateProgress(unsigned uPercent, void *pvUser);
 
@@ -758,7 +759,7 @@ struct Appliance::TaskOVF
     HRESULT rc;
 };
 
-struct Appliance::TaskImportOVF: Appliance::TaskOVF
+struct Appliance::TaskImportOVF : Appliance::TaskOVF
 {
     enum TaskType
     {
@@ -767,15 +768,16 @@ struct Appliance::TaskImportOVF: Appliance::TaskOVF
     };
 
     TaskImportOVF(Appliance *aThat)
-        : TaskOVF(aThat)
-        , taskType(Read) {}
+        : TaskOVF(aThat),
+          taskType(Read)
+    {}
 
     int startThread();
 
     TaskType taskType;
 };
 
-struct Appliance::TaskExportOVF: Appliance::TaskOVF
+struct Appliance::TaskExportOVF : Appliance::TaskOVF
 {
     enum OVFFormat
     {
@@ -789,8 +791,9 @@ struct Appliance::TaskExportOVF: Appliance::TaskOVF
     };
 
     TaskExportOVF(Appliance *aThat)
-        : TaskOVF(aThat)
-        , taskType(Write) {}
+        : TaskOVF(aThat),
+          taskType(Write)
+    {}
 
     int startThread();
 
@@ -812,8 +815,8 @@ int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
 {
     Appliance::TaskOVF* pTask = *(Appliance::TaskOVF**)pvUser;
 
-    if (pTask &&
-        !pTask->progress.isNull())
+    if (    pTask
+         && !pTask->progress.isNull())
     {
         BOOL fCanceled;
         pTask->progress->COMGETTER(Canceled)(&fCanceled);
@@ -870,6 +873,13 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
     return rc;
 }
 
+/**
+ * Implementation of the import code. This gets called from the public Appliance::ImportMachines()
+ * method as well as Appliance::importS3().
+ * @param aLocInfo
+ * @param aProgress
+ * @return
+ */
 HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
     /* Initialize our worker task */
@@ -3955,6 +3965,7 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    // do not allow entering this method if the appliance is busy reading or writing
     if (!isApplianceIdle())
         return E_ACCESSDENIED;
 
@@ -3988,9 +3999,6 @@ STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!isApplianceIdle())
-        return E_ACCESSDENIED;
 
     ComObjPtr<VFSExplorer> explorer;
     HRESULT rc = S_OK;
@@ -4026,6 +4034,7 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
+    // do not allow entering this method if the appliance is busy reading or writing
     if (!isApplianceIdle())
         return E_ACCESSDENIED;
 
@@ -4078,9 +4087,6 @@ STDMETHODIMP Appliance::GetWarnings(ComSafeArrayOut(BSTR, aWarnings))
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!isApplianceIdle())
-        return E_ACCESSDENIED;
 
     com::SafeArray<BSTR> sfaWarnings(m->llWarnings.size());
 

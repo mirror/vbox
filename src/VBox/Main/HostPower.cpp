@@ -45,7 +45,7 @@ HostPowerService::~HostPowerService()
 
 void HostPowerService::notify(HostPowerEvent aEvent)
 {
-    VirtualBox::SessionMachineList machines;
+    SessionMachinesList machines;
     VirtualBox::InternalControlList controls;
 
     HRESULT rc = S_OK;

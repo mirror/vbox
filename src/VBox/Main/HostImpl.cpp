@@ -22,12 +22,19 @@
 #define __STDC_LIMIT_MACROS
 #define __STDC_CONSTANT_MACROS
 
+#include "HostImpl.h"
+
 #ifdef VBOX_WITH_USB
 # include "HostUSBDeviceImpl.h"
 # include "USBDeviceFilterImpl.h"
 # include "USBProxyService.h"
-# include "VirtualBoxImpl.h"
 #endif // VBOX_WITH_USB
+
+#include "HostNetworkInterfaceImpl.h"
+#include "MachineImpl.h"
+#include "AutoCaller.h"
+#include "Logging.h"
+#include "Performance.h"
 
 #include "MediumImpl.h"
 #include "HostPower.h"
@@ -93,19 +100,6 @@ extern "C" char *getfullrawname(char *);
 # include <cfgmgr32.h>
 
 #endif /* RT_OS_WINDOWS */
-
-#include "HostImpl.h"
-#include "HostNetworkInterfaceImpl.h"
-#ifdef VBOX_WITH_USB
-# include "HostUSBDeviceImpl.h"
-# include "USBDeviceFilterImpl.h"
-# include "USBProxyService.h"
-#endif
-#include "VirtualBoxImpl.h"
-#include "MachineImpl.h"
-#include "AutoCaller.h"
-#include "Logging.h"
-#include "Performance.h"
 
 #ifdef RT_OS_DARWIN
 # include "darwin/iokit.h"
