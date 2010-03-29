@@ -1315,7 +1315,7 @@
   </interface>
 
   <interface
-     name="ILocalOwner" extends="$dispatched"
+     name="ILocalOwner" extends="$unknown"
      uuid="308FF42A-DC45-49D4-A950-B1EEE5E00BB5" wsmap="suppress"
      >
     <desc>
@@ -1688,7 +1688,7 @@
   </interface>
 
   <interface
-    name="IVirtualBox" extends="$dispatched"
+    name="IVirtualBox" extends="$unknown"
     uuid="3f36e024-7fed-4f20-a02c-9158a82b44e6"
     wsmap="managed"
   >
@@ -8034,7 +8034,7 @@
   <interface
      name="ISystemProperties"
      extends="$unknown"
-     uuid="fca0d89c-d2ce-45c1-a7b9-e6e7d8501eb1"
+     uuid="07c3ffd8-8f59-49cc-b608-53a332e85cc3"
      wsmap="managed"
      >
     <desc>
@@ -8240,6 +8240,28 @@
           <link to="IVirtualBox::createHardDisk"/>
         </see>
       </desc>
+    </attribute>
+
+    <attribute name="freeDiskSpaceWarning" type="unsigned long long">
+      <desc>Issue a warning if the free disk space is below (or in some disk
+      intensive operation is expected to go below) the given size in
+      Megabytes.</desc>
+    </attribute>
+
+    <attribute name="freeDiskSpacePercentWarning" type="unsigned long">
+      <desc>Issue a warning if the free disk space is below (or in some disk
+      intensive operation is expected to go below) the given percentage.</desc>
+    </attribute>
+
+    <attribute name="freeDiskSpaceError" type="unsigned long long">
+      <desc>Issue an error if the free disk space is below (or in some disk
+      intensive operation is expected to go below) the given size in
+      Megabytes.</desc>
+    </attribute>
+
+    <attribute name="freeDiskSpacePercentError" type="unsigned long">
+      <desc>Issue an error if the free disk space is below (or in some disk
+      intensive operation is expected to go below) the given percentage.</desc>
     </attribute>
 
     <attribute name="remoteDisplayAuthLibrary" type="wstring">
@@ -13245,7 +13267,7 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
   </interface>
 
   <interface
-     name="ISession" extends="$dispatched"
+     name="ISession" extends="$unknown"
      uuid="12F4DCDB-12B2-4EC1-B7CD-DDD9F6C5BF4D"
      wsmap="managed"
      >
