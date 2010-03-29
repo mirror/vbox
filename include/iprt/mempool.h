@@ -123,7 +123,7 @@ RTDECL(void *) RTMemPoolRealloc(RTMEMPOOL hMemPool, void *pvOld, size_t cbNew) R
 /**
  * Frees memory allocated from a pool.
  *
- * @param   hMemPool        Handle to the pool containing the memory. Passing
+ * @param   hMemPool        Handle to the pool containing the memory.  Passing
  *                          NIL here is fine, but it may come at a slight
  *                          performance cost.
  * @param   pv              Pointer to memory block.
@@ -145,12 +145,22 @@ RTDECL(uint32_t) RTMemPoolRetain(void *pv) RT_NO_THROW;
 /**
  * Releases a reference to a memory block in a pool.
  *
- * @param   hMemPool        Handle to the pool containing the memory. Passing
+ * @returns New reference count, UINT32_MAX on error (asserted).
+ *
+ * @param   hMemPool        Handle to the pool containing the memory.  Passing
  *                          NIL here is fine, but it may come at a slight
  *                          performance cost.
  * @param   pv              Pointer to memory block.
  */
 RTDECL(uint32_t) RTMemPoolRelease(RTMEMPOOL hMemPool, void *pv) RT_NO_THROW;
+
+/**
+ * Get the current reference count.
+ *
+ * @returns The reference count, UINT32_MAX on error (asserted).
+ * @param   pv              Pointer to memory block.
+ */
+RTDECL(uint32_t) RTMemPoolRefCount(void *pv) RT_NO_THROW;
 
 
 RT_C_DECLS_END

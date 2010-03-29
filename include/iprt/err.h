@@ -612,8 +612,12 @@ RTDECL(PCRTCOMERRMSG) RTErrCOMGet(uint32_t rc);
 #define VERR_IGNORED                        (-91)
 /** Concurrent access to the object is not allowed. */
 #define VERR_CONCURRENT_ACCESS              (-92)
+/** The caller does not have a reference to the object.
+ * This status is used when two threads is caught sharing the same object
+ * reference. */
+#define VERR_CALLER_NO_REFERENCE            (-93)
 /** Invalid login data given. */
-#define VERR_LOGON_FAILURE                  (-93)
+#define VERR_LOGON_FAILURE                  (-94)
 /** @} */
 
 
