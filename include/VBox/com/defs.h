@@ -266,7 +266,6 @@ typedef const OLECHAR *CBSTR;
 /* XPCOM has only 64bit floats */
 #define FLOAT   PRFloat64
 #define DOUBLE  PRFloat64
-#define 
 
 #define FALSE   PR_FALSE
 #define TRUE    PR_TRUE
