@@ -4719,6 +4719,8 @@ STDMETHODIMP Machine::ReadLog(ULONG /*aIdx*/, ULONG64 /*aOffset*/, ULONG64 /*aSi
 {
     CheckComArgExpr(aData, !ComSafeArrayOutIsNull(aData));
 
+    NOREF(aDataSize);
+
     ReturnComNotImplemented();
 }
 
@@ -9138,17 +9140,43 @@ void SessionMachine::uninit(Uninit::Reason aReason)
         return;
     }
 
-    /* We need to lock this object in uninit() because the lock is shared
-     * with mPeer (as well as data we modify below). mParent->addProcessToReap()
-     * and others need mParent lock, and USB needs host lock. */
-    AutoMultiWriteLock3 alock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
+    MachineState_T lastState;
+    {
+        AutoReadLock tempLock(this COMMA_LOCKVAL_SRC_POS);
+        lastState = mData->mMachineState;
+    }
+    NOREF(lastState);
+
+#ifdef VBOX_WITH_USB
+    // release all captured USB devices, but do this before requesting the locks below
+    if (aReason == Uninit::Abnormal && Global::IsOnline(lastState))
+    {
+        /* Console::captureUSBDevices() is called in the VM process only after
+         * setting the machine state to Starting or Restoring.
+         * Console::detachAllUSBDevices() will be called upon successful
+         * termination. So, we need to release USB devices only if there was
+         * an abnormal termination of a running VM.
+         *
+         * This is identical to SessionMachine::DetachAllUSBDevices except
+         * for the aAbnormal argument. */
+        HRESULT rc = mUSBController->notifyProxy(false /* aInsertFilters */);
+        AssertComRC(rc);
+        NOREF(rc);
+
+        USBProxyService *service = mParent->host()->usbProxyService();
+        if (service)
+            service->detachAllDevicesFromVM(this, true /* aDone */, true /* aAbnormal */);
+    }
+#endif /* VBOX_WITH_USB */
+
+    // we need to lock this object in uninit() because the lock is shared
+    // with mPeer (as well as data we modify below). mParent->addProcessToReap()
+    // and others need mParent lock, and USB needs host lock.
+    AutoMultiWriteLock3 multilock(mParent, mParent->host(), this COMMA_LOCKVAL_SRC_POS);
 
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     unregisterMetrics(mParent->performanceCollector(), mPeer);
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
-
-    MachineState_T lastState = mData->mMachineState;
-    NOREF(lastState);
 
     if (aReason == Uninit::Abnormal)
     {
@@ -9186,28 +9214,6 @@ void SessionMachine::uninit(Uninit::Reason aReason)
 
         mSnapshotData.mSnapshot->uninit();
     }
-
-#ifdef VBOX_WITH_USB
-    /* release all captured USB devices */
-    if (aReason == Uninit::Abnormal && Global::IsOnline(lastState))
-    {
-        /* Console::captureUSBDevices() is called in the VM process only after
-         * setting the machine state to Starting or Restoring.
-         * Console::detachAllUSBDevices() will be called upon successful
-         * termination. So, we need to release USB devices only if there was
-         * an abnormal termination of a running VM.
-         *
-         * This is identical to SessionMachine::DetachAllUSBDevices except
-         * for the aAbnormal argument. */
-        HRESULT rc = mUSBController->notifyProxy(false /* aInsertFilters */);
-        AssertComRC(rc);
-        NOREF(rc);
-
-        USBProxyService *service = mParent->host()->usbProxyService();
-        if (service)
-            service->detachAllDevicesFromVM(this, true /* aDone */, true /* aAbnormal */);
-    }
-#endif /* VBOX_WITH_USB */
 
     if (!mData->mSession.mType.isEmpty())
     {
@@ -9325,7 +9331,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     mData.free();
 
     /* leave the exclusive lock before setting the below two to NULL */
-    alock.leave();
+    multilock.leave();
 
     unconst(mParent) = NULL;
     unconst(mPeer) = NULL;
@@ -10817,7 +10823,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
     {
         /* Make sure any transient guest properties get removed from the
          * property store on shutdown. */
-        
+
         HWData::GuestPropertyList::iterator it;
         BOOL fNeedsSaving = mHWData->mGuestPropertiesModified;
         if (!fNeedsSaving)
