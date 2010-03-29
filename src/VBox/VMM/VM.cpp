@@ -1512,7 +1512,7 @@ static DECLCALLBACK(VBOXSTRICTRC) vmR3LiveDoStep1Cleanup(PVM pVM, PVMCPU pVCpu, 
     bool *pfSuspended = (bool *)pvUser;
     NOREF(pVCpu);
 
-    int rc = vmR3TrySetState(pVM, "vmR3LiveDoStep1Cleanup", 6,
+    int rc = vmR3TrySetState(pVM, "vmR3LiveDoStep1Cleanup", 8,
                              VMSTATE_OFF,               VMSTATE_OFF_LS,                     /* 1 */
                              VMSTATE_FATAL_ERROR,       VMSTATE_FATAL_ERROR_LS,             /* 2 */
                              VMSTATE_GURU_MEDITATION,   VMSTATE_GURU_MEDITATION_LS,         /* 3 */
@@ -3183,8 +3183,15 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
          * Complain about it.
          */
         if (cTransitions == 1)
+        {
             LogRel(("%s: %s -> %s failed, because the VM state is actually %s\n",
                     pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
+            VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
+                       N_("%s failed because the VM state is %s instead of %s"),
+                       pszWho, VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
+            AssertMsgFailed(("%s: %s -> %s failed, because the VM state is actually %s\n",
+                             pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
+        }
         else
         {
             va_end(va);
@@ -3198,13 +3205,12 @@ static int vmR3TrySetState(PVM pVM, const char *pszWho, unsigned cTransitions, .
                         i ? ", " : " ", VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew)));
             }
             LogRel((" failed, because the VM state is actually %s\n", VMR3GetStateName(enmStateCur)));
+            VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
+                       N_("%s failed because the current VM state, %s, was not found in the state transition table"),
+                       pszWho, VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
+            AssertMsgFailed(("%s - state=%s, see release log for full details. Check the cTransitions passed us.\n",
+                             pszWho, VMR3GetStateName(enmStateCur)));
         }
-
-        VMSetError(pVM, VERR_VM_INVALID_VM_STATE, RT_SRC_POS,
-                   N_("%s failed because the VM state is %s instead of %s"),
-                   VMR3GetStateName(enmStateCur), VMR3GetStateName(enmStateOld));
-        AssertMsgFailed(("%s: %s -> %s failed, state is actually %s\n",
-                         pszWho, VMR3GetStateName(enmStateOld), VMR3GetStateName(enmStateNew), VMR3GetStateName(enmStateCur)));
     }
 
     RTCritSectLeave(&pUVM->vm.s.AtStateCritSect);
