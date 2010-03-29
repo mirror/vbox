@@ -434,6 +434,7 @@ private:
 
     static DECLCALLBACK(int) configConstructor(PVM pVM, void *pvConsole);
     static DECLCALLBACK(int) configGuestProperties(void *pvConsole);
+    static DECLCALLBACK(int) configGuestControl(void *pvConsole);
     static int configNetwork(Console *pThis, const char *pszDevice,
                              unsigned uInstance, unsigned uLun,
                              INetworkAdapter *aNetworkAdapter,

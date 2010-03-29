@@ -76,17 +76,17 @@ static int handleExecProgram(HandlerArg *a)
      * arguments.
      */
     /** @todo */
-    if (a->argc < 2)
+    if (a->argc < 2) /* At least the command we want to execute should be present. */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
-    const char *pszCmd = a->argv[1];
+    Utf8Str Utf8Cmd(a->argv[1]);
     uint32_t uFlags = 0;
-    const char *pszArgs;
+    Utf8Str Utf8Args;
     com::SafeArray <BSTR> env;
-    const char *pszStdIn = NULL;
-    const char *pszStdOut = NULL;
-    const char *pszStdErr = NULL;
-    const char *pszUserName = NULL;
-    const char *pszPassword = NULL;
+    Utf8Str Utf8StdIn;
+    Utf8Str Utf8StdOut;
+    Utf8Str Utf8StdErr;
+    Utf8Str Utf8UserName;
+    Utf8Str Utf8Password;
     uint32_t uTimeoutMS = 0;
 
     /* lookup VM. */
@@ -106,7 +106,7 @@ static int handleExecProgram(HandlerArg *a)
             machine->COMGETTER(Id)(uuid.asOutParam());
     
             /* open an existing session for VM - so the VM has to be running */
-            CHECK_ERROR_BREAK(a->virtualBox, OpenExistingSession(a->session, uuid), 1);
+            CHECK_ERROR_BREAK(a->virtualBox, OpenExistingSession(a->session, uuid));
     
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
@@ -119,10 +119,10 @@ static int handleExecProgram(HandlerArg *a)
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
 
             ULONG uPID = 0;
-            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(pszCmd), uFlags, 
-                                                    Bstr(pszArgs), ComSafeArrayAsInParam(env), 
-                                                    Bstr(pszStdIn), Bstr(pszStdOut), Bstr(pszStdErr),
-                                                    Bstr(pszUserName), Bstr(pszPassword), uTimeoutMS,
+            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags, 
+                                                    Bstr(Utf8Args), ComSafeArrayAsInParam(env), 
+                                                    Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
+                                                    Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID));
             a->session->Close();
         } while (0);

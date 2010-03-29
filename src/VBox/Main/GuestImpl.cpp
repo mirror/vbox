@@ -351,7 +351,8 @@ int Guest::prepareExecuteArgs(const char *pszArgs, void **ppvList, uint32_t *pcb
         {
             *ppvList = pszTemp;
             *pcArgs = iArgs;
-            *pcbList = strlen(pszTemp) + 1; /* Include zero termination. */
+            if (pszTemp)
+                *pcbList = strlen(pszTemp) + 1; /* Include zero termination. */
         }
         else
             RTStrFree(pszTemp);
@@ -454,12 +455,13 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
         if (RT_SUCCESS(vrc))
         {
             /* Prepare environment. */
-            void *pvEnv = NULL;
-            uint32_t uNumEnv;
-            uint32_t cbEnv;
-
             com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
-            for (unsigned i = 0; i < env.size(); ++i)
+
+            void *pvEnv = NULL;
+            uint32_t uNumEnv = env.size();
+            uint32_t cbEnv = 0;
+
+            for (unsigned i = 0; i < uNumEnv; i++)
             {
                 const char *pszCurEnv = Utf8Str(env[i]).raw();
                 vrc = prepareExecuteEnv(pszCurEnv, &pvEnv, &cbEnv, &uNumEnv);
@@ -496,7 +498,7 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                 if (vmmDev)
                 {
                     vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
-                                               13, &paParms[0]);
+                                               13, paParms);
                     /** @todo Get the PID. */
                 }
                 RTMemFree(pvEnv);
