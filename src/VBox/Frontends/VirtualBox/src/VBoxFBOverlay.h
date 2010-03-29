@@ -1207,7 +1207,7 @@ public:
         }
     }
 
-    void setNewEventFlag() {bNewEvent = true;}
+    void setNewEvent(bool bNew) {bNewEvent = bNew;}
     bool isNewEvent() const { return bNewEvent; }
 
     VBOXVHWA_PIPECMD_TYPE type() const {return mType;}
@@ -1293,6 +1293,7 @@ public:
         {
             mpLast->mpNext = pFirst;
             mpLast = pLast;
+            pLast->mpNext = NULL;
         }
     }
 
@@ -1412,6 +1413,9 @@ public:
             class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free);
     void reset(class VBoxVHWACommandElement ** ppHead, class VBoxVHWACommandElement ** ppTail);
     void setNotifyObject(QObject *pNotifyObject);
+#ifdef DEBUG_misha
+    void checkConsistence(uint32_t cEvents2Submit = 0, const VBoxVHWACommandElementPipe *pPipe = NULL);
+#endif
 private:
     RTCRITSECT mCritSect;
     VBoxVHWACommandElementPipe m_CmdPipe;
