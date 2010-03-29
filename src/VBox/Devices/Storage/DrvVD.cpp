@@ -1477,7 +1477,7 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
     }
 
-#if 0 /* Temporary disabled. WIP
+#if 0 /* Temporary disabled. WIP */
     if (pThis->pDrvMediaAsyncPort)
         pThis->fAsyncIOSupported = true;
 #else
