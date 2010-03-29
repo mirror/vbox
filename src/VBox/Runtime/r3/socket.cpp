@@ -120,11 +120,9 @@ typedef struct RTSOCKETINT
 {
     /** Magic number (RTTCPSOCKET_MAGIC). */
     uint32_t            u32Magic;
-    /** Usage bit.  This is used to prevent two threads from accessing the
+    /** Usage count.  This is used to prevent two threads from accessing the
      *  handle concurrently. */
     uint32_t volatile   cUsers;
-    /* Number of references to this object */
-    int32_t volatile    cRefs;
     /** The native socket handle. */
     RTSOCKETNATIVE      hNative;
 #ifdef RT_OS_WINDOWS
@@ -213,51 +211,6 @@ int rtSocketResolverError(void)
 
 
 /**
- * Increase reference counter of socket. This is orthogonal to usage bit,
- * as some users of socket may not really modify its state (such as RTSocketSelectOne())
- * or be allowed to perform operation disregarding if socket is in use (such as RTSocketShutdown()).
- *
- * Call rtSocketRelease() when done with socket.
- *
- * @returns @c true if object valid, @c false otherwise.
- * @param   pThis               The socket structure.
- */
-DECLINLINE(bool) rtSocketAddRef(RTSOCKETINT *pThis)
-{
-    if (ASMAtomicReadS32(&pThis->cRefs) < 0)
-        return false;
-
-    ASMAtomicAddS32(&pThis->cRefs, 1);
-    return true;
-}
-
-/**
- * Decrease reference counter of socket.
- *
- * @returns @c true if object valid, @c false otherwise.
- * @param   pThis               The socket structure.
- */
-DECLINLINE(bool) rtSocketRelease(RTSOCKETINT *pThis)
-{
-    if (ASMAtomicReadS32(&pThis->cRefs) <= 0)
-        return false;
-
-    ASMAtomicSubS32(&pThis->cRefs, 1);
-    return true;
-}
-
-/**
- * Declare socket dead.
- *
- * @param   pThis               The socket structure.
- */
-DECLINLINE(void) rtSocketNoMore(RTSOCKETINT *pThis)
-{
-    ASMAtomicWriteS32(&pThis->cRefs, -1);
-}
-
-
-/**
  * Tries to lock the socket for exclusive usage by the calling thread.
  *
  * Call rtSocketUnlock() to unlock.
@@ -267,14 +220,7 @@ DECLINLINE(void) rtSocketNoMore(RTSOCKETINT *pThis)
  */
 DECLINLINE(bool) rtSocketTryLock(RTSOCKETINT *pThis)
 {
-    bool rv = ASMAtomicCmpXchgU32(&pThis->cUsers, 1, 0);
-    if (rv)
-    {
-        rv = rtSocketAddRef(pThis);
-        AssertReturn(rv, false);
-    }
-
-    return rv;
+    return ASMAtomicCmpXchgU32(&pThis->cUsers, 1, 0);
 }
 
 
@@ -285,15 +231,9 @@ DECLINLINE(bool) rtSocketTryLock(RTSOCKETINT *pThis)
  */
 DECLINLINE(void) rtSocketUnlock(RTSOCKETINT *pThis)
 {
-    bool rv = ASMAtomicCmpXchgU32(&pThis->cUsers, 0, 1);
-    Assert(rv);
-
-    if (rv)
-    {
-        rv = rtSocketRelease(pThis);
-        Assert(rv);
-    }
+    ASMAtomicCmpXchgU32(&pThis->cUsers, 0, 1);
 }
+
 
 /**
  * Creates an IPRT socket handle for a native one.
@@ -396,8 +336,6 @@ RTDECL(int) RTSocketDestroy(RTSOCKET hSocket)
         }
         pThis->hNative = NIL_RTSOCKETNATIVE;
     }
-
-    rtSocketNoMore(pThis);
 
     return rc;
 }
@@ -573,7 +511,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     RTSOCKETINT *pThis = hSocket;
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
-    AssertReturn(rtSocketAddRef(pThis), VERR_INVALID_HANDLE);
+    AssertReturn(rtSocketTryLock(pThis), VERR_CONCURRENT_ACCESS);
 
     /*
      * Set up the file descriptor sets and do the select.
@@ -601,7 +539,7 @@ RTDECL(int) RTSocketSelectOne(RTSOCKET hSocket, RTMSINTERVAL cMillies)
     else
         rc = rtSocketError();
 
-    rtSocketRelease(pThis);
+    rtSocketUnlock(pThis);
     return rc;
 }
 
@@ -616,7 +554,6 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     AssertPtrReturn(pThis, VERR_INVALID_HANDLE);
     AssertReturn(pThis->u32Magic == RTSOCKET_MAGIC, VERR_INVALID_HANDLE);
     AssertReturn(fRead || fWrite, VERR_INVALID_PARAMETER);
-    AssertReturn(rtSocketAddRef(pThis), VERR_INVALID_HANDLE);
 
     /*
      * Do the job.
@@ -632,7 +569,6 @@ RTDECL(int) RTSocketShutdown(RTSOCKET hSocket, bool fRead, bool fWrite)
     if (shutdown(pThis->hNative, fHow) == -1)
         rc = rtSocketError();
 
-    rtSocketRelease(pThis);
     return rc;
 }
 
