@@ -141,10 +141,6 @@ typedef union RTGETOPTUNION
     /** A RTGETOPT_REQ_STRING option argument. */
     const char     *psz;
 
-#if !defined(RT_ARCH_AMD64) && !defined(RT_ARCH_X86)
-# error "PORTME: big-endian systems will need to fix the layout here to get the next two fields working right"
-#endif
-
     /** A RTGETOPT_REQ_INT8 option argument. */
     int8_t          i8;
     /** A RTGETOPT_REQ_UINT8 option argument . */
@@ -169,10 +165,6 @@ typedef union RTGETOPTUNION
     RTMAC           MacAddr;
     /** A RTGETOPT_REQ_UUID option argument. */
     RTUUID          Uuid;
-    /** A signed integer value. */
-    int64_t         i;
-    /** An unsigned integer value. */
-    uint64_t        u;
     /** A boolean flag. */
     bool            f;
 } RTGETOPTUNION;
