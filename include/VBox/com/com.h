@@ -38,7 +38,7 @@ namespace com
 
 /**
  *  Initializes the COM runtime.
- *  Must be called on every thread that uses COM, before any COM activity.
+ *  Must be called on the main thread, before any COM activity in any thread.
  *
  *  @return COM result code
  */
@@ -46,8 +46,8 @@ HRESULT Initialize();
 
 /**
  *  Shuts down the COM runtime.
- *  Must be called on every thread before termination.
- *  No COM calls may be made after this method returns.
+ *  Must be called on the main thread before termination.
+ *  No COM calls may be made in any thread after this method returns.
  */
 HRESULT Shutdown();
 
