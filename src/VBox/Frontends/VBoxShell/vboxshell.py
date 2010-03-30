@@ -817,7 +817,17 @@ def plugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'plugcpu', args[2])
+    if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
+        if mach.CPUHotPlugEnabled:
+            session = ctx['global'].openMachineSession(mach.id)
+            mach1 = session.machine
+            cpu = int(args[2])
+            print "Adding CPU %d..." %(cpu)
+            mach1.hotPlugCPU(cpu)
+            mach1.saveSettings()
+            session.close()
+    else:
+        cmdExistingVm(ctx, mach, 'plugcpu', args[2])
     return 0
 
 def unplugcpuCmd(ctx, args):
@@ -827,7 +837,17 @@ def unplugcpuCmd(ctx, args):
     mach = argsToMach(ctx,args)
     if mach == None:
         return 0
-    cmdExistingVm(ctx, mach, 'unplugcpu', args[2])
+    if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
+        if mach.CPUHotPlugEnabled:
+            session = ctx['global'].openMachineSession(mach.id)
+            mach1 = session.machine
+            cpu = int(args[2])
+            print "Removing CPU %d..." %(cpu)
+            mach1.hotUnplugCPU(cpu)
+            mach1.saveSettings()
+            session.close()
+    else:
+        cmdExistingVm(ctx, mach, 'unplugcpu', args[2])
     return 0
 
 def setvarCmd(ctx, args):
