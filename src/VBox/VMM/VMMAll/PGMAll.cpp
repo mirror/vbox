@@ -1814,8 +1814,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
-    pgmLock(pVM);
-
 # ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
     PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
     if (pPool->cDirtyPages)
@@ -1828,10 +1826,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
      */
     rc = pgmPoolSyncCR3(pVCpu);
     if (rc != VINF_SUCCESS)
-    {
-        pgmUnlock(pVM);
         return rc;
-    }
 
     /*
      * We might be called when we shouldn't.
@@ -1846,7 +1841,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
         Assert((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE));
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
-        pgmUnlock(pVM);
         return VINF_SUCCESS;
     }
 
@@ -1896,16 +1890,11 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
 #else
             if (rc == VINF_PGM_SYNC_CR3)
                 pVCpu->pgm.s.GCPhysCR3 = GCPhysCR3Old;
-            pgmUnlock(pVM);
             return VINF_PGM_SYNC_CR3;
 #endif
         }
-        if (rc != VINF_SUCCESS)
-        {
-            pgmUnlock(pVM);
-            AssertFailed();
-            return RT_FAILURE(rc) ? rc : VERR_INTERNAL_ERROR;
-        }
+        AssertRCReturn(rc, rc);
+        AssertRCSuccessReturn(rc, VERR_INTERNAL_ERROR);
     }
 
     /*
@@ -1938,8 +1927,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
      */
     if (rc == VINF_SUCCESS)
         PGM_INVL_VCPU_TLBS(pVCpu);
-
-    pgmUnlock(pVM);
     return rc;
 }
 
