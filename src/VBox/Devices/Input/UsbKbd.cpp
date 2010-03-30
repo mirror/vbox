@@ -12,7 +12,7 @@
 /*******************************************************************************
 *   Header Files                                                               *
 *******************************************************************************/
-#define LOG_GROUP   LOG_GROUP_USB_MSD
+#define LOG_GROUP   LOG_GROUP_USB_KBD
 #include <VBox/pdmusb.h>
 #include <VBox/log.h>
 #include <VBox/err.h>
@@ -159,6 +159,10 @@ typedef struct USBHID
     RTSEMEVENT          hEvtDoneQueue;
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
+    /** If no URB since last key press */
+    bool                fNoUrbSinceLastPress;
+    /* Keys released since last URB */
+    uint8_t             aReleasedKeys[6];
 
     /**
      * Keyboard port - LUN#0.
@@ -602,6 +606,8 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     pThis->enmState = USBHIDREQSTATE_READY;
     pThis->bIdle = 0;
     memset(&pThis->Report, 0, sizeof(pThis->Report));
+    pThis->fNoUrbSinceLastPress = false;
+    memset(&pThis->aReleasedKeys, 0, sizeof(pThis->aReleasedKeys));
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
@@ -624,6 +630,24 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     return VINF_SUCCESS;
 }
 
+static void usbHidUpdateReportReleased(PUSBHID pThis, uint8_t u8HidCode)
+{
+    unsigned i;
+    
+    for (i = 0; i < RT_ELEMENTS(pThis->Report.aKeys); ++i)
+    {
+        if (pThis->Report.aKeys[i] == u8HidCode)
+        {
+            pThis->Report.aKeys[i] = 0;
+            break;                              /* Remove key down. */
+        }
+    }
+
+    if (i == RT_ELEMENTS(pThis->Report.aKeys))
+    {
+        //            AssertMsgFailed(("Key is up but was never down!?"));
+    }
+}
 
 /**
  * Sends a state report to the host if there is a pending URB.
@@ -635,11 +659,25 @@ static int usbHidSendReport(PUSBHID pThis)
     {
         PUSBHIDK_REPORT pReport = &pThis->Report;
         size_t          cbCopy;
+        unsigned        i;
 
         cbCopy = sizeof(*pReport);
         memcpy(&pUrb->abData[0], pReport, cbCopy);
+        pThis->fNoUrbSinceLastPress = false;
+        for (i=0; i < RT_ELEMENTS(pThis->aReleasedKeys); ++i)
+        {
+            if (pThis->aReleasedKeys[i] != 0)
+            {
+                usbHidUpdateReportReleased(pThis, pThis->aReleasedKeys[i]);
+                pThis->aReleasedKeys[i] = 0;
+            }
+        }
 //        LogRel(("Sent report: %x : %x %x, size %d\n", pReport->ShiftState, pReport->aKeys[0], pReport->aKeys[1], cbCopy));
         return usbHidCompleteOk(pThis, pUrb, cbCopy);
+    }
+    else
+    {
+        Log(("No available URB for USB kbd\n"));
     }
     return VINF_EOF;
 }
@@ -694,26 +732,32 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
                     break;
                 }
             }
+
+            pThis->fNoUrbSinceLastPress = true;
+
             if (i == RT_ELEMENTS(pReport->aKeys))
             {
                 /* We ran out of room. Report error. */
+                Log(("no more room in usbHidKeyboardPutEvent\n"));
                 // @todo!!
             }
         }
         else
         {
-            for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
-            {
-                if (pReport->aKeys[i] == u8HidCode)
+            /* We have to avoid coalescing key presses and releases, so put all releases somewhere else */
+            if (pThis->fNoUrbSinceLastPress)
+            {                
+                for (i = 0; i < RT_ELEMENTS(pThis->aReleasedKeys); ++i)
                 {
-                    pReport->aKeys[i] = 0;
-                    break;                              /* Remove key down. */
+                    if (pThis->aReleasedKeys[i] == 0)
+                    {
+                        pThis->aReleasedKeys[i] = u8HidCode;
+                        break;
+                    }
                 }
             }
-            if (i == RT_ELEMENTS(pReport->aKeys))
-            {
-    //            AssertMsgFailed(("Key is up but was never down!?"));
-            }
+            else
+                usbHidUpdateReportReleased(pThis, u8HidCode);
         }
 
         /* Send a report if the host is already waiting for it. */
@@ -840,6 +884,8 @@ static int usbHidHandleIntrDevToHost(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb
 static int usbHidHandleDefaultPipe(PUSBHID pThis, PUSBHIDEP pEp, PVUSBURB pUrb)
 {
     PVUSBSETUP pSetup = (PVUSBSETUP)&pUrb->abData[0];
+    LogFlow(("usbHidHandleDefaultPipe: cbData=%d\n", pUrb->cbData));
+
     AssertReturn(pUrb->cbData >= sizeof(*pSetup), VERR_VUSB_FAILED_TO_QUEUE_URB);
 
     if ((pSetup->bmRequestType & VUSB_REQ_MASK) == VUSB_REQ_STANDARD)
