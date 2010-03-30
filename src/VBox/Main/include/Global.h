@@ -43,6 +43,7 @@
 #define VBOXOSHINT_USBHID               RT_BIT(5)
 #define VBOXOSHINT_HPET                 RT_BIT(6)
 #define VBOXOSHINT_USBTABLET            RT_BIT(7)
+#define VBOXOSHINT_RTCUTC               RT_BIT(8)
 
 /**
  * Contains global static definitions that can be referenced by all COM classes

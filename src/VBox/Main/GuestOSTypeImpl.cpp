@@ -357,4 +357,17 @@ STDMETHODIMP GuestOSType::COMGETTER(RecommendedUsbTablet) (BOOL *aRecommendedUsb
     return S_OK;
 }
 
+STDMETHODIMP GuestOSType::COMGETTER(RecommendedRtcUseUtc) (BOOL *aRecommendedRtcUseUtc)
+{
+    CheckComArgOutPointerValid(aRecommendedRtcUseUtc);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    /* HID type is constant during life time, no need to lock */
+    *aRecommendedRtcUseUtc = !!(mOSHint & VBOXOSHINT_RTCUTC);
+
+    return S_OK;
+}
+
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
