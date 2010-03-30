@@ -3788,7 +3788,7 @@ STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
 /**
  * Look up a guest property in VBoxSVC's internal structures.
  */
-HRESULT Machine::GetGuestPropertyFromService(IN_BSTR aName,
+HRESULT Machine::getGuestPropertyFromService(IN_BSTR aName,
                                              BSTR *aValue,
                                              ULONG64 *aTimestamp,
                                              BSTR *aFlags)
@@ -3821,7 +3821,7 @@ HRESULT Machine::GetGuestPropertyFromService(IN_BSTR aName,
  *          currently handling queries and the lookup should then be done in
  *          VBoxSVC.
  */
-HRESULT Machine::GetGuestPropertyFromVM(IN_BSTR aName,
+HRESULT Machine::getGuestPropertyFromVM(IN_BSTR aName,
                                         BSTR *aValue,
                                         ULONG64 *aTimestamp,
                                         BSTR *aFlags)
@@ -3859,10 +3859,10 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT rc = GetGuestPropertyFromVM(aName, aValue, aTimestamp, aFlags);
+    HRESULT rc = getGuestPropertyFromVM(aName, aValue, aTimestamp, aFlags);
     if (rc == E_ACCESSDENIED)
         /* The VM is not running or the service is not (yet) accessible */
-        rc = GetGuestPropertyFromService(aName, aValue, aTimestamp, aFlags);
+        rc = getGuestPropertyFromService(aName, aValue, aTimestamp, aFlags);
     return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
@@ -3885,7 +3885,7 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp(IN_BSTR aName, ULONG64 *aTimesta
 /**
  * Set a guest property in VBoxSVC's internal structures.
  */
-HRESULT Machine::SetGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
+HRESULT Machine::setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                                            IN_BSTR aFlags)
 {
     using namespace guestProp;
@@ -3987,7 +3987,7 @@ HRESULT Machine::SetGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
  *          currently handling queries and the setting should then be done in
  *          VBoxSVC.
  */
-HRESULT Machine::SetGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
+HRESULT Machine::setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
                                       IN_BSTR aFlags)
 {
     HRESULT rc;
@@ -4029,10 +4029,10 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT rc = SetGuestPropertyToVM(aName, aValue, aFlags);
+    HRESULT rc = setGuestPropertyToVM(aName, aValue, aFlags);
     if (rc == E_ACCESSDENIED)
         /* The VM is not running or the service is not (yet) accessible */
-        rc = SetGuestPropertyToService(aName, aValue, aFlags);
+        rc = setGuestPropertyToService(aName, aValue, aFlags);
     return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
@@ -4046,7 +4046,7 @@ STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 /**
  * Enumerate the guest properties in VBoxSVC's internal structures.
  */
-HRESULT Machine::EnumerateGuestPropertiesInService
+HRESULT Machine::enumerateGuestPropertiesInService
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
                  ComSafeArrayOut(ULONG64, aTimestamps),
@@ -4106,7 +4106,7 @@ HRESULT Machine::EnumerateGuestPropertiesInService
  *          currently handling queries and the setting should then be done in
  *          VBoxSVC.
  */
-HRESULT Machine::EnumerateGuestPropertiesOnVM
+HRESULT Machine::enumerateGuestPropertiesOnVM
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
                  ComSafeArrayOut(ULONG64, aTimestamps),
@@ -4148,14 +4148,14 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    HRESULT rc = EnumerateGuestPropertiesOnVM
+    HRESULT rc = enumerateGuestPropertiesOnVM
                      (aPatterns, ComSafeArrayOutArg(aNames),
                       ComSafeArrayOutArg(aValues),
                       ComSafeArrayOutArg(aTimestamps),
                       ComSafeArrayOutArg(aFlags));
     if (rc == E_ACCESSDENIED)
         /* The VM is not running or the service is not (yet) accessible */
-        rc = EnumerateGuestPropertiesInService
+        rc = enumerateGuestPropertiesInService
                      (aPatterns, ComSafeArrayOutArg(aNames),
                       ComSafeArrayOutArg(aValues),
                       ComSafeArrayOutArg(aTimestamps),
