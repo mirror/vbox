@@ -58,8 +58,10 @@ $$(PATH_PcBiosBin)/PcBiosBin.c: $$(PATH_PcBiosBin)/pcbios.bin $(VBOX_BIN2C)
 #
 
 # 1. precompile rombios.c
-$$(PATH_PcBiosBin)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c $(PATH_SUB_CURRENT)/apmbios.S $(if $(VBOX_WITH_SCSI),$(PATH_SUB_CURRENT)/scsi.c) \
-		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h | $$(dir $$@)
+$$(PATH_PcBiosBin)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT)/logo.c \
+		$(PATH_SUB_CURRENT)/apmbios.S $(if $(VBOX_WITH_SCSI),$(PATH_SUB_CURRENT)/scsi.c) \
+		$(PATH_SUB_CURRENT)/../DevPcBios.h $(PATH_ROOT)/include/VBox/bioslogo.h \
+		$(VBOX_VERSION_STAMP) | $$(dir $$@)
 	$(call MSG_TOOL,cpp,PcBiosBin,$<,$@)
 	$(QUIET)$(TOOL_$(VBOX_GCC_TOOL)_CC) -E \
 		-I$(PATH_PcBiosBin) -I$(VBOX_PATH_DEVICES_SRC)/PC -I$(PATH_ROOT)/include -I$(PATH_OUT) \
@@ -69,7 +71,7 @@ $$(PATH_PcBiosBin)/_rombios_.c: $(PATH_SUB_CURRENT)/rombios.c $(PATH_SUB_CURRENT
 
 # 2. compile to intermediate asm file.
 # BCC tempfile clashes, order the BCC jobs to make sure they don't interfere with one another.
-$$(PATH_PcBiosBin)/rombios0.s: $$(PATH_PcBiosBin)/_rombios_.c $(VBOX_VERSION_STAMP) | $(VBOX_BCC_JOBS)
+$$(PATH_PcBiosBin)/rombios0.s: $$(PATH_PcBiosBin)/_rombios_.c | $(VBOX_BCC_JOBS)
 	$(call MSG_COMPILE,PcBiosBin,$<,$@,C)
 	$(QUIET)$(VBOX_BCC) -o $@ -C-c -D__i86__ -0 -S $<
 VBOX_BCC_JOBS += $(PATH_PcBiosBin)/rombios0.s
