@@ -280,7 +280,7 @@ RTDECL(int) RTTimerLRCreateEx(PRTTIMERLR phTimerLR, uint64_t u64NanoInterval, ui
 RTDECL(int) RTTimerLRDestroy(RTTIMERLR hTimerLR);
 
 /**
- * Stops an active low resolution timer.
+ * Starts a low resolution timer.
  *
  * @returns IPRT status code.
  * @retval  VERR_INVALID_HANDLE if pTimer isn't valid.
