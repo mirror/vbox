@@ -82,9 +82,54 @@ typedef struct DRVNETSNIFFER
 
 
 /**
+ * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
+ */
+static DECLCALLBACK(int) drvNetSnifferUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf)
+{
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (RT_UNLIKELY(!pThis->pIBelowNet))
+        return VERR_NET_DOWN;
+    return pThis->pIBelowNet->pfnAllocBuf(pThis->pIBelowNet, cbMin, ppSgBuf);
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
+ */
+static DECLCALLBACK(int) drvNetSnifferUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
+{
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (RT_UNLIKELY(!pThis->pIBelowNet))
+        return VERR_NET_DOWN;
+    return pThis->pIBelowNet->pfnFreeBuf(pThis->pIBelowNet, pSgBuf);
+}
+
+
+/**
+ * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
+ */
+static DECLCALLBACK(int) drvNetSnifferUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+{
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
+    if (RT_UNLIKELY(!pThis->pIBelowNet))
+        return VERR_NET_DOWN;
+
+    /* output to sniffer */
+    RTCritSectEnter(&pThis->Lock);
+    PcapFileFrame(pThis->File, pThis->StartNanoTS,
+                  pSgBuf->aSegs[0].pvSeg,
+                  pSgBuf->cbUsed,
+                  RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
+    RTCritSectLeave(&pThis->Lock);
+
+    return pThis->pIBelowNet->pfnSendBuf(pThis->pIBelowNet, pSgBuf, fOnWorkerThread);
+}
+
+
+/**
  * @interface_method_impl{PDMINETWORKUP,pfnSendDeprecated}
  */
-static DECLCALLBACK(int) drvNetSnifferSendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNetSnifferUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
 
@@ -94,7 +139,7 @@ static DECLCALLBACK(int) drvNetSnifferSendDeprecated(PPDMINETWORKUP pInterface, 
     RTCritSectLeave(&pThis->Lock);
 
     /* pass down */
-    if (pThis->pIBelowNet)
+    if (RT_LIKELY(pThis->pIBelowNet))
     {
         int rc = pThis->pIBelowNet->pfnSendDeprecated(pThis->pIBelowNet, pvBuf, cb);
 #if 0
@@ -115,9 +160,9 @@ static DECLCALLBACK(int) drvNetSnifferSendDeprecated(PPDMINETWORKUP pInterface, 
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnSetPromiscuousMode}
  */
-static DECLCALLBACK(void) drvNetSnifferSetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
+static DECLCALLBACK(void) drvNetSnifferUp_SetPromiscuousMode(PPDMINETWORKUP pInterface, bool fPromiscuous)
 {
-    LogFlow(("drvNetSnifferSetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
+    LogFlow(("drvNetSnifferUp_SetPromiscuousMode: fPromiscuous=%d\n", fPromiscuous));
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
     if (pThis->pIBelowNet)
         pThis->pIBelowNet->pfnSetPromiscuousMode(pThis->pIBelowNet, fPromiscuous);
@@ -127,9 +172,9 @@ static DECLCALLBACK(void) drvNetSnifferSetPromiscuousMode(PPDMINETWORKUP pInterf
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnNotifyLinkChanged}
  */
-static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
+static DECLCALLBACK(void) drvNetSnifferUp_NotifyLinkChanged(PPDMINETWORKUP pInterface, PDMNETWORKLINKSTATE enmLinkState)
 {
-    LogFlow(("drvNetSnifferNotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
+    LogFlow(("drvNetSnifferUp_NotifyLinkChanged: enmLinkState=%d\n", enmLinkState));
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkUp);
     if (pThis->pIBelowNet)
         pThis->pIBelowNet->pfnNotifyLinkChanged(pThis->pIBelowNet, enmLinkState);
@@ -137,14 +182,9 @@ static DECLCALLBACK(void) drvNetSnifferNotifyLinkChanged(PPDMINETWORKUP pInterfa
 
 
 /**
- * Check how much data the device/driver can receive data now.
- * This must be called before the pfnRecieve() method is called.
- *
- * @returns Number of bytes the device can receive now.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @thread  EMT
+ * @copydoc PDMINETWORKDOWN::pfnWaitReceiveAvail
  */
-static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
+static DECLCALLBACK(int) drvNetSnifferDown_WaitReceiveAvail(PPDMINETWORKDOWN pInterface, RTMSINTERVAL cMillies)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
     return pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, cMillies);
@@ -152,15 +192,9 @@ static DECLCALLBACK(int) drvNetSnifferWaitReceiveAvail(PPDMINETWORKDOWN pInterfa
 
 
 /**
- * Receive data from the network.
- *
- * @returns VBox status code.
- * @param   pInterface      Pointer to the interface structure containing the called function pointer.
- * @param   pvBuf           The available data.
- * @param   cb              Number of bytes available in the buffer.
- * @thread  EMT
+ * @copydoc PDMINETWORKDOWN::pfnReceive
  */
-static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
+static DECLCALLBACK(int) drvNetSnifferDown_Receive(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
 
@@ -185,6 +219,16 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKDOWN pInterface, const
 
 
 /**
+ * @copydoc PDMINETWORKDOWN::pfnNotifyBufAvailable
+ */
+static DECLCALLBACK(void) drvNetSnifferDown_NotifyBufAvailable(PPDMINETWORKDOWN pInterface)
+{
+    PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkDown);
+    pThis->pIAboveNet->pfnNotifyBufAvailable(pThis->pIAboveNet);
+}
+
+
+/**
  * Gets the current Media Access Control (MAC) address.
  *
  * @returns VBox status code.
@@ -192,7 +236,7 @@ static DECLCALLBACK(int) drvNetSnifferReceive(PPDMINETWORKDOWN pInterface, const
  * @param   pMac            Where to store the MAC address.
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
+static DECLCALLBACK(int) drvNetSnifferDownCfg_GetMac(PPDMINETWORKCONFIG pInterface, PRTMAC pMac)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
     return pThis->pIAboveConfig->pfnGetMac(pThis->pIAboveConfig, pMac);
@@ -205,7 +249,7 @@ static DECLCALLBACK(int) drvNetSnifferGetMac(PPDMINETWORKCONFIG pInterface, PRTM
  * @param   pInterface      Pointer to the interface structure containing the called function pointer.
  * @thread  EMT
  */
-static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferGetLinkState(PPDMINETWORKCONFIG pInterface)
+static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferDownCfg_GetLinkState(PPDMINETWORKCONFIG pInterface)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
     return pThis->pIAboveConfig->pfnGetLinkState(pThis->pIAboveConfig);
@@ -219,7 +263,7 @@ static DECLCALLBACK(PDMNETWORKLINKSTATE) drvNetSnifferGetLinkState(PPDMINETWORKC
  * @param   enmState        The new link state
  * @thread  EMT
  */
-static DECLCALLBACK(int) drvNetSnifferSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
+static DECLCALLBACK(int) drvNetSnifferDownCfg_SetLinkState(PPDMINETWORKCONFIG pInterface, PDMNETWORKLINKSTATE enmState)
 {
     PDRVNETSNIFFER pThis = RT_FROM_MEMBER(pInterface, DRVNETSNIFFER, INetworkConfig);
     return pThis->pIAboveConfig->pfnSetLinkState(pThis->pIAboveConfig, enmState);
@@ -350,17 +394,20 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
     /* IBase */
     pDrvIns->IBase.pfnQueryInterface                = drvNetSnifferQueryInterface;
     /* INetworkUp */
-    pThis->INetworkUp.pfnSendDeprecated             = drvNetSnifferSendDeprecated;
-    pThis->INetworkUp.pfnSetPromiscuousMode         = drvNetSnifferSetPromiscuousMode;
-    pThis->INetworkUp.pfnNotifyLinkChanged          = drvNetSnifferNotifyLinkChanged;
-/** @todo implement the new interfaces methods! */
+    pThis->INetworkUp.pfnAllocBuf                   = drvNetSnifferUp_AllocBuf;
+    pThis->INetworkUp.pfnFreeBuf                    = drvNetSnifferUp_FreeBuf;
+    pThis->INetworkUp.pfnSendBuf                    = drvNetSnifferUp_SendBuf;
+    pThis->INetworkUp.pfnSendDeprecated             = drvNetSnifferUp_SendDeprecated;
+    pThis->INetworkUp.pfnSetPromiscuousMode         = drvNetSnifferUp_SetPromiscuousMode;
+    pThis->INetworkUp.pfnNotifyLinkChanged          = drvNetSnifferUp_NotifyLinkChanged;
     /* INetworkDown */
-    pThis->INetworkDown.pfnWaitReceiveAvail         = drvNetSnifferWaitReceiveAvail;
-    pThis->INetworkDown.pfnReceive                  = drvNetSnifferReceive;
+    pThis->INetworkDown.pfnWaitReceiveAvail         = drvNetSnifferDown_WaitReceiveAvail;
+    pThis->INetworkDown.pfnReceive                  = drvNetSnifferDown_Receive;
+    pThis->INetworkDown.pfnNotifyBufAvailable       = drvNetSnifferDown_NotifyBufAvailable;
     /* INetworkConfig */
-    pThis->INetworkConfig.pfnGetMac                 = drvNetSnifferGetMac;
-    pThis->INetworkConfig.pfnGetLinkState           = drvNetSnifferGetLinkState;
-    pThis->INetworkConfig.pfnSetLinkState           = drvNetSnifferSetLinkState;
+    pThis->INetworkConfig.pfnGetMac                 = drvNetSnifferDownCfg_GetMac;
+    pThis->INetworkConfig.pfnGetLinkState           = drvNetSnifferDownCfg_GetLinkState;
+    pThis->INetworkConfig.pfnSetLinkState           = drvNetSnifferDownCfg_SetLinkState;
 
     /*
      * Get the filename.
