@@ -1814,12 +1814,6 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     PVM pVM = pVCpu->CTX_SUFF(pVM);
     int rc;
 
-# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
-    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
-    if (pPool->cDirtyPages)
-        pgmPoolResetDirtyPages(pVM);
-# endif
-
     /*
      * The pool may have pending stuff and even require a return to ring-3 to
      * clear the whole thing.
