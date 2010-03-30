@@ -109,6 +109,7 @@ Machine::Data::Data()
     mMachineStateChangePending = 0;
 
     mCurrentStateModified = TRUE;
+    mGuestPropertiesModified = FALSE;
     mHandleCfgFile = NIL_RTFILE;
 
     mSession.mPid = NIL_RTPROCESS;
@@ -183,8 +184,6 @@ Machine::HWData::HWData()
     mPAEEnabled = false;
 #endif
     mSyntheticCpu = false;
-    mPropertyServiceActive = false;
-    mGuestPropertiesModified = false;
     mHpetEnabled = false;
 
     /* default boot order: floppy - DVD - HDD */
@@ -3821,6 +3820,65 @@ STDMETHODIMP Machine::ShowConsoleWindow(ULONG64 *aWinId)
     return directControl->OnShowWindow(FALSE /* aCheck */, &dummy, aWinId);
 }
 
+#ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * Look up a guest property in VBoxSVC's internal structures.
+ */
+HRESULT Machine::GetGuestPropertyFromService(IN_BSTR aName,
+                                             BSTR *aValue,
+                                             ULONG64 *aTimestamp,
+                                             BSTR *aFlags)
+{
+    using namespace guestProp;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Utf8Str strName(aName);
+    HWData::GuestPropertyList::const_iterator it;
+
+    for (it = mHWData->mGuestProperties.begin();
+         it != mHWData->mGuestProperties.end(); ++it)
+    {
+        if (it->strName == strName)
+        {
+            char szFlags[MAX_FLAGS_LEN + 1];
+            it->strValue.cloneTo(aValue);
+            *aTimestamp = it->mTimestamp;
+            writeFlags(it->mFlags, szFlags);
+            Bstr(szFlags).cloneTo(aFlags);
+            break;
+        }
+    }
+    return S_OK;
+}
+
+/**
+ * Query the VM that a guest property belongs to for the property.
+ * @returns E_ACCESSDENIED if the VM process is not available or not
+ *          currently handling queries and the lookup should then be done in
+ *          VBoxSVC.
+ */
+HRESULT Machine::GetGuestPropertyFromVM(IN_BSTR aName,
+                                        BSTR *aValue,
+                                        ULONG64 *aTimestamp,
+                                        BSTR *aFlags)
+{
+    HRESULT rc;
+    ComPtr<IInternalSessionControl> directControl;
+    directControl = mData->mSession.mDirectControl;
+
+    /* fail if we were called after #OnSessionEnd() is called.  This is a
+     * silly race condition. */
+
+    if (!directControl)
+        rc = E_ACCESSDENIED;
+    else
+        rc = directControl->AccessGuestProperty(aName, NULL, NULL,
+                                                false /* isSetter */,
+                                                aValue, aTimestamp, aFlags);
+    return rc;
+}
+#endif // VBOX_WITH_GUEST_PROPS
+
 STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
                                        BSTR *aValue,
                                        ULONG64 *aTimestamp,
@@ -3837,50 +3895,10 @@ STDMETHODIMP Machine::GetGuestProperty(IN_BSTR aName,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    using namespace guestProp;
-    HRESULT rc = E_FAIL;
-
-    Utf8Str strName(aName);
-
-    if (!mHWData->mPropertyServiceActive)
-    {
-        bool found = false;
-        for (HWData::GuestPropertyList::const_iterator it = mHWData->mGuestProperties.begin();
-             (it != mHWData->mGuestProperties.end()) && !found;
-             ++it)
-        {
-            if (it->strName == strName)
-            {
-                char szFlags[MAX_FLAGS_LEN + 1];
-                it->strValue.cloneTo(aValue);
-                *aTimestamp = it->mTimestamp;
-                writeFlags(it->mFlags, szFlags);
-                Bstr(szFlags).cloneTo(aFlags);
-                found = true;
-            }
-        }
-        rc = S_OK;
-    }
-    else
-    {
-        ComPtr<IInternalSessionControl> directControl =
-            mData->mSession.mDirectControl;
-
-        /* just be on the safe side when calling another process */
-        alock.release();
-
-        /* fail if we were called after #OnSessionEnd() is called.  This is a
-         * silly race condition. */
-
-        if (!directControl)
-            rc = E_FAIL;
-        else
-            rc = directControl->AccessGuestProperty(aName, NULL, NULL,
-                                                    false /* isSetter */,
-                                                    aValue, aTimestamp, aFlags);
-    }
+    HRESULT rc = GetGuestPropertyFromVM(aName, aValue, aTimestamp, aFlags);
+    if (rc == E_ACCESSDENIED)
+        /* The VM is not running or the service is not (yet) accessible */
+        rc = GetGuestPropertyFromService(aName, aValue, aTimestamp, aFlags);
     return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
@@ -3899,35 +3917,28 @@ STDMETHODIMP Machine::GetGuestPropertyTimestamp(IN_BSTR aName, ULONG64 *aTimesta
     return GetGuestProperty(aName, &dummyValue, aTimestamp, &dummyFlags);
 }
 
-STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
-                                       IN_BSTR aValue,
-                                       IN_BSTR aFlags)
+#ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * Set a guest property in VBoxSVC's internal structures.
+ */
+HRESULT Machine::SetGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
+                                           IN_BSTR aFlags)
 {
-#ifndef VBOX_WITH_GUEST_PROPS
-    ReturnComNotImplemented();
-#else // VBOX_WITH_GUEST_PROPS
     using namespace guestProp;
 
-    CheckComArgStrNotEmptyOrNull(aName);
-    if ((aFlags != NULL) && !VALID_PTR(aFlags))
-        return E_INVALIDARG;
-
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     HRESULT rc = S_OK;
+    HWData::GuestProperty property;
+    property.mFlags = NILFLAG;
+    bool found = false;
+
+    rc = checkStateDependency(MutableStateDep);
+    if (FAILED(rc)) return rc;
 
     try
     {
         Utf8Str utf8Name(aName);
         Utf8Str utf8Flags(aFlags);
-
-        AutoCaller autoCaller(this);
-        if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-        AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-        rc = checkStateDependency(MutableStateDep);
-        if (FAILED(rc)) return rc;
-
-        rc = S_OK;
         uint32_t fFlags = NILFLAG;
         if (    (aFlags != NULL)
              && RT_FAILURE(validateFlags(utf8Flags.raw(), &fFlags))
@@ -3936,92 +3947,66 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
                             tr("Invalid flag values: '%ls'"),
                             aFlags);
 
-        if (!mHWData->mPropertyServiceActive)
-        {
-            bool found = false;
-            HWData::GuestProperty property;
-            property.mFlags = NILFLAG;
-
-            /** @todo r=bird: see efficiency rant in PushGuestProperty. (Yeah, I know,
-             *        this is simple and do an OK job atm.) */
-            for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
-                 it != mHWData->mGuestProperties.end();
-                 ++it)
-                if (it->strName == utf8Name)
-                {
-                    property = *it;
-                    if (it->mFlags & (RDONLYHOST))
-                        rc = setError(E_ACCESSDENIED,
-                                      tr("The property '%ls' cannot be changed by the host"),
-                                      aName);
-                    else
-                    {
-                        setModified(IsModified_MachineData);
-                        mHWData.backup();           // @todo r=dj backup in a loop?!?
-
-                        /* The backup() operation invalidates our iterator, so
-                        * get a new one. */
-                        for (it = mHWData->mGuestProperties.begin();
-                             it->strName != utf8Name;
-                             ++it)
-                            ;
-                        mHWData->mGuestProperties.erase(it);
-                    }
-                    found = true;
-                    break;
-                }
-            if (found && SUCCEEDED(rc))
+        /** @todo r=bird: see efficiency rant in PushGuestProperty. (Yeah, I
+         *                know, this is simple and do an OK job atm.) */
+        HWData::GuestPropertyList::iterator it;
+        for (it = mHWData->mGuestProperties.begin();
+             it != mHWData->mGuestProperties.end(); ++it)
+            if (it->strName == utf8Name)
             {
-                if (*aValue)
+                property = *it;
+                if (it->mFlags & (RDONLYHOST))
+                    rc = setError(E_ACCESSDENIED,
+                                  tr("The property '%ls' cannot be changed by the host"),
+                                  aName);
+                else
                 {
-                    RTTIMESPEC time;
-                    property.strValue = aValue;
-                    property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-                    if (aFlags != NULL)
-                        property.mFlags = fFlags;
-                    mHWData->mGuestProperties.push_back(property);
+                    setModified(IsModified_MachineData);
+                    mHWData.backup();           // @todo r=dj backup in a loop?!?
+
+                    /* The backup() operation invalidates our iterator, so
+                    * get a new one. */
+                    for (it = mHWData->mGuestProperties.begin();
+                         it->strName != utf8Name;
+                         ++it)
+                        ;
+                    mHWData->mGuestProperties.erase(it);
                 }
+                found = true;
+                break;
             }
-            else if (SUCCEEDED(rc) && *aValue)
+        if (found && SUCCEEDED(rc))
+        {
+            if (*aValue)
             {
                 RTTIMESPEC time;
-                setModified(IsModified_MachineData);
-                mHWData.backup();
-                property.strName = aName;
                 property.strValue = aValue;
                 property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
-                property.mFlags = fFlags;
+                if (aFlags != NULL)
+                    property.mFlags = fFlags;
                 mHWData->mGuestProperties.push_back(property);
             }
-            if (   SUCCEEDED(rc)
-                && (   mHWData->mGuestPropertyNotificationPatterns.isEmpty()
-                    || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(), RTSTR_MAX,
-                                                    utf8Name.raw(), RTSTR_MAX, NULL) )
-               )
-            {
-                /** @todo r=bird: Why aren't we leaving the lock here?  The
-                 *                same code in PushGuestProperty does... */
-                mParent->onGuestPropertyChange(mData->mUuid, aName, aValue, aFlags);
-            }
         }
-        else
+        else if (SUCCEEDED(rc) && *aValue)
         {
-            ComPtr<IInternalSessionControl> directControl =
-                mData->mSession.mDirectControl;
-
-            /* just be on the safe side when calling another process */
-            alock.leave();
-
-            BSTR dummy = NULL;
-            ULONG64 dummy64;
-            if (!directControl)
-                rc = E_FAIL;
-            else
-                rc = directControl->AccessGuestProperty(aName,
-                                                        *aValue ? aValue : NULL,  /** @todo Fix when adding DeleteGuestProperty(), see defect. */
-                                                        aFlags,
-                                                        true /* isSetter */,
-                                                        &dummy, &dummy64, &dummy);
+            RTTIMESPEC time;
+            setModified(IsModified_MachineData);
+            mHWData.backup();
+            property.strName = aName;
+            property.strValue = aValue;
+            property.mTimestamp = RTTimeSpecGetNano(RTTimeNow(&time));
+            property.mFlags = fFlags;
+            mHWData->mGuestProperties.push_back(property);
+        }
+        if (   SUCCEEDED(rc)
+            && (   mHWData->mGuestPropertyNotificationPatterns.isEmpty()
+                || RTStrSimplePatternMultiMatch(mHWData->mGuestPropertyNotificationPatterns.raw(), RTSTR_MAX,
+                                                utf8Name.raw(), RTSTR_MAX, NULL) )
+           )
+        {
+            /** @todo r=bird: Why aren't we leaving the lock here?  The
+             *                same code in PushGuestProperty does... */
+            mParent->onGuestPropertyChange(mData->mUuid, aName, aValue, aFlags);
         }
     }
     catch (std::bad_alloc &)
@@ -4030,6 +4015,61 @@ STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName,
     }
 
     return rc;
+}
+
+/**
+ * Set a property on the VM that that property belongs to.
+ * @returns E_ACCESSDENIED if the VM process is not available or not
+ *          currently handling queries and the setting should then be done in
+ *          VBoxSVC.
+ */
+HRESULT Machine::SetGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
+                                      IN_BSTR aFlags)
+{
+    HRESULT rc;
+
+    try {
+        ComPtr<IInternalSessionControl> directControl =
+            mData->mSession.mDirectControl;
+
+        BSTR dummy = NULL;
+        ULONG64 dummy64;
+        if (!directControl)
+            rc = E_ACCESSDENIED;
+        else
+            rc = directControl->AccessGuestProperty
+                     (aName,
+                      /** @todo Fix when adding DeleteGuestProperty(),
+                                   see defect. */
+                      *aValue ? aValue : NULL, aFlags, true /* isSetter */,
+                      &dummy, &dummy64, &dummy);
+    }
+    catch (std::bad_alloc &)
+    {
+        rc = E_OUTOFMEMORY;
+    }
+
+    return rc;
+}
+#endif // VBOX_WITH_GUEST_PROPS
+
+STDMETHODIMP Machine::SetGuestProperty(IN_BSTR aName, IN_BSTR aValue,
+                                       IN_BSTR aFlags)
+{
+#ifndef VBOX_WITH_GUEST_PROPS
+    ReturnComNotImplemented();
+#else // VBOX_WITH_GUEST_PROPS
+    CheckComArgStrNotEmptyOrNull(aName);
+    if ((aFlags != NULL) && !VALID_PTR(aFlags))
+        return E_INVALIDARG;
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    HRESULT rc = SetGuestPropertyToVM(aName, aValue, aFlags);
+    if (rc == E_ACCESSDENIED)
+        /* The VM is not running or the service is not (yet) accessible */
+        rc = SetGuestPropertyToService(aName, aValue, aFlags);
+    return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
 
@@ -4037,6 +4077,92 @@ STDMETHODIMP Machine::SetGuestPropertyValue(IN_BSTR aName, IN_BSTR aValue)
 {
     return SetGuestProperty(aName, aValue, NULL);
 }
+
+#ifdef VBOX_WITH_GUEST_PROPS
+/**
+ * Enumerate the guest properties in VBoxSVC's internal structures.
+ */
+HRESULT Machine::EnumerateGuestPropertiesInService
+                (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
+                 ComSafeArrayOut(BSTR, aValues),
+                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(BSTR, aFlags))
+{
+    using namespace guestProp;
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+    Utf8Str strPatterns(aPatterns);
+
+    /*
+     * Look for matching patterns and build up a list.
+     */
+    HWData::GuestPropertyList propList;
+    for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
+         it != mHWData->mGuestProperties.end();
+         ++it)
+        if (   strPatterns.isEmpty()
+            || RTStrSimplePatternMultiMatch(strPatterns.raw(),
+                                            RTSTR_MAX,
+                                            it->strName.raw(),
+                                            RTSTR_MAX, NULL)
+           )
+            propList.push_back(*it);
+
+    /*
+     * And build up the arrays for returning the property information.
+     */
+    size_t cEntries = propList.size();
+    SafeArray<BSTR> names(cEntries);
+    SafeArray<BSTR> values(cEntries);
+    SafeArray<ULONG64> timestamps(cEntries);
+    SafeArray<BSTR> flags(cEntries);
+    size_t iProp = 0;
+    for (HWData::GuestPropertyList::iterator it = propList.begin();
+         it != propList.end();
+         ++it)
+    {
+         char szFlags[MAX_FLAGS_LEN + 1];
+         it->strName.cloneTo(&names[iProp]);
+         it->strValue.cloneTo(&values[iProp]);
+         timestamps[iProp] = it->mTimestamp;
+         writeFlags(it->mFlags, szFlags);
+         Bstr(szFlags).cloneTo(&flags[iProp]);
+         ++iProp;
+    }
+    names.detachTo(ComSafeArrayOutArg(aNames));
+    values.detachTo(ComSafeArrayOutArg(aValues));
+    timestamps.detachTo(ComSafeArrayOutArg(aTimestamps));
+    flags.detachTo(ComSafeArrayOutArg(aFlags));
+    return S_OK;
+}
+
+/**
+ * Enumerate the properties managed by a VM.
+ * @returns E_ACCESSDENIED if the VM process is not available or not
+ *          currently handling queries and the setting should then be done in
+ *          VBoxSVC.
+ */
+HRESULT Machine::EnumerateGuestPropertiesOnVM
+                (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
+                 ComSafeArrayOut(BSTR, aValues),
+                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(BSTR, aFlags))
+{
+    HRESULT rc;
+    ComPtr<IInternalSessionControl> directControl;
+    directControl = mData->mSession.mDirectControl;
+
+    if (!directControl)
+        rc = E_ACCESSDENIED;
+    else
+        rc = directControl->EnumerateGuestProperties
+                     (aPatterns, ComSafeArrayOutArg(aNames),
+                      ComSafeArrayOutArg(aValues),
+                      ComSafeArrayOutArg(aTimestamps),
+                      ComSafeArrayOutArg(aFlags));
+    return rc;
+}
+#endif // VBOX_WITH_GUEST_PROPS
 
 STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
                                                ComSafeArrayOut(BSTR, aNames),
@@ -4058,74 +4184,18 @@ STDMETHODIMP Machine::EnumerateGuestProperties(IN_BSTR aPatterns,
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    using namespace guestProp;
-    HRESULT rc = E_FAIL;
-
-    Utf8Str strPatterns(aPatterns);
-
-    if (!mHWData->mPropertyServiceActive)
-    {
-
-        /*
-         * Look for matching patterns and build up a list.
-         */
-        HWData::GuestPropertyList propList;
-        for (HWData::GuestPropertyList::iterator it = mHWData->mGuestProperties.begin();
-             it != mHWData->mGuestProperties.end();
-             ++it)
-            if (   strPatterns.isEmpty()
-                || RTStrSimplePatternMultiMatch(strPatterns.raw(),
-                                                RTSTR_MAX,
-                                                it->strName.raw(),
-                                                RTSTR_MAX, NULL)
-               )
-                propList.push_back(*it);
-
-        /*
-         * And build up the arrays for returning the property information.
-         */
-        size_t cEntries = propList.size();
-        SafeArray<BSTR> names(cEntries);
-        SafeArray<BSTR> values(cEntries);
-        SafeArray<ULONG64> timestamps(cEntries);
-        SafeArray<BSTR> flags(cEntries);
-        size_t iProp = 0;
-        for (HWData::GuestPropertyList::iterator it = propList.begin();
-             it != propList.end();
-             ++it)
-        {
-             char szFlags[MAX_FLAGS_LEN + 1];
-             it->strName.cloneTo(&names[iProp]);
-             it->strValue.cloneTo(&values[iProp]);
-             timestamps[iProp] = it->mTimestamp;
-             writeFlags(it->mFlags, szFlags);
-             Bstr(szFlags).cloneTo(&flags[iProp]);
-             ++iProp;
-        }
-        names.detachTo(ComSafeArrayOutArg(aNames));
-        values.detachTo(ComSafeArrayOutArg(aValues));
-        timestamps.detachTo(ComSafeArrayOutArg(aTimestamps));
-        flags.detachTo(ComSafeArrayOutArg(aFlags));
-        rc = S_OK;
-    }
-    else
-    {
-        ComPtr<IInternalSessionControl> directControl = mData->mSession.mDirectControl;
-
-        /* just be on the safe side when calling another process */
-        alock.release();
-
-        if (!directControl)
-            rc = E_FAIL;
-        else
-            rc = directControl->EnumerateGuestProperties(aPatterns,
-                                                         ComSafeArrayOutArg(aNames),
-                                                         ComSafeArrayOutArg(aValues),
-                                                         ComSafeArrayOutArg(aTimestamps),
-                                                         ComSafeArrayOutArg(aFlags));
-    }
+    HRESULT rc = EnumerateGuestPropertiesOnVM
+                     (aPatterns, ComSafeArrayOutArg(aNames),
+                      ComSafeArrayOutArg(aValues),
+                      ComSafeArrayOutArg(aTimestamps),
+                      ComSafeArrayOutArg(aFlags));
+    if (rc == E_ACCESSDENIED)
+        /* The VM is not running or the service is not (yet) accessible */
+        rc = EnumerateGuestPropertiesInService
+                     (aPatterns, ComSafeArrayOutArg(aNames),
+                      ComSafeArrayOutArg(aValues),
+                      ComSafeArrayOutArg(aTimestamps),
+                      ComSafeArrayOutArg(aFlags));
     return rc;
 #endif // VBOX_WITH_GUEST_PROPS
 }
@@ -6638,7 +6708,6 @@ HRESULT Machine::loadHardware(const settings::Hardware &data)
             mHWData->mGuestProperties.push_back(property);
         }
 
-        mHWData->mPropertyServiceActive = false;
         mHWData->mGuestPropertyNotificationPatterns = data.strNotificationPatterns;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
     }
@@ -7694,7 +7763,7 @@ HRESULT Machine::saveHardware(settings::Hardware &data)
 
         data.strNotificationPatterns = mHWData->mGuestPropertyNotificationPatterns;
         /* I presume this doesn't require a backup(). */
-        mHWData->mGuestPropertiesModified = false;
+        mData->mGuestPropertiesModified = FALSE;
 #endif /* VBOX_WITH_GUEST_PROPS defined */
     }
     catch(std::bad_alloc &)
@@ -9837,79 +9906,6 @@ STDMETHODIMP SessionMachine::PullGuestProperties(ComSafeArrayOut(BSTR, aNames),
     values.detachTo(ComSafeArrayOutArg(aValues));
     timestamps.detachTo(ComSafeArrayOutArg(aTimestamps));
     flags.detachTo(ComSafeArrayOutArg(aFlags));
-    mHWData->mPropertyServiceActive = true;
-    return S_OK;
-#else
-    ReturnComNotImplemented();
-#endif
-}
-
-STDMETHODIMP SessionMachine::PushGuestProperties(ComSafeArrayIn(IN_BSTR, aNames),
-                                                 ComSafeArrayIn(IN_BSTR, aValues),
-                                                 ComSafeArrayIn(ULONG64, aTimestamps),
-                                                 ComSafeArrayIn(IN_BSTR, aFlags))
-{
-    LogFlowThisFunc(("\n"));
-
-#ifdef VBOX_WITH_GUEST_PROPS
-    using namespace guestProp;
-
-    AssertReturn(!ComSafeArrayInIsNull(aNames),      E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull(aValues),     E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull(aTimestamps), E_POINTER);
-    AssertReturn(!ComSafeArrayInIsNull(aFlags),      E_POINTER);
-
-    AutoCaller autoCaller(this);
-    AssertComRCReturn(autoCaller.rc(), autoCaller.rc());
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    /*
-     * Temporarily reset the registered flag, so that our machine state
-     * changes (i.e. mHWData.backup()) succeed.  (isMutable() used in all
-     * setters will return FALSE for a Machine instance if mRegistered is TRUE).
-     *
-     * This is copied from registeredInit(), and may or may not be the right
-     * way to handle this.
-     *
-     * @todo r=dj review this, this gets called during machine power-down when
-     * we have already saved the machine settings, there's no need to do this
-     * twice.
-     */
-    Assert(mData->mRegistered);
-    mData->mRegistered = FALSE;
-
-    HRESULT rc = checkStateDependency(MutableStateDep);
-    AssertLogRelMsgReturn(SUCCEEDED(rc), ("%Rhrc\n", rc), rc);
-
-    com::SafeArray<IN_BSTR> names(     ComSafeArrayInArg(aNames));
-    com::SafeArray<IN_BSTR> values(    ComSafeArrayInArg(aValues));
-    com::SafeArray<ULONG64> timestamps(ComSafeArrayInArg(aTimestamps));
-    com::SafeArray<IN_BSTR> flags(     ComSafeArrayInArg(aFlags));
-
-    DiscardSettings();
-    setModified(IsModified_MachineData);
-    mHWData.backup();
-
-    mHWData->mGuestProperties.erase(mHWData->mGuestProperties.begin(),
-                                    mHWData->mGuestProperties.end());
-    for (unsigned i = 0; i < names.size(); ++i)
-    {
-        uint32_t fFlags = NILFLAG;
-        validateFlags(Utf8Str(flags[i]).raw(), &fFlags);
-        HWData::GuestProperty property = { names[i], values[i], timestamps[i], fFlags };
-        mHWData->mGuestProperties.push_back(property);
-    }
-
-    mHWData->mPropertyServiceActive = false;
-
-    alock.release();
-    SaveSettings();
-
-    /* Restore the mRegistered flag. */
-    alock.acquire();
-    mData->mRegistered = TRUE;
-
     return S_OK;
 #else
     ReturnComNotImplemented();
@@ -9952,7 +9948,6 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-        AssertReturn(mHWData->mPropertyServiceActive, VBOX_E_INVALID_OBJECT_STATE);
         switch (mData->mMachineState)
         {
             case MachineState_Paused:
@@ -9987,14 +9982,14 @@ STDMETHODIMP SessionMachine::PushGuestProperty(IN_BSTR aName,
             if (utf8Name == iter->strName)
             {
                 mHWData->mGuestProperties.erase(iter);
-                mHWData->mGuestPropertiesModified = true;
+                mData->mGuestPropertiesModified = TRUE;
                 break;
             }
         if (aValue != NULL)
         {
             HWData::GuestProperty property = { aName, aValue, aTimestamp, fFlags };
             mHWData->mGuestProperties.push_back(property);
-            mHWData->mGuestPropertiesModified = true;
+            mData->mGuestPropertiesModified = TRUE;
         }
 
         /*
@@ -10827,7 +10822,7 @@ HRESULT SessionMachine::setMachineState(MachineState_T aMachineState)
          * property store on shutdown. */
 
         HWData::GuestPropertyList::iterator it;
-        BOOL fNeedsSaving = mHWData->mGuestPropertiesModified;
+        BOOL fNeedsSaving = mData->mGuestPropertiesModified;
         if (!fNeedsSaving)
             for (it = mHWData->mGuestProperties.begin();
                  it != mHWData->mGuestProperties.end(); ++it)

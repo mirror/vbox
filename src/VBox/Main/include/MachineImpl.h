@@ -184,6 +184,10 @@ public:
         uint32_t mMachineStateChangePending;
 
         BOOL mCurrentStateModified;
+        /** Guest properties have been modified and need saving since the
+         * machine was started, or there are transient properties which need
+         * deleting and the machine is being shut down. */
+        BOOL mGuestPropertiesModified;
 
         RTFILE mHandleCfgFile;
 
@@ -298,8 +302,6 @@ public:
 
         typedef std::list<GuestProperty> GuestPropertyList;
         GuestPropertyList    mGuestProperties;
-        BOOL                 mPropertyServiceActive;
-        BOOL                 mGuestPropertiesModified;
         Utf8Str              mGuestPropertyNotificationPatterns;
 
         FirmwareType_T       mFirmwareType;
@@ -771,6 +773,27 @@ protected:
     void commit();
     void copyFrom(Machine *aThat);
 
+#ifdef VBOX_WITH_GUEST_PROPS
+    HRESULT GetGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
+                                        ULONG64 *aTimestamp, BSTR *aFlags);
+    HRESULT GetGuestPropertyFromVM(IN_BSTR aName, BSTR *aValue,
+                                   ULONG64 *aTimestamp, BSTR *aFlags);
+    HRESULT SetGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
+                                      IN_BSTR aFlags);
+    HRESULT SetGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
+                                 IN_BSTR aFlags);
+    HRESULT EnumerateGuestPropertiesInService
+                (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
+                 ComSafeArrayOut(BSTR, aValues),
+                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(BSTR, aFlags));
+    HRESULT EnumerateGuestPropertiesOnVM
+                (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
+                 ComSafeArrayOut(BSTR, aValues),
+                 ComSafeArrayOut(ULONG64, aTimestamps),
+                 ComSafeArrayOut(BSTR, aFlags));
+#endif /* VBOX_WITH_GUEST_PROPS */
+
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
     void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
@@ -879,8 +902,6 @@ public:
                                IProgress **aProgress);
     STDMETHOD(PullGuestProperties)(ComSafeArrayOut(BSTR, aNames), ComSafeArrayOut(BSTR, aValues),
               ComSafeArrayOut(ULONG64, aTimestamps), ComSafeArrayOut(BSTR, aFlags));
-    STDMETHOD(PushGuestProperties)(ComSafeArrayIn(IN_BSTR, aNames), ComSafeArrayIn(IN_BSTR, aValues),
-              ComSafeArrayIn(ULONG64, aTimestamps), ComSafeArrayIn(IN_BSTR, aFlags));
     STDMETHOD(PushGuestProperty)(IN_BSTR aName, IN_BSTR aValue,
                                   ULONG64 aTimestamp, IN_BSTR aFlags);
     STDMETHOD(LockMedia)()   { return lockMedia(); }
