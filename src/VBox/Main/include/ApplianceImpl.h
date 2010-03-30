@@ -31,6 +31,7 @@
 
 /* VBox forward declarations */
 class Progress;
+class VirtualSystemDescription;
 
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBase,
@@ -52,6 +53,13 @@ public:
     END_COM_MAP()
 
     DECLARE_EMPTY_CTOR_DTOR (Appliance)
+
+    enum OVFFormat
+    {
+        unspecified,
+        OVF_0_9,
+        OVF_1_0
+    };
 
     // public initializer/uninitializer for internal purposes only
     HRESULT FinalConstruct() { return S_OK; }
@@ -125,10 +133,16 @@ private:
                                      int32_t &lChannel,
                                      int32_t &lDevice);
 
-    HRESULT writeImpl(int aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     struct TaskExportOVF; /* Worker threads for export */
     static DECLCALLBACK(int) taskThreadWriteOVF(RTTHREAD aThread, void *pvUser);
+
+    struct XMLStack;
+    void buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
+                                     ComObjPtr<VirtualSystemDescription> &vsdescThis,
+                                     OVFFormat enFormat,
+                                     XMLStack &stack);
 
     int writeFS(TaskExportOVF *pTask);
     int writeS3(TaskExportOVF *pTask);

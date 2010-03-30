@@ -776,9 +776,11 @@ public:
     void convertOldOSType_pre1_5(com::Utf8Str &str);
     void readMachine(const xml::ElementNode &elmMachine);
 
-    void writeHardware(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
-    void writeStorageControllers(xml::ElementNode &elmParent, const Storage &st);
-    void writeSnapshot(xml::ElementNode &elmParent, const Snapshot &snap);
+    void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
+    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st);
+    void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
+    void buildMachineXML(xml::ElementNode &elmMachine);
+
     void bumpSettingsVersionIfNeeded();
     void write(const com::Utf8Str &strFilename);
 
@@ -807,6 +809,8 @@ public:
 
     SnapshotsList           llFirstSnapshot;            // first snapshot or empty list if there's none
 };
+
+
 
 } // namespace settings
 

@@ -736,13 +736,12 @@ protected:
     HRESULT prepareSaveSettings(bool *pfNeedsGlobalSaveSettings);
     HRESULT saveSettings(bool *pfNeedsGlobalSaveSettings, int aFlags = 0);
 
-    HRESULT saveAllSnapshots();
-
+    void copyMachineDataToSettings(settings::MachineConfigFile &config);
+    HRESULT saveAllSnapshots(settings::MachineConfigFile &config);
     HRESULT saveHardware(settings::Hardware &data);
     HRESULT saveStorageControllers(settings::Storage &data);
     HRESULT saveStorageDevices(ComObjPtr<StorageController> aStorageController,
                                settings::StorageController &data);
-
     HRESULT saveStateSettings(int aFlags);
 
     HRESULT createImplicitDiffs(const Bstr &aFolder,
@@ -825,6 +824,7 @@ protected:
 
     friend class SessionMachine;
     friend class SnapshotMachine;
+    friend class Appliance;
 };
 
 // SessionMachine class
