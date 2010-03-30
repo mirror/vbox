@@ -7344,68 +7344,17 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
 
     // keep a pointer to the current settings structures
     settings::MachineConfigFile *pOldConfig = mData->m_pMachineConfigFile;
+    settings::MachineConfigFile *pNewConfig;
 
     try
     {
         // make a fresh one to have everyone write stuff into
-        mData->m_pMachineConfigFile = new settings::MachineConfigFile(NULL);
-        mData->m_pMachineConfigFile->copyBaseFrom(*pOldConfig);
+        pNewConfig = new settings::MachineConfigFile(NULL);
+        pNewConfig->copyBaseFrom(*mData->m_pMachineConfigFile);
 
-        // deep copy extradata
-        mData->m_pMachineConfigFile->mapExtraDataItems = pOldConfig->mapExtraDataItems;
-
-        mData->m_pMachineConfigFile->uuid = mData->mUuid;
-        mData->m_pMachineConfigFile->strName = mUserData->mName;
-        mData->m_pMachineConfigFile->fNameSync = !!mUserData->mNameSync;
-        mData->m_pMachineConfigFile->strDescription = mUserData->mDescription;
-        mData->m_pMachineConfigFile->strOsType = mUserData->mOSTypeId;
-
-        if (    mData->mMachineState == MachineState_Saved
-             || mData->mMachineState == MachineState_Restoring
-                // when deleting a snapshot we may or may not have a saved state in the current state,
-                // so let's not assert here please
-             || (    (mData->mMachineState == MachineState_DeletingSnapshot)
-                  && (!mSSData->mStateFilePath.isEmpty())
-                )
-           )
-        {
-            Assert(!mSSData->mStateFilePath.isEmpty());
-            /* try to make the file name relative to the settings file dir */
-            calculateRelativePath(mSSData->mStateFilePath, mData->m_pMachineConfigFile->strStateFile);
-        }
-        else
-        {
-            Assert(mSSData->mStateFilePath.isEmpty());
-            mData->m_pMachineConfigFile->strStateFile.setNull();
-        }
-
-        if (mData->mCurrentSnapshot)
-            mData->m_pMachineConfigFile->uuidCurrentSnapshot = mData->mCurrentSnapshot->getId();
-        else
-            mData->m_pMachineConfigFile->uuidCurrentSnapshot.clear();
-
-        mData->m_pMachineConfigFile->strSnapshotFolder = mUserData->mSnapshotFolder;
-        // mData->m_pMachineConfigFile->fCurrentStateModified is special, see below
-        mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
-        mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
-/// @todo Live Migration:        mData->m_pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
-
-        mData->m_pMachineConfigFile->fTeleporterEnabled    = !!mUserData->mTeleporterEnabled;
-        mData->m_pMachineConfigFile->uTeleporterPort       = mUserData->mTeleporterPort;
-        mData->m_pMachineConfigFile->strTeleporterAddress  = mUserData->mTeleporterAddress;
-        mData->m_pMachineConfigFile->strTeleporterPassword = mUserData->mTeleporterPassword;
-
-        mData->m_pMachineConfigFile->fRTCUseUTC = !!mUserData->mRTCUseUTC;
-
-        rc = saveHardware(mData->m_pMachineConfigFile->hardwareMachine);
-        if (FAILED(rc)) throw rc;
-
-        rc = saveStorageControllers(mData->m_pMachineConfigFile->storageMachine);
-        if (FAILED(rc)) throw rc;
-
-        // save snapshots
-        rc = saveAllSnapshots();
-        if (FAILED(rc)) throw rc;
+        // now go and copy all the settings data from COM to the settings structures
+        // (this calles saveSettings() on all the COM objects in the machine)
+        copyMachineDataToSettings(*pNewConfig);
 
         if (aFlags & SaveS_ResetCurStateModified)
         {
@@ -7425,7 +7374,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
                 // previously stored in the config file; this invokes MachineConfigFile::operator==
                 // which does a deep compare of all the settings, which is expensive but less expensive
                 // than writing out XML in vain
-                bool fAnySettingsChanged = (*mData->m_pMachineConfigFile == *pOldConfig);
+                bool fAnySettingsChanged = (*pNewConfig == *pOldConfig);
 
                 // could still be modified if any settings changed
                 mData->mCurrentStateModified = fAnySettingsChanged;
@@ -7436,11 +7385,15 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
                 fNeedsWrite = true;
         }
 
-        mData->m_pMachineConfigFile->fCurrentStateModified = !!mData->mCurrentStateModified;
+        pNewConfig->fCurrentStateModified = !!mData->mCurrentStateModified;
 
         if (fNeedsWrite)
             // now spit it all out!
-            mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
+            pNewConfig->write(mData->m_strConfigFileFull);
+
+        mData->m_pMachineConfigFile = pNewConfig;
+        delete pOldConfig;
+        commit();
 
         // after saving settings, we are no longer different from the XML on disk
         m_flModifications = 0;
@@ -7451,18 +7404,12 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
         rc = err;
 
         // restore old config
-        delete mData->m_pMachineConfigFile;
+        delete pNewConfig;
         mData->m_pMachineConfigFile = pOldConfig;
     }
     catch (...)
     {
         rc = VirtualBox::handleUnexpectedExceptions(RT_SRC_POS);
-    }
-
-    if (SUCCEEDED(rc))
-    {
-        commit();
-        delete pOldConfig;
     }
 
     if (fNeedsWrite || (aFlags & SaveS_InformCallbacksAnyway))
@@ -7481,7 +7428,89 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
     return rc;
 }
 
-HRESULT Machine::saveAllSnapshots()
+/**
+ * Implementation for saving the machine settings into the given
+ * settings::MachineConfigFile instance. This copies machine extradata
+ * from the previous machine config file in the instance data, if any.
+ *
+ * This fills all the fields in there, including snapshots, *except*
+ * for the following:
+ *
+ * -- fCurrentStateModified. There is some special logic associated with that.
+ *
+ * The caller can then call MachineConfigFile::write() or do something else
+ * with it.
+ *
+ * Caller must hold the machine lock!
+ *
+ * This throws XML errors and HRESULT, so the caller must have a catch block!
+ */
+void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
+{
+    // deep copy extradata
+    config.mapExtraDataItems = mData->m_pMachineConfigFile->mapExtraDataItems;
+
+    config.uuid = mData->mUuid;
+    config.strName = mUserData->mName;
+    config.fNameSync = !!mUserData->mNameSync;
+    config.strDescription = mUserData->mDescription;
+    config.strOsType = mUserData->mOSTypeId;
+
+    if (    mData->mMachineState == MachineState_Saved
+         || mData->mMachineState == MachineState_Restoring
+            // when deleting a snapshot we may or may not have a saved state in the current state,
+            // so let's not assert here please
+         || (    (mData->mMachineState == MachineState_DeletingSnapshot)
+              && (!mSSData->mStateFilePath.isEmpty())
+            )
+        )
+    {
+        Assert(!mSSData->mStateFilePath.isEmpty());
+        /* try to make the file name relative to the settings file dir */
+        calculateRelativePath(mSSData->mStateFilePath, config.strStateFile);
+    }
+    else
+    {
+        Assert(mSSData->mStateFilePath.isEmpty());
+        config.strStateFile.setNull();
+    }
+
+    if (mData->mCurrentSnapshot)
+        config.uuidCurrentSnapshot = mData->mCurrentSnapshot->getId();
+    else
+        config.uuidCurrentSnapshot.clear();
+
+    config.strSnapshotFolder = mUserData->mSnapshotFolder;
+    // config.fCurrentStateModified is special, see below
+    config.timeLastStateChange = mData->mLastStateChange;
+    config.fAborted = (mData->mMachineState == MachineState_Aborted);
+    /// @todo Live Migration:        config.fTeleported = (mData->mMachineState == MachineState_Teleported);
+
+    config.fTeleporterEnabled    = !!mUserData->mTeleporterEnabled;
+    config.uTeleporterPort       = mUserData->mTeleporterPort;
+    config.strTeleporterAddress  = mUserData->mTeleporterAddress;
+    config.strTeleporterPassword = mUserData->mTeleporterPassword;
+
+    config.fRTCUseUTC = !!mUserData->mRTCUseUTC;
+
+    HRESULT rc = saveHardware(config.hardwareMachine);
+    if (FAILED(rc)) throw rc;
+
+    rc = saveStorageControllers(config.storageMachine);
+    if (FAILED(rc)) throw rc;
+
+    // save snapshots
+    rc = saveAllSnapshots(config);
+    if (FAILED(rc)) throw rc;
+}
+
+/**
+ * Saves all snapshots of the machine into the given machine config file. Called
+ * from Machine::buildMachineXML() and SessionMachine::deleteSnapshotHandler().
+ * @param config
+ * @return
+ */
+HRESULT Machine::saveAllSnapshots(settings::MachineConfigFile &config)
 {
     AssertReturn(isWriteLockOnCurrentThread(), E_FAIL);
 
@@ -7489,16 +7518,16 @@ HRESULT Machine::saveAllSnapshots()
 
     try
     {
-        mData->m_pMachineConfigFile->llFirstSnapshot.clear();
+        config.llFirstSnapshot.clear();
 
         if (mData->mFirstSnapshot)
         {
             settings::Snapshot snapNew;
-            mData->m_pMachineConfigFile->llFirstSnapshot.push_back(snapNew);
+            config.llFirstSnapshot.push_back(snapNew);
 
             // get reference to the fresh copy of the snapshot on the list and
             // work on that copy directly to avoid excessive copying later
-            settings::Snapshot &snap = mData->m_pMachineConfigFile->llFirstSnapshot.front();
+            settings::Snapshot &snap = config.llFirstSnapshot.front();
 
             rc = mData->mFirstSnapshot->saveSnapshot(snap, false /*aAttrsOnly*/);
             if (FAILED(rc)) throw rc;
@@ -8925,7 +8954,7 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(hal, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
-    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(hal, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, 
+    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(hal, aMachine, guestMemTotal, guestMemFree, guestMemBalloon,
                                                         guestMemCache, guestPagedTotal, guestPagedFree);
     aCollector->registerBaseMetric(guestCpuMem);
 

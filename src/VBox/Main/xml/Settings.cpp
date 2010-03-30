@@ -2951,9 +2951,9 @@ void MachineConfigFile::readMachine(const xml::ElementNode &elmMachine)
  * @param elmParent
  * @param st
  */
-void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
-                                      const Hardware &hw,
-                                      const Storage &strg)
+void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
+                                         const Hardware &hw,
+                                         const Storage &strg)
 {
     xml::ElementNode *pelmHardware = elmParent.createChild("Hardware");
 
@@ -3441,8 +3441,8 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
  * @param elmParent
  * @param st
  */
-void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
-                                                const Storage &st)
+void MachineConfigFile::buildStorageControllersXML(xml::ElementNode &elmParent,
+                                                   const Storage &st)
 {
     xml::ElementNode *pelmStorageControllers = elmParent.createChild("StorageControllers");
 
@@ -3559,8 +3559,8 @@ void MachineConfigFile::writeStorageControllers(xml::ElementNode &elmParent,
  * @param elmParent
  * @param snap
  */
-void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
-                                      const Snapshot &snap)
+void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
+                                         const Snapshot &snap)
 {
     xml::ElementNode *pelmSnapshot = elmParent.createChild("Snapshot");
 
@@ -3574,8 +3574,8 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
     if (snap.strDescription.length())
         pelmSnapshot->createChild("Description")->addContent(snap.strDescription);
 
-    writeHardware(*pelmSnapshot, snap.hardware, snap.storage);
-    writeStorageControllers(*pelmSnapshot, snap.storage);
+    buildHardwareXML(*pelmSnapshot, snap.hardware, snap.storage);
+    buildStorageControllersXML(*pelmSnapshot, snap.storage);
 
     if (snap.llChildSnapshots.size())
     {
@@ -3585,9 +3585,59 @@ void MachineConfigFile::writeSnapshot(xml::ElementNode &elmParent,
              ++it)
         {
             const Snapshot &child = *it;
-            writeSnapshot(*pelmChildren, child);
+            buildSnapshotXML(*pelmChildren, child);
         }
     }
+}
+
+/**
+ * Builds the XML DOM tree for the machine config under the given XML element.
+ * This has been separated out from write() so it can be called from elsewhere,
+ * such as the OVF code, to build machine XML in an existing XML tree.
+ * @param elmMachine
+ */
+void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine)
+{
+    elmMachine.setAttribute("uuid", makeString(uuid));
+    elmMachine.setAttribute("name", strName);
+    if (!fNameSync)
+        elmMachine.setAttribute("nameSync", fNameSync);
+    if (strDescription.length())
+        elmMachine.createChild("Description")->addContent(strDescription);
+    elmMachine.setAttribute("OSType", strOsType);
+    if (strStateFile.length())
+        elmMachine.setAttribute("stateFile", strStateFile);
+    if (!uuidCurrentSnapshot.isEmpty())
+        elmMachine.setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
+    if (strSnapshotFolder.length())
+        elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
+    if (!fCurrentStateModified)
+        elmMachine.setAttribute("currentStateModified", fCurrentStateModified);
+    elmMachine.setAttribute("lastStateChange", makeString(timeLastStateChange));
+    if (fAborted)
+        elmMachine.setAttribute("aborted", fAborted);
+    if (    m->sv >= SettingsVersion_v1_9
+        &&  (   fTeleporterEnabled
+            ||  uTeleporterPort
+            ||  !strTeleporterAddress.isEmpty()
+            ||  !strTeleporterPassword.isEmpty()
+            )
+       )
+    {
+        xml::ElementNode *pelmTeleporter = elmMachine.createChild("Teleporter");
+        pelmTeleporter->setAttribute("enabled", fTeleporterEnabled);
+        pelmTeleporter->setAttribute("port", uTeleporterPort);
+        pelmTeleporter->setAttribute("address", strTeleporterAddress);
+        pelmTeleporter->setAttribute("password", strTeleporterPassword);
+    }
+
+    writeExtraData(elmMachine, mapExtraDataItems);
+
+    if (llFirstSnapshot.size())
+        buildSnapshotXML(elmMachine, llFirstSnapshot.front());
+
+    buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
+    buildStorageControllersXML(elmMachine, storageMachine);
 }
 
 /**
@@ -3725,47 +3775,7 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         createStubDocument();
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
-
-        pelmMachine->setAttribute("uuid", makeString(uuid));
-        pelmMachine->setAttribute("name", strName);
-        if (!fNameSync)
-            pelmMachine->setAttribute("nameSync", fNameSync);
-        if (strDescription.length())
-            pelmMachine->createChild("Description")->addContent(strDescription);
-        pelmMachine->setAttribute("OSType", strOsType);
-        if (strStateFile.length())
-            pelmMachine->setAttribute("stateFile", strStateFile);
-        if (!uuidCurrentSnapshot.isEmpty())
-            pelmMachine->setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
-        if (strSnapshotFolder.length())
-            pelmMachine->setAttribute("snapshotFolder", strSnapshotFolder);
-        if (!fCurrentStateModified)
-            pelmMachine->setAttribute("currentStateModified", fCurrentStateModified);
-        pelmMachine->setAttribute("lastStateChange", makeString(timeLastStateChange));
-        if (fAborted)
-            pelmMachine->setAttribute("aborted", fAborted);
-        if (    m->sv >= SettingsVersion_v1_9
-            &&  (   fTeleporterEnabled
-                 || uTeleporterPort
-                 || !strTeleporterAddress.isEmpty()
-                 || !strTeleporterPassword.isEmpty()
-                )
-           )
-        {
-           xml::ElementNode *pelmTeleporter = pelmMachine->createChild("Teleporter");
-           pelmTeleporter->setAttribute("enabled", fTeleporterEnabled);
-           pelmTeleporter->setAttribute("port", uTeleporterPort);
-           pelmTeleporter->setAttribute("address", strTeleporterAddress);
-           pelmTeleporter->setAttribute("password", strTeleporterPassword);
-        }
-
-        writeExtraData(*pelmMachine, mapExtraDataItems);
-
-        if (llFirstSnapshot.size())
-            writeSnapshot(*pelmMachine, llFirstSnapshot.front());
-
-        writeHardware(*pelmMachine, hardwareMachine, storageMachine);
-        writeStorageControllers(*pelmMachine, storageMachine);
+        buildMachineXML(*pelmMachine);
 
         // now go write the XML
         xml::XmlFileWriter writer(*m->pDoc);

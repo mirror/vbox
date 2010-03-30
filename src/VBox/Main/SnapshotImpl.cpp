@@ -2313,7 +2313,7 @@ void SessionMachine::deleteSnapshotHandler(DeleteSnapshotTask &aTask)
                     // this requests the machine lock in turn when deleting all the children
                     // in the snapshot machine
 
-            rc = saveAllSnapshots();
+            rc = saveAllSnapshots(*mData->m_pMachineConfigFile);
             machineLock.release();
             if (FAILED(rc)) throw rc;
 
