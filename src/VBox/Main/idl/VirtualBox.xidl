@@ -8370,7 +8370,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="c738a1de-3616-48d1-9ac5-8efd21e2560d"
+    uuid="3fcf2078-3c69-45ca-bd5c-79c3e3c15362"
     wsmap="struct"
   >
     <desc>
