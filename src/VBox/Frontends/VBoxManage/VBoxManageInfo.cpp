@@ -1805,198 +1805,8 @@ HRESULT showVMInfo (ComPtr<IVirtualBox> virtualBox,
         else
             RTPrintf("Configured memory balloon size:      %d MB\n", guestVal);
     }
-    rc = machine->COMGETTER(StatisticsUpdateInterval)(&guestVal);
-    if (SUCCEEDED(rc))
-    {
-        if (details == VMINFO_MACHINEREADABLE)
-            RTPrintf("GuestStatisticsUpdateInterval=%d\n", guestVal);
-        else
-        {
-            if (guestVal == 0)
-                RTPrintf("Statistics update:                   disabled\n");
-            else
-                RTPrintf("Statistics update interval:          %d seconds\n", guestVal);
-        }
-    }
     if (details != VMINFO_MACHINEREADABLE)
         RTPrintf("\n");
-
-    if (    console
-        &&  (   details == VMINFO_STATISTICS
-             || details == VMINFO_FULL
-             || details == VMINFO_MACHINEREADABLE))
-    {
-        ComPtr <IGuest> guest;
-
-        rc = console->COMGETTER(Guest)(guest.asOutParam());
-        if (SUCCEEDED(rc))
-        {
-            ULONG statVal;
-
-            rc = guest->GetStatistic(0, GuestStatisticType_SampleNumber, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestSample=%d\n", statVal);
-                else
-                    RTPrintf("Guest statistics for sample %d:\n\n", statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Idle, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestLoadIdleCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: CPU Load Idle          %-3d%%\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_Kernel, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestLoadKernelCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: CPU Load Kernel        %-3d%%\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_CPULoad_User, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestLoadUserCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: CPU Load User          %-3d%%\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_Threads, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestThreadsCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Threads                %d\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_Processes, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestProcessesCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Processes              %d\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_Handles, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestHandlesCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Handles                %d\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemoryLoad, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryLoadCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Memory Load            %d%%\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_PhysMemTotal, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryTotalPhysCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Total physical memory  %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_PhysMemAvailable, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryFreePhysCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Free physical memory   %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_PhysMemBalloon, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryBalloonCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Memory balloon size    %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemCommitTotal, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryCommittedCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Committed memory       %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemKernelTotal, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryTotalKernelCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Total kernel memory    %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemKernelPaged, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryPagedKernelCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Paged kernel memory    %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemKernelNonpaged, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestMemoryNonpagedKernelCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Nonpaged kernel memory %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_MemSystemCache, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestSystemCacheSizeCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: System cache size      %-4d MB\n", 0, statVal);
-            }
-
-            rc = guest->GetStatistic(0, GuestStatisticType_PageFileSize, &statVal);
-            if (SUCCEEDED(rc))
-            {
-                if (details == VMINFO_MACHINEREADABLE)
-                    RTPrintf("StatGuestPageFileSizeCPU%d=%d\n", 0, statVal);
-                else
-                    RTPrintf("CPU%d: Page file size         %-4d MB\n", 0, statVal);
-            }
-
-            RTPrintf("\n");
-        }
-        else
-        {
-            if (details != VMINFO_MACHINEREADABLE)
-            {
-                RTPrintf("[!] FAILED calling console->getGuest at line %d!\n", __LINE__);
-                GluePrintRCMessage(rc);
-            }
-        }
-    }
 
     /*
      * snapshots
@@ -2028,8 +1838,6 @@ static const RTGETOPTDEF g_aShowVMInfoOptions[] =
 {
     { "--details",          'D', RTGETOPT_REQ_NOTHING },
     { "-details",           'D', RTGETOPT_REQ_NOTHING },    // deprecated
-    { "--statistics",       'S', RTGETOPT_REQ_NOTHING },
-    { "-statistics",        'S', RTGETOPT_REQ_NOTHING },    // deprecated
     { "--machinereadable",  'M', RTGETOPT_REQ_NOTHING },
     { "-machinereadable",   'M', RTGETOPT_REQ_NOTHING },    // deprecated
 };
@@ -2039,7 +1847,6 @@ int handleShowVMInfo(HandlerArg *a)
     HRESULT rc;
     const char *VMNameOrUuid = NULL;
     bool fDetails = false;
-    bool fStatistics = false;
     bool fMachinereadable = false;
 
     int c;
@@ -2054,10 +1861,6 @@ int handleShowVMInfo(HandlerArg *a)
         {
             case 'D':   // --details
                 fDetails = true;
-                break;
-
-            case 'S':   // --statistics
-                fStatistics = true;
                 break;
 
             case 'M':   // --machinereadable
@@ -2108,19 +1911,16 @@ int handleShowVMInfo(HandlerArg *a)
     if (FAILED (rc))
         return 1;
 
-    /* 2nd option can be -details, -statistics or -argdump */
+    /* 2nd option can be -details or -argdump */
     VMINFO_DETAILS details = VMINFO_NONE;
     if (fMachinereadable)
         details = VMINFO_MACHINEREADABLE;
     else
-    if (fDetails && fStatistics)
+    if (fDetails)
         details = VMINFO_FULL;
     else
     if (fDetails)
         details = VMINFO_STANDARD;
-    else
-    if (fStatistics)
-        details = VMINFO_STATISTICS;
 
     ComPtr <IConsole> console;
 

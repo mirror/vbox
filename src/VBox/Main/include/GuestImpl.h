@@ -64,13 +64,10 @@ public:
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
-    STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
-    STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
-    STDMETHOD(GetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal);
     STDMETHOD(ExecuteProgram)(IN_BSTR aCommand, ULONG aFlags,
                               IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
@@ -84,7 +81,8 @@ public:
 
     void setSupportsGraphics (BOOL aSupportsGraphics);
 
-    STDMETHOD(SetStatistic)(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal);
+    HRESULT GetStatisticsUpdateInterval(ULONG *aUpdateInterval);
+    HRESULT SetStatisticsUpdateInterval(ULONG aUpdateInterval);
 
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
@@ -113,8 +111,6 @@ private:
 
     ULONG mMemoryBalloonSize;
     ULONG mStatUpdateInterval;
-
-    ULONG mCurrentGuestStat[GuestStatisticType_MaxVal];
 
     Console *mParent;
     Data mData;
