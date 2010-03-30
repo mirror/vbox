@@ -98,6 +98,7 @@ static const osTypePattern gs_OSTypePattern[] =
     { QRegExp("Man", Qt::CaseInsensitive), "Mandriva" },
     { QRegExp("((Red)|(rhel)).*64", Qt::CaseInsensitive), "RedHat_64" },
     { QRegExp("(Red)|(rhel)", Qt::CaseInsensitive), "RedHat" },
+    { QRegExp("Tur.*64", Qt::CaseInsensitive), "Turbolinux_64" },
     { QRegExp("Tur", Qt::CaseInsensitive), "Turbolinux" },
     { QRegExp("Ub.*64", Qt::CaseInsensitive), "Ubuntu_64" },
     { QRegExp("Ub", Qt::CaseInsensitive), "Ubuntu" },
@@ -699,6 +700,9 @@ bool UINewVMWzdPage5::constructMachine()
 
     // Set HPET flag
     m_Machine.SetHpetEnabled(type.GetRecommendedHpet());
+
+    // Set UTC flags
+    m_Machine.SetRTCUseUTC(type.GetRecommendedRtcUseUtc());
 
     /* Register the VM prior to attaching hard disks */
     vbox.RegisterMachine(m_Machine);

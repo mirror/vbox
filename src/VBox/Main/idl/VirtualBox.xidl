@@ -8444,6 +8444,10 @@
       <desc>Returns @c true if using USB Tablet recommended (only relevant if using USB HIDs).</desc>
     </attribute>
 
+    <attribute name="recommendedRtcUseUtc" type="boolean" readonly="yes">
+      <desc>Returns @c true if the RTC of this VM should be set to UTC</desc>
+    </attribute>
+
   </interface>
 
   <interface

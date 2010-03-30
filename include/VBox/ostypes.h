@@ -93,6 +93,7 @@ typedef enum VBOXOSTYPE
     VBOXOSTYPE_RedHat           = 0x5A000,
     VBOXOSTYPE_RedHat_x64       = 0x5A100,
     VBOXOSTYPE_Turbolinux       = 0x5B000,
+    VBOXOSTYPE_Turbolinux_x64   = 0x5B100,
     VBOXOSTYPE_Ubuntu           = 0x5C000,
     VBOXOSTYPE_Ubuntu_x64       = 0x5C100,
     VBOXOSTYPE_Xandros          = 0x5D000,
