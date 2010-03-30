@@ -225,7 +225,9 @@ public:
 
     VBoxVHWAColorFormat(uint32_t bitsPerPixel, uint32_t r, uint32_t g, uint32_t b);
     VBoxVHWAColorFormat(uint32_t fourcc);
-    VBoxVHWAColorFormat(){}
+    VBoxVHWAColorFormat() :
+        mBitsPerPixel(0) /* needed for isValid() to work */
+    {}
     GLint internalFormat() const {return mInternalFormat; }
     GLenum format() const {return mFormat; }
     GLenum type() const {return mType; }
@@ -1574,12 +1576,13 @@ private:
 #endif
 #ifdef VBOX_WITH_VIDEOHWACCEL
 
-    void vboxCheckUpdateAddress (VBoxVHWASurfaceBase * pSurface, uint64_t offset)
+    void vboxCheckUpdateAddress(VBoxVHWASurfaceBase * pSurface, uint64_t offset)
     {
         if (pSurface->addressAlocated())
         {
+            Assert(!mDisplay.isPrimary(pSurface));
             uchar * addr = vboxVRAMAddressFromOffset(offset);
-            if(addr)
+            if (addr)
             {
                 pSurface->setAddress(addr);
             }
@@ -1760,7 +1763,7 @@ private:
 class VBoxQGLOverlay
 {
 public:
-    VBoxQGLOverlay (QWidget *pViewport, QObject *pPostEventObject, CSession * aSession);
+    VBoxQGLOverlay(QWidget *pViewport, QObject *pPostEventObject, CSession * aSession, uint32_t id);
     ~VBoxQGLOverlay()
     {
         if (mpShareWgt)
@@ -1911,6 +1914,8 @@ private:
     QPoint mContentsTopLeft;
 
     QGLWidget *mpShareWgt;
+
+    uint32_t m_id;
 };
 
 /* these two additional class V, class R are to workaround the [VBox|UI] duplication,
@@ -1919,9 +1924,9 @@ template <class T, class V, class R>
 class VBoxOverlayFrameBuffer : public T
 {
 public:
-    VBoxOverlayFrameBuffer (V *pView, CSession * aSession)
+    VBoxOverlayFrameBuffer (V *pView, CSession * aSession, uint32_t id)
         : T (pView),
-          mOverlay(pView->viewport(), pView, aSession),
+          mOverlay(pView->viewport(), pView, aSession, id),
           mpView (pView)
     {
         /* synch with framebuffer */

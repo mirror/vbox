@@ -2686,8 +2686,31 @@ BOOLEAN VBoxVideoStartIO(PVOID HwDeviceExtension,
             }
             break;
         }
-#endif /* VBOX_WITH_HGSMI */
+# ifdef VBOX_WITH_VIDEOHWACCEL
+        case IOCTL_VIDEO_VHWA_QUERY_INFO:
+        {
+            if (RequestPacket->OutputBufferLength < sizeof (VHWAQUERYINFO))
+            {
+                dprintf(("VBoxVideo::VBoxVideoStartIO: Output buffer too small: %d needed: %d!!!\n",
+                         RequestPacket->OutputBufferLength, sizeof(VHWAQUERYINFO)));
+                RequestPacket->StatusBlock->Status = ERROR_INSUFFICIENT_BUFFER;
+                return FALSE;
+            }
 
+            if (!pDevExt->pPrimary->u.primary.bHGSMI)
+            {
+                RequestPacket->StatusBlock->Status = ERROR_INVALID_FUNCTION;
+                return FALSE;
+            }
+
+            VHWAQUERYINFO *pInfo = (VHWAQUERYINFO *)RequestPacket->OutputBuffer;
+            pInfo->offVramBase = (ULONG_PTR)pDevExt->ulFrameBufferOffset;
+            RequestPacket->StatusBlock->Information = sizeof (VHWAQUERYINFO);
+            Result = TRUE;
+            break;
+        }
+# endif
+#endif /* VBOX_WITH_HGSMI */
         default:
             dprintf(("VBoxVideo::VBoxVideoStartIO: Unsupported %p, fn %d(0x%x)\n",
                       RequestPacket->IoControlCode,

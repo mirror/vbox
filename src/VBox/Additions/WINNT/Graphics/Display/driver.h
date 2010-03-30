@@ -130,7 +130,9 @@ typedef struct _VBOXVHWAINFO
     uint32_t numOverlays;
     uint32_t numFourCC;
     HGSMIOFFSET FourCC;
+    ULONG_PTR offVramBase;
     BOOLEAN bVHWAEnabled;
+    BOOLEAN bVHWAInited;
 } VBOXVHWAINFO;
 #endif
 
@@ -296,6 +298,11 @@ void drvLoadEng (void);
 void vboxVBVAHostCommandComplete(PPDEV ppdev, VBVAHOSTCMD * pCmd);
 
  #ifdef VBOX_WITH_VIDEOHWACCEL
+
+DECLINLINE(uint64_t) vboxVHWAVramOffsetFromPDEV(PPDEV pDev, ULONG_PTR offPdev)
+{
+    return (uint64_t)(pDev->vhwaInfo.offVramBase + offPdev);
+}
 
 #define VBOXDD_CHECKFLAG(_v, _f) ((_v) & (_f)) == (_f)
 

@@ -1000,18 +1000,22 @@ int vboxVBVALoadStateDone (PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
 }
 
 #ifdef VBOX_WITH_VIDEOHWACCEL
-static VBOXVHWACMD* vbvaVHWAHHCommandCreate (PVGASTATE pVGAState, VBOXVHWACMD_TYPE enmCmd, VBOXVHWACMD_LENGTH cbCmd)
+static void vbvaVHWAHHCommandReinit(VBOXVHWACMD* pHdr, VBOXVHWACMD_TYPE enmCmd, int32_t iDisplay)
+{
+    memset(pHdr, 0, VBOXVHWACMD_HEADSIZE());
+    pHdr->cRefs = 1;
+    pHdr->iDisplay = iDisplay;
+    pHdr->rc = VERR_NOT_IMPLEMENTED;
+    pHdr->enmCmd = enmCmd;
+    pHdr->Flags = VBOXVHWACMD_FLAG_HH_CMD;
+}
+
+static VBOXVHWACMD* vbvaVHWAHHCommandCreate (PVGASTATE pVGAState, VBOXVHWACMD_TYPE enmCmd, int32_t iDisplay, VBOXVHWACMD_LENGTH cbCmd)
 {
     VBOXVHWACMD* pHdr = (VBOXVHWACMD*)RTMemAlloc(cbCmd + VBOXVHWACMD_HEADSIZE());
     Assert(pHdr);
     if (pHdr)
-    {
-        memset(pHdr, 0, VBOXVHWACMD_HEADSIZE());
-        pHdr->cRefs = 1;
-        pHdr->rc = VERR_NOT_IMPLEMENTED;
-        pHdr->enmCmd = enmCmd;
-        pHdr->Flags = VBOXVHWACMD_FLAG_HH_CMD;
-    }
+        vbvaVHWAHHCommandReinit(pHdr, enmCmd, iDisplay);
 
     return pHdr;
 }
@@ -1078,33 +1082,49 @@ static int vbvaVHWAHHCommandPost(PVGASTATE pVGAState, VBOXVHWACMD* pCmd)
 
 int vbvaVHWAConstruct (PVGASTATE pVGAState)
 {
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_CONSTRUCT, sizeof(VBOXVHWACMD_HH_CONSTRUCT));
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_CONSTRUCT, 0, sizeof(VBOXVHWACMD_HH_CONSTRUCT));
     Assert(pCmd);
     if(pCmd)
     {
+        uint32_t iDisplay = 0;
+        int rc = VINF_SUCCESS;
         VBOXVHWACMD_HH_CONSTRUCT * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_HH_CONSTRUCT);
-        memset(pBody, 0, sizeof(VBOXVHWACMD_HH_CONSTRUCT));
 
-        PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
-        PVM pVM = PDMDevHlpGetVM(pDevIns);
-
-        pBody->pVM = pVM;
-        pBody->pvVRAM = pVGAState->vram_ptrR3;
-        pBody->cbVRAM = pVGAState->vram_size;
-
-        int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        AssertRC(rc);
-        if(RT_SUCCESS(rc))
+        do
         {
-            rc = pCmd->rc;
-            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
-            if(rc == VERR_NOT_IMPLEMENTED)
+            memset(pBody, 0, sizeof(VBOXVHWACMD_HH_CONSTRUCT));
+
+            PPDMDEVINS pDevIns = pVGAState->pDevInsR3;
+            PVM pVM = PDMDevHlpGetVM(pDevIns);
+
+            pBody->pVM = pVM;
+            pBody->pvVRAM = pVGAState->vram_ptrR3;
+            pBody->cbVRAM = pVGAState->vram_size;
+
+            rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
+            AssertRC(rc);
+            if(RT_SUCCESS(rc))
             {
-                /* @todo: set some flag in pVGAState indicating VHWA is not supported */
-                /* VERR_NOT_IMPLEMENTED is not a failure, we just do not support it */
-                rc = VINF_SUCCESS;
+                rc = pCmd->rc;
+                AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+                if(rc == VERR_NOT_IMPLEMENTED)
+                {
+                    /* @todo: set some flag in pVGAState indicating VHWA is not supported */
+                    /* VERR_NOT_IMPLEMENTED is not a failure, we just do not support it */
+                    rc = VINF_SUCCESS;
+                }
+
+                if (!RT_SUCCESS(rc))
+                    break;
             }
-        }
+            else
+                break;
+
+            ++iDisplay;
+            if (iDisplay >= pVGAState->cMonitors)
+                break;
+            vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_HH_CONSTRUCT, (int32_t)iDisplay);
+        } while (true);
 
         vbvaVHWAHHCommandRelease(pCmd);
 
@@ -1116,19 +1136,34 @@ int vbvaVHWAConstruct (PVGASTATE pVGAState)
 int vbvaVHWAReset (PVGASTATE pVGAState)
 {
     /* ensure we have all pending cmds processed and h->g cmds disabled */
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_RESET, 0);
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_HH_RESET, 0, 0);
     Assert(pCmd);
     if(pCmd)
     {
-        int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        AssertRC(rc);
-        if(RT_SUCCESS(rc))
+        int rc = VINF_SUCCESS;
+        uint32_t iDisplay = 0;
+
+        do
         {
-            rc = pCmd->rc;
-            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
-            if (rc == VERR_NOT_IMPLEMENTED)
-                rc = VINF_SUCCESS;
-        }
+            rc =vbvaVHWAHHCommandPost(pVGAState, pCmd);
+            AssertRC(rc);
+            if(RT_SUCCESS(rc))
+            {
+                rc = pCmd->rc;
+                AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+                if (rc == VERR_NOT_IMPLEMENTED)
+                    rc = VINF_SUCCESS;
+            }
+
+            if (!RT_SUCCESS(rc))
+                break;
+
+            ++iDisplay;
+            if (iDisplay >= pVGAState->cMonitors)
+                break;
+            vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_HH_RESET, (int32_t)iDisplay);
+
+        } while (true);
 
         vbvaVHWAHHCommandRelease(pCmd);
 
@@ -1140,21 +1175,36 @@ int vbvaVHWAReset (PVGASTATE pVGAState)
 /* @todo call this also on reset? */
 int vbvaVHWADisable (PVGASTATE pVGAState)
 {
-    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_DISABLE, 0);
+    VBOXVHWACMD *pCmd = vbvaVHWAHHCommandCreate(pVGAState, VBOXVHWACMD_TYPE_DISABLE, 0, 0);
     Assert(pCmd);
     if(pCmd)
     {
-        int rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
-        AssertRC(rc);
-        if(RT_SUCCESS(rc))
+        int rc = VINF_SUCCESS;
+        uint32_t iDisplay = 0;
+
+        do
         {
-            rc = pCmd->rc;
-            AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
-            if(rc == VERR_NOT_IMPLEMENTED)
+            rc = vbvaVHWAHHCommandPost(pVGAState, pCmd);
+            AssertRC(rc);
+            if(RT_SUCCESS(rc))
             {
-                rc = VINF_SUCCESS;
+                rc = pCmd->rc;
+                AssertMsg(RT_SUCCESS(rc) || rc == VERR_NOT_IMPLEMENTED, ("%Rrc\n", rc));
+                if(rc == VERR_NOT_IMPLEMENTED)
+                {
+                    rc = VINF_SUCCESS;
+                }
             }
-        }
+
+            if (!RT_SUCCESS(rc))
+                break;
+
+            ++iDisplay;
+            if (iDisplay >= pVGAState->cMonitors)
+                break;
+            vbvaVHWAHHCommandReinit(pCmd, VBOXVHWACMD_TYPE_DISABLE, (int32_t)iDisplay);
+
+        } while (true);
 
         vbvaVHWAHHCommandRelease(pCmd);
 

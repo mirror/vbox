@@ -153,6 +153,12 @@ static void vboxInitVBoxVideo (PPDEV ppdev, const VIDEO_MEMORY_INFORMATION *pMem
 #ifdef DEBUG_misha
                 Assert(!err);
 #endif
+
+#ifdef VBOX_WITH_VIDEOHWACCEL
+                if (!err)
+                    vboxVHWAInit(ppdev);
+#endif
+
                 /* this is not fatal, just means Video 2D acceleration will not be supported */
                 err = 0;
             }
