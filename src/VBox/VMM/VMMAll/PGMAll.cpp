@@ -1833,6 +1833,7 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     if (pVCpu->pgm.s.enmGuestMode <= PGMMODE_PROTECTED)
     {
         Assert((cr0 & (X86_CR0_PG | X86_CR0_PE)) != (X86_CR0_PG | X86_CR0_PE));
+        Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL));
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
         VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
         return VINF_SUCCESS;
@@ -1900,8 +1901,15 @@ VMMDECL(int) PGMSyncCR3(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr4, 
     AssertMsg(rc == VINF_SUCCESS || rc == VINF_PGM_SYNC_CR3 || RT_FAILURE(rc), ("rc=%Rrc\n", rc));
     if (rc == VINF_SUCCESS)
     {
+        if (pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL)
+        {
+            /* Go back to ring 3 if a pgm pool sync is again pending. */
+            return VINF_PGM_SYNC_CR3;
+        }
+
         if (!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_ALWAYS))
         {
+            Assert(!(pVCpu->pgm.s.fSyncFlags & PGM_SYNC_CLEAR_PGM_POOL));
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3);
             VMCPU_FF_CLEAR(pVCpu, VMCPU_FF_PGM_SYNC_CR3_NON_GLOBAL);
         }
