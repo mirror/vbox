@@ -168,6 +168,10 @@ endif
 VBOX_VENDOR = Oracle Corporation
 VBOX_VENDOR_SHORT = Oracle
 VBOX_PRODUCT = Oracle VM VirtualBox
+# Not all could be done automatically. Here is a list of known places which
+# have to be updated manually. Please keep the list up to date.
+# src/VBox/Devices/PC/PXE/client/uinit.asm
+
 # maybe we want set this manually
 VBOX_C_YEAR = $(date-utc %Y)
 
