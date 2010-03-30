@@ -3481,6 +3481,12 @@ PGM_BTH_DECL(int, SyncCR3)(PVMCPU pVCpu, uint64_t cr0, uint64_t cr3, uint64_t cr
 
     pgmLock(pVM);
 
+# ifdef PGMPOOL_WITH_OPTIMIZED_DIRTY_PT
+    PPGMPOOL pPool = pVM->pgm.s.CTX_SUFF(pPool);
+    if (pPool->cDirtyPages)
+        pgmPoolResetDirtyPages(pVM);
+# endif
+
     /*
      * Update page access handlers.
      * The virtual are always flushed, while the physical are only on demand.
