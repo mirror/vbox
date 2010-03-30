@@ -138,14 +138,6 @@ void vboxVHWASurfDescFree(PVBOXVHWASURFDESC pDesc)
         | VBOXVHWA_OVER_SHOW \
         )
 
-void vboxVHWAInit()
-{
-}
-
-void vboxVHWATerm()
-{
-}
-
 uint32_t vboxVHWAUnsupportedDDCAPS(uint32_t caps)
 {
     return caps & (~VBOXVHWA_SUPPORTED_CAPS);

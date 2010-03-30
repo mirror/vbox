@@ -1064,6 +1064,31 @@ int vboxVHWADisable(PPDEV ppdev)
     return rc;
 }
 
+void vboxVHWAInit(PPDEV ppdev)
+{
+    VHWAQUERYINFO info;
+    DWORD returnedDataLength;
+    DWORD err;
+
+    memset(&info, 0, sizeof (info));
+
+    err = EngDeviceIoControl(ppdev->hDriver,
+            IOCTL_VIDEO_VHWA_QUERY_INFO,
+            NULL,
+            0,
+            &info,
+            sizeof(info),
+            &returnedDataLength);
+    Assert(!err);
+    if(!err)
+    {
+        ppdev->vhwaInfo.offVramBase = info.offVramBase;
+        ppdev->vhwaInfo.bVHWAInited = TRUE;
+    }
+    else
+        ppdev->vhwaInfo.bVHWAInited = FALSE;
+}
+
 # endif
 
 void vboxVBVAHostCommandComplete(PPDEV ppdev, VBVAHOSTCMD * pCmd)

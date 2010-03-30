@@ -107,8 +107,6 @@ BOOL APIENTRY DrvGetDirectDrawInfo(
     if (!(pvmList && pdwFourCC))
     {
 #ifdef VBOX_WITH_VIDEOHWACCEL
-        vboxVHWAInit();
-
         memset(pHalInfo, 0, sizeof(DD_HALINFO));
         pHalInfo->dwSize    = sizeof(DD_HALINFO);
 
@@ -658,7 +656,7 @@ DWORD APIENTRY DdCreateSurface(PDD_CREATESURFACEDATA  lpCreateSurface)
 
             if (lpSurfaceLocal->ddsCaps.dwCaps & DDSCAPS_PRIMARYSURFACE)
             {
-                pBody->SurfInfo.offSurface = 0;
+                pBody->SurfInfo.offSurface = vboxVHWAVramOffsetFromPDEV(pDev, 0);
             }
             else
             {
@@ -1081,7 +1079,7 @@ DWORD APIENTRY DdLock(PDD_LOCKDATA lpLock)
                 VBOXVHWACMD_SURF_LOCK * pBody = VBOXVHWACMD_BODY(pCmd, VBOXVHWACMD_SURF_LOCK);
                 memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_LOCK));
 
-                pBody->u.in.offSurface = (uint64_t)lpSurfaceGlobal->fpVidMem;
+                pBody->u.in.offSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpSurfaceGlobal->fpVidMem);
 
 //            if (lpLock->bHasRect)
 //            {
@@ -1464,7 +1462,7 @@ DWORD APIENTRY DdSetColorKey(PDD_SETCOLORKEYDATA  lpSetColorKey)
         PVBOXVHWASURFDESC pDesc = (PVBOXVHWASURFDESC)lpSurfaceGlobal->dwReserved1;
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_COLORKEY_SET));
 
-        pBody->u.in.offSurface = (uint64_t)lpSurfaceGlobal->fpVidMem;
+        pBody->u.in.offSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpSurfaceGlobal->fpVidMem);
         pBody->u.in.hSurf = pDesc->hHostHandle;
         pBody->u.in.flags = vboxVHWAFromDDCKEYs(lpSetColorKey->dwFlags);
         vboxVHWAFromDDCOLORKEY(&pBody->u.in.CKey, &lpSetColorKey->ckNew);
@@ -1507,8 +1505,8 @@ DWORD APIENTRY DdBlt(PDD_BLTDATA  lpBlt)
             PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
             memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_BLT));
 
-            pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
-            pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+            pBody->u.in.offSrcSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpSrcSurfaceGlobal->fpVidMem);
+            pBody->u.in.offDstSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpDestSurfaceGlobal->fpVidMem);
 
             pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
             vboxVHWAFromRECTL(&pBody->u.in.dstRect, &lpBlt->rDest);
@@ -1600,8 +1598,8 @@ DWORD APIENTRY DdFlip(PDD_FLIPDATA  lpFlip)
 
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_FLIP));
 
-        pBody->u.in.offCurrSurface = (uint64_t)lpCurrSurfaceGlobal->fpVidMem;
-        pBody->u.in.offTargSurface = (uint64_t)lpTargSurfaceGlobal->fpVidMem;
+        pBody->u.in.offCurrSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpCurrSurfaceGlobal->fpVidMem);
+        pBody->u.in.offTargSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpTargSurfaceGlobal->fpVidMem);
 
         pBody->u.in.hTargSurf = pTargDesc->hHostHandle;
         pBody->u.in.hCurrSurf = pCurrDesc->hHostHandle;
@@ -1769,8 +1767,8 @@ DWORD APIENTRY DdSetOverlayPosition(PDD_SETOVERLAYPOSITIONDATA  lpSetOverlayPosi
 
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_SETPOSITION));
 
-        pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
-        pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+        pBody->u.in.offSrcSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpSrcSurfaceGlobal->fpVidMem);
+        pBody->u.in.offDstSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpDestSurfaceGlobal->fpVidMem);
 
         pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
         pBody->u.in.hSrcSurf = pSrcDesc->hHostHandle;
@@ -1810,7 +1808,7 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
 
         memset(pBody, 0, sizeof(VBOXVHWACMD_SURF_OVERLAY_UPDATE));
 
-        pBody->u.in.offSrcSurface = (uint64_t)lpSrcSurfaceGlobal->fpVidMem;
+        pBody->u.in.offSrcSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpSrcSurfaceGlobal->fpVidMem);
 
         pBody->u.in.hSrcSurf = pSrcDesc->hHostHandle;
 
@@ -1840,7 +1838,7 @@ DWORD APIENTRY DdUpdateOverlay(PDD_UPDATEOVERLAYDATA  lpUpdateOverlay)
             DD_SURFACE_GLOBAL* lpDestSurfaceGlobal = lpDestSurfaceLocal->lpGbl;
             PVBOXVHWASURFDESC pDestDesc = (PVBOXVHWASURFDESC)lpDestSurfaceGlobal->dwReserved1;
             pBody->u.in.hDstSurf = pDestDesc->hHostHandle;
-            pBody->u.in.offDstSurface = (uint64_t)lpDestSurfaceGlobal->fpVidMem;
+            pBody->u.in.offDstSurface = vboxVHWAVramOffsetFromPDEV(pDev, lpDestSurfaceGlobal->fpVidMem);
         }
 
         vboxVHWACommandSubmitAsynchAndComplete(pDev, pCmd);
