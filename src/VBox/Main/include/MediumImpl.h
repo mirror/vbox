@@ -317,16 +317,16 @@ private:
     friend class DeleteTask;
     friend class MergeTask;
 
-    HRESULT startThread(std::auto_ptr<Task> task);
-    HRESULT runNow(std::auto_ptr<Task> task, bool *pfNeedsSaveSettings);
+    HRESULT startThread(Medium::Task *pTask);
+    HRESULT runNow(Medium::Task *pTask, bool *pfNeedsSaveSettings);
 
-    HRESULT taskThreadCreateBase(CreateBaseTask &task);
-    HRESULT taskThreadCreateDiff(CreateDiffTask &task);
-    HRESULT taskThreadMerge(MergeTask &task);
-    HRESULT taskThreadClone(CloneTask &task);
-    HRESULT taskThreadDelete(DeleteTask &task);
-    HRESULT taskThreadReset(ResetTask &task);
-    HRESULT taskThreadCompact(CompactTask &task);
+    HRESULT taskThreadCreateBase(Medium::CreateBaseTask &task);
+    HRESULT taskThreadCreateDiff(Medium::CreateDiffTask &task);
+    HRESULT taskThreadMerge(Medium::MergeTask &task);
+    HRESULT taskThreadClone(Medium::CloneTask &task);
+    HRESULT taskThreadDelete(Medium::DeleteTask &task);
+    HRESULT taskThreadReset(Medium::ResetTask &task);
+    HRESULT taskThreadCompact(Medium::CompactTask &task);
 
     struct Data;            // opaque data struct, defined in MediumImpl.cpp
     Data *m;

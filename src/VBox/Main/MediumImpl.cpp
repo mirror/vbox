@@ -406,31 +406,28 @@ private:
 /**
  * Thread function for time-consuming medium tasks.
  *
- * @param pvUser    Pointer to the std::auto_ptr<Medium::Task> instance.
+ * @param pvUser    Pointer to the Medium::Task instance.
  */
 /* static */
 DECLCALLBACK(int) Medium::Task::fntMediumTask(RTTHREAD aThread, void *pvUser)
 {
     LogFlowFuncEnter();
-    /* pvUser is a pointer to a std::auto_ptr<Medium::Task>, which is so
-     * hard to understand that we just clear this situation now by copying
-     * it. This means the old object loses ownership, and task owns it. */
     AssertReturn(pvUser, (int)E_INVALIDARG);
-    std::auto_ptr<Medium::Task> *pTask =
-        static_cast<std::auto_ptr<Medium::Task> *>(pvUser);
-    std::auto_ptr<Medium::Task> task(pTask->release());
-    AssertReturn(task.get(), (int)E_INVALIDARG);
+    Medium::Task *pTask = static_cast<Medium::Task *>(pvUser);
 
-    task->mThread = aThread;
+    pTask->mThread = aThread;
 
-    HRESULT rc = task->handler();
+    HRESULT rc = pTask->handler();
 
     /* complete the progress if run asynchronously */
-    if (task->isAsync())
+    if (pTask->isAsync())
     {
-        if (!task->mProgress.isNull())
-            task->mProgress->notifyComplete(rc);
+        if (!pTask->mProgress.isNull())
+            pTask->mProgress->notifyComplete(rc);
     }
+
+    /* pTask is no longer needed, delete it. */
+    delete pTask;
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -2468,16 +2465,23 @@ STDMETHODIMP Medium::CreateBaseStorage(ULONG64 aLogicalSize,
     if (FAILED(rc)) return rc;
 
     /* setup task object to carry out the operation asynchronously */
-    std::auto_ptr<Medium::Task> task(new CreateBaseTask(this, progress,
-                                                        aLogicalSize,
-                                                        aVariant));
-    AssertComRCReturnRC(task->rc());
+    Medium::Task *pTask(new Medium::CreateBaseTask(this, progress,
+                                                   aLogicalSize, aVariant));
+    rc = pTask->rc();
+    if (FAILED(rc))
+    {
+        AssertComRC(rc);
+        delete pTask;
+        return rc;
+    }
 
-    rc = startThread(task);
+    rc = startThread(pTask);
     if (FAILED(rc)) return rc;
 
     /* go to Creating state on success */
     m->state = MediumState_Creating;
+
+    progress.queryInterfaceTo(aProgress);
 
     return S_OK;
 }
@@ -2493,10 +2497,7 @@ STDMETHODIMP Medium::DeleteStorage(IProgress **aProgress)
 
     HRESULT rc = deleteStorageNoWait(progress);
     if (SUCCEEDED(rc))
-    {
-        /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
-    }
 
     return rc;
 }
@@ -2535,10 +2536,7 @@ STDMETHODIMP Medium::CreateDiffStorage(IMedium *aTarget,
         /* Note: on success, the task will unlock this */
     }
     else
-    {
-        /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
-    }
 
     return rc;
 }
@@ -2631,14 +2629,20 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
         if (FAILED(rc)) throw rc;
 
         /* setup task object to carry out the operation asynchronously */
-        std::auto_ptr<Medium::Task> task(new CloneTask(this, progress,
-                                                       target, parent,
-                                                       sourceChain.release(),
-                                                       parentChain.release(),
-                                                       aVariant));
-        AssertComRCReturnRC(task->rc());
+        Medium::Task *pTask(new Medium::CloneTask(this, progress, target,
+                                                  parent,
+                                                  sourceChain.release(),
+                                                  parentChain.release(),
+                                                  aVariant));
+        rc = pTask->rc();
+        if (FAILED(rc))
+        {
+            AssertComRC(rc);
+            delete pTask;
+            throw rc;
+        }
 
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) throw rc;
 
         if (target->m->state == MediumState_NotCreated)
@@ -2653,7 +2657,6 @@ STDMETHODIMP Medium::CloneTo(IMedium *aTarget,
     }
 
     if (SUCCEEDED(rc))
-        /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
 
     return rc;
@@ -2701,11 +2704,17 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
         if (FAILED(rc)) throw rc;
 
         /* setup task object to carry out the operation asynchronously */
-        std::auto_ptr<Medium::Task> task(new CompactTask(this, progress,
-                                                         imgChain.release()));
-        AssertComRCReturnRC(task->rc());
+        Medium::Task *pTask(new Medium::CompactTask(this, progress,
+                                                    imgChain.release()));
+        rc = pTask->rc();
+        if (FAILED(rc))
+        {
+            AssertComRC(rc);
+            delete pTask;
+            throw rc;
+        }
 
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) throw rc;
     }
     catch (HRESULT aRC)
@@ -2714,10 +2723,7 @@ STDMETHODIMP Medium::Compact(IProgress **aProgress)
     }
 
     if (SUCCEEDED(rc))
-    {
-        /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
-    }
 
     return rc;
 }
@@ -2771,10 +2777,16 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         if (FAILED(rc)) throw rc;
 
         /* setup task object to carry out the operation asynchronously */
-        std::auto_ptr<Medium::Task> task(new ResetTask(this, progress));
-        AssertComRCReturnRC(task->rc());
+        Medium::Task *pTask(new Medium::ResetTask(this, progress));
+        rc = pTask->rc();
+        if (FAILED(rc))
+        {
+            AssertComRC(rc);
+            delete pTask;
+            throw rc;
+        }
 
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) throw rc;
     }
     catch (HRESULT aRC)
@@ -2789,10 +2801,7 @@ STDMETHODIMP Medium::Reset(IProgress **aProgress)
         /* Note: on success, the task will unlock this */
     }
     else
-    {
-        /* return progress to the caller */
         progress.queryInterfaceTo(aProgress);
-    }
 
     LogFlowThisFunc(("LEAVE, rc=%Rhrc\n", rc));
 
@@ -4330,19 +4339,26 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
     }
 
     /* setup task object to carry out the operation asynchronously */
-    std::auto_ptr<Medium::Task> task(new DeleteTask(this, progress));
-    AssertComRCReturnRC(task->rc());
+    Medium::Task *pTask(new Medium::DeleteTask(this, progress));
+    rc = pTask->rc();
+    if (FAILED(rc))
+    {
+        AssertComRC(rc);
+        delete pTask;
+        return rc;
+    }
 
     if (aWait)
     {
         /* go to Deleting state before starting the task */
         m->state = MediumState_Deleting;
 
-        rc = runNow(task, NULL /* pfNeedsSaveSettings*/ );        // there is no save settings to do in taskThreadDelete()
+        rc = runNow(pTask, NULL /* pfNeedsSaveSettings*/ );        // there is no save settings to do in taskThreadDelete()
+        if (FAILED(rc)) return rc;
     }
     else
     {
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) return rc;
 
         /* go to Deleting state before leaving the lock */
@@ -4350,10 +4366,7 @@ HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
     }
 
     if (aProgress != NULL)
-    {
-        /* return progress to the caller */
         *aProgress = progress;
-    }
 
     return rc;
 }
@@ -4470,9 +4483,15 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     }
 
     /* setup task object to carry out the operation asynchronously */
-    std::auto_ptr<Medium::Task> task(new CreateDiffTask(this, progress,
-                                                        aTarget, aVariant));
-    AssertComRCReturnRC(task->rc());
+    Medium::Task *pTask(new Medium::CreateDiffTask(this, progress, aTarget,
+                                                   aVariant));
+    rc = pTask->rc();
+    if (FAILED(rc))
+    {
+        AssertComRC(rc);
+        delete pTask;
+        return rc;
+    }
 
     /* register a task (it will deregister itself when done) */
     ++m->numCreateDiffTasks;
@@ -4488,11 +4507,12 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
         // their states; we have asserted above that *this* is locked read or write!
         alock.release();
 
-        rc = runNow(task, pfNeedsSaveSettings);
+        rc = runNow(pTask, pfNeedsSaveSettings);
+        if (FAILED(rc)) return rc;
     }
     else
     {
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) return rc;
 
         /* go to Creating state before leaving the lock */
@@ -4500,10 +4520,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
     }
 
     if (aProgress != NULL)
-    {
-        /* return progress to the caller */
         *aProgress = progress;
-    }
 
     return rc;
 }
@@ -4721,8 +4738,14 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
     }
 
     /* setup task object to carry out the operation asynchronously */
-    std::auto_ptr<Medium::Task> task(new MergeTask(this, progress, aChain));
-    AssertComRCReturnRC(task->rc());
+    Medium::Task *pTask(new Medium::MergeTask(this, progress, aChain));
+    rc = pTask->rc();
+    if (FAILED(rc))
+    {
+        AssertComRC(rc);
+        delete pTask;
+        return rc;
+    }
 
     /* Note: task owns aChain (will delete it when not needed) in all cases
      * except when @a aWait is @c true and runNow() fails -- in this case
@@ -4731,19 +4754,17 @@ HRESULT Medium::mergeTo(MergeChain *aChain,
 
     if (aWait)
     {
-        rc = runNow(task, pfNeedsSaveSettings);
+        rc = runNow(pTask, pfNeedsSaveSettings);
+        if (FAILED(rc)) return rc;
     }
     else
     {
-        rc = startThread(task);
+        rc = startThread(pTask);
         if (FAILED(rc)) return rc;
     }
 
     if (aProgress != NULL)
-    {
-        /* return progress to the caller */
         *aProgress = progress;
-    }
 
     return rc;
 }
@@ -5018,24 +5039,25 @@ DECLCALLBACK(int) Medium::vdConfigQuery(void *pvUser, const char *pszName,
 /**
  * Starts a new thread driven by the appropriate Medium::Task::handler() method.
  *
- * @note if this method returns success, this Medium::Task object becomes owned
- *       by the started thread and will be automatically deleted when the
- *       thread terminates.
- *
  * @note When the task is executed by this method, IProgress::notifyComplete()
  *       is automatically called for the progress object associated with this
  *       task when the task is finished to signal the operation completion for
  *       other threads asynchronously waiting for it.
  */
-HRESULT Medium::startThread(std::auto_ptr<Medium::Task> task)
+HRESULT Medium::startThread(Medium::Task *pTask)
 {
     /// @todo use a more descriptive task name
-    int vrc = RTThreadCreate(NULL, Medium::Task::fntMediumTask, &task,
+    int vrc = RTThreadCreate(NULL, Medium::Task::fntMediumTask, pTask,
                              0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
                              "Medium::Task");
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create Medium::Task thread (%Rrc)\n", vrc),
-                      E_FAIL);
+    if (RT_FAILURE(vrc))
+    {
+        delete pTask;
+        ComAssertMsgRCRet(vrc,
+                          ("Could not create Medium::Task thread (%Rrc)\n",
+                           vrc),
+                          E_FAIL);
+    }
 
     return S_OK;
 }
@@ -5049,21 +5071,19 @@ HRESULT Medium::startThread(std::auto_ptr<Medium::Task> task)
  * operations are potentially lengthy and will block the calling thread in this
  * case.
  *
- * @note This Medium::Task object will be deleted when this method returns.
- *
  * @note When the task is executed by this method, IProgress::notifyComplete()
  *       is not called for the progress object associated with this task when
  *       the task is finished. Instead, the result of the operation is returned
  *       by this method directly and it's the caller's responsibility to
  *       complete the progress object in this case.
  */
-HRESULT Medium::runNow(std::auto_ptr<Medium::Task> task,
+HRESULT Medium::runNow(Medium::Task *pTask,
                        bool *pfNeedsSaveSettings)
 {
-    task->m_pfNeedsSaveSettings = pfNeedsSaveSettings;
+    pTask->m_pfNeedsSaveSettings = pfNeedsSaveSettings;
 
     /* NIL_RTTHREAD indicates synchronous call. */
-    return (HRESULT)Medium::Task::fntMediumTask(NIL_RTTHREAD, &task);
+    return (HRESULT)Medium::Task::fntMediumTask(NIL_RTTHREAD, pTask);
 }
 
 /**
@@ -5076,7 +5096,7 @@ HRESULT Medium::runNow(std::auto_ptr<Medium::Task> task,
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCreateBase(CreateBaseTask &task)
+HRESULT Medium::taskThreadCreateBase(Medium::CreateBaseTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5201,7 +5221,7 @@ HRESULT Medium::taskThreadCreateBase(CreateBaseTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCreateDiff(CreateDiffTask &task)
+HRESULT Medium::taskThreadCreateDiff(Medium::CreateDiffTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5384,7 +5404,7 @@ HRESULT Medium::taskThreadCreateDiff(CreateDiffTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadMerge(MergeTask &task)
+HRESULT Medium::taskThreadMerge(Medium::MergeTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5656,7 +5676,7 @@ HRESULT Medium::taskThreadMerge(MergeTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadClone(CloneTask &task)
+HRESULT Medium::taskThreadClone(Medium::CloneTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -5874,8 +5894,9 @@ HRESULT Medium::taskThreadClone(CloneTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadDelete(DeleteTask &task)
+HRESULT Medium::taskThreadDelete(Medium::DeleteTask &task)
 {
+    NOREF(task);
     HRESULT rc = S_OK;
 
     try
@@ -5939,7 +5960,7 @@ HRESULT Medium::taskThreadDelete(DeleteTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadReset(ResetTask &task)
+HRESULT Medium::taskThreadReset(Medium::ResetTask &task)
 {
     HRESULT rc = S_OK;
 
@@ -6049,7 +6070,7 @@ HRESULT Medium::taskThreadReset(ResetTask &task)
  * @param task
  * @return
  */
-HRESULT Medium::taskThreadCompact(CompactTask &task)
+HRESULT Medium::taskThreadCompact(Medium::CompactTask &task)
 {
     HRESULT rc = S_OK;
 
