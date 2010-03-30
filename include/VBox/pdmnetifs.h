@@ -207,10 +207,6 @@ typedef struct PDMINETWORKUP
      * Frees an unused buffer.
      *
      * @retval  VINF_SUCCESS on success.
-     * @retval  VERR_TRY_AGAIN if temporarily out of buffer space.  After this
-     *          happens, the driver will call PDMINETWORKDOWN::pfnNotifyBufAvailable
-     *          when this is a buffer of the required size available.
-     * @retval  VERR_NO_MEMORY if really out of buffer space.
      *
      * @param   pInterface      Pointer to the interface structure containing the called function pointer.
      * @param   pSgBuf          A buffer from PDMINETWORKUP::pfnAllocBuf or
