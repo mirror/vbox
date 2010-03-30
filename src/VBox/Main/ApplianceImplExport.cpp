@@ -1553,11 +1553,11 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             ppManifestFiles[i] = (*it1).c_str();
         Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
         int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1);
+        RTMemFree(ppManifestFiles);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Couldn't create manifest file '%s' (%Rrc)"),
                            RTPathFilename(strMfFile.c_str()), vrc);
-        RTMemFree(ppManifestFiles);
     }
     catch(xml::Error &x)
     {
