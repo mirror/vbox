@@ -78,9 +78,6 @@
 /* Enable to handle frequent io reads in the guest context (recommended) */
 #define PCNET_GC_ENABLED
 
-/* Experimental: queue TX packets */
-//#define PCNET_QUEUE_SEND_PACKETS
-
 #if defined(LOG_ENABLED)
 #define PCNET_DEBUG_IO
 #define PCNET_DEBUG_BCR
@@ -277,18 +274,6 @@ struct PCNetState_st
     bool                                fR0Enabled;
     bool                                fAm79C973;
     uint32_t                            u32LinkSpeed;
-
-#ifdef PCNET_QUEUE_SEND_PACKETS
-# define PCNET_MAX_XMIT_SLOTS           128
-# define PCNET_MAX_XMIT_SLOTS_MASK      (PCNET_MAX_XMIT_SLOTS - 1)
-
-    uint32_t                            iXmitRingBufProd;
-    uint32_t                            iXmitRingBufCons;
-    /** @todo XXX currently atomic operations on this variable are overkill */
-    volatile int32_t                    cXmitRingBufPending;
-    uint16_t                            cbXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
-    R3PTRTYPE(uint8_t *)                apXmitRingBuffer[PCNET_MAX_XMIT_SLOTS];
-#endif
 
     STAMCOUNTER                         StatReceiveBytes;
     STAMCOUNTER                         StatTransmitBytes;
@@ -622,9 +607,6 @@ AssertCompileSize(RMD, 16);
         (R)->rmd2.rcc, (R)->rmd2.rpc, (R)->rmd2.mcnt,   \
         (R)->rmd2.zeros))
 
-#if defined(PCNET_QUEUE_SEND_PACKETS) && defined(IN_RING3)
-static int pcnetSyncTransmit(PCNetState *pThis);
-#endif
 static void pcnetPollTimerStart(PCNetState *pThis);
 
 /**
@@ -2081,15 +2063,8 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
 
     /* Clear counter .*/
     ASMAtomicAndU32(&pThis->cPendingSends, 0);
-#ifdef PCNET_QUEUE_SEND_PACKETS
-    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-    AssertReleaseRC(rc);
-    pcnetSyncTransmit(pThis);
-    PDMCritSectLeave(&pThis->CritSect);
-#else
     int rc = RTSemEventSignal(pThis->hSendEventSem);
     AssertRC(rc);
-#endif
     return true;
 }
 
@@ -2113,12 +2088,7 @@ DECLINLINE(void) pcnetXmitRead1st(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, con
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
     Assert(cbFrame < sizeof(pThis->abSendBuf));
 
-#ifdef PCNET_QUEUE_SEND_PACKETS
-    AssertRelease(pThis->cXmitRingBufPending < PCNET_MAX_XMIT_SLOTS-1);
-    pThis->pvSendFrame = pThis->apXmitRingBuffer[pThis->iXmitRingBufProd];
-#else
     pThis->pvSendFrame = pThis->abSendBuf;
-#endif
     PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pThis->pvSendFrame, cbFrame);
     pThis->cbSendFrame = cbFrame;
 }
@@ -2141,20 +2111,6 @@ DECLINLINE(void) pcnetXmitReadMore(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, co
  */
 DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pThis)
 {
-#ifdef PCNET_QUEUE_SEND_PACKETS
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
-    AssertRelease(pThis->cXmitRingBufPending < PCNET_MAX_XMIT_SLOTS-1);
-    Assert(!pThis->cbXmitRingBuffer[pThis->iXmitRingBufProd]);
-
-    pThis->cbXmitRingBuffer[pThis->iXmitRingBufProd] = (uint16_t)pThis->cbSendFrame;
-    pThis->iXmitRingBufProd = (pThis->iXmitRingBufProd+1) & PCNET_MAX_XMIT_SLOTS_MASK;
-    ASMAtomicIncS32(&pThis->cXmitRingBufPending);
-
-    int rc = RTSemEventSignal(pThis->hSendEventSem);
-    AssertRC(rc);
-
-    return VINF_SUCCESS;
-#else
     /* Don't hold the critical section while transmitting data. */
     /** @note also avoids deadlocks with NAT as it can call us right back. */
     PDMCritSectLeave(&pThis->CritSect);
@@ -2169,7 +2125,6 @@ DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pThis)
     STAM_PROFILE_ADV_STOP(&pThis->StatTransmitSend, a);
 
     return PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-#endif
 }
 
 
@@ -2279,43 +2234,7 @@ static void pcnetTransmit(PCNetState *pThis)
 /**
  * Try to transmit frames
  */
-#ifdef PCNET_QUEUE_SEND_PACKETS
 static int pcnetAsyncTransmit(PCNetState *pThis)
-{
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
-    size_t cb;
-
-    while ((pThis->cXmitRingBufPending > 0))
-    {
-        cb = pThis->cbXmitRingBuffer[pThis->iXmitRingBufCons];
-
-        /* Don't hold the critical section while transmitting data. */
-        /** @note also avoids deadlocks with NAT as it can call us right back. */
-        PDMCritSectLeave(&pThis->CritSect);
-
-        STAM_PROFILE_ADV_START(&pThis->StatTransmitSend, a);
-        if (cb > 70) /* unqualified guess */
-            pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
-
-        pThis->pDrv->pfnSend(pThis->pDrv, pThis->apXmitRingBuffer[pThis->iXmitRingBufCons], cb);
-        STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, cb);
-        pThis->Led.Actual.s.fWriting = 0;
-        STAM_PROFILE_ADV_STOP(&pThis->StatTransmitSend, a);
-
-        int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
-        AssertReleaseRC(rc);
-
-        pThis->cbXmitRingBuffer[pThis->iXmitRingBufCons] = 0;
-        pThis->iXmitRingBufCons = (pThis->iXmitRingBufCons+1) & PCNET_MAX_XMIT_SLOTS_MASK;
-        ASMAtomicDecS32(&pThis->cXmitRingBufPending);
-    }
-    return VINF_SUCCESS;
-}
-
-static int pcnetSyncTransmit(PCNetState *pThis)
-#else
-static int pcnetAsyncTransmit(PCNetState *pThis)
-#endif
 {
     unsigned cFlushIrq = 0;
 
@@ -4921,10 +4840,6 @@ static DECLCALLBACK(int) pcnetDestruct(PPDMDEVINS pDevIns)
         pThis->hEventOutOfRxSpace = NIL_RTSEMEVENT;
         PDMR3CritSectDelete(&pThis->CritSect);
     }
-#ifdef PCNET_QUEUE_SEND_PACKETS
-    if (pThis->apXmitRingBuffer)
-        RTMemFree(pThis->apXmitRingBuffer[0]);
-#endif
     return VINF_SUCCESS;
 }
 
@@ -5221,12 +5136,6 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* Create asynchronous thread */
     rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pSendThread, pThis, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
     AssertRCReturn(rc, rc);
-
-#ifdef PCNET_QUEUE_SEND_PACKETS
-    pThis->apXmitRingBuffer[0] = (uint8_t *)RTMemAlloc(PCNET_MAX_XMIT_SLOTS * MAX_FRAME);
-    for (unsigned i = 1; i < PCNET_MAX_XMIT_SLOTS; i++)
-        pThis->apXmitRingBuffer[i] = pThis->apXmitRingBuffer[0] + i*MAX_FRAME;
-#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
