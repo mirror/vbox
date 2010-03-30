@@ -2243,6 +2243,12 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
         VBoxVHWASurfaceBase * pVga = vgaSurface();
 
         Assert((pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN) == 0);
+
+        reportedFormat = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
+                                    pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
+                                    pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
+                                    pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
+
         if (pVga->handle() == VBOXVHWA_SURFHANDLE_INVALID
                 && (pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_OFFSCREENPLAIN) == 0)
         {
@@ -2254,10 +2260,6 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 //                if(pCmd->SurfInfo.width == pVga->width()
 //                        && pCmd->SurfInfo.height == pVga->height())
                 {
-                    reportedFormat = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
-                                                pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
-                                                pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
-                                                pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
                     // the assert below is incorrect in case the Framebuffer is working in "not using VRAM" mode
 //                    Assert(pVga->pixelFormat().equals(format));
 //                    if(pVga->pixelFormat().equals(format))
@@ -2285,7 +2287,6 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 
     if(!surf)
     {
-        Assert(!(pCmd->SurfInfo.surfCaps & VBOXVHWA_SCAPS_PRIMARYSURFACE));
         VBOXVHWAIMG_TYPE fFlags = 0;
         if(!bNoPBO)
         {
@@ -2294,14 +2295,23 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                 fFlags |= VBOXVHWAIMG_FBO;
         }
 
-        if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
-        {
-            VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
+        QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
+        QRect primaryRect = mDisplay.getPrimary()->rect();
+        VBoxVHWAColorFormat format;
+        if (bPrimary)
+            format = mDisplay.getVGA()->pixelFormat();
+        else if (pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_RGB)
+            format = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.c.rgbBitCount,
                                             pCmd->SurfInfo.PixelFormat.m1.rgbRBitMask,
                                             pCmd->SurfInfo.PixelFormat.m2.rgbGBitMask,
                                             pCmd->SurfInfo.PixelFormat.m3.rgbBBitMask);
-            QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
-            QRect primaryRect = mDisplay.getPrimary()->rect();
+        else if (pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_FOURCC)
+            format = VBoxVHWAColorFormat(pCmd->SurfInfo.PixelFormat.fourCC);
+        else
+            AssertBreakpoint();
+
+        if (format.isValid())
+        {
             surf = new VBoxVHWASurfaceBase(this,
                         surfSize,
                         primaryRect,
@@ -2314,28 +2324,10 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
 #endif
                         fFlags);
         }
-        else if(pCmd->SurfInfo.PixelFormat.flags & VBOXVHWA_PF_FOURCC)
-        {
-            QSize surfSize(pCmd->SurfInfo.width, pCmd->SurfInfo.height);
-            QRect primaryRect = mDisplay.getPrimary()->rect();
-
-            VBoxVHWAColorFormat format(pCmd->SurfInfo.PixelFormat.fourCC);
-            surf = new VBoxVHWASurfaceBase(this,
-                                    surfSize,
-                                    primaryRect,
-                                    QRect(0, 0, surfSize.width(), surfSize.height()),
-                                    mViewport,
-                                    format,
-                                    pSrcBltCKey, pDstBltCKey, pSrcOverlayCKey, pDstOverlayCKey,
-#ifdef VBOXVHWA_USE_TEXGROUP
-                                    0,
-#endif
-                                    fFlags);
-        }
         else
         {
-            Assert(0);
-            VBOXQGLLOG_EXIT(("pSurf (0x%x)\n",surf));
+            AssertBreakpoint();
+            VBOXQGLLOG_EXIT(("pSurf (0x%p)\n",surf));
             return VERR_GENERAL_FAILURE;
         }
 
@@ -2429,7 +2421,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
     surf->setHandle(handle);
     Assert(surf->handle() == handle);
 
-    VBOXQGLLOG_EXIT(("pSurf (0x%x)\n",surf));
+    VBOXQGLLOG_EXIT(("pSurf (0x%p)\n",surf));
 
     return VINF_SUCCESS;
 }

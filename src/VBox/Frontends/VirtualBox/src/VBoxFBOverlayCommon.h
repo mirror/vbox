@@ -30,9 +30,9 @@
 # define VBOXQGLLOG(_m)    do {}while(0)
 # define VBOXQGLLOGREL(_m) LogRel( _m )
 #endif
-#define VBOXQGLLOG_ENTER(_m)
+#define VBOXQGLLOG_ENTER(_m) do {}while(0)
 //do{VBOXQGLLOG(("==>[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
-#define VBOXQGLLOG_EXIT(_m)
+#define VBOXQGLLOG_EXIT(_m) do {}while(0)
 //do{VBOXQGLLOG(("<==[%s]:", __FUNCTION__)); VBOXQGLLOG(_m);}while(0)
 #ifdef DEBUG
  #define VBOXQGL_ASSERTNOERR() \
