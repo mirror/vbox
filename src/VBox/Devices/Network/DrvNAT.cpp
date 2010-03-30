@@ -458,6 +458,16 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
 }
 
 /**
+ * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
+ */
+static DECLCALLBACK(int) drvNATNetworkUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
+{
+    PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
+    drvNATFreeSgBuf(pThis, pSgBuf);
+    return VINF_SUCCESS;
+}
+
+/**
  * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
  */
 static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
@@ -1043,6 +1053,7 @@ static DECLCALLBACK(int) drvNATConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg, uin
     pDrvIns->IBase.pfnQueryInterface    = drvNATQueryInterface;
     /* INetwork */
     pThis->INetworkUp.pfnAllocBuf           = drvNATNetworkUp_AllocBuf;
+    pThis->INetworkUp.pfnFreeBuf            = drvNATNetworkUp_FreeBuf;
     pThis->INetworkUp.pfnSendBuf            = drvNATNetworkUp_SendBuf;
     pThis->INetworkUp.pfnSendDeprecated     = drvNATNetworkUp_SendDeprecated;
     pThis->INetworkUp.pfnSetPromiscuousMode = drvNATNetworkUp_SetPromiscuousMode;
