@@ -542,7 +542,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                     }
                 }
             }
-            else
+            else if (pHdr->u16Type != INTNETHDR_TYPE_PADDING)
             {
                 RTPrintf("tstIntNet-1: Unknown frame type %d\n", pHdr->u16Type);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);

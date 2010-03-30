@@ -249,11 +249,53 @@ static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_
 }
 
 /**
+ * @interface_method_impl{PDMINETWORKUP,pfnFreeBuf}
+ */
+static DECLCALLBACK(int) drvR3IntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
+{
+    PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
+    PINTNETHDR  pHdr  = (PINTNETHDR)pSgBuf->pvUser;
+    Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
+    Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
+    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
+
+    /** @todo LATER: try unalloc the frame. */
+    pHdr->u16Type = INTNETHDR_TYPE_PADDING;
+    INTNETRingCommitFrame(&pThis->pBufR3->Send, pHdr);
+
+    RTMemCacheFree(pThis->hSgCache, pSgBuf);
+    return VINF_SUCCESS;
+}
+
+/**
  * @interface_method_impl{PDMINETWORKUP,pfnSendBuf}
  */
 static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
 {
-    return VERR_NOT_IMPLEMENTED;
+    PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
+    STAM_PROFILE_START(&pThis->StatTransmit, a);
+
+    AssertPtr(pSgBuf);
+    Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
+    Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
+
+    /*
+     * Commit the frame and push it thru the switch.
+     */
+    PINTNETHDR pHdr = (PINTNETHDR)pSgBuf->pvUser;
+    INTNETRingCommitFrameEx(&pThis->pBufR3->Send, pHdr, pSgBuf->cbUsed);
+
+    INTNETIFSENDREQ SendReq;
+    SendReq.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    SendReq.Hdr.cbReq = sizeof(SendReq);
+    SendReq.pSession = NIL_RTR0PTR;
+    SendReq.hIf = pThis->hIf;
+    PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
+
+    RTMemCacheFree(pThis->hSgCache, pSgBuf);
+
+    STAM_PROFILE_STOP(&pThis->StatTransmit, a);
+    return VINF_SUCCESS;
 }
 
 /**
@@ -443,8 +485,9 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                             /*
                              * NIC is going down, likely because the VM is being reset. Skip the frame.
                              */
-                            AssertMsg(pHdr->u16Type == INTNETHDR_TYPE_FRAME, ("Unknown frame type %RX16! offRead=%#x\n",
-                                                                              pHdr->u16Type, pRingBuf->offReadX));
+                            AssertMsg(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
+                                      || pHdr->u16Type == INTNETHDR_TYPE_PADDING,
+                                      ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
                             INTNETRingSkipFrame(pRingBuf);
                         }
                         else
@@ -461,8 +504,9 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                 /*
                  * Link down or unknown frame - skip to the next frame.
                  */
-                AssertMsg(pHdr->u16Type == INTNETHDR_TYPE_FRAME, ("Unknown frame type %RX16! offRead=%#x\n",
-                                                                  pHdr->u16Type, pRingBuf->offReadX));
+                AssertMsg(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
+                          || pHdr->u16Type == INTNETHDR_TYPE_PADDING,
+                          ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
                 INTNETRingSkipFrame(pRingBuf);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
             }
@@ -802,6 +846,7 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     pThis->IBaseRC.pfnQueryInterface                = drvR3IntNetIBaseRC_QueryInterface;
     /* INetworkUp */
     pThis->INetworkUpR3.pfnAllocBuf                 = drvR3IntNetUp_AllocBuf;
+    pThis->INetworkUpR3.pfnFreeBuf                  = drvR3IntNetUp_FreeBuf;
     pThis->INetworkUpR3.pfnSendBuf                  = drvR3IntNetUp_SendBuf;
     pThis->INetworkUpR3.pfnSendDeprecated           = drvR3IntNetUp_SendDeprecated;
     pThis->INetworkUpR3.pfnSetPromiscuousMode       = drvR3IntNetUp_SetPromiscuousMode;

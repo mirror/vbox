@@ -230,6 +230,8 @@ AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
 
 /** INTNETHDR::u16Type value for normal frames. */
 #define INTNETHDR_TYPE_FRAME        0x2442
+/** INTNETHDR::u16Type value for padding frames. */
+#define INTNETHDR_TYPE_PADDING      0x3553
 
 /**
  * Asserts the sanity of the specified INTNETHDR.
@@ -239,7 +241,7 @@ AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
     { \
         AssertPtr(pHdr); \
         Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr); \
-        Assert((pHdr)->u16Type == INTNETHDR_TYPE_FRAME); \
+        Assert((pHdr)->u16Type == INTNETHDR_TYPE_FRAME || (pHdr)->u16Type == INTNETHDR_TYPE_PADDING); \
         { \
             uintptr_t const offHdr   = (uintptr_t)pHdr - (uintptr_t)pRingBuf; \
             uintptr_t const offFrame = offHdr + (pHdr)->offFrame; \
