@@ -214,8 +214,13 @@ typedef struct VDIOCTX
  */
 typedef struct VDIOSTORAGE
 {
-    /** Storage handle */
-    void                        *pStorage;
+    union
+    {
+        /** Storage handle */
+        void                        *pStorage;
+        /** File handle for the limited I/O version. */
+        RTFILE                       hFile;
+    } u;
 } VDIOSTORAGE;
 
 extern VBOXHDDBACKEND g_RawBackend;
@@ -1199,7 +1204,7 @@ static int vdIOOpen(void *pvUser, const char *pszLocation,
                                                     pszLocation, uOpenFlags,
                                                     vdIOReqCompleted,
                                                     pDisk->pVDIfsDisk,
-                                                    &pIoStorage->pStorage);
+                                                    &pIoStorage->u.pStorage);
     if (RT_SUCCESS(rc))
         *ppIoStorage = pIoStorage;
     else
@@ -1213,7 +1218,7 @@ static int vdIOClose(void *pvUser, PVDIOSTORAGE pIoStorage)
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     int rc = pDisk->pInterfaceAsyncIOCallbacks->pfnClose(pDisk->pInterfaceAsyncIO->pvUser,
-                                                         pIoStorage->pStorage);
+                                                         pIoStorage->u.pStorage);
     AssertRC(rc);
 
     RTMemFree(pIoStorage);
@@ -1226,7 +1231,7 @@ static int vdIOGetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     return pDisk->pInterfaceAsyncIOCallbacks->pfnGetSize(pDisk->pInterfaceAsyncIO->pvUser,
-                                                         pIoStorage->pStorage,
+                                                         pIoStorage->u.pStorage,
                                                          pcbSize);
 }
 
@@ -1236,7 +1241,7 @@ static int vdIOSetSize(void *pvUser, PVDIOSTORAGE pIoStorage,
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     return pDisk->pInterfaceAsyncIOCallbacks->pfnSetSize(pDisk->pInterfaceAsyncIO->pvUser,
-                                                         pIoStorage->pStorage,
+                                                         pIoStorage->u.pStorage,
                                                          cbSize);
 }
 
@@ -1246,7 +1251,7 @@ static int vdIOWriteSync(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     return pDisk->pInterfaceAsyncIOCallbacks->pfnWriteSync(pDisk->pInterfaceAsyncIO->pvUser,
-                                                           pIoStorage->pStorage,
+                                                           pIoStorage->u.pStorage,
                                                            uOffset, cbWrite, pvBuf,
                                                            pcbWritten);
 }
@@ -1257,7 +1262,7 @@ static int vdIOReadSync(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     return pDisk->pInterfaceAsyncIOCallbacks->pfnReadSync(pDisk->pInterfaceAsyncIO->pvUser,
-                                                          pIoStorage->pStorage,
+                                                          pIoStorage->u.pStorage,
                                                           uOffset, cbRead, pvBuf,
                                                           pcbRead);
 }
@@ -1267,7 +1272,7 @@ static int vdIOFlushSync(void *pvUser, PVDIOSTORAGE pIoStorage)
     PVBOXHDD pDisk = (PVBOXHDD)pvUser;
 
     return pDisk->pInterfaceAsyncIOCallbacks->pfnFlushSync(pDisk->pInterfaceAsyncIO->pvUser,
-                                                           pIoStorage->pStorage);
+                                                           pIoStorage->u.pStorage);
 }
 
 static int vdIOReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
@@ -1325,6 +1330,78 @@ static size_t vdIOIoCtxSet(void *pvUser, PVDIOCTX pIoCtx,
 {
     return vdIoCtxSet(pIoCtx, ch, cb);
 }
+
+/**
+ * VD I/O interface callback for opening a file (limited version for VDGetFormat).
+ */
+static int vdIOOpenLimited(void *pvUser, const char *pszLocation,
+                           unsigned uOpenFlags, PPVDIOSTORAGE ppIoStorage)
+{
+    int rc = VINF_SUCCESS;
+    PVDIOSTORAGE pIoStorage = (PVDIOSTORAGE)RTMemAllocZ(sizeof(VDIOSTORAGE));
+
+    if (!pIoStorage)
+        return VERR_NO_MEMORY;
+
+    uint32_t fOpen = 0;
+
+    if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_READONLY)
+        fOpen |= RTFILE_O_READ      | RTFILE_O_DENY_NONE;
+    else
+        fOpen |= RTFILE_O_READWRITE | RTFILE_O_DENY_WRITE;
+
+    if (uOpenFlags & VD_INTERFACEASYNCIO_OPEN_FLAGS_CREATE)
+        fOpen |= RTFILE_O_CREATE;
+    else
+        fOpen |= RTFILE_O_OPEN;
+
+    rc = RTFileOpen(&pIoStorage->u.hFile, pszLocation, fOpen);
+    if (RT_SUCCESS(rc))
+        *ppIoStorage = pIoStorage;
+    else
+        RTMemFree(pIoStorage);
+
+    return rc;
+}
+
+static int vdIOCloseLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
+{
+    int rc = RTFileClose(pIoStorage->u.hFile);
+    AssertRC(rc);
+
+    RTMemFree(pIoStorage);
+    return VINF_SUCCESS;
+}
+
+static int vdIOGetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
+                       uint64_t *pcbSize)
+{
+    return RTFileGetSize(pIoStorage->u.hFile, pcbSize);
+}
+
+static int vdIOSetSizeLimited(void *pvUser, PVDIOSTORAGE pIoStorage,
+                       uint64_t cbSize)
+{
+    return RTFileSetSize(pIoStorage->u.hFile, cbSize);
+}
+
+static int vdIOWriteSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                         size_t cbWrite, const void *pvBuf, size_t *pcbWritten)
+{
+    return RTFileWriteAt(pIoStorage->u.hFile, uOffset, pvBuf, cbWrite, pcbWritten);
+}
+
+static int vdIOReadSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage, uint64_t uOffset,
+                        size_t cbRead, void *pvBuf, size_t *pcbRead)
+{
+    return RTFileReadAt(pIoStorage->u.hFile, uOffset, pvBuf, cbRead, pcbRead);
+}
+
+static int vdIOFlushSyncLimited(void *pvUser, PVDIOSTORAGE pIoStorage)
+{
+    return RTFileFlush(pIoStorage->u.hFile);
+}
+
 
 /**
  * internal: send output to the log (unconditionally).
@@ -1642,13 +1719,13 @@ VBOXDDU_DECL(int) VDGetFormat(PVDINTERFACE pVDIfsDisk, const char *pszFilename, 
 
     VDIIOCallbacks.cbSize            = sizeof(VDINTERFACEIO);
     VDIIOCallbacks.enmInterface      = VDINTERFACETYPE_IO;
-    VDIIOCallbacks.pfnOpen           = vdIOOpen;
-    VDIIOCallbacks.pfnClose          = vdIOClose;
-    VDIIOCallbacks.pfnGetSize        = vdIOGetSize;
-    VDIIOCallbacks.pfnSetSize        = vdIOSetSize;
-    VDIIOCallbacks.pfnReadSync       = vdIOReadSync;
-    VDIIOCallbacks.pfnWriteSync      = vdIOWriteSync;
-    VDIIOCallbacks.pfnFlushSync      = vdIOFlushSync;
+    VDIIOCallbacks.pfnOpen           = vdIOOpenLimited;
+    VDIIOCallbacks.pfnClose          = vdIOCloseLimited;
+    VDIIOCallbacks.pfnGetSize        = vdIOGetSizeLimited;
+    VDIIOCallbacks.pfnSetSize        = vdIOSetSizeLimited;
+    VDIIOCallbacks.pfnReadSync       = vdIOReadSyncLimited;
+    VDIIOCallbacks.pfnWriteSync      = vdIOWriteSyncLimited;
+    VDIIOCallbacks.pfnFlushSync      = vdIOFlushSyncLimited;
     VDIIOCallbacks.pfnReadUserAsync  = NULL;
     VDIIOCallbacks.pfnWriteUserAsync = NULL;
     VDIIOCallbacks.pfnReadMetaAsync  = NULL;
