@@ -2415,7 +2415,7 @@ INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSES
                 intnetR0NetworkSend(pNetwork, pIf, 0, &Sg, !!pTrunkIf);
             }
         }
-        else
+        else if (pHdr->u16Type != INTNETHDR_TYPE_PADDING)
             STAM_REL_COUNTER_INC(&pIf->pIntBuf->cStatBadFrames); /* ignore */
 
         /* Skip to the next frame. */

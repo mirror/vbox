@@ -119,7 +119,7 @@ DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
     uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
 #ifdef VBOX_STRICT
     const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
+    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME || pHdr->u16Type == INTNETHDR_TYPE_PADDING);
     Assert(off < pBuf->cbBuf);
     Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
@@ -140,7 +140,7 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETRINGBUF pRingBuf)
     Assert(offReadOld >= pRingBuf->offStart);
     Assert(offReadOld <  pRingBuf->offEnd);
     Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr);
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
+    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME || pHdr->u16Type == INTNETHDR_TYPE_PADDING);
 
     /* skip the frame */
     uint32_t        offReadNew  = offReadOld + pHdr->offFrame + pHdr->cbFrame;
@@ -284,6 +284,60 @@ DECLINLINE(void) INTNETRingCommitFrame(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr)
     Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (offRead=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX));
     ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
     STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbFrame);
+    STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
+}
+
+
+/**
+ * Commits a frame and injects a filler frame if not all of the buffer was used.
+ *
+ * Make sure to commit the frames in the order they've been allocated!
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pRingBuf            The ring buffer.
+ * @param   pHdr                The frame header returned by
+ *                              INTNETRingAllocateFrame.
+ * @param   cbUsed              The amount of space actually used.
+ */
+DECLINLINE(void) INTNETRingCommitFrameEx(PINTNETRINGBUF pRingBuf, PINTNETHDR pHdr, size_t cbUsed)
+{
+    /*
+     * Validate input and commit order.
+     */
+    INTNETRINGBUF_ASSERT_SANITY(pRingBuf);
+    INTNETHDR_ASSERT_SANITY(pHdr, pRingBuf);
+    Assert(pRingBuf->offWriteCom == ((uintptr_t)pHdr - (uintptr_t)pRingBuf));
+
+    /*
+     * Calc the new write commit offset.
+     */
+    const uint32_t  cbAlignedFrame = RT_ALIGN_32(pHdr->cbFrame, INTNETHDR_ALIGNMENT);
+    const uint32_t  cbAlignedUsed  = RT_ALIGN_32(cbUsed, INTNETHDR_ALIGNMENT);
+    uint32_t        offWriteCom    = (uint32_t)((uintptr_t)pHdr - (uintptr_t)pRingBuf)
+                                   + pHdr->offFrame
+                                   + cbAlignedFrame;
+    if (offWriteCom >= pRingBuf->offEnd)
+    {
+        Assert(offWriteCom == pRingBuf->offEnd);
+        offWriteCom = pRingBuf->offStart;
+    }
+
+    /*
+     * Insert a dummy frame to pad any unused space.
+     */
+    if (cbAlignedFrame != cbAlignedUsed)
+    {
+        /** @todo Later: Try unallocate the extra memory.  */
+        PINTNETHDR pHdrPadding = (PINTNETHDR)((uint8_t *)pHdr + pHdr->offFrame + cbAlignedUsed);
+        pHdrPadding->u16Type  = INTNETHDR_TYPE_PADDING;
+        pHdrPadding->cbFrame  = cbAlignedFrame - cbAlignedUsed - sizeof(INTNETHDR);
+        pHdrPadding->offFrame = sizeof(INTNETHDR);
+        pHdr->cbFrame = cbUsed;
+    }
+
+    Log2(("INTNETRingCommitFrame:   offWriteCom: %#x -> %#x (offRead=%#x)\n", pRingBuf->offWriteCom, offWriteCom, pRingBuf->offReadX));
+    ASMAtomicWriteU32(&pRingBuf->offWriteCom, offWriteCom);
+    STAM_REL_COUNTER_ADD(&pRingBuf->cbStatWritten, cbUsed);
     STAM_REL_COUNTER_INC(&pRingBuf->cStatFrames);
 }
 
