@@ -771,20 +771,20 @@ protected:
     void copyFrom(Machine *aThat);
 
 #ifdef VBOX_WITH_GUEST_PROPS
-    HRESULT GetGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
+    HRESULT getGuestPropertyFromService(IN_BSTR aName, BSTR *aValue,
                                         ULONG64 *aTimestamp, BSTR *aFlags);
-    HRESULT GetGuestPropertyFromVM(IN_BSTR aName, BSTR *aValue,
+    HRESULT getGuestPropertyFromVM(IN_BSTR aName, BSTR *aValue,
                                    ULONG64 *aTimestamp, BSTR *aFlags);
-    HRESULT SetGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
+    HRESULT setGuestPropertyToService(IN_BSTR aName, IN_BSTR aValue,
                                       IN_BSTR aFlags);
-    HRESULT SetGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
+    HRESULT setGuestPropertyToVM(IN_BSTR aName, IN_BSTR aValue,
                                  IN_BSTR aFlags);
-    HRESULT EnumerateGuestPropertiesInService
+    HRESULT enumerateGuestPropertiesInService
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
                  ComSafeArrayOut(ULONG64, aTimestamps),
                  ComSafeArrayOut(BSTR, aFlags));
-    HRESULT EnumerateGuestPropertiesOnVM
+    HRESULT enumerateGuestPropertiesOnVM
                 (IN_BSTR aPatterns, ComSafeArrayOut(BSTR, aNames),
                  ComSafeArrayOut(BSTR, aValues),
                  ComSafeArrayOut(ULONG64, aTimestamps),
