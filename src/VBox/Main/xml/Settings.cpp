@@ -2803,43 +2803,60 @@ void MachineConfigFile::readSnapshot(const xml::ElementNode &elmSnapshot,
         readDVDAndFloppies_pre1_9(*pelmHardware, snap.storage);
 }
 
+const struct {
+    const char *pcszOld;
+    const char *pcszNew;
+} aConvertOSTypes[] =
+{
+    { "unknown", "Other" },
+    { "dos", "DOS" },
+    { "win31", "Windows31" },
+    { "win95", "Windows95" },
+    { "win98", "Windows98" },
+    { "winme", "WindowsMe" },
+    { "winnt4", "WindowsNT4" },
+    { "win2k", "Windows2000" },
+    { "winxp", "WindowsXP" },
+    { "win2k3", "Windows2003" },
+    { "winvista", "WindowsVista" },
+    { "win2k8", "Windows2008" },
+    { "os2warp3", "OS2Warp3" },
+    { "os2warp4", "OS2Warp4" },
+    { "os2warp45", "OS2Warp45" },
+    { "ecs", "OS2eCS" },
+    { "linux22", "Linux22" },
+    { "linux24", "Linux24" },
+    { "linux26", "Linux26" },
+    { "archlinux", "ArchLinux" },
+    { "debian", "Debian" },
+    { "opensuse", "OpenSUSE" },
+    { "fedoracore", "Fedora" },
+    { "gentoo", "Gentoo" },
+    { "mandriva", "Mandriva" },
+    { "redhat", "RedHat" },
+    { "ubuntu", "Ubuntu" },
+    { "xandros", "Xandros" },
+    { "freebsd", "FreeBSD" },
+    { "openbsd", "OpenBSD" },
+    { "netbsd", "NetBSD" },
+    { "netware", "Netware" },
+    { "solaris", "Solaris" },
+    { "opensolaris", "OpenSolaris" },
+    { "l4", "L4" }
+};
+
 void MachineConfigFile::convertOldOSType_pre1_5(Utf8Str &str)
 {
-    if (str == "unknown") str = "Other";
-    else if (str == "dos") str = "DOS";
-    else if (str == "win31") str = "Windows31";
-    else if (str == "win95") str = "Windows95";
-    else if (str == "win98") str = "Windows98";
-    else if (str == "winme") str = "WindowsMe";
-    else if (str == "winnt4") str = "WindowsNT4";
-    else if (str == "win2k") str = "Windows2000";
-    else if (str == "winxp") str = "WindowsXP";
-    else if (str == "win2k3") str = "Windows2003";
-    else if (str == "winvista") str = "WindowsVista";
-    else if (str == "win2k8") str = "Windows2008";
-    else if (str == "os2warp3") str = "OS2Warp3";
-    else if (str == "os2warp4") str = "OS2Warp4";
-    else if (str == "os2warp45") str = "OS2Warp45";
-    else if (str == "ecs") str = "OS2eCS";
-    else if (str == "linux22") str = "Linux22";
-    else if (str == "linux24") str = "Linux24";
-    else if (str == "linux26") str = "Linux26";
-    else if (str == "archlinux") str = "ArchLinux";
-    else if (str == "debian") str = "Debian";
-    else if (str == "opensuse") str = "OpenSUSE";
-    else if (str == "fedoracore") str = "Fedora";
-    else if (str == "gentoo") str = "Gentoo";
-    else if (str == "mandriva") str = "Mandriva";
-    else if (str == "redhat") str = "RedHat";
-    else if (str == "ubuntu") str = "Ubuntu";
-    else if (str == "xandros") str = "Xandros";
-    else if (str == "freebsd") str = "FreeBSD";
-    else if (str == "openbsd") str = "OpenBSD";
-    else if (str == "netbsd") str = "NetBSD";
-    else if (str == "netware") str = "Netware";
-    else if (str == "solaris") str = "Solaris";
-    else if (str == "opensolaris") str = "OpenSolaris";
-    else if (str == "l4") str = "L4";
+    for (unsigned u = 0;
+         u < RT_ELEMENTS(aConvertOSTypes);
+         ++u)
+    {
+        if (str == aConvertOSTypes[u].pcszOld)
+        {
+            str = aConvertOSTypes[u].pcszNew;
+            break;
+        }
+    }
 }
 
 /**
