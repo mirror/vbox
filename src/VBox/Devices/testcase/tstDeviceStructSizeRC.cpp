@@ -384,7 +384,7 @@ int main()
     GEN_CHECK_OFF(PCNetState, aMII[MII_MAX_REG - 1]);
     GEN_CHECK_OFF(PCNetState, u16CSR0LastSeenByGuest);
     GEN_CHECK_OFF(PCNetState, u64LastPoll);
-    GEN_CHECK_OFF(PCNetState, abSendBuf);
+    GEN_CHECK_OFF(PCNetState, abLoopBuf);
     GEN_CHECK_OFF(PCNetState, abRecvBuf);
     GEN_CHECK_OFF(PCNetState, iLog2DescSize);
     GEN_CHECK_OFF(PCNetState, GCUpperPhys);
@@ -398,7 +398,7 @@ int main()
     GEN_CHECK_OFF(PCNetState, pDevInsR3);
     GEN_CHECK_OFF(PCNetState, pDevInsR0);
     GEN_CHECK_OFF(PCNetState, pDevInsRC);
-    GEN_CHECK_OFF(PCNetState, pDrv);
+    GEN_CHECK_OFF(PCNetState, pDrvR3);
     GEN_CHECK_OFF(PCNetState, pDrvBase);
     GEN_CHECK_OFF(PCNetState, IBase);
     GEN_CHECK_OFF(PCNetState, INetworkDown);
@@ -415,7 +415,6 @@ int main()
     GEN_CHECK_OFF(PCNetState, hSendEventSem);
     GEN_CHECK_OFF(PCNetState, pSendThread);
     GEN_CHECK_OFF(PCNetState, CritSect);
-    GEN_CHECK_OFF(PCNetState, cPendingSends);
 #ifdef PCNET_NO_POLLING
     GEN_CHECK_OFF(PCNetState, TDRAPhysOld);
     GEN_CHECK_OFF(PCNetState, cbTDRAOld);

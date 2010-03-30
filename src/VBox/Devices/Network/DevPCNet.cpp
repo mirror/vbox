@@ -49,6 +49,7 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
+#define VBOX_WITH_TX_THREAD_IN_NET_DEVICES 1 //debug, bird, remove
 
 /*******************************************************************************
 *   Header Files                                                               *
@@ -157,20 +158,13 @@ struct PCNetState_st
     /** Last time we polled the queues */
     uint64_t                            u64LastPoll;
 
-    /** Size of current send frame */
-    uint32_t                            cbSendFrame;
-#if HC_ARCH_BITS == 64
-    uint32_t                            Alignment3;
-#endif
-    /** Buffer address of current send frame */
-    R3PTRTYPE(uint8_t *)                pvSendFrame;
-    /** The xmit buffer. */
-    uint8_t                             abSendBuf[4096];
+    /** The loopback transmit buffer (avoid stack allocations). */
+    uint8_t                             abLoopBuf[4096];
     /** The recv buffer. */
     uint8_t                             abRecvBuf[4096];
 
-    /** Pending send packet counter. */
-    uint32_t                            cPendingSends;
+    /** Unused / padding. */
+    uint32_t                            u32Unused;
 
     /** Size of a RX/TX descriptor (8 or 16 bytes according to SWSTYLE */
     int                                 iLog2DescSize;
@@ -200,7 +194,7 @@ struct PCNetState_st
      *  This is used to disconnect and reconnect the link after a restore. */
     PTMTIMERR3                          pTimerRestore;
     /** Pointer to the connector of the attached network driver. */
-    R3PTRTYPE(PPDMINETWORKUP)    pDrv;
+    R3PTRTYPE(PPDMINETWORKUP)           pDrvR3;
     /** Pointer to the attached network driver. */
     R3PTRTYPE(PPDMIBASE)                pDrvBase;
     /** LUN\#0 + status LUN: The base interface. */
@@ -232,10 +226,12 @@ struct PCNetState_st
     /** Partner of ILeds. */
     R3PTRTYPE(PPDMILEDCONNECTORS)       pLedsConnector;
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     /** Async send thread */
     RTSEMEVENT                          hSendEventSem;
     /** The Async send thread. */
     PPDMTHREAD                          pSendThread;
+#endif
 
     /** Access critical section. */
     PDMCRITSECT                         CritSect;
@@ -291,7 +287,9 @@ struct PCNetState_st
     STAMPROFILEADV                      StatTimer;
     STAMPROFILEADV                      StatReceive;
     STAMPROFILEADV                      StatTransmit;
-    STAMPROFILEADV                      StatTransmitSend;
+    STAMCOUNTER                         StatTransmitCase1;
+    STAMCOUNTER                         StatTransmitCase2;
+    STAMPROFILE                         StatTransmitSend;
     STAMPROFILEADV                      StatTdtePollGC;
     STAMPROFILEADV                      StatTdtePollHC;
     STAMPROFILEADV                      StatTmdStoreGC;
@@ -616,7 +614,7 @@ static void pcnetPollTimerStart(PCNetState *pThis);
  */
 DECLINLINE(bool) pcnetIsLinkUp(PCNetState *pThis)
 {
-    return pThis->pDrv && !pThis->fLinkTempDown && pThis->fLinkUp;
+    return pThis->pDrvR3 && !pThis->fLinkTempDown && pThis->fLinkUp;
 }
 
 /**
@@ -1597,8 +1595,8 @@ static void pcnetInit(PCNetState *pThis)
      */
     pThis->fSignalRxMiss = (cbRxBuffers == 0 || cbRxBuffers >= 32*_1K);
 
-    if (pThis->pDrv)
-        pThis->pDrv->pfnSetPromiscuousMode(pThis->pDrv, CSR_PROM(pThis));
+    if (pThis->pDrvR3)
+        pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, CSR_PROM(pThis));
 
     CSR_RCVRC(pThis) = CSR_RCVRL(pThis);
     CSR_XMTRC(pThis) = CSR_XMTRL(pThis);
@@ -2062,69 +2060,256 @@ static DECLCALLBACK(bool) pcnetXmitQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEIT
     NOREF(pItem);
 
     /* Clear counter .*/
-    ASMAtomicAndU32(&pThis->cPendingSends, 0);
+#ifndef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
+    int rc = PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    AssertReleaseRC(rc);
+
+    pcnetAsyncTransmit(pThis, false /*fOnWorkerThread*/);
+
+    PDMCritSectLeave(&pThis->CritSect);
+#else
     int rc = RTSemEventSignal(pThis->hSendEventSem);
     AssertRC(rc);
+#endif
     return true;
 }
 
 
 /**
- * Scraps the top frame.
- * This is done as a precaution against mess left over by on
+ * Allocates a scatter/gather buffer for a transfer.
+ *
+ * @returns See PPDMINETWORKUP::pfnAllocBuf.
+ * @param   pThis       The device instance.
+ * @param   cbMin       The minimum buffer size.
+ * @param   fLoopback   Set if we're in loopback mode.
+ * @param   pSgLoop     Pointer to stack storage for the loopback SG.
+ * @param   ppSgBuf     Where to return the SG buffer descriptor on success.
+ *                      Always set.
  */
-DECLINLINE(void) pcnetXmitScrapFrame(PCNetState *pThis)
+DECLINLINE(int) pcnetXmitAllocBuf(PCNetState *pThis, size_t cbMin, bool fLoopback,
+                                  PPDMSCATTERGATHER pSgLoop, PPPDMSCATTERGATHER ppSgBuf)
 {
-    pThis->pvSendFrame = NULL;
-    pThis->cbSendFrame = 0;
+    int rc;
+
+    if (RT_UNLIKELY(fLoopback)) /* hope that loopback mode is rare */
+    {
+        pSgLoop->fFlags      = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
+        pSgLoop->cbUsed      = 0;
+        pSgLoop->cbAvailable = sizeof(pThis->abLoopBuf);
+        pSgLoop->pvAllocator = pThis;
+        pSgLoop->pvUser      = NULL;
+        pSgLoop->cSegs       = 1;
+        pSgLoop->aSegs[0].cbSeg = sizeof(pThis->abLoopBuf);
+        pSgLoop->aSegs[0].pvSeg = pThis->abLoopBuf;
+        *ppSgBuf = pSgLoop;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        PPDMINETWORKUP pDrv = pThis->pDrvR3;
+        if (RT_LIKELY(pDrv))
+        {
+            rc = pDrv->pfnAllocBuf(pDrv, cbMin, ppSgBuf);
+            AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN || rc == VERR_NET_DOWN || rc == VERR_NO_MEMORY, ("%Rrc\n", rc));
+            if (RT_FAILURE(rc))
+                *ppSgBuf = NULL;
+        }
+        else
+        {
+            rc = VERR_NET_DOWN;
+            *ppSgBuf = NULL;
+        }
+    }
+    return rc;
 }
 
 
 /**
- * Reads the first part of a frame
+ * Frees an unsent buffer.
+ *
+ * @param   pThis           The device instance.
+ * @param   fLoopback       Set if we're in loopback mode.
+ * @param   pSgBuf          The SG to free.  Can be NULL.
  */
-DECLINLINE(void) pcnetXmitRead1st(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
+DECLINLINE(void) pcnetXmitFreeBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf)
 {
-    Assert(PDMCritSectIsOwner(&pThis->CritSect));
-    Assert(cbFrame < sizeof(pThis->abSendBuf));
-
-    pThis->pvSendFrame = pThis->abSendBuf;
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pThis->pvSendFrame, cbFrame);
-    pThis->cbSendFrame = cbFrame;
+    if (pSgBuf)
+    {
+        if (RT_UNLIKELY(fLoopback))
+            pSgBuf->pvAllocator = NULL;
+        else
+        {
+            PPDMINETWORKUP pDrv = pThis->pDrvR3;
+            if (RT_LIKELY(pDrv))
+                pDrv->pfnFreeBuf(pDrv, pSgBuf);
+        }
+    }
 }
 
+
+/**
+ * Sends the scatter/gather buffer.
+ *
+ * Wrapper around PDMINETWORKUP::pfnSendBuf, so check it out for the fine print.
+ *
+ * @returns See PDMINETWORKUP::pfnSendBuf.
+ * @param   pThis           The device instance.
+ * @param   fLoopback       Set if we're in loopback mode.
+ * @param   pSgBuf          The SG to send.
+ * @param   fOnWorkerThread Set if we're being called on a work thread.  Clear
+ *                          if an EMT.
+ */
+DECLINLINE(int) pcnetXmitSendBuf(PCNetState *pThis, bool fLoopback, PPDMSCATTERGATHER pSgBuf, bool fOnWorkerThread)
+{
+    int rc;
+    STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pSgBuf->cbUsed);
+    if (RT_UNLIKELY(fLoopback)) /* hope that loopback mode is rare */
+    {
+        Assert(pSgBuf->pvAllocator == (void *)pThis);
+        pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
+        if (HOST_IS_OWNER(CSR_CRST(pThis)))
+            pcnetRdtePoll(pThis);
+
+        pcnetReceiveNoSync(pThis, pThis->abLoopBuf, pSgBuf->cbUsed);
+        pThis->Led.Actual.s.fReading = 0;
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        /** @todo We used to leave the critsect here, not sure if that's necessary any
+         *        longer.  If we could avoid that we could cache a bit more info in
+         *        the loop and make it part of the driver<->device contract, saving
+         *        critsect mess down in DrvIntNet. */
+        STAM_PROFILE_START(&pThis->StatTransmitSend, a);
+        if (pSgBuf->cbUsed > 70) /* unqualified guess */
+            pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
+
+        PPDMINETWORKUP pDrv = pThis->pDrvR3;
+        if (RT_LIKELY(pDrv))
+        {
+            rc = pDrv->pfnSendBuf(pDrv, pSgBuf, fOnWorkerThread);
+            AssertMsg(rc == VINF_SUCCESS || rc == VERR_NET_DOWN || rc == VERR_NET_NO_BUFFER_SPACE, ("%Rrc\n", rc));
+        }
+        else
+            rc = VERR_NET_DOWN;
+
+        pThis->Led.Actual.s.fWriting = 0;
+        STAM_PROFILE_STOP(&pThis->StatTransmitSend, a);
+    }
+    return rc;
+}
+
+
+/**
+ * pcnetXmitRead1st worker that handles the unlikely + slower segmented code
+ * path.
+ */
+static void pcnetXmitRead1stSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
+                                 PPDMSCATTERGATHER pSgBuf)
+{
+    AssertFailed(); /* This path is not suppost to be taken atm */
+
+    pSgBuf->cbUsed = cbFrame;
+    for (uint32_t iSeg = 0; ; iSeg++)
+    {
+        Assert(iSeg < pSgBuf->cSegs);
+        size_t cbRead = RT_MIN(cbFrame, pSgBuf->aSegs[iSeg].cbSeg);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        cbFrame -= cbRead;
+        if (!cbFrame)
+            return;
+        GCPhysFrame += cbRead;
+    }
+}
+
+
+/**
+ * pcnetXmitSgReadMore worker that handles the unlikely + slower segmented code
+ * path.
+ */
+static void pcnetXmitReadMoreSlow(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, unsigned cbFrame,
+                                  PPDMSCATTERGATHER pSgBuf)
+{
+    AssertFailed(); /* This path is not suppost to be taken atm */
+
+    /* Find the segment which we'll put the next byte into. */
+    size_t      off    = pSgBuf->cbUsed;
+    size_t      offSeg = 0;
+    uint32_t    iSeg   = 0;
+    while (offSeg + pSgBuf->aSegs[iSeg].cbSeg <= off)
+    {
+        offSeg += pSgBuf->aSegs[iSeg].cbSeg;
+        iSeg++;
+        Assert(iSeg < pSgBuf->cSegs);
+    }
+
+    /* Commit before we start copying so we can decrement cbFrame. */
+    pSgBuf->cbUsed = off + cbFrame;
+
+    /* Deal with the first segment if we at an offset into it. */
+    if (off != offSeg)
+    {
+        size_t offIntoSeg = off - offSeg;
+        size_t cbRead     = RT_MIN(pSgBuf->aSegs[iSeg].cbSeg - offIntoSeg, cbFrame);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame,
+                          (uint8_t *)pSgBuf->aSegs[iSeg].pvSeg + offIntoSeg, cbRead);
+        cbFrame -= cbRead;
+        if (!cbFrame)
+            return;
+        GCPhysFrame += cbRead;
+        iSeg++;
+    }
+
+    /* For the remainder, we've got whole segments. */
+    for (;; iSeg++)
+    {
+        Assert(iSeg < pSgBuf->cSegs);
+
+        size_t cbRead = RT_MIN(pSgBuf->aSegs[iSeg].cbSeg, cbFrame);
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[iSeg].pvSeg, cbRead);
+        cbFrame -= cbRead;
+        if (!cbFrame)
+            return;
+        GCPhysFrame += cbFrame;
+    }
+}
+
+
+/**
+ * Reads the first part of a frame into the scatter gather buffer.
+ */
+DECLINLINE(void) pcnetXmitRead1st(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
+                                  PPDMSCATTERGATHER pSgBuf)
+{
+    Assert(PDMCritSectIsOwner(&pThis->CritSect));
+    Assert(pSgBuf->cbAvailable >= cbFrame);
+
+    if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame)) /* justification: all drivers returns a single segment atm. */
+    {
+        pSgBuf->cbUsed = cbFrame;
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pSgBuf->aSegs[0].pvSeg, cbFrame);
+    }
+    else
+        pcnetXmitRead1stSlow(pThis, GCPhysFrame, cbFrame, pSgBuf);
+}
 
 /**
  * Reads more into the current frame.
  */
-DECLINLINE(void) pcnetXmitReadMore(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame)
+DECLINLINE(void) pcnetXmitReadMore(PCNetState *pThis, RTGCPHYS32 GCPhysFrame, const unsigned cbFrame,
+                                   PPDMSCATTERGATHER pSgBuf)
 {
-    Assert(pThis->cbSendFrame + cbFrame <= MAX_FRAME);
-    PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame, pThis->pvSendFrame + pThis->cbSendFrame, cbFrame);
-    pThis->cbSendFrame += cbFrame;
-}
+    size_t off = pSgBuf->cbUsed;
+    Assert(pSgBuf->cbAvailable >= cbFrame + off);
 
-
-/**
- * Completes the current frame.
- * If we've reached the maxium number of frames, they will be flushed.
- */
-DECLINLINE(int) pcnetXmitCompleteFrame(PCNetState *pThis)
-{
-    /* Don't hold the critical section while transmitting data. */
-    /** @note also avoids deadlocks with NAT as it can call us right back. */
-    PDMCritSectLeave(&pThis->CritSect);
-
-    STAM_PROFILE_ADV_START(&pThis->StatTransmitSend, a);
-    if (pThis->cbSendFrame > 70) /* unqualified guess */
-        pThis->Led.Asserted.s.fWriting = pThis->Led.Actual.s.fWriting = 1;
-
-    pThis->pDrv->pfnSendDeprecated(pThis->pDrv, pThis->pvSendFrame, pThis->cbSendFrame);
-    STAM_REL_COUNTER_ADD(&pThis->StatTransmitBytes, pThis->cbSendFrame);
-    pThis->Led.Actual.s.fWriting = 0;
-    STAM_PROFILE_ADV_STOP(&pThis->StatTransmitSend, a);
-
-    return PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
+    if (RT_LIKELY(pSgBuf->aSegs[0].cbSeg >= cbFrame + off))
+    {
+        pSgBuf->cbUsed = cbFrame + off;
+        PDMDevHlpPhysRead(pThis->CTX_SUFF(pDevIns), GCPhysFrame,
+                          (uint8_t *)pSgBuf->aSegs[0].pvSeg + off, cbFrame);
+    }
+    else
+        pcnetXmitReadMoreSlow(pThis, GCPhysFrame, cbFrame, pSgBuf);
 }
 
 
@@ -2155,21 +2340,6 @@ static void pcnetXmitFailTMDGeneric(PCNetState *pThis, TMD *pTmd)
          PCNET_INST_NR, pThis->aBCR[BCR_SWS]));
 }
 
-
-/**
- * Transmit a loopback frame.
- */
-DECLINLINE(void) pcnetXmitLoopbackFrame(PCNetState *pThis)
-{
-    pThis->Led.Asserted.s.fReading = pThis->Led.Actual.s.fReading = 1;
-    if (HOST_IS_OWNER(CSR_CRST(pThis)))
-        pcnetRdtePoll(pThis);
-
-    Assert(pThis->pvSendFrame);
-    pcnetReceiveNoSync(pThis, (const uint8_t *)pThis->pvSendFrame, pThis->cbSendFrame);
-    pcnetXmitScrapFrame(pThis);
-    pThis->Led.Actual.s.fReading = 0;
-}
 
 /**
  * Flushes queued frames.
@@ -2212,34 +2382,26 @@ static void pcnetTransmit(PCNetState *pThis)
 #ifdef IN_RING3
     pcnetXmitFlushFrames(pThis);
 #else
-# if 1
     PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
     if (RT_UNLIKELY(pItem))
         PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
-# else
-    if (ASMAtomicIncU32(&pThis->cPendingSends) < 16)
-    {
-        PPDMQUEUEITEMCORE pItem = PDMQueueAlloc(pThis->CTX_SUFF(pXmitQueue));
-        if (RT_UNLIKELY(pItem))
-            PDMQueueInsert(pThis->CTX_SUFF(pXmitQueue), pItem);
-    }
-    else
-        PDMQueueFlush(pThis->CTX_SUFF(pXmitQueue));
-# endif
 #endif
 }
 
 #ifdef IN_RING3
 
 /**
- * Try to transmit frames
+ * Actually try transmit frames.
+ *
+ * @threads TX or EMT.
  */
-static int pcnetAsyncTransmit(PCNetState *pThis)
+static int pcnetAsyncTransmit(PCNetState *pThis, bool fOnWorkerThread)
 {
-    unsigned cFlushIrq = 0;
-
     Assert(PDMCritSectIsOwner(&pThis->CritSect));
 
+    /*
+     * Just cleard transmit demand if the transmitter is off.
+     */
     if (RT_UNLIKELY(!CSR_TXON(pThis)))
     {
         pThis->aCSR[0] &= ~0x0008; /* Clear TDMD */
@@ -2249,6 +2411,8 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
     /*
      * Iterate the transmit descriptors.
      */
+    int         rc;
+    unsigned    cFlushIrq = 0;
     STAM_PROFILE_ADV_START(&pThis->StatTransmit, a);
     do
     {
@@ -2269,7 +2433,9 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
         Log2(("#%d TMDLOAD %#010x\n", PCNET_INST_NR, PHYSADDR(pThis, CSR_CXDA(pThis))));
         PRINT_TMD(&tmd);
 #endif
-        pcnetXmitScrapFrame(pThis);
+        bool const          fLoopback = CSR_LOOP(pThis);
+        PDMSCATTERGATHER    SgLoop;
+        PPDMSCATTERGATHER   pSgBuf;
 
         /*
          * The typical case - a complete packet.
@@ -2277,9 +2443,10 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
         if (tmd.tmd1.stp && tmd.tmd1.enp)
         {
             const unsigned cb = 4096 - tmd.tmd1.bcnt;
-            Log(("#%d pcnetTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNET_INST_NR, cb, CSR_XMTRC(pThis)));
+            Log(("#%d pcnetAsyncTransmit: stp&enp: cb=%d xmtrc=%#x\n", PCNET_INST_NR, cb, CSR_XMTRC(pThis)));
+            STAM_COUNTER_INC(&pThis->StatTransmitCase1);
 
-            if (RT_LIKELY(pcnetIsLinkUp(pThis) || CSR_LOOP(pThis)))
+            if (RT_LIKELY(pcnetIsLinkUp(pThis) || fLoopback))
             {
                 /* From the manual: ``A zero length buffer is acceptable as
                  * long as it is not the last buffer in a chain (STP = 0 and
@@ -2287,14 +2454,19 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
                  * zero length if it is not the last one in the chain. */
                 if (RT_LIKELY(cb <= MAX_FRAME))
                 {
-                    pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb);
-                    if (CSR_LOOP(pThis))
-                        pcnetXmitLoopbackFrame(pThis);
-                    else
+                    rc = pcnetXmitAllocBuf(pThis, cb, fLoopback, &SgLoop, &pSgBuf);
+                    if (RT_SUCCESS(rc))
                     {
-                        int rc = pcnetXmitCompleteFrame(pThis);
-                        AssertRCReturn(rc, rc);
+                        pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
+                        rc = pcnetXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
                     }
+                    else if (rc == VERR_TRY_AGAIN)
+                    {
+                        STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
+                        return VINF_SUCCESS;
+                    }
+                    if (RT_FAILURE(rc))
+                        pcnetXmitFailTMDLinkDown(pThis, &tmd);
                 }
                 else if (cb == 4096)
                 {
@@ -2336,19 +2508,34 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
         }
         else if (tmd.tmd1.stp)
         {
+            STAM_COUNTER_INC(&pThis->StatTransmitCase2);
+
             /*
              * Read TMDs until end-of-packet or tdte poll fails (underflow).
+             *
+             * We allocate a maximum sized buffer here since we do not wish to
+             * waste time finding out how much space we actually need even if
+             * we could reliably do that on SMP guests.
              */
-            bool fDropFrame = false;
             unsigned cb = 4096 - tmd.tmd1.bcnt;
-            pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb);
+            rc = pcnetXmitAllocBuf(pThis, RT_MAX(MAX_FRAME, cb), fLoopback, &SgLoop, &pSgBuf);
+            if (rc == VERR_TRY_AGAIN)
+            {
+                STAM_PROFILE_ADV_STOP(&pThis->StatTransmit, a);
+                return VINF_SUCCESS;
+            }
+
+            bool fDropFrame = RT_FAILURE(rc);
+            if (!fDropFrame)
+                pcnetXmitRead1st(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
+
             for (;;)
             {
                 /*
                  * Advance the ring counter register and check the next tmd.
                  */
 #ifdef LOG_ENABLED
-                const uint32_t iStart = CSR_XMTRC(pThis);
+                const uint32_t iStart        = CSR_XMTRC(pThis);
 #endif
                 const uint32_t GCPhysPrevTmd = PHYSADDR(pThis, CSR_CXDA(pThis));
                 if (CSR_XMTRC(pThis) < 2)
@@ -2367,7 +2554,8 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
                     if (!CSR_DXSUFLO(pThis))         /* stop on xmit underflow */
                         pThis->aCSR[0] &= ~0x0010;   /* clear TXON */
                     pcnetTmdStorePassHost(pThis, &tmd, GCPhysPrevTmd);
-                    AssertMsgFailed(("pcnetTransmit: Underflow!!!\n"));
+                    AssertMsgFailed(("pcnetAsyncTransmit: Underflow!!!\n"));
+                    pcnetXmitFreeBuf(pThis, fLoopback, pSgBuf);
                     break;
                 }
 
@@ -2375,39 +2563,38 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
                 pcnetTmdStorePassHost(pThis, &tmd, GCPhysPrevTmd);
 
                 /*
-                 * The next tdm.
+                 * The next tmd.
                  */
 #ifdef VBOX_WITH_STATISTICS
                 cBuffers++;
 #endif
                 pcnetTmdLoad(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)), false);
                 cb = 4096 - tmd.tmd1.bcnt;
-                if (    pThis->cbSendFrame + cb < MAX_FRAME
-                    &&  !fDropFrame)
-                    pcnetXmitReadMore(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb);
+                if (   !fDropFrame
+                    && pSgBuf->cbUsed + cb <= MAX_FRAME) /** @todo this used to be ... + cb < MAX_FRAME. */
+                    pcnetXmitReadMore(pThis, PHYSADDR(pThis, tmd.tmd0.tbadr), cb, pSgBuf);
                 else
                 {
-                    AssertMsg(fDropFrame, ("pcnetTransmit: Frame is too big!!! %d bytes\n",
-                                pThis->cbSendFrame + cb));
+                    AssertMsg(fDropFrame, ("pcnetAsyncTransmit: Frame is too big!!! %d bytes\n", pSgBuf->cbUsed + cb));
                     fDropFrame = true;
                 }
+
+                /*
+                 * Done already?
+                 */
                 if (tmd.tmd1.enp)
                 {
-                    Log(("#%d pcnetTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNET_INST_NR,
-                                pThis->cbSendFrame, iStart, CSR_XMTRC(pThis)));
-                    if (pcnetIsLinkUp(pThis) && !fDropFrame)
+                    Log(("#%d pcnetAsyncTransmit: stp: cb=%d xmtrc=%#x-%#x\n", PCNET_INST_NR,
+                         pSgBuf ? pSgBuf->cbUsed : 0, iStart, CSR_XMTRC(pThis)));
+                    if (!fDropFrame && (pcnetIsLinkUp(pThis) || fLoopback))
                     {
-                        int rc = pcnetXmitCompleteFrame(pThis);
-                        AssertRCReturn(rc, rc);
+                        rc = pcnetXmitSendBuf(pThis, fLoopback, pSgBuf, fOnWorkerThread);
+                        fDropFrame = RT_FAILURE(rc);
                     }
-                    else if (CSR_LOOP(pThis) && !fDropFrame)
-                        pcnetXmitLoopbackFrame(pThis);
                     else
-                    {
-                        if (!fDropFrame)
-                            pcnetXmitFailTMDLinkDown(pThis, &tmd);
-                        pcnetXmitScrapFrame(pThis);
-                    }
+                        pcnetXmitFreeBuf(pThis, fLoopback, pSgBuf);
+                    if (fDropFrame)
+                        pcnetXmitFailTMDLinkDown(pThis, &tmd);
 
                     /* Write back the TMD, pass it to the host */
                     pcnetTmdStorePassHost(pThis, &tmd, PHYSADDR(pThis, CSR_CXDA(pThis)));
@@ -2419,7 +2606,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
                         CSR_XMTRC(pThis)--;
                     break;
                 }
-            }
+            } /* the loop */
         }
         else
         {
@@ -2428,7 +2615,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
              * Simply stop the transmitting for now.
              */
             /** @todo according to the specs we're supposed to clear the own bit and move on to the next one. */
-            Log(("#%d pcnetTransmit: guest is giving us shit!\n", PCNET_INST_NR));
+            Log(("#%d pcnetAsyncTransmit: guest is giving us shit!\n", PCNET_INST_NR));
             break;
         }
         /* Update TDMD, TXSTRT and TINT. */
@@ -2460,6 +2647,7 @@ static int pcnetAsyncTransmit(PCNetState *pThis)
     return VINF_SUCCESS;
 }
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
 
 /**
  * Async I/O thread for delayed sending of packets.
@@ -2509,7 +2697,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThread(PPDMDEVINS pDevIns, PPDMTHREAD pTh
 
         if (pThread->enmState == PDMTHREADSTATE_RUNNING)
         {
-            rc = pcnetAsyncTransmit(pThis);
+            rc = pcnetAsyncTransmit(pThis, true /*fOnWorkerThread*/);
             AssertReleaseRC(rc);
         }
 
@@ -2534,6 +2722,7 @@ static DECLCALLBACK(int) pcnetAsyncSendThreadWakeUp(PPDMDEVINS pDevIns, PPDMTHRE
     return RTSemEventSignal(pThis->hSendEventSem);
 }
 
+# endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES*/
 #endif /* IN_RING3 */
 
 /**
@@ -2744,15 +2933,15 @@ static int pcnetCSRWriteU16(PCNetState *pThis, uint32_t u32RAP, uint32_t val)
                 return rc;
             }
         case 15: /* Mode */
-            if ((pThis->aCSR[15] & 0x8000) != (uint16_t)(val & 0x8000) && pThis->pDrv)
+            if ((pThis->aCSR[15] & 0x8000) != (uint16_t)(val & 0x8000) && pThis->pDrvR3)
             {
                 Log(("#%d: promiscuous mode changed to %d\n", PCNET_INST_NR, !!(val & 0x8000)));
 #ifndef IN_RING3
                 return VINF_IOM_HC_IOPORT_WRITE;
 #else
                 /* check for promiscuous mode change */
-                if (pThis->pDrv)
-                    pThis->pDrv->pfnSetPromiscuousMode(pThis->pDrv, !!(val & 0x8000));
+                if (pThis->pDrvR3)
+                    pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, !!(val & 0x8000));
 #endif
             }
             break;
@@ -3077,7 +3266,7 @@ static uint32_t pcnetBCRReadU16(PCNetState *pThis, uint32_t u32RAP)
         case BCR_LED3:
             val = pThis->aBCR[u32RAP] & ~0x8000;
             /* Clear LNKSTE if we're not connected or if we've just loaded a VM state. */
-            if (!pThis->pDrv || pThis->fLinkTempDown || !pThis->fLinkUp)
+            if (!pThis->pDrvR3 || pThis->fLinkTempDown || !pThis->fLinkUp)
             {
                 if (u32RAP == 4)
                     pThis->cLinkDownReported++;
@@ -4381,8 +4570,8 @@ static DECLCALLBACK(int) pcnetLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint
                              : (0xff00 & (uint32_t)pThis->aCSR[2]) << 16;
 
         /* update promiscuous mode. */
-        if (pThis->pDrv)
-            pThis->pDrv->pfnSetPromiscuousMode(pThis->pDrv, CSR_PROM(pThis));
+        if (pThis->pDrvR3)
+            pThis->pDrvR3->pfnSetPromiscuousMode(pThis->pDrvR3, CSR_PROM(pThis));
 
 #ifdef PCNET_NO_POLLING
         /* Enable physical monitoring again (!) */
@@ -4631,8 +4820,8 @@ static DECLCALLBACK(int) pcnetSetLinkState(PPDMINETWORKCONFIG pInterface, PDMNET
             pThis->Led.Asserted.s.fError = pThis->Led.Actual.s.fError = 1;
         }
         Assert(!PDMCritSectIsOwner(&pThis->CritSect));
-        if (pThis->pDrv)
-            pThis->pDrv->pfnNotifyLinkChanged(pThis->pDrv, enmState);
+        if (pThis->pDrvR3)
+            pThis->pDrvR3->pfnNotifyLinkChanged(pThis->pDrvR3, enmState);
     }
     return VINF_SUCCESS;
 }
@@ -4695,7 +4884,7 @@ static DECLCALLBACK(void) pcnetDetach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_
      * Zero some important members.
      */
     pThis->pDrvBase = NULL;
-    pThis->pDrv = NULL;
+    pThis->pDrvR3 = NULL;
 
     PDMCritSectLeave(&pThis->CritSect);
 }
@@ -4738,8 +4927,8 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgStmt(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
+        AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -4860,7 +5049,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     PDMDEV_CHECK_VERSIONS_RETURN(pDevIns);
     Assert(RT_ELEMENTS(pThis->aBCR) == BCR_MAX_RAP);
     Assert(RT_ELEMENTS(pThis->aMII) == MII_MAX_REG);
-    Assert(sizeof(pThis->abSendBuf) == RT_ALIGN_Z(sizeof(pThis->abSendBuf), 16));
+    Assert(sizeof(pThis->abLoopBuf) == RT_ALIGN_Z(sizeof(pThis->abLoopBuf), 16));
 
     /*
      * Init what's required to make the destructor safe.
@@ -5115,8 +5304,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
                                        N_("A Domain Name Server (DNS) for NAT networking could not be determined. Ensure that your host is correctly connected to an ISP. If you ignore this warning the guest will not be able to perform nameserver lookups and it will probably observe delays if trying so"));
 #endif
         }
-        pThis->pDrv = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
-        AssertMsgReturn(pThis->pDrv, ("Failed to obtain the PDMINETWORKUP interface!\n"),
+        pThis->pDrvR3 = PDMIBASE_QUERY_INTERFACE(pThis->pDrvBase, PDMINETWORKUP);
+        AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
@@ -5129,6 +5318,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
      */
     pcnetHardReset(pThis);
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     /* Create send queue for the async send thread. */
     rc = RTSemEventCreate(&pThis->hSendEventSem);
     AssertRC(rc);
@@ -5136,6 +5326,7 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     /* Create asynchronous thread */
     rc = PDMDevHlpThreadCreate(pDevIns, &pThis->pSendThread, pThis, pcnetAsyncSendThread, pcnetAsyncSendThreadWakeUp, 0, RTTHREADTYPE_IO, "PCNET_TX");
     AssertRCReturn(rc, rc);
+#endif
 
 #ifdef VBOX_WITH_STATISTICS
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/PCNet%d/MMIO/ReadGC", iInstance);
@@ -5155,6 +5346,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
 #endif
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatReceiveBytes,       STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data received",            "/Devices/PCNet%d/ReceiveBytes", iInstance);
 #ifdef VBOX_WITH_STATISTICS
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase1,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Single descriptor transmit",         "/Devices/PCNet%d/Transmit/Case1", iInstance);
+    PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitCase2,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_OCCURENCES,     "Multi descriptor transmit",          "/Devices/PCNet%d/Transmit/Case2", iInstance);
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmit,           STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling transmits in HC",          "/Devices/PCNet%d/Transmit/Total", iInstance);
 #endif
     PDMDevHlpSTAMRegisterF(pDevIns, &pThis->StatTransmitBytes,      STAMTYPE_COUNTER, STAMVISIBILITY_ALWAYS, STAMUNIT_BYTES,          "Amount of data transmitted",         "/Devices/PCNet%d/TransmitBytes", iInstance);
