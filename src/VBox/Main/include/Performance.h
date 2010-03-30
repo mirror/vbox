@@ -317,6 +317,63 @@ namespace pm
         SubMetric *mUsed;
     };
 
+
+    class GuestCpuLoad : public BaseMetric
+    {
+    public:
+        GuestCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
+        : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
+        ~GuestCpuLoad() { delete mUser; delete mKernel; delete mIdle; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints);
+        void collect();
+        const char *getUnit() { return "%"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return PM_CPU_LOAD_MULTIPLIER; };
+        ULONG getScale() { return PM_CPU_LOAD_MULTIPLIER / 100; }
+    protected:
+        SubMetric *mUser;
+        SubMetric *mKernel;
+        SubMetric *mIdle;
+    };
+
+    class GuestRamUsage : public BaseMetric
+    {
+    public:
+        GuestRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *cache, SubMetric *pagedtotal, SubMetric *pagedfree)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mPagedFree(pagedfree) {};
+        ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mCache; delete mPagedTotal; delete mPagedFree; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints);
+        void collect();
+        const char *getUnit() { return "kB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        SubMetric *mTotal, *mFree, *mBallooned, *mCache, *mPagedTotal, *mPagedFree;
+    };
+
+    class GuestSystemUsage : public BaseMetric
+    {
+    public:
+        GuestSystemUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *processes, SubMetric *threads)
+        : BaseMetric(hal, "System/Usage", object), mProcesses(processes), mThreads(threads) {};
+        ~GuestSystemUsage() { delete mProcesses; delete mThreads; };
+
+        void init(ULONG period, ULONG length);
+        void preCollect(CollectorHints& hints);
+        void collect();
+        const char *getUnit() { return "kB"; };
+        ULONG getMinValue() { return 0; };
+        ULONG getMaxValue() { return INT32_MAX; };
+        ULONG getScale() { return 1; }
+    private:
+        SubMetric *mProcesses, *mThreads;
+    };
+
     /* Aggregate Functions **************************************************/
     class Aggregate
     {

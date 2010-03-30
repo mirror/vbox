@@ -430,7 +430,7 @@ DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface,
     if (!guest)
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
-    guest->COMGETTER(StatisticsUpdateInterval)(&val);
+    guest->GetStatisticsUpdateInterval(&val);
     *pulInterval = val;
     return VINF_SUCCESS;
 }
@@ -457,6 +457,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     if (!guest)
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
+#if 0
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_CPU_LOAD_IDLE)
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_CPULoad_Idle, pGuestStats->u32CpuLoad_Idle);
 
@@ -516,7 +517,7 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
     int rc = guest->GetStatistic(0, GuestStatisticType_SampleNumber, &sample);
     if (SUCCEEDED(rc))
         guest->SetStatistic(pGuestStats->u32CpuId, GuestStatisticType_SampleNumber, sample+1);
-
+#endif
     return VINF_SUCCESS;
 }
 

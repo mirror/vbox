@@ -292,6 +292,99 @@ void MachineRamUsage::collect()
         mUsed->put(used);
 }
 
+
+void GuestCpuLoad::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+
+    mUser->init(mLength);
+    mKernel->init(mLength);
+    mIdle->init(mLength);
+}
+
+void GuestCpuLoad::preCollect(CollectorHints& hints)
+{
+}
+
+void GuestCpuLoad::collect()
+{
+#if 0
+    uint64_t processUser, processKernel, hostTotal;
+
+    int rc = mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel, &hostTotal);
+    if (RT_SUCCESS(rc))
+    {
+        if (hostTotal == mHostTotalPrev)
+        {
+            /* Nearly impossible, but... */
+            mUser->put(0);
+            mKernel->put(0);
+        }
+        else
+        {
+            mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
+            mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
+        }
+
+        mHostTotalPrev     = hostTotal;
+        mProcessUserPrev   = processUser;
+        mProcessKernelPrev = processKernel;
+    }
+#endif
+}
+
+void GuestRamUsage::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+
+    mTotal->init(mLength);
+    mFree->init(mLength);
+    mBallooned->init(mLength);
+    mCache->init(mLength);
+    mPagedTotal->init(mLength);
+    mPagedFree->init(mLength);
+}
+
+void GuestRamUsage::preCollect(CollectorHints& hints)
+{
+}
+
+void GuestRamUsage::collect()
+{
+#if 0
+    ULONG used;
+    int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
+    if (RT_SUCCESS(rc))
+        mUsed->put(used);
+#endif
+}
+
+void GuestSystemUsage::init(ULONG period, ULONG length)
+{
+    mPeriod = period;
+    mLength = length;
+
+    mThreads->init(mLength);
+    mProcesses->init(mLength);
+}
+
+void GuestSystemUsage::preCollect(CollectorHints& hints)
+{
+}
+
+void GuestSystemUsage::collect()
+{
+#if 0
+    ULONG used;
+    int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
+    if (RT_SUCCESS(rc))
+        mUsed->put(used);
+#endif
+}
+
+
 void CircularBuffer::init(ULONG ulLength)
 {
     if (mData)

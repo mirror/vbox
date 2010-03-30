@@ -86,19 +86,7 @@ HRESULT Guest::init (Console *aParent)
     else
         mMemoryBalloonSize = 0;                     /* Default is no ballooning */
 
-    ULONG aStatUpdateInterval;
-    ret = mParent->machine()->COMGETTER(StatisticsUpdateInterval)(&aStatUpdateInterval);
-    if (ret == S_OK)
-        mStatUpdateInterval = aStatUpdateInterval;
-    else
-        mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
-
-    /* invalidate all stats */
-    for (int i=0;i<GuestStatisticType_MaxVal;i++)
-        mCurrentGuestStat[i] = GUEST_STAT_INVALID;
-
-    /* start with sample 0 */
-    mCurrentGuestStat[GuestStatisticType_SampleNumber] = 0;
+    mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
     return S_OK;
 }
 
@@ -229,7 +217,7 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     return ret;
 }
 
-STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
+HRESULT Guest::GetStatisticsUpdateInterval (ULONG *aUpdateInterval)
 {
     CheckComArgOutPointerValid(aUpdateInterval);
 
@@ -243,24 +231,20 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval) (ULONG *aUpdateInterval)
     return S_OK;
 }
 
-STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval) (ULONG aUpdateInterval)
+HRESULT Guest::SetStatisticsUpdateInterval (ULONG aUpdateInterval)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    HRESULT ret = mParent->machine()->COMSETTER(StatisticsUpdateInterval)(aUpdateInterval);
-    if (ret == S_OK)
-    {
-        mStatUpdateInterval = aUpdateInterval;
-        /* forward the information to the VMM device */
-        VMMDev *vmmDev = mParent->getVMMDev();
-        if (vmmDev)
-            vmmDev->getVMMDevPort()->pfnSetStatisticsInterval(vmmDev->getVMMDevPort(), aUpdateInterval);
-    }
+    mStatUpdateInterval = aUpdateInterval;
+    /* forward the information to the VMM device */
+    VMMDev *vmmDev = mParent->getVMMDev();
+    if (vmmDev)
+        vmmDev->getVMMDevPort()->pfnSetStatisticsInterval(vmmDev->getVMMDevPort(), aUpdateInterval);
 
-    return ret;
+    return S_OK;
 }
 
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
@@ -285,31 +269,6 @@ STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
 
     return setError(VBOX_E_VM_ERROR,
                     tr("VMM device is not available (is the VM running?)"));
-}
-
-STDMETHODIMP Guest::GetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG *aStatVal)
-{
-    CheckComArgExpr(aCpuId, aCpuId == 0);
-    CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
-    CheckComArgOutPointerValid(aStatVal);
-
-    /* Not available or not yet reported? In that case, just return with a proper error
-     * but don't use setError(). */
-    if (mCurrentGuestStat[aStatistic] == GUEST_STAT_INVALID)
-        return E_INVALIDARG;
-
-    *aStatVal = mCurrentGuestStat[aStatistic];
-    return S_OK;
-}
-
-STDMETHODIMP Guest::SetStatistic(ULONG aCpuId, GuestStatisticType_T aStatistic, ULONG aStatVal)
-{
-    CheckComArgExpr(aCpuId, aCpuId == 0);
-    CheckComArgExpr(aStatistic, aStatistic < GuestStatisticType_MaxVal);
-
-    /* internal method assumes that the caller knows what he's doing (no boundary checks) */
-    mCurrentGuestStat[aStatistic] = aStatVal;
-    return S_OK;
 }
 
 #ifdef VBOX_WITH_GUEST_CONTROL

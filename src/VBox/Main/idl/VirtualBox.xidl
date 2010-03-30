@@ -984,102 +984,6 @@
   </enum>
 
   <enum
-    name="GuestStatisticType"
-    uuid="aa7c1d71-aafe-47a8-9608-27d2d337cf55"
-  >
-    <desc>
-      Statistics type for <link to="IGuest::getStatistic"/>.
-    </desc>
-
-    <const name="CPULoad_Idle"         value="0">
-      <desc>
-        Idle CPU load (0-100%) for last interval.
-      </desc>
-    </const>
-    <const name="CPULoad_Kernel"       value="1">
-      <desc>
-        Kernel CPU load (0-100%) for last interval.
-      </desc>
-    </const>
-    <const name="CPULoad_User"         value="2">
-      <desc>
-        User CPU load (0-100%) for last interval.
-      </desc>
-    </const>
-    <const name="Threads"              value="3">
-      <desc>
-        Total number of threads in the system.
-      </desc>
-    </const>
-    <const name="Processes"            value="4">
-      <desc>
-        Total number of processes in the system.
-      </desc>
-    </const>
-    <const name="Handles"              value="5">
-      <desc>
-        Total number of handles in the system.
-      </desc>
-    </const>
-    <const name="MemoryLoad"           value="6">
-      <desc>
-        Memory load (0-100%).
-      </desc>
-    </const>
-    <const name="PhysMemTotal"         value="7">
-      <desc>
-        Total physical memory in megabytes.
-      </desc>
-    </const>
-    <const name="PhysMemAvailable"     value="8">
-      <desc>
-        Free physical memory in megabytes.
-      </desc>
-    </const>
-    <const name="PhysMemBalloon"       value="9">
-      <desc>
-        Ballooned physical memory in megabytes.
-      </desc>
-    </const>
-    <const name="MemCommitTotal"       value="10">
-      <desc>
-        Total amount of memory in the committed state in megabytes.
-      </desc>
-    </const>
-    <const name="MemKernelTotal"       value="11">
-      <desc>
-        Total amount of memory used by the guest OS's kernel in megabytes.
-      </desc>
-    </const>
-    <const name="MemKernelPaged"       value="12">
-      <desc>
-        Total amount of paged memory used by the guest OS's kernel in megabytes.
-      </desc>
-    </const>
-    <const name="MemKernelNonpaged"    value="13">
-      <desc>
-        Total amount of non-paged memory used by the guest OS's kernel in megabytes.
-      </desc>
-    </const>
-    <const name="MemSystemCache"       value="14">
-      <desc>
-        Total amount of memory used by the guest OS's system cache in megabytes.
-      </desc>
-    </const>
-    <const name="PageFileSize"         value="15">
-      <desc>
-        Pagefile size in megabytes.
-      </desc>
-    </const>
-    <const name="SampleNumber"         value="16">
-      <desc>
-        Statistics sample number
-      </desc>
-    </const>
-    <const name="MaxVal"               value="17"/>
-  </enum>
-
-  <enum
     name="BIOSBootMenuMode"
     uuid="ae4fb9f7-29d2-45b4-b2c7-d579603135d5"
   >
@@ -4239,7 +4143,7 @@
 
   <interface
      name="IMachine" extends="$unknown"
-     uuid="07862b34-c068-4667-be7d-1d722f496f20"
+     uuid="21f56f5d-d0fc-49e5-9ea7-91639278f424"
      wsmap="managed"
      >
     <desc>
@@ -4442,10 +4346,6 @@
 
     <attribute name="memoryBalloonSize" type="unsigned long">
       <desc>Initial memory balloon size in megabytes.</desc>
-    </attribute>
-
-    <attribute name="statisticsUpdateInterval" type="unsigned long">
-      <desc>Initial interval to update guest statistics in seconds.</desc>
     </attribute>
 
     <attribute name="VRAMSize" type="unsigned long">
@@ -8452,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="a910034a-f95e-bc2c-6bae-eabc3ccd9c73"
+     uuid="2f6fba62-0d41-42fd-a891-51b7d87a9e84"
      wsmap="managed"
      >
     <desc>
@@ -8517,10 +8417,6 @@
       <desc>Guest system memory balloon size in megabytes.</desc>
     </attribute>
 
-    <attribute name="statisticsUpdateInterval" type="unsigned long">
-      <desc>Interval to update guest statistics in seconds.</desc>
-    </attribute>
-
     <method name="setCredentials">
       <desc>
         Store login credentials that can be queried by guest operating
@@ -8549,21 +8445,6 @@
           interactively specify different credentials. This flag might
           not be supported by all versions of the Additions.
         </desc>
-      </param>
-    </method>
-
-    <method name="getStatistic">
-      <desc>
-        Query specified guest statistics as reported by the VirtualBox Additions.
-      </desc>
-      <param name="cpuId" type="unsigned long" dir="in">
-        <desc>Virtual CPU id; not relevant for all statistic types</desc>
-      </param>
-      <param name="statistic" type="GuestStatisticType" dir="in">
-        <desc>Statistic type.</desc>
-      </param>
-      <param name="statVal" type="unsigned long" dir="return">
-        <desc>Statistics value</desc>
       </param>
     </method>
 
