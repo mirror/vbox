@@ -533,7 +533,7 @@ HRESULT Medium::MergeTask::handler()
  * Helper class for merge operations.
  *
  * @note It is assumed that when modifying methods of this class are called,
- *       Medium::getTreeLock() is held in read mode.
+ *       the medium tree lock is held in read mode.
  */
 class Medium::MergeChain : public MediaList,
                            public com::SupportErrorInfoBase
@@ -851,7 +851,7 @@ private:
  * Helper class for image operations involving the entire parent chain.
  *
  * @note It is assumed that when modifying methods of this class are called,
- *       Medium::getTreeLock() is held in read mode.
+ *       the medium tree lock is held in read mode.
  */
 class Medium::ImageChain : public MediaList,
                            public com::SupportErrorInfoBase
@@ -1272,7 +1272,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @param aDeviceType   Device type of the medium.
  * @param aNode         Configuration settings.
  *
- * @note Locks VirtualBox lock for writing, getTreeLock() for writing.
+ * @note Locks VirtualBox for writing, the medium tree for writing.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      Medium *aParent,
@@ -1421,7 +1421,7 @@ HRESULT Medium::init(VirtualBox *aVirtualBox,
  * @param aLocation     Location of the host drive.
  * @param aDescription  Comment for this host drive.
  *
- * @note Locks VirtualBox lock for writing, getTreeLock() for writing.
+ * @note Locks VirtualBox lock for writing.
  */
 HRESULT Medium::init(VirtualBox *aVirtualBox,
                      DeviceType_T aDeviceType,
@@ -3106,7 +3106,7 @@ HRESULT Medium::updatePath(const char *aOldPath, const char *aNewPath)
  * @param aOldPath  Old path (full).
  * @param aNewPath  New path (full).
  *
- * @note Locks getTreeLock() for reading, this object and all children for writing.
+ * @note Locks the medium tree for reading, this object and all children for writing.
  */
 void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
 {
@@ -3142,7 +3142,7 @@ void Medium::updatePaths(const char *aOldPath, const char *aNewPath)
  * @param aLevel    Where to store the number of ancestors of this hard disk
  *                  (zero for the base), may be @c NULL.
  *
- * @note Locks getTreeLock() for reading.
+ * @note Locks medium tree for reading.
  */
 ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
 {
@@ -3184,7 +3184,7 @@ ComObjPtr<Medium> Medium::getBase(uint32_t *aLevel /*= NULL*/)
  * dependants (children) or is part of the snapshot. Related to the hard disk
  * type and posterity, not to the current media state.
  *
- * @note Locks this object and getTreeLock() for reading.
+ * @note Locks this object and medium tree for reading.
  */
 bool Medium::isReadOnly()
 {
@@ -3231,7 +3231,7 @@ bool Medium::isReadOnly()
  *
  * @param data      Settings struct to be updated.
  *
- * @note Locks this object, getTreeLock() and children for reading.
+ * @note Locks this object, medium tree and children for reading.
  */
 HRESULT Medium::saveSettings(settings::Medium &data)
 {
@@ -3484,7 +3484,7 @@ HRESULT Medium::prepareDiscard(MergeChain * &aChain)
  *                      no real merge takes place).
  *
  * @note Locks the hard disks from the chain for writing. Locks the machine
- *       object when the backward merge takes place. Locks getTreeLock() lock for
+ *       object when the backward merge takes place. Locks medium tree for
  *       reading or writing.
  */
 HRESULT Medium::discard(ComObjPtr<Progress> &aProgress,
@@ -3558,7 +3558,7 @@ HRESULT Medium::discard(ComObjPtr<Progress> &aProgress,
  * @param aChain        Merge chain created by #prepareDiscard() (may be NULL if
  *                      no real merge takes place).
  *
- * @note Locks the hard disks from the chain for writing. Locks getTreeLock() for
+ * @note Locks the hard disks from the chain for writing. Locks medium tree for
  *       reading.
  */
 void Medium::cancelDiscard(MergeChain *aChain)
@@ -3829,7 +3829,7 @@ HRESULT Medium::setLocation(const Utf8Str &aLocation, const Utf8Str &aFormat)
  * @note This method may block during a system I/O call that checks storage
  *       accessibility.
  *
- * @note Locks getTreeLock() for reading and writing (for new diff media checked
+ * @note Locks medium tree for reading and writing (for new diff media checked
  *       for the first time). Locks mParent for reading. Locks this object for
  *       writing.
  */
@@ -4234,7 +4234,7 @@ HRESULT Medium::setStateError()
  *                This only works in "wait" mode; otherwise saveSettings gets called automatically by the thread that was created,
  *                and this parameter is ignored.
  *
- * @note Locks mVirtualBox and this object for writing. Locks getTreeLock() for
+ * @note Locks mVirtualBox and this object for writing. Locks medium tree for
  *       writing.
  */
 HRESULT Medium::deleteStorage(ComObjPtr<Progress> *aProgress,
@@ -4528,7 +4528,7 @@ HRESULT Medium::createDiffStorage(ComObjPtr<Medium> &aTarget,
  * @param aIgnoreAttachments    Don't check if the source or any intermediate
  *                              hard disk is attached to any VM.
  *
- * @note Locks getTreeLock() for reading. Locks this object, aTarget and all
+ * @note Locks medium tree for reading. Locks this object, aTarget and all
  *       intermediate hard disks for writing.
  */
 HRESULT Medium::prepareMergeTo(Medium *aTarget,
