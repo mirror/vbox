@@ -1476,8 +1476,7 @@ Hardware::Hardware()
           pointingHidType(PointingHidType_PS2Mouse),
           keyboardHidType(KeyboardHidType_PS2Keyboard),
           clipboardMode(ClipboardMode_Bidirectional),
-          ulMemoryBalloonSize(0),
-          ulStatisticsUpdateInterval(0)
+          ulMemoryBalloonSize(0)
 {
     mapBootOrder[0] = DeviceType_Floppy;
     mapBootOrder[1] = DeviceType_DVD;
@@ -1533,7 +1532,6 @@ bool Hardware::operator==(const Hardware& h) const
                   && (llSharedFolders           == h.llSharedFolders)
                   && (clipboardMode             == h.clipboardMode)
                   && (ulMemoryBalloonSize       == h.ulMemoryBalloonSize)
-                  && (ulStatisticsUpdateInterval == h.ulStatisticsUpdateInterval)
                   && (llGuestProperties         == h.llGuestProperties)
                   && (strNotificationPatterns   == h.strNotificationPatterns)
                 )
@@ -2376,8 +2374,6 @@ void MachineConfigFile::readHardware(const xml::ElementNode &elmHardware,
         {
             if (!pelmHwChild->getAttributeValue("memoryBalloonSize", hw.ulMemoryBalloonSize))
                 pelmHwChild->getAttributeValue("MemoryBalloonSize", hw.ulMemoryBalloonSize);            // used before 1.3
-            if (!pelmHwChild->getAttributeValue("statisticsUpdateInterval", hw.ulStatisticsUpdateInterval))
-                pelmHwChild->getAttributeValue("StatisticsUpdateInterval", hw.ulStatisticsUpdateInterval);
         }
         else if (pelmHwChild->nameEquals("GuestProperties"))
             readGuestProperties(*pelmHwChild, hw);
@@ -3404,7 +3400,6 @@ void MachineConfigFile::writeHardware(xml::ElementNode &elmParent,
 
     xml::ElementNode *pelmGuest = pelmHardware->createChild("Guest");
     pelmGuest->setAttribute("memoryBalloonSize", hw.ulMemoryBalloonSize);
-    pelmGuest->setAttribute("statisticsUpdateInterval", hw.ulStatisticsUpdateInterval);
 
     xml::ElementNode *pelmGuestProps = pelmHardware->createChild("GuestProperties");
     for (GuestPropertiesList::const_iterator it = hw.llGuestProperties.begin();

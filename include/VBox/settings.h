@@ -624,7 +624,6 @@ struct Hardware
     ClipboardMode_T     clipboardMode;
 
     uint32_t            ulMemoryBalloonSize;
-    uint32_t            ulStatisticsUpdateInterval;
 
     GuestPropertiesList llGuestProperties;
     com::Utf8Str        strNotificationPatterns;
