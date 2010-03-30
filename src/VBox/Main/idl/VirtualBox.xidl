@@ -4127,36 +4127,6 @@
       </param>
     </method>
 
-    <method name="pushGuestProperties">
-      <desc>
-        Set the list of the guest properties matching a set of patterns along
-        with their values, time stamps and flags and return responsibility for
-        managing properties to IMachine.
-      </desc>
-      <param name="name" type="wstring" dir="in" safearray="yes">
-        <desc>
-          The names of the properties.
-        </desc>
-      </param>
-      <param name="value" type="wstring" dir="in" safearray="yes">
-        <desc>
-          The values of the properties.  The array entries match the
-          corresponding entries in the @a name array.
-        </desc>
-      </param>
-      <param name="timestamp" type="unsigned long long" dir="in" safearray="yes">
-        <desc>
-          The time stamps of the properties.  The array entries match
-          the corresponding entries in the @a name array.
-        </desc>
-      </param>
-      <param name="flags" type="wstring" dir="in" safearray="yes">
-        <desc>
-          The flags of the properties.  The array entries match the
-          corresponding entries in the @a name array.
-        </desc>
-      </param>
-    </method>
     <method name="pushGuestProperty">
       <desc>
         Update a single guest property in IMachine.
