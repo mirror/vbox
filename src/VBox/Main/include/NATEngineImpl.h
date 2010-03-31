@@ -119,7 +119,7 @@ class ATL_NO_VTABLE NATEngine :
     STDMETHOD(GetNetworkSettings)(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv);
 
     STDMETHOD(COMGETTER(Redirects)) (ComSafeArrayOut (BSTR, aNatRules));
-    STDMETHOD(AddRedirect)(IN_BSTR aName, PRUint32 aProto, IN_BSTR aBindIp, PRUint16 aHostPort, IN_BSTR aGuestIP, PRUint16 aGuestPort);
+    STDMETHOD(AddRedirect)(IN_BSTR aName, uint32_t aProto, IN_BSTR aBindIp, uint16_t aHostPort, IN_BSTR aGuestIP, uint16_t aGuestPort);
     STDMETHOD(RemoveRedirect)(IN_BSTR aName);
 
     static const wchar_t *getComponentName() { return L"NATEngine"; }
