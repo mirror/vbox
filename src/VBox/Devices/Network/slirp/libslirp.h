@@ -31,7 +31,7 @@ extern "C" {
 #ifndef VBOX_WITH_NAT_SERVICE
 int slirp_init(PNATState *, const char *, uint32_t, bool, bool, void *);
 #else
-int slirp_init(PNATState *, uint32_t, uint32_t, bool, void *);
+int slirp_init(PNATState *, uint32_t, uint32_t, bool, bool, void *);
 #endif
 void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns);
 void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns);

@@ -516,7 +516,7 @@ int slirp_init(PNATState *ppData, const char *pszNetAddr, uint32_t u32Netmask,
                bool fPassDomain, bool fUseHostResolver, void *pvUser)
 #else
 int slirp_init(PNATState *ppData, uint32_t u32NetAddr, uint32_t u32Netmask,
-               bool fPassDomain, void *pvUser)
+               bool fPassDomain, bool fUseHostResolver, void *pvUser)
 #endif
 {
     int fNATfailed = 0;
@@ -639,6 +639,8 @@ void slirp_register_statistics(PNATState pData, PPDMDRVINS pDrvIns)
  */
 void slirp_deregister_statistics(PNATState pData, PPDMDRVINS pDrvIns)
 {
+    if (pData == NULL)
+        return;
 #ifdef VBOX_WITH_STATISTICS
 # define PROFILE_COUNTER(name, dsc)     DEREGISTER_COUNTER(name, pData)
 # define COUNTING_COUNTER(name, dsc)    DEREGISTER_COUNTER(name, pData)
@@ -700,6 +702,8 @@ void slirp_link_down(PNATState pData)
  */
 void slirp_term(PNATState pData)
 {
+    if (pData == NULL)
+        return; 
 #ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);
