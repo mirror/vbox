@@ -848,6 +848,15 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
        display = RT_ELEMENTS(CustomVideoModes) - 1;
     }
 
+    dprintf(("display = %d, DeviceExtension->iDevice = %d\n", display, DeviceExtension->iDevice));
+    if (display != DeviceExtension->iDevice)
+    {
+        /* No need to go through the custom mode logic. And no need to clear the custom mode
+         * entry in the next 'for' loop.
+         */
+        fDisplayChangeRequest = FALSE;
+    }
+
     dprintf(("VBoxVideo: fDisplayChangeRequest = %d\n", fDisplayChangeRequest));
 
     /*
@@ -858,7 +867,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     {
         if (fDisplayChangeRequest && iCustomMode == display)
         {
-            /* Do not keep info for this display to make sure that 
+            /* Do not keep info for this display, which received a video mode hint, to make sure that 
              * the new mode will be taken from the alternating index entries actually.
              */
             memcpy(&VideoModes[gNumVideoModes], &VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
@@ -876,9 +885,27 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #endif
         gNumVideoModes++;
     }
+
+    if (display != DeviceExtension->iDevice)
+    {
+        /* The display change is for another monitor. Just add 2 standard modes to the table
+         * to make enough entries. This is not necessary if it is a first mode set (CurrentMode == 0),
+         * because these 2 entries will be added by "if (fDisplayChangeRequest || DeviceExtension->CurrentMode == 0)"
+         * code branch.
+         */
+        if (DeviceExtension->CurrentMode != 0)
+        {
+            dprintf(("Filling custom mode entries.\n"));
+            memcpy(&VideoModes[gNumVideoModes], &VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
+            VideoModes[gNumVideoModes].ModeIndex = gNumVideoModes + 1;
+            gNumVideoModes++;
+            memcpy(&VideoModes[gNumVideoModes], &VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));
+            VideoModes[gNumVideoModes].ModeIndex = gNumVideoModes + 1;
+            gNumVideoModes++;
+        }
+    }
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
 
-    
 #ifndef VBOX_WITH_MULTIMONITOR_FIX
     uint32_t xres = 0, yres = 0, bpp = 0, display = 0;
     if (   (   vboxQueryDisplayRequest(&xres, &yres, &bpp, &display)
@@ -906,15 +933,16 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 yres = gCustomYRes;
             if (!bpp)
                 bpp  = gCustomBPP;
+            dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d\n", xres, yres, bpp));
 #else
             if (!xres)
-                xres = CustomVideoModes[display].VisScreenWidth;
+                xres = CustomVideoModes[DeviceExtension->iDevice].VisScreenWidth;
             if (!yres)
-                yres = CustomVideoModes[display].VisScreenHeight;
+                yres = CustomVideoModes[DeviceExtension->iDevice].VisScreenHeight;
             if (!bpp)
-                bpp  = CustomVideoModes[display].BitsPerPlane;
+                bpp  = CustomVideoModes[DeviceExtension->iDevice].BitsPerPlane;
+            dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d for %d\n", xres, yres, bpp, DeviceExtension->iDevice));
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
-            dprintf(("VBoxVideo: using stored custom resolution %dx%dx%d\n", xres, yres, bpp));
         }
         /* round down to multiple of 8 */
         if ((xres & 0xfff8) != xres)
@@ -1085,7 +1113,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 VideoModes[gNumVideoModes].DriverSpecificAttributeFlags = 0;
 #ifdef VBOX_WITH_MULTIMONITOR_FIX
                 /* Save the mode in the list of custom modes for this display. */
-                CustomVideoModes[display] = VideoModes[gNumVideoModes];
+                CustomVideoModes[DeviceExtension->iDevice] = VideoModes[gNumVideoModes];
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
                 ++gNumVideoModes;
 
@@ -1124,7 +1152,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                     dprintf(("VBoxVideo: error %d writing CustomBPP\n", status));
 #else
                 /* Save the custom mode for this display. */
-                if (display == 0)
+                if (DeviceExtension->iDevice == 0)
                 {
                     /* Name without a suffix */
                     status = VBoxVideoCmnRegSetDword(Reg, L"CustomXRes", xres);
@@ -1140,18 +1168,18 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
                 else
                 {
                     wchar_t keyname[32];
-                    swprintf(keyname, L"CustomXRes%d", display);
+                    swprintf(keyname, L"CustomXRes%d", DeviceExtension->iDevice);
                     status = VBoxVideoCmnRegSetDword(Reg, keyname, xres);
                     if (status != NO_ERROR)
-                        dprintf(("VBoxVideo: error %d writing CustomXRes%d\n", status, display));
-                    swprintf(keyname, L"CustomYRes%d", display);
+                        dprintf(("VBoxVideo: error %d writing CustomXRes%d\n", status, DeviceExtension->iDevice));
+                    swprintf(keyname, L"CustomYRes%d", DeviceExtension->iDevice);
                     status = VBoxVideoCmnRegSetDword(Reg, keyname, yres);
                     if (status != NO_ERROR)
-                        dprintf(("VBoxVideo: error %d writing CustomYRes%d\n", status, display));
-                    swprintf(keyname, L"CustomBPP%d", display);
+                        dprintf(("VBoxVideo: error %d writing CustomYRes%d\n", status, DeviceExtension->iDevice));
+                    swprintf(keyname, L"CustomBPP%d", DeviceExtension->iDevice);
                     status = VBoxVideoCmnRegSetDword(Reg, keyname, bpp);
                     if (status != NO_ERROR)
-                        dprintf(("VBoxVideo: error %d writing CustomBPP%d\n", status, display));
+                        dprintf(("VBoxVideo: error %d writing CustomBPP%d\n", status, DeviceExtension->iDevice));
                 }
 #endif /* VBOX_WITH_MULTIMONITOR_FIX */
             }
@@ -1178,9 +1206,9 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     {
         int i;
 #ifndef VBOXWDDM
-        dprintf(("VBoxVideo: VideoModes (CurrentMode = %d)\n", DeviceExtension->CurrentMode));
+        dprintf(("VBoxVideo: VideoModes (CurrentMode = %d, last #%d)\n", DeviceExtension->CurrentMode, gNumVideoModes));
 #endif
-        for (i=0; i<MAX_VIDEO_MODES + 2; i++)
+        for (i = 0; i < RT_ELEMENTS(VideoModes); i++)
         {
             if (   VideoModes[i].VisScreenWidth
                 || VideoModes[i].VisScreenHeight
