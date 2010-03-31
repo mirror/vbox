@@ -87,6 +87,11 @@ HRESULT Guest::init (Console *aParent)
         mMemoryBalloonSize = 0;                     /* Default is no ballooning */
 
     mStatUpdateInterval = 0;                    /* Default is not to report guest statistics at all */
+
+    /* Clear statistics. */
+    for (unsigned i = 0 ; i < GUESTSTATTYPE_MAX; i++)
+        mCurrentGuestStat[i] = 0;
+
     return S_OK;
 }
 
@@ -250,9 +255,47 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *
                                           ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                           ULONG *aPageTotal, ULONG *aPageFree)
 {
+    CheckComArgOutPointerValid(aCpuUser);
+    CheckComArgOutPointerValid(aCpuKernel);
+    CheckComArgOutPointerValid(aCpuIdle);
+    CheckComArgOutPointerValid(aMemTotal);
+    CheckComArgOutPointerValid(aMemFree);
+    CheckComArgOutPointerValid(aMemBalloon);
+    CheckComArgOutPointerValid(aMemCache);
+    CheckComArgOutPointerValid(aPageTotal);
+    CheckComArgOutPointerValid(aPageFree);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    *aCpuUser = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER];
+    *aCpuKernel = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL];
+    *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
+    *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL];
+    *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE];
+    *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON];
+    *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE];
+    *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL];
+    *aPageFree = mCurrentGuestStat[GUESTSTATTYPE_PAGEFREE];
+
     return S_OK;
 }
 
+HRESULT Guest::SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
+{
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    if (enmType > GUESTSTATTYPE_MAX)
+        return E_INVALIDARG;
+
+    mCurrentGuestStat[enmType] = aVal;
+    return S_OK;
+}
 
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                                    IN_BSTR aDomain, BOOL aAllowInteractiveLogon)
