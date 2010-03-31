@@ -1793,6 +1793,15 @@ public:
                           HRESULT *pResult,
                           BOOL * pbFinished)
     {
+        Q_UNUSED(aScreenId);
+        Q_UNUSED(uPixelFormat);
+        Q_UNUSED(pVRAM);
+        Q_UNUSED(uBitsPerPixel);
+        Q_UNUSED(uBytesPerLine);
+        Q_UNUSED(uWidth);
+        Q_UNUSED(uHeight);
+        Q_UNUSED(pbFinished);
+
         if (mCmdPipe.completeCurrentEvent())
             return false;
 
