@@ -117,10 +117,10 @@ private:
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     struct TaskOVF;
+    static DECLCALLBACK(int) taskThreadImportOrExport(RTTHREAD aThread, void *pvUser);
 
-    struct TaskImportOVF; /* Worker threads for import */
-    int readFS(TaskImportOVF *pTask);
-    int readS3(TaskImportOVF *pTask);
+    HRESULT readFS(const LocationInfo &locInfo);
+    HRESULT readS3(TaskOVF *pTask);
 
     void convertDiskAttachmentValues(const HardDiskController &hdc,
                                      uint32_t ulAddressOnParent,
@@ -130,15 +130,10 @@ private:
 
     HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
-    static DECLCALLBACK(int) taskThreadImportOVF(RTTHREAD aThread, void *pvUser);
-
-    int importFS(TaskImportOVF *pTask);
-    int importS3(TaskImportOVF *pTask);
+    HRESULT importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &aProgress);
+    HRESULT importS3(TaskOVF *pTask);
 
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
-
-    struct TaskExportOVF; /* Worker threads for export */
-    static DECLCALLBACK(int) taskThreadWriteOVF(RTTHREAD aThread, void *pvUser);
 
     struct XMLStack;
     void buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSystemsTo,
@@ -146,8 +141,8 @@ private:
                                      OVFFormat enFormat,
                                      XMLStack &stack);
 
-    int writeFS(TaskExportOVF *pTask);
-    int writeS3(TaskExportOVF *pTask);
+    HRESULT writeFS(const LocationInfo &locInfo, const OVFFormat enFormat, ComObjPtr<Progress> &pProgress);
+    HRESULT writeS3(TaskOVF *pTask);
 
     friend class Machine;
 };
