@@ -25,6 +25,20 @@
 #include "VirtualBoxBase.h"
 #include <VBox/ostypes.h>
 
+typedef enum
+{
+    GUESTSTATTYPE_CPUUSER     = 0,
+    GUESTSTATTYPE_CPUKERNEL   = 1,
+    GUESTSTATTYPE_CPUIDLE     = 2,
+    GUESTSTATTYPE_MEMTOTAL    = 3,
+    GUESTSTATTYPE_MEMFREE     = 4,
+    GUESTSTATTYPE_MEMBALLOON  = 5,
+    GUESTSTATTYPE_MEMCACHE    = 6,
+    GUESTSTATTYPE_PAGETOTAL   = 7,
+    GUESTSTATTYPE_PAGEFREE    = 8,
+    GUESTSTATTYPE_MAX         = 8
+} GUESTSTATTYPE;
+
 class Console;
 
 class ATL_NO_VTABLE Guest :
@@ -84,6 +98,8 @@ public:
 
     void setSupportsGraphics (BOOL aSupportsGraphics);
 
+    HRESULT SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal);
+
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
 
@@ -111,6 +127,7 @@ private:
 
     ULONG mMemoryBalloonSize;
     ULONG mStatUpdateInterval;
+    ULONG mCurrentGuestStat[GUESTSTATTYPE_MAX];
 
     Console *mParent;
     Data mData;
