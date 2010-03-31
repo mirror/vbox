@@ -24,7 +24,7 @@
         <translation>Spain</translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Oficina de Software Libre da USC, Enrique Estévez Fernández, Francisco Diéguez Souto, Mancomun, Antón Méixome.</translation>
     </message>

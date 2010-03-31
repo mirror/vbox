@@ -24,7 +24,7 @@
         <translation>Brazil</translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translatorcomment>O ponto final não faz sentido...</translatorcomment>
         <translation>Érico Mendonça &lt;erico.mendonca@gmail.com&gt;</translation>

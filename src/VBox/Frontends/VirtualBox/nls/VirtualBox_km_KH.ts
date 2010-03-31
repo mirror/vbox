@@ -23,9 +23,9 @@
       <translation>--</translation>
     </message>
     <message>
-      <source>Sun Microsystems, Inc.</source>
+      <source>Oracle Corporation</source>
       <comment>Comma-separated list of translators</comment>
-      <translation>Sun Microsystems, Inc.</translation>
+      <translation>Khoem Sokhem</translation>
     </message>
   </context>
   <context>

@@ -24,7 +24,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>José Melo &lt;mmodem00@gmail.com&gt;, Marcelo Coelho &lt;marcelocoelho@gmail.com&gt;</translation>
     </message>

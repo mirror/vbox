@@ -24,7 +24,7 @@
         <translation>Finland</translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Jarno Kiuttu, Timo Jyrinki, Ilkka Tuohela</translation>
     </message>

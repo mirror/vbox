@@ -24,7 +24,7 @@
         <translation>Bulgaria</translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Stoyan Marinov, Moyat.NET.</translation>
     </message>
