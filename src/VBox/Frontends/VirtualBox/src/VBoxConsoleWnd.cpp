@@ -78,6 +78,7 @@
 #endif
 
 #include <VBox/VMMDev.h> /** @todo @bugref{4084} */
+#include <VBox/version.h>
 #include <iprt/buildconfig.h>
 #include <iprt/param.h>
 #include <iprt/path.h>
@@ -1550,7 +1551,7 @@ void VBoxConsoleWnd::retranslateUi()
 #ifdef VBOX_OSE
     mCaptionPrefix = tr ("VirtualBox OSE");
 #else
-    mCaptionPrefix = tr ("Sun VirtualBox");
+    mCaptionPrefix = VBOX_PRODUCT;
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
