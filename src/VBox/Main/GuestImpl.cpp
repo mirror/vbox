@@ -217,21 +217,20 @@ STDMETHODIMP Guest::COMSETTER(MemoryBalloonSize) (ULONG aMemoryBalloonSize)
     return ret;
 }
 
-HRESULT Guest::GetStatisticsUpdateInterval (ULONG *aUpdateInterval)
+STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval)(ULONG *aUpdateInterval)
 {
     CheckComArgOutPointerValid(aUpdateInterval);
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
+ 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aUpdateInterval = mStatUpdateInterval;
-
     return S_OK;
 }
 
-HRESULT Guest::SetStatisticsUpdateInterval (ULONG aUpdateInterval)
+STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 {
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
@@ -246,6 +245,14 @@ HRESULT Guest::SetStatisticsUpdateInterval (ULONG aUpdateInterval)
 
     return S_OK;
 }
+
+STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle, 
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
+                                          ULONG *aPageTotal, ULONG *aPageFree)
+{
+    return S_OK;
+}
+
 
 STDMETHODIMP Guest::SetCredentials(IN_BSTR aUserName, IN_BSTR aPassword,
                                    IN_BSTR aDomain, BOOL aAllowInteractiveLogon)

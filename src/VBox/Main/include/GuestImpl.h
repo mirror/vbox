@@ -27,8 +27,6 @@
 
 class Console;
 
-#define GUEST_STAT_INVALID          (ULONG)-1
-
 class ATL_NO_VTABLE Guest :
     public VirtualBoxSupportErrorInfoImpl<Guest, IGuest>,
     public VirtualBoxSupportTranslation<Guest>,
@@ -64,6 +62,8 @@ public:
     STDMETHOD(COMGETTER(SupportsGraphics)) (BOOL *aSupportsGraphics);
     STDMETHOD(COMGETTER(MemoryBalloonSize)) (ULONG *aMemoryBalloonSize);
     STDMETHOD(COMSETTER(MemoryBalloonSize)) (ULONG aMemoryBalloonSize);
+    STDMETHOD(COMGETTER(StatisticsUpdateInterval)) (ULONG *aUpdateInterval);
+    STDMETHOD(COMSETTER(StatisticsUpdateInterval)) (ULONG aUpdateInterval);
 
     // IGuest methods
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
@@ -73,6 +73,9 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID);
+    STDMETHOD(InternalGetStatistics)(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle, 
+                                     ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
+                                     ULONG *aPageTotal, ULONG *aPageFree); 
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);

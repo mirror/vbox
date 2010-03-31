@@ -8934,6 +8934,7 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
 
 
     /* Guest metrics */
+    mGuestHAL = new pm::CollectorGuestHAL(this);
 
     /* Create sub metrics */
     pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/Cpu/Load/User",
@@ -8950,22 +8951,15 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::SubMetric *guestMemCache = new pm::SubMetric("Guest/RAM/Usage/Cache",        "Total amount of guest (disk) cache memory.");
 
     pm::SubMetric *guestPagedTotal = new pm::SubMetric("Guest/Pagefile/Usage/Total",    "Total amount of space in the page file.");
-    pm::SubMetric *guestPagedFree = new pm::SubMetric("Guest/Pagefile/Usage/Free",      "Total amount of free space in the page file.");
-
-    pm::SubMetric *guestSystemProc = new pm::SubMetric("Guest/System/Processes",      "Total number of guest processes.");
-    pm::SubMetric *guestSystemThread = new pm::SubMetric("Guest/System/Threads",      "Total number of guest threads.");
+    pm::SubMetric *guestPagedFree = new pm::SubMetric("Guest/Pagefile/Usage/Free",      "Free amount of free space in the page file.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(&mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
+    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
-    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(&mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, 
+    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, 
                                                         guestMemCache, guestPagedTotal, guestPagedFree);
     aCollector->registerBaseMetric(guestCpuMem);
-
-    pm::BaseMetric *guestSystem = new pm::GuestSystemUsage(&mGuestHAL, aMachine, guestSystemProc, guestSystemThread);
-    aCollector->registerBaseMetric(guestSystem);
-
 
     aCollector->registerMetric(new pm::Metric(guestCpuLoad, guestLoadUser, 0));
     aCollector->registerMetric(new pm::Metric(guestCpuLoad, guestLoadUser, new pm::AggregateAvg()));
@@ -9011,22 +9005,15 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateAvg()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateMax()));
-
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemProc, 0));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemProc, new pm::AggregateAvg()));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemProc, new pm::AggregateMin()));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemProc, new pm::AggregateMax()));
-
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemThread, 0));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemThread, new pm::AggregateAvg()));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemThread, new pm::AggregateMin()));
-    aCollector->registerMetric(new pm::Metric(guestSystem, guestSystemThread, new pm::AggregateMax()));
 };
 
 void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine)
 {
     aCollector->unregisterMetricsFor(aMachine);
     aCollector->unregisterBaseMetricsFor(aMachine);
+
+    if (mGuestHAL)
+        delete mGuestHAL;
 };
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
