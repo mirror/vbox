@@ -100,6 +100,8 @@ typedef struct DRVVDSTORAGEBACKEND
     RTSEMEVENT                  EventSem;
     /** Flag whether a synchronous operation is currently pending. */
     volatile bool               fSyncIoPending;
+    /** Return code of the last completed request. */
+    int                         rcReqLast;
     /** Callback routine */
     PFNVDCOMPLETED              pfnCompleted;
 
@@ -291,6 +293,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
 
     if (pStorageBackend->fSyncIoPending)
     {
+        pStorageBackend->rcReqLast      = rcReq;
         pStorageBackend->fSyncIoPending = false;
         RTSemEventSignal(pStorageBackend->EventSem);
     }
@@ -337,6 +340,7 @@ static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
     if (pStorageBackend)
     {
         pStorageBackend->fSyncIoPending = false;
+        pStorageBackend->rcReqLast      = VINF_SUCCESS;
         pStorageBackend->pfnCompleted   = pfnCompleted;
         pStorageBackend->pInterfaceThreadSync = NULL;
         pStorageBackend->pInterfaceThreadSyncCallbacks = NULL;
@@ -417,7 +421,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
     if (pcbRead)
         *pcbRead = cbRead;
 
-    return VINF_SUCCESS;
+    return pStorageBackend->rcReqLast;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uint64_t uOffset,
@@ -449,7 +453,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
     if (pcbWritten)
         *pcbWritten = cbWrite;
 
-    return VINF_SUCCESS;
+    return pStorageBackend->rcReqLast;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
@@ -474,7 +478,7 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
     else
         ASMAtomicXchgBool(&pStorageBackend->fSyncIoPending, false);
 
-    return VINF_SUCCESS;
+    return pStorageBackend->rcReqLast;
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uint64_t uOffset,
