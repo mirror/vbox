@@ -1,0 +1,101 @@
+<!--
+     Unoffical DTD for the VirtualBox.xidl file. This is not currently used:
+     neither by the VirtualBox build process nor at runtime, so it's not shipped
+     with the product either, and thus not guaranteed to be up to date.
+     It is still the only sort-of-documentation available about what is valid
+     XIDL syntax.
+
+     Copyright (C) 2008-2010 Sun Microsystems, Inc.
+
+     This file is part of VirtualBox Open Source Edition (OSE), as
+     available from http://www.virtualbox.org. This file is free software;
+     you can redistribute it and/or modify it under the terms of the GNU
+     General Public License (GPL) as published by the Free Software
+     Foundation, in version 2 as it comes in the "COPYING" file of the
+     VirtualBox OSE distribution. VirtualBox OSE is distributed in the
+     hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+
+     Please contact Sun Microsystems, Inc., 4150 Network Circle, Santa
+     Clara, CA 95054 USA or visit http://www.sun.com if you need
+     additional information or have any questions.
+-->
+<!DOCTYPE idl [
+  <!ELEMENT idl (if|module)*>                                 <!-- done -->
+  <!ELEMENT if ANY>
+    <!ATTLIST if target (midl|xpidl|wsdl) #REQUIRED>          <!-- done -->
+  <!ELEMENT ifnot ANY>
+    <!ATTLIST if target (midl|xpidl|wsdl) #REQUIRED>          <!-- done -->
+  <!ELEMENT cpp ANY>
+    <!ATTLIST cpp line CDATA #IMPLIED>                        <!-- done -->
+  <!ELEMENT module (enum|interface|class|collection|if|enumerator)*> <!-- done -->
+    <!ATTLIST module name CDATA #REQUIRED>
+    <!ATTLIST module uuid CDATA #REQUIRED>
+    <!ATTLIST module version CDATA #REQUIRED>
+    <!ATTLIST module desc CDATA #REQUIRED>
+    <!ATTLIST module supportsErrorInfo (yes|no) #REQUIRED>
+  <!ELEMENT enum (desc?, const+)>                             <!-- done -->
+    <!ATTLIST enum name CDATA #REQUIRED>
+    <!ATTLIST enum uuid CDATA #REQUIRED>
+  <!ELEMENT const (desc?)>                                    <!-- done -->
+    <!ATTLIST const name CDATA #REQUIRED>
+    <!ATTLIST const value CDATA #REQUIRED>
+  <!ELEMENT interface (desc?, (attribute|method|class|if)*)>  <!-- done -->
+    <!ATTLIST interface name CDATA #REQUIRED>
+    <!ATTLIST interface extends CDATA #IMPLIED>
+    <!ATTLIST interface uuid CDATA #IMPLIED>
+    <!ATTLIST interface supportsErrorInfo (yes|no) #IMPLIED>
+    <!ATTLIST interface default (yes|no) "no">
+    <!ATTLIST interface internal (yes|no) "no">
+    <!ATTLIST interface wsmap (fail|none|uuid|wstring|global|struct|managed) "fail">
+                <!-- wsmap specifies how this interface is mapped to the
+                     web services API (WSDL). One of the following must be specified:
+                        fail: the default value, for which vboxweb.xsl will raise an error and die.
+                        global: object is a singleton and resides in global variable in the web service.
+                        managed: objects of this type are referenced by managed object referenced
+                        struct: object is a simple struct and can be copied as such
+                        suppress: Skip this interface entirely, and all methods that use it -->
+    <!ATTLIST interface wscpp (generate|hardcoded) "generate">
+                <!-- wscpp specifies whether C++ code should be generated in methodmaps.cpp
+                     as a mapper to COM APIs. By default, this is "generate"; however, if set
+                     to "hardcoded", then no automatic C++ code should be generated. This is done
+                     for webservice APIs that have no counterpart in COM and are hard-coded in
+                     the webservice server, such as IManagedObjectReference and ISessionManager. -->
+  <!ELEMENT class (interface)>                                <!-- done (ignoring) -->
+    <!ATTLIST class name CDATA #REQUIRED>
+    <!ATTLIST class uuid CDATA #REQUIRED>
+  <!ELEMENT attribute (desc?)>                                <!-- done -->
+    <!ATTLIST attribute name CDATA #REQUIRED>
+    <!ATTLIST attribute type CDATA #REQUIRED>
+    <!ATTLIST attribute readonly (yes|no) "no">
+    <!ATTLIST attribute mod (ptr|string) #IMPLIED>
+    <!ATTLIST attribute internal (yes|no) "no">
+    <!ATTLIST attribute safearray (yes|no) "no">
+  <!ELEMENT method (desc?,param*, note*)>                     <!-- done -->
+    <!ATTLIST method name CDATA #REQUIRED>
+    <!ATTLIST method const CDATA "no">
+    <!ATTLIST method internal (yes|no) "no">
+  <!ELEMENT param (desc?)>                                    <!-- done -->
+    <!ATTLIST param name CDATA #REQUIRED>
+    <!ATTLIST param type CDATA #REQUIRED>
+    <!ATTLIST param dir (in|out|return) #REQUIRED>
+    <!ATTLIST param mod (ptr|string) #IMPLIED>
+    <!ATTLIST param safearray (yes|no) "no">
+  <!ELEMENT desc (#PCDATA|link|note|see|b|tt|i|pre|p|ul|h3|table)*>   <!-- done (ignoring) -->
+  <!-- the following only appear within descriptions -->
+  <!ELEMENT link (#PCDATA)>
+    <!ATTLIST link to CDATA #REQUIRED>
+  <!ELEMENT h3 ANY>
+  <!ELEMENT p ANY>
+  <!ELEMENT b ANY>
+  <!ELEMENT i ANY>
+  <!ELEMENT ul (#PCDATA|li)*>
+  <!ELEMENT li ANY>
+  <!ELEMENT pre ANY>
+  <!ELEMENT tt ANY>
+  <!ELEMENT see (#PCDATA|link)*>
+  <!ELEMENT note ANY>
+  <!ELEMENT table (tr)+>
+  <!ELEMENT tr (td|th)+>
+  <!ELEMENT th ANY>
+  <!ELEMENT td ANY>
+]>
