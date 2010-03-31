@@ -172,6 +172,7 @@ VBOX_PRODUCT = Oracle VM VirtualBox
 # have to be updated manually. Please keep the list up to date.
 # src/VBox/Devices/PC/PXE/client/uinit.asm
 # src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
+# src/VBox/Frontends/VirtualBox/nls/*.ts
 
 # maybe we want set this manually
 VBOX_C_YEAR = $(date-utc %Y)
