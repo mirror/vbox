@@ -634,7 +634,8 @@ static void supR3HardenedMainGrabCapabilites(void)
 #  ifdef USE_LIB_PCAP
         /* XXX cap_net_bind_service */
         if (!cap_set_proc(cap_from_text("all-eip cap_net_raw+ep")))
-            prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+            prctl(PR_SET_KEEPCAPS, 1 /*keep=*/, 0, 0, 0);
+        prctl(PR_SET_DUMPABLE, 1 /*dump*/, 0, 0, 0);
 #  else
         cap_user_header_t hdr = (cap_user_header_t)alloca(sizeof(*hdr));
         cap_user_data_t   cap = (cap_user_data_t)alloca(sizeof(*cap));
@@ -644,7 +645,8 @@ static void supR3HardenedMainGrabCapabilites(void)
         cap->effective = g_uCaps;
         cap->permitted = g_uCaps;
         if (!capset(hdr, cap))
-            prctl(PR_SET_KEEPCAPS, /*keep=*/1, 0, 0, 0);
+            prctl(PR_SET_KEEPCAPS, 1 /*keep*/, 0, 0, 0);
+        prctl(PR_SET_DUMPABLE, 1 /*dump*/, 0, 0, 0);
 #  endif /* !USE_LIB_PCAP */
     }
 
