@@ -28,6 +28,10 @@ ifdef VBOX_SIGN_ADDITIONS # (See the parent makefile.)
  VBoxTray_NOINST  = true
 endif
 VBoxTray_DEFS     = VBOX_WITH_HGCM LOG_TO_BACKDOOR
+ifdef VBOXWDDM
+ VBoxTray_DEFS   += VBOXWDDM
+ VBoxTray_DEFS   += LOG_ENABLED
+endif
 VBoxTray_INCS     = ../include
 VBoxTray_SOURCES  = \
 	VBoxTray.cpp \
