@@ -834,7 +834,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
