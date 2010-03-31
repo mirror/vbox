@@ -871,28 +871,44 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevDisplayChangeRequest *displayChangeRequest = (VMMDevDisplayChangeRequest*)pRequestHeader;
 
+                DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[0];
+
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
+                    /* Current request has been read at least once. */
+                    pRequest->fPending = false;
+
+                    /* Check if there are more pending requests. */
+                    int i;
+                    for (i = 1; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    {
+                        if (pThis->displayChangeData.aRequests[i].fPending)
+                        {
+                            VMMDevNotifyGuest (pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+                            break;
+                        }
+                    }
+
                     /* Remember which resolution the client has queried, subsequent reads
                      * will return the same values. */
-                    pThis->lastReadDisplayChangeRequest = pThis->displayChangeRequest;
-                    pThis->fGuestSentChangeEventAck = true;
+                    pRequest->lastReadDisplayChangeRequest = pRequest->displayChangeRequest;
+                    pThis->displayChangeData.fGuestSentChangeEventAck = true;
                 }
 
-                if (pThis->fGuestSentChangeEventAck)
+                if (pThis->displayChangeData.fGuestSentChangeEventAck)
                 {
-                    displayChangeRequest->xres = pThis->lastReadDisplayChangeRequest.xres;
-                    displayChangeRequest->yres = pThis->lastReadDisplayChangeRequest.yres;
-                    displayChangeRequest->bpp  = pThis->lastReadDisplayChangeRequest.bpp;
+                    displayChangeRequest->xres = pRequest->lastReadDisplayChangeRequest.xres;
+                    displayChangeRequest->yres = pRequest->lastReadDisplayChangeRequest.yres;
+                    displayChangeRequest->bpp  = pRequest->lastReadDisplayChangeRequest.bpp;
                 }
                 else
                 {
                     /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
                      * read the last valid video mode hint. This happens when the guest X server
                      * determines the initial mode. */
-                    displayChangeRequest->xres = pThis->displayChangeRequest.xres;
-                    displayChangeRequest->yres = pThis->displayChangeRequest.yres;
-                    displayChangeRequest->bpp = pThis->displayChangeRequest.bpp;
+                    displayChangeRequest->xres = pRequest->displayChangeRequest.xres;
+                    displayChangeRequest->yres = pRequest->displayChangeRequest.yres;
+                    displayChangeRequest->bpp = pRequest->displayChangeRequest.bpp;
                 }
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d\n",
                      displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp));
@@ -912,30 +928,77 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
             {
                 VMMDevDisplayChangeRequest2 *displayChangeRequest = (VMMDevDisplayChangeRequest2*)pRequestHeader;
 
+                DISPLAYCHANGEREQUEST *pRequest = NULL;
+
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
-                    /* Remember which resolution the client has queried, subsequent reads
-                     * will return the same values. */
-                    pThis->lastReadDisplayChangeRequest = pThis->displayChangeRequest;
-                    pThis->fGuestSentChangeEventAck = true;
+                    /* Select a pending request to report. */
+                    int i;
+                    for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    {
+                        pRequest = &pThis->displayChangeData.aRequests[i];
+                        if (pRequest->fPending)
+                        {
+                            /* Remember which request should be reported. */
+                            pThis->displayChangeData.iCurrentMonitor = i;
+                            Log3(("VMMDev: will report pending request for %d\n",
+                                  i));
+                            break;
+                        }
+                    }
+
+                    /* Check if there are more pending requests. */
+                    i++;
+                    for (; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    {
+                        if (pThis->displayChangeData.aRequests[i].fPending)
+                        {
+                            VMMDevNotifyGuest (pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
+                            Log3(("VMMDev: another pending at %d\n",
+                                  i));
+                            break;
+                        }
+                    }
+
+                    if (pRequest)
+                    {
+                        /* Current request has been read at least once. */
+                        pRequest->fPending = false;
+
+                        /* Remember which resolution the client has queried, subsequent reads
+                         * will return the same values. */
+                        pRequest->lastReadDisplayChangeRequest = pRequest->displayChangeRequest;
+                        pThis->displayChangeData.fGuestSentChangeEventAck = true;
+                    }
+                    else
+                    {
+                         Log3(("VMMDev: no pending request!!!\n"));
+                    }
                 }
 
-                if (pThis->fGuestSentChangeEventAck)
+                if (!pRequest)
                 {
-                    displayChangeRequest->xres    = pThis->lastReadDisplayChangeRequest.xres;
-                    displayChangeRequest->yres    = pThis->lastReadDisplayChangeRequest.yres;
-                    displayChangeRequest->bpp     = pThis->lastReadDisplayChangeRequest.bpp;
-                    displayChangeRequest->display = pThis->lastReadDisplayChangeRequest.display;
+                    Log3(("VMMDev: default to %d\n",
+                          pThis->displayChangeData.iCurrentMonitor));
+                    pRequest = &pThis->displayChangeData.aRequests[pThis->displayChangeData.iCurrentMonitor];
+                }
+
+                if (pThis->displayChangeData.fGuestSentChangeEventAck)
+                {
+                    displayChangeRequest->xres    = pRequest->lastReadDisplayChangeRequest.xres;
+                    displayChangeRequest->yres    = pRequest->lastReadDisplayChangeRequest.yres;
+                    displayChangeRequest->bpp     = pRequest->lastReadDisplayChangeRequest.bpp;
+                    displayChangeRequest->display = pRequest->lastReadDisplayChangeRequest.display;
                 }
                 else
                 {
                     /* This is not a response to a VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST, just
                      * read the last valid video mode hint. This happens when the guest X server
                      * determines the initial video mode. */
-                    displayChangeRequest->xres    = pThis->displayChangeRequest.xres;
-                    displayChangeRequest->yres    = pThis->displayChangeRequest.yres;
-                    displayChangeRequest->bpp     = pThis->displayChangeRequest.bpp;
-                    displayChangeRequest->display = pThis->displayChangeRequest.display;
+                    displayChangeRequest->xres    = pRequest->displayChangeRequest.xres;
+                    displayChangeRequest->yres    = pRequest->displayChangeRequest.yres;
+                    displayChangeRequest->bpp     = pRequest->displayChangeRequest.bpp;
+                    displayChangeRequest->display = pRequest->displayChangeRequest.display;
                 }
                 Log(("VMMDev: returning display change request xres = %d, yres = %d, bpp = %d at %d\n",
                      displayChangeRequest->xres, displayChangeRequest->yres, displayChangeRequest->bpp, displayChangeRequest->display));
@@ -1969,13 +2032,21 @@ static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, 
 static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, uint32_t xres, uint32_t yres, uint32_t bpp, uint32_t display)
 {
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
+
+    if (display >= RT_ELEMENTS(pThis->displayChangeData.aRequests))
+    {
+        return VERR_INVALID_PARAMETER;
+    }
+
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
+    DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[display];
+
     /* Verify that the new resolution is different and that guest does not yet know about it. */
-    bool fSameResolution = (!xres || (pThis->lastReadDisplayChangeRequest.xres == xres)) &&
-                           (!yres || (pThis->lastReadDisplayChangeRequest.yres == yres)) &&
-                           (!bpp || (pThis->lastReadDisplayChangeRequest.bpp == bpp)) &&
-                           pThis->lastReadDisplayChangeRequest.display == display;
+    bool fSameResolution = (!xres || (pRequest->lastReadDisplayChangeRequest.xres == xres)) &&
+                           (!yres || (pRequest->lastReadDisplayChangeRequest.yres == yres)) &&
+                           (!bpp || (pRequest->lastReadDisplayChangeRequest.bpp == bpp)) &&
+                           pRequest->lastReadDisplayChangeRequest.display == display;
 
     if (!xres && !yres && !bpp)
     {
@@ -1984,7 +2055,7 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
     }
 
     Log3(("vmmdevRequestDisplayChange: same=%d. new: xres=%d, yres=%d, bpp=%d, display=%d. old: xres=%d, yres=%d, bpp=%d, display=%d.\n",
-          fSameResolution, xres, yres, bpp, display, pThis->lastReadDisplayChangeRequest.xres, pThis->lastReadDisplayChangeRequest.yres, pThis->lastReadDisplayChangeRequest.bpp, pThis->lastReadDisplayChangeRequest.display));
+          fSameResolution, xres, yres, bpp, display, pRequest->lastReadDisplayChangeRequest.xres, pRequest->lastReadDisplayChangeRequest.yres, pRequest->lastReadDisplayChangeRequest.bpp, pRequest->lastReadDisplayChangeRequest.display));
 
     if (!fSameResolution)
     {
@@ -1992,10 +2063,11 @@ static DECLCALLBACK(int) vmmdevRequestDisplayChange(PPDMIVMMDEVPORT pInterface, 
                 xres, yres, bpp, display));
 
         /* we could validate the information here but hey, the guest can do that as well! */
-        pThis->displayChangeRequest.xres    = xres;
-        pThis->displayChangeRequest.yres    = yres;
-        pThis->displayChangeRequest.bpp     = bpp;
-        pThis->displayChangeRequest.display = display;
+        pRequest->displayChangeRequest.xres    = xres;
+        pRequest->displayChangeRequest.yres    = yres;
+        pRequest->displayChangeRequest.bpp     = bpp;
+        pRequest->displayChangeRequest.display = display;
+        pRequest->fPending = true;
 
         /* IRQ so the guest knows what's going on */
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST);
@@ -2256,7 +2328,7 @@ static DECLCALLBACK(int) vmmdevSaveExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM)
     SSMR3PutMem(pSSM, &pThis->guestInfo, sizeof (pThis->guestInfo));
     SSMR3PutU32(pSSM, pThis->fu32AdditionsOk);
     SSMR3PutU32(pSSM, pThis->u32VideoAccelEnabled);
-    SSMR3PutBool(pSSM, pThis->fGuestSentChangeEventAck);
+    SSMR3PutBool(pSSM, pThis->displayChangeData.fGuestSentChangeEventAck);
 
     SSMR3PutU32(pSSM, pThis->guestCaps);
 
@@ -2327,7 +2399,7 @@ static DECLCALLBACK(int) vmmdevLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uin
     SSMR3GetU32(pSSM, &pThis->fu32AdditionsOk);
     SSMR3GetU32(pSSM, &pThis->u32VideoAccelEnabled);
     if (uVersion > 10)
-        SSMR3GetBool(pSSM, &pThis->fGuestSentChangeEventAck);
+        SSMR3GetBool(pSSM, &pThis->displayChangeData.fGuestSentChangeEventAck);
 
     rc = SSMR3GetU32(pSSM, &pThis->guestCaps);
 
@@ -2474,8 +2546,14 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
 
     /* clear pending display change request. */
-    memset (&pThis->lastReadDisplayChangeRequest, 0, sizeof (pThis->lastReadDisplayChangeRequest));
-    pThis->fGuestSentChangeEventAck = false;
+    int i;
+    for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+    {
+        DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
+        memset (&pRequest->lastReadDisplayChangeRequest, 0, sizeof (pRequest->lastReadDisplayChangeRequest));
+    }
+    pThis->displayChangeData.iCurrentMonitor = 0;
+    pThis->displayChangeData.fGuestSentChangeEventAck = false;
 
     /* disable seamless mode */
     pThis->fLastSeamlessEnabled = false;
