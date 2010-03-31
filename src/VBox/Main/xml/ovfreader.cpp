@@ -25,6 +25,7 @@
 
 using namespace std;
 using namespace iprt;
+using namespace ovf;
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -367,7 +368,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     {
                         uint32_t ulType;
                         pelmItemChild->copyValue(ulType);
-                        i.resourceType = (OVFResourceType_T)ulType;
+                        i.resourceType = (ResourceType_T)ulType;
                     }
                     else if (!strcmp(pcszItemChildName, "OtherResourceType"))
                         i.strOtherResourceType = pelmItemChild->getValue();
@@ -427,7 +428,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 // do some analysis
                 switch (i.resourceType)
                 {
-                    case OVFResourceType_Processor:     // 3
+                    case ResourceType_Processor:     // 3
                         /*  <rasd:Caption>1 virtual CPU</rasd:Caption>
                             <rasd:Description>Number of virtual CPUs</rasd:Description>
                             <rasd:ElementName>virtual CPU</rasd:ElementName>
@@ -444,7 +445,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 i.ulLineNumber);
                     break;
 
-                    case OVFResourceType_Memory:        // 4
+                    case ResourceType_Memory:        // 4
                         if (    (i.strAllocationUnits == "MegaBytes")           // found in OVF created by OVF toolkit
                              || (i.strAllocationUnits == "MB")                  // found in MS docs
                              || (i.strAllocationUnits == "byte * 2^20")         // suggested by OVF spec DSP0243 page 21
@@ -457,7 +458,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                                                 i.ulLineNumber);
                     break;
 
-                    case OVFResourceType_IDEController:          // 5
+                    case ResourceType_IDEController:          // 5
                     {
                         /*  <Item>
                                 <rasd:Caption>ideController0</rasd:Caption>
@@ -478,7 +479,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     }
                     break;
 
-                    case OVFResourceType_ParallelSCSIHBA:        // 6       SCSI controller
+                    case ResourceType_ParallelSCSIHBA:        // 6       SCSI controller
                     {
                         /*  <Item>
                                 <rasd:Caption>SCSI Controller 0 - LSI Logic</rasd:Caption>
@@ -497,7 +498,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     }
                     break;
 
-                    case OVFResourceType_EthernetAdapter: // 10
+                    case ResourceType_EthernetAdapter: // 10
                     {
                         /*  <Item>
                             <rasd:Caption>Ethernet adapter on 'Bridged'</rasd:Caption>
@@ -523,11 +524,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                     }
                     break;
 
-                    case OVFResourceType_FloppyDrive: // 14
+                    case ResourceType_FloppyDrive: // 14
                         vsys.fHasFloppyDrive = true;           // we have no additional information
                     break;
 
-                    case OVFResourceType_CDDrive:       // 15
+                    case ResourceType_CDDrive:       // 15
                         /*  <Item ovf:required="false">
                                 <rasd:Caption>cdrom1</rasd:Caption>
                                 <rasd:InstanceId>7</rasd:InstanceId>
@@ -542,11 +543,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         vsys.fHasCdromDrive = true;           // we have no additional information
                     break;
 
-                    case OVFResourceType_HardDisk: // 17
+                    case ResourceType_HardDisk: // 17
                         // handled separately in second loop below
                     break;
 
-                    case OVFResourceType_OtherStorageDevice:        // 20       SATA controller
+                    case ResourceType_OtherStorageDevice:        // 20       SATA controller
                     {
                         /* <Item>
                             <rasd:Description>SATA Controller</rasd:Description>
@@ -571,12 +572,12 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         else
                             throw OVFLogicError(N_("Error reading \"%s\": Host resource of type \"Other Storage Device (%d)\" is supported with SATA AHCI controllers only, line %d"),
                                                 m_strPath.c_str(),
-                                                OVFResourceType_OtherStorageDevice,
+                                                ResourceType_OtherStorageDevice,
                                                 i.ulLineNumber);
                     }
                     break;
 
-                    case OVFResourceType_USBController: // 23
+                    case ResourceType_USBController: // 23
                         /*  <Item ovf:required="false">
                                 <rasd:Caption>usb</rasd:Caption>
                                 <rasd:Description>USB Controller</rasd:Description>
@@ -588,7 +589,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                         vsys.fHasUsbController = true;           // we have no additional information
                     break;
 
-                    case OVFResourceType_SoundCard: // 35
+                    case ResourceType_SoundCard: // 35
                         /*  <Item ovf:required="false">
                                 <rasd:Caption>sound</rasd:Caption>
                                 <rasd:Description>Sound Card</rasd:Description>
@@ -621,7 +622,7 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
                 // do some analysis
                 switch (i.resourceType)
                 {
-                    case OVFResourceType_HardDisk: // 17
+                    case ResourceType_HardDisk: // 17
                     {
                         /*  <Item>
                                 <rasd:Caption>Harddisk 1</rasd:Caption>

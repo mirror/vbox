@@ -46,64 +46,64 @@ using namespace std;
 
 static const struct
 {
-    CIMOSType_T     cim;
-    const char      *pcszVbox;
+    ovf::CIMOSType_T    cim;
+    const char          *pcszVbox;
 }
 g_osTypes[] =
 {
-    { CIMOSType_CIMOS_Unknown,                              SchemaDefs_OSTypeId_Other },
-    { CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2 },
-    { CIMOSType_CIMOS_MSDOS,                                SchemaDefs_OSTypeId_DOS },
-    { CIMOSType_CIMOS_WIN3x,                                SchemaDefs_OSTypeId_Windows31 },
-    { CIMOSType_CIMOS_WIN95,                                SchemaDefs_OSTypeId_Windows95 },
-    { CIMOSType_CIMOS_WIN98,                                SchemaDefs_OSTypeId_Windows98 },
-    { CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT4 },
-    { CIMOSType_CIMOS_NetWare,                              SchemaDefs_OSTypeId_Netware },
-    { CIMOSType_CIMOS_NovellOES,                            SchemaDefs_OSTypeId_Netware },
-    { CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
-    { CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_OpenSolaris },
-    { CIMOSType_CIMOS_FreeBSD,                              SchemaDefs_OSTypeId_FreeBSD },
-    { CIMOSType_CIMOS_NetBSD,                               SchemaDefs_OSTypeId_NetBSD },
-    { CIMOSType_CIMOS_QNX,                                  SchemaDefs_OSTypeId_QNX },
-    { CIMOSType_CIMOS_Windows2000,                          SchemaDefs_OSTypeId_Windows2000 },
-    { CIMOSType_CIMOS_WindowsMe,                            SchemaDefs_OSTypeId_WindowsMe },
-    { CIMOSType_CIMOS_OpenBSD,                              SchemaDefs_OSTypeId_OpenBSD },
-    { CIMOSType_CIMOS_WindowsXP,                            SchemaDefs_OSTypeId_WindowsXP },
-    { CIMOSType_CIMOS_WindowsXPEmbedded,                    SchemaDefs_OSTypeId_WindowsXP },
-    { CIMOSType_CIMOS_WindowsEmbeddedforPointofService,     SchemaDefs_OSTypeId_WindowsXP },
-    { CIMOSType_CIMOS_MicrosoftWindowsServer2003,           SchemaDefs_OSTypeId_Windows2003 },
-    { CIMOSType_CIMOS_MicrosoftWindowsServer2003_64,        SchemaDefs_OSTypeId_Windows2003_64 },
-    { CIMOSType_CIMOS_WindowsXP_64,                         SchemaDefs_OSTypeId_WindowsXP_64 },
-    { CIMOSType_CIMOS_WindowsVista,                         SchemaDefs_OSTypeId_WindowsVista },
-    { CIMOSType_CIMOS_WindowsVista_64,                      SchemaDefs_OSTypeId_WindowsVista_64 },
-    { CIMOSType_CIMOS_MicrosoftWindowsServer2008,           SchemaDefs_OSTypeId_Windows2008 },
-    { CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        SchemaDefs_OSTypeId_Windows2008_64 },
-    { CIMOSType_CIMOS_FreeBSD_64,                           SchemaDefs_OSTypeId_FreeBSD_64 },
-    { CIMOSType_CIMOS_RedHatEnterpriseLinux,                SchemaDefs_OSTypeId_RedHat },
-    { CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             SchemaDefs_OSTypeId_RedHat_64 },
-    { CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
-    { CIMOSType_CIMOS_SUSE,                                 SchemaDefs_OSTypeId_OpenSUSE },
-    { CIMOSType_CIMOS_SLES,                                 SchemaDefs_OSTypeId_OpenSUSE },
-    { CIMOSType_CIMOS_NovellLinuxDesktop,                   SchemaDefs_OSTypeId_OpenSUSE },
-    { CIMOSType_CIMOS_SUSE_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
-    { CIMOSType_CIMOS_SLES_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
-    { CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux },
-    { CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
-    { CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Linux},
+    { ovf::CIMOSType_CIMOS_Unknown,                              SchemaDefs_OSTypeId_Other },
+    { ovf::CIMOSType_CIMOS_OS2,                                  SchemaDefs_OSTypeId_OS2 },
+    { ovf::CIMOSType_CIMOS_MSDOS,                                SchemaDefs_OSTypeId_DOS },
+    { ovf::CIMOSType_CIMOS_WIN3x,                                SchemaDefs_OSTypeId_Windows31 },
+    { ovf::CIMOSType_CIMOS_WIN95,                                SchemaDefs_OSTypeId_Windows95 },
+    { ovf::CIMOSType_CIMOS_WIN98,                                SchemaDefs_OSTypeId_Windows98 },
+    { ovf::CIMOSType_CIMOS_WINNT,                                SchemaDefs_OSTypeId_WindowsNT4 },
+    { ovf::CIMOSType_CIMOS_NetWare,                              SchemaDefs_OSTypeId_Netware },
+    { ovf::CIMOSType_CIMOS_NovellOES,                            SchemaDefs_OSTypeId_Netware },
+    { ovf::CIMOSType_CIMOS_Solaris,                              SchemaDefs_OSTypeId_OpenSolaris },
+    { ovf::CIMOSType_CIMOS_SunOS,                                SchemaDefs_OSTypeId_OpenSolaris },
+    { ovf::CIMOSType_CIMOS_FreeBSD,                              SchemaDefs_OSTypeId_FreeBSD },
+    { ovf::CIMOSType_CIMOS_NetBSD,                               SchemaDefs_OSTypeId_NetBSD },
+    { ovf::CIMOSType_CIMOS_QNX,                                  SchemaDefs_OSTypeId_QNX },
+    { ovf::CIMOSType_CIMOS_Windows2000,                          SchemaDefs_OSTypeId_Windows2000 },
+    { ovf::CIMOSType_CIMOS_WindowsMe,                            SchemaDefs_OSTypeId_WindowsMe },
+    { ovf::CIMOSType_CIMOS_OpenBSD,                              SchemaDefs_OSTypeId_OpenBSD },
+    { ovf::CIMOSType_CIMOS_WindowsXP,                            SchemaDefs_OSTypeId_WindowsXP },
+    { ovf::CIMOSType_CIMOS_WindowsXPEmbedded,                    SchemaDefs_OSTypeId_WindowsXP },
+    { ovf::CIMOSType_CIMOS_WindowsEmbeddedforPointofService,     SchemaDefs_OSTypeId_WindowsXP },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003,           SchemaDefs_OSTypeId_Windows2003 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2003_64,        SchemaDefs_OSTypeId_Windows2003_64 },
+    { ovf::CIMOSType_CIMOS_WindowsXP_64,                         SchemaDefs_OSTypeId_WindowsXP_64 },
+    { ovf::CIMOSType_CIMOS_WindowsVista,                         SchemaDefs_OSTypeId_WindowsVista },
+    { ovf::CIMOSType_CIMOS_WindowsVista_64,                      SchemaDefs_OSTypeId_WindowsVista_64 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008,           SchemaDefs_OSTypeId_Windows2008 },
+    { ovf::CIMOSType_CIMOS_MicrosoftWindowsServer2008_64,        SchemaDefs_OSTypeId_Windows2008_64 },
+    { ovf::CIMOSType_CIMOS_FreeBSD_64,                           SchemaDefs_OSTypeId_FreeBSD_64 },
+    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux,                SchemaDefs_OSTypeId_RedHat },
+    { ovf::CIMOSType_CIMOS_RedHatEnterpriseLinux_64,             SchemaDefs_OSTypeId_RedHat_64 },
+    { ovf::CIMOSType_CIMOS_Solaris_64,                           SchemaDefs_OSTypeId_OpenSolaris_64 },
+    { ovf::CIMOSType_CIMOS_SUSE,                                 SchemaDefs_OSTypeId_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_SLES,                                 SchemaDefs_OSTypeId_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_NovellLinuxDesktop,                   SchemaDefs_OSTypeId_OpenSUSE },
+    { ovf::CIMOSType_CIMOS_SUSE_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
+    { ovf::CIMOSType_CIMOS_SLES_64,                              SchemaDefs_OSTypeId_OpenSUSE_64 },
+    { ovf::CIMOSType_CIMOS_LINUX,                                SchemaDefs_OSTypeId_Linux },
+    { ovf::CIMOSType_CIMOS_SunJavaDesktopSystem,                 SchemaDefs_OSTypeId_Linux },
+    { ovf::CIMOSType_CIMOS_TurboLinux,                           SchemaDefs_OSTypeId_Linux},
 
-    //                { CIMOSType_CIMOS_TurboLinux_64, },
+    //                { ovf::CIMOSType_CIMOS_TurboLinux_64, },
 
-    { CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
-    { CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
-    { CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
-    { CIMOSType_CIMOS_Ubuntu_64,                            SchemaDefs_OSTypeId_Ubuntu_64 },
-    { CIMOSType_CIMOS_Debian,                               SchemaDefs_OSTypeId_Debian },
-    { CIMOSType_CIMOS_Debian_64,                            SchemaDefs_OSTypeId_Debian_64 },
-    { CIMOSType_CIMOS_Linux_2_4_x,                          SchemaDefs_OSTypeId_Linux24 },
-    { CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
-    { CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
-    { CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 },
-    { CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 }
+    { ovf::CIMOSType_CIMOS_Mandriva,                             SchemaDefs_OSTypeId_Mandriva },
+    { ovf::CIMOSType_CIMOS_Mandriva_64,                          SchemaDefs_OSTypeId_Mandriva_64 },
+    { ovf::CIMOSType_CIMOS_Ubuntu,                               SchemaDefs_OSTypeId_Ubuntu },
+    { ovf::CIMOSType_CIMOS_Ubuntu_64,                            SchemaDefs_OSTypeId_Ubuntu_64 },
+    { ovf::CIMOSType_CIMOS_Debian,                               SchemaDefs_OSTypeId_Debian },
+    { ovf::CIMOSType_CIMOS_Debian_64,                            SchemaDefs_OSTypeId_Debian_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_4_x,                          SchemaDefs_OSTypeId_Linux24 },
+    { ovf::CIMOSType_CIMOS_Linux_2_4_x_64,                       SchemaDefs_OSTypeId_Linux24_64 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x,                          SchemaDefs_OSTypeId_Linux26 },
+    { ovf::CIMOSType_CIMOS_Linux_2_6_x_64,                       SchemaDefs_OSTypeId_Linux26_64 },
+    { ovf::CIMOSType_CIMOS_Linux_64,                             SchemaDefs_OSTypeId_Linux26_64 }
 };
 
 /* Pattern structure for matching the OS type description field */
@@ -172,10 +172,10 @@ static const osTypePattern g_osTypesPattern64[] =
  * @param c
  * @param cStr
  */
-void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str &cStr)
+void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf8Str &cStr)
 {
     /* First check if the type is other/other_64 */
-    if (c == CIMOSType_CIMOS_Other)
+    if (c == ovf::CIMOSType_CIMOS_Other)
     {
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern); ++i)
             if (cStr.contains (g_osTypesPattern[i].pcszPattern, Utf8Str::CaseInsensitive))
@@ -184,7 +184,7 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str 
                 return;
             }
     }
-    else if (c == CIMOSType_CIMOS_Other_64)
+    else if (c == ovf::CIMOSType_CIMOS_Other_64)
     {
         for (size_t i=0; i < RT_ELEMENTS(g_osTypesPattern64); ++i)
             if (cStr.contains (g_osTypesPattern64[i].pcszPattern, Utf8Str::CaseInsensitive))
@@ -212,7 +212,7 @@ void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str 
  * @param osTypeVBox
  * @param c
  */
-CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
 {
     for (size_t i = 0; i < RT_ELEMENTS(g_osTypes); ++i)
     {
@@ -220,7 +220,7 @@ CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox)
             return g_osTypes[i].cim;
     }
 
-    return CIMOSType_CIMOS_Other;
+    return ovf::CIMOSType_CIMOS_Other;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -357,14 +357,14 @@ STDMETHODIMP Appliance::COMGETTER(Disks)(ComSafeArrayOut(BSTR, aDisks))
         size_t c = m->pReader->m_mapDisks.size();
         com::SafeArray<BSTR> sfaDisks(c);
 
-        DiskImagesMap::const_iterator it;
+        ovf::DiskImagesMap::const_iterator it;
         size_t i = 0;
         for (it = m->pReader->m_mapDisks.begin();
              it != m->pReader->m_mapDisks.end();
              ++it, ++i)
         {
             // create a string representing this disk
-            const DiskImage &d = it->second;
+            const ovf::DiskImage &d = it->second;
             char *psz = NULL;
             RTStrAPrintf(&psz,
                          "%s\t"

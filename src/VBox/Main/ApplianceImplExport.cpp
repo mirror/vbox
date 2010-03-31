@@ -130,7 +130,7 @@ STDMETHODIMP Machine::Export(IAppliance *aAppliance, IVirtualSystemDescription *
 
         /* Guest OS type */
         Utf8Str strOsTypeVBox(bstrGuestOSType);
-        CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str());
+        ovf::CIMOSType_T cim = convertVBoxOSType2CIMOSType(strOsTypeVBox.c_str());
         pNewDesc->addEntry(VirtualSystemDescriptionType_OS,
                            "",
                            Utf8StrFmt("%RI32", cim),
@@ -775,7 +775,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
     pelmOperatingSystemSection->setAttribute("ovf:id", llOS.front()->strOvf);
     pelmOperatingSystemSection->createChild("Info")->addContent("The kind of installed guest operating system");
     Utf8Str strOSDesc;
-    convertCIMOSType2VBoxOSType(strOSDesc, (CIMOSType_T)llOS.front()->strOvf.toInt32(), "");
+    convertCIMOSType2VBoxOSType(strOSDesc, (ovf::CIMOSType_T)llOS.front()->strOvf.toInt32(), "");
     pelmOperatingSystemSection->createChild("Description")->addContent(strOSDesc);
 
     // <VirtualHardwareSection ovf:id="hw1" ovf:transport="iso">
@@ -842,7 +842,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
         {
             const VirtualSystemDescriptionEntry &desc = *itD;
 
-            OVFResourceType_T type = (OVFResourceType_T)0;      // if this becomes != 0 then we do stuff
+            ovf::ResourceType_T type = (ovf::ResourceType_T)0;      // if this becomes != 0 then we do stuff
             Utf8Str strResourceSubType;
 
             Utf8Str strDescription;                             // results in <rasd:Description>...</rasd:Description> block
@@ -877,7 +877,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     if (uLoop == 1)
                     {
                         strDescription = "Number of virtual CPUs";
-                        type = OVFResourceType_Processor; // 3
+                        type = ovf::ResourceType_Processor; // 3
                         desc.strVbox.toInt(uTemp);
                         lVirtualQuantity = (int32_t)uTemp;
                         strCaption = Utf8StrFmt("%d virtual CPU", lVirtualQuantity);     // without this ovftool won't eat the item
@@ -897,7 +897,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     if (uLoop == 1)
                     {
                         strDescription = "Memory Size";
-                        type = OVFResourceType_Memory; // 4
+                        type = ovf::ResourceType_Memory; // 4
                         desc.strVbox.toInt(uTemp);
                         lVirtualQuantity = (int32_t)(uTemp / _1M);
                         strAllocationUnits = "MegaBytes";
@@ -918,7 +918,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "IDE Controller";
                         strCaption = "ideController0";
-                        type = OVFResourceType_IDEController; // 5
+                        type = ovf::ResourceType_IDEController; // 5
                         strResourceSubType = desc.strVbox;
                         // it seems that OVFTool always writes these two, and since we can only
                         // have one IDE controller, we'll use this as well
@@ -946,7 +946,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "SATA Controller";
                         strCaption = "sataController0";
-                        type = OVFResourceType_OtherStorageDevice; // 20
+                        type = ovf::ResourceType_OtherStorageDevice; // 20
                         // it seems that OVFTool always writes these two, and since we can only
                         // have one SATA controller, we'll use this as well
                         lAddress = 0;
@@ -981,7 +981,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "SCSI Controller";
                         strCaption = "scsiController0";
-                        type = OVFResourceType_ParallelSCSIHBA; // 6
+                        type = ovf::ResourceType_ParallelSCSIHBA; // 6
                         // it seems that OVFTool always writes these two, and since we can only
                         // have one SATA controller, we'll use this as well
                         lAddress = 0;
@@ -1019,7 +1019,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
 
                         strDescription = "Disk Image";
                         strCaption = Utf8StrFmt("disk%RI32", cDisks);        // this is not used for anything else
-                        type = OVFResourceType_HardDisk; // 17
+                        type = ovf::ResourceType_HardDisk; // 17
 
                         // the following references the "<Disks>" XML block
                         strHostResource = Utf8StrFmt("/disk/%s", strDiskID.c_str());
@@ -1056,7 +1056,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "Floppy Drive";
                         strCaption = "floppy0";         // this is what OVFTool writes
-                        type = OVFResourceType_FloppyDrive; // 14
+                        type = ovf::ResourceType_FloppyDrive; // 14
                         lAutomaticAllocation = 0;
                         lAddressOnParent = 0;           // this is what OVFTool writes
                     }
@@ -1072,7 +1072,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
 
                         strDescription = "CD-ROM Drive";
                         strCaption = "cdrom1";          // this is what OVFTool writes
-                        type = OVFResourceType_CDDrive; // 15
+                        type = ovf::ResourceType_CDDrive; // 15
                         lAutomaticAllocation = 1;
                         ulParent = idIDEController;
                         lAddressOnParent = 0;           // this is what OVFTool writes
@@ -1092,7 +1092,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         lAutomaticAllocation = 1;
                         strCaption = Utf8StrFmt("Ethernet adapter on '%s'", desc.strOvf.c_str());
-                        type = OVFResourceType_EthernetAdapter; // 10
+                        type = ovf::ResourceType_EthernetAdapter; // 10
                         /* Set the hardware type to something useful.
                             * To be compatible with vmware & others we set
                             * PCNet32 for our PCNet types & E1000 for the
@@ -1126,7 +1126,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "USB Controller";
                         strCaption = "usb";
-                        type = OVFResourceType_USBController; // 23
+                        type = ovf::ResourceType_USBController; // 23
                         lAddress = 0;                   // this is what OVFTool writes
                         lBusNumber = 0;                 // this is what OVFTool writes
                     }
@@ -1146,7 +1146,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
                     {
                         strDescription = "Sound Card";
                         strCaption = "sound";
-                        type = OVFResourceType_SoundCard; // 35
+                        type = ovf::ResourceType_SoundCard; // 35
                         strResourceSubType = desc.strOvf;       // e.g. ensoniq1371
                         lAutomaticAllocation = 0;
                         lAddressOnParent = 3;               // what gives? this is what OVFTool writes

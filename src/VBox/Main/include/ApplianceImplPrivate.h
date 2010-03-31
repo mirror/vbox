@@ -24,6 +24,8 @@
 
 class VirtualSystemDescription;
 
+#include "ovfreader.h"
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Appliance data definition
@@ -67,7 +69,7 @@ struct Appliance::Data
 
     LocationInfo    locInfo;       // location info for the currently processed OVF
 
-    OVFReader       *pReader;
+    ovf::OVFReader  *pReader;
 
     bool            fBusyWriting;          // state protection; while this is true nobody else can call methods
 
@@ -149,8 +151,8 @@ struct VirtualSystemDescription::Data
 //
 ////////////////////////////////////////////////////////////////////////////////
 
-void convertCIMOSType2VBoxOSType(Utf8Str &strType, CIMOSType_T c, const Utf8Str &cStr);
+void convertCIMOSType2VBoxOSType(Utf8Str &strType, ovf::CIMOSType_T c, const Utf8Str &cStr);
 
-CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
+ovf::CIMOSType_T convertVBoxOSType2CIMOSType(const char *pcszVbox);
 
 #endif // ____H_APPLIANCEIMPLPRIVATE
