@@ -1722,6 +1722,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
                  pEndpoint, pEndpoint->Core.pszUri, pTask, off, paSegments, cSegments, cbRead));
 
     pTask->cbTransferLeft = cbRead;
+    pTask->rc             = VINF_SUCCESS;
     /* Set to completed to make sure that the task is valid while we access it. */
     ASMAtomicWriteBool(&pTask->fCompleted, true);
 
@@ -1955,6 +1956,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
                  pEndpoint, pEndpoint->Core.pszUri, pTask, off, paSegments, cSegments, cbWrite));
 
     pTask->cbTransferLeft = cbWrite;
+    pTask->rc             = VINF_SUCCESS;
     /* Set to completed to make sure that the task is valid while we access it. */
     ASMAtomicWriteBool(&pTask->fCompleted, true);
 
@@ -2194,6 +2196,8 @@ int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
     LogFlowFunc((": pEndpoint=%#p{%s} pTask=%#p\n",
                  pEndpoint, pEndpoint->Core.pszUri, pTask));
+
+    pTask->rc = VINF_SUCCESS;
 
     if (ASMAtomicReadPtr((void * volatile *)&pEndpoint->DataCache.pTaskFlush))
         rc = VERR_RESOURCE_BUSY;
