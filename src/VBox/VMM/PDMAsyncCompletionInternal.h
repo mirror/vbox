@@ -183,13 +183,6 @@ typedef struct PDMASYNCCOMPLETIONEPCLASS
 {
     /** Pointer to the shared VM structure. */
     PVM                                         pVM;
-    /** @name   Things configurable through CFGM
-     * @{ */
-    /** Size of the per endpoint cache. */
-    uint32_t                                    cEndpointCacheSize;
-    /** Size of the per class cache. */
-    uint32_t                                    cEpClassCacheSize;
-    /** @} */
     /** Critical section protecting the endpoint list. */
     RTCRITSECT                                  CritSect;
     /** Number of endpoints in the list. */
