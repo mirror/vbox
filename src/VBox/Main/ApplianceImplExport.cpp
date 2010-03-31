@@ -601,8 +601,9 @@ STDMETHODIMP Appliance::Write(IN_BSTR format, IN_BSTR path, IProgress **aProgres
 
 /**
  * Implementation for writing out the OVF to disk. This starts a new thread which will call
- * Appliance::taskThreadWriteOVF(). This is in a separate private method because it is used
- * from two locations:
+ * Appliance::taskThreadWriteOVF().
+ *
+ * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::Write().
  * 2) from Appliance::writeS3(), which got called from a previous instance of Appliance::taskThreadWriteOVF().
@@ -649,6 +650,22 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     }
 
     return rc;
+}
+
+/**
+ *
+ * @return
+ */
+int Appliance::TaskExportOVF::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create taskThreadWriteOVF (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
 }
 
 /**

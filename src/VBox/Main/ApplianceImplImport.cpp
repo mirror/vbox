@@ -561,6 +561,13 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 ////////////////////////////////////////////////////////////////////////////////
 
 /**
+ * Implementation for reading an OVF. This starts a new thread which will call
+ * Appliance::taskThreadImportOVF() which will then call readFS() or readS3().
+ *
+ * This is in a separate private method because it is used from two locations:
+ *
+ * 1) from the public Appliance::Read().
+ * 2) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOVF().
  *
  * @param aLocInfo
  * @param aProgress
@@ -614,6 +621,77 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
 
 /**
  *
+ * @return
+ */
+int Appliance::TaskImportOVF::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportOVF, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create taskThreadImportOVF (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
+}
+
+/**
+ * Thread function for the thread started in Appliance::readImpl() and Appliance::importImpl().
+ * This will in turn call Appliance::readFS() or Appliance::readS3() or Appliance::importFS()
+ * or Appliance::importS3().
+ *
+ * @param aThread
+ * @param pvUser
+ */
+/* static */
+DECLCALLBACK(int) Appliance::taskThreadImportOVF(RTTHREAD /* aThread */, void *pvUser)
+{
+    std::auto_ptr<TaskImportOVF> task(static_cast<TaskImportOVF*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    Appliance *pAppliance = task->pAppliance;
+
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", pAppliance));
+
+    HRESULT taskrc = S_OK;
+
+    switch (task->taskType)
+    {
+        case TaskImportOVF::Read:
+        {
+            if (task->locInfo.storageType == VFSType_File)
+                taskrc = pAppliance->readFS(task.get());
+            else if (task->locInfo.storageType == VFSType_S3)
+                taskrc = pAppliance->readS3(task.get());
+            break;
+        }
+        case TaskImportOVF::Import:
+        {
+            if (task->locInfo.storageType == VFSType_File)
+                taskrc = pAppliance->importFS(task.get());
+            else if (task->locInfo.storageType == VFSType_S3)
+                taskrc = pAppliance->importS3(task.get());
+            break;
+        }
+    }
+
+    task->rc = taskrc;
+
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
+/**
+ * Actual worker code for reading an OVF from disk. This is called from Appliance::taskThreadImportOVF()
+ * and therefore runs on the OVF read worker thread. This runs in two contexts:
+ *
+ * 1) in a first worker thread; in that case, Appliance::Read() called Appliance::readImpl();
+ *
+ * 2) in a second worker thread; in that case, Appliance::Read() called Appliance::readImpl(), which
+ *    called Appliance::readS3(), which called Appliance::readImpl(), which then called this.
+ *
  * @param pTask
  * @return
  */
@@ -665,6 +743,9 @@ int Appliance::readFS(TaskImportOVF *pTask)
 }
 
 /**
+ * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadImportOVF()
+ * in S3 mode and therefore runs on the OVF read worker thread. This then starts a second worker
+ * thread to create temporary files (see Appliance::readFS()).
  *
  * @param pTask
  * @return
@@ -862,8 +943,14 @@ void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
 }
 
 /**
- * Implementation of the import code. This gets called from the public Appliance::ImportMachines()
- * method as well as Appliance::importS3().
+ * Implementation for importing OVF data into VirtualBox. This starts a new thread which will call
+ * Appliance::taskThreadImportOVF().
+ *
+ * This is in a separate private method because it is used from two locations:
+ *
+ * 1) from the public Appliance::ImportMachines().
+ * 2) from Appliance::importS3(), which got called from a previous instance of Appliance::taskThreadImportOVF().
+ *
  * @param aLocInfo
  * @param aProgress
  * @return
@@ -901,63 +988,13 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
 }
 
 /**
- * Worker thread implementation for Read() (ovf reader).
- * @param aThread
- * @param pvUser
- */
-/* static */
-DECLCALLBACK(int) Appliance::taskThreadImportOVF(RTTHREAD /* aThread */, void *pvUser)
-{
-    std::auto_ptr<TaskImportOVF> task(static_cast<TaskImportOVF*>(pvUser));
-    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
-
-    Appliance *pAppliance = task->pAppliance;
-
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", pAppliance));
-
-    switch (task->taskType)
-    {
-        case TaskImportOVF::Read:
-        {
-            if (task->locInfo.storageType == VFSType_File)
-                pAppliance->readFS(task.get());
-            else if (task->locInfo.storageType == VFSType_S3)
-                pAppliance->readS3(task.get());
-            break;
-        }
-        case TaskImportOVF::Import:
-        {
-            if (task->locInfo.storageType == VFSType_File)
-                pAppliance->importFS(task.get());
-            else if (task->locInfo.storageType == VFSType_S3)
-                pAppliance->importS3(task.get());
-            break;
-        }
-    }
-
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
-}
-
-/**
+ * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOVF()
+ * and therefore runs on the OVF import worker thread. This runs in two contexts:
  *
- * @return
- */
-int Appliance::TaskImportOVF::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportOVF, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadImportOVF (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
-}
-
-/**
+ * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl();
+ *
+ * 2) in a second worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl(), which
+ *    called Appliance::importS3(), which called Appliance::importImpl(), which then called this.
  *
  * @param pTask
  * @return
@@ -1799,7 +1836,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 }
 
 /**
- *
+ * Gets called from taskThreadImportOVF().
  * @param pTask
  * @return
  */
