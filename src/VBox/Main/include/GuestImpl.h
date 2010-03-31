@@ -36,7 +36,7 @@ typedef enum
     GUESTSTATTYPE_MEMCACHE    = 6,
     GUESTSTATTYPE_PAGETOTAL   = 7,
     GUESTSTATTYPE_PAGEFREE    = 8,
-    GUESTSTATTYPE_MAX         = 8
+    GUESTSTATTYPE_MAX         = 9
 } GUESTSTATTYPE;
 
 class Console;
