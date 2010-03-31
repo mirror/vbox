@@ -24,7 +24,7 @@
         <translation></translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Ivan Masár &lt;helix84@centrum.sk&gt;, Jozef Říha &lt;jose1711@gmail.com&gt;</translation>
     </message>

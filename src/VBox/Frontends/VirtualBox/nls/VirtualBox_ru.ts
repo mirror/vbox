@@ -24,9 +24,9 @@
         <translation></translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Sun Microsystems, Inc., Igor Gorbounov, Egor Morozov</translation>
+        <translation>Oracle Corporation, Igor Gorbounov, Egor Morozov</translation>
     </message>
 </context>
 <context>

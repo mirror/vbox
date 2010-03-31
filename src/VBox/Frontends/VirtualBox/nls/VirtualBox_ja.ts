@@ -29,7 +29,7 @@
     </message>
     <message>
         <location filename="../src/globals/VBoxGlobal.cpp" line="2656"/>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
         <translation>Toshimitsu Tanaka</translation>
     </message>

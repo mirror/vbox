@@ -24,9 +24,9 @@
         <translation></translation>
     </message>
     <message>
-        <source>Sun Microsystems, Inc.</source>
+        <source>Oracle Corporation</source>
         <comment>Comma-separated list of translators</comment>
-        <translation>Jean-Jacques Sarton, Sun Microsystems, Inc.</translation>
+        <translation>Jean-Jacques Sarton, Oracle Corporation</translation>
     </message>
 </context>
 <context>
