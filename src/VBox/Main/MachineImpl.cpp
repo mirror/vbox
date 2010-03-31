@@ -8951,14 +8951,14 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::SubMetric *guestSystemThread = new pm::SubMetric("Guest/System/Threads",      "Total number of guest threads.");
 
     /* Create and register base metrics */
-    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(hal, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
+    pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(&mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
-    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(hal, aMachine, guestMemTotal, guestMemFree, guestMemBalloon,
+    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(&mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, 
                                                         guestMemCache, guestPagedTotal, guestPagedFree);
     aCollector->registerBaseMetric(guestCpuMem);
 
-    pm::BaseMetric *guestSystem = new pm::GuestSystemUsage(hal, aMachine, guestSystemProc, guestSystemThread);
+    pm::BaseMetric *guestSystem = new pm::GuestSystemUsage(&mGuestHAL, aMachine, guestSystemProc, guestSystemThread);
     aCollector->registerBaseMetric(guestSystem);
 
 

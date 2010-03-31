@@ -36,6 +36,7 @@
 #include "StorageControllerImpl.h"          // required for MachineImpl.h to compile on Windows
 #include "VBox/settings.h"
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
+#include "Performance.h"
 #include "PerformanceImpl.h"
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
@@ -793,6 +794,8 @@ protected:
 #ifdef VBOX_WITH_RESOURCE_USAGE_API
     void registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
     void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
+
+    pm::CollectorGuestHAL   mGuestHAL;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     Machine* const          mPeer;

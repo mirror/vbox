@@ -20,7 +20,8 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-
+#ifndef ___performance_h
+#define ___performance_h
 
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>
@@ -73,9 +74,9 @@ namespace pm
 
     /* Collector Hardware Abstraction Layer *********************************/
     enum {
-        COLLECT_NONE      = 0x0,
-        COLLECT_CPU_LOAD  = 0x1,
-        COLLECT_RAM_USAGE = 0x2
+        COLLECT_NONE        = 0x0,
+        COLLECT_CPU_LOAD    = 0x1,
+        COLLECT_RAM_USAGE   = 0x2
     };
     typedef int HintFlags;
     typedef std::pair<RTPROCESS, HintFlags> ProcessFlagsPair;
@@ -140,16 +141,35 @@ namespace pm
         /** Returns the average frequency in MHz across all host's CPUs. */
         virtual int getHostCpuMHz(ULONG *mhz);
         /** Returns the amount of physical memory in kilobytes. */
-        virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available) = 0;
+        virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
         /** Returns CPU usage in 1/1000th per cent by a particular process. */
         virtual int getProcessCpuLoad(RTPROCESS process, ULONG *user, ULONG *kernel);
         /** Returns the amount of memory used by a process in kilobytes. */
-        virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used) = 0;
+        virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
         /** Returns CPU usage counters in platform-specific units. */
         virtual int getRawHostCpuLoad(uint64_t *user, uint64_t *kernel, uint64_t *idle);
         /** Returns process' CPU usage counter in platform-specific units. */
         virtual int getRawProcessCpuLoad(RTPROCESS process, uint64_t *user, uint64_t *kernel, uint64_t *total);
+
+        /** Enable metrics collecting (if applicable) */
+        virtual int enable();
+        /** Disable metrics collecting (if applicable) */
+        virtual int disable();
+    };
+
+    class CollectorGuestHAL : public CollectorHAL
+    {
+    public:
+        CollectorGuestHAL() : cEnabled(0) {};
+        ~CollectorGuestHAL();
+
+        /** Enable metrics collecting (if applicable) */
+        virtual int enable();
+        /** Disable metrics collecting (if applicable) */
+        virtual int disable();
+    protected:
+        unsigned        cEnabled;
     };
 
     extern CollectorHAL *createHAL();
@@ -172,8 +192,16 @@ namespace pm
 
         bool collectorBeat(uint64_t nowAt);
 
-        void enable() { mEnabled = true; };
-        void disable() { mEnabled = false; };
+        void enable() 
+        { 
+            mEnabled = true; 
+            mHAL->enable();
+        };
+        void disable() 
+        { 
+            mHAL->disable();
+            mEnabled = false; 
+        };
 
         bool isEnabled() { return mEnabled; };
         ULONG getPeriod() { return mPeriod; };
@@ -321,7 +349,7 @@ namespace pm
     class GuestCpuLoad : public BaseMetric
     {
     public:
-        GuestCpuLoad(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
+        GuestCpuLoad(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
         ~GuestCpuLoad() { delete mUser; delete mKernel; delete mIdle; };
 
@@ -341,7 +369,7 @@ namespace pm
     class GuestRamUsage : public BaseMetric
     {
     public:
-        GuestRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *cache, SubMetric *pagedtotal, SubMetric *pagedfree)
+        GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *cache, SubMetric *pagedtotal, SubMetric *pagedfree)
         : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mPagedFree(pagedfree) {};
         ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mCache; delete mPagedTotal; delete mPagedFree; };
 
@@ -359,7 +387,7 @@ namespace pm
     class GuestSystemUsage : public BaseMetric
     {
     public:
-        GuestSystemUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *processes, SubMetric *threads)
+        GuestSystemUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *processes, SubMetric *threads)
         : BaseMetric(hal, "System/Usage", object), mProcesses(processes), mThreads(threads) {};
         ~GuestSystemUsage() { delete mProcesses; delete mThreads; };
 
@@ -465,5 +493,5 @@ namespace pm
         void processMetricList(const com::Utf8Str &name, const ComPtr<IUnknown> object);
     };
 }
-
+#endif /* ___performance_h */
 /* vi: set tabstop=4 shiftwidth=4 expandtab: */
