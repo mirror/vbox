@@ -437,7 +437,11 @@ public:
     ~Node();
 
     const char* getName() const;
-    bool nameEquals(const char *pcsz) const;
+    bool nameEquals(const char *pcszNamespace, const char *pcsz) const;
+    bool nameEquals(const char *pcsz) const
+    {
+        return nameEquals(NULL, pcsz);
+    }
 
     const char* getValue() const;
     bool copyValue(int32_t &i) const;
@@ -473,7 +477,12 @@ public:
     int getChildElements(ElementNodesList &children,
                          const char *pcszMatch = NULL) const;
 
-    const ElementNode* findChildElement(const char *pcszMatch) const;
+    const ElementNode* findChildElement(const char *pcszNamespace,
+                                        const char *pcszMatch) const;
+    const ElementNode* findChildElement(const char *pcszMatch) const
+    {
+        return findChildElement(NULL, pcszMatch);
+    }
     const ElementNode* findChildElementFromId(const char *pcszId) const;
 
     const AttributeNode* findAttribute(const char *pcszMatch) const;

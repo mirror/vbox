@@ -963,6 +963,7 @@ HRESULT VirtualSystemDescription::init()
 
     /* Initialize data */
     m = new Data();
+    m->pConfig = NULL;
 
     /* Confirm a successful initialization */
     autoInitSpan.setSucceeded();
@@ -975,6 +976,8 @@ HRESULT VirtualSystemDescription::init()
 
 void VirtualSystemDescription::uninit()
 {
+    if (m->pConfig)
+        delete m->pConfig;
     delete m;
     m = NULL;
 }
@@ -1320,5 +1323,48 @@ const VirtualSystemDescriptionEntry* VirtualSystemDescription::findControllerFro
     }
 
     return NULL;
+}
+
+/**
+ * Method called from Appliance::Interpret() if the source OVF for a virtual system
+ * contains a <vbox:Machine> element. This method then attempts to parse that and
+ * create a MachineConfigFile instance from it which is stored in this instance data
+ * and can then be used to create a machine.
+ *
+ * This must only be called once per instance.
+ *
+ * This rethrows all XML and logic errors from MachineConfigFile.
+ *
+ * @param elmMachine <vbox:Machine> element with attributes and subelements from some
+ *                  DOM tree.
+ */
+void VirtualSystemDescription::importVboxMachineXML(const xml::ElementNode &elmMachine)
+{
+    settings::MachineConfigFile *pConfig = NULL;
+
+    Assert(m->pConfig == NULL);
+
+    try
+    {
+        pConfig = new settings::MachineConfigFile(NULL);
+        pConfig->importMachineXML(elmMachine);
+
+        m->pConfig = pConfig;
+    }
+    catch (...)
+    {
+        if (pConfig)
+            delete pConfig;
+        throw;
+    }
+}
+
+/**
+ * Returns the machine config created by importVboxMachineXML() or NULL if there's none.
+ * @return
+ */
+const settings::MachineConfigFile* VirtualSystemDescription::getMachineConfig() const
+{
+    return m->pConfig;
 }
 

@@ -142,7 +142,11 @@ struct VirtualSystemDescription::Data
 {
     std::list<VirtualSystemDescriptionEntry>
                             llDescriptions;     // item descriptions
+
     ComPtr<Machine>         pMachine;           // VirtualBox machine this description was exported from (export only)
+
+    settings::MachineConfigFile
+                            *pConfig;           // machine config created from <vbox:Machine> element if found (import only)
 };
 
 ////////////////////////////////////////////////////////////////////////////////

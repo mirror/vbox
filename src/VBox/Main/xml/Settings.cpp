@@ -1675,6 +1675,20 @@ MachineConfigFile::MachineConfigFile(const Utf8Str *pstrFilename)
 }
 
 /**
+ * Public routine which allows for importing machine XML from an external DOM tree.
+ * Use this after having called the constructor with a NULL argument.
+ *
+ * This is used by the OVF code if a <vbox:Machine> element has been encountered
+ * in an OVF VirtualSystem element.
+ *
+ * @param elmMachine
+ */
+void MachineConfigFile::importMachineXML(const xml::ElementNode &elmMachine)
+{
+    readMachine(elmMachine);
+}
+
+/**
  * Comparison operator. This gets called from Machine::saveSettings to figure out
  * whether machine settings have really changed and thus need to be written out to disk.
  *
@@ -3330,7 +3344,7 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
                         if (nic.nat.strTftpNextServer.length())
                             pelmTFTP->setAttribute("next-server", nic.nat.strTftpNextServer);
                     }
-                    for(NATRuleList::const_iterator rule = nic.nat.llRules.begin(); 
+                    for(NATRuleList::const_iterator rule = nic.nat.llRules.begin();
                             rule != nic.nat.llRules.end(); ++rule)
                     {
                         xml::ElementNode *pelmPF;
@@ -3826,10 +3840,10 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
     // VirtualBox 3.2 adds NAT Main
     if (m->sv < SettingsVersion_v1_10)
     {
-        NetworkAdaptersList::const_iterator netit; 
+        NetworkAdaptersList::const_iterator netit;
         for (netit = hardwareMachine.llNetworkAdapters.begin();
              netit != hardwareMachine.llNetworkAdapters.end(); ++netit)
-            if (    netit->fEnabled 
+            if (    netit->fEnabled
                  && netit->mode == NetworkAttachmentType_NAT
                  && (   netit->nat.u32Mtu != 0
                      || netit->nat.u32SockRcv != 0

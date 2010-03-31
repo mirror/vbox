@@ -349,7 +349,7 @@ struct USBController
     }
  };
  typedef std::list<NATRule> NATRuleList;
- 
+
  struct NAT
  {
      NAT(): u32Mtu(0),
@@ -823,33 +823,6 @@ struct Snapshot
 class MachineConfigFile : public ConfigFileBase
 {
 public:
-    MachineConfigFile(const com::Utf8Str *pstrFilename);
-
-    bool operator==(const MachineConfigFile &m) const;
-
-    void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
-    void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
-    void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
-    void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
-    void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
-    void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
-    void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
-    void readHardware(const xml::ElementNode &elmHardware, Hardware &hw, Storage &strg);
-    void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
-    void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
-    void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
-    void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
-    void convertOldOSType_pre1_5(com::Utf8Str &str);
-    void readMachine(const xml::ElementNode &elmMachine);
-
-    void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
-    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st);
-    void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
-    void buildMachineXML(xml::ElementNode &elmMachine);
-
-    void bumpSettingsVersionIfNeeded();
-    void write(const com::Utf8Str &strFilename);
-
     com::Guid               uuid;
     com::Utf8Str            strName;
     bool                    fNameSync;
@@ -874,9 +847,38 @@ public:
     ExtraDataItemsMap       mapExtraDataItems;
 
     SnapshotsList           llFirstSnapshot;            // first snapshot or empty list if there's none
+
+    MachineConfigFile(const com::Utf8Str *pstrFilename);
+
+    bool operator==(const MachineConfigFile &m) const;
+
+    void importMachineXML(const xml::ElementNode &elmMachine);
+
+    void write(const com::Utf8Str &strFilename);
+    void buildMachineXML(xml::ElementNode &elmMachine);
+
+private:
+    void readNetworkAdapters(const xml::ElementNode &elmHardware, NetworkAdaptersList &ll);
+    void readCpuIdTree(const xml::ElementNode &elmCpuid, CpuIdLeafsList &ll);
+    void readCpuTree(const xml::ElementNode &elmCpu, CpuList &ll);
+    void readSerialPorts(const xml::ElementNode &elmUART, SerialPortsList &ll);
+    void readParallelPorts(const xml::ElementNode &elmLPT, ParallelPortsList &ll);
+    void readGuestProperties(const xml::ElementNode &elmGuestProperties, Hardware &hw);
+    void readStorageControllerAttributes(const xml::ElementNode &elmStorageController, StorageController &sctl);
+    void readHardware(const xml::ElementNode &elmHardware, Hardware &hw, Storage &strg);
+    void readHardDiskAttachments_pre1_7(const xml::ElementNode &elmHardDiskAttachments, Storage &strg);
+    void readStorageControllers(const xml::ElementNode &elmStorageControllers, Storage &strg);
+    void readDVDAndFloppies_pre1_9(const xml::ElementNode &elmHardware, Storage &strg);
+    void readSnapshot(const xml::ElementNode &elmSnapshot, Snapshot &snap);
+    void convertOldOSType_pre1_5(com::Utf8Str &str);
+    void readMachine(const xml::ElementNode &elmMachine);
+
+    void buildHardwareXML(xml::ElementNode &elmParent, const Hardware &hw, const Storage &strg);
+    void buildStorageControllersXML(xml::ElementNode &elmParent, const Storage &st);
+    void buildSnapshotXML(xml::ElementNode &elmParent, const Snapshot &snap);
+
+    void bumpSettingsVersionIfNeeded();
 };
-
-
 
 } // namespace settings
 

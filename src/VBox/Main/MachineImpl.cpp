@@ -263,7 +263,9 @@ void Machine::FinalRelease()
  *  @param aParent      Associated parent object
  *  @param aConfigFile  Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
- *  @param aMode        Init_New, Init_Existing or Init_Registered
+ *  @param aMode        Init_New: called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine() to create an empty machine
+ *                      Init_Import: called from VirtualBox::OpenMachine()
+ *                      Init_Registered: called from VirtualBox::initMachines() during startup
  *  @param aName        name for the machine when aMode is Init_New
  *                      (ignored otherwise)
  *  @param aOsType      OS Type of this machine
@@ -331,6 +333,8 @@ HRESULT Machine::init(VirtualBox *aParent,
 
     if (aMode == Init_Registered)
     {
+        // Init_Registered: called from VirtualBox::initMachines() during startup
+
         mData->mRegistered = TRUE;
 
         /* store the supplied UUID (will be used to check for UUID consistency
@@ -344,10 +348,14 @@ HRESULT Machine::init(VirtualBox *aParent,
     {
         if (aMode == Init_Import)
         {
+            // Init_Import: called from VirtualBox::OpenMachine()
+
             // we're reading the settings file below
         }
         else if (aMode == Init_New)
         {
+            // Init_New: called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine() to create an empty machine
+
             /* check for the file existence */
             RTFILE f = NIL_RTFILE;
             int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);

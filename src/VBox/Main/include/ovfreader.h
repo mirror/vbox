@@ -229,7 +229,15 @@ struct VirtualHardwareItem
     uint32_t ulLineNumber;              // line number of <Item> element in XML source; cached for error messages
 
     VirtualHardwareItem()
-        : ulInstanceID(0), fAutomaticAllocation(false), fAutomaticDeallocation(false), ullVirtualQuantity(0), ullReservation(0), ullLimit(0), ullWeight(0), ulBusNumber(0), ulLineNumber(0)
+        : ulInstanceID(0),
+          fAutomaticAllocation(false),
+          fAutomaticDeallocation(false),
+          ullVirtualQuantity(0),
+          ullReservation(0),
+          ullLimit(0),
+          ullWeight(0),
+          ulBusNumber(0),
+          ulLineNumber(0)
     {};
 };
 
@@ -326,8 +334,16 @@ struct VirtualSystem
     iprt::MiniString    strProductUrl;          // product info if any; receives contents of VirtualSystem/ProductSection/ProductUrl
     iprt::MiniString    strVendorUrl;           // product info if any; receives contents of VirtualSystem/ProductSection/VendorUrl
 
+    const xml::ElementNode                      // pointer to <vbox:Machine> element under <VirtualSystem> element or NULL if not present
+                        *pelmVboxMachine;
+
     VirtualSystem()
-        : ullMemorySize(0), cCPUs(1), fHasFloppyDrive(false), fHasCdromDrive(false), fHasUsbController(false)
+        : ullMemorySize(0),
+          cCPUs(1),
+          fHasFloppyDrive(false),
+          fHasCdromDrive(false),
+          fHasUsbController(false),
+          pelmVboxMachine(NULL)
     {
     }
 };
@@ -365,7 +381,6 @@ class OVFReader
 {
 public:
     OVFReader(const iprt::MiniString &path);
-    ~OVFReader();
 
     void LoopThruSections(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pCurElem);
     void HandleDiskSection(const xml::ElementNode *pReferencesElem, const xml::ElementNode *pSectionElem);
@@ -373,9 +388,12 @@ public:
     void HandleVirtualSystemContent(const xml::ElementNode *pContentElem);
 
     // Data fields
-    iprt::MiniString         m_strPath;            // file name given to constructor
-    DiskImagesMap            m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
-    std::list<VirtualSystem> m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
+    iprt::MiniString            m_strPath;            // file name given to constructor
+    DiskImagesMap               m_mapDisks;           // map of DiskImage structs, sorted by DiskImage.strDiskId
+    std::list<VirtualSystem>    m_llVirtualSystems;   // list of virtual systems, created by and valid after read()
+
+private:
+    xml::Document               m_doc;
 };
 
 ////////////////////////////////////////////////////////////////////////////////
