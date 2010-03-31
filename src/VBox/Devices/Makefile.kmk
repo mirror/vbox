@@ -27,9 +27,6 @@ VBOX_PATH_DEVICES_SRC := $(PATH_SUB_CURRENT)
 
 # Include sub-makefiles.
 include $(PATH_SUB_CURRENT)/PC/BIOS/Makefile.kmk
-ifdef VBOX_WITH_VMI
- include $(PATH_SUB_CURRENT)/PC/VMI/Makefile.kmk
-endif
 include $(PATH_SUB_CURRENT)/Graphics/BIOS/Makefile.kmk
 include $(PATH_SUB_CURRENT)/testcase/Makefile.kmk
 include $(PATH_SUB_CURRENT)/Storage/testcase/Makefile.kmk
