@@ -27,6 +27,9 @@
 #include "iprt/cpp/xml.h"
 #include <map>
 
+namespace ovf
+{
+
 ////////////////////////////////////////////////////////////////////////////////
 //
 // Enumerations
@@ -165,27 +168,27 @@ struct DiskImage
     iprt::MiniString strCompression; // value from /References/File/@compression (optional, can be "gzip" according to spec)
 };
 
-enum OVFResourceType_T
-{   OVFResourceType_Other   = 1,
-    OVFResourceType_ComputerSystem  = 2,
-    OVFResourceType_Processor   = 3,
-    OVFResourceType_Memory  = 4,
-    OVFResourceType_IDEController   = 5,
-    OVFResourceType_ParallelSCSIHBA = 6,
-    OVFResourceType_FCHBA   = 7,
-    OVFResourceType_iSCSIHBA    = 8,
-    OVFResourceType_IBHCA   = 9,
-    OVFResourceType_EthernetAdapter = 10,
-    OVFResourceType_OtherNetworkAdapter = 11,
-    OVFResourceType_IOSlot  = 12,
-    OVFResourceType_IODevice    = 13,
-    OVFResourceType_FloppyDrive = 14,
-    OVFResourceType_CDDrive = 15,
-    OVFResourceType_DVDDrive    = 16,
-    OVFResourceType_HardDisk    = 17,
-    OVFResourceType_OtherStorageDevice  = 20,
-    OVFResourceType_USBController   = 23,
-    OVFResourceType_SoundCard   = 35
+enum ResourceType_T
+{   ResourceType_Other   = 1,
+    ResourceType_ComputerSystem  = 2,
+    ResourceType_Processor   = 3,
+    ResourceType_Memory  = 4,
+    ResourceType_IDEController   = 5,
+    ResourceType_ParallelSCSIHBA = 6,
+    ResourceType_FCHBA   = 7,
+    ResourceType_iSCSIHBA    = 8,
+    ResourceType_IBHCA   = 9,
+    ResourceType_EthernetAdapter = 10,
+    ResourceType_OtherNetworkAdapter = 11,
+    ResourceType_IOSlot  = 12,
+    ResourceType_IODevice    = 13,
+    ResourceType_FloppyDrive = 14,
+    ResourceType_CDDrive = 15,
+    ResourceType_DVDDrive    = 16,
+    ResourceType_HardDisk    = 17,
+    ResourceType_OtherStorageDevice  = 20,
+    ResourceType_USBController   = 23,
+    ResourceType_SoundCard   = 35
 };
 
 struct VirtualHardwareItem
@@ -197,7 +200,7 @@ struct VirtualHardwareItem
     uint32_t ulInstanceID;
     uint32_t ulParent;
 
-    OVFResourceType_T resourceType;
+    ResourceType_T resourceType;
     iprt::MiniString strOtherResourceType;
     iprt::MiniString strResourceSubType;
 
@@ -392,5 +395,7 @@ class OVFLogicError : public xml::LogicError
 public:
     OVFLogicError(const char *aFormat, ...);
 };
+
+} // end namespace ovf
 
 #endif // ____H_OVFREADER

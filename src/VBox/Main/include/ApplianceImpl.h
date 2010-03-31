@@ -27,11 +27,20 @@
 /* VBox includes */
 #include "VirtualBoxBase.h"
 
-#include "ovfreader.h"
-
 /* VBox forward declarations */
 class Progress;
 class VirtualSystemDescription;
+
+namespace ovf
+{
+    struct HardDiskController;
+    class OVFReader;
+}
+
+namespace xml
+{
+    class ElementNode;
+}
 
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBase,
@@ -122,7 +131,7 @@ private:
     HRESULT readFS(const LocationInfo &locInfo);
     HRESULT readS3(TaskOVF *pTask);
 
-    void convertDiskAttachmentValues(const HardDiskController &hdc,
+    void convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                      uint32_t ulAddressOnParent,
                                      Bstr &controllerType,
                                      int32_t &lChannel,

@@ -143,13 +143,13 @@ STDMETHODIMP Appliance::Interpret()
     /* Try/catch so we can clean up on error */
     try
     {
-        list<VirtualSystem>::const_iterator it;
+        list<ovf::VirtualSystem>::const_iterator it;
         /* Iterate through all virtual systems */
         for (it = m->pReader->m_llVirtualSystems.begin();
              it != m->pReader->m_llVirtualSystems.end();
              ++it)
         {
-            const VirtualSystem &vsysThis = *it;
+            const ovf::VirtualSystem &vsysThis = *it;
 
             ComObjPtr<VirtualSystemDescription> pNewDesc;
             rc = pNewDesc.createObject();
@@ -303,7 +303,7 @@ STDMETHODIMP Appliance::Interpret()
                 rc = pGuestOSType->COMGETTER(AdapterType)(&defaultAdapterVBox);
                 if (FAILED(rc)) throw rc;
 
-                EthernetAdaptersList::const_iterator itEA;
+                ovf::EthernetAdaptersList::const_iterator itEA;
                 /* Iterate through all abstract networks. We support 8 network
                  * adapters at the maximum, so the first 8 will be added only. */
                 size_t a = 0;
@@ -311,7 +311,7 @@ STDMETHODIMP Appliance::Interpret()
                      itEA != vsysThis.llEthernetAdapters.end() && a < SchemaDefs::NetworkAdapterCount;
                      ++itEA, ++a)
                 {
-                    const EthernetAdapter &ea = *itEA; // logical network to connect to
+                    const ovf::EthernetAdapter &ea = *itEA; // logical network to connect to
                     Utf8Str strNetwork = ea.strNetworkName;
                     // make sure it's one of these two
                     if (    (strNetwork.compare("Null", Utf8Str::CaseInsensitive))
@@ -378,18 +378,18 @@ STDMETHODIMP Appliance::Interpret()
             uint16_t cIDEused = 0;
             uint16_t cSATAused = 0; NOREF(cSATAused);
             uint16_t cSCSIused = 0; NOREF(cSCSIused);
-            ControllersMap::const_iterator hdcIt;
+            ovf::ControllersMap::const_iterator hdcIt;
             /* Iterate through all hard disk controllers */
             for (hdcIt = vsysThis.mapControllers.begin();
                  hdcIt != vsysThis.mapControllers.end();
                  ++hdcIt)
             {
-                const HardDiskController &hdc = hdcIt->second;
+                const ovf::HardDiskController &hdc = hdcIt->second;
                 Utf8Str strControllerID = Utf8StrFmt("%RI32", (uint32_t)hdc.idController);
 
                 switch (hdc.system)
                 {
-                    case HardDiskController::IDE:
+                    case ovf::HardDiskController::IDE:
                         {
                             /* Check for the constrains */
                             /* @todo: I'm very confused! Are these bits *one* controller or
@@ -420,7 +420,7 @@ STDMETHODIMP Appliance::Interpret()
                             break;
                         }
 
-                    case HardDiskController::SATA:
+                    case ovf::HardDiskController::SATA:
                         {
 #ifdef VBOX_WITH_AHCI
                             /* Check for the constrains */
@@ -449,7 +449,7 @@ STDMETHODIMP Appliance::Interpret()
 #endif /* !VBOX_WITH_AHCI */
                         }
 
-                    case HardDiskController::SCSI:
+                    case ovf::HardDiskController::SCSI:
                         {
 #ifdef VBOX_WITH_LSILOGIC
                             /* Check for the constrains */
@@ -481,15 +481,15 @@ STDMETHODIMP Appliance::Interpret()
             /* Hard disks */
             if (vsysThis.mapVirtualDisks.size() > 0)
             {
-                VirtualDisksMap::const_iterator itVD;
+                ovf::VirtualDisksMap::const_iterator itVD;
                 /* Iterate through all hard disks ()*/
                 for (itVD = vsysThis.mapVirtualDisks.begin();
                      itVD != vsysThis.mapVirtualDisks.end();
                      ++itVD)
                 {
-                    const VirtualDisk &hd = itVD->second;
+                    const ovf::VirtualDisk &hd = itVD->second;
                     /* Get the associated disk image */
-                    const DiskImage &di = m->pReader->m_mapDisks[hd.strDiskId];
+                    const ovf::DiskImage &di = m->pReader->m_mapDisks[hd.strDiskId];
 
                     // @todo:
                     //  - figure out all possible vmdk formats we also support
@@ -683,7 +683,7 @@ HRESULT Appliance::readFS(const LocationInfo &locInfo)
     try
     {
         /* Read & parse the XML structure of the OVF file */
-        m->pReader = new OVFReader(locInfo.strPath);
+        m->pReader = new ovf::OVFReader(locInfo.strPath);
         /* Create the SHA1 sum of the OVF file for later validation */
         char *pszDigest;
         int vrc = RTSha1Digest(locInfo.strPath.c_str(), &pszDigest);
@@ -845,7 +845,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
  * @param vd
  * @param mhda
  */
-void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
+void Appliance::convertDiskAttachmentValues(const ovf::HardDiskController &hdc,
                                             uint32_t ulAddressOnParent,
                                             Bstr &controllerType,
                                             int32_t &lChannel,
@@ -853,7 +853,7 @@ void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
 {
     switch (hdc.system)
     {
-        case HardDiskController::IDE:
+        case ovf::HardDiskController::IDE:
             // For the IDE bus, the channel parameter can be either 0 or 1, to specify the primary
             // or secondary IDE controller, respectively. For the primary controller of the IDE bus,
             // the device number can be either 0 or 1, to specify the master or the slave device,
@@ -889,13 +889,13 @@ void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
             }
         break;
 
-        case HardDiskController::SATA:
+        case ovf::HardDiskController::SATA:
             controllerType = Bstr("SATA Controller");
             lChannel = (long)ulAddressOnParent;
             lDevice = (long)0;
         break;
 
-        case HardDiskController::SCSI:
+        case ovf::HardDiskController::SCSI:
             controllerType = Bstr("SCSI Controller");
             lChannel = (long)ulAddressOnParent;
             lDevice = (long)0;
@@ -987,7 +987,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
     rc = session.createInprocObject(CLSID_Session);
     if (FAILED(rc)) return rc;
 
-    const OVFReader &reader = *m->pReader;
+    const ovf::OVFReader &reader = *m->pReader;
     // this is safe to access because this thread only gets started
     // if pReader != NULL
 
@@ -1014,8 +1014,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
             {
                 VirtualSystemDescriptionEntry *vsdeHD = *itH;
                 /* Find the disk from the OVF's disk list */
-                DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
-                const DiskImage &di = itDiskImage->second;
+                ovf::DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
+                const ovf::DiskImage &di = itDiskImage->second;
                 Utf8StrFmt strSrcFilePath("%s%c%s", strSrcDir.c_str(), RTPATH_DELIMITER, di.strHref.c_str());
                 filesList.push_back(strSrcFilePath);
             }
@@ -1057,7 +1057,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
         if (FAILED(rc)) return rc;
     }
 
-    list<VirtualSystem>::const_iterator it;
+    list<ovf::VirtualSystem>::const_iterator it;
     list< ComObjPtr<VirtualSystemDescription> >::const_iterator it1;
     /* Iterate through all virtual systems of that appliance */
     size_t i = 0;
@@ -1066,7 +1066,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
          it != reader.m_llVirtualSystems.end();
          ++it, ++it1, ++i)
     {
-        const VirtualSystem &vsysThis = *it;
+        const ovf::VirtualSystem &vsysThis = *it;
         ComObjPtr<VirtualSystemDescription> vsdescThis = (*it1);
 
         ComPtr<IMachine> pNewMachine;
@@ -1455,12 +1455,12 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
                         // attach jt (@todo test with latest versions of OVF software)
 
                         // find the IDE controller
-                        const HardDiskController *pController = NULL;
-                        for (ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
+                        const ovf::HardDiskController *pController = NULL;
+                        for (ovf::ControllersMap::const_iterator kt = vsysThis.mapControllers.begin();
                              kt != vsysThis.mapControllers.end();
                              ++kt)
                         {
-                            if (kt->second.system == HardDiskController::IDE)
+                            if (kt->second.system == ovf::HardDiskController::IDE)
                             {
                                 pController = &kt->second;
                             }
@@ -1551,10 +1551,10 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
                                               vsdeHD->strVbox.c_str()));
 
                         /* Find the disk from the OVF's disk list */
-                        DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
+                        ovf::DiskImagesMap::const_iterator itDiskImage = reader.m_mapDisks.find(vsdeHD->strRef);
                         /* vsdeHD->strRef contains the disk identifier (e.g. "vmdisk1"), which should exist
                            in the virtual system's disks map under that ID and also in the global images map. */
-                        VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
+                        ovf::VirtualDisksMap::const_iterator itVirtualDisk = vsysThis.mapVirtualDisks.find(vsdeHD->strRef);
 
                         if (    itDiskImage == reader.m_mapDisks.end()
                              || itVirtualDisk == vsysThis.mapVirtualDisks.end()
@@ -1562,8 +1562,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
                             throw setError(E_FAIL,
                                            tr("Internal inconsistency looking up disk images."));
 
-                        const DiskImage &di = itDiskImage->second;
-                        const VirtualDisk &vd = itVirtualDisk->second;
+                        const ovf::DiskImage &di = itDiskImage->second;
+                        const ovf::VirtualDisk &vd = itVirtualDisk->second;
 
                         /* Make sure all target directories exists */
                         rc = VirtualBox::ensureFilePathExists(vsdeHD->strVbox.c_str());
@@ -1658,7 +1658,7 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
                         if (FAILED(rc)) throw rc;
 
                         /* For now we assume we have one controller of every type only */
-                        HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
+                        ovf::HardDiskController hdc = (*vsysThis.mapControllers.find(vd.idController)).second;
 
                         // this is for rollback later
                         MyHardDiskAttachment mhda;
