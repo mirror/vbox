@@ -930,18 +930,6 @@ int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
     return VINF_SUCCESS;
 }
 
-int Appliance::TaskExportOVF::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadWriteOVF (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 //
 // IVirtualSystemDescription constructor / destructor
