@@ -7344,7 +7344,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
 
     // keep a pointer to the current settings structures
     settings::MachineConfigFile *pOldConfig = mData->m_pMachineConfigFile;
-    settings::MachineConfigFile *pNewConfig;
+    settings::MachineConfigFile *pNewConfig = NULL;
 
     try
     {

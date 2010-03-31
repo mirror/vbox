@@ -656,7 +656,7 @@ STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceWarning)(ULONG64 *aFreeSpa
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceWarning)(ULONG64 aFreeSpace)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceWarning)(ULONG64 /* aFreeSpace */)
 {
     ReturnComNotImplemented();
 }
@@ -668,7 +668,7 @@ STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpacePercentWarning)(ULONG *aFr
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentWarning)(ULONG aFreeSpacePercent)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentWarning)(ULONG /* aFreeSpacePercent */)
 {
     ReturnComNotImplemented();
 }
@@ -680,7 +680,7 @@ STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpaceError)(ULONG64 *aFreeSpace
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceError)(ULONG64 aFreeSpace)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpaceError)(ULONG64 /* aFreeSpace */)
 {
     ReturnComNotImplemented();
 }
@@ -692,7 +692,7 @@ STDMETHODIMP SystemProperties::COMGETTER(FreeDiskSpacePercentError)(ULONG *aFree
     ReturnComNotImplemented();
 }
 
-STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentError)(ULONG aFreeSpacePercent)
+STDMETHODIMP SystemProperties::COMSETTER(FreeDiskSpacePercentError)(ULONG /* aFreeSpacePercent */)
 {
     ReturnComNotImplemented();
 }
