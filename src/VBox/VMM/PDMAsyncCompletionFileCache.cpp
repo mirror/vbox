@@ -84,7 +84,7 @@ typedef struct PDMIOMEMCTX
 /*******************************************************************************
 *   Internal Functions                                                         *
 *******************************************************************************/
-static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser);
+static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc);
 
 /**
  * Decrement the reference counter of the given cache entry.
@@ -759,16 +759,21 @@ static bool pdmacFileCacheAddDirtyEntry(PPDMACFILEENDPOINTCACHE pEndpointCache, 
  * @returns Next task segment handle.
  * @param   pEndpointCache    The endpoint cache.
  * @param   pTaskSeg          Task segment to complete.
+ * @param   rc                Status code to set.
  */
-static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILETASKSEG pTaskSeg)
+static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEndpointCache, PPDMACFILETASKSEG pTaskSeg, int rc)
 {
     PPDMACFILETASKSEG pNext = pTaskSeg->pNext;
+    PPDMASYNCCOMPLETIONTASKFILE pTaskFile = pTaskSeg->pTask;
 
-    uint32_t uOld = ASMAtomicSubS32(&pTaskSeg->pTask->cbTransferLeft, pTaskSeg->cbTransfer);
+    if (RT_FAILURE(rc))
+        ASMAtomicCmpXchgS32(&pTaskFile->rc, rc, VINF_SUCCESS);
+
+    uint32_t uOld = ASMAtomicSubS32(&pTaskFile->cbTransferLeft, pTaskSeg->cbTransfer);
     AssertMsg(uOld >= pTaskSeg->cbTransfer, ("New value would overflow\n"));
     if (!(uOld - pTaskSeg->cbTransfer)
-        && !ASMAtomicXchgBool(&pTaskSeg->pTask->fCompleted, true))
-        pdmR3AsyncCompletionCompleteTask(&pTaskSeg->pTask->Core, true);
+        && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
+        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
 
     RTMemFree(pTaskSeg);
 
@@ -781,8 +786,9 @@ static PPDMACFILETASKSEG pdmacFileCacheTaskComplete(PPDMACFILEENDPOINTCACHE pEnd
  * @returns nothing.
  * @param    pTask     The completed task.
  * @param    pvUser    Opaque user data.
+ * @param    rc        Status code of the completed request.
  */
-static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
+static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 {
     PPDMACFILECACHEENTRY pEntry = (PPDMACFILECACHEENTRY)pvUser;
     PPDMACFILECACHEGLOBAL pCache = pEntry->pCache;
@@ -810,16 +816,47 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
         AssertMsg(pEndpointCache->cWritesOutstanding > 0, ("Completed write request but outstanding task count is 0\n"));
         ASMAtomicDecU32(&pEndpointCache->cWritesOutstanding);
 
-        pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
-
-        while (pCurr)
+        /*
+         * An error here is difficult to handle as the original request completed already.
+         * The error is logged for now and the VM is paused.
+         * If the user continues the entry is written again in the hope
+         * the user fixed the problem and the next write succeeds.
+         */
+        /** @todo r=aeichner: This solution doesn't work
+         * The user will get the message but the VM will hang afterwards
+         * VMR3Suspend() returns when the VM is suspended but suspending
+         * the VM will reopen the images readonly in DrvVD. They are closed first
+         * which will close the endpoints. This will block EMT while the
+         * I/O manager processes the close request but the IO manager is stuck
+         * in the VMR3Suspend call and can't process the request.
+         * Another problem is that closing the VM means flushing the cache
+         * but the entry failed and will probably fail again.
+         * No idea so far how to solve this problem... but the user gets informed
+         * at least.
+         */
+        if (RT_FAILURE(rc))
         {
-            AssertMsg(pCurr->fWrite, ("Completed write entries should never have read tasks attached\n"));
+            LogRel(("I/O cache: Error while writing entry at offset %RTfoff (%u bytes) to file \"%s\"\n",
+                    pEntry->Core.Key, pEntry->cbData, pEndpoint->Core.pszUri));
 
-            memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
-            fDirty = true;
+            rc = VMSetRuntimeError(pEndpoint->Core.pEpClass->pVM, 0, "CACHE_IOERR",
+                                   N_("The I/O cache encountered an error while updating data in file \"%s\" (rc=%Rrc). Make sure there is enough free space on the disk and that the disk is working properly. Operation can be resumed afterwards."), pEndpoint->Core.pszUri, rc);
+            AssertRC(rc);
+            rc = VMR3Suspend(pEndpoint->Core.pEpClass->pVM);
+        }
+        else
+        {
+            pEntry->fFlags &= ~PDMACFILECACHE_ENTRY_IS_DIRTY;
 
-            pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr);
+            while (pCurr)
+            {
+                AssertMsg(pCurr->fWrite, ("Completed write entries should never have read tasks attached\n"));
+
+                memcpy(pEntry->pbData + pCurr->uBufOffset, pCurr->pvBuf, pCurr->cbTransfer);
+                fDirty = true;
+
+                pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr, VINF_SUCCESS);
+            }
         }
     }
     else
@@ -838,7 +875,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
             else
                 memcpy(pCurr->pvBuf, pEntry->pbData + pCurr->uBufOffset, pCurr->cbTransfer);
 
-            pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr);
+            pCurr = pdmacFileCacheTaskComplete(pEndpointCache, pCurr, rc);
         }
     }
 
@@ -851,7 +888,7 @@ static void pdmacFileCacheTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
     {
         PPDMASYNCCOMPLETIONTASKFILE pTaskFlush = (PPDMASYNCCOMPLETIONTASKFILE)ASMAtomicXchgPtr((void * volatile *)&pEndpointCache->pTaskFlush, NULL);
         if (pTaskFlush)
-            pdmR3AsyncCompletionCompleteTask(&pTaskFlush->Core, true);
+            pdmR3AsyncCompletionCompleteTask(&pTaskFlush->Core, VINF_SUCCESS, true);
     }
 
     RTSemRWReleaseWrite(pEndpoint->DataCache.SemRWEntries);
@@ -1885,7 +1922,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 
     if (ASMAtomicReadS32(&pTask->cbTransferLeft) == 0
         && !ASMAtomicXchgBool(&pTask->fCompleted, true))
-        pdmR3AsyncCompletionCompleteTask(&pTask->Core, false);
+        pdmR3AsyncCompletionCompleteTask(&pTask->Core, VINF_SUCCESS, false);
     else
         rc = VINF_AIO_TASK_PENDING;
 
@@ -2142,7 +2179,7 @@ int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
 
     if (ASMAtomicReadS32(&pTask->cbTransferLeft) == 0
         && !ASMAtomicXchgBool(&pTask->fCompleted, true))
-        pdmR3AsyncCompletionCompleteTask(&pTask->Core, false);
+        pdmR3AsyncCompletionCompleteTask(&pTask->Core, VINF_SUCCESS, false);
     else
         rc = VINF_AIO_TASK_PENDING;
 
@@ -2170,7 +2207,7 @@ int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCO
             rc = VINF_AIO_TASK_PENDING;
         }
         else
-            pdmR3AsyncCompletionCompleteTask(&pTask->Core, false);
+            pdmR3AsyncCompletionCompleteTask(&pTask->Core, VINF_SUCCESS, false);
     }
 
     LogFlowFunc((": Leave rc=%Rrc\n", rc));

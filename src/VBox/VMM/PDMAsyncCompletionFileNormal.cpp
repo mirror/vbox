@@ -816,7 +816,7 @@ static int pdmacFileAioMgrNormalProcessTaskList(PPDMACTASKFILE pTaskHead,
                 /* If there is no data transfer request this flush request finished immediately. */
                 if (!pEndpoint->AioMgr.cRequestsActive)
                 {
-                    pCurr->pfnCompleted(pCurr, pCurr->pvUser);
+                    pCurr->pfnCompleted(pCurr, pCurr->pvUser, VINF_SUCCESS);
                     pdmacFileTaskFree(pEndpoint, pCurr);
                 }
                 else
@@ -1162,9 +1162,10 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
     }
     else
     {
-        AssertMsg((   (cbTransfered == pTask->DataSeg.cbSeg)
-                    || (pTask->fBounceBuffer && (cbTransfered >= pTask->DataSeg.cbSeg))),
-                    ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rcReq, cbTransfered));
+        AssertMsg(   RT_FAILURE(rcReq)
+                  || (   (cbTransfered == pTask->DataSeg.cbSeg)
+                      || (pTask->fBounceBuffer && (cbTransfered >= pTask->DataSeg.cbSeg))),
+                  ("Task didn't completed successfully (rc=%Rrc) or was incomplete (cbTransfered=%u)\n", rcReq, cbTransfered));
 
         if (pTask->fPrefetch)
         {
@@ -1195,7 +1196,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
         }
         else
         {
-            if (pTask->fBounceBuffer)
+            if (RT_SUCCESS(rc) && pTask->fBounceBuffer)
             {
                 if (pTask->enmTransferType == PDMACTASKFILETRANSFER_READ)
                     memcpy(pTask->DataSeg.pvSeg,
@@ -1217,7 +1218,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
             pdmacFileAioMgrNormalRangeLockFree(pAioMgr, pEndpoint, pTask->pRangeLock);
 
             /* Call completion callback */
-            pTask->pfnCompleted(pTask, pTask->pvUser);
+            pTask->pfnCompleted(pTask, pTask->pvUser, rcReq);
             pdmacFileTaskFree(pEndpoint, pTask);
 
             /*
@@ -1233,7 +1234,7 @@ static void pdmacFileAioMgrNormalReqComplete(PPDMACEPFILEMGR pAioMgr, RTFILEAIOR
 
                 AssertMsg(pTask->pEndpoint == pEndpoint, ("Endpoint of the flush request does not match assigned one\n"));
 
-                pTask->pfnCompleted(pTask, pTask->pvUser);
+                pTask->pfnCompleted(pTask, pTask->pvUser, VINF_SUCCESS);
                 pdmacFileTaskFree(pEndpoint, pTask);
             }
             else if (RT_UNLIKELY(!pEndpoint->AioMgr.cRequestsActive && pEndpoint->AioMgr.fMoving))

@@ -604,7 +604,7 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
 typedef PDMASYNCCOMPLETIONENDPOINTFILE *PPDMASYNCCOMPLETIONENDPOINTFILE;
 
 /** Request completion function */
-typedef DECLCALLBACK(void)   FNPDMACTASKCOMPLETED(PPDMACTASKFILE pTask, void *pvUser);
+typedef DECLCALLBACK(void)   FNPDMACTASKCOMPLETED(PPDMACTASKFILE pTask, void *pvUser, int rc);
 /** Pointer to a request completion function. */
 typedef FNPDMACTASKCOMPLETED *PFNPDMACTASKCOMPLETED;
 
@@ -666,6 +666,8 @@ typedef struct PDMASYNCCOMPLETIONTASKFILE
     volatile int32_t      cbTransferLeft;
     /** Flag whether the task completed. */
     volatile bool         fCompleted;
+    /** Return code. */
+    volatile int          rc;
 } PDMASYNCCOMPLETIONTASKFILE;
 
 int pdmacFileAioMgrFailsafe(RTTHREAD ThreadSelf, void *pvUser);
@@ -685,7 +687,7 @@ void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
 
 int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE pTask);
 
-void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser);
+void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc);
 
 bool pdmacFileBwMgrIsTransferAllowed(PPDMACFILEBWMGR pBwMgr, uint32_t cbTransfer);
 

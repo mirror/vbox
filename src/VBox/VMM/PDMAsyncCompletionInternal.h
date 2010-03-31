@@ -262,10 +262,11 @@ typedef struct PDMASYNCCOMPLETIONTASK
  *
  * @returns nothing
  * @param   pTask                     Pointer to the finished task.
+ * @param   rc                        Status code of the completed request.
  * @param   fCallCompletionHandler    Flag whether the completion handler should be called to
  *                                    inform the owner of the task that it has completed.
  */
-void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, bool fCallCompletionHandler);
+void pdmR3AsyncCompletionCompleteTask(PPDMASYNCCOMPLETIONTASK pTask, int rc, bool fCallCompletionHandler);
 
 RT_C_DECLS_END
 

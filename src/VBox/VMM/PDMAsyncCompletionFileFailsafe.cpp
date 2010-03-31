@@ -74,13 +74,11 @@ static int pdmacFileAioMgrFailsafeProcessEndpointTaskList(PPDMASYNCCOMPLETIONEND
                 AssertMsgFailed(("Invalid transfer type %d\n", pTasks->enmTransferType));
         }
 
-        AssertRC(rc);
-
-        pCurr->pfnCompleted(pCurr, pCurr->pvUser);
+        pCurr->pfnCompleted(pCurr, pCurr->pvUser, rc);
         pdmacFileTaskFree(pEndpoint, pCurr);
     }
 
-    return rc;
+    return VINF_SUCCESS;
 }
 
 static int pdmacFileAioMgrFailsafeProcessEndpoint(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)

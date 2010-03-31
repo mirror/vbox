@@ -314,22 +314,26 @@ int pdmacFileEpAddTask(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMACTASKFILE
     return VINF_SUCCESS;
 }
 
-void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser)
+void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 {
     PPDMASYNCCOMPLETIONTASKFILE pTaskFile = (PPDMASYNCCOMPLETIONTASKFILE)pvUser;
 
     if (pTask->enmTransferType == PDMACTASKFILETRANSFER_FLUSH)
     {
-        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, true);
+        pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, rc, true);
     }
     else
     {
         Assert((uint32_t)pTask->DataSeg.cbSeg == pTask->DataSeg.cbSeg && (int32_t)pTask->DataSeg.cbSeg >= 0);
         uint32_t uOld = ASMAtomicSubS32(&pTaskFile->cbTransferLeft, (int32_t)pTask->DataSeg.cbSeg);
 
+        /* The first error will be returned. */
+        if (RT_FAILURE(rc))
+            ASMAtomicCmpXchgS32(&pTaskFile->rc, rc, VINF_SUCCESS);
+
         if (!(uOld - pTask->DataSeg.cbSeg)
             && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
-            pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, true);
+            pdmR3AsyncCompletionCompleteTask(&pTaskFile->Core, pTaskFile->rc, true);
     }
 }
 
@@ -349,6 +353,7 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
     Assert((uint32_t)cbTransfer == cbTransfer && (int32_t)cbTransfer >= 0);
     ASMAtomicWriteS32(&pTaskFile->cbTransferLeft, (int32_t)cbTransfer);
     ASMAtomicWriteBool(&pTaskFile->fCompleted, false);
+    ASMAtomicWriteS32(&pTaskFile->rc, VINF_SUCCESS);
 
     for (unsigned i = 0; i < cSegments; i++)
     {
@@ -373,7 +378,7 @@ int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
 
     if (ASMAtomicReadS32(&pTaskFile->cbTransferLeft) == 0
         && !ASMAtomicXchgBool(&pTaskFile->fCompleted, true))
-        pdmR3AsyncCompletionCompleteTask(pTask, false);
+        pdmR3AsyncCompletionCompleteTask(pTask, pTaskFile->rc, false);
     else
         rc = VINF_AIO_TASK_PENDING;
 
@@ -1079,6 +1084,7 @@ static int pdmacFileEpFlush(PPDMASYNCCOMPLETIONTASK pTask,
         return VERR_NOT_SUPPORTED;
 
     pTaskFile->cbTransferLeft = 0;
+    pTaskFile->rc             = VINF_SUCCESS;
 
     if (pEpFile->fCaching)
         rc = pdmacFileEpCacheFlush(pEpFile, pTaskFile);
