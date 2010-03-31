@@ -686,6 +686,66 @@
       <xsd:complexType>
         <xsd:attribute name="network" type="xsd:string"/>
       </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="hostip" type="xsd:string"/>
+      </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="mtu" type="xsd:unsignedInt"/>
+      </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="sockrcv" type="xsd:unsignedInt"/>
+      </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="socksnd" type="xsd:unsignedInt"/>
+      </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="tcprcv" type="xsd:unsignedInt"/>
+      </xsd:complexType>
+      <xsd:complexType>
+        <xsd:attribute name="tcpsnd" type="xsd:unsignedInt"/>
+      </xsd:complexType>
+      <xsd:element name="DNS">
+        <xsd:complexType>
+          <xsd:attribute name="pass-domain" type="xsd:boolean"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="use-proxy" type="xsd:boolean"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="use-host-resolver" type="xsd:boolean"/>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="TFTP">
+        <xsd:complexType>
+          <xsd:attribute name="prefix" type="xsd:string"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="boot-file" type="xsd:string"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="next-server" type="xsd:string"/>
+        </xsd:complexType>
+      </xsd:element>
+      <xsd:element name="Forwarding">
+        <xsd:complexType>
+          <xsd:attribute name="name" type="xsd:string"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="proto" type="xsd:unsignedInt"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="hostip" type="xsd:string"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="hostport" type="xsd:unsignedInt"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="guestip" type="xsd:string"/>
+        </xsd:complexType>
+        <xsd:complexType>
+          <xsd:attribute name="guestport" type="xsd:unsignedInt"/>
+        </xsd:complexType>
+      </xsd:element>
     </xsd:element>
     <xsd:element name="HostInterface">
       <xsd:complexType>

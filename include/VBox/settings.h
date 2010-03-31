@@ -327,6 +327,71 @@ struct USBController
     USBDeviceFiltersList    llDeviceFilters;
 };
 
+ struct NATRule
+ {
+     NATRule(): u32Proto(0),
+             u16HostPort(0),
+             u16GuestPort(0){}
+     com::Utf8Str            strName;
+     uint32_t                u32Proto;
+     uint16_t                u16HostPort;
+     com::Utf8Str            strHostIP;
+     uint16_t                u16GuestPort;
+     com::Utf8Str            strGuestIP;
+    bool operator==(const NATRule &r) const
+    {
+        return    strName == r.strName
+               && u32Proto == r.u32Proto
+               && u16HostPort == r.u16HostPort
+               && strHostIP == r.strHostIP
+               && u16GuestPort == r.u16GuestPort
+               && strGuestIP == r.strGuestIP;
+    }
+ };
+ typedef std::list<NATRule> NATRuleList;
+ 
+ struct NAT
+ {
+     NAT(): u32Mtu(0),
+         u32SockRcv(0),
+         u32SockSnd(0),
+         u32TcpRcv(0),
+         u32TcpSnd(0),
+         fDnsPassDomain(true), /* historically this value is true */
+         fDnsProxy(false),
+         fDnsUseHostResolver(false){}
+     com::Utf8Str            strNetwork;
+     com::Utf8Str            strBindIP;
+     uint32_t                u32Mtu;
+     uint32_t                u32SockRcv;
+     uint32_t                u32SockSnd;
+     uint32_t                u32TcpRcv;
+     uint32_t                u32TcpSnd;
+     com::Utf8Str            strTftpPrefix;
+     com::Utf8Str            strTftpBootFile;
+     com::Utf8Str            strTftpNextServer;
+     bool                    fDnsPassDomain;
+     bool                    fDnsProxy;
+     bool                    fDnsUseHostResolver;
+     NATRuleList             llRules;
+     bool operator==(const NAT &n) const
+     {
+        return strNetwork == n.strNetwork
+             && strBindIP == n.strBindIP
+             && u32Mtu == n.u32Mtu
+             && u32SockRcv == n.u32SockRcv
+             && u32SockSnd == n.u32SockSnd
+             && u32TcpSnd == n.u32TcpSnd
+             && u32TcpRcv == n.u32TcpRcv
+             && strTftpPrefix == n.strTftpPrefix
+             && strTftpBootFile == n.strTftpBootFile
+             && strTftpNextServer == n.strTftpNextServer
+             && fDnsPassDomain == n.fDnsPassDomain
+             && fDnsProxy == n.fDnsProxy
+             && fDnsUseHostResolver == n.fDnsUseHostResolver
+             && llRules == n.llRules;
+     }
+ };
 /**
  * NOTE: If you add any fields in here, you must update a) the constructor and b)
  * the operator== which is used by MachineConfigFile::operator==(), or otherwise
@@ -357,7 +422,8 @@ struct NetworkAdapter
     com::Utf8Str            strTraceFile;
 
     NetworkAttachmentType_T mode;
-    com::Utf8Str            strName;            // with NAT: nat network or empty;
+    NAT                     nat;
+    com::Utf8Str            strName;            // NAT has own attribute
                                                 // with bridged: host interface or empty;
                                                 // otherwise: network name (required)
 };

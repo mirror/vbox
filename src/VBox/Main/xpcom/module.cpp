@@ -43,6 +43,7 @@
 #include "SharedFolderImpl.h"
 #include "ProgressImpl.h"
 #include "NetworkAdapterImpl.h"
+#include "NATEngineImpl.h"
 
 #include "SessionImpl.h"
 #include "ConsoleImpl.h"

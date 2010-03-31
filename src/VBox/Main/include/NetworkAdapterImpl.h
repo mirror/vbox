@@ -25,6 +25,7 @@
 #define ____H_NETWORKADAPTER
 
 #include "VirtualBoxBase.h"
+#include "NATEngineImpl.h"
 
 class GuestOSType;
 
@@ -110,6 +111,7 @@ public:
     STDMETHOD(COMSETTER(LineSpeed)) (ULONG aSpeed);
     STDMETHOD(COMGETTER(TraceFile)) (BSTR *aTraceFile);
     STDMETHOD(COMSETTER(TraceFile)) (IN_BSTR aTraceFile);
+    STDMETHOD(COMGETTER(NatDriver)) (INATEngine **aNatDriver);
 
     // INetworkAdapter methods
     STDMETHOD(AttachToNAT)();
@@ -139,6 +141,7 @@ private:
 
     Machine * const     mParent;
     const ComObjPtr<NetworkAdapter> mPeer;
+    const ComObjPtr<NATEngine> mNATEngine;
 
     bool                m_fModified;
     Backupable<Data>    mData;

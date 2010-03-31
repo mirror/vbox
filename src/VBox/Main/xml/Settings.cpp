@@ -1810,7 +1810,43 @@ void MachineConfigFile::readNetworkAdapters(const xml::ElementNode &elmNetwork,
         if ((pelmAdapterChild = pelmAdapter->findChildElement("NAT")))
         {
             nic.mode = NetworkAttachmentType_NAT;
-            pelmAdapterChild->getAttributeValue("network", nic.strName);    // optional network name
+            pelmAdapterChild->getAttributeValue("network", nic.nat.strNetwork);    // optional network name
+            pelmAdapterChild->getAttributeValue("hostip", nic.nat.strBindIP);
+            pelmAdapterChild->getAttributeValue("mtu", nic.nat.u32Mtu);
+            pelmAdapterChild->getAttributeValue("sockrcv", nic.nat.u32SockRcv);
+            pelmAdapterChild->getAttributeValue("socksnd", nic.nat.u32SockSnd);
+            pelmAdapterChild->getAttributeValue("tcprcv", nic.nat.u32TcpRcv);
+            pelmAdapterChild->getAttributeValue("tcpsnd", nic.nat.u32TcpSnd);
+            const xml::ElementNode *pelmDNS;
+            if ((pelmDNS = pelmAdapterChild->findChildElement("DNS")))
+            {
+                pelmDNS->getAttributeValue("pass-domain", nic.nat.fDnsPassDomain);
+                pelmDNS->getAttributeValue("use-proxy", nic.nat.fDnsProxy);
+                pelmDNS->getAttributeValue("use-host-resolver", nic.nat.fDnsUseHostResolver);
+            }
+            const xml::ElementNode *pelmTFTP;
+            if ((pelmTFTP = pelmAdapterChild->findChildElement("TFTP")))
+            {
+                pelmTFTP->getAttributeValue("prefix", nic.nat.strTftpPrefix);
+                pelmTFTP->getAttributeValue("boot-file", nic.nat.strTftpBootFile);
+                pelmTFTP->getAttributeValue("next-server", nic.nat.strTftpNextServer);
+            }
+            xml::ElementNodesList plstNatPF;
+            pelmAdapterChild->getChildElements(plstNatPF, "Forwarding");
+            for(xml::ElementNodesList::iterator pf = plstNatPF.begin(); pf != plstNatPF.end(); ++pf)
+            {
+                NATRule rule;
+                uint32_t port = 0;
+                (*pf)->getAttributeValue("name", rule.strName);
+                (*pf)->getAttributeValue("proto", rule.u32Proto);
+                (*pf)->getAttributeValue("hostip", rule.strHostIP);
+                (*pf)->getAttributeValue("hostport", port);
+                rule.u16HostPort = port;
+                (*pf)->getAttributeValue("guestip", rule.strGuestIP);
+                (*pf)->getAttributeValue("guestport", port);
+                rule.u16GuestPort = port;
+                nic.nat.llRules.push_back(rule);
+            }
         }
         else if (    ((pelmAdapterChild = pelmAdapter->findChildElement("HostInterface")))
                   || ((pelmAdapterChild = pelmAdapter->findChildElement("BridgedInterface")))
@@ -3260,8 +3296,58 @@ void MachineConfigFile::buildHardwareXML(xml::ElementNode &elmParent,
         {
             case NetworkAttachmentType_NAT:
                 pelmNAT = pelmAdapter->createChild("NAT");
-                if (nic.strName.length())
-                    pelmNAT->setAttribute("network", nic.strName);
+                if (nic.nat.strNetwork.length())
+                    pelmNAT->setAttribute("network", nic.nat.strNetwork);
+                if (m->sv >= SettingsVersion_v1_10)
+                {
+                    if (nic.nat.strBindIP.length())
+                        pelmNAT->setAttribute("hostip", nic.nat.strBindIP);
+                    if (nic.nat.u32Mtu)
+                        pelmNAT->setAttribute("mtu", nic.nat.u32Mtu);
+                    if (nic.nat.u32SockRcv)
+                        pelmNAT->setAttribute("sockrcv", nic.nat.u32SockRcv);
+                    if (nic.nat.u32SockSnd)
+                        pelmNAT->setAttribute("socksnd", nic.nat.u32SockSnd);
+                    if (nic.nat.u32TcpRcv)
+                        pelmNAT->setAttribute("tcprcv", nic.nat.u32TcpRcv);
+                    if (nic.nat.u32TcpSnd)
+                        pelmNAT->setAttribute("tcpsnd", nic.nat.u32TcpSnd);
+                    xml::ElementNode *pelmDNS;
+                    pelmDNS = pelmNAT->createChild("DNS");
+                    pelmDNS->setAttribute("pass-domain", nic.nat.fDnsPassDomain);
+                    pelmDNS->setAttribute("use-proxy", nic.nat.fDnsProxy);
+                    pelmDNS->setAttribute("use-host-resolver", nic.nat.fDnsUseHostResolver);
+                    if (   nic.nat.strTftpPrefix.length()
+                        || nic.nat.strTftpBootFile.length()
+                        || nic.nat.strTftpNextServer.length())
+                    {
+                        xml::ElementNode *pelmTFTP;
+                        pelmTFTP = pelmNAT->createChild("TFTP");
+                        if (nic.nat.strTftpPrefix.length())
+                            pelmTFTP->setAttribute("prefix", nic.nat.strTftpPrefix);
+                        if (nic.nat.strTftpBootFile.length())
+                            pelmTFTP->setAttribute("boot-file", nic.nat.strTftpBootFile);
+                        if (nic.nat.strTftpNextServer.length())
+                            pelmTFTP->setAttribute("next-server", nic.nat.strTftpNextServer);
+                    }
+                    for(NATRuleList::const_iterator rule = nic.nat.llRules.begin(); 
+                            rule != nic.nat.llRules.end(); ++rule)
+                    {
+                        xml::ElementNode *pelmPF;
+                        pelmPF = pelmNAT->createChild("Forwarding");
+                        if ((*rule).strName.length())
+                            pelmPF->setAttribute("name", (*rule).strName);
+                        pelmPF->setAttribute("proto", (*rule).u32Proto);
+                        if ((*rule).strHostIP.length())
+                            pelmPF->setAttribute("hostip", (*rule).strHostIP);
+                        if ((*rule).u16HostPort)
+                            pelmPF->setAttribute("hostport", (*rule).u16HostPort);
+                        if ((*rule).strGuestIP.length())
+                            pelmPF->setAttribute("guestip", (*rule).strGuestIP);
+                        if ((*rule).u16GuestPort)
+                            pelmPF->setAttribute("guestport", (*rule).u16GuestPort);
+                    }
+                }
             break;
 
             case NetworkAttachmentType_Bridged:
@@ -3737,7 +3823,32 @@ void MachineConfigFile::bumpSettingsVersionIfNeeded()
             )
        )
         m->sv = SettingsVersion_v1_10;
-
+    // VirtualBox 3.2 adds NAT Main
+    if (m->sv < SettingsVersion_v1_10)
+    {
+        NetworkAdaptersList::const_iterator netit; 
+        for (netit = hardwareMachine.llNetworkAdapters.begin();
+             netit != hardwareMachine.llNetworkAdapters.end(); ++netit)
+            if (    netit->fEnabled 
+                 && netit->mode == NetworkAttachmentType_NAT
+                 && (   netit->nat.u32Mtu != 0
+                     || netit->nat.u32SockRcv != 0
+                     || netit->nat.u32SockSnd != 0
+                     || netit->nat.u32TcpRcv != 0
+                     || netit->nat.u32TcpSnd != 0
+                     || !netit->nat.fDnsPassDomain
+                     || netit->nat.fDnsProxy
+                     || netit->nat.fDnsUseHostResolver
+                     || netit->nat.strTftpPrefix.length()
+                     || netit->nat.strTftpBootFile.length()
+                     || netit->nat.strTftpNextServer.length()
+                     || netit->nat.llRules.size())
+                )
+            {
+                m->sv = SettingsVersion_v1_10;
+                break;
+            }
+    }
     // Check for non default I/O settings and bump the settings version.
     if (m->sv < SettingsVersion_v1_10)
     {

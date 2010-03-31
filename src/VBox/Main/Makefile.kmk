@@ -304,6 +304,7 @@ VBoxSVC_SOURCES = \
 	DHCPServerImpl.cpp \
 	DHCPServerRunner.cpp \
 	GuestOSTypeImpl.cpp \
+	NATEngineImpl.cpp \
 	NetworkAdapterImpl.cpp \
 	SerialPortImpl.cpp \
 	ParallelPortImpl.cpp \

@@ -86,7 +86,8 @@ enum enOptionCodes
     LISTUSBHOST,
     LISTUSBFILTERS,
     LISTSYSTEMPROPERTIES,
-    LISTDHCPSERVERS
+    LISTDHCPSERVERS,
+    LISTNATPFS
 };
 
 static const RTGETOPTDEF g_aListOptions[]
@@ -111,7 +112,8 @@ static const RTGETOPTDEF g_aListOptions[]
         { "usbhost",            LISTUSBHOST,            RTGETOPT_REQ_NOTHING },
         { "usbfilters",         LISTUSBFILTERS,         RTGETOPT_REQ_NOTHING },
         { "systemproperties",   LISTSYSTEMPROPERTIES,   RTGETOPT_REQ_NOTHING },
-        { "dhcpservers",        LISTDHCPSERVERS,        RTGETOPT_REQ_NOTHING }
+        { "dhcpservers",        LISTDHCPSERVERS,        RTGETOPT_REQ_NOTHING },
+        { "natrules",           LISTNATPFS,             RTGETOPT_REQ_STRING|RTGETOPT_FLAG_INDEX }
       };
 
 int handleList(HandlerArg *a)
@@ -135,6 +137,10 @@ int handleList(HandlerArg *a)
                 fOptLong = true;
             break;
 
+            case LISTNATPFS:
+                if (a->argc < 2)
+                    return errorSyntax(USAGE_LIST, "Missing vm name for \"list\" %S.\n", a->argv[0]);
+                    
             case LISTVMS:
             case LISTRUNNINGVMS:
             case LISTOSTYPES:
@@ -917,6 +923,78 @@ int handleList(HandlerArg *a)
                 RTPrintf("Enabled:        %s\n", bEnabled ? "Yes" : "No");
                 RTPrintf("\n");
             }
+        }
+        break;
+        case LISTNATPFS:
+        {
+            ComPtr<IMachine> machine;
+            ComPtr<INetworkAdapter> nic;
+            ComPtr<INATEngine> driver;
+            com::SafeArray<BSTR> rules;
+            if (!Guid(Bstr(a->argv[1])).isEmpty())
+            {
+                CHECK_ERROR_RET(a->virtualBox, GetMachine(Bstr(a->argv[1]), machine.asOutParam()), 1);
+            }
+            else
+            {
+                CHECK_ERROR_RET(a->virtualBox, FindMachine(Bstr(a->argv[1]), machine.asOutParam()), 1);
+            }
+
+            ASSERT(machine);
+
+            CHECK_ERROR_BREAK(machine, GetNetworkAdapter(RTStrToUInt32(&a->argv[0][8]) - 1, nic.asOutParam()));
+            ASSERT(nic);
+            CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+            CHECK_ERROR(driver, COMGETTER(Redirects)(ComSafeArrayAsOutParam (rules)));
+            for (size_t i = 0; i < rules.size(); ++ i)
+            {
+                uint16_t port = 0;
+                BSTR r = rules[i];
+                Utf8Str utf = Utf8Str(r);
+                Utf8Str strName;
+                Utf8Str strProto;
+                Utf8Str strHostPort;
+                Utf8Str strHostIP;
+                Utf8Str strGuestPort;
+                Utf8Str strGuestIP;
+                size_t pos, ppos;
+                pos = ppos = 0;
+                #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
+                do {                                                \
+                    pos = str.find(",", ppos);                      \
+                    if (pos == Utf8Str::npos)                       \
+                    {                                               \
+                        Log(( #res " extracting from %s is failed\n", str.raw())); \
+                        return E_INVALIDARG;                        \
+                    }                                               \
+                    res = str.substr(ppos, pos - ppos);             \
+                    Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+                    ppos = pos + 1;                                 \
+                }while (0)
+                ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
+                strGuestPort = utf.substr(ppos, utf.length() - ppos);
+                #undef ITERATE_TO_NEXT_TERM
+                switch (strProto.toUInt32())
+                {
+                    case NATProtocol_TCP:
+                        strProto = "tcp";
+                        break;
+                    case NATProtocol_UDP:
+                        strProto = "udp";
+                        break;
+                    default:
+                        strProto = "unk";
+                        break;
+                }
+                RTPrintf("%s:%s:%s:%s:%s:%s\n", strName.raw(), strProto.raw(), 
+                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(), 
+                    strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
+            }
+            
         }
         break;
     } // end switch

@@ -28,6 +28,7 @@
 #include <iprt/assert.h>
 
 #include <NetworkAdapterImpl.h>
+#include <NATDriver.h>
 #include <COMDefs.h>
 #include <ConsoleImpl.h>
 
