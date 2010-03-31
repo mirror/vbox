@@ -114,6 +114,15 @@ enum
     MODIFYVM_HOSTONLYADAPTER,
     MODIFYVM_INTNET,
     MODIFYVM_NATNET,
+    MODIFYVM_NATBINDIP,
+    MODIFYVM_NATSETTINGS,
+    MODIFYVM_NATPF,
+    MODIFYVM_NATTFTPPREFIX,
+    MODIFYVM_NATTFTPFILE,
+    MODIFYVM_NATTFTPSERVER,
+    MODIFYVM_NATDNSPASSDOMAIN,
+    MODIFYVM_NATDNSPROXY,
+    MODIFYVM_NATDNSHOSTRESOLVER,
     MODIFYVM_MACADDRESS,
     MODIFYVM_HIDPTR,
     MODIFYVM_HIDKBD,
@@ -209,6 +218,15 @@ static const RTGETOPTDEF g_aModifyVMOptions[] =
     { "--hostonlyadapter",          MODIFYVM_HOSTONLYADAPTER,           RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--intnet",                   MODIFYVM_INTNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--natnet",                   MODIFYVM_NATNET,                    RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--natbindip",                MODIFYVM_NATBINDIP,                 RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--natsettings",              MODIFYVM_NATSETTINGS,               RTGETOPT_REQ_UINT32 | RTGETOPT_FLAG_INDEX },
+    { "--natpf",                    MODIFYVM_NATPF,                     RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nattftpprefix",            MODIFYVM_NATTFTPPREFIX,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nattftpfile",              MODIFYVM_NATTFTPFILE,               RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--nattftpserver",            MODIFYVM_NATTFTPSERVER,             RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
+    { "--natdnspassdomain",         MODIFYVM_NATDNSPASSDOMAIN,          RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
+    { "--natdnsproxy",              MODIFYVM_NATDNSPROXY,               RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
+    { "--natdnshostresolver",       MODIFYVM_NATDNSHOSTRESOLVER,        RTGETOPT_REQ_BOOL_ONOFF | RTGETOPT_FLAG_INDEX },
     { "--macaddress",               MODIFYVM_MACADDRESS,                RTGETOPT_REQ_STRING | RTGETOPT_FLAG_INDEX },
     { "--mouse",                    MODIFYVM_HIDPTR,                    RTGETOPT_REQ_STRING },
     { "--keyboard",                 MODIFYVM_HIDKBD,                    RTGETOPT_REQ_STRING },
@@ -1206,14 +1224,207 @@ int handleModifyVM(HandlerArg *a)
             case MODIFYVM_NATNET:
             {
                 ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
 
                 CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
                 ASSERT(nic);
 
-                CHECK_ERROR(nic, COMSETTER(NATNetwork)(Bstr(ValueUnion.psz)));
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(Network)(Bstr(ValueUnion.psz)));
                 break;
             }
 
+            case MODIFYVM_NATBINDIP:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(HostIP)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+	        #define ITERATE_TO_NEXT_TERM(ch)       		\
+	        do {							                \
+	        	while (*ch != ',') {				        \
+	        		if (*ch == 0) {				            \
+                            return errorSyntax(USAGE_MODIFYVM,                  \
+                                       "Missing or Invalid argument to '%s'",   \
+                                       GetOptState.pDef->pszLong);              \
+	        		}					                    \
+	        		ch++;					                \
+	        	}						                    \
+	            *ch = '\0'; 				                \
+	            ch++;		    			                \
+	        }while(0)
+            case MODIFYVM_NATSETTINGS:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+                char *strMtu;
+                char *strSockSnd;
+                char *strSockRcv;
+                char *strTcpSnd;
+                char *strTcpRcv;
+                char *strRaw = RTStrDup(ValueUnion.psz); 
+                char *ch = strRaw;
+                strMtu = ch;
+                ITERATE_TO_NEXT_TERM(ch);
+                strSockSnd = ch;
+                ITERATE_TO_NEXT_TERM(ch);
+                strSockRcv = ch;
+                ITERATE_TO_NEXT_TERM(ch);
+                strTcpSnd = ch;
+                ITERATE_TO_NEXT_TERM(ch);
+                strTcpRcv = ch;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, SetNetworkSettings(RTStrToUInt32(strMtu), RTStrToUInt32(strSockSnd), RTStrToUInt32(strSockRcv),
+                                    RTStrToUInt32(strTcpSnd), RTStrToUInt32(strTcpRcv)));
+                break;
+            }
+
+
+            case MODIFYVM_NATPF:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                /* format name:proto:hostip:hostport:guestip:guestport*/
+                if (RTStrCmp(ValueUnion.psz, "delete") != 0)
+                {
+                    char *strName;
+                    char *strProto;
+                    char *strHostIp;
+                    char *strHostPort;
+                    char *strGuestIp;
+                    char *strGuestPort;
+                    char *strRaw = RTStrDup(ValueUnion.psz); 
+                    char *ch = strRaw;
+                    strName = ch;
+                    ITERATE_TO_NEXT_TERM(ch);
+                    strProto = ch;
+                    ITERATE_TO_NEXT_TERM(ch);
+                    strHostIp = ch;
+                    ITERATE_TO_NEXT_TERM(ch);
+                    strHostPort = ch;
+                    ITERATE_TO_NEXT_TERM(ch);
+                    strGuestIp = ch;                
+                    ITERATE_TO_NEXT_TERM(ch);
+                    strGuestPort = ch;
+                    uint32_t proto;
+                    if (RTStrICmp(strProto, "udp") == 0)
+                        proto = NATProtocol_UDP;
+                    else if (RTStrICmp(strProto, "tcp") == 0)
+                        proto = NATProtocol_TCP;
+                    else
+                    {
+                        errorArgument("Invalid proto '%s' specfied for NIC %u", ValueUnion.psz, GetOptState.uIndex);
+                        rc = E_FAIL;
+                        break;
+                    }
+                    CHECK_ERROR(driver, AddRedirect(Bstr(strName), proto, Bstr(strHostIp), 
+                            RTStrToUInt16(strHostPort), Bstr(strGuestIp), RTStrToUInt16(strGuestPort)));
+                }
+                else
+                {
+                    /* delete NAT Rule operation */
+                    int vrc;
+                    vrc = RTGetOptFetchValue(&GetOptState, &ValueUnion, RTGETOPT_REQ_STRING);
+                    if (RT_FAILURE(vrc))
+                        return errorSyntax(USAGE_MODIFYVM, "Not enough parameters");
+                    CHECK_ERROR(driver, RemoveRedirect(Bstr(ValueUnion.psz)));
+                }
+                break;
+            }
+            #undef ITERATE_TO_NEXT_TERM
+            
+            case MODIFYVM_NATTFTPPREFIX:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(TftpPrefix)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_NATTFTPFILE:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(TftpBootFile)(Bstr(ValueUnion.psz)));
+                break;
+            }
+
+            case MODIFYVM_NATTFTPSERVER:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(TftpNextServer)(Bstr(ValueUnion.psz)));
+                break;
+            }
+            case MODIFYVM_NATDNSPASSDOMAIN:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(DnsPassDomain)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_NATDNSPROXY:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(DnsProxy)(ValueUnion.f));
+                break;
+            }
+
+            case MODIFYVM_NATDNSHOSTRESOLVER:
+            {
+                ComPtr<INetworkAdapter> nic;
+                ComPtr<INATEngine> driver;
+
+                CHECK_ERROR_BREAK(machine, GetNetworkAdapter(GetOptState.uIndex - 1, nic.asOutParam()));
+                ASSERT(nic);
+
+                CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
+                CHECK_ERROR(driver, COMSETTER(DnsUseHostResolver)(ValueUnion.f));
+                break;
+            }
             case MODIFYVM_MACADDRESS:
             {
                 ComPtr<INetworkAdapter> nic;

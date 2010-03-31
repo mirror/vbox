@@ -2530,6 +2530,8 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         case NetworkAttachmentType_NAT:
         {
+            ComPtr<INATEngine> natDriver;
+            hrc = aNetworkAdapter->COMGETTER(NatDriver)(natDriver.asOutParam());         H();
             if (fSniffer)
             {
                 rc = CFGMR3InsertNode(pLunL0, "AttachedDriver", &pLunL0); RC_CHECK();
@@ -2552,14 +2554,148 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
             rc = CFGMR3InsertStringF(pCfg, "BootFile", "%ls.pxe", str); RC_CHECK();
             STR_FREE();
 
-            hrc = aNetworkAdapter->COMGETTER(NATNetwork)(&str);         H();
-            if (str && *str)
-            {
+            hrc = natDriver->COMGETTER(Network)(&str);                  H();
+            if (str)
                 rc = CFGMR3InsertStringW(pCfg, "Network", str);         RC_CHECK();
-                /* NAT uses its own DHCP implementation */
-                //networkName = Bstr(psz);
+            STR_FREE();
+            hrc = natDriver->COMGETTER(HostIP)(&str);                   H();
+            if (str)
+            {
+                rc = CFGMR3InsertStringW(pCfg, "BindIP", str);          RC_CHECK();
             }
             STR_FREE();
+            uint32_t mtu = 0;
+            uint32_t sockSnd = 0;
+            uint32_t sockRcv = 0;
+            uint32_t tcpSnd = 0;
+            uint32_t tcpRcv = 0;
+            hrc = natDriver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv); H();
+            if (mtu)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "SlirpMTU", mtu);         RC_CHECK();
+            }
+            if (sockRcv)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "SockRcv", sockRcv);      RC_CHECK();
+            }
+            if (sockSnd)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "SockSnd", sockSnd);      RC_CHECK();
+            }
+            if (tcpRcv)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "TcpRcv", tcpRcv);        RC_CHECK();
+            }
+            if (tcpSnd)
+            {
+                rc = CFGMR3InsertInteger(pCfg, "TcpSnd", tcpSnd);        RC_CHECK();
+            }
+            STR_FREE();
+            hrc = natDriver->COMGETTER(TftpPrefix)(&str);                H();
+            if (str)
+            {
+                rc = CFGMR3RemoveValue(pCfg, "TFTPPrefix");              RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "TFTPPrefix", str);       RC_CHECK();
+            }
+            STR_FREE();
+            hrc = natDriver->COMGETTER(TftpBootFile)(&str);              H();
+            if (str)
+            {
+                rc = CFGMR3RemoveValue(pCfg, "BootFile");                RC_CHECK();
+                rc = CFGMR3InsertStringW(pCfg, "BootFile", str);         RC_CHECK();
+            }
+            STR_FREE();
+            hrc = natDriver->COMGETTER(TftpNextServer)(&str);            H();
+            if (str)
+            {
+                rc = CFGMR3InsertStringW(pCfg, "NextServer", str);       RC_CHECK();
+            }
+            BOOL fDnsFlag;
+            hrc = natDriver->COMGETTER(DnsPassDomain)(&fDnsFlag);        H();
+            rc = CFGMR3InsertInteger(pCfg, "PassDomain", fDnsFlag);      RC_CHECK();
+            hrc = natDriver->COMGETTER(DnsProxy)(&fDnsFlag);             H();
+            rc = CFGMR3InsertInteger(pCfg, "DNSProxy", fDnsFlag);        RC_CHECK();
+            hrc = natDriver->COMGETTER(DnsUseHostResolver)(&fDnsFlag);   H();
+            rc = CFGMR3InsertInteger(pCfg, "UseHostResolver", fDnsFlag); RC_CHECK();
+            /* port-forwarding */
+            SafeArray<BSTR> pfs;
+            hrc = natDriver->COMGETTER(Redirects)(ComSafeArrayAsOutParam(pfs)); H();
+            PCFGMNODE pPF = NULL;          /* /Devices/Dev/.../Config/PF#0/ */
+            for(unsigned int i = 0; i < pfs.size(); ++i)
+            {
+                uint16_t port = 0;
+                BSTR r = pfs[i];
+                Utf8Str utf = Utf8Str(r);
+                Utf8Str strName;
+                Utf8Str strProto;
+                Utf8Str strHostPort;
+                Utf8Str strHostIP;
+                Utf8Str strGuestPort;
+                Utf8Str strGuestIP;
+                size_t pos, ppos;
+                pos = ppos = 0;
+                #define ITERATE_TO_NEXT_TERM(res, str, pos, ppos)   \
+                do {                                                \
+                    pos = str.find(",", ppos);                      \
+                    if (pos == Utf8Str::npos)                       \
+                    {                                               \
+                        Log(( #res " extracting from %s is failed\n", str.raw())); \
+                        continue;                                   \
+                    }                                               \
+                    res = str.substr(ppos, pos - ppos);             \
+                    Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
+                    ppos = pos + 1;                                 \
+                }while (0)
+                ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strHostPort, utf, pos, ppos);
+                ITERATE_TO_NEXT_TERM(strGuestIP, utf, pos, ppos);
+                strGuestPort = utf.substr(ppos, utf.length() - ppos);
+                #undef ITERATE_TO_NEXT_TERM
+
+                uint32_t proto = strProto.toUInt32();
+                bool fValid = true;
+                switch(proto)
+                {
+                    case NATProtocol_UDP: 
+                        strProto = "UDP";
+                    break;
+                    case NATProtocol_TCP:
+                        strProto = "TCP";
+                    break;
+                    default:
+                        fValid = false;
+                }
+                /* continue with next rule if no valid proto was passed */
+                if (!fValid)
+                    continue;
+
+                rc = CFGMR3InsertNode(pCfg, strName.raw(), &pPF);        RC_CHECK();
+                rc = CFGMR3InsertString(pPF, "Protocol", strProto.raw()); RC_CHECK();
+
+                if (!strHostIP.isEmpty())
+                {
+                    rc = CFGMR3InsertString(pPF, "BindIP", strHostIP.raw()); RC_CHECK();
+                }
+
+                if (!strGuestIP.isEmpty())
+                {
+                    rc = CFGMR3InsertString(pPF, "GuestIP", strGuestIP.raw()); RC_CHECK();
+                }
+
+                port = RTStrToUInt16(strHostPort.raw());
+                if (port)
+                {
+                    rc = CFGMR3InsertInteger(pPF, "HostPort", port);     RC_CHECK();
+                }
+
+                port = RTStrToUInt16(strGuestPort.raw());
+                if (port)
+                {
+                    rc = CFGMR3InsertInteger(pPF, "GuestPort", port);    RC_CHECK();
+                }
+            }
             break;
         }
 

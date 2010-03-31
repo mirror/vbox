@@ -20,6 +20,7 @@
  */
 
 #include "NetworkAdapterImpl.h"
+#include "NATEngineImpl.h"
 #include "AutoCaller.h"
 #include "Logging.h"
 #include "MachineImpl.h"
@@ -47,6 +48,7 @@ NetworkAdapter::~NetworkAdapter()
 
 HRESULT NetworkAdapter::FinalConstruct()
 {
+    
     return S_OK;
 }
 
@@ -75,6 +77,8 @@ HRESULT NetworkAdapter::init(Machine *aParent, ULONG aSlot)
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
     unconst(mParent) = aParent;
+    unconst(mNATEngine).createObject();
+    mNATEngine->init(aParent);
     /* mPeer is left null */
 
     m_fModified = false;
@@ -120,6 +124,8 @@ HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
 
     unconst(mParent) = aParent;
     unconst(mPeer) = aThat;
+    mNATEngine.createObject();
+    mNATEngine->init(aParent, aThat->mNATEngine);
 
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
@@ -153,6 +159,9 @@ HRESULT NetworkAdapter::initCopy(Machine *aParent, NetworkAdapter *aThat)
     unconst(mParent) = aParent;
     /* mPeer is left null */
 
+    unconst(mNATEngine).createObject();
+    mNATEngine->initCopy(aParent, aThat->mNATEngine);
+
     AutoCaller thatCaller (aThat);
     AssertComRCReturnRC(thatCaller.rc());
 
@@ -180,6 +189,7 @@ void NetworkAdapter::uninit()
 
     mData.free();
 
+    unconst(mNATEngine).setNull();
     unconst(mPeer) = NULL;
     unconst(mParent) = NULL;
 }
@@ -778,6 +788,20 @@ STDMETHODIMP NetworkAdapter::COMSETTER(TraceFile) (IN_BSTR aTraceFile)
     return S_OK;
 }
 
+STDMETHODIMP NetworkAdapter::COMGETTER(NatDriver) (INATEngine **aNatDriver)
+{
+    CheckComArgOutPointerValid(aNatDriver);
+
+    AutoCaller autoCaller(this);
+    if (FAILED(autoCaller.rc())) return autoCaller.rc();
+
+    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
+
+    mNATEngine.queryInterfaceTo(aNatDriver);
+
+    return S_OK;
+}
+
 // INetworkAdapter methods
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -1055,7 +1079,7 @@ HRESULT NetworkAdapter::loadSettings(const settings::NetworkAdapter &data)
     switch (data.mode)
     {
         case NetworkAttachmentType_NAT:
-            mData->mNATNetwork = data.strName;
+            mNATEngine->loadSettings(data.nat);
             rc = AttachToNAT();
             if (FAILED(rc)) return rc;
         break;
@@ -1131,7 +1155,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
         break;
 
         case NetworkAttachmentType_NAT:
-            data.strName = mData->mNATNetwork;
+            mNATEngine->commit();
+            mNATEngine->saveSettings(data.nat);
         break;
 
         case NetworkAttachmentType_Bridged:
@@ -1157,10 +1182,11 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
  * Returns true if any setter method has modified settings of this instance.
  * @return
  */
-bool NetworkAdapter::isModified()
-{
-    AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
-    return m_fModified;
+bool NetworkAdapter::isModified() { 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    bool fChanged = m_fModified;
+    fChanged |= (mData->mAdapterType == NetworkAttachmentType_NAT? mNATEngine->isModified() : false);
+    return fChanged;
 }
 
 /**
