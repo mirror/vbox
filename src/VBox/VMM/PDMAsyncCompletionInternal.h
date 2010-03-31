@@ -24,6 +24,7 @@
 #include "PDMInternal.h"
 #include <iprt/cdefs.h>
 #include <iprt/critsect.h>
+#include <iprt/memcache.h>
 #include <VBox/types.h>
 #include <VBox/cfgm.h>
 #include <VBox/stam.h>
@@ -197,11 +198,8 @@ typedef struct PDMASYNCCOMPLETIONEPCLASS
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINT)      pEndpointsHead;
     /** Pointer to the callback table. */
     R3PTRTYPE(PCPDMASYNCCOMPLETIONEPCLASSOPS)   pEndpointOps;
-    /** Bigger cache for free task items used by all endpoints
-     * of this class. */
-    R3PTRTYPE(volatile PPDMASYNCCOMPLETIONTASK) apTaskCache[10];
-    /** Number of tasks cached */
-    volatile uint32_t                           cTasksCached;
+    /** Task cache. */
+    RTMEMCACHE                                  hMemCacheTasks;
 } PDMASYNCCOMPLETIONEPCLASS;
 /** Pointer to the PDM async completion endpoint class data. */
 typedef PDMASYNCCOMPLETIONEPCLASS *PPDMASYNCCOMPLETIONEPCLASS;
@@ -218,16 +216,6 @@ typedef struct PDMASYNCCOMPLETIONENDPOINT
     R3PTRTYPE(PPDMASYNCCOMPLETIONENDPOINT)      pPrev;
     /** Pointer to the class this endpoint belongs to. */
     R3PTRTYPE(PPDMASYNCCOMPLETIONEPCLASS)       pEpClass;
-    /** Head of the small cache for allocated task structures for exclusive
-     * use by this endpoint. */
-    R3PTRTYPE(volatile PPDMASYNCCOMPLETIONTASK) pTasksFreeHead;
-    /** Tail of the small cache for allocated task structures for exclusive
-     * use by this endpoint. */
-    R3PTRTYPE(volatile PPDMASYNCCOMPLETIONTASK) pTasksFreeTail;
-    /** Number of elements in the cache. */
-    volatile uint32_t                           cTasksCached;
-    /** Start slot for the global task cache. */
-    unsigned                                    iSlotStart;
     /** ID of the next task to ensure consistency. */
     volatile uint32_t                           uTaskIdNext;
     /** Flag whether a wraparound occurred for the ID counter. */
