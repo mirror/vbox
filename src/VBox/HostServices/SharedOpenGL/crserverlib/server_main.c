@@ -852,8 +852,8 @@ DECLEXPORT(int32_t) crVBoxServerLoadState(PSSMHANDLE pSSM, uint32_t version)
         AssertRCReturn(rc, rc);
 
         /* Restore windows geometry info */
-        crServerDispatchWindowSize(key, muralInfo.underlyingDisplay[2], muralInfo.underlyingDisplay[3]);
-        crServerDispatchWindowPosition(key, muralInfo.underlyingDisplay[0], muralInfo.underlyingDisplay[1]);
+        crServerDispatchWindowSize(key, muralInfo.width, muralInfo.height);
+        crServerDispatchWindowPosition(key, muralInfo.gX, muralInfo.gY);
     }
 
     /* Load starting free context and window IDs */
@@ -1017,6 +1017,14 @@ static void crVBoxServerReparentMuralCB(unsigned long key, void *data1, void *da
     }
 }
 
+static void crVBoxServerCheckMuralCB(unsigned long key, void *data1, void *data2)
+{
+    CRMuralInfo *pMI = (CRMuralInfo*) data1;
+    (void) data2;
+
+    crServerCheckMuralGeometry(pMI);
+}
+
 DECLEXPORT(int32_t) crVBoxServerSetScreenCount(int sCount)
 {
     int i;
@@ -1067,9 +1075,10 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     if (winID==0)
         return VERR_INVALID_PARAMETER;
 
-    if (MAPPED(SCREEN(sIndex)))
+    if (MAPPED(SCREEN(sIndex)) && SCREEN(sIndex).winID!=winID)
     {
         crWarning("Mapped screen[%i] is being remapped.", sIndex);
+        crVBoxServerUnmapScreen(sIndex);
     }
 
     SCREEN(sIndex).winID = winID;
@@ -1079,10 +1088,11 @@ DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint
     SCREEN(sIndex).h = h;
 
     renderspuSetWindowId(SCREEN(sIndex).winID);
-
     crHashtableWalk(cr_server.muralTable, crVBoxServerReparentMuralCB, &sIndex);
-
     renderspuSetWindowId(SCREEN(0).winID);
+
+    crHashtableWalk(cr_server.muralTable, crVBoxServerCheckMuralCB, NULL);
+    
     return VINF_SUCCESS;
 }
 
@@ -1091,4 +1101,9 @@ DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects
     renderspuSetRootVisibleRegion(cRects, pRects);
 
     return VINF_SUCCESS;
+}
+
+DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO)
+{
+    cr_server.pfnPresentFBO = pfnPresentFBO;
 }

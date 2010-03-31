@@ -75,6 +75,7 @@ void crServerSetVBoxConfiguration()
     unsigned char key[16]= {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};
     char hostname[1024];
     char **clientchain, **clientlist;
+    GLint dims[4];
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -153,9 +154,13 @@ void crServerSetVBoxConfiguration()
 
     /* Need to do this as early as possible */
 
-    /* XXX DMX get window size instead? */
-    cr_server.head_spu->dispatch_table.GetIntegerv(GL_VIEWPORT,
-                                                   (GLint *) defaultMural->underlyingDisplay);
+    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
+    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);
+    
+    defaultMural->gX = dims[0];
+    defaultMural->gY = dims[1];
+    defaultMural->width = dims[2];
+    defaultMural->height = dims[3];
 
     crFree(spu_ids);
     crFreeStrings(spu_names);
@@ -245,6 +250,7 @@ void crServerSetVBoxConfigurationHGCM()
     char *spu_names[1] = {"render"};
     char *spu_dir = NULL;
     int i;
+    GLint dims[4];
 
     defaultMural = (CRMuralInfo *) crHashtableSearch(cr_server.muralTable, 0);
     CRASSERT(defaultMural);
@@ -259,9 +265,14 @@ void crServerSetVBoxConfigurationHGCM()
     if (!cr_server.head_spu)
         return;
 
-    /* XXX DMX get window size instead? */
-    cr_server.head_spu->dispatch_table.GetIntegerv(GL_VIEWPORT,
-                                                   (GLint *) defaultMural->underlyingDisplay);
+    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_POSITION_CR, 0, GL_INT, 2, &dims[0]);
+    cr_server.head_spu->dispatch_table.GetChromiumParametervCR(GL_WINDOW_SIZE_CR, 0, GL_INT, 2, &dims[2]);
+    
+    defaultMural->gX = dims[0];
+    defaultMural->gY = dims[1];
+    defaultMural->width = dims[2];
+    defaultMural->height = dims[3];
+
     cr_server.mtu = 1024 * 250;
 
     cr_server.numClients = 0;

@@ -195,10 +195,6 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetProgramHWID(GLuint id)
     return pProgram ? pProgram->hwid : 0;
 }
 
-typedef struct _crCheckIDHWID {
-    GLuint id, hwid;
-} crCheckIDHWID_t;
-
 static void crStateCheckShaderHWIDCB(unsigned long key, void *data1, void *data2)
 {
     CRGLSLShader *pShader = (CRGLSLShader *) data1;

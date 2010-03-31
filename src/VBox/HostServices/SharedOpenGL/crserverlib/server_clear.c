@@ -29,36 +29,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchClear( GLenum mask )
 		   return;
 	}
 
-	if (mural->numExtents == 0)
-	{
-		cr_server.head_spu->dispatch_table.Clear( mask );
-	}
-	else
-	{
-		int scissor_on, i;
-
-		if (!mural->viewportValidated) {
-			crServerComputeViewportBounds(&(cr_server.curClient->currentCtx->viewport), mural);
-		}
-
-
-		scissor_on = q->client->currentCtx->viewport.scissorTest;
-
-		if (!scissor_on)
-		{
-			cr_server.head_spu->dispatch_table.Enable( GL_SCISSOR_TEST );
-		}
-
-		for ( i = 0; i < mural->numExtents; i++ )
-		{
-			crServerSetOutputBounds( mural, i );
-			cr_server.head_spu->dispatch_table.Clear( mask );
-		}
-		if (!scissor_on)
-		{
-			cr_server.head_spu->dispatch_table.Disable( GL_SCISSOR_TEST );
-		}
-	}
+	cr_server.head_spu->dispatch_table.Clear( mask );
 }
 
 static void __draw_poly(CRPoly *p)
@@ -96,6 +67,7 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 		}
 	}
 
+#if 0
 	if (cr_server.overlapBlending)
 	{
 		int a;
@@ -277,10 +249,40 @@ crServerDispatchSwapBuffers( GLint window, GLint flags )
 	
 		cr_server.head_spu->dispatch_table.Color4f(col.r, col.g, col.b, col.a);
 	}
+#endif
 
 	/* Check if using a file network */
 	if (!cr_server.clients[0]->conn->actual_network && window == MAGIC_OFFSET)
 		window = 0;
 
-	cr_server.head_spu->dispatch_table.SwapBuffers( mural->spuWindow, flags );
+    if (crServerIsRedirectedToFBO())
+    {
+        crServerPresentFBO(mural);
+    }
+    else
+    {
+        cr_server.head_spu->dispatch_table.SwapBuffers( mural->spuWindow, flags );
+    }
+}
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchFlush(void)
+{
+    cr_server.head_spu->dispatch_table.Flush();
+
+    if (crServerIsRedirectedToFBO())
+    {
+        crServerPresentFBO(cr_server.curClient->currentMural);
+    }
+}
+
+void SERVER_DISPATCH_APIENTRY
+crServerDispatchFinish(void)
+{
+    cr_server.head_spu->dispatch_table.Finish();
+
+    if (crServerIsRedirectedToFBO())
+    {
+        crServerPresentFBO(cr_server.curClient->currentMural);
+    }
 }

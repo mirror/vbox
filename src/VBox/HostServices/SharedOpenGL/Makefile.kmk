@@ -128,7 +128,6 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_projmatrix.c \
 	crserverlib/server_readpixels.c \
 	crserverlib/server_stream.c \
-	crserverlib/server_tiles.c \
 	crserverlib/server_viewport.c \
 	crserverlib/server_window.c \
 	crserverlib/server_winpos.c \
@@ -136,6 +135,7 @@ VBoxOGLcrserverlib_SOURCES := \
 	crserverlib/server_getshaders.c \
 	crserverlib/server_framebuffer.c \
 	crserverlib/server_glsl.c \
+	crserverlib/server_muralfbo.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_dispatch.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_retval.c \
 	$(VBOX_PATH_CROGL_GENFILES)/server_get.c \

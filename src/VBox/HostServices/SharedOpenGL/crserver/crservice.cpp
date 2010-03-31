@@ -68,7 +68,7 @@ static PVM g_pVM = NULL;
 #endif
 
 static const char* gszVBoxOGLSSMMagic = "***OpenGL state data***";
-#define SHCROGL_SSM_VERSION 16
+#define SHCROGL_SSM_VERSION 17
 
 static DECLCALLBACK(int) svcUnload (void *)
 {
@@ -193,6 +193,38 @@ static void svcClientVersionUnsupported(uint32_t minor, uint32_t major)
         "version of VirtualBox on the host. Please install appropriate Guest Additions to fix this issue");
         shown = 1;
     }
+}
+
+static DECLCALLBACK(void) svcPresentFBO(void *data, int32_t screenId, int32_t x, int32_t y, uint32_t w, uint32_t h)
+{
+#if 0
+    ComPtr<IDisplay> pDisplay;
+    BYTE *data;
+    int i,j;
+    CHECK_ERROR(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()));
+
+    data = (BYTE*) RTMemTmpAllocZ(100*100*4);
+
+    for (i=0; i<100; i+=2)
+    {
+        for (j=0; j<100; ++j)
+        {
+            *(data+i*100*4+j*4+0) = 0xFF;
+            *(data+i*100*4+j*4+1) = 0xFF;
+            *(data+i*100*4+j*4+2) = 0xFF;
+            *(data+i*100*4+j*4+3) = 0xFF;
+        }
+    }
+
+    CHECK_ERROR(pDisplay, DrawToScreen(data, 0, 0, 100, 100));
+
+    RTMemTmpFree(data);
+#endif
+    HRESULT rc;
+    ComPtr<IDisplay> pDisplay;
+
+    CHECK_ERROR(g_pConsole, COMGETTER(Display)(pDisplay.asOutParam()));
+    CHECK_ERROR(pDisplay, DrawToScreen((BYTE*)data, x, y, w, h));
 }
 
 static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID, void *pvClient, uint32_t u32Function, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
@@ -331,6 +363,7 @@ static DECLCALLBACK(void) svcCall (void *, VBOXHGCMCALLHANDLE callHandle, uint32
                 /* Return the required buffer size always */
                 paParms[2].u.uint32 = cbWriteback;
             }
+
             break;
         }
 
@@ -620,6 +653,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad (VBOXHGCMSVCFNTABLE *pt
 
             if (!crVBoxServerInit())
                 return VERR_NOT_SUPPORTED;
+
+            crVBoxServerSetPresentFBOCB(svcPresentFBO);
         }
     }
 

@@ -39,6 +39,7 @@ struct BucketingInfo {
 static GLboolean
 fillBucketingHash(CRMuralInfo *mural)
 {
+#if 0
 	int i, j, k, m;
 	int r_len = 0;
 	int xinc, yinc;
@@ -163,6 +164,7 @@ fillBucketingHash(CRMuralInfo *mural)
 	}
 
 	mural->bucketInfo = bucketInfo;
+#endif
 	return GL_TRUE;
 }
 
@@ -174,6 +176,7 @@ fillBucketingHash(CRMuralInfo *mural)
 GLboolean
 crServerInitializeBucketing(CRMuralInfo *mural)
 {
+#if 0
 	int optTileWidth = 0, optTileHeight = 0;
 	int i;
 
@@ -216,7 +219,7 @@ crServerInitializeBucketing(CRMuralInfo *mural)
 			}
 		}
 	}
-
+#endif
 	return fillBucketingHash(mural);
 }
 
@@ -237,7 +240,7 @@ crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 
 	/* Save current unpacker state */
 	crUnpackPush();
-
+#if 0
 	/* pass bounds info to first SPU */
 	{
 		/* bias bounds to extent/window coords */
@@ -318,7 +321,7 @@ crServerDispatchBoundsInfoCR( const CRrecti *bounds, const GLbyte *payload,
 			}
 		}
 	}
-
+#endif
 	/* Restore previous unpacker state */
 	crUnpackPop();
 }

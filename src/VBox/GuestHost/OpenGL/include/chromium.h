@@ -679,9 +679,10 @@ extern void APIENTRY glZPixCR(GLsizei width, GLsizei height, GLenum format,
 /*Allow to use glGetString to query real host GPU info*/
 #ifndef GL_CR_real_vendor_strings
 #define GL_CR_real_vendor_strings 1
-#define GL_REAL_VENDOR   0x8B23
-#define GL_REAL_VERSION  0x8B24
-#define GL_REAL_RENDERER 0x8B25
+#define GL_REAL_VENDOR     0x8B23
+#define GL_REAL_VERSION    0x8B24
+#define GL_REAL_RENDERER   0x8B25
+#define GL_REAL_EXTENSIONS 0x8B26
 #endif
 
 

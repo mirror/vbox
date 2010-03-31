@@ -767,6 +767,50 @@ DECLEXPORT(GLuint) STATE_APIENTRY crStateGetRenderbufferHWID(GLuint id)
     return pRBO ? pRBO->hwid : 0;
 }
 
+static void crStateCheckFBOHWIDCB(unsigned long key, void *data1, void *data2)
+{
+    CRFramebufferObject *pFBO = (CRFramebufferObject *) data1;
+    crCheckIDHWID_t *pParms = (crCheckIDHWID_t*) data2;
+    (void) key;
+
+    if (pFBO->hwid==pParms->hwid)
+        pParms->id = pFBO->id;
+}
+
+static void crStateCheckRBOHWIDCB(unsigned long key, void *data1, void *data2)
+{
+    CRRenderbufferObject *pRBO = (CRRenderbufferObject *) data1;
+    crCheckIDHWID_t *pParms = (crCheckIDHWID_t*) data2;
+    (void) key;
+
+    if (pRBO->hwid==pParms->hwid)
+        pParms->id = pRBO->id;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateFBOHWIDtoID(GLuint hwid)
+{
+    CRContext *g = GetCurrentContext();
+    crCheckIDHWID_t parms;
+
+    parms.id = hwid;
+    parms.hwid = hwid;
+
+    crHashtableWalk(g->framebufferobject.framebuffers, crStateCheckFBOHWIDCB, &parms);
+    return parms.id;
+}
+
+DECLEXPORT(GLuint) STATE_APIENTRY crStateRBOHWIDtoID(GLuint hwid)
+{
+    CRContext *g = GetCurrentContext();
+    crCheckIDHWID_t parms;
+
+    parms.id = hwid;
+    parms.hwid = hwid;
+
+    crHashtableWalk(g->framebufferobject.renderbuffers, crStateCheckRBOHWIDCB, &parms);
+    return parms.id;
+}
+
 #ifdef IN_GUEST
 DECLEXPORT(GLenum) STATE_APIENTRY crStateCheckFramebufferStatusEXT(GLenum target)
 {

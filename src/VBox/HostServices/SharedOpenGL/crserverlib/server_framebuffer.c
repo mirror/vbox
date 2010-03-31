@@ -83,7 +83,15 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchFramebufferTexture3DEXT(GLenum tar
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindFramebufferEXT(GLenum target, GLuint framebuffer)
 {
 	crStateBindFramebufferEXT(target, framebuffer);
-	cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(framebuffer));
+
+    if (0==framebuffer && crServerIsRedirectedToFBO())
+    {
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, cr_server.curClient->currentMural->idFBO);
+    }
+    else
+    {
+        cr_server.head_spu->dispatch_table.BindFramebufferEXT(target, crStateGetFramebufferHWID(framebuffer));
+    }
 }
 
 void SERVER_DISPATCH_APIENTRY crServerDispatchBindRenderbufferEXT(GLenum target, GLuint renderbuffer)

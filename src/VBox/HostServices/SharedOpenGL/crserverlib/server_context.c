@@ -228,6 +228,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         crStateSetCurrentPointers( ctx, &(cr_server.current) );
 
     /* check if being made current for first time, update viewport */
+#if 0
     if (ctx) {
         /* initialize the viewport */
         if (ctx->viewport.viewportW == 0) {
@@ -237,6 +238,7 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
             ctx->viewport.scissorH = mural->height;
         }
     }
+#endif
 
     /*
     crDebug("**** %s  currentWindow %d  newWindow %d", __func__,
@@ -259,29 +261,9 @@ crServerDispatchMakeCurrent( GLint window, GLint nativeWindow, GLint context )
         cr_server.firstCallMakeCurrent = GL_FALSE;
         cr_server.currentWindow = window;
         cr_server.currentNativeWindow = nativeWindow;
-
-        /* Set initial raster/window position for this context.
-         * The position has to be translated according to the tile origin.
-         */
-        if (mural->numExtents > 0)
-        {
-            GLint x = -mural->extents[0].imagewindow.x1;
-            GLint y = -mural->extents[0].imagewindow.y1;
-            cr_server.head_spu->dispatch_table.WindowPos2iARB(x, y);
-            /* This MakeCurrent is a bit redundant (we do it again below)
-             * but it's only done the first time we activate a context.
-             */
-            crStateMakeCurrent(ctx);
-            crStateWindowPos2iARB(x, y);
-        }
     }
 
     /* This used to be earlier, after crStateUpdateColorBits() call */
     crStateMakeCurrent( ctx );
-
-    /* This is pessimistic - we really don't have to invalidate the viewport
-     * info every time we MakeCurrent, but play it safe for now.
-     */
-    mural->viewportValidated = GL_FALSE;
 }
 
