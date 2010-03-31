@@ -124,7 +124,7 @@ HRESULT NetworkAdapter::init(Machine *aParent, NetworkAdapter *aThat)
 
     unconst(mParent) = aParent;
     unconst(mPeer) = aThat;
-    mNATEngine.createObject();
+    unconst(mNATEngine).createObject();
     mNATEngine->init(aParent, aThat->mNATEngine);
 
     AutoCaller thatCaller (aThat);
