@@ -33,16 +33,22 @@ using namespace ovf;
 //
 ////////////////////////////////////////////////////////////////////////////////
 
+/**
+ * Constructor. This opens the given XML file and parses it. Throws lots of exceptions
+ * on XML or OVF invalidity.
+ * @param path
+ */
 OVFReader::OVFReader(const MiniString &path)
     : m_strPath(path)
 {
     xml::XmlFileParser parser;
-    xml::Document doc;
     parser.read(m_strPath,
-                doc);
+                m_doc);
 
-    const xml::ElementNode *pRootElem = doc.getRootElement();
-    if (pRootElem && strcmp(pRootElem->getName(), "Envelope"))
+    const xml::ElementNode *pRootElem = m_doc.getRootElement();
+    if (    !pRootElem
+         || strcmp(pRootElem->getName(), "Envelope")
+       )
         throw OVFLogicError(N_("Root element in OVF file must be \"Envelope\"."));
 
     // OVF has the following rough layout:
@@ -62,10 +68,6 @@ OVFReader::OVFReader(const MiniString &path)
 
     // now go though the sections
     LoopThruSections(pReferencesElem, pRootElem);
-}
-
-OVFReader::~OVFReader()
-{
 }
 
 /**
@@ -268,6 +270,11 @@ void OVFReader::HandleVirtualSystemContent(const xml::ElementNode *pelmVirtualSy
 {
     VirtualSystem vsys;
 
+    // peek under the <VirtualSystem> node whether we have a <vbox:Machine> node;
+    // that case case, the caller can completely ignore the OVF but only load the VBox machine XML
+    vsys.pelmVboxMachine = pelmVirtualSystem->findChildElement("vbox", "Machine");
+
+    // now look for real OVF
     const xml::AttributeNode *pIdAttr = pelmVirtualSystem->findAttribute("id");
     if (pIdAttr)
         vsys.strName = pIdAttr->getValue();

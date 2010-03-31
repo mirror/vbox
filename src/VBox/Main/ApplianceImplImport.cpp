@@ -41,6 +41,7 @@
 
 #include <VBox/param.h>
 #include <VBox/version.h>
+#include <VBox/settings.h>
 
 using namespace std;
 
@@ -157,6 +158,11 @@ STDMETHODIMP Appliance::Interpret()
             rc = pNewDesc->init();
             if (FAILED(rc)) throw rc;
 
+            // if the virtual system in OVF had a <vbox:Machine> element, have the
+            // VirtualBox settings code parse that XML now
+            if (vsysThis.pelmVboxMachine)
+                pNewDesc->importVboxMachineXML(*vsysThis.pelmVboxMachine);
+
             /* Guest OS type */
             Utf8Str strOsTypeVBox,
                     strCIMOSType = Utf8StrFmt("%RI32", (uint32_t)vsysThis.cimos);
@@ -253,7 +259,8 @@ STDMETHODIMP Appliance::Interpret()
             /* Check for the constrains */
             if (    ullMemSizeVBox != 0
                  && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
-                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB)
+                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB
+                    )
                )
             {
                 addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has support for min %u & max %u MB RAM size only."),
@@ -711,7 +718,7 @@ HRESULT Appliance::readFS(const LocationInfo &locInfo)
 }
 
 /**
- * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadImportOrExport()
+ * Worker code for reading OVF from the cloud. This is called from Appliance::taskThreadImportOrExport()
  * in S3 mode and therefore runs on the OVF read worker thread. This then starts a second worker
  * thread to create temporary files (see Appliance::readFS()).
  *
@@ -1074,6 +1081,8 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
         /* Catch possible errors */
         try
         {
+            // there are two ways in which we can create
+
             /* Guest OS type */
             std::list<VirtualSystemDescriptionEntry*> vsdeOS;
             vsdeOS = vsdescThis->findByType(VirtualSystemDescriptionType_OS);
@@ -1094,9 +1103,12 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Missing VM name"));
             const Utf8Str &strNameVBox = vsdeName.front()->strVbox;
-            rc = mVirtualBox->CreateMachine(Bstr(strNameVBox), Bstr(strOsTypeVBox),
-                                                 Bstr(), Bstr(), FALSE,
-                                                 pNewMachine.asOutParam());
+            rc = mVirtualBox->CreateMachine(Bstr(strNameVBox),
+                                            Bstr(strOsTypeVBox),
+                                            NULL,
+                                            NULL,
+                                            FALSE,
+                                            pNewMachine.asOutParam());
             if (FAILED(rc)) throw rc;
 
             // and the description

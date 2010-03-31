@@ -505,7 +505,13 @@ const char* Node::getName() const
     return m->pcszName;
 }
 
-bool Node::nameEquals(const char *pcsz) const
+/**
+ * Variant of nameEquals that checks the namespace as well.
+ * @param pcszNamespace
+ * @param pcsz
+ * @return
+ */
+bool Node::nameEquals(const char *pcszNamespace, const char *pcsz) const
 {
     if (m->pcszName == pcsz)
         return true;
@@ -513,9 +519,21 @@ bool Node::nameEquals(const char *pcsz) const
         return false;
     if (pcsz == NULL)
         return false;
-    return !strcmp(m->pcszName, pcsz);
-}
+    if (strcmp(m->pcszName, pcsz))
+        return false;
 
+    // name matches: then check namespaces as well
+    if (!pcszNamespace)
+        return true;
+    // caller wants namespace:
+    if (    !m->plibNode->ns
+         || !m->plibNode->ns->prefix
+         || !*m->plibNode->ns->prefix
+       )
+        // but node has no namespace:
+        return false;
+    return !strcmp((const char*)m->plibNode->ns->prefix, pcszNamespace);
+}
 
 /**
  * Returns the value of a node. If this node is an attribute, returns
@@ -662,10 +680,13 @@ int ElementNode::getChildElements(ElementNodesList &children,
 
 /**
  * Returns the first child element whose name matches pcszMatch.
- * @param pcszMatch
+ *
+ * @param pcszNamespace Namespace prefix (e.g. "vbox") or NULL to match any namespace.
+ * @param pcszMatch Element name to match.
  * @return
  */
-const ElementNode* ElementNode::findChildElement(const char *pcszMatch)
+const ElementNode* ElementNode::findChildElement(const char *pcszNamespace,
+                                                 const char *pcszMatch)
     const
 {
     Data::InternalNodesList::const_iterator
@@ -678,7 +699,7 @@ const ElementNode* ElementNode::findChildElement(const char *pcszMatch)
         if ((**it).isElement())
         {
             ElementNode *pelm = static_cast<ElementNode*>((*it).get());
-            if (!strcmp(pcszMatch, pelm->getName())) // the element name matches
+            if (pelm->nameEquals(pcszNamespace, pcszMatch))
                 return pelm;
         }
     }

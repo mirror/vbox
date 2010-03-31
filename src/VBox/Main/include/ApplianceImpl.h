@@ -42,6 +42,11 @@ namespace xml
     class ElementNode;
 }
 
+namespace settings
+{
+    class MachineConfigFile;
+}
+
 class ATL_NO_VTABLE Appliance :
     public VirtualBoxBase,
     public VirtualBoxSupportErrorInfoImpl<Appliance, IAppliance>,
@@ -241,6 +246,9 @@ public:
 
     std::list<VirtualSystemDescriptionEntry*> findByType(VirtualSystemDescriptionType_T aType);
     const VirtualSystemDescriptionEntry* findControllerFromID(uint32_t id);
+
+    void importVboxMachineXML(const xml::ElementNode &elmMachine);
+    const settings::MachineConfigFile* getMachineConfig() const;
 
     /* private instance data */
 private:
