@@ -254,7 +254,7 @@ NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
 
 
 STDMETHODIMP 
-NATEngine::AddRedirect(IN_BSTR aName, uint32_t aProto, IN_BSTR aBindIp, uint16_t aHostPort, IN_BSTR aGuestIP, uint16_t aGuestPort)
+NATEngine::AddRedirect(IN_BSTR aName, ULONG aProto, IN_BSTR aBindIp, USHORT aHostPort, IN_BSTR aGuestIP, USHORT aGuestPort)
 {
 
     AutoCaller autoCaller(this);
@@ -406,7 +406,7 @@ NATEngine::COMGETTER(Network)(BSTR *aNetwork)
 }
 
 STDMETHODIMP 
-NATEngine::COMSETTER(HostIP) (CBSTR aBindIP)
+NATEngine::COMSETTER(HostIP) (IN_BSTR aBindIP)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());

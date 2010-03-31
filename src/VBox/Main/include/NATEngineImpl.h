@@ -96,16 +96,16 @@ class ATL_NO_VTABLE NATEngine :
     HRESULT loadSettings(const settings::NAT &data);
     HRESULT saveSettings(settings::NAT &data);
 
-    STDMETHOD(COMSETTER(Network)) (CBSTR aNetwork);
+    STDMETHOD(COMSETTER(Network)) (IN_BSTR aNetwork);
     STDMETHOD(COMGETTER(Network)) (BSTR *aNetwork);
-    STDMETHOD(COMSETTER(HostIP)) (CBSTR aBindIP);
+    STDMETHOD(COMSETTER(HostIP)) (IN_BSTR aBindIP);
     STDMETHOD(COMGETTER(HostIP)) (BSTR *aBindIP);
     /* TFTP attributes */
-    STDMETHOD(COMSETTER(TftpPrefix)) (CBSTR aTftpPrefix);
+    STDMETHOD(COMSETTER(TftpPrefix)) (IN_BSTR aTftpPrefix);
     STDMETHOD(COMGETTER(TftpPrefix)) (BSTR *aTftpPrefix);
-    STDMETHOD(COMSETTER(TftpBootFile)) (CBSTR aTftpBootFile);
+    STDMETHOD(COMSETTER(TftpBootFile)) (IN_BSTR aTftpBootFile);
     STDMETHOD(COMGETTER(TftpBootFile)) (BSTR *aTftpBootFile);
-    STDMETHOD(COMSETTER(TftpNextServer)) (CBSTR aTftpNextServer);
+    STDMETHOD(COMSETTER(TftpNextServer)) (IN_BSTR aTftpNextServer);
     STDMETHOD(COMGETTER(TftpNextServer)) (BSTR *aTftpNextServer);
     /* DNS attributes */
     STDMETHOD(COMSETTER(DnsPassDomain)) (BOOL aDnsPassDomain);
@@ -119,7 +119,7 @@ class ATL_NO_VTABLE NATEngine :
     STDMETHOD(GetNetworkSettings)(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv);
 
     STDMETHOD(COMGETTER(Redirects)) (ComSafeArrayOut (BSTR, aNatRules));
-    STDMETHOD(AddRedirect)(IN_BSTR aName, uint32_t aProto, IN_BSTR aBindIp, uint16_t aHostPort, IN_BSTR aGuestIP, uint16_t aGuestPort);
+    STDMETHOD(AddRedirect)(IN_BSTR aName, ULONG aProto, IN_BSTR aBindIp, USHORT aHostPort, IN_BSTR aGuestIP, USHORT aGuestPort);
     STDMETHOD(RemoveRedirect)(IN_BSTR aName);
 
     static const wchar_t *getComponentName() { return L"NATEngine"; }
