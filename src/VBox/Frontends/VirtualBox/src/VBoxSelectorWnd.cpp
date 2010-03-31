@@ -55,6 +55,7 @@
 #include <QToolButton>
 
 #include <iprt/buildconfig.h>
+#include <VBox/version.h>
 #endif /* !VBOX_WITH_PRECOMPILED_HEADERS */
 
 // VBoxVMDetailsView class
@@ -1307,7 +1308,7 @@ void VBoxSelectorWnd::retranslateUi()
 #ifdef VBOX_OSE
     QString title (tr ("VirtualBox OSE"));
 #else
-    QString title (tr ("Sun VirtualBox"));
+    QString title (VBOX_PRODUCT);
 #endif
 
 #ifdef VBOX_BLEEDING_EDGE
