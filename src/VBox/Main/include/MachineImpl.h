@@ -623,6 +623,19 @@ public:
                               Progress *aProgress);
     HRESULT openExistingSession(IInternalSessionControl *aControl);
 
+    HRESULT getDirectControl(ComPtr<IInternalSessionControl> *directControl)
+    {
+        HRESULT rc;
+        *directControl = mData->mSession.mDirectControl;
+
+        if (!*directControl)
+            rc = E_ACCESSDENIED;
+        else
+            rc = S_OK;
+
+        return rc;
+    }
+
 #if defined(RT_OS_WINDOWS)
 
     bool isSessionOpen(ComObjPtr<SessionMachine> &aMachine,
@@ -795,7 +808,7 @@ protected:
     void registerMetrics(PerformanceCollector *aCollector, Machine *aMachine, RTPROCESS pid);
     void unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine);
 
-    pm::CollectorGuestHAL   mGuestHAL;
+    pm::CollectorGuestHAL  *mGuestHAL;
 #endif /* VBOX_WITH_RESOURCE_USAGE_API */
 
     Machine* const          mPeer;

@@ -112,6 +112,7 @@ tstCollector_SOURCES  = \
 	tstCollector.cpp \
 	../Performance.cpp
 tstCollector_INCS     = ../include
+tstCollector_DEFS    += VBOX_COLLECTOR_TEST_CASE
 tstCollector_LDFLAGS.darwin  += -lproc
 tstCollector_LDFLAGS.solaris += -lkstat
 tstCollector_LDFLAGS.win     += psapi.lib powrprof.lib

@@ -27,6 +27,10 @@
  * 1) Detection of erroneous metric names
  */
 
+#ifndef VBOX_COLLECTOR_TEST_CASE
+#include "VirtualBoxImpl.h"
+#include "MachineImpl.h"
+#endif
 #include "Performance.h"
 
 #include <VBox/com/array.h>
@@ -118,21 +122,49 @@ int CollectorHAL::getHostCpuMHz(ULONG *mhz)
     return VINF_SUCCESS;
 }
 
+#ifndef VBOX_COLLECTOR_TEST_CASE
 CollectorGuestHAL::~CollectorGuestHAL()
 {
-//    if (cEnabled)
-//
+    Assert(!cEnabled);
 }
 
 int CollectorGuestHAL::enable()
 {
-    return S_OK;
+    HRESULT ret = S_OK;
+
+    if (ASMAtomicIncU32(&cEnabled) == 1)
+    {
+#if 0
+        ComPtr<IInternalSessionControl> directControl;
+
+        ret = mMachine->getDirectControl(&directControl);
+        if (ret != S_OK)
+            return ret;
+
+        /* get the associated console */
+        ComPtr<IConsole> console;
+        ret = directControl->COMGETTER(Console)(console.asOutParam()));
+        if (ret != S_OK)
+            return ret;
+
+        ComPtr<IGuest> guest;
+        ret = console->COMGETTER(Guest)(guest.asOutParam());
+        if (ret == S_OK)
+        {
+        }
+#endif
+    }
+    return ret;
 }
 
 int CollectorGuestHAL::disable()
 {
+    if (ASMAtomicDecU32(&cEnabled) == 0)
+    {
+    }
     return S_OK;
 }
+#endif /* VBOX_COLLECTOR_TEST_CASE */
 
 bool BaseMetric::collectorBeat(uint64_t nowAt)
 {
@@ -396,30 +428,6 @@ void GuestRamUsage::collect()
         mUsed->put(used);
 #endif
 }
-
-void GuestSystemUsage::init(ULONG period, ULONG length)
-{
-    mPeriod = period;
-    mLength = length;
-
-    mThreads->init(mLength);
-    mProcesses->init(mLength);
-}
-
-void GuestSystemUsage::preCollect(CollectorHints& /* hints */)
-{
-}
-
-void GuestSystemUsage::collect()
-{
-#if 0
-    ULONG used;
-    int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
-    if (RT_SUCCESS(rc))
-        mUsed->put(used);
-#endif
-}
-
 
 void CircularBuffer::init(ULONG ulLength)
 {

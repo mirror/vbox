@@ -91,14 +91,6 @@ static const char *g_papcszMetricNames[] =
     "Guest/Pagefile/Usage/Free:avg",
     "Guest/Pagefile/Usage/Free:min",
     "Guest/Pagefile/Usage/Free:max",
-    "Guest/System/Processes",
-    "Guest/System/Processes:avg",
-    "Guest/System/Processes:min",
-    "Guest/System/Processes:max",
-    "Guest/System/Threads",
-    "Guest/System/Threads:avg",
-    "Guest/System/Threads:min",
-    "Guest/System/Threads:max",
 };
 
 ////////////////////////////////////////////////////////////////////////////////

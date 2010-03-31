@@ -430,7 +430,7 @@ DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface,
     if (!guest)
         return VERR_INVALID_PARAMETER; /** @todo wrong error */
 
-    guest->GetStatisticsUpdateInterval(&val);
+    guest->COMGETTER(StatisticsUpdateInterval)(&val);
     *pulInterval = val;
     return VINF_SUCCESS;
 }
