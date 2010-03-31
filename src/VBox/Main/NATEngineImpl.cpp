@@ -254,7 +254,7 @@ NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
 
 
 STDMETHODIMP 
-NATEngine::AddRedirect(IN_BSTR aName, PRUint32 aProto, IN_BSTR aBindIp, PRUint16 aHostPort, IN_BSTR aGuestIP, PRUint16 aGuestPort)
+NATEngine::AddRedirect(IN_BSTR aName, uint32_t aProto, IN_BSTR aBindIp, uint16_t aHostPort, IN_BSTR aGuestIP, uint16_t aGuestPort)
 {
 
     AutoCaller autoCaller(this);
