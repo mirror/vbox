@@ -72,7 +72,27 @@ for index in range(len(funcs)):
         programid = (GLuint) *get_values;
         *get_values = (%s) crStateGLSLProgramHWIDtoID(programid);
     }
-    """ % (types[index], types[index], types[index], types[index])
+    else if (GL_FRAMEBUFFER_BINDING_EXT==pname
+             ||GL_READ_FRAMEBUFFER_BINDING==pname)
+    {
+        GLuint fboid;
+        CRASSERT(tablesize/sizeof(%s)==1);
+        fboid = crStateFBOHWIDtoID((GLuint) *get_values);
+        if (crServerIsRedirectedToFBO()
+            && fboid==cr_server.curClient->currentMural->idFBO)
+        {
+            fboid = 0;
+        }
+        *get_values = (%s) fboid;
+    }
+    else if (GL_RENDERBUFFER_BINDING_EXT==pname)
+    {
+        GLuint rbid;
+        CRASSERT(tablesize/sizeof(%s)==1);
+        rbid = (GLuint) *get_values;
+        *get_values = (%s) crStateRBOHWIDtoID(rbid);
+    }
+    """ % (types[index], types[index], types[index], types[index], types[index], types[index], types[index], types[index])
     print '\tcrServerReturnValue( get_values, tablesize );'
     print '\tcrFree(get_values);'
     print '}\n'

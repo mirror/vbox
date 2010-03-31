@@ -31,6 +31,8 @@ extern "C" {
 /*@todo must match MaxGuestMonitors from SchemaDefs.h*/
 #define CR_MAX_GUEST_MONITORS 8
 
+typedef DECLCALLBACKPTR(void, PFNCRSERVERPRESENTFBO) (void *data, int32_t screenId, int32_t x, int32_t y, uint32_t w, uint32_t h);
+
 typedef struct {
     CRrecti imagewindow;    /**< coordinates in mural space */
     CRrectf bounds;         /**< normalized coordinates in [-1,-1] x [1,1] */
@@ -48,24 +50,19 @@ struct BucketingInfo;
  * Mural info
  */
 typedef struct {
-    int width, height;
-    CRrecti imagespace;                /**< the whole mural rectangle */
-    int curExtent;
-    int numExtents;                    /**< number of tiles */
-    CRExtent extents[CR_MAX_EXTENTS];  /**< per-tile info */
-    int maxTileHeight;                 /**< the tallest tile's height */
-
-    /** optimized, hash-based tile bucketing */
-    int optimizeBucket;
-    struct BucketingInfo *bucketInfo;
-
-    unsigned int underlyingDisplay[4]; /**< needed for laying out the extents */
-
-    GLboolean viewportValidated;
-
-    int spuWindow;                     /**< the SPU's corresponding window ID */
+    GLuint width, height;
+    GLint gX, gY;            /*guest coordinates*/
+    GLint hX, hY;            /*host coordinates, screenID related*/
+    
+    int spuWindow;           /*the SPU's corresponding window ID */
 
     int screenId;
+
+    GLboolean bVisible;      /*guest window is visible*/
+    GLboolean bUseFBO;       /*redirect to FBO instead of real host window*/
+
+    GLuint idFBO, idColorTex, idDepthStencilRB;
+    GLuint fboWidth, fboHeight;
 } CRMuralInfo;
 
 /**
@@ -82,7 +79,6 @@ typedef struct _crclient {
     GLint windowList[CR_MAX_WINDOWS];
     GLint contextList[CR_MAX_CONTEXTS];
 } CRClient;
-
 
 typedef struct CRPoly_t {
     int npoints;
@@ -214,6 +210,8 @@ typedef struct {
     RunQueue *run_queue;
 
     GLuint currentSerialNo;
+
+    PFNCRSERVERPRESENTFBO pfnPresentFBO;
 } CRServer;
 
 
@@ -240,6 +238,9 @@ extern DECLEXPORT(int32_t) crVBoxServerUnmapScreen(int sIndex);
 extern DECLEXPORT(int32_t) crVBoxServerMapScreen(int sIndex, int32_t x, int32_t y, uint32_t w, uint32_t h, uint64_t winID);
 
 extern DECLEXPORT(int32_t) crVBoxServerSetRootVisibleRegion(GLint cRects, GLint *pRects);
+
+extern DECLEXPORT(void) crVBoxServerSetPresentFBOCB(PFNCRSERVERPRESENTFBO pfnPresentFBO);
+
 #ifdef __cplusplus
 }
 #endif

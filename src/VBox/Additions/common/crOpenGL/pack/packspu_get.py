@@ -121,6 +121,7 @@ for func_name in keys:
                 if (localparams[i] != params[i])
                 {
                     crWarning("Incorrect local state in %s for %%x param %%i", pname, i);
+                    crWarning("Expected %%i but got %%i", (int)localparams[i], (int)params[i]);
                 }
             }
             crFree(localparams);

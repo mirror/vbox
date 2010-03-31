@@ -86,25 +86,8 @@ crServerDispatchCallList( GLuint list )
 
     if (cr_server.curClient->currentCtx->lists.mode == 0) {
         /* we're not compiling, so execute the list now */
-        CRMuralInfo *mural = cr_server.curClient->currentMural;
-        int i;
-
-        if (!mural->viewportValidated) {
-            crServerComputeViewportBounds(&(cr_server.curClient->currentCtx->viewport), mural);
-        }
-
-        if (mural->numExtents == 0) {
-            /* Issue the list as-is */
-            cr_server.head_spu->dispatch_table.CallList( list );
-        }
-        else {
-            /* Loop over the extents (tiles) calling glCallList() */
-            for ( i = 0; i < mural->numExtents; i++ )   {
-                if (cr_server.run_queue->client->currentCtx)
-                    crServerSetOutputBounds( mural, i );
-                cr_server.head_spu->dispatch_table.CallList( list );
-            }
-        }
+        /* Issue the list as-is */
+        cr_server.head_spu->dispatch_table.CallList( list );
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */
@@ -230,25 +213,8 @@ crServerDispatchCallLists( GLsizei n, GLenum type, const GLvoid *lists )
 
     if (cr_server.curClient->currentCtx->lists.mode == 0) {
         /* we're not compiling, so execute the list now */
-        CRMuralInfo *mural = cr_server.curClient->currentMural;
-        int i;
-
-        if (!mural->viewportValidated) {
-            crServerComputeViewportBounds(&(cr_server.curClient->currentCtx->viewport), mural);
-        }
-
-        if (mural->numExtents == 0) {
-            /* Issue the list as-is */
-            cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
-        }
-        else {
-            /* Loop over the extents (tiles) calling glCallList() */
-            for ( i = 0; i < mural->numExtents; i++ ) {
-                if (cr_server.run_queue->client->currentCtx)
-                    crServerSetOutputBounds( mural, i );
-                cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
-            }
-        }
+        /* Issue the list as-is */
+        cr_server.head_spu->dispatch_table.CallLists( n, type, lists );
     }
     else {
         /* we're compiling glCallList into another list - just pass it through */

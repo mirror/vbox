@@ -12,6 +12,10 @@
 #include "cr_threads.h"
 #endif
 
+typedef struct _crCheckIDHWID {
+    GLuint id, hwid;
+} crCheckIDHWID_t;
+
 extern SPUDispatchTable diff_api;
 extern CRStateBits *__currentBits;
 

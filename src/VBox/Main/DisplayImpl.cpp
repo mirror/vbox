@@ -950,6 +950,24 @@ void Display::handleResizeCompletedEMT (void)
         /* Inform VRDP server about the change of display parameters. */
         LogFlowFunc (("Calling VRDP\n"));
         mParent->consoleVRDPServer()->SendResize();
+
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+        {
+            BOOL is3denabled;
+            mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+            if (is3denabled)
+            {
+                VBOXHGCMSVCPARM parm;
+
+                parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+                parm.u.uint32 = uScreenId;
+
+                mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
+                                                   SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+            }
+        }
+#endif /* VBOX_WITH_CROGL */
     }
 }
 
@@ -3433,6 +3451,25 @@ DECLCALLBACK(int) Display::displayVBVAResize(PPDMIDISPLAYCONNECTOR pInterface, c
     {
         /* @todo May be framebuffer/display should be notified in this case. */
     }
+
+#if defined(VBOX_WITH_HGCM) && defined(VBOX_WITH_CROGL)
+    if (fNewOrigin && !fResize)
+    {
+        BOOL is3denabled;
+        pThis->mParent->machine()->COMGETTER(Accelerate3DEnabled)(&is3denabled);
+
+        if (is3denabled)
+        {
+            VBOXHGCMSVCPARM parm;
+
+            parm.type = VBOX_HGCM_SVC_PARM_32BIT;
+            parm.u.uint32 = pScreen->u32ViewIndex;
+
+            pThis->mParent->getVMMDev()->hgcmHostCall("VBoxSharedCrOpenGL", SHCRGL_HOST_FN_SCREEN_CHANGED,
+                                                      SHCRGL_CPARMS_SCREEN_CHANGED, &parm);
+        }
+    }
+#endif /* VBOX_WITH_CROGL */
 
     if (!fResize)
     {

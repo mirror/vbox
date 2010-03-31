@@ -46,13 +46,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixf( const GLfloat *m )
 
     crStateLoadMatrixf( m );
 
-    if (matMode == GL_PROJECTION && mural->numExtents > 0) {
-        /* we're loading a matrix onto the projection stack -- better put the base 
-         * projection there first! */
-        crServerApplyBaseProjection(&(mural->extents[mural->curExtent].
-                                                                    baseProjection));
-    }
-    else if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
+    if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
         crServerApplyViewMatrix(&cr_server.viewMatrix[eye]);
     }
@@ -69,13 +63,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadMatrixd( const GLdouble *m )
 
     crStateLoadMatrixd( m );
 
-    if (matMode == GL_PROJECTION && mural->numExtents > 0) {
-        /* we're loading a matrix onto the projection stack -- better put the base 
-         * projection there first! */
-        crServerApplyBaseProjection(&(mural->extents[mural->curExtent].
-                                                                    baseProjection));
-    }
-    else if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
+    if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
         crServerApplyViewMatrix(&cr_server.viewMatrix[eye]);
     }
@@ -127,13 +115,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchLoadIdentity( void )
 
     crStateLoadIdentity();
 
-    if (matMode == GL_PROJECTION && mural->numExtents > 0) {
-        /* we're loading a matrix onto the projection stack -- better put the base 
-         * projection there first! */
-        crServerApplyBaseProjection(&(mural->extents[mural->curExtent].
-                                                                    baseProjection));
-    }
-    else if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
+    if (matMode == GL_MODELVIEW && cr_server.viewOverride) {
         int eye = crServerGetCurrentEye();
         crServerApplyViewMatrix(&cr_server.viewMatrix[eye]);
     }
@@ -206,6 +188,7 @@ LookupProgram(GLuint id)
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchProgramLocalParameter4fARB(GLenum target, GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
+#if 0
     if (target == GL_VERTEX_PROGRAM_ARB) {
         CRServerProgram *prog = LookupProgram(cr_server.currentProgram);
 
@@ -239,6 +222,7 @@ crServerDispatchProgramLocalParameter4fARB(GLenum target, GLuint index, GLfloat 
             }
         }
     }
+#endif
 
     /* if we get here, pass the call through unchanged */
     cr_server.head_spu->dispatch_table.ProgramLocalParameter4fARB(target, index, x, y, z, w);
@@ -255,6 +239,7 @@ crServerDispatchProgramLocalParameter4dARB(GLenum target, GLuint index, GLdouble
 void SERVER_DISPATCH_APIENTRY
 crServerDispatchProgramParameter4fNV(GLenum target, GLuint index, GLfloat x, GLfloat y, GLfloat z, GLfloat w)
 {
+#if 0
     if (target == GL_VERTEX_PROGRAM_NV) {
         CRServerProgram *prog = LookupProgram(cr_server.currentProgram);
 
@@ -288,6 +273,7 @@ crServerDispatchProgramParameter4fNV(GLenum target, GLuint index, GLfloat x, GLf
             }
         }
     }
+#endif
 
     /* if we get here, pass the call through unchanged */
     cr_server.head_spu->dispatch_table.ProgramParameter4fNV(target, index, x, y, z, w);

@@ -870,7 +870,7 @@ void renderspu_SystemMakeCurrent( WindowInfo *window, GLint nativeWindow, Contex
                 }
             }
 
-            crDebug("MakeCurrent 0x%x, 0x%x", window->device_context, context->hRC);
+            /*crDebug("MakeCurrent 0x%x, 0x%x", window->device_context, context->hRC);*/
             if (!render_spu.ws.wglMakeCurrent(window->device_context, context->hRC))
             {
                 DWORD err = GetLastError();

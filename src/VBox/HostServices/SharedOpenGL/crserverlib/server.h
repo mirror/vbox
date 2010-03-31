@@ -54,7 +54,6 @@ typedef struct {
 
 void crServerSetVBoxConfiguration();
 void crServerSetVBoxConfigurationHGCM();
-void crServerInitializeTiling(CRMuralInfo *mural);
 void crServerInitDispatch(void);
 void crServerReturnValue( const void *payload, unsigned int payload_len );
 void crServerWriteback(void);
@@ -70,8 +69,6 @@ void crServerSetOutputBounds( const CRMuralInfo *mural, int extNum );
 void crServerComputeViewportBounds( const CRViewportState *v, CRMuralInfo *mural );
 
 GLboolean crServerInitializeBucketing(CRMuralInfo *mural);
-
-void crServerNewMuralTiling(CRMuralInfo *mural, GLint muralWidth, GLint muralHeight, GLint numTiles, const GLint *tileBounds);
 
 void crComputeOverlapGeom(double *quads, int nquad, CRPoly ***res);
 void crComputeKnockoutGeom(double *quads, int nquad, int my_quad_idx, CRPoly **res);
@@ -91,5 +88,13 @@ GLint crServerSPUWindowID(GLint serverWindow);
 
 GLuint crServerTranslateTextureID(GLuint id);
 GLuint crServerTranslateProgramID(GLuint id);
+
+void crServerCheckMuralGeometry(CRMuralInfo *mural);
+GLboolean crServerSupportRedirMuralFBO(void);
+void crServerRedirMuralFBO(CRMuralInfo *mural, GLboolean redir);
+void crServerCreateMuralFBO(CRMuralInfo *mural);
+void crServerDeleteMuralFBO(CRMuralInfo *mural);
+void crServerPresentFBO(CRMuralInfo *mural);
+GLboolean crServerIsRedirectedToFBO();
 
 #endif /* CR_SERVER_H */

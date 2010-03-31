@@ -1033,6 +1033,8 @@ renderspuGetString(GLenum pname)
         return render_spu.ws.glGetString(GL_VERSION);
     else if (pname == GL_REAL_RENDERER)
         return render_spu.ws.glGetString(GL_RENDERER);
+    else if (pname == GL_REAL_EXTENSIONS)
+        return render_spu.ws.glGetString(GL_EXTENSIONS);
 #endif
     else
         return NULL;

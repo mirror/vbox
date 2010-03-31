@@ -62,6 +62,7 @@ crServerConvertToOutput( const CRrecti *imagewindow,
 void
 crServerComputeViewportBounds(const CRViewportState *v, CRMuralInfo *mural)
 {
+#if 0
 	static GLuint serialNo = 1;
 	int i;
 
@@ -181,6 +182,7 @@ crServerComputeViewportBounds(const CRViewportState *v, CRMuralInfo *mural)
 		extent->serialNo = serialNo++;
 	}
 	mural->viewportValidated = GL_TRUE;
+#endif
 }
 
 
@@ -192,6 +194,7 @@ crServerComputeViewportBounds(const CRViewportState *v, CRMuralInfo *mural)
 void
 crServerSetOutputBounds( const CRMuralInfo *mural, int extNum )
 {
+#if 0
 	const CRExtent *extent = mural->extents + extNum;
 	CRASSERT(mural->viewportValidated);
 
@@ -218,6 +221,7 @@ crServerSetOutputBounds( const CRMuralInfo *mural, int extNum )
 		crServerApplyBaseProjection(&(extent->baseProjection));
 		cr_server.currentSerialNo = extent->serialNo;
 	}		
+#endif
 }
 
 
@@ -277,8 +281,6 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchViewport( GLint x, GLint y, GLsize
 		 /* Note -- If there are tiles, this will be overridden in the 
 			* process of decoding the BoundsInfo packet, so no worries. */
 		 crStateViewport( x, y, width, height );
-
-		 if (mural) mural->viewportValidated = GL_FALSE;
 	}
 
 	/* always dispatch to be safe */
