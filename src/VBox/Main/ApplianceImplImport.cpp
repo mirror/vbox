@@ -609,12 +609,12 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
 
 /**
  * Implementation for reading an OVF. This starts a new thread which will call
- * Appliance::taskThreadImportOVF() which will then call readFS() or readS3().
+ * Appliance::taskThreadImportOrExport() which will then call readFS() or readS3().
  *
  * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::Read().
- * 2) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOVF().
+ * 2) from Appliance::readS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param aLocInfo
  * @param aProgress
@@ -657,7 +657,7 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
 }
 
 /**
- * Actual worker code for reading an OVF from disk. This is called from Appliance::taskThreadImportOVF()
+ * Actual worker code for reading an OVF from disk. This is called from Appliance::taskThreadImportOrExport()
  * and therefore runs on the OVF read worker thread. This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::Read() called Appliance::readImpl();
@@ -711,7 +711,7 @@ HRESULT Appliance::readFS(const LocationInfo &locInfo)
 }
 
 /**
- * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadImportOVF()
+ * Worker code for writing out OVF to the cloud. This is called from Appliance::taskThreadImportOrExport()
  * in S3 mode and therefore runs on the OVF read worker thread. This then starts a second worker
  * thread to create temporary files (see Appliance::readFS()).
  *
@@ -907,12 +907,12 @@ void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
 
 /**
  * Implementation for importing OVF data into VirtualBox. This starts a new thread which will call
- * Appliance::taskThreadImportOVF().
+ * Appliance::taskThreadImportOrExport().
  *
  * This is in a separate private method because it is used from two locations:
  *
  * 1) from the public Appliance::ImportMachines().
- * 2) from Appliance::importS3(), which got called from a previous instance of Appliance::taskThreadImportOVF().
+ * 2) from Appliance::importS3(), which got called from a previous instance of Appliance::taskThreadImportOrExport().
  *
  * @param aLocInfo
  * @param aProgress
@@ -944,7 +944,7 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
 }
 
 /**
- * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOVF()
+ * Actual worker code for importing OVF data into VirtualBox. This is called from Appliance::taskThreadImportOrExport()
  * and therefore runs on the OVF import worker thread. This runs in two contexts:
  *
  * 1) in a first worker thread; in that case, Appliance::ImportMachines() called Appliance::importImpl();
@@ -1779,7 +1779,9 @@ HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pP
 }
 
 /**
- * Gets called from taskThreadImportOVF().
+ * Worker code for importing OVF from the cloud. This is called from Appliance::taskThreadImportOrExport()
+ * in S3 mode and therefore runs on the OVF import worker thread. This then starts a second worker
+ * thread to import from temporary files (see Appliance::importFS()).
  * @param pTask
  * @return
  */
