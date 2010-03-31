@@ -448,6 +448,7 @@ def cmdExistingVm(ctx,mach,cmd,args):
          'powerbutton':     lambda: console.powerButton(),
          'stats':           lambda: perfStats(ctx, mach),
          'guest':           lambda: guestExec(ctx, mach, console, args),
+         'guestlambda':     lambda: args[0](ctx, mach, console, args[1:]),
          'monitorGuest':    lambda: monitorGuest(ctx, mach, console, args),
          'save':            lambda: progressBar(ctx,console.saveState()),
          'screenshot':      lambda: takeScreenshot(ctx,console,args),
@@ -1256,7 +1257,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'eval':['Evaluate arbitrary Python construction: eval \'for m in getMachines(ctx): print m.name,"has",m.memorySize,"M"\'', evalCmd, 0],
             'quit':['Exits', quitCmd, 0],
             'host':['Show host information', hostCmd, 0],
-            'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0)\'', guestCmd, 0],
+            'guest':['Execute command for guest: guest Win32 \'console.mouse.putMouseEvent(20, 20, 0, 0, 0)\'', guestCmd, 0],
             'monitorGuest':['Monitor what happens with the guest for some time: monitorGuest Win32 10', monitorGuestCmd, 0],
             'monitorVBox':['Monitor what happens with Virtual Box for some time: monitorVBox 10', monitorVBoxCmd, 0],
             'portForward':['Setup permanent port forwarding for a VM, takes adapter number host port and guest port: portForward Win32 0 8080 80', portForwardCmd, 0],
@@ -1396,6 +1397,14 @@ def runCommandCb(ctx, cmd, args):
     args.insert(0, cmd)
     return runCommandArgs(ctx, args)
 
+def runGuestCommandCb(ctx, id, guestLambda, args):
+    mach =  machById(ctx,id)
+    if mach == None:
+        return 0
+    args.insert(0, guestLambda)
+    cmdExistingVm(ctx, mach, 'guestlambda', args)
+    return 0
+
 def main(argv):
     style = None
     autopath = False
@@ -1425,6 +1434,7 @@ def main(argv):
            'remote':g_virtualBoxManager.remote,
            'type':g_virtualBoxManager.type,
            'run': lambda cmd,args: runCommandCb(ctx, cmd, args),
+           'guestlambda': lambda id,guestLambda,args: runGuestCommandCb(ctx, id, guestLambda, args),
            'machById': lambda id: machById(ctx,id),
            'argsToMach': lambda args: argsToMach(ctx,args),
            'progressBar': lambda p: progressBar(ctx,p),
