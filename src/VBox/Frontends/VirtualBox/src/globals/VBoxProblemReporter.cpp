@@ -2616,13 +2616,7 @@ void VBoxProblemReporter::sltShowUserManual(const QString &strLocation)
     AssertRC(rc);
     QProcess::startDetached(QString(szViewerPath) + "/kchmviewer", QStringList(strLocation));
 # else /* #ifndef VBOX_OSE */
-    /* In OSE case we do NOT know which of PDF viewers are installed,
-     * so we will just try few of them: */
-    QStringList viewers;
-    viewers << "evince" << "okular";
-    foreach (const QString &viewer, viewers)
-        if (QProcess::startDetached(viewer, QStringList(strLocation)))
-            break;
+    vboxGlobal().openURL("file://" + strLocation);
 # endif /* #ifdef VBOX_OSE */
 #elif defined (Q_WS_MAC)
     vboxGlobal().openURL("file://" + strLocation);
