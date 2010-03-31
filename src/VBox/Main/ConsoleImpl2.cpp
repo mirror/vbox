@@ -2564,11 +2564,11 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 rc = CFGMR3InsertStringW(pCfg, "BindIP", str);          RC_CHECK();
             }
             STR_FREE();
-            uint32_t mtu = 0;
-            uint32_t sockSnd = 0;
-            uint32_t sockRcv = 0;
-            uint32_t tcpSnd = 0;
-            uint32_t tcpRcv = 0;
+            ULONG mtu = 0;
+            ULONG sockSnd = 0;
+            ULONG sockRcv = 0;
+            ULONG tcpSnd = 0;
+            ULONG tcpRcv = 0;
             hrc = natDriver->GetNetworkSettings(&mtu, &sockSnd, &sockRcv, &tcpSnd, &tcpRcv); H();
             if (mtu)
             {
