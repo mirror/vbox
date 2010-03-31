@@ -1,0 +1,37 @@
+# $Id$
+## @file
+# Sub-Makefile for test cases.
+#
+
+#
+# Copyright (C) 2009 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../../..
+include	$(KBUILD_PATH)/subheader.kmk
+
+PROGRAMS += tstCredentialProvider
+tstCredentialProvider_TEMPLATE = VBOXGUESTR3EXE
+tstCredentialProvider_SOURCES  = \
+	tstCredentialProvider.cpp
+tstCredentialProvider_SDKS.x86 = WINDDK
+
+#
+# Since this is not the default SDK we have to navigate manually to it.
+#
+VBOX_PATH_PSDK_200702    := \
+	$(PATH_DEVTOOLS)/win.x86/sdk/x200702/
+
+tstCredentialProvider_INCS        := \
+	$(VBOX_PATH_PSDK_200702)/Include
+tstCredentialProvider_LIBS.x86  := \
+	$(VBOX_PATH_PSDK_200702)/Lib/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/Secur32.Lib
+tstCredentialProvider_LIBS.amd64  := \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/Credui.Lib \
+	$(VBOX_PATH_PSDK_200702)/Lib/x64/Secur32.Lib
+
+include	$(KBUILD_PATH)/subfooter.kmk
