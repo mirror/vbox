@@ -1,0 +1,43 @@
+SUB_DEPTH = ../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+ifdef VBOX_WITH_HARDENING
+ PROGRAMS += VBoxNetNATHardened
+ DLLS += VBoxNetNAT
+else
+ PROGRAMS += VBoxNetNAT
+endif
+VBoxNetNAT_TEMPLATE =
+VBoxNetNAT_TEMPLATE := VBOXR3$(if-expr defined(VBOX_WITH_HARDENING),,EXE)
+VBoxNetNAT_INCS = ../../Devices/Network/slirp
+VBoxNetNAT_DEFS = VBOX_WITH_NAT_SERVICE
+VBoxNetNAT_SOURCES += VBoxNetNAT.cpp
+VBoxNetNAT_DEFS += VBOX_WITH_NAT_SERVICE
+VBoxNetNAT_DEFS += VBOX_WITH_SLIRP_BSD_MBUF
+
+#define def_vbox_slirp_service_cflags
+#  $(file)_DEFS += VBOX_WITH_NAT_SERVICE
+#endef
+
+define def_vbox_slirp_service_sources
+    VBoxNetNAT_SOURCES += $1/$(file)
+endef
+VBOX_NOT_IN_NATSERVICE = Network/DrvNAT.cpp
+$(foreach file,$(filter-out $(VBOX_NOT_IN_NATSERVICE), $(VBOX_SLIRP_SOURCES)),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
+$(foreach file,$(VBOX_SLIRP_ALIAS_SOURCES),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
+$(foreach file,$(VBOX_SLIRP_BSD_SOURCES),$(eval $(call def_vbox_slirp_service_sources, ../../Devices)))
+
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_BSD_SOURCES)),$(eval $(call def_vbox_slirp_bsd_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_service_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(filter-out $(VBOX_WITH_NAT_SERVICE), $(VBOX_SLIRP_SOURCES))),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_cflags, ../../Devices/Network)))
+$(foreach file,$(addprefix ../../Devices/, $(VBOX_SLIRP_ALIAS_SOURCES)),$(eval $(call def_vbox_slirp_alias_cflags, ../../Devices/Network)))
+
+VBoxNetNAT_SOURCES += ../NetLib/VBoxNetBaseService.cpp
+
+VBoxNetNAT_LIBS = \
+	$(LIB_RUNTIME)
+VBoxNetNAT_LDFLAGS.win = /SUBSYSTEM:windows
+
+include $(KBUILD_PATH)/subfooter.kmk
