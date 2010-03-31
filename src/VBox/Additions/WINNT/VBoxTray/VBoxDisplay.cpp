@@ -120,7 +120,10 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 
                 if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
                     result = true;
-
+#ifdef VBOXWDDM
+                if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter (Microsoft Corporation - WDDM)") == 0)
+                    result = true;
+#endif
                 break;
             }
 
