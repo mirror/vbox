@@ -1322,7 +1322,7 @@ int handleModifyVM(HandlerArg *a)
                     strGuestIp = ch;                
                     ITERATE_TO_NEXT_TERM(ch);
                     strGuestPort = ch;
-                    uint32_t proto;
+                    NATProtocol_T proto;
                     if (RTStrICmp(strProto, "udp") == 0)
                         proto = NATProtocol_UDP;
                     else if (RTStrICmp(strProto, "tcp") == 0)
