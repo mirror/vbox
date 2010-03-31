@@ -774,6 +774,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     uint32_t    u32Usage = 0;
     uint8_t     u8HidCode;
     int         fKeyDown;
+    bool        fHaveEvent = true;
     unsigned    i;
 
     usbKbdLock(pThis);
@@ -791,18 +792,17 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
 
         if (fKeyDown)
         {
-            bool fAlready = false;
             for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
             {
                 if (pReport->aKeys[i] == u8HidCode)
                 {
                     /* Skip repeat events. */
-                    fAlready = true;
+                    fHaveEvent = false;
                     break;                              
                 }
             }
 
-            if (!fAlready)
+            if (fHaveEvent)
             {
                 for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
                 {
@@ -849,7 +849,8 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
         }
 
         /* Send a report if the host is already waiting for it. */
-        usbHidSendReport(pThis);
+        if (fHaveEvent)
+            usbHidSendReport(pThis);
     }
 
     usbKbdUnlock(pThis);
