@@ -291,6 +291,7 @@ VBoxSVC_SOURCES = \
 	VirtualBoxImpl.cpp \
 	ApplianceImpl.cpp \
 	ApplianceImplExport.cpp \
+	ApplianceImplImport.cpp \
 	xml/ovfreader.cpp \
 	VFSExplorerImpl.cpp \
 	MachineImpl.cpp \

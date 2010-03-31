@@ -115,23 +115,25 @@ private:
     Utf8Str manifestFileName(Utf8Str aPath) const;
 
     HRESULT readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
-    HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
     struct TaskOVF;
-    struct TaskImportOVF; /* Worker threads for import */
-    static DECLCALLBACK(int) taskThreadImportOVF(RTTHREAD aThread, void *pvUser);
 
+    struct TaskImportOVF; /* Worker threads for import */
     int readFS(TaskImportOVF *pTask);
     int readS3(TaskImportOVF *pTask);
 
-    int importFS(TaskImportOVF *pTask);
-    int importS3(TaskImportOVF *pTask);
-
-    void ConvertDiskAttachmentValues(const HardDiskController &hdc,
+    void convertDiskAttachmentValues(const HardDiskController &hdc,
                                      uint32_t ulAddressOnParent,
                                      Bstr &controllerType,
                                      int32_t &lChannel,
                                      int32_t &lDevice);
+
+    HRESULT importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
+
+    static DECLCALLBACK(int) taskThreadImportOVF(RTTHREAD aThread, void *pvUser);
+
+    int importFS(TaskImportOVF *pTask);
+    int importS3(TaskImportOVF *pTask);
 
     HRESULT writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress);
 
