@@ -14024,10 +14024,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
      uuid="4b286616-eb03-11de-b0fb-1701eca42246"
      wsmap="managed"
      >
-    <desc>Interface for managing a NAT engine which is used with a virtual machine. This allows for changing
-      NAT behavior such as port-forwarding rules. This interface is used in the <link to="INetworkAdapter::natDriver" /> attribute.</desc>
+     <desc>Interface for managing a NAT engine which is used with a virtual machine. This
+       allows for changing NAT behavior such as port-forwarding rules. This interface is
+       used in the <link to="INetworkAdapter::natDriver" /> attribute.</desc>
     <attribute name="network" type="wstring">
-      <desc>The network attribute of the NAT engine (the same value used with built-in DHCP server to fill corresponding fields of DHCP leases).</desc>
+      <desc>The network attribute of the NAT engine (the same value is used with built-in
+        DHCP server to fill corresponding fields of DHCP leases).</desc>
     </attribute>
     <attribute name="hostIP" type="wstring">
         <desc>IP of host interface to bind all opened sockets to.
@@ -14035,13 +14037,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </desc>
     </attribute>
     <attribute name="tftpPrefix" type="wstring">
-      <desc>TFTP prefix attribute which is used with the built-in DHCP server to fill corresponding fields of DHCP leases.</desc>
+      <desc>TFTP prefix attribute which is used with the built-in DHCP server to fill
+        the corresponding fields of DHCP leases.</desc>
     </attribute>
     <attribute name="tftpBootFile" type="wstring">
-      <desc>TFTP boot file attribute which is used with the built-in DHCP server to fill corresponding fields of DHCP leases.</desc>
+      <desc>TFTP boot file attribute which is used with the built-in DHCP server to fill
+        the corresponding fields of DHCP leases.</desc>
     </attribute>
     <attribute name="tftpNextServer" type="wstring">
-      <desc>TFTP server attribute which is used with the built-in DHCP server to fill corresponding fields of DHCP leases.
+      <desc>TFTP server attribute which is used with the built-in DHCP server to fill
+        the corresponding fields of DHCP leases.
         <note>The preferred form is IPv4 addresses.</note>
       </desc>
     </attribute>
@@ -14049,36 +14054,40 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       <desc>Whether the DHCP server should pass the DNS domain used by the host.</desc>
     </attribute>
     <attribute name="dnsProxy" type="boolean">
-      <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address of the DNS proxy and process traffic using
-           DNS servers registerd on the host.</desc>
+      <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
+        of the DNS proxy and process traffic using DNS servers registerd on the host.</desc>
     </attribute>
     <attribute name="dnsUseHostResolver" type="boolean">
-      <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address of the DNS proxy and process traffic using
-           the host resolver mechanism.</desc>
+      <desc>Whether the DHCP server (and the DNS traffic by NAT) should pass the address
+        of the DNS proxy and process traffic using the host resolver mechanism.</desc>
     </attribute>
     <attribute name="redirects" type="wstring" readonly="yes" safearray="yes">
-      <desc>Array of NAT port-forwarding rules in string representation, in the following format: "name,protocol id,host ip,host port,guest ip,guest port".</desc>
+      <desc>Array of NAT port-forwarding rules in string representation, in the following
+        format: "name,protocol id,host ip,host port,guest ip,guest port".</desc>
     </attribute>
     <method name="setNetworkSettings">
       <desc>Sets network configuration of the NAT engine.</desc>
       <param name="mtu" type="unsigned long" dir="in">
-        <desc>MTU of the NAT engine.</desc>
+        <desc>MTU (maximum transmission unit) of the NAT engine in bytes.</desc>
       </param>
       <param name="sockSnd" type="unsigned long" dir="in">
-        <desc>Capacity of the socket send buffer when creating a new socket.</desc>
+        <desc>Capacity of the socket send buffer in bytes when creating a new socket.</desc>
       </param>
       <param name="sockRcv" type="unsigned long" dir="in">
-        <desc>Capacity of the socket receive buffer when creating a new socket.</desc>
+        <desc>Capacity of the socket receive buffer in bytes when creating a new socket.</desc>
       </param>
       <param name="TcpWndSnd" type="unsigned long" dir="in">
-        <desc>Initial size of the NAT engine's sending TCP window when establishing a new TCP connection.</desc>
+        <desc>Initial size of the NAT engine's sending TCP window in bytes when
+          establishing a new TCP connection.</desc>
       </param>
       <param name="TcpWndRcv" type="unsigned long" dir="in">
-        <desc>Initial size of the NAT engine's receiving TCP window when establishing a new TCP connection.</desc>
+        <desc>Initial size of the NAT engine's receiving TCP window in bytes when
+          establishing a new TCP connection.</desc>
       </param>
     </method>
     <method name="getNetworkSettings">
-      <desc>Returns network configuration of NAT engine. See <link to="#setNetworkSettings" /> for parameter descriptions.</desc>
+      <desc>Returns network configuration of NAT engine. See <link to="#setNetworkSettings" />
+        for parameter descriptions.</desc>
       <param name="mtu" type="unsigned long" dir="out" />
       <param name="sockSnd" type="unsigned long" dir="out" />
       <param name="sockRcv" type="unsigned long" dir="out" />
@@ -14088,19 +14097,23 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="addRedirect">
         <desc>Adds a new NAT port-forwarding rule.</desc>
         <param name="name" type="wstring" dir="in">
-          <desc>The name of the rule. An empty name is acceptable, in which case the NAT engine auto-generates one using the other parameters.</desc>
+          <desc>The name of the rule. An empty name is acceptable, in which case the NAT engine
+            auto-generates one using the other parameters.</desc>
         </param>
         <param name="proto" type="NATProtocol" dir="in">
           <desc>Protocol handled with the rule.</desc>
         </param>
         <param name="hostIp" type="wstring" dir="in">
-           <desc>IP of the host interface to which the rule should apply. An empty ip address is acceptable, in which case the NAT engine binds the handling socket to any interface.</desc>
+          <desc>IP of the host interface to which the rule should apply. An empty ip address is
+            acceptable, in which case the NAT engine binds the handling socket to any interface.</desc>
         </param>
         <param name="hostPort" type="unsigned short" dir="in">
           <desc>The port number to listen on.</desc>
         </param>
         <param name="guestIp" type="wstring" dir="in">
-          <desc>The IP address of the guest which the NAT engine will forward matching packets to. An empty IP address is acceptable, in which case the NAT engine will forward packets to the first DHCP lease (x.x.x.15).</desc>
+          <desc>The IP address of the guest which the NAT engine will forward matching packets
+            to. An empty IP address is acceptable, in which case the NAT engine will forward
+            packets to the first DHCP lease (x.x.x.15).</desc>
         </param>
         <param name="guestPort" type="unsigned short" dir="in">
           <desc>The port number to forward.</desc>
