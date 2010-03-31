@@ -437,27 +437,28 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                 Utf8Str Utf8Password(aPassword);
             
                 VBOXHGCMSVCPARM paParms[13];
-                paParms[0].setUInt32(HOST_EXEC_CMD);
-                paParms[1].setUInt32(aFlags);
-                paParms[2].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
-                paParms[3].setUInt32(uNumArgs);
-                paParms[4].setPointer((void*)pvArgs, cbArgs);
-                paParms[5].setUInt32(uNumEnv);
-                paParms[6].setPointer((void*)pvEnv, cbEnv);
-                paParms[7].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
-                paParms[8].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);
-                paParms[9].setPointer((void*)Utf8StdErr.raw(), (uint32_t)strlen(Utf8StdErr.raw()) + 1);
-                paParms[10].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
-                paParms[11].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
-                paParms[12].setUInt32(aTimeoutMS);
+                int i = 0;
+                paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
+                paParms[i++].setUInt32(aFlags);
+                paParms[i++].setUInt32(uNumArgs);
+                paParms[i++].setPointer((void*)pvArgs, cbArgs);
+                paParms[i++].setUInt32(uNumEnv);
+                paParms[i++].setPointer((void*)pvEnv, cbEnv);
+                paParms[i++].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
+                paParms[i++].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);
+                paParms[i++].setPointer((void*)Utf8StdErr.raw(), (uint32_t)strlen(Utf8StdErr.raw()) + 1);
+                paParms[i++].setPointer((void*)Utf8UserName.raw(), (uint32_t)strlen(Utf8UserName.raw()) + 1);
+                paParms[i++].setPointer((void*)Utf8Password.raw(), (uint32_t)strlen(Utf8Password.raw()) + 1);
+                paParms[i++].setUInt32(aTimeoutMS);
 
                 /* Forward the information to the VMM device. */
                 AssertPtr(mParent);
                 VMMDev *vmmDev = mParent->getVMMDev();
                 if (vmmDev)
                 {
+                    LogFlow(("Guest::ExecuteProgram: numParms=%d\n", i));
                     vrc = vmmDev->hgcmHostCall("VBoxGuestControlSvc", HOST_EXEC_CMD,
-                                               13, paParms);
+                                               i, paParms);
                     /** @todo Get the PID. */
                 }
                 RTMemFree(pvEnv);

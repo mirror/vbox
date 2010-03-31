@@ -3544,6 +3544,8 @@ int configSetGlobalPropertyFlags(VMMDev * const pVMMDev,
         /* That is not a fatal failure. */
         rc = VINF_SUCCESS;
     }
+    else
+        Log(("VBoxGuestControlSvc loaded\n"));
 
     return VINF_SUCCESS;
 #else /* !VBOX_WITH_GUEST_CONTROL */
