@@ -62,7 +62,7 @@ PPDMASYNCCOMPLETIONTASK g_AsyncCompletionTasks[NR_TASKS];
 volatile uint32_t       g_cTasksLeft;
 RTSEMEVENT              g_FinishedEventSem;
 
-void pfnAsyncTaskCompleted(PVM pVM, void *pvUser, void *pvUser2)
+void pfnAsyncTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rc)
 {
     LogFlow((TESTCASE ": %s: pVM=%p pvUser=%p pvUser2=%p\n", __FUNCTION__, pVM, pvUser, pvUser2));
 

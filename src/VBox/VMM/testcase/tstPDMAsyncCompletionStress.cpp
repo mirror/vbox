@@ -159,7 +159,7 @@ size_t   g_cbTestPattern;
 /** Array holding test files. */
 PDMACTESTFILE g_aTestFiles[NR_OPEN_ENDPOINTS];
 
-static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2);
+static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq);
 
 static void tstPDMACStressTestFileVerify(PPDMACTESTFILE pTestFile, PPDMACTESTFILETASK pTestTask)
 {
@@ -363,10 +363,8 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
                 else
                     rc = tstPDMACStressTestFileRead(pTestFile, pTask);
 
-                AssertRC(rc);
-
                 if (rc != VINF_AIO_TASK_PENDING)
-                    tstPDMACStressTestFileTaskCompleted(pVM, pTask, pTestFile);
+                    tstPDMACStressTestFileTaskCompleted(pVM, pTask, pTestFile, rc);
 
                 cTasksStarted++;
             }
@@ -393,7 +391,7 @@ static int tstPDMACTestFileThread(PVM pVM, PPDMTHREAD pThread)
     return rc;
 }
 
-static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2)
+static void tstPDMACStressTestFileTaskCompleted(PVM pVM, void *pvUser, void *pvUser2, int rcReq)
 {
     PPDMACTESTFILE pTestFile = (PPDMACTESTFILE)pvUser2;
     PPDMACTESTFILETASK pTestTask = (PPDMACTESTFILETASK)pvUser;
