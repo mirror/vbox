@@ -237,7 +237,7 @@ Machine::MediaData::~MediaData()
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Machine()
-    : mPeer(NULL), mParent(NULL)
+    : mPeer(NULL), mParent(NULL), mGuestHAL(NULL)
 {}
 
 Machine::~Machine()
