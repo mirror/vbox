@@ -4,7 +4,7 @@
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -65,6 +65,96 @@ static const char *getHostIfStatusText(HostNetworkInterfaceStatus_T enmStatus)
     return "Unknown";
 }
 #endif
+
+static void listHardDisks(const ComPtr<IVirtualBox> aVirtualBox,
+                          const com::SafeIfaceArray<IMedium> &aMedia,
+                          const char *pszParentUUIDStr)
+{
+    HRESULT rc;
+    for (size_t i = 0; i < aMedia.size(); ++ i)
+    {
+        ComPtr<IMedium> hdd = aMedia[i];
+        Bstr uuid;
+        hdd->COMGETTER(Id)(uuid.asOutParam());
+        RTPrintf("UUID:        %s\n", Utf8Str(uuid).raw());
+        RTPrintf("Parent UUID: %s\n", pszParentUUIDStr);
+        Bstr format;
+        hdd->COMGETTER(Format)(format.asOutParam());
+        RTPrintf("Format:      %lS\n", format.raw());
+        Bstr filepath;
+        hdd->COMGETTER(Location)(filepath.asOutParam());
+        RTPrintf("Location:    %lS\n", filepath.raw());
+
+        MediumState_T enmState;
+        hdd->RefreshState(&enmState);
+        const char *stateStr = "unknown";
+        switch (enmState)
+        {
+            case MediumState_NotCreated:
+                stateStr = "not created";
+                break;
+            case MediumState_Created:
+                stateStr = "created";
+                break;
+            case MediumState_LockedRead:
+                stateStr = "locked read";
+                break;
+            case MediumState_LockedWrite:
+                stateStr = "locked write";
+                break;
+            case MediumState_Inaccessible:
+                stateStr = "inaccessible";
+                break;
+            case MediumState_Creating:
+                stateStr = "creating";
+                break;
+            case MediumState_Deleting:
+                stateStr = "deleting";
+                break;
+        }
+        RTPrintf("State:       %s\n", stateStr);
+
+        MediumType_T type;
+        hdd->COMGETTER(Type)(&type);
+        const char *typeStr = "unknown";
+        switch (type)
+        {
+            case MediumType_Normal:
+                typeStr = "normal";
+                break;
+            case MediumType_Immutable:
+                typeStr = "immutable";
+                break;
+            case MediumType_Writethrough:
+                typeStr = "writethrough";
+                break;
+        }
+        RTPrintf("Type:        %s\n", typeStr);
+
+        com::SafeArray<BSTR> machineIds;
+        hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
+        for (size_t j = 0; j < machineIds.size(); ++ j)
+        {
+            ComPtr<IMachine> machine;
+            CHECK_ERROR(aVirtualBox, GetMachine(machineIds[j], machine.asOutParam()));
+            ASSERT(machine);
+            Bstr name;
+            machine->COMGETTER(Name)(name.asOutParam());
+            RTPrintf("%s%lS (UUID: %lS)\n",
+                    j == 0 ? "Usage:       " : "             ",
+                    name.raw(), machineIds[j]);
+        }
+        RTPrintf("\n");
+
+        com::SafeIfaceArray<IMedium> children;
+        CHECK_ERROR(hdd, COMGETTER(Children)(ComSafeArrayAsOutParam(children)));
+        if (children.size() > 0)
+        {
+            // depth first listing of child media
+            listHardDisks(aVirtualBox, children, Utf8Str(uuid).raw());
+        }
+    }
+}
 
 enum enOptionCodes
 {
@@ -140,7 +230,7 @@ int handleList(HandlerArg *a)
             case LISTNATPFS:
                 if (a->argc < 2)
                     return errorSyntax(USAGE_LIST, "Missing vm name for \"list\" %S.\n", a->argv[0]);
-                    
+
             case LISTVMS:
             case LISTRUNNINGVMS:
             case LISTOSTYPES:
@@ -199,7 +289,7 @@ int handleList(HandlerArg *a)
              * Get the list of all registered VMs
              */
             com::SafeIfaceArray <IMachine> machines;
-            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam (machines));
+            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -222,7 +312,7 @@ int handleList(HandlerArg *a)
              * Get the list of all _running_ VMs
              */
             com::SafeIfaceArray <IMachine> machines;
-            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam (machines));
+            rc = a->virtualBox->COMGETTER(Machines)(ComSafeArrayAsOutParam(machines));
             if (SUCCEEDED(rc))
             {
                 /*
@@ -233,7 +323,7 @@ int handleList(HandlerArg *a)
                     if (machines[i])
                     {
                         MachineState_T machineState;
-                        rc = machines [i]->COMGETTER(State)(&machineState);
+                        rc = machines[i]->COMGETTER(State)(&machineState);
                         if (SUCCEEDED(rc))
                         {
                             switch (machineState)
@@ -394,12 +484,12 @@ int handleList(HandlerArg *a)
         case LISTHOSTINFO:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR (a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
+            CHECK_ERROR(a->virtualBox, COMGETTER(Host)(Host.asOutParam()));
 
             RTPrintf("Host Information:\n\n");
 
             LONG64 uTCTime = 0;
-            CHECK_ERROR (Host, COMGETTER(UTCTime)(&uTCTime));
+            CHECK_ERROR(Host, COMGETTER(UTCTime)(&uTCTime));
             RTTIMESPEC timeSpec;
             RTTimeSpecSetMilli(&timeSpec, uTCTime);
             char szTime[32] = {0};
@@ -407,38 +497,38 @@ int handleList(HandlerArg *a)
             RTPrintf("Host time: %s\n", szTime);
 
             ULONG processorOnlineCount = 0;
-            CHECK_ERROR (Host, COMGETTER(ProcessorOnlineCount)(&processorOnlineCount));
+            CHECK_ERROR(Host, COMGETTER(ProcessorOnlineCount)(&processorOnlineCount));
             RTPrintf("Processor online count: %lu\n", processorOnlineCount);
             ULONG processorCount = 0;
-            CHECK_ERROR (Host, COMGETTER(ProcessorCount)(&processorCount));
+            CHECK_ERROR(Host, COMGETTER(ProcessorCount)(&processorCount));
             RTPrintf("Processor count: %lu\n", processorCount);
             ULONG processorSpeed = 0;
             Bstr processorDescription;
             for (ULONG i = 0; i < processorCount; i++)
             {
-                CHECK_ERROR (Host, GetProcessorSpeed(i, &processorSpeed));
+                CHECK_ERROR(Host, GetProcessorSpeed(i, &processorSpeed));
                 if (processorSpeed)
                     RTPrintf("Processor#%u speed: %lu MHz\n", i, processorSpeed);
                 else
                     RTPrintf("Processor#%u speed: unknown\n", i, processorSpeed);
-                CHECK_ERROR (Host, GetProcessorDescription(i, processorDescription.asOutParam()));
+                CHECK_ERROR(Host, GetProcessorDescription(i, processorDescription.asOutParam()));
                 RTPrintf("Processor#%u description: %lS\n", i, processorDescription.raw());
             }
 
             ULONG memorySize = 0;
-            CHECK_ERROR (Host, COMGETTER(MemorySize)(&memorySize));
+            CHECK_ERROR(Host, COMGETTER(MemorySize)(&memorySize));
             RTPrintf("Memory size: %lu MByte\n", memorySize);
 
             ULONG memoryAvailable = 0;
-            CHECK_ERROR (Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
+            CHECK_ERROR(Host, COMGETTER(MemoryAvailable)(&memoryAvailable));
             RTPrintf("Memory available: %lu MByte\n", memoryAvailable);
 
             Bstr operatingSystem;
-            CHECK_ERROR (Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
+            CHECK_ERROR(Host, COMGETTER(OperatingSystem)(operatingSystem.asOutParam()));
             RTPrintf("Operating system: %lS\n", operatingSystem.raw());
 
             Bstr oSVersion;
-            CHECK_ERROR (Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
+            CHECK_ERROR(Host, COMGETTER(OSVersion)(oSVersion.asOutParam()));
             RTPrintf("Operating system version: %lS\n", oSVersion.raw());
         }
         break;
@@ -476,41 +566,40 @@ int handleList(HandlerArg *a)
         {
             ComPtr<ISystemProperties> systemProperties;
             CHECK_ERROR(a->virtualBox,
-                        COMGETTER(SystemProperties) (systemProperties.asOutParam()));
+                        COMGETTER(SystemProperties)(systemProperties.asOutParam()));
             com::SafeIfaceArray <IMediumFormat> mediumFormats;
             CHECK_ERROR(systemProperties,
-                        COMGETTER(MediumFormats) (ComSafeArrayAsOutParam (mediumFormats)));
+                        COMGETTER(MediumFormats)(ComSafeArrayAsOutParam(mediumFormats)));
 
             RTPrintf("Supported hard disk backends:\n\n");
             for (size_t i = 0; i < mediumFormats.size(); ++ i)
             {
                 /* General information */
                 Bstr id;
-                CHECK_ERROR(mediumFormats [i],
-                            COMGETTER(Id) (id.asOutParam()));
+                CHECK_ERROR(mediumFormats[i], COMGETTER(Id)(id.asOutParam()));
 
                 Bstr description;
-                CHECK_ERROR(mediumFormats [i],
-                            COMGETTER(Id) (description.asOutParam()));
+                CHECK_ERROR(mediumFormats[i],
+                            COMGETTER(Id)(description.asOutParam()));
 
                 ULONG caps;
-                CHECK_ERROR(mediumFormats [i],
-                            COMGETTER(Capabilities) (&caps));
+                CHECK_ERROR(mediumFormats[i],
+                            COMGETTER(Capabilities)(&caps));
 
                 RTPrintf("Backend %u: id='%ls' description='%ls' capabilities=%#06x extensions='",
                         i, id.raw(), description.raw(), caps);
 
                 /* File extensions */
                 com::SafeArray <BSTR> fileExtensions;
-                CHECK_ERROR(mediumFormats [i],
-                            COMGETTER(FileExtensions) (ComSafeArrayAsOutParam (fileExtensions)));
+                CHECK_ERROR(mediumFormats[i],
+                            COMGETTER(FileExtensions)(ComSafeArrayAsOutParam(fileExtensions)));
                 for (size_t j = 0; j < fileExtensions.size(); ++ j)
                 {
-                    RTPrintf ("%ls", Bstr (fileExtensions [j]).raw());
+                    RTPrintf("%ls", Bstr(fileExtensions[j]).raw());
                     if (j != fileExtensions.size()-1)
-                        RTPrintf (",");
+                        RTPrintf(",");
                 }
-                RTPrintf ("'");
+                RTPrintf("'");
 
                 /* Configuration keys */
                 com::SafeArray <BSTR> propertyNames;
@@ -518,33 +607,33 @@ int handleList(HandlerArg *a)
                 com::SafeArray <DataType_T> propertyTypes;
                 com::SafeArray <ULONG> propertyFlags;
                 com::SafeArray <BSTR> propertyDefaults;
-                CHECK_ERROR(mediumFormats [i],
-                            DescribeProperties (ComSafeArrayAsOutParam (propertyNames),
-                                                ComSafeArrayAsOutParam (propertyDescriptions),
-                                                ComSafeArrayAsOutParam (propertyTypes),
-                                                ComSafeArrayAsOutParam (propertyFlags),
-                                                ComSafeArrayAsOutParam (propertyDefaults)));
+                CHECK_ERROR(mediumFormats[i],
+                            DescribeProperties(ComSafeArrayAsOutParam(propertyNames),
+                                                ComSafeArrayAsOutParam(propertyDescriptions),
+                                                ComSafeArrayAsOutParam(propertyTypes),
+                                                ComSafeArrayAsOutParam(propertyFlags),
+                                                ComSafeArrayAsOutParam(propertyDefaults)));
 
-                RTPrintf (" properties=(");
+                RTPrintf(" properties=(");
                 if (propertyNames.size() > 0)
                 {
                     for (size_t j = 0; j < propertyNames.size(); ++ j)
                     {
-                        RTPrintf ("\n  name='%ls' desc='%ls' type=",
-                                Bstr (propertyNames [j]).raw(), Bstr (propertyDescriptions [j]).raw());
-                        switch (propertyTypes [j])
+                        RTPrintf("\n  name='%ls' desc='%ls' type=",
+                                Bstr(propertyNames[j]).raw(), Bstr(propertyDescriptions[j]).raw());
+                        switch (propertyTypes[j])
                         {
-                            case DataType_Int32: RTPrintf ("int"); break;
-                            case DataType_Int8: RTPrintf ("byte"); break;
-                            case DataType_String: RTPrintf ("string"); break;
+                            case DataType_Int32: RTPrintf("int"); break;
+                            case DataType_Int8: RTPrintf("byte"); break;
+                            case DataType_String: RTPrintf("string"); break;
                         }
-                        RTPrintf (" flags=%#04x", propertyFlags [j]);
-                        RTPrintf (" default='%ls'", Bstr (propertyDefaults [j]).raw());
+                        RTPrintf(" flags=%#04x", propertyFlags[j]);
+                        RTPrintf(" default='%ls'", Bstr(propertyDefaults[j]).raw());
                         if (j != propertyNames.size()-1)
-                            RTPrintf (", ");
+                            RTPrintf(", ");
                     }
                 }
-                RTPrintf (")\n");
+                RTPrintf(")\n");
             }
         }
         break;
@@ -552,61 +641,8 @@ int handleList(HandlerArg *a)
         case LISTHDDS:
         {
             com::SafeIfaceArray<IMedium> hdds;
-            CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam (hdds)));
-            for (size_t i = 0; i < hdds.size(); ++ i)
-            {
-                ComPtr<IMedium> hdd = hdds[i];
-                Bstr uuid;
-                hdd->COMGETTER(Id)(uuid.asOutParam());
-                RTPrintf("UUID:       %s\n", Utf8Str(uuid).raw());
-                Bstr format;
-                hdd->COMGETTER(Format)(format.asOutParam());
-                RTPrintf("Format:     %lS\n", format.raw());
-                Bstr filepath;
-                hdd->COMGETTER(Location)(filepath.asOutParam());
-                RTPrintf("Location:   %lS\n", filepath.raw());
-                MediumState_T enmState;
-                /// @todo NEWMEDIA check accessibility of all parents
-                /// @todo NEWMEDIA print the full state value
-                hdd->RefreshState(&enmState);
-                RTPrintf("Accessible: %s\n", enmState != MediumState_Inaccessible ? "yes" : "no");
-
-                MediumType_T type;
-                hdd->COMGETTER(Type)(&type);
-                const char *typeStr = "unknown";
-                switch (type)
-                {
-                    case MediumType_Normal:
-                        typeStr = "normal";
-                        break;
-                    case MediumType_Immutable:
-                        typeStr = "immutable";
-                        break;
-                    case MediumType_Writethrough:
-                        typeStr = "writethrough";
-                        break;
-                }
-                RTPrintf("Type:       %s\n", typeStr);
-
-                com::SafeArray<BSTR> machineIds;
-                hdd->COMGETTER(MachineIds)(ComSafeArrayAsOutParam(machineIds));
-                for (size_t j = 0; j < machineIds.size(); ++ j)
-                {
-                    ComPtr<IMachine> machine;
-                    CHECK_ERROR(a->virtualBox, GetMachine(machineIds[j], machine.asOutParam()));
-                    ASSERT(machine);
-                    Bstr name;
-                    machine->COMGETTER(Name)(name.asOutParam());
-                    machine->COMGETTER(Id)(uuid.asOutParam());
-                    RTPrintf("%s%lS (UUID: %lS)\n",
-                            j == 0 ? "Usage:      " : "            ",
-                            name.raw(), machineIds[j]);
-                }
-                /// @todo NEWMEDIA check usage in snapshots too
-                /// @todo NEWMEDIA also list children and say 'differencing' for
-                /// hard disks with the parent or 'base' otherwise.
-                RTPrintf("\n");
-            }
+            CHECK_ERROR(a->virtualBox, COMGETTER(HardDisks)(ComSafeArrayAsOutParam(hdds)));
+            listHardDisks(a->virtualBox, hdds, "base");
         }
         break;
 
@@ -685,10 +721,10 @@ int handleList(HandlerArg *a)
         case LISTUSBHOST:
         {
             ComPtr<IHost> Host;
-            CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
+            CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(Host.asOutParam()), 1);
 
             SafeIfaceArray <IHostUSBDevice> CollPtr;
-            CHECK_ERROR_RET (Host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(CollPtr)), 1);
+            CHECK_ERROR_RET(Host, COMGETTER(USBDevices)(ComSafeArrayAsOutParam(CollPtr)), 1);
 
             RTPrintf("Host USB Devices:\n\n");
 
@@ -704,13 +740,13 @@ int handleList(HandlerArg *a)
 
                     /* Query info. */
                     Bstr id;
-                    CHECK_ERROR_RET (dev, COMGETTER(Id)(id.asOutParam()), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(Id)(id.asOutParam()), 1);
                     USHORT usVendorId;
-                    CHECK_ERROR_RET (dev, COMGETTER(VendorId)(&usVendorId), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(VendorId)(&usVendorId), 1);
                     USHORT usProductId;
-                    CHECK_ERROR_RET (dev, COMGETTER(ProductId)(&usProductId), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(ProductId)(&usProductId), 1);
                     USHORT bcdRevision;
-                    CHECK_ERROR_RET (dev, COMGETTER(Revision)(&bcdRevision), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(Revision)(&bcdRevision), 1);
 
                     RTPrintf("UUID:               %S\n"
                             "VendorId:           0x%04x (%04X)\n"
@@ -723,22 +759,22 @@ int handleList(HandlerArg *a)
 
                     /* optional stuff. */
                     Bstr bstr;
-                    CHECK_ERROR_RET (dev, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
                     if (!bstr.isEmpty())
                         RTPrintf("Manufacturer:       %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (dev, COMGETTER(Product)(bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(Product)(bstr.asOutParam()), 1);
                     if (!bstr.isEmpty())
                         RTPrintf("Product:            %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (dev, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
                     if (!bstr.isEmpty())
                         RTPrintf("SerialNumber:       %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (dev, COMGETTER(Address)(bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(Address)(bstr.asOutParam()), 1);
                     if (!bstr.isEmpty())
                         RTPrintf("Address:            %lS\n", bstr.raw());
 
                     /* current state  */
                     USBDeviceState_T state;
-                    CHECK_ERROR_RET (dev, COMGETTER(State)(&state), 1);
+                    CHECK_ERROR_RET(dev, COMGETTER(State)(&state), 1);
                     const char *pszState = "?";
                     switch (state)
                     {
@@ -755,7 +791,7 @@ int handleList(HandlerArg *a)
                         case USBDeviceState_Captured:
                             pszState = "Captured"; break;
                         default:
-                            ASSERT (false);
+                            ASSERT(false);
                             break;
                     }
                     RTPrintf("Current State:      %s\n\n", pszState);
@@ -769,10 +805,10 @@ int handleList(HandlerArg *a)
             RTPrintf("Global USB Device Filters:\n\n");
 
             ComPtr <IHost> host;
-            CHECK_ERROR_RET (a->virtualBox, COMGETTER(Host) (host.asOutParam()), 1);
+            CHECK_ERROR_RET(a->virtualBox, COMGETTER(Host)(host.asOutParam()), 1);
 
             SafeIfaceArray <IHostUSBDeviceFilter> coll;
-            CHECK_ERROR_RET (host, COMGETTER (USBDeviceFilters)(ComSafeArrayAsOutParam(coll)), 1);
+            CHECK_ERROR_RET(host, COMGETTER(USBDeviceFilters)(ComSafeArrayAsOutParam(coll)), 1);
 
             if (coll.size() == 0)
             {
@@ -789,11 +825,11 @@ int handleList(HandlerArg *a)
                     RTPrintf("Index:            %zu\n", index);
 
                     BOOL active = FALSE;
-                    CHECK_ERROR_RET (flt, COMGETTER (Active) (&active), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Active)(&active), 1);
                     RTPrintf("Active:           %s\n", active ? "yes" : "no");
 
                     USBDeviceFilterAction_T action;
-                    CHECK_ERROR_RET (flt, COMGETTER (Action) (&action), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Action)(&action), 1);
                     const char *pszAction = "<invalid>";
                     switch (action)
                     {
@@ -809,19 +845,19 @@ int handleList(HandlerArg *a)
                     RTPrintf("Action:           %s\n", pszAction);
 
                     Bstr bstr;
-                    CHECK_ERROR_RET (flt, COMGETTER (Name) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Name)(bstr.asOutParam()), 1);
                     RTPrintf("Name:             %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (VendorId) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(VendorId)(bstr.asOutParam()), 1);
                     RTPrintf("VendorId:         %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (ProductId) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(ProductId)(bstr.asOutParam()), 1);
                     RTPrintf("ProductId:        %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (Revision) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Revision)(bstr.asOutParam()), 1);
                     RTPrintf("Revision:         %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (Manufacturer) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Manufacturer)(bstr.asOutParam()), 1);
                     RTPrintf("Manufacturer:     %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (Product) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(Product)(bstr.asOutParam()), 1);
                     RTPrintf("Product:          %lS\n", bstr.raw());
-                    CHECK_ERROR_RET (flt, COMGETTER (SerialNumber) (bstr.asOutParam()), 1);
+                    CHECK_ERROR_RET(flt, COMGETTER(SerialNumber)(bstr.asOutParam()), 1);
                     RTPrintf("Serial Number:    %lS\n\n", bstr.raw());
                 }
             }
@@ -899,7 +935,7 @@ int handleList(HandlerArg *a)
         case LISTDHCPSERVERS:
         {
             com::SafeIfaceArray<IDHCPServer> svrs;
-            CHECK_ERROR(a->virtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam (svrs)));
+            CHECK_ERROR(a->virtualBox, COMGETTER(DHCPServers)(ComSafeArrayAsOutParam(svrs)));
             for (size_t i = 0; i < svrs.size(); ++ i)
             {
                 ComPtr<IDHCPServer> svr = svrs[i];
@@ -945,7 +981,7 @@ int handleList(HandlerArg *a)
             CHECK_ERROR_BREAK(machine, GetNetworkAdapter(RTStrToUInt32(&a->argv[0][8]) - 1, nic.asOutParam()));
             ASSERT(nic);
             CHECK_ERROR(nic, COMGETTER(NatDriver)(driver.asOutParam()));
-            CHECK_ERROR(driver, COMGETTER(Redirects)(ComSafeArrayAsOutParam (rules)));
+            CHECK_ERROR(driver, COMGETTER(Redirects)(ComSafeArrayAsOutParam(rules)));
             for (size_t i = 0; i < rules.size(); ++ i)
             {
                 uint16_t port = 0;
@@ -970,7 +1006,7 @@ int handleList(HandlerArg *a)
                     res = str.substr(ppos, pos - ppos);             \
                     Log2((#res " %s pos:%d, ppos:%d\n", res.raw(), pos, ppos)); \
                     ppos = pos + 1;                                 \
-                }while (0)
+                } while (0)
                 ITERATE_TO_NEXT_TERM(strName, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strProto, utf, pos, ppos);
                 ITERATE_TO_NEXT_TERM(strHostIP, utf, pos, ppos);
@@ -990,11 +1026,11 @@ int handleList(HandlerArg *a)
                         strProto = "unk";
                         break;
                 }
-                RTPrintf("%s:%s:%s:%s:%s:%s\n", strName.raw(), strProto.raw(), 
-                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(), 
+                RTPrintf("%s:%s:%s:%s:%s:%s\n", strName.raw(), strProto.raw(),
+                    strHostIP.isEmpty() ? "": strHostIP.raw(), strHostPort.raw(),
                     strGuestIP.isEmpty() ? "": strGuestIP.raw(), strGuestPort.raw());
             }
-            
+
         }
         break;
     } // end switch
