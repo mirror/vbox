@@ -20,7 +20,6 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
 #include <iprt/file.h>
@@ -28,23 +27,20 @@
 #include <iprt/sha.h>
 #include <iprt/manifest.h>
 
-#include <VBox/param.h>
-#include <VBox/version.h>
+#include <VBox/com/array.h>
 
 #include "ApplianceImpl.h"
-#include "VFSExplorerImpl.h"
 #include "VirtualBoxImpl.h"
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
-#include "MachineImpl.h"
-#include "MediumImpl.h"
-
-#include "HostNetworkInterfaceImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
 
 #include "ApplianceImplPrivate.h"
+
+#include <VBox/param.h>
+#include <VBox/version.h>
 
 using namespace std;
 
@@ -205,9 +201,10 @@ STDMETHODIMP Appliance::Interpret()
             /* RAM */
             uint64_t ullMemSizeVBox = vsysThis.ullMemorySize / _1M;
             /* Check for the constrains */
-            if (ullMemSizeVBox != 0 &&
-                (ullMemSizeVBox < MM_RAM_MIN_IN_MB ||
-                 ullMemSizeVBox > MM_RAM_MAX_IN_MB))
+            if (    ullMemSizeVBox != 0
+                 && (    ullMemSizeVBox < MM_RAM_MIN_IN_MB
+                      || ullMemSizeVBox > MM_RAM_MAX_IN_MB)
+               )
             {
                 addWarning(tr("The virtual system \"%s\" claims support for %llu MB RAM size, but VirtualBox has support for min %u & max %u MB RAM size only."),
                               vsysThis.strName.c_str(), ullMemSizeVBox, MM_RAM_MIN_IN_MB, MM_RAM_MAX_IN_MB);
@@ -575,27 +572,17 @@ STDMETHODIMP Appliance::ImportMachines(IProgress **aProgress)
  */
 HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    /* Initialize our worker task */
-    std::auto_ptr<TaskImportOVF> task(new TaskImportOVF(this));
-    /* What should the task do */
-    task->taskType = TaskImportOVF::Read;
-    /* Copy the current location info to the task */
-    task->locInfo = aLocInfo;
-
     BstrFmt bstrDesc = BstrFmt(tr("Read appliance '%s'"),
                                aLocInfo.strPath.c_str());
     HRESULT rc;
     /* Create the progress object */
     aProgress.createObject();
-    if (task->locInfo.storageType == VFSType_File)
-    {
+    if (aLocInfo.storageType == VFSType_File)
         /* 1 operation only */
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                              bstrDesc,
                              TRUE /* aCancelable */);
-    }
     else
-    {
         /* 4/5 is downloading, 1/5 is reading */
         rc = aProgress->init(mVirtualBox, static_cast<IAppliance*>(this),
                              bstrDesc,
@@ -605,10 +592,10 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
                              BstrFmt(tr("Download appliance '%s'"),
                                      aLocInfo.strPath.c_str()), // CBSTR bstrFirstOperationDescription,
                              4); // ULONG ulFirstOperationWeight,
-    }
     if (FAILED(rc)) throw rc;
 
-    task->progress = aProgress;
+    /* Initialize our worker task */
+    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Read, aLocInfo, aProgress));
 
     rc = task->startThread();
     if (FAILED(rc)) throw rc;
@@ -617,70 +604,6 @@ HRESULT Appliance::readImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &a
     task.release();
 
     return rc;
-}
-
-/**
- *
- * @return
- */
-int Appliance::TaskImportOVF::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportOVF, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadImportOVF (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
-}
-
-/**
- * Thread function for the thread started in Appliance::readImpl() and Appliance::importImpl().
- * This will in turn call Appliance::readFS() or Appliance::readS3() or Appliance::importFS()
- * or Appliance::importS3().
- *
- * @param aThread
- * @param pvUser
- */
-/* static */
-DECLCALLBACK(int) Appliance::taskThreadImportOVF(RTTHREAD /* aThread */, void *pvUser)
-{
-    std::auto_ptr<TaskImportOVF> task(static_cast<TaskImportOVF*>(pvUser));
-    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
-
-    Appliance *pAppliance = task->pAppliance;
-
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", pAppliance));
-
-    HRESULT taskrc = S_OK;
-
-    switch (task->taskType)
-    {
-        case TaskImportOVF::Read:
-        {
-            if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->readFS(task.get());
-            else if (task->locInfo.storageType == VFSType_S3)
-                taskrc = pAppliance->readS3(task.get());
-            break;
-        }
-        case TaskImportOVF::Import:
-        {
-            if (task->locInfo.storageType == VFSType_File)
-                taskrc = pAppliance->importFS(task.get());
-            else if (task->locInfo.storageType == VFSType_S3)
-                taskrc = pAppliance->importS3(task.get());
-            break;
-        }
-    }
-
-    task->rc = taskrc;
-
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -695,7 +618,7 @@ DECLCALLBACK(int) Appliance::taskThreadImportOVF(RTTHREAD /* aThread */, void *p
  * @param pTask
  * @return
  */
-int Appliance::readFS(TaskImportOVF *pTask)
+HRESULT Appliance::readFS(const LocationInfo &locInfo)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -710,14 +633,14 @@ int Appliance::readFS(TaskImportOVF *pTask)
     try
     {
         /* Read & parse the XML structure of the OVF file */
-        m->pReader = new OVFReader(pTask->locInfo.strPath);
+        m->pReader = new OVFReader(locInfo.strPath);
         /* Create the SHA1 sum of the OVF file for later validation */
         char *pszDigest;
-        int vrc = RTSha1Digest(pTask->locInfo.strPath.c_str(), &pszDigest);
+        int vrc = RTSha1Digest(locInfo.strPath.c_str(), &pszDigest);
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Couldn't calculate SHA1 digest for file '%s' (%Rrc)"),
-                           RTPathFilename(pTask->locInfo.strPath.c_str()), vrc);
+                           RTPathFilename(locInfo.strPath.c_str()), vrc);
         m->strOVFSHA1Digest = pszDigest;
         RTStrFree(pszDigest);
     }
@@ -731,15 +654,10 @@ int Appliance::readFS(TaskImportOVF *pTask)
         rc = aRC;
     }
 
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -750,7 +668,7 @@ int Appliance::readFS(TaskImportOVF *pTask)
  * @param pTask
  * @return
  */
-int Appliance::readS3(TaskImportOVF *pTask)
+HRESULT Appliance::readS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -817,8 +735,8 @@ int Appliance::readS3(TaskImportOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        if (!pTask->progress.isNull())
-            pTask->progress->SetNextOperation(Bstr(tr("Reading")), 1);
+        if (!pTask->pProgress.isNull())
+            pTask->pProgress->SetNextOperation(Bstr(tr("Reading")), 1);
 
         /* Prepare the temporary reading of the OVF */
         ComObjPtr<Progress> progress;
@@ -833,7 +751,7 @@ int Appliance::readS3(TaskImportOVF *pTask)
         /* Wait until the reading is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
+        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -862,11 +780,6 @@ int Appliance::readS3(TaskImportOVF *pTask)
     }
     if (pszTmpDir)
         RTStrFree(pszTmpDir);
-
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
 
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
@@ -957,26 +870,19 @@ void Appliance::convertDiskAttachmentValues(const HardDiskController &hdc,
  */
 HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> &aProgress)
 {
-    /* Initialize our worker task */
-    std::auto_ptr<TaskImportOVF> task(new TaskImportOVF(this));
-    /* What should the task do */
-    task->taskType = TaskImportOVF::Import;
-    /* Copy the current location info to the task */
-    task->locInfo = aLocInfo;
-
     Bstr progressDesc = BstrFmt(tr("Import appliance '%s'"),
                                 aLocInfo.strPath.c_str());
-
     HRESULT rc = S_OK;
 
     /* todo: This progress init stuff should be done a little bit more generic */
-    if (task->locInfo.storageType == VFSType_File)
+    if (aLocInfo.storageType == VFSType_File)
         rc = setUpProgressFS(aProgress, progressDesc);
     else
         rc = setUpProgressImportS3(aProgress, progressDesc);
     if (FAILED(rc)) throw rc;
 
-    task->progress = aProgress;
+    /* Initialize our worker task */
+    std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Import, aLocInfo, aProgress));
 
     rc = task->startThread();
     if (FAILED(rc)) throw rc;
@@ -999,7 +905,7 @@ HRESULT Appliance::importImpl(const LocationInfo &aLocInfo, ComObjPtr<Progress> 
  * @param pTask
  * @return
  */
-int Appliance::importFS(TaskImportOVF *pTask)
+HRESULT Appliance::importFS(const LocationInfo &locInfo, ComObjPtr<Progress> &pProgress)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1010,7 +916,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
     AutoWriteLock appLock(this COMMA_LOCKVAL_SRC_POS);
 
     if (!isApplianceIdle())
-        return VERR_ACCESS_DENIED;
+        return E_ACCESSDENIED;
 
     // Change the appliance state so we can safely leave the lock while doing time-consuming
     // disk imports; also the below method calls do all kinds of locking which conflicts with
@@ -1037,11 +943,11 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
     /* If an manifest file exists, verify the content. Therefore we need all
      * files which are referenced by the OVF & the OVF itself */
-    Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath);
+    Utf8Str strMfFile = manifestFileName(locInfo.strPath);
     list<Utf8Str> filesList;
     if (RTPathExists(strMfFile.c_str()))
     {
-        Utf8Str strSrcDir(pTask->locInfo.strPath);
+        Utf8Str strSrcDir(locInfo.strPath);
         strSrcDir.stripFilename();
         /* Add every disks of every virtual system to an internal list */
         list< ComObjPtr<VirtualSystemDescription> >::const_iterator it;
@@ -1066,7 +972,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
         }
         /* Create the test list */
         PRTMANIFESTTEST pTestList = (PRTMANIFESTTEST)RTMemAllocZ(sizeof(RTMANIFESTTEST)*(filesList.size()+1));
-        pTestList[0].pszTestFile = (char*)pTask->locInfo.strPath.c_str();
+        pTestList[0].pszTestFile = (char*)locInfo.strPath.c_str();
         pTestList[0].pszTestDigest = (char*)m->strOVFSHA1Digest.c_str();
         int vrc = VINF_SUCCESS;
         size_t i = 1;
@@ -1098,15 +1004,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
              ++j)
             RTStrFree(pTestList[j].pszTestDigest);
         RTMemFree(pTestList);
-        if (FAILED(rc))
-        {
-            /* Return on error */
-            pTask->rc = rc;
-
-            if (!pTask->progress.isNull())
-                pTask->progress->notifyComplete(rc);
-            return rc;
-        }
+        if (FAILED(rc)) return rc;
     }
 
     list<VirtualSystem>::const_iterator it;
@@ -1581,7 +1479,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
 
                     /* The disk image has to be on the same place as the OVF file. So
                      * strip the filename out of the full file path. */
-                    Utf8Str strSrcDir(pTask->locInfo.strPath);
+                    Utf8Str strSrcDir(locInfo.strPath);
                     strSrcDir.stripFilename();
 
                     /* Iterate over all given disk images */
@@ -1643,9 +1541,9 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
-                            if (!pTask->progress.isNull())
-                                pTask->progress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
-                                                                 vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
+                            if (!pProgress.isNull())
+                                pProgress->SetNextOperation(BstrFmt(tr("Creating virtual disk image '%s'"), vsdeHD->strVbox.c_str()),
+                                                            vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally
                         }
                         else
                         {
@@ -1685,13 +1583,13 @@ int Appliance::importFS(TaskImportOVF *pTask)
                             if (FAILED(rc)) throw rc;
 
                             /* Advance to the next operation */
-                            if (!pTask->progress.isNull())
-                                pTask->progress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
-                                                                 vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                            if (!pProgress.isNull())
+                                pProgress->SetNextOperation(BstrFmt(tr("Importing virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                                            vsdeHD->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
                         }
 
                         // now wait for the background disk operation to complete; this throws HRESULTs on error
-                        waitForAsyncProgress(pTask->progress, pProgress2);
+                        waitForAsyncProgress(pProgress, pProgress2);
 
                         if (fSourceHdNeedsClosing)
                         {
@@ -1801,9 +1699,9 @@ int Appliance::importFS(TaskImportOVF *pTask)
              ++itHD)
         {
             ComPtr<IMedium> pDisk = *itHD;
-            ComPtr<IProgress> pProgress;
-            rc2 = pDisk->DeleteStorage(pProgress.asOutParam());
-            rc2 = pProgress->WaitForCompletion(-1);
+            ComPtr<IProgress> pProgress2;
+            rc2 = pDisk->DeleteStorage(pProgress2.asOutParam());
+            rc2 = pProgress2->WaitForCompletion(-1);
         }
 
         // finally, deregister and remove all machines
@@ -1824,15 +1722,10 @@ int Appliance::importFS(TaskImportOVF *pTask)
     appLock.acquire();
     m->state = Data::ApplianceIdle;
 
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -1840,7 +1733,7 @@ int Appliance::importFS(TaskImportOVF *pTask)
  * @param pTask
  * @return
  */
-int Appliance::importS3(TaskImportOVF *pTask)
+HRESULT Appliance::importS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1912,8 +1805,8 @@ int Appliance::importS3(TaskImportOVF *pTask)
             /* Construct the source file name */
             char *pszFilename = RTPathFilename(strSrcFile.c_str());
             /* Advance to the next operation */
-            if (!pTask->progress.isNull())
-                pTask->progress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), s.second);
+            if (!pTask->pProgress.isNull())
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), s.second);
 
             vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strSrcFile.c_str());
             if (RT_FAILURE(vrc))
@@ -1938,8 +1831,8 @@ int Appliance::importS3(TaskImportOVF *pTask)
         /* Now check if there is an manifest file. This is optional. */
         Utf8Str strManifestFile = manifestFileName(strTmpOvf);
         char *pszFilename = RTPathFilename(strManifestFile.c_str());
-        if (!pTask->progress.isNull())
-            pTask->progress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
+        if (!pTask->pProgress.isNull())
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Downloading file '%s'"), pszFilename), 1);
 
         /* Try to download it. If the error is VERR_S3_NOT_FOUND, it isn't fatal. */
         vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strManifestFile.c_str());
@@ -1963,8 +1856,8 @@ int Appliance::importS3(TaskImportOVF *pTask)
         RTS3Destroy(hS3);
         hS3 = NIL_RTS3;
 
-        if (!pTask->progress.isNull())
-            pTask->progress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightPerOperation);
+        if (!pTask->pProgress.isNull())
+            pTask->pProgress->SetNextOperation(BstrFmt(tr("Importing appliance")), m->ulWeightPerOperation);
 
         ComObjPtr<Progress> progress;
         /* Import the whole temporary OVF & the disk images */
@@ -1978,7 +1871,7 @@ int Appliance::importS3(TaskImportOVF *pTask)
         /* Wait until the import is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
+        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -2012,14 +1905,9 @@ int Appliance::importS3(TaskImportOVF *pTask)
     if (pszTmpDir)
         RTStrFree(pszTmpDir);
 
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 

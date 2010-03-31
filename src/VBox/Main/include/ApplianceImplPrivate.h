@@ -88,53 +88,37 @@ struct Appliance::XMLStack
 
 struct Appliance::TaskOVF
 {
-    TaskOVF(Appliance *aThat)
+    enum TaskType
+    {
+        Read,
+        Import,
+        Write
+    };
+
+    TaskOVF(Appliance *aThat,
+            TaskType aType,
+            LocationInfo aLocInfo,
+            ComObjPtr<Progress> &aProgress)
       : pAppliance(aThat),
+        taskType(aType),
+        locInfo(aLocInfo),
+        pProgress(aProgress),
+        enFormat(unspecified),
         rc(S_OK)
     {}
 
     static int updateProgress(unsigned uPercent, void *pvUser);
 
-    LocationInfo locInfo;
+    int startThread();
+
     Appliance *pAppliance;
-    ComObjPtr<Progress> progress;
-    HRESULT rc;
-};
-
-struct Appliance::TaskImportOVF : Appliance::TaskOVF
-{
-    enum TaskType
-    {
-        Read,
-        Import
-    };
-
-    TaskImportOVF(Appliance *aThat)
-        : TaskOVF(aThat),
-          taskType(Read)
-    {}
-
-    int startThread();
-
     TaskType taskType;
-};
+    const LocationInfo locInfo;
+    ComObjPtr<Progress> pProgress;
 
-struct Appliance::TaskExportOVF : Appliance::TaskOVF
-{
-    enum TaskType
-    {
-        Write
-    };
-
-    TaskExportOVF(Appliance *aThat)
-        : TaskOVF(aThat),
-          taskType(Write)
-    {}
-
-    int startThread();
-
-    TaskType taskType;
     OVFFormat enFormat;
+
+    HRESULT rc;
 };
 
 struct MyHardDiskAttachment

@@ -20,16 +20,9 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stream.h>
 #include <iprt/path.h>
-#include <iprt/dir.h>
-#include <iprt/file.h>
-#include <iprt/s3.h>
-#include <iprt/sha.h>
-#include <iprt/manifest.h>
 
-#include <VBox/param.h>
-#include <VBox/version.h>
+#include <VBox/com/array.h>
 
 #include "ApplianceImpl.h"
 #include "VFSExplorerImpl.h"
@@ -37,9 +30,6 @@
 #include "GuestOSTypeImpl.h"
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
-#include "MediumImpl.h"
-
-#include "HostNetworkInterfaceImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -601,8 +591,9 @@ HRESULT Appliance::searchUniqueDiskImageFilePath(Utf8Str& aName) const
     /* Check if the file exists or if a file with this path is registered
      * already */
     /* @todo: Maybe too cost-intensive; try to find a lighter way */
-    while (RTPathExists(tmpName) ||
-           mVirtualBox->FindHardDisk(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND)
+    while (    RTPathExists(tmpName)
+            || mVirtualBox->FindHardDisk(Bstr(tmpName), &harddisk) != VBOX_E_OBJECT_NOT_FOUND
+          )
     {
         RTStrFree(tmpName);
         char *tmpDir = RTStrDup(aName.c_str());
@@ -913,19 +904,91 @@ Utf8Str Appliance::manifestFileName(Utf8Str aPath) const
     return strMfFile;
 }
 
+/**
+ *
+ * @return
+ */
+int Appliance::TaskOVF::startThread()
+{
+    int vrc = RTThreadCreate(NULL, Appliance::taskThreadImportOrExport, this,
+                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
+                             "Appliance::Task");
+
+    ComAssertMsgRCRet(vrc,
+                      ("Could not create OVF task thread (%Rrc)\n", vrc), E_FAIL);
+
+    return S_OK;
+}
+
+/**
+ * Thread function for the thread started in Appliance::readImpl() and Appliance::importImpl()
+ * and Appliance::writeImpl().
+ * This will in turn call Appliance::readFS() or Appliance::readS3() or Appliance::importFS()
+ * or Appliance::importS3() or Appliance::writeFS() or Appliance::writeS3().
+ *
+ * @param aThread
+ * @param pvUser
+ */
+/* static */
+DECLCALLBACK(int) Appliance::taskThreadImportOrExport(RTTHREAD /* aThread */, void *pvUser)
+{
+    std::auto_ptr<TaskOVF> task(static_cast<TaskOVF*>(pvUser));
+    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
+
+    Appliance *pAppliance = task->pAppliance;
+
+    LogFlowFuncEnter();
+    LogFlowFunc(("Appliance %p\n", pAppliance));
+
+    HRESULT taskrc = S_OK;
+
+    switch (task->taskType)
+    {
+        case TaskOVF::Read:
+            if (task->locInfo.storageType == VFSType_File)
+                taskrc = pAppliance->readFS(task->locInfo);
+            else if (task->locInfo.storageType == VFSType_S3)
+                taskrc = pAppliance->readS3(task.get());
+        break;
+
+        case TaskOVF::Import:
+            if (task->locInfo.storageType == VFSType_File)
+                taskrc = pAppliance->importFS(task->locInfo, task->pProgress);
+            else if (task->locInfo.storageType == VFSType_S3)
+                taskrc = pAppliance->importS3(task.get());
+        break;
+
+        case TaskOVF::Write:
+            if (task->locInfo.storageType == VFSType_File)
+                taskrc = pAppliance->writeFS(task->locInfo, task->enFormat, task->pProgress);
+            else if (task->locInfo.storageType == VFSType_S3)
+                taskrc = pAppliance->writeS3(task.get());
+        break;
+    }
+
+    task->rc = taskrc;
+
+    if (!task->pProgress.isNull())
+        task->pProgress->notifyComplete(taskrc);
+
+    LogFlowFuncLeave();
+
+    return VINF_SUCCESS;
+}
+
 /* static */
 int Appliance::TaskOVF::updateProgress(unsigned uPercent, void *pvUser)
 {
     Appliance::TaskOVF* pTask = *(Appliance::TaskOVF**)pvUser;
 
     if (    pTask
-         && !pTask->progress.isNull())
+         && !pTask->pProgress.isNull())
     {
         BOOL fCanceled;
-        pTask->progress->COMGETTER(Canceled)(&fCanceled);
+        pTask->pProgress->COMGETTER(Canceled)(&fCanceled);
         if (fCanceled)
             return -1;
-        pTask->progress->SetCurrentOperationProgress(uPercent);
+        pTask->pProgress->SetCurrentOperationProgress(uPercent);
     }
     return VINF_SUCCESS;
 }

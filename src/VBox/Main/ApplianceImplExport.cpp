@@ -20,26 +20,19 @@
  * additional information or have any questions.
  */
 
-#include <iprt/stream.h>
 #include <iprt/path.h>
 #include <iprt/dir.h>
-#include <iprt/file.h>
+#include <iprt/param.h>
 #include <iprt/s3.h>
-#include <iprt/sha.h>
 #include <iprt/manifest.h>
 
-#include <VBox/param.h>
 #include <VBox/version.h>
 
 #include "ApplianceImpl.h"
-#include "VFSExplorerImpl.h"
 #include "VirtualBoxImpl.h"
-#include "GuestOSTypeImpl.h"
+
 #include "ProgressImpl.h"
 #include "MachineImpl.h"
-#include "MediumImpl.h"
-
-#include "HostNetworkInterfaceImpl.h"
 
 #include "AutoCaller.h"
 #include "Logging.h"
@@ -47,12 +40,6 @@
 #include "ApplianceImplPrivate.h"
 
 using namespace std;
-
-////////////////////////////////////////////////////////////////////////////////
-//
-// internal helpers
-//
-////////////////////////////////////////////////////////////////////////////////
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -618,25 +605,19 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     HRESULT rc = S_OK;
     try
     {
-        /* Initialize our worker task */
-        std::auto_ptr<TaskExportOVF> task(new TaskExportOVF(this));
-        /* What should the task do */
-        task->taskType = TaskExportOVF::Write;
-        /* The OVF version to write */
-        task->enFormat = aFormat;
-        /* Copy the current location info to the task */
-        task->locInfo = aLocInfo;
-
         Bstr progressDesc = BstrFmt(tr("Export appliance '%s'"),
-                                    task->locInfo.strPath.c_str());
+                                    aLocInfo.strPath.c_str());
 
         /* todo: This progress init stuff should be done a little bit more generic */
-        if (task->locInfo.storageType == VFSType_File)
+        if (aLocInfo.storageType == VFSType_File)
             rc = setUpProgressFS(aProgress, progressDesc);
         else
             rc = setUpProgressWriteS3(aProgress, progressDesc);
 
-        task->progress = aProgress;
+        /* Initialize our worker task */
+        std::auto_ptr<TaskOVF> task(new TaskOVF(this, TaskOVF::Write, aLocInfo, aProgress));
+        /* The OVF version to write */
+        task->enFormat = aFormat;
 
         rc = task->startThread();
         if (FAILED(rc)) throw rc;
@@ -650,59 +631,6 @@ HRESULT Appliance::writeImpl(OVFFormat aFormat, const LocationInfo &aLocInfo, Co
     }
 
     return rc;
-}
-
-/**
- *
- * @return
- */
-int Appliance::TaskExportOVF::startThread()
-{
-    int vrc = RTThreadCreate(NULL, Appliance::taskThreadWriteOVF, this,
-                             0, RTTHREADTYPE_MAIN_HEAVY_WORKER, 0,
-                             "Appliance::Task");
-
-    ComAssertMsgRCRet(vrc,
-                      ("Could not create taskThreadWriteOVF (%Rrc)\n", vrc), E_FAIL);
-
-    return S_OK;
-}
-
-/**
- * Thread function for the thread started in Appliance::writeImpl(). This will in turn
- * call Appliance::writeFS() or Appliance::writeS3().
- * @param
- * @param pvUser
- * @return
- */
-DECLCALLBACK(int) Appliance::taskThreadWriteOVF(RTTHREAD /* aThread */, void *pvUser)
-{
-    std::auto_ptr<TaskExportOVF> task(static_cast<TaskExportOVF*>(pvUser));
-    AssertReturn(task.get(), VERR_GENERAL_FAILURE);
-
-    Appliance *pAppliance = task->pAppliance;
-
-    LogFlowFuncEnter();
-    LogFlowFunc(("Appliance %p\n", pAppliance));
-
-    HRESULT rc = S_OK;
-
-    switch(task->taskType)
-    {
-        case TaskExportOVF::Write:
-        {
-            if (task->locInfo.storageType == VFSType_File)
-                rc = pAppliance->writeFS(task.get());
-            else if (task->locInfo.storageType == VFSType_S3)
-                rc = pAppliance->writeS3(task.get());
-            break;
-        }
-    }
-
-    LogFlowFunc(("rc=%Rhrc\n", rc));
-    LogFlowFuncLeave();
-
-    return VINF_SUCCESS;
 }
 
 /**
@@ -1323,7 +1251,7 @@ void Appliance::buildXMLForOneVirtualSystem(xml::ElementNode &elmToAddVirtualSys
  * @param pTask
  * @return
  */
-int Appliance::writeFS(TaskExportOVF *pTask)
+HRESULT Appliance::writeFS(const LocationInfo &locInfo, const OVFFormat enFormat, ComObjPtr<Progress> &pProgress)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1340,10 +1268,10 @@ int Appliance::writeFS(TaskExportOVF *pTask)
         xml::Document doc;
         xml::ElementNode *pelmRoot = doc.createRootElement("Envelope");
 
-        pelmRoot->setAttribute("ovf:version", (pTask->enFormat == OVF_1_0) ? "1.0" : "0.9");
+        pelmRoot->setAttribute("ovf:version", (enFormat == OVF_1_0) ? "1.0" : "0.9");
         pelmRoot->setAttribute("xml:lang", "en-US");
 
-        Utf8Str strNamespace = (pTask->enFormat == OVF_0_9)
+        Utf8Str strNamespace = (enFormat == OVF_0_9)
             ? "http://www.vmware.com/schema/ovf/1/envelope"     // 0.9
             : "http://schemas.dmtf.org/ovf/envelope/1";         // 1.0
         pelmRoot->setAttribute("xmlns", strNamespace);
@@ -1365,7 +1293,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 <Disk ovf:capacity="4294967296" ovf:diskId="lamp" ovf:format="http://www.vmware.com/specifications/vmdk.html#compressed" ovf:populatedSize="1924967692"/>
             </DiskSection> */
         xml::ElementNode *pelmDiskSection;
-        if (pTask->enFormat == OVF_0_9)
+        if (enFormat == OVF_0_9)
         {
             // <Section xsi:type="ovf:DiskSection_Type">
             pelmDiskSection = pelmRoot->createChild("Section");
@@ -1390,7 +1318,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 </Network>
             </NetworkSection> */
         xml::ElementNode *pelmNetworkSection;
-        if (pTask->enFormat == OVF_0_9)
+        if (enFormat == OVF_0_9)
         {
             // <Section xsi:type="ovf:NetworkSection_Type">
             pelmNetworkSection = pelmRoot->createChild("Section");
@@ -1416,7 +1344,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
         xml::ElementNode *pelmToAddVirtualSystemsTo;
         if (m->virtualSystemDescriptions.size() > 1)
         {
-            if (pTask->enFormat == OVF_0_9)
+            if (enFormat == OVF_0_9)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Cannot export more than one virtual system with OVF 0.9, use OVF 1.0"));
 
@@ -1435,7 +1363,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             ComObjPtr<VirtualSystemDescription> vsdescThis = *it;
             buildXMLForOneVirtualSystem(*pelmToAddVirtualSystemsTo,
                                         vsdescThis,
-                                        pTask->enFormat,
+                                        enFormat,
                                         stack);         // disks and networks stack
         }
 
@@ -1476,7 +1404,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
             // output filename
             const Utf8Str &strTargetFileNameOnly = pDiskEntry->strOvf;
             // target path needs to be composed from where the output OVF is
-            Utf8Str strTargetFilePath(pTask->locInfo.strPath);
+            Utf8Str strTargetFilePath(locInfo.strPath);
             strTargetFilePath.stripFilename();
             strTargetFilePath.append("/");
             strTargetFilePath.append(strTargetFileNameOnly);
@@ -1507,12 +1435,12 @@ int Appliance::writeFS(TaskExportOVF *pTask)
                 if (FAILED(rc)) throw rc;
 
                 // advance to the next operation
-                if (!pTask->progress.isNull())
-                    pTask->progress->SetNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
-                                                      pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
+                if (!pProgress.isNull())
+                    pProgress->SetNextOperation(BstrFmt(tr("Exporting virtual disk image '%s'"), strSrcFilePath.c_str()),
+                                                pDiskEntry->ulSizeMB);     // operation's weight, as set up with the IProgress originally);
 
                 // now wait for the background disk operation to complete; this throws HRESULTs on error
-                waitForAsyncProgress(pTask->progress, pProgress2);
+                waitForAsyncProgress(pProgress, pProgress2);
             }
             catch (HRESULT rc3)
             {
@@ -1557,18 +1485,18 @@ int Appliance::writeFS(TaskExportOVF *pTask)
 
         // now go write the XML
         xml::XmlFileWriter writer(doc);
-        writer.write(pTask->locInfo.strPath.c_str());
+        writer.write(locInfo.strPath.c_str());
 
         /* Create & write the manifest file */
         const char** ppManifestFiles = (const char**)RTMemAlloc(sizeof(char*)*diskList.size() + 1);
-        ppManifestFiles[0] = pTask->locInfo.strPath.c_str();
+        ppManifestFiles[0] = locInfo.strPath.c_str();
         list<Utf8Str>::const_iterator it1;
         size_t i = 1;
         for (it1 = diskList.begin();
              it1 != diskList.end();
              ++it1, ++i)
             ppManifestFiles[i] = (*it1).c_str();
-        Utf8Str strMfFile = manifestFileName(pTask->locInfo.strPath.c_str());
+        Utf8Str strMfFile = manifestFileName(locInfo.strPath.c_str());
         int vrc = RTManifestWriteFiles(strMfFile.c_str(), ppManifestFiles, diskList.size()+1);
         RTMemFree(ppManifestFiles);
         if (RT_FAILURE(vrc))
@@ -1590,15 +1518,10 @@ int Appliance::writeFS(TaskExportOVF *pTask)
     // reset the state so others can call methods again
     m->state = Data::ApplianceIdle;
 
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
 /**
@@ -1609,7 +1532,7 @@ int Appliance::writeFS(TaskExportOVF *pTask)
  * @param pTask
  * @return
  */
-int Appliance::writeS3(TaskExportOVF *pTask)
+HRESULT Appliance::writeS3(TaskOVF *pTask)
 {
     LogFlowFuncEnter();
     LogFlowFunc(("Appliance %p\n", this));
@@ -1663,7 +1586,7 @@ int Appliance::writeS3(TaskExportOVF *pTask)
         /* Wait until the writing is done, but report the progress back to the
            caller */
         ComPtr<IProgress> progressInt(progress);
-        waitForAsyncProgress(pTask->progress, progressInt); /* Any errors will be thrown */
+        waitForAsyncProgress(pTask->pProgress, progressInt); /* Any errors will be thrown */
 
         /* Again lock the appliance for the next steps */
         appLock.acquire();
@@ -1716,8 +1639,8 @@ int Appliance::writeS3(TaskExportOVF *pTask)
             const pair<Utf8Str, ULONG> &s = (*it1);
             char *pszFilename = RTPathFilename(s.first.c_str());
             /* Advance to the next operation */
-            if (!pTask->progress.isNull())
-                pTask->progress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
+            if (!pTask->pProgress.isNull())
+                pTask->pProgress->SetNextOperation(BstrFmt(tr("Uploading file '%s'"), pszFilename), s.second);
             vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
             if (RT_FAILURE(vrc))
             {
@@ -1764,14 +1687,9 @@ int Appliance::writeS3(TaskExportOVF *pTask)
     if (pszTmpDir)
         RTStrFree(pszTmpDir);
 
-    pTask->rc = rc;
-
-    if (!pTask->progress.isNull())
-        pTask->progress->notifyComplete(rc);
-
     LogFlowFunc(("rc=%Rhrc\n", rc));
     LogFlowFuncLeave();
 
-    return VINF_SUCCESS;
+    return rc;
 }
 
