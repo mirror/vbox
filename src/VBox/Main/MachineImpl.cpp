@@ -237,7 +237,9 @@ Machine::MediaData::~MediaData()
 /////////////////////////////////////////////////////////////////////////////
 
 Machine::Machine()
-    : mPeer(NULL), mParent(NULL), mGuestHAL(NULL)
+    : mGuestHAL(NULL),
+      mPeer(NULL),
+      mParent(NULL)
 {}
 
 Machine::~Machine()
@@ -8957,7 +8959,7 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
-    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon, 
+    pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon,
                                                         guestMemCache, guestPagedTotal, guestPagedFree);
     aCollector->registerBaseMetric(guestCpuMem);
 
