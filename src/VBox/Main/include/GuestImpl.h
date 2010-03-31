@@ -84,9 +84,6 @@ public:
 
     void setSupportsGraphics (BOOL aSupportsGraphics);
 
-    HRESULT GetStatisticsUpdateInterval(ULONG *aUpdateInterval);
-    HRESULT SetStatisticsUpdateInterval(ULONG aUpdateInterval);
-
     // for VirtualBoxSupportErrorInfoImpl
     static const wchar_t *getComponentName() { return L"Guest"; }
 
