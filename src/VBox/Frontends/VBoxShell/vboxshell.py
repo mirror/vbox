@@ -369,7 +369,7 @@ def teleport(ctx,session,console,args):
         passwd = args[1]
     else:
         passwd = ""
-    
+
     if len(args) > 2:
         maxDowntime  = int(args[2])
     else:
@@ -820,11 +820,15 @@ def plugcpuCmd(ctx, args):
     if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
             session = ctx['global'].openMachineSession(mach.id)
-            mach1 = session.machine
-            cpu = int(args[2])
-            print "Adding CPU %d..." %(cpu)
-            mach1.hotPlugCPU(cpu)
-            mach1.saveSettings()
+            try:
+                mach1 = session.machine
+                cpu = int(args[2])
+                print "Adding CPU %d..." %(cpu)
+                mach1.hotPlugCPU(cpu)
+                mach1.saveSettings()
+            except:
+                session.close()
+                raise
             session.close()
     else:
         cmdExistingVm(ctx, mach, 'plugcpu', args[2])
@@ -840,11 +844,15 @@ def unplugcpuCmd(ctx, args):
     if str(mach.sessionState) != str(ctx['ifaces'].SessionState_Open):
         if mach.CPUHotPlugEnabled:
             session = ctx['global'].openMachineSession(mach.id)
-            mach1 = session.machine
-            cpu = int(args[2])
-            print "Removing CPU %d..." %(cpu)
-            mach1.hotUnplugCPU(cpu)
-            mach1.saveSettings()
+            try:
+                mach1 = session.machine
+                cpu = int(args[2])
+                print "Removing CPU %d..." %(cpu)
+                mach1.hotUnplugCPU(cpu)
+                mach1.saveSettings()
+            except:
+                session.close()
+                raise
             session.close()
     else:
         cmdExistingVm(ctx, mach, 'unplugcpu', args[2])
