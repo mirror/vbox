@@ -353,14 +353,24 @@ HRESULT Machine::init(VirtualBox *aParent,
                  || vrc == VERR_SHARING_VIOLATION
                )
             {
+                if (RT_SUCCESS(vrc))
+                    RTFileClose(f);
                 if (!aOverride)
                 {
                     rc = setError(VBOX_E_FILE_ERROR,
                                   tr("Machine settings file '%s' already exists"),
                                   mData->m_strConfigFileFull.raw());
                 }
-                if (RT_SUCCESS(vrc))
-                    RTFileClose(f);
+                else
+                {
+                    /* try to delete the config file, as otherwise the creation
+                     * of a new settings file will fail. */
+                    int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
+                    if (RT_FAILURE(vrc2))
+                        rc = setError(VBOX_E_FILE_ERROR,
+                                      tr("Could not delete the settings file '%s' (%Rrc)"),
+                                      mData->m_strConfigFileFull.raw(), vrc2);
+                }
             }
             else
             {
@@ -7101,11 +7111,6 @@ HRESULT Machine::getMediumAttachmentsOfController(CBSTR aName,
  *  if this is a new machine.
  *
  *  @note Must be never called directly but only from #saveSettings().
- *
- *  @param aRenamed receives |true| if the name was changed and the settings
- *                  file was renamed as a result, or |false| otherwise. The
- *                  value makes sense only on success.
- *  @param aNew     receives |true| if a virgin settings file was created.
  */
 HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 {
