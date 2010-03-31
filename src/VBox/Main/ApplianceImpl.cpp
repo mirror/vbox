@@ -419,56 +419,6 @@ STDMETHODIMP Appliance::COMGETTER(VirtualSystemDescriptions)(ComSafeArrayOut(IVi
     return S_OK;
 }
 
-/**
- * Public method implementation.
- * @param path
- * @return
- */
-STDMETHODIMP Appliance::Read(IN_BSTR path, IProgress **aProgress)
-{
-    if (!path) return E_POINTER;
-    CheckComArgOutPointerValid(aProgress);
-
-    AutoCaller autoCaller(this);
-    if (FAILED(autoCaller.rc())) return autoCaller.rc();
-
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-
-    if (!isApplianceIdle())
-        return E_ACCESSDENIED;
-
-    if (m->pReader)
-    {
-        delete m->pReader;
-        m->pReader = NULL;
-    }
-
-    // see if we can handle this file; for now we insist it has an ".ovf" extension
-    Utf8Str strPath (path);
-    if (!strPath.endsWith(".ovf", Utf8Str::CaseInsensitive))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Appliance file must have .ovf extension"));
-
-    ComObjPtr<Progress> progress;
-    HRESULT rc = S_OK;
-    try
-    {
-        /* Parse all necessary info out of the URI */
-        parseURI(strPath, m->locInfo);
-        rc = readImpl(m->locInfo, progress);
-    }
-    catch (HRESULT aRC)
-    {
-        rc = aRC;
-    }
-
-    if (SUCCEEDED(rc))
-        /* Return progress to the caller */
-        progress.queryInterfaceTo(aProgress);
-
-    return S_OK;
-}
-
 STDMETHODIMP Appliance::CreateVFSExplorer(IN_BSTR aURI, IVFSExplorer **aExplorer)
 {
     CheckComArgOutPointerValid(aExplorer);
