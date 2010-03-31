@@ -1,0 +1,33 @@
+# $Id$
+## @file
+# Makefile for VBox PAM module for automated logons.
+#
+
+#
+# Copyright (C) 2010 Sun Microsystems, Inc.
+#
+# Sun Microsystems, Inc. confidential
+# All rights reserved
+#
+
+SUB_DEPTH = ../../../../..
+include $(KBUILD_PATH)/subheader.kmk
+
+# The PAM module.
+DLLS += pam_vbox
+
+pam_vbox_TEMPLATE = VBOXGUESTR3DLL
+pam_vbox_DEFS     = LOG_TO_BACKDOOR VBOX_WITH_HGCM
+# Set symbol visibility to default; otherwise the PAM module wouldn't work.
+# Only required on GCC >= 4.
+ifdef VBOX_GCC_fvisibility-hidden
+ pam_vbox_CXXFLAGS = -fvisibility=default
+endif
+pam_vbox_SOURCES.linux = pam_vbox.cpp
+pam_vbox_LIBS.linux = \
+	pam \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED) \
+	$(VBOX_LIB_VBGL_R3_SHARED) \
+	$(VBOX_LIB_IPRT_GUEST_R3_SHARED)
+
+include $(KBUILD_PATH)/subfooter.kmk
