@@ -1231,12 +1231,201 @@ def exportVMCmd(ctx, args):
     print "Exported to %s in format %s" %(path, format)
     return 0
 
+# PC XT scancodes
+scancodes = {
+    'a':  0x1e,
+    'b':  0x30,
+    'c':  0x2e,
+    'd':  0x20,
+    'e':  0x12,
+    'f':  0x21,
+    'g':  0x22,
+    'h':  0x23,
+    'i':  0x17,
+    'j':  0x24,
+    'k':  0x25,
+    'l':  0x26,
+    'm':  0x32,
+    'n':  0x31,
+    'o':  0x18,
+    'p':  0x19,
+    'q':  0x10,
+    'r':  0x13,
+    's':  0x1f,
+    't':  0x14,
+    'u':  0x16,
+    'v':  0x2f,
+    'w':  0x11,
+    'x':  0x2d,
+    'y':  0x15,
+    'z':  0x2c,
+    '0':  0x0b,
+    '1':  0x02,
+    '2':  0x03,
+    '3':  0x04,
+    '4':  0x05,
+    '5':  0x06,
+    '6':  0x07,
+    '7':  0x08,
+    '8':  0x09,
+    '9':  0x0a,
+    ' ':  0x39,
+    '-':  0xc,
+    '=':  0xd,
+    '[':  0x1a,
+    ']':  0x1b,
+    ';':  0x27,
+    '\'': 0x28,
+    ',':  0x33,
+    '.':  0x34,
+    '/':  0x35,
+    '\t': 0xf,
+    '\n': 0x1c,
+    '`':  0x29
+};
+
+extScancodes = {
+    'ESC' :    [0x01],
+    'BKSP':    [0xe],
+    'SPACE':   [0x39],
+    'TAB':     [0x0f],
+    'CAPS':    [0x3a],
+    'ENTER':   [0x1c],
+    'LSHIFT':  [0x2a],
+    'RSHIFT':  [0x36],
+    'INS':     [0xe0, 0x52],
+    'DEL':     [0xe0, 0x53],
+    'END':     [0xe0, 0x4f],
+    'HOME':    [0xe0, 0x47],
+    'PGUP':    [0xe0, 0x49],
+    'PGDOWN':  [0xe0, 0x51],
+    'LGUI':    [0xe0, 0x5b], # GUI, aka Win, aka Apple key
+    'RGUI':    [0xe0, 0x5c],
+    'LCTR':    [0x1d],
+    'RCTR':    [0xe0, 0x1d],
+    'LALT':    [0x38],
+    'RALT':    [0xe0, 0x38],
+    'APPS':    [0xe0, 0x5d],
+    'F1':      [0x3b],
+    'F2':      [0x3c],
+    'F3':      [0x3d],
+    'F4':      [0x3e],
+    'F5':      [0x3f],
+    'F6':      [0x40],
+    'F7':      [0x41],
+    'F8':      [0x42],
+    'F9':      [0x43],
+    'F10':     [0x44 ],
+    'F11':     [0x57],
+    'F12':     [0x58],
+    'UP':      [0xe0, 0x48],
+    'LEFT':    [0xe0, 0x4b],
+    'DOWN':    [0xe0, 0x50],
+    'RIGHT':   [0xe0, 0x4d],
+};
+
+def keyDown(ch):
+    code = scancodes.get(ch, 0x0)
+    if code != 0:
+        return [code]
+    extCode = extScancodes.get(ch, [])
+    if len(extCode) == 0:
+        print "bad ext",ch
+    return extCode
+
+def keyUp(ch):
+    codes = keyDown(ch)[:] # make a copy
+    if len(codes) > 0:
+        codes[len(codes)-1] += 0x80
+    return codes
+
+def typeInGuest(console, text, delay):
+    import time
+    pressed = []
+    group = False
+    modGroupEnd = True
+    i = 0
+    while i < len(text):
+        ch = text[i]
+        i = i+1
+        if ch == '{':
+            # start group, all keys to be pressed at the same time
+            group = True
+            continue
+        if ch == '}':
+            # end group, release all keys
+            for c in pressed:
+                 console.keyboard.putScancodes(keyUp(c))
+            pressed = []
+            group = False
+            continue
+        if  ch == '^' or  ch == '|' or ch == '$' or ch == '_':
+            if ch == '^':
+                ch = 'LCTR'
+            if ch == '|':
+                ch = 'LSHIFT'
+            if ch == '_':
+                ch = 'LALT'
+            if ch == '$':
+                ch = 'LGUI'
+            if not group:
+                modGroupEnd = False
+        else:
+            if ch == '\\':
+                if i < len(text):
+                    ch = text[i]
+                    i = i+1
+                    if ch == 'n':
+                        ch = '\n'
+            elif ch == '&':
+                combo = ""
+                while i  < len(text):
+                    ch = text[i]
+                    i = i+1
+                    if ch == ';':
+                        break
+                    combo += ch
+                ch = combo
+            modGroupEnd = True
+        console.keyboard.putScancodes(keyDown(ch))
+        pressed.insert(0, ch)
+        if not group and modGroupEnd:
+            for c in pressed:
+                console.keyboard.putScancodes(keyUp(c))
+            pressed = []
+            modGroupEnd = True
+        time.sleep(delay)
+
+def typeGuestCmd(ctx, args):
+    import sys
+
+    if len(args) < 3:
+        print "usage: typeGuest <machine> <text> <charDelay>"
+        return 0
+    mach = ctx['machById'](args[1])
+    if mach is None:
+        return 0
+
+    text = args[2]
+
+    if len(args) > 3:
+        delay = float(args[3])
+    else:
+        delay = 0.1
+
+    args = [lambda ctx,mach,console,args: typeInGuest(console, text, delay)]
+    cmdExistingVm(ctx, mach, 'guestlambda', args)
+
+    return 0
+
+
 aliases = {'s':'start',
            'i':'info',
            'l':'list',
            'h':'help',
            'a':'alias',
            'q':'quit', 'exit':'quit',
+           'tg': 'typeGuest',
            'v':'verbose'}
 
 commands = {'help':['Prints help information', helpCmd, 0],
@@ -1269,6 +1458,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'exportVm':['Export VM in OVF format: export Win /tmp/win.ovf', exportVMCmd, 0],
             'screenshot':['Take VM screenshot to a file: screenshot Win /tmp/win.png 1024 768', screenshotCmd, 0],
             'teleport':['Teleport VM to another box (see openportal): teleport Win anotherhost:8000 <passwd> <maxDowntime>', teleportCmd, 0],
+            'typeGuest':['Type arbitrary text in guest: typeGuest Linux "^lls\\n&UP;&BKSP;ess /etc/hosts\\nq^c" 0.7', typeGuestCmd, 0],
             'openportal':['Open portal for teleportation of VM from another box (see teleport): openportal Win 8000 <passwd>', openportalCmd, 0],
             'closeportal':['Close teleportation portal (see openportal,teleport): closeportal Win', closeportalCmd, 0],
             'getextra':['Get extra data, empty key lists all: getextra <vm|global> <key>', getExtraDataCmd, 0],
@@ -1438,6 +1628,7 @@ def main(argv):
            'machById': lambda id: machById(ctx,id),
            'argsToMach': lambda args: argsToMach(ctx,args),
            'progressBar': lambda p: progressBar(ctx,p),
+           'typeInGuest': typeInGuest,
            '_machlist':None
            }
     interpret(ctx)
