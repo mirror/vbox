@@ -1592,7 +1592,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         appLock.acquire();
 
         vrc = RTPathExists(strTmpOvf.c_str()); /* Paranoid check */
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR,
                            tr("Cannot find source file '%s'"), strTmpOvf.c_str());
         /* Add the OVF file */
@@ -1620,7 +1620,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
                 strTargetFilePath.append("/");
                 strTargetFilePath.append(strTargetFileNameOnly);
                 vrc = RTPathExists(strTargetFilePath.c_str()); /* Paranoid check */
-                if(RT_FAILURE(vrc))
+                if (RT_FAILURE(vrc))
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Cannot find source file '%s'"), strTargetFilePath.c_str());
                 filesList.push_back(pair<Utf8Str, ULONG>(strTargetFilePath, (*itH)->ulSizeMB));
@@ -1628,7 +1628,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         }
         /* Next we have to upload the OVF & all disk images */
         vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Cannot create S3 service handler"));
         RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
@@ -1644,12 +1644,12 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
             vrc = RTS3PutKey(hS3, bucket.c_str(), pszFilename, s.first.c_str());
             if (RT_FAILURE(vrc))
             {
-                if(vrc == VERR_S3_CANCELED)
+                if (vrc == VERR_S3_CANCELED)
                     break;
-                else if(vrc == VERR_S3_ACCESS_DENIED)
+                else if (vrc == VERR_S3_ACCESS_DENIED)
                     throw setError(E_ACCESSDENIED,
                                    tr("Cannot upload file '%s' to S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
-                else if(vrc == VERR_S3_NOT_FOUND)
+                else if (vrc == VERR_S3_NOT_FOUND)
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Cannot upload file '%s' to S3 storage server (File not found)"), pszFilename);
                 else
@@ -1671,7 +1671,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
         if (RTPathExists(pszFilePath))
         {
             vrc = RTFileDelete(pszFilePath);
-            if(RT_FAILURE(vrc))
+            if (RT_FAILURE(vrc))
                 rc = setError(VBOX_E_FILE_ERROR,
                               tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
         }
@@ -1680,7 +1680,7 @@ HRESULT Appliance::writeS3(TaskOVF *pTask)
     if (RTPathExists(pszTmpDir))
     {
         vrc = RTDirRemove(pszTmpDir);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
     }

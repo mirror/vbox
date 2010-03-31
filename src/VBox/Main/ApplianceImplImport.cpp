@@ -758,7 +758,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
 
         /* Next we have to download the OVF */
         vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Cannot create S3 service handler"));
         RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
@@ -768,12 +768,12 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
         vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strTmpOvf.c_str());
         if (RT_FAILURE(vrc))
         {
-            if(vrc == VERR_S3_CANCELED)
+            if (vrc == VERR_S3_CANCELED)
                 throw S_OK; /* todo: !!!!!!!!!!!!! */
-            else if(vrc == VERR_S3_ACCESS_DENIED)
+            else if (vrc == VERR_S3_ACCESS_DENIED)
                 throw setError(E_ACCESSDENIED,
                                tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
-            else if(vrc == VERR_S3_NOT_FOUND)
+            else if (vrc == VERR_S3_NOT_FOUND)
                 throw setError(VBOX_E_FILE_ERROR,
                                tr("Cannot download file '%s' from S3 storage server (File not found)"), pszFilename);
             else
@@ -816,7 +816,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
     if (RTPathExists(strTmpOvf.c_str()))
     {
         vrc = RTFileDelete(strTmpOvf.c_str());
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Cannot delete file '%s' (%Rrc)"), strTmpOvf.c_str(), vrc);
     }
@@ -824,7 +824,7 @@ HRESULT Appliance::readS3(TaskOVF *pTask)
     if (RTPathExists(pszTmpDir))
     {
         vrc = RTDirRemove(pszTmpDir);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
     }
@@ -1844,7 +1844,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
 
         /* Next we have to download the disk images */
         vrc = RTS3Create(&hS3, pTask->locInfo.strUsername.c_str(), pTask->locInfo.strPassword.c_str(), pTask->locInfo.strHostname.c_str(), "virtualbox-agent/"VBOX_VERSION_STRING);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             throw setError(VBOX_E_IPRT_ERROR,
                            tr("Cannot create S3 service handler"));
         RTS3SetProgressCallback(hS3, pTask->updateProgress, &pTask);
@@ -1863,12 +1863,12 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
             vrc = RTS3GetKey(hS3, bucket.c_str(), pszFilename, strSrcFile.c_str());
             if (RT_FAILURE(vrc))
             {
-                if(vrc == VERR_S3_CANCELED)
+                if (vrc == VERR_S3_CANCELED)
                     throw S_OK; /* todo: !!!!!!!!!!!!! */
-                else if(vrc == VERR_S3_ACCESS_DENIED)
+                else if (vrc == VERR_S3_ACCESS_DENIED)
                     throw setError(E_ACCESSDENIED,
                                    tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
-                else if(vrc == VERR_S3_NOT_FOUND)
+                else if (vrc == VERR_S3_NOT_FOUND)
                     throw setError(VBOX_E_FILE_ERROR,
                                    tr("Cannot download file '%s' from S3 storage server (File not found)"), pszFilename);
                 else
@@ -1892,11 +1892,11 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
             filesList.push_back(pair<Utf8Str, ULONG>(strManifestFile, 0));
         else if (RT_FAILURE(vrc))
         {
-            if(vrc == VERR_S3_CANCELED)
+            if (vrc == VERR_S3_CANCELED)
                 throw S_OK; /* todo: !!!!!!!!!!!!! */
-            else if(vrc == VERR_S3_NOT_FOUND)
+            else if (vrc == VERR_S3_NOT_FOUND)
                 vrc = VINF_SUCCESS; /* Not found is ok */
-            else if(vrc == VERR_S3_ACCESS_DENIED)
+            else if (vrc == VERR_S3_ACCESS_DENIED)
                 throw setError(E_ACCESSDENIED,
                                tr("Cannot download file '%s' from S3 storage server (Access denied). Make sure that your credentials are right. Also check that your host clock is properly synced"), pszFilename);
             else
@@ -1941,7 +1941,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
         if (RTPathExists(pszFilePath))
         {
             vrc = RTFileDelete(pszFilePath);
-            if(RT_FAILURE(vrc))
+            if (RT_FAILURE(vrc))
                 rc = setError(VBOX_E_FILE_ERROR,
                               tr("Cannot delete file '%s' (%Rrc)"), pszFilePath, vrc);
         }
@@ -1950,7 +1950,7 @@ HRESULT Appliance::importS3(TaskOVF *pTask)
     if (RTPathExists(pszTmpDir))
     {
         vrc = RTDirRemove(pszTmpDir);
-        if(RT_FAILURE(vrc))
+        if (RT_FAILURE(vrc))
             rc = setError(VBOX_E_FILE_ERROR,
                           tr("Cannot delete temporary directory '%s' (%Rrc)"), pszTmpDir, vrc);
     }

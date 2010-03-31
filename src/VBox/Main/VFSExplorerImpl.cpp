@@ -299,7 +299,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
         if (RT_FAILURE(vrc))
             throw setError(VBOX_E_FILE_ERROR, tr ("Can't open directory '%s' (%Rrc)"), pszPath, vrc);
 
-        if(aTask->progress)
+        if (aTask->progress)
             aTask->progress->SetCurrentOperationProgress(33);
         RTDIRENTRY entry;
         while (RT_SUCCESS(vrc))
@@ -313,7 +313,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
                     fileList.push_back(VFSExplorer::Data::DirEntry(name, RTToVFSFileType(entry.enmType)));
             }
         }
-        if(aTask->progress)
+        if (aTask->progress)
             aTask->progress->SetCurrentOperationProgress(66);
     }
     catch(HRESULT aRC)
@@ -327,7 +327,7 @@ HRESULT VFSExplorer::updateFS(TaskVFSExplorer *aTask)
     if (pDir)
         RTDirClose(pDir);
 
-    if(aTask->progress)
+    if (aTask->progress)
         aTask->progress->SetCurrentOperationProgress(99);
 
     /* Assign the result on success (this clears the old list) */
@@ -372,7 +372,7 @@ HRESULT VFSExplorer::deleteFS(TaskVFSExplorer *aTask)
             int vrc = RTFileDelete(szPath);
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), szPath, vrc);
-            if(aTask->progress)
+            if (aTask->progress)
                 aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
@@ -498,7 +498,7 @@ HRESULT VFSExplorer::deleteS3(TaskVFSExplorer *aTask)
             vrc = RTS3DeleteKey(hS3, m->strBucket.c_str(), (*it).c_str());
             if (RT_FAILURE(vrc))
                 throw setError(VBOX_E_FILE_ERROR, tr ("Can't delete file '%s' (%Rrc)"), (*it).c_str(), vrc);
-            if(aTask->progress)
+            if (aTask->progress)
                 aTask->progress->SetCurrentOperationProgress((ULONG)(fPercentStep * i));
         }
     }
