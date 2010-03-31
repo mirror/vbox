@@ -178,11 +178,11 @@ void HostPowerServiceDarwin::checkBatteryCriticalLevel (bool *pfCriticalChanged)
 
     if (CFArrayGetCount (pSources) > 0)
     {
-        for(int i = 0; i < CFArrayGetCount (pSources); ++i)
+        for (int i = 0; i < CFArrayGetCount (pSources); ++i)
         {
             pSource = IOPSGetPowerSourceDescription (pBlob, CFArrayGetValueAtIndex (pSources, i));
             /* If the source is empty skip over to the next one. */
-            if(!pSource)
+            if (!pSource)
                 continue;
             /* Skip all power sources which are currently not present like a
              * second battery. */

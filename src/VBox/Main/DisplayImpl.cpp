@@ -3213,7 +3213,7 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
 {
     unsigned id = (unsigned)pCommand->iDisplay;
     int rc = VINF_SUCCESS;
-    if(id < mcMonitors)
+    if (id < mcMonitors)
     {
         IFramebuffer *pFramebuffer = maFramebuffers[id].pFramebuffer;
         Assert (pFramebuffer);
@@ -3223,7 +3223,7 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
             pFramebuffer->Lock();
 
             HRESULT hr = pFramebuffer->ProcessVHWACommand((BYTE*)pCommand);
-            if(FAILED(hr))
+            if (FAILED(hr))
             {
                 rc = (hr == E_NOTIMPL) ? VERR_NOT_IMPLEMENTED : VERR_GENERAL_FAILURE;
             }
@@ -3240,7 +3240,7 @@ void Display::handleVHWACommandProcess(PPDMIDISPLAYCONNECTOR pInterface, PVBOXVH
         rc = VERR_INVALID_PARAMETER;
     }
 
-    if(RT_FAILURE(rc))
+    if (RT_FAILURE(rc))
     {
         /* tell the guest the command is complete */
         pCommand->Flags &= (~VBOXVHWACMD_FLAG_HG_ASYNCH);
