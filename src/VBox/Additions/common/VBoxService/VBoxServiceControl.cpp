@@ -111,7 +111,11 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
                                            execData.szUser, sizeof(execData.szUser),
                                            execData.szPassword, sizeof(execData.szPassword),
                                            &execData.uTimeLimitMS);
-    if (RT_SUCCESS(rc))
+    if (RT_FAILURE(rc))
+    {
+        VBoxServiceError("Control: Failed to retrieve execution command! Error: %Rrc\n", rc);
+    }
+    else
     {
         /* Adjust time limit value. */
         execData.uTimeLimitMS = UINT32_MAX ? 

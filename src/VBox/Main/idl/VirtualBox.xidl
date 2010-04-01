@@ -8352,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="66dfe00b-f174-40d8-9d78-4e30d58137ed"
+     uuid="a4dac036-f7ed-4634-98d8-44b8672b1779"
      wsmap="managed"
      >
     <desc>
@@ -8527,10 +8527,13 @@
       <param name="timeoutMS" type="unsigned long" dir="in">
         <desc>Foobar</desc>
       </param>
-      <param name="pid" type="unsigned long" dir="return">
+      <param name="pid" type="unsigned long" dir="out">
         <desc>Foobar</desc>
       </param>
-    </method>
+      <param name="progress" type="IProgress" dir="return">
+        <desc>Progress object to track the operation completion.</desc>
+      </param>
+      </method>
 
   </interface>
 

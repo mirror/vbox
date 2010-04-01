@@ -86,7 +86,7 @@ public:
                               IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
-                              ULONG aTimeoutMS, ULONG* aPID);
+                              ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle, 
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                      ULONG *aPageTotal, ULONG *aPageFree); 
