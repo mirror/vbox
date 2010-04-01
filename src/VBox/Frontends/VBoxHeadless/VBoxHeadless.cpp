@@ -731,14 +731,14 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 break;
 #endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
-            case 'n': 
-                fVNCEnable = true; 
+            case 'n':
+                fVNCEnable = true;
                 break;
-            case 'm': 
-                uVNCPort = ValueUnion.i32; 
+            case 'm':
+                uVNCPort = ValueUnion.i32;
                 break;
-            case 'o': 
-                pszVNCPassword = (char*)ValueUnion.psz; 
+            case 'o':
+                pszVNCPassword = (char*)ValueUnion.psz;
                 break;
 #endif /* VBOX_WITH_VNC */
             case OPT_RAW_R0:
@@ -959,20 +959,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         }
 #endif /* defined(VBOX_FFMPEG) */
 #ifdef VBOX_WITH_VNC
-	    if (fVNCEnable) 
+        if (fVNCEnable)
         {
             VNCFB           *pFramebuffer;
             RTLDRMOD         hLdrVNC;
-	        PFNREGISTERVNCFB pfnRegisterVNCFB;
+            PFNREGISTERVNCFB pfnRegisterVNCFB;
 
-        	pFramebuffer = new VNCFB(console, uVNCPort, pszVNCPassword);
-        	rc = pFramebuffer->init();
-        	if (rc != S_OK) 
+            pFramebuffer = new VNCFB(console, uVNCPort, pszVNCPassword);
+            rc = pFramebuffer->init();
+            if (rc != S_OK)
             {
-                LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rrc);
-             	delete pFramebuffer;
+                LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rc);
+                delete pFramebuffer;
                 break;
-        	}
+            }
 
             Log2(("VBoxHeadless: Registering VNC framebuffer\n"));
             pFramebuffer->AddRef();
