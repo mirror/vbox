@@ -119,6 +119,7 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            hostcpuids|hddbackends|hdds|dvds|floppies|\n"
                  "                            usbhost|usbfilters|systemproperties\n"
+                 "                            natrules<1-N> <name>\n"
                  "\n");
     }
 
@@ -210,6 +211,14 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            [--intnet<1-N> <network name>]\n"
                  "                            [--natnet<1-N> <network>|default]\n"
+                 "                            [--natsettings<1-N> \"<mtu>,<socksnd>,<sockrcv>,<rcpsnd>,<tcprcv>\"]\n"
+                 "                            [--natpf<1-N> delete <rulename>| \"<rulename>|<default>,tcp|udp,<hostip>|<default>,<hostport>,<guestip>|<default>,<guestport>\"]\n"
+                 "                            [--nattftpprefix<1-N> <prefix>]\n"
+                 "                            [--nattftpfile<1-N> <file>]\n"
+                 "                            [--nattftpserver<1-N> <ip>]\n"
+                 "                            [--natdnspassdomain<1-N> on|off]\n"
+                 "                            [--natdnsproxy<1-N> on|off]\n"
+                 "                            [--natdnshostresolver<1-N> on|off]\n"
                  "                            [--macaddress<1-N> auto|<mac>]\n"
                  "                            [--mouse ps2|usb|usbtablet\n"
                  "                            [--keyboard ps2|usb\n"
