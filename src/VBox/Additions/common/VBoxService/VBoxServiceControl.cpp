@@ -25,17 +25,10 @@
 *   Header Files                                                               *
 *******************************************************************************/
 #include <iprt/assert.h>
-#include <iprt/ctype.h>
-#include <iprt/env.h>
-#include <iprt/file.h>
+#include <iprt/getopt.h>
 #include <iprt/mem.h>
-#include <iprt/path.h>
-#include <iprt/param.h>
-#include <iprt/process.h>
-#include <iprt/string.h>
 #include <iprt/semaphore.h>
 #include <iprt/thread.h>
-#include <VBox/version.h>
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/HostServices/GuestControlSvc.h>
 #include "VBoxServiceInternal.h"
@@ -99,36 +92,70 @@ static DECLCALLBACK(int) VBoxServiceControlInit(void)
     return rc;
 }
 
-int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
+
+static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumParms)
 {
     VBoxServiceVerbose(3, "VBoxServiceControlHandleCmdExec: Called uNumParms=%ld\n", uNumParms);
 
-    char szCmd[_1K];
-    uint32_t uFlags;
-    char szArgs[_1K];
-    uint32_t uNumArgs;
-    char szEnv[_64K];
-    uint32_t cbEnv = sizeof(szEnv);
-    uint32_t uNumEnvVars;
-    char szStdIn[_1K];
-    char szStdOut[_1K];
-    char szStdErr[_1K];
-    char szUser[128];
-    char szPassword[128];
-    uint32_t uTimeLimitMS;
+    VBOXSERVICECTRLPROCDATA execData;
+    execData.cbEnv = sizeof(execData.szEnv);
 
     int rc = VbglR3GuestCtrlGetHostCmdExec(u32ClientId, uNumParms,
-                                           szCmd, sizeof(szCmd),
-                                           &uFlags,
-                                           szArgs, sizeof(szArgs), &uNumArgs,
-                                           szEnv, &cbEnv, &uNumEnvVars,
-                                           szStdIn, sizeof(szStdIn),
-                                           szStdOut, sizeof(szStdOut),
-                                           szStdErr, sizeof(szStdErr),
-                                           szUser, sizeof(szUser),
-                                           szPassword, sizeof(szPassword),
-                                           &uTimeLimitMS);
-    return 0;
+                                           execData.szCmd, sizeof(execData.szCmd),
+                                           &execData.uFlags,
+                                           execData.szArgs, sizeof(execData.szArgs), &execData.uNumArgs,
+                                           execData.szEnv, &execData.cbEnv, &execData.uNumEnvVars,
+                                           execData.szStdIn, sizeof(execData.szStdIn),
+                                           execData.szStdOut, sizeof(execData.szStdOut),
+                                           execData.szStdErr, sizeof(execData.szStdErr),
+                                           execData.szUser, sizeof(execData.szUser),
+                                           execData.szPassword, sizeof(execData.szPassword),
+                                           &execData.uTimeLimitMS);
+    if (RT_SUCCESS(rc))
+    {
+        /* Adjust time limit value. */
+        execData.uTimeLimitMS = UINT32_MAX ? 
+            RT_INDEFINITE_WAIT : execData.uTimeLimitMS;
+
+        /* Prepare argument list. */
+        char **ppaArg;
+        int iArgs;
+        rc = RTGetOptArgvFromString(&ppaArg, &iArgs, execData.szArgs, NULL);
+        Assert(execData.uNumArgs == iArgs);
+        if (RT_SUCCESS(rc))
+        {
+            /* Prepare environment list. */
+            char **ppaEnv;
+            if (execData.uNumEnvVars)
+            {
+                ppaEnv = (char**)RTMemAlloc(execData.uNumEnvVars * sizeof(char*));
+                AssertPtr(ppaEnv);
+
+                char *pcCur = execData.szEnv;
+                uint32_t i = 0;
+                while (pcCur < execData.szEnv + execData.cbEnv)
+                {
+                    if (RTStrAPrintf(&ppaEnv[i++], "%s", pcCur) < 0)
+                    {
+                        rc = VERR_NO_MEMORY;
+                        break;
+                    }
+                    pcCur += strlen(pcCur) + 1; /* Skip terminating zero. */
+                }
+            }
+
+            if (RT_SUCCESS(rc))
+            {
+                /* Do the actual execution. */
+                rc = VBoxServiceControlExecProcess(&execData, ppaArg, ppaEnv);
+                for (uint32_t i = 0; i < execData.uNumEnvVars; i++)
+                    RTStrFree(ppaEnv[i]);
+                RTMemFree(ppaEnv);
+            }
+            RTGetOptArgvFree(ppaArg);
+        }
+    }
+    return rc;
 }
 
 
@@ -167,6 +194,7 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
+            break; /* DEBUG BREAK */
         }
     
         /*

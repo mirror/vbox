@@ -124,6 +124,48 @@ typedef struct
 typedef DWORD (WINAPI *PFNWTSGETACTIVECONSOLESESSIONID)(void);
 #endif /* RT_OS_WINDOWS */
 
+#ifdef VBOX_WITH_GUEST_CONTROL
+/* Structure for holding process execution data. */
+typedef struct _VBoxServiceControlProcessData
+{
+    char szCmd[_1K];
+    uint32_t uFlags;
+    char szArgs[_1K];
+    uint32_t uNumArgs;
+    char szEnv[_64K];
+    uint32_t cbEnv;
+    uint32_t uNumEnvVars;
+    char szStdIn[_1K];
+    char szStdOut[_1K];
+    char szStdErr[_1K];
+    char szUser[128];
+    char szPassword[128];
+    uint32_t uTimeLimitMS;
+} VBOXSERVICECTRLPROCDATA;
+/** Pointer to execution data. */
+typedef VBOXSERVICECTRLPROCDATA *PVBOXSERVICECTRLPROCDATA;
+/**
+ * For buffering process input supplied by the client.
+ */
+typedef struct _VBoxServiceControlStdInBuf
+{
+    /** The mount of buffered data. */
+    size_t  cb;
+    /** The current data offset. */
+    size_t  off;
+    /** The data buffer. */
+    char   *pch;
+    /** The amount of allocated buffer space. */
+    size_t  cbAllocated;
+    /** Send further input into the bit bucket (stdin is dead). */
+    bool    fBitBucket;
+    /** The CRC-32 for standard input (received part). */
+    uint32_t uCrc32;
+} VBOXSERVICECTRLSTDINBUF;
+/** Pointer to a standard input buffer. */
+typedef VBOXSERVICECTRLSTDINBUF *PVBOXSERVICECTRLSTDINBUF;
+#endif
+
 RT_C_DECLS_BEGIN
 
 extern char *g_pszProgName;
@@ -165,6 +207,12 @@ extern void VBoxServiceVMInfoWinProcessesFree(PVBOXSERVICEVMINFOPROC paProcs);
 extern int  VBoxServiceWinGetComponentVersions(uint32_t uiClientID);
 # endif /* VBOX_WITH_GUEST_PROPS */
 #endif /* RT_OS_WINDOWS */
+
+#ifdef VBOX_WITH_GUEST_CONTROL
+extern int  VBoxServiceControlExecProcess(PVBOXSERVICECTRLPROCDATA pExecData,
+                                          const char * const      *papszArgs,
+                                          const char * const      *papszEnv);
+#endif
 
 #ifdef VBOXSERVICE_MANAGEMENT
 extern uint32_t VBoxServiceBalloonQueryChunks(void);
