@@ -589,7 +589,7 @@ static DECLCALLBACK(int) drvNamedPipeConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCf
         }
 
         rc = RTSemEventMultiCreate(&pThis->ListenSem);
-        AssertRCReturn(rc);
+        AssertRCReturn(rc, rc);
 
         rc = RTThreadCreate(&pThis->ListenThread, drvNamedPipeListenLoop, (void *)pThis, 0,
                             RTTHREADTYPE_IO, RTTHREADFLAGS_WAITABLE, "SerPipe");
