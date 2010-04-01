@@ -74,7 +74,7 @@ in_cksum_update(struct ip *ip)
 
 #endif
 
-#ifdef _KERNEL
+#if defined(_KERNEL) || defined(VBOX)
 u_int in_cksum_hdr(const struct ip *ip);
 u_short	in_addword(u_short sum, u_short b);
 u_short	in_pseudo(u_int sum, u_int b, u_int c);
