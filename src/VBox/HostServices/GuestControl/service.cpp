@@ -35,6 +35,7 @@
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
+#include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
@@ -76,6 +77,7 @@ private:
     void *mpvHostData;
     /** The execution data to hold (atm only one buffer!) */
     VBOXGUESTCTRPARAMBUFFER mExec;
+    RTCRITSECT critsect;
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
@@ -92,6 +94,12 @@ public:
                                 RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                                 "GuestCtrlReq");
 #endif
+        mExec.uParmCount = 0;
+        mExec.pParms = NULL;
+
+        if (RT_SUCCESS(rc))
+            rc = RTCritSectInit(&critsect);
+
         if (RT_FAILURE(rc))
             throw rc;
     }
@@ -203,6 +211,8 @@ DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 /* Stores a HGCM request in an internal buffer (pEx). Needs to be freed later using execBufferFree(). */
 int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    RTCritSectEnter(&critsect);
+
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
 
@@ -259,19 +269,22 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
             }
         }
     }
+    RTCritSectLeave(&critsect);
     return rc;
 }
 
 /* Frees a buffered HGCM request. */
 void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 {
+    RTCritSectEnter(&critsect);
     AssertPtr(pBuf);
     for (uint32_t i = 0; i < pBuf->uParmCount; i++)
     {
         switch (pBuf->pParms[i].type)
         {
             case VBOX_HGCM_SVC_PARM_PTR:
-                RTMemFree(pBuf->pParms[i].u.pointer.addr);
+                if (pBuf->pParms[i].u.pointer.size > 0)
+                    RTMemFree(pBuf->pParms[i].u.pointer.addr);
                 break;
         }
     }
@@ -280,40 +293,51 @@ void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
         RTMemFree(pBuf->pParms);
         pBuf->uParmCount = 0;
     }
+    RTCritSectLeave(&critsect);
 }
 
 /* Assigns data from a buffered HGCM request to the current HGCM request. */
 int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
+    execBufferFree(pBuf);
+
+    RTCritSectEnter(&critsect);
+
     AssertPtr(pBuf);
+    int rc = VINF_SUCCESS;
     if (cParms != pBuf->uParmCount)
-        return VERR_INVALID_PARAMETER;
-    /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */
-
-    for (uint32_t i = 0; i < pBuf->uParmCount; i++)
     {
-        paParms[i].type = pBuf->pParms[i].type;
-        switch (paParms[i].type)
+        rc = VERR_INVALID_PARAMETER;
+    }
+    else
+    {
+        /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */    
+        for (uint32_t i = 0; i < pBuf->uParmCount; i++)
         {
-            case VBOX_HGCM_SVC_PARM_32BIT:
-                paParms[i].u.uint32 = pBuf->pParms[i].u.uint32;
-                break;
-
-            case VBOX_HGCM_SVC_PARM_64BIT:
-                /* Not supported yet. */
-                break;
-
-            case VBOX_HGCM_SVC_PARM_PTR:
-                paParms[i].u.pointer.size = pBuf->pParms[i].u.pointer.size;
-                paParms[i].u.pointer.addr = pBuf->pParms[i].u.pointer.addr;
-                break;
-
-            default:                        
-                break;
+            paParms[i].type = pBuf->pParms[i].type;
+            switch (paParms[i].type)
+            {
+                case VBOX_HGCM_SVC_PARM_32BIT:
+                    paParms[i].u.uint32 = pBuf->pParms[i].u.uint32;
+                    break;
+    
+                case VBOX_HGCM_SVC_PARM_64BIT:
+                    /* Not supported yet. */
+                    break;
+    
+                case VBOX_HGCM_SVC_PARM_PTR:
+                    memcpy(paParms[i].u.pointer.addr,
+                           pBuf->pParms[i].u.pointer.addr,
+                           pBuf->pParms[i].u.pointer.size);
+                    break;
+    
+                default:                        
+                    break;
+            }
         }
     }
-
-    return VINF_SUCCESS;
+    RTCritSectLeave(&critsect);
+    return rc;
 }
 
 /**
@@ -332,6 +356,9 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     int rc = VINF_SUCCESS;
     LogFlowFunc(("u32ClientID = %d, fn = %d, cParms = %d, pparms = %d\n",
                  u32ClientID, eFunction, cParms, paParms));
+
+    ASMBreakpoint();
+
     try
     {
         switch (eFunction)

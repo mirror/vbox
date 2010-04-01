@@ -36,6 +36,7 @@
 
 #include <VBox/log.h>
 #include <iprt/asm.h>
+#include <iprt/getopt.h>
 #include <iprt/stream.h>
 #include <iprt/string.h>
 #include <iprt/time.h>
@@ -61,7 +62,7 @@ using namespace com;
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program> [--arguments <arguments>] [--environment NAME=VALUE]\n"
+             "                            <path to program> [--arguments \"<arguments>\"] [--environment \"NAME=VALUE NAME=VALUE\"]\n"
              "                            [--flags <flags>] [--username <name> [--password <password>]]\n"
              "                            [--timeout <msec>]\n"
              "\n");
@@ -107,13 +108,21 @@ static int handleExecProgram(HandlerArg *a)
         else if (   !strcmp(a->argv[i], "--environment")
                  || !strcmp(a->argv[i], "--env"))
         {
-            /** @todo Allow more environment blocks be spcecified per "--environment"
-              *       option, e.g. "--environment "FOO=BAR HOHO=HEHE;QWER=ASDF". */
             if (i + 1 >= a->argc)
                 usageOK = false;
             else
             {                
-                env.push_back(Bstr(a->argv[i + 1]));
+                char **papszArg;
+                int cArgs;
+
+                rc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    for (int a = 0; a < cArgs; a++)                       
+                        env.push_back(Bstr(papszArg[a]));
+
+                    RTGetOptArgvFree(papszArg);
+                }                
                 ++i;
             }
         }
@@ -203,12 +212,14 @@ static int handleExecProgram(HandlerArg *a)
             ComPtr<IGuest> guest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
 
+            ComPtr<IProgress> progress;
             ULONG uPID = 0;
             CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags, 
                                                     Bstr(Utf8Args), ComSafeArrayAsInParam(env), 
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
-                                                    &uPID));
+                                                    &uPID, progress.asOutParam()));
+            /** @todo Show some progress here? */
             a->session->Close();
         } while (0);
     }
