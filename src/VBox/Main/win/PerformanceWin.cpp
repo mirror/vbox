@@ -56,7 +56,7 @@ class CollectorWin : public CollectorHAL
 public:
     CollectorWin();
     virtual ~CollectorWin();
-    virtual int preCollect(const CollectorHints& hints);
+    virtual int preCollect(const CollectorHints& hints, uint64_t /* iTick */);
     virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
     virtual int getHostCpuMHz(ULONG *mhz);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
@@ -131,7 +131,7 @@ CollectorWin::~CollectorWin()
 
 #define FILETTIME_TO_100NS(ft) (((uint64_t)ft.dwHighDateTime << 32) + ft.dwLowDateTime)
 
-int CollectorWin::preCollect(const CollectorHints& hints)
+int CollectorWin::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 {
     LogFlowThisFuncEnter();
 
