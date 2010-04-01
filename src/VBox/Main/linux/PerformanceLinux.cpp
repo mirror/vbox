@@ -38,7 +38,7 @@ namespace pm {
 class CollectorLinux : public CollectorHAL
 {
 public:
-    virtual int preCollect(const CollectorHints& hints);
+    virtual int preCollect(const CollectorHints& hints, uint64_t /* iTick */);
     virtual int getHostMemoryUsage(ULONG *total, ULONG *used, ULONG *available);
     virtual int getProcessMemoryUsage(RTPROCESS process, ULONG *used);
 
@@ -68,7 +68,7 @@ CollectorHAL *createHAL()
 
 // Collector HAL for Linux
 
-int CollectorLinux::preCollect(const CollectorHints& hints)
+int CollectorLinux::preCollect(const CollectorHints& hints, uint64_t /* iTick */)
 {
     std::vector<RTPROCESS> processes;
     hints.getProcesses(processes);
