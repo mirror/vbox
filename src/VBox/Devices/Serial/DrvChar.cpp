@@ -1,6 +1,6 @@
 /* $Id$ */
 /** @file
- * Driver that PDMISTREAM into PDMICHARCONNECTOR / PDMICHARPORT.
+ * Driver that adapts PDMISTREAM into PDMICHARCONNECTOR / PDMICHARPORT.
  *
  * Converts synchronous calls (PDMICHARCONNECTOR::pfnWrite, PDMISTREAM::pfnRead)
  * into asynchronous ones.
@@ -326,7 +326,7 @@ static DECLCALLBACK(void) drvCharDestruct(PPDMDRVINS pDrvIns)
      */
     if (pThis->ReceiveThread != NIL_RTTHREAD)
     {
-        int rc = RTThreadWait(pThis->ReceiveThread, 300000, NULL);
+        int rc = RTThreadWait(pThis->ReceiveThread, 30000, NULL);
         if (RT_SUCCESS(rc))
             pThis->ReceiveThread = NIL_RTTHREAD;
         else
