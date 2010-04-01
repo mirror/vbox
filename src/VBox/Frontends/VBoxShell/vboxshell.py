@@ -1531,7 +1531,7 @@ def interpret(ctx):
 
     if vbox is not None:
         print "Running VirtualBox version %s" %(vbox.version)
-        ctx['perf'] = ctx['global'].getPerfCollector(vbox)
+        ctx['perf'] = None # ctx['global'].getPerfCollector(vbox)
     else:
         ctx['perf'] = None
 
