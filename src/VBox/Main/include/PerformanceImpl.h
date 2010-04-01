@@ -199,7 +199,7 @@ private:
     HRESULT toIPerformanceMetric(pm::BaseMetric *src, IPerformanceMetric **dst);
 
     static void staticSamplerCallback (RTTIMERLR hTimerLR, void *pvUser, uint64_t iTick);
-    void samplerCallback();
+    void samplerCallback(uint64_t iTick);
 
     typedef std::list<pm::Metric*> MetricList;
     typedef std::list<pm::BaseMetric*> BaseMetricList;

@@ -563,19 +563,18 @@ void PerformanceCollector::resumeSampling()
 
 /* static */
 void PerformanceCollector::staticSamplerCallback(RTTIMERLR hTimerLR, void *pvUser,
-                                                 uint64_t /* iTick */)
+                                                 uint64_t iTick)
 {
     AssertReturnVoid (pvUser != NULL);
     PerformanceCollector *collector = static_cast <PerformanceCollector *> (pvUser);
     Assert(collector->mMagic == MAGIC);
     if (collector->mMagic == MAGIC)
-    {
-        collector->samplerCallback();
-    }
+        collector->samplerCallback(iTick);
+
     NOREF (hTimerLR);
 }
 
-void PerformanceCollector::samplerCallback()
+void PerformanceCollector::samplerCallback(uint64_t iTick)
 {
     Log4(("{%p} " LOG_FN_FMT ": ENTER\n", this, __PRETTY_FUNCTION__));
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
@@ -588,7 +587,7 @@ void PerformanceCollector::samplerCallback()
     for (it = m.baseMetrics.begin(); it != m.baseMetrics.end(); it++)
         if ((*it)->collectorBeat(timestamp))
         {
-            (*it)->preCollect(hints);
+            (*it)->preCollect(hints, iTick);
             toBeCollected.push_back(*it);
         }
 
@@ -596,7 +595,7 @@ void PerformanceCollector::samplerCallback()
         return;
 
     /* Let know the platform specific code what is being collected */
-    m.hal->preCollect(hints);
+    m.hal->preCollect(hints, iTick);
 
     /* Finally, collect the data */
     std::for_each (toBeCollected.begin(), toBeCollected.end(),
