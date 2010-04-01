@@ -8533,7 +8533,7 @@
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
-      </method>
+    </method>
 
   </interface>
 
