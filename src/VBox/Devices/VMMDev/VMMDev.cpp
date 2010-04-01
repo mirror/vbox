@@ -879,8 +879,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                     pRequest->fPending = false;
 
                     /* Check if there are more pending requests. */
-                    int i;
-                    for (i = 1; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+                    for (unsigned i = 1; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
                     {
                         if (pThis->displayChangeData.aRequests[i].fPending)
                         {
@@ -933,7 +932,7 @@ static DECLCALLBACK(int) vmmdevRequestHandler(PPDMDEVINS pDevIns, void *pvUser, 
                 if (displayChangeRequest->eventAck == VMMDEV_EVENT_DISPLAY_CHANGE_REQUEST)
                 {
                     /* Select a pending request to report. */
-                    int i;
+                    unsigned i;
                     for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
                     {
                         pRequest = &pThis->displayChangeData.aRequests[i];
@@ -2546,8 +2545,7 @@ static DECLCALLBACK(void) vmmdevReset(PPDMDEVINS pDevIns)
     memset (&pThis->guestInfo, 0, sizeof (pThis->guestInfo));
 
     /* clear pending display change request. */
-    int i;
-    for (i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
+    for (unsigned i = 0; i < RT_ELEMENTS(pThis->displayChangeData.aRequests); i++)
     {
         DISPLAYCHANGEREQUEST *pRequest = &pThis->displayChangeData.aRequests[i];
         memset (&pRequest->lastReadDisplayChangeRequest, 0, sizeof (pRequest->lastReadDisplayChangeRequest));
