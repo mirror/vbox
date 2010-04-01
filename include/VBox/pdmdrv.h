@@ -172,6 +172,11 @@ typedef FNPDMDRVRESUME *PFNPDMDRVRESUME;
 /**
  * Power Off notification.
  *
+ * This is only called when the VMR3PowerOff call is made on a running VM. This
+ * means that there is no notification if the VM was suspended before being
+ * powered of.  There will also be no callback when hot plugging devices or when
+ * replumbing the driver stack.
+ *
  * @param   pDrvIns     The driver instance data.
  */
 typedef DECLCALLBACK(void)   FNPDMDRVPOWEROFF(PPDMDRVINS pDrvIns);

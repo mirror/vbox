@@ -229,6 +229,10 @@ typedef struct PDMUSBREG
     /**
      * VM Power Off notification.
      *
+     * This is only called when the VMR3PowerOff call is made on a running VM.  This
+     * means that there is no notification if the VM was suspended before being
+     * powered of.  There will also be no callback when hot plugging devices.
+     *
      * @param   pUsbIns     The USB device instance data.
      */
     DECLR3CALLBACKMEMBER(void, pfnVMPowerOff,(PPDMUSBINS pUsbIns));
