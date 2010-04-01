@@ -166,7 +166,7 @@ namespace pm
     {
     public:
         CollectorGuestHAL(Machine *machine) : cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL), mLastTick(0),
-                                              mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0), mMemBalloon(0), 
+                                              mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0), mMemBalloon(0),
                                               mMemCache(0), mPageTotal(0), mPageFree(0) {};
         ~CollectorGuestHAL();
 
@@ -235,15 +235,15 @@ namespace pm
 
         bool collectorBeat(uint64_t nowAt);
 
-        void enable() 
-        { 
-            mEnabled = true; 
+        void enable()
+        {
+            mEnabled = true;
             mHAL->enable();
         };
-        void disable() 
-        { 
+        void disable()
+        {
             mHAL->disable();
-            mEnabled = false; 
+            mEnabled = false;
         };
 
         bool isEnabled() { return mEnabled; };
