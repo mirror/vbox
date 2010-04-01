@@ -8498,38 +8498,71 @@
 
       </desc>
       <param name="execName" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          Full path name of the command to execute on the guest; the
+          commands has to exists in the guest VM in order to be executed.
+        </desc>
       </param>
       <param name="flags" type="unsigned long" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          Execution flags - currently not supported and therefore
+          has to be set to 0.
+        </desc>
       </param>
       <param name="arguments" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          Arguments passed to the execution command. If more than one argument 
+          should be passed, put them in a quoted string, e.g. "--foo --bar". 
+        </desc>
       </param>
       <param name="environment" type="wstring" safearray="yes" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          Environment variables that can be set while the command is being 
+          executed, in form of "NAME=VALUE". If more than one environment 
+          variable should be passed, put them in a quoted string, e.g. "FOO=BAR 
+          VBOX_LOG=ALL".
+        </desc>
       </param>
       <param name="stdIn" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          What to do with the standard input (stdin) of the command being
+          executed. Currently not used and has to be set to an empty value.
+        </desc>
       </param>
       <param name="stdOut" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          What to do with the standard output (stdout) of the command being
+          executed. Currently not used and has to be set to an empty value.
+        </desc>
       </param>
       <param name="stdErr" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          What to do with the standard error (stderr) of the command being
+          executed. Currently not used and has to be set to an empty value.
+        </desc>
       </param>
       <param name="userName" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          User name under which the command will be executed; has to exist
+          and have the appropriate rights to execute programs in the VM.
+        </desc>
       </param>
       <param name="password" type="wstring" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          Password of the user account specified.
+        </desc>
       </param>
       <param name="timeoutMS" type="unsigned long" dir="in">
-        <desc>Foobar</desc>
+        <desc>
+          The maximum timeout value (in msec) to wait for finished program 
+          execution. Pass 0 for an infinite timeout.
+        </desc>
       </param>
       <param name="pid" type="unsigned long" dir="out">
-        <desc>Foobar</desc>
-      </param>
+        <desc>
+          The PID (process ID) of the started command for later reference.
+        </desc> 
+      </param> 
       <param name="progress" type="IProgress" dir="return">
         <desc>Progress object to track the operation completion.</desc>
       </param>
