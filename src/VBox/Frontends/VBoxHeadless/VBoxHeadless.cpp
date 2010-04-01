@@ -962,7 +962,6 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         if (fVNCEnable)
         {
             VNCFB           *pFramebuffer;
-            RTLDRMOD         hLdrVNC;
             PFNREGISTERVNCFB pfnRegisterVNCFB;
 
             pFramebuffer = new VNCFB(console, uVNCPort, pszVNCPassword);
