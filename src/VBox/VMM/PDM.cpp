@@ -1715,7 +1715,7 @@ DECLINLINE(void) pdmR3PowerOffDev(PPDMDEVINS pDevIns, unsigned *pcAsync)
     if (!(pDevIns->Internal.s.fIntFlags & PDMDEVINSINT_FLAGS_SUSPENDED))
     {
         pDevIns->Internal.s.fIntFlags |= PDMDEVINSINT_FLAGS_SUSPENDED;
-        if (pDevIns->pReg->pfnSuspend)
+        if (pDevIns->pReg->pfnPowerOff)
         {
             if (!pDevIns->Internal.s.pfnAsyncNotify)
             {
