@@ -109,7 +109,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     uint64_t start;
     unsigned int nCalls;
     /* Pre-collect */
-    CALLS_PER_SECOND(preCollect(hints));
+    CALLS_PER_SECOND(preCollect(hints, 0));
     /* Host CPU load */
     CALLS_PER_SECOND(getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
     /* Process CPU load */
@@ -127,7 +127,7 @@ void measurePerformance(pm::CollectorHAL *collector, const char *pszName, int cV
     for (times = 0; times < 100; times++)
     {
         /* Pre-collect */
-        N_CALLS(1, preCollect(hints));
+        N_CALLS(1, preCollect(hints, 0));
         /* Host CPU load */
         N_CALLS(1, getRawHostCpuLoad(&tmp64, &tmp64, &tmp64));
         /* Host CPU speed */
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
 
     RTPrintf("tstCollector: TESTING - CPU load, sleeping for 5 sec\n");
 
-    rc = collector->preCollect(hints);
+    rc = collector->preCollect(hints, 0);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
@@ -222,7 +222,7 @@ int main(int argc, char *argv[])
 
     RTThreadSleep(5000); // Sleep for 5 seconds
 
-    rc = collector->preCollect(hints);
+    rc = collector->preCollect(hints, 0);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     RTPrintf("tstCollector: process cpu kernel = %llu %%\n\n", (processKernelStop - processKernelStart) * 100 / (processTotalStop - processTotalStart));
 
     RTPrintf("tstCollector: TESTING - CPU load, looping for 5 sec\n");
-    rc = collector->preCollect(hints);
+    rc = collector->preCollect(hints, 0);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);
@@ -275,7 +275,7 @@ int main(int argc, char *argv[])
     start = RTTimeMilliTS();
     while(RTTimeMilliTS() - start < 5000)
         ; // Loop for 5 seconds
-    rc = collector->preCollect(hints);
+    rc = collector->preCollect(hints, 0);
     if (RT_FAILURE(rc))
     {
         RTPrintf("tstCollector: preCollect() -> %Rrc\n", rc);

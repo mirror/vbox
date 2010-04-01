@@ -290,7 +290,7 @@ HRESULT Guest::SetStatistic(ULONG aCpuId, GUESTSTATTYPE enmType, ULONG aVal)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    if (enmType > GUESTSTATTYPE_MAX)
+    if (enmType >= GUESTSTATTYPE_MAX)
         return E_INVALIDARG;
 
     mCurrentGuestStat[enmType] = aVal;

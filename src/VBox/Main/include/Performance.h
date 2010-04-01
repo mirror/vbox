@@ -26,6 +26,7 @@
 #include <VBox/com/defs.h>
 #include <VBox/com/ptr.h>
 #include <VBox/com/string.h>
+#include <VBox/com/VirtualBox.h>
 
 #include <iprt/types.h>
 #include <iprt/err.h>
@@ -138,7 +139,7 @@ namespace pm
     {
     public:
         virtual ~CollectorHAL() { };
-        virtual int preCollect(const CollectorHints& /* hints */) { return VINF_SUCCESS; }
+        virtual int preCollect(const CollectorHints& /* hints */, uint64_t iTick) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
         virtual int getHostCpuLoad(ULONG *user, ULONG *kernel, ULONG *idle);
         /** Returns the average frequency in MHz across all host's CPUs. */
@@ -164,16 +165,54 @@ namespace pm
     class CollectorGuestHAL : public CollectorHAL
     {
     public:
-        CollectorGuestHAL(Machine *machine) : cEnabled(0), mMachine(machine) {};
+        CollectorGuestHAL(Machine *machine) : cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL), mLastTick(0),
+                                              mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0), mMemBalloon(0), 
+                                              mMemCache(0), mPageTotal(0), mPageFree(0) {};
         ~CollectorGuestHAL();
+
+        virtual int preCollect(const CollectorHints& hints, uint64_t iTick);
 
         /** Enable metrics collecting (if applicable) */
         virtual int enable();
         /** Disable metrics collecting (if applicable) */
         virtual int disable();
+
+        /** Return guest cpu absolute load values (0-100). */
+        void getGuestCpuLoad(ULONG *pulCpuUser, ULONG *pulCpuKernel, ULONG *pulCpuIdle)
+        {
+            *pulCpuUser   = mCpuUser;
+            *pulCpuKernel = mCpuKernel;
+            *pulCpuIdle   = mCpuIdle;
+        }
+
+        /** Return guest memory information in kb. */
+        void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemCache, ULONG *pulPageTotal, ULONG *pulPageFree)
+        {
+            *pulMemTotal   = mMemTotal;
+            *pulMemFree    = mMemFree;
+            *pulMemBalloon = mMemBalloon;
+            *pulMemCache   = mMemCache;
+            *pulPageTotal  = mPageTotal;
+            *pulPageFree   = mPageFree;
+        }
+
+
     protected:
-        uint32_t    cEnabled;
-        Machine    *mMachine;
+        uint32_t             cEnabled;
+        Machine             *mMachine;
+        ComPtr<IConsole>     mConsole;
+        ComPtr<IGuest>       mGuest;
+        uint64_t             mLastTick;
+
+        ULONG                mCpuUser;
+        ULONG                mCpuKernel;
+        ULONG                mCpuIdle;
+        ULONG                mMemTotal;
+        ULONG                mMemFree;
+        ULONG                mMemBalloon;
+        ULONG                mMemCache;
+        ULONG                mPageTotal;
+        ULONG                mPageFree;
     };
 
     extern CollectorHAL *createHAL();
@@ -187,7 +226,7 @@ namespace pm
         virtual ~BaseMetric() {};
 
         virtual void init(ULONG period, ULONG length) = 0;
-        virtual void preCollect(CollectorHints& hints) = 0;
+        virtual void preCollect(CollectorHints& hints, uint64_t iTick) = 0;
         virtual void collect() = 0;
         virtual const char *getUnit() = 0;
         virtual ULONG getMinValue() = 0;
@@ -215,9 +254,9 @@ namespace pm
         bool associatedWith(ComPtr<IUnknown> object) { return mObject == object; };
 
     protected:
+        ULONG           mPeriod;
+        ULONG           mLength;
         CollectorHAL    *mHAL;
-        ULONG    mPeriod;
-        ULONG    mLength;
         const char      *mName;
         ComPtr<IUnknown> mObject;
         uint64_t         mLastSampleTaken;
@@ -251,7 +290,7 @@ namespace pm
         HostCpuLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
         : HostCpuLoad(hal, object, user, kernel, idle), mUserPrev(0), mKernelPrev(0), mIdlePrev(0) {};
 
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
     private:
         uint64_t mUserPrev;
@@ -267,7 +306,7 @@ namespace pm
         ~HostCpuMhz() { delete mMHz; };
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& /* hints */) {}
+        void preCollect(CollectorHints& /* hints */, uint64_t /* iTick */) {}
         void collect();
         const char *getUnit() { return "MHz"; };
         ULONG getMinValue() { return 0; };
@@ -285,7 +324,7 @@ namespace pm
         ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
@@ -322,7 +361,7 @@ namespace pm
         MachineCpuLoadRaw(CollectorHAL *hal, ComPtr<IUnknown> object, RTPROCESS process, SubMetric *user, SubMetric *kernel)
         : MachineCpuLoad(hal, object, process, user, kernel), mHostTotalPrev(0), mProcessUserPrev(0), mProcessKernelPrev(0) {};
 
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
     private:
         uint64_t mHostTotalPrev;
@@ -338,7 +377,7 @@ namespace pm
         ~MachineRamUsage() { delete mUsed; };
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
@@ -354,11 +393,11 @@ namespace pm
     {
     public:
         GuestCpuLoad(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *user, SubMetric *kernel, SubMetric *idle)
-        : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle) {};
+        : BaseMetric(hal, "CPU/Load", object), mUser(user), mKernel(kernel), mIdle(idle), mGuestHAL(hal) {};
         ~GuestCpuLoad() { delete mUser; delete mKernel; delete mIdle; };
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
         const char *getUnit() { return "%"; };
         ULONG getMinValue() { return 0; };
@@ -368,17 +407,18 @@ namespace pm
         SubMetric *mUser;
         SubMetric *mKernel;
         SubMetric *mIdle;
+        CollectorGuestHAL *mGuestHAL;
     };
 
     class GuestRamUsage : public BaseMetric
     {
     public:
         GuestRamUsage(CollectorGuestHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *free, SubMetric *balloon, SubMetric *cache, SubMetric *pagedtotal, SubMetric *pagedfree)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mPagedFree(pagedfree) {};
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mFree(free), mBallooned(balloon), mCache(cache), mPagedTotal(pagedtotal), mPagedFree(pagedfree), mGuestHAL(hal) {};
         ~GuestRamUsage() { delete mTotal; delete mFree; delete mBallooned; delete mCache; delete mPagedTotal; delete mPagedFree; };
 
         void init(ULONG period, ULONG length);
-        void preCollect(CollectorHints& hints);
+        void preCollect(CollectorHints& hints, uint64_t iTick);
         void collect();
         const char *getUnit() { return "kB"; };
         ULONG getMinValue() { return 0; };
@@ -386,6 +426,7 @@ namespace pm
         ULONG getScale() { return 1; }
     private:
         SubMetric *mTotal, *mFree, *mBallooned, *mCache, *mPagedTotal, *mPagedFree;
+        CollectorGuestHAL *mGuestHAL;
     };
 
     /* Aggregate Functions **************************************************/

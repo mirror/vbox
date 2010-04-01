@@ -134,25 +134,20 @@ int CollectorGuestHAL::enable()
 
     if (ASMAtomicIncU32(&cEnabled) == 1)
     {
-#if 0
         ComPtr<IInternalSessionControl> directControl;
 
         ret = mMachine->getDirectControl(&directControl);
         if (ret != S_OK)
             return ret;
 
-        /* get the associated console */
-        ComPtr<IConsole> console;
-        ret = directControl->COMGETTER(Console)(console.asOutParam()));
+        /* get the associated console; this is a remote call (!) */
+        ret = directControl->GetRemoteConsole(mConsole.asOutParam());
         if (ret != S_OK)
             return ret;
 
-        ComPtr<IGuest> guest;
-        ret = console->COMGETTER(Guest)(guest.asOutParam());
+        ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
         if (ret == S_OK)
-        {
-        }
-#endif
+            mGuest->COMSETTER(StatisticsUpdateInterval)(1000 /* 1000 ms */);
     }
     return ret;
 }
@@ -161,9 +156,25 @@ int CollectorGuestHAL::disable()
 {
     if (ASMAtomicDecU32(&cEnabled) == 0)
     {
+        Assert(mGuest && mConsole);
+        mGuest->COMSETTER(StatisticsUpdateInterval)(0 /* off */);
     }
     return S_OK;
 }
+
+int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
+{
+    if (    mGuest
+        &&  iTick != mLastTick)
+    {
+        mGuest->InternalGetStatistics(0, &mCpuUser, &mCpuKernel, &mCpuIdle, 
+                                      &mMemTotal, &mMemFree, &mMemBalloon, &mMemCache,
+                                      &mPageTotal, &mPageFree);
+        mLastTick = iTick;
+    }
+    return S_OK;
+}
+
 #endif /* VBOX_COLLECTOR_TEST_CASE */
 
 bool BaseMetric::collectorBeat(uint64_t nowAt)
@@ -208,7 +219,7 @@ void HostCpuLoad::collect()
     }
 }
 
-void HostCpuLoadRaw::preCollect(CollectorHints& hints)
+void HostCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t iTick)
 {
     hints.collectHostCpuLoad();
 }
@@ -272,7 +283,7 @@ void HostRamUsage::init(ULONG period, ULONG length)
     mAvailable->init(mLength);
 }
 
-void HostRamUsage::preCollect(CollectorHints& hints)
+void HostRamUsage::preCollect(CollectorHints& hints, uint64_t iTick)
 {
     hints.collectHostRamUsage();
 }
@@ -310,7 +321,7 @@ void MachineCpuLoad::collect()
     }
 }
 
-void MachineCpuLoadRaw::preCollect(CollectorHints& hints)
+void MachineCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t iTick)
 {
     hints.collectProcessCpuLoad(mProcess);
 }
@@ -347,7 +358,7 @@ void MachineRamUsage::init(ULONG period, ULONG length)
     mUsed->init(mLength);
 }
 
-void MachineRamUsage::preCollect(CollectorHints& hints)
+void MachineRamUsage::preCollect(CollectorHints& hints, uint64_t iTick)
 {
     hints.collectProcessRamUsage(mProcess);
 }
@@ -371,35 +382,19 @@ void GuestCpuLoad::init(ULONG period, ULONG length)
     mIdle->init(mLength);
 }
 
-void GuestCpuLoad::preCollect(CollectorHints& /* hints */)
+void GuestCpuLoad::preCollect(CollectorHints& hints, uint64_t iTick)
 {
+    mHAL->preCollect(hints, iTick);
 }
 
 void GuestCpuLoad::collect()
 {
-#if 0
-    uint64_t processUser, processKernel, hostTotal;
+    ULONG CpuUser = 0, CpuKernel = 0, CpuIdle = 0;
 
-    int rc = mHAL->getRawProcessCpuLoad(mProcess, &processUser, &processKernel, &hostTotal);
-    if (RT_SUCCESS(rc))
-    {
-        if (hostTotal == mHostTotalPrev)
-        {
-            /* Nearly impossible, but... */
-            mUser->put(0);
-            mKernel->put(0);
-        }
-        else
-        {
-            mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processUser - mProcessUserPrev) / (hostTotal - mHostTotalPrev)));
-            mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * (processKernel - mProcessKernelPrev ) / (hostTotal - mHostTotalPrev)));
-        }
-
-        mHostTotalPrev     = hostTotal;
-        mProcessUserPrev   = processUser;
-        mProcessKernelPrev = processKernel;
-    }
-#endif
+    mGuestHAL->getGuestCpuLoad(&CpuUser, &CpuKernel, &CpuIdle);
+    mUser->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuUser) / 100);
+    mKernel->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuKernel) / 100);
+    mIdle->put((ULONG)(PM_CPU_LOAD_MULTIPLIER * CpuIdle) / 100);
 }
 
 void GuestRamUsage::init(ULONG period, ULONG length)
@@ -415,18 +410,22 @@ void GuestRamUsage::init(ULONG period, ULONG length)
     mPagedFree->init(mLength);
 }
 
-void GuestRamUsage::preCollect(CollectorHints& /* hints */)
+void GuestRamUsage::preCollect(CollectorHints& hints,  uint64_t iTick)
 {
+    mHAL->preCollect(hints, iTick);
 }
 
 void GuestRamUsage::collect()
 {
-#if 0
-    ULONG used;
-    int rc = mHAL->getProcessMemoryUsage(mProcess, &used);
-    if (RT_SUCCESS(rc))
-        mUsed->put(used);
-#endif
+    ULONG ulMemTotal = 0, ulMemFree = 0, ulMemBalloon = 0, ulMemCache = 0, ulPageTotal = 0, ulPageFree = 0;
+
+    mGuestHAL->getGuestMemLoad(&ulMemTotal, &ulMemFree, &ulMemBalloon, &ulMemCache, &ulPageTotal, &ulPageFree);
+    mTotal->put(ulMemTotal);
+    mFree->put(ulMemFree);
+    mBallooned->put(ulMemBalloon);
+    mCache->put(ulMemCache);
+    mPagedTotal->put(ulPageTotal);
+    mPagedFree->put(ulPageFree);
 }
 
 void CircularBuffer::init(ULONG ulLength)
