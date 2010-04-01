@@ -200,6 +200,8 @@ def autoCompletion(commands, ctx):
       comps[k] = None
   completer = CompleterNG(comps, ctx)
   readline.set_completer(completer.complete)
+  # OSX need it
+  readline.parse_and_bind ("bind ^I rl_complete")
   readline.parse_and_bind("tab: complete")
 
 g_verbose = True
@@ -540,21 +542,6 @@ def getControllerType(type):
     else:
         return "Unknown"
 
-def getFirmwareType(type):
-    if type == 0:
-        return "invalid"
-    elif type == 1:
-        return "bios"
-    elif type == 2:
-        return "efi"
-    elif type == 3:
-        return "efi64"
-    elif type == 4:
-        return "efidual"
-    else:
-        return "Unknown"
-
-
 def asEnumElem(ctx,enum,elem):
     all = ctx['ifaces'].all_values(enum)
     for e in all.keys():
@@ -573,7 +560,7 @@ def infoCmd(ctx,args):
     print " One can use setvar <mach> <var> <value> to change variable, using name in []."
     print "  Name [name]: %s" %(mach.name)
     print "  ID [n/a]: %s" %(mach.id)
-    print "  OS Type [n/a]: %s" %(os.description)
+    print "  OS Type [via OSTypeId]: %s" %(os.description)
     print "  Firmware [firmwareType]: %s (%s)" %(asEnumElem(ctx,"FirmwareType", mach.firmwareType),mach.firmwareType)
     print
     print "  CPUs [CPUCount]: %d" %(mach.CPUCount)
@@ -581,12 +568,12 @@ def infoCmd(ctx,args):
     print "  VRAM [VRAMSize]: %dM" %(mach.VRAMSize)
     print "  Monitors [monitorCount]: %d" %(mach.monitorCount)
     print
-    print "  Clipboard mode [clipboardMode]: %d" %(mach.clipboardMode)
-    print "  Machine status [n/a]: %d" % (mach.sessionState)
+    print "  Clipboard mode [clipboardMode]: %s (%s)" %(asEnumElem(ctx,"ClipboardMode", mach.clipboardMode), mach.clipboardMode)
+    print "  Machine status [n/a]: %s (%s)" % (asEnumElem(ctx,"SessionState", mach.sessionState), mach.sessionState)
     print
     if mach.teleporterEnabled:
         print "  Teleport target on port %d (%s)" %(mach.teleporterPort, mach.teleporterPassword)
-    print
+        print
     bios = mach.BIOSSettings
     print "  ACPI [BIOSSettings.ACPIEnabled]: %s" %(asState(bios.ACPIEnabled))
     print "  APIC [BIOSSettings.IOAPICEnabled]: %s" %(asState(bios.IOAPICEnabled))
@@ -620,7 +607,7 @@ def infoCmd(ctx,args):
         print
         print "  Mediums:"
     for a in attaches:
-        print "   Controller: %s port: %d device: %d type: %s:" % (a.controller, a.port, a.device, a.type)
+        print "   Controller: %s port: %d device: %d type: %s (%s):" % (a.controller, a.port, a.device, asEnumElem(ctx,"DeviceType", a.type), a.type)
         m = a.medium
         if a.type == ctx['global'].constants.DeviceType_HardDisk:
             print "   HDD:"
