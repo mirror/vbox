@@ -63,7 +63,7 @@ void usageGuestControl(void)
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
              "                            <path to program> [--args <arguments>] [--env NAME=VALUE]\n"
              "                            [--flags <flags>] [--user <name> [--password <password>]]\n"
-             "                            [--timeout <milliseconds>]\n"
+             "                            [--timeout <msec>]\n"
              "\n");
 }
 

@@ -175,9 +175,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            [--cpus <number>]\n"
                  "                            [--rtcuseutc]\n"
                  "                            [--monitorcount <number>]\n"
-                 "                            [--accelerate3d <on|off>]\n"
+                 "                            [--accelerate3d on|off]\n"
 #ifdef VBOX_WITH_VIDEOHWACCEL
-                 "                            [--accelerate2dvideo <on|off>]\n"
+                 "                            [--accelerate2dvideo on|off]\n"
 #endif
                  "                            [--firmware bios|efi|efi32|efi64]\n"
                  "                            [--bioslogofadein on|off]\n"
@@ -211,8 +211,12 @@ void printUsage(USAGECATEGORY u64Cmd)
 #endif
                  "                            [--intnet<1-N> <network name>]\n"
                  "                            [--natnet<1-N> <network>|default]\n"
-                 "                            [--natsettings<1-N> \"<mtu>,<socksnd>,<sockrcv>,<rcpsnd>,<tcprcv>\"]\n"
-                 "                            [--natpf<1-N> delete <rulename>| \"<rulename>|<default>,tcp|udp,<hostip>|<default>,<hostport>,<guestip>|<default>,<guestport>\"]\n"
+                 "                            [--natsettings<1-N> \"[<mtu>],[<socksnd>],[<sockrcv>],\n"
+                 "                                                         [<tcpsnd>],[<tcprcv>]\"]\n"
+                 "                            [--natpf<1-N> \"[<rulename>],tcp|udp,\n"
+                 "                                                        [<hostip>],<hostport>,\n"
+                 "                                                        [<guestip>],<guestport>\"]\n"
+                 "                            [--natpf<1-N> delete <rulename>]\n"
                  "                            [--nattftpprefix<1-N> <prefix>]\n"
                  "                            [--nattftpfile<1-N> <file>]\n"
                  "                            [--nattftpserver<1-N> <ip>]\n"
@@ -420,9 +424,9 @@ void printUsage(USAGECATEGORY u64Cmd)
                  "                            --storagectl <name>\n"
                  "                            --port <number>\n"
                  "                            --device <number>\n"
-                 "                            [--type <dvddrive|hdd|fdd>\n"
-                 "                             --medium <none|emptydrive|uuid|filename|host:<drive>>]\n"
-                 "                            [--passthrough <on|off>]\n"
+                 "                            [--type dvddrive|hdd|fdd\n"
+                 "                             --medium none|emptydrive|uuid|filename|host:<drive>]\n"
+                 "                            [--passthrough on|off]\n"
                  "                            [--forceunmount]\n"
                  "\n");
     }
@@ -431,8 +435,9 @@ void printUsage(USAGECATEGORY u64Cmd)
     {
         RTPrintf("VBoxManage storagectl       <uuid|vmname>\n"
                  "                            --name <name>\n"
-                 "                            [--add <ide/sata/scsi/floppy/sas>]\n"
-                 "                            [--controller <LsiLogic/BusLogic/IntelAhci/PIIX3/PIIX4/ICH6/I82078/LsiLogicSas>]\n"
+                 "                            [--add ide|sata|scsi|floppy|sas]\n"
+                 "                            [--controller LSILogic|LSILogicSAS|BusLogic|IntelAHCI|\n"
+                 "                                          PIIX3|PIIX4|ICH6|I82078]\n"
                  "                            [--sataideemulation<1-4> <1-30>]\n"
                  "                            [--sataportcount <1-30>]\n"
                  "                            [--remove]\n"
