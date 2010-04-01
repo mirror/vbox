@@ -1247,19 +1247,22 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
 
-	        #define ITERATE_TO_NEXT_TERM(ch)       		\
-	        do {							                \
-	        	while (*ch != ',') {				        \
-	        		if (*ch == 0) {				            \
-                            return errorSyntax(USAGE_MODIFYVM,                  \
-                                       "Missing or Invalid argument to '%s'",   \
-                                       GetOptState.pDef->pszLong);              \
-	        		}					                    \
-	        		ch++;					                \
-	        	}						                    \
-	            *ch = '\0'; 				                \
-	            ch++;		    			                \
-	        }while(0)
+#define ITERATE_TO_NEXT_TERM(ch)                                           \
+    do {                                                                   \
+        while (*ch != ',')                                                 \
+        {                                                                  \
+            if (*ch == 0)                                                  \
+            {                                                              \
+                return errorSyntax(USAGE_MODIFYVM,                         \
+                                   "Missing or Invalid argument to '%s'",  \
+                                    GetOptState.pDef->pszLong);            \
+            }                                                              \
+            ch++;                                                          \
+        }                                                                  \
+        *ch = '\0';                                                        \
+        ch++;                                                              \
+    } while(0)
+
             case MODIFYVM_NATSETTINGS:
             {
                 ComPtr<INetworkAdapter> nic;
