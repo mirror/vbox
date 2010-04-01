@@ -61,8 +61,8 @@ using namespace com;
 void usageGuestControl(void)
 {
     RTPrintf("VBoxManage guestcontrol     execute <vmname>|<uuid>\n"
-             "                            <path to program> [--args <arguments>] [--env NAME=VALUE]\n"
-             "                            [--flags <flags>] [--user <name> [--password <password>]]\n"
+             "                            <path to program> [--arguments <arguments>] [--environment NAME=VALUE]\n"
+             "                            [--flags <flags>] [--username <name> [--password <password>]]\n"
              "                            [--timeout <msec>]\n"
              "\n");
 }
@@ -75,9 +75,10 @@ static int handleExecProgram(HandlerArg *a)
      * Check the syntax.  We can deduce the correct syntax from the number of
      * arguments.
      */
-    /** @todo */
-    if (a->argc < 2) /* At least the command we want to execute should be present. */
+    bool usageOK = true;
+    if (a->argc < 2) /* At least the command we want to execute in the guest should be present :-). */
         return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
     Utf8Str Utf8Cmd(a->argv[1]);
     uint32_t uFlags = 0;
     Utf8Str Utf8Args;
@@ -88,6 +89,90 @@ static int handleExecProgram(HandlerArg *a)
     Utf8Str Utf8UserName;
     Utf8Str Utf8Password;
     uint32_t uTimeoutMS = 0;
+
+    /* Iterate through all possible commands (if available). */
+    for (int i = 2; usageOK && i < a->argc; i++)
+    {
+        if (   !strcmp(a->argv[i], "--arguments")
+            || !strcmp(a->argv[i], "--args"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8Args = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--environment")
+                 || !strcmp(a->argv[i], "--env"))
+        {
+            /** @todo Allow more environment blocks be spcecified per "--environment"
+              *       option, e.g. "--environment "FOO=BAR HOHO=HEHE;QWER=ASDF". */
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {                
+                env.push_back(Bstr(a->argv[i + 1]));
+                ++i;
+            }
+        }
+        else if (!strcmp(a->argv[i], "--flags"))
+        {
+            if (   i + 1 >= a->argc
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &uFlags) != VINF_SUCCESS)
+                usageOK = false;
+            else
+                ++i;
+        }
+        else if (   !strcmp(a->argv[i], "--username")
+                 || !strcmp(a->argv[i], "--user"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8UserName = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (   !strcmp(a->argv[i], "--password")
+                 || !strcmp(a->argv[i], "--pwd"))
+        {
+            if (i + 1 >= a->argc)
+                usageOK = false;
+            else
+            {
+                Utf8Password = a->argv[i + 1];
+                ++i;
+            }
+        }
+        else if (!strcmp(a->argv[i], "--timeout"))
+        {
+            if (   i + 1 >= a->argc
+                || RTStrToUInt32Full(a->argv[i + 1], 10, &uTimeoutMS) != VINF_SUCCESS)
+                usageOK = false;
+            else
+                ++i;
+        }
+        /** @todo Add fancy piping stuff here. */
+        else
+        {
+            return errorSyntax(USAGE_GUESTCONTROL, 
+                               "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
+        }
+    }
+
+    if (!usageOK)
+        return errorSyntax(USAGE_GUESTCONTROL, "Incorrect parameters");
+
+    /* If a password was specified, check if we also got a user name. */
+    if (   !Utf8Password.isEmpty()
+        &&  Utf8UserName.isEmpty())
+    {
+        return errorSyntax(USAGE_GUESTCONTROL, 
+                           "No user name for password specified!");
+    }
 
     /* lookup VM. */
     ComPtr<IMachine> machine;
