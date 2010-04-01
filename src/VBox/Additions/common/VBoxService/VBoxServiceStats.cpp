@@ -270,31 +270,31 @@ static void VBoxServiceVMStatsReport()
             rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
             if (RT_FAILURE(rc))
                 break;
-            if (strstr("MemTotal:", szLine) == szLine)
+            if (strstr(szLine, "MemTotal:") == szLine)
             {
                 rc = RTStrToUInt64Ex(RTStrStripL(&szLine[9]), &psz, 0, &u64Kb);
                 if (RT_SUCCESS(rc))
                     u64Total = u64Kb * _1K;
             }
-            else if (strstr("MemFree:", szLine) == szLine)
+            else if (strstr(szLine, "MemFree:") == szLine)
             {
                 rc = RTStrToUInt64Ex(RTStrStripL(&szLine[8]), &psz, 0, &u64Kb);
                 if (RT_SUCCESS(rc))
                     u64Free = u64Kb * _1K;
             }
-            else if (strstr("Buffers:", szLine) == szLine)
+            else if (strstr(szLine, "Buffers:") == szLine)
             {
                 rc = RTStrToUInt64Ex(RTStrStripL(&szLine[8]), &psz, 0, &u64Kb);
                 if (RT_SUCCESS(rc))
                     u64Buffers = u64Kb * _1K;
             }
-            else if (strstr("Cached:", szLine) == szLine)
+            else if (strstr(szLine, "Cached:") == szLine)
             {
                 rc = RTStrToUInt64Ex(RTStrStripL(&szLine[7]), &psz, 0, &u64Kb);
                 if (RT_SUCCESS(rc))
                     u64Cached = u64Kb * _1K;
             }
-            else if (strstr("SwapTotal:", szLine) == szLine)
+            else if (strstr(szLine, "SwapTotal:") == szLine)
             {
                 rc = RTStrToUInt64Ex(RTStrStripL(&szLine[10]), &psz, 0, &u64Kb);
                 if (RT_SUCCESS(rc))
@@ -323,7 +323,7 @@ static void VBoxServiceVMStatsReport()
             rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
             if (RT_FAILURE(rc))
                 break;
-            if (   strstr("cpu", szLine) == szLine
+            if (   strstr(szLine, "cpu") == szLine
                 && strlen(szLine) > 3
                 && RT_C_IS_DIGIT(szLine[3]))
             {
