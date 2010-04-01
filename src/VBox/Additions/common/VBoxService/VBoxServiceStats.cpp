@@ -43,13 +43,16 @@
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
+#define NR_CPUS  32
+
 typedef struct _VBOXSTATSCONTEXT
 {
     RTMSINTERVAL          cMsStatInterval;
 
-    uint64_t              ullLastCpuLoad_Idle;
-    uint64_t              ullLastCpuLoad_Kernel;
-    uint64_t              ullLastCpuLoad_User;
+    uint64_t              u64LastCpuLoad_Idle[NR_CPUS];
+    uint64_t              u64LastCpuLoad_Kernel[NR_CPUS];
+    uint64_t              u64LastCpuLoad_User[NR_CPUS];
+    uint64_t              u64LastCpuLoad_Nice[NR_CPUS];
 
 #ifdef RT_OS_WINDOWS
     NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
@@ -94,9 +97,10 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
     AssertRCReturn(rc, rc);
 
     gCtx.cMsStatInterval        = 0;     /* default; update disabled */
-    gCtx.ullLastCpuLoad_Idle    = 0;
-    gCtx.ullLastCpuLoad_Kernel  = 0;
-    gCtx.ullLastCpuLoad_User    = 0;
+    RT_ZERO(gCtx.u64LastCpuLoad_Idle);
+    RT_ZERO(gCtx.u64LastCpuLoad_Kernel);
+    RT_ZERO(gCtx.u64LastCpuLoad_User);
+    RT_ZERO(gCtx.u64LastCpuLoad_Nice);
 
     rc = VbglR3StatQueryInterval(&gCtx.cMsStatInterval);
     if (RT_SUCCESS(rc))
@@ -210,12 +214,12 @@ static void VBoxServiceVMStatsReport()
     if (    !rc
         &&  cbReturned == cbStruct)
     {
-        if (gCtx.ullLastCpuLoad_Kernel == 0)
+        if (gCtx.u64LastCpuLoad_Kernel == 0)
         {
             /* first time */
-            gCtx.ullLastCpuLoad_Idle    = pProcInfo->IdleTime.QuadPart;
-            gCtx.ullLastCpuLoad_Kernel  = pProcInfo->KernelTime.QuadPart;
-            gCtx.ullLastCpuLoad_User    = pProcInfo->UserTime.QuadPart;
+            gCtx.u64LastCpuLoad_Idle[0]    = pProcInfo->IdleTime.QuadPart;
+            gCtx.u64LastCpuLoad_Kernel[0]  = pProcInfo->KernelTime.QuadPart;
+            gCtx.u64LastCpuLoad_User[0]    = pProcInfo->UserTime.QuadPart;
 
             Sleep(250);
 
@@ -223,9 +227,9 @@ static void VBoxServiceVMStatsReport()
             Assert(!rc);
         }
 
-        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart - gCtx.ullLastCpuLoad_Idle);
-        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.ullLastCpuLoad_Kernel);
-        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart - gCtx.ullLastCpuLoad_User);
+        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart   - gCtx.u64LastCpuLoad_Idle[0]);
+        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.u64LastCpuLoad_Kernel[0]);
+        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart   - gCtx.u64LastCpuLoad_User[0]);
         deltaKernel          -= deltaIdle;  /* idle time is added to kernel time */
         uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
 
@@ -235,9 +239,9 @@ static void VBoxServiceVMStatsReport()
 
         req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
 
-        gCtx.ullLastCpuLoad_Idle    = pProcInfo->IdleTime.QuadPart;
-        gCtx.ullLastCpuLoad_Kernel  = pProcInfo->KernelTime.QuadPart;
-        gCtx.ullLastCpuLoad_User    = pProcInfo->UserTime.QuadPart;
+        gCtx.u64LastCpuLoad_Idle[0]   = pProcInfo->IdleTime.QuadPart;
+        gCtx.u64LastCpuLoad_Kernel[0] = pProcInfo->KernelTime.QuadPart;
+        gCtx.u64LastCpuLoad_User[0]   = pProcInfo->UserTime.QuadPart;
     }
 
     for (uint32_t i=0; i<systemInfo.dwNumberOfProcessors; i++)
@@ -319,7 +323,8 @@ static void VBoxServiceVMStatsReport()
     {
         for (;;)
         {
-            uint64_t u64CpuId, u64User = 0, u64Nice = 0, u64System = 0, u64Idle = 0;
+            uint32_t u32CpuId;
+            uint64_t u64User = 0, u64Nice = 0, u64System = 0, u64Idle = 0;
             rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
             if (RT_FAILURE(rc))
                 break;
@@ -327,28 +332,47 @@ static void VBoxServiceVMStatsReport()
                 && strlen(szLine) > 3
                 && RT_C_IS_DIGIT(szLine[3]))
             {
-                rc = RTStrToUInt64Ex(&szLine[3], &psz, 0, &u64CpuId);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64User);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Nice);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64System);
-                if (RT_SUCCESS(rc))
-                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Idle);
-                uint64_t u64All = u64Idle + u64System + u64User + u64Nice;
-                req.guestStats.u32CpuId = u64CpuId;
-                req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64Idle * 100 / u64All);
-                req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64System * 100 / u64All);
-                req.guestStats.u32CpuLoad_User   = (uint32_t)((u64User + u64Nice) * 100 / u64All);
-                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
-                                            | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
-                                            | VBOX_GUEST_STAT_CPU_LOAD_USER;
-                rc = VbglR3StatReport(&req);
-                if (RT_SUCCESS(rc))
-                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
-                else
-                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
+                rc = RTStrToUInt32Ex(&szLine[3], &psz, 0, &u32CpuId);
+                if (u32CpuId < NR_CPUS)
+                {
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64User);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Nice);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64System);
+                    if (RT_SUCCESS(rc))
+                        rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Idle);
+
+                    uint64_t u64DeltaIdle   = u64Idle   - gCtx.u64LastCpuLoad_Idle[u32CpuId];
+                    uint64_t u64DeltaSystem = u64System - gCtx.u64LastCpuLoad_Kernel[u32CpuId];
+                    uint64_t u64DeltaUser   = u64User   - gCtx.u64LastCpuLoad_User[u32CpuId];
+                    uint64_t u64DeltaNice   = u64Nice   - gCtx.u64LastCpuLoad_Nice[u32CpuId];
+
+                    uint64_t u64DeltaAll    = u64DeltaIdle
+                                            + u64DeltaSystem
+                                            + u64DeltaUser
+                                            + u64DeltaNice;
+
+                    gCtx.u64LastCpuLoad_Idle[u32CpuId]   = u64Idle;
+                    gCtx.u64LastCpuLoad_Kernel[u32CpuId] = u64System;
+                    gCtx.u64LastCpuLoad_User[u32CpuId]   = u64User;
+                    gCtx.u64LastCpuLoad_Nice[u32CpuId]   = u64Nice;
+
+                    req.guestStats.u32CpuId = u32CpuId;
+                    req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
+                    req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
+                    req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser 
+                                                                 + u64DeltaNice) * 100 / u64DeltaAll);
+                    req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
+                                               | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                                               | VBOX_GUEST_STAT_CPU_LOAD_USER;
+                    rc = VbglR3StatReport(&req);
+                    if (RT_SUCCESS(rc))
+                        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
+                    else
+                        VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
+                }
             }
         }
         RTStrmClose(pStrm);
