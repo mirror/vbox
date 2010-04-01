@@ -405,7 +405,7 @@ typedef struct PDMDRVINS
  *
  * Intended for the constructor.
  *
- * @param   pDrvIns     The drvice instance pointer.
+ * @param   pDrvIns             Pointer to the PDM driver instance.
  */
 #define PDMDRV_CHECK_VERSIONS_RETURN(pDrvIns) \
     do \
@@ -425,7 +425,7 @@ typedef struct PDMDRVINS
  *
  * Intended for the destructor.
  *
- * @param   pDrvIns     The drvice instance pointer.
+ * @param   pDrvIns             Pointer to the PDM driver instance.
  */
 #define PDMDRV_CHECK_VERSIONS_RETURN_VOID(pDrvIns) \
     do \
@@ -436,6 +436,29 @@ typedef struct PDMDRVINS
             return; \
     } while (0)
 
+/**
+ * Wrapper around CFGMR3ValidateConfig for the root config for use in the
+ * constructor - returns on failure.
+ *
+ * This should be invoked after having initialized the instance data
+ * sufficiently for the correct operation of the destructor.  The destructor is
+ * always called!
+ *
+ * @param   pDrvIns             Pointer to the PDM driver instance.
+ * @param   pszValidValues      Patterns describing the valid value names.  See
+ *                              RTStrSimplePatternMultiMatch for details on the
+ *                              pattern syntax.
+ * @param   pszValidNodes       Patterns describing the valid node (key) names.
+ *                              Pass empty string if no valid nodess.
+ */
+#define PDMDRV_VALIDATE_CONFIG_RETURN(pDrvIns, pszValidValues, pszValidNodes) \
+    do \
+    { \
+        int rcValCfg = CFGMR3ValidateConfig((pDrvIns)->pCfg, "/", pszValidValues, pszValidNodes, \
+                                            (pDrvIns)->pReg->szName, (pDrvIns)->iInstance); \
+        if (RT_FAILURE(rcValCfg)) \
+            return rcValCfg; \
+    } while (0)
 
 
 
