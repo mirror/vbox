@@ -147,7 +147,7 @@ int CollectorGuestHAL::enable()
 
         ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
         if (ret == S_OK)
-            mGuest->COMSETTER(StatisticsUpdateInterval)(1000 /* 1000 ms */);
+            mGuest->COMSETTER(StatisticsUpdateInterval)(1 /* 1 sec */);
     }
     return ret;
 }
