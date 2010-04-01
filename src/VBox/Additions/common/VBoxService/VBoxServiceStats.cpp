@@ -23,10 +23,13 @@
 #define _WIN32_WINNT 0x501
 #endif
 
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS)
 # include <windows.h>
 # include <psapi.h>
 # include <winternl.h>
+#elif defined(RT_OS_LINUX)
+# include <iprt/ctype.h>
+# include <iprt/stream.h>
 #endif
 
 #include <iprt/assert.h>
@@ -147,7 +150,7 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 
 static void VBoxServiceVMStatsReport()
 {
-#ifdef RT_OS_WINDOWS
+#if defined(RT_OS_WINDOWS)
     SYSTEM_INFO systemInfo;
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
     MEMORYSTATUSEX memStatus;
@@ -237,23 +240,123 @@ static void VBoxServiceVMStatsReport()
         gCtx.ullLastCpuLoad_User    = pProcInfo->UserTime.QuadPart;
     }
 
-    for (uint32_t i=0;i<systemInfo.dwNumberOfProcessors;i++)
+    for (uint32_t i=0; i<systemInfo.dwNumberOfProcessors; i++)
     {
         req.guestStats.u32CpuId = i;
 
         rc = VbglR3StatReport(&req);
         if (RT_SUCCESS(rc))
-        {
             VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
-        }
         else
             VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
     }
 
     free(pProcInfo);
+
+#elif defined(RT_OS_LINUX)
+    VMMDevReportGuestStats req;
+    RT_ZERO(req);
+    PRTSTREAM pStrm;
+    char szLine[256];
+    char *psz;
+
+    int rc = RTStrmOpen("/proc/meminfo", "r", &pStrm);
+    if (RT_SUCCESS(rc))
+    {
+        uint64_t u64Kb;
+        uint64_t u64Total = 0, u64Free = 0, u64Buffers = 0, u64Cached = 0, u64PagedTotal = 0;
+        for (;;)
+        {
+            rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
+            if (RT_FAILURE(rc))
+                break;
+            if (strstr("MemTotal:", szLine) == szLine)
+            {
+                rc = RTStrToUInt64Ex(RTStrStripL(&szLine[9]), &psz, 0, &u64Kb);
+                if (RT_SUCCESS(rc))
+                    u64Total = u64Kb * _1K;
+            }
+            else if (strstr("MemFree:", szLine) == szLine)
+            {
+                rc = RTStrToUInt64Ex(RTStrStripL(&szLine[8]), &psz, 0, &u64Kb);
+                if (RT_SUCCESS(rc))
+                    u64Free = u64Kb * _1K;
+            }
+            else if (strstr("Buffers:", szLine) == szLine)
+            {
+                rc = RTStrToUInt64Ex(RTStrStripL(&szLine[8]), &psz, 0, &u64Kb);
+                if (RT_SUCCESS(rc))
+                    u64Buffers = u64Kb * _1K;
+            }
+            else if (strstr("Cached:", szLine) == szLine)
+            {
+                rc = RTStrToUInt64Ex(RTStrStripL(&szLine[7]), &psz, 0, &u64Kb);
+                if (RT_SUCCESS(rc))
+                    u64Cached = u64Kb * _1K;
+            }
+            else if (strstr("SwapTotal:", szLine) == szLine)
+            {
+                rc = RTStrToUInt64Ex(RTStrStripL(&szLine[10]), &psz, 0, &u64Kb);
+                if (RT_SUCCESS(rc))
+                    u64PagedTotal = u64Kb * _1K;
+            }
+        }
+        req.guestStats.u32PhysMemTotal   = u64Total / _4K;
+        req.guestStats.u32PhysMemAvail   = (u64Free + u64Buffers + u64Cached) / _4K;
+        req.guestStats.u32MemSystemCache = (u64Buffers + u64Cached) / _4K;
+        req.guestStats.u32PageFileSize   = u64PagedTotal / _4K;
+        RTStrmClose(pStrm);
+    }
+
+    req.guestStats.u32PhysMemBalloon = VBoxServiceBalloonQueryChunks() * (_1M/_4K);
+    req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL \
+                               | VBOX_GUEST_STAT_PHYS_MEM_AVAIL \
+                               | VBOX_GUEST_STAT_PHYS_MEM_BALLOON \
+                               | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
+
+    rc = RTStrmOpen("/proc/stat", "r", &pStrm);
+    if (RT_SUCCESS(rc))
+    {
+        for (;;)
+        {
+            uint64_t u64CpuId, u64User = 0, u64Nice = 0, u64System = 0, u64Idle = 0;
+            rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
+            if (RT_FAILURE(rc))
+                break;
+            if (   strstr("cpu", szLine) == szLine
+                && strlen(szLine) > 3
+                && RT_C_IS_DIGIT(szLine[3]))
+            {
+                rc = RTStrToUInt64Ex(&szLine[3], &psz, 0, &u64CpuId);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64User);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Nice);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64System);
+                if (RT_SUCCESS(rc))
+                    rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Idle);
+                uint64_t u64All = u64Idle + u64System + u64User + u64Nice;
+                req.guestStats.u32CpuId = u64CpuId;
+                req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64Idle * 100 / u64All);
+                req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64System * 100 / u64All);
+                req.guestStats.u32CpuLoad_User   = (uint32_t)((u64User + u64Nice) * 100 / u64All);
+                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
+                                            | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                                            | VBOX_GUEST_STAT_CPU_LOAD_USER;
+                rc = VbglR3StatReport(&req);
+                if (RT_SUCCESS(rc))
+                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
+                else
+                    VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
+            }
+        }
+        RTStrmClose(pStrm);
+    }
+
 #else
     /* todo: implement for other platforms. */
-    return;
+
 #endif
 }
 
