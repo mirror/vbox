@@ -1,6 +1,6 @@
 #!/usr/bin/python
 #
-# Copyright (C) 2009 Sun Microsystems, Inc.
+# Copyright (C) 2009-2010 Sun Microsystems, Inc.
 #
 # This file is part of VirtualBox Open Source Edition (OSE), as
 # available from http://www.virtualbox.org. This file is free software;
@@ -19,9 +19,11 @@
 # information and issue commands from a simple command line.                    #
 #                                                                               #
 # It also provides you with examples on how to use VirtualBox's Python API.     #
-# This shell is even somewhat documented and supports TAB-completion and        #
+# This shell is even somewhat documented, supports TAB-completion and           #
 # history if you have Python readline installed.                                #
 #                                                                               #
+# Finally, shell allows arbitrary custom extensions, just create                #
+# .VirtualBox/shexts/ and drop your extensions there.                           #
 #                                                Enjoy.                         #
 ################################################################################
 
@@ -524,24 +526,6 @@ def listCmd(ctx, args):
         print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,m.sessionState)
     return 0
 
-def getControllerType(type):
-    if type == 0:
-        return "Null"
-    elif  type == 1:
-        return "LsiLogic"
-    elif type == 2:
-        return "BusLogic"
-    elif type == 3:
-        return "IntelAhci"
-    elif type == 4:
-        return "PIIX3"
-    elif type == 5:
-        return "PIIX4"
-    elif type == 6:
-        return "ICH6"
-    else:
-        return "Unknown"
-
 def asEnumElem(ctx,enum,elem):
     all = ctx['ifaces'].all_values(enum)
     for e in all.keys():
@@ -588,6 +572,8 @@ def infoCmd(ctx,args):
     print "  Hardware 2d video acceleration[accelerate2DVideoEnabled]: " + asState(mach.accelerate2DVideoEnabled)
 
     print "  HPET [hpetEnabled]: %s" %(asState(mach.hpetEnabled))
+    if mach.audioAdapter.enabled:
+        print "  Audio [via audioAdapter]: chip %s; host driver %s" %(asEnumElem(ctx,"AudioControllerType", mach.audioAdapter.audioController), asEnumElem(ctx,"AudioDriverType",  mach.audioAdapter.audioDriver))
     print "  CPU hotplugging [CPUHotPlugEnabled]: %s" %(asState(mach.CPUHotPlugEnabled))
 
     print "  Keyboard [keyboardHidType]: %s (%s)" %(asEnumElem(ctx,"KeyboardHidType", mach.keyboardHidType), mach.keyboardHidType)
@@ -600,7 +586,7 @@ def infoCmd(ctx,args):
         print
         print "  Controllers:"
     for controller in controllers:
-        print "    %s %s bus: %d" % (controller.name, getControllerType(controller.controllerType), controller.bus)
+        print "    %s %s bus: %d" % (controller.name, asEnumElem(ctx,"StorageControllerType", controller.controllerType), controller.bus)
 
     attaches = ctx['global'].getArray(mach, 'mediumAttachments')
     if attaches:
@@ -1346,6 +1332,10 @@ def typeInGuest(console, text, delay):
             pressed = []
             group = False
             continue
+        if ch == 'W':
+            # just wait a bit
+            time.sleep(0.3)
+            continue
         if  ch == '^' or  ch == '|' or ch == '$' or ch == '_':
             if ch == '^':
                 ch = 'LCTR'
@@ -1452,7 +1442,7 @@ commands = {'help':['Prints help information', helpCmd, 0],
             'setextra':['Set extra data, empty value removes key: setextra <vm|global> <key> <value>', setExtraDataCmd, 0],
             'gueststats':['Print available guest stats (only Windows guests with additions so far): gueststats Win32', gueststatsCmd, 0],
             'plugcpu':['Add a CPU to a running VM: plugcpu Win 1', plugcpuCmd, 0],
-            'unplugcpu':['Remove a CPU from a running VM: plugcpu Win 1', unplugcpuCmd, 0],
+            'unplugcpu':['Remove a CPU from a running VM (additions required, Windows cannot unplug): unplugcpu Linux 1', unplugcpuCmd, 0],
             }
 
 def runCommandArgs(ctx, args):
