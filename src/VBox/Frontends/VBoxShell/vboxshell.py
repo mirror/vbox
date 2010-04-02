@@ -194,6 +194,7 @@ if g_hasreadline:
 
 
 def autoCompletion(commands, ctx):
+  import platform
   if  not g_hasreadline:
       return
 
@@ -203,7 +204,8 @@ def autoCompletion(commands, ctx):
   completer = CompleterNG(comps, ctx)
   readline.set_completer(completer.complete)
   # OSX need it
-  readline.parse_and_bind ("bind ^I rl_complete")
+  if platform.system() == 'Darwin':
+      readline.parse_and_bind ("bind ^I rl_complete")
   readline.parse_and_bind("tab: complete")
 
 g_verbose = True
