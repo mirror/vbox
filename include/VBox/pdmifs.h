@@ -551,18 +551,28 @@ typedef struct PDMIDISPLAYPORT
     DECLR3CALLBACKMEMBER(void, pfnSetRenderVRAM,(PPDMIDISPLAYPORT pInterface, bool fRender));
 
     /**
-     * Render a rectangle from guest VRAM to Framebuffer.
+     * Render a rectangle from guest VRAM to Framebuffer, multi-display variant.
      *
      * @param   pInterface          Pointer to this interface.
      * @param   x                   The upper left corner x coordinate of the rectangle to be updated.
      * @param   y                   The upper left corner y coordinate of the rectangle to be updated.
      * @param   cx                  The width of the rectangle to be updated.
      * @param   cy                  The height of the rectangle to be updated.
+     * @param   pbSrcVRAM           Pointer to VRAM.
+     * @param   cxSrc               The width of the source display.
+     * @param   cySrc               The height of the source display.
+     * @param   cbSrcLine           The line length of the source display.
+     * @param   cSrcBitsPerPixel    The pixel depth of the source.
+     * @param   pbDstBuffer         Destination buffer (framebuffer).
+     * @param   cxDst               The width of the destination frame buffer.
+     * @param   cyDst               The height of the destination frame buffer.
+     * @param   cbDstLine           The line length of the destination frame buffer.
+     * @param   cDstBitsPerPixel    The pixel depth of the destination.
      * @thread  The emulation thread.
      */
     DECLR3CALLBACKMEMBER(void, pfnUpdateDisplayRectEx,(PPDMIDISPLAYPORT pInterface, int32_t x, int32_t y, uint32_t cx, uint32_t cy,
-                                                       const uint8_t *pu8SrcVRAM, uint32_t u32SrcWidth, uint32_t u32SrcHeight, uint32_t u32SrcLineSize, uint32_t u32SrcBitsPerPixel,
-                                                       uint8_t *pu8DstBuffer, uint32_t u32DstWidth, uint32_t u32DstHeight, uint32_t u32DstLineSize, uint32_t u32DstBitsPerPixel));
+        const uint8_t *pbSrcVRAM, uint32_t cxSrc, uint32_t cySrc, uint32_t cbSrcLine, uint32_t cSrcBitsPerPixel,
+        uint8_t     *pbDstBuffer, uint32_t cxDst, uint32_t cyDst, uint32_t cbDstLine, uint32_t cDstBitsPerPixel));
 
 } PDMIDISPLAYPORT;
 /** PDMIDISPLAYPORT interface ID. */
