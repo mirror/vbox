@@ -280,13 +280,14 @@ static DECLCALLBACK(int) VBoxServiceBalloonInit(void)
 
 
 /**
- * Query the size of the memory balloon, given as a count of chunks.
+ * Query the size of the memory balloon, given as a page count.
  *
- * @returns The number of chunks (VMMDEV_MEMORY_BALLOON_CHUNK_SIZE).
+ * @returns Number of pages.
+ * @param   cbPage          The page size.
  */
-uint32_t VBoxServiceBalloonQueryChunks(void)
+uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage)
 {
-    return g_cMemBalloonChunks;
+    return g_cMemBalloonChunks * (VMMDEV_MEMORY_BALLOON_CHUNK_SIZE / cbPage);
 }
 
 

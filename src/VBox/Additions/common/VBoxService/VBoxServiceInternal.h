@@ -215,7 +215,7 @@ extern int  VBoxServiceControlExecProcess(PVBOXSERVICECTRLPROCDATA pExecData,
 #endif
 
 #ifdef VBOXSERVICE_MANAGEMENT
-extern uint32_t VBoxServiceBalloonQueryChunks(void);
+extern uint32_t VBoxServiceBalloonQueryPages(uint32_t cbPage);
 #endif
 
 RT_C_DECLS_END
