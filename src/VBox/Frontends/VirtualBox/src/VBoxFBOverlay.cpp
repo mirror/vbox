@@ -4848,7 +4848,6 @@ void VBoxVHWACommandElementProcessor::checkConsistence(uint32_t cEvents2Submit, 
 void VBoxVHWACommandElementProcessor::putBack(class VBoxVHWACommandElement * pFirst2Put, VBoxVHWACommandElement * pLast2Put,
         class VBoxVHWACommandElement * pFirst2Free, VBoxVHWACommandElement * pLast2Free)
 {
-    VBoxVHWACommandElement * pList = NULL;
     RTCritSectEnter(&mCritSect);
     if (pFirst2Free)
         mFreeElements.pusha(pFirst2Free, pLast2Free);
