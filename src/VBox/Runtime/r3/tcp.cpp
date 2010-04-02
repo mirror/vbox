@@ -983,7 +983,6 @@ RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer)
 
 RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock)
 {
-
     int fFlag = 1;
     int rc = rtSocketSetOpt(Sock, IPPROTO_TCP, TCP_NODELAY, &fFlag, sizeof(fFlag));
     if (RT_SUCCESS(rc))
@@ -992,6 +991,13 @@ RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock)
         rc = rtSocketSetOpt(Sock, IPPROTO_TCP, TCP_NODELAY, &fFlag, sizeof(fFlag));
     }
     return rc;
+}
+
+
+RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable)
+{
+    int fFlag = fEnable ? 0 : 1;
+    return rtSocketSetOpt(Sock, IPPROTO_TCP, TCP_NODELAY, &fFlag, sizeof(fFlag));
 }
 
 

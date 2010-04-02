@@ -219,6 +219,17 @@ RTR3DECL(int)  RTTcpWrite(RTSOCKET Sock, const void *pvBuffer, size_t cbBuffer);
 RTR3DECL(int)  RTTcpFlush(RTSOCKET Sock);
 
 /**
+ * Enables or disable delaying sends to coalesce packets.
+ *
+ * The TCP/IP stack usually uses the Nagle algorithm (RFC 896) to implement the
+ * coalescing.
+ *
+ * @returns iprt status code.
+ * @param   Sock        Socket descriptor.
+ */
+RTR3DECL(int)  RTTcpSetSendCoalescing(RTSOCKET Sock, bool fEnable);
+
+/**
  * Socket I/O multiplexing.
  * Checks if the socket is ready for reading.
  *
