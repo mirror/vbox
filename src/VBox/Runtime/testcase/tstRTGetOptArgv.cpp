@@ -48,7 +48,7 @@ static void tst2(void)
     {
         const char * const      apszArgs[5];
         const char             *pszCmdLine;
-    } s_aTests[] =
+    } s_aMscCrtTests[] =
     {
         {
             { "abcd", "a ", " b", " c ", NULL },
@@ -68,16 +68,81 @@ static void tst2(void)
         },
     };
 
-    for (size_t i = 0; i < RT_ELEMENTS(s_aTests); i++)
+    for (size_t i = 0; i < RT_ELEMENTS(s_aMscCrtTests); i++)
     {
         char *pszCmdLine = NULL;
-        int rc = RTGetOptArgvToString(&pszCmdLine, s_aTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
+        int rc = RTGetOptArgvToString(&pszCmdLine, s_aMscCrtTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_MS_CRT);
         RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
-        if (strcmp(s_aTests[i].pszCmdLine, pszCmdLine))
+        if (strcmp(s_aMscCrtTests[i].pszCmdLine, pszCmdLine))
             RTTestIFailed("g_aTest[%i] failed:\n"
                           " got      '%s'\n"
                           " expected '%s'\n",
-                          i, pszCmdLine, s_aTests[i].pszCmdLine);
+                          i, pszCmdLine, s_aMscCrtTests[i].pszCmdLine);
+        RTStrFree(pszCmdLine);
+    }
+
+
+    RTTestISub("RTGetOptArgvToString / BOURNE_SH");
+
+    static const struct
+    {
+        const char * const      apszArgs[5];
+        const char             *pszCmdLine;
+    } s_aBournShTests[] =
+    {
+        {
+            { "abcd", "a ", " b", " c ", NULL },
+            "abcd 'a ' ' b' ' c '"
+        },
+        {
+            { "a\n\\b", "de'fg", "h", "'", NULL },
+            "'a\n\\b' 'de'\"'\"'fg' h ''\"'\"''"
+        }
+    };
+
+    for (size_t i = 0; i < RT_ELEMENTS(s_aBournShTests); i++)
+    {
+        char *pszCmdLine = NULL;
+        int rc = RTGetOptArgvToString(&pszCmdLine, s_aBournShTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+        RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+        if (strcmp(s_aBournShTests[i].pszCmdLine, pszCmdLine))
+            RTTestIFailed("g_aTest[%i] failed:\n"
+                          " got      |%s|\n"
+                          " expected |%s|\n",
+                          i, pszCmdLine, s_aBournShTests[i].pszCmdLine);
+        RTStrFree(pszCmdLine);
+    }
+
+
+    RTTestISub("RTGetOptArgvToString <-> RTGetOptArgvFromString");
+
+    for (size_t i = 0; i < RT_ELEMENTS(s_aBournShTests); i++)
+    {
+        char *pszCmdLine = NULL;
+        int rc = RTGetOptArgvToString(&pszCmdLine, s_aBournShTests[i].apszArgs, RTGETOPTARGV_CNV_QUOTE_BOURNE_SH);
+        RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+
+        char  **papszArgs;
+        int     cArgs;
+        rc = RTGetOptArgvFromString(&papszArgs, &cArgs, pszCmdLine, NULL);
+        RTTESTI_CHECK_RC_RETV(rc, VINF_SUCCESS);
+
+        size_t j = 0;
+        while (papszArgs[j] && s_aBournShTests[i].apszArgs[j])
+        {
+            if (strcmp(papszArgs[j], s_aBournShTests[i].apszArgs[j]))
+                RTTestIFailed("Test #%u, argument #%u mismatch:\n"
+                              " FromString: |%s| (got)\n"
+                              " ToString:   |%s| (expected)\n",
+                              i, j, papszArgs[j], s_aBournShTests[i].apszArgs[j]);
+
+            /* next */
+            j++;
+        }
+        RTTESTI_CHECK(papszArgs[j] == NULL);
+        RTTESTI_CHECK(s_aBournShTests[i].apszArgs[j] == NULL);
+
+        RTGetOptArgvFree(papszArgs);
         RTStrFree(pszCmdLine);
     }
 }
