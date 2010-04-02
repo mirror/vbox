@@ -1,5 +1,6 @@
+/* $Id$ */
 /** @file
- * UsbKbd - USB Human Interface Device Emulation (Keyboard).
+ * UsbKbd - USB Human Interface Device Emulation, Keyboard.
  */
 
 /*
@@ -116,16 +117,16 @@ typedef USBHIDURBQUEUE const *PCUSBHIDURBQUEUE;
  */
 typedef struct USBHIDK_REPORT
 {
-    uint8_t     ShiftState;     /* Modifier keys bitfield */
-    uint8_t     Reserved;       /* Currently unused */
-    uint8_t     aKeys[6];       /* Normal keys */
+    uint8_t     ShiftState;     /**< Modifier keys bitfield */
+    uint8_t     Reserved;       /**< Currently unused */
+    uint8_t     aKeys[6];       /**< Normal keys */
 } USBHIDK_REPORT, *PUSBHIDK_REPORT;
 
-/* Scancode translator state.  */
+/** Scancode translator state.  */
 typedef enum {
-    SS_IDLE,    /* Starting state. */
-    SS_EXT,     /* E0 byte was received. */
-    SS_EXT1     /* E1 byte was received. */
+    SS_IDLE,    /**< Starting state. */
+    SS_EXT,     /**< E0 byte was received. */
+    SS_EXT1     /**< E1 byte was received. */
 } scan_state_t;
 
 /**
@@ -136,7 +137,7 @@ typedef struct USBHID
     /** Pointer back to the PDM USB Device instance structure. */
     PPDMUSBINS          pUsbIns;
     /** Critical section protecting the device state. */
-    RTCRITSECT          csLock;
+    RTCRITSECT          CritSect;
 
     /** The current configuration.
      * (0 - default, 1 - the one supported configuration, i.e configured.) */
@@ -168,12 +169,12 @@ typedef struct USBHID
     RTSEMEVENT          hEvtDoneQueue;
     /** Someone is waiting on the done queue. */
     bool                fHaveDoneQueueWaiter;
-    /** If no URB since last key press */
+    /** If no URB since last key press. */
     bool                fNoUrbSinceLastPress;
-    /* If device has pending changes */
+    /** If device has pending changes. */
     bool                fHasPendingChanges;
-    /* Keys released since last URB */
-    uint8_t             aReleasedKeys[6];
+    /** Keys released since last URB. */
+    uint8_t             abReleasedKeys[6];
 
     /**
      * Keyboard port - LUN#0.
@@ -228,7 +229,7 @@ static const VUSBDESCENDPOINTEX g_aUsbHidEndpointDescs[] =
     },
 };
 
-/* HID report descriptor. */
+/** HID report descriptor. */
 static const uint8_t g_UsbHidReportDesc[] =
 {
     /* Usage Page */                0x05, 0x01,     /* Generic Desktop */
@@ -265,7 +266,7 @@ static const uint8_t g_UsbHidReportDesc[] =
     /* End Collection */            0xC0,
 };
 
-/* Additional HID class interface descriptor. */
+/** Additional HID class interface descriptor. */
 static const uint8_t g_UsbHidIfHidDesc[] =
 {
     /* .bLength = */                0x09,
@@ -356,7 +357,7 @@ static const PDMUSBDESCCACHE g_UsbHidDescCache =
  * This function could possibly live somewhere else.
  */
 
-/* Lookup table for converting PC/XT scan codes to USB HID usage codes. */
+/** Lookup table for converting PC/XT scan codes to USB HID usage codes. */
 static uint8_t aScancode2Hid[] =
 {
     0x00, 0x29, 0x1e, 0x1f, 0x20, 0x21, 0x22, 0x23, /* 00-07 */
@@ -377,7 +378,7 @@ static uint8_t aScancode2Hid[] =
     0x00, 0x8a, 0x00, 0x8b, 0x00, 0x89, 0x85, 0x00  /* 78-7F */
 };
 
-/* Lookup table for extended scancodes (arrow keys etc.). */
+/** Lookup table for extended scancodes (arrow keys etc.). */
 static uint8_t aExtScan2Hid[] =
 {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, /* 00-07 */
@@ -448,22 +449,6 @@ static scan_state_t ScancodeToHidUsage(scan_state_t state, uint8_t scanCode, uin
 *   Internal Functions                                                         *
 *******************************************************************************/
 
-/* Everything happens in R3 */
-/**
- * Lock device state mutex.
- */
-DECLINLINE(int) usbKbdLock(PUSBHID pThis)
-{
-    return RTCritSectEnter(&pThis->csLock);
-}
-
-/**
- * Unlock device state mutex.
- */
-DECLINLINE(void) usbKbdUnlock(PUSBHID pThis)
-{
-    RTCritSectLeave(&pThis->csLock);
-}
 
 /**
  * Initializes an URB queue.
@@ -634,7 +619,7 @@ static int usbHidResetWorker(PUSBHID pThis, PVUSBURB pUrb, bool fSetConfig)
     memset(&pThis->Report, 0, sizeof(pThis->Report));
     pThis->fNoUrbSinceLastPress = false;
     pThis->fHasPendingChanges = false;
-    memset(&pThis->aReleasedKeys[0], 0, sizeof(pThis->aReleasedKeys));
+    memset(&pThis->abReleasedKeys[0], 0, sizeof(pThis->abReleasedKeys));
 
     for (unsigned i = 0; i < RT_ELEMENTS(pThis->aEps); i++)
         pThis->aEps[i].fHalted = false;
@@ -681,36 +666,37 @@ static void usbHidUpdateReportReleased(PUSBHID pThis, uint8_t u8HidCode)
 static void usbHidCommitReportReleased(PUSBHID pThis)
 {
     unsigned i;
-    for (i=0; i < RT_ELEMENTS(pThis->aReleasedKeys); ++i)
+    for (i = 0; i < RT_ELEMENTS(pThis->abReleasedKeys); ++i)
     {
-        if (pThis->aReleasedKeys[i] != 0)
+        if (pThis->abReleasedKeys[i] != 0)
         {
-            usbHidUpdateReportReleased(pThis, pThis->aReleasedKeys[i]);
-            pThis->aReleasedKeys[i] = 0;
+            usbHidUpdateReportReleased(pThis, pThis->abReleasedKeys[i]);
+            pThis->abReleasedKeys[i] = 0;
         }
     }
 }
 
 #ifdef DEBUG
-#define HEX_DIGIT(x) (((x) < 0xa) ? ((x) + '0') : ((x) - 0xa + 'a'))
-static void usbHidComputePressed(PUSBHIDK_REPORT pReport, char* pszBuf, unsigned uBufLen)
+# define HEX_DIGIT(x) (((x) < 0xa) ? ((x) + '0') : ((x) - 0xa + 'a'))
+static void usbHidComputePressed(PUSBHIDK_REPORT pReport, char* pszBuf, unsigned cbBuf)
 {
-    unsigned i, uBufPos = 0;
-    for (i=0; i < RT_ELEMENTS(pReport->aKeys); ++i)
+    unsigned offBuf = 0;
+    unsigned i;
+    for (i = 0; i < RT_ELEMENTS(pReport->aKeys); ++i)
     {
         uint8_t uCode = pReport->aKeys[i];
         if (uCode != 0)
         {
-            if (uBufPos + 4 >= uBufLen)
+            if (offBuf + 4 >= cbBuf)
                 break;
-            pszBuf[uBufPos++] = HEX_DIGIT(uCode >> 4);
-            pszBuf[uBufPos++] = HEX_DIGIT(uCode & 0xf);
-            pszBuf[uBufPos++] = ' ';
+            pszBuf[offBuf++] = HEX_DIGIT(uCode >> 4);
+            pszBuf[offBuf++] = HEX_DIGIT(uCode & 0xf);
+            pszBuf[offBuf++] = ' ';
         }
     }
-    pszBuf[uBufPos++] = '\0';
+    pszBuf[offBuf++] = '\0';
 }
-#undef HEX_DIGIT
+# undef HEX_DIGIT
 #endif
 
 /**
@@ -777,7 +763,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
     bool        fHaveEvent = true;
     unsigned    i;
 
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     pThis->XlatState = ScancodeToHidUsage(pThis->XlatState, u8KeyCode, &u32Usage);
 
@@ -798,7 +784,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
                 {
                     /* Skip repeat events. */
                     fHaveEvent = false;
-                    break;                              
+                    break;
                 }
             }
 
@@ -812,14 +798,14 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
                         break;
                     }
                 }
-                
+
                 pThis->fNoUrbSinceLastPress = true;
-                
+
                 if (i == RT_ELEMENTS(pReport->aKeys))
                 {
                     /* We ran out of room. Report error. */
                     Log(("no more room in usbHidKeyboardPutEvent\n"));
-                    // @todo!!
+                    /// @todo!!
                 }
             }
         }
@@ -832,14 +818,14 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
              */
             if (pThis->fNoUrbSinceLastPress)
             {
-                for (i = 0; i < RT_ELEMENTS(pThis->aReleasedKeys); ++i)
+                for (i = 0; i < RT_ELEMENTS(pThis->abReleasedKeys); ++i)
                 {
-                    if (pThis->aReleasedKeys[i] == u8HidCode)
+                    if (pThis->abReleasedKeys[i] == u8HidCode)
                         break;
 
-                    if (pThis->aReleasedKeys[i] == 0)
+                    if (pThis->abReleasedKeys[i] == 0)
                     {
-                        pThis->aReleasedKeys[i] = u8HidCode;
+                        pThis->abReleasedKeys[i] = u8HidCode;
                         break;
                     }
                 }
@@ -853,7 +839,7 @@ static DECLCALLBACK(int) usbHidKeyboardPutEvent(PPDMIKEYBOARDPORT pInterface, ui
             usbHidSendReport(pThis);
     }
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
 
     return VINF_SUCCESS;
 }
@@ -866,24 +852,24 @@ static DECLCALLBACK(PVUSBURB) usbHidUrbReap(PPDMUSBINS pUsbIns, RTMSINTERVAL cMi
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     //LogFlow(("usbHidUrbReap/#%u: cMillies=%u\n", pUsbIns->iInstance, cMillies));
 
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     PVUSBURB pUrb = usbHidQueueRemoveHead(&pThis->DoneQueue);
     if (!pUrb && cMillies)
     {
         /* Wait */
         pThis->fHaveDoneQueueWaiter = true;
-        usbKbdUnlock(pThis);
+        RTCritSectLeave(&pThis->CritSect);
 
         RTSemEventWait(pThis->hEvtDoneQueue, cMillies);
 
-        usbKbdLock(pThis);
+        RTCritSectEnter(&pThis->CritSect);
         pThis->fHaveDoneQueueWaiter = false;
 
         pUrb = usbHidQueueRemoveHead(&pThis->DoneQueue);
     }
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
 
     if (pUrb)
         Log(("usbHidUrbReap/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc));
@@ -898,7 +884,7 @@ static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUrbCancel/#%u: pUrb=%p:%s\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc));
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     /*
      * Remove the URB from the to-host queue and move it onto the done queue.
@@ -906,7 +892,7 @@ static DECLCALLBACK(int) usbHidUrbCancel(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
     if (usbHidQueueRemove(&pThis->ToHostQueue, pUrb))
         usbHidLinkDone(pThis, pUrb);
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1152,7 +1138,7 @@ static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidQueue/#%u: pUrb=%p:%s EndPt=%#x\n", pUsbIns->iInstance, pUrb, pUrb->pszDesc, pUrb->EndPt));
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     /*
      * Parse on a per end-point basis.
@@ -1176,7 +1162,7 @@ static DECLCALLBACK(int) usbHidQueue(PPDMUSBINS pUsbIns, PVUSBURB pUrb)
             break;
     }
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
     return rc;
 }
 
@@ -1191,9 +1177,9 @@ static DECLCALLBACK(int) usbHidUsbClearHaltedEndpoint(PPDMUSBINS pUsbIns, unsign
 
     if ((uEndpoint & ~0x80) < RT_ELEMENTS(pThis->aEps))
     {
-        usbKbdLock(pThis);
+        RTCritSectEnter(&pThis->CritSect);
         pThis->aEps[(uEndpoint & ~0x80)].fHalted = false;
-        usbKbdUnlock(pThis);
+        RTCritSectLeave(&pThis->CritSect);
     }
 
     return VINF_SUCCESS;
@@ -1220,7 +1206,7 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUsbSetConfiguration/#%u: bConfigurationValue=%u\n", pUsbIns->iInstance, bConfigurationValue));
     Assert(bConfigurationValue == 1);
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     /*
      * If the same config is applied more than once, it's a kind of reset.
@@ -1229,7 +1215,7 @@ static DECLCALLBACK(int) usbHidUsbSetConfiguration(PPDMUSBINS pUsbIns, uint8_t b
         usbHidResetWorker(pThis, NULL, true /*fSetConfig*/); /** @todo figure out the exact difference */
     pThis->bConfigurationValue = bConfigurationValue;
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -1252,11 +1238,11 @@ static DECLCALLBACK(int) usbHidUsbReset(PPDMUSBINS pUsbIns, bool fResetOnLinux)
 {
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidUsbReset/#%u:\n", pUsbIns->iInstance));
-    usbKbdLock(pThis);
+    RTCritSectEnter(&pThis->CritSect);
 
     int rc = usbHidResetWorker(pThis, NULL, false /*fSetConfig*/);
 
-    usbKbdUnlock(pThis);
+    RTCritSectLeave(&pThis->CritSect);
     return rc;
 }
 
@@ -1269,12 +1255,12 @@ static void usbHidDestruct(PPDMUSBINS pUsbIns)
     PUSBHID pThis = PDMINS_2_DATA(pUsbIns, PUSBHID);
     LogFlow(("usbHidDestruct/#%u:\n", pUsbIns->iInstance));
 
-    if (RTCritSectIsInitialized(&pThis->csLock))
+    if (RTCritSectIsInitialized(&pThis->CritSect))
     {
-        /* Let whoever runs in this critical section complete */
-        usbKbdLock(pThis);
-        usbKbdUnlock(pThis);
-        RTCritSectDelete(&pThis->csLock);
+        /* Let whoever runs in this critical section complete. */
+        RTCritSectEnter(&pThis->CritSect);
+        RTCritSectLeave(&pThis->CritSect);
+        RTCritSectDelete(&pThis->CritSect);
     }
 
     if (pThis->hEvtDoneQueue != NIL_RTSEMEVENT)
@@ -1303,7 +1289,7 @@ static DECLCALLBACK(int) usbHidConstruct(PPDMUSBINS pUsbIns, int iInstance, PCFG
     usbHidQueueInit(&pThis->ToHostQueue);
     usbHidQueueInit(&pThis->DoneQueue);
 
-    int rc = RTCritSectInit(&pThis->csLock);
+    int rc = RTCritSectInit(&pThis->CritSect);
     AssertRCReturn(rc, rc);
 
     rc = RTSemEventCreate(&pThis->hEvtDoneQueue);
