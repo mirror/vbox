@@ -1935,6 +1935,7 @@ VBoxGLWgt::VBoxGLWgt(VBoxVHWAImage * pImage,
     /* work-around to disable done current needed to old ATI drivers on Linux */
     VBoxGLContext *pc = (VBoxGLContext*)context();
     pc->allowDoneCurrent (false);
+    Assert(isSharing());
 }
 
 
@@ -4042,8 +4043,12 @@ class VBoxGLShareWgt : public QGLWidget
 {
 public:
     VBoxGLShareWgt() :
-        QGLWidget(VBoxVHWAImage::vboxGLFormat())
-    {}
+        QGLWidget(new VBoxGLContext(VBoxVHWAImage::vboxGLFormat()))
+    {
+        /* work-around to disable done current needed to old ATI drivers on Linux */
+        VBoxGLContext *pc = (VBoxGLContext*)context();
+        pc->allowDoneCurrent (false);
+    }
 
 protected:
     void initializeGL()
