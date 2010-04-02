@@ -62,7 +62,7 @@ endif
 ifdef VBOX_WITH_HARDENING
  VBoxHeadless_LDFLAGS.darwin += -install_name $(VBOX_DYLD_EXECUTABLE_PATH)/VBoxHeadless.dylib
 endif
-ifdef VBOX_WITH_VNC
+ifdef VBOX_WITH_VNC                     # (GPL only)
  VBoxHeadless_DEFS     += VBOX_WITH_VNC
  VBoxHeadless_SOURCES  += FramebufferVNC.cpp
  VBoxHeadless_LIBS     += vncserver
