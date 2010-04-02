@@ -169,12 +169,12 @@ VBOX_VENDOR = Oracle Corporation
 VBOX_VENDOR_SHORT = Oracle
 VBOX_PRODUCT = Oracle VM VirtualBox
 # Not all could be done automatically. Here is a list of known places which
-# have to be updated manually. Please keep the list up to date.
-# src/VBox/Devices/PC/PXE/client/uinit.asm
-# src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
-# src/VBox/Frontends/VirtualBox/nls/*.ts
+# have to be updated manually, please keep this up to date:
+# 	src/VBox/Devices/PC/PXE/client/uinit.asm
+# 	src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
+# 	src/VBox/Frontends/VirtualBox/nls/*.ts
 
-# maybe we want set this manually
+# Maybe we want set this manually.
 VBOX_C_YEAR = $(date-utc %Y)
 
 #
