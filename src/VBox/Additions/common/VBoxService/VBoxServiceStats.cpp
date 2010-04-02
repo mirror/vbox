@@ -18,41 +18,53 @@
  * Clara, CA 95054 USA or visit http://www.sun.com if you need
  * additional information or have any questions.
  */
-#ifdef TARGET_NT4
-#undef _WIN32_WINNT
-#define _WIN32_WINNT 0x501
-#endif
 
+/*******************************************************************************
+*   Header Files                                                               *
+*******************************************************************************/
 #if defined(RT_OS_WINDOWS)
+# ifdef TARGET_NT4
+#  undef _WIN32_WINNT
+#  define _WIN32_WINNT 0x501
+# endif
 # include <windows.h>
 # include <psapi.h>
 # include <winternl.h>
+
 #elif defined(RT_OS_LINUX)
 # include <iprt/ctype.h>
 # include <iprt/stream.h>
+# include <unistd.h>
+
+#else
+/** @todo port me. */
+
 #endif
 
 #include <iprt/assert.h>
 #include <iprt/mem.h>
-#include <iprt/thread.h>
-#include <iprt/string.h>
+#include <VBox/param.h>
 #include <iprt/semaphore.h>
+#include <iprt/string.h>
 #include <iprt/system.h>
 #include <iprt/time.h>
+#include <iprt/thread.h>
 #include <VBox/VBoxGuestLib.h>
 #include "VBoxServiceInternal.h"
 #include "VBoxServiceUtils.h"
 
-#define NR_CPUS  32
 
+/*******************************************************************************
+*   Structures and Typedefs                                                    *
+*******************************************************************************/
 typedef struct _VBOXSTATSCONTEXT
 {
     RTMSINTERVAL          cMsStatInterval;
 
-    uint64_t              u64LastCpuLoad_Idle[NR_CPUS];
-    uint64_t              u64LastCpuLoad_Kernel[NR_CPUS];
-    uint64_t              u64LastCpuLoad_User[NR_CPUS];
-    uint64_t              u64LastCpuLoad_Nice[NR_CPUS];
+    uint64_t              au64LastCpuLoad_Idle[VMM_MAX_CPU_COUNT];
+    uint64_t              au64LastCpuLoad_Kernel[VMM_MAX_CPU_COUNT];
+    uint64_t              au64LastCpuLoad_User[VMM_MAX_CPU_COUNT];
+    uint64_t              au64LastCpuLoad_Nice[VMM_MAX_CPU_COUNT];
 
 #ifdef RT_OS_WINDOWS
     NTSTATUS (WINAPI *pfnNtQuerySystemInformation)(SYSTEM_INFORMATION_CLASS SystemInformationClass, PVOID SystemInformation, ULONG SystemInformationLength, PULONG ReturnLength);
@@ -60,6 +72,7 @@ typedef struct _VBOXSTATSCONTEXT
     BOOL     (WINAPI *pfnGetPerformanceInfo)(PPERFORMANCE_INFORMATION pPerformanceInformation, DWORD cb);
 #endif
 } VBOXSTATSCONTEXT;
+
 
 /*******************************************************************************
 *   Global Variables                                                           *
@@ -97,10 +110,10 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
     AssertRCReturn(rc, rc);
 
     gCtx.cMsStatInterval        = 0;     /* default; update disabled */
-    RT_ZERO(gCtx.u64LastCpuLoad_Idle);
-    RT_ZERO(gCtx.u64LastCpuLoad_Kernel);
-    RT_ZERO(gCtx.u64LastCpuLoad_User);
-    RT_ZERO(gCtx.u64LastCpuLoad_Nice);
+    RT_ZERO(gCtx.au64LastCpuLoad_Idle);
+    RT_ZERO(gCtx.au64LastCpuLoad_Kernel);
+    RT_ZERO(gCtx.au64LastCpuLoad_User);
+    RT_ZERO(gCtx.au64LastCpuLoad_Nice);
 
     rc = VbglR3StatQueryInterval(&gCtx.cMsStatInterval);
     if (RT_SUCCESS(rc))
@@ -152,13 +165,18 @@ static DECLCALLBACK(int) VBoxServiceVMStatsInit(void)
 }
 
 
-static void VBoxServiceVMStatsReport()
+/**
+ * Gathers VM statistics and reports them to the host.
+ *
+ * @returns
+ * @param   oid                 .
+ */
+static void VBoxServiceVMStatsReport(void)
 {
 #if defined(RT_OS_WINDOWS)
     SYSTEM_INFO systemInfo;
     PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION pProcInfo;
     MEMORYSTATUSEX memStatus;
-    VMMDevReportGuestStats req;
     uint32_t cbStruct;
     DWORD    cbReturned;
 
@@ -167,6 +185,11 @@ static void VBoxServiceVMStatsReport()
         ||  !gCtx.pfnNtQuerySystemInformation)
         return;
 
+    /* Clear the report so we don't report garbage should NtQuerySystemInformation
+       behave in an unexpected manner. */
+    VMMDevReportGuestStats req;
+    RT_ZERO(req);
+
     /* Query and report guest statistics */
     GetSystemInfo(&systemInfo);
 
@@ -174,13 +197,15 @@ static void VBoxServiceVMStatsReport()
     gCtx.pfnGlobalMemoryStatusEx(&memStatus);
 
     req.guestStats.u32PageSize          = systemInfo.dwPageSize;
-    req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / systemInfo.dwPageSize);
-    req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / systemInfo.dwPageSize);
-    /* The current size of the committed memory limit, in bytes. This is physical memory plus the size of the page file, minus a small overhead. */
-    req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / systemInfo.dwPageSize) - req.guestStats.u32PhysMemTotal;
+    req.guestStats.u32PhysMemTotal      = (uint32_t)(memStatus.ullTotalPhys / _4K);
+    req.guestStats.u32PhysMemAvail      = (uint32_t)(memStatus.ullAvailPhys / _4K);
+    /* The current size of the committed memory limit, in bytes. This is physical
+       memory plus the size of the page file, minus a small overhead. */
+    req.guestStats.u32PageFileSize      = (uint32_t)(memStatus.ullTotalPageFile / _4K) - req.guestStats.u32PhysMemTotal;
     req.guestStats.u32MemoryLoad        = memStatus.dwMemoryLoad;
-    req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQueryChunks() * (_1M/systemInfo.dwPageSize);    /* was in megabytes */
-    req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
+    req.guestStats.u32PhysMemBalloon    = VBoxServiceBalloonQueryPages(_4K);
+    req.guestStats.u32StatCaps          = VBOX_GUEST_STAT_PHYS_MEM_TOTAL | VBOX_GUEST_STAT_PHYS_MEM_AVAIL | VBOX_GUEST_STAT_PAGE_FILE_SIZE
+                                        | VBOX_GUEST_STAT_MEMORY_LOAD | VBOX_GUEST_STAT_PHYS_MEM_BALLOON;
 
     if (gCtx.pfnGetPerformanceInfo)
     {
@@ -196,16 +221,18 @@ static void VBoxServiceVMStatsReport()
             req.guestStats.u32MemKernelPaged    = perfInfo.KernelPaged;     /* already in pages */
             req.guestStats.u32MemKernelNonPaged = perfInfo.KernelNonpaged;  /* already in pages */
             req.guestStats.u32MemSystemCache    = perfInfo.SystemCache;     /* already in pages */
-            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_HANDLES | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
+            req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_PROCESSES | VBOX_GUEST_STAT_THREADS | VBOX_GUEST_STAT_HANDLES
+                                        | VBOX_GUEST_STAT_MEM_COMMIT_TOTAL | VBOX_GUEST_STAT_MEM_KERNEL_TOTAL
+                                        | VBOX_GUEST_STAT_MEM_KERNEL_PAGED | VBOX_GUEST_STAT_MEM_KERNEL_NONPAGED
+                                        | VBOX_GUEST_STAT_MEM_SYSTEM_CACHE;
         }
         else
             VBoxServiceVerbose(3, "GetPerformanceInfo failed with %d\n", GetLastError());
     }
 
     /* Query CPU load information */
-    cbStruct = systemInfo.dwNumberOfProcessors*sizeof(SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION);
-    pProcInfo = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)malloc(cbStruct);
-    Assert(pProcInfo);
+    cbStruct = systemInfo.dwNumberOfProcessors * sizeof(SYSTEM_PROCESSOR_PERFORMANCE_INFORMATION);
+    pProcInfo = (PSYSTEM_PROCESSOR_PERFORMANCE_INFORMATION)RTMemAlloc(cbStruct);
     if (!pProcInfo)
         return;
 
@@ -214,12 +241,12 @@ static void VBoxServiceVMStatsReport()
     if (    !rc
         &&  cbReturned == cbStruct)
     {
-        if (gCtx.u64LastCpuLoad_Kernel == 0)
+        if (gCtx.au64LastCpuLoad_Kernel == 0)
         {
             /* first time */
-            gCtx.u64LastCpuLoad_Idle[0]    = pProcInfo->IdleTime.QuadPart;
-            gCtx.u64LastCpuLoad_Kernel[0]  = pProcInfo->KernelTime.QuadPart;
-            gCtx.u64LastCpuLoad_User[0]    = pProcInfo->UserTime.QuadPart;
+            gCtx.au64LastCpuLoad_Idle[0]    = pProcInfo->IdleTime.QuadPart;
+            gCtx.au64LastCpuLoad_Kernel[0]  = pProcInfo->KernelTime.QuadPart;
+            gCtx.au64LastCpuLoad_User[0]    = pProcInfo->UserTime.QuadPart;
 
             Sleep(250);
 
@@ -227,9 +254,9 @@ static void VBoxServiceVMStatsReport()
             Assert(!rc);
         }
 
-        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart   - gCtx.u64LastCpuLoad_Idle[0]);
-        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.u64LastCpuLoad_Kernel[0]);
-        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart   - gCtx.u64LastCpuLoad_User[0]);
+        uint64_t deltaIdle    = (pProcInfo->IdleTime.QuadPart   - gCtx.au64LastCpuLoad_Idle[0]);
+        uint64_t deltaKernel  = (pProcInfo->KernelTime.QuadPart - gCtx.au64LastCpuLoad_Kernel[0]);
+        uint64_t deltaUser    = (pProcInfo->UserTime.QuadPart   - gCtx.au64LastCpuLoad_User[0]);
         deltaKernel          -= deltaIdle;  /* idle time is added to kernel time */
         uint64_t ullTotalTime = deltaIdle + deltaKernel + deltaUser;
 
@@ -239,12 +266,13 @@ static void VBoxServiceVMStatsReport()
 
         req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE | VBOX_GUEST_STAT_CPU_LOAD_KERNEL | VBOX_GUEST_STAT_CPU_LOAD_USER;
 
-        gCtx.u64LastCpuLoad_Idle[0]   = pProcInfo->IdleTime.QuadPart;
-        gCtx.u64LastCpuLoad_Kernel[0] = pProcInfo->KernelTime.QuadPart;
-        gCtx.u64LastCpuLoad_User[0]   = pProcInfo->UserTime.QuadPart;
+        gCtx.au64LastCpuLoad_Idle[0]   = pProcInfo->IdleTime.QuadPart;
+        gCtx.au64LastCpuLoad_Kernel[0] = pProcInfo->KernelTime.QuadPart;
+        gCtx.au64LastCpuLoad_User[0]   = pProcInfo->UserTime.QuadPart;
+        /** @todo SMP: report details for each CPU?  */
     }
 
-    for (uint32_t i=0; i<systemInfo.dwNumberOfProcessors; i++)
+    for (uint32_t i = 0; i < systemInfo.dwNumberOfProcessors; i++)
     {
         req.guestStats.u32CpuId = i;
 
@@ -255,7 +283,7 @@ static void VBoxServiceVMStatsReport()
             VBoxServiceVerbose(3, "VBoxStatsReportStatistics: DeviceIoControl (stats report) failed with %d\n", GetLastError());
     }
 
-    free(pProcInfo);
+    RTMemFree(pProcInfo);
 
 #elif defined(RT_OS_LINUX)
     VMMDevReportGuestStats req;
@@ -312,19 +340,27 @@ static void VBoxServiceVMStatsReport()
         RTStrmClose(pStrm);
     }
 
-    req.guestStats.u32PhysMemBalloon = VBoxServiceBalloonQueryChunks() * (_1M/_4K);
+    req.guestStats.u32PageSize = getpagesize();
+    req.guestStats.u32PhysMemBalloon = VBoxServiceBalloonQueryPages(_4K);
     req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL \
                                | VBOX_GUEST_STAT_PHYS_MEM_AVAIL \
                                | VBOX_GUEST_STAT_PHYS_MEM_BALLOON \
                                | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
+
+    /** @todo req.guestStats.u32Threads */
+    /** @todo req.guestStats.u32Processes */
+    /* req.guestStats.u32Handles doesn't make sense here. */
+    /** @todo req.guestStats.u32MemoryLoad */
+    /** @todo req.guestStats.u32MemCommitTotal */
+    /** @todo req.guestStats.u32MemKernelTotal */
+    /** @todo req.guestStats.u32MemKernelPaged, make any sense?  = u32MemKernelTotal? */
+    /** @todo req.guestStats.u32MemKernelNonPaged, make any sense? = 0? */
 
     rc = RTStrmOpen("/proc/stat", "r", &pStrm);
     if (RT_SUCCESS(rc))
     {
         for (;;)
         {
-            uint32_t u32CpuId;
-            uint64_t u64User = 0, u64Nice = 0, u64System = 0, u64Idle = 0;
             rc = RTStrmGetLine(pStrm, szLine, sizeof(szLine));
             if (RT_FAILURE(rc))
                 break;
@@ -332,37 +368,45 @@ static void VBoxServiceVMStatsReport()
                 && strlen(szLine) > 3
                 && RT_C_IS_DIGIT(szLine[3]))
             {
+                uint32_t u32CpuId;
                 rc = RTStrToUInt32Ex(&szLine[3], &psz, 0, &u32CpuId);
-                if (u32CpuId < NR_CPUS)
+                if (u32CpuId < VMM_MAX_CPU_COUNT)
                 {
+                    uint64_t u64User = 0;
                     if (RT_SUCCESS(rc))
                         rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64User);
+
+                    uint64_t u64Nice = 0;
                     if (RT_SUCCESS(rc))
                         rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Nice);
+
+                    uint64_t u64System = 0;
                     if (RT_SUCCESS(rc))
                         rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64System);
+
+                    uint64_t u64Idle = 0;
                     if (RT_SUCCESS(rc))
                         rc = RTStrToUInt64Ex(RTStrStripL(psz), &psz, 0, &u64Idle);
 
-                    uint64_t u64DeltaIdle   = u64Idle   - gCtx.u64LastCpuLoad_Idle[u32CpuId];
-                    uint64_t u64DeltaSystem = u64System - gCtx.u64LastCpuLoad_Kernel[u32CpuId];
-                    uint64_t u64DeltaUser   = u64User   - gCtx.u64LastCpuLoad_User[u32CpuId];
-                    uint64_t u64DeltaNice   = u64Nice   - gCtx.u64LastCpuLoad_Nice[u32CpuId];
+                    uint64_t u64DeltaIdle   = u64Idle   - gCtx.au64LastCpuLoad_Idle[u32CpuId];
+                    uint64_t u64DeltaSystem = u64System - gCtx.au64LastCpuLoad_Kernel[u32CpuId];
+                    uint64_t u64DeltaUser   = u64User   - gCtx.au64LastCpuLoad_User[u32CpuId];
+                    uint64_t u64DeltaNice   = u64Nice   - gCtx.au64LastCpuLoad_Nice[u32CpuId];
 
                     uint64_t u64DeltaAll    = u64DeltaIdle
                                             + u64DeltaSystem
                                             + u64DeltaUser
                                             + u64DeltaNice;
 
-                    gCtx.u64LastCpuLoad_Idle[u32CpuId]   = u64Idle;
-                    gCtx.u64LastCpuLoad_Kernel[u32CpuId] = u64System;
-                    gCtx.u64LastCpuLoad_User[u32CpuId]   = u64User;
-                    gCtx.u64LastCpuLoad_Nice[u32CpuId]   = u64Nice;
+                    gCtx.au64LastCpuLoad_Idle[u32CpuId]   = u64Idle;
+                    gCtx.au64LastCpuLoad_Kernel[u32CpuId] = u64System;
+                    gCtx.au64LastCpuLoad_User[u32CpuId]   = u64User;
+                    gCtx.au64LastCpuLoad_Nice[u32CpuId]   = u64Nice;
 
                     req.guestStats.u32CpuId = u32CpuId;
                     req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
                     req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
-                    req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser 
+                    req.guestStats.u32CpuLoad_User   = (uint32_t)((u64DeltaUser
                                                                  + u64DeltaNice) * 100 / u64DeltaAll);
                     req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
                                                | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
