@@ -1,11 +1,10 @@
+/* $Id$ */
 /** @file
- *
- * VBox frontends: VBoxHeadless (headless frontend):
- * Headless server executable
+ * VBoxHeadless - The VirtualBox Headless frontend for running VMs on servers.
  */
 
 /*
- * Copyright (C) 2006-2009 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -66,6 +65,10 @@ using namespace com;
 #ifdef VBOX_WITH_VRDP
 # include "Framebuffer.h"
 #endif
+#ifdef VBOX_WITH_VNC
+# include "FramebufferVNC.h"
+#endif
+
 
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -961,21 +964,20 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VNC
         if (fVNCEnable)
         {
-            VNCFB           *pFramebuffer;
-            PFNREGISTERVNCFB pfnRegisterVNCFB;
+            VNCFB           *pFramebufferVNC;
 
-            pFramebuffer = new VNCFB(console, uVNCPort, pszVNCPassword);
-            rc = pFramebuffer->init();
+            pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
+            rc = pFramebufferVNC->init();
             if (rc != S_OK)
             {
                 LogError("Failed to load the vnc server extension, possibly due to a damaged file\n", rc);
-                delete pFramebuffer;
+                delete pFramebufferVNC;
                 break;
             }
 
             Log2(("VBoxHeadless: Registering VNC framebuffer\n"));
-            pFramebuffer->AddRef();
-            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebuffer);
+            pFramebufferVNC->AddRef();
+            display->SetFramebuffer(VBOX_VIDEO_PRIMARY_SCREEN, pFramebufferVNC);
         }
         if (rc != S_OK)
             break;

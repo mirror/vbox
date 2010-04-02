@@ -65,6 +65,7 @@ endif
 ifdef VBOX_WITH_VNC
  VBoxHeadless_DEFS     += VBOX_WITH_VNC
  VBoxHeadless_SOURCES  += FramebufferVNC.cpp
+ VBoxHeadless_LIBS     += vncserver
 endif
 
 include $(KBUILD_PATH)/subfooter.kmk

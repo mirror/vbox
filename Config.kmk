@@ -481,6 +481,8 @@ VBOX_WITH_GUEST_CONTROL =
 if1of ($(KBUILD_TARGET), darwin freebsd linux solaris win)
  VBOX_WITH_CROGL = 1
 endif
+# Enable the VNC server in VBoxHeadless (GPL only).
+#VBOX_WITH_VNC = 1
 ## @}
 
 
