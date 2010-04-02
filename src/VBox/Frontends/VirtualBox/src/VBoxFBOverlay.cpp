@@ -2272,7 +2272,7 @@ int VBoxVHWAImage::vhwaSurfaceCreate (struct _VBOXVHWACMD_SURF_CREATE *pCmd)
                         surf->setDefaultDstOverlayCKey(pDstOverlayCKey);
                         surf->resetDefaultDstOverlayCKey();
 
-                        surf->setDefaultSrcOverlayCKey(pDstOverlayCKey);
+                        surf->setDefaultSrcOverlayCKey(pSrcOverlayCKey);
                         surf->resetDefaultSrcOverlayCKey();
 //                        mbVGASurfCreated = true;
                     }
@@ -2787,6 +2787,7 @@ int VBoxVHWAImage::vhwaSurfaceColorkeySet(struct _VBOXVHWACMD_SURF_COLORKEY_SET 
     {
         VBoxVHWAColorKey ckey(pCmd->u.in.CKey.high, pCmd->u.in.CKey.low);
         pSurf->setSrcBltCKey(&ckey);
+
     }
     if (pCmd->u.in.flags & VBOXVHWA_CKEY_SRCOVERLAY)
     {
@@ -5281,12 +5282,16 @@ int VBoxVHWATextureImage::createDisplay(VBoxVHWATextureImage *pDst, const QRect 
         GLuint *pDisplay, class VBoxVHWAGlProgramVHWA ** ppProgram)
 {
     VBoxVHWAGlProgramVHWA * pProgram = NULL;
-    if(!pDst)
+    if (!pDst)
     {
         /* sanity */
         Assert(pDstCKey == NULL);
         pDstCKey = NULL;
     }
+
+    Assert(!pSrcCKey);
+    if (pSrcCKey)
+        pSrcCKey = NULL; /* fallback */
 
     pProgram = calcProgram(pDst, pDstCKey, pSrcCKey, bNotIntersected);
 
