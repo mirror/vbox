@@ -532,9 +532,9 @@ static void show_usage()
     RTPrintf("Usage:\n"
              "   -s, -startvm, --startvm <name|uuid>   Start given VM (required argument)\n"
 #ifdef VBOX_WITH_VNC
-             "   -n, -vnc                              Enable the built in VNC server\n"
-             "   -m, -vncport                          TCP port number to use for the VNC server\n"
-             "   -o, -vncpass <pw>                     Set the VNC server password\n"
+             "   -n, --vnc                             Enable the built in VNC server\n"
+             "   -m, --vncport <port>                  TCP port number to use for the VNC server\n"
+             "   -o, --vncpass <pw>                    Set the VNC server password\n"
 #endif
 #ifdef VBOX_WITH_VRDP
              "   -v, -vrdp, --vrdp on|off|config       Enable (default) or disable the VRDP\n"
@@ -615,7 +615,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VNC
     bool        fVNCEnable      = false;
     unsigned    uVNCPort        = 0;          /* default port */
-    char       *pszVNCPassword  = NULL;       /* no password */
+    char const *pszVNCPassword  = NULL;       /* no password */
 #endif
     unsigned fRawR0 = ~0U;
     unsigned fRawR3 = ~0U;
@@ -675,9 +675,9 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
         { "--vrdp", 'v', RTGETOPT_REQ_STRING },
 #endif /* VBOX_WITH_VRDP defined */
 #ifdef VBOX_WITH_VNC
-        { "-vncport", 'm', RTGETOPT_REQ_INT32 },
-        { "-vncpass", 'o', RTGETOPT_REQ_STRING },
-        { "-vnc", 'n', 0 },
+        { "--vncport", 'm', RTGETOPT_REQ_INT32 },
+        { "--vncpass", 'o', RTGETOPT_REQ_STRING },
+        { "--vnc", 'n', 0 },
 #endif /* VBOX_WITH_VNC */
         { "-rawr0", OPT_RAW_R0, 0 },
         { "--rawr0", OPT_RAW_R0, 0 },
@@ -741,7 +741,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
                 uVNCPort = ValueUnion.i32;
                 break;
             case 'o':
-                pszVNCPassword = (char*)ValueUnion.psz;
+                pszVNCPassword = ValueUnion.psz;
                 break;
 #endif /* VBOX_WITH_VNC */
             case OPT_RAW_R0:
@@ -964,9 +964,7 @@ extern "C" DECLEXPORT(int) TrustedMain(int argc, char **argv, char **envp)
 #ifdef VBOX_WITH_VNC
         if (fVNCEnable)
         {
-            VNCFB           *pFramebufferVNC;
-
-            pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
+            VNCFB *pFramebufferVNC = new VNCFB(console, uVNCPort, pszVNCPassword);
             rc = pFramebufferVNC->init();
             if (rc != S_OK)
             {
