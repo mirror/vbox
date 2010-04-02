@@ -26,6 +26,12 @@ int                VBoxDisplayInit    (const VBOXSERVICEENV *pEnv, void **ppInst
 unsigned __stdcall VBoxDisplayThread  (void *pInstance);
 void               VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance);
 
+#ifndef VBOXWDDM
 static bool isVBoxDisplayDriverActive (void);
+#else
+/* @misha: getVBoxDisplayDriverType is used instead.
+ * it seems bad to put static function declaration to header,
+ * so it is moved to VBoxDisplay.cpp */
+#endif
 
 #endif /* __VBOXSERVICEDISPLAY__H */

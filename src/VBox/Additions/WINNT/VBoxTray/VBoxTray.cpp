@@ -369,6 +369,13 @@ void WINAPI VBoxServiceStart(void)
     svcEnv.hInstance  = gInstance;
     svcEnv.hDriver    = gVBoxDriver;
 
+    /* initializes disp-if to default (XPDM) mode */
+    status = VBoxDispIfInit(&svcEnv.dispIf);
+#ifdef VBOXWDDM
+    /* for now the display mode will be adjusted to WDDM mode if needed
+     * on display service initialization when it detects the display driver type */
+#endif
+
     if (status == NO_ERROR)
     {
         int rc = vboxStartServices (&svcEnv, vboxServiceTable);
@@ -608,4 +615,169 @@ LRESULT CALLBACK VBoxToolWndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
             return DefWindowProc(hwnd, msg, wParam, lParam);
     }
     return 0;
+}
+
+/* display driver interface abstraction for XPDM & WDDM
+ * with WDDM we can not use ExtEscape to communicate with our driver
+ * because we do not have XPDM display driver any more, i.e. escape requests are handled by cdd
+ * that knows nothing about us */
+DWORD VBoxDispIfInit(PVBOXDISPIF pIf)
+{
+    pIf->enmMode = VBOXDISPIF_MODE_XPDM;
+    return NO_ERROR;
+}
+
+DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_MODE *penmOldMode)
+{
+    /* @todo: may need to addd synchronization in case we want to change modes dynamically
+     * i.e. currently the mode is supposed to be initialized once on service initialization */
+    if (penmOldMode)
+        *penmOldMode = pIf->enmMode;
+
+    if (enmMode == pIf->enmMode)
+        return VINF_ALREADY_INITIALIZED;
+
+    DWORD err = NO_ERROR;
+    switch (enmMode)
+    {
+        case VBOXDISPIF_MODE_XPDM:
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM\n"));
+            pIf->enmMode = VBOXDISPIF_MODE_XPDM;
+            break;
+#ifdef VBOXWDDM
+        case VBOXDISPIF_MODE_WDDM:
+        {
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));
+            OSVERSIONINFO OSinfo;
+            OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+            GetVersionEx (&OSinfo);
+            if (OSinfo.dwMajorVersion >= 6)
+            {
+                /* this is vista and up */
+                Log((__FUNCTION__": this is vista and up\n"));
+                HMODULE hGdi32 = GetModuleHandle("gdi32");
+                if (hGdi32 != NULL)
+                {
+                    bool bSupported = true;
+                    pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc = (PFND3DKMT_OPENADAPTERFROMHDC)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromHdc");
+                    Log((__FUNCTION__"pfnD3DKMTOpenAdapterFromHdc = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc));
+                    bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromHdc);
+
+                    pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName = (PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME)GetProcAddress(hGdi32, "D3DKMTOpenAdapterFromGdiDisplayName");
+                    Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName = %p\n", pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName));
+                    bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName);
+
+                    pIf->modeData.wddm.pfnD3DKMTCloseAdapter = (PFND3DKMT_CLOSEADAPTER)GetProcAddress(hGdi32, "D3DKMTCloseAdapter");
+                    Log((__FUNCTION__": pfnD3DKMTCloseAdapter = %p\n", pIf->modeData.wddm.pfnD3DKMTCloseAdapter));
+                    bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
+
+                    pIf->modeData.wddm.pfnD3DKMTEscape = (PFND3DKMT_ESCAPE)GetProcAddress(hGdi32, "D3DKMTEscape");
+                    Log((__FUNCTION__": pfnD3DKMTEscape = %p\n", pIf->modeData.wddm.pfnD3DKMTEscape));
+                    bSupported &= !!(pIf->modeData.wddm.pfnD3DKMTCloseAdapter);
+
+                    if (bSupported)
+                        pIf->enmMode = VBOXDISPIF_MODE_WDDM;
+                    else
+                    {
+                        Log((__FUNCTION__": one of pfnD3DKMT function pointers failed to initialize\n"));
+                        err = ERROR_NOT_SUPPORTED;
+                    }
+                }
+                else
+                {
+                    Log((__FUNCTION__": GetModuleHandle(gdi32) failed, err(%d)\n", GetLastError()));
+                    err = ERROR_NOT_SUPPORTED;
+                }
+            }
+            else
+            {
+                Log((__FUNCTION__": can not switch to VBOXDISPIF_MODE_WDDM, because os is not Vista or upper\n"));
+                err = ERROR_NOT_SUPPORTED;
+            }
+            break;
+        }
+#endif
+        default:
+            err = ERROR_INVALID_PARAMETER;
+            break;
+    }
+    return err;
+}
+
+DWORD VBoxDispIfTerm(PVBOXDISPIF pIf)
+{
+    pIf->enmMode = VBOXDISPIF_MODE_UNKNOWN;
+    return NO_ERROR;
+}
+
+static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+{
+    HDC  hdc = GetDC(HWND_DESKTOP);
+    VOID *pvData = cbData ? VBOXDISPIFESCAPE_DATA(pEscape, VOID) : NULL;
+    int iRet = ExtEscape(hdc, pEscape->escapeCode, cbData, (LPCSTR)pvData, 0, NULL);
+    ReleaseDC(HWND_DESKTOP, hdc);
+    if (iRet > 0)
+        return VINF_SUCCESS;
+    else if (iRet == 0)
+        return ERROR_NOT_SUPPORTED;
+    /* else */
+    return ERROR_GEN_FAILURE;
+}
+
+#ifdef VBOXWDDM
+static DWORD vboxDispIfEscapeWDDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+{
+    D3DKMT_OPENADAPTERFROMGDIDISPLAYNAME OpenAdapterData = {0};
+    wcscpy(OpenAdapterData.DeviceName, L"\\\\.\\DISPLAY1");
+
+    DWORD err = ERROR_GEN_FAILURE;
+    NTSTATUS Status = pIf->modeData.wddm.pfnD3DKMTOpenAdapterFromGdiDisplayName(&OpenAdapterData);
+    if (!Status)
+    {
+        D3DKMT_ESCAPE EscapeData = {0};
+        EscapeData.hAdapter = OpenAdapterData.hAdapter;
+        //EscapeData.hDevice = NULL;
+        EscapeData.Type = D3DKMT_ESCAPE_DRIVERPRIVATE;
+        EscapeData.Flags.HardwareAccess = 1;
+        EscapeData.pPrivateDriverData = pEscape;
+        EscapeData.PrivateDriverDataSize = VBOXDISPIFESCAPE_SIZE(cbData);
+        //EscapeData.hContext = NULL;
+
+        Status = pIf->modeData.wddm.pfnD3DKMTEscape(&EscapeData);
+        if (!Status)
+            err = NO_ERROR;
+        else
+        {
+            if (Status == 0xC00000BBL) /* not supported */
+                err = ERROR_NOT_SUPPORTED;
+            Log((__FUNCTION__": pfnD3DKMTEscape failed, Status (0x%x)\n", Status));
+        }
+
+        D3DKMT_CLOSEADAPTER ClosaAdapterData = {0};
+        ClosaAdapterData.hAdapter = OpenAdapterData.hAdapter;
+        Status = pIf->modeData.wddm.pfnD3DKMTCloseAdapter(&ClosaAdapterData);
+        if (Status)
+            Log((__FUNCTION__": pfnD3DKMTCloseAdapter failed, Status (0x%x)\n", Status));
+    }
+    else
+        Log((__FUNCTION__": pfnD3DKMTOpenAdapterFromGdiDisplayName failed, Status (0x%x)\n", Status));
+
+    return err;
+}
+#endif
+
+DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
+{
+    switch (pIf->enmMode)
+    {
+        case VBOXDISPIF_MODE_XPDM:
+            return vboxDispIfEscapeXPDM(pIf, pEscape, cbData);
+#ifdef VBOXWDDM
+        case VBOXDISPIF_MODE_WDDM:
+            return vboxDispIfEscapeWDDM(pIf, pEscape, cbData);
+#endif
+        default:
+            Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
+            return ERROR_INVALID_PARAMETER;
+    }
 }

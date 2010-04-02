@@ -1230,6 +1230,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 }
 
 #ifdef VBOXWDDM
+static bool g_bModesTableInitialized = false;
 /**
  * Helper function to dynamically build our table of standard video
  * modes. We take the amount of VRAM and create modes with standard
@@ -1240,11 +1241,10 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
         VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
         D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions)
 {
-    static bool bTableInitialized = false;
-    if(bRebuildTable || !bTableInitialized)
+    if(bRebuildTable || !g_bModesTableInitialized)
     {
         VBoxBuildModesTable(DeviceExtension);
-        bTableInitialized = true;
+        g_bModesTableInitialized = true;
     }
 
     *ppModes = VideoModes;
@@ -1252,6 +1252,11 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
     *pPreferrableMode = gPreferredVideoMode;
     *ppResolutions = g_VBoxWddmVideoResolutions;
     *pcResolutions = g_VBoxWddmNumResolutions;
+}
+
+VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension)
+{
+    g_bModesTableInitialized = false;
 }
 
 #else
