@@ -467,6 +467,9 @@ DECLCALLBACK(int) vmmdevReportStatistics(PPDMIVMMDEVCONNECTOR pInterface, VBoxGu
         guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_CPUUSER, pGuestStats->u32CpuLoad_User);
 
 
+    /** @todo r=bird: Convert from 4KB to 1KB units?
+     *        CollectorGuestHAL::getGuestMemLoad says it returns KB units to
+     *        preCollect().  I might be wrong ofc, this is convoluted code... */
     if (pGuestStats->u32StatCaps & VBOX_GUEST_STAT_PHYS_MEM_TOTAL)
         guest->SetStatistic(pGuestStats->u32CpuId, GUESTSTATTYPE_MEMTOTAL, pGuestStats->u32PhysMemTotal);
 
