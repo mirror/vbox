@@ -81,6 +81,8 @@ typedef VBOXGUESTWAITLIST *PVBOXGUESTWAITLIST;
  */
 typedef struct VBOXGUESTMEMBALLOON
 {
+    /** Mutext protecting the members below from concurrent access.. */
+    RTSEMFASTMUTEX              hMtx;
     /** The current number of chunks in the balloon. */
     uint32_t                    cChunks;
     /** The maximum number of chunks in the balloon (typically the amount of guest
@@ -89,8 +91,10 @@ typedef struct VBOXGUESTMEMBALLOON
     /** This is true if we are using RTR0MemObjAllocPhysNC() / RTR0MemObjGetPagePhysAddr()
      * and false otherwise. */
     bool                        fUseKernelAPI;
-    /** The owner of the balloon which is the first process using the balloon API. */
-    PVBOXGUESTSESSION volatile  pOwner;
+    /** The current owner of the balloon.
+     * This is automatically assigned to the first session using the ballooning
+     * API and first released when the session closes. */
+    PVBOXGUESTSESSION           pOwner;
     /** The pointer to the array of memory objects holding the chunks of the
      *  balloon.  This array is cMaxChunks in size when present. */
     PRTR0MEMOBJ                 paMemObj;
