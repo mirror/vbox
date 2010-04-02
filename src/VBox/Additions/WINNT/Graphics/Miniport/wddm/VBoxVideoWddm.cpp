@@ -19,6 +19,8 @@
 
 #include <VBox/VBoxGuestLib.h>
 #include <VBox/VBoxVideo.h>
+#include <wingdi.h> /* needed for RGNDATA definition */
+#include <VBoxDisplay.h> /* this is from Additions/WINNT/include/ to include escape codes */
 
 #define VBOXWDDM_MEMTAG 'MDBV'
 PVOID vboxWddmMemAlloc(IN SIZE_T cbSize)
@@ -2165,11 +2167,98 @@ DxgkDdiEscape(
 
     dfprintf(("==> "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    AssertBreakpoint();
+    NTSTATUS Status = STATUS_NOT_SUPPORTED;
+    PDEVICE_EXTENSION pDevExt = (PDEVICE_EXTENSION)hAdapter;
+    if (pEscape->PrivateDriverDataSize >= sizeof (VBOXDISPIFESCAPE))
+    {
+        PVBOXDISPIFESCAPE pEscapeHdr = (PVBOXDISPIFESCAPE)pEscape->pPrivateDriverData;
+        switch (pEscapeHdr->escapeCode)
+        {
+            case VBOXESC_SETVISIBLEREGION:
+            {
+                LPRGNDATA lpRgnData = VBOXDISPIFESCAPE_DATA(pEscapeHdr, RGNDATA);
+                uint32_t cbData = VBOXDISPIFESCAPE_DATA_SIZE(pEscape->PrivateDriverDataSize);
+                uint32_t cbRects = cbData - RT_OFFSETOF(RGNDATA, Buffer);
+                /* the lpRgnData->Buffer comes to us as RECT
+                 * to avoid extra memcpy we cast it to PRTRECT assuming
+                 * they are identical */
+                AssertCompile(sizeof(RECT) == sizeof(RTRECT));
+                AssertCompile(RT_OFFSETOF(RECT, left) == RT_OFFSETOF(RTRECT, xLeft));
+                AssertCompile(RT_OFFSETOF(RECT, bottom) == RT_OFFSETOF(RTRECT, yBottom));
+                AssertCompile(RT_OFFSETOF(RECT, right) == RT_OFFSETOF(RTRECT, xRight));
+                AssertCompile(RT_OFFSETOF(RECT, top) == RT_OFFSETOF(RTRECT, yTop));
+                RTRECT   *pRect = (RTRECT *)&lpRgnData->Buffer;
+
+                uint32_t cRects = cbRects/sizeof(RTRECT);
+                int      rc;
+
+                dprintf(("IOCTL_VIDEO_VBOX_SETVISIBLEREGION cRects=%d\n", cRects));
+                Assert(cbRects >= sizeof(RTRECT)
+                    &&  cbRects == cRects*sizeof(RTRECT)
+                    &&  cRects == lpRgnData->rdh.nCount);
+                if (    cbRects >= sizeof(RTRECT)
+                    &&  cbRects == cRects*sizeof(RTRECT)
+                    &&  cRects == lpRgnData->rdh.nCount)
+                {
+                    /*
+                     * Inform the host about the visible region
+                     */
+                    VMMDevVideoSetVisibleRegion *req = NULL;
+
+                    rc = VbglGRAlloc ((VMMDevRequestHeader **)&req,
+                                      sizeof (VMMDevVideoSetVisibleRegion) + (cRects-1)*sizeof(RTRECT),
+                                      VMMDevReq_VideoSetVisibleRegion);
+                    AssertRC(rc);
+                    if (RT_SUCCESS(rc))
+                    {
+                        req->cRect = cRects;
+                        memcpy(&req->Rect, pRect, cRects*sizeof(RTRECT));
+
+                        rc = VbglGRPerform (&req->header);
+                        AssertRC(rc);
+                        if (!RT_SUCCESS(rc))
+                        {
+                            drprintf((__FUNCTION__": VbglGRPerform failed rc (%d)", rc));
+                            Status = STATUS_UNSUCCESSFUL;
+                        }
+                    }
+                    else
+                    {
+                        drprintf((__FUNCTION__": VbglGRAlloc failed rc (%d)", rc));
+                        Status = STATUS_UNSUCCESSFUL;
+                    }
+                }
+                else
+                {
+                    drprintf((__FUNCTION__": VBOXESC_SETVISIBLEREGION: incorrect buffer size (%d), reported count (%d)\n", cbRects, lpRgnData->rdh.nCount));
+                    AssertBreakpoint();
+                    Status = STATUS_INVALID_PARAMETER;
+                }
+                break;
+            }
+            case VBOXESC_ISVRDPACTIVE:
+                /* @todo: implement */
+                Status = STATUS_SUCCESS;
+                break;
+            case VBOXESC_REINITVIDEOMODES:
+                VBoxWddmInvalidateModesTable(pDevExt);
+                Status = STATUS_SUCCESS;
+                break;
+            default:
+                drprintf((__FUNCTION__": unsupported escape code (0x%x)\n", pEscapeHdr->escapeCode));
+                break;
+        }
+    }
+    else
+    {
+        drprintf((__FUNCTION__": pEscape->PrivateDriverDataSize(%d) < (%d)\n", pEscape->PrivateDriverDataSize, sizeof (VBOXDISPIFESCAPE)));
+        Status = STATUS_INVALID_PARAMETER;
+        AssertBreakpoint();
+    }
 
     dfprintf(("<== "__FUNCTION__ ", hAdapter(0x%x)\n", hAdapter));
 
-    return STATUS_INVALID_PARAMETER;
+    return Status;
 }
 
 NTSTATUS

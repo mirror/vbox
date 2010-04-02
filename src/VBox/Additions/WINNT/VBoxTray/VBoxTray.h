@@ -35,6 +35,10 @@
 #include <VBox/Log.h>
 #include <VBox/VBoxGuest.h> /** @todo use the VbglR3 interface! */
 #include <VBox/VBoxGuestLib.h>
+#include <VBoxDisplay.h>
+#ifdef VBOXWDDM
+# include <d3dkmthk.h>
+#endif
 
 #define WM_VBOX_RESTORED                WM_APP + 1
 #define WM_VBOX_CHECK_VRDP              WM_APP + 2
@@ -43,6 +47,52 @@
 
 #define ID_TRAYICON                     2000
 
+typedef enum
+{
+    VBOXDISPIF_MODE_UNKNOWN = 0,
+    VBOXDISPIF_MODE_XPDM    = 1
+#ifdef VBOXWDDM
+    , VBOXDISPIF_MODE_WDDM  = 2
+#endif
+} VBOXDISPIF_MODE;
+/* display driver interface abstraction for XPDM & WDDM
+ * with WDDM we can not use ExtEscape to communicate with our driver
+ * because we do not have XPDM display driver any more, i.e. escape requests are handled by cdd
+ * that knows nothing about us
+ * NOTE: DispIf makes no checks whether the display driver is actually a VBox driver,
+ * it just switches between using different backend OS API based on the VBoxDispIfSwitchMode call
+ * It's caller's responsibility to initiate it to work in the correct mode */
+typedef struct VBOXDISPIF
+{
+    VBOXDISPIF_MODE enmMode;
+#ifdef VBOXWDDM
+    /* with WDDM the approach is to call into WDDM miniport driver via PFND3DKMT API provided by the GDI,
+     * The PFND3DKMT is supposed to be used by the OpenGL ICD according to MSDN, so this approach is a bit hacky */
+    /* open adapter */
+    union
+    {
+        struct
+        {
+        PFND3DKMT_OPENADAPTERFROMHDC pfnD3DKMTOpenAdapterFromHdc;
+        PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME pfnD3DKMTOpenAdapterFromGdiDisplayName;
+        /* close adapter */
+        PFND3DKMT_CLOSEADAPTER pfnD3DKMTCloseAdapter;
+        /* escape */
+        PFND3DKMT_ESCAPE pfnD3DKMTEscape;
+        } wddm;
+    } modeData;
+#endif
+} VBOXDISPIF, *PVBOXDISPIF;
+typedef const struct VBOXDISPIF *PCVBOXDISPIF;
+
+/* initializes the DispIf
+ * Initially the DispIf is configured to work in XPDM mode
+ * call VBoxDispIfSwitchMode to switch the mode to WDDM */
+DWORD VBoxDispIfInit(PVBOXDISPIF pIf);
+DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_MODE *penmOldMode);
+DECLINLINE(VBOXDISPIF_MODE) VBoxDispGetMode(PVBOXDISPIF pIf) { return pIf->enmMode; }
+DWORD VBoxDispIfTerm(PVBOXDISPIF pIf);
+DWORD VBoxDispIfEscape(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, int cbData);
 
 /* The environment information for services. */
 typedef struct _VBOXSERVICEENV
@@ -50,6 +100,8 @@ typedef struct _VBOXSERVICEENV
     HINSTANCE hInstance;
     HANDLE    hDriver;
     HANDLE    hStopEvent;
+    /* display driver interface, XPDM - WDDM abstraction see VBOXDISPIF** definitions above */
+    VBOXDISPIF dispIf;
 } VBOXSERVICEENV;
 
 /* The service initialization info and runtime variables. */

@@ -586,6 +586,8 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
         VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
         D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions);
 
+VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension);
+
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 

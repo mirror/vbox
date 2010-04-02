@@ -38,10 +38,33 @@ typedef struct _VBOXDISPLAYCONTEXT
 
     /* EnumDisplayDevices does not exist in NT. isVBoxDisplayDriverActive et al. are using these functions. */
     BOOL (WINAPI * pfnEnumDisplayDevices)(IN LPCSTR lpDevice, IN DWORD iDevNum, OUT PDISPLAY_DEVICEA lpDisplayDevice, IN DWORD dwFlags);
-
 } VBOXDISPLAYCONTEXT;
 
 static VBOXDISPLAYCONTEXT gCtx = {0};
+
+#ifdef VBOXWDDM
+static bool vboxWddmReinitVideoModes(VBOXDISPLAYCONTEXT *pCtx)
+{
+    VBOXDISPIFESCAPE escape = {0};
+    escape.escapeCode = VBOXESC_REINITVIDEOMODES;
+    DWORD err = VBoxDispIfEscape(&pCtx->pEnv->dispIf, &escape, 0);
+    if (err != NO_ERROR)
+    {
+        Log((__FUNCTION__": VBoxDispIfEscape failed with err (%d)\n", err));
+        return false;
+    }
+    return true;
+}
+
+typedef enum
+{
+    VBOXDISPLAY_DRIVER_TYPE_UNKNOWN = 0,
+    VBOXDISPLAY_DRIVER_TYPE_XPDM    = 1,
+    VBOXDISPLAY_DRIVER_TYPE_WDDM    = 2
+} VBOXDISPLAY_DRIVER_TYPE;
+
+static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCtx);
+#endif
 
 int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStartThread)
 {
@@ -65,6 +88,25 @@ int VBoxDisplayInit(const VBOXSERVICEENV *pEnv, void **ppInstance, bool *pfStart
 
         *(uintptr_t *)&gCtx.pfnEnumDisplayDevices = (uintptr_t)GetProcAddress(hUser, "EnumDisplayDevicesA");
         Log(("VBoxTray: pfnEnumDisplayDevices = %p\n", gCtx.pfnEnumDisplayDevices));
+
+#ifdef VBOXWDDM
+        if (OSinfo.dwMajorVersion >= 6)
+        {
+            /* this is vista and up, check if we need to switch the display driver if to WDDM mode */
+            Log(("VBoxTray: this is vista and up\n"));
+            VBOXDISPLAY_DRIVER_TYPE enmType = getVBoxDisplayDriverType (&gCtx);
+            if (enmType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
+            {
+                Log(("VBoxTray: WDDM driver is installed, switching display driver if to WDDM mode\n"));
+                /* this is hacky, but the most easiest way */
+                DWORD err = VBoxDispIfSwitchMode(const_cast<PVBOXDISPIF>(&pEnv->dispIf), VBOXDISPIF_MODE_WDDM, NULL /* old mode, we don't care about it */);
+                if (err == NO_ERROR)
+                    Log(("VBoxTray: DispIf switched to WDDM mode successfully\n"));
+                else
+                    Log(("VBoxTray: failed to switch DispIf to WDDM mode, err (%d)\n", err));
+            }
+        }
+#endif
     }
     else if (OSinfo.dwMajorVersion <= 4)            /* Windows NT 4.0 */
     {
@@ -88,9 +130,17 @@ void VBoxDisplayDestroy (const VBOXSERVICEENV *pEnv, void *pInstance)
     return;
 }
 
+#ifdef VBOXWDDM
+static VBOXDISPLAY_DRIVER_TYPE getVBoxDisplayDriverType (VBOXDISPLAYCONTEXT *pCtx)
+#else
 static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
+#endif
 {
+#ifdef VBOXWDDM
+    VBOXDISPLAY_DRIVER_TYPE enmType = VBOXDISPLAY_DRIVER_TYPE_UNKNOWN;
+#else
     bool result = false;
+#endif
 
     if( pCtx->pfnEnumDisplayDevices )
     {
@@ -119,10 +169,12 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
                 Log(("Primary device.\n"));
 
                 if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter") == 0)
+#ifndef VBOXWDDM
                     result = true;
-#ifdef VBOXWDDM
-                if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter (Microsoft Corporation - WDDM)") == 0)
-                    result = true;
+#else
+                    enmType = VBOXDISPLAY_DRIVER_TYPE_XPDM;
+                else if (strcmp(&dispDevice.DeviceString[0], "VirtualBox Graphics Adapter (Microsoft Corporation - WDDM)") == 0)
+                    enmType = VBOXDISPLAY_DRIVER_TYPE_WDDM;
 #endif
                 break;
             }
@@ -145,14 +197,27 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 
         /* Check for the short name, because all long stuff would be truncated */
         if (strcmp((char*)&tempDevMode.dmDeviceName[0], "VBoxDisp") == 0)
+#ifndef VBOXWDDM
             result = true;
+#else
+            enmType = VBOXDISPLAY_DRIVER_TYPE_XPDM;
+#endif
     }
 
+#ifndef VBOXWDDM
     return result;
+#else
+    return enmType;
+#endif
 }
 
 /* Returns TRUE to try again. */
-static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
+static BOOL ResizeDisplayDevice(
+#ifdef VBOXWDDM
+        VBOXDISPLAYCONTEXT *pCtx, VBOXDISPLAY_DRIVER_TYPE enmType,
+#endif
+        ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel
+        )
 {
     BOOL fModeReset = (Width == 0 && Height == 0 && BitsPerPixel == 0);
 
@@ -334,6 +399,11 @@ static BOOL ResizeDisplayDevice(ULONG Id, DWORD Width, DWORD Height, DWORD BitsP
         Log(("ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
     }
 
+#ifdef VBOXWDDM
+    if (enmType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
+        vboxWddmReinitVideoModes(pCtx);
+#endif
+
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
     {
@@ -471,7 +541,16 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                         /*
                          * Only try to change video mode if the active display driver is VBox additions.
                          */
+#ifdef VBOXWDDM
+                        VBOXDISPLAY_DRIVER_TYPE enmDriverType = getVBoxDisplayDriverType (pCtx);
+
+                        if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
+                            Log(("VBoxDisplayThread : Detected WDDM Driver\n"));
+
+                        if (enmDriverType != VBOXDISPLAY_DRIVER_TYPE_UNKNOWN)
+#else
                         if (isVBoxDisplayDriverActive (pCtx))
+#endif
                         {
                             Log(("VBoxDisplayThread : Display driver is active!\n"));
 
@@ -480,10 +559,15 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                                 Log(("VBoxDisplayThread : Detected W2K or later.\n"));
 
                                 /* W2K or later. */
-                                if (!ResizeDisplayDevice(displayChangeRequest.display,
+                                if (!ResizeDisplayDevice(
+#ifdef VBOXWDDM
+                                                         pCtx, enmDriverType ,
+#endif
+                                                         displayChangeRequest.display,
                                                          displayChangeRequest.xres,
                                                          displayChangeRequest.yres,
-                                                         displayChangeRequest.bpp))
+                                                         displayChangeRequest.bpp
+                                                         ))
                                 {
                                     break;
                                 }
