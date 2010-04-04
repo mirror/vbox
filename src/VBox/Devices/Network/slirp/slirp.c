@@ -703,7 +703,7 @@ void slirp_link_down(PNATState pData)
 void slirp_term(PNATState pData)
 {
     if (pData == NULL)
-        return; 
+        return;
 #ifdef RT_OS_WINDOWS
     pData->pfIcmpCloseHandle(pData->icmp_socket.sh);
     FreeLibrary(pData->hmIcmpLibrary);

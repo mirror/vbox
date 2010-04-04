@@ -3003,7 +3003,7 @@ ResumeExecution:
                     /* Resync DR6 if the debug state is active. */
                     if (CPUMIsGuestDebugStateActive(pVCpu))
                         ASMSetDR6(pCtx->dr[6]);
-                        
+
                     /* X86_DR7_GD will be cleared if drx accesses should be trapped inside the guest. */
                     pCtx->dr[7] &= ~X86_DR7_GD;
 
@@ -3380,7 +3380,7 @@ ResumeExecution:
         {
             errCode |= X86_TRAP_PF_P;
         }
-        else 
+        else
         {
             /* Shortcut for APIC TPR reads and writes. */
             if (    (GCPhys & 0xfff) == 0x080

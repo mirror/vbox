@@ -867,7 +867,7 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
     {
         if (fDisplayChangeRequest && iCustomMode == display)
         {
-            /* Do not keep info for this display, which received a video mode hint, to make sure that 
+            /* Do not keep info for this display, which received a video mode hint, to make sure that
              * the new mode will be taken from the alternating index entries actually.
              */
             memcpy(&VideoModes[gNumVideoModes], &VideoModes[3], sizeof(VIDEO_MODE_INFORMATION));

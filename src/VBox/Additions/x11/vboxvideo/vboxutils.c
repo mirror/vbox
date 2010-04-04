@@ -1102,7 +1102,7 @@ struct
     /** mode width */
     uint32_t cx;
     /** mode height */
-    uint32_t cy;    
+    uint32_t cy;
 } vboxStandardModes[] =
 {
     { 1600, 1200 },
@@ -1243,7 +1243,7 @@ static DisplayModePtr vboxMoveModeToFront(ScrnInfoPtr pScrn,
 /**
  * Rewrites the first dynamic mode found which is not the current screen mode
  * to contain the host's currently preferred screen size, then moves that
- * mode to the front of the screen information structure's mode list. 
+ * mode to the front of the screen information structure's mode list.
  * Additionally, if the current mode is not dynamic, the second dynamic mode
  * will be set to match the current mode and also added to the front.  This
  * ensures that the user can always reset the current size to kick the driver

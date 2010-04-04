@@ -111,18 +111,18 @@ static int handleExecProgram(HandlerArg *a)
             if (i + 1 >= a->argc)
                 usageOK = false;
             else
-            {                
+            {
                 char **papszArg;
                 int cArgs;
 
                 rc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
                 if (RT_SUCCESS(rc))
                 {
-                    for (int a = 0; a < cArgs; a++)                       
+                    for (int a = 0; a < cArgs; a++)
                         env.push_back(Bstr(papszArg[a]));
 
                     RTGetOptArgvFree(papszArg);
-                }                
+                }
                 ++i;
             }
         }
@@ -167,7 +167,7 @@ static int handleExecProgram(HandlerArg *a)
         /** @todo Add fancy piping stuff here. */
         else
         {
-            return errorSyntax(USAGE_GUESTCONTROL, 
+            return errorSyntax(USAGE_GUESTCONTROL,
                                "Invalid parameter '%s'", Utf8Str(a->argv[i]).raw());
         }
     }
@@ -179,7 +179,7 @@ static int handleExecProgram(HandlerArg *a)
     if (   !Utf8Password.isEmpty()
         &&  Utf8UserName.isEmpty())
     {
-        return errorSyntax(USAGE_GUESTCONTROL, 
+        return errorSyntax(USAGE_GUESTCONTROL,
                            "No user name for password specified!");
     }
 
@@ -198,24 +198,24 @@ static int handleExecProgram(HandlerArg *a)
         {
             Bstr uuid;
             machine->COMGETTER(Id)(uuid.asOutParam());
-    
+
             /* open an existing session for VM - so the VM has to be running */
             CHECK_ERROR_BREAK(a->virtualBox, OpenExistingSession(a->session, uuid));
-    
+
             /* get the mutable session machine */
             a->session->COMGETTER(Machine)(machine.asOutParam());
-    
+
             /* get the associated console */
             ComPtr<IConsole> console;
             CHECK_ERROR_BREAK(a->session, COMGETTER(Console)(console.asOutParam()));
-    
+
             ComPtr<IGuest> guest;
             CHECK_ERROR_BREAK(console, COMGETTER(Guest)(guest.asOutParam()));
 
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
-            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags, 
-                                                    Bstr(Utf8Args), ComSafeArrayAsInParam(env), 
+            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags,
+                                                    Bstr(Utf8Args), ComSafeArrayAsInParam(env),
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));

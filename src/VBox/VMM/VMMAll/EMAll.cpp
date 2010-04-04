@@ -2765,7 +2765,7 @@ VMMDECL(int) EMInterpretMWait(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     if (!(u32ExtFeatures & X86_CPUID_FEATURE_ECX_MONITOR))
         return VERR_EM_INTERPRETER; /* not supported */
 
-    /* 
+    /*
      * CPUID.05H.ECX[0] defines support for power management extensions (eax)
      * CPUID.05H.ECX[1] defines support for interrupts as break events for mwait even when IF=0
      */

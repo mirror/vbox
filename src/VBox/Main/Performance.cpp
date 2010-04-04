@@ -167,7 +167,7 @@ int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
     if (    mGuest
         &&  iTick != mLastTick)
     {
-        mGuest->InternalGetStatistics(0, &mCpuUser, &mCpuKernel, &mCpuIdle, 
+        mGuest->InternalGetStatistics(0, &mCpuUser, &mCpuKernel, &mCpuIdle,
                                       &mMemTotal, &mMemFree, &mMemBalloon, &mMemCache,
                                       &mPageTotal, &mPageFree);
         mLastTick = iTick;

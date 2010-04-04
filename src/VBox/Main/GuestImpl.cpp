@@ -228,7 +228,7 @@ STDMETHODIMP Guest::COMGETTER(StatisticsUpdateInterval)(ULONG *aUpdateInterval)
 
     AutoCaller autoCaller(this);
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
- 
+
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     *aUpdateInterval = mStatUpdateInterval;
@@ -251,7 +251,7 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
     return S_OK;
 }
 
-STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle, 
+STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                           ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
                                           ULONG *aPageTotal, ULONG *aPageFree)
 {
@@ -386,7 +386,7 @@ int Guest::prepareExecuteEnv(const char *pszEnv, void **ppvList, uint32_t *pcbLi
     if (*ppvList)
     {
         uint32_t cbNewLen = *pcbList + cbLen + 1; /* Include zero termination. */
-        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);        
+        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);
         if (NULL == pvTmp)
         {
             rc = VERR_NO_MEMORY;
@@ -444,23 +444,23 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
         if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
         AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-       
+
         /* Just be on the safe side when calling another process. */
         alock.leave();
-     
+
         HRESULT rc = E_UNEXPECTED;
         using namespace guestControl;
-    
-        int vrc = VINF_SUCCESS; 
+
+        int vrc = VINF_SUCCESS;
         Utf8Str Utf8Command(aCommand);
 
-        /* Prepare arguments. */        
+        /* Prepare arguments. */
         void *pvArgs;
         uint32_t uNumArgs;
         uint32_t cbArgs;
 
         const char *pszCurArg = Utf8Str(aArguments).raw();
-        vrc = prepareExecuteArgs(pszCurArg, 
+        vrc = prepareExecuteArgs(pszCurArg,
                                  &pvArgs, &cbArgs, &uNumArgs);
         if (RT_SUCCESS(vrc))
         {
@@ -486,7 +486,7 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                 Utf8Str Utf8StdErr(aStdErr);
                 Utf8Str Utf8UserName(aUserName);
                 Utf8Str Utf8Password(aPassword);
-            
+
                 VBOXHGCMSVCPARM paParms[13];
                 int i = 0;
                 paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
@@ -528,7 +528,7 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
         rc = E_OUTOFMEMORY;
     };
 
-    return rc;    
+    return rc;
 #endif /* VBOX_WITH_GUEST_CONTROL */
 }
 

@@ -2658,7 +2658,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
                 bool fValid = true;
                 switch(proto)
                 {
-                    case NATProtocol_UDP: 
+                    case NATProtocol_UDP:
                         strProto = "UDP";
                     break;
                     case NATProtocol_TCP:

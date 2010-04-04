@@ -48,7 +48,7 @@ NetworkAdapter::~NetworkAdapter()
 
 HRESULT NetworkAdapter::FinalConstruct()
 {
-    
+
     return S_OK;
 }
 
@@ -1182,8 +1182,8 @@ HRESULT NetworkAdapter::saveSettings(settings::NetworkAdapter &data)
  * Returns true if any setter method has modified settings of this instance.
  * @return
  */
-bool NetworkAdapter::isModified() { 
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+bool NetworkAdapter::isModified() {
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     bool fChanged = m_fModified;
     fChanged |= (mData->mAdapterType == NetworkAttachmentType_NAT? mNATEngine->isModified() : false);
     return fChanged;

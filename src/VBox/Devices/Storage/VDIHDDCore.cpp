@@ -2202,7 +2202,7 @@ static int vdiCompact(void *pBackendData, unsigned uPercentStart,
             {
                 rc = pCbProgress->pfnProgress(pIfProgress->pvUser,
                                               (uint64_t)(cBlocks + cBlocksMoved) * uPercentSpan / (cBlocks + cBlocksToMove) + uPercentStart);
-                                             
+
                 if (RT_FAILURE(rc))
                     break;
             }

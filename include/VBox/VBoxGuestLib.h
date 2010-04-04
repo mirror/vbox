@@ -514,9 +514,9 @@ VBGLR3DECL(int)     VbglR3GuestCtrlConnect(uint32_t *pu32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlDisconnect(uint32_t u32ClientId);
 VBGLR3DECL(int)     VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms);
 VBGLR3DECL(int)     VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNumParms,
-                                                  char    *pszCmd,      uint32_t cbCmd, 
+                                                  char    *pszCmd,      uint32_t cbCmd,
                                                   uint32_t *puFlags,
-                                                  char *pszArgs,        uint32_t cbArgs,  uint32_t *puNumArgs, 
+                                                  char *pszArgs,        uint32_t cbArgs,  uint32_t *puNumArgs,
                                                   char *pszEnv,         uint32_t *pcbEnv, uint32_t *puNumEnvVars,
                                                   char *pszStdIn,       uint32_t cbStdIn,
                                                   char *pszStdOut,      uint32_t cbStdOut,

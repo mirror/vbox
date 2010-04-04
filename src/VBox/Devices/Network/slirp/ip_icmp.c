@@ -187,15 +187,15 @@ icmp_find_original_mbuf(PNATState pData, struct ip *ip)
                     continue;
                 }
                 icp0 = (struct icmp *)((char *)ip0 + (ip0->ip_hl << 2));
-                /* 
-                 * IP could pointer to ICMP_REPLY datagram (1) 
-                 * or pointer IP header in ICMP payload in case of 
+                /*
+                 * IP could pointer to ICMP_REPLY datagram (1)
+                 * or pointer IP header in ICMP payload in case of
                  * ICMP_TIMXCEED or ICMP_UNREACH (2)
-                 * 
+                 *
                  * if (1) and then ICMP (type should be ICMP_ECHOREPLY) and we need check that
                  * IP.IP_SRC == IP0.IP_DST received datagramm comes from destination.
                  *
-                 * if (2) then check that payload ICMP has got type ICMP_ECHO and 
+                 * if (2) then check that payload ICMP has got type ICMP_ECHO and
                  * IP.IP_DST == IP0.IP_DST destination of returned datagram is the same as
                  * one was sent.
                  */
@@ -424,7 +424,7 @@ freeit:
                     }
                     else
                         slirp_arm_fast_timer(pData->pvUser);
-                        
+
                 }
                 else
                 {

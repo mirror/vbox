@@ -329,7 +329,7 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
 
 static DECLCALLBACK(int) drvvdAsyncIOOpen(void *pvUser, const char *pszLocation,
                                           unsigned uOpenFlags,
-                                          PFNVDCOMPLETED pfnCompleted, 
+                                          PFNVDCOMPLETED pfnCompleted,
                                           PVDINTERFACE pVDIfsDisk,
                                           void **ppStorage)
 {

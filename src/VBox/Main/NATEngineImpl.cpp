@@ -107,7 +107,7 @@ HRESULT NATEngine::initCopy (Machine *aParent, NATEngine *aThat)
 
 void NATEngine::FinalRelease()
 {
-    uninit();    
+    uninit();
 }
 
 void NATEngine::uninit()
@@ -124,9 +124,9 @@ void NATEngine::uninit()
 
 bool NATEngine::isModified()
 {
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     bool fModified = m_fModified;
-    return fModified; 
+    return fModified;
 }
 
 bool NATEngine::rollback()
@@ -176,7 +176,7 @@ void NATEngine::commit()
     m_fModified = false;
 }
 
-STDMETHODIMP 
+STDMETHODIMP
 NATEngine::GetNetworkSettings(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULONG *aTcpWndSnd, ULONG *aTcpWndRcv)
 {
     AutoCaller autoCaller(this);
@@ -197,7 +197,7 @@ NATEngine::GetNetworkSettings(ULONG *aMtu, ULONG *aSockSnd, ULONG *aSockRcv, ULO
     return S_OK;
 }
 
-STDMETHODIMP 
+STDMETHODIMP
 NATEngine::SetNetworkSettings(ULONG aMtu, ULONG aSockSnd, ULONG aSockRcv, ULONG aTcpWndSnd, ULONG aTcpWndRcv)
 {
     AutoCaller autoCaller(this);
@@ -244,7 +244,7 @@ NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
          it != mNATRules.end(); ++it, ++i)
     {
         settings::NATRule r = it->second;
-        Utf8Str utf = Utf8StrFmt("%s,%d,%s,%d,%s,%d", r.strName.raw(), r.u32Proto, 
+        Utf8Str utf = Utf8StrFmt("%s,%d,%s,%d,%s,%d", r.strName.raw(), r.u32Proto,
                         r.strHostIP.raw(), r.u16HostPort, r.strGuestIP.raw(), r.u16GuestPort);
         utf.cloneTo(&sf[i]);
     }
@@ -253,7 +253,7 @@ NATEngine::COMGETTER(Redirects) (ComSafeArrayOut (BSTR , aNatRules))
 }
 
 
-STDMETHODIMP 
+STDMETHODIMP
 NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USHORT aHostPort, IN_BSTR aGuestIP, USHORT aGuestPort)
 {
 
@@ -261,7 +261,7 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     if (FAILED(autoCaller.rc())) return autoCaller.rc();
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
-    Utf8Str name = aName; 
+    Utf8Str name = aName;
     settings::NATRule r;
     if (name.isEmpty())
     {
@@ -291,7 +291,7 @@ NATEngine::AddRedirect(IN_BSTR aName, NATProtocol_T aProto, IN_BSTR aBindIp, USH
     return S_OK;
 }
 
-STDMETHODIMP 
+STDMETHODIMP
 NATEngine::RemoveRedirect(IN_BSTR aName)
 {
     AutoCaller autoCaller(this);
@@ -299,7 +299,7 @@ NATEngine::RemoveRedirect(IN_BSTR aName)
 
     AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     Utf8Str rule;
-    NATRuleMap::iterator it = mNATRules.find(aName); 
+    NATRuleMap::iterator it = mNATRules.find(aName);
     if (it == mNATRules.end())
         return E_INVALIDARG;
     mData.backup();
@@ -332,7 +332,7 @@ HRESULT NATEngine::loadSettings(const settings::NAT &data)
     mData->mDnsUseHostResolver = data.fDnsUseHostResolver;
     /* port forwarding */
     mNATRules.clear();
-    for (settings::NATRuleList::const_iterator it = data.llRules.begin(); 
+    for (settings::NATRuleList::const_iterator it = data.llRules.begin();
         it != data.llRules.end(); ++it)
     {
         mNATRules.insert(std::make_pair(it->strName, *it));
@@ -365,7 +365,7 @@ HRESULT NATEngine::saveSettings(settings::NAT &data)
     data.fDnsProxy = mData->mDnsProxy;
     data.fDnsUseHostResolver = mData->mDnsUseHostResolver;
 
-    for (NATRuleMap::iterator it = mNATRules.begin(); 
+    for (NATRuleMap::iterator it = mNATRules.begin();
         it != mNATRules.end(); ++it)
         data.llRules.push_back(it->second);
     m_fModified = false;
@@ -378,7 +378,7 @@ NATEngine::COMSETTER(Network)(IN_BSTR aNetwork)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (Bstr(mData->mNetwork) != aNetwork)
     {
         mData.backup();
@@ -405,12 +405,12 @@ NATEngine::COMGETTER(Network)(BSTR *aNetwork)
     return S_OK;
 }
 
-STDMETHODIMP 
+STDMETHODIMP
 NATEngine::COMSETTER(HostIP) (IN_BSTR aBindIP)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (Bstr(mData->mBindIP) != aBindIP)
     {
         mData.backup();
@@ -437,7 +437,7 @@ NATEngine::COMSETTER(TftpPrefix)(IN_BSTR aTftpPrefix)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (Bstr(mData->mTftpPrefix) != aTftpPrefix)
     {
         mData.backup();
@@ -468,7 +468,7 @@ NATEngine::COMSETTER(TftpBootFile)(IN_BSTR aTftpBootFile)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (Bstr(mData->mTftpBootFile) != aTftpBootFile)
     {
         mData.backup();
@@ -499,7 +499,7 @@ NATEngine::COMSETTER(TftpNextServer)(IN_BSTR aTftpNextServer)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     if (Bstr(mData->mTftpNextServer) != aTftpNextServer)
     {
         mData.backup();
@@ -530,8 +530,8 @@ NATEngine::COMSETTER(DnsPassDomain) (BOOL aDnsPassDomain)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
-    
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
+
     if (mData->mDnsPassDomain != aDnsPassDomain)
     {
         mData.backup();
@@ -556,7 +556,7 @@ NATEngine::COMSETTER(DnsProxy)(BOOL aDnsProxy)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
 
     if (mData->mDnsProxy != aDnsProxy)
     {
@@ -582,7 +582,7 @@ NATEngine::COMGETTER(DnsUseHostResolver)(BOOL *aDnsUseHostResolver)
 {
     AutoCaller autoCaller(this);
     AssertComRCReturnRC (autoCaller.rc());
-    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS); 
+    AutoWriteLock alock(this COMMA_LOCKVAL_SRC_POS);
     *aDnsUseHostResolver = mData->mDnsUseHostResolver;
     return S_OK;
 }

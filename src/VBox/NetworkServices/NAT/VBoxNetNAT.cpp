@@ -374,10 +374,10 @@ static void IntNetSendWorker(bool urg, const void *pvFrame, size_t cbFrame, stru
 
     if (!urg)
     {
-        while (ASMAtomicReadU32(&g_pNAT->cUrgPkt) != 0 
+        while (ASMAtomicReadU32(&g_pNAT->cUrgPkt) != 0
                || ASMAtomicReadU32(&g_pNAT->cPkt) == 0)
             rc = RTSemEventWait(g_pNAT->m_EventSend, RT_INDEFINITE_WAIT);
-    } 
+    }
     else
     {
         while (ASMAtomicReadU32(&g_pNAT->cUrgPkt) == 0)
@@ -393,7 +393,7 @@ static void IntNetSendWorker(bool urg, const void *pvFrame, size_t cbFrame, stru
         rc = SUPR3CallVMMR0Ex(NIL_RTR0PTR, NIL_VMCPUID, VMMR0_DO_INTNET_IF_SEND, 0, &SendReq.Hdr);
 
         rc = INTNETRingWriteFrame(&pThis->m_pIfBuf->Send, pvFrame, cbFrame);
-        
+
     }
     if (RT_SUCCESS(rc))
     {

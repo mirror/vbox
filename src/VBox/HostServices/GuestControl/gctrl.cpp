@@ -117,7 +117,7 @@ int gctrlAddToExecEnvv(char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t
     if (*ppvList)
     {
         uint32_t cbNewLen = *pcbList + cbLen + 1; /* Include zero termination. */
-        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);        
+        char *pvTmp = (char*)RTMemRealloc(*ppvList, cbNewLen);
         if (NULL == pvTmp)
         {
             rc = VERR_NO_MEMORY;
@@ -150,7 +150,7 @@ int gctrlAddToExecEnvv(char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t
 
 /*
 int gctrlAllocateExecBlock(PVBOXGUESTCTRLEXECBLOCK *ppBlock,
-                           const char *pszCmd, uint32_t fFlags, 
+                           const char *pszCmd, uint32_t fFlags,
                            uint32_t cArgs,    const char * const *papszArgs,
                            uint32_t cEnvVars, const char * const *papszEnv,
                            const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,
@@ -160,8 +160,8 @@ int gctrlAllocateExecBlock(PVBOXGUESTCTRLEXECBLOCK *ppBlock,
     int rc;
     if (pNewBlock)
     {
-        
-    
+
+
         *ppBlock = pNewBlock;
         rc = VINF_SUCCESS;
     }
@@ -195,7 +195,7 @@ int gctrlPrepareHostCmdExec(PVBOXHGCMSVCPARM *ppaParms, uint32_t *pcParms,
     AssertPtr(ppaParms);
     AssertPtr(pBlock);
 
-    PVBOXHGCMSVCPARM pNewParms = 
+    PVBOXHGCMSVCPARM pNewParms =
         (VBOXHGCMSVCPARM*)RTMemAlloc(sizeof(VBOXHGCMSVCPARM) * 13);
 
     int rc;
@@ -225,9 +225,9 @@ int gctrlPrepareHostCmdExec(PVBOXHGCMSVCPARM *ppaParms, uint32_t *pcParms,
         *pcParms = 13;
 
     return rc;
-}     
-            
-             
+}
+
+
 void gctrlFreeHostCmd(PVBOXHGCMSVCPARM paParms)
 {
     RTMemFree(paParms);
