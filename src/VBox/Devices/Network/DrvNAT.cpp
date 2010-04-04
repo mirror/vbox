@@ -416,9 +416,11 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
-static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf)
+static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
+                                                  PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
+AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
@@ -505,7 +507,7 @@ static DECLCALLBACK(int) drvNATNetworkUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 static DECLCALLBACK(int) drvNATNetworkUp_SendDeprecated(PPDMINETWORKUP pInterface, const void *pvBuf, size_t cb)
 {
     PPDMSCATTERGATHER pSgBuf;
-    int rc = drvNATNetworkUp_AllocBuf(pInterface, cb, &pSgBuf);
+    int rc = drvNATNetworkUp_AllocBuf(pInterface, cb, NULL /*pGso*/, &pSgBuf);
     if (RT_SUCCESS(rc))
     {
         memcpy(pSgBuf->aSegs[0].pvSeg, pvBuf, cb);

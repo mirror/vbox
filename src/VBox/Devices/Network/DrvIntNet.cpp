@@ -189,11 +189,13 @@ static int drvR3IntNetSetActive(PDRVINTNET pThis, bool fActive)
 /**
  * @interface_method_impl{PDMINETWORKUP,pfnAllocBuf}
  */
-static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf)
+static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_t cbMin,
+                                                PCPDMNETWORKGSO pGso,  PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     int         rc    = VINF_SUCCESS;
     Assert(cbMin < UINT32_MAX / 2);
+AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
 
     /*
      * Allocate a S/G buffer.

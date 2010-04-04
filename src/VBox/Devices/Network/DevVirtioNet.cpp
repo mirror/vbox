@@ -387,6 +387,7 @@ PDMBOTHCBDECL(void) vnetReset(void *pvState)
 }
 
 #ifdef IN_RING3
+
 /**
  * Wakeup the RX thread.
  */
