@@ -5855,13 +5855,93 @@ static int vmdkSetParentFilename(void *pvBackendData, const char *pszParentFilen
 
 static bool vmdkIsAsyncIOSupported(void *pvBackendData)
 {
-    return false;
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    bool fAsyncIOSupported = false;
+
+    if (pImage)
+    {
+        fAsyncIOSupported = true;
+        for (unsigned i = 0; i < pImage->cExtents; i++)
+        {
+            if  (    pImage->pExtents[i].enmType != VMDKETYPE_FLAT
+                 &&  pImage->pExtents[i].enmType != VMDKETYPE_ZERO)
+            {
+                fAsyncIOSupported = false;
+                break; /* Stop search */
+            }
+        }
+    }
+
+    return fAsyncIOSupported;
 }
 
 static int vmdkAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
                          PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbRead, pcbActuallyRead));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKEXTENT pExtent;
+    uint64_t uSectorExtentRel;
+    uint64_t uSectorExtentAbs;
+    int rc;
+
+    AssertPtr(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbRead % 512 == 0);
+
+    if (   uOffset + cbRead > pImage->cbSize
+        || cbRead == 0)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
+                        &pExtent, &uSectorExtentRel);
+    if (RT_FAILURE(rc))
+        goto out;
+
+    /* Check access permissions as defined in the extent descriptor. */
+    if (pExtent->enmAccess == VMDKACCESS_NOACCESS)
+    {
+        rc = VERR_VD_VMDK_INVALID_STATE;
+        goto out;
+    }
+
+    /* Clip read range to remain in this extent. */
+    cbRead = RT_MIN(cbRead, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
+
+    /* Handle the read according to the current extent type. */
+    switch (pExtent->enmType)
+    {
+        case VMDKETYPE_HOSTED_SPARSE:
+#ifdef VBOX_WITH_VMDK_ESX
+        case VMDKETYPE_ESX_SPARSE:
+#endif /* VBOX_WITH_VMDK_ESX */
+            AssertMsgFailed(("Not supported\n"));
+            break;
+        case VMDKETYPE_VMFS:
+        case VMDKETYPE_FLAT:
+            rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                 pExtent->pFile->pStorage,
+                                                                 VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                                                 pIoCtx, cbRead);
+            break;
+        case VMDKETYPE_ZERO:
+            size_t cbSet;
+
+            cbSet = pImage->pInterfaceIOCallbacks->pfnIoCtxSet(pImage->pInterfaceIO->pvUser,
+                                                               pIoCtx, 0, cbRead);
+            Assert(cbSet == cbRead);
+
+            rc = VINF_SUCCESS;
+            break;
+    }
+    if (pcbActuallyRead)
+        *pcbActuallyRead = cbRead;
+
+out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -5871,7 +5951,76 @@ static int vmdkAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
                           size_t *pcbWriteProcess, size_t *pcbPreRead,
                           size_t *pcbPostRead, unsigned fWrite)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    PVMDKIMAGE pImage = (PVMDKIMAGE)pvBackendData;
+    PVMDKEXTENT pExtent;
+    uint64_t uSectorExtentRel;
+    uint64_t uSectorExtentAbs;
+    int rc;
+
+    AssertPtr(pImage);
+    Assert(uOffset % 512 == 0);
+    Assert(cbWrite % 512 == 0);
+
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+    {
+        rc = VERR_VD_IMAGE_READ_ONLY;
+        goto out;
+    }
+
+    if (cbWrite == 0)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* No size check here, will do that later when the extent is located.
+     * There are sparse images out there which according to the spec are
+     * invalid, because the total size is not a multiple of the grain size.
+     * Also for sparse images which are stitched together in odd ways (not at
+     * grain boundaries, and with the nominal size not being a multiple of the
+     * grain size), this would prevent writing to the last grain. */
+
+    rc = vmdkFindExtent(pImage, VMDK_BYTE2SECTOR(uOffset),
+                        &pExtent, &uSectorExtentRel);
+    if (RT_FAILURE(rc))
+        goto out;
+
+    /* Check access permissions as defined in the extent descriptor. */
+    if (pExtent->enmAccess != VMDKACCESS_READWRITE)
+    {
+        rc = VERR_VD_VMDK_INVALID_STATE;
+        goto out;
+    }
+
+    /* Handle the write according to the current extent type. */
+    switch (pExtent->enmType)
+    {
+        case VMDKETYPE_HOSTED_SPARSE:
+#ifdef VBOX_WITH_VMDK_ESX
+        case VMDKETYPE_ESX_SPARSE:
+#endif /* VBOX_WITH_VMDK_ESX */
+            AssertMsgFailed(("Not supported\n"));
+            break;
+        case VMDKETYPE_VMFS:
+        case VMDKETYPE_FLAT:
+            /* Clip write range to remain in this extent. */
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                  pExtent->pFile->pStorage,
+                                                                  VMDK_SECTOR2BYTE(uSectorExtentRel),
+                                                                  pIoCtx, cbWrite);
+            break;
+        case VMDKETYPE_ZERO:
+            /* Clip write range to remain in this extent. */
+            cbWrite = RT_MIN(cbWrite, VMDK_SECTOR2BYTE(pExtent->uSectorOffset + pExtent->cNominalSectors - uSectorExtentRel));
+            break;
+    }
+    if (pcbWriteProcess)
+        *pcbWriteProcess = cbWrite;
+
+out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
