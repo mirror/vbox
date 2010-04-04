@@ -33,7 +33,7 @@ int gctrlAddToExecEnvv(char *pszEnv, void **ppvList, uint32_t *pcbList, uint32_t
 /** @todo write docs! */
 #if 0
 int gctrlAllocateExecBlock(PVBOXGUESTCTRLEXECBLOCK *ppBlock,
-                           const char *pszCmd, uint32_t fFlags, 
+                           const char *pszCmd, uint32_t fFlags,
                            uint32_t cArgs,    const char * const *papszArgs,
                            uint32_t cEnvVars, const char * const *papszEnv,
                            const char *pszStdIn, const char *pszStdOut, const char *pszStdErr,

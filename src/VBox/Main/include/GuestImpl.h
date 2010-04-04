@@ -87,9 +87,9 @@ public:
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
-    STDMETHOD(InternalGetStatistics)(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle, 
+    STDMETHOD(InternalGetStatistics)(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
-                                     ULONG *aPageTotal, ULONG *aPageFree); 
+                                     ULONG *aPageTotal, ULONG *aPageFree);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);
@@ -106,10 +106,10 @@ public:
 private:
 
 # ifdef VBOX_WITH_GUEST_CONTROL
-    int prepareExecuteArgs(const char *pszArgs, void **ppvList, 
+    int prepareExecuteArgs(const char *pszArgs, void **ppvList,
                            uint32_t *pcbList, uint32_t *pcArgs);
 
-    int prepareExecuteEnv(const char *pszEnv, void **ppvList, 
+    int prepareExecuteEnv(const char *pszEnv, void **ppvList,
                           uint32_t *pcbList, uint32_t *pcEnv);
 # endif
 

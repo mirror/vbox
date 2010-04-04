@@ -1272,7 +1272,7 @@ int handleModifyVM(HandlerArg *a)
                 char *strSockRcv;
                 char *strTcpSnd;
                 char *strTcpRcv;
-                char *strRaw = RTStrDup(ValueUnion.psz); 
+                char *strRaw = RTStrDup(ValueUnion.psz);
                 char *ch = strRaw;
                 strMtu = ch;
                 ITERATE_TO_NEXT_TERM(ch);
@@ -1312,7 +1312,7 @@ int handleModifyVM(HandlerArg *a)
                     char *strHostPort;
                     char *strGuestIp;
                     char *strGuestPort;
-                    char *strRaw = RTStrDup(ValueUnion.psz); 
+                    char *strRaw = RTStrDup(ValueUnion.psz);
                     char *ch = strRaw;
                     strName = ch;
                     ITERATE_TO_NEXT_TERM(ch);
@@ -1322,7 +1322,7 @@ int handleModifyVM(HandlerArg *a)
                     ITERATE_TO_NEXT_TERM(ch);
                     strHostPort = ch;
                     ITERATE_TO_NEXT_TERM(ch);
-                    strGuestIp = ch;                
+                    strGuestIp = ch;
                     ITERATE_TO_NEXT_TERM(ch);
                     strGuestPort = ch;
                     NATProtocol_T proto;
@@ -1336,7 +1336,7 @@ int handleModifyVM(HandlerArg *a)
                         rc = E_FAIL;
                         break;
                     }
-                    CHECK_ERROR(driver, AddRedirect(Bstr(strName), proto, Bstr(strHostIp), 
+                    CHECK_ERROR(driver, AddRedirect(Bstr(strName), proto, Bstr(strHostIp),
                             RTStrToUInt16(strHostPort), Bstr(strGuestIp), RTStrToUInt16(strGuestPort)));
                 }
                 else
@@ -1351,7 +1351,7 @@ int handleModifyVM(HandlerArg *a)
                 break;
             }
             #undef ITERATE_TO_NEXT_TERM
-            
+
             case MODIFYVM_NATTFTPPREFIX:
             {
                 ComPtr<INetworkAdapter> nic;

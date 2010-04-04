@@ -219,10 +219,10 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
     /*
      * Don't verify anything here (yet), because this function only buffers
      * the HGCM data into an internal structure and reaches it back to the guest (client)
-     * in an unmodified state. 
+     * in an unmodified state.
      */
     if (RT_SUCCESS(rc))
-    {  
+    {
         pBuf->uParmCount = cParms;
         pBuf->pParms = (VBOXHGCMSVCPARM*)RTMemAlloc(sizeof(VBOXHGCMSVCPARM) * pBuf->uParmCount);
         if (NULL == pBuf->pParms)
@@ -239,11 +239,11 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
                     case VBOX_HGCM_SVC_PARM_32BIT:
                         pBuf->pParms[i].u.uint32 = paParms[i].u.uint32;
                         break;
-    
+
                     case VBOX_HGCM_SVC_PARM_64BIT:
                         /* Not supported yet. */
                         break;
-    
+
                     case VBOX_HGCM_SVC_PARM_PTR:
                         pBuf->pParms[i].u.pointer.size = paParms[i].u.pointer.size;
                         if (pBuf->pParms[i].u.pointer.size > 0)
@@ -255,13 +255,13 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
                                 break;
                             }
                             else
-                                memcpy(pBuf->pParms[i].u.pointer.addr, 
-                                       paParms[i].u.pointer.addr, 
+                                memcpy(pBuf->pParms[i].u.pointer.addr,
+                                       paParms[i].u.pointer.addr,
                                        pBuf->pParms[i].u.pointer.size);
                         }
                         break;
 
-                    default:                        
+                    default:
                         break;
                 }
                 if (RT_FAILURE(rc))
@@ -311,7 +311,7 @@ int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VB
     }
     else
     {
-        /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */    
+        /** @todo Add check to verify if the HGCM request is the same *type* as the buffered one! */
         for (uint32_t i = 0; i < pBuf->uParmCount; i++)
         {
             paParms[i].type = pBuf->pParms[i].type;
@@ -320,18 +320,18 @@ int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VB
                 case VBOX_HGCM_SVC_PARM_32BIT:
                     paParms[i].u.uint32 = pBuf->pParms[i].u.uint32;
                     break;
-    
+
                 case VBOX_HGCM_SVC_PARM_64BIT:
                     /* Not supported yet. */
                     break;
-    
+
                 case VBOX_HGCM_SVC_PARM_PTR:
                     memcpy(paParms[i].u.pointer.addr,
                            pBuf->pParms[i].u.pointer.addr,
                            pBuf->pParms[i].u.pointer.size);
                     break;
-    
-                default:                        
+
+                default:
                     break;
             }
         }
@@ -496,8 +496,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
             if (RT_SUCCESS(rc))
             {
                 /*
-                 * We don't need an additional client data area on the host, 
-                 * because we're a class which can have members for that :-). 
+                 * We don't need an additional client data area on the host,
+                 * because we're a class which can have members for that :-).
                  */
                 ptable->cbClient = 0;
 

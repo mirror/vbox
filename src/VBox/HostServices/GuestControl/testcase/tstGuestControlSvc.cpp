@@ -108,7 +108,7 @@ void initTable(VBOXHGCMSVCFNTABLE *pTable, VBOXHGCMSVCHELPERS *pHelpers)
  * @param   fd                  Which standard handle it is (0 == stdin, 1 ==
  *                              stdout, 2 == stderr).
  * @param   ph                  The generic handle that @a pph may be set
- *                              pointing to.  Always set. 
+ *                              pointing to.  Always set.
  * @param   pph                 Pointer to the RTProcCreateExec argument.
  *                              Always set.
  * @param   phPipe              Where to return the end of the pipe that we
@@ -258,7 +258,7 @@ static int guestExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt,
      * Try drain the pipe before acting on any errors.
      */
     int rc = VINF_SUCCESS;
-    
+
     char    abBuf[_64K];
     size_t  cbRead;
     int     rc2 = RTPipeRead(*phPipeR, abBuf, sizeof(abBuf), &cbRead);
@@ -324,9 +324,9 @@ static int guestExecProcHandleOutputEvent(RTPOLLSET hPollSet, uint32_t fPollEvt,
 static int guestExecProcHandleTransportEvent(RTPOLLSET hPollSet, uint32_t fPollEvt, uint32_t idPollHnd,
                                              PRTPIPE phStdInW, PTXSEXECSTDINBUF pStdInBuf)
 {
- 
+
     int rc = RTPollSetAddPipe(hPollSet, *phStdInW, RTPOLL_EVT_WRITE, 4 /*TXSEXECHNDID_STDIN_WRITABLE*/);
- 
+
     return rc;
 }
 
@@ -388,7 +388,7 @@ static int guestExecProcLoop(VBOXHGCMSVCFNTABLE *pTable,
                     rc = guestExecProcHandleOutputEvent(hPollSet, fPollEvt, &hStdErrR, &uStdErrCrc32, 2 /*TXSEXECHNDID_STDERR */);
                     break;
 
-                case 4 /* TXSEXECHNDID_STDIN_WRITABLE */: 
+                case 4 /* TXSEXECHNDID_STDIN_WRITABLE */:
                     guestExecProcHandleStdInWritableEvent(hPollSet, fPollEvt, &hStdInW, &StdInBuf);
                     break;
 
@@ -499,44 +499,44 @@ static int guestExecProcLoop(VBOXHGCMSVCFNTABLE *pTable,
     {
         if (     fProcessTimedOut  && !fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-            
+
         }
         else if (fProcessTimedOut  &&  fProcessAlive && MsProcessKilled != UINT64_MAX)
         {
-            
+
         }
         /*else if (g_fTerminate && (fProcessAlive || MsProcessKilled != UINT64_MAX))
         {
-        
+
         }*/
         else if (fProcessAlive)
         {
-        
+
         }
         else if (MsProcessKilled != UINT64_MAX)
         {
-        
+
         }
         else if (   ProcessStatus.enmReason == RTPROCEXITREASON_NORMAL
                  && ProcessStatus.iStatus   == 0)
         {
-        
+
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_NORMAL)
         {
-        
+
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_SIGNAL)
         {
-        
+
         }
         else if (ProcessStatus.enmReason == RTPROCEXITREASON_ABEND)
         {
-        
+
         }
         else
         {
-        
+
         }
     }
 
@@ -558,7 +558,7 @@ int guestExecProcess(VBOXHGCMSVCFNTABLE *pTable,
              "# Env: %u\n"
              "StdIn: %s, StdOut: %s, StdErr: %s\n"
              "User: %s, Timelimit: %u\n",
-                fFlags, cArgs, cEnvVars, 
+                fFlags, cArgs, cEnvVars,
                 pszStdIn, pszStdOut, pszStdErr,
                 pszUsername ? pszUsername : "<None>", cMillies);
     for (uint32_t i=0; i<cArgs; i++)
@@ -566,7 +566,7 @@ int guestExecProcess(VBOXHGCMSVCFNTABLE *pTable,
     for (uint32_t i=0; i<cEnvVars; i++)
         RTPrintf("Env %u: %s\n", i, papszEnv[i]);
 #endif
-  
+
     /*
      * Create the environment.
      */
@@ -622,7 +622,7 @@ int guestExecProcess(VBOXHGCMSVCFNTABLE *pTable,
                             {
                                 RTPROCESS hProcess;
                                 rc = RTProcCreateEx(pszExecName, papszArgs, hEnv, 0 /*fFlags*/,
-                                                    phStdIn, phStdOut, phStdErr, 
+                                                    phStdIn, phStdOut, phStdErr,
                                                     /*pszUsername, pszPassword,*/ NULL, NULL,
                                                     &hProcess);
                                 if (RT_SUCCESS(rc))
@@ -638,7 +638,7 @@ int guestExecProcess(VBOXHGCMSVCFNTABLE *pTable,
                                     phStdErr   = NULL;
 
                                     rc = guestExecProcLoop(pTable,
-                                                           hProcess, cMillies, hPollSet, 
+                                                           hProcess, cMillies, hPollSet,
                                                            hStdInW, hStdOutR, hStdErrR);
                                     /*
                                      * The handles that are no longer in the set have
@@ -689,7 +689,7 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
         char *pszExecName = RTStrDup(pcBuf);
 
         /* arguments */
-        if (   pszExecName 
+        if (   pszExecName
             && RT_SUCCESS(rc))
         {
             /* argc */
@@ -719,7 +719,7 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
                 uint32_t cbLen;
                 paParms[6].getBuffer((void**)&pcData, &cbLen);
                 AssertPtr(pcData);
-                
+
                 char **ppaEnv;
                 if (uEnvc)
                 {
@@ -779,7 +779,7 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
                                                                   uArgc, ppaArg,
                                                                   uEnvc, ppaEnv,
                                                                   pszStdIn, pszStdOut, pszStdIn,
-                                                                  pszUser, pszPassword, 
+                                                                  pszUser, pszPassword,
                                                                   msTimeLimit == UINT32_MAX ? RT_INDEFINITE_WAIT : msTimeLimit);
                                         }
                                     }
@@ -798,7 +798,7 @@ int guestExecHandleCmdExecute(VBOXHGCMSVCFNTABLE *pTable, PVBOXHGCMSVCPARM paPar
                 RTGetOptArgvFree(ppaArg);
             }
             RTStrFree(pszExecName);
-        }          
+        }
     }
     return rc;
 }
@@ -852,9 +852,9 @@ int guestGetHostMsg(VBOXHGCMSVCFNTABLE *pTable)
     {
         uint32_t uCmd;
 
-        /* 
+        /*
          * Parameter 0 *always* specifies the actual command the host wants
-         * to execute. 
+         * to execute.
          */
         rc = paParms[0].getUInt32(&uCmd);
         if (RT_SUCCESS(rc))
@@ -893,7 +893,7 @@ static DECLCALLBACK(int) guestThread(RTTHREAD Thread, void *pvUser)
      * so don't try to get a new host message more than once atm. */
 
     for(;;) /* Run forever atm. */
-    {       
+    {
         RTThreadSleep(1);
         /** @tdo Add graceful shutdown here. */
     }
@@ -933,7 +933,7 @@ int hostExecCmd(VBOXHGCMSVCFNTABLE *pTable,
     paParms[10].setPointer((void*)pszUser, (uint32_t)strlen(pszUser) + 1);
     paParms[11].setPointer((void*)pszPassword, (uint32_t)strlen(pszPassword) + 1);
     paParms[12].setUInt32(u32TimeLimit);
-    
+
     int rc = pTable->pfnHostCall(pTable->pvService, command,
                                  13, paParms);
     if (RT_FAILURE(rc))
@@ -969,13 +969,13 @@ int testExecute(VBOXHGCMSVCFNTABLE *pTable)
     }
 
     int rc = VINF_SUCCESS;
-    /* 
+    /*
      * The host code (= later Main?) will run in this thread,
-     * while the client (guest) code will run in another one (= VBoxService in guest). 
+     * while the client (guest) code will run in another one (= VBoxService in guest).
      */
     RTTHREAD threadGuest;
-    rc = RTThreadCreate(&threadGuest, guestThread, pTable /* Save call table. */, 
-                        0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "GUEST"); 
+    rc = RTThreadCreate(&threadGuest, guestThread, pTable /* Save call table. */,
+                        0, RTTHREADTYPE_DEFAULT, RTTHREADFLAGS_WAITABLE, "GUEST");
 
     /* This is the host code. */
     if(RT_SUCCESS(rc))
@@ -991,7 +991,7 @@ int testExecute(VBOXHGCMSVCFNTABLE *pTable)
         char szCmdLine[_1K];
 
         /* Test stdout*/
-        RTStrPrintf(szCmdLine, sizeof(szCmdLine), 
+        RTStrPrintf(szCmdLine, sizeof(szCmdLine),
                     "%s --test-stdout", g_szImageName); /* Include image name as argv[0]. */
         rc = gctrlPrepareExecArgv(szCmdLine, &pvArgs, &cbArgs, &cArgs);
         if (RT_SUCCESS(rc))
@@ -1003,7 +1003,7 @@ int testExecute(VBOXHGCMSVCFNTABLE *pTable)
                 rc = gctrlAddToExecEnvv("HOME=iN-WoNdeRlAnd", &pvEnv, &cbEnv, &cEnv);
             if (RT_SUCCESS(rc))
             {
-                rc = hostExecCmd(pTable, 
+                rc = hostExecCmd(pTable,
                                  456123,
                                  g_szImageName,
                                  cArgs,
@@ -1021,7 +1021,7 @@ int testExecute(VBOXHGCMSVCFNTABLE *pTable)
                 RTMemFree(pvEnv);
             }
             RTMemFree(pvArgs);
-        }        
+        }
         if (RT_SUCCESS(rc))
         {
             for(;;)
@@ -1032,7 +1032,7 @@ int testExecute(VBOXHGCMSVCFNTABLE *pTable)
 
         /* Wait for guest thread to finish. */
         int rc2;
-        rc = RTThreadWait(threadGuest, RT_INDEFINITE_WAIT, &rc2);                
+        rc = RTThreadWait(threadGuest, RT_INDEFINITE_WAIT, &rc2);
         if (RT_FAILURE(rc))
             RTPrintf("RTThreadWait failed, rc=%Rrc\n", rc);
         else if (RT_FAILURE(rc2))
@@ -1069,7 +1069,7 @@ RTEXITCODE selfTestExecStd(int h, int argc, char **argv)
         const char *const *pcEnv = RTEnvGetExecEnvP(env);
         RTPrintf("Environment: %s\n" , pcEnv);
         rc = RTEnvDestroy(env);
-    }    
+    }
 #endif
 
     /* Do the test(s) based on the handle number(s). */
@@ -1119,7 +1119,7 @@ static RTEXITCODE parseArgv(int argc, char **argv, bool *pfExit)
             return selfTestExecStd(2 /* stderr */, argc, argv);
         else if (!strcmp(argv[1], "--test-all"))
             return selfTestExecStd(3 /* all */, argc, argv);
-        
+
         RTPrintf("Unknown test! Exit.\n");
         return RTEXITCODE_FAILURE;
     }

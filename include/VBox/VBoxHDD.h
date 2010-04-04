@@ -1217,7 +1217,7 @@ typedef struct VDINTERFACETHREADSYNC
      * Start a read operation.
      */
     DECLR3CALLBACKMEMBER(int, pfnStartRead, (void *pvUser));
-    
+
     /**
      * Finish a read operation.
      */

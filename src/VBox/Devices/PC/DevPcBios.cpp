@@ -477,7 +477,7 @@ static DECLCALLBACK(int) pcbiosInitComplete(PPDMDEVINS pDevIns)
     /*
      * Network boot device list.
      */
-    for (i = 0; i < NET_BOOT_DEVS; ++i) 
+    for (i = 0; i < NET_BOOT_DEVS; ++i)
     {
         pcbiosCmosWrite(pDevIns, 0x82 + i * 2, pThis->au16NetBootDev[i] & 0xff);
         pcbiosCmosWrite(pDevIns, 0x83 + i * 2, pThis->au16NetBootDev[i] >> 8);

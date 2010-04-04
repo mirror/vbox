@@ -36,7 +36,7 @@ extern VSCSILUNDESC g_VScsiLunTypeSbc;
 /**
  * Array of supported SCSI LUN types.
  */
-static PVSCSILUNDESC g_aVScsiLunTypesSupported[] = 
+static PVSCSILUNDESC g_aVScsiLunTypesSupported[] =
 {
     &g_VScsiLunTypeSbc
 };

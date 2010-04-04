@@ -50,4 +50,3 @@ RTDECL(bool) RTSortApvIsSorted(void const * const *papvArray, size_t cElements, 
 }
 RT_EXPORT_SYMBOL(RTSortIsSorted);
 
-

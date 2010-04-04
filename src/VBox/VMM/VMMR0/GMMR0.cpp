@@ -2842,7 +2842,7 @@ GMMR0DECL(int) GMMR0FreePagesReq(PVM pVM, VMCPUID idCpu, PGMMFREEPAGESREQ pReq)
  *
  * @returns VBox status code:
  * @retval  VERR_GMM_ATTEMPT_TO_FREE_TOO_MUCH
- * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH 
+ * @retval  VERR_GMM_ATTEMPT_TO_DEFLATE_TOO_MUCH
  * @retval  VERR_GMM_OVERCOMMITED_TRY_AGAIN_IN_A_BIT - reset condition
  *          indicating that we won't necessarily have sufficient RAM to boot
  *          the VM again and that it should pause until this changes (we'll try

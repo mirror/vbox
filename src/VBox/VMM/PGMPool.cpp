@@ -652,21 +652,21 @@ DECLCALLBACK(VBOXSTRICTRC) pgmR3PoolClearAllRendezvous(PVM pVM, PVMCPU pVCpu, vo
                             {
                                 bool fFoundFirst = false;
                                 PX86PTPAE pPT = (PX86PTPAE)pvShw;
-                                for (unsigned ptIndex = 0; ptIndex < RT_ELEMENTS(pPT->a); ptIndex++) 
+                                for (unsigned ptIndex = 0; ptIndex < RT_ELEMENTS(pPT->a); ptIndex++)
                                 {
-                                    if (pPT->a[ptIndex].u) 
+                                    if (pPT->a[ptIndex].u)
                                     {
-                                        if (!fFoundFirst) 
+                                        if (!fFoundFirst)
                                         {
                                             AssertFatalMsg(pPage->iFirstPresent <= ptIndex, ("ptIndex = %d first present = %d\n", ptIndex, pPage->iFirstPresent));
-                                            if (pPage->iFirstPresent != ptIndex) 
+                                            if (pPage->iFirstPresent != ptIndex)
                                                 Log(("ptIndex = %d first present = %d\n", ptIndex, pPage->iFirstPresent));
                                             fFoundFirst = true;
                                         }
-                                        if (pPT->a[ptIndex].n.u1Present) 
+                                        if (pPT->a[ptIndex].n.u1Present)
                                         {
                                             pgmPoolTracDerefGCPhysHint(pPool, pPage, pPT->a[ptIndex].u & X86_PTE_PAE_PG_MASK, NIL_RTGCPHYS);
-                                            if (pPage->iFirstPresent == ptIndex) 
+                                            if (pPage->iFirstPresent == ptIndex)
                                                 pPage->iFirstPresent = NIL_PGMPOOL_PRESENT_INDEX;
                                         }
                                     }

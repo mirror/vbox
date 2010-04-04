@@ -122,4 +122,3 @@ size_t vscsiCopyFromIoMemCtx(PVSCSIIOMEMCTX pIoMemCtx, uint8_t *pbData, size_t c
     return cbData - cbLeft;
 }
 
-

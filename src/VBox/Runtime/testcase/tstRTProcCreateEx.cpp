@@ -172,7 +172,7 @@ static void tstRTCreateProcEx5(const char *pszUser, const char *pszPassword)
     else
         RTTestIPassed(NULL);
 }
-    
+
 
 static int tstRTCreateProcEx4Child(int argc, char **argv)
 {

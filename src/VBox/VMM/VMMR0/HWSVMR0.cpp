@@ -2393,7 +2393,7 @@ ResumeExecution:
         AssertMsg(rc == VERR_EM_INTERPRETER, ("EMU: monitor failed with %Rrc\n", rc));
         break;
     }
-        
+
 
     case SVM_EXIT_VMMCALL:
         rc = svmR0EmulateTprVMMCall(pVM, pVCpu, pCtx);

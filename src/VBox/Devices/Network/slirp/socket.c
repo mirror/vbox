@@ -1126,13 +1126,13 @@ send_icmp_to_guest(PNATState pData, char *buff, size_t len, struct socket *so, c
             return;
         }
         /*
-         * while combining buffer to send (see ip_icmp.c) we control ICMP header only, 
-         * IP header combined by OS network stack, our local copy of IP header contians values 
+         * while combining buffer to send (see ip_icmp.c) we control ICMP header only,
+         * IP header combined by OS network stack, our local copy of IP header contians values
          * in host byte order so no byte order conversion is required. IP headers fields are converting
-         * in ip_output0 routine only.   
+         * in ip_output0 routine only.
          */
         if (   (ip->ip_len - hlen)
-            != (ip0->ip_len - (ip0->ip_hl << 2))) 
+            != (ip0->ip_len - (ip0->ip_hl << 2)))
         {
             Log(("NAT: ECHO(%d) lenght doesn't match ECHOREPLY(%d)\n",
                 (ip->ip_len - hlen), (ip0->ip_len - (ip0->ip_hl << 2))));
