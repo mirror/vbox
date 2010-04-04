@@ -737,6 +737,75 @@ typedef PDMDATASEG const *PCPDMDATASEG;
 
 
 /**
+ * Forms of generic segment offloading.
+ */
+typedef enum PDMNETWORKGSOTYPE
+{
+    /** Invalid zero value. */
+    PDMNETWORKGSOTYPE_INVALID = 0,
+    /** TCP/IPv4. */
+    PDMNETWORKGSOTYPE_IPV4_TCP,
+#if 0 /* later */
+    /** TCP/IPv6. */
+    PDMNETWORKGSOTYPE_IPV6_TCP,
+    /** UDP/IPv4. */
+    PDMNETWORKGSOTYPE_IPV4_UDP,
+    /** UDP/IPv6. */
+    PDMNETWORKGSOTYPE_IPV6_UDP,
+    /** IPv6 over IPv4 tunneling. */
+    PDMNETWORKGSOTYPE_IPV4_TCPV6,
+    /** TCP/IPv6 over IPv4 tunneling.
+     * The header offsets and sizes relates to IPv4 and TCP, the IPv6 header is
+     * figured out as needed.
+     * @todo Needs checking against facts, this is just an outline of the idea. */
+    PDMNETWORKGSOTYPE_IPV4_TCPV6_TCP,
+    /** UDP/IPv6 over IPv4 tunneling.
+     * The header offsets and sizes relates to IPv4 and UDP, the IPv6 header is
+     * figured out as needed.
+     * @todo Needs checking against facts, this is just an outline of the idea. */
+    PDMNETWORKGSOTYPE_IPV4_TCPV6_UDP,
+#endif
+    /** The end of valid GSO types. */
+    PDMNETWORKGSOTYPE_END
+} PDMNETWORKGSOTYPE;
+
+
+/**
+ * Generic segment offloading context.
+ *
+ * We generally follow the E1000 specs wrt to which header fields we change.
+ * However the GSO type implies where the checksum fields are and that they are
+ * always updated from scratch (no half done pseudo checksums).
+ *
+ * @remarks This is part of the internal network GSO packets.  Take great care
+ *          when making changes.  The size is expected to be exactly 8 bytes.
+ */
+typedef struct PDMNETWORKGSO
+{
+    /** The type of segmentation offloading we're performing (PDMNETWORKGSOTYPE). */
+    uint8_t             u8Type;
+    /** The total header size. */
+    uint8_t             cbHdrs;
+    /** The max segment size (MSS) to apply. */
+    uint16_t            cbMaxSeg;
+
+    /** Offset of the first header (IPv4 / IPv6). */
+    uint8_t             offHdr1;
+    /** The size of the first header (IPv4 / IPv6). */
+    uint8_t             cbHdr1;
+
+    /** Offset of the second header (TCP / UDP). */
+    uint8_t             offHdr2;
+    /** The size of the second header (TCP / UDP). */
+    uint8_t             cbHdr2;
+} PDMNETWORKGSO;
+/** Pointer to a GSO context. */
+typedef PDMNETWORKGSO *PPDMNETWORKGSO;
+/** Pointer to a const GSO context. */
+typedef PDMNETWORKGSO const *PCPDMNETWORKGSO;
+
+
+/**
  * The current ROM page protection.
  *
  * @remarks This is part of the saved state.

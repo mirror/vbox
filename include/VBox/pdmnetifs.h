@@ -85,6 +85,11 @@ typedef PPDMSCATTERGATHER *PPPDMSCATTERGATHER;
 #define PDMSCATTERGATHER_FLAGS_OWNER_3      UINT32_C(0x00000002)
 /** Owner mask. */
 #define PDMSCATTERGATHER_FLAGS_OWNER_MASK   UINT32_C(0x00000003)
+/** Mask of flags available to general use.
+ * The parties using the SG must all agree upon how to use these of course. */
+#define PDMSCATTERGATHER_FLAGS_AVL_MASK     UINT32_C(0x0000f000)
+/** Flags reserved for future use, MBZ. */
+#define PDMSCATTERGATHER_FLAGS_RVD_MASK     UINT32_C(0x00000ff8)
 /** @} */
 
 
@@ -135,7 +140,6 @@ typedef struct PDMINETWORKDOWN
      */
     DECLR3CALLBACKMEMBER(int, pfnReceive,(PPDMINETWORKDOWN pInterface, const void *pvBuf, size_t cb));
 
-
     /**
      * Called when there is a buffered of the required size available.
      *
@@ -144,10 +148,6 @@ typedef struct PDMINETWORKDOWN
      * becomes available via this method.
      *
      * @param   pInterface      Pointer to this interface.
-     * @param   pSgBuf          Scatter/gather buffer of the size previously
-     *                          requested.  Pass to PDMINETWORKUP::pfnSendBuf or
-     *                          PDMINETWORKUP::pfnFreeBuf.
-     *
      * @thread  Non-EMT.
      */
     DECLR3CALLBACKMEMBER(void, pfnNotifyBufAvailable,(PPDMINETWORKDOWN pInterface));
@@ -194,14 +194,21 @@ typedef struct PDMINETWORKUP
      *          only seen when pausing the VM since the device keeps the link state,
      *          but there could of course be races.
      *
-     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   pInterface      Pointer to the interface structure containing the
+     *                          called function pointer.
      * @param   cbMin           The minimum buffer size.
+     * @param   pGso            Pointer to a GSO context (only reference while in
+     *                          this call).  NULL indicates no segmentation
+     *                          offloading.  PDMSCATTERGATHER::pvUser is used to
+     *                          indicate that a network SG uses GSO, usually by
+     *                          pointing to a copy of @a pGso.
      * @param   ppSgBuf         Where to return the buffer.  The buffer will be
      *                          owned by the caller, designation owner number 1.
      *
      * @thread  Any, but normally EMT.
      */
-    DECLR3CALLBACKMEMBER(int, pfnAllocBuf,(PPDMINETWORKUP pInterface, size_t cbMin, PPPDMSCATTERGATHER ppSgBuf));
+    DECLR3CALLBACKMEMBER(int, pfnAllocBuf,(PPDMINETWORKUP pInterface, size_t cbMin, PCPDMNETWORKGSO pGso,
+                                           PPPDMSCATTERGATHER ppSgBuf));
 
     /**
      * Frees an unused buffer.
@@ -277,7 +284,7 @@ typedef struct PDMINETWORKUP
 
 } PDMINETWORKUP;
 /** PDMINETWORKUP interface ID. */
-#define PDMINETWORKUP_IID                       "f915243e-801a-4868-8979-b6b8594b09cc"
+#define PDMINETWORKUP_IID                       "0e603bc1-3016-41b4-b521-15c038cda16a"
 
 
 /** Pointer to a network config port interface */

@@ -2109,7 +2109,7 @@ DECLINLINE(int) pcnetXmitAllocBuf(PCNetState *pThis, size_t cbMin, bool fLoopbac
         PPDMINETWORKUP pDrv = pThis->pDrvR3;
         if (RT_LIKELY(pDrv))
         {
-            rc = pDrv->pfnAllocBuf(pDrv, cbMin, ppSgBuf);
+            rc = pDrv->pfnAllocBuf(pDrv, cbMin, NULL /*pGso*/, ppSgBuf);
             AssertMsg(rc == VINF_SUCCESS || rc == VERR_TRY_AGAIN || rc == VERR_NET_DOWN || rc == VERR_NO_MEMORY, ("%Rrc\n", rc));
             if (RT_FAILURE(rc))
                 *ppSgBuf = NULL;
