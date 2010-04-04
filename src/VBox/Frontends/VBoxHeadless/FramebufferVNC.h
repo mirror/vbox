@@ -80,55 +80,55 @@ public:
     STDMETHOD(ProcessVHWACommand)(BYTE *pCommand);
 
 private:
-	/** Guest framebuffer pixel format */
-	ULONG mPixelFormat;
-	/** Guest framebuffer color depth */
-	ULONG mBitsPerPixel;
-	/** Guest framebuffer line length */
-	ULONG mBytesPerLine;
+    /** Guest framebuffer pixel format */
+    ULONG mPixelFormat;
+    /** Guest framebuffer color depth */
+    ULONG mBitsPerPixel;
+    /** Guest framebuffer line length */
+    ULONG mBytesPerLine;
 
-	//Our own framebuffer, in case we can't use the VRAM
-	uint8_t *mRGBBuffer;
-	//The source framebuffer (either our own mRGBBuffer or the guest VRAM)
-	uint8_t *mBufferAddress;
-	//VNC display framebuffer (RGB -> BGR converted)
-	uint8_t *mScreenBuffer;
+    //Our own framebuffer, in case we can't use the VRAM
+    uint8_t *mRGBBuffer;
+    //The source framebuffer (either our own mRGBBuffer or the guest VRAM)
+    uint8_t *mBufferAddress;
+    //VNC display framebuffer (RGB -> BGR converted)
+    uint8_t *mScreenBuffer;
 
-	int mVncPort;
+    int mVncPort;
 
-	ComPtr<IConsole> mConsole;
-	ComPtr<IKeyboard> mKeyboard;
-	ComPtr<IMouse> mMouse;
+    ComPtr<IConsole> mConsole;
+    ComPtr<IKeyboard> mKeyboard;
+    ComPtr<IMouse> mMouse;
 
-	int kbdShiftState;
-	void kbdSetShift(int state);
-	void kbdPutCode(int code);
-	void kbdPutCode(int code, int down);
-	void kbdPutCodeShift(int shift, int code, int down);
+    int kbdShiftState;
+    void kbdSetShift(int state);
+    void kbdPutCode(int code);
+    void kbdPutCode(int code, int down);
+    void kbdPutCodeShift(int shift, int code, int down);
 
-	ULONG mWidth, mHeight;
+    ULONG mWidth, mHeight;
 
-	RTCRITSECT mCritSect;
+    RTCRITSECT mCritSect;
 
-	rfbScreenInfoPtr vncServer;
-	RTTHREAD mVncThread;
+    rfbScreenInfoPtr vncServer;
+    RTTHREAD mVncThread;
         static DECLCALLBACK(int) vncThreadFn(RTTHREAD hThreadSelf, void *pvUser);
         /** The password that was passed to the constructor.  NULL if no
          * authentication required. */
-	char const *mVncPassword;
+    char const *mVncPassword;
 
-	static void vncKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl);
-	static void vncMouseEvent(int buttonMask, int x, int y, rfbClientPtr cl);
-	static void vncReleaseKeysEvent(rfbClientPtr cl);
+    static void vncKeyboardEvent(rfbBool down, rfbKeySym keySym, rfbClientPtr cl);
+    static void vncMouseEvent(int buttonMask, int x, int y, rfbClientPtr cl);
+    static void vncReleaseKeysEvent(rfbClientPtr cl);
 
-	void handleVncKeyboardEvent(int down, int keySym);
-	void handleVncMouseEvent(int buttonMask, int x, int y);
-	void handleVncKeyboardReleaseEvent();
+    void handleVncKeyboardEvent(int down, int keySym);
+    void handleVncMouseEvent(int buttonMask, int x, int y);
+    void handleVncKeyboardReleaseEvent();
 
-	int mouseX, mouseY;
+    int mouseX, mouseY;
 
 #ifndef VBOX_WITH_XPCOM
-	long refcnt;
+    long refcnt;
 #endif
 };
 
