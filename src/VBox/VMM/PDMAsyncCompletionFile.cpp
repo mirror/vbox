@@ -67,10 +67,6 @@ void pdmacFileTaskFree(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint,
         pEndpoint->pTasksFreeTail        = pTask;
         ASMAtomicIncU32(&pEndpoint->cTasksCached);
     }
-    else if (false)
-    {
-        /* Bigger class cache */
-    }
     else
     {
         Log(("Freeing task %p because all caches are full\n", pTask));
@@ -94,69 +90,17 @@ PPDMACTASKFILE pdmacFileTaskAlloc(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint)
         /* Try the bigger endpoint class cache. */
         PPDMASYNCCOMPLETIONEPCLASSFILE pEndpointClass = (PPDMASYNCCOMPLETIONEPCLASSFILE)pEndpoint->Core.pEpClass;
 
-#if 0
-        /* We start with the assigned slot id to distribute the load when allocating new tasks. */
-        unsigned iSlot = pEndpoint->iSlotStart;
-        do
-        {
-            pTask = (PPDMASYNCCOMPLETIONTASK)ASMAtomicXchgPtr((void * volatile *)&pEndpointClass->apTaskCache[iSlot], NULL);
-            if (pTask)
-                break;
+        /*
+         * Allocate completely new.
+         * If this fails we return NULL.
+         */
+        int rc = MMR3HeapAllocZEx(pEndpointClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
+                                  sizeof(PDMACTASKFILE),
+                                  (void **)&pTask);
+        if (RT_FAILURE(rc))
+            pTask = NULL;
 
-            iSlot = (iSlot + 1) % RT_ELEMENTS(pEndpointClass->apTaskCache);
-        } while (iSlot != pEndpoint->iSlotStart);
-#endif
-        if (!pTask)
-        {
-            /*
-             * Allocate completely new.
-             * If this fails we return NULL.
-             */
-            int rc = MMR3HeapAllocZEx(pEndpointClass->Core.pVM, MM_TAG_PDM_ASYNC_COMPLETION,
-                                      sizeof(PDMACTASKFILE),
-                                      (void **)&pTask);
-            if (RT_FAILURE(rc))
-                pTask = NULL;
-
-            LogFlow(("Allocated task %p\n", pTask));
-        }
-#if 0
-        else
-        {
-            /* Remove the first element and put the rest into the slot again. */
-            PPDMASYNCCOMPLETIONTASK pTaskHeadNew = pTask->pNext;
-
-            pTaskHeadNew->pPrev = NULL;
-
-            /* Put back into the list adding any new tasks. */
-            while (true)
-            {
-                bool fChanged = ASMAtomicCmpXchgPtr((void * volatile *)&pEndpointClass->apTaskCache[iSlot], pTaskHeadNew, NULL);
-
-                if (fChanged)
-                    break;
-
-                PPDMASYNCCOMPLETIONTASK pTaskHead = (PPDMASYNCCOMPLETIONTASK)ASMAtomicXchgPtr((void * volatile *)&pEndpointClass->apTaskCache[iSlot], NULL);
-
-                /* The new task could be taken inbetween */
-                if (pTaskHead)
-                {
-                    /* Go to the end of the probably much shorter new list. */
-                    PPDMASYNCCOMPLETIONTASK pTaskTail = pTaskHead;
-                    while (pTaskTail->pNext)
-                        pTaskTail = pTaskTail->pNext;
-
-                    /* Concatenate */
-                    pTaskTail->pNext = pTaskHeadNew;
-
-                    pTaskHeadNew = pTaskHead;
-                }
-                /* Another round trying to change the list. */
-            }
-            /* We got a task from the global cache so decrement the counter */
-            ASMAtomicDecU32(&pEndpointClass->cTasksCached);
-        }
-#endif
+        LogFlow(("Allocated task %p\n", pTask));
     }
     else
     {
@@ -523,7 +467,7 @@ static int pdmacFileBwMgrInitialize(PPDMASYNCCOMPLETIONEPCLASSFILE pEpClassFile,
         /* Init I/O flow control. */
         rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecMax", &pBwMgr->cbVMTransferPerSecMax, UINT32_MAX);
         AssertLogRelRCReturn(rc, rc);
-        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStart", &pBwMgr->cbVMTransferPerSecStart, 5 * _1M);
+        rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStart", &pBwMgr->cbVMTransferPerSecStart, UINT32_MAX /*5 * _1M*/);
         AssertLogRelRCReturn(rc, rc);
         rc = CFGMR3QueryU32Def(pCfgNode, "VMTransferPerSecStep", &pBwMgr->cbVMTransferPerSecStep, _1M);
         AssertLogRelRCReturn(rc, rc);
