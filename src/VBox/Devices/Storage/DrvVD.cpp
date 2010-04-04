@@ -299,13 +299,11 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
     }
     else
     {
-        int rc = VINF_VD_ASYNC_IO_FINISHED;
-        void *pvCallerUser = NULL;
+        int rc;
 
-        if (pStorageBackend->pfnCompleted)
-            rc = pStorageBackend->pfnCompleted(pvUser, &pvCallerUser);
-        else
-            pvCallerUser = pvUser;
+        AssertPtr(pStorageBackend->pfnCompleted);
+        rc = pStorageBackend->pfnCompleted(pvUser);
+        AssertRC(rc);
 
         /* If thread synchronization is active, then signal the end of the
          * this disk read/write operation. */
@@ -316,14 +314,6 @@ static DECLCALLBACK(void) drvvdAsyncTaskCompleted(PPDMDRVINS pDrvIns, void *pvTe
             int rc2 = pStorageBackend->pInterfaceThreadSyncCallbacks->pfnFinishWrite(pStorageBackend->pInterfaceThreadSync->pvUser);
             AssertRC(rc2);
         }
-
-        if (rc == VINF_VD_ASYNC_IO_FINISHED)
-        {
-            rc = pThis->pDrvMediaAsyncPort->pfnTransferCompleteNotify(pThis->pDrvMediaAsyncPort, pvCallerUser);
-            AssertRC(rc);
-        }
-        else
-            AssertMsg(rc == VERR_VD_ASYNC_IO_IN_PROGRESS, ("Invalid return code from disk backend rc=%Rrc\n", rc));
     }
 }
 
@@ -1481,12 +1471,8 @@ static DECLCALLBACK(int) drvvdConstruct(PPDMDRVINS pDrvIns,
         }
     }
 
-#if 0 /* Temporary disabled. WIP */
-    if (pThis->pDrvMediaAsyncPort)
+    if (pThis->pDrvMediaAsyncPort && fUseNewIo)
         pThis->fAsyncIOSupported = true;
-#else
-    pThis->fAsyncIOSupported = false;
-#endif
 
     unsigned iImageIdx = 0;
     while (pCurNode && RT_SUCCESS(rc))

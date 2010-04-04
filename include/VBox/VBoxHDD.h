@@ -458,10 +458,8 @@ DECLINLINE(PVDINTERFACEERROR) VDGetInterfaceError(PVDINTERFACE pInterface)
  *
  * @return  VBox status code.
  * @param   pvUser          Opaque user data which is passed on request submission.
- * @param   ppvCaller       Where to store the opaque user data the caller of
- *                          VDAsyncRead or VDAsyncWrite passed.
  */
-typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser, void **ppvCaller);
+typedef DECLCALLBACK(int) FNVDCOMPLETED(void *pvUser);
 /** Pointer to FNVDCOMPLETED() */
 typedef FNVDCOMPLETED *PFNVDCOMPLETED;
 

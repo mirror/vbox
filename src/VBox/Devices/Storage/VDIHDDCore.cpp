@@ -1975,23 +1975,188 @@ static int vdiSetParentFilename(void *pBackendData, const char *pszParentFilenam
 
 static bool vdiIsAsyncIOSupported(void *pBackendData)
 {
+#if 0
+    return true;
+#else
     return false;
+#endif
 }
 
-static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbRead,
+static int vdiAsyncRead(void *pvBackendData, uint64_t uOffset, size_t cbToRead,
                         PVDIOCTX pIoCtx, size_t *pcbActuallyRead)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToRead=%zu pcbActuallyRead=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbToRead, pcbActuallyRead));
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pvBackendData;
+    unsigned uBlock;
+    unsigned offRead;
+    int rc;
+
+    AssertPtr(pImage);
+    Assert(!(uOffset % 512));
+    Assert(!(cbToRead % 512));
+
+    if (   uOffset + cbToRead > getImageDiskSize(&pImage->Header)
+        || !VALID_PTR(pIoCtx)
+        || !cbToRead)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* Calculate starting block number and offset inside it. */
+    uBlock = (unsigned)(uOffset >> pImage->uShiftOffset2Index);
+    offRead = (unsigned)uOffset & pImage->uBlockMask;
+
+    /* Clip read range to at most the rest of the block. */
+    cbToRead = RT_MIN(cbToRead, getImageBlockSize(&pImage->Header) - offRead);
+    Assert(!(cbToRead % 512));
+
+    if (pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_FREE)
+        rc = VERR_VD_BLOCK_FREE;
+    else if (pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO)
+    {
+        size_t cbSet;
+
+        cbSet = pImage->pInterfaceIOCallbacks->pfnIoCtxSet(pImage->pInterfaceIO->pvUser,
+                                                           pIoCtx, 0, cbToRead);
+        Assert(cbSet == cbToRead);
+
+        rc = VINF_SUCCESS;
+    }
+    else
+    {
+        /* Block present in image file, read relevant data. */
+        uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
+                           + (pImage->offStartData + pImage->offStartBlockData + offRead);
+        rc = pImage->pInterfaceIOCallbacks->pfnReadUserAsync(pImage->pInterfaceIO->pvUser,
+                                                             pImage->pStorage,
+                                                             u64Offset,
+                                                             pIoCtx, cbToRead);
+    }
+
+    if (pcbActuallyRead)
+        *pcbActuallyRead = cbToRead;
+
+out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
 
-static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbWrite,
+static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite,
                          PVDIOCTX pIoCtx,
                          size_t *pcbWriteProcess, size_t *pcbPreRead,
                          size_t *pcbPostRead, unsigned fWrite)
 {
-    int rc = VERR_NOT_IMPLEMENTED;
+    LogFlowFunc(("pvBackendData=%#p uOffset=%llu pIoCtx=%#p cbToWrite=%zu pcbWriteProcess=%#p pcbPreRead=%#p pcbPostRead=%#p\n",
+                 pvBackendData, uOffset, pIoCtx, cbToWrite, pcbWriteProcess, pcbPreRead, pcbPostRead));
+    PVDIIMAGEDESC pImage = (PVDIIMAGEDESC)pvBackendData;
+    unsigned uBlock;
+    unsigned offWrite;
+    int rc = VINF_SUCCESS;
+
+    AssertPtr(pImage);
+    Assert(!(uOffset % 512));
+    Assert(!(cbToWrite % 512));
+
+    if (pImage->uOpenFlags & VD_OPEN_FLAGS_READONLY)
+    {
+        rc = VERR_VD_IMAGE_READ_ONLY;
+        goto out;
+    }
+
+    if (!VALID_PTR(pIoCtx) || !cbToWrite)
+    {
+        rc = VERR_INVALID_PARAMETER;
+        goto out;
+    }
+
+    /* No size check here, will do that later.  For dynamic images which are
+     * not multiples of the block size in length, this would prevent writing to
+     * the last grain. */
+
+    /* Calculate starting block number and offset inside it. */
+    uBlock = (unsigned)(uOffset >> pImage->uShiftOffset2Index);
+    offWrite = (unsigned)uOffset & pImage->uBlockMask;
+
+    /* Clip write range to at most the rest of the block. */
+    cbToWrite = RT_MIN(cbToWrite, getImageBlockSize(&pImage->Header) - offWrite);
+    Assert(!(cbToWrite % 512));
+
+    do
+    {
+        if (!IS_VDI_IMAGE_BLOCK_ALLOCATED(pImage->paBlocks[uBlock]))
+        {
+            /* Block is either free or zero. */
+            if (   !(pImage->uOpenFlags & VD_OPEN_FLAGS_HONOR_ZEROES)
+                && (   pImage->paBlocks[uBlock] == VDI_IMAGE_BLOCK_ZERO
+                    || cbToWrite == getImageBlockSize(&pImage->Header)))
+            {
+#if 0 /** @todo Provide interface to check an I/O context for a specific value */
+                /* If the destination block is unallocated at this point, it's
+                 * either a zero block or a block which hasn't been used so far
+                 * (which also means that it's a zero block. Don't need to write
+                 * anything to this block  if the data consists of just zeroes. */
+                Assert(!(cbToWrite % 4));
+                Assert(cbToWrite * 8 <= UINT32_MAX);
+                if (ASMBitFirstSet((volatile void *)pvBuf, (uint32_t)cbToWrite * 8) == -1)
+                {
+                    pImage->paBlocks[uBlock] = VDI_IMAGE_BLOCK_ZERO;
+                    break;
+                }
+#endif
+            }
+
+            if (cbToWrite == getImageBlockSize(&pImage->Header))
+            {
+                /* Full block write to previously unallocated block.
+                 * Allocate block and write data. */
+                Assert(!offWrite);
+                unsigned cBlocksAllocated = getImageBlocksAllocated(&pImage->Header);
+                uint64_t u64Offset = (uint64_t)cBlocksAllocated * pImage->cbTotalBlockData
+                                   + (pImage->offStartData + pImage->offStartBlockData);
+                rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                      pImage->pStorage,
+                                                                      u64Offset,
+                                                                      pIoCtx, cbToWrite);
+                if (RT_UNLIKELY(RT_FAILURE_NP(rc) && (rc != VERR_VD_ASYNC_IO_IN_PROGRESS)))
+                    goto out;
+                pImage->paBlocks[uBlock] = cBlocksAllocated;
+                setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
+
+                /** @todo Async */
+                rc = vdiUpdateBlockInfo(pImage, uBlock);
+                if (RT_FAILURE(rc))
+                    goto out;
+
+                *pcbPreRead = 0;
+                *pcbPostRead = 0;
+            }
+            else
+            {
+                /* Trying to do a partial write to an unallocated block. Don't do
+                 * anything except letting the upper layer know what to do. */
+                *pcbPreRead = offWrite % getImageBlockSize(&pImage->Header);
+                *pcbPostRead = getImageBlockSize(&pImage->Header) - cbToWrite - *pcbPreRead;
+                rc = VERR_VD_BLOCK_FREE;
+            }
+        }
+        else
+        {
+            /* Block present in image file, write relevant data. */
+            uint64_t u64Offset = (uint64_t)pImage->paBlocks[uBlock] * pImage->cbTotalBlockData
+                               + (pImage->offStartData + pImage->offStartBlockData + offWrite);
+            rc = pImage->pInterfaceIOCallbacks->pfnWriteUserAsync(pImage->pInterfaceIO->pvUser,
+                                                                  pImage->pStorage,
+                                                                  u64Offset,
+                                                                  pIoCtx, cbToWrite);
+        }
+    } while (0);
+
+    if (pcbWriteProcess)
+        *pcbWriteProcess = cbToWrite;
+
+out:
     LogFlowFunc(("returns %Rrc\n", rc));
     return rc;
 }
@@ -2246,7 +2411,11 @@ VBOXHDDBACKEND g_VDIBackend =
     sizeof(VBOXHDDBACKEND),
     /* uBackendCaps */
       VD_CAP_UUID | VD_CAP_CREATE_FIXED | VD_CAP_CREATE_DYNAMIC
-    | VD_CAP_DIFF | VD_CAP_FILE,
+    | VD_CAP_DIFF | VD_CAP_FILE
+#if 0
+    | VD_CAP_ASYNC
+#endif
+    ,
     /* papszFileExtensions */
     s_apszVdiFileExtensions,
     /* paConfigInfo */
