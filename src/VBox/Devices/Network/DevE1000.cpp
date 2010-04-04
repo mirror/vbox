@@ -30,7 +30,7 @@
  * additional information or have any questions.
  */
 
-
+#define VBOX_WITH_TX_THREAD_IN_NET_DEVICES 1 //debug, bird, remove
 #define LOG_GROUP LOG_GROUP_DEV_E1000
 
 //#define E1kLogRel(a) LogRel(a)
@@ -165,6 +165,7 @@ struct E1kChips
 
 /*****************************************************************************/
 
+/** Gets the specfieid bits from the register. */
 #define GET_BITS(reg, bits) ((reg & reg##_##bits##_MASK) >> reg##_##bits##_SHIFT)
 #define GET_BITS_V(val, reg, bits) ((val & reg##_##bits##_MASK) >> reg##_##bits##_SHIFT)
 #define BITS(reg, bits, bitval) (bitval << reg##_##bits##_SHIFT)
@@ -215,7 +216,7 @@ struct E1kChips
 #define RCTL_LBM_SHIFT   6
 #define RCTL_RDMTS_MASK  0x00000300
 #define RCTL_RDMTS_SHIFT 8
-#define RCTL_LBM_TCVR    3
+#define RCTL_LBM_TCVR    3              /**< PHY or external SerDes loopback. */
 #define RCTL_MO_MASK     0x00003000
 #define RCTL_MO_SHIFT    12
 #define RCTL_BAM         0x00008000
@@ -605,27 +606,35 @@ class E1kEEPROM
 #endif /* IN_RING3 */
 };
 
+
 struct E1kRxDStatus
 {
-    /* Descriptor Status field */
-    unsigned fDD     : 1;
-    unsigned fEOP    : 1;
-    unsigned fIXSM   : 1;
-    unsigned fVP     : 1;
+    /** @name Descriptor Status field (3.2.3.1)
+     * @{ */
+    unsigned fDD     : 1;                             /**< Descriptor Done. */
+    unsigned fEOP    : 1;                               /**< End of packet. */
+    unsigned fIXSM   : 1;                  /**< Ignore checksum indication. */
+    unsigned fVP     : 1;                           /**< VLAN, matches VET. */
     unsigned         : 1;
-    unsigned fTCPCS  : 1;
-    unsigned fIPCS   : 1;
-    unsigned fPIF    : 1;
-    /* Descriptor Errors field */
-    unsigned fCE     : 1;
-    unsigned         : 4;
-    unsigned fTCPE   : 1;
-    unsigned fIPE    : 1;
-    unsigned fRXE    : 1;
-    /* Descriptor Special field */
-    unsigned u12VLAN : 12;
-    unsigned fCFI    : 1;
-    unsigned u3PRI   : 3;
+    unsigned fTCPCS  : 1;       /**< RCP Checksum calculated on the packet. */
+    unsigned fIPCS   : 1;        /**< IP Checksum calculated on the packet. */
+    unsigned fPIF    : 1;                       /**< Passed in-exact filter */
+    /** @} */
+    /** @name Descriptor Errors field (3.2.3.2)
+     * (Only valid when fEOP and fDD are set.)
+     * @{ */
+    unsigned fCE     : 1;                      /**< CRC or alignment error. */
+    unsigned         : 4;    /**< Reserved, varies with different models... */
+    unsigned fTCPE   : 1;                      /**< TCP/UDP checksum error. */
+    unsigned fIPE    : 1;                           /**< IP Checksum error. */
+    unsigned fRXE    : 1;                               /**< RX Data error. */
+    /** @} */
+    /** @name Descriptor Special field (3.2.3.3)
+     * @{  */
+    unsigned u12VLAN : 12;                            /**< VLAN identifier. */
+    unsigned fCFI    : 1;             /**< Canonical form indicator (VLAN). */
+    unsigned u3PRI   : 3;                        /**< User priority (VLAN). */
+    /** @} */
 };
 typedef struct E1kRxDStatus E1KRXDST;
 
@@ -678,73 +687,120 @@ struct E1kTDLegacy
     } dw3;
 };
 
+/**
+ * TCP/IP Context Transmit Descriptor, section 3.3.6.
+ */
 struct E1kTDContext
 {
     struct CheckSum_st
     {
+        /** TSE: Header start. !TSE: Checksum start. */
         unsigned u8CSS     : 8;
+        /** Checksum offset - where to store it. */
         unsigned u8CSO     : 8;
+        /** Checksum ending (inclusive) offset, 0 = end of packet. */
         unsigned u16CSE    : 16;
     } ip;
     struct CheckSum_st tu;
     struct TDCDw2_st
     {
+        /** TSE: The total number of payload bytes for this context. Sans header. */
         unsigned u20PAYLEN : 20;
+        /** The descriptor type - E1K_DTYP_CONTEXT (0). */
         unsigned u4DTYP    : 4;
-        /* CMD field       : 8 */
+        /** TUCMD field, 8 bits
+         * @{ */
+        /** TSE: TCP (set) or UDP (clear). */
         unsigned fTCP      : 1;
+        /** TSE: IPv4 (set) or IPv6 (clear) - for finding the payload length field in
+         * the IP header.  Does not affect the checksumming.
+         * @remarks 82544GC/EI interprets a cleared field differently.  */
         unsigned fIP       : 1;
+        /** TSE: TCP segmentation enable.  When clear the context describes  */
         unsigned fTSE      : 1;
+        /** Report status (only applies to dw3.fDD for here). */
         unsigned fRS       : 1;
+        /** Reserved, MBZ. */
         unsigned fRSV1     : 1;
+        /** Descriptor extension, must be set for this descriptor type. */
         unsigned fDEXT     : 1;
+        /** Reserved, MBZ. */
         unsigned fRSV2     : 1;
+        /** Interrupt delay enable. */
         unsigned fIDE      : 1;
+        /** @} */
     } dw2;
     struct TDCDw3_st
     {
+        /** Descriptor Done. */
         unsigned fDD       : 1;
+        /** Reserved, MBZ. */
         unsigned u7RSV     : 7;
+        /** TSO: The header (prototype) length (Ethernet[, VLAN tag], IP, TCP/UDP. */
         unsigned u8HDRLEN  : 8;
+        /** TSO: Maximum segment size. */
         unsigned u16MSS    : 16;
     } dw3;
 };
 typedef struct E1kTDContext E1KTXCTX;
 
+/**
+ * TCP/IP Data Transmit Descriptor, section 3.3.7.
+ */
 struct E1kTDData
 {
-    uint64_t u64BufAddr;                     /**< Address of data buffer */
+    uint64_t u64BufAddr;                        /**< Address of data buffer */
     struct TDDCmd_st
     {
+        /** The total length of data pointed to by this descriptor. */
         unsigned u20DTALEN : 20;
+        /** The descriptor type - E1K_DTYP_DATA (1). */
         unsigned u4DTYP    : 4;
-        /* DCMD field       : 8 */
+        /** @name DCMD field, 8 bits (3.3.7.1).
+         * @{ */
+        /** End of packet.  Note TSCTFC update.  */
         unsigned fEOP      : 1;
+        /** Insert Ethernet FCS/CRC (requires fEOP to be set). */
         unsigned fIFCS     : 1;
+        /** Use the TSE context when set and the normal when clear. */
         unsigned fTSE      : 1;
+        /** Report status (dw3.STA). */
         unsigned fRS       : 1;
+        /** Reserved. 82544GC/EI defines this report packet set (RPS).  */
         unsigned fRSV      : 1;
+        /** Descriptor extension, must be set for this descriptor type. */
         unsigned fDEXT     : 1;
+        /** VLAN enable, requires CTRL.VME, auto enables FCS/CRC.
+         *  Insert dw3.SPECIAL after ethernet header. */
         unsigned fVLE      : 1;
+        /** Interrupt delay enable. */
         unsigned fIDE      : 1;
+        /** @} */
     } cmd;
     struct TDDDw3_st
     {
-        /* STA field */
-        unsigned fDD       : 1;
-        unsigned fEC       : 1;
-        unsigned fLC       : 1;
+        /** @name STA field (3.3.7.2)
+         * @{  */
+        unsigned fDD       : 1;                       /**< Descriptor done. */
+        unsigned fEC       : 1;                      /**< Excess collision. */
+        unsigned fLC       : 1;                        /**< Late collision. */
+        /** Reserved, except for the usual oddball (82544GC/EI) where it's called TU. */
         unsigned fTURSV    : 1;
-        /* RSV field */
-        unsigned u4RSV     : 4;
-        /* POPTS field */
-        unsigned fIXSM     : 1;
-        unsigned fTXSM     : 1;
-        unsigned u6RSV     : 6;
-        /* Special field*/
-        unsigned u12VLAN   : 12;
-        unsigned fCFI      : 1;
-        unsigned u3PRI     : 3;
+        /** @} */
+        unsigned u4RSV     : 4;                   /**< Reserved field, MBZ. */
+        /** @name POPTS (Packet Option) field (3.3.7.3)
+         * @{  */
+        unsigned fIXSM     : 1;                    /**< Insert IP checksum. */
+        unsigned fTXSM     : 1;               /**< Insert TCP/UDP checksum. */
+        unsigned u6RSV     : 6;                         /**< Reserved, MBZ. */
+        /** @} */
+        /** @name SPECIAL field - VLAN tag to be inserted after ethernet header.
+         * Requires fEOP, fVLE and CTRL.VME to be set.
+         * @{ */
+        unsigned u12VLAN   : 12;                      /**< VLAN identifier. */
+        unsigned fCFI      : 1;       /**< Canonical form indicator (VLAN). */
+        unsigned u3PRI     : 3;                  /**< User priority (VLAN). */
+        /** @}  */
     } dw3;
 };
 typedef struct E1kTDData E1KTXDAT;
@@ -888,7 +944,9 @@ struct E1kState_st
     uint32_t                u32Padding2;
 #endif
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     PPDMTHREAD  pTxThread;                                    /**< Transmit thread. */
+#endif
     PDMCRITSECT cs;                  /**< Critical section - what is it protecting? */
 #ifndef E1K_GLOBAL_MUTEX
     PDMCRITSECT csRx;                                     /**< RX Critical section. */
@@ -948,8 +1006,10 @@ struct E1kState_st
     E1KTXCTX    contextTSE;
     /** TX: Context used for ordinary packets. */
     E1KTXCTX    contextNormal;
+#if 1 /** @todo bird/buffering: change this to a 240 bytes buffer of the headers when TSE=1. */
     /** TX: Transmit packet buffer. */
     uint8_t     aTxPacket[E1K_MAX_TX_PKT_SIZE];
+#endif
     /** TX: Number of bytes assembled in TX packet buffer. */
     uint16_t    u16TxPktLen;
     /** TX: IP checksum has to be inserted if true. */
@@ -997,7 +1057,7 @@ struct E1kState_st
     STAMPROFILEADV                      StatReceiveFilter;
     STAMPROFILEADV                      StatReceiveStore;
     STAMPROFILEADV                      StatTransmit;
-    STAMPROFILEADV                      StatTransmitSend;
+    STAMPROFILE                         StatTransmitSend;
     STAMPROFILE                         StatRxOverflow;
     STAMCOUNTER                         StatRxOverflowWakeup;
     STAMCOUNTER                         StatTxDescLegacy;
@@ -1447,7 +1507,7 @@ static void e1kWakeupReceive(PPDMDEVINS pDevIns)
  *
  * @thread  E1000_TX
  */
-static DECLCALLBACK(uint16_t) e1kCSum16(const void *pvBuf, size_t cb)
+static uint16_t e1kCSum16(const void *pvBuf, size_t cb)
 {
     uint32_t  csum = 0;
     uint16_t *pu16 = (uint16_t *)pvBuf;
@@ -1495,7 +1555,7 @@ DECLINLINE(void) e1kPacketDump(E1KSTATE* pState, const uint8_t *cpPacket, size_t
 /**
  * Determine the type of transmit descriptor.
  *
- * @returns Descriptor type. See E1K_DTYPE_XXX defines.
+ * @returns Descriptor type. See E1K_DTYP_XXX defines.
  *
  * @param   pDesc       Pointer to descriptor union.
  * @thread  E1000_TX
@@ -1994,7 +2054,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
              * Note that it is safe to leave the critical section here since e1kRegWriteRDT()
              * modifies RDT only.
              */
-            if(cb > pState->u16RxBSize)
+            if (cb > pState->u16RxBSize)
             {
                 desc.status.fEOP = false;
                 e1kCsRxLeave(pState);
@@ -2842,6 +2902,7 @@ static void e1kTransmitFrame(E1KSTATE* pState, uint8_t *pFrame, uint16_t u16Fram
     e1kPacketDump(pState, pFrame, u16FrameLen, "--> Outgoing");
 
 
+    int rc = VINF_SUCCESS;
     if (GET_BITS(RCTL, LBM) == RCTL_LBM_TCVR)
     {
         E1KRXDST status;
@@ -2854,9 +2915,9 @@ static void e1kTransmitFrame(E1KSTATE* pState, uint8_t *pFrame, uint16_t u16Fram
         /* Release critical section to avoid deadlock in CanReceive */
         //e1kCsLeave(pState);
         e1kMutexRelease(pState);
-        STAM_PROFILE_ADV_START(&pState->StatTransmitSend, a);
-        int rc = pState->pDrv->pfnSendDeprecated(pState->pDrv, pFrame, u16FrameLen);
-        STAM_PROFILE_ADV_STOP(&pState->StatTransmitSend, a);
+        STAM_PROFILE_START(&pState->StatTransmitSend, a);
+        rc = pState->pDrv->pfnSendDeprecated(pState->pDrv, pFrame, u16FrameLen);
+        STAM_PROFILE_STOP(&pState->StatTransmitSend, a);
         if (rc != VINF_SUCCESS)
         {
             E1kLogRel(("E1000: ERROR! pfnSend returned %Rrc\n", rc));
@@ -2864,6 +2925,16 @@ static void e1kTransmitFrame(E1KSTATE* pState, uint8_t *pFrame, uint16_t u16Fram
         e1kMutexAcquire(pState, VERR_SEM_BUSY, RT_SRC_POS);
         //e1kCsEnter(pState, RT_SRC_POS);
     }
+#if 0  /** @todo bird/buf: error handling. */
+    else
+        rc = VERR_NET_DOWN;
+    if (RT_FAILURE(rc))
+    {
+        /** @todo handle VERR_NET_DOWN and VERR_NET_NO_BUFFER_SPACE. Signal error. */
+        ;
+    }
+#endif
+
 #ifdef E1K_LEDS_WITH_MUTEX
     if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
@@ -2876,7 +2947,7 @@ static void e1kTransmitFrame(E1KSTATE* pState, uint8_t *pFrame, uint16_t u16Fram
 }
 
 /**
- * Compute and write checksum at the specified offset.
+ * Compute and write internet checksum (e1kCSum16) at the specified offset.
  *
  * @param   pState      The device state structure.
  * @param   pPkt        Pointer to the packet.
@@ -2899,10 +2970,10 @@ static void e1kInsertChecksum(E1KSTATE* pState, uint8_t *pPkt, uint16_t u16PktLe
 
     if (cse == 0)
         cse = u16PktLen - 1;
+    uint16_t u16ChkSum = e1kCSum16(pPkt + css, cse - css + 1);
     E1kLog2(("%s Inserting csum: %04X at %02X, old value: %04X\n", INSTANCE(pState),
-             e1kCSum16(pPkt + css, cse - css + 1), cso,
-                       *(uint16_t*)(pPkt + cso)));
-    *(uint16_t*)(pPkt + cso) = e1kCSum16(pPkt + css, cse - css + 1);
+             u16ChkSum, cso, *(uint16_t*)(pPkt + cso)));
+    *(uint16_t*)(pPkt + cso) = u16ChkSum;
 }
 
 /**
@@ -2916,6 +2987,7 @@ static void e1kInsertChecksum(E1KSTATE* pState, uint8_t *pPkt, uint16_t u16PktLe
  * @param   pDesc       Pointer to the descriptor to transmit.
  * @param   u16Len      Length of buffer to the end of segment.
  * @param   fSend       Force packet sending.
+ * @param   pSgBuf      The current scatter gather buffer.
  * @thread  E1000_TX
  */
 static void e1kAddSegment(E1KSTATE* pState, E1KTXDESC* pDesc, uint16_t u16Len, bool fSend)
@@ -2988,6 +3060,7 @@ static void e1kAddSegment(E1KSTATE* pState, E1KTXDESC* pDesc, uint16_t u16Len, b
             pTcpHdr->hdrlen_flags = pState->u16SavedFlags;
             E1K_INC_CNT32(TSCTC);
         }
+        /** @todo else: inc TSCTFC, see EOP description in 3.3.7.1. */
         /* Add TCP length to partial pseudo header sum */
         uint32_t csum = pState->u32SavedCsum
                 + htons(pState->u16TxPktLen - pState->contextTSE.tu.u8CSS);
@@ -3014,6 +3087,8 @@ static void e1kAddSegment(E1KSTATE* pState, E1KTXDESC* pDesc, uint16_t u16Len, b
  * @remarks data.u64BufAddr is used uncoditionally for both data
  *          and legacy descriptors since it is identical to
  *          legacy.u64BufAddr.
+ *
+ * @returns true if the frame should be transmitted, false if not.
  *
  * @param   pState      The device state structure.
  * @param   pDesc       Pointer to the descriptor to transmit.
@@ -3056,20 +3131,15 @@ static bool e1kAddToFrame(E1KSTATE* pState, E1KTXDESC* pDesc, uint32_t u32PartLe
         }
         return false;
     }
-    else
+
+    if (u32PartLen + pState->u16TxPktLen > E1K_MAX_TX_PKT_SIZE)
     {
-        if (u32PartLen + pState->u16TxPktLen > E1K_MAX_TX_PKT_SIZE)
-        {
-            E1kLog(("%s Transmit packet is too large: %d > %d(max)\n",
-                    INSTANCE(pState), u32PartLen + pState->u16TxPktLen, E1K_MAX_TX_PKT_SIZE));
-            return false;
-        }
-        else
-        {
-            PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns), pDesc->data.u64BufAddr, pState->aTxPacket + pState->u16TxPktLen, u32PartLen);
-            pState->u16TxPktLen += u32PartLen;
-        }
+        E1kLog(("%s Transmit packet is too large: %d > %d(max)\n",
+                INSTANCE(pState), u32PartLen + pState->u16TxPktLen, E1K_MAX_TX_PKT_SIZE));
+        return false;
     }
+    PDMDevHlpPhysRead(pState->CTX_SUFF(pDevIns), pDesc->data.u64BufAddr, pState->aTxPacket + pState->u16TxPktLen, u32PartLen);
+    pState->u16TxPktLen += u32PartLen;
 
     return true;
 }
@@ -3108,22 +3178,22 @@ static void e1kDescReport(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 //else {
                 /* Arm the timer to fire in TIVD usec (discard .024) */
                 e1kArmTimer(pState, pState->CTX_SUFF(pTIDTimer), TIDV);
-#ifndef E1K_NO_TAD
+# ifndef E1K_NO_TAD
                 /* If absolute timer delay is enabled and the timer is not running yet, arm it. */
                 E1kLog2(("%s Checking if TAD timer is running\n",
                          INSTANCE(pState)));
                 if (TADV != 0 && !TMTimerIsActive(pState->CTX_SUFF(pTADTimer)))
                     e1kArmTimer(pState, pState->CTX_SUFF(pTADTimer), TADV);
-#endif /* E1K_NO_TAD */
+# endif /* E1K_NO_TAD */
             }
             else
             {
                 E1kLog2(("%s No IDE set, cancel TAD timer and raise interrupt\n",
                         INSTANCE(pState)));
-#ifndef E1K_NO_TAD
+# ifndef E1K_NO_TAD
                 /* Cancel both timers if armed and fire immediately. */
                 e1kCancelTimer(pState, pState->CTX_SUFF(pTADTimer));
-#endif /* E1K_NO_TAD */
+# endif /* E1K_NO_TAD */
 #endif /* E1K_USE_TX_TIMERS */
                 E1K_INC_ISTAT_CNT(pState->uStatIntTx);
                 e1kRaiseInterrupt(pState, VERR_SEM_BUSY, ICR_TXDW);
@@ -3257,6 +3327,8 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
     }
 }
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
+
 /**
  * Wake up callback for transmission thread.
  *
@@ -3323,6 +3395,8 @@ static DECLCALLBACK(int) e1kTxThread(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
     }
     return VINF_SUCCESS;
 }
+
+#endif /* VBOX_WITH_TX_THREAD_IN_NET_DEVICES */
 
 /**
  * Callback for consuming from transmit queue. It gets called in R3 whenever
@@ -3588,7 +3662,7 @@ static int e1kRegReadDefault(E1KSTATE* pState, uint32_t offset, uint32_t index, 
  * @thread  EMT
  */
 
-static int e1kRegWriteUnimplemented(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
+ static int e1kRegWriteUnimplemented(E1KSTATE* pState, uint32_t offset, uint32_t index, uint32_t value)
 {
     E1kLog(("%s At %08X write attempt (%08X) to  unimplemented register %s (%s)\n",
             INSTANCE(pState), offset, value, s_e1kRegMap[index].abbrev, s_e1kRegMap[index].name));
@@ -5298,9 +5372,11 @@ static DECLCALLBACK(int) e1kConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGMNO
 
     e1kHardReset(pState);
 
+#ifdef VBOX_WITH_TX_THREAD_IN_NET_DEVICES
     rc = PDMDevHlpThreadCreate(pDevIns, &pState->pTxThread, pState, e1kTxThread, e1kTxThreadWakeUp, 0, RTTHREADTYPE_IO, "E1000_TX");
     if (RT_FAILURE(rc))
         return rc;
+#endif
 
 #if defined(VBOX_WITH_STATISTICS) || defined(E1K_REL_STATS)
     PDMDevHlpSTAMRegisterF(pDevIns, &pState->StatMMIOReadGC,         STAMTYPE_PROFILE, STAMVISIBILITY_ALWAYS, STAMUNIT_TICKS_PER_CALL, "Profiling MMIO reads in GC",         "/Devices/E1k%d/MMIO/ReadGC", iInstance);
