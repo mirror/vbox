@@ -49,10 +49,11 @@
 
 typedef enum
 {
-    VBOXDISPIF_MODE_UNKNOWN = 0,
-    VBOXDISPIF_MODE_XPDM    = 1
+    VBOXDISPIF_MODE_UNKNOWN  = 0,
+    VBOXDISPIF_MODE_XPDM_NT4 = 1,
+    VBOXDISPIF_MODE_XPDM
 #ifdef VBOXWDDM
-    , VBOXDISPIF_MODE_WDDM  = 2
+    , VBOXDISPIF_MODE_WDDM
 #endif
 } VBOXDISPIF_MODE;
 /* display driver interface abstraction for XPDM & WDDM
@@ -72,6 +73,11 @@ typedef struct VBOXDISPIF
     {
         struct
         {
+            LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
+        } xpdm;
+
+        struct
+        {
             /* open adapter */
             PFND3DKMT_OPENADAPTERFROMHDC pfnD3DKMTOpenAdapterFromHdc;
             PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME pfnD3DKMTOpenAdapterFromGdiDisplayName;
@@ -79,6 +85,7 @@ typedef struct VBOXDISPIF
             PFND3DKMT_CLOSEADAPTER pfnD3DKMTCloseAdapter;
             /* escape */
             PFND3DKMT_ESCAPE pfnD3DKMTEscape;
+            /* auto resize support */
             PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
         } wddm;
     } modeData;
@@ -94,6 +101,7 @@ DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_
 DECLINLINE(VBOXDISPIF_MODE) VBoxDispGetMode(PVBOXDISPIF pIf) { return pIf->enmMode; }
 DWORD VBoxDispIfTerm(PVBOXDISPIF pIf);
 DWORD VBoxDispIfEscape(PCVBOXDISPIF const pIf, PVBOXDISPIFESCAPE pEscape, int cbData);
+DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel);
 
 /* The environment information for services. */
 typedef struct _VBOXSERVICEENV

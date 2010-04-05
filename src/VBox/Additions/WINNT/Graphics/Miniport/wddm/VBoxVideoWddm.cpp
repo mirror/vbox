@@ -2427,7 +2427,7 @@ DxgkDdiRecommendFunctionalVidPn(
     int32_t iPreferredModeInfo;
     bool bFreeModes = false;
     VBoxWddmGetModesTable(pDevExt, /* PDEVICE_EXTENSION DeviceExtension */
-            false, /* bool bRebuildTable*/
+            true, /* bool bRebuildTable*/
             &pModes, /* VIDEO_MODE_INFORMATION ** ppModes*/
             &cModes, /* uint32_t * pcModes */
             &iPreferredMode, /* uint32_t * pPreferrableMode*/
