@@ -13704,39 +13704,39 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     wsmap="managed"
   >
     <desc>
-      The IPerformanceCollector interface represents a service that collects and
-      stores performance metrics data.
+      The IPerformanceCollector interface represents a service that collects
+      and stores performance metrics data.
 
-      Performance metrics are associated with objects of interfaces like IHost and
-      IMachine. Each object has a distinct set of performance metrics.
-      The set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
+      Performance metrics are associated with objects of interfaces like IHost
+      and IMachine. Each object has a distinct set of performance metrics.  The
+      set can be obtained with <link to="IPerformanceCollector::getMetrics"/>.
 
       Metric data is collected at the specified intervals and is retained
       internally. The interval and the number of retained samples can be set
       with <link to="IPerformanceCollector::setupMetrics" />. Both metric data
       and collection settings are not persistent, they are discarded as soon as
       VBoxSVC process terminates. Moreover, metric settings and data associated
-      with a particular VM only exist while VM is running. They disappear as soon
-      as VM shuts down. It is not possible to setup metrics for machines that are
-      powered off. One needs to start VM first, then set up metric collection
-      parameters.
+      with a particular VM only exist while VM is running. They disappear as
+      soon as VM shuts down. It is not possible to set up metrics for machines
+      that are powered off. One needs to start VM first, then set up metric
+      collection parameters.
 
       Metrics are organized hierarchically, with each level separated by a
       slash (/) character. Generally, the scheme for metric names is like this:
 
       <tt>Category/Metric[/SubMetric][:aggregation]</tt>
 
-      "Category/Metric" together form the base metric name. A base metric is the
-      smallest unit for which a sampling interval and the number of retained
-      samples can be set. Only base metrics can be enabled and disabled. All
-      sub-metrics are collected when their base metric is collected.
-      Collected values for any set of sub-metrics can be queried with
-      <link to="IPerformanceCollector::queryMetricsData" />.
+      "Category/Metric" together form the base metric name. A base metric is
+      the smallest unit for which a sampling interval and the number of
+      retained samples can be set. Only base metrics can be enabled and
+      disabled. All sub-metrics are collected when their base metric is
+      collected.  Collected values for any set of sub-metrics can be queried
+      with <link to="IPerformanceCollector::queryMetricsData" />.
 
-      For example "CPU/Load/User:avg"
-      metric name stands for the "CPU" category, "Load" metric, "User" submetric,
-      "average" aggregate. An aggregate function is computed over all retained
-      data. Valid aggregate functions are:
+      For example "CPU/Load/User:avg" metric name stands for the "CPU"
+      category, "Load" metric, "User" submetric, "average" aggregate. An
+      aggregate function is computed over all retained data. Valid aggregate
+      functions are:
 
       <ul>
           <li>avg -- average</li>
@@ -13744,12 +13744,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           <li>max -- maximum</li>
       </ul>
 
-      When setting up
-      metric parameters, querying metric data, enabling or disabling metrics
-      wildcards can be used in metric names to specify a subset of metrics. For
-      example, to select all CPU-related metrics use <tt>CPU/*</tt>, all
-      averages can be queried using <tt>*:avg</tt> and so on. To query metric
-      values without aggregates <tt>*:</tt> can be used.
+      When setting up metric parameters, querying metric data, enabling or
+      disabling metrics wildcards can be used in metric names to specify a
+      subset of metrics. For example, to select all CPU-related metrics
+      use <tt>CPU/*</tt>, all averages can be queried using <tt>*:avg</tt> and
+      so on. To query metric values without aggregates <tt>*:</tt> can be used.
 
       The valid names for base metrics are:
 
@@ -13770,12 +13769,12 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           will be collected for. Use references to IHost and IMachine objects.
         </li>
         <li>
-          Allocate and populate an array with base metric names the data will be
-          collected for.
+          Allocate and populate an array with base metric names the data will
+          be collected for.
         </li>
         <li>
-          Call <link to="IPerformanceCollector::setupMetrics" />. From now on the
-          metric data will be collected and stored.
+          Call <link to="IPerformanceCollector::setupMetrics" />. From now on
+          the metric data will be collected and stored.
         </li>
         <li>
           Wait for the data to get collected.
@@ -13790,9 +13789,9 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
           collected for. Note that metric names differ from base metric names.
         </li>
         <li>
-          Call <link to="IPerformanceCollector::queryMetricsData" />. The data that
-          have been collected so far are returned. Note that the values are still
-          retained internally and data collection continues.
+          Call <link to="IPerformanceCollector::queryMetricsData" />. The data
+          that have been collected so far are returned. Note that the values
+          are still retained internally and data collection continues.
         </li>
       </ul>
 
@@ -13847,14 +13846,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
     <method name="setupMetrics">
       <desc>
         Sets parameters of specified base metrics for a set of objects. Returns
-        an array of <link to="IPerformanceMetric" /> describing the metrics have
-        been affected.
+        an array of <link to="IPerformanceMetric" /> describing the metrics
+        have been affected.
         <note>
-          @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains
-          a single element and object array contains many, the single metric
-          name array element is applied to each object array element to form
-          metric/object pairs.
+          @c Null or empty metric name array means all metrics. @c Null or
+          empty object array means all existing objects. If metric name array
+          contains a single element and object array contains many, the single
+          metric name array element is applied to each object array element to
+          form metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
@@ -13870,14 +13869,14 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
       </param>
       <param name="period" type="unsigned long" dir="in">
         <desc>
-          Time interval in seconds between two consecutive samples of performance
-          data.
+          Time interval in seconds between two consecutive samples of
+          performance data.
         </desc>
       </param>
       <param name="count" type="unsigned long" dir="in">
         <desc>
-          Number of samples to retain in performance data history. Older samples
-          get discarded.
+          Number of samples to retain in performance data history. Older
+          samples get discarded.
         </desc>
       </param>
       <param name="affectedMetrics" type="IPerformanceMetric" dir="return" safearray="yes">
@@ -13893,11 +13892,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="IPerformanceMetric" /> describing the metrics have been
         affected.
         <note>
-          @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains
-          a single element and object array contains many, the single metric
-          name array element is applied to each object array element to form
-          metric/object pairs.
+          @c Null or empty metric name array means all metrics. @c Null or
+          empty object array means all existing objects. If metric name array
+          contains a single element and object array contains many, the single
+          metric name array element is applied to each object array element to
+          form metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
@@ -13924,11 +13923,11 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <link to="IPerformanceMetric" /> describing the metrics have been
         affected.
         <note>
-          @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains
-          a single element and object array contains many, the single metric
-          name array element is applied to each object array element to form
-          metric/object pairs.
+          @c Null or empty metric name array means all metrics. @c Null or
+          empty object array means all existing objects. If metric name array
+          contains a single element and object array contains many, the single
+          metric name array element is applied to each object array element to
+          form metric/object pairs.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
@@ -13967,22 +13966,21 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
         <tt>returnData[returnIndices[i]]</tt>.
 
         <note>
-          @c Null or empty metric name array means all metrics. @c Null or empty
-          object array means all existing objects. If metric name array contains
-          a single element and object array contains many, the single metric
-          name array element is applied to each object array element to form
-          metric/object pairs.
+          @c Null or empty metric name array means all metrics. @c Null or
+          empty object array means all existing objects. If metric name array
+          contains a single element and object array contains many, the single
+          metric name array element is applied to each object array element to
+          form metric/object pairs.
         </note>
         <note>
-          Data collection continues behind the scenes after call to
-          @c queryMetricsData. The return data can be seen as the snapshot of
-          the current state at the time of @c queryMetricsData call. The
-          internally kept metric values are not cleared by the call. This makes
-          possible querying different subsets of metrics or aggregates with
-          subsequent calls. If periodic querying is needed it is highly
-          suggested to query the values with @c interval*count period to avoid
-          confusion. This way a completely new set of data values will be
-          provided by each query.
+          Data collection continues behind the scenes after call to @c
+          queryMetricsData. The return data can be seen as the snapshot of the
+          current state at the time of @c queryMetricsData call. The internally
+          kept metric values are not cleared by the call. This makes possible
+          querying different subsets of metrics or aggregates with subsequent
+          calls. If periodic querying is needed it is highly suggested to query
+          the values with @c interval*count period to avoid confusion. This way
+          a completely new set of data values will be provided by each query.
         </note>
       </desc>
       <param name="metricNames" type="wstring" dir="in" safearray="yes">
@@ -14022,15 +14020,16 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
        </param>
        <param name="returnSequenceNumbers" type="unsigned long" dir="out" safearray="yes">
          <desc>
-           Sequence numbers of the first elements of value sequences of particular metrics
-           returned in @c returnData. For aggregate metrics it is the sequence number of
-           the sample the aggregate started calculation from.
+           Sequence numbers of the first elements of value sequences of
+           particular metrics returned in @c returnData. For aggregate metrics
+           it is the sequence number of the sample the aggregate started
+           calculation from.
          </desc>
        </param>
       <param name="returnDataIndices" type="unsigned long" dir="out" safearray="yes">
         <desc>
-          Indices of the first elements of value sequences of particular metrics
-          returned in @c returnData.
+          Indices of the first elements of value sequences of particular
+          metrics returned in @c returnData.
         </desc>
       </param>
       <param name="returnDataLengths" type="unsigned long" dir="out" safearray="yes">
