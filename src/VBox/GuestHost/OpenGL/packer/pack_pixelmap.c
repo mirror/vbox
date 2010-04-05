@@ -13,7 +13,7 @@ static unsigned char * __gl_HandlePixelMapData(GLenum map, GLsizei mapsize, int 
     int nodata = (values == NULL) || crStateIsBufferBound(GL_PIXEL_UNPACK_BUFFER_ARB);
     int packet_length = 
         sizeof( map ) + 
-        sizeof( mapsize ) + sizeof(int) + sizeof(uintptr_t);
+        sizeof( mapsize ) + sizeof(int) + sizeof(GLint);
     unsigned char *data_ptr;
 
     if (!nodata)
@@ -26,7 +26,7 @@ static unsigned char * __gl_HandlePixelMapData(GLenum map, GLsizei mapsize, int 
     WRITE_DATA( 0, GLenum, map );
     WRITE_DATA( 4, GLsizei, mapsize );
     WRITE_DATA( 8, int, nodata);
-    WRITE_DATA( 12, uintptr_t, (uintptr_t)values);
+    WRITE_DATA( 12, GLint, (GLint)(uintptr_t)values);
 
     if (!nodata)
     {

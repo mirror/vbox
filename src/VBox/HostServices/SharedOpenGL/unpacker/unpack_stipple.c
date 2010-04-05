@@ -12,7 +12,7 @@ void crUnpackPolygonStipple( void  )
     GLubyte *mask;
 
     if (nodata)
-        mask = (void*) READ_DATA(4, uintptr_t);
+        mask = (void*) (uintptr_t) READ_DATA(4, GLint);
     else
         mask = DATA_POINTER( 4, GLubyte );
 

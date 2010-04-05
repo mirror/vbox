@@ -24,7 +24,7 @@ void PACK_APIENTRY crPackDrawPixels(GLsizei width, GLsizei height,
         sizeof( width ) +
         sizeof( height ) +
         sizeof( format ) +
-        sizeof( type ) + sizeof(int) + sizeof(uintptr_t);
+        sizeof( type ) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -44,7 +44,7 @@ void PACK_APIENTRY crPackDrawPixels(GLsizei width, GLsizei height,
     WRITE_DATA( 8, GLenum, format );
     WRITE_DATA( 12, GLenum, type );
     WRITE_DATA( 16, GLint, noimagedata );
-    WRITE_DATA( 20, uintptr_t, (uintptr_t) pixels );
+    WRITE_DATA( 20, GLint, (GLint) (uintptr_t) pixels );
 
     if (!noimagedata)
     {
@@ -123,7 +123,7 @@ void PACK_APIENTRY crPackBitmap(GLsizei width, GLsizei height,
         sizeof( yorig ) + 
         sizeof( xmove ) + 
         sizeof( ymove ) +
-        sizeof( GLuint ) + sizeof(uintptr_t);
+        sizeof( GLuint ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -140,7 +140,7 @@ void PACK_APIENTRY crPackBitmap(GLsizei width, GLsizei height,
     WRITE_DATA( 16, GLfloat, xmove );
     WRITE_DATA( 20, GLfloat, ymove );
     WRITE_DATA( 24, GLuint, noimagedata );
-    WRITE_DATA( 28, uintptr_t, (uintptr_t) bitmap);
+    WRITE_DATA( 28, GLint, (GLint) (uintptr_t) bitmap);
 
     crBitmapCopy(width, height, (GLubyte *)(data_ptr + 32), bitmap, unpack);
 

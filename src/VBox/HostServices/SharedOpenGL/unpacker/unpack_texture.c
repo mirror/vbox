@@ -30,7 +30,7 @@ void crUnpackTexImage3DEXT( void )
       pointer would convert to either NULL or offset in the bound buffer.
      */
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+40, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+40, GLint);
     else
         pixels = DATA_POINTER( sizeof( int ) + 44, GLvoid );
 
@@ -57,7 +57,7 @@ void crUnpackTexImage3D( void )
     GLvoid *pixels;
     
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+40, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+40, GLint);
     else
         pixels = DATA_POINTER( sizeof( int ) + 44, GLvoid );
     
@@ -81,7 +81,7 @@ void crUnpackTexImage2D( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+36, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+36, GLint);
     else 
         pixels = DATA_POINTER( sizeof( int ) + 40, GLvoid );
 
@@ -103,7 +103,7 @@ void crUnpackTexImage1D( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+32, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+32, GLint);
     else 
         pixels = DATA_POINTER( sizeof( int ) + 36, GLvoid );
 
@@ -190,7 +190,7 @@ void crUnpackTexSubImage3D( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+44, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+44, GLint);
     else 
         pixels = DATA_POINTER( sizeof( int ) + 48, GLvoid );
 
@@ -219,7 +219,7 @@ void crUnpackTexSubImage2D( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+36, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+36, GLint);
     else 
         pixels = DATA_POINTER( sizeof( int ) + 40, GLvoid );
 
@@ -245,7 +245,7 @@ void crUnpackTexSubImage1D( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(sizeof(int)+28, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(sizeof(int)+28, GLint);
     else 
         pixels = DATA_POINTER( sizeof( int ) + 32, GLvoid );
 
@@ -342,7 +342,7 @@ void crUnpackExtendCompressedTexImage3DARB( void )
     GLvoid  *pixels;
 
     if( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+36, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+36, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof(int) + 40, GLvoid );
 
@@ -365,7 +365,7 @@ void crUnpackExtendCompressedTexImage2DARB( void )
     GLvoid *pixels;
 
     if ( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+32, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+32, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof( int ) + 36, GLvoid );
 
@@ -387,7 +387,7 @@ void crUnpackExtendCompressedTexImage1DARB( void )
     GLvoid  *pixels;
 
     if( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+28, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+28, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof(int) + 32, GLvoid );
 
@@ -412,7 +412,7 @@ void crUnpackExtendCompressedTexSubImage3DARB( void )
     GLvoid  *pixels;
 
     if( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+44, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+44, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof(int) + 48, GLvoid );
 
@@ -437,7 +437,7 @@ void crUnpackExtendCompressedTexSubImage2DARB( void )
     GLvoid  *pixels;
 
     if( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+36, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+36, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof(int) + 40, GLvoid );
 
@@ -459,7 +459,7 @@ void crUnpackExtendCompressedTexSubImage1DARB( void )
     GLvoid  *pixels;
 
     if( noimagedata )
-        pixels = (void*) READ_DATA(4+sizeof(int)+28, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA(4+sizeof(int)+28, GLint);
     else
         pixels = DATA_POINTER( 4 + sizeof(int) + 32, GLvoid );
 

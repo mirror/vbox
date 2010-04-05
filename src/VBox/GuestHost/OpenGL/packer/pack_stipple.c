@@ -17,7 +17,7 @@ void PACK_APIENTRY crPackPolygonStipple( const GLubyte *mask )
     int packet_length = sizeof(int);
 
     if (nodata)
-        packet_length += sizeof(uintptr_t);
+        packet_length += sizeof(GLint);
     else
         packet_length += 32*32/8;
 
@@ -25,7 +25,7 @@ void PACK_APIENTRY crPackPolygonStipple( const GLubyte *mask )
     WRITE_DATA_AI(int, nodata);
     if (nodata)
     {
-        WRITE_DATA_AI(uintptr_t, (uintptr_t)mask);
+        WRITE_DATA_AI(GLint, (GLint)(uintptr_t)mask);
     }
     else
     {

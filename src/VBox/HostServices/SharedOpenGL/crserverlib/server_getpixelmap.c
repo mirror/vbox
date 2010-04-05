@@ -67,7 +67,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapfv( GLenum map, GLfloat
     {
         GLvoid *pbo_offset;
 
-        pbo_offset = (GLfloat*) ((uintptr_t) *((GLvoid**)values));
+        pbo_offset = (GLfloat*) ((uintptr_t) *((GLint*)values));
 
         cr_server.head_spu->dispatch_table.GetPixelMapfv( map, pbo_offset );
     }
@@ -94,7 +94,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapuiv( GLenum map, GLuint
     {
         GLvoid *pbo_offset;
 
-        pbo_offset = (GLuint*) ((uintptr_t) *((GLvoid**)values));
+        pbo_offset = (GLuint*) ((uintptr_t) *((GLint*)values));
 
         cr_server.head_spu->dispatch_table.GetPixelMapuiv( map, pbo_offset );
     }
@@ -121,7 +121,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPixelMapusv( GLenum map, GLusho
     {
         GLvoid *pbo_offset;
 
-        pbo_offset = (GLushort*) ((uintptr_t) *((GLvoid**)values));
+        pbo_offset = (GLushort*) ((uintptr_t) *((GLint*)values));
 
         cr_server.head_spu->dispatch_table.GetPixelMapusv( map, pbo_offset );
     }
