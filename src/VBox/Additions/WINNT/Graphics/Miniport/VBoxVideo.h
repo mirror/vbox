@@ -583,10 +583,15 @@ DriverEntry(
 RT_C_DECLS_END
 
 VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
-        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
+        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, int32_t * pPreferrableMode,
         D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions);
 
 VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension);
+
+/* @return STATUS_BUFFER_TOO_SMALL - if buffer is too small, STATUS_SUCCESS - on success */
+NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
+        D3DKMDT_2DREGION *pResolution,
+        VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t * piPreferrableMode);
 
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);

@@ -1238,7 +1238,7 @@ static bool g_bModesTableInitialized = false;
  * or the available VRAM does not allow for additional modes.
  */
 VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
-        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, uint32_t * pPreferrableMode,
+        VIDEO_MODE_INFORMATION ** ppModes, uint32_t * pcModes, int32_t * pPreferrableMode,
         D3DKMDT_2DREGION **ppResolutions, uint32_t * pcResolutions)
 {
     if(bRebuildTable || !g_bModesTableInitialized)
@@ -1249,7 +1249,7 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
 
     *ppModes = VideoModes;
     *pcModes = gNumVideoModes;
-    *pPreferrableMode = gPreferredVideoMode;
+    *pPreferrableMode = (int32_t)gPreferredVideoMode;
     *ppResolutions = g_VBoxWddmVideoResolutions;
     *pcResolutions = g_VBoxWddmNumResolutions;
 }
@@ -1257,6 +1257,45 @@ VOID VBoxWddmGetModesTable(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable
 VOID VBoxWddmInvalidateModesTable(PDEVICE_EXTENSION DeviceExtension)
 {
     g_bModesTableInitialized = false;
+}
+
+NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool bRebuildTable,
+        D3DKMDT_2DREGION *pResolution,
+        VIDEO_MODE_INFORMATION * pModes, uint32_t cModes, uint32_t *pcModes, int32_t *piPreferrableMode)
+{
+    VIDEO_MODE_INFORMATION *pAllModes;
+    uint32_t cAllModes, cAllResolutions;
+    int32_t iPreferrableMode;
+    D3DKMDT_2DREGION *pAllResolutions;
+    VBoxWddmGetModesTable(DeviceExtension, bRebuildTable,
+            &pAllModes, &cAllModes, &iPreferrableMode,
+            &pAllResolutions, &cAllResolutions);
+    NTSTATUS Status = STATUS_SUCCESS;
+    uint32_t cFound = 0;
+    int iFoundPreferrableMode = -1;
+    for (uint32_t i = 0; i < cAllModes; ++i)
+    {
+        VIDEO_MODE_INFORMATION *pCur = &pAllModes[i];
+        if (pResolution->cx == pAllModes[iPreferrableMode].VisScreenWidth
+                        && pResolution->cy == pAllModes[iPreferrableMode].VisScreenHeight)
+        {
+            if (pModes && cModes > cFound)
+            {
+                memcpy(&pModes[cFound], pCur, sizeof (VIDEO_MODE_INFORMATION));
+                ++pModes;
+            }
+            else
+                Status = STATUS_BUFFER_TOO_SMALL;
+            ++cFound;
+
+            if (i == (uint32_t)iPreferrableMode)
+                iFoundPreferrableMode = i;
+        }
+    }
+    *pcModes = cFound;
+    if (piPreferrableMode)
+        *piPreferrableMode = iFoundPreferrableMode;
+    return Status;
 }
 
 #else

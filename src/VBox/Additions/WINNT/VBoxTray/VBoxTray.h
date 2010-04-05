@@ -68,17 +68,18 @@ typedef struct VBOXDISPIF
 #ifdef VBOXWDDM
     /* with WDDM the approach is to call into WDDM miniport driver via PFND3DKMT API provided by the GDI,
      * The PFND3DKMT is supposed to be used by the OpenGL ICD according to MSDN, so this approach is a bit hacky */
-    /* open adapter */
     union
     {
         struct
         {
-        PFND3DKMT_OPENADAPTERFROMHDC pfnD3DKMTOpenAdapterFromHdc;
-        PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME pfnD3DKMTOpenAdapterFromGdiDisplayName;
-        /* close adapter */
-        PFND3DKMT_CLOSEADAPTER pfnD3DKMTCloseAdapter;
-        /* escape */
-        PFND3DKMT_ESCAPE pfnD3DKMTEscape;
+            /* open adapter */
+            PFND3DKMT_OPENADAPTERFROMHDC pfnD3DKMTOpenAdapterFromHdc;
+            PFND3DKMT_OPENADAPTERFROMGDIDISPLAYNAME pfnD3DKMTOpenAdapterFromGdiDisplayName;
+            /* close adapter */
+            PFND3DKMT_CLOSEADAPTER pfnD3DKMTCloseAdapter;
+            /* escape */
+            PFND3DKMT_ESCAPE pfnD3DKMTEscape;
+            PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
         } wddm;
     } modeData;
 #endif
