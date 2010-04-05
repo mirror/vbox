@@ -14,7 +14,7 @@ void crUnpackPixelMapfv( void  )
     GLfloat *values;
 
     if (nodata)
-        values = (GLfloat*) READ_DATA(sizeof(int) + 12, uintptr_t);
+        values = (GLfloat*) (uintptr_t) READ_DATA(sizeof(int) + 12, GLint);
     else
         values = DATA_POINTER( sizeof( int ) + 16, GLfloat );
 
@@ -30,7 +30,7 @@ void crUnpackPixelMapuiv( void  )
     GLuint *values;
 
     if (nodata)
-        values = (GLuint*) READ_DATA(sizeof(int) + 12, uintptr_t);
+        values = (GLuint*) (uintptr_t) READ_DATA(sizeof(int) + 12, GLint);
     else
         values = DATA_POINTER( sizeof( int ) + 16, GLuint );
         
@@ -46,7 +46,7 @@ void crUnpackPixelMapusv( void  )
     GLushort *values;
 
     if (nodata)
-        values = (GLushort*) READ_DATA(sizeof(int) + 12, uintptr_t);
+        values = (GLushort*) (uintptr_t) READ_DATA(sizeof(int) + 12, GLint);
     else
         values = DATA_POINTER( sizeof( int ) + 16, GLushort );
 

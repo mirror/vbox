@@ -28,7 +28,7 @@ crServerDispatchGetTexImage(GLenum target, GLint level, GLenum format,
           regarless of guest/host bitness we're using only 4lower bytes as there're no
           pbo>4gb (yet?)
          */
-        pbo_offset = (GLvoid*) ((uintptr_t) *((GLvoid**)pixels));
+        pbo_offset = (GLvoid*) ((uintptr_t) *((GLint*)pixels));
 
         cr_server.head_spu->dispatch_table.GetTexImage(target, level, format, type, pbo_offset);
 
@@ -73,7 +73,7 @@ crServerDispatchGetCompressedTexImageARB(GLenum target, GLint level,
     {
         GLvoid *pbo_offset;
 
-        pbo_offset = (GLvoid*) ((uintptr_t) *((GLvoid**)img));
+        pbo_offset = (GLvoid*) ((uintptr_t) *((GLint*)img));
 
         cr_server.head_spu->dispatch_table.GetCompressedTexImageARB(target, level, pbo_offset);
 
@@ -105,7 +105,7 @@ void SERVER_DISPATCH_APIENTRY crServerDispatchGetPolygonStipple( GLubyte * mask 
     {
         GLvoid *pbo_offset;
 
-        pbo_offset = (GLubyte*) ((uintptr_t) *((GLvoid**)mask));
+        pbo_offset = (GLubyte*) ((uintptr_t) *((GLint*)mask));
 
         cr_server.head_spu->dispatch_table.GetPolygonStipple(pbo_offset);
     }

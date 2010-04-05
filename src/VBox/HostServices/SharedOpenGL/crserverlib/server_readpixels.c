@@ -39,7 +39,7 @@ crServerDispatchReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
           regarless of guest/host bitness we're using only 4lower bytes as there're no
           pbo>4gb (yet?)
          */
-        pbo_offset = (GLvoid*) ((uintptr_t) *((GLvoid**)pixels));
+        pbo_offset = (GLvoid*) ((uintptr_t) *((GLint*)pixels));
 
         cr_server.head_spu->dispatch_table.ReadPixels(x, y, width, height,
                                                       format, type, pbo_offset);

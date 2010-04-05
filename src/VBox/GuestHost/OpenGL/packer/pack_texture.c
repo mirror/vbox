@@ -26,7 +26,7 @@ crPackTexImage1D(GLenum target, GLint level,
         sizeof(level) +
         sizeof(internalformat) +
         sizeof(width) +
-        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -42,7 +42,7 @@ crPackTexImage1D(GLenum target, GLint level,
     WRITE_DATA(20, GLenum, format);
     WRITE_DATA(24, GLenum, type);
     WRITE_DATA(28, int, noimagedata);
-    WRITE_DATA(32, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA(32, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -72,7 +72,7 @@ crPackTexImage2D(GLenum target, GLint level,
         sizeof(internalformat) +
         sizeof(width) +
         sizeof(height) +
-        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+        sizeof(border) + sizeof(format) + sizeof(type) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -104,7 +104,7 @@ crPackTexImage2D(GLenum target, GLint level,
     WRITE_DATA(24, GLenum, format);
     WRITE_DATA(28, GLenum, type);
     WRITE_DATA(32, int, noimagedata);
-    WRITE_DATA(36, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA(36, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -153,7 +153,7 @@ crPackTexImage3DEXT(GLenum target, GLint level,
         sizeof( border ) +
         sizeof( format ) +
         sizeof( type ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -181,7 +181,7 @@ crPackTexImage3DEXT(GLenum target, GLint level,
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLenum, type );
     WRITE_DATA( 36, int, noimagedata );
-    WRITE_DATA( 40, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA( 40, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -229,7 +229,7 @@ crPackTexImage3D(GLenum target, GLint level,
         sizeof( border ) +
         sizeof( format ) +
         sizeof( type ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -257,7 +257,7 @@ crPackTexImage3D(GLenum target, GLint level,
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLenum, type );
     WRITE_DATA( 36, int, noimagedata );
-    WRITE_DATA( 40, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA( 40, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -561,7 +561,7 @@ crPackTexSubImage3D(GLenum target, GLint level,
         sizeof(height) +
         sizeof(depth) +
         sizeof(format) +
-        sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+        sizeof(type) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -580,7 +580,7 @@ crPackTexSubImage3D(GLenum target, GLint level,
     WRITE_DATA(32, GLenum, format);
     WRITE_DATA(36, GLenum, type);
     WRITE_DATA(40, GLint, noimagedata);
-    WRITE_DATA(44, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA(44, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -611,7 +611,7 @@ crPackTexSubImage2D(GLenum target, GLint level,
         sizeof(yoffset) +
         sizeof(width) +
         sizeof(height) +
-        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -628,7 +628,7 @@ crPackTexSubImage2D(GLenum target, GLint level,
     WRITE_DATA(24, GLenum, format);
     WRITE_DATA(28, GLenum, type);
     WRITE_DATA(32, GLint, noimagedata);
-    WRITE_DATA(36, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA(36, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -655,7 +655,7 @@ crPackTexSubImage1D(GLenum target, GLint level,
         sizeof(level) +
         sizeof(xoffset) +
         sizeof(width) +
-        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(uintptr_t);
+        sizeof(format) + sizeof(type) + sizeof(int) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -670,7 +670,7 @@ crPackTexSubImage1D(GLenum target, GLint level,
     WRITE_DATA(16, GLenum, format);
     WRITE_DATA(20, GLenum, type);
     WRITE_DATA(24, GLint, noimagedata);
-    WRITE_DATA(28, uintptr_t, (uintptr_t) pixels);
+    WRITE_DATA(28, GLint, (GLint)(uintptr_t) pixels);
 
     if (!noimagedata)
     {
@@ -732,7 +732,7 @@ void PACK_APIENTRY crPackCompressedTexImage1DARB( GLenum target, GLint level, GL
         sizeof( width ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -749,7 +749,7 @@ void PACK_APIENTRY crPackCompressedTexImage1DARB( GLenum target, GLint level, GL
     WRITE_DATA( 20, GLint, border );
     WRITE_DATA( 24, GLsizei, imagesize );
     WRITE_DATA( 28, int, noimagedata );
-    WRITE_DATA( 32, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 32, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 36), (void *)data, imagesize);
@@ -778,7 +778,7 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
         sizeof( height ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -797,7 +797,7 @@ void PACK_APIENTRY crPackCompressedTexImage2DARB( GLenum target, GLint level, GL
     WRITE_DATA( 24, GLint, border );
     WRITE_DATA( 28, GLsizei, imagesize );
     WRITE_DATA( 32, int, noimagedata );
-    WRITE_DATA( 36, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 36, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 40), (void *)data, imagesize);
@@ -827,7 +827,7 @@ void PACK_APIENTRY crPackCompressedTexImage3DARB( GLenum target, GLint level, GL
         sizeof( depth ) + 
         sizeof( border ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -845,7 +845,7 @@ void PACK_APIENTRY crPackCompressedTexImage3DARB( GLenum target, GLint level, GL
     WRITE_DATA( 28, GLint, border );
     WRITE_DATA( 32, GLsizei, imagesize );
     WRITE_DATA( 36, int, noimagedata );
-    WRITE_DATA( 40, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 40, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 44), (void *)data, imagesize);
@@ -873,7 +873,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage1DARB( GLenum target, GLint level,
         sizeof( width ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -889,7 +889,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage1DARB( GLenum target, GLint level,
     WRITE_DATA( 20, GLenum, format );
     WRITE_DATA( 24, GLsizei, imagesize );
     WRITE_DATA( 28, int, noimagedata );
-    WRITE_DATA( 32, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 32, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 36), (void *)data, imagesize);
@@ -919,7 +919,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage2DARB( GLenum target, GLint level,
         sizeof( height ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -937,7 +937,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage2DARB( GLenum target, GLint level,
     WRITE_DATA( 28, GLenum, format );
     WRITE_DATA( 32, GLsizei, imagesize );
     WRITE_DATA( 36, int, noimagedata );
-    WRITE_DATA( 40, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 40, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 44), (void *)data, imagesize);
@@ -969,7 +969,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
         sizeof( depth ) + 
         sizeof( format ) +
         sizeof( imagesize ) +
-        sizeof( int ) + sizeof(uintptr_t);
+        sizeof( int ) + sizeof(GLint);
 
     if (!noimagedata)
     {
@@ -989,7 +989,7 @@ void PACK_APIENTRY crPackCompressedTexSubImage3DARB( GLenum target, GLint level,
     WRITE_DATA( 36, GLenum, format );
     WRITE_DATA( 40, GLsizei, imagesize );
     WRITE_DATA( 44, int, noimagedata );
-    WRITE_DATA( 48, uintptr_t, (uintptr_t) data);
+    WRITE_DATA( 48, GLint, (GLint)(uintptr_t) data);
 
     if (!noimagedata) {
         crMemcpy( (void *)(data_ptr + 52), (void *)data, imagesize);

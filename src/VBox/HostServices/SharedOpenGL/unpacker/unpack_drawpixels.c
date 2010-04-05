@@ -17,7 +17,7 @@ void crUnpackDrawPixels( void )
     GLvoid *pixels;
 
     if (noimagedata)
-        pixels = (void*) READ_DATA( sizeof( int ) + 20, uintptr_t);
+        pixels = (void*) (uintptr_t) READ_DATA( sizeof( int ) + 20, GLint);
     else
         pixels = DATA_POINTER( sizeof( int ) + 24, GLvoid );
 
@@ -43,7 +43,7 @@ void crUnpackBitmap( void )
     GLubyte *bitmap;
 
     if (noimagedata)
-        bitmap = (void*) READ_DATA(sizeof(int) + 28, uintptr_t);
+        bitmap = (void*) (uintptr_t) READ_DATA(sizeof(int) + 28, GLint);
     else
         bitmap = DATA_POINTER( sizeof(int) + 32, GLubyte );
 
