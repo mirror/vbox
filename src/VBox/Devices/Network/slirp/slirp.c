@@ -1530,7 +1530,6 @@ static void arp_input(PNATState pData, struct mbuf *m)
                 memcpy(rah->ar_tha, ah->ar_sha, ETH_ALEN);
                 memcpy(rah->ar_tip, ah->ar_sip, 4);
                 if_encap(pData, ETH_P_ARP, mr, ETH_ENCAP_URG);
-                m_free(pData, m);
             }
             /* Gratuitous ARP */
             if (  *(uint32_t *)ah->ar_sip == *(uint32_t *)ah->ar_tip
@@ -2098,6 +2097,8 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
     /* warn!!! should falls in mbuf minimal size */
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
 #endif
+    m->m_data += ETH_HLEN;
+    m->m_len -= ETH_HLEN;
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
 }
 
