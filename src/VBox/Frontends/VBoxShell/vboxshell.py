@@ -525,7 +525,7 @@ def listCmd(ctx, args):
             tele = "[T] "
         else:
             tele = "    "
-        print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,m.sessionState)
+        print "%sMachine '%s' [%s], state=%s" %(tele,m.name,m.id,asEnumElem(ctx,"SessionState", m.sessionState))
     return 0
 
 def asEnumElem(ctx,enum,elem):
