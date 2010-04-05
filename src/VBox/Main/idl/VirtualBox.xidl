@@ -13713,7 +13713,13 @@ Snapshot 1 (B.vdi)            Snapshot 1 (B.vdi)
 
       Metric data is collected at the specified intervals and is retained
       internally. The interval and the number of retained samples can be set
-      with <link to="IPerformanceCollector::setupMetrics" />.
+      with <link to="IPerformanceCollector::setupMetrics" />. Both metric data
+      and collection settings are not persistent, they are discarded as soon as
+      VBoxSVC process terminates. Moreover, metric settings and data associated
+      with a particular VM only exist while VM is running. They disappear as soon
+      as VM shuts down. It is not possible to setup metrics for machines that are
+      powered off. One needs to start VM first, then set up metric collection
+      parameters.
 
       Metrics are organized hierarchically, with each level separated by a
       slash (/) character. Generally, the scheme for metric names is like this:
