@@ -178,7 +178,7 @@ static const char *crExtensions =
 	"GL_NV_texgen_reflection "
 #endif
 #ifdef CR_NV_texture_rectangle
-	"GL_NV_texture_rectangle GL_EXT_texture_rectangle "
+	"GL_NV_texture_rectangle GL_EXT_texture_rectangle GL_ARB_texture_rectangle "
 #endif
 #ifdef CR_NV_vertex_program
 	"GL_NV_vertex_program "
