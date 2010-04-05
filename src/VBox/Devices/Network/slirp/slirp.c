@@ -2097,6 +2097,8 @@ void slirp_arp_who_has(PNATState pData, uint32_t dst)
 #else
     /* warn!!! should falls in mbuf minimal size */
     m->m_len = sizeof(struct arphdr) + ETH_HLEN;
+    m->m_data += ETH_HLEN;
+    m->m_len -= ETH_HLEN;
 #endif
     if_encap(pData, ETH_P_ARP, m, ETH_ENCAP_URG);
 }
