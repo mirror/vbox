@@ -213,9 +213,6 @@ static bool isVBoxDisplayDriverActive (VBOXDISPLAYCONTEXT *pCtx)
 
 /* Returns TRUE to try again. */
 static BOOL ResizeDisplayDevice(
-#ifdef VBOXWDDM
-        VBOXDISPLAYCONTEXT *pCtx, VBOXDISPLAY_DRIVER_TYPE enmType,
-#endif
         ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel
         )
 {
@@ -399,11 +396,6 @@ static BOOL ResizeDisplayDevice(
         Log(("ResizeDisplayDevice: EnumDisplaySettings last error %d\n", GetLastError ()));
     }
 
-#ifdef VBOXWDDM
-    if (enmType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
-        vboxWddmReinitVideoModes(pCtx);
-#endif
-
     /* Assign the new rectangles to displays. */
     for (i = 0; i < NumDevices; i++)
     {
@@ -558,12 +550,24 @@ unsigned __stdcall VBoxDisplayThread  (void *pInstance)
                             {
                                 Log(("VBoxDisplayThread : Detected W2K or later.\n"));
 
-                                /* W2K or later. */
-                                if (!ResizeDisplayDevice(
-#ifdef VBOXWDDM
-                                                         pCtx, enmDriverType ,
+#ifdef  VBOXWDDM
+                                if (enmDriverType == VBOXDISPLAY_DRIVER_TYPE_WDDM)
+                                {
+                                    DWORD err = VBoxDispIfResize(&pCtx->pEnv->dispIf,
+                                                        displayChangeRequest.display,
+                                                        displayChangeRequest.xres,
+                                                        displayChangeRequest.yres,
+                                                        displayChangeRequest.bpp);
+                                    if (err == NO_ERROR)
+                                    {
+                                        Log(("VBoxDisplayThread : VBoxDispIfResize succeeded\n"));
+                                        break;
+                                    }
+                                    Log(("VBoxDisplayThread : VBoxDispIfResize failed err(%d)\n", err));
+                                }
 #endif
-                                                         displayChangeRequest.display,
+                                /* W2K or later. */
+                                if (!ResizeDisplayDevice(displayChangeRequest.display,
                                                          displayChangeRequest.xres,
                                                          displayChangeRequest.yres,
                                                          displayChangeRequest.bpp

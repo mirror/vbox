@@ -1276,14 +1276,11 @@ NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool b
     for (uint32_t i = 0; i < cAllModes; ++i)
     {
         VIDEO_MODE_INFORMATION *pCur = &pAllModes[i];
-        if (pResolution->cx == pAllModes[iPreferrableMode].VisScreenWidth
-                        && pResolution->cy == pAllModes[iPreferrableMode].VisScreenHeight)
+        if (pResolution->cx == pAllModes[i].VisScreenWidth
+                        && pResolution->cy == pAllModes[i].VisScreenHeight)
         {
             if (pModes && cModes > cFound)
-            {
                 memcpy(&pModes[cFound], pCur, sizeof (VIDEO_MODE_INFORMATION));
-                ++pModes;
-            }
             else
                 Status = STATUS_BUFFER_TOO_SMALL;
             ++cFound;
