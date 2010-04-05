@@ -627,40 +627,27 @@ DWORD VBoxDispIfInit(PVBOXDISPIF pIf)
     return NO_ERROR;
 }
 
-static DWORD vboxDispIfSwitchToXPDM_NT4(PVBOXDISPIF pIf)
+DWORD VBoxDispIfTerm(PVBOXDISPIF pIf)
 {
+    pIf->enmMode = VBOXDISPIF_MODE_UNKNOWN;
     return NO_ERROR;
 }
 
-static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
+static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
 {
-    DWORD err = NO_ERROR;
-    AssertBreakpoint();
-//    OSVERSIONINFO OSinfo;
-//    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
-//    GetVersionEx (&OSinfo);
-//    if (OSinfo.dwMajorVersion >= 5)
-//    {
-//        bool bSupported = true;
-//        *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-//        Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
-//        bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
-//
-//        if (!bSupported)
-//        {
-//            Log((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
-//            err = ERROR_NOT_SUPPORTED;
-//        }
-//    }
-//    else
-//    {
-//        Log((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
-//        err = ERROR_NOT_SUPPORTED;
-//    }
-
-    return err;
+    HDC  hdc = GetDC(HWND_DESKTOP);
+    VOID *pvData = cbData ? VBOXDISPIFESCAPE_DATA(pEscape, VOID) : NULL;
+    int iRet = ExtEscape(hdc, pEscape->escapeCode, cbData, (LPCSTR)pvData, 0, NULL);
+    ReleaseDC(HWND_DESKTOP, hdc);
+    if (iRet > 0)
+        return VINF_SUCCESS;
+    else if (iRet == 0)
+        return ERROR_NOT_SUPPORTED;
+    /* else */
+    return ERROR_GEN_FAILURE;
 }
 
+#ifdef VBOXWDDM
 static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
 {
     DWORD err = NO_ERROR;
@@ -716,84 +703,6 @@ static DWORD vboxDispIfSwitchToWDDM(PVBOXDISPIF pIf)
     return err;
 }
 
-DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_MODE *penmOldMode)
-{
-    /* @todo: may need to addd synchronization in case we want to change modes dynamically
-     * i.e. currently the mode is supposed to be initialized once on service initialization */
-    if (penmOldMode)
-        *penmOldMode = pIf->enmMode;
-
-    if (enmMode == pIf->enmMode)
-        return VINF_ALREADY_INITIALIZED;
-
-    DWORD err = NO_ERROR;
-    switch (enmMode)
-    {
-        case VBOXDISPIF_MODE_XPDM_NT4:
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
-            err = vboxDispIfSwitchToXPDM_NT4(pIf);
-            if (err == NO_ERROR)
-            {
-                Log((__FUNCTION__": successfully switched to XPDM_NT4 mode\n"));
-                pIf->enmMode = VBOXDISPIF_MODE_XPDM_NT4;
-            }
-            else
-                Log((__FUNCTION__": failed to switch to XPDM_NT4 mode, err (%d)\n", err));
-            break;
-        case VBOXDISPIF_MODE_XPDM:
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM\n"));
-            err = vboxDispIfSwitchToXPDM(pIf);
-            if (err == NO_ERROR)
-            {
-                Log((__FUNCTION__": successfully switched to XPDM mode\n"));
-                pIf->enmMode = VBOXDISPIF_MODE_XPDM;
-            }
-            else
-                Log((__FUNCTION__": failed to switch to XPDM mode, err (%d)\n", err));
-            break;
-#ifdef VBOXWDDM
-        case VBOXDISPIF_MODE_WDDM:
-        {
-            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));
-            err = vboxDispIfSwitchToWDDM(pIf);
-            if (err == NO_ERROR)
-            {
-                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
-                pIf->enmMode = VBOXDISPIF_MODE_WDDM;
-            }
-            else
-                Log((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
-            break;
-        }
-#endif
-        default:
-            err = ERROR_INVALID_PARAMETER;
-            break;
-    }
-    return err;
-}
-
-DWORD VBoxDispIfTerm(PVBOXDISPIF pIf)
-{
-    pIf->enmMode = VBOXDISPIF_MODE_UNKNOWN;
-    return NO_ERROR;
-}
-
-static DWORD vboxDispIfEscapeXPDM(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
-{
-    HDC  hdc = GetDC(HWND_DESKTOP);
-    VOID *pvData = cbData ? VBOXDISPIFESCAPE_DATA(pEscape, VOID) : NULL;
-    int iRet = ExtEscape(hdc, pEscape->escapeCode, cbData, (LPCSTR)pvData, 0, NULL);
-    ReleaseDC(HWND_DESKTOP, hdc);
-    if (iRet > 0)
-        return VINF_SUCCESS;
-    else if (iRet == 0)
-        return ERROR_NOT_SUPPORTED;
-    /* else */
-    return ERROR_GEN_FAILURE;
-}
-
-#ifdef VBOXWDDM
 typedef DECLCALLBACK(BOOLEAN) FNVBOXDISPIFWDDM_ADAPTEROP(PCVBOXDISPIF pIf, D3DKMT_HANDLE hAdapter, LPCWSTR pDevName, PVOID pContext);
 typedef FNVBOXDISPIFWDDM_ADAPTEROP *PFNVBOXDISPIFWDDM_ADAPTEROP;
 static DWORD vboxDispIfWDDMAdapterOp(PCVBOXDISPIF pIf, LPCWSTR pDevName, PFNVBOXDISPIFWDDM_ADAPTEROP pfnOp, PVOID pContext)
@@ -983,4 +892,95 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
             Log((__FUNCTION__": unknown mode (%d)\n", pIf->enmMode));
             return ERROR_INVALID_PARAMETER;
     }
+}
+
+static DWORD vboxDispIfSwitchToXPDM_NT4(PVBOXDISPIF pIf)
+{
+    return NO_ERROR;
+}
+
+static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
+{
+    DWORD err = NO_ERROR;
+    AssertBreakpoint();
+//    OSVERSIONINFO OSinfo;
+//    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+//    GetVersionEx (&OSinfo);
+//    if (OSinfo.dwMajorVersion >= 5)
+//    {
+//        bool bSupported = true;
+//        *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
+//        Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
+//        bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
+//
+//        if (!bSupported)
+//        {
+//            Log((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
+//            err = ERROR_NOT_SUPPORTED;
+//        }
+//    }
+//    else
+//    {
+//        Log((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
+//        err = ERROR_NOT_SUPPORTED;
+//    }
+
+    return err;
+}
+
+DWORD VBoxDispIfSwitchMode(PVBOXDISPIF pIf, VBOXDISPIF_MODE enmMode, VBOXDISPIF_MODE *penmOldMode)
+{
+    /* @todo: may need to addd synchronization in case we want to change modes dynamically
+     * i.e. currently the mode is supposed to be initialized once on service initialization */
+    if (penmOldMode)
+        *penmOldMode = pIf->enmMode;
+
+    if (enmMode == pIf->enmMode)
+        return VINF_ALREADY_INITIALIZED;
+
+    DWORD err = NO_ERROR;
+    switch (enmMode)
+    {
+        case VBOXDISPIF_MODE_XPDM_NT4:
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM_NT4\n"));
+            err = vboxDispIfSwitchToXPDM_NT4(pIf);
+            if (err == NO_ERROR)
+            {
+                Log((__FUNCTION__": successfully switched to XPDM_NT4 mode\n"));
+                pIf->enmMode = VBOXDISPIF_MODE_XPDM_NT4;
+            }
+            else
+                Log((__FUNCTION__": failed to switch to XPDM_NT4 mode, err (%d)\n", err));
+            break;
+        case VBOXDISPIF_MODE_XPDM:
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_XPDM\n"));
+            err = vboxDispIfSwitchToXPDM(pIf);
+            if (err == NO_ERROR)
+            {
+                Log((__FUNCTION__": successfully switched to XPDM mode\n"));
+                pIf->enmMode = VBOXDISPIF_MODE_XPDM;
+            }
+            else
+                Log((__FUNCTION__": failed to switch to XPDM mode, err (%d)\n", err));
+            break;
+#ifdef VBOXWDDM
+        case VBOXDISPIF_MODE_WDDM:
+        {
+            Log((__FUNCTION__": request to switch to VBOXDISPIF_MODE_WDDM\n"));
+            err = vboxDispIfSwitchToWDDM(pIf);
+            if (err == NO_ERROR)
+            {
+                Log((__FUNCTION__": successfully switched to WDDM mode\n"));
+                pIf->enmMode = VBOXDISPIF_MODE_WDDM;
+            }
+            else
+                Log((__FUNCTION__": failed to switch to WDDM mode, err (%d)\n", err));
+            break;
+        }
+#endif
+        default:
+            err = ERROR_INVALID_PARAMETER;
+            break;
+    }
+    return err;
 }
