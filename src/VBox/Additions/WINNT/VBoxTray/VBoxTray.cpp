@@ -869,10 +869,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
 
 static DWORD vboxDispIfResizeXPDM(PCVBOXDISPIF const pIf, LPCSTR lpszDeviceName, LPDEVMODE lpDevMode, LONG *pResult)
 {
-    SetLastError(NO_ERROR);
-    *pResult = pIf->modeData.xpdm.pfnChangeDisplaySettingsEx(lpszDeviceName,
-            lpDevMode, NULL, lpDevMode ? (CDS_NORESET | CDS_UPDATEREGISTRY) : 0, NULL);
-    return GetLastError();
+    return ERROR_NOT_SUPPORTED;
 }
 
 DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
@@ -882,8 +879,7 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
         case VBOXDISPIF_MODE_XPDM_NT4:
             return ERROR_NOT_SUPPORTED;
         case VBOXDISPIF_MODE_XPDM:
-//            return vboxDispIfResizeXPDM(pIf, lpszDeviceName, lpDevMode, pResult);
-            return ERROR_NOT_SUPPORTED;
+            return vboxDispIfResizeXPDM(pIf, lpszDeviceName, lpDevMode, pResult);
 #ifdef VBOXWDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfResizeWDDM(pIf, Id, Width, Height, BitsPerPixel);
