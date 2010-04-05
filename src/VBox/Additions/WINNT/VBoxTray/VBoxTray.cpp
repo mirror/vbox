@@ -867,7 +867,7 @@ DWORD VBoxDispIfEscape(PCVBOXDISPIF pIf, PVBOXDISPIFESCAPE pEscape, int cbData)
     }
 }
 
-static DWORD vboxDispIfResizeXPDM(PCVBOXDISPIF const pIf, LPCSTR lpszDeviceName, LPDEVMODE lpDevMode, LONG *pResult)
+static DWORD vboxDispIfResizeXPDM(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Height, DWORD BitsPerPixel)
 {
     return ERROR_NOT_SUPPORTED;
 }
@@ -879,7 +879,7 @@ DWORD VBoxDispIfResize(PCVBOXDISPIF const pIf, ULONG Id, DWORD Width, DWORD Heig
         case VBOXDISPIF_MODE_XPDM_NT4:
             return ERROR_NOT_SUPPORTED;
         case VBOXDISPIF_MODE_XPDM:
-            return vboxDispIfResizeXPDM(pIf, lpszDeviceName, lpDevMode, pResult);
+            return vboxDispIfResizeXPDM(pIf, Id, Width, Height, BitsPerPixel);
 #ifdef VBOXWDDM
         case VBOXDISPIF_MODE_WDDM:
             return vboxDispIfResizeWDDM(pIf, Id, Width, Height, BitsPerPixel);
@@ -899,27 +899,36 @@ static DWORD vboxDispIfSwitchToXPDM(PVBOXDISPIF pIf)
 {
     DWORD err = NO_ERROR;
     AssertBreakpoint();
-//    OSVERSIONINFO OSinfo;
-//    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
-//    GetVersionEx (&OSinfo);
-//    if (OSinfo.dwMajorVersion >= 5)
-//    {
-//        bool bSupported = true;
-//        *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
-//        Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
-//        bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
-//
-//        if (!bSupported)
-//        {
-//            Log((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
-//            err = ERROR_NOT_SUPPORTED;
-//        }
-//    }
-//    else
-//    {
-//        Log((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
-//        err = ERROR_NOT_SUPPORTED;
-//    }
+    OSVERSIONINFO OSinfo;
+    OSinfo.dwOSVersionInfoSize = sizeof (OSinfo);
+    GetVersionEx (&OSinfo);
+    if (OSinfo.dwMajorVersion >= 5)
+    {
+        HMODULE hUser = GetModuleHandle("USER32");
+        if (NULL != hUser)
+        {
+            bool bSupported = true;
+            *(uintptr_t *)&pIf->modeData.xpdm.pfnChangeDisplaySettingsEx = (uintptr_t)GetProcAddress(hUser, "ChangeDisplaySettingsExA");
+            Log((__FUNCTION__": pfnChangeDisplaySettingsEx = %p\n", pIf->modeData.xpdm.pfnChangeDisplaySettingsEx));
+            bSupported &= !!(pIf->modeData.xpdm.pfnChangeDisplaySettingsEx);
+
+            if (!bSupported)
+            {
+                Log((__FUNCTION__": pfnChangeDisplaySettingsEx function pointer failed to initialize\n"));
+                err = ERROR_NOT_SUPPORTED;
+            }
+        }
+        else
+        {
+            Log((__FUNCTION__": failed to get USER32 handle, err (%d)\n", GetLastError()));
+            err = ERROR_NOT_SUPPORTED;
+        }
+    }
+    else
+    {
+        Log((__FUNCTION__": can not switch to VBOXDISPIF_MODE_XPDM, because os is not >= w2k\n"));
+        err = ERROR_NOT_SUPPORTED;
+    }
 
     return err;
 }
