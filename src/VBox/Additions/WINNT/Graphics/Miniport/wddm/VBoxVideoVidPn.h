@@ -45,7 +45,7 @@ typedef struct VBOXVIDPNCOFUNCMODALITY
     CONST DXGKARG_ENUMVIDPNCOFUNCMODALITY* pEnumCofuncModalityArg;
     /* legacy mode information populated by the common XPDM-WDDM layer */
     uint32_t cModes;
-    uint32_t iPreferredMode;
+    int iPreferredMode;
     VIDEO_MODE_INFORMATION *pModes;
     uint32_t cResolutions;
     D3DKMDT_2DREGION *pResolutions;
@@ -113,7 +113,7 @@ NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(struct _DEVICE_EXTENSI
         BOOLEAN bPreferred);
 
 NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(struct _DEVICE_EXTENSION* pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
-        VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, uint32_t iPreferredMomde,
+        VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, int iPreferredMomde,
         D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions);
 
 #endif /* #ifndef ___VBoxVideoVidPn_h___ */
