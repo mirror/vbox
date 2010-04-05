@@ -1283,15 +1283,20 @@ NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool b
                 memcpy(&pModes[cFound], pCur, sizeof (VIDEO_MODE_INFORMATION));
             else
                 Status = STATUS_BUFFER_TOO_SMALL;
-            ++cFound;
 
             if (i == (uint32_t)iPreferrableMode)
-                iFoundPreferrableMode = i;
+                iFoundPreferrableMode = cFound;
+
+            ++cFound;
         }
     }
+
+    Assert(iFoundPreferrableMode < 0 || cFound > (uint32_t)iFoundPreferrableMode);
+
     *pcModes = cFound;
     if (piPreferrableMode)
         *piPreferrableMode = iFoundPreferrableMode;
+
     return Status;
 }
 

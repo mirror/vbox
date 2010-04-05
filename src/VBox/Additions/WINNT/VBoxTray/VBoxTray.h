@@ -66,7 +66,6 @@ typedef enum
 typedef struct VBOXDISPIF
 {
     VBOXDISPIF_MODE enmMode;
-#ifdef VBOXWDDM
     /* with WDDM the approach is to call into WDDM miniport driver via PFND3DKMT API provided by the GDI,
      * The PFND3DKMT is supposed to be used by the OpenGL ICD according to MSDN, so this approach is a bit hacky */
     union
@@ -75,7 +74,7 @@ typedef struct VBOXDISPIF
         {
             LONG (WINAPI * pfnChangeDisplaySettingsEx)(LPCSTR lpszDeviceName, LPDEVMODE lpDevMode, HWND hwnd, DWORD dwflags, LPVOID lParam);
         } xpdm;
-
+#ifdef VBOXWDDM
         struct
         {
             /* open adapter */
@@ -88,8 +87,8 @@ typedef struct VBOXDISPIF
             /* auto resize support */
             PFND3DKMT_INVALIDATEACTIVEVIDPN pfnD3DKMTInvalidateActiveVidPn;
         } wddm;
-    } modeData;
 #endif
+    } modeData;
 } VBOXDISPIF, *PVBOXDISPIF;
 typedef const struct VBOXDISPIF *PCVBOXDISPIF;
 
