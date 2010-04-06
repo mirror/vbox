@@ -51,6 +51,24 @@
 
 namespace guestControl {
 
+struct Client
+{
+    VBOXGUESTCTRPARAMBUFFER parmBuf;
+    VBOXHGCMCALLHANDLE callHandle;
+    uint32_t uClientID;
+};
+
+struct HostCmd
+{
+    VBOXGUESTCTRPARAMBUFFER parmBuf;
+    uint32_t uAssignedToClientID;
+};
+
+/** The client list list type */
+typedef std::list <Client> ClientList;
+/** The host cmd list type */
+typedef std::list <HostCmd> HostCmdList;
+
 /**
  * Class containing the shared information service functionality.
  */
@@ -75,8 +93,10 @@ private:
     PFNHGCMSVCEXT mpfnHostCallback;
     /** User data pointer to be supplied to the host callback function */
     void *mpvHostData;
-    /** The execution data to hold (atm only one buffer!) */
-    VBOXGUESTCTRPARAMBUFFER mExec;
+    /** The client list */
+    ClientList mClients;
+    /** The host command list */
+    HostCmdList mHostCmds;
     RTCRITSECT critsect;
 
 public:
@@ -94,9 +114,6 @@ public:
                                 RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                                 "GuestCtrlReq");
 #endif
-        mExec.uParmCount = 0;
-        mExec.pParms = NULL;
-
         if (RT_SUCCESS(rc))
             rc = RTCritSectInit(&critsect);
 
@@ -123,11 +140,32 @@ public:
      * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
      * Stub implementation of pfnConnect and pfnDisconnect.
      */
-    static DECLCALLBACK(int) svcConnectDisconnect (void * /* pvService */,
-                                                   uint32_t /* u32ClientID */,
-                                                   void * /* pvClient */)
+    static DECLCALLBACK(int) svcConnect (void *pvService,
+                                         uint32_t u32ClientID,
+                                         void *pvClient)
     {
-        return VINF_SUCCESS;
+        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        LogFlowFunc (("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
+        SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        int rc = pSelf->clientConnect(u32ClientID, pvClient);
+        LogFlowFunc (("rc=%Rrc\n", rc));
+        return rc;
+    }
+
+    /**
+     * @copydoc VBOXHGCMSVCHELPERS::pfnConnect
+     * Stub implementation of pfnConnect and pfnDisconnect.
+     */
+    static DECLCALLBACK(int) svcDisconnect (void *pvService,
+                                            uint32_t u32ClientID,
+                                            void *pvClient)
+    {
+        AssertLogRelReturn(VALID_PTR(pvService), VERR_INVALID_PARAMETER);
+        LogFlowFunc (("pvService=%p, u32ClientID=%u, pvClient=%p\n", pvService, u32ClientID, pvClient));
+        SELF *pSelf = reinterpret_cast<SELF *>(pvService);
+        int rc = pSelf->clientDisconnect(u32ClientID, pvClient);
+        LogFlowFunc (("rc=%Rrc\n", rc));
+        return rc;
     }
 
     /**
@@ -186,11 +224,13 @@ private:
     int execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     int prepareExecute(uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
     static DECLCALLBACK(int) reqThreadFn(RTTHREAD ThreadSelf, void *pvUser);
-    void call (VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
-               void *pvClient, uint32_t eFunction, uint32_t cParms,
-               VBOXHGCMSVCPARM paParms[]);
-    int hostCall (uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
-    int uninit ();
+    int clientConnect(uint32_t u32ClientID, void *pvClient);
+    int clientDisconnect(uint32_t u32ClientID, void *pvClient);
+    void call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
+              void *pvClient, uint32_t eFunction, uint32_t cParms,
+              VBOXHGCMSVCPARM paParms[]);
+    int hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[]);
+    int uninit();
 };
 
 
@@ -340,6 +380,57 @@ int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VB
     return rc;
 }
 
+int Service::clientConnect(uint32_t u32ClientID, void *pvClient)
+{
+ASMBreakpoint();
+
+    bool bFound = false;
+    for (ClientList::const_iterator it = mClients.begin();
+         !bFound && it != mClients.end(); ++it)
+    {
+        if (it->uClientID == u32ClientID)
+            bFound = true;
+    }
+
+    if (!bFound)
+    {
+        Client newClient;
+
+        /** @todo Use a constructor here! */
+        newClient.uClientID = u32ClientID;
+        newClient.parmBuf.uParmCount = 0;
+        newClient.parmBuf.pParms = NULL;
+
+        mClients.push_back(newClient);
+        LogFlowFunc(("New client = %ld connected\n", u32ClientID));
+    }
+    else
+    {
+        LogFlowFunc(("Exising client (%ld) connected another instance\n", u32ClientID));
+    }
+    return VINF_SUCCESS;
+}
+
+int Service::clientDisconnect(uint32_t u32ClientID, void *pvClient)
+{
+ASMBreakpoint();
+
+    bool bFound = false;
+    for (ClientList::iterator it = mClients.begin();
+         !bFound && it != mClients.end(); ++it)
+    {
+        if (it->uClientID == u32ClientID)
+        {
+            mClients.erase(it);
+            bFound = true;
+        }
+    }
+    Assert(bFound);
+
+    LogFlowFunc(("Client (%ld) disconnected\n", u32ClientID));
+    return VINF_SUCCESS;
+}
+
 /**
  * Handle an HGCM service call.
  * @copydoc VBOXHGCMSVCFNTABLE::pfnCall
@@ -365,14 +456,93 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         {
             /* The guest asks the host for the next messsage to process. */
             case GUEST_GET_HOST_MSG:
-                LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
-                paParms[0].setUInt32(HOST_EXEC_CMD); /* msg id */
-                paParms[1].setUInt32(12); /* parms count */
+                LogFlowFunc(("GUEST_GET_HOST_MSG\n"));                
+
+/** @todo !!!!! LOCKING !!!!!!!!! */
+
+                if (cParms < 2)
+                {
+                    LogFlowFunc(("Parameter buffer is too small!\n"));
+                    rc = VERR_INVALID_PARAMETER;
+                }
+                else
+                {      
+                    /* 
+                     * If host command list is empty (nothing to do right now) just
+                     * defer the call until we got something to do (makes the client
+                     * wait, depending on the flags set).
+                     */
+                    if (mHostCmds.empty())
+                        rc = VINF_HGCM_ASYNC_EXECUTE;
+    
+                    if (RT_SUCCESS(rc))
+                    {
+                        /*
+                         * Get the next unassigned host command in the list.
+                         */
+                        bool bFound = false;
+                        HostCmdList::iterator it;
+                        for (it = mHostCmds.begin();
+                             !bFound && it != mHostCmds.end(); ++it)
+                        {
+                            if (it->uAssignedToClientID == 0)
+                                bFound = true;
+                        }
+                        if (!bFound) /* No new command found, defer ... */
+                            rc = VINF_HGCM_ASYNC_EXECUTE;
+
+                        /*
+                         * Okay we got a host command which is unassigned at the moment.                    
+                         */
+                        if (RT_SUCCESS(rc))
+                        {
+                            /* 
+                             * Do *not* pop the most recent (front) command here yet, because
+                             * the client could fail in retrieving the GUEST_GET_HOST_MSG_DATA message
+                             * below. 
+                             */
+                            uint32_t uCmd = 0;
+                            if (it->parmBuf.uParmCount)
+                                it->parmBuf.pParms[0].getUInt32(&uCmd);
+                            paParms[0].setUInt32(uCmd); /* msg id */
+                            paParms[1].setUInt32(it->parmBuf.uParmCount); /* parms count */
+    
+                            /* Assign this command to the specific client ID. */
+                            it->uAssignedToClientID = u32ClientID;
+                        }
+                    }
+                }
                 break;
 
             case GUEST_GET_HOST_MSG_DATA:
-                LogFlowFunc(("GUEST_GET_HOST_MSG_DATA\n"));
-                rc = execBufferAssign(&mExec, cParms, paParms);
+                {
+                    LogFlowFunc(("GUEST_GET_HOST_MSG_DATA\n"));
+
+/** @todo !!!!! LOCKING !!!!!!!!! */
+
+                    /*
+                     * Get host command assigned to incoming client ID.                           
+                     */
+                    bool bFound = false;
+                    HostCmdList::iterator it;
+                    for (it = mHostCmds.begin();
+                         !bFound && it != mHostCmds.end(); ++it)
+                    {
+                        if (it->uAssignedToClientID == u32ClientID)                      
+                            bFound = true;
+                    }
+                    Assert(bFound);
+
+                    /*
+                     * Assign buffered data to client HGCM parms.
+                     */
+                    rc = execBufferAssign(&it->parmBuf, cParms, paParms);
+        
+                    /*
+                     * Finally remove the command from the list. 
+                     */
+                    mHostCmds.erase(it);
+                }
                 break;
 
             /* The guest notifies the host that some output at stdout is available. */
@@ -401,7 +571,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
     LogFlowFunc(("rc = %Rrc\n", rc));
     if (rc != VINF_HGCM_ASYNC_EXECUTE)
     {
-        mpHelpers->pfnCallComplete (callHandle, rc);
+        mpHelpers->pfnCallComplete(callHandle, rc);
     }
 }
 
@@ -423,7 +593,13 @@ int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paPar
             /* The host wants to execute something. */
             case HOST_EXEC_CMD:
                 LogFlowFunc(("HOST_EXEC_CMD\n"));
-                rc = execBufferAllocate(&mExec, cParms, paParms);
+
+/** @todo !!!!! LOCKING !!!!!!!!! */
+
+                HostCmd newCmd;
+                execBufferAllocate(&newCmd.parmBuf, cParms, paParms);
+                newCmd.uAssignedToClientID = 0;
+                mHostCmds.push_back(newCmd);
                 break;
 
             /* The host wants to send something to the guest's stdin pipe. */
@@ -503,8 +679,8 @@ extern "C" DECLCALLBACK(DECLEXPORT(int)) VBoxHGCMSvcLoad(VBOXHGCMSVCFNTABLE *pta
 
                 /* Register functions. */
                 ptable->pfnUnload             = Service::svcUnload;
-                ptable->pfnConnect            = Service::svcConnectDisconnect;
-                ptable->pfnDisconnect         = Service::svcConnectDisconnect;
+                ptable->pfnConnect            = Service::svcConnect;
+                ptable->pfnDisconnect         = Service::svcDisconnect;
                 ptable->pfnCall               = Service::svcCall;
                 ptable->pfnHostCall           = Service::svcHostCall;
                 ptable->pfnSaveState          = NULL;  /* The service is stateless, so the normal */
