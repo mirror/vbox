@@ -2982,7 +2982,7 @@ QString VBoxGlobal::languageCountryEnglish() const
  */
 QString VBoxGlobal::languageTranslators() const
 {
-    return qApp->translate ("@@@", VBOX_VENDOR,
+    return qApp->translate ("@@@", "Oracle Corporation",
                             "Comma-separated list of translators");
 }
 
