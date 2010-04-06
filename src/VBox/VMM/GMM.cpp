@@ -294,7 +294,7 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_
  */
 GMMR3DECL(int)  GMMR3QueryTotalBalloonSize(PVM pVM, uint64_t *pcTotalBalloonedPages)
 {
-    GMMBALLOONEDPAGESREQ Req;
+    GMMBALLOONQUERYREQ Req;
     Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
     Req.Hdr.cbReq = sizeof(Req);
     Req.cBalloonedPages = 0;
