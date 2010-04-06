@@ -71,7 +71,7 @@ public:
             "(empty if native country name is empty)");
 
         QString translatorsName = tratra (aTranslator,
-            "@@@", VBOX_VENDOR, "Comma-separated list of translators");
+            "@@@", "Oracle Corporation", "Comma-separated list of translators");
 
         QString itemName = nativeLanguage;
         QString langName = englishLanguage;

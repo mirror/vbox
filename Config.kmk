@@ -172,6 +172,8 @@ VBOX_PRODUCT = Oracle VM VirtualBox
 # have to be updated manually, please keep this up to date:
 # 	src/VBox/Devices/PC/PXE/client/uinit.asm
 # 	src/VBox/RDP/webclient/flash/com/sun/network/rdp/Version.as
+# 	src/VBox/Frontends/VirtualBox/src/globals/VBoxGlobal.cpp
+# 	src/VBox/Frontends/VirtualBox/src/settings/global/VBoxGLSettingsLanguage.cpp
 # 	src/VBox/Frontends/VirtualBox/nls/*.ts
 
 # Maybe we want set this manually.
