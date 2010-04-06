@@ -339,8 +339,6 @@ void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 /* Assigns data from a buffered HGCM request to the current HGCM request. */
 int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    execBufferFree(pBuf);
-
     RTCritSectEnter(&critsect);
 
     AssertPtr(pBuf);
@@ -475,7 +473,8 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     if (mHostCmds.empty())
                         rc = VINF_HGCM_ASYNC_EXECUTE;
     
-                    if (RT_SUCCESS(rc))
+                    if (   RT_SUCCESS(rc)
+                        && rc != VINF_HGCM_ASYNC_EXECUTE)
                     {
                         /*
                          * Get the next unassigned host command in the list.
@@ -486,7 +485,10 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                              !bFound && it != mHostCmds.end(); ++it)
                         {
                             if (it->uAssignedToClientID == 0)
+                            {
                                 bFound = true;
+                                break;
+                            }
                         }
                         if (!bFound) /* No new command found, defer ... */
                             rc = VINF_HGCM_ASYNC_EXECUTE;
@@ -494,18 +496,20 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                         /*
                          * Okay we got a host command which is unassigned at the moment.                    
                          */
-                        if (RT_SUCCESS(rc))
+                        if (   RT_SUCCESS(rc)
+                            && rc != VINF_HGCM_ASYNC_EXECUTE)
                         {
                             /* 
                              * Do *not* remove the command from host cmds list here yet, because
                              * the client could fail in retrieving the GUEST_GET_HOST_MSG_DATA message
                              * below. Then we just could repeat this one here.
                              */
-                            uint32_t uCmd = 0;
-                            if (it->parmBuf.uParmCount)
+                            uint32_t uCmd = 1; /** @todo HARDCODED FOR EXEC! */
+                            uint32_t uParmCount = it->parmBuf.uParmCount;
+                            if (uParmCount)
                                 it->parmBuf.pParms[0].getUInt32(&uCmd);
                             paParms[0].setUInt32(uCmd); /* msg id */
-                            paParms[1].setUInt32(it->parmBuf.uParmCount); /* parms count */
+                            paParms[1].setUInt32(uParmCount); /* parms count */
     
                             /* Assign this command to the specific client ID. */
                             it->uAssignedToClientID = u32ClientID;
@@ -528,8 +532,11 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     for (it = mHostCmds.begin();
                          !bFound && it != mHostCmds.end(); ++it)
                     {
-                        if (it->uAssignedToClientID == u32ClientID)                      
+                        if (it->uAssignedToClientID == u32ClientID)    
+                        {
                             bFound = true;
+                            break;
+                        }
                     }
                     Assert(bFound);
 
@@ -541,6 +548,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                     /*
                      * Finally remove the command from the list. 
                      */
+                    execBufferFree(&it->parmBuf);
                     mHostCmds.erase(it);
                 }
                 break;
@@ -583,6 +591,8 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
 int Service::hostCall(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
     int rc = VINF_SUCCESS;
+
+    ASMBreakpoint();
 
     LogFlowFunc(("fn = %d, cParms = %d, pparms = %d\n",
                  eFunction, cParms, paParms));
