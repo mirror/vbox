@@ -135,7 +135,7 @@ protected:
 
     void retranslateUi()
     {
-        setWindowTitle(tr("Network Adapters"));
+        setWindowTitle(QApplication::translate("VBoxNetworkDialog", "Network Adapters"));
     }
 
 protected slots:
@@ -209,7 +209,7 @@ protected:
 
     void retranslateUi()
     {
-        setWindowTitle(tr("Shared Folders"));
+        setWindowTitle(QApplication::translate("VBoxSFDialog", "Shared Folders"));
     }
 
 protected slots:
@@ -240,105 +240,6 @@ private:
     VBoxVMSettingsSF *m_pSettings;
     CSession &m_session;
 };
-
-#if 0 // TODO: Rework additions downloader logic!
-class UIAdditionsDownloader : public VBoxDownloaderWgt
-{
-    Q_OBJECT;
-
-public:
-
-    UIAdditionsDownloader (const QString &aSource, const QString &aTarget, QAction *aAction)
-        : VBoxDownloaderWgt (aSource, aTarget)
-        , mAction (aAction)
-    {
-        mAction->setEnabled (false);
-        retranslateUi();
-    }
-
-    void start()
-    {
-        acknowledgeStart();
-    }
-
-protected:
-
-    void retranslateUi()
-    {
-        mCancelButton->setText (tr ("Cancel"));
-        mProgressBar->setToolTip (tr ("Downloading the VirtualBox Guest Additions "
-                                      "CD image from <nobr><b>%1</b>...</nobr>")
-                                      .arg (mSource.toString()));
-        mCancelButton->setToolTip (tr ("Cancel the VirtualBox Guest "
-                                       "Additions CD image download"));
-    }
-
-private slots:
-
-    void downloadFinished (bool aError)
-    {
-        if (aError)
-            VBoxDownloaderWgt::downloadFinished (aError);
-        else
-        {
-            QByteArray receivedData (mHttp->readAll());
-            /* Serialize the incoming buffer into the .iso image. */
-            while (true)
-            {
-                QFile file (mTarget);
-                if (file.open (QIODevice::WriteOnly))
-                {
-                    file.write (receivedData);
-                    file.close();
-                    //if (vboxProblem().confirmMountAdditions (mSource.toString(),QDir::toNativeSeparators (mTarget)))
-                    //    vboxGlobal().consoleWnd().installGuestAdditionsFrom (mTarget);
-                    QTimer::singleShot (0, this, SLOT (suicide()));
-                    break;
-                }
-                else
-                {
-                    vboxProblem().message (window(), VBoxProblemReporter::Error,
-                        tr ("<p>Failed to save the downloaded file as "
-                            "<nobr><b>%1</b>.</nobr></p>")
-                        .arg (QDir::toNativeSeparators (mTarget)));
-                }
-
-                QString target = QIFileDialog::getExistingDirectory (
-                    QFileInfo (mTarget).absolutePath(), this,
-                    tr ("Select folder to save Guest Additions image to"), true);
-                if (target.isNull())
-                    QTimer::singleShot (0, this, SLOT (suicide()));
-                else
-                    mTarget = QDir (target).absoluteFilePath (QFileInfo (mTarget).fileName());
-            }
-        }
-    }
-
-    void suicide()
-    {
-        QStatusBar *sb = qobject_cast <QStatusBar*> (parent());
-        Assert (sb);
-        sb->removeWidget (this);
-        mAction->setEnabled (true);
-        VBoxDownloaderWgt::suicide();
-    }
-
-private:
-
-    bool confirmDownload()
-    {
-        return vboxProblem().confirmDownloadAdditions (mSource.toString(),
-            mHttp->lastResponse().contentLength());
-    }
-
-    void warnAboutError (const QString &aError)
-    {
-        return vboxProblem().cannotDownloadGuestAdditions (mSource.toString(), aError);
-    }
-
-    QAction *mAction;
-};
-#endif
 
 UIMachineLogic* UIMachineLogic::create(QObject *pParent,
                                        UISession *pSession,
@@ -468,7 +369,7 @@ void UIMachineLogic::retranslateUi()
         for (int i = 0; i < actions.size(); ++i)
         {
             QAction *pAction = actions.at(i);
-            pAction->setText(tr("Preview Monitor %1").arg(pAction->data().toInt() + 1));
+            pAction->setText(QApplication::translate("VBoxConsoleWnd", "Preview Monitor %1").arg(pAction->data().toInt() + 1));
         }
     }
 #endif /* Q_WS_MAC */
@@ -992,7 +893,7 @@ void UIMachineLogic::sltTakeSnapshot()
     dlg.mLbIcon->setPixmap(vboxGlobal().vmGuestOSTypeIcon(strTypeId));
 
     /* Search for the max available filter index. */
-    QString strNameTemplate = tr("Snapshot %1");
+    QString strNameTemplate = QApplication::translate("VBoxConsoleWnd", "Snapshot %1");
     int iMaxSnapshotIndex = searchMaxSnapshotIndex(machine, machine.GetSnapshot(QString()), strNameTemplate);
     dlg.mLeName->setText(strNameTemplate.arg(++ iMaxSnapshotIndex));
 
@@ -1208,14 +1109,14 @@ void UIMachineLogic::sltPrepareStorageMenu()
             switch (mediumType)
             {
                 case VBoxDefs::MediumType_DVD:
-                    callVMMAction->setText(tr("More CD/DVD Images..."));
-                    unmountMediumAction->setText(tr("Unmount CD/DVD Device"));
+                    callVMMAction->setText(QApplication::translate("VBoxConsoleWnd", "More CD/DVD Images..."));
+                    unmountMediumAction->setText(QApplication::translate("VBoxConsoleWnd", "Unmount CD/DVD Device"));
                     unmountMediumAction->setIcon(VBoxGlobal::iconSet(":/cd_unmount_16px.png",
                                                                      ":/cd_unmount_dis_16px.png"));
                     break;
                 case VBoxDefs::MediumType_Floppy:
-                    callVMMAction->setText(tr("More Floppy Images..."));
-                    unmountMediumAction->setText(tr("Unmount Floppy Device"));
+                    callVMMAction->setText(QApplication::translate("VBoxConsoleWnd", "More Floppy Images..."));
+                    unmountMediumAction->setText(QApplication::translate("VBoxConsoleWnd", "Unmount Floppy Device"));
                     unmountMediumAction->setIcon(VBoxGlobal::iconSet(":/fd_unmount_16px.png",
                                                                      ":/fd_unmount_dis_16px.png"));
                     break;
@@ -1234,12 +1135,12 @@ void UIMachineLogic::sltPrepareStorageMenu()
         switch (mediumType)
         {
             case VBoxDefs::MediumType_DVD:
-                pEmptyMenuAction->setText(tr("No CD/DVD Devices Attached"));
-                pEmptyMenuAction->setToolTip(tr("No CD/DVD devices attached to that VM"));
+                pEmptyMenuAction->setText(QApplication::translate("VBoxConsoleWnd", "No CD/DVD Devices Attached"));
+                pEmptyMenuAction->setToolTip(QApplication::translate("VBoxConsoleWnd", "No CD/DVD devices attached to that VM"));
                 break;
             case VBoxDefs::MediumType_Floppy:
-                pEmptyMenuAction->setText(tr("No Floppy Devices Attached"));
-                pEmptyMenuAction->setToolTip(tr("No floppy devices attached to that VM"));
+                pEmptyMenuAction->setText(QApplication::translate("VBoxConsoleWnd", "No Floppy Devices Attached"));
+                pEmptyMenuAction->setToolTip(QApplication::translate("VBoxConsoleWnd", "No floppy devices attached to that VM"));
                 break;
             default:
                 break;
@@ -1343,9 +1244,9 @@ void UIMachineLogic::sltPrepareUSBMenu()
         /* Fill USB devices menu: */
         QAction *pEmptyMenuAction = new QAction(pMenu);
         pEmptyMenuAction->setEnabled(false);
-        pEmptyMenuAction->setText(tr("No USB Devices Connected"));
+        pEmptyMenuAction->setText(QApplication::translate("VBoxConsoleWnd", "No USB Devices Connected"));
         pEmptyMenuAction->setIcon(VBoxGlobal::iconSet(":/delete_16px.png", ":/delete_dis_16px.png"));
-        pEmptyMenuAction->setToolTip(tr("No supported devices connected to the host PC"));
+        pEmptyMenuAction->setToolTip(QApplication::translate("VBoxConsoleWnd", "No supported devices connected to the host PC"));
     }
     else
     {
