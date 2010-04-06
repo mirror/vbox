@@ -199,7 +199,6 @@ DECLCALLBACK(int) VBoxServiceControlWorker(bool volatile *pfShutdown)
                     /* Don't terminate here; just wait for the next message. */
                     break;
             }
-            break; /* DEBUG BREAK */
         }
 
         /*
