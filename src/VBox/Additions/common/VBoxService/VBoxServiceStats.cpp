@@ -36,6 +36,10 @@
 # include <iprt/stream.h>
 # include <unistd.h>
 
+#elif defined(RT_OS_SOLARIS)
+# include <kstat.h>
+# include <sys/sysinfo.h>
+# include <unistd.h>
 #else
 /** @todo port me. */
 
@@ -420,6 +424,142 @@ static void VBoxServiceVMStatsReport(void)
             }
         }
         RTStrmClose(pStrm);
+    }
+
+#elif defined(RT_OS_SOLARIS)
+    VMMDevReportGuestStats req;
+    RT_ZERO(req);
+    kstat_ctl_t *pStatKern = kstat_open();
+    if (pStatKern)
+    {
+        /*
+         * Memory statistics.
+         */
+        uint64_t u64Total = 0, u64Free = 0, u64Buffers = 0, u64Cached = 0, u64PagedTotal = 0;
+        int rc = -1;
+        kstat_t *pStatPages = kstat_lookup(pStatKern, "unix", 0 /* instance */, "system_pages");
+        if (pStatPages)
+        {
+            rc = kstat_read(pStatKern, pStatPages, NULL /* optional-copy-buf */);
+            if (rc != -1)
+            {
+                kstat_named_t *pStat = NULL;
+                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, "pagestotal");
+                if (pStat)
+                    u64Total = pStat->value.ul;
+
+                pStat = (kstat_named_t *)kstat_data_lookup(pStatPages, "freemem");
+                if (pStat)
+                    u64Free = pStat->value.ul;
+            }
+        }
+
+        kstat_t *pStatZFS = kstat_lookup(pStatKern, "zfs", 0 /* instance */, "arcstats");
+        if (pStatZFS)
+        {
+            rc = kstat_read(pStatKern, pStatZFS, NULL /* optional-copy-buf */);
+            if (rc != -1)
+            {
+                kstat_named_t *pStat = (kstat_named_t *)kstat_data_lookup(pStatZFS, "size");
+                if (pStat)
+                    u64Cached = pStat->value.ul;
+            }
+        }
+
+        /*
+         * The vminfo are accumulative counters updated every "N" ticks. Let's get the
+         * number of stat updates so far and use that to divide the swap counter.
+         */
+        kstat_t *pStatInfo = kstat_lookup(pStatKern, "unix", 0 /* instance */, "sysinfo");
+        if (pStatInfo)
+        {
+            sysinfo_t SysInfo;
+            rc = kstat_read(pStatKern, pStatInfo, &SysInfo);
+            if (rc != -1)
+            {
+                kstat_t *pStatVMInfo = kstat_lookup(pStatKern, "unix", 0 /* instance */, "vminfo");
+                if (pStatVMInfo)
+                {
+                    vminfo_t VMInfo;
+                    rc = kstat_read(pStatKern, pStatVMInfo, &VMInfo);
+                    if (rc != -1)
+                    {
+                        u64PagedTotal = VMInfo.swap_avail / SysInfo.updates;
+                    }
+                }
+            }
+        }
+
+        req.guestStats.u32PhysMemTotal   = u64Total;        /* already in pages */
+        req.guestStats.u32PhysMemAvail   = u64Free;         /* already in pages */
+        req.guestStats.u32MemSystemCache = u64Cached / _4K;
+        req.guestStats.u32PageFileSize   = u64PagedTotal;   /* already in pages */
+        /** @todo req.guestStats.u32Threads */
+        /** @todo req.guestStats.u32Processes */
+        /** @todo req.guestStats.u32Handles -- ??? */
+        /** @todo req.guestStats.u32MemoryLoad */
+        /** @todo req.guestStats.u32MemCommitTotal */
+        /** @todo req.guestStats.u32MemKernelTotal */
+        /** @todo req.guestStats.u32MemKernelPaged */
+        /** @todo req.guestStats.u32MemKernelNonPaged */
+        req.guestStats.u32PageSize = getpagesize();
+        req.guestStats.u32PhysMemBalloon = VBoxServiceBalloonQueryPages(_4K);
+        req.guestStats.u32StatCaps = VBOX_GUEST_STAT_PHYS_MEM_TOTAL \
+                                   | VBOX_GUEST_STAT_PHYS_MEM_AVAIL \
+                                   | VBOX_GUEST_STAT_PHYS_MEM_BALLOON \
+                                   | VBOX_GUEST_STAT_PAGE_FILE_SIZE;
+
+        /*
+         * CPU statistics.
+         */
+        cpu_stat_t StatCPU;
+        RT_ZERO(StatCPU);
+        kstat_t *pStatNode = NULL;
+        uint32_t cCPUs = 0;
+        for (pStatNode = pStatKern->kc_chain; pStatNode != NULL; pStatNode = pStatNode->ks_next)
+        {
+            if (!strcmp(pStatNode->ks_module, "cpu_stat"))
+            {
+                rc = kstat_read(pStatKern, pStatNode, &StatCPU);
+                if (rc == -1)
+                    break;
+
+                uint64_t u64Idle   = StatCPU.cpu_sysinfo.cpu[CPU_IDLE];
+                uint64_t u64User   = StatCPU.cpu_sysinfo.cpu[CPU_USER];
+                uint64_t u64System = StatCPU.cpu_sysinfo.cpu[CPU_KERNEL];
+
+                uint64_t u64DeltaIdle   = u64Idle   - gCtx.au64LastCpuLoad_Idle[cCPUs];
+                uint64_t u64DeltaSystem = u64System - gCtx.au64LastCpuLoad_Kernel[cCPUs];
+                uint64_t u64DeltaUser   = u64User   - gCtx.au64LastCpuLoad_User[cCPUs];
+
+                uint64_t u64DeltaAll    = u64DeltaIdle + u64DeltaSystem + u64DeltaUser;
+
+                gCtx.au64LastCpuLoad_Idle[cCPUs]   = u64Idle;
+                gCtx.au64LastCpuLoad_Kernel[cCPUs] = u64System;
+                gCtx.au64LastCpuLoad_User[cCPUs]   = u64User;
+
+                req.guestStats.u32CpuId = cCPUs;
+                req.guestStats.u32CpuLoad_Idle   = (uint32_t)(u64DeltaIdle   * 100 / u64DeltaAll);
+                req.guestStats.u32CpuLoad_Kernel = (uint32_t)(u64DeltaSystem * 100 / u64DeltaAll);
+
+                req.guestStats.u32StatCaps |= VBOX_GUEST_STAT_CPU_LOAD_IDLE \
+                                           | VBOX_GUEST_STAT_CPU_LOAD_KERNEL \
+                                           | VBOX_GUEST_STAT_CPU_LOAD_USER;
+
+                cCPUs++;
+            }
+        }
+
+        /*
+         * Report whatever statistics were collected.
+         */
+        rc = VbglR3StatReport(&req);
+        if (RT_SUCCESS(rc))
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: new statistics reported successfully!\n");
+        else
+            VBoxServiceVerbose(3, "VBoxStatsReportStatistics: stats report failed with rc=%Rrc\n", rc);
+
+        kstat_close(pStatKern);
     }
 
 #else
