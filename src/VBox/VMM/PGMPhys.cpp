@@ -952,6 +952,30 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
     return rc;
 }
 
+/**
+ * Query the VM and host balloon sizes
+ *
+ * @returns VBox status code.
+ * @param   pVM             The VM handle.
+ * @param   puBalloonVM     Pointer to VM balloon size
+ * @param   puBalloonAllVMs Pointer to total balloon size of all VMs
+ */
+VMMR3DECL(int) PGMR3QueryBalloonSize(PVM pVM, uint64_t *puBalloonVM, uint64_t *puBalloonAllVMs)
+{
+    int rc = VINF_SUCCESS;
+
+    if (puBalloonVM)
+        *puBalloonVM = pVM->pgm.s.cBalloonedPages;
+
+    if (puBalloonAllVMs)
+    {
+        *puBalloonAllVMs = 0;
+        rc = GMMR3QueryTotalBalloonSize(pVM, puBalloonAllVMs);
+        AssertRC(rc);
+    }
+
+    return rc;
+}
 
 /**
  * PGMR3PhysRegisterRam worker that initializes and links a RAM range.

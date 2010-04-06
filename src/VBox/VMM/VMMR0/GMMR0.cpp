@@ -2861,6 +2861,8 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
     LogFlow(("GMMR0BalloonedPages: pVM=%p enmAction=%d cBalloonedPages=%#x\n",
              pVM, enmAction, cBalloonedPages));
 
+    AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
+
     /*
      * Validate input and get the basics.
      */
@@ -2870,8 +2872,6 @@ GMMR0DECL(int) GMMR0BalloonedPages(PVM pVM, VMCPUID idCpu, GMMBALLOONACTION enmA
     int rc = GVMMR0ByVMAndEMT(pVM, idCpu, &pGVM);
     if (RT_FAILURE(rc))
         return rc;
-
-    AssertMsgReturn(cBalloonedPages < RT_BIT(32 - PAGE_SHIFT), ("%#x\n", cBalloonedPages), VERR_INVALID_PARAMETER);
 
     /*
      * Take the sempahore and do some more validations.
@@ -2990,6 +2990,34 @@ GMMR0DECL(int) GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGES
     return GMMR0BalloonedPages(pVM, idCpu, pReq->enmAction, pReq->cBalloonedPages);
 }
 
+/**
+ * Return the total amount of ballooned pages for all VMs
+ *
+ * @returns VBox status code:
+ * @param   pVM             Pointer to the shared VM structure.
+ * @param   pReq            The request packet.
+ */
+GMMR0DECL(int) GMMR0QueryTotalBalloonSizeReq(PVM pVM, PGMMBALLOONQUERYREQ pReq)
+{
+    /*
+     * Validate input and pass it on.
+     */
+    AssertPtrReturn(pVM, VERR_INVALID_POINTER);
+    AssertPtrReturn(pReq, VERR_INVALID_POINTER);
+    AssertMsgReturn(pReq->Hdr.cbReq == sizeof(GMMBALLOONQUERYREQ),
+                    ("%#x < %#x\n", pReq->Hdr.cbReq, sizeof(GMMBALLOONQUERYREQ)),
+                    VERR_INVALID_PARAMETER);
+
+    /*
+     * Validate input and get the basics.
+     */
+    PGMM pGMM;
+    GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
+    pReq->cBalloonedPages = pGMM->cBalloonedPages;
+    GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
+
+    return VINF_SUCCESS;
+}
 
 /**
  * Unmaps a chunk previously mapped into the address space of the current process.

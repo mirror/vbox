@@ -398,6 +398,22 @@ GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGE
 
 
 /**
+ * Request buffer for GMMR0QueryTotalBalloonSizeReq / VMMR0_DO_GMM_BALLOONED_PAGES.
+ * @see GMMR0QueryTotalBalloonSize.
+ */
+typedef struct GMMBALLOONQUERY
+{
+    /** The header. */
+    SUPVMMR0REQHDR      Hdr;
+    /** The number of ballooned pages (out). */
+    uint64_t            cBalloonedPages;
+} GMMBALLOONQUERYREQ;
+/** Pointer to a GMMR0QueryTotalBalloonSizeReq / VMMR0_DO_GMM_QUERY_TOTAL_BALLOON_SIZE request buffer. */
+typedef GMMBALLOONQUERYREQ *PGMMBALLOONQUERYREQ;
+
+GMMR0DECL(int)  GMMR0QueryTotalBalloonSizeReq(PVM pVM, PGMMBALLOONQUERYREQ pReq);
+
+/**
  * Request buffer for GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
  * @see GMMR0MapUnmapChunk
  */
@@ -456,6 +472,7 @@ GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
+GMMR3DECL(int)  GMMR3QueryTotalBalloonSize(PVM pVM, uint64_t *pcTotalBalloonedPages);
 /** @} */
 #endif /* IN_RING3 */
 
