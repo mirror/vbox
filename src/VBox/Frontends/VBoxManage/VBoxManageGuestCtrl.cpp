@@ -95,7 +95,8 @@ static int handleExecProgram(HandlerArg *a)
     for (int i = 2; usageOK && i < a->argc; i++)
     {
         if (   !strcmp(a->argv[i], "--arguments")
-            || !strcmp(a->argv[i], "--args"))
+            || !strcmp(a->argv[i], "--args")
+            || !strcmp(a->argv[i], "--arg"))
         {
             if (i + 1 >= a->argc)
                 usageOK = false;
