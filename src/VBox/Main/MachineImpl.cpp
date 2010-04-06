@@ -8961,14 +8961,13 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     pm::SubMetric *guestMemCache = new pm::SubMetric("Guest/RAM/Usage/Cache",        "Total amount of guest (disk) cache memory.");
 
     pm::SubMetric *guestPagedTotal = new pm::SubMetric("Guest/Pagefile/Usage/Total",    "Total amount of space in the page file.");
-    pm::SubMetric *guestPagedFree = new pm::SubMetric("Guest/Pagefile/Usage/Free",      "Free amount of free space in the page file.");
 
     /* Create and register base metrics */
     pm::BaseMetric *guestCpuLoad = new pm::GuestCpuLoad(mGuestHAL, aMachine, guestLoadUser, guestLoadKernel, guestLoadIdle);
     aCollector->registerBaseMetric(guestCpuLoad);
 
     pm::BaseMetric *guestCpuMem = new pm::GuestRamUsage(mGuestHAL, aMachine, guestMemTotal, guestMemFree, guestMemBalloon,
-                                                        guestMemCache, guestPagedTotal, guestPagedFree);
+                                                        guestMemCache, guestPagedTotal);
     aCollector->registerBaseMetric(guestCpuMem);
 
     aCollector->registerMetric(new pm::Metric(guestCpuLoad, guestLoadUser, 0));
@@ -9010,11 +9009,6 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateAvg()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedTotal, new pm::AggregateMax()));
-
-    aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, 0));
-    aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateAvg()));
-    aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateMin()));
-    aCollector->registerMetric(new pm::Metric(guestCpuMem, guestPagedFree, new pm::AggregateMax()));
 };
 
 void Machine::unregisterMetrics(PerformanceCollector *aCollector, Machine *aMachine)

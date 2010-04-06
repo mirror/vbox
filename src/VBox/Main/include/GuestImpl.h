@@ -89,7 +89,7 @@ public:
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                      ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
-                                     ULONG *aPageTotal, ULONG *aPageFree);
+                                     ULONG *aPageTotal);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);
