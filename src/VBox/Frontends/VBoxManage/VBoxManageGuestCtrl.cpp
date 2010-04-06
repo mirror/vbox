@@ -82,7 +82,7 @@ static int handleExecProgram(HandlerArg *a)
 
     Utf8Str Utf8Cmd(a->argv[1]);
     uint32_t uFlags = 0;
-    Utf8Str Utf8Args;
+    com::SafeArray <BSTR> args;
     com::SafeArray <BSTR> env;
     Utf8Str Utf8StdIn;
     Utf8Str Utf8StdOut;
@@ -101,7 +101,17 @@ static int handleExecProgram(HandlerArg *a)
                 usageOK = false;
             else
             {
-                Utf8Args = a->argv[i + 1];
+                char **papszArg;
+                int cArgs;
+
+                rc = RTGetOptArgvFromString(&papszArg, &cArgs, a->argv[i + 1], NULL);
+                if (RT_SUCCESS(rc))
+                {
+                    for (int a = 0; a < cArgs; a++)                       
+                        args.push_back(Bstr(papszArg[a]));
+
+                    RTGetOptArgvFree(papszArg);
+                }                
                 ++i;
             }
         }
@@ -214,8 +224,8 @@ static int handleExecProgram(HandlerArg *a)
 
             ComPtr<IProgress> progress;
             ULONG uPID = 0;
-            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags,
-                                                    Bstr(Utf8Args), ComSafeArrayAsInParam(env),
+            CHECK_ERROR_BREAK(guest, ExecuteProgram(Bstr(Utf8Cmd), uFlags, 
+                                                    ComSafeArrayAsInParam(args), ComSafeArrayAsInParam(env), 
                                                     Bstr(Utf8StdIn), Bstr(Utf8StdOut), Bstr(Utf8StdErr),
                                                     Bstr(Utf8UserName), Bstr(Utf8Password), uTimeoutMS,
                                                     &uPID, progress.asOutParam()));

@@ -8352,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="a4dac036-f7ed-4634-98d8-44b8672b1779"
+     uuid="a2c749bb-55df-46a4-8d88-567ee1503fff"
      wsmap="managed"
      >
     <desc>
@@ -8509,18 +8509,16 @@
           has to be set to 0.
         </desc>
       </param>
-      <param name="arguments" type="wstring" dir="in">
+      <param name="arguments" type="wstring" safearray="yes" dir="in">
         <desc>
-          Arguments passed to the execution command. If more than one argument 
-          should be passed, put them in a quoted string, e.g. "--foo --bar". 
+          Array of arguments passed to the execution command.
         </desc>
       </param>
       <param name="environment" type="wstring" safearray="yes" dir="in">
         <desc>
           Environment variables that can be set while the command is being 
-          executed, in form of "NAME=VALUE". If more than one environment 
-          variable should be passed, put them in a quoted string, e.g. "FOO=BAR 
-          VBOX_LOG=ALL".
+          executed, in form of "NAME=VALUE"; one pair per entry. To unset a
+          variable just set its name ("NAME") without a value.
         </desc>
       </param>
       <param name="stdIn" type="wstring" dir="in">
