@@ -2462,21 +2462,35 @@ DxgkDdiRecommendFunctionalVidPn(
 
     if (Status == STATUS_SUCCESS)
     {
-        const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
-        Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
-        Assert(Status == STATUS_SUCCESS);
-        if (Status == STATUS_SUCCESS)
+        for (uint32_t i = 0; i < pDevExt->cSources; ++i)
         {
-            Assert (iPreferredModeInfo >= 0);
-            Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
-                    pModeInfos, cModeInfos, iPreferredModeInfo,
-                    &Resolution, 1);
+            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, pResolutions, cResolutions);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
-                drprintf((__FUNCTION__": vboxVidPnCreatePopulateVidPnFromLegacy failed Status(0x%x)\n", Status));
+            {
+                drprintf((__FUNCTION__": vboxVidPnCheckAddMonitorModes failed Status(0x%x)\n", Status));
+                break;
+            }
         }
-        else
-            drprintf((__FUNCTION__": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
+
+        if (Status == STATUS_SUCCESS)
+        {
+            const DXGK_VIDPN_INTERFACE* pVidPnInterface = NULL;
+            Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryVidPnInterface(pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, DXGK_VIDPN_INTERFACE_VERSION_V1, &pVidPnInterface);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                Assert (iPreferredModeInfo >= 0);
+                Status = vboxVidPnCreatePopulateVidPnFromLegacy(pDevExt, pRecommendFunctionalVidPnArg->hRecommendedFunctionalVidPn, pVidPnInterface,
+                        pModeInfos, cModeInfos, iPreferredModeInfo,
+                        &Resolution, 1);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status != STATUS_SUCCESS)
+                    drprintf((__FUNCTION__": vboxVidPnCreatePopulateVidPnFromLegacy failed Status(0x%x)\n", Status));
+            }
+            else
+                drprintf((__FUNCTION__": DxgkCbQueryVidPnInterface failed Status(0x%x)\n", Status));
+        }
     }
 
     if (bFreeModes)

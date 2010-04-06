@@ -26,6 +26,10 @@
 
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 
+PVOID vboxWddmMemAlloc(IN SIZE_T cbSize);
+PVOID vboxWddmMemAllocZero(IN SIZE_T cbSize);
+VOID vboxWddmMemFree(PVOID pvMem);
+
 typedef enum
 {
     VBOXWDDM_ALLOC_TYPE_UNEFINED = 0,

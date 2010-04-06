@@ -598,6 +598,51 @@ NTSTATUS vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(PDEVICE_EXTENSION pDev
     return Status;
 }
 
+NTSTATUS vboxVidPnCreatePopulateMonitorSourceModeInfoFromLegacy(PDEVICE_EXTENSION pDevExt,
+        CONST D3DKMDT_HMONITORSOURCEMODESET hMonitorSMS,
+        CONST DXGK_MONITORSOURCEMODESET_INTERFACE *pMonitorSMSIf,
+        D3DKMDT_2DREGION *pResolution,
+        D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin,
+        BOOLEAN bPreferred)
+{
+    D3DKMDT_MONITOR_SOURCE_MODE * pMonitorSMI;
+    NTSTATUS Status = pMonitorSMSIf->pfnCreateNewModeInfo(hMonitorSMS, &pMonitorSMI);
+    Assert(Status == STATUS_SUCCESS);
+    if (Status == STATUS_SUCCESS)
+    {
+        do
+        {
+            Status = vboxVidPnPopulateMonitorSourceModeInfoFromLegacy(pDevExt,
+                    pMonitorSMI,
+                    pResolution,
+                    enmOrigin,
+                    bPreferred);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                Status = pMonitorSMSIf->pfnAddMode(hMonitorSMS, pMonitorSMI);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                    break;
+                drprintf((__FUNCTION__": pfnAddMode failed, Status(0x%x)", Status));
+            }
+            else
+                drprintf((__FUNCTION__": vboxVidPnPopulateMonitorSourceModeInfoFromLegacy failed, Status(0x%x)", Status));
+
+            Assert (Status != STATUS_SUCCESS);
+            /* we're here because of a failure */
+            NTSTATUS tmpStatus = pMonitorSMSIf->pfnReleaseModeInfo(hMonitorSMS, pMonitorSMI);
+            Assert(tmpStatus == STATUS_SUCCESS);
+            if (tmpStatus != STATUS_SUCCESS)
+                drprintf((__FUNCTION__": pfnReleaseModeInfo failed tmpStatus(0x%x)\n", tmpStatus));
+        } while (0);
+    }
+    else
+        drprintf((__FUNCTION__": pfnCreateNewModeInfo failed, Status(0x%x)", Status));
+
+    return Status;
+}
+
 NTSTATUS vboxVidPnPopulateTargetModeInfoFromLegacy(D3DKMDT_VIDPN_TARGET_MODE *pNewVidPnTargetModeInfo,
         D3DKMDT_2DREGION *pResolution,
         BOOLEAN bPreferred)
@@ -752,15 +797,129 @@ NTSTATUS vboxVidPnCreatePopulateTargetModeSetFromLegacy(PDEVICE_EXTENSION pDevEx
 
 }
 
+typedef struct VBOXVIDPNCHECKADDMONITORMODES
+{
+    NTSTATUS Status;
+    D3DKMDT_2DREGION *pResolutions;
+    uint32_t cResolutions;
+} VBOXVIDPNCHECKADDMONITORMODES, *PVBOXVIDPNCHECKADDMONITORMODES;
+
+static DECLCALLBACK(BOOLEAN) vboxVidPnCheckAddMonitorModesEnum(struct _DEVICE_EXTENSION* pDevExt, D3DKMDT_HMONITORSOURCEMODESET hMonitorSMS, CONST DXGK_MONITORSOURCEMODESET_INTERFACE *pMonitorSMSIf,
+        CONST D3DKMDT_MONITOR_SOURCE_MODE *pMonitorSMI, PVOID pContext)
+{
+    PVBOXVIDPNCHECKADDMONITORMODES pData = (PVBOXVIDPNCHECKADDMONITORMODES)pContext;
+    NTSTATUS Status = STATUS_SUCCESS;
+
+    for (uint32_t i = 0; i < pData->cResolutions; ++i)
+    {
+        D3DKMDT_VIDPN_TARGET_MODE dummyMode = {0};
+        Status = vboxVidPnPopulateTargetModeInfoFromLegacy(&dummyMode, &pData->pResolutions[i], FALSE);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            if (vboxVidPnMatchVideoSignal(&dummyMode.VideoSignalInfo, &pMonitorSMI->VideoSignalInfo))
+            {
+                /* mark it as unneened */
+                pData->pResolutions[i].cx = 0;
+                break;
+            }
+        }
+        else
+        {
+            drprintf((__FUNCTION__": vboxVidPnPopulateTargetModeInfoFromLegacy failed Status(0x%x)\n", Status));
+            break;
+        }
+    }
+
+    pMonitorSMSIf->pfnReleaseModeInfo(hMonitorSMS, pMonitorSMI);
+
+    pData->Status = Status;
+
+    return Status == STATUS_SUCCESS;
+}
+
+NTSTATUS vboxVidPnCheckAddMonitorModes(PDEVICE_EXTENSION pDevExt, D3DDDI_VIDEO_PRESENT_TARGET_ID targetId, D3DKMDT_MONITOR_CAPABILITIES_ORIGIN enmOrigin, D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions)
+{
+    NTSTATUS Status;
+    D3DKMDT_2DREGION *pResolutionsCopy = (D3DKMDT_2DREGION*)vboxWddmMemAlloc(cResolutions * sizeof (D3DKMDT_2DREGION));
+    if (pResolutionsCopy)
+    {
+        memcpy(pResolutionsCopy, pResolutions, cResolutions * sizeof (D3DKMDT_2DREGION));
+        CONST DXGK_MONITOR_INTERFACE *pMonitorInterface;
+        Status = pDevExt->u.primary.DxgkInterface.DxgkCbQueryMonitorInterface(pDevExt->u.primary.DxgkInterface.DeviceHandle, DXGK_MONITOR_INTERFACE_VERSION_V1, &pMonitorInterface);
+        Assert(Status == STATUS_SUCCESS);
+        if (Status == STATUS_SUCCESS)
+        {
+            D3DKMDT_HMONITORSOURCEMODESET hMonitorSMS;
+            CONST DXGK_MONITORSOURCEMODESET_INTERFACE *pMonitorSMSIf;
+            Status = pMonitorInterface->pfnAcquireMonitorSourceModeSet(pDevExt->u.primary.DxgkInterface.DeviceHandle,
+                                            targetId,
+                                            &hMonitorSMS,
+                                            &pMonitorSMSIf);
+            Assert(Status == STATUS_SUCCESS);
+            if (Status == STATUS_SUCCESS)
+            {
+                VBOXVIDPNCHECKADDMONITORMODES EnumData = {0};
+                EnumData.cResolutions = cResolutions;
+                EnumData.pResolutions = pResolutionsCopy;
+                Status = vboxVidPnEnumMonitorSourceModes(pDevExt, hMonitorSMS, pMonitorSMSIf,
+                        vboxVidPnCheckAddMonitorModesEnum, &EnumData);
+                Assert(Status == STATUS_SUCCESS);
+                if (Status == STATUS_SUCCESS)
+                {
+                    Assert(EnumData.Status == STATUS_SUCCESS);
+                    if (EnumData.Status == STATUS_SUCCESS)
+                    {
+                        for (uint32_t i = 0; i < cResolutions; ++i)
+                        {
+                            D3DKMDT_2DREGION *pRes = &pResolutionsCopy[i];
+                            if (pRes->cx)
+                            {
+                                Status = vboxVidPnCreatePopulateMonitorSourceModeInfoFromLegacy(pDevExt,
+                                        hMonitorSMS,
+                                        pMonitorSMSIf,
+                                        pRes,
+                                        enmOrigin,
+                                        FALSE);
+                                Assert(Status == STATUS_SUCCESS);
+                                if (Status != STATUS_SUCCESS)
+                                {
+                                    drprintf((__FUNCTION__": vboxVidPnCreatePopulateMonitorSourceModeInfoFromLegacy failed Status(0x%x)\n", Status));
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                NTSTATUS tmpStatus = pMonitorInterface->pfnReleaseMonitorSourceModeSet(pDevExt->u.primary.DxgkInterface.DeviceHandle, hMonitorSMS);
+                Assert(tmpStatus == STATUS_SUCCESS);
+                if (tmpStatus != STATUS_SUCCESS)
+                    drprintf((__FUNCTION__": pfnReleaseMonitorSourceModeSet failed tmpStatus(0x%x)\n", tmpStatus));
+            }
+            else
+                drprintf((__FUNCTION__": pfnAcquireMonitorSourceModeSet failed Status(0x%x)\n", Status));
+        }
+        else
+            drprintf((__FUNCTION__": DxgkCbQueryMonitorInterface failed Status(0x%x)\n", Status));
+    }
+    else
+    {
+        drprintf((__FUNCTION__": failed to allocate resolution copy of size (%d)\n", cResolutions));
+        Status = STATUS_NO_MEMORY;
+    }
+
+    return Status;
+}
+
 NTSTATUS vboxVidPnCreatePopulateVidPnFromLegacy(PDEVICE_EXTENSION pDevExt, D3DKMDT_HVIDPN hVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         VIDEO_MODE_INFORMATION *pModes, uint32_t cModes, int iPreferredMode,
         D3DKMDT_2DREGION *pResolutions, uint32_t cResolutions)
 {
-    NTSTATUS Status;
     D3DKMDT_HVIDPNTOPOLOGY hVidPnTopology;
     const DXGK_VIDPNTOPOLOGY_INTERFACE* pVidPnTopologyInterface;
     VIDEO_MODE_INFORMATION *pPreferredMode = iPreferredMode >= 0 ? &pModes[iPreferredMode] : NULL;
-    Status = pVidPnInterface->pfnGetTopology(hVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
+    NTSTATUS Status = pVidPnInterface->pfnGetTopology(hVidPn, &hVidPnTopology, &pVidPnTopologyInterface);
     if (Status == STATUS_SUCCESS)
     {
         D3DKMDT_VIDPN_PRESENT_PATH *pNewVidPnPresentPathInfo;
@@ -1042,6 +1201,59 @@ DECLCALLBACK(BOOLEAN) vboxVidPnCofuncModalityPathEnum(PDEVICE_EXTENSION pDevExt,
     return Status == STATUS_SUCCESS;
 }
 
+NTSTATUS vboxVidPnEnumMonitorSourceModes(PDEVICE_EXTENSION pDevExt, D3DKMDT_HMONITORSOURCEMODESET hMonitorSMS, CONST DXGK_MONITORSOURCEMODESET_INTERFACE *pMonitorSMSIf,
+        PFNVBOXVIDPNENUMMONITORSOURCEMODES pfnCallback, PVOID pContext)
+{
+    CONST D3DKMDT_MONITOR_SOURCE_MODE *pMonitorSMI;
+    NTSTATUS Status = pMonitorSMSIf->pfnAcquireFirstModeInfo(hMonitorSMS, &pMonitorSMI);
+    Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_DATASET_IS_EMPTY);
+    if (Status == STATUS_SUCCESS)
+    {
+        Assert(pMonitorSMI);
+        while (1)
+        {
+            CONST D3DKMDT_MONITOR_SOURCE_MODE *pNextMonitorSMI;
+            Status = pMonitorSMSIf->pfnAcquireNextModeInfo(hMonitorSMS, pMonitorSMI, &pNextMonitorSMI);
+            if (!pfnCallback(pDevExt, hMonitorSMS, pMonitorSMSIf, pMonitorSMI, pContext))
+            {
+                Assert(Status == STATUS_SUCCESS || Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET);
+                if (Status == STATUS_SUCCESS)
+                    pMonitorSMSIf->pfnReleaseModeInfo(hMonitorSMS, pNextMonitorSMI);
+                else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+                {
+                    Status = STATUS_SUCCESS;
+                    break;
+                }
+                else
+                {
+                    drprintf((__FUNCTION__": pfnAcquireNextModeInfo Failed Status(0x%x), ignored since callback returned false\n", Status));
+                    Status = STATUS_SUCCESS;
+                }
+                break;
+            }
+            else if (Status == STATUS_SUCCESS)
+                pMonitorSMI = pNextMonitorSMI;
+            else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+            {
+                Status = STATUS_SUCCESS;
+                break;
+            }
+            else
+            {
+                AssertBreakpoint();
+                drprintf((__FUNCTION__": pfnAcquireNextModeInfo Failed Status(0x%x)\n", Status));
+                pNextMonitorSMI = NULL;
+                break;
+            }
+        }
+    }
+    else if (Status == STATUS_GRAPHICS_DATASET_IS_EMPTY)
+        Status = STATUS_SUCCESS;
+    else
+        drprintf((__FUNCTION__": pfnAcquireFirstModeInfo failed Status(0x%x)\n", Status));
+
+    return Status;
+}
 
 NTSTATUS vboxVidPnEnumSourceModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDPN hDesiredVidPn, const DXGK_VIDPN_INTERFACE* pVidPnInterface,
         D3DKMDT_HVIDPNSOURCEMODESET hNewVidPnSourceModeSet, const DXGK_VIDPNSOURCEMODESET_INTERFACE *pVidPnSourceModeSetInterface,
@@ -1078,6 +1290,11 @@ NTSTATUS vboxVidPnEnumSourceModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
             }
             else if (Status == STATUS_SUCCESS)
                 pNewVidPnSourceModeInfo = pNextVidPnSourceModeInfo;
+            else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+            {
+                Status = STATUS_SUCCESS;
+                break;
+            }
             else
             {
                 AssertBreakpoint();
@@ -1130,6 +1347,11 @@ NTSTATUS vboxVidPnEnumTargetModes(PDEVICE_EXTENSION pDevExt, const D3DKMDT_HVIDP
             }
             else if (Status == STATUS_SUCCESS)
                 pNewVidPnTargetModeInfo = pNextVidPnTargetModeInfo;
+            else if (Status == STATUS_GRAPHICS_NO_MORE_ELEMENTS_IN_DATASET)
+            {
+                Status = STATUS_SUCCESS;
+                break;
+            }
             else
             {
                 AssertBreakpoint();
