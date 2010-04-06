@@ -88,8 +88,8 @@ public:
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
     STDMETHOD(InternalGetStatistics)(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                     ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemBalloonTotal, ULONG *aMemCache,
-                                     ULONG *aPageTotal);
+                                     ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
+                                     ULONG *aPageTotal, ULONG *aMemFreeTotal);
 
     // public methods that are not in IDL
     void setAdditionsVersion (Bstr aVersion, VBOXOSTYPE aOsType);

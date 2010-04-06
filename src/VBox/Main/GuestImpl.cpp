@@ -253,8 +253,8 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 }
 
 STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemBalloonTotal,
-                                          ULONG *aMemCache, ULONG *aPageTotal)
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, 
+                                          ULONG *aMemCache, ULONG *aPageTotal, ULONG *aMemFreeTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
     CheckComArgOutPointerValid(aCpuKernel);
@@ -275,29 +275,22 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
     *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL];
     *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE];
-
+    *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON];
     *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE];
     *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL];
 
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
     {
-        unsigned uBalloon, uBalloonTotal;
-        *aMemBalloon      = 0;
-        *aMemBalloonTotal = 0;
-        int rc = PGMR3QueryBalloonSize(pVM.raw(), &uBalloon, &uBalloonTotal);
+        unsigned uFreeTotal;
+        *aMemFreeTotal = 0;
+        int rc = PGMR3QueryFreeMemory(pVM.raw(), &uFreeTotal);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
-        {
-            *aMemBalloon      = uBalloon;
-            *aMemBalloonTotal = uBalloonTotal;
-        }
+            *aMemFreeTotal = uFreeTotal;
     }
     else
-    {
-        *aMemBalloon      = 0;
-        *aMemBalloonTotal = 0;
-    }
+        *aMemFreeTotal = 0;
 
     return S_OK;
 }

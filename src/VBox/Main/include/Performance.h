@@ -138,7 +138,7 @@ namespace pm
     class CollectorHAL
     {
     public:
-                 CollectorHAL() : mMemBalloonTotal(0) {};
+                 CollectorHAL() : mMemFreeTotal(0) {};
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */, uint64_t /* iTick */) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
@@ -162,19 +162,19 @@ namespace pm
         /** Disable metrics collecting (if applicable) */
         virtual int disable();
 
-        virtual int setBalloonSize(ULONG balloonsize)
+        virtual int setMemFreeTotal(ULONG memfree)
         {
-            mMemBalloonTotal = balloonsize;
+            mMemFreeTotal = memfree;
             return S_OK;
         }
 
-        virtual ULONG getBalloonSize()
+        virtual ULONG getMemFreeTotal()
         {
-            return mMemBalloonTotal;
+            return mMemFreeTotal;
         }
 
     private:
-        ULONG       mMemBalloonTotal;
+        ULONG       mMemFreeTotal;
     };
 
     class CollectorGuestHAL : public CollectorHAL
@@ -334,9 +334,9 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *ballooned)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mBallooned(ballooned) {};
-        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mBallooned; };
+        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -349,7 +349,6 @@ namespace pm
         SubMetric *mTotal;
         SubMetric *mUsed;
         SubMetric *mAvailable;
-        SubMetric *mBallooned;
     };
 
     class MachineCpuLoad : public BaseMetric
