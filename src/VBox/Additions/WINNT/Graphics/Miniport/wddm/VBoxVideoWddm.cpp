@@ -2464,7 +2464,7 @@ DxgkDdiRecommendFunctionalVidPn(
     {
         for (uint32_t i = 0; i < pDevExt->cSources; ++i)
         {
-            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, pResolutions, cResolutions);
+            Status = vboxVidPnCheckAddMonitorModes(pDevExt, i, D3DKMDT_MCO_DRIVER, &Resolution, 1, 0);
             Assert(Status == STATUS_SUCCESS);
             if (Status != STATUS_SUCCESS)
             {
