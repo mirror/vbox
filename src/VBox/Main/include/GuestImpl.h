@@ -83,7 +83,7 @@ public:
     STDMETHOD(SetCredentials)(IN_BSTR aUserName, IN_BSTR aPassword,
                               IN_BSTR aDomain, BOOL aAllowInteractiveLogon);
     STDMETHOD(ExecuteProgram)(IN_BSTR aCommand, ULONG aFlags,
-                              IN_BSTR aArguments, ComSafeArrayIn(IN_BSTR, aEnvironment),
+                              ComSafeArrayIn(IN_BSTR, aArguments), ComSafeArrayIn(IN_BSTR, aEnvironment),
                               IN_BSTR aStdIn, IN_BSTR aStdOut, IN_BSTR aStdErr,
                               IN_BSTR aUserName, IN_BSTR aPassword,
                               ULONG aTimeoutMS, ULONG* aPID, IProgress **aProgress);
