@@ -676,7 +676,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="123"/>
         <source>Cancel</source>
@@ -2004,7 +2004,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <location filename="../src/VBoxConsoleWnd.cpp" line="3111"/>
         <source>Cancel</source>
@@ -2041,7 +2041,7 @@ Version %1</source>
         <translation type="obsolete">接続がタイムアウトになりました。</translation>
     </message>
     <message>
-        <location filename="../src/widgets/VBoxDownloaderWgt.cpp" line="155"/>
+        <location filename="../src/widgets/UIDownloader.cpp" line="155"/>
         <source>The download process has been cancelled by the user.</source>
         <translation>ダウンロード処理がユーザーによってキャンセルされました。</translation>
     </message>
@@ -2055,39 +2055,39 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="77"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="77"/>
         <source>Select a file to export into</source>
         <translation>エクスポートするファイルを選択</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="78"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="78"/>
         <source>Open Virtualization Format (%1)</source>
         <translation>仮想フォーマット(%1)を開く</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="131"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="131"/>
         <source>Appliance</source>
         <translation>仮想アプライアンス</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="388"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="388"/>
         <source>Exporting Appliance ...</source>
         <translation>仮想アプライアンスのエクスポート...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="31"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="31"/>
         <source>Appliance Export Wizard</source>
         <translation>仮想アプライアンス エクスポート ウィザード</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="55"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="55"/>
         <source>Welcome to the Appliance Export Wizard!</source>
         <translation>ようこそ仮想アプライアンス エクスポート ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="105"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="105"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -2098,122 +2098,122 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;このウィザードは、仮想アプライアンスをエクスポートする手順を案内します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;ウィザードの次のページに進むには&lt;span style=&quot; font-weight:600;&quot;&gt;[次へ]&lt;/span&gt;ボタンを、前のページに戻るには&lt;span style=&quot; font-weight:600;&quot;&gt;[戻る]&lt;/span&gt;ボタンを使用してください。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;エクスポートする仮想マシンを選択してください。 1つ以上の仮想マシンを選択できます。 エクスポートする前に、それらの仮想マシンをオフにしなければなりません。&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="722"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="722"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="501"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="501"/>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="752"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="752"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="545"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="545"/>
         <source>Appliance Export Settings</source>
         <translation>仮想アプライアンスのエクスポート設定</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="252"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="252"/>
         <source>Here you can change additional configuration values of the selected virtual machines. You can modify most of the properties shown by double-clicking on the items.</source>
         <translation>選択した仮想マシンの構成を変更することができます。項目をダブルクリックして表示されているプロパティを変更できます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="298"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="298"/>
         <source>Restore Defaults</source>
         <translation>デフォルト値に戻す</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="298"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="298"/>
         <source>Please specify a filename into which the appliance information will be written. Currently VirtualBox supports the Open Virtualization Format (OVF).</source>
         <translation type="obsolete">仮想アプライアンス情報が書かれたファイル名を指定してください。 VirtualBoxはOpen Virtualization Format(OVF)をサポートします。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="729"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="729"/>
         <source>&amp;Export &gt;</source>
         <translation>エクスポート(&amp;E) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="675"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="675"/>
         <source>Write in legacy OVF 0.9 format for compatibility with other virtualization products.</source>
         <translation>他の仮想化製品との互換性のため、古いOVF0.9形式で書き込みます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="678"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="678"/>
         <source>&amp;Write legacy OVF 0.9</source>
         <translation>OVF 0.9形式で書き込み(&amp;W)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="133"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="133"/>
         <source>Please choose a filename to export the OVF to.</source>
         <translation>エクスポートするファイル名を選択してください。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="134"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="134"/>
         <source>Please complete the additional fields like the username, password and the bucket, and provide a filename for the OVF target.</source>
         <translation>ユーザ名、パスワードおよびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="135"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="135"/>
         <source>Please complete the additional fields like the username, password, hostname and the bucket, and provide a filename for the OVF target.</source>
         <translation>ユーザ名、パスワード、ホスト名およびバケット名などの追加フィールドをすべて指定してください。最後にOVFターゲットのファイル名を指定しなければなりません。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="208"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="208"/>
         <source>Checking files ...</source>
         <translation>ファイルを確認中...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.cpp" line="230"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.cpp" line="230"/>
         <source>Removing files ...</source>
         <translation>ファイルを除去中...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="419"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="419"/>
         <source>Please specify the target for the OVF export. You can choose between a local file system export, uploading the OVF to the Sun Cloud service or an S3 storage server.</source>
         <translation>OVFのエクスポートのためのターゲットを指定してください。 ローカル ファイルシステムへのエクスポートか、OVFのアップロード(Sun CloudまたはS3 ストレージ サーバー)を選択することができます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="431"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="431"/>
         <source>&amp;Local Filesystem </source>
         <translation>ローカル ファイルシステム(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="441"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="441"/>
         <source>Sun &amp;Cloud</source>
         <translation>Sun Cloud(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="448"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="448"/>
         <source>&amp;Simple Storage System (S3)</source>
         <translation>Simple Storage System (S3)(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="604"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="604"/>
         <source>&amp;Username:</source>
         <translation>ユーザー名(&amp;U):</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="617"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="617"/>
         <source>&amp;Password:</source>
         <translation>パスワード(&amp;P):</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="637"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="637"/>
         <source>&amp;File:</source>
         <translation>ファイル(&amp;F):</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="650"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="650"/>
         <source>&amp;Bucket:</source>
         <translation>バケット名(&amp;B):</translation>
     </message>
     <message>
-        <location filename="../src/wizards/exportappliance/VBoxExportApplianceWzd.ui" line="660"/>
+        <location filename="../src/wizards/exportappliance/UIExportApplianceWzd.ui" line="660"/>
         <source>&amp;Hostname:</source>
         <translation>ホスト名(&amp;H):</translation>
     </message>
@@ -4881,29 +4881,29 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="129"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="129"/>
         <source>Select an appliance to import</source>
         <translation>インポートする仮想アプライアンスを選択</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="130"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="130"/>
         <source>Open Virtualization Format (%1)</source>
         <translation>Open Virtualization Format (%1)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="31"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="31"/>
         <source>Appliance Import Wizard</source>
         <translation>仮想アプライアンス インポート ウィザード</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="55"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="55"/>
         <source>Welcome to the Appliance Import Wizard!</source>
         <translation>ようこそ仮想アプライアンス インポート ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="105"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="105"/>
         <source>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
@@ -4914,80 +4914,80 @@ p, li { white-space: pre-wrap; }
         <translation>&lt;!DOCTYPE HTML PUBLIC &quot;-//W3C//DTD HTML 4.0//EN&quot; &quot;http://www.w3.org/TR/REC-html40/strict.dtd&quot;&gt;&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;このウィザードは、仮想アプライアンスをインポートする手順を案内します。 &lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;ウィザードの次のページに進むには&lt;span style=&quot; font-weight:600;&quot;&gt;[次へ]&lt;/span&gt;ボタンを、前のページに戻るには&lt;span style=&quot; font-weight:600;&quot;&gt;[戻る]&lt;/span&gt;ボタンを使用してください。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;インポートするには、最初に仮想アプライアンス情報が書かれたファイルを選択しなければなりません。 VirtualBoxはOpen Virtualization Format(OVF)をサポートします。続いて、以下からインポートするファイルを選択してください:&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="331"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="331"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="171"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="171"/>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="361"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="361"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="215"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="215"/>
         <source>Appliance Import Settings</source>
         <translation>仮想アプライアンスのインポート設定</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="265"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="265"/>
         <source>These are the virtual machines contained in the appliance and the suggested settings of the imported VirtualBox machines. You can change many of the properties shown by double-clicking on the items and disable others using the check boxes below.</source>
         <translation>VirtualBoxへのインポートのために仮想アプライアンス情報で記載された仮想マシン構成です。項目をダブルクリックすると、表示されているプロパティの大部分を変更できます。また、以下のチェックボックスを使用して他のプロパティを無効化することができます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="311"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="311"/>
         <source>Restore Defaults</source>
         <translation>デフォルト値に戻す</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.ui" line="338"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.ui" line="338"/>
         <source>&amp;Import &gt;</source>
         <translation>インポート(&amp;I) &gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="77"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="77"/>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;仮想システム&quot;%1&quot;のインポートには、以下のソフトウェア使用許諾契約への同意が必要です。&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;[同意する]をクリックして続行するか、[同意しない]をクリックしてインポートを中止してください。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="84"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="84"/>
         <source>Software License Agreement</source>
         <translation>ソフトウェア使用許諾契約</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="85"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="85"/>
         <source>&amp;Disagree</source>
         <translation>同意しない(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="86"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="86"/>
         <source>&amp;Agree</source>
         <translation>同意する(&amp;A)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="87"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="87"/>
         <source>&amp;Print...</source>
         <translation>印刷(&amp;P)...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="88"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="88"/>
         <source>&amp;Save...</source>
         <translation>保存(&amp;S)...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="103"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="103"/>
         <source>Text (*.txt)</source>
         <translation>テキストファイル(*.txt)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/importappliance/VBoxImportApplianceWzd.cpp" line="103"/>
+        <location filename="../src/wizards/importappliance/UIImportApplianceWzd.cpp" line="103"/>
         <source>Save license to file...</source>
         <translation>使用許諾契約をファイルに保存...</translation>
     </message>
@@ -5351,14 +5351,14 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="30"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="30"/>
         <source>Create New Virtual Disk</source>
         <translation>新規仮想ディスクの作成</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="30"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="30"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard
 and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
@@ -5366,102 +5366,102 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>Welcome to the Create New Virtual Disk Wizard!</source>
         <translation>ようこそ新規仮想ディスク作成ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>Image Type</source>
         <translation type="obsolete">イメージのタイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>&amp;Dynamically expanding image</source>
         <translation type="obsolete">可変サイズのイメージ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>&amp;Fixed-size image</source>
         <translation type="obsolete">固定サイズのイメージ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>Virtual Disk Image Type</source>
         <translation type="obsolete">仮想ディスクイメージのタイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file
 to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックし、ファイルの場所と名前を選択して仮想ハードディスクイメージを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>&amp;Image File Name</source>
         <translation type="obsolete">イメージファイル名(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>Select</source>
         <translation type="obsolete">選択</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS
 as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想ハードディスクのサイズを選択してください。
 このサイズは仮想ハードディスクのサイズとしてゲストOSに報告されます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="63"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="63"/>
         <source>Image &amp;Size</source>
         <translation type="obsolete">イメージのサイズ(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="435"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="435"/>
         <source>Virtual Disk Location and Size</source>
         <translation>仮想ディスクの場所とサイズ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="435"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="435"/>
         <source>You are going to create a new virtual hard disk image with the following parameters:</source>
         <translation type="obsolete">新規仮想ハードディスクイメージは以下の設定で作成されます:</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="435"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="435"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button.
                             Once you press it, a new hard disk image will be created.
                             </source>
         <translation type="obsolete">上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 新規ハードディスクイメージが作成されます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="735"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="735"/>
         <source>Summary</source>
         <translation>概要</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="364"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="364"/>
         <source>&lt;nobr&gt;%1 Bytes&lt;/nobr&gt;</source>
         <translation>&lt;nobr&gt;%1 バイト&lt;/nobr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="364"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="364"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Location:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Size:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;Bytes)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;タイプ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;場所:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;サイズ:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;(%4&amp;nbsp;バイト)&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="274"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="274"/>
         <source>Hard disk images (*.vdi)</source>
         <translation>ハードディスクイメージ(*.vdi)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="272"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="272"/>
         <source>Select a file for the new hard disk image file</source>
         <translation>新規ハードディスクのファイルを選択してください</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="272"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="272"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;
 &lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount
 of space on your physical hard disk. It will grow dynamically (up to
@@ -5476,144 +5476,144 @@ time depending on the image size and the write performance of your harddisk.&lt;
 固定サイズのイメージの作成は、イメージのサイズとハードディスクの書き込み性能に依存して長い時間がかかるかもしれません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="272"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="272"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk image for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;このウィザードは仮想マシン用の新規仮想ハードディスクイメージ作成を手助けします。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="898"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="898"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="691"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="691"/>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="691"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="691"/>
         <source>&lt;p&gt;Select the type of virtual hard disk image you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding image&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size image&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size image may take a long time depending on the image size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;作成する仮想ハードディスクイメージのタイプを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;可変サイズのイメージ&lt;/b&gt;は、最初に物理的なハードディスク上のごく小さな容量しか使用しません。ゲストOSが要求するディスク容量に応じてサイズが動的に増加(指定されたサイズまで)します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;固定サイズのイメージ&lt;/b&gt;の容量は増加しません。仮想ハードディスクのサイズとほぼ同じサイズのファイルに保存されます。固定サイズのイメージの作成は、イメージのサイズとハードディスクの書き込み性能に依存して長い時間がかかるかもしれません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="691"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="691"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location and name of the file to store the virtual hard disk image or type a file name in the entry field.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックし、ファイルの場所と名前を選択して仮想ハードディスクイメージを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="691"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="691"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk image in megabytes. This size will be reported to the Guest OS as the size of the virtual hard disk.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想ハードディスクのサイズを選択してください。このサイズは仮想ハードディスクのサイズとしてゲストOSに報告されます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="691"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="691"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk image will be created.</source>
         <translation type="obsolete">上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 新規ハードディスクイメージが作成されます。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="905"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="905"/>
         <source>&amp;Finish</source>
         <translation>完了(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="213"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="213"/>
         <source>Type</source>
         <comment>summary</comment>
         <translation>タイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="214"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="214"/>
         <source>Location</source>
         <comment>summary</comment>
         <translation>場所</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="215"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="215"/>
         <source>Size</source>
         <comment>summary</comment>
         <translation>サイズ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.cpp" line="216"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.cpp" line="216"/>
         <source>Bytes</source>
         <comment>summary</comment>
         <translation>バイト</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="928"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="928"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="121"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="121"/>
         <source>&lt;p&gt;This wizard will help you to create a new virtual hard disk for your virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;このウィザードは仮想マシン用の新規仮想ハードディスク作成を手助けします。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="227"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="227"/>
         <source>Hard Disk Storage Type</source>
         <translation>ハードディスク ストレージ タイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="285"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="285"/>
         <source>&lt;p&gt;Select the type of virtual hard disk you want to create.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;dynamically expanding storage&lt;/b&gt; initially occupies a very small amount of space on your physical hard disk. It will grow dynamically (up to the size specified) as the Guest OS claims disk space.&lt;/p&gt;&lt;p&gt;A &lt;b&gt;fixed-size storage&lt;/b&gt; does not grow. It is stored in a file of approximately the same size as the size of the virtual hard disk. The creation of a fixed-size storage may take a long time depending on the storage size and the write performance of your harddisk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;作成する仮想ハードディスクのタイプを選択してください。&lt;/p&gt;&lt;p&gt;&lt;b&gt;可変サイズのイメージ&lt;/b&gt;は、最初に物理的なハードディスク上のごく小さな容量しか使用しません。ゲストOSが要求するディスク容量に応じてサイズが動的に増加(指定されたサイズまで)します。&lt;/p&gt;&lt;p&gt;&lt;b&gt;固定サイズのイメージ&lt;/b&gt;の容量は増加しません。仮想ハードディスクのサイズとほぼ同じサイズのファイルに保存されます。固定サイズのイメージの作成は、イメージのサイズとハードディスクの書き込み性能に依存して長い時間がかかるかもしれません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="304"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="304"/>
         <source>Storage Type</source>
         <translation>ストレージ タイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="319"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="319"/>
         <source>&amp;Dynamically expanding storage</source>
         <translation>可変サイズのストレージ(&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="335"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="335"/>
         <source>&amp;Fixed-size storage</source>
         <translation>固定サイズのストレージ(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="493"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="493"/>
         <source>&lt;p&gt;Press the &lt;b&gt;Select&lt;/b&gt; button to select the location of a file to store the hard disk data or type a file name in the entry field.&lt;/p&gt;</source>
         <translation>&lt;p&gt;&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリックし、ファイルの場所を選択してハードディスクデータを保存するか、入力フィールドにファイル名を入力してください 。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="512"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="512"/>
         <source>&amp;Location</source>
         <translation>場所(&amp;L)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="549"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="549"/>
         <source>&lt;p&gt;Select the size of the virtual hard disk in megabytes. This size will be reported to the Guest OS as the maximum size of this hard disk.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想ハードディスクのサイズをメガバイト単位で選択してください。このサイズは仮想ハードディスクの最大サイズとしてゲストOSに報告されます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="568"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="568"/>
         <source>&amp;Size</source>
         <translation>サイズ(&amp;S)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="793"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="793"/>
         <source>You are going to create a new virtual hard disk with the following parameters:</source>
         <translation>新規仮想ハードディスクは以下の設定で作成されます:</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newhd/VBoxNewHDWzd.ui" line="843"/>
+        <location filename="../src/wizards/newhd/UINewHDWzd.ui" line="843"/>
         <source>If the above settings are correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new hard disk will be created.</source>
         <translation>上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 新規ハードディスクが作成されます。</translation>
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="31"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="31"/>
         <source>Create New Virtual Machine</source>
         <translation>新規仮想マシンの作成</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="31"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="31"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create
 a new virtual machine for VirtualBox.&lt;/p&gt;
 &lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard
@@ -5622,12 +5622,12 @@ and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;
 &lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="55"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="55"/>
         <source>Welcome to the New Virtual Machine Wizard!</source>
         <translation>ようこそ新規仮想マシン作成ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="55"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="55"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating
 system you plan to install onto the virtual machine.&lt;/p&gt;
 &lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration.
@@ -5636,57 +5636,57 @@ It will be used by all VirtualBox components to identify your virtual machine.&l
 &lt;p&gt;通常、仮想マシンの名前はソフトウェアとハードウェア構成を示します。VirtualBoxは作成された仮想マシンを特定するためにこの名前を使用します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="290"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="290"/>
         <source>N&amp;ame</source>
         <translation>名前(&amp;N)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="323"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="323"/>
         <source>OS &amp;Type</source>
         <translation>OSタイプ(&amp;T)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="216"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="216"/>
         <source>VM Name and OS Type</source>
         <translation>仮想マシン名とOSタイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="486"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="486"/>
         <source>&lt;p&gt;Select the amount of base memory (RAM) in megabytes to be allocated to the virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想マシンに割り当てるメインメモリ(RAM)のサイズをメガバイト単位で選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="524"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="524"/>
         <source>Base &amp;Memory Size</source>
         <translation>メインメモリのサイズ(&amp;M)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="524"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="524"/>
         <source>&lt;</source>
         <translation type="obsolete">&lt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="524"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="524"/>
         <source>=</source>
         <translation type="obsolete">=</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="524"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="524"/>
         <source>&gt;</source>
         <translation type="obsolete">&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="571"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="571"/>
         <source>MB</source>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="428"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="428"/>
         <source>Memory</source>
         <translation>メモリ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="428"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="428"/>
         <source>&lt;p&gt;Select a hard disk image to be used
 as the boot hard disk of the virtual machine. You can either create a new hard
 disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk
@@ -5700,27 +5700,27 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 &lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="428"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="428"/>
         <source>B&amp;oot Hard Disk (Primary Master)</source>
         <translation type="obsolete">起動ディスク (プライマリ マスター) (&amp;O)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="428"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="428"/>
         <source>N&amp;ew...</source>
         <translation type="obsolete">新規(&amp;E)...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="428"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="428"/>
         <source>E&amp;xisting...</source>
         <translation type="obsolete">選択(&amp;X)...</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="716"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="716"/>
         <source>Virtual Hard Disk</source>
         <translation>仮想ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="716"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="716"/>
         <source>
                             &lt;p&gt;
                             You are going to create a new virtual machine
@@ -5730,7 +5730,7 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
         <translation type="obsolete"> &lt;p&gt;新規仮想マシンは以下の設定で作成されます: &lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="716"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="716"/>
         <source>
                             &lt;p&gt;
                             If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button.
@@ -5746,127 +5746,127 @@ step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source
 &lt;p&gt;注：メインウィンドウのツールバーからアクセスできる&lt;b&gt;[設定]&lt;/b&gt;ダイアログを使用して作成した仮想マシンのすべてのすべての設定をいつでも変更することができます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="948"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="948"/>
         <source>Summary</source>
         <translation>概要</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="948"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="948"/>
         <source>&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</source>
         <translation type="obsolete">&lt;qt&gt;%1&amp;nbsp;MB&lt;/qt&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="948"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="948"/>
         <source>&lt;tr&gt;&lt;td&gt;Name:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OS Type:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Base Memory:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;名前:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;OSタイプ:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;メインメモリ:&lt;/td&gt;&lt;td&gt;%3&amp;nbsp;MB&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="948"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="948"/>
         <source>&lt;tr&gt;&lt;td&gt;Boot Hard Disk:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</source>
         <translation type="obsolete">&lt;tr&gt;&lt;td&gt;起動ディスク:&lt;/td&gt;&lt;td&gt;%4&lt;/td&gt;&lt;/tr&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="127"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="127"/>
         <source>The recommended base memory size is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>推奨されるメインメモリのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="130"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="130"/>
         <source>The recommended size of the boot hard disk is &lt;b&gt;%1&lt;/b&gt; MB.</source>
         <translation>推奨される起動ディスクのサイズは&lt;b&gt;%1&lt;/b&gt;MBです。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="113"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="113"/>
         <source>&lt;p&gt;This wizard will guide you through the steps that are necessary to create a new virtual machine for VirtualBox.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page.&lt;/p&gt;</source>
         <translation>&lt;p&gt;このウィザードはVirtualBox用の新規仮想マシンを作成するために必要なステップを案内します。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="1105"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="1105"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="904"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="904"/>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="274"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="274"/>
         <source>&lt;p&gt;Enter a name for the new virtual machine and select the type of the guest operating system you plan to install onto the virtual machine.&lt;/p&gt;&lt;p&gt;The name of the virtual machine usually indicates its software and hardware configuration. It will be used by all VirtualBox components to identify your virtual machine.&lt;/p&gt;</source>
         <translation>&lt;p&gt;新規仮想マシンの名前を入力し、仮想マシンにインストールしたいゲストOSのタイプを選択してください。&lt;/p&gt;&lt;p&gt;通常、仮想マシンの名前はソフトウェアとハードウェア構成を示します。VirtualBoxは作成された仮想マシンを特定するためにこの名前を使用します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="274"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="274"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Disk Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation type="obsolete">&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想ディスクマネージャを起動します)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="1006"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="1006"/>
         <source>&lt;p&gt;You are going to create a new virtual machine with the following parameters:&lt;/p&gt;</source>
         <translation>&lt;p&gt;新規仮想マシンは以下の設定で作成されます:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="1053"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="1053"/>
         <source>&lt;p&gt;If the above is correct press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, a new virtual machine will be created. &lt;/p&gt;&lt;p&gt;Note that you can alter these and all other setting of the created virtual machine at any time using the &lt;b&gt;Settings&lt;/b&gt; dialog accessible through the menu of the main window.&lt;/p&gt;</source>
         <translation>&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。新規仮想マシンが作成されます。 &lt;/p&gt;&lt;p&gt;注：メインウィンドウのツールバーからアクセスできる&lt;b&gt;[設定]&lt;/b&gt;ダイアログを使用して作成した仮想マシンのすべてのすべての設定をいつでも変更することができます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="1112"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="1112"/>
         <source>&amp;Finish</source>
         <translation>完了(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="150"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="150"/>
         <source>MB</source>
         <comment>megabytes</comment>
         <translation>MB</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="147"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="147"/>
         <source>Name</source>
         <comment>summary</comment>
         <translation>名前</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="148"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="148"/>
         <source>OS Type</source>
         <comment>summary</comment>
         <translation>OSタイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="149"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="149"/>
         <source>Base Memory</source>
         <comment>summary</comment>
         <translation>メインメモリ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="155"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="155"/>
         <source>Boot Hard Disk</source>
         <comment>summary</comment>
         <translation>起動 ハードディスク</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="1135"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="1135"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="774"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="774"/>
         <source>&lt;p&gt;Select a hard disk image to be used as the boot hard disk of the virtual machine. You can either create a new hard disk using the &lt;b&gt;New&lt;/b&gt; button or select an existing hard disk image from the drop-down list or by pressing the &lt;b&gt;Existing&lt;/b&gt; button (to invoke the Virtual Media Manager dialog).&lt;/p&gt;&lt;p&gt;If you need a more complicated hard disk setup, you can also skip this step and attach hard disks later using the VM Settings dialog.&lt;/p&gt;</source>
         <translation>&lt;p&gt;仮想マシンで起動ディスクとして使用するハードディスクイメージを選択します。&lt;b&gt;[新規]&lt;/b&gt;ボタンをクリックして新規ハードディスクを作成するか、ドロップダウンリストまたは&lt;b&gt;[選択]&lt;/b&gt;ボタンをクリック(仮想メディアマネージャを起動)して既存のハードディスクイメージを選択します。&lt;/p&gt;&lt;p&gt;より高度なハードディスク設定が必要であれば、このステップをスキップし、後で仮想マシン設定ダイアログを使用してハードディスクを割り当てることもできます。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="812"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="812"/>
         <source>Boot Hard &amp;Disk (Primary Master)</source>
         <translation>起動ディスク (プライマリ マスター) (&amp;D)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="821"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="821"/>
         <source>&amp;Create new hard disk</source>
         <translation>新規ハードディスクの作成(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.ui" line="831"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.ui" line="831"/>
         <source>&amp;Use existing hard disk</source>
         <translation>既存のハードディスクを使用(&amp;U)</translation>
     </message>
@@ -8796,145 +8796,145 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="30"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="30"/>
         <source>First Run Wizard</source>
         <translation>初回起動ウィザード</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="121"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="121"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for installing an operating system of your choice onto this virtual machine.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。このウィザードは、この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。ウィザードの実行を中止したい場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="63"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="63"/>
         <source>Welcome to the First Run Wizard!</source>
         <translation>ようこそ初回起動ウィザードへ！</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="307"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="307"/>
         <source>&lt;p&gt;Select the type of media you would like to use for installation.&lt;/p&gt;</source>
         <translation>&lt;p&gt;インストールに使用したいメディアの種別を選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="348"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="348"/>
         <source>Media Type</source>
         <translation>メディア種別</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="363"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="363"/>
         <source>&amp;CD/DVD-ROM Device</source>
         <translation>CD/DVD-ROMデバイス(&amp;C)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="379"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="379"/>
         <source>&amp;Floppy Device</source>
         <translation>フロッピー デバイス(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="401"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="401"/>
         <source>&lt;p&gt;Select the media which contains the setup program of the operating system you want to install. This media must be bootable, otherwise the setup program will not be able to start.&lt;/p&gt;</source>
         <translation>&lt;p&gt;インストールするオペレーティングシステムのセットアップ プログラムを含むメディアを選択してください。このメディアは起動可能でなければなりません。そうでなければセットアップ プログラムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="439"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="439"/>
         <source>Media Source</source>
         <translation>メディア ソース</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="439"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="439"/>
         <source>&amp;Host Drive</source>
         <translation type="obsolete">ホスト デバイス(&amp;H)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="439"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="439"/>
         <source>&amp;Image File</source>
         <translation type="obsolete">イメージファイル(&amp;I)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="439"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="439"/>
         <source>VDM</source>
         <translation type="obsolete">VDM</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="249"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="249"/>
         <source>Select Installation Media</source>
         <translation>インストールメディアを選択</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="609"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="609"/>
         <source>&lt;p&gt;You have selected the following media to boot from:&lt;/p&gt;</source>
         <translation>&lt;p&gt;以下のメディアからの起動を選択しました:&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="681"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="681"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be temporarily mounted on the virtual machine and the machine will start execution.&lt;/p&gt;&lt;p&gt;Please note that when you close the virtual machine, the specified media will be automatically unmounted and the boot device will be set back to the first hard disk.&lt;/p&gt;&lt;p&gt;Depending on the type of the setup program, you may need to manually unmount (eject) the media after the setup program reboots the virtual machine, to prevent the installation process from starting again. You can do this by selecting the corresponding &lt;b&gt;Unmount...&lt;/b&gt; action in the &lt;b&gt;Devices&lt;/b&gt; menu.&lt;/p&gt;</source>
         <translation>&lt;p&gt;上記の設定が正しければ、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 クリックすると、選択されたメディアが一時的に仮想マシンにマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p&gt;仮想マシンを閉じると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p&gt;セットアップ プログラムの種類によっては、仮想マシンを再起動したときにインストール作業が再実行されることを防ぐため、手動でデバイスのマウント解除(取り出し)を行う必要があります。これを行うには&lt;b&gt;[デバイス]&lt;/b&gt;メニューから対応する&lt;b&gt;[マウント解除...]&lt;/b&gt;の動作を選択します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="551"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="551"/>
         <source>Summary</source>
         <translation>概要</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="86"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="86"/>
         <source>CD/DVD-ROM Device</source>
         <translation>CD/DVD-ROMデバイス</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="86"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="86"/>
         <source>Floppy Device</source>
         <translation>フロッピー デバイス</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="86"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="86"/>
         <source>Host Drive %1</source>
         <translation type="obsolete">ホスト ドライブ %1</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="86"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="86"/>
         <source>&lt;table&gt;&lt;tr&gt;&lt;td&gt;Type:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;Source:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;</source>
         <translation type="obsolete">&lt;table&gt;&lt;tr&gt;&lt;td&gt;タイプ:&lt;/td&gt;&lt;td&gt;%1&lt;/td&gt;&lt;/tr&gt;&lt;tr&gt;&lt;td&gt;ソース:&lt;/td&gt;&lt;td&gt;%2&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
 </translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="146"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="146"/>
         <source>&lt;p&gt;You have started a newly created virtual machine for the first time. This wizard will help you to perform the steps necessary for booting an operating system of your choice on the virtual machine.&lt;/p&gt;&lt;p&gt;Note that you will not be able to install an operating system into this virtual machine right now because you did not attach any hard disk to it. If this is not what you want, you can cancel the execution of this wizard, select &lt;b&gt;Settings&lt;/b&gt; from the &lt;b&gt;Machine&lt;/b&gt; menu of the main VirtualBox window to access the settings dialog of this machine and change the hard disk configuration.&lt;/p&gt;&lt;p&gt;Use the &lt;b&gt;Next&lt;/b&gt; button to go to the next page of the wizard and the &lt;b&gt;Back&lt;/b&gt; button to return to the previous page. You can also press &lt;b&gt;Cancel&lt;/b&gt; if you want to cancel the execution of this wizard.&lt;/p&gt;</source>
         <translation>&lt;p&gt;新たに作成された仮想マシンが初めて起動されました。この仮想マシンに選択したオペレーティングシステムをインストールするために必要な作業を手助けします。&lt;/p&gt;&lt;p&gt;注：ハードディスクが割り当てられていないため、現在オペレーティングシステムをこの仮想マシンにインストールすることができません。このウィザードの実行を中止し、VirtualBoxメインウィンドウの&lt;b&gt;[仮想マシン]&lt;/b&gt;メニューから&lt;b&gt;[設定]&lt;/b&gt;を選び、仮想マシンの設定ダイアログにアクセスしてハードディスク構成を変更することができます。&lt;/p&gt;&lt;p&gt;ウィザードの次のページに進むには&lt;b&gt;[次へ]&lt;/b&gt;ボタンを、前のページに戻るには&lt;b&gt;[戻る]&lt;/b&gt;ボタンを使用してください。ウィザードの実行を中止したい場合は&lt;b&gt;[キャンセル]&lt;/b&gt;ボタンをクリックしてください&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="332"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="332"/>
         <source>&lt;p&gt;Select the type of media you would like to use for booting an operating system.&lt;/p&gt;</source>
         <translation>&lt;p&gt;オペレーティングシステムの起動に使用したいメディアのタイプを選択してください。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="423"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="423"/>
         <source>&lt;p&gt;Select the media that contains the operating system you want to work with. This media must be bootable, otherwise the operating system will not be able to start.&lt;/p&gt;</source>
         <translation>&lt;p&gt;使用したいオペレーティングシステムを含むメディアを選択してください。 このメディアは起動可能でなければなりません。そうでなければオペレーティングシステムは起動できません。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="634"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="634"/>
         <source>&lt;p&gt;You have selected the following media to boot an operating system from:&lt;/p&gt;</source>
         <translation>&lt;p&gt;オペレーティングシステムの以下のメディアからの起動を選択しました::&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="706"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="706"/>
         <source>&lt;p&gt;If the above is correct, press the &lt;b&gt;Finish&lt;/b&gt; button. Once you press it, the selected media will be mounted on the virtual machine and the machine will start execution.&lt;/p&gt;</source>
         <translation>&lt;p&gt;上記が正しいなら、&lt;b&gt;[完了]&lt;/b&gt;ボタンをクリックしてください。 選択されたメディアは仮想マシンに取り付けられ、仮想マシンは実行を開始します。&lt;/p&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="758"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="758"/>
         <source>&lt; &amp;Back</source>
         <translation>&lt; 戻る(&amp;B)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="507"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="507"/>
         <source>&amp;Next &gt;</source>
         <translation>次へ(&amp;N) &gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="507"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="507"/>
         <source>&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;
@@ -8944,24 +8944,24 @@ p, li { white-space: pre-wrap; }
         <translation type="obsolete">&lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;p, li { white-space: pre-wrap; }&lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:&apos;Arial&apos;; font-size:9pt; font-weight:400; font-style:normal;&quot;&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;上記が正しいなら、[&lt;span style=&quot; font-weight:600;&quot;&gt;完了&lt;/span&gt;]ボタンをクリックしてください。 選択されたメディアが仮想マシンに一時的にマウントされ、仮想マシンが起動します。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;仮想マシンを終了すると、指定されたメディアは自動的にマウント解除され、起動デバイスは最初のハードディスクに設定されます。&lt;/p&gt;&lt;p style=&quot; margin-top:12px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;セットアッププログラムの種類によっては、インストールプロセスが再度実行されないように、仮想マシンの再起動後にメディアを手動でマウント解除(取り出し)する必要があります。これは&lt;span style=&quot; font-weight:600;&quot;&gt;[デバイス]&lt;/span&gt;メニューから対応する&lt;span style=&quot; font-weight:600;&quot;&gt;[〜のマウント解除]&lt;/span&gt;の動作を選択することで行えます。&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="765"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="765"/>
         <source>&amp;Finish</source>
         <translation>完了(&amp;F)</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="92"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="92"/>
         <source>Type</source>
         <comment>summary</comment>
         <translation>タイプ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.cpp" line="93"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.cpp" line="93"/>
         <source>Source</source>
         <comment>summary</comment>
         <translation>ソース</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="788"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="788"/>
         <source>Cancel</source>
         <translation>キャンセル</translation>
     </message>
@@ -8969,12 +8969,12 @@ p, li { white-space: pre-wrap; }
 <context>
     <name>VBoxVMInformationDlg</name>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="788"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="788"/>
         <source>Session Information Dialog</source>
         <translation type="obsolete">セッション情報ダイアログ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/firstrun/VBoxVMFirstRunWzd.ui" line="788"/>
+        <location filename="../src/wizards/firstrun/UIFirstRunWzd.ui" line="788"/>
         <source>&amp;Close</source>
         <translation type="obsolete">閉じる(&amp;C)</translation>
     </message>
@@ -11313,7 +11313,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>ハイライト表示されたストレージ ツリーの割り当てを除去します。</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="357"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="357"/>
         <source>IDE Controller</source>
         <translation>IDE コントローラ</translation>
     </message>
@@ -11328,7 +11328,7 @@ USBフィルタを追加または除去するにはコンテキストメニュ�
         <translation>SCSI コントローラ</translation>
     </message>
     <message>
-        <location filename="../src/wizards/newvm/VBoxNewVMWzd.cpp" line="358"/>
+        <location filename="../src/wizards/newvm/UINewVMWzd.cpp" line="358"/>
         <source>Floppy Controller</source>
         <translation>フロッピー コントローラ</translation>
     </message>

@@ -374,7 +374,7 @@
     </message>
   </context>
   <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
       <source>Cancel</source>
       <translation>បោះពុម្ព</translation>
@@ -934,7 +934,7 @@ Virtualization Stuff LED</comment>
     </message>
   </context>
   <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
       <source>The download process has been cancelled by the user.</source>
       <translation>ដំណើរការ​​ទាញយក​ត្រូវ​បានបោះបង់​ដោយ​អ្នកប្រើ​ ។</translation>
@@ -948,7 +948,7 @@ Virtualization Stuff LED</comment>
     </message>
   </context>
   <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
       <source>Select a file to export into</source>
       <translation>ជ្រើស​ឯកសាត​ត្រូវ​នាំចេញ</translation>
@@ -2865,7 +2865,7 @@ medium</comment>
     </message>
   </context>
   <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
       <source>Select an appliance to import</source>
       <translation>ជ្រើស​ឧបករណ៍​​ដើម្បី​នាំ​ចូល​</translation>
@@ -2928,7 +2928,7 @@ p, li { white-space: pre-wrap; }
     </message>
   </context>
   <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
       <source>&lt;b>The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b>&lt;br />&lt;br />Click &lt;b>Agree&lt;/b> to continue or click &lt;b>Disagree&lt;/b> to cancel the import.</source>
       <translation>&lt;b>ប្រ​ព័ន្ធ​ជាក់​ស្តែង​របស់​​ &quot;%1&quot; តម្រូវ​ការ​ដែល​អ្នក​យល់​ព្រមទៅ​កាន់ពេល​កំណត់​ និ​ងលក្ខ​ខ័ណ្នៃអាជ្ញាបណ្ណ​​ផ្នែកទន់​កិច្ច​ព្រម​ព្រៀង​​បង្ហាញ​ខាង​ក្រោម​ ។&lt;/b>&lt;br />&lt;br />ចុច​​ &lt;b>យល់​ព្រម​​&lt;/b> ទៅ​បន្ត​ ឬ​&lt;b>មិន​យល់​ព្រម​​&lt;/b> ទៅ​​បោះ​បង់​កា​រនាំចូល​ ។</translation>
@@ -3213,7 +3213,7 @@ VMM: Floppy Image</comment>
     </message>
   </context>
   <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
       <source>Create New Virtual Disk</source>
       <translation>បង្កើត​ថាស​និម្មិត​ថ្មី</translation>
@@ -3328,7 +3328,7 @@ VMM: Floppy Image</comment>
     </message>
   </context>
   <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
       <source>Create New Virtual Machine</source>
       <translation>បង្កើត​ម៉ាស៊ីន​និម្មិត​ថ្មី</translation>
@@ -5004,7 +5004,7 @@ You may wish to translate this more like &quot;Time remaining: %1&quot;</comment
     </message>
   </context>
   <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
       <source>First Run Wizard</source>
       <translation>អ្នក​ជំនួយកា​ររត់​ដំបូង</translation>

@@ -574,7 +574,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Annuler</translation>
@@ -1480,7 +1480,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Annuler</translation>
@@ -1522,7 +1522,7 @@ Version %1</source>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Choisissez un fichier cible pour l&apos;exportation</translation>
@@ -3562,7 +3562,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Choisissez une application virtuelle à importer</translation>
@@ -3645,7 +3645,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>Software License Agreement</source>
         <translation>Contrat de licence logiciel</translation>
@@ -3972,7 +3972,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Créer un nouveau disque virtuel</translation>
@@ -4135,7 +4135,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Créer un nouvelle machine virtuelle</translation>
@@ -6211,7 +6211,7 @@ Pour que la souris soit capturée, cliquer dans la fenêtre de la machine virtue
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Assistant du premier lancement</translation>

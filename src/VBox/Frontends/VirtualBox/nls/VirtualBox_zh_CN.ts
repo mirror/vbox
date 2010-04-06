@@ -588,7 +588,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>取消</translation>
@@ -1780,7 +1780,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">取消</translation>
@@ -1834,7 +1834,7 @@ Version %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>选择一个用于保存的文件</translation>
@@ -4327,7 +4327,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>选择一个要导入的虚拟电脑</translation>
@@ -4390,7 +4390,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;虚拟电脑内的系统 &quot;%1&quot; 要求您同意下面显示的软件授权协议的各项条款。&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;按 &lt;b&gt;同意&lt;/b&gt; 继续或按 &lt;b&gt;不同意&lt;/b&gt; 取消导入.</translation>
@@ -4725,7 +4725,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>创建新的虚拟硬盘</translation>
@@ -4953,7 +4953,7 @@ time depending on the image size and the write performance of your harddisk.&lt;
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>新建虚拟电脑</translation>
@@ -7591,7 +7591,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>首次运行向导</translation>

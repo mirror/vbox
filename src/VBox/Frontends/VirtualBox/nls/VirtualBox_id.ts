@@ -542,7 +542,7 @@ Versi %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation type="unfinished">Batal</translation>
@@ -1605,7 +1605,7 @@ Versi %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Batal</translation>
@@ -1647,7 +1647,7 @@ Versi %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation type="unfinished"></translation>
@@ -4041,7 +4041,7 @@ ke nilai awal bahasa sistem.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation type="unfinished"></translation>
@@ -4098,7 +4098,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation type="unfinished"></translation>
@@ -4409,7 +4409,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Ciptakan Disk Virtual Baru</translation>
@@ -4618,7 +4618,7 @@ bergantung pada ukuran image dan performa tulis harddisk anda.&lt;/p&gt;</transl
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Ciptakan Mesin Virtual Baru</translation>
@@ -7142,7 +7142,7 @@ dengan nilai apapun.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>First Run Wizard</translation>

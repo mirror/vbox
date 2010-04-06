@@ -549,7 +549,7 @@ verzia %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Zrušiť</translation>
@@ -1614,7 +1614,7 @@ verzia %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Zrušiť</translation>
@@ -1668,7 +1668,7 @@ verzia %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Vyberte súbor pre export</translation>
@@ -3967,7 +3967,7 @@ je zobrazený &lt;b&gt;tučným&lt;/b&gt; písmom. Voľbou &lt;i&gt;Štandardný
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation type="unfinished"></translation>
@@ -4024,7 +4024,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation type="unfinished"></translation>
@@ -4359,7 +4359,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Vytvoriť nový virtuálny disk</translation>
@@ -4560,7 +4560,7 @@ ako veľkosť virtuálneho pevného disku.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Vytvoriť nový virtuálny stroj</translation>
@@ -6896,7 +6896,7 @@ preskočiť a pripojiť pevné disky neskôr pomocou dialógu Nastavenia virtuá
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Sprievodca prvým spustením</translation>

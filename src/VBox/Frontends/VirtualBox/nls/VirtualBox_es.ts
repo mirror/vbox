@@ -588,7 +588,7 @@ Versión %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Cancelar</translation>
@@ -1837,7 +1837,7 @@ Versión %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancelar</translation>
@@ -1879,7 +1879,7 @@ Versión %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Seleccione un archivo para la exportación</translation>
@@ -4327,7 +4327,7 @@ volver al idioma por omisión del sistema.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Seleccione un servicio virtualizado («Appliance») para importar</translation>
@@ -4390,7 +4390,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;El sistema virtual «%1» requiere que acepte los terminos y condiciones de la Licencia de Software mostrada a continuación.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Haga clic en &lt;b&gt;Acepto&lt;/b&gt; para continuar &lt;b&gt;No acepto&lt;/b&gt; para cancelar la importación.</translation>
@@ -4721,7 +4721,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Crear nuevo disco virtual</translation>
@@ -4957,7 +4957,7 @@ dependiendo del tamaño de la imagen y el rendimiento de su disco duro.&lt;/p&gt
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Crear nueva máquina virtual</translation>
@@ -7658,7 +7658,7 @@ cualquier valor.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Asistente de Primera Ejecución</translation>
