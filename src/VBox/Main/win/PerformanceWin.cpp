@@ -98,7 +98,7 @@ CollectorHAL *createHAL()
     return new CollectorWin();
 }
 
-CollectorWin::CollectorWin() : mhNtDll(0)
+CollectorWin::CollectorWin() : CollectorHAL(), mhNtDll(0)
 {
     mpfnGetSystemTimes = (PFNGST)GetProcAddress(
         GetModuleHandle(TEXT("kernel32.dll")),
