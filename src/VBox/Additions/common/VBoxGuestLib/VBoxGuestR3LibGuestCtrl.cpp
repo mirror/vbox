@@ -180,6 +180,11 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
     if (RT_SUCCESS(rc))
     {
         rc = Msg.hdr.result;
+
+        Msg.flags.GetUInt32(puFlags);
+        Msg.num_args.GetUInt32(puNumArgs);
+        Msg.num_env.GetUInt32(puNumEnvVars);
+        Msg.timeout.GetUInt32(puTimeLimit);
     }
     return rc;
 }

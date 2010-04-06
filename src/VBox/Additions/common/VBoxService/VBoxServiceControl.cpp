@@ -124,7 +124,8 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
         /* Prepare argument list. */
         char **ppaArg;
         int iArgs;
-        rc = RTGetOptArgvFromString(&ppaArg, &iArgs, execData.szArgs, NULL);
+        rc = RTGetOptArgvFromString(&ppaArg, &iArgs, 
+                                    execData.uNumArgs ? execData.szArgs : "", NULL);
         Assert(execData.uNumArgs == iArgs);
         if (RT_SUCCESS(rc))
         {
