@@ -289,6 +289,23 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_
     return VMMR3CallR0(pVM, VMMR0_DO_GMM_BALLOONED_PAGES, 0, &Req.Hdr);
 }
 
+/**
+ * @see GMMR0QueryTotalBalloonSizeReq
+ */
+GMMR3DECL(int)  GMMR3QueryTotalBalloonSize(PVM pVM, uint64_t *pcTotalBalloonedPages)
+{
+    GMMBALLOONEDPAGESREQ Req;
+    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq = sizeof(Req);
+    Req.cBalloonedPages = 0;
+
+    *pcTotalBalloonedPages = 0;
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_QUERY_TOTAL_BALLOON_SIZE, 0, &Req.Hdr);
+    if (rc == VINF_SUCCESS)
+        *pcTotalBalloonedPages = Req.cBalloonedPages;
+
+    return rc;
+}
 
 /**
  * @see GMMR0MapUnmapChunk
