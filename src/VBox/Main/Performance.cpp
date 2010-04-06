@@ -172,6 +172,10 @@ int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
         mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
                                       &mMemTotal, &mMemFree, &mMemBalloon, &ulMemBalloonTotal, &mMemCache,
                                       &mPageTotal);
+
+        if (mHostHAL)
+            mHostHAL->setBalloonSize(ulMemBalloonTotal);
+
         mLastTick = iTick;
     }
     return S_OK;
@@ -300,6 +304,7 @@ void HostRamUsage::collect()
         mUsed->put(used);
         mAvailable->put(available);
     }
+    mBallooned->put(mHAL->getBalloonSize());
 }
 
 

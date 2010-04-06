@@ -8944,7 +8944,7 @@ void Machine::registerMetrics(PerformanceCollector *aCollector, Machine *aMachin
 
 
     /* Guest metrics */
-    mGuestHAL = new pm::CollectorGuestHAL(this);
+    mGuestHAL = new pm::CollectorGuestHAL(this, hal);
 
     /* Create sub metrics */
     pm::SubMetric *guestLoadUser = new pm::SubMetric("Guest/Cpu/Load/User",

@@ -138,6 +138,7 @@ namespace pm
     class CollectorHAL
     {
     public:
+                 CollectorHAL() : mMemBalloonTotal(0) {};
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */, uint64_t /* iTick */) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
@@ -160,14 +161,28 @@ namespace pm
         virtual int enable();
         /** Disable metrics collecting (if applicable) */
         virtual int disable();
+
+        virtual int setBalloonSize(ULONG balloonsize)
+        {
+            mMemBalloonTotal = balloonsize;
+            return S_OK;
+        }
+
+        virtual ULONG getBalloonSize()
+        {
+            return mMemBalloonTotal;
+        }
+
+    private:
+        ULONG       mMemBalloonTotal;
     };
 
     class CollectorGuestHAL : public CollectorHAL
     {
     public:
-        CollectorGuestHAL(Machine *machine) : cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL), mLastTick(0),
+        CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL) : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL), mLastTick(0),
                                               mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0), mMemBalloon(0),
-                                              mMemCache(0), mPageTotal(0) {};
+                                              mMemCache(0), mPageTotal(0), mHostHAL(hostHAL) {};
         ~CollectorGuestHAL();
 
         virtual int preCollect(const CollectorHints& hints, uint64_t iTick);
@@ -202,6 +217,8 @@ namespace pm
         ComPtr<IConsole>     mConsole;
         ComPtr<IGuest>       mGuest;
         uint64_t             mLastTick;
+
+        CollectorHAL        *mHostHAL;
 
         ULONG                mCpuUser;
         ULONG                mCpuKernel;
