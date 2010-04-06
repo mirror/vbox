@@ -960,7 +960,7 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
  * @param   puVMBalloonSize     Pointer to VM balloon size (in megabytes)
  * @param   puTotalBalloonSize  Pointer to total balloon size of all VMs (in megabytes)
  */
-VMMR3DECL(int) PGMR3QueryBalloonSize(PVM pVM, uint64_t *puVMBalloonSize, uint64_t *puTotalBalloonSize)
+VMMR3DECL(int) PGMR3QueryBalloonSize(PVM pVM, unsigned *puVMBalloonSize, unsigned *puTotalBalloonSize)
 {
     int rc = VINF_SUCCESS;
 
@@ -969,10 +969,10 @@ VMMR3DECL(int) PGMR3QueryBalloonSize(PVM pVM, uint64_t *puVMBalloonSize, uint64_
 
     if (puTotalBalloonSize)
     {
-        *puTotalBalloonSize = 0;
-        rc = GMMR3QueryTotalBalloonSize(pVM, puTotalBalloonSize);
+        uint64_t cPages = 0;
+        rc = GMMR3QueryTotalBalloonSize(pVM, &cPages);
         AssertRC(rc);
-        *puTotalBalloonSize = *puTotalBalloonSize * _4K / _1M;
+        *puTotalBalloonSize = (unsigned) (cPages * _4K / _1M);
     }
 
     return rc;
