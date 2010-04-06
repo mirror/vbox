@@ -20,7 +20,7 @@ void crStateError( int line, const char *file, GLenum error, const char *format,
 
 	g->error = error;
 
-	if (1||crGetenv("CR_DEBUG"))
+	if (crGetenv("CR_DEBUG"))
 	{
 		char *glerr;
 		va_start( args, format );
