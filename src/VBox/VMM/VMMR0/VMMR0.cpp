@@ -909,15 +909,15 @@ static int vmmR0EntryExWorker(PVM pVM, VMCPUID idCpu, VMMR0OPERATION enmOperatio
                 return VERR_INVALID_PARAMETER;
             return GMMR0FreeLargePageReq(pVM, idCpu, (PGMMFREELARGEPAGEREQ)pReqHdr);
 
+        case VMMR0_DO_GMM_QUERY_TOTAL_FREE_PAGES:
+            if (u64Arg)
+                return VERR_INVALID_PARAMETER;
+            return GMMR0QueryTotalFreePagesReq(pVM, (PGMMFREEQUERYREQ)pReqHdr);
+
         case VMMR0_DO_GMM_BALLOONED_PAGES:
             if (u64Arg)
                 return VERR_INVALID_PARAMETER;
             return GMMR0BalloonedPagesReq(pVM, idCpu, (PGMMBALLOONEDPAGESREQ)pReqHdr);
-
-        case VMMR0_DO_GMM_QUERY_TOTAL_BALLOON_SIZE:
-            if (u64Arg)
-                return VERR_INVALID_PARAMETER;
-            return GMMR0QueryTotalBalloonSizeReq(pVM, (PGMMBALLOONQUERYREQ)pReqHdr);
 
         case VMMR0_DO_GMM_MAP_UNMAP_CHUNK:
             if (u64Arg)

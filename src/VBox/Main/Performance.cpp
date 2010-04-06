@@ -167,14 +167,14 @@ int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
     if (    mGuest
         &&  iTick != mLastTick)
     {
-        ULONG ulMemBalloonTotal;
+        ULONG ulMemFreeTotal;
 
         mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
-                                      &mMemTotal, &mMemFree, &mMemBalloon, &ulMemBalloonTotal, &mMemCache,
-                                      &mPageTotal);
+                                      &mMemTotal, &mMemFree, &mMemBalloon, &mMemCache,
+                                      &mPageTotal, &ulMemFreeTotal);
 
         if (mHostHAL)
-            mHostHAL->setBalloonSize(ulMemBalloonTotal);
+            mHostHAL->setMemFreeTotal(ulMemFreeTotal);
 
         mLastTick = iTick;
     }
@@ -302,9 +302,8 @@ void HostRamUsage::collect()
     {
         mTotal->put(total);
         mUsed->put(used);
-        mAvailable->put(available);
+        mAvailable->put(available + mHAL->getMemFreeTotal());
     }
-    mBallooned->put(mHAL->getBalloonSize());
 }
 
 

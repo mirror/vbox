@@ -8443,14 +8443,14 @@
       <param name="memBalloon" type="unsigned long" dir="out"> 
          <desc>Amount of ballooned physical guest RAM</desc> 
       </param> 
-      <param name="memBalloonTotal" type="unsigned long" dir="out"> 
-         <desc>Amount of ballooned physical guest RAM for all running VMs</desc> 
-      </param> 
       <param name="memCache" type="unsigned long" dir="out"> 
          <desc>Total amount of guest (disk) cache memory</desc> 
       </param> 
       <param name="pagedTotal" type="unsigned long" dir="out"> 
          <desc>Total amount of space in the page file</desc> 
+      </param> 
+      <param name="memFreeTotal" type="unsigned long" dir="out"> 
+         <desc>Total amount of free memory available in VMMR0</desc> 
       </param> 
     </method> 
 

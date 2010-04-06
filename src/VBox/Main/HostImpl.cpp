@@ -2410,8 +2410,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
         "Physical memory currently occupied.");
     pm::SubMetric *ramUsageFree  = new pm::SubMetric("RAM/Usage/Free",
         "Physical memory currently available to applications.");
-    pm::SubMetric *ramUsageBalloon = new pm::SubMetric("RAM/Usage/Ballooned",
-        "Physical memory currently available from guest balloons.");
+
     /* Create and register base metrics */
     IUnknown *objptr;
     ComObjPtr<Host> tmp = this;
@@ -2422,7 +2421,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, objptr, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
     pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, objptr, ramUsageTotal, ramUsageUsed,
-                                           ramUsageFree, ramUsageBalloon);
+                                           ramUsageFree);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
@@ -2479,14 +2478,6 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
-                                              new pm::AggregateMax()));
-
-    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageBalloon, 0));
-    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageBalloon,
-                                              new pm::AggregateAvg()));
-    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageBalloon,
-                                              new pm::AggregateMin()));
-    aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageBalloon,
                                               new pm::AggregateMax()));
 };
 
