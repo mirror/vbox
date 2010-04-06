@@ -42,6 +42,9 @@
 #include "UIMachineLogic.h"
 #include "UIMachineWindow.h"
 #include "UIMachineView.h"
+#include "UIMachineWindowNormal.h"
+#include "UIMachineWindowFullscreen.h"
+#include "UIMachineWindowSeamless.h"
 #include "UIMachineViewNormal.h"
 #include "UIMachineViewFullscreen.h"
 #include "UIMachineViewSeamless.h"
@@ -1037,9 +1040,48 @@ bool UIMachineView::eventFilter(QObject *pWatched, QEvent *pEvent)
         switch (pEvent->type())
         {
             case QEvent::MouseMove:
+            case QEvent::MouseButtonRelease:
+            {
+                /* Check if we should propagate this event to another window: */
+                QWidget *pWidgetAt = QApplication::widgetAt(QCursor::pos());
+                if (pWidgetAt && pWidgetAt->window() && pWidgetAt->window()->inherits("UIMachineWindow") &&
+                    pWidgetAt->window() != machineWindowWrapper()->machineWindow())
+                {
+                    /* Get current mouse-move event: */
+                    QMouseEvent *pOldMouseEvent = static_cast<QMouseEvent*>(pEvent);
+
+                    /* Get real destination window of that event: */
+                    UIMachineWindow *pMachineWindow =
+                        pWidgetAt->window()->inherits("UIMachineWindowNormal") ?
+                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowNormal*>(pWidgetAt->window())) :
+                        pWidgetAt->window()->inherits("UIMachineWindowFullscreen") ?
+                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowFullscreen*>(pWidgetAt->window())) :
+                        pWidgetAt->window()->inherits("UIMachineWindowSeamless") ?
+                        static_cast<UIMachineWindow*>(qobject_cast<UIMachineWindowSeamless*>(pWidgetAt->window())) : 0;
+                    if (pMachineWindow)
+                    {
+                        /* Get viewport: */
+                        QWidget *pOtherViewport = pMachineWindow->machineView()->viewport();
+
+                        /* Prepare redirected mouse-move event: */
+                        QMouseEvent *pNewMouseEvent = new QMouseEvent(pOldMouseEvent->type(),
+                                                                      pOtherViewport->mapFromGlobal(pOldMouseEvent->globalPos()),
+                                                                      pOldMouseEvent->globalPos(),
+                                                                      pOldMouseEvent->button(),
+                                                                      pOldMouseEvent->buttons(),
+                                                                      pOldMouseEvent->modifiers());
+
+                        /* Send that event to real destination: */
+                        QApplication::postEvent(pOtherViewport, pNewMouseEvent);
+
+                        /* Filter out that event: */
+                        return true;
+                    }
+                }
+                /* Else this event will be processed using next 'case': */
+            }
             case QEvent::MouseButtonPress:
             case QEvent::MouseButtonDblClick:
-            case QEvent::MouseButtonRelease:
             {
                 QMouseEvent *pMouseEvent = static_cast<QMouseEvent*>(pEvent);
                 m_iLastMouseWheelDelta = 0;
