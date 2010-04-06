@@ -554,7 +554,7 @@ Verzió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Mégsem</translation>
@@ -1741,7 +1741,7 @@ Verzió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Mégsem</translation>
@@ -1783,7 +1783,7 @@ Verzió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Válaszd ki a fájlt, amibe az exportálás történik</translation>
@@ -4021,7 +4021,7 @@ to the system default language.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Válaszd ki az importálandó gépet</translation>
@@ -4084,7 +4084,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;A(z) &quot;%1&quot; virtuális gép használatához el kell fogadnod a mellékelt licencszerződést, mely lent olvasható.&lt;/b&gt;&lt;br/&gt;&lt;br/&gt;Kattints az &lt;b&gt;Elfogad&lt;/b&gt; gombra a folytatáshoz, vagy az &lt;b&gt;Elutasít&lt;/b&gt; gombra az importálás megszakításához.</translation>
@@ -4415,7 +4415,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Új virtuális lemez készítése</translation>
@@ -4645,7 +4645,7 @@ a rámásolt adatok függvényében növekszik az általa elfoglalt hely - míg 
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Új virtuális gép készítése</translation>
@@ -7080,7 +7080,7 @@ value.&lt;/qt&gt;</source>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Első indítási varázsló</translation>

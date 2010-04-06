@@ -557,7 +557,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Cancel·la</translation>
@@ -1652,7 +1652,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Cancel·la</translation>
@@ -1694,7 +1694,7 @@ Versió %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Seleccioneu un fitxer al qual s&apos;exportarà</translation>
@@ -4148,7 +4148,7 @@ un disc dur per connectar a la ranura remarcada actualment.&lt;/a&gt;</translati
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Seleccioneu una aplicació virtual per importar</translation>
@@ -4211,7 +4211,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;El sistema virtual &quot;%1&quot; requreix l&apos;acceptació dels termes i condicions de l&apos;acord de llicència del programari que es mostra.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Premeu &lt;b&gt;Hi estic d&apos;acord&lt;/b&gt; per continuar o &lt;b&gt;No hi estic d&apos;acord&lt;/b&gt; per a cancel·lar la importació.</translation>
@@ -4538,7 +4538,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Crea un disc virtual nou</translation>
@@ -4768,7 +4768,7 @@ l&apos;eficiència d&apos;escriptura del disc dur físic.&lt;/p&gt;</translation
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Crea una màquina virtual nova</translation>
@@ -7464,7 +7464,7 @@ o a ambdòs (&lt;i&gt;Qualsevol&lt;/i&gt;).&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>&amp;CD/DVD-ROM Device</source>
         <translation>Dispositiu &amp;CD/DVD</translation>

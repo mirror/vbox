@@ -557,7 +557,7 @@ Wersja %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Anuluj</translation>
@@ -1725,7 +1725,7 @@ Wersja %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Anuluj</translation>
@@ -1779,7 +1779,7 @@ Wersja %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Wybierz plik do wyeksportowania</translation>
@@ -4191,7 +4191,7 @@ języka ustawiony jako domyślny dla systemu.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Wybierz urządzenie programowe do zaimportowania</translation>
@@ -4254,7 +4254,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;Wirtualny system &quot;%1&quot; wymaga zaakceptowania warunków umowy licencyjnej oprogramowania wyświetlonych poniżej.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Proszę kliknąć &lt;b&gt;Zgadzam się&lt;/b&gt; aby kontynuować lub &lt;b&gt;Nie zgadzam się&lt;/b&gt; aby przerwać importowanie.</translation>
@@ -4577,7 +4577,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Tworzenie nowego dysku wirtualnego</translation>
@@ -4809,7 +4809,7 @@ oraz wydajności zapisu dysku twardego w komputerze.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Tworzenie nowej maszyny wirtualnej</translation>
@@ -7342,7 +7342,7 @@ Puste pole sprawi, że filtr zadziała dla jakiejkolwiek wartości.&lt;/qt&gt;</
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Asystent pierwszego uruchomienia</translation>

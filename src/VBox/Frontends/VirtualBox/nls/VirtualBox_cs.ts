@@ -541,7 +541,7 @@ Verze %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Zrušit</translation>
@@ -1670,7 +1670,7 @@ Verze %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>Cancel</source>
         <translation type="obsolete">Zrušit</translation>
@@ -1724,7 +1724,7 @@ Verze %1</translation>
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Vyberte soubor pro export</translation>
@@ -3866,7 +3866,7 @@ na výchozí jazyk systému.&lt;/qt&gt;
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translation>Vyberte applianci pro import</translation>
@@ -3929,7 +3929,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;Virtuální počítač &quot;%1&quot; vyžaduje souhlas s podmínkami používání uvedené v softwarové licenci zobrazené níže.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Klikněte na &lt;b&gt;Souhlasím&lt;/b&gt; pro pokračování nebo &lt;b&gt;Nesouhlasím&lt;/b&gt; pro přerušení importu. </translation>
@@ -4256,7 +4256,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Vytvořit nový virtuální disk</translation>
@@ -4469,7 +4469,7 @@ jako velikost virtuálního pevného disku.&lt;/p&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Vytvoření nového virtuálního počítače</translation>
@@ -7036,7 +7036,7 @@ hodnotu.&lt;/qt&gt;</translation>
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Průvodce prvním spuštěním</translation>

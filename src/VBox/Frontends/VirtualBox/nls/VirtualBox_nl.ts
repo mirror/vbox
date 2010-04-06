@@ -410,7 +410,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxAdditionsDownloader</name>
+    <name>UIDownloaderAdditions</name>
     <message>
         <source>Cancel</source>
         <translation>Annuleren</translation>
@@ -1099,7 +1099,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxDownloaderWgt</name>
+    <name>UIDownloader</name>
     <message>
         <source>The download process has been cancelled by the user.</source>
         <translation>Het download proces is gestopt door de gebruiker.</translation>
@@ -1113,7 +1113,7 @@
     </message>
 </context>
 <context>
-    <name>VBoxExportApplianceWzd</name>
+    <name>UIExportApplianceWzd</name>
     <message>
         <source>Select a file to export into</source>
         <translation>Selecteer een bestand om naar te exporteren</translation>
@@ -2865,7 +2865,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportApplianceWzd</name>
+    <name>UIImportApplianceWzd</name>
     <message>
         <source>Select an appliance to import</source>
         <translatorcomment>Appliance is hulpmiddel maar ook toestel, gereedschap,  uitrusting,  apparaat,  werktuig,</translatorcomment>
@@ -2929,7 +2929,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxImportLicenseViewer</name>
+    <name>UIImportLicenseViewer</name>
     <message>
         <source>&lt;b&gt;The virtual system &quot;%1&quot; requires that you agree to the terms and conditions of the software license agreement shown below.&lt;/b&gt;&lt;br /&gt;&lt;br /&gt;Click &lt;b&gt;Agree&lt;/b&gt; to continue or click &lt;b&gt;Disagree&lt;/b&gt; to cancel the import.</source>
         <translation>&lt;b&gt;Het virtuele systeem &quot;%1&quot; verlangt dat u akkoord gaat met de bepalingen en condities uit de software licentie overeenkomst zoals hieronder weergegeven.&lt;b&gt;&lt;br/&gt;&lt;br/&gt;Klik op &lt;b&gt;Akkoord&lt;/b&gt;, om door te gaan of klik op &lt;b&gt;Niet akkoord&lt;/b&gt;, om het importeren te annuleren.</translation>
@@ -3213,7 +3213,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewHDWzd</name>
+    <name>UINewHDWzd</name>
     <message>
         <source>Create New Virtual Disk</source>
         <translation>Maak een nieuwe virtuele schijf</translation>
@@ -3328,7 +3328,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxNewVMWzd</name>
+    <name>UINewVMWzd</name>
     <message>
         <source>Create New Virtual Machine</source>
         <translation>Maak een nieuwe virtuele machine</translation>
@@ -5174,7 +5174,7 @@ p, li { white-space: pre-wrap; }
     </message>
 </context>
 <context>
-    <name>VBoxVMFirstRunWzd</name>
+    <name>UIFirstRunWzd</name>
     <message>
         <source>First Run Wizard</source>
         <translation>Start eerst de assistent</translation>
