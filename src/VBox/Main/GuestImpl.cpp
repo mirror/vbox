@@ -37,6 +37,7 @@
 #endif
 #include <iprt/cpp/utils.h>
 #include <iprt/getopt.h>
+#include <VBox/pgm.h>
 
 // defines
 /////////////////////////////////////////////////////////////////////////////
@@ -251,9 +252,9 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
     return S_OK;
 }
 
-STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
-                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemCache,
-                                          ULONG *aPageTotal)
+STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
+                                          ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, ULONG *aMemBalloonTotal,
+                                          ULONG *aMemCache, ULONG *aPageTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
     CheckComArgOutPointerValid(aCpuKernel);
@@ -274,9 +275,29 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG aCpuId, ULONG *aCpuUser, ULONG *
     *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE];
     *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL];
     *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE];
-    *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON];
+
     *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE];
     *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL];
+
+    Console::SafeVMPtr pVM (mParent);
+    if (pVM.isOk())
+    {
+        unsigned uBalloon, uBalloonTotal;
+        *aMemBalloon      = 0;
+        *aMemBalloonTotal = 0;
+        int rc = PGMR3QueryBalloonSize(pVM.raw(), &uBalloon, &uBalloonTotal);
+        AssertRC(rc);
+        if (rc == VINF_SUCCESS)
+        {
+            *aMemBalloon      = uBalloon;
+            *aMemBalloonTotal = uBalloonTotal;
+        }
+    }
+    else
+    {
+        *aMemBalloon      = 0;
+        *aMemBalloonTotal = 0;
+    }
 
     return S_OK;
 }

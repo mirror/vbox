@@ -188,11 +188,11 @@ namespace pm
         /** Return guest memory information in kb. */
         void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemCache, ULONG *pulPageTotal)
         {
-            *pulMemTotal   = mMemTotal;
-            *pulMemFree    = mMemFree;
-            *pulMemBalloon = mMemBalloon;
-            *pulMemCache   = mMemCache;
-            *pulPageTotal  = mPageTotal;
+            *pulMemTotal        = mMemTotal;
+            *pulMemFree         = mMemFree;
+            *pulMemBalloon      = mMemBalloon;
+            *pulMemCache        = mMemCache;
+            *pulPageTotal       = mPageTotal;
         }
 
 
@@ -317,9 +317,9 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
-        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
+        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *ballooned)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mBallooned(ballooned) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mBallooned; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -332,6 +332,7 @@ namespace pm
         SubMetric *mTotal;
         SubMetric *mUsed;
         SubMetric *mAvailable;
+        SubMetric *mBallooned;
     };
 
     class MachineCpuLoad : public BaseMetric

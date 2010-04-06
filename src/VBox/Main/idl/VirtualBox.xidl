@@ -8270,7 +8270,7 @@
 
   <interface
     name="IGuestOSType" extends="$unknown"
-    uuid="8cec1502-8869-42e3-9d9c-45f0d1bb0861"
+    uuid="3fcf2078-3c69-45ca-bd5c-79c3e3c15362"
     wsmap="struct"
   >
     <desc>
@@ -8352,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="a2c749bb-55df-46a4-8d88-567ee1503fff"
+     uuid="8e809ebd-c842-4952-8073-c9c07045c9a2"
      wsmap="managed"
      >
     <desc>
@@ -8425,9 +8425,6 @@
       <desc>
          Internal method; do not use as it might change at any time
       </desc> 
-      <param name="cpuId" type="unsigned long" dir="in"> 
-         <desc>Virtual CPU id</desc> 
-      </param> 
       <param name="cpuUser" type="unsigned long" dir="out"> 
          <desc>Percentage of processor time spent in user mode as seen by the guest</desc> 
       </param> 
@@ -8445,6 +8442,9 @@
       </param> 
       <param name="memBalloon" type="unsigned long" dir="out"> 
          <desc>Amount of ballooned physical guest RAM</desc> 
+      </param> 
+      <param name="memBalloonTotal" type="unsigned long" dir="out"> 
+         <desc>Amount of ballooned physical guest RAM for all running VMs</desc> 
       </param> 
       <param name="memCache" type="unsigned long" dir="out"> 
          <desc>Total amount of guest (disk) cache memory</desc> 
