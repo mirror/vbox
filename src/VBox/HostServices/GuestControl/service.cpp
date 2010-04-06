@@ -497,9 +497,9 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
                         if (RT_SUCCESS(rc))
                         {
                             /* 
-                             * Do *not* pop the most recent (front) command here yet, because
+                             * Do *not* remove the command from host cmds list here yet, because
                              * the client could fail in retrieving the GUEST_GET_HOST_MSG_DATA message
-                             * below. 
+                             * below. Then we just could repeat this one here.
                              */
                             uint32_t uCmd = 0;
                             if (it->parmBuf.uParmCount)
