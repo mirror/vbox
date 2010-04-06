@@ -467,14 +467,6 @@ int rtR0MemObjNativeMapUser(PPRTR0MEMOBJINTERNAL ppMem, PRTR0MEMOBJINTERNAL pMem
 
 int rtR0MemObjNativeProtect(PRTR0MEMOBJINTERNAL pMem, size_t offSub, size_t cbSub, uint32_t fProt)
 {
-    PRTR0MEMOBJSOLARIS pMemSolaris = (PRTR0MEMOBJSOLARIS)pMem;
-
-    if (pMemSolaris->Core.enmType == RTR0MEMOBJTYPE_PHYS_NC)
-    {
-//        LogRel(("here \n"));
-//        vbi_page_lock(pMemSolaris->pvHandle, pMemSolaris->Core.cb);
-    }
-
     NOREF(pMem);
     NOREF(offSub);
     NOREF(cbSub);
