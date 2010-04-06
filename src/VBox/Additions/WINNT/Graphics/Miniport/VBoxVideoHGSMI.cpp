@@ -1074,8 +1074,10 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                  + pointerAttr->Width * 4 * pointerAttr->Height;
     }
 
+#ifndef DEBUG_misha
     dprintf(("vboxUpdatePointerShape: cbData %d, %dx%d\n",
              cbData, pointerAttr->Width, pointerAttr->Height));
+#endif
 
     if (cbData > cbLength - sizeof(VIDEO_POINTER_ATTRIBUTES))
     {
@@ -1096,8 +1098,9 @@ BOOLEAN vboxUpdatePointerShape (PDEVICE_EXTENSION DeviceExtension,
                            vbvaInitMousePointerShape,
                            vbvaFinalizeMousePointerShape,
                            &ctx);
-
+#ifndef DEBUG_misha
     dprintf(("VBoxVideo::vboxMousePointerShape: rc %d, i32Result = %d\n", rc, ctx.i32Result));
+#endif
 
     return RT_SUCCESS(rc) && RT_SUCCESS(ctx.i32Result);
 }
