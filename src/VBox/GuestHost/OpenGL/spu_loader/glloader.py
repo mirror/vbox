@@ -67,7 +67,9 @@ static CRDLL *aglDll = NULL;
 #define GLLOADER_APIENTRY
 #endif
 
-#define CR_NO_GL_SYSTEM_PATH 1
+#ifndef VBOX_WITH_COCOA_QT
+# define CR_NO_GL_SYSTEM_PATH 1 */
+#endif /* VBOX_WITH_COCOA_QT */
 
 /*
  * Add an entry to the SPUNamedFunctionTable
