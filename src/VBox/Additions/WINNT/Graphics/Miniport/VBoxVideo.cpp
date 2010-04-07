@@ -347,7 +347,11 @@ VOID VBoxBuildModesTable(PDEVICE_EXTENSION DeviceExtension)
 #ifndef VBOXWDDM
     ULONG vramSize = DeviceExtension->pPrimary->u.primary.ulMaxFrameBufferSize;
 #else
-    ULONG vramSize = vboxWddmVramReportedSegmentSize(DeviceExtension);
+    ULONG vramSize = vboxWddmVramCpuVisibleSegmentSize(DeviceExtension);
+#ifndef VBOXWDDM_WITH_FAKE_SEGMENT
+    /* at least two surfaces will be needed: primary & shadow */
+    vramSize /= 2;
+#endif
 
     gPreferredVideoMode = 0;
 #endif

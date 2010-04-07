@@ -16,6 +16,8 @@
 #ifndef ___VBoxVideoWddm_h___
 #define ___VBoxVideoWddm_h___
 
+#include "../VBoxVideo.h"
+
 /* one page size */
 #define VBOXWDDM_C_DMA_BUFFER_SIZE         0x1000
 #define VBOXWDDM_C_ALLOC_LIST_SIZE         0xc00
@@ -23,6 +25,10 @@
 
 #define VBOXWDDM_C_POINTER_MAX_WIDTH  64
 #define VBOXWDDM_C_POINTER_MAX_HEIGHT 64
+
+#define VBOXWDDM_C_VDMA_BUFFER_SIZE   (64*_1K)
+
+//#define VBOXWDDM_WITH_FAKE_SEGMENT
 
 #define VBOXWDDM_ROUNDBOUND(_v, _b) (((_v) + ((_b) - 1)) & ~((_b) - 1))
 

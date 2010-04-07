@@ -18,6 +18,7 @@
 
 #include <iprt/cdefs.h>
 #include <VBox/VBoxVideo.h>
+#include "../VBoxVideo.h"
 
 typedef DECLCALLBACK(void) FNVBOXSHGSMICMDCOMPLETION(struct _HGSMIHEAP * pHeap, void *pvCmd, void *pvContext);
 typedef FNVBOXSHGSMICMDCOMPLETION *PFNVBOXSHGSMICMDCOMPLETION;

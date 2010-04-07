@@ -606,22 +606,26 @@ NTSTATUS VBoxWddmGetModesForResolution(PDEVICE_EXTENSION DeviceExtension, bool b
 D3DDDIFORMAT vboxWddmCalcPixelFormat(VIDEO_MODE_INFORMATION *pInfo);
 UINT vboxWddmCalcBitsPerPixel(D3DDDIFORMAT format);
 
-DECLINLINE(ULONG) vboxWddmVramReportedSize(PDEVICE_EXTENSION pDevExt)
+DECLINLINE(ULONG) vboxWddmVramCpuVisibleSize(PDEVICE_EXTENSION pDevExt)
 {
     /* all memory layout info should be initialized */
     Assert(pDevExt->u.primary.Vdma.CmdHeap.area.offBase);
     /* page aligned */
     Assert(!(pDevExt->u.primary.Vdma.CmdHeap.area.offBase & 0xfff));
-    return pDevExt->u.primary.Vdma.CmdHeap.area.offBase;
+    return pDevExt->u.primary.Vdma.CmdHeap.area.offBase & ~0xfffUL;
 }
 
-DECLINLINE(ULONG) vboxWddmVramReportedSegmentSize(PDEVICE_EXTENSION pDevExt)
+DECLINLINE(ULONG) vboxWddmVramCpuVisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
 {
-    ULONG size = vboxWddmVramReportedSize(pDevExt);
-    size /= 2;
-    size &= ~0xfffUL;
-    return size;
+    return vboxWddmVramCpuVisibleSize(pDevExt);
 }
+
+#ifdef VBOXWDDM_WITH_FAKE_SEGMENT
+DECLINLINE(ULONG) vboxWddmVramCpuInvisibleSegmentSize(PDEVICE_EXTENSION pDevExt)
+{
+    return vboxWddmVramCpuVisibleSegmentSize(pDevExt);
+}
+#endif
 
 DECLINLINE(VOID) vboxWddmAssignPrimary(PDEVICE_EXTENSION pDevExt, PVBOXWDDM_SOURCE pSource, PVBOXWDDM_ALLOCATION pAllocation, D3DDDI_VIDEO_PRESENT_SOURCE_ID srcId)
 {
