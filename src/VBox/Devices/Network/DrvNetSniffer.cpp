@@ -117,11 +117,16 @@ static DECLCALLBACK(int) drvNetSnifferUp_SendBuf(PPDMINETWORKUP pInterface, PPDM
 
     /* output to sniffer */
     RTCritSectEnter(&pThis->Lock);
-    /** @todo Deal with GSO here. */
-    PcapFileFrame(pThis->File, pThis->StartNanoTS,
-                  pSgBuf->aSegs[0].pvSeg,
-                  pSgBuf->cbUsed,
-                  RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
+    if (!pSgBuf->pvUser)
+        PcapFileFrame(pThis->File, pThis->StartNanoTS,
+                      pSgBuf->aSegs[0].pvSeg,
+                      pSgBuf->cbUsed,
+                      RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
+    else
+        PcapFileGsoFrame(pThis->File, pThis->StartNanoTS, (PCPDMNETWORKGSO)pSgBuf->pvUser,
+                         pSgBuf->aSegs[0].pvSeg,
+                         pSgBuf->cbUsed,
+                         RT_MIN(pSgBuf->cbUsed, pSgBuf->aSegs[0].cbSeg));
     RTCritSectLeave(&pThis->Lock);
 
     return pThis->pIBelowNet->pfnSendBuf(pThis->pIBelowNet, pSgBuf, fOnWorkerThread);
