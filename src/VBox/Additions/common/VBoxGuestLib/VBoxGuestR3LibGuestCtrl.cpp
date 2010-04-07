@@ -156,6 +156,21 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
                                               char *pszPassword,    uint32_t cbPassword,
                                               uint32_t *puTimeLimit)
 {
+    AssertPtr(pszCmd);
+    AssertPtr(puFlags);
+    AssertPtr(pszArgs);
+    AssertPtr(puNumArgs);
+    AssertPtr(pszEnv);
+    AssertPtr(pcbEnv);
+    AssertPtr(puNumEnvVars);
+    AssertPtr(pszStdIn);
+    AssertPtr(pszStdOut);
+    AssertPtr(pszStdOut);
+    AssertPtr(pszStdErr);
+    AssertPtr(pszUser);
+    AssertPtr(pszPassword);
+    AssertPtr(puTimeLimit);
+
     VBoxGuestCtrlHGCMMsgExecCmd Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
@@ -168,6 +183,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
     VbglHGCMParmUInt32Set(&Msg.num_args, 0);
     VbglHGCMParmPtrSet(&Msg.args, pszArgs, cbArgs);
     VbglHGCMParmUInt32Set(&Msg.num_env, 0);
+    VbglHGCMParmUInt32Set(&Msg.cb_env, 0);
     VbglHGCMParmPtrSet(&Msg.env, pszEnv, *pcbEnv);
     VbglHGCMParmPtrSet(&Msg.std_in, pszStdIn, cbStdIn);
     VbglHGCMParmPtrSet(&Msg.std_out, pszStdOut, cbStdOut);
@@ -184,7 +200,8 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
         Msg.flags.GetUInt32(puFlags);
         Msg.num_args.GetUInt32(puNumArgs);
         Msg.num_env.GetUInt32(puNumEnvVars);
-        Msg.timeout.GetUInt32(puTimeLimit);
+        Msg.cb_env.GetUInt32(pcbEnv);
+        Msg.timeout.GetUInt32(puTimeLimit);        
     }
     return rc;
 }

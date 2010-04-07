@@ -492,10 +492,10 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                 com::SafeArray<IN_BSTR> env(ComSafeArrayInArg(aEnvironment));
     
                 void *pvEnv = NULL;
-                uint32_t uNumEnv = env.size();
+                uint32_t uNumEnv = 0;
                 uint32_t cbEnv = 0;
     
-                for (unsigned i = 0; i < uNumEnv; i++)
+                for (unsigned i = 0; i < env.size(); i++)
                 {
                     vrc = prepareExecuteEnv(Utf8Str(env[i]).raw(), &pvEnv, &cbEnv, &uNumEnv);
                     if (RT_FAILURE(vrc))
@@ -510,13 +510,14 @@ STDMETHODIMP Guest::ExecuteProgram(IN_BSTR aCommand, ULONG aFlags,
                     Utf8Str Utf8UserName(aUserName);
                     Utf8Str Utf8Password(aPassword);
                 
-                    VBOXHGCMSVCPARM paParms[13];
+                    VBOXHGCMSVCPARM paParms[14];
                     int i = 0;
                     paParms[i++].setPointer((void*)Utf8Command.raw(), (uint32_t)strlen(Utf8Command.raw()) + 1);
                     paParms[i++].setUInt32(aFlags);
                     paParms[i++].setUInt32(uNumArgs);
                     paParms[i++].setPointer((void*)pszArgs, cbArgs);
                     paParms[i++].setUInt32(uNumEnv);
+                    paParms[i++].setUInt32(cbEnv);
                     paParms[i++].setPointer((void*)pvEnv, cbEnv);
                     paParms[i++].setPointer((void*)Utf8StdIn.raw(), (uint32_t)strlen(Utf8StdIn.raw()) + 1);
                     paParms[i++].setPointer((void*)Utf8StdOut.raw(), (uint32_t)strlen(Utf8StdOut.raw()) + 1);

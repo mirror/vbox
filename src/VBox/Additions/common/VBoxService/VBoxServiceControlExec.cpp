@@ -514,7 +514,7 @@ int VBoxServiceControlExecProcess(PVBOXSERVICECTRLPROCDATA pExecData,
         size_t i;
         for (i = 0; i < pExecData->uNumEnvVars; i++)
         {
-            // @todo rc = RTEnvPutEx(hEnv, pExecData->[i]);
+            rc = RTEnvPutEx(hEnv, papszEnv[i]);
             if (RT_FAILURE(rc))
                 break;
         }
