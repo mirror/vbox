@@ -290,15 +290,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 {
     struct sk_buff *pPkt;
     struct net_device *pDev;
-    /*
-     * Because we're lazy, we will ASSUME that all SGs coming from INTNET
-     * will only contain one single segment.
-     */
-    if (pSG->cSegsUsed != 1 || pSG->cbTotal != pSG->aSegs[0].cb)
-    {
-        LogRel(("VBoxNetFlt: Dropped multi-segment(%d) packet coming from internal network.\n", pSG->cSegsUsed));
-        return NULL;
-    }
+
     if (pSG->cbTotal == 0)
     {
         LogRel(("VBoxNetFlt: Dropped empty packet coming from internal network.\n"));
@@ -307,36 +299,49 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 
     /*
      * Allocate a packet and copy over the data.
-     *
      */
     pDev = (struct net_device *)ASMAtomicUoReadPtr((void * volatile *)&pThis->u.s.pDev);
     pPkt = dev_alloc_skb(pSG->cbTotal + NET_IP_ALIGN);
-    if (pPkt)
+    if (RT_UNLIKELY(!pPkt))
     {
-        pPkt->dev = pDev;
-        /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
-        skb_reserve(pPkt, NET_IP_ALIGN);
-        skb_put(pPkt, pSG->cbTotal);
-        memcpy(pPkt->data, pSG->aSegs[0].pv, pSG->cbTotal);
-        /* Set protocol and packet_type fields. */
-        pPkt->protocol = eth_type_trans(pPkt, pDev);
-        pPkt->ip_summed = CHECKSUM_NONE;
-        if (fDstWire)
-        {
-            VBOX_SKB_RESET_NETWORK_HDR(pPkt);
-            /* Restore ethernet header back. */
-            skb_push(pPkt, ETH_HLEN);
-            VBOX_SKB_RESET_MAC_HDR(pPkt);
-        }
-        VBOXNETFLT_SKB_TAG(pPkt) = VBOXNETFLT_CB_TAG(pPkt);
-
-        return pPkt;
-    }
-    else
         Log(("vboxNetFltLinuxSkBufFromSG: Failed to allocate sk_buff(%u).\n", pSG->cbTotal));
-    pSG->pvUserData = NULL;
+        pSG->pvUserData = NULL;
+        return NULL;
+    }
 
-    return NULL;
+    pPkt->dev = pDev;
+
+    /* Align IP header on 16-byte boundary: 2 + 14 (ethernet hdr size). */
+    skb_reserve(pPkt, NET_IP_ALIGN);
+
+    /* Copy the segments. */
+    skb_put(pPkt, pSG->cbTotal);
+    memcpy(pPkt->data, pSG->aSegs[0].pv, pSG->aSegs[0].cb);
+    if (pSG->cSegsUsed > 1)
+    {
+        uint8_t *pbDst = (uint8_t *)pPkt->data + pSG->aSegs[0].cb;
+        size_t   iSeg  = 0;
+        while (++iSeg < pSG->cSegsUsed)
+        {
+            memcpy(pbDst, pSG->aSegs[iSeg].pv, pSG->aSegs[iSeg].cb);
+            pbDst += pSG->aSegs[iSeg].cb;
+            Assert((uintptr_t)pbDst - (uintptr_t)pPkt->data <= pSG->cbTotal);
+        }
+    }
+
+    /* Set protocol and packet_type fields. */
+    pPkt->protocol = eth_type_trans(pPkt, pDev);
+    pPkt->ip_summed = CHECKSUM_NONE;
+    if (fDstWire)
+    {
+        VBOX_SKB_RESET_NETWORK_HDR(pPkt);
+        /* Restore ethernet header back. */
+        skb_push(pPkt, ETH_HLEN);
+        VBOX_SKB_RESET_MAC_HDR(pPkt);
+    }
+    VBOXNETFLT_SKB_TAG(pPkt) = VBOXNETFLT_CB_TAG(pPkt);
+
+    return pPkt;
 }
 
 
@@ -544,7 +549,7 @@ static void  vboxNetFltLinuxFreeSkBuff(struct sk_buff *pBuf, PINTNETSG pSG)
 }
 
 #ifndef LOG_ENABLED
-#define vboxNetFltDumpPacket(a, b, c, d)
+# define vboxNetFltDumpPacket(a, b, c, d) do {} while (0)
 #else
 static void vboxNetFltDumpPacket(PINTNETSG pSG, bool fEgress, const char *pszWhere, int iIncrement)
 {
