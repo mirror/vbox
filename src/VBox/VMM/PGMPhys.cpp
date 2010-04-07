@@ -796,6 +796,9 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
 
     if (fInflate)
     {
+        /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
+        pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
+
         /* Replace pages with ZERO pages. */
         rc = GMMR3FreePagesPrepare(pVM, &pReq, PGMPHYS_FREE_PAGE_BATCH_SIZE, GMMACCOUNT_BASE);
         if (RT_FAILURE(rc))
@@ -843,9 +846,6 @@ static DECLCALLBACK(VBOXSTRICTRC) pgmR3PhysChangeMemBalloonRendezvous(PVM pVM, P
             }
         }
         GMMR3FreePagesCleanup(pReq);
-
-        /* Flush the PGM pool cache as we might have stale references to pages that we just freed. */
-        pgmR3PoolClearAllRendezvous(pVM, pVCpu, NULL);
     }
     else
     {
