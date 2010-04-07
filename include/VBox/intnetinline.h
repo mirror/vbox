@@ -81,9 +81,9 @@ DECLINLINE(void) INTNETSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned 
     pSG->GsoCtx.cbHdrs  = 0;
     pSG->GsoCtx.cbMaxSeg= 0;
     pSG->GsoCtx.offHdr1 = 0;
-    pSG->GsoCtx.cbHdr1  = 0;
     pSG->GsoCtx.offHdr2 = 0;
-    pSG->GsoCtx.cbHdr2  = 0;
+    pSG->GsoCtx.au8Unused[0] = 0;
+    pSG->GsoCtx.au8Unused[1] = 0;
 #if ARCH_BITS == 64
     pSG->uPadding       = 0;
 #endif
@@ -119,9 +119,9 @@ DECLINLINE(void) INTNETSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsign
     pSG->GsoCtx.cbHdrs  = pGso->cbHdrs;
     pSG->GsoCtx.cbMaxSeg= pGso->cbMaxSeg;
     pSG->GsoCtx.offHdr1 = pGso->offHdr1;
-    pSG->GsoCtx.cbHdr1  = pGso->cbHdr1;
     pSG->GsoCtx.offHdr2 = pGso->offHdr2;
-    pSG->GsoCtx.cbHdr2  = pGso->cbHdr2;
+    pSG->GsoCtx.au8Unused[0] = 0;
+    pSG->GsoCtx.au8Unused[1] = 0;
 #if ARCH_BITS == 64
     pSG->uPadding       = 0;
 #endif

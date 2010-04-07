@@ -55,6 +55,7 @@
 #include <iprt/uuid.h>
 #include <VBox/pdmdev.h>
 #include <VBox/pdmnetifs.h>
+#include <VBox/pdmnetinline.h>
 #include <VBox/tm.h>
 #include <VBox/vm.h>
 #include "../Builtins.h"
@@ -1006,6 +1007,9 @@ struct E1kState_st
     E1KTXCTX    contextTSE;
     /** TX: Context used for ordinary packets. */
     E1KTXCTX    contextNormal;
+    /** GSO context. u8Type is set to PDMNETWORKGSOTYPE_INVALID when not
+     *  applicable to the current TSE mode. */
+    PDMNETWORKGSO GsoCtx;
 #if 1 /** @todo bird/buffering: change this to a 240 bytes buffer of the headers when TSE=1. */
     /** TX: Transmit packet buffer. */
     uint8_t     aTxPacket[E1K_MAX_TX_PKT_SIZE];
@@ -2814,6 +2818,70 @@ static DECLCALLBACK(void) e1kLinkUpTimer(PPDMDEVINS pDevIns, PTMTIMER pTimer, vo
 
 
 
+/**
+ * Sets up the GSO context according to the TSE new context descriptor.
+ *
+ * @param   pGso                The GSO context to setup.
+ * @param   pCtx                The context descriptor.
+ */
+DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
+{
+    pGso->u8Type = PDMNETWORKGSOTYPE_INVALID;
+
+    /*
+     * See if the context descriptor describes something that could be TCP or
+     * UDP over IPv[46].
+     */
+    /* Check the header ordering and spacing: 1. Ethernet, 2. IP, 3. TCP/UDP. */
+    if (RT_UNLIKELY( pCtx->ip.u8CSS < sizeof(RTNETETHERHDR) ))
+        return;
+    if (RT_UNLIKELY( pCtx->tu.u8CSS     < (size_t)pCtx->ip.u8CSS + (pCtx->dw2.fIP  ? RTNETIPV4_MIN_LEN : RTNETIPV6_MIN_LEN) ))
+        return;
+    if (RT_UNLIKELY(   pCtx->dw2.fTCP
+                     ? pCtx->dw3.u8HDRLEN <  (size_t)pCtx->tu.u8CSS + RTNETTCP_MIN_LEN
+                     : pCtx->dw3.u8HDRLEN != (size_t)pCtx->tu.u8CSS + RTNETUDP_MIN_LEN ))
+        return;
+
+    /* The end of the TCP/UDP checksum should stop at the end of the packet or at least after the headers. */
+    if (RT_UNLIKELY( pCtx->tu.u16CSE > 0 && pCtx->tu.u16CSE <= pCtx->dw3.u8HDRLEN ))
+        return;
+
+    /* IPv4 checksum offset. */
+    if (RT_UNLIKELY( pCtx->dw2.fIP && pCtx->ip.u8CSO - pCtx->ip.u8CSS != RT_OFFSETOF(RTNETIPV4, ip_sum) ))
+        return;
+
+    /* TCP/UDP checksum offsets. */
+    if (RT_UNLIKELY( pCtx->tu.u8CSO - pCtx->tu.u8CSS != ( pCtx->dw2.fTCP
+                                                         ? RT_OFFSETOF(RTNETTCP, th_sum)
+                                                         : RT_OFFSETOF(RTNETUDP, uh_sum) ) ))
+        return;
+
+    /*
+     * We're good for now - we'll do more checks when seeing the data.
+     * So, figure the type of offloading and setup the context.
+     */
+    if (pCtx->dw2.fIP)
+    {
+        if (pCtx->dw2.fTCP)
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_TCP;
+        else
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV4_UDP;
+        /** @todo Detect IPv4-IPv6 tunneling (need test setup since linux doesn't do
+         *        this yet it seems)... */
+    }
+    else
+    {
+        if (pCtx->dw2.fTCP)
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_TCP;
+        else
+            pGso->u8Type = PDMNETWORKGSOTYPE_IPV6_UDP;
+    }
+    pGso->offHdr1  = pCtx->ip.u8CSS;
+    pGso->offHdr2  = pCtx->tu.u8CSS;
+    pGso->cbHdrs   = pCtx->dw3.u8HDRLEN;
+    pGso->cbMaxSeg = pCtx->dw3.u16MSS;
+    Assert(PDMNetGsoIsValid(pGso, sizeof(*pGso), pGso->cbMaxSeg * 5));
+}
 
 /**
  * Load transmit descriptor from guest memory.
@@ -3237,6 +3305,7 @@ static void e1kXmitDesc(E1KSTATE* pState, E1KTXDESC* pDesc, RTGCPHYS addr)
                 pState->contextTSE = pDesc->context;
                 pState->u32PayRemain = pDesc->context.dw2.u20PAYLEN;
                 pState->u16HdrRemain = pDesc->context.dw3.u8HDRLEN;
+                e1kSetupGsoCtx(&pState->GsoCtx, &pDesc->context);
             }
             else
                 pState->contextNormal = pDesc->context;
@@ -4782,6 +4851,10 @@ static DECLCALLBACK(int) e1kLoadExec(PPDMDEVINS pDevIns, PSSMHANDLE pSSM, uint32
         SSMR3GetMem(pSSM, &pState->contextTSE, sizeof(pState->contextTSE));
         rc = SSMR3GetMem(pSSM, &pState->contextNormal, sizeof(pState->contextNormal));
         AssertRCReturn(rc, rc);
+
+        /* derived state  */
+        e1kSetupGsoCtx(&pState->GsoCtx, &pState->contextTSE);
+
         E1kLog(("%s State has been restored\n", INSTANCE(pState)));
         e1kDumpState(pState);
     }

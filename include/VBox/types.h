@@ -743,15 +743,15 @@ typedef enum PDMNETWORKGSOTYPE
 {
     /** Invalid zero value. */
     PDMNETWORKGSOTYPE_INVALID = 0,
-    /** TCP/IPv4. */
+    /** TCP/IPv4 - no CWR/ECE encoding. */
     PDMNETWORKGSOTYPE_IPV4_TCP,
-    /** TCP/IPv6. */
+    /** TCP/IPv6 - no CWR/ECE encoding. */
     PDMNETWORKGSOTYPE_IPV6_TCP,
     /** UDP/IPv4. */
     PDMNETWORKGSOTYPE_IPV4_UDP,
     /** UDP/IPv6. */
     PDMNETWORKGSOTYPE_IPV6_UDP,
-    /** TCP/IPv6 over IPv4 tunneling.
+    /** TCP/IPv6 over IPv4 tunneling - no CWR/ECE encoding.
      * The header offsets and sizes relates to IPv4 and TCP, the IPv6 header is
      * figured out as needed.
      * @todo Needs checking against facts, this is just an outline of the idea. */
@@ -787,13 +787,10 @@ typedef struct PDMNETWORKGSO
 
     /** Offset of the first header (IPv4 / IPv6).  0 if not not needed. */
     uint8_t             offHdr1;
-    /** The size of the first header (IPv4 / IPv6).  0 if not not needed. */
-    uint8_t             cbHdr1;
-
     /** Offset of the second header (TCP / UDP).  0 if not not needed. */
     uint8_t             offHdr2;
-    /** The size of the second header (TCP / UDP).  0 if not not needed. */
-    uint8_t             cbHdr2;
+    /** Unused. */
+    uint8_t             au8Unused[2];
 } PDMNETWORKGSO;
 /** Pointer to a GSO context. */
 typedef PDMNETWORKGSO *PPDMNETWORKGSO;
