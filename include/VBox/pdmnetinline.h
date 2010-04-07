@@ -118,7 +118,7 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
 
 
 /**
- * Calculates the number of segements a GSO frame will be segmented into.
+ * Calculates the number of segments a GSO frame will be segmented into.
  *
  * @returns Segment count.
  * @param   pGso                The GSO context.
@@ -233,7 +233,7 @@ DECLINLINE(uint32_t) pdmNetGsoUpdateIPv4Hdr(uint8_t *pbSegHdrs, uint8_t offIpHdr
     PRTNETIPV4 pIpHdr = (PRTNETIPV4)&pbSegHdrs[offIpHdr];
     pIpHdr->ip_len    = RT_H2N_U16(cbHdrs - offIpHdr + cbSegPayload);
     pIpHdr->ip_id     = RT_H2N_U16(RT_N2H_U16(pIpHdr->ip_id) + iSeg);
-    pIpHdr->ip_sum    = RT_H2N_U16(RTNetIPv4HdrChecksum(pIpHdr));
+    pIpHdr->ip_sum    = RTNetIPv4HdrChecksum(pIpHdr);
     return RTNetIPv4PseudoChecksum(pIpHdr);
 }
 
