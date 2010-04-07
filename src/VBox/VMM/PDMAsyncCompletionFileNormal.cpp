@@ -476,7 +476,7 @@ static bool pdmacFileAioMgrNormalIsRangeLocked(PPDMASYNCCOMPLETIONENDPOINTFILE p
               || pTask->enmTransferType == PDMACTASKFILETRANSFER_READ,
                  ("Invalid task type %d\n", pTask->enmTransferType));
 
-    pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetGet(pEndpoint->AioMgr.pTreeRangesLocked, offStart);
+    pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetRangeGet(pEndpoint->AioMgr.pTreeRangesLocked, offStart);
     if (!pRangeLock)
     {
         pRangeLock = (PPDMACFILERANGELOCK)RTAvlrFileOffsetGetBestFit(pEndpoint->AioMgr.pTreeRangesLocked, offStart, true);
