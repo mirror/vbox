@@ -138,14 +138,16 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
 
                 char *pcCur = execData.szEnv;
                 uint32_t i = 0;
-                while (pcCur < execData.szEnv + execData.cbEnv)
+                uint32_t cbLen = 0;
+                while (cbLen < execData.cbEnv)
                 {
                     if (RTStrAPrintf(&ppaEnv[i++], "%s", pcCur) < 0)
                     {
                         rc = VERR_NO_MEMORY;
                         break;
                     }
-                    pcCur += strlen(pcCur) + 1; /* Skip terminating zero. */
+                    cbLen += strlen(pcCur) + 1; /* Skip terminating zero. */
+                    pcCur += cbLen;
                 }
             }
 
@@ -153,9 +155,13 @@ static int VBoxServiceControlHandleCmdExec(uint32_t u32ClientId, uint32_t uNumPa
             {
                 /* Do the actual execution. */
                 rc = VBoxServiceControlExecProcess(&execData, ppaArg, ppaEnv);
-                for (uint32_t i = 0; i < execData.uNumEnvVars; i++)
-                    RTStrFree(ppaEnv[i]);
-                RTMemFree(ppaEnv);
+                /* Cleanup. */
+                if (execData.uNumEnvVars)
+                {
+                    for (uint32_t i = 0; i < execData.uNumEnvVars; i++)
+                        RTStrFree(ppaEnv[i]);
+                    RTMemFree(ppaEnv);
+                }
             }
             RTGetOptArgvFree(ppaArg);
         }
