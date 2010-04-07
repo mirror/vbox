@@ -2196,6 +2196,16 @@ typedef struct PDMIVMMDEVCONNECTOR
      */
     DECLR3CALLBACKMEMBER(int, pfnReportStatistics,(PPDMIVMMDEVCONNECTOR pInterface, struct VBoxGuestStatistics *pGuestStats));
 
+    /**
+     * Query the current balloon size
+     *
+     * @returns VBox status code.
+     * @param   pInterface          Pointer to this interface.
+     * @param   pcbBalloon          Balloon size
+     * @thread  The emulation thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnQueryBalloonSize,(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcbBalloon));
+
 } PDMIVMMDEVCONNECTOR;
 /** PDMIVMMDEVCONNECTOR interface ID. */
 #define PDMIVMMDEVCONNECTOR_IID                 "5c35e324-2b02-49b7-a613-119fbf3320a9"

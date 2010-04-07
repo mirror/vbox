@@ -436,6 +436,33 @@ DECLCALLBACK(int) vmmdevQueryStatisticsInterval(PPDMIVMMDEVCONNECTOR pInterface,
 }
 
 /**
+ * Query the current balloon size
+ *
+ * @returns VBox status code.
+ * @param   pInterface          Pointer to this interface.
+ * @param   pcbBalloon          Balloon size
+ * @thread  The emulation thread.
+ */
+DECLCALLBACK(int) vmmdevQueryBalloonSize(PPDMIVMMDEVCONNECTOR pInterface, uint32_t *pcbBalloon)
+{
+    PDRVMAINVMMDEV pDrv = PDMIVMMDEVCONNECTOR_2_MAINVMMDEV(pInterface);
+    ULONG          val = 0;
+
+    if (!pcbBalloon)
+        return VERR_INVALID_POINTER;
+
+    /* store that information in IGuest */
+    Guest* guest = pDrv->pVMMDev->getParent()->getGuest();
+    Assert(guest);
+    if (!guest)
+        return VERR_INVALID_PARAMETER; /** @todo wrong error */
+
+    guest->COMGETTER(MemoryBalloonSize)(&val);
+    *pcbBalloon = val;
+    return VINF_SUCCESS;
+}
+
+/**
  * Report new guest statistics
  *
  * @returns VBox status code.
@@ -690,6 +717,7 @@ DECLCALLBACK(int) VMMDev::drvConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfgHandle,
     pData->Connector.pfnQueryVisibleRegion            = vmmdevQueryVisibleRegion;
     pData->Connector.pfnReportStatistics              = vmmdevReportStatistics;
     pData->Connector.pfnQueryStatisticsInterval       = vmmdevQueryStatisticsInterval;
+    pData->Connector.pfnQueryBalloonSize              = vmmdevQueryBalloonSize;
 
 #ifdef VBOX_WITH_HGCM
     pData->HGCMConnector.pfnConnect                   = iface_hgcmConnect;

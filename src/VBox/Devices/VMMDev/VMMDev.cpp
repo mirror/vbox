@@ -2763,6 +2763,10 @@ static DECLCALLBACK(int) vmmdevConstruct(PPDMDEVINS pDevIns, int iInstance, PCFG
             /* this is not actually an error, just means that there is no support for HGCM */
         }
 #endif
+        /* Query the initial balloon size. */
+        rc = pThis->pDrv->pfnQueryBalloonSize(pThis->pDrv, &pThis->u32MemoryBalloonSize);
+        AssertRC(rc);
+        Log(("Initial balloon size %x\n", pThis->u32MemoryBalloonSize));
     }
     else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
     {
