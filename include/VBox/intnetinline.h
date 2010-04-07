@@ -167,6 +167,94 @@ DECLINLINE(void) INTNETSgInitTempGso(PINTNETSG pSG, void *pvFrame, uint32_t cbFr
     pSG->aSegs[0].cb    = cbFrame;
 }
 
+
+/**
+ * Reads an entire SG into a fittingly size buffer.
+ *
+ * @param   pSG         The SG list to read.
+ * @param   pvBuf       The buffer to read into (at least pSG->cbTotal in size).
+ */
+DECLINLINE(void) INTNETSgRead(PCINTNETSG pSG, void *pvBuf)
+{
+    memcpy(pvBuf, pSG->aSegs[0].pv, pSG->aSegs[0].cb);
+    if (pSG->cSegsUsed == 1)
+        Assert(pSG->cbTotal == pSG->aSegs[0].cb);
+    else
+    {
+        uint8_t        *pbDst = (uint8_t *)pvBuf + pSG->aSegs[0].cb;
+        unsigned        iSeg  = 0;
+        unsigned const  cSegs = pSG->cSegsUsed;
+        while (++iSeg < cSegs)
+        {
+            uint32_t    cbSeg = pSG->aSegs[iSeg].cb;
+            Assert((uintptr_t)pbDst - (uintptr_t)pvBuf + cbSeg <= pSG->cbTotal);
+            memcpy(pbDst, pSG->aSegs[iSeg].pv, cbSeg);
+            pbDst += cbSeg;
+        }
+    }
+}
+
+
+/**
+ * Reads a portion of an SG into a buffer.
+ *
+ * @param   pSG         The SG list to read.
+ * @param   offSrc      The offset to start start copying from.
+ * @param   cbToRead    The number of bytes to copy.
+ * @param   pvBuf       The buffer to read into, cb or more in size.
+ */
+DECLINLINE(void) INTNETSgReadEx(PCINTNETSG pSG, uint32_t offSrc, uint32_t cbToRead, void *pvBuf)
+{
+    uint8_t    *pbDst = (uint8_t *)pvBuf;
+    uint32_t    iSeg  = 0;
+
+    /* validate assumptions */
+    Assert(cbToRead          <  pSG->cbTotal);
+    Assert(offSrc            <= pSG->cbTotal);
+    Assert(offSrc + cbToRead <= pSG->cbTotal);
+
+    /* Find the right segment and copy any bits from within the segment. */
+    while (offSrc)
+    {
+        uint32_t cbSeg = pSG->aSegs[iSeg].cb;
+        if (offSrc < cbSeg)
+        {
+            uint32_t cbChunk = cbSeg - offSrc;
+            if (cbChunk >= cbToRead)
+            {
+                memcpy(pbDst, (uint8_t const *)pSG->aSegs[iSeg].pv + offSrc, cbToRead);
+                return;
+            }
+
+            memcpy(pbDst, (uint8_t const *)pSG->aSegs[iSeg].pv + offSrc, cbChunk);
+            pbDst    += cbChunk;
+            cbToRead -= cbChunk;
+            break;
+        }
+
+        /* advance */
+        offSrc -= cbSeg;
+        iSeg++;
+    }
+
+    /* We're not at the start of a segment, copy until we're done. */
+    for (;;)
+    {
+        uint32_t cbSeg = pSG->aSegs[iSeg].cb;
+        if (cbSeg >= cbToRead)
+        {
+            memcpy(pbDst, pSG->aSegs[iSeg].pv, cbToRead);
+            return;
+        }
+
+        memcpy(pbDst, pSG->aSegs[iSeg].pv, cbSeg);
+        pbDst    += cbSeg;
+        cbToRead -= cbSeg;
+        iSeg++;
+        Assert(iSeg < pSG->cSegsUsed);
+    }
+}
+
 #ifdef __cplusplus
 
 /**

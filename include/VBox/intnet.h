@@ -582,7 +582,8 @@ typedef struct INTNETTRUNKIFPORT
      *
      * @param   pIfPort     Pointer to this structure.
      *
-     * @remarks Called while owning the network and the out-bound trunk port semaphores.
+     * @remarks Usuaully called while owning the network and the out-bound trunk
+     *          port semaphores.
      */
     DECLR0CALLBACKMEMBER(bool, pfnIsPromiscuous,(PINTNETTRUNKIFPORT pIfPort));
 
