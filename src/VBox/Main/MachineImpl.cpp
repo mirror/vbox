@@ -1270,7 +1270,6 @@ STDMETHODIMP Machine::COMGETTER(MemoryBalloonSize)(ULONG *memoryBalloonSize)
     return S_OK;
 }
 
-/** @todo this method should not be public */
 STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
 {
     /* check limits */
@@ -1290,6 +1289,28 @@ STDMETHODIMP Machine::COMSETTER(MemoryBalloonSize)(ULONG memoryBalloonSize)
     setModified(IsModified_MachineData);
     mHWData.backup();
     mHWData->mMemoryBalloonSize = memoryBalloonSize;
+
+    /* Propagate the balloon change to the guest if there's an open session. */
+    if (mData->mSession.mState != SessionState_Open)
+    {
+        ComPtr<IInternalSessionControl> directControl;
+
+        int ret = getDirectControl(&directControl);
+        if (ret == S_OK)
+        {
+            ComPtr<IConsole> mConsole = NULL;
+            ComPtr<IGuest>   mGuest = NULL;
+
+            /* get the associated console; this is a remote call (!) */
+            ret = directControl->GetRemoteConsole(mConsole.asOutParam());
+            if (ret == S_OK)
+            {
+                ret = mConsole->COMGETTER(Guest)(mGuest.asOutParam());
+                if (ret == S_OK)
+                    mGuest->COMSETTER(MemoryBalloonSize)(memoryBalloonSize);
+            }
+        }
+    }
 
     return S_OK;
 }
