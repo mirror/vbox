@@ -925,6 +925,9 @@ VMMR3DECL(int) PGMR3PhysChangeMemBalloon(PVM pVM, bool fInflate, unsigned cPages
 {
     int rc;
 
+    /* Older additions (ancient non-functioning balloon code) pass wrong physical addresses. */
+    AssertReturn(!(paPhysPage[0] & 0xfff), VERR_INVALID_PARAMETER);
+
     /* We own the IOM lock here and could cause a deadlock by waiting for another VCPU that is blocking on the IOM lock.
      * In the SMP case we post a request packet to postpone the job.
      */
