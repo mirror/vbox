@@ -839,6 +839,9 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 /** Nehalem power control. */
 #define MSR_IA32_PLATFORM_INFO              0xCE
 
+/** Get FSB clock status (Intel-specific). */
+#define MSR_IA32_FSB_CLOCK_STS              0xCD
+
 /** MTRR Capabilities. */
 #define MSR_IA32_MTRR_CAP                   0xFE
 
@@ -875,6 +878,7 @@ typedef const X86CPUIDFEATEDX *PCX86CPUIDFEATEDX;
 #define MSR_IA32_FLEX_RATIO                 0x194
 #define MSR_IA32_PERF_STATUS                0x198
 #define MSR_IA32_PERF_CTL                   0x199
+#define MSR_IA32_THERM_STATUS               0x19c
 
 /** Enable misc. processor features (R/W). */
 #define MSR_IA32_MISC_ENABLE                0x1A0

@@ -791,12 +791,31 @@ VMMDECL(uint64_t)  CPUMGetGuestMsr(PVMCPU pVCpu, unsigned idMsr)
             /** @todo: could really be not exactly correct, maybe use host's values */
             /* Keep consistent with helper_rdmsr() in REM */
             u64 =     (1000ULL                      /* TSC increment by tick */)
-                    | ((uint64_t)u8Multiplier << 40 /* CPU multiplier */       );
+                    | ((uint64_t)u8Multiplier << 24 /* CPU multiplier (aka bus ratio) min */       )
+                    | ((uint64_t)u8Multiplier << 40 /* CPU multiplier (aka bus ratio) max */       );
+            break;
+
+        case  MSR_IA32_FSB_CLOCK_STS:
+            /**
+             * Encoded as:
+             * 0 - 266
+             * 1 - 133
+             * 2 - 200
+             * 3 - return 166
+             * 5 - return 100
+             */
+            u64 = (2 << 4);
             break;
 
         case MSR_IA32_PLATFORM_INFO:
             u64 =     ((u8Multiplier)<<8              /* Flex ratio max */)
                     | ((uint64_t)u8Multiplier << 40   /* Flex ratio min */ );
+            break;
+
+        case MSR_IA32_THERM_STATUS:
+            /* CPU temperature reltive to TCC, to actually activate, CPUID leaf 6 EAX[0] must be set */
+            u64 = (1 << 31) /* validity bit */ |
+                  (20 << 16) /* degrees till TCC */;
             break;
 
         case MSR_IA32_MISC_ENABLE:
