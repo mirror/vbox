@@ -428,6 +428,9 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
              * GSO frame, need to segment it.
              */
             /** @todo Make the NAT engine grok large frames?  Could be more efficient... */
+#if 0 /* this is for testing PDMNetGsoCarveSegmentQD. */
+            uint8_t         abHdrScratch[256];
+#endif
             uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
             PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
             uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
@@ -439,12 +442,21 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
                 if (!m)
                     break;
 
+#if 1
                 uint32_t cbPayload;
                 uint32_t offPayload = PDMNetGsoCarveSegment(pGso, pbFrame, pSgBuf->cbUsed,
                                                             iSeg, cSegs, (uint8_t *)pvSeg, &cbPayload);
                 memcpy((uint8_t *)pvSeg + pGso->cbHdrs, pbFrame + offPayload, cbPayload);
 
                 slirp_input(pThis->pNATState, m, cbPayload + pGso->cbHdrs);
+#else
+                uint32_t cbSegFrame;
+                void *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)pbFrame, pSgBuf->cbUsed, abHdrScratch,
+                                                           iSeg, cSegs, &cbSegFrame);
+                memcpy((uint8_t *)pvSeg, pvSegFrame, cbSegFrame);
+
+                slirp_input(pThis->pNATState, m, cbSegFrame);
+#endif
             }
         }
     }
