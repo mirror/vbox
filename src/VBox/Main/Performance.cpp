@@ -167,14 +167,14 @@ int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
     if (    mGuest
         &&  iTick != mLastTick)
     {
-        ULONG ulMemFreeTotal;
+        ULONG ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal;
 
         mGuest->InternalGetStatistics(&mCpuUser, &mCpuKernel, &mCpuIdle,
                                       &mMemTotal, &mMemFree, &mMemBalloon, &mMemCache,
-                                      &mPageTotal, &ulMemFreeTotal);
+                                      &mPageTotal, &ulMemAllocTotal, &ulMemFreeTotal, &ulMemBalloonTotal);
 
         if (mHostHAL)
-            mHostHAL->setMemFreeTotal(ulMemFreeTotal);
+            mHostHAL->setMemHypervisorStats(ulMemAllocTotal, ulMemFreeTotal, ulMemBalloonTotal);
 
         mLastTick = iTick;
     }
@@ -302,8 +302,15 @@ void HostRamUsage::collect()
     {
         mTotal->put(total);
         mUsed->put(used);
-        mAvailable->put(available + mHAL->getMemFreeTotal());
+        mAvailable->put(available);
+
     }
+    ULONG allocVMM, freeVMM, balloonVMM;
+
+    mHAL->getMemHypervisorStats(&allocVMM, &freeVMM, &balloonVMM);
+    mAllocVMM->put(allocVMM);
+    mFreeVMM->put(freeVMM);
+    mBalloonVMM->put(balloonVMM);
 }
 
 
@@ -425,11 +432,11 @@ void GuestRamUsage::collect()
     ULONG ulMemTotal = 0, ulMemFree = 0, ulMemBalloon = 0, ulMemCache = 0, ulPageTotal = 0;
 
     mGuestHAL->getGuestMemLoad(&ulMemTotal, &ulMemFree, &ulMemBalloon, &ulMemCache, &ulPageTotal);
-    mTotal->put(ulMemTotal);
-    mFree->put(ulMemFree);
-    mBallooned->put(ulMemBalloon);
-    mCache->put(ulMemCache);
-    mPagedTotal->put(ulPageTotal);
+    mTotal->put(ulMemTotal * (_1M / _1K));      /* MB -> KB */
+    mFree->put(ulMemFree * (_1M / _1K));
+    mBallooned->put(ulMemBalloon * (_1M / _1K));
+    mCache->put(ulMemCache * (_1M / _1K));
+    mPagedTotal->put(ulPageTotal * (_1M / _1K));
 }
 
 void CircularBuffer::init(ULONG ulLength)

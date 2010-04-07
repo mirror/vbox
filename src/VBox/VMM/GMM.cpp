@@ -290,20 +290,28 @@ GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_
 }
 
 /**
- * @see GMMR0QueryTotalFreePagesReq
+ * @see GMMR0QueryVMMMemoryStatsReq
  */
-GMMR3DECL(int)  GMMR3QueryTotalFreePages(PVM pVM, uint64_t *pcTotalFreePages)
+GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages)
 {
-    GMMFREEQUERYREQ Req;
-    Req.Hdr.u32Magic = SUPVMMR0REQHDR_MAGIC;
-    Req.Hdr.cbReq = sizeof(Req);
-    Req.cFreePages = 0;
+    GMMMEMSTATSREQ Req;
+    Req.Hdr.u32Magic     = SUPVMMR0REQHDR_MAGIC;
+    Req.Hdr.cbReq        = sizeof(Req);
+    Req.cAllocPages      = 0;
+    Req.cFreePages       = 0;
+    Req.cBalloonedPages  = 0;
 
-    *pcTotalFreePages = 0;
-    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_QUERY_TOTAL_FREE_PAGES, 0, &Req.Hdr);
+    *pcTotalAllocPages   = 0;
+    *pcTotalFreePages    = 0;
+    *pcTotalBalloonPages = 0;
+
+    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_QUERY_VMM_MEM_STATS, 0, &Req.Hdr);
     if (rc == VINF_SUCCESS)
-        *pcTotalFreePages = Req.cFreePages;
-
+    {
+        *pcTotalAllocPages   = Req.cAllocPages;
+        *pcTotalFreePages    = Req.cFreePages;
+        *pcTotalBalloonPages = Req.cBalloonedPages;
+    }
     return rc;
 }
 

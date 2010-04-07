@@ -138,7 +138,7 @@ namespace pm
     class CollectorHAL
     {
     public:
-                 CollectorHAL() : mMemFreeTotal(0) {};
+                 CollectorHAL() : mMemAllocVMM(0), mMemFreeVMM(0), mMemBalloonedVMM(0) {};
         virtual ~CollectorHAL() { };
         virtual int preCollect(const CollectorHints& /* hints */, uint64_t /* iTick */) { return VINF_SUCCESS; }
         /** Returns averaged CPU usage in 1/1000th per cent across all host's CPUs. */
@@ -162,19 +162,25 @@ namespace pm
         /** Disable metrics collecting (if applicable) */
         virtual int disable();
 
-        virtual int setMemFreeTotal(ULONG memfree)
+        virtual int setMemHypervisorStats(ULONG memAlloc, ULONG memFree, ULONG memBallooned)
         {
-            mMemFreeTotal = memfree;
+            mMemAllocVMM     = memAlloc;
+            mMemFreeVMM      = memFree;
+            mMemBalloonedVMM = memBallooned;
             return S_OK;
         }
 
-        virtual ULONG getMemFreeTotal()
+        virtual void getMemHypervisorStats(ULONG *pMemAlloc, ULONG *pMemFree, ULONG *pMemBallooned)
         {
-            return mMemFreeTotal;
+            *pMemAlloc     = mMemAllocVMM;
+            *pMemFree      = mMemFreeVMM;
+            *pMemBallooned = mMemBalloonedVMM;
         }
 
     private:
-        ULONG       mMemFreeTotal;
+        ULONG       mMemAllocVMM;
+        ULONG       mMemFreeVMM;
+        ULONG       mMemBalloonedVMM;
     };
 
     class CollectorGuestHAL : public CollectorHAL
@@ -200,7 +206,7 @@ namespace pm
             *pulCpuIdle   = mCpuIdle;
         }
 
-        /** Return guest memory information in kb. */
+        /** Return guest memory information in MB. */
         void getGuestMemLoad(ULONG *pulMemTotal, ULONG *pulMemFree, ULONG *pulMemBalloon, ULONG *pulMemCache, ULONG *pulPageTotal)
         {
             *pulMemTotal        = mMemTotal;
@@ -334,9 +340,9 @@ namespace pm
     class HostRamUsage : public BaseMetric
     {
     public:
-        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available)
-        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available) {};
-        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; };
+        HostRamUsage(CollectorHAL *hal, ComPtr<IUnknown> object, SubMetric *total, SubMetric *used, SubMetric *available, SubMetric *allocVMM, SubMetric *freeVMM, SubMetric *balloonVMM)
+        : BaseMetric(hal, "RAM/Usage", object), mTotal(total), mUsed(used), mAvailable(available), mAllocVMM(allocVMM), mFreeVMM(freeVMM), mBalloonVMM(balloonVMM) {};
+        ~HostRamUsage() { delete mTotal; delete mUsed; delete mAvailable; delete mAllocVMM; delete mFreeVMM; delete mBalloonVMM; };
 
         void init(ULONG period, ULONG length);
         void preCollect(CollectorHints& hints, uint64_t iTick);
@@ -349,6 +355,9 @@ namespace pm
         SubMetric *mTotal;
         SubMetric *mUsed;
         SubMetric *mAvailable;
+        SubMetric *mAllocVMM; 
+        SubMetric *mFreeVMM; 
+        SubMetric *mBalloonVMM;
     };
 
     class MachineCpuLoad : public BaseMetric

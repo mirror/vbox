@@ -299,8 +299,8 @@ typedef enum VMMR0OPERATION
     VMMR0_DO_GMM_FREE_PAGES,
     /** Call GMMR0FreeLargePage(). */
     VMMR0_DO_GMM_FREE_LARGE_PAGE,
-    /** Call GMMR0QueryTotalFreePagesReq */
-    VMMR0_DO_GMM_QUERY_TOTAL_FREE_PAGES,
+    /** Call GMMR0QueryVMMMemoryStatsReq */
+    VMMR0_DO_GMM_QUERY_VMM_MEM_STATS,
     /** Call GMMR0BalloonedPages(). */
     VMMR0_DO_GMM_BALLOONED_PAGES,
     /** Call GMMR0MapUnmapChunk(). */

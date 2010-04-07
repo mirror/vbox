@@ -2410,6 +2410,13 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
         "Physical memory currently occupied.");
     pm::SubMetric *ramUsageFree  = new pm::SubMetric("RAM/Usage/Free",
         "Physical memory currently available to applications.");
+    pm::SubMetric *ramVMMUsed = new pm::SubMetric("RAM/VMM/Used",
+        "Total physical memory used by the hypervisor.");
+    pm::SubMetric *ramVMMFree = new pm::SubMetric("RAM/VMM/Free",
+        "Total physical memory free inside the hypervisor.");
+    pm::SubMetric *ramVMMBallooned  = new pm::SubMetric("RAM/VMM/Ballooned",
+        "Total physical memory ballooned by the hypervisor.");
+
 
     /* Create and register base metrics */
     IUnknown *objptr;
@@ -2421,7 +2428,7 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     pm::BaseMetric *cpuMhz = new pm::HostCpuMhz(hal, objptr, cpuMhzSM);
     aCollector->registerBaseMetric (cpuMhz);
     pm::BaseMetric *ramUsage = new pm::HostRamUsage(hal, objptr, ramUsageTotal, ramUsageUsed,
-                                           ramUsageFree);
+                                           ramUsageFree, ramVMMUsed, ramVMMFree, ramVMMBallooned);
     aCollector->registerBaseMetric (ramUsage);
 
     aCollector->registerMetric(new pm::Metric(cpuLoad, cpuLoadUser, 0));
@@ -2478,6 +2485,30 @@ void Host::registerMetrics(PerformanceCollector *aCollector)
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
                                               new pm::AggregateMin()));
     aCollector->registerMetric(new pm::Metric(ramUsage, ramUsageFree,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMUsed, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMUsed,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMUsed,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMUsed,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMFree, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMFree,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMFree,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMFree,
+                                              new pm::AggregateMax()));
+
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned, 0));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
+                                              new pm::AggregateAvg()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
+                                              new pm::AggregateMin()));
+    aCollector->registerMetric(new pm::Metric(ramUsage, ramVMMBallooned,
                                               new pm::AggregateMax()));
 };
 
