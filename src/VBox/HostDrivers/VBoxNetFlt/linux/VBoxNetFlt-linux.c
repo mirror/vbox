@@ -33,6 +33,7 @@
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
+#include <VBox/intnetinline.h>
 #include <iprt/alloca.h>
 #include <iprt/assert.h>
 #include <iprt/spinlock.h>
@@ -357,14 +358,8 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
     NOREF(pThis);
 
     Assert(!skb_shinfo(pBuf)->frag_list);
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cUsers = 1;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsAlloc = cSegs;
 
-   if (fSrc & INTNETTRUNKDIR_WIRE)
+    if (fSrc & INTNETTRUNKDIR_WIRE)
     {
         /*
          * The packet came from wire, ethernet header was removed by device driver.
@@ -372,7 +367,9 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
          */
         skb_push(pBuf, ETH_HLEN);
     }
-    pSG->cbTotal = pBuf->len;
+
+    INTNETSgInitTempSegs(pSG, pBuf->len, cSegs, 0 /*cSegsUsed*/);
+
 #ifdef VBOXNETFLT_SG_SUPPORT
     pSG->aSegs[0].cb = skb_headlen(pBuf);
     pSG->aSegs[0].pv = pBuf->data;
@@ -386,14 +383,16 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         printk("%p = kmap()\n", pSG->aSegs[i+1].pv);
         pSG->aSegs[i+1].Phys = NIL_RTHCPHYS;
     }
-    pSG->cSegsUsed = ++i;
+    ++i;
+
 #else
     pSG->aSegs[0].cb = pBuf->len;
     pSG->aSegs[0].pv = pBuf->data;
     pSG->aSegs[0].Phys = NIL_RTHCPHYS;
-    pSG->cSegsUsed = i = 1;
+    i = 1;
 #endif
 
+    pSG->cSegsUsed = i;
 
 #ifdef PADD_RUNT_FRAMES_FROM_HOST
     /*
@@ -414,8 +413,10 @@ DECLINLINE(void) vboxNetFltLinuxSkBufToSG(PVBOXNETFLTINS pThis, struct sk_buff *
         pSG->aSegs[i].cb = 60 - pSG->cbTotal;
         pSG->cbTotal = 60;
         pSG->cSegsUsed++;
+        Assert(i + 1 <= pSG->cSegsAlloc)
     }
 #endif
+
     Log4(("vboxNetFltLinuxSkBufToSG: allocated=%d, segments=%d frags=%d next=%p frag_list=%p pkt_type=%x fSrc=%x\n",
           pSG->cSegsAlloc, pSG->cSegsUsed, skb_shinfo(pBuf)->nr_frags, pBuf->next, skb_shinfo(pBuf)->frag_list, pBuf->pkt_type, fSrc));
     for (i = 0; i < pSG->cSegsUsed; i++)

@@ -23,14 +23,19 @@
 #define ___VBox_Pcap_h
 
 #include <iprt/stream.h>
+#include <VBox/types.h>
 
 RT_C_DECLS_BEGIN
 
 int PcapStreamHdr(PRTSTREAM pStream, uint64_t StartNanoTS);
 int PcapStreamFrame(PRTSTREAM pStream, uint64_t StartNanoTS, const void *pvFrame, size_t cbFrame, size_t cbMax);
+int PcapStreamGsoFrame(PRTSTREAM pStream, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
+                       const void *pvFrame, size_t cbFrame, size_t cbMax);
 
 int PcapFileHdr(RTFILE File, uint64_t StartNanoTS);
 int PcapFileFrame(RTFILE File, uint64_t StartNanoTS, const void *pvFrame, size_t cbFrame, size_t cbMax);
+int PcapFileGsoFrame(RTFILE File, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
+                     const void *pvFrame, size_t cbFrame, size_t cbSegMax);
 
 RT_C_DECLS_END
 

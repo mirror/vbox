@@ -24,6 +24,7 @@
 *******************************************************************************/
 #include <VBox/intnet.h>
 #include <VBox/intnetinline.h>
+#include <VBox/pdmnetinline.h>
 #include <VBox/sup.h>
 #include <VBox/vmm.h>
 #include <VBox/err.h>
@@ -89,7 +90,7 @@ static void tstIntNetError(PRTSTREAM pErrStrm, const char *pszFormat, ...)
  * @param   cbFrame     The size of the ethernet frame.
  * @param   pErrStrm    The error stream.
  */
-static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pErrStrm)
+static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pErrStrm, bool fGso)
 {
     /*
      * Ethernet header.
@@ -113,7 +114,7 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
             g_cIpv4Pkts++;
 
             PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)pbCur;
-            if (!RTNetIPv4IsHdrValid(pIpHdr, cbLeft, cbLeft))
+            if (!RTNetIPv4IsHdrValid(pIpHdr, cbLeft, cbLeft, !fGso /*fChecksum*/))
                 return tstIntNetError(pErrStrm, "RTNetIPv4IsHdrValid failed\n");
             pbCur += pIpHdr->ip_hl * 4;
             cbLeft -= pIpHdr->ip_hl * 4;
@@ -131,7 +132,7 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
                 {
                     g_cUdpPkts++;
                     PCRTNETUDP pUdpHdr = (PCRTNETUDP)pbCur;
-                    if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbLeft))
+                    if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbLeft, !fGso /*fChecksum*/))
                         return tstIntNetError(pErrStrm, "RTNetIPv4IsUDPValid failed\n");
                     pbCur += sizeof(*pUdpHdr);
                     cbLeft -= sizeof(*pUdpHdr);
@@ -150,7 +151,7 @@ static void tstIntNetTestFrame(void const *pvFrame, size_t cbFrame, PRTSTREAM pE
                 {
                     g_cTcpPkts++;
                     PCRTNETTCP pTcpHdr = (PCRTNETTCP)pbCur;
-                    if (!RTNetIPv4IsTCPValid(pIpHdr, pTcpHdr, cbLeft, NULL, cbLeft))
+                    if (!RTNetIPv4IsTCPValid(pIpHdr, pTcpHdr, cbLeft, NULL, cbLeft, !fGso /*fChecksum*/))
                         return tstIntNetError(pErrStrm, "RTNetIPv4IsTCPValid failed\n");
                     break;
                 }
@@ -194,7 +195,7 @@ static void doXmitFrame(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNETBUF 
     /*
      * Run in thru the frame validator to test the RTNet code.
      */
-    tstIntNetTestFrame(pvFrame, cbFrame, pFileText);
+    tstIntNetTestFrame(pvFrame, cbFrame, pFileText, false /*fGso*/);
 
     /*
      * Write the frame and push the queue.
@@ -480,7 +481,7 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                                  NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
                                  cbFrame, &pEthHdr->DstMac, &pEthHdr->SrcMac, RT_BE2H_U16(pEthHdr->EtherType),
                                  !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
-                tstIntNetTestFrame(pvFrame, cbFrame, pFileText);
+                tstIntNetTestFrame(pvFrame, cbFrame, pFileText, false /*fGso*/);
 
                 /* Loop for the DHCP reply. */
                 if (    cbFrame > 64
@@ -540,6 +541,34 @@ static void doPacketSniffing(INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, PINTNE
                             RTPrintf("type=%d seq=%d dstmac=%.6Rhxs ip=%d.%d.%d.%d\n", pIcmpHdr->icmp_type, pIcmpEcho->icmp_seq,
                                     &pEthHdr->DstMac, pIpHdr->ip_dst.au8[0], pIpHdr->ip_dst.au8[1], pIpHdr->ip_dst.au8[2], pIpHdr->ip_dst.au8[3]);
                     }
+                }
+            }
+            else if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
+            {
+                PCPDMNETWORKGSO pGso    = INTNETHdrGetGsoContext(pHdr, pBuf);
+                size_t          cbFrame = pHdr->cbFrame;
+                if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(*pGso)))
+                {
+                    const void *pvFrame = pGso + 1;
+                    uint64_t    NanoTS  = RTTimeNanoTS() - g_StartTS;
+                    cbFrame -= sizeof(pGso);
+
+                    if (pFileRaw)
+                        PcapStreamGsoFrame(pFileRaw, g_StartTS, pGso, pvFrame, cbFrame, 0xffff);
+
+                    PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
+                    if (pFileText)
+                        RTStrmPrintf(pFileText, "%3RU64.%09u: cb=%04x dst=%.6Rhxs src=%.6Rhxs type=%04x%s [GSO]\n",
+                                     NanoTS / 1000000000, (uint32_t)(NanoTS % 1000000000),
+                                     cbFrame, &pEthHdr->DstMac, &pEthHdr->SrcMac, RT_BE2H_U16(pEthHdr->EtherType),
+                                     !memcmp(&pEthHdr->DstMac, pSrcMac, sizeof(*pSrcMac)) ? " Mine!" : "");
+                    tstIntNetTestFrame(pvFrame, cbFrame, pFileText, true /*fGso*/);
+                }
+                else
+                {
+                    RTPrintf("tstIntNet-1: Bad GSO frame: %Rhxs\n", sizeof(*pGso), pGso);
+                    STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
+                    g_cErrors++;
                 }
             }
             else if (pHdr->u16Type != INTNETHDR_TYPE_PADDING)

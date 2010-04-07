@@ -60,6 +60,7 @@
 #include <VBox/version.h>
 #include <VBox/err.h>
 #include <VBox/log.h>
+#include <VBox/intnetinline.h>
 #include <iprt/initterm.h>
 #include <iprt/string.h>
 #include <iprt/spinlock.h>
@@ -187,13 +188,7 @@ static void vboxNetFltFreeBSDMBufToSG(PVBOXNETFLTINS pThis, struct mbuf *m, PINT
     unsigned int i;
     struct mbuf *m0;
 
-    pSG->cbTotal = m_length(m, NULL);
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cUsers = 1;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsAlloc = cSegs;
+    INTNETSgInitTempSegs(pSG, m_length(m, NULL), cSegs, 0 /*cSegsUsed*/);
 
     for (m0 = m, i = segOffset; m0; m0 = m0->m_next)
     {
@@ -216,6 +211,7 @@ static void vboxNetFltFreeBSDMBufToSG(PVBOXNETFLTINS pThis, struct mbuf *m, PINT
         i++;
     }
 #endif
+
     pSG->cSegsUsed = i;
 }
 

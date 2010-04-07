@@ -3,7 +3,8 @@
  * INTNET - Internal Networking, Inlined Code. (DEV,++)
  *
  * This is all inlined because it's too tedious to create 2-3 libraries to
- * contain it all.  Requires C++ since variables and code is mixed as usual.
+ * contain it all.  Large parts of this header is only accessible from C++
+ * sources because of mixed code and variables.
  */
 
 /*
@@ -34,16 +35,139 @@
 #ifndef ___VBox_intnetinline_h
 #define ___VBox_intnetinline_h
 
-#ifndef __cplusplus
-# error "C++ only header."
-#endif
-
 #include <VBox/intnet.h>
 #include <iprt/string.h>
 #include <iprt/assert.h>
 #include <iprt/err.h>
 #include <VBox/log.h>
 
+
+
+/**
+ * Valid internal networking frame type.
+ *
+ * @returns  true / false.
+ * @param   u16Type             The frame type to check.
+ */
+DECLINLINE(bool) INETNETIsValidFrameType(uint16_t u16Type)
+{
+    if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
+                  || u16Type == INTNETHDR_TYPE_GSO
+                  || u16Type == INTNETHDR_TYPE_PADDING))
+        return true;
+    return false;
+}
+
+
+/**
+ * Partly initializes a scatter / gather buffer, leaving the segments to the
+ * caller.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ * @param   cbTotal     The total size.
+ * @param   cSegs       The number of segments.
+ * @param   cSegsUsed   The number of used segments.
+ */
+DECLINLINE(void) INTNETSgInitTempSegs(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs, unsigned cSegsUsed)
+{
+    pSG->pvOwnerData    = NULL;
+    pSG->pvUserData     = NULL;
+    pSG->pvUserData2    = NULL;
+    pSG->cbTotal        = cbTotal;
+    pSG->cUsers         = 1;
+    pSG->fFlags         = INTNETSG_FLAGS_TEMP;
+    pSG->GsoCtx.u8Type  = (uint8_t)PDMNETWORKGSOTYPE_INVALID;
+    pSG->GsoCtx.cbHdrs  = 0;
+    pSG->GsoCtx.cbMaxSeg= 0;
+    pSG->GsoCtx.offHdr1 = 0;
+    pSG->GsoCtx.cbHdr1  = 0;
+    pSG->GsoCtx.offHdr2 = 0;
+    pSG->GsoCtx.cbHdr2  = 0;
+#if ARCH_BITS == 64
+    pSG->uPadding       = 0;
+#endif
+    pSG->cSegsAlloc     = (uint16_t)cSegs;
+    Assert(pSG->cSegsAlloc == cSegs);
+    pSG->cSegsUsed      = (uint16_t)cSegsUsed;
+    Assert(pSG->cSegsUsed == cSegsUsed);
+    Assert(cSegs >= cSegsUsed);
+}
+
+
+/**
+ * Partly initializes a scatter / gather buffer w/ GSO, leaving the segments to
+ * the caller.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ * @param   cbTotal     The total size.
+ * @param   cSegs       The number of segments.
+ * @param   cSegsUsed   The number of used segments.
+ * @param   pGso        The GSO context.
+ */
+DECLINLINE(void) INTNETSgInitTempSegsGso(PINTNETSG pSG, uint32_t cbTotal, unsigned cSegs,
+                                         unsigned cSegsUsed, PCPDMNETWORKGSO pGso)
+{
+    pSG->pvOwnerData    = NULL;
+    pSG->pvUserData     = NULL;
+    pSG->pvUserData2    = NULL;
+    pSG->cbTotal        = cbTotal;
+    pSG->cUsers         = 1;
+    pSG->fFlags         = INTNETSG_FLAGS_TEMP;
+    pSG->GsoCtx.u8Type  = pGso->u8Type;
+    pSG->GsoCtx.cbHdrs  = pGso->cbHdrs;
+    pSG->GsoCtx.cbMaxSeg= pGso->cbMaxSeg;
+    pSG->GsoCtx.offHdr1 = pGso->offHdr1;
+    pSG->GsoCtx.cbHdr1  = pGso->cbHdr1;
+    pSG->GsoCtx.offHdr2 = pGso->offHdr2;
+    pSG->GsoCtx.cbHdr2  = pGso->cbHdr2;
+#if ARCH_BITS == 64
+    pSG->uPadding       = 0;
+#endif
+    pSG->cSegsAlloc     = (uint16_t)cSegs;
+    Assert(pSG->cSegsAlloc == cSegs);
+    pSG->cSegsUsed      = (uint16_t)cSegsUsed;
+    Assert(pSG->cSegsUsed == cSegsUsed);
+    Assert(cSegs >= cSegsUsed);
+}
+
+
+
+/**
+ * Initializes a scatter / gather buffer describing a simple linear buffer.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ * @param   pvFrame     Pointer to the frame
+ * @param   cbFrame     The size of the frame.
+ */
+DECLINLINE(void) INTNETSgInitTemp(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame)
+{
+    INTNETSgInitTempSegs(pSG, cbFrame, 1, 1);
+    pSG->aSegs[0].Phys  = NIL_RTHCPHYS;
+    pSG->aSegs[0].pv    = pvFrame;
+    pSG->aSegs[0].cb    = cbFrame;
+}
+
+/**
+ * Initializes a scatter / gather buffer describing a simple linear buffer.
+ *
+ * @returns Pointer to the start of the frame.
+ * @param   pSG         Pointer to the scatter / gather structure.
+ * @param   pvFrame     Pointer to the frame
+ * @param   cbFrame     The size of the frame.
+ * @param   pGso        The GSO context.
+ */
+DECLINLINE(void) INTNETSgInitTempGso(PINTNETSG pSG, void *pvFrame, uint32_t cbFrame, PCPDMNETWORKGSO pGso)
+{
+    INTNETSgInitTempSegsGso(pSG, cbFrame, 1, 1, pGso);
+    pSG->aSegs[0].Phys  = NIL_RTHCPHYS;
+    pSG->aSegs[0].pv    = pvFrame;
+    pSG->aSegs[0].cb    = cbFrame;
+}
+
+#ifdef __cplusplus
 
 /**
  * Get the amount of space available for writing.
@@ -119,12 +243,38 @@ DECLINLINE(void *) INTNETHdrGetFramePtr(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
     uint8_t *pu8 = (uint8_t *)pHdr + pHdr->offFrame;
 #ifdef VBOX_STRICT
     const uintptr_t off = (uintptr_t)pu8 - (uintptr_t)pBuf;
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME || pHdr->u16Type == INTNETHDR_TYPE_PADDING);
+    Assert(INETNETIsValidFrameType(pHdr->u16Type));
     Assert(off < pBuf->cbBuf);
     Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
 #endif
     NOREF(pBuf);
     return pu8;
+}
+
+
+/**
+ * Calculates the pointer to the GSO context.
+ *
+ * ASSUMES the frame is a GSO frame.
+ *
+ * The GSO context is immediately followed by the headers and payload.  The size
+ * is INTNETBUF::cbFrame - sizeof(PDMNETWORKGSO).
+ *
+ * @returns Pointer to the GSO context.
+ * @param   pHdr        Pointer to the packet header
+ * @param   pBuf        The buffer the header is within. Only used in strict builds.
+ */
+DECLINLINE(PPDMNETWORKGSO) INTNETHdrGetGsoContext(PCINTNETHDR pHdr, PCINTNETBUF pBuf)
+{
+    PPDMNETWORKGSO pGso = (PPDMNETWORKGSO)((uint8_t *)pHdr + pHdr->offFrame);
+#ifdef VBOX_STRICT
+    const uintptr_t off = (uintptr_t)pGso - (uintptr_t)pBuf;
+    Assert(pHdr->u16Type == INTNETHDR_TYPE_GSO);
+    Assert(off < pBuf->cbBuf);
+    Assert(off + pHdr->cbFrame <= pBuf->cbBuf);
+#endif
+    NOREF(pBuf);
+    return pGso;
 }
 
 
@@ -140,7 +290,7 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETRINGBUF pRingBuf)
     Assert(offReadOld >= pRingBuf->offStart);
     Assert(offReadOld <  pRingBuf->offEnd);
     Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr);
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME || pHdr->u16Type == INTNETHDR_TYPE_PADDING);
+    Assert(INETNETIsValidFrameType(pHdr->u16Type));
 
     /* skip the frame */
     uint32_t        offReadNew  = offReadOld + pHdr->offFrame + pHdr->cbFrame;
@@ -167,7 +317,8 @@ DECLINLINE(void) INTNETRingSkipFrame(PINTNETRINGBUF pRingBuf)
  *                              Don't touch this!
  * @param   ppvFrame            Where to return the frame pointer.
  */
-DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PINTNETHDR *ppHdr, void **ppvFrame)
+DECLINLINE(int) intnetRingAllocateFrameInternal(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, uint16_t u16Type,
+                                                PINTNETHDR *ppHdr, void **ppvFrame)
 {
     /*
      * Validate input and adjust the input.
@@ -193,7 +344,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
             Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (1) (offRead=%#x)\n", offWriteInt, offNew, offRead));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->u16Type  = u16Type;
             pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = sizeof(INTNETHDR);
 
@@ -214,7 +365,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
             Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (2) (offRead=%#x)\n", offWriteInt, offNew, offRead));
 
             PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-            pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+            pHdr->u16Type  = u16Type;
             pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
             pHdr->offFrame = pRingBuf->offStart - offWriteInt;
 
@@ -234,7 +385,7 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
         Log2(("INTNETRingAllocateFrame: offWriteInt: %#x -> %#x (3) (offRead=%#x)\n", offWriteInt, offNew, offRead));
 
         PINTNETHDR pHdr = (PINTNETHDR)((uint8_t *)pRingBuf + offWriteInt);
-        pHdr->u16Type  = INTNETHDR_TYPE_FRAME;
+        pHdr->u16Type  = u16Type;
         pHdr->cbFrame  = (uint16_t)cbFrame; Assert(pHdr->cbFrame == cbFrame);
         pHdr->offFrame = sizeof(INTNETHDR);
 
@@ -246,6 +397,48 @@ DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFram
     /* (it didn't fit) */
     STAM_REL_COUNTER_INC(&pRingBuf->cOverflows);
     return VERR_BUFFER_OVERFLOW;
+}
+
+
+/**
+ * Allocates a normal frame in the specified ring.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pRingBuf            The ring buffer.
+ * @param   cbFrame             The frame size.
+ * @param   ppHdr               Where to return the frame header.
+ *                              Don't touch this!
+ * @param   ppvFrame            Where to return the frame pointer.
+ */
+DECLINLINE(int) INTNETRingAllocateFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PINTNETHDR *ppHdr, void **ppvFrame)
+{
+    return intnetRingAllocateFrameInternal(pRingBuf, cbFrame, INTNETHDR_TYPE_FRAME, ppHdr, ppvFrame);
+}
+
+
+/**
+ * Allocates a GSO frame in the specified ring.
+ *
+ * @returns VINF_SUCCESS or VERR_BUFFER_OVERFLOW.
+ * @param   pRingBuf            The ring buffer.
+ * @param   cbFrame             The frame size.
+ * @param   pGso                Pointer to the GSO context.
+ * @param   ppHdr               Where to return the frame header.
+ *                              Don't touch this!
+ * @param   ppvFrame            Where to return the frame pointer.
+ */
+DECLINLINE(int) INTNETRingAllocateGsoFrame(PINTNETRINGBUF pRingBuf, uint32_t cbFrame, PCPDMNETWORKGSO pGso,
+                                           PINTNETHDR *ppHdr, void **ppvFrame)
+{
+    void *pvFrame;
+    int rc = intnetRingAllocateFrameInternal(pRingBuf, cbFrame + sizeof(*pGso), INTNETHDR_TYPE_GSO, ppHdr, &pvFrame);
+    if (RT_SUCCESS(rc))
+    {
+        PPDMNETWORKGSO pGsoCopy = (PPDMNETWORKGSO)pvFrame;
+        *pGsoCopy = *pGso;
+        *ppvFrame = pGsoCopy + 1;
+    }
+    return rc;
 }
 
 
@@ -491,7 +684,6 @@ DECLINLINE(uint32_t) INTNETRingReadAndSkipFrame(PINTNETRINGBUF pRingBuf, void *p
 }
 
 
-
 /**
  * Initializes a buffer structure.
  *
@@ -533,6 +725,8 @@ DECLINLINE(void) INTNETBufInit(PINTNETBUF pIntBuf, uint32_t cbBuf, uint32_t cbRe
     pIntBuf->Send.offEnd        = offBuf + cbSend;
     Assert(cbBuf >= offBuf + cbSend);
 }
+
+#endif /* __cplusplus */
 
 #endif
 

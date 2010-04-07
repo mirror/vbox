@@ -28,6 +28,7 @@
 #include <iprt/string.h>
 #include <iprt/rand.h>
 #include <VBox/log.h>
+#include <VBox/pdmnetinline.h>
 #include <VBox/intnetinline.h>
 
 
@@ -63,11 +64,27 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
      * Valid IntNet Ethernet frame?
      */
     PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
-    if (!pHdr || pHdr->u16Type != INTNETHDR_TYPE_FRAME)
+    if (    !pHdr
+        ||  (   pHdr->u16Type != INTNETHDR_TYPE_FRAME
+             && pHdr->u16Type != INTNETHDR_TYPE_GSO))
         return NULL;
 
     size_t          cbFrame = pHdr->cbFrame;
     const void     *pvFrame = INTNETHdrGetFramePtr(pHdr, pBuf);
+    PCPDMNETWORKGSO pGso    = NULL;
+    if (pHdr->u16Type == INTNETHDR_TYPE_GSO)
+    {
+        pGso = (PCPDMNETWORKGSO)pvFrame;
+        if (!PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(*pGso)))
+            return NULL;
+        /** @todo IPv6 UDP support, goes for this entire function really.  Not really
+         *        important yet since this is currently only used by the DHCP server. */
+        if (pGso->u8Type != PDMNETWORKGSOTYPE_IPV4_UDP)
+            return NULL;
+        pvFrame  = pGso + 1;
+        cbFrame -= sizeof(*pGso);
+    }
+
     PCRTNETETHERHDR pEthHdr = (PCRTNETETHERHDR)pvFrame;
     if (pHdrs)
         pHdrs->pEth = pEthHdr;
@@ -105,6 +122,13 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
         return NULL;
 
     /*
+     * If we're working on a GSO frame, we need to make sure the length fields
+     * are set correctly (they are usually set to 0).
+     */
+    if (pGso)
+        PDMNetGsoPrepForDirectUse(pGso, (void *)pvFrame, cbFrame, false /*fHeaderChecskum*/, false /*fPayloadChecksum*/);
+
+    /*
      * IP validation and matching.
      */
     PCRTNETIPV4 pIpHdr = (PCRTNETIPV4)(pEthHdr + 1);
@@ -117,7 +141,7 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
 
     /* Valid IPv4 header? */
     size_t const offIpHdr = (uintptr_t)pIpHdr - (uintptr_t)pEthHdr;
-    if (!RTNetIPv4IsHdrValid(pIpHdr, cbFrame - offIpHdr, cbFrame - offIpHdr))
+    if (!RTNetIPv4IsHdrValid(pIpHdr, cbFrame - offIpHdr, cbFrame - offIpHdr, !pGso /*fChecksum*/))
         return NULL;
 
     /*
@@ -131,20 +155,23 @@ void *VBoxNetUDPMatch(PINTNETBUF pBuf, unsigned uDstPort, PCRTMAC pDstMac, uint3
     if (RT_BE2H_U16(pUdpHdr->uh_dport) != uDstPort)
         return NULL;
 
-    /* Validate the UDP header according to flags. */
-    size_t      offUdpHdr = (uintptr_t)pUdpHdr - (uintptr_t)pEthHdr;
-    if (fFlags & (VBOXNETUDP_MATCH_CHECKSUM | VBOXNETUDP_MATCH_REQUIRE_CHECKSUM))
+    if (!pGso)
     {
-        if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbFrame - offUdpHdr))
-            return NULL;
-        if (    (fFlags & VBOXNETUDP_MATCH_REQUIRE_CHECKSUM)
-            &&  !pUdpHdr->uh_sum)
-            return NULL;
-    }
-    else
-    {
-        if (!RTNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbFrame - offUdpHdr))
-            return NULL;
+        /* Validate the UDP header according to flags. */
+        size_t      offUdpHdr = (uintptr_t)pUdpHdr - (uintptr_t)pEthHdr;
+        if (fFlags & (VBOXNETUDP_MATCH_CHECKSUM | VBOXNETUDP_MATCH_REQUIRE_CHECKSUM))
+        {
+            if (!RTNetIPv4IsUDPValid(pIpHdr, pUdpHdr, pUdpHdr + 1, cbFrame - offUdpHdr, true /*fChecksum*/))
+                return NULL;
+            if (    (fFlags & VBOXNETUDP_MATCH_REQUIRE_CHECKSUM)
+                &&  !pUdpHdr->uh_sum)
+                return NULL;
+        }
+        else
+        {
+            if (!RTNetIPv4IsUDPSizeValid(pIpHdr, pUdpHdr, cbFrame - offUdpHdr))
+                return NULL;
+        }
     }
 
     /*

@@ -24,6 +24,7 @@
  */
 
 #include "VBoxNetFltCommon-win.h"
+#include <VBox/intnetinline.h>
 #include <iprt/thread.h>
 
 /** represents the job element of the job queue
@@ -307,35 +308,13 @@ DECLHIDDEN(NDIS_STATUS) vboxNetFltWinCopyString(PNDIS_STRING pDst, PNDIS_STRING 
 /************************************************************************************
  * PINTNETSG pSG manipulation functions
  ************************************************************************************/
-static void vboxNetFltWinReinitSG(PINTNETSG pSG)
-{
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cUsers = 1;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsUsed = 0;
-    pSG->cbTotal = 0;
-}
-
-static void vboxNetFltWinInitSG(PINTNETSG pSG, UINT cBufferCount)
-{
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cUsers = 1;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsAlloc = cBufferCount;
-    pSG->cSegsUsed = 0;
-    pSG->cbTotal = 0;
-}
 
 /* moves the contents of the given NDIS_BUFFER and all other buffers chained to it to the PINTNETSG
  * the PINTNETSG is expected to contain one segment whose bugger is large enough to maintain
  * the contents of the given NDIS_BUFFER and all other buffers chained to it */
 static NDIS_STATUS vboxNetFltWinNdisBufferMoveToSG0(PNDIS_BUFFER pBuffer, PINTNETSG pSG)
 {
-    UINT cbSeg = 0;
+    UINT cSegs = 0;
     PINTNETSEG paSeg;
     uint8_t * ptr;
     PVOID pVirtualAddress;
@@ -388,7 +367,7 @@ static NDIS_STATUS vboxNetFltWinNdisBufferMoveToSG0(PNDIS_BUFFER pBuffer, PINTNE
  * ndis buffer(s) point to (as opposed to vboxNetFltWinNdisBufferMoveToSG0 which copies the memory from ndis buffers(s) to PINTNETSG) */
 static NDIS_STATUS vboxNetFltWinNdisBuffersToSG(PNDIS_BUFFER pBuffer, PINTNETSG pSG)
 {
-    UINT cbSeg = 0;
+    UINT cSegs = 0;
     NDIS_STATUS fStatus = NDIS_STATUS_SUCCESS;
     PVOID pVirtualAddress;
     UINT cbCurrentLength;
@@ -407,21 +386,21 @@ static NDIS_STATUS vboxNetFltWinNdisBuffersToSG(PNDIS_BUFFER pBuffer, PINTNETSG 
         }
 
         pSG->cbTotal += cbCurrentLength;
-        pSG->aSegs[cbSeg].cb = cbCurrentLength;
-        pSG->aSegs[cbSeg].pv = pVirtualAddress;
-        pSG->aSegs[cbSeg].Phys = NIL_RTHCPHYS;
-        cbSeg++;
+        pSG->aSegs[cSegs].cb = cbCurrentLength;
+        pSG->aSegs[cSegs].pv = pVirtualAddress;
+        pSG->aSegs[cSegs].Phys = NIL_RTHCPHYS;
+        cSegs++;
 
         NdisGetNextBuffer(
                 pBuffer,
                 &pBuffer);
     }
 
-    AssertFatal(cbSeg <= pSG->cSegsAlloc);
+    AssertFatal(cSegs <= pSG->cSegsAlloc);
 
     if(fStatus == NDIS_STATUS_SUCCESS)
     {
-        pSG->cSegsUsed = cbSeg;
+        pSG->cSegsUsed = cSegs;
     }
 
     return fStatus;
@@ -432,13 +411,13 @@ static void vboxNetFltWinDeleteSG(PINTNETSG pSG)
     vboxNetFltWinMemFree(pSG);
 }
 
-static PINTNETSG vboxNetFltWinCreateSG(uint32_t cSize)
+static PINTNETSG vboxNetFltWinCreateSG(uint32_t cSegs)
 {
     PINTNETSG pSG;
-    NTSTATUS Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, RT_OFFSETOF(INTNETSG, aSegs[cSize]));
+    NTSTATUS Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, RT_OFFSETOF(INTNETSG, aSegs[cSegs]));
     if(Status == STATUS_SUCCESS)
     {
-        vboxNetFltWinInitSG(pSG, cSize);
+        INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
         return pSG;
     }
 
@@ -655,7 +634,7 @@ static bool vboxNetFltWinQuProcessInfo(PVBOXNETFLTINS pNetFltIf, PPACKET_QUEUE_W
         if(pSG)
         {
             /* reinitialize */
-            vboxNetFltWinReinitSG(pSG);
+            INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, pSG->cSegsAlloc, 0 /*cSegsUsed*/);
 
             /* convert the ndis buffers to INTNETSG */
             Status = vboxNetFltWinNdisBuffersToSG(pCurrentBuffer, pSG);
@@ -1163,37 +1142,20 @@ DECLHIDDEN(void) vboxNetFltWinQuFiniPacketQueue(PVBOXNETFLTINS pInstance)
  * creates the INTNETSG containing one segment pointing to the buffer of size cbBufSize
  * the INTNETSG created should be cleaned with vboxNetFltWinMemFree
  */
-DECLHIDDEN(NDIS_STATUS) vboxNetFltWinAllocSG(UINT cbBufSize, PINTNETSG *ppSG)
+DECLHIDDEN(NDIS_STATUS) vboxNetFltWinAllocSG(UINT cbPacket, PINTNETSG *ppSG)
 {
-    UINT cbBufferOffset;
-    UINT cbMemSize;
     NDIS_STATUS Status;
     PINTNETSG pSG;
 
     /* allocation:
      * 1. SG_PACKET - with one aSegs pointing to
-     * 2. buffer of cbPacketLength containing the entire packet */
-    cbBufferOffset = sizeof(INTNETSG);
-    /* make sure the buffer is aligned */
-    if((cbBufferOffset & (sizeof(PVOID) - 1)) != 0)
-    {
-        cbBufferOffset += sizeof(PVOID);
-        cbBufferOffset &= ~(sizeof(PVOID) - 1);
-    }
-
-    cbMemSize = cbBufferOffset + cbBufSize;
-    Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, cbMemSize);
+     * 2. buffer of cbPacket containing the entire packet */
+    AssertCompileSizeAlignment(INTNETSG, sizeof(PVOID));
+    Status = vboxNetFltWinMemAlloc((PVOID*)&pSG, cbPacket + sizeof(INTNETSG));
     if(Status == NDIS_STATUS_SUCCESS)
     {
-        vboxNetFltWinInitSG(pSG, 1);
-        pSG->aSegs[0].pv = (uint8_t *)pSG + cbBufferOffset;
-        pSG->aSegs[0].Phys = NIL_RTHCPHYS;
-        pSG->aSegs[0].cb = cbBufSize;
-        pSG->cbTotal = cbBufSize;
-        pSG->cSegsUsed = 1;
-
+        INTNETSgInitTemp(pSG, pSG + 1, cbPacket);
         LogFlow(("pSG created  (%p)\n", pSG));
-
         *ppSG = pSG;
     }
     return Status;

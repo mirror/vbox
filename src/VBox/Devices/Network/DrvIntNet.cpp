@@ -24,6 +24,7 @@
 *******************************************************************************/
 #define LOG_GROUP LOG_GROUP_DRV_INTNET
 #include <VBox/pdmdrv.h>
+#include <VBox/pdmnetinline.h>
 #include <VBox/pdmnetifs.h>
 #include <VBox/cfgm.h>
 #include <VBox/intnet.h>
@@ -195,7 +196,6 @@ static DECLCALLBACK(int) drvR3IntNetUp_AllocBuf(PPDMINETWORKUP pInterface, size_
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
     int         rc    = VINF_SUCCESS;
     Assert(cbMin < UINT32_MAX / 2);
-AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
 
     /*
      * Allocate a S/G buffer.
@@ -204,8 +204,13 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
     if (pSgBuf)
     {
         PINTNETHDR pHdr;
-        rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
-                                     &pHdr, &pSgBuf->aSegs[0].pvSeg);
+        if (pGso)
+            rc = INTNETRingAllocateGsoFrame(&pThis->pBufR3->Send, (uint32_t)cbMin, pGso,
+                                            &pHdr, &pSgBuf->aSegs[0].pvSeg);
+        else
+            rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
+                                         &pHdr, &pSgBuf->aSegs[0].pvSeg);
+
 #if 1 /** @todo implement VERR_TRY_AGAIN once this moves to EMT. */
         if (    RT_FAILURE(rc)
             &&  pThis->pBufR3->cbSend >= cbMin * 2 + sizeof(INTNETHDR))
@@ -217,8 +222,12 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
             SendReq.hIf = pThis->hIf;
             PDMDrvHlpSUPCallVMMR0Ex(pThis->pDrvInsR3, VMMR0_DO_INTNET_IF_SEND, &SendReq, sizeof(SendReq));
 
-            rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
-                                         &pHdr, &pSgBuf->aSegs[0].pvSeg);
+            if (pGso)
+                rc = INTNETRingAllocateGsoFrame(&pThis->pBufR3->Send, (uint32_t)cbMin, pGso,
+                                                &pHdr, &pSgBuf->aSegs[0].pvSeg);
+            else
+                rc = INTNETRingAllocateFrame(&pThis->pBufR3->Send, (uint32_t)cbMin,
+                                             &pHdr, &pSgBuf->aSegs[0].pvSeg);
         }
 #endif
         if (RT_SUCCESS(rc))
@@ -226,7 +235,8 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
             pSgBuf->fFlags          = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
             pSgBuf->cbUsed          = 0;
             pSgBuf->cbAvailable     = cbMin;
-            pSgBuf->pvUser          = pHdr;
+            pSgBuf->pvAllocator     = pHdr;
+            pSgBuf->pvUser          = pGso ? (PPDMNETWORKGSO)pSgBuf->aSegs[0].pvSeg - 1 : NULL;
             pSgBuf->cSegs           = 1;
             pSgBuf->aSegs[0].cbSeg  = cbMin;
 
@@ -256,10 +266,11 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
 static DECLCALLBACK(int) drvR3IntNetUp_FreeBuf(PPDMINETWORKUP pInterface, PPDMSCATTERGATHER pSgBuf)
 {
     PDRVINTNET  pThis = RT_FROM_MEMBER(pInterface, DRVINTNET, INetworkUpR3);
-    PINTNETHDR  pHdr  = (PINTNETHDR)pSgBuf->pvUser;
+    PINTNETHDR  pHdr  = (PINTNETHDR)pSgBuf->pvAllocator;
     Assert(pSgBuf->fFlags == (PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1));
     Assert(pSgBuf->cbUsed <= pSgBuf->cbAvailable);
-    Assert(pHdr->u16Type == INTNETHDR_TYPE_FRAME);
+    Assert(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
+           || pHdr->u16Type == INTNETHDR_TYPE_GSO);
 
     /** @todo LATER: try unalloc the frame. */
     pHdr->u16Type = INTNETHDR_TYPE_PADDING;
@@ -284,7 +295,7 @@ static DECLCALLBACK(int) drvR3IntNetUp_SendBuf(PPDMINETWORKUP pInterface, PPDMSC
     /*
      * Commit the frame and push it thru the switch.
      */
-    PINTNETHDR pHdr = (PINTNETHDR)pSgBuf->pvUser;
+    PINTNETHDR pHdr = (PINTNETHDR)pSgBuf->pvAllocator;
     INTNETRingCommitFrameEx(&pThis->pBufR3->Send, pHdr, pSgBuf->cbUsed);
 
     INTNETIFSENDREQ SendReq;
@@ -412,6 +423,8 @@ static int drvR3IntNetAsyncIoWaitForSpace(PDRVINTNET pThis)
 }
 
 
+
+
 /**
  * Executes async I/O (RUNNING mode).
  *
@@ -449,7 +462,9 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
             }
 
             Log2(("pHdr=%p offRead=%#x: %.8Rhxs\n", pHdr, pRingBuf->offReadX, pHdr));
-            if (    pHdr->u16Type == INTNETHDR_TYPE_FRAME
+            uint16_t u16Type = pHdr->u16Type;
+            if (    (   u16Type == INTNETHDR_TYPE_FRAME
+                     || u16Type == INTNETHDR_TYPE_GSO)
                 &&  !pThis->fLinkDown)
             {
                 /*
@@ -459,20 +474,79 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                 int rc = pThis->pIAboveNet->pfnWaitReceiveAvail(pThis->pIAboveNet, 0);
                 if (rc == VINF_SUCCESS)
                 {
+                    if (u16Type == INTNETHDR_TYPE_FRAME)
+                    {
+                        /*
+                         * Normal frame.
+                         */
 #ifdef LOG_ENABLED
-                    uint64_t u64Now = RTTimeProgramNanoTS();
-                    LogFlow(("drvR3IntNetAsyncIoRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
-                             cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
-                    pThis->u64LastReceiveTS = u64Now;
-                    Log2(("drvR3IntNetAsyncIoRun: cbFrame=%#x\n"
-                          "%.*Rhxd\n",
-                          cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
+                        if (LogIsEnabled())
+                        {
+                            uint64_t u64Now = RTTimeProgramNanoTS();
+                            LogFlow(("drvR3IntNetAsyncIoRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu\n",
+                                     cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS));
+                            pThis->u64LastReceiveTS = u64Now;
+                            Log2(("drvR3IntNetAsyncIoRun: cbFrame=%#x\n"
+                                  "%.*Rhxd\n",
+                                  cbFrame, cbFrame, INTNETHdrGetFramePtr(pHdr, pBuf)));
+                        }
 #endif
-                    rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
-                    AssertRC(rc);
+                        rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, INTNETHdrGetFramePtr(pHdr, pBuf), cbFrame);
+                        AssertRC(rc);
 
-                    /* skip to the next frame. */
-                    INTNETRingSkipFrame(pRingBuf);
+                        /* skip to the next frame. */
+                        INTNETRingSkipFrame(pRingBuf);
+                    }
+                    else
+                    {
+                        /*
+                         * Generic segment offload frame (INTNETHDR_TYPE_GSO).
+                         *
+                         * This is where we do the offloading since we don't
+                         * emulate any NICs with large receive offload (LRO).
+                         */
+                        PCPDMNETWORKGSO     pGso = INTNETHdrGetGsoContext(pHdr, pBuf);
+                        if (PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(PDMNETWORKGSO)))
+                        {
+                            uint8_t         abHdrScratch[256];
+                            uint32_t const  cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
+#ifdef LOG_ENABLED
+                            if (LogIsEnabled())
+                            {
+                                uint64_t u64Now = RTTimeProgramNanoTS();
+                                LogFlow(("drvR3IntNetAsyncIoRun: %-4d bytes at %llu ns  deltas: r=%llu t=%llu; GSO - %u segs\n",
+                                         cbFrame, u64Now, u64Now - pThis->u64LastReceiveTS, u64Now - pThis->u64LastTransferTS, cSegs));
+                                pThis->u64LastReceiveTS = u64Now;
+                                Log2(("drvR3IntNetAsyncIoRun: cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x/%#x Hdr2=%#x/%#x MMS=%#x\n"
+                                      "%.*Rhxd\n",
+                                      cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->cbHdr1, pGso->offHdr2, pGso->cbHdr2,
+                                      pGso->cbMaxSeg, cbFrame - sizeof(*pGso), pGso + 1));
+                            }
+#endif
+                            for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+                            {
+                                uint32_t cbSegFrame;
+                                void    *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
+                                                                              iSeg, cSegs, &cbSegFrame);
+                                rc = drvR3IntNetAsyncIoWaitForSpace(pThis);
+                                if (RT_FAILURE(rc))
+                                {
+                                    Log(("drvR3IntNetAsyncIoRun: drvR3IntNetAsyncIoWaitForSpace -> %Rrc; iSeg=%u cSegs=%u\n", iSeg, cSegs));
+                                    break; /* we drop the rest. */
+                                }
+                                rc = pThis->pIAboveNet->pfnReceive(pThis->pIAboveNet, pvSegFrame, cbSegFrame);
+                                AssertRC(rc);
+                            }
+                        }
+                        else
+                        {
+                            AssertMsgFailed(("cbFrame=%#x type=%d cbHdrs=%#x Hdr1=%#x/%#x Hdr2=%#x/%#x MMS=%#x\n",
+                                             cbFrame, pGso->u8Type, pGso->cbHdrs, pGso->offHdr1, pGso->cbHdr1, pGso->offHdr2, pGso->cbHdr2, pGso->cbMaxSeg));
+                            STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
+                        }
+
+                        INTNETRingSkipFrame(pRingBuf);
+                    }
                 }
                 else
                 {
@@ -487,9 +561,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                             /*
                              * NIC is going down, likely because the VM is being reset. Skip the frame.
                              */
-                            AssertMsg(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
-                                      || pHdr->u16Type == INTNETHDR_TYPE_PADDING,
-                                      ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                            AssertMsg(INETNETIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
                             INTNETRingSkipFrame(pRingBuf);
                         }
                         else
@@ -506,9 +578,7 @@ static int drvR3IntNetAsyncIoRun(PDRVINTNET pThis)
                 /*
                  * Link down or unknown frame - skip to the next frame.
                  */
-                AssertMsg(   pHdr->u16Type == INTNETHDR_TYPE_FRAME
-                          || pHdr->u16Type == INTNETHDR_TYPE_PADDING,
-                          ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
+                AssertMsg(INETNETIsValidFrameType(pHdr->u16Type), ("Unknown frame type %RX16! offRead=%#x\n", pHdr->u16Type, pRingBuf->offReadX));
                 INTNETRingSkipFrame(pRingBuf);
                 STAM_REL_COUNTER_INC(&pBuf->cStatBadFrames);
             }
