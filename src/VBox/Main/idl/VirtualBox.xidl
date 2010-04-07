@@ -4345,7 +4345,7 @@
     </attribute>
 
     <attribute name="memoryBalloonSize" type="unsigned long">
-      <desc>Initial memory balloon size in megabytes.</desc>
+      <desc>Memory balloon size in megabytes.</desc>
     </attribute>
 
     <attribute name="VRAMSize" type="unsigned long">
@@ -8414,7 +8414,7 @@
     </attribute>
 
     <attribute name="memoryBalloonSize" type="unsigned long">
-      <desc>Guest system memory balloon size in megabytes.</desc>
+      <desc>Guest system memory balloon size in megabytes (transient property).</desc>
     </attribute>
 
     <attribute name="statisticsUpdateInterval" type="unsigned long"> 
