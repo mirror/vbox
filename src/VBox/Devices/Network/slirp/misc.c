@@ -189,6 +189,14 @@ free_list_check:
     }
     zone->max_items ++;
     it = &((struct item *)sub_area)[-1];
+    /* it's chunk descriptor of master zone we should remove it 
+     *  from the master list first
+     */
+    Assert((it->zone && it->zone->magic == ZONE_MAGIC));
+    RTCritSectEnter(&it->zone->csZone);
+    /*@todo should we alter count of master counters ?*/
+    LIST_REMOVE(it, list);
+    RTCritSectLeave(&it->zone->csZone);
     /*@todo '+ zone->size' should be depend on flag */
     memset(it, 0, sizeof(struct item));
     it->zone = zone;
