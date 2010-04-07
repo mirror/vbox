@@ -305,7 +305,8 @@ GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, u
     *pcTotalFreePages    = 0;
     *pcTotalBalloonPages = 0;
 
-    int rc = VMMR3CallR0(pVM, VMMR0_DO_GMM_QUERY_VMM_MEM_STATS, 0, &Req.Hdr);
+    /* Must be callable from any thread, so can't use VMMR3CallR0. */
+    int rc = SUPR3CallVMMR0Ex(pVM->pVMR0, 0, VMMR0_DO_GMM_QUERY_VMM_MEM_STATS, 0, &Req.Hdr);
     if (rc == VINF_SUCCESS)
     {
         *pcTotalAllocPages   = Req.cAllocPages;
