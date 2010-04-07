@@ -224,7 +224,7 @@ static struct mbuf * vboxNetFltFreeBSDSGMBufFromSG(PVBOXNETFLTINS pThis, PINTNET
     int error;
     unsigned int i;
 
-    if (pSG->cbTotal == 0 || pSG->aSegs[0].cb == 0)
+    if (pSG->cbTotal == 0)
         return (NULL);
 
     m = m_getcl(M_WAITOK, MT_DATA, M_PKTHDR);

@@ -316,18 +316,7 @@ static struct sk_buff *vboxNetFltLinuxSkBufFromSG(PVBOXNETFLTINS pThis, PINTNETS
 
     /* Copy the segments. */
     skb_put(pPkt, pSG->cbTotal);
-    memcpy(pPkt->data, pSG->aSegs[0].pv, pSG->aSegs[0].cb);
-    if (pSG->cSegsUsed > 1)
-    {
-        uint8_t *pbDst = (uint8_t *)pPkt->data + pSG->aSegs[0].cb;
-        size_t   iSeg  = 0;
-        while (++iSeg < pSG->cSegsUsed)
-        {
-            memcpy(pbDst, pSG->aSegs[iSeg].pv, pSG->aSegs[iSeg].cb);
-            pbDst += pSG->aSegs[iSeg].cb;
-            Assert((uintptr_t)pbDst - (uintptr_t)pPkt->data <= pSG->cbTotal);
-        }
-    }
+    INTNETSgRead(pSG, pPkt->data);
 
     /* Set protocol and packet_type fields. */
     pPkt->protocol = eth_type_trans(pPkt, pDev);

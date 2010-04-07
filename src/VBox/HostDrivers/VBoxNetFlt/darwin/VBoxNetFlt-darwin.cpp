@@ -385,26 +385,27 @@ static mbuf_t vboxNetFltDarwinMBufFromSG(PVBOXNETFLTINS pThis, PINTNETSG pSG)
             &&  mbuf_maxlen(pCur) >= pSG->cbTotal)
         {
             mbuf_setlen(pCur, pSG->cbTotal);
-            memcpy(mbuf_data(pCur), pSG->aSegs[0].pv, pSG->cbTotal);
+            INTNETSgRead(pSG, mbuf_data(pCur));
         }
         else
         {
             /* Multi buffer copying. */
-            size_t         cbSrc = pSG->cbTotal;
-            uint8_t const *pbSrc = (uint8_t const *)pSG->aSegs[0].pv;
-            while (cbSrc > 0 && pCur)
+            size_t  cbLeft = pSG->cbTotal;
+            size_t  offSrc = 0;
+            while (cbLeft > 0 && pCur)
             {
                 size_t cb = mbuf_maxlen(pCur);
-                if (cbSrc < cb)
-                    cb = cbSrc;
+                if (cb > cbLeft)
+                    cb = cbLeft;
                 mbuf_setlen(pCur, cb);
-                memcpy(mbuf_data(pCur), pbSrc, cb);
+                INTNETSgReadEx(pSG, off, cb, mbuf_data(pCur));
 
                 /* advance */
-                pbSrc += cb;
-                cbSrc -= cb;
+                offSrc += cb;
+                cbLeft -= cb;
                 pCur = mbuf_next(pCur);
             }
+            Assert(cbSrc == 0);
         }
         if (!err)
         {
