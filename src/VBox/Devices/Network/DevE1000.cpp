@@ -1987,16 +1987,8 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
         return rc;
 #endif
 
-#ifdef E1K_LEDS_WITH_MUTEX
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
-    {
-#endif /* E1K_LEDS_WITH_MUTEX */
-        pState->led.Asserted.s.fReading = 1;
-        pState->led.Actual.s.fReading = 1;
-#ifdef E1K_LEDS_WITH_MUTEX
-        e1kCsLeave(pState);
-    }
-#endif /* E1K_LEDS_WITH_MUTEX */
+    if (cb > 70) /* unqualified guess */
+        pState->led.Asserted.s.fReading = pState->led.Actual.s.fReading = 1;
 
     Assert(cb <= E1K_MAX_RX_PKT_SIZE);
     memcpy(rxPacket, pvBuf, cb);
@@ -2081,15 +2073,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
                 desc.status.fEOP = true;
                 e1kCsRxLeave(pState);
                 e1kStoreRxFragment(pState, &desc, ptr, cb);
-#ifdef E1K_LEDS_WITH_MUTEX
-                if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
-                {
-#endif /* E1K_LEDS_WITH_MUTEX */
-                    pState->led.Actual.s.fReading = 0;
-#ifdef E1K_LEDS_WITH_MUTEX
-                    e1kCsLeave(pState);
-                }
-#endif /* E1K_LEDS_WITH_MUTEX */
+                pState->led.Actual.s.fReading = 0;
                 return VINF_SUCCESS;
             }
             /* Note: RDH is advanced by e1kStoreRxFragment! */
@@ -2107,15 +2091,7 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
     if (cb > 0)
         E1kLog(("%s Out of recieve buffers, dropping %u bytes", INSTANCE(pState), cb));
 
-#ifdef E1K_LEDS_WITH_MUTEX
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
-    {
-#endif /* E1K_LEDS_WITH_MUTEX */
-        pState->led.Actual.s.fReading = 0;
-#ifdef E1K_LEDS_WITH_MUTEX
-        e1kCsLeave(pState);
-    }
-#endif /* E1K_LEDS_WITH_MUTEX */
+    pState->led.Actual.s.fReading = 0;
 
     e1kCsRxLeave(pState);
 
@@ -3078,16 +3054,9 @@ static void e1kTransmitFrame(E1KSTATE* pState)
             "%s <<<<<<<<<<<<< End of dump >>>>>>>>>>>>\n",
             INSTANCE(pState), cbFrame, pSg->aSegs[0].pvSeg, INSTANCE(pState)));*/
 
-#ifdef E1K_LEDS_WITH_MUTEX
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
-    {
-#endif /* E1K_LEDS_WITH_MUTEX */
-        pState->led.Asserted.s.fWriting = 1;
-        pState->led.Actual.s.fWriting = 1;
-#ifdef E1K_LEDS_WITH_MUTEX
-        e1kCsLeave(pState);
-    }
-#endif /* E1K_LEDS_WITH_MUTEX */
+    if (cbFrame > 70) /* unqualified guess */
+        pState->led.Asserted.s.fWriting = pState->led.Actual.s.fWriting = 1;
+
     /* Update the stats */
     E1K_INC_CNT32(TPT);
     E1K_ADD_CNT64(TOTL, TOTH, cbFrame);
@@ -3160,15 +3129,7 @@ static void e1kTransmitFrame(E1KSTATE* pState)
         /** @todo handle VERR_NET_DOWN and VERR_NET_NO_BUFFER_SPACE. Signal error ? */
     }
 
-#ifdef E1K_LEDS_WITH_MUTEX
-    if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
-    {
-#endif /* E1K_LEDS_WITH_MUTEX */
-        pState->led.Actual.s.fWriting = 0;
-#ifdef E1K_LEDS_WITH_MUTEX
-        e1kCsLeave(pState);
-    }
-#endif /* E1K_LEDS_WITH_MUTEX */
+    pState->led.Actual.s.fWriting = 0;
 }
 
 /**
