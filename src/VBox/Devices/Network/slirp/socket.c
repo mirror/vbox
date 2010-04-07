@@ -211,7 +211,7 @@ soread(PNATState pData, struct socket *so)
          */
         int status, ignored;
         unsigned long pending = 0;
-        status = ioctl(so->s, FIONREAD, &pending);
+        status = ioctlsocket(so->s, FIONREAD, &pending);
         if (status < 0)
             LogRel(("NAT:error in WSAIoctl: %d\n", errno));
         if (nn == 0 && (pending != 0))
