@@ -2902,7 +2902,6 @@ DECLINLINE(void) e1kSetupGsoCtx(PPDMNETWORKGSO pGso, E1KTXCTX const *pCtx)
  */
 DECLINLINE(bool) e1kCanDoGso(PCPDMNETWORKGSO pGso, E1KTXDAT const *pData)
 {
-//return false; /** @todo remove this before comitting */
     if (!pData->cmd.fTSE)
         return false;
     if (pData->cmd.fVLE) /** @todo VLAN tagging. */
@@ -2989,7 +2988,7 @@ DECLINLINE(int) e1kXmitAllocBuf(E1KSTATE *pState, size_t cbMin, bool fExactSize,
     Assert(pState->pTxSgR3 == NULL);
 
     /*
-     * Allocate the buffe.r
+     * Allocate the buffer.
      */
     PPDMSCATTERGATHER pSg;
     if (RT_LIKELY(GET_BITS(RCTL, LBM) != RCTL_LBM_TCVR))
