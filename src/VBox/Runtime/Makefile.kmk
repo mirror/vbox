@@ -226,6 +226,7 @@ RuntimeR3_SOURCES       = \
 	common/checksum/md5.cpp \
 	common/checksum/md5str.cpp \
 	common/checksum/ipv4.cpp \
+	common/checksum/ipv6.cpp \
 	common/dbg/dbg.cpp \
 	common/dbg/dbgas.cpp \
 	common/dbg/dbgmod.cpp \
@@ -1189,6 +1190,7 @@ RuntimeR0_SOURCES       = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
+	common/checksum/ipv6.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrelellipsis.cpp \
 	common/log/logcom.cpp \
@@ -1305,6 +1307,7 @@ RuntimeR0Drv_SOURCES    = \
 	common/checksum/crc64.cpp \
 	common/checksum/md5.cpp \
 	common/checksum/ipv4.cpp \
+	common/checksum/ipv6.cpp \
 	common/log/log.cpp \
 	common/log/logellipsis.cpp \
 	common/log/logrel.cpp \
