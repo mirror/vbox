@@ -2103,6 +2103,10 @@ static int e1kHandleRxPacket(E1KSTATE* pState, const void *pvBuf, size_t cb, E1K
             e1kAdvanceRDH(pState);
         }
     }
+
+    if (cb > 0)
+        E1kLog(("%s Out of recieve buffers, dropping %u bytes", INSTANCE(pState), cb));
+
 #ifdef E1K_LEDS_WITH_MUTEX
     if (RT_LIKELY(e1kCsEnter(pState, VERR_SEM_BUSY, RT_SRC_POS) == VINF_SUCCESS))
     {
