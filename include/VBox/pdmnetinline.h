@@ -216,7 +216,8 @@ DECLINLINE(uint32_t) pdmNetGsoUpdateIPv6Hdr(uint8_t *pbSegHdrs, uint8_t offIpHdr
     PRTNETIPV6 pIpHdr  = (PRTNETIPV6)&pbSegHdrs[offIpHdr];
     uint32_t cbPayload = cbHdrs - offIpHdr + sizeof(*pIpHdr) + cbSegPayload;
     pIpHdr->ip6_plen   = RT_H2N_U16(cbPayload);
-    return RTNetIPv6PseudoChecksumEx(pIpHdr, bProtocol, cbPayload - (offPktHdr - offPktHdr - sizeof(*pIpHdr)));
+    cbPayload         -= (offPktHdr - offPktHdr - sizeof(*pIpHdr));
+    return RTNetIPv6PseudoChecksumEx(pIpHdr, bProtocol, (uint16_t)cbPayload);
 }
 
 
@@ -281,7 +282,9 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
      */
     uint8_t * const pbSegHdrs    = pbFrame + pGso->cbMaxSeg * iSeg;
     uint8_t * const pbSegPayload = pbSegHdrs + pGso->cbHdrs;
-    uint32_t const  cbSegPayload = iSeg + 1 != cSegs ? pGso->cbMaxSeg : cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs;
+    uint32_t const  cbSegPayload = iSeg + 1 != cSegs
+                                 ? pGso->cbMaxSeg
+                                 : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
     uint32_t const  cbSegFrame   = cbSegPayload + pGso->cbHdrs;
 
     /*
@@ -376,7 +379,9 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
      * do the protocol specific carving.
      */
     uint8_t const * const pbSegPayload = pbFrame + pGso->cbHdrs + iSeg * pGso->cbMaxSeg;
-    uint32_t const        cbSegPayload = iSeg + 1 != cSegs ? pGso->cbMaxSeg : cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs;
+    uint32_t const        cbSegPayload = iSeg + 1 != cSegs
+                                       ? pGso->cbMaxSeg
+                                       : (uint32_t)(cbFrame - iSeg * pGso->cbMaxSeg - pGso->cbHdrs);
 
     /*
      * Copy the header and do the protocol specific massaging of it.
