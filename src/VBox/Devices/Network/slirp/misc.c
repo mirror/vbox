@@ -143,6 +143,7 @@ struct uma_zone
     LIST_HEAD(RT_NOTHING, item) used_items;
     LIST_HEAD(RT_NOTHING, item) free_items;
     uma_zone_t master_zone;
+    void *area;
 };
 
 
@@ -150,45 +151,53 @@ static void *slirp_uma_alloc(uma_zone_t zone,
     int size, uint8_t *pflags, int wait)
 {
     struct item *it;
+    uint8_t *sub_area;
+    int cChunk;
+    int i;
     RTCritSectEnter(&zone->csZone);
+free_list_check:
     if (!LIST_EMPTY(&zone->free_items))
     {
-        /*
-         * @todo (r=vvl) here should be some
-         * accounting of extra items in case
-         * breakthrough barrier
-         */
-        if (LIST_EMPTY(&zone->free_items))
-        {
-            RTCritSectLeave(&zone->csZone);
-            return NULL;
-        }
+        zone->cur_items++;
         it = LIST_FIRST(&zone->free_items);
         LIST_REMOVE(it, list);
         LIST_INSERT_HEAD(&zone->used_items, it, list);
-        goto allocated;
+        if (zone->pfInit)
+            zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
+        RTCritSectLeave(&zone->csZone);
+        return (void *)&it[1];
     }
 
-    /*@todo 'Z' should be depend on flag */
-    it = RTMemAllocZ(sizeof(struct item) + zone->size);
-    if (it == NULL)
+    if (zone->master_zone == NULL)
     {
-        Log(("NAT: uma no memory"));
+        /* We're on master zone and we cant allocate more */
+        Log2(("NAT: no room on %s zone\n", zone->name));
         RTCritSectLeave(&zone->csZone);
         return NULL;
     }
-    it->magic = ITEM_MAGIC;
-    LIST_INSERT_HEAD(&zone->used_items, it, list);
-    zone->cur_items++;
+
+    /* we're on sub-zone we need get chunk of master zone and split 
+     * it for sub-zone conforming chunks.
+     */
+    sub_area = slirp_uma_alloc(zone->master_zone, zone->master_zone->size, NULL, 0);
+    if (sub_area == NULL)
+    {
+        /*No room on master*/
+        Log2(("NAT: no room on %s zone for %s zone\n", zone->master_zone->name, zone->name));
+        RTCritSectLeave(&zone->csZone);
+        return NULL;
+    }
+    zone->max_items ++;
+    it = &((struct item *)sub_area)[-1];
+    /*@todo '+ zone->size' should be depend on flag */
+    memset(it, 0, sizeof(struct item));
     it->zone = zone;
+    it->magic = ITEM_MAGIC;
+    LIST_INSERT_HEAD(&zone->free_items, it, list);
     if (zone->cur_items >= zone->max_items)
         LogRel(("NAT: zone(%s) has reached it maximum\n", zone->name));
+    goto free_list_check;
 
-allocated:
-    if (zone->pfInit)
-        zone->pfInit(zone->pData, (void *)&it[1], zone->size, M_DONTWAIT);
-    RTCritSectLeave(&zone->csZone);
-    return (void *)&it[1];
 }
 
 static void slirp_uma_free(void *item, int size, uint8_t flags)
@@ -210,7 +219,7 @@ static void slirp_uma_free(void *item, int size, uint8_t flags)
 uma_zone_t uma_zcreate(PNATState pData, char *name, size_t size,
                        ctor_t ctor, dtor_t dtor, zinit_t init, zfini_t fini, int flags1, int flags2)
 {
-    uma_zone_t zone = RTMemAllocZ(sizeof(struct uma_zone) + size);
+    uma_zone_t zone = RTMemAllocZ(sizeof(struct uma_zone));
     Assert((pData));
     zone->magic = ZONE_MAGIC;
     zone->pData = pData;
@@ -234,6 +243,7 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     if (master->pfAlloc != NULL)
         zone = (uma_zone_t)master->pfAlloc(master, sizeof(struct uma_zone), NULL, 0);
 #endif
+    Assert(master);
     zone = RTMemAllocZ(sizeof(struct uma_zone));
     if (zone == NULL)
         return NULL;
@@ -249,13 +259,25 @@ uma_zone_t uma_zsecond_create(char *name, ctor_t ctor,
     zone->pfAlloc = slirp_uma_alloc;
     zone->pfFree = slirp_uma_free;
     zone->size = master->size;
+    zone->master_zone = master;
     RTCritSectInit(&zone->csZone);
     return zone;
 }
 
 void uma_zone_set_max(uma_zone_t zone, int max)
 {
+    int i = 0;
+    struct item *it;
     zone->max_items = max;
+    zone->area = RTMemAllocZ(max * (sizeof(struct item) + zone->size));
+    for (; i < max; ++i)
+    {
+        it = (struct item *)(((uint8_t *)zone->area) + i*(sizeof(struct item) + zone->size));
+        it->magic = ITEM_MAGIC;
+        it->zone = zone;
+        LIST_INSERT_HEAD(&zone->free_items, it, list);
+    }
+    
 }
 
 void uma_zone_set_allocf(uma_zone_t zone, uma_alloc_t pfAlloc)
@@ -377,19 +399,8 @@ static void zone_destroy(uma_zone_t zone)
     struct item *it;
     RTCritSectEnter(&zone->csZone);
     LogRel(("NAT: zone(nm:%s, used:%d)\n", zone->name, zone->cur_items));
-    /* freeing */
-    while (!LIST_EMPTY(&zone->free_items))
-    {
-        it = LIST_FIRST(&zone->free_items);
-        LIST_REMOVE(it, list);
-        RTMemFree(it);
-    }
-    while (zone->master_zone != NULL && !LIST_EMPTY(&zone->used_items))
-    {
-        it = LIST_FIRST(&zone->used_items);
-        LIST_REMOVE(it, list);
-        RTMemFree(it);
-    }
+    if (zone->master_zone)
+        RTMemFree(zone->area);
     RTCritSectLeave(&zone->csZone);
     RTCritSectDelete(&zone->csZone);
     RTMemFree(zone);

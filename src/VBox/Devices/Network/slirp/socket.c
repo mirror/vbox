@@ -198,11 +198,10 @@ soread(PNATState pData, struct socket *so)
     nn = readv(so->s, (struct iovec *)iov, n);
     DEBUG_MISC((dfd, " ... read nn = %d bytes\n", nn));
 #else
-    nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, 0);
+    nn = recv(so->s, iov[0].iov_base, iov[0].iov_len, (so->so_tcpcb->t_force? MSG_OOB:0));
 #endif
     if (nn <= 0)
     {
-#ifdef RT_OS_WINDOWS
         /*
          * Special case for WSAEnumNetworkEvents: If we receive 0 bytes that
          * _could_ mean that the connection is closed. But we will receive an
@@ -212,16 +211,15 @@ soread(PNATState pData, struct socket *so)
          */
         int status, ignored;
         unsigned long pending = 0;
-        status = WSAIoctl(so->s, FIONREAD, NULL, 0, &pending, sizeof(unsigned long), &ignored, NULL, NULL);
+        status = ioctl(so->s, FIONREAD, &pending);
         if (status < 0)
-            LogRel(("NAT:error in WSAIoctl: %d\n", WSAGetLastError()));
+            LogRel(("NAT:error in WSAIoctl: %d\n", errno));
         if (nn == 0 && (pending != 0))
         {
             SOCKET_UNLOCK(so);
             STAM_PROFILE_STOP(&pData->StatIOread, a);
             return 0;
         }
-#endif
         if (   nn < 0
             && (   errno == EINTR
                 || errno == EAGAIN
@@ -305,6 +303,7 @@ void
 sorecvoob(PNATState pData, struct socket *so)
 {
     struct tcpcb *tp = sototcpcb(so);
+    ssize_t ret;
 
     DEBUG_CALL("sorecvoob");
     DEBUG_ARG("so = %lx", (long)so);
@@ -317,7 +316,7 @@ sorecvoob(PNATState pData, struct socket *so)
      * urgent data, or the read() doesn't return all the
      * urgent data.
      */
-    soread(pData, so);
+    ret = soread(pData, so);
     tp->snd_up = tp->snd_una + so->so_snd.sb_cc;
     tp->t_force = 1;
     tcp_output(pData, tp);

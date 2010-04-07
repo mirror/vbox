@@ -312,6 +312,8 @@ mbuf_init(void *dummy)
 	    mb_ctor_mbuf, mb_dtor_mbuf,
 	    NULL, NULL,
 	    MSIZE - 1, UMA_ZONE_MAXBUCKET);
+	if (nmbclusters > 0)
+		uma_zone_set_max(zone_mbuf, nmbclusters);
 
 	zone_clust = uma_zcreate(MBUF_CLUSTER_MEM_NAME, MCLBYTES,
 	    mb_ctor_clust, mb_dtor_clust,
