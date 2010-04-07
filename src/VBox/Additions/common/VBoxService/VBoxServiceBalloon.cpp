@@ -61,7 +61,7 @@ static bool g_fSysMadviseWorks;
 
 
 /**
- * Check weather madvise() works.
+ * Check whether madvise() works.
  */
 static void VBoxServiceBalloonInitMadvise(void)
 {
