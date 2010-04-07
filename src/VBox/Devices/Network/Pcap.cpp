@@ -93,6 +93,16 @@ static void pcapCalcHeader(struct pcaprec_hdr *pHdr, uint64_t StartNanoTS, size_
 
 
 /**
+ * Internal helper.
+ */
+static void pcapUpdateHeader(struct pcaprec_hdr *pHdr, size_t cbFrame, size_t cbMax)
+{
+    pHdr->incl_len = (uint32_t)RT_MIN(cbFrame, cbMax);
+    pHdr->orig_len = (uint32_t)cbFrame;
+}
+
+
+/**
  * Writes the stream header.
  *
  * @returns IPRT status code, @see RTStrmWrite.
@@ -145,6 +155,9 @@ int PcapStreamFrame(PRTSTREAM pStream, uint64_t StartNanoTS, const void *pvFrame
 int PcapStreamGsoFrame(PRTSTREAM pStream, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
                        const void *pvFrame, size_t cbFrame, size_t cbSegMax)
 {
+    struct pcaprec_hdr Hdr;
+    pcapCalcHeader(&Hdr, StartNanoTS, 0, 0);
+
     uint8_t const  *pbFrame = (uint8_t const *)pvFrame;
     uint8_t         abHdrs[256];
     uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
@@ -153,8 +166,7 @@ int PcapStreamGsoFrame(PRTSTREAM pStream, uint64_t StartNanoTS, PCPDMNETWORKGSO 
         uint32_t cbSegPayload;
         uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbSegPayload);
 
-        struct pcaprec_hdr Hdr;
-        pcapCalcHeader(&Hdr, StartNanoTS, pGso->cbHdrs + cbSegPayload, cbSegMax);
+        pcapUpdateHeader(&Hdr, pGso->cbHdrs + cbSegPayload, cbSegMax);
         int rc = RTStrmWrite(pStream, &Hdr, sizeof(Hdr));
         if (RT_FAILURE(rc))
             return rc;
@@ -223,6 +235,9 @@ int PcapFileFrame(RTFILE File, uint64_t StartNanoTS, const void *pvFrame, size_t
 int PcapFileGsoFrame(RTFILE File, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
                      const void *pvFrame, size_t cbFrame, size_t cbSegMax)
 {
+    struct pcaprec_hdr Hdr;
+    pcapCalcHeader(&Hdr, StartNanoTS, 0, 0);
+
     uint8_t const  *pbFrame = (uint8_t const *)pvFrame;
     uint8_t         abHdrs[256];
     uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, cbFrame);
@@ -231,8 +246,7 @@ int PcapFileGsoFrame(RTFILE File, uint64_t StartNanoTS, PCPDMNETWORKGSO pGso,
         uint32_t cbSegPayload;
         uint32_t offSegPayload = PDMNetGsoCarveSegment(pGso, pbFrame, cbFrame, iSeg, cSegs, abHdrs, &cbSegPayload);
 
-        struct pcaprec_hdr Hdr;
-        pcapCalcHeader(&Hdr, StartNanoTS, pGso->cbHdrs + cbSegPayload, cbSegMax);
+        pcapUpdateHeader(&Hdr, pGso->cbHdrs + cbSegPayload, cbSegMax);
         int rc = RTFileWrite(File, &Hdr, sizeof(Hdr), NULL);
         if (RT_FAILURE(rc))
             return rc;
