@@ -142,7 +142,7 @@ NTSTATUS vboxWddmGhDisplayPostInfoView (PDEVICE_EXTENSION pDevExt, PVBOXWDDM_ALL
 
         pView->u32ViewIndex     = pPrimaryInfo->VidPnSourceId;
         pView->u32ViewOffset    = (uint32_t)offVram;
-        pView->u32ViewSize      = vboxWddmVramReportedSegmentSize(pDevExt)/pDevExt->cSources;
+        pView->u32ViewSize      = vboxWddmVramCpuVisibleSegmentSize(pDevExt)/pDevExt->cSources;
 
         pView->u32MaxScreenSize = pView->u32ViewSize;
 
@@ -1168,12 +1168,17 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
             /* no need for DXGK_QUERYSEGMENTIN as it contains AGP aperture info, which (AGP aperture) we do not support
              * DXGK_QUERYSEGMENTIN *pQsIn = (DXGK_QUERYSEGMENTIN*)pQueryAdapterInfo->pInputData; */
             DXGK_QUERYSEGMENTOUT *pQsOut = (DXGK_QUERYSEGMENTOUT*)pQueryAdapterInfo->pOutputData;
+#ifdef VBOXWDDM_WITH_FAKE_SEGMENT
+# define VBOXWDDM_SEGMENTS_COUNT 2
+#else
+# define VBOXWDDM_SEGMENTS_COUNT 1
+#endif
             if (!pQsOut->pSegmentDescriptor)
             {
                 /* we are requested to provide the number of segments we support */
-                pQsOut->NbSegment = 2;
+                pQsOut->NbSegment = VBOXWDDM_SEGMENTS_COUNT;
             }
-            else if (pQsOut->NbSegment != 2)
+            else if (pQsOut->NbSegment != VBOXWDDM_SEGMENTS_COUNT)
             {
                 AssertBreakpoint();
                 drprintf((__FUNCTION__ " NbSegment (%d) != 1\n", pQsOut->NbSegment));
@@ -1187,24 +1192,25 @@ NTSTATUS APIENTRY DxgkDdiQueryAdapterInfo(
                 pDr->CpuTranslatedAddress.QuadPart = VBE_DISPI_LFB_PHYSICAL_ADDRESS;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramReportedSegmentSize(pContext);
+                pDr->Size = vboxWddmVramCpuVisibleSegmentSize(pContext);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
                 pDr->CommitLimit = pDr->Size;
                 pDr->Flags.Value = 0;
                 pDr->Flags.CpuVisible = 1;
-
+#ifdef VBOXWDDM_WITH_FAKE_SEGMENT
                 ++pDr;
                 /* create cpu-invisible segment of the same size */
                 pDr->BaseAddress.QuadPart = 0;
                 pDr->CpuTranslatedAddress.QuadPart = 0;
                 /* make sure the size is page aligned */
                 /* @todo: need to setup VBVA buffers and adjust the mem size here */
-                pDr->Size = vboxWddmVramReportedSegmentSize(pContext);
+                pDr->Size = vboxWddmVramCpuInvisibleSegmentSize(pContext);
                 pDr->NbOfBanks = 0;
                 pDr->pBankRangeTable = 0;
                 pDr->CommitLimit = pDr->Size;
                 pDr->Flags.Value = 0;
+#endif
 
                 pQsOut->PagingBufferSegmentId = 0;
                 pQsOut->PagingBufferSize = 1024;

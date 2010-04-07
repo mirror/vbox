@@ -16,6 +16,8 @@
 #ifndef ___VBoxVideoVidPn_h___
 #define ___VBoxVideoVidPn_h___
 
+#include "../VBoxVideo.h"
+
 #define VBOXVDPN_C_DISPLAY_HBLANK_SIZE 200
 #define VBOXVDPN_C_DISPLAY_VBLANK_SIZE 180
 

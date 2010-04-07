@@ -18,6 +18,7 @@
 
 #include <iprt/cdefs.h>
 #include <VBox/VBoxVideo.h>
+#include "../VBoxVideo.h"
 
 /* DMA commands are currently submitted over HGSMI */
 typedef struct VBOXVDMAINFO
