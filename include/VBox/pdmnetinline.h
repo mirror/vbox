@@ -149,7 +149,7 @@ DECLINLINE(uint8_t) pgmNetGsoCalcIpv6Offset(uint8_t *pbSegHdrs, uint8_t offIPv4H
 /**
  * Update an UDP header after carving out a segment
  *
- * @param   u32PsudoSum         The pseudo checksum.
+ * @param   u32PseudoSum        The pseudo checksum.
  * @param   pbSegHdrs           Pointer to the header bytes / frame start.
  * @param   offUdpHdr           The offset into @a pbSegHdrs of the UDP header.
  * @param   pbPayload           Pointer to the payload bytes.
@@ -157,19 +157,19 @@ DECLINLINE(uint8_t) pgmNetGsoCalcIpv6Offset(uint8_t *pbSegHdrs, uint8_t offIPv4H
  * @param   cbHdrs              The size of all the headers.
  * @internal
  */
-DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PsudoSum, uint8_t *pbSegHdrs, uint8_t offUdpHdr,
+DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs, uint8_t offUdpHdr,
                                        uint8_t const *pbPayload, uint32_t cbPayload, uint8_t cbHdrs)
 {
     PRTNETUDP pUdpHdr = (PRTNETUDP)&pbSegHdrs[offUdpHdr];
     pUdpHdr->uh_ulen = cbPayload + cbHdrs - offUdpHdr;
-    pUdpHdr->uh_sum  = RTNetUDPChecksum(u32PsudoSum, pUdpHdr);
+    pUdpHdr->uh_sum  = RTNetUDPChecksum(u32PseudoSum, pUdpHdr);
 }
 
 
 /**
  * Update a TCP header after carving out a segment.
  *
- * @param   u32PsudoSum         The pseudo checksum.
+ * @param   u32PseudoSum        The pseudo checksum.
  * @param   pbSegHdrs           Pointer to the header bytes / frame start.
  * @param   offTcpHdr           The offset into @a pbSegHdrs of the TCP header.
  * @param   pbPayload           Pointer to the payload bytes.
@@ -181,14 +181,14 @@ DECLINLINE(void) pdmNetGsoUpdateUdpHdr(uint32_t u32PsudoSum, uint8_t *pbSegHdrs,
  * @param   fLastSeg            Set if this is the last segment.
  * @internal
  */
-DECLINLINE(void) pdmNetGsoUpdateTcpHdr(uint32_t u32PsudoSum, uint8_t *pbSegHdrs, uint8_t offTcpHdr,
+DECLINLINE(void) pdmNetGsoUpdateTcpHdr(uint32_t u32PseudoSum, uint8_t *pbSegHdrs, uint8_t offTcpHdr,
                                        uint8_t const *pbPayload, uint32_t cbPayload, uint32_t offPayload, uint8_t cbHdrs, bool fLastSeg)
 {
     PRTNETTCP pTcpHdr = (PRTNETTCP)&pbSegHdrs[offTcpHdr];
     pTcpHdr->th_seq = RT_H2N_U32(RT_N2H_U32(pTcpHdr->th_seq) + offPayload);
     if (!fLastSeg)
         pTcpHdr->th_flags &= ~(RTNETTCP_F_FIN | RTNETTCP_F_PSH);
-    pTcpHdr->th_sum = RTNetTCPChecksum(u32PsudoSum, pTcpHdr, pbPayload, cbPayload);
+    pTcpHdr->th_sum = RTNetTCPChecksum(u32PseudoSum, pTcpHdr, pbPayload, cbPayload);
 }
 
 
