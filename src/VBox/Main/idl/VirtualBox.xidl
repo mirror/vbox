@@ -8352,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="8e809ebd-c842-4952-8073-c9c07045c9a2"
+     uuid="54ebdc27-89ca-4bf8-a58a-48077679a3af"
      wsmap="managed"
      >
     <desc>
@@ -8485,7 +8485,7 @@
       </param>
     </method>
 
-    <method name="executeProgram">
+    <method name="executeProcess">
       <desc>
         Executes an existing program inside the guest VM.
 
