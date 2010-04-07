@@ -3855,6 +3855,8 @@ void helper_rdmsr(void)
 #ifdef VBOX
     case MSR_IA32_PERF_STATUS:
     case MSR_IA32_PLATFORM_INFO:
+    case MSR_IA32_FSB_CLOCK_STS:
+    case MSR_IA32_THERM_STATUS:
         val = CPUMGetGuestMsr(env->pVCpu, (uint32_t)ECX);
         break;
 #else

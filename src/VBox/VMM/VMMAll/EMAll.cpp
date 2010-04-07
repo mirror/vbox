@@ -2994,6 +2994,8 @@ VMMDECL(int) EMInterpretRdmsr(PVM pVM, PVMCPU pVCpu, PCPUMCTXCORE pRegFrame)
     case MSR_IA32_PERF_STATUS:
     case MSR_IA32_PLATFORM_INFO:
     case MSR_IA32_MISC_ENABLE:
+    case MSR_IA32_FSB_CLOCK_STS:
+    case MSR_IA32_THERM_STATUS:
         val = CPUMGetGuestMsr(pVCpu, pRegFrame->ecx);
         break;
 
