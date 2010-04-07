@@ -43,7 +43,7 @@
  * @copydoc RTNetIPv6PseudoChecksumBits
  */
 DECLINLINE(uint32_t) rtNetIPv6PseudoChecksumBits(PCRTNETADDRIPV6 pSrcAddr, PCRTNETADDRIPV6 pDstAddr,
-                                                 uint8_t bProtocol, uint16_t cbPkt)
+                                                 uint8_t bProtocol, uint32_t cbPkt)
 {
     uint32_t u32Sum = pSrcAddr->au16[0]
                     + pSrcAddr->au16[1]
