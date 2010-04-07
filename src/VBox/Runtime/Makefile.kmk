@@ -272,6 +272,7 @@ RuntimeR3_SOURCES       = \
 	common/misc/sanity-c.c \
 	common/misc/sanity-cpp.cpp \
 	common/misc/semspingpong.cpp \
+	common/misc/sg.cpp \
 	common/misc/thread.cpp \
 	common/misc/zip.cpp \
 	common/misc/term.cpp \
