@@ -186,9 +186,9 @@ namespace pm
     class CollectorGuestHAL : public CollectorHAL
     {
     public:
-        CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL) : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL), mLastTick(0),
-                                              mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0), mMemBalloon(0),
-                                              mMemCache(0), mPageTotal(0), mHostHAL(hostHAL) {};
+        CollectorGuestHAL(Machine *machine, CollectorHAL *hostHAL) : CollectorHAL(), cEnabled(0), mMachine(machine), mConsole(NULL), mGuest(NULL),
+                                              mLastTick(0), mHostHAL(hostHAL), mCpuUser(0), mCpuKernel(0), mCpuIdle(0), mMemTotal(0), mMemFree(0),
+                                              mMemBalloon(0), mMemCache(0), mPageTotal(0) {};
         ~CollectorGuestHAL();
 
         virtual int preCollect(const CollectorHints& hints, uint64_t iTick);

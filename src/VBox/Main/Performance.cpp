@@ -162,7 +162,7 @@ int CollectorGuestHAL::disable()
     return S_OK;
 }
 
-int CollectorGuestHAL::preCollect(const CollectorHints& hints, uint64_t iTick)
+int CollectorGuestHAL::preCollect(const CollectorHints& /* hints */, uint64_t iTick)
 {
     if (    mGuest
         &&  iTick != mLastTick)
@@ -225,7 +225,7 @@ void HostCpuLoad::collect()
     }
 }
 
-void HostCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t iTick)
+void HostCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
     hints.collectHostCpuLoad();
 }
@@ -292,7 +292,7 @@ void HostRamUsage::init(ULONG period, ULONG length)
     mBalloonVMM->init(mLength);
 }
 
-void HostRamUsage::preCollect(CollectorHints& hints, uint64_t iTick)
+void HostRamUsage::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
     hints.collectHostRamUsage();
 }
@@ -337,7 +337,7 @@ void MachineCpuLoad::collect()
     }
 }
 
-void MachineCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t iTick)
+void MachineCpuLoadRaw::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
     hints.collectProcessCpuLoad(mProcess);
 }
@@ -374,7 +374,7 @@ void MachineRamUsage::init(ULONG period, ULONG length)
     mUsed->init(mLength);
 }
 
-void MachineRamUsage::preCollect(CollectorHints& hints, uint64_t iTick)
+void MachineRamUsage::preCollect(CollectorHints& hints, uint64_t /* iTick */)
 {
     hints.collectProcessRamUsage(mProcess);
 }
