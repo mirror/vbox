@@ -87,7 +87,7 @@ typedef struct VSCSILUNINT
 typedef struct VSCSIIOMEMCTX
 {
     /** Pointer to the scatter/gather list. */
-    PCPDMDATASEG   paDataSeg;
+    PCRTSGSEG      paDataSeg;
     /** Number of segments. */
     size_t         cSegments;
     /** Current segment we are in. */
@@ -141,7 +141,7 @@ typedef struct VSCSIIOREQINT
     /** Number of segments. */
     unsigned            cSeg;
     /** Segment array. */
-    PCPDMDATASEG        paSeg;
+    PCRTSGSEG           paSeg;
 } VSCSIIOREQINT;
 
 /**
@@ -206,7 +206,7 @@ void vscsiDeviceReqComplete(PVSCSIDEVICEINT pVScsiDevice, PVSCSIREQINT pVScsiReq
  * @param   paDataSeg    Pointer to the S/G list.
  * @param   cSegments    Number of segments in the S/G list.
  */
-void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCPDMDATASEG paDataSeg, size_t cSegments);
+void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCRTSGSEG paDataSeg, size_t cSegments);
 
 /**
  * Return a buffer from the I/O memory context.

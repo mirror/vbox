@@ -113,7 +113,7 @@ typedef struct PDMACTESTFILETASK
     /** Start offset. */
     RTFOFF                      off;
     /** Data segment */
-    PDMDATASEG                  DataSeg;
+    RTSGSEG                     DataSeg;
     /** Task handle. */
     PPDMASYNCCOMPLETIONTASK     hTask;
 } PDMACTESTFILETASK, *PPDMACTESTFILETASK;

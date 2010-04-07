@@ -33,6 +33,7 @@
 
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
+#include <iprt/sg.h>
 
 RT_C_DECLS_BEGIN
 
@@ -221,7 +222,7 @@ VBOXDDU_DECL(int) VSCSIDeviceReqEnqueue(VSCSIDEVICE hVScsiDevice, VSCSIREQ hVScs
 VBOXDDU_DECL(int) VSCSIDeviceReqCreate(VSCSIDEVICE hVScsiDevice, PVSCSIREQ phVScsiReq,
                                        uint32_t iLun, uint8_t *pbCDB, size_t cbCDB,
                                        size_t cbSGList, unsigned cSGListEntries,
-                                       PPDMDATASEG paSGList, uint8_t *pbSense,
+                                       PCRTSGSEG paSGList, uint8_t *pbSense,
                                        size_t cbSense, void *pvVScsiReqUser);
 
 /**
@@ -279,7 +280,7 @@ VBOXDDU_DECL(VSCSIIOREQTXDIR) VSCSIIoReqTxDirGet(VSCSIIOREQ hVScsiIoReq);
  */
 VBOXDDU_DECL(int) VSCSIIoReqParamsGet(VSCSIIOREQ hVScsiIoReq, uint64_t *puOffset,
                                       size_t *pcbTransfer, unsigned *pcSeg,
-                                      size_t *pcbSeg, PCPDMDATASEG *ppaSeg);
+                                      size_t *pcbSeg, PCRTSGSEG *ppaSeg);
 
 RT_C_DECLS_END
 

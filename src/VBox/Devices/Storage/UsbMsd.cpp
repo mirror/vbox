@@ -142,7 +142,7 @@ typedef struct USBMSDREQ
     /** The current SCSI request. */
     PDMSCSIREQUEST      ScsiReq;
     /** The scatter-gather segment used by ScsiReq for describing pbBuf. */
-    PDMDATASEG          ScsiReqSeg;
+    RTSGSEG             ScsiReqSeg;
     /** The sense buffer for the current SCSI request. */
     uint8_t             ScsiReqSense[64];
     /** The status of a completed SCSI request. */

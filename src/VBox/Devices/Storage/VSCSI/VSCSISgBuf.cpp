@@ -26,7 +26,7 @@
 #include "VSCSIInternal.h"
 
 
-void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCPDMDATASEG paDataSeg, size_t cSegments)
+void vscsiIoMemCtxInit(PVSCSIIOMEMCTX pIoMemCtx, PCRTSGSEG paDataSeg, size_t cSegments)
 {
     if (RT_UNLIKELY(!cSegments))
     {

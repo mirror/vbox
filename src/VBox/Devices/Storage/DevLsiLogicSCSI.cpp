@@ -330,7 +330,7 @@ typedef struct LSILOGICTASKSTATE
     /** How many times the list was too big. */
     uint32_t                   cSGListTooBig;
     /** Pointer to the first entry of the scatter gather list. */
-    PPDMDATASEG                pSGListHead;
+    PRTSGSEG                   pSGListHead;
     /** How many entries would fit into the sg info list. */
     uint32_t                   cSGInfoSize;
     /** Number of entries for the information entries. */
@@ -1291,7 +1291,7 @@ PDMBOTHCBDECL(int) lsilogicDiagnosticRead(PPDMDEVINS pDevIns, void *pvUser,
 static void lsilogicScatterGatherListCopyFromBuffer(PLSILOGICTASKSTATE pTaskState, void *pvBuf, size_t cbCopy)
 {
     unsigned cSGEntry = 0;
-    PPDMDATASEG pSGEntry = &pTaskState->pSGListHead[cSGEntry];
+    PRTSGSEG pSGEntry = &pTaskState->pSGListHead[cSGEntry];
     uint8_t *pu8Buf = (uint8_t *)pvBuf;
 
     while (cSGEntry < pTaskState->cSGListEntries)
@@ -1361,7 +1361,7 @@ static int lsilogicScatterGatherListAllocate(PLSILOGICTASKSTATE pTaskState, uint
             RTMemFree(pTaskState->pSGListHead);
 
         /* Allocate R3 scatter gather list. */
-        pTaskState->pSGListHead = (PPDMDATASEG)RTMemAllocZ(cSGList * sizeof(PDMDATASEG));
+        pTaskState->pSGListHead = (PRTSGSEG)RTMemAllocZ(cSGList * sizeof(RTSGSEG));
         if (!pTaskState->pSGListHead)
             return VERR_NO_MEMORY;
 
@@ -1444,7 +1444,7 @@ static int lsilogicScatterGatherListAllocate(PLSILOGICTASKSTATE pTaskState, uint
 
     /* Make debugging easier. */
 #ifdef DEBUG
-    memset(pTaskState->pSGListHead, 0, pTaskState->cSGListSize * sizeof(PDMDATASEG));
+    memset(pTaskState->pSGListHead, 0, pTaskState->cSGListSize * sizeof(RTSGSEG));
     memset(pTaskState->paSGEntries, 0, pTaskState->cSGInfoSize * sizeof(LSILOGICTASKSTATESGENTRY));
     if (pTaskState->pvBufferUnaligned)
         memset(pTaskState->pvBufferUnaligned, 0, pTaskState->cbBufferUnaligned);
@@ -1711,7 +1711,7 @@ static int lsilogicScatterGatherListCreate(PLSILOGICSCSI pLsiLogic, PLSILOGICTAS
     }
 
     uint32_t    cSGEntries;
-    PPDMDATASEG pSGEntryCurr = pTaskState->pSGListHead;
+    PRTSGSEG    pSGEntryCurr = pTaskState->pSGListHead;
     pSGInfoCurr              = pTaskState->paSGEntries;
 
     /* Initialize first entry. */

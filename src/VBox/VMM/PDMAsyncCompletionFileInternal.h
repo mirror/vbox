@@ -402,6 +402,8 @@ typedef struct PDMACFILEENDPOINTCACHE
     /** Node of the cache endpoint list. */
     RTLISTNODE                           NodeCacheEndpoint;
 #ifdef VBOX_WITH_STATISTICS
+    /** Alignment */
+    bool                                 afAlignment[3];
     /** Number of times a write was deferred because the cache entry was still in progress */
     STAMCOUNTER                          StatWriteDeferred;
 #endif
@@ -519,10 +521,6 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
      * data is appended.
      */
     volatile uint64_t                      cbFile;
-    /** Flag whether caching is enabled for this file. */
-    bool                                   fCaching;
-    /** Flag whether the file was opened readonly. */
-    bool                                   fReadonly;
     /** List of new tasks. */
     R3PTRTYPE(volatile PPDMACTASKFILE)     pTasksNewHead;
 
@@ -543,22 +541,26 @@ typedef struct PDMASYNCCOMPLETIONENDPOINTFILE
     /** Flag whether a flush request is currently active */
     PPDMACTASKFILE                         pFlushReq;
 
-    /** Event sempahore for blocking external events.
-     * The caller waits on it until the async I/O manager
-     * finished processing the event. */
-    RTSEMEVENT                             EventSemBlock;
-    /** Flag whether a blocking event is pending and needs
-     * processing by the I/O manager. */
-    bool                                   fBlockingEventPending;
-    /** Blocking event type */
-    PDMACEPFILEBLOCKINGEVENT               enmBlockingEvent;
-
 #ifdef VBOX_WITH_STATISTICS
     /** Time spend in a read. */
     STAMPROFILEADV                         StatRead;
     /** Time spend in a write. */
     STAMPROFILEADV                         StatWrite;
 #endif
+
+    /** Event sempahore for blocking external events.
+     * The caller waits on it until the async I/O manager
+     * finished processing the event. */
+    RTSEMEVENT                             EventSemBlock;
+    /** Flag whether caching is enabled for this file. */
+    bool                                   fCaching;
+    /** Flag whether the file was opened readonly. */
+    bool                                   fReadonly;
+    /** Flag whether a blocking event is pending and needs
+     * processing by the I/O manager. */
+    bool                                   fBlockingEventPending;
+    /** Blocking event type */
+    PDMACEPFILEBLOCKINGEVENT               enmBlockingEvent;
 
     /** Additional data needed for the event types. */
     union
@@ -639,7 +641,7 @@ typedef struct PDMACTASKFILE
     /** Start offset */
     RTFOFF                               Off;
     /** Data segment. */
-    PDMDATASEG                           DataSeg;
+    RTSGSEG                              DataSeg;
     /** Flag whether this segment uses a bounce buffer
      * because the provided buffer doesn't meet host requirements. */
     bool                                 fBounceBuffer;
@@ -697,10 +699,10 @@ int pdmacFileEpCacheInit(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
 void pdmacFileEpCacheDestroy(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint);
 
 int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
-                         RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                         RTFOFF off, PCRTSGSEG paSegments, size_t cSegments,
                          size_t cbRead);
 int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
-                          RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                          RTFOFF off, PCRTSGSEG paSegments, size_t cSegments,
                           size_t cbWrite);
 int pdmacFileEpCacheFlush(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask);
 

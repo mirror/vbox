@@ -283,7 +283,7 @@ void pdmacFileEpTaskCompleted(PPDMACTASKFILE pTask, void *pvUser, int rc)
 
 int pdmacFileEpTaskInitiate(PPDMASYNCCOMPLETIONTASK pTask,
                             PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                            PCPDMDATASEG paSegments, size_t cSegments,
+                            PCRTSGSEG paSegments, size_t cSegments,
                             size_t cbTransfer, PDMACTASKFILETRANSFER enmTransfer)
 {
     int rc = VINF_SUCCESS;
@@ -967,7 +967,7 @@ static int pdmacFileEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoint)
 
 static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
                            PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                           PCPDMDATASEG paSegments, size_t cSegments,
+                           PCRTSGSEG paSegments, size_t cSegments,
                            size_t cbRead)
 {
     int rc = VINF_SUCCESS;
@@ -989,7 +989,7 @@ static int pdmacFileEpRead(PPDMASYNCCOMPLETIONTASK pTask,
 
 static int pdmacFileEpWrite(PPDMASYNCCOMPLETIONTASK pTask,
                             PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                            PCPDMDATASEG paSegments, size_t cSegments,
+                            PCRTSGSEG paSegments, size_t cSegments,
                             size_t cbWrite)
 {
     int rc = VINF_SUCCESS;

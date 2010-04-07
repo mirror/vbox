@@ -34,6 +34,7 @@
 #include <iprt/string.h>
 #include <iprt/mem.h>
 #include <iprt/net.h>
+#include <iprt/sg.h>
 #include <VBox/cdefs.h>
 #include <VBox/types.h>
 #include <VBox/err.h>
@@ -588,7 +589,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   ppTask         Where to store the opaque task handle.
      */
     DECLR3CALLBACKMEMBER(int, pfnReadAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                             PCPDMDATASEG paSegments, size_t cSegments,
+                                             PCRTSGSEG paSegments, size_t cSegments,
                                              size_t cbRead, void *pvCompletion,
                                              void **ppTask));
 
@@ -606,7 +607,7 @@ typedef struct VDINTERFACEASYNCIO
      * @param   ppTask         Where to store the opaque task handle.
      */
     DECLR3CALLBACKMEMBER(int, pfnWriteAsync, (void *pvUser, void *pStorage, uint64_t uOffset,
-                                              PCPDMDATASEG paSegments, size_t cSegments,
+                                              PCRTSGSEG paSegments, size_t cSegments,
                                               size_t cbWrite, void *pvCompletion,
                                               void **ppTask));
 
@@ -2187,7 +2188,7 @@ VBOXDDU_DECL(int) VDImageIsAsyncIOSupported(PVBOXHDD pDisk, unsigned nImage, boo
  * @param   pvUser          User data which is passed on completion
  */
 VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
-                              PPDMDATASEG paSeg, unsigned cSeg,
+                              PCRTSGSEG paSeg, unsigned cSeg,
                               PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                               void *pvUser1, void *pvUser2);
 
@@ -2205,7 +2206,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
  * @param   pvUser          User data which is passed on completion.
  */
 VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
-                               PPDMDATASEG paSeg, unsigned cSeg,
+                               PCRTSGSEG paSeg, unsigned cSeg,
                                PFNVDASYNCTRANSFERCOMPLETE pfnComplete,
                                void *pvUser1, void *pvUser2);
 

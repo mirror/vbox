@@ -34,6 +34,7 @@
 #include <VBox/types.h>
 #include <VBox/err.h>
 #include <iprt/assert.h>
+#include <iprt/sg.h>
 
 RT_C_DECLS_BEGIN
 
@@ -257,7 +258,7 @@ VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoin
  * @param   ppTask          Where to store the task handle on success.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                                          PCPDMDATASEG paSegments, size_t cSegments,
+                                          PCRTSGSEG paSegments, unsigned cSegments,
                                           size_t cbRead, void *pvUser,
                                           PPPDMASYNCCOMPLETIONTASK ppTask);
 
@@ -275,7 +276,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
  * @param   ppTask          Where to store the task handle on success.
  */
 VMMR3DECL(int) PDMR3AsyncCompletionEpWrite(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                                           PCPDMDATASEG paSegments, size_t cSegments,
+                                           PCRTSGSEG paSegments, unsigned cSegments,
                                            size_t cbWrite, void *pvUser,
                                            PPPDMASYNCCOMPLETIONTASK ppTask);
 

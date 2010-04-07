@@ -35,6 +35,7 @@
 #include <iprt/string.h>
 #include <iprt/tcp.h>
 #include <iprt/semaphore.h>
+#include <iprt/sg.h>
 
 #ifdef VBOX_WITH_INIP
 /* All lwip header files are not C++ safe. So hack around this. */
@@ -387,7 +388,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadSync(void *pvUser, void *pStorage, uint
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
-    PDMDATASEG DataSeg;
+    RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
     Assert(!pStorageBackend->fSyncIoPending);
@@ -419,7 +420,7 @@ static DECLCALLBACK(int) drvvdAsyncIOWriteSync(void *pvUser, void *pStorage, uin
 {
     PVBOXDISK pThis = (PVBOXDISK)pvUser;
     PDRVVDSTORAGEBACKEND pStorageBackend = (PDRVVDSTORAGEBACKEND)pStorage;
-    PDMDATASEG DataSeg;
+    RTSGSEG DataSeg;
     PPDMASYNCCOMPLETIONTASK pTask;
 
     Assert(!pStorageBackend->fSyncIoPending);
@@ -472,7 +473,7 @@ static DECLCALLBACK(int) drvvdAsyncIOFlushSync(void *pvUser, void *pStorage)
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uint64_t uOffset,
-                                               PCPDMDATASEG paSegments, size_t cSegments,
+                                               PCRTSGSEG paSegments, size_t cSegments,
                                                size_t cbRead, void *pvCompletion,
                                                void **ppTask)
 {
@@ -488,7 +489,7 @@ static DECLCALLBACK(int) drvvdAsyncIOReadAsync(void *pvUser, void *pStorage, uin
 }
 
 static DECLCALLBACK(int) drvvdAsyncIOWriteAsync(void *pvUser, void *pStorage, uint64_t uOffset,
-                                                PCPDMDATASEG paSegments, size_t cSegments,
+                                                PCRTSGSEG paSegments, size_t cSegments,
                                                 size_t cbWrite, void *pvCompletion,
                                                 void **ppTask)
 {
@@ -999,7 +1000,7 @@ static void drvvdAsyncReqComplete(void *pvUser1, void *pvUser2)
 }
 
 static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                        PPDMDATASEG paSeg, unsigned cSeg,
+                                        PCRTSGSEG paSeg, unsigned cSeg,
                                         size_t cbRead, void *pvUser)
 {
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbRead=%d\n pvUser=%#p", __FUNCTION__,
@@ -1012,7 +1013,7 @@ static DECLCALLBACK(int) drvvdStartRead(PPDMIMEDIAASYNC pInterface, uint64_t uOf
 }
 
 static DECLCALLBACK(int) drvvdStartWrite(PPDMIMEDIAASYNC pInterface, uint64_t uOffset,
-                                         PPDMDATASEG paSeg, unsigned cSeg,
+                                         PCRTSGSEG paSeg, unsigned cSeg,
                                          size_t cbWrite, void *pvUser)
 {
      LogFlow(("%s: uOffset=%#llx paSeg=%#p cSeg=%u cbWrite=%d\n pvUser=%#p", __FUNCTION__,
