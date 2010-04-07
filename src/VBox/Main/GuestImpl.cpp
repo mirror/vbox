@@ -254,7 +254,8 @@ STDMETHODIMP Guest::COMSETTER(StatisticsUpdateInterval)(ULONG aUpdateInterval)
 
 STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, ULONG *aCpuIdle,
                                           ULONG *aMemTotal, ULONG *aMemFree, ULONG *aMemBalloon, 
-                                          ULONG *aMemCache, ULONG *aPageTotal, ULONG *aMemFreeTotal)
+                                          ULONG *aMemCache, ULONG *aPageTotal, 
+                                          ULONG *aMemAllocTotal, ULONG *aMemFreeTotal, ULONG *aMemBalloonTotal)
 {
     CheckComArgOutPointerValid(aCpuUser);
     CheckComArgOutPointerValid(aCpuKernel);
@@ -282,12 +283,16 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
     {
-        unsigned uFreeTotal;
+        uint64_t uFreeTotal, uAllocTotal, uBalloonedTotal;
         *aMemFreeTotal = 0;
-        int rc = PGMR3QueryFreeMemory(pVM.raw(), &uFreeTotal);
+        int rc = PGMR3QueryVMMMemoryStats(pVM.raw(), &uAllocTotal, &uFreeTotal, &uBalloonedTotal);
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
-            *aMemFreeTotal = uFreeTotal;
+        {
+            *aMemAllocTotal   = uAllocTotal / _1K;  /* bytes -> KB */
+            *aMemFreeTotal    = uFreeTotal / _1K;
+            *aMemBalloonTotal = uBalloonedTotal / _1K;
+        }
     }
     else
         *aMemFreeTotal = 0;

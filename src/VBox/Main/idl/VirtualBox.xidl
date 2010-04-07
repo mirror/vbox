@@ -8352,7 +8352,7 @@
 
   <interface
      name="IGuest" extends="$unknown"
-     uuid="54ebdc27-89ca-4bf8-a58a-48077679a3af"
+     uuid="8cf03bf9-7478-42de-add8-10b2af75a06d"
      wsmap="managed"
      >
     <desc>
@@ -8449,8 +8449,14 @@
       <param name="pagedTotal" type="unsigned long" dir="out"> 
          <desc>Total amount of space in the page file</desc> 
       </param> 
+      <param name="memAllocTotal" type="unsigned long" dir="out"> 
+         <desc>Total amount of memory allocated by the hypervisor</desc> 
+      </param> 
       <param name="memFreeTotal" type="unsigned long" dir="out"> 
-         <desc>Total amount of free memory available in VMMR0</desc> 
+         <desc>Total amount of free memory available in the hypervisor</desc> 
+      </param> 
+      <param name="memBalloonTotal" type="unsigned long" dir="out"> 
+         <desc>Total amount of memory ballooned by the hypervisor</desc> 
       </param> 
     </method> 
 

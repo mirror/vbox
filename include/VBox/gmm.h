@@ -398,20 +398,24 @@ GMMR0DECL(int)  GMMR0BalloonedPagesReq(PVM pVM, VMCPUID idCpu, PGMMBALLOONEDPAGE
 
 
 /**
- * Request buffer for GMMR0QueryTotalFreePagesReq / VMMR0_DO_GMM_QUERY_TOTAL_FREE_PAGES.
- * @see GMMR0QueryTotalFreePagesReq.
+ * Request buffer for GMMR0QueryVMMMemoryStatsReq / VMMR0_DO_GMM_QUERY_VMM_MEM_STATS.
+ * @see GMMR0QueryVMMMemoryStatsReq.
  */
-typedef struct GMMFREEQUERYREQ
+typedef struct GMMMEMSTATSREQ
 {
     /** The header. */
     SUPVMMR0REQHDR      Hdr;
+    /** The number of allocated pages (out). */
+    uint64_t            cAllocPages;
     /** The number of free pages (out). */
     uint64_t            cFreePages;
-} GMMFREEQUERYREQ;
-/** Pointer to a GMMR0QueryTotalFreePagesReq / VMMR0_DO_GMM_QUERY_TOTAL_FREE_PAGES request buffer. */
-typedef GMMFREEQUERYREQ *PGMMFREEQUERYREQ;
+    /** The number of ballooned pages (out). */
+    uint64_t            cBalloonedPages;
+} GMMMEMSTATSREQ;
+/** Pointer to a GMMR0QueryVMMMemoryStatsReq / VMMR0_DO_GMM_QUERY_VMM_MEM_STATS request buffer. */
+typedef GMMMEMSTATSREQ *PGMMMEMSTATSREQ;
 
-GMMR0DECL(int)  GMMR0QueryTotalFreePagesReq(PVM pVM, PGMMFREEQUERYREQ pReq);
+GMMR0DECL(int)  GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq);
 
 /**
  * Request buffer for GMMR0MapUnmapChunkReq / VMMR0_DO_GMM_MAP_UNMAP_CHUNK.
@@ -472,7 +476,7 @@ GMMR3DECL(int)  GMMR3FreeLargePage(PVM pVM,  uint32_t idPage);
 GMMR3DECL(int)  GMMR3MapUnmapChunk(PVM pVM, uint32_t idChunkMap, uint32_t idChunkUnmap, PRTR3PTR ppvR3);
 GMMR3DECL(int)  GMMR3SeedChunk(PVM pVM, RTR3PTR pvR3);
 GMMR3DECL(int)  GMMR3BalloonedPages(PVM pVM, GMMBALLOONACTION enmAction, uint32_t cBalloonedPages);
-GMMR3DECL(int)  GMMR3QueryTotalFreePages(PVM pVM, uint64_t *pcTotalFreePages);
+GMMR3DECL(int)  GMMR3QueryVMMMemoryStats(PVM pVM, uint64_t *pcTotalAllocPages, uint64_t *pcTotalFreePages, uint64_t *pcTotalBalloonPages);
 /** @} */
 #endif /* IN_RING3 */
 
