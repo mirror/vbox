@@ -83,7 +83,17 @@ HRESULT Guest::init (Console *aParent)
     ULONG aMemoryBalloonSize;
     HRESULT ret = mParent->machine()->COMGETTER(MemoryBalloonSize)(&aMemoryBalloonSize);
     if (ret == S_OK)
+    {
         mMemoryBalloonSize = aMemoryBalloonSize;
+
+        if (mMemoryBalloonSize)
+        {
+            /* forward the information to the VMM device */
+            VMMDev *vmmDev = mParent->getVMMDev();
+            if (vmmDev)
+                vmmDev->getVMMDevPort()->pfnSetMemoryBalloon(vmmDev->getVMMDevPort(), aMemoryBalloonSize);
+        }
+    }
     else
         mMemoryBalloonSize = 0;                     /* Default is no ballooning */
 
