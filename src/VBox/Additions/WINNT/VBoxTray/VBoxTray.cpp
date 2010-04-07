@@ -404,7 +404,7 @@ void WINAPI VBoxServiceStart(void)
     ndata.uFlags           = NIF_ICON | NIF_MESSAGE | NIF_TIP;
     ndata.uCallbackMessage = WM_VBOX_TRAY;
     ndata.hIcon            = LoadIcon(gInstance, MAKEINTRESOURCE(IDI_VIRTUALBOX));
-    sprintf(ndata.szTip, "Sun VirtualBox Guest Additions %d.%d.%dr%d", VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
+    sprintf(ndata.szTip, "%s Guest Additions %d.%d.%dr%d", VBOX_PRODUCT, VBOX_VERSION_MAJOR, VBOX_VERSION_MINOR, VBOX_VERSION_BUILD, VBOX_SVN_REV);
     Log(("VBoxTray: ndata.hWnd %08X, ndata.hIcon = %p\n", ndata.hWnd, ndata.hIcon));
 
     /* Boost thread priority to make sure we wake up early for seamless window notifications (not sure if it actually makes any difference though) */
