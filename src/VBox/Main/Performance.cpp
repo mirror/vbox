@@ -287,6 +287,9 @@ void HostRamUsage::init(ULONG period, ULONG length)
     mTotal->init(mLength);
     mUsed->init(mLength);
     mAvailable->init(mLength);
+    mAllocVMM->init(mLength);
+    mFreeVMM->init(mLength);
+    mBalloonVMM->init(mLength);
 }
 
 void HostRamUsage::preCollect(CollectorHints& hints, uint64_t iTick)

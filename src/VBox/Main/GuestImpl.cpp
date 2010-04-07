@@ -271,14 +271,14 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    *aCpuUser = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER] / (_4K/_1K);   /* page (4K) -> 1 KB units */
-    *aCpuKernel = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL] / (_4K/_1K);
-    *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE] / (_4K/_1K);
-    *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] / (_4K/_1K);
-    *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] / (_4K/_1K);
-    *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] / (_4K/_1K);
-    *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] / (_4K/_1K);
-    *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] / (_4K/_1K);
+    *aCpuUser = mCurrentGuestStat[GUESTSTATTYPE_CPUUSER] * (_4K/_1K);   /* page (4K) -> 1 KB units */
+    *aCpuKernel = mCurrentGuestStat[GUESTSTATTYPE_CPUKERNEL] * (_4K/_1K);
+    *aCpuIdle = mCurrentGuestStat[GUESTSTATTYPE_CPUIDLE] * (_4K/_1K);
+    *aMemTotal = mCurrentGuestStat[GUESTSTATTYPE_MEMTOTAL] * (_4K/_1K);
+    *aMemFree = mCurrentGuestStat[GUESTSTATTYPE_MEMFREE] * (_4K/_1K);
+    *aMemBalloon = mCurrentGuestStat[GUESTSTATTYPE_MEMBALLOON] * (_4K/_1K);
+    *aMemCache = mCurrentGuestStat[GUESTSTATTYPE_MEMCACHE] * (_4K/_1K);
+    *aPageTotal = mCurrentGuestStat[GUESTSTATTYPE_PAGETOTAL] * (_4K/_1K);
 
     Console::SafeVMPtr pVM (mParent);
     if (pVM.isOk())
@@ -289,9 +289,9 @@ STDMETHODIMP Guest::InternalGetStatistics(ULONG *aCpuUser, ULONG *aCpuKernel, UL
         AssertRC(rc);
         if (rc == VINF_SUCCESS)
         {
-            *aMemAllocTotal   = uAllocTotal / _1K;  /* bytes -> KB */
-            *aMemFreeTotal    = uFreeTotal / _1K;
-            *aMemBalloonTotal = uBalloonedTotal / _1K;
+            *aMemAllocTotal   = (ULONG)(uAllocTotal / _1K);  /* bytes -> KB */
+            *aMemFreeTotal    = (ULONG)(uFreeTotal / _1K);
+            *aMemBalloonTotal = (ULONG)(uBalloonedTotal / _1K);
         }
     }
     else
