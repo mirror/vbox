@@ -30,6 +30,7 @@
 #include "slirp/ctl.h"
 #include <VBox/pdmdrv.h>
 #include <VBox/pdmnetifs.h>
+#include <VBox/pdmnetinline.h>
 #include <iprt/assert.h>
 #include <iprt/file.h>
 #include <iprt/mem.h>
@@ -386,8 +387,16 @@ static void drvNATFreeSgBuf(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     pSgBuf->fFlags = 0;
     if (pSgBuf->pvAllocator)
     {
+        Assert(!pSgBuf->pvUser);
         slirp_ext_m_free(pThis->pNATState, (struct mbuf *)pSgBuf->pvAllocator);
         pSgBuf->pvAllocator = NULL;
+    }
+    else if (pSgBuf->pvUser)
+    {
+        RTMemFree(pSgBuf->aSegs[0].pvSeg);
+        pSgBuf->aSegs[0].pvSeg = NULL;
+        RTMemFree(pSgBuf->pvUser);
+        pSgBuf->pvUser = NULL;
     }
     RTMemFree(pSgBuf);
 }
@@ -405,8 +414,39 @@ static void drvNATSendWorker(PDRVNAT pThis, PPDMSCATTERGATHER pSgBuf)
     if (pThis->enmLinkState == PDMNETWORKLINKSTATE_UP)
     {
         struct mbuf *m = (struct mbuf *)pSgBuf->pvAllocator;
-        pSgBuf->pvAllocator = NULL;
-        slirp_input(pThis->pNATState, m, pSgBuf->cbUsed);
+        if (m)
+        {
+            /*
+             * A normal frame.
+             */
+            pSgBuf->pvAllocator = NULL;
+            slirp_input(pThis->pNATState, m, pSgBuf->cbUsed);
+        }
+        else
+        {
+            /*
+             * GSO frame, need to segment it.
+             */
+            /** @todo Make the NAT engine grok large frames?  Could be more efficient... */
+            uint8_t const  *pbFrame = (uint8_t const *)pSgBuf->aSegs[0].pvSeg;
+            PCPDMNETWORKGSO pGso    = (PCPDMNETWORKGSO)pSgBuf->pvUser;
+            uint32_t const  cSegs   = PDMNetGsoCalcSegmentCount(pGso, pSgBuf->cbUsed);  Assert(cSegs > 1);
+            for (size_t iSeg = 0; iSeg < cSegs; iSeg++)
+            {
+                size_t cbSeg;
+                void  *pvSeg;
+                m = slirp_ext_m_get(pThis->pNATState, pGso->cbHdrs + pGso->cbMaxSeg, &pvSeg, &cbSeg);
+                if (!m)
+                    break;
+
+                uint32_t cbPayload;
+                uint32_t offPayload = PDMNetGsoCarveSegment(pGso, pbFrame, pSgBuf->cbUsed,
+                                                            iSeg, cSegs, (uint8_t *)pvSeg, &cbPayload);
+                memcpy((uint8_t *)pvSeg + pGso->cbHdrs, pbFrame + offPayload, cbPayload);
+
+                slirp_input(pThis->pNATState, m, cbPayload + pGso->cbHdrs);
+            }
+        }
     }
     drvNATFreeSgBuf(pThis, pSgBuf);
 
@@ -420,7 +460,6 @@ static DECLCALLBACK(int) drvNATNetworkUp_AllocBuf(PPDMINETWORKUP pInterface, siz
                                                   PCPDMNETWORKGSO pGso, PPPDMSCATTERGATHER ppSgBuf)
 {
     PDRVNAT pThis = RT_FROM_MEMBER(pInterface, DRVNAT, INetworkUp);
-AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
 
     /*
      * Drop the incoming frame if the NAT thread isn't running.
@@ -437,13 +476,32 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
     PPDMSCATTERGATHER pSgBuf = (PPDMSCATTERGATHER)RTMemAlloc(sizeof(*pSgBuf));
     if (!pSgBuf)
         return VERR_NO_MEMORY;
-    pSgBuf->pvAllocator = slirp_ext_m_get(pThis->pNATState, cbMin,
-                                          &pSgBuf->aSegs[0].pvSeg, &pSgBuf->aSegs[0].cbSeg);
-    if (!pSgBuf->pvAllocator)
+    if (!pGso)
     {
-        RTMemFree(pSgBuf);
-        /** @todo Implement the VERR_TRY_AGAIN sematics. */
-        return VERR_NO_MEMORY;
+        pSgBuf->pvUser      = NULL;
+        pSgBuf->pvAllocator = slirp_ext_m_get(pThis->pNATState, cbMin,
+                                              &pSgBuf->aSegs[0].pvSeg, &pSgBuf->aSegs[0].cbSeg);
+        if (!pSgBuf->pvAllocator)
+        {
+            RTMemFree(pSgBuf);
+            /** @todo Implement the VERR_TRY_AGAIN semantics. */
+            return VERR_NO_MEMORY;
+        }
+    }
+    else
+    {
+        pSgBuf->pvUser      = RTMemDup(pGso, sizeof(*pGso));
+        pSgBuf->pvAllocator = NULL;
+        pSgBuf->aSegs[0].cbSeg = RT_ALIGN_Z(cbMin, 16);
+        pSgBuf->aSegs[0].pvSeg = RTMemAlloc(pSgBuf->aSegs[0].cbSeg);
+        if (!pSgBuf->pvUser || !pSgBuf->aSegs[0].pvSeg)
+        {
+            RTMemFree(pSgBuf->aSegs[0].pvSeg);
+            RTMemFree(pSgBuf->pvUser);
+            RTMemFree(pSgBuf);
+            /** @todo Implement the VERR_TRY_AGAIN semantics. */
+            return VERR_NO_MEMORY;
+        }
     }
 
     /*
@@ -452,9 +510,11 @@ AssertReturn(!pGso, VERR_NOT_IMPLEMENTED); /** @todo GSO buffer allocation. */
     pSgBuf->fFlags      = PDMSCATTERGATHER_FLAGS_MAGIC | PDMSCATTERGATHER_FLAGS_OWNER_1;
     pSgBuf->cbUsed      = 0;
     pSgBuf->cbAvailable = pSgBuf->aSegs[0].cbSeg;
-    pSgBuf->pvUser      = NULL;
     pSgBuf->cSegs       = 1;
 
+#if 1 /* poison */
+    memset(pSgBuf->aSegs[0].pvSeg, 'F', pSgBuf->aSegs[0].cbSeg);
+#endif
     *ppSgBuf = pSgBuf;
     return VINF_SUCCESS;
 }
