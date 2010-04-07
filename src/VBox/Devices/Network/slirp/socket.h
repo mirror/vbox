@@ -72,12 +72,11 @@ struct socket
 #endif
 #ifndef RT_OS_WINDOWS
     int so_poll_index;
-#else /* !RT_OS_WINDOWS */
+#endif /* !RT_OS_WINDOWS */
     /*
-     * FD_CLOSE event has been occurred on socket
+     * FD_CLOSE/POLLHUP event has been occurred on socket
      */
     int so_close;
-#endif /* RT_OS_WINDOWS */
 
     void (* so_timeout)(PNATState pData, struct socket *so, void *arg);
     void *so_timeout_arg;

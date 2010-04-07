@@ -55,12 +55,12 @@
 
 # define DO_POLL_EVENTS(rc, error, so, events, label) do {} while (0)
 
-# define DO_CHECK_FD_SET(so, events, fdset)                        \
-     (   ((so)->so_poll_index != -1)                               \
-      && ((so)->so_poll_index <= ndfs)                             \
-      && ((so)->s == polls[so->so_poll_index].fd)                  \
-      && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)))
-
+#  define DO_CHECK_FD_SET(so, events, fdset)                        \
+      (   ((so)->so_poll_index != -1)                               \
+       && ((so)->so_poll_index <= ndfs)                             \
+       && ((so)->s == polls[so->so_poll_index].fd)                  \
+       && (polls[(so)->so_poll_index].revents & N_(fdset ## _poll)) \
+       && !(polls[(so)->so_poll_index].revents & (POLLERR|POLLNVAL)))
   /* specific for Unix API */
 # define DO_UNIX_CHECK_FD_SET(so, events, fdset) DO_CHECK_FD_SET((so), (events), fdset)
   /* specific for Windows Winsock API */
@@ -130,6 +130,9 @@
 # define xfds_win         FD_OOB
 # define xfds_win_bit     FD_OOB_BIT
 # define closefds_win     FD_CLOSE
+# define closefds_win_bit FD_CLOSE_BIT
+
+# define closefds_win FD_CLOSE
 # define closefds_win_bit FD_CLOSE_BIT
 
 # define DO_CHECK_FD_SET(so, events, fdset)  \
@@ -1124,7 +1127,14 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
          */
 
         /* out-of-band data */
-        if (CHECK_FD_SET(so, NetworkEvents, xfds))
+        if (    CHECK_FD_SET(so, NetworkEvents, xfds)
+#ifdef RT_OS_DARWIN
+            /* Darwin and probably BSD hosts generates POLLPRI|POLLHUB event on receiving TCP.flags.{ACK|URG|FIN} this
+             * combination on other Unixs hosts doesn't enter to this branch 
+             */
+            &&  !CHECK_FD_SET(so, NetworkEvents, closefds)
+#endif
+        )
         {
             sorecvoob(pData, so);
         }
@@ -1141,9 +1151,7 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             if (so->so_state & SS_FACCEPTCONN)
             {
                 TCP_CONNECT(pData, so);
-#if defined(RT_OS_WINDOWS)
                 if (!CHECK_FD_SET(so, NetworkEvents, closefds))
-#endif
                     CONTINUE(tcp);
             }
 
@@ -1153,7 +1161,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 TCP_OUTPUT(pData, sototcpcb(so));
         }
 
-#if defined(RT_OS_WINDOWS)
         /*
          * Check for FD_CLOSE events.
          * in some cases once FD_CLOSE engaged on socket it could be flashed latter (for some reasons)
@@ -1170,13 +1177,15 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
                 if (ret > 0)
                     TCP_OUTPUT(pData, sototcpcb(so));
                 else
+                {
+                    Log2(("%R[natsock] errno %d:%s\n", so, errno, strerror(errno)));
                     break;
+                } 
             }
             /* mark the socket for termination _after_ it was drained */
             so->so_close = 1;
             CONTINUE(tcp);
         }
-#endif
 
         /*
          * Check sockets for writing
@@ -1277,81 +1286,6 @@ void slirp_select_poll(PNATState pData, struct pollfd *polls, int ndfs)
             }
             TCP_INPUT((struct mbuf *)NULL, sizeof(struct ip),so);
         } /* SS_ISFCONNECTING */
-#endif
-#ifndef RT_OS_WINDOWS
-        if (   UNIX_CHECK_FD_SET(so, NetworkEvents, rdhup)
-            || UNIX_CHECK_FD_SET(so, NetworkEvents, rderr))
-        {
-            int err;
-            int inq, outq;
-            int status;
-            socklen_t optlen = sizeof(int);
-            inq = outq = 0;
-            status = getsockopt(so->s, SOL_SOCKET, SO_ERROR, &err, &optlen);
-            if (status != 0)
-                Log(("NAT: can't get error status from %R[natsock]\n", so));
-#ifndef RT_OS_SOLARIS
-            status = ioctl(so->s, FIONREAD, &inq); /* tcp(7) recommends SIOCINQ which is Linux specific */
-            if (status != 0 || status != EINVAL)
-            {
-                /* EINVAL returned if socket in listen state tcp(7)*/
-                Log(("NAT: can't get depth of IN queue status from %R[natsock]\n", so));
-            }
-            status = ioctl(so->s, TIOCOUTQ, &outq); /* SIOCOUTQ see previous comment */
-            if (status != 0)
-                Log(("NAT: can't get depth of OUT queue from %R[natsock]\n", so));
-#else
-                /*
-                 * Solaris has bit different ioctl commands and its handlings
-                 * hint: streamio(7) I_NREAD
-                 */
-#endif
-            if (   so->so_state & SS_ISFCONNECTING
-                || UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
-            {
-                /**
-                 * Check if we need here take care about gracefull connection
-                 * @todo try with proxy server
-                 */
-                if (UNIX_CHECK_FD_SET(so, NetworkEvents, readfds))
-                {
-                    /*
-                     * Never meet inq != 0 or outq != 0, anyway let it stay for a while
-                     * in case it happens we'll able to detect it.
-                     * Give TCP/IP stack wait or expire the socket.
-                     */
-                    Log(("NAT: %R[natsock] err(%d:%s) s(in:%d,out:%d)happens on read I/O, "
-                        "other side close connection \n", so, err, strerror(err), inq, outq));
-                    CONTINUE(tcp);
-                }
-                goto tcp_input_close;
-            }
-            if (   !UNIX_CHECK_FD_SET(so, NetworkEvents, readfds)
-                && !UNIX_CHECK_FD_SET(so, NetworkEvents, writefds)
-                && !UNIX_CHECK_FD_SET(so, NetworkEvents, xfds))
-            {
-                Log(("NAT: system expires the socket %R[natsock] err(%d:%s) s(in:%d,out:%d) happens on non-I/O. ",
-                        so, err, strerror(err), inq, outq));
-                goto tcp_input_close;
-            }
-            Log(("NAT: %R[natsock] we've met(%d:%s) s(in:%d, out:%d) unhandled combination hup (%d) "
-                "rederr(%d) on (r:%d, w:%d, x:%d)\n",
-                    so, err, strerror(err),
-                    inq, outq,
-                    UNIX_CHECK_FD_SET(so, ign, rdhup),
-                    UNIX_CHECK_FD_SET(so, ign, rderr),
-                    UNIX_CHECK_FD_SET(so, ign, readfds),
-                    UNIX_CHECK_FD_SET(so, ign, writefds),
-                    UNIX_CHECK_FD_SET(so, ign, xfds)));
-            /*
-             * Give OS's TCP/IP stack a chance to resolve an issue or expire the socket.
-             */
-            CONTINUE(tcp);
-tcp_input_close:
-            so->so_state = SS_NOFDREF; /*cause connection valid tcp connection termination and socket closing */
-            TCP_INPUT(pData, (struct mbuf *)NULL, sizeof(struct ip), so);
-            CONTINUE(tcp);
-        }
 #endif
         LOOP_LABEL(tcp, so, so_next);
     }
