@@ -1638,7 +1638,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETSG pSG, u
         uint32_t offSegPayload = PDMNetGsoCarveSegment(&pSG->GsoCtx, (uint8_t *)pSG->aSegs[0].pv, pSG->cbTotal, iSeg, cSegs,
                                                        pThis->abGsoHdrs, &cbSegPayload);
 
-        INTNETSgInitTempSegs(&u.SG, cbSegPayload + pSG->GsoCtx.cbHdrs, 2, 2);
+        INTNETSgInitTempSegs(&u.SG, pSG->GsoCtx.cbHdrs + cbSegPayload, 2, 2);
         u.SG.aSegs[0].Phys = NIL_RTHCPHYS;
         u.SG.aSegs[0].pv   = pThis->abGsoHdrs;
         u.SG.aSegs[0].cb   = pSG->GsoCtx.cbHdrs;
@@ -1646,7 +1646,7 @@ static int intnetR0TrunkIfSendGsoFallback(PINTNETTRUNKIF pThis, PINTNETSG pSG, u
         u.SG.aSegs[1].pv   = (uint8_t *)pSG->aSegs[0].pv + offSegPayload;
         u.SG.aSegs[1].cb   = (uint32_t)cbSegPayload;
 
-        int rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, pSG, fDst);
+        int rc = pThis->pIfPort->pfnXmit(pThis->pIfPort, &u.SG, fDst);
         if (RT_FAILURE(rc))
             return rc;
     }
