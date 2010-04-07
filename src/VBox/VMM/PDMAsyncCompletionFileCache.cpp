@@ -42,7 +42,7 @@
 typedef struct PDMIOMEMCTX
 {
     /** Pointer to the scatter/gather list. */
-    PCPDMDATASEG   paDataSeg;
+    PCRTSGSEG      paDataSeg;
     /** Number of segments. */
     size_t         cSegments;
     /** Current segment we are in. */
@@ -117,7 +117,7 @@ DECLINLINE(void) pdmacFileEpCacheEntryRef(PPDMACFILECACHEENTRY pEntry)
  * @param   paDataSeg    Pointer to the S/G list.
  * @param   cSegments    Number of segments in the S/G list.
  */
-DECLINLINE(void) pdmIoMemCtxInit(PPDMIOMEMCTX pIoMemCtx, PCPDMDATASEG paDataSeg, size_t cSegments)
+DECLINLINE(void) pdmIoMemCtxInit(PPDMIOMEMCTX pIoMemCtx, PCRTSGSEG paDataSeg, size_t cSegments)
 {
     AssertMsg((cSegments > 0) && paDataSeg, ("Trying to initialize a I/O memory context without a S/G list\n"));
 
@@ -1710,7 +1710,7 @@ static PPDMACFILECACHEENTRY pdmacFileEpCacheEntryCreate(PPDMASYNCCOMPLETIONENDPO
  * @param    cbRead        Number of bytes to read.
  */
 int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
-                         RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                         RTFOFF off, PCRTSGSEG paSegments, size_t cSegments,
                          size_t cbRead)
 {
     int rc = VINF_SUCCESS;
@@ -1944,7 +1944,7 @@ int pdmacFileEpCacheRead(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOM
  * @param    cbWrite       Number of bytes to write.
  */
 int pdmacFileEpCacheWrite(PPDMASYNCCOMPLETIONENDPOINTFILE pEndpoint, PPDMASYNCCOMPLETIONTASKFILE pTask,
-                          RTFOFF off, PCPDMDATASEG paSegments, size_t cSegments,
+                          RTFOFF off, PCRTSGSEG paSegments, size_t cSegments,
                           size_t cbWrite)
 {
     int rc = VINF_SUCCESS;

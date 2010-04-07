@@ -247,7 +247,7 @@ int vboxscsiSetupRequest(PVBOXSCSI pVBoxSCSI, PPDMSCSIREQUEST pScsiRequest, uint
     }
 
     /** Allocate scatter gather element. */
-    pScsiRequest->paScatterGatherHead = (PPDMDATASEG)RTMemAllocZ(sizeof(PDMDATASEG) * 1); /* Only one element. */
+    pScsiRequest->paScatterGatherHead = (PRTSGSEG)RTMemAllocZ(sizeof(RTSGSEG) * 1); /* Only one element. */
     if (!pScsiRequest->paScatterGatherHead)
     {
         RTMemFree(pVBoxSCSI->pBuf);

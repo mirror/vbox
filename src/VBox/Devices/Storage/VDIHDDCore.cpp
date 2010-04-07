@@ -62,7 +62,8 @@ static void vdiSetupImageDesc(PVDIIMAGEDESC pImage);
 static int  vdiUpdateHeader(PVDIIMAGEDESC pImage);
 static int  vdiUpdateBlockInfo(PVDIIMAGEDESC pImage, unsigned uBlock);
 static void vdiFreeImage(PVDIIMAGEDESC pImage, bool fDelete);
-
+static int  vdiUpdateHeaderAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx);
+static int  vdiUpdateBlockInfoAsync(PVDIIMAGEDESC pImage, unsigned uBlock, PVDIOCTX pIoCtx);
 
 /**
  * Internal: signal an error to the frontend.
@@ -205,6 +206,24 @@ static int vdiFileReadSync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf, size
 #endif
 
     return rc;
+}
+
+static int vdiFileWriteMetaAsync(PVDIIMAGEDESC pImage, uint64_t off, void *pcvBuf, size_t cbWrite,
+                                 PVDIOCTX pIoCtx, PFNVDMETACOMPLETED pfnMetaComplete, void *pvMetaUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnWriteMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                            pImage->pStorage,
+                                                            off, pcvBuf, cbWrite, pIoCtx,
+                                                            pfnMetaComplete, pvMetaUser);
+}
+
+static int vdiFileReadMetaAsync(PVDIIMAGEDESC pImage, uint64_t off, void *pvBuf, size_t cbRead,
+                                PVDIOCTX pIoCtx, PFNVDMETACOMPLETED pfnMetaComplete, void *pvMetaUser)
+{
+    return pImage->pInterfaceIOCallbacks->pfnReadMetaAsync(pImage->pInterfaceIO->pvUser,
+                                                           pImage->pStorage,
+                                                           off, pvBuf, cbRead, pIoCtx,
+                                                           pfnMetaComplete, pvMetaUser);
 }
 
 static bool vdiFileOpened(PVDIIMAGEDESC pImage)
@@ -844,6 +863,37 @@ static int vdiUpdateHeader(PVDIIMAGEDESC pImage)
 }
 
 /**
+ * Internal: Save header to file - async version.
+ */
+static int vdiUpdateHeaderAsync(PVDIIMAGEDESC pImage, PVDIOCTX pIoCtx)
+{
+    int rc;
+    switch (GET_MAJOR_HEADER_VERSION(&pImage->Header))
+    {
+        case 0:
+            rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
+                                       &pImage->Header.u.v0, sizeof(pImage->Header.u.v0),
+                                       pIoCtx, NULL, NULL);
+            break;
+        case 1:
+            if (pImage->Header.u.v1plus.cbHeader < sizeof(pImage->Header.u.v1plus))
+                rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
+                                           &pImage->Header.u.v1, sizeof(pImage->Header.u.v1),
+                                           pIoCtx, NULL, NULL);
+            else
+                rc = vdiFileWriteMetaAsync(pImage, sizeof(VDIPREHEADER),
+                                           &pImage->Header.u.v1plus, sizeof(pImage->Header.u.v1plus),
+                                           pIoCtx, NULL, NULL);
+            break;
+        default:
+            rc = VERR_VD_VDI_UNSUPPORTED_VERSION;
+            break;
+    }
+    AssertMsgRC(rc, ("vdiUpdateHeader failed, filename=\"%s\" rc=%Rrc\n", pImage->pszFilename, rc));
+    return rc;
+}
+
+/**
  * Internal: Save block pointer to file, save header to file.
  */
 static int vdiUpdateBlockInfo(PVDIIMAGEDESC pImage, unsigned uBlock)
@@ -858,6 +908,29 @@ static int vdiUpdateBlockInfo(PVDIIMAGEDESC pImage, unsigned uBlock)
                               &pImage->paBlocks[uBlock],
                               sizeof(VDIIMAGEBLOCKPOINTER),
                               NULL);
+        AssertMsgRC(rc, ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Rrc\n",
+                         uBlock, pImage->pszFilename, rc));
+    }
+    return rc;
+}
+
+/**
+ * Internal: Save block pointer to file, save header to file - async version.
+ */
+static int vdiUpdateBlockInfoAsync(PVDIIMAGEDESC pImage, unsigned uBlock,
+                                   PVDIOCTX pIoCtx)
+{
+    /* Update image header. */
+    int rc = vdiUpdateHeaderAsync(pImage, pIoCtx);
+    if (RT_SUCCESS(rc))
+    {
+        /* write only one block pointer. */
+        rc = vdiFileWriteMetaAsync(pImage,
+                                   pImage->offStartBlocks + uBlock * sizeof(VDIIMAGEBLOCKPOINTER),
+                                   &pImage->paBlocks[uBlock],
+                                   sizeof(VDIIMAGEBLOCKPOINTER),
+                                   pIoCtx,
+                                   NULL, NULL);
         AssertMsgRC(rc, ("vdiUpdateBlockInfo failed to update block=%u, filename=\"%s\", rc=%Rrc\n",
                          uBlock, pImage->pszFilename, rc));
     }
@@ -2124,8 +2197,7 @@ static int vdiAsyncWrite(void *pvBackendData, uint64_t uOffset, size_t cbToWrite
                 pImage->paBlocks[uBlock] = cBlocksAllocated;
                 setImageBlocksAllocated(&pImage->Header, cBlocksAllocated + 1);
 
-                /** @todo Async */
-                rc = vdiUpdateBlockInfo(pImage, uBlock);
+                rc = vdiUpdateBlockInfoAsync(pImage, uBlock, pIoCtx);
                 if (RT_FAILURE(rc))
                     goto out;
 

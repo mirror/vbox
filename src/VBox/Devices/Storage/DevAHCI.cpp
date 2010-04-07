@@ -256,7 +256,7 @@ typedef struct AHCIPORTTASKSTATE
     /** Number of used SG list entries. */
     uint32_t                   cSGListUsed;
     /** Pointer to the first entry of the scatter gather list. */
-    PPDMDATASEG                pSGListHead;
+    PRTSGSEG                   pSGListHead;
     /** Number of scatter gather list entries. */
     uint32_t                   cSGEntries;
     /** Total number of bytes the guest reserved for this request.
@@ -4041,7 +4041,7 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
         }
 
         /* Allocate R3 scatter gather list. */
-        pAhciPortTaskState->pSGListHead = (PPDMDATASEG)RTMemAllocZ(cSGList * sizeof(PDMDATASEG));
+        pAhciPortTaskState->pSGListHead = (PRTSGSEG)RTMemAllocZ(cSGList * sizeof(RTSGSEG));
         if (!pAhciPortTaskState->pSGListHead)
             return VERR_NO_MEMORY;
 
@@ -4090,7 +4090,7 @@ static int ahciScatterGatherListAllocate(PAHCIPORTTASKSTATE pAhciPortTaskState, 
 
     /* Make debugging easier. */
 #ifdef DEBUG
-    memset(pAhciPortTaskState->pSGListHead, 0, pAhciPortTaskState->cSGListSize * sizeof(PDMDATASEG));
+    memset(pAhciPortTaskState->pSGListHead, 0, pAhciPortTaskState->cSGListSize * sizeof(RTSGSEG));
     memset(pAhciPortTaskState->paSGEntries, 0, pAhciPortTaskState->cSGListSize * sizeof(AHCIPORTTASKSTATESGENTRY));
     if (pAhciPortTaskState->pvBufferUnaligned)
         memset(pAhciPortTaskState->pvBufferUnaligned, 0, pAhciPortTaskState->cbBufferUnaligned);
@@ -4162,7 +4162,7 @@ static int ahciScatterGatherListCreateSafe(PAHCIPort pAhciPort, PAHCIPORTTASKSTA
     if (!pAhciPortTaskState->pvBufferUnaligned)
         return VERR_NO_MEMORY;
 
-    pAhciPortTaskState->pSGListHead = (PPDMDATASEG)RTMemAllocZ(1 * sizeof(PDMDATASEG));
+    pAhciPortTaskState->pSGListHead = (PRTSGSEG)RTMemAllocZ(1 * sizeof(RTSGSEG));
     if (!pAhciPortTaskState->pSGListHead)
     {
         RTMemFree(pAhciPortTaskState->pvBufferUnaligned);
@@ -4244,8 +4244,8 @@ static int ahciScatterGatherListCreate(PAHCIPort pAhciPort, PAHCIPORTTASKSTATE p
     RTGCPHYS   GCPhysAddrPRDTLUnalignedStart = NIL_RTGCPHYS;
     PAHCIPORTTASKSTATESGENTRY  pSGInfoCurr  = NULL;
     PAHCIPORTTASKSTATESGENTRY  pSGInfoPrev  = NULL;
-    PPDMDATASEG                pSGEntryCurr = NULL;
-    PPDMDATASEG                pSGEntryPrev = NULL;
+    PRTSGSEG                   pSGEntryCurr = NULL;
+    PRTSGSEG                   pSGEntryPrev = NULL;
     RTGCPHYS                   GCPhysBufferPageAlignedPrev = NIL_RTGCPHYS;
     uint8_t                   *pu8BufferUnalignedPos = NULL;
     uint32_t                   cbUnalignedComplete = 0;
@@ -4792,7 +4792,7 @@ static int ahciScatterGatherListCopyFromBuffer(PAHCIPORTTASKSTATE pAhciPortTaskS
 {
     unsigned cSGEntry = 0;
     int cbCopied = 0;
-    PPDMDATASEG pSGEntry = &pAhciPortTaskState->pSGListHead[cSGEntry];
+    PRTSGSEG pSGEntry = &pAhciPortTaskState->pSGListHead[cSGEntry];
     uint8_t *pu8Buf = (uint8_t *)pvBuf;
 
     while (cSGEntry < pAhciPortTaskState->cSGEntries)
@@ -5307,7 +5307,7 @@ static DECLCALLBACK(bool) ahciNotifyQueueConsumer(PPDMDEVINS pDevIns, PPDMQUEUEI
             if (rc == VINF_VD_ASYNC_IO_FINISHED)
                 rc = ahciTransferComplete(pAhciPort, pAhciPortTaskState);
 
-            if (RT_FAILURE(rc))
+            if (RT_FAILURE(rc) && rc != VERR_VD_ASYNC_IO_IN_PROGRESS)
                 AssertMsgFailed(("%s: Failed to enqueue command %Rrc\n", __FUNCTION__, rc));
         }
         else
@@ -5492,7 +5492,7 @@ static DECLCALLBACK(int) ahciAsyncIOLoop(PPDMDEVINS pDevIns, PPDMTHREAD pThread)
                 {
                     uint64_t uOffset;
                     size_t cbTransfer;
-                    PPDMDATASEG pSegCurr;
+                    PRTSGSEG pSegCurr;
                     PAHCIPORTTASKSTATESGENTRY pSGInfoCurr;
 
                     rc = ahciScatterGatherListCreate(pAhciPort, pAhciPortTaskState, (iTxDir == PDMBLOCKTXDIR_FROM_DEVICE) ? false : true);

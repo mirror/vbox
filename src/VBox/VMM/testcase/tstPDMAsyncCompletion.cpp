@@ -179,7 +179,7 @@ int main(int argc, char *argv[])
                             for (uint32_t i = 0; i < cTasksUsed; i++)
                             {
                                 size_t cbRead = ((size_t)offSrc + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - offSrc;
-                                PDMDATASEG DataSeg;
+                                RTSGSEG DataSeg;
 
                                 DataSeg.pvSeg = g_AsyncCompletionTasksBuffer[i];
                                 DataSeg.cbSeg = cbRead;
@@ -199,7 +199,7 @@ int main(int argc, char *argv[])
                             for (uint32_t i = 0; i < cTasksUsed; i++)
                             {
                                 size_t cbWrite = (offDst + BUFFER_SIZE) <= cbSrc ? BUFFER_SIZE : cbSrc - offDst;
-                                PDMDATASEG DataSeg;
+                                RTSGSEG DataSeg;
 
                                 DataSeg.pvSeg = g_AsyncCompletionTasksBuffer[i];
                                 DataSeg.cbSeg = cbWrite;

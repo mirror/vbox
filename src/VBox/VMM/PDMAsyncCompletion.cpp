@@ -1116,7 +1116,7 @@ VMMR3DECL(void) PDMR3AsyncCompletionEpClose(PPDMASYNCCOMPLETIONENDPOINT pEndpoin
 }
 
 VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                                          PCPDMDATASEG paSegments, size_t cSegments,
+                                          PCRTSGSEG paSegments, unsigned cSegments,
                                           size_t cbRead, void *pvUser,
                                           PPPDMASYNCCOMPLETIONTASK ppTask)
 {
@@ -1148,7 +1148,7 @@ VMMR3DECL(int) PDMR3AsyncCompletionEpRead(PPDMASYNCCOMPLETIONENDPOINT pEndpoint,
 }
 
 VMMR3DECL(int) PDMR3AsyncCompletionEpWrite(PPDMASYNCCOMPLETIONENDPOINT pEndpoint, RTFOFF off,
-                                           PCPDMDATASEG paSegments, size_t cSegments,
+                                           PCRTSGSEG paSegments, unsigned cSegments,
                                            size_t cbWrite, void *pvUser,
                                            PPPDMASYNCCOMPLETIONTASK ppTask)
 {

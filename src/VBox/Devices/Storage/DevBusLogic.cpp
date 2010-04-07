@@ -737,7 +737,7 @@ typedef struct BUSLOGICTASKSTATE
     /** The SCSI request we pass to the underlying SCSI engine. */
     PDMSCSIREQUEST      PDMScsiRequest;
     /** Data buffer segment */
-    PDMDATASEG          DataSeg;
+    RTSGSEG             DataSeg;
     /** Pointer to the R3 sense buffer. */
     uint8_t            *pbSenseBuffer;
     /** Flag whether this is a request from the BIOS. */

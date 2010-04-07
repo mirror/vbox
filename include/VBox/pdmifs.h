@@ -30,6 +30,7 @@
 #ifndef ___VBox_pdmifs_h
 #define ___VBox_pdmifs_h
 
+#include <iprt/sg.h>
 #include <VBox/types.h>
 #include <VBox/hgcmsvc.h>
 
@@ -1391,7 +1392,7 @@ typedef struct PDMIBLOCKASYNC
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
 
     /**
      * Write bits.
@@ -1405,7 +1406,7 @@ typedef struct PDMIBLOCKASYNC
      * @param   pvUser          User argument which is returned in completion callback.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIBLOCKASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
 } PDMIBLOCKASYNC;
 /** PDMIBLOCKASYNC interface ID. */
@@ -1454,7 +1455,7 @@ typedef struct PDMIMEDIAASYNC
      * @param   pvUser          User data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIMEDIAASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartRead,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbRead, void *pvUser));
 
     /**
      * Start writing task.
@@ -1468,7 +1469,7 @@ typedef struct PDMIMEDIAASYNC
      * @param   pvUser          User data.
      * @thread  Any thread.
      */
-    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PPDMDATASEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
+    DECLR3CALLBACKMEMBER(int, pfnStartWrite,(PPDMIMEDIAASYNC pInterface, uint64_t off, PCRTSGSEG pSeg, unsigned cSeg, size_t cbWrite, void *pvUser));
 
 } PDMIMEDIAASYNC;
 /** PDMIMEDIAASYNC interface ID. */
@@ -2533,7 +2534,7 @@ typedef struct PDMSCSIREQUEST
     /** Number of elements in the scatter gather list. */
     uint32_t               cScatterGatherEntries;
     /** Pointer to the head of the scatter gather list. */
-    PPDMDATASEG            paScatterGatherHead;
+    PRTSGSEG               paScatterGatherHead;
     /** Size of the sense buffer. */
     uint32_t               cbSenseBuffer;
     /** Pointer to the sense buffer. *

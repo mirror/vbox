@@ -110,7 +110,7 @@ static void drvscsihostDumpScsiRequest(PPDMSCSIREQUEST pRequest)
 static int drvscsihostScatterGatherListCopyFromBuffer(PPDMSCSIREQUEST pRequest, void *pvBuf, size_t cbBuf)
 {
     unsigned cSGEntry = 0;
-    PPDMDATASEG pSGEntry = &pRequest->paScatterGatherHead[cSGEntry];
+    PRTSGSEG pSGEntry = &pRequest->paScatterGatherHead[cSGEntry];
     uint8_t *pu8Buf = (uint8_t *)pvBuf;
 
     while (cSGEntry < pRequest->cScatterGatherEntries)
