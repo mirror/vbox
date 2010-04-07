@@ -25,7 +25,7 @@
 #define LOG_GROUP LOG_GROUP_NET_FLT_DRV
 #include <VBox/log.h>
 #include <VBox/err.h>
-#include <VBox/cdefs.h>
+#include <VBox/intnetinline.h>
 #include <VBox/version.h>
 #include <iprt/string.h>
 #include <iprt/initterm.h>
@@ -2696,17 +2696,10 @@ static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNET
 {
     LogFlowFunc((DEVICE_NAME ":vboxNetFltSolarisMBlkToSG pThis=%p pMsg=%p pSG=%p cSegs=%d\n", pThis, pMsg, pSG, cSegs));
 
-    pSG->pvOwnerData = NULL;
-    pSG->pvUserData = NULL;
-    pSG->pvUserData2 = NULL;
-    pSG->cUsers = 1;
-    pSG->cbTotal = 0;
-    pSG->fFlags = INTNETSG_FLAGS_TEMP;
-    pSG->cSegsAlloc = cSegs;
-
     /*
-     * Convert the message block to segments.
+     * Convert the message block to segments. Work INTNETSG::cbTotal.
      */
+    INTNETSgInitTempSegs(pSG, 0 /*cbTotal*/, cSegs, 0 /*cSegsUsed*/);
     mblk_t *pCur = pMsg;
     unsigned iSeg = 0;
     while (pCur)
@@ -2736,6 +2729,7 @@ static int vboxNetFltSolarisMBlkToSG(PVBOXNETFLTINS pThis, mblk_t *pMsg, PINTNET
         pSG->aSegs[iSeg].cb = 60 - pSG->cbTotal;
         pSG->cbTotal = 60;
         pSG->cSegsUsed++;
+        Assert(iSeg + 1 < cSegs);
     }
 #endif
 

@@ -213,6 +213,22 @@ INTNETR3DECL(int) SUPR0MemFree(PSUPDRVSESSION pSession, RTHCUINTPTR uPtr)
 #undef LOG_GROUP
 #include "../SrvIntNetR0.cpp"
 
+
+/**
+ * Sends the data @a pvBuf points to.
+ */
+static int tstIntNetSendBuf(PINTNET pIntNet, PINTNETRINGBUF pRingBuf, INTNETIFHANDLE hIf,
+                            PSUPDRVSESSION pSession, void const *pvBuf, size_t cbBuf)
+{
+    INTNETSG Sg;
+    INTNETSgInitTemp(&Sg, (void *)pvBuf, cbBuf);
+    int rc = intnetR0RingWriteFrame(pRingBuf, &Sg, NULL);
+    if (RT_SUCCESS(rc))
+        rc = INTNETR0IfSend(pIntNet, hIf, pSession);
+    return rc;
+}
+
+
 typedef struct MYARGS
 {
     PINTNET pIntNet;
@@ -252,15 +268,12 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     {
         const unsigned cb = iFrame % 1519 + 12 + sizeof(unsigned);
         *puFrame = iFrame;
-#if 0
-        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, cb);
-#else
+
         INTNETSG Sg;
-        intnetR0SgInitTemp(&Sg, abBuf, cb);
+        INTNETSgInitTemp(&Sg, abBuf, cb);
         int rc = intnetR0RingWriteFrame(&pArgs->pBuf->Send, &Sg, NULL);
         if (RT_SUCCESS(rc))
-            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, NULL, 0);
-#endif
+            rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession);
         if (RT_FAILURE(rc))
         {
             g_cErrors++;
@@ -278,7 +291,8 @@ DECLCALLBACK(int) SendThread(RTTHREAD Thread, void *pvArg)
     puFrame[3] = 0xffffdead;
     for (unsigned c = 0; c < 20; c++)
     {
-        int rc = INTNETR0IfSend(pArgs->pIntNet, pArgs->hIf, g_pSession, abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4);
+        int rc = tstIntNetSendBuf(pArgs->pIntNet, &pArgs->pBuf->Send, pArgs->hIf, g_pSession,
+                                  abBuf, sizeof(RTMAC) * 2 + sizeof(unsigned) * 4);
         if (RT_FAILURE(rc))
         {
             g_cErrors++;
@@ -511,7 +525,7 @@ int main(int argc, char **argv)
                     /*
                      * Send and receive.
                      */
-                    rc = INTNETR0IfSend(pIntNet, hIf0, g_pSession, &g_TestFrame0, sizeof(g_TestFrame0));
+                    rc = tstIntNetSendBuf(pIntNet, &pBuf0->Send, hIf0, g_pSession, &g_TestFrame0, sizeof(g_TestFrame0));
                     if (RT_SUCCESS(rc))
                     {
                         rc = INTNETR0IfWait(pIntNet, hIf0, g_pSession, 1);
@@ -549,7 +563,7 @@ int main(int argc, char **argv)
                             /*
                              * Send a packet from If1 just to set its MAC address.
                              */
-                            rc = INTNETR0IfSend(pIntNet, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
+                            rc = tstIntNetSendBuf(pIntNet, &pBuf1->Send, hIf1, g_pSession, &g_TestFrame1, sizeof(g_TestFrame1));
                             if (RT_FAILURE(rc))
                             {
                                 RTPrintf("tstIntNetR0: INTNETIfSend returned %Rrc! (hIf1)\n", rc);

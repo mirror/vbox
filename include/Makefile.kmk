@@ -97,7 +97,7 @@ $$(PATH_TARGET)/$(flatname)-cpp.cpp: $$(PATH_TARGET)/
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 
 $$(PATH_TARGET)/$(flatname)-c.c: $(VBOX_ROOT_INCLUDE_MAKEFILE)  | $$(PATH_TARGET)/
-ifn1of ($(hdr), $(cpp_hdrs) VBox/intnetinline.h)
+ifn1of ($(hdr), $(cpp_hdrs) VBox/pdmnetinline.h)
 	$(QUIET)$$(APPEND) -t -n $$@ '#include <$(hdr)>' 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'
 else
 	$(QUIET)$$(APPEND) -t -n $$@ 'int main(int argc, char **argv) {(void)argc; (void)argv; return 0;}'

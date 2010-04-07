@@ -267,24 +267,61 @@ void VBoxNetNAT::run()
         PCINTNETHDR pHdr;
         while ((pHdr = INTNETRingGetNextFrameToRead(pRingBuf)) != NULL)
         {
-            if (RT_LIKELY(pHdr->u16Type == INTNETHDR_TYPE_FRAME))
+            uint16_t const u16Type = pHdr->u16Type;
+            if (RT_LIKELY(   u16Type == INTNETHDR_TYPE_FRAME
+                          || u16Type == INTNETHDR_TYPE_GSO))
             {
-                size_t  cbFrame = pHdr->cbFrame;
-                size_t  cbIgnored;
-                void   *pvSlirpFrame;
-                struct mbuf *m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
-                if (!m)
+                size_t       cbFrame = pHdr->cbFrame;
+                size_t       cbIgnored;
+                void        *pvSlirpFrame;
+                struct mbuf *m;
+                if (u16Type == INTNETHDR_TYPE_FRAME)
                 {
-                    LogRel(("NAT: Can't allocate send buffer\n"));
-                    break;
-                }
-                memcpy(pvSlirpFrame, INTNETHdrGetFramePtr(pHdr, m_pIfBuf), cbFrame);
-                INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                    m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
+                    if (!m)
+                    {
+                        LogRel(("NAT: Can't allocate send buffer cbFrame=%u\n", cbFrame));
+                        break;
+                    }
+                    memcpy(pvSlirpFrame, INTNETHdrGetFramePtr(pHdr, m_pIfBuf), cbFrame);
+                    INTNETRingSkipFrame(&m_pIfBuf->Recv);
 
-                /* don't wait, we have to wakeup the NAT thread fist */
-                rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
-                                 (PFNRT)SendWorker, 2, m, cbFrame);
-                AssertReleaseRC(rc);
+                    /* don't wait, we may have to wakeup the NAT thread first */
+                    rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                                     (PFNRT)SendWorker, 2, m, cbFrame);
+                    AssertReleaseRC(rc);
+                }
+                else
+                {
+                    /** @todo pass these unmodified. */
+                    PCPDMNETWORKGSO pGso  = INTNETHdrGetGsoContext(pHdr, m_pIfBuf);
+                    if (!PDMNetGsoIsValid(pGso, cbFrame, cbFrame - sizeof(*pGso)))
+                    {
+                        INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                        STAM_REL_COUNTER_INC(&m_pIfBuf->cStatBadFrames);
+                        continue;
+                    }
+
+                    uint32_t const cSegs = PDMNetGsoCalcSegmentCount(pGso, cbFrame - sizeof(*pGso));
+                    for (uint32_t iSeg = 0; iSeg < cSegs; iSeg++)
+                    {
+                        uint32_t cbSegFrame;
+                        void  *pvSegFrame = PDMNetGsoCarveSegmentQD(pGso, (uint8_t *)(pGso + 1), cbFrame, abHdrScratch,
+                                                                    &cbSegFrame);
+                        m = slirp_ext_m_get(g_pNAT->m_pNATState, cbFrame, &pvSlirpFrame, &cbIgnored);
+                        if (!m)
+                        {
+                            LogRel(("NAT: Can't allocate send buffer cbSegFrame=%u seg=%u/%u\n", cbSegFrame, iSeg, cSegs));
+                            break;
+                        }
+                        memcpy(pvSlirpFrame, pvSegFrame, cbFrame);
+
+                        rc = RTReqCallEx(m_pReqQueue, NULL /*ppReq*/, 0 /*cMillies*/, RTREQFLAGS_VOID | RTREQFLAGS_NO_WAIT,
+                                         (PFNRT)SendWorker, 2, m, cbSubFrame);
+                        AssertReleaseRC(rc);
+                    }
+                    INTNETRingSkipFrame(&m_pIfBuf->Recv);
+                }
 
 #ifndef RT_OS_WINDOWS
                 /* kick select() */
@@ -296,7 +333,7 @@ void VBoxNetNAT::run()
                 AssertRelease(rc == TRUE);
 #endif
             }
-            else if (pHdr->u16Type == INTNETHDR_TYPE_PADDING)
+            else if (u16Type == INTNETHDR_TYPE_PADDING)
                 INTNETRingSkipFrame(&m_pIfBuf->Recv);
             else
             {

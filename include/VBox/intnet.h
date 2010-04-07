@@ -3,7 +3,7 @@
  */
 
 /*
- * Copyright (C) 2006-2007 Sun Microsystems, Inc.
+ * Copyright (C) 2006-2010 Sun Microsystems, Inc.
  *
  * This file is part of VirtualBox Open Source Edition (OSE), as
  * available from http://www.virtualbox.org. This file is free software;
@@ -196,7 +196,7 @@ typedef INTNETIFHANDLE *PINTNETIFHANDLE;
 
 
 /**
- * The packet header.
+ * The frame header.
  *
  * The header is intentionally 8 bytes long. It will always
  * start at an 8 byte aligned address. Assuming that the buffer
@@ -207,7 +207,7 @@ typedef INTNETIFHANDLE *PINTNETIFHANDLE;
 typedef struct INTNETHDR
 {
     /** Header type. This is currently serving as a magic, it
-     * can be extended later to encode special command packets and stuff. */
+     * can be extended later to encode special command frames and stuff. */
     uint16_t        u16Type;
     /** The size of the frame. */
     uint16_t        cbFrame;
@@ -218,20 +218,28 @@ typedef struct INTNETHDR
 } INTNETHDR;
 AssertCompileSize(INTNETHDR, 8);
 AssertCompileSizeAlignment(INTNETBUF, sizeof(INTNETHDR));
-/** Pointer to a packet header.*/
+/** Pointer to a frame header.*/
 typedef INTNETHDR *PINTNETHDR;
-/** Pointer to a const packet header.*/
+/** Pointer to a const frame header.*/
 typedef INTNETHDR const *PCINTNETHDR;
 
-/** The alignment of a packet header. */
+/** The alignment of a frame header. */
 #define INTNETHDR_ALIGNMENT         sizeof(INTNETHDR)
 AssertCompile(sizeof(INTNETHDR) == INTNETHDR_ALIGNMENT);
 AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
 
-/** INTNETHDR::u16Type value for normal frames. */
+/** @name Frame types (INTNETHDR::u16Type).
+ * @{ */
+/** Normal frames. */
 #define INTNETHDR_TYPE_FRAME        0x2442
-/** INTNETHDR::u16Type value for padding frames. */
+/** Padding frames. */
 #define INTNETHDR_TYPE_PADDING      0x3553
+/** Generic segment offload frames.
+ * The frame starts with a PDMNETWORKGSO structure which is followed by the
+ * header template and data. */
+#define INTNETHDR_TYPE_GSO          0x4664
+AssertCompileSize(PDMNETWORKGSO, 8);
+/** @}  */
 
 /**
  * Asserts the sanity of the specified INTNETHDR.
@@ -241,7 +249,9 @@ AssertCompile(INTNETHDR_ALIGNMENT <= INTNETRINGBUF_ALIGNMENT);
     { \
         AssertPtr(pHdr); \
         Assert(RT_ALIGN_PT(pHdr, INTNETHDR_ALIGNMENT, INTNETHDR *) == pHdr); \
-        Assert((pHdr)->u16Type == INTNETHDR_TYPE_FRAME || (pHdr)->u16Type == INTNETHDR_TYPE_PADDING); \
+        Assert(   (pHdr)->u16Type == INTNETHDR_TYPE_FRAME \
+               || (pHdr)->u16Type == INTNETHDR_TYPE_GSO \
+               || (pHdr)->u16Type == INTNETHDR_TYPE_PADDING); \
         { \
             uintptr_t const offHdr   = (uintptr_t)pHdr - (uintptr_t)pRingBuf; \
             uintptr_t const offFrame = offHdr + (pHdr)->offFrame; \
@@ -268,9 +278,9 @@ typedef struct INTNETSEG
     /** The segment size. */
     uint32_t        cb;
 } INTNETSEG;
-/** Pointer to a internal networking packet segment. */
+/** Pointer to a internal networking frame segment. */
 typedef INTNETSEG *PINTNETSEG;
-/** Pointer to a internal networking packet segment. */
+/** Pointer to a internal networking frame segment. */
 typedef INTNETSEG const *PCINTNETSEG;
 
 
@@ -282,25 +292,32 @@ typedef INTNETSEG const *PCINTNETSEG;
 typedef struct INTNETSG
 {
     /** Owner data, don't touch! */
-    void           *pvOwnerData;
+    void               *pvOwnerData;
     /** User data. */
-    void           *pvUserData;
+    void               *pvUserData;
     /** User data 2 in case anyone needs it. */
-    void           *pvUserData2;
+    void               *pvUserData2;
+    /** GSO context information, set the type to invalid if not relevant. */
+    PDMNETWORKGSO       GsoCtx;
     /** The total length of the scatter gather list. */
-    uint32_t        cbTotal;
+    uint32_t            cbTotal;
     /** The number of users (references).
      * This is used by the SGRelease code to decide when it can be freed. */
-    uint16_t volatile cUsers;
+    uint16_t volatile   cUsers;
     /** Flags, see INTNETSG_FLAGS_* */
-    uint16_t volatile fFlags;
+    uint16_t volatile   fFlags;
+#if ARCH_BITS == 64
+    /** Alignment padding. */
+    uint16_t            uPadding;
+#endif
     /** The number of segments allocated. */
-    uint16_t        cSegsAlloc;
+    uint16_t            cSegsAlloc;
     /** The number of segments actually used. */
-    uint16_t        cSegsUsed;
+    uint16_t            cSegsUsed;
     /** Variable sized list of segments. */
-    INTNETSEG       aSegs[1];
+    INTNETSEG           aSegs[1];
 } INTNETSG;
+AssertCompileSizeAlignment(INTNETSG, 8);
 /** Pointer to a scatter / gather list. */
 typedef INTNETSG *PINTNETSG;
 /** Pointer to a const scatter / gather list. */
@@ -325,7 +342,7 @@ typedef INTNETSG const *PCINTNETSG;
 /** @} */
 
 
-/** @name Direction (packet source or destination)
+/** @name Direction (frame source or destination)
  * @{ */
 /** To/From the wire. */
 #define INTNETTRUNKDIR_WIRE             RT_BIT_32(0)
@@ -508,8 +525,8 @@ typedef struct INTNETTRUNKIFPORT
      * Waits for the interface to become idle.
      *
      * This method must be called before disconnecting and releasing the
-     * object in order to prevent racing incoming/outgoing packets and
-     * device enabling/disabling.
+     * object in order to prevent racing incoming/outgoing frames and device
+     * enabling/disabling.
      *
      * @returns IPRT status code (see RTSemEventWait).
      * @param   pIfPort     Pointer to this structure.
@@ -572,7 +589,7 @@ typedef struct INTNETTRUNKIFPORT
     /**
      * Transmit a frame.
      *
-     * @return  VBox status code. Error generally means we'll drop the packet.
+     * @return  VBox status code. Error generally means we'll drop the frame.
      * @param   pIfPort     Pointer to this structure.
      * @param   pSG         Pointer to the (scatter /) gather structure for the frame.
      *                      This may or may not be a temporary buffer. If it's temporary
@@ -996,10 +1013,8 @@ INTNETR0DECL(int) INTNETR0IfSetActive(          PINTNET pIntNet, INTNETIFHANDLE 
  * @param   pIntNet     The instance data.
  * @param   hIf         The interface handle.
  * @param   pSession    The caller's session.
- * @param   pvFrame     Pointer to the frame. Optional, please don't use.
- * @param   cbFrame     Size of the frame. Optional, please don't use.
  */
-INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession, const void *pvFrame, unsigned cbFrame);
+INTNETR0DECL(int) INTNETR0IfSend(PINTNET pIntNet, INTNETIFHANDLE hIf, PSUPDRVSESSION pSession);
 
 /**
  * Wait for the interface to get signaled.

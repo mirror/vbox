@@ -43,7 +43,7 @@
 bool VBoxNetArpHandleIt(PSUPDRVSESSION pSession, INTNETIFHANDLE hIf, PINTNETBUF pBuf, PCRTMAC pMacAddr, RTNETADDRIPV4 IPv4Addr)
 {
     /*
-     * Valid IntNet Ethernet frame?
+     * Valid IntNet Ethernet frame? Skip GSO, no ARP in there.
      */
     PCINTNETHDR pHdr = INTNETRingGetNextFrameToRead(&pBuf->Recv);
     if (   !pHdr

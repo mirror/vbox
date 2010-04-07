@@ -1,5 +1,5 @@
 #!/bin/sh
-# $Id: $
+# $Id$
 ## @file
 # Shared file between Makefile.kmk and export_modules
 #
@@ -54,6 +54,7 @@ VBOX_VBOXNETFLT_SOURCES=" \
     ${PATH_ROOT}/include/VBox/err.h=>include/VBox/err.h \
     ${PATH_ROOT}/include/VBox/log.h=>include/VBox/log.h \
     ${PATH_ROOT}/include/VBox/intnet.h=>include/VBox/intnet.h \
+    ${PATH_ROOT}/include/VBox/intnetinline.h=>include/VBox/intnetinline.h \
     ${PATH_ROOT}/include/VBox/stam.h=>include/VBox/stam.h \
     ${PATH_ROOT}/include/VBox/sup.h=>include/VBox/sup.h \
     ${PATH_ROOT}/include/VBox/types.h=>include/VBox/types.h \

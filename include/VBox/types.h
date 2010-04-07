@@ -745,26 +745,22 @@ typedef enum PDMNETWORKGSOTYPE
     PDMNETWORKGSOTYPE_INVALID = 0,
     /** TCP/IPv4. */
     PDMNETWORKGSOTYPE_IPV4_TCP,
-#if 0 /* later */
     /** TCP/IPv6. */
     PDMNETWORKGSOTYPE_IPV6_TCP,
     /** UDP/IPv4. */
     PDMNETWORKGSOTYPE_IPV4_UDP,
     /** UDP/IPv6. */
     PDMNETWORKGSOTYPE_IPV6_UDP,
-    /** IPv6 over IPv4 tunneling. */
-    PDMNETWORKGSOTYPE_IPV4_TCPV6,
     /** TCP/IPv6 over IPv4 tunneling.
      * The header offsets and sizes relates to IPv4 and TCP, the IPv6 header is
      * figured out as needed.
      * @todo Needs checking against facts, this is just an outline of the idea. */
-    PDMNETWORKGSOTYPE_IPV4_TCPV6_TCP,
+    PDMNETWORKGSOTYPE_IPV4_IPV6_TCP,
     /** UDP/IPv6 over IPv4 tunneling.
      * The header offsets and sizes relates to IPv4 and UDP, the IPv6 header is
      * figured out as needed.
      * @todo Needs checking against facts, this is just an outline of the idea. */
-    PDMNETWORKGSOTYPE_IPV4_TCPV6_UDP,
-#endif
+    PDMNETWORKGSOTYPE_IPV4_IPV6_UDP,
     /** The end of valid GSO types. */
     PDMNETWORKGSOTYPE_END
 } PDMNETWORKGSOTYPE;
@@ -789,14 +785,14 @@ typedef struct PDMNETWORKGSO
     /** The max segment size (MSS) to apply. */
     uint16_t            cbMaxSeg;
 
-    /** Offset of the first header (IPv4 / IPv6). */
+    /** Offset of the first header (IPv4 / IPv6).  0 if not not needed. */
     uint8_t             offHdr1;
-    /** The size of the first header (IPv4 / IPv6). */
+    /** The size of the first header (IPv4 / IPv6).  0 if not not needed. */
     uint8_t             cbHdr1;
 
-    /** Offset of the second header (TCP / UDP). */
+    /** Offset of the second header (TCP / UDP).  0 if not not needed. */
     uint8_t             offHdr2;
-    /** The size of the second header (TCP / UDP). */
+    /** The size of the second header (TCP / UDP).  0 if not not needed. */
     uint8_t             cbHdr2;
 } PDMNETWORKGSO;
 /** Pointer to a GSO context. */
