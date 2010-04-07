@@ -3014,7 +3014,7 @@ GMMR0DECL(int) GMMR0QueryVMMMemoryStatsReq(PVM pVM, PGMMMEMSTATSREQ pReq)
     PGMM pGMM;
     GMM_GET_VALID_INSTANCE(pGMM, VERR_INTERNAL_ERROR);
     pReq->cAllocPages     = pGMM->cAllocatedPages; 
-    pReq->cFreePages      = (pGMM->cChunks << GMM_CHUNK_SHIFT) - pGMM->cAllocatedPages; 
+    pReq->cFreePages      = (pGMM->cChunks << (GMM_CHUNK_SHIFT- PAGE_SHIFT)) - pGMM->cAllocatedPages; 
     pReq->cBalloonedPages = pGMM->cBalloonedPages; 
     GMM_CHECK_SANITY_UPON_LEAVING(pGMM);
 
