@@ -426,7 +426,8 @@ static DECLCALLBACK(bool) vboxNetFltPortIsPromiscuous(PINTNETTRUNKIFPORT pIfPort
     AssertPtr(pThis);
     Assert(pThis->MyPort.u32Version == INTNETTRUNKIFPORT_VERSION);
     Assert(vboxNetFltGetState(pThis) == kVBoxNetFltInsState_Connected);
-    Assert(pThis->fActive);
+/** @todo Assert(pThis->fActive); - disabled because we may call this without
+ *        holding the out-bound lock and race the clearing. */
 
     /*
      * Ask the OS specific code.
