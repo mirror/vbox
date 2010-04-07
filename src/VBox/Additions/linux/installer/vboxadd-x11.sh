@@ -316,13 +316,19 @@ setup()
 
     echo
     case $x_version in
-        1.7.99.* )
+        1.8.99.* )
             echo "Warning: unsupported pre-release version of X.Org Server installed.  Not"
             echo "installing the X.Org drivers."
             dox11config=""
             ;;
+        1.7.99.* | 1.8.* )
+            begin "Installing X.Org Server 1.8 modules"
+            vboxvideo_src=vboxvideo_drv_18.so
+            vboxmouse_src=vboxmouse_drv_18.so
+            setupxorgconf=""
+            ;;
         1.6.99.* | 1.7.* )
-            begin "Installing experimental X.Org Server 1.7 modules"
+            begin "Installing X.Org Server 1.7 modules"
             vboxvideo_src=vboxvideo_drv_17.so
             vboxmouse_src=vboxmouse_drv_17.so
             setupxorgconf=""
