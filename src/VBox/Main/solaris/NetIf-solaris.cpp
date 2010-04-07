@@ -83,6 +83,7 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
         SolarisNICMap.insert(NICPair("ipge", "PCI-E Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("iprb", "Intel 82557/58/59 Ethernet"));
         SolarisNICMap.insert(NICPair("mxfe", "Macronix 98715 Fast Ethernet"));
+        SolarisNICMap.insert(NICPair("nfo", "Nvidia Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("nge", "Nvidia Gigabit Ethernet"));
         SolarisNICMap.insert(NICPair("pcelx", "3COM EtherLink III PCMCIA Ethernet"));
         SolarisNICMap.insert(NICPair("pcn", "AMD PCnet Ethernet"));
@@ -207,6 +208,12 @@ static void vboxSolarisAddHostIface(char *pszIface, int Instance, void *pvHostNe
 static boolean_t vboxSolarisAddLinkHostIface(const char *pszIface, void *pvHostNetworkInterfaceList)
 {
     /*
+     * Skip IPSEC interfaces. It's at IP level.
+     */
+    if (!strncmp(pszIface, "ip.tun", 6))
+        return _B_FALSE;
+
+    /*
      * Clip off the zone instance number from the interface name (if any).
      */
     char szIfaceName[128];
@@ -269,6 +276,8 @@ static bool vboxSolarisSameNIC(const ComObjPtr<HostNetworkInterface> Iface1, con
 # ifdef VBOX_SOLARIS_NSL_RESOLVED
 static int vboxSolarisAddPhysHostIface(di_node_t Node, di_minor_t Minor, void *pvHostNetworkInterfaceList)
 {
+    NOREF(Minor);
+
     /*
      * Skip aggregations.
      */
@@ -396,6 +405,7 @@ int NetIfList(std::list <ComObjPtr<HostNetworkInterface> > &list)
 
 int NetIfGetConfigByName(PNETIFINFO pInfo)
 {
+    NOREF(pInfo);
     return VERR_NOT_IMPLEMENTED;
 }
 
