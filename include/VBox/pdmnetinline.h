@@ -51,17 +51,15 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
         return false;
 
     PDMNETWORKGSOTYPE const enmType = (PDMNETWORKGSOTYPE)pGso->u8Type;
-    if (RT_UNLIKELY(enmType <= PDMNETWORKGSOTYPE_INVALID || enmType >= PDMNETWORKGSOTYPE_END))
+    if (RT_UNLIKELY( enmType <= PDMNETWORKGSOTYPE_INVALID || enmType >= PDMNETWORKGSOTYPE_END ))
         return false;
 
     /* all types requires both headers. */
-    if (RT_UNLIKELY(pGso->offHdr1 < sizeof(RTNETETHERHDR)))
+    if (RT_UNLIKELY( pGso->offHdr1 < sizeof(RTNETETHERHDR) ))
         return false;
-    if (RT_UNLIKELY(pGso->offHdr2 < sizeof(RTNETETHERHDR)))
+    if (RT_UNLIKELY( pGso->offHdr2 <= pGso->offHdr1 ))
         return false;
-    if (RT_UNLIKELY(pGso->offHdr2 < (unsigned)pGso->offHdr1 + pGso->cbHdr1))
-        return false;
-    if (RT_UNLIKELY(pGso->cbHdrs  < (unsigned)pGso->offHdr2 + pGso->cbHdr2))
+    if (RT_UNLIKELY( pGso->cbHdrs  <= pGso->offHdr2 ))
         return false;
 
     /* min size of the 1st header(s). */
@@ -69,19 +67,17 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     {
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV4_UDP:
-            if (RT_UNLIKELY(pGso->cbHdr1 < sizeof(RTNETIPV4_MIN_LEN)))
-                return false;
-            break;
-        case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-        case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            if (RT_UNLIKELY(pGso->cbHdr1 < sizeof(RTNETIPV4_MIN_LEN)))
-                return false;
-            if (RT_UNLIKELY(pGso->offHdr1 + pGso->cbHdr1 + RTNETIPV6_MIN_LEN > pGso->offHdr2))
+            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV4_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
-            if (RT_UNLIKELY(pGso->cbHdr1 < sizeof(RTNETIPV6_MIN_LEN)))
+            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV6_MIN_LEN ))
+                return false;
+            break;
+        case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
+        case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
+            if (RT_UNLIKELY( (unsigned)pGso->offHdr2 - pGso->offHdr1 < RTNETIPV4_MIN_LEN + RTNETIPV6_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_INVALID:
@@ -96,13 +92,13 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
         case PDMNETWORKGSOTYPE_IPV4_TCP:
         case PDMNETWORKGSOTYPE_IPV6_TCP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
-            if (RT_UNLIKELY(pGso->cbHdr2 < sizeof(RTNETTCP_MIN_LEN)))
+            if (RT_UNLIKELY( (unsigned)pGso->cbHdrs - pGso->offHdr2 < RTNETTCP_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_IPV4_UDP:
         case PDMNETWORKGSOTYPE_IPV6_UDP:
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
-            if (RT_UNLIKELY(pGso->cbHdr2 < sizeof(RTNETUDP_MIN_LEN)))
+            if (RT_UNLIKELY( (unsigned)pGso->cbHdrs - pGso->offHdr2 < RTNETUDP_MIN_LEN ))
                 return false;
             break;
         case PDMNETWORKGSOTYPE_INVALID:
@@ -112,9 +108,9 @@ DECLINLINE(bool) PDMNetGsoIsValid(PCPDMNETWORKGSO pGso, size_t cbGsoMax, size_t 
     }
 
     /* There must be at more than one segment. */
-    if (RT_UNLIKELY(cbFrame <= pGso->cbHdrs))
+    if (RT_UNLIKELY( cbFrame <= pGso->cbHdrs ))
         return false;
-    if (RT_UNLIKELY(cbFrame - pGso->cbHdrs < pGso->cbMaxSeg))
+    if (RT_UNLIKELY( cbFrame - pGso->cbHdrs < pGso->cbMaxSeg ))
         return false;
 
     return true;
@@ -214,10 +210,9 @@ DECLINLINE(uint32_t) pdmNetGsoUpdateIPv6Hdr(uint8_t *pbSegHdrs, uint8_t offIpHdr
                                             uint8_t offPktHdr, uint8_t bProtocol)
 {
     PRTNETIPV6 pIpHdr  = (PRTNETIPV6)&pbSegHdrs[offIpHdr];
-    uint32_t cbPayload = cbHdrs - offIpHdr + sizeof(*pIpHdr) + cbSegPayload;
+    uint16_t cbPayload = (uint16_t)(cbHdrs - (offIpHdr + sizeof(RTNETIPV6)) + cbSegPayload);
     pIpHdr->ip6_plen   = RT_H2N_U16(cbPayload);
-    cbPayload         -= (offPktHdr - offPktHdr - sizeof(*pIpHdr));
-    return RTNetIPv6PseudoChecksumEx(pIpHdr, bProtocol, (uint16_t)cbPayload);
+    return RTNetIPv6PseudoChecksumEx(pIpHdr, bProtocol, (uint16_t)(cbHdrs - offPktHdr + cbSegPayload));
 }
 
 
@@ -308,26 +303,26 @@ DECLINLINE(void *) PDMNetGsoCarveSegmentQD(PCPDMNETWORKGSO pGso, uint8_t *pbFram
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
-                                                         pGso->cbHdr2, RTNETIPV4_PROT_TCP),
+                                                         pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
                                   pGso->cbHdrs, iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV6_UDP:
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
-                                                         pGso->cbHdr2, RTNETIPV4_PROT_UDP),
+                                                         pGso->offHdr2, RTNETIPV4_PROT_UDP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
             pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->cbHdr2, RTNETIPV4_PROT_TCP),
+                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
                                   pGso->cbHdrs, iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
             pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->cbHdr2, RTNETIPV4_PROT_UDP),
+                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs);
             break;
         case PDMNETWORKGSOTYPE_INVALID:
@@ -401,26 +396,26 @@ DECLINLINE(uint32_t) PDMNetGsoCarveSegment(PCPDMNETWORKGSO pGso, const uint8_t *
             break;
         case PDMNETWORKGSOTYPE_IPV6_TCP:
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
-                                                         pGso->cbHdr2, RTNETIPV4_PROT_TCP),
+                                                         pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
                                   pGso->cbHdrs, iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV6_UDP:
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, pGso->cbHdrs,
-                                                         pGso->cbHdr2, RTNETIPV4_PROT_UDP),
+                                                         pGso->offHdr2, RTNETIPV4_PROT_UDP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_TCP:
             pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
             pdmNetGsoUpdateTcpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->cbHdr2, RTNETIPV4_PROT_TCP),
+                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_TCP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, iSeg * pGso->cbMaxSeg,
                                   pGso->cbHdrs, iSeg + 1 == cSegs);
             break;
         case PDMNETWORKGSOTYPE_IPV4_IPV6_UDP:
             pdmNetGsoUpdateIPv4Hdr(pbSegHdrs, pGso->offHdr1, cbSegPayload, iSeg, pGso->cbHdrs);
             pdmNetGsoUpdateUdpHdr(pdmNetGsoUpdateIPv6Hdr(pbSegHdrs, pgmNetGsoCalcIpv6Offset(pbSegHdrs, pGso->offHdr1),
-                                                         cbSegPayload, pGso->cbHdrs, pGso->cbHdr2, RTNETIPV4_PROT_UDP),
+                                                         cbSegPayload, pGso->cbHdrs, pGso->offHdr2, RTNETIPV4_PROT_UDP),
                                   pbSegHdrs, pGso->offHdr2, pbSegPayload, cbSegPayload, pGso->cbHdrs);
             break;
         case PDMNETWORKGSOTYPE_INVALID:
