@@ -5499,7 +5499,7 @@ VBOXDDU_DECL(int) VDAsyncRead(PVBOXHDD pDisk, uint64_t uOffset, size_t cbRead,
     int rc = VERR_VD_BLOCK_FREE;
     int rc2;
     bool fLockRead = false;
-    PVDIOCTX pIoCtx;
+    PVDIOCTX pIoCtx = NULL;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbRead=%zu\n",
                  pDisk, uOffset, paSeg, cSeg, cbRead));
@@ -5581,7 +5581,7 @@ VBOXDDU_DECL(int) VDAsyncWrite(PVBOXHDD pDisk, uint64_t uOffset, size_t cbWrite,
     int rc;
     int rc2;
     bool fLockWrite = false;
-    PVDIOCTX pIoCtx;
+    PVDIOCTX pIoCtx = NULL;
 
     LogFlowFunc(("pDisk=%#p uOffset=%llu paSeg=%p cSeg=%u cbWrite=%zu\n",
                  pDisk, uOffset, paSeg, cSeg, cbWrite));
