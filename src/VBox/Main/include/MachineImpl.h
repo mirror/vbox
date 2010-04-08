@@ -93,7 +93,7 @@ class ATL_NO_VTABLE Machine :
 
 public:
 
-    enum InitMode { Init_New, Init_Import, Init_Registered };
+//     enum InitMode { Init_New, Init_Import, Init_Registered };
 
     enum StateDependency
     {
@@ -161,38 +161,35 @@ public:
         Data();
         ~Data();
 
-        const Guid mUuid;
-        BOOL mRegistered;
-        InitMode mInitMode;
+        const Guid          mUuid;
+        BOOL                mRegistered;
 
         /** Flag indicating that the config file is read-only. */
-        BOOL mConfigFileReadonly;
-        Utf8Str m_strConfigFile;
-        Utf8Str m_strConfigFileFull;
+        Utf8Str             m_strConfigFile;
+        Utf8Str             m_strConfigFileFull;
 
         // machine settings XML file
-        settings::MachineConfigFile *m_pMachineConfigFile;
+        settings::MachineConfigFile *pMachineConfigFile;
+        uint32_t            flModifications;
 
-        BOOL mAccessible;
-        com::ErrorInfo mAccessError;
+        BOOL                mAccessible;
+        com::ErrorInfo      mAccessError;
 
-        MachineState_T mMachineState;
-        RTTIMESPEC mLastStateChange;
+        MachineState_T      mMachineState;
+        RTTIMESPEC          mLastStateChange;
 
         /* Note: These are guarded by VirtualBoxBase::stateLockHandle() */
-        uint32_t mMachineStateDeps;
-        RTSEMEVENTMULTI mMachineStateDepsSem;
-        uint32_t mMachineStateChangePending;
+        uint32_t            mMachineStateDeps;
+        RTSEMEVENTMULTI     mMachineStateDepsSem;
+        uint32_t            mMachineStateChangePending;
 
-        BOOL mCurrentStateModified;
+        BOOL                mCurrentStateModified;
         /** Guest properties have been modified and need saving since the
          * machine was started, or there are transient properties which need
          * deleting and the machine is being shut down. */
-        BOOL mGuestPropertiesModified;
+        BOOL                mGuestPropertiesModified;
 
-        RTFILE mHandleCfgFile;
-
-        Session mSession;
+        Session             mSession;
 
         ComObjPtr<Snapshot> mFirstSnapshot;
         ComObjPtr<Snapshot> mCurrentSnapshot;
@@ -350,18 +347,27 @@ public:
     HRESULT FinalConstruct();
     void FinalRelease();
 
-    // public initializer/uninitializer for internal purposes only
+    // public initializer/uninitializer for internal purposes only:
+
+    // initializer for creating a new, empty machine
     HRESULT init(VirtualBox *aParent,
                  const Utf8Str &strConfigFile,
-                 InitMode aMode,
-                 CBSTR aName = NULL,
+                 const Utf8Str &strName,
+                 const Guid &aId,
                  GuestOSType *aOsType = NULL,
                  BOOL aOverride = FALSE,
-                 BOOL aNameSync = TRUE,
-                 const Guid *aId = NULL);
+                 BOOL aNameSync = TRUE);
+
+    // initializer for loading existing machine XML (either registered or not)
+    HRESULT init(VirtualBox *aParent,
+                 const Utf8Str &strConfigFile,
+                 const Guid *aId);
+
     void uninit();
 
 protected:
+    HRESULT initImpl(VirtualBox *aParent,
+                     const Utf8Str &strConfigFile);
     HRESULT initDataAndChildObjects();
     void uninitDataAndChildObjects();
 
@@ -814,8 +820,6 @@ protected:
     Machine* const          mPeer;
 
     VirtualBox* const       mParent;
-
-    uint32_t                m_flModifications;
 
     Shareable<Data>         mData;
     Shareable<SSData>       mSSData;

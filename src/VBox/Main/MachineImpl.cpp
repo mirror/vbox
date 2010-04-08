@@ -98,6 +98,8 @@
 Machine::Data::Data()
 {
     mRegistered = FALSE;
+    pMachineConfigFile = NULL;
+    flModifications = 0;
     mAccessible = FALSE;
     /* mUuid is initialized in Machine::init() */
 
@@ -110,7 +112,6 @@ Machine::Data::Data()
 
     mCurrentStateModified = TRUE;
     mGuestPropertiesModified = FALSE;
-    mHandleCfgFile = NIL_RTFILE;
 
     mSession.mPid = NIL_RTPROCESS;
     mSession.mState = SessionState_Closed;
@@ -258,149 +259,181 @@ void Machine::FinalRelease()
 }
 
 /**
- *  Initializes the instance.
+ *  Initializes a new machine instance; this init() variant creates a new, empty machine.
+ *  This gets called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine().
  *
  *  @param aParent      Associated parent object
- *  @param aConfigFile  Local file system path to the VM settings file (can
+ *  @param strConfigFile  Local file system path to the VM settings file (can
  *                      be relative to the VirtualBox config directory).
- *  @param aMode        Init_New: called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine() to create an empty machine
- *                      Init_Import: called from VirtualBox::OpenMachine()
- *                      Init_Registered: called from VirtualBox::initMachines() during startup
- *  @param aName        name for the machine when aMode is Init_New
- *                      (ignored otherwise)
- *  @param aOsType      OS Type of this machine
+ *  @param strName      name for the machine
+ *  @param aId          UUID for the new machine.
+ *  @param aOsType      Optional OS Type of this machine.
  *  @param aOverride    |TRUE| to override VM config file existence checks.
  *                      |FALSE| refuses to overwrite existing VM configs.
  *  @param aNameSync    |TRUE| to automatically sync settings dir and file
  *                      name with the machine name. |FALSE| is used for legacy
  *                      machines where the file name is specified by the
- *                      user and should never change. Used only in Init_New
- *                      mode (ignored otherwise).
- *  @param aId          UUID of the machine. Required for aMode==Init_Registered
- *                      and optional for aMode==Init_New. Used for consistency
- *                      check when aMode is Init_Registered; must match UUID
- *                      stored in the settings file. Used for predefining the
- *                      UUID of a VM when aMode is Init_New.
+ *                      user and should never change.
  *
  *  @return  Success indicator. if not S_OK, the machine object is invalid
  */
 HRESULT Machine::init(VirtualBox *aParent,
                       const Utf8Str &strConfigFile,
-                      InitMode aMode,
-                      CBSTR aName /* = NULL */,
+                      const Utf8Str &strName,
+                      const Guid &aId,
                       GuestOSType *aOsType /* = NULL */,
                       BOOL aOverride /* = FALSE */,
-                      BOOL aNameSync /* = TRUE */,
-                      const Guid *aId /* = NULL */)
+                      BOOL aNameSync /* = TRUE */)
 {
     LogFlowThisFuncEnter();
-    LogFlowThisFunc(("aConfigFile='%s', aMode=%d\n", strConfigFile.raw(), aMode));
-
-    AssertReturn(aParent, E_INVALIDARG);
-    AssertReturn(!strConfigFile.isEmpty(), E_INVALIDARG);
-    AssertReturn(aMode != Init_New || (aName != NULL && *aName != '\0'),
-                  E_INVALIDARG);
-    AssertReturn(aMode != Init_Registered || aId != NULL, E_FAIL);
+    LogFlowThisFunc(("(Init_New) aConfigFile='%s'\n", strConfigFile.raw()));
 
     /* Enclose the state transition NotReady->InInit->Ready */
     AutoInitSpan autoInitSpan(this);
     AssertReturn(autoInitSpan.isOk(), E_FAIL);
 
-    HRESULT rc = S_OK;
+    HRESULT rc = initImpl(aParent, strConfigFile);
+    if (FAILED(rc)) return rc;
 
-    /* share the parent weakly */
-    unconst(mParent) = aParent;
-
-    m_flModifications = 0;
-
-    /* allocate the essential machine data structure (the rest will be
-     * allocated later by initDataAndChildObjects() */
-    mData.allocate();
-
-    mData->m_pMachineConfigFile = NULL;
-    m_flModifications = 0;
-
-    /* memorize the config file name (as provided) */
-    mData->m_strConfigFile = strConfigFile;
-
-    /* get the full file name */
-    int vrc1 = mParent->calculateFullPath(strConfigFile, mData->m_strConfigFileFull);
-    if (RT_FAILURE(vrc1))
-        return setError(VBOX_E_FILE_ERROR,
-                        tr("Invalid machine settings file name '%s' (%Rrc)"),
-                        strConfigFile.raw(),
-                        vrc1);
-
-    if (aMode == Init_Registered)
+    // when we create a new machine, we must be able to create the settings file
+    RTFILE f = NIL_RTFILE;
+    int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
+    if (    RT_SUCCESS(vrc)
+         || vrc == VERR_SHARING_VIOLATION
+       )
     {
-        // Init_Registered: called from VirtualBox::initMachines() during startup
+        if (RT_SUCCESS(vrc))
+            RTFileClose(f);
+        if (!aOverride)
+            rc = setError(VBOX_E_FILE_ERROR,
+                          tr("Machine settings file '%s' already exists"),
+                          mData->m_strConfigFileFull.raw());
+        else
+        {
+            /* try to delete the config file, as otherwise the creation
+                * of a new settings file will fail. */
+            int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
+            if (RT_FAILURE(vrc2))
+                rc = setError(VBOX_E_FILE_ERROR,
+                              tr("Could not delete the existing settings file '%s' (%Rrc)"),
+                              mData->m_strConfigFileFull.raw(), vrc2);
+        }
+    }
+    else if (    vrc != VERR_FILE_NOT_FOUND
+              && vrc != VERR_PATH_NOT_FOUND
+            )
+        rc = setError(VBOX_E_FILE_ERROR,
+                      tr("Invalid machine settings file name '%s' (%Rrc)"),
+                      mData->m_strConfigFileFull.raw(),
+                      vrc);
 
-        mData->mRegistered = TRUE;
+    if (SUCCEEDED(rc))
+    {
+        // create an empty machine config
+        mData->pMachineConfigFile = new settings::MachineConfigFile(NULL);
 
-        /* store the supplied UUID (will be used to check for UUID consistency
-         * in loadSettings() */
+        rc = initDataAndChildObjects();
+    }
+
+    if (SUCCEEDED(rc))
+    {
+        /* set to true now to cause uninit() to call
+         * uninitDataAndChildObjects() on failure */
+        mData->mAccessible = TRUE;
+
+        unconst(mData->mUuid) = aId;
+
+        mUserData->mName = strName;
+        mUserData->mNameSync = aNameSync;
+
+        /* initialize the default snapshots folder
+         * (note: depends on the name value set above!) */
+        rc = COMSETTER(SnapshotFolder)(NULL);
+        AssertComRC(rc);
+
+        if (aOsType)
+        {
+            /* Store OS type */
+            mUserData->mOSTypeId = aOsType->id();
+
+            /* Apply BIOS defaults */
+            mBIOSSettings->applyDefaults(aOsType);
+
+            /* Apply network adapters defaults */
+            for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); ++slot)
+                mNetworkAdapters[slot]->applyDefaults(aOsType);
+
+            /* Apply serial port defaults */
+            for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
+                mSerialPorts[slot]->applyDefaults(aOsType);
+        }
+
+        /* commit all changes made during the initialization */
+        commit();
+    }
+
+    /* Confirm a successful initialization when it's the case */
+    if (SUCCEEDED(rc))
+    {
+        if (mData->mAccessible)
+            autoInitSpan.setSucceeded();
+        else
+            autoInitSpan.setLimited();
+    }
+
+    LogFlowThisFunc(("mName='%ls', mRegistered=%RTbool, mAccessible=%RTbool, rc=%08X\n",
+                     !!mUserData ? mUserData->mName.raw() : NULL,
+                     mData->mRegistered,
+                     mData->mAccessible,
+                     rc));
+
+    LogFlowThisFuncLeave();
+
+    return rc;
+}
+
+/**
+ *  Initializes a new instance with data from machine XML (formerly Init_Registered).
+ *  Gets called in two modes:
+ *      -- from VirtualBox::initMachines() during VirtualBox startup; in that case, the
+ *         UUID is specified and we mark the machine as "registered";
+ *      -- from the public VirtualBox::OpenMachine() API, in which case the UUID is NULL
+ *         and the machine remains unregistered until RegisterMachine() is called.
+ *
+ *  @param aParent      Associated parent object
+ *  @param aConfigFile  Local file system path to the VM settings file (can
+ *                      be relative to the VirtualBox config directory).
+ *  @param aId          UUID of the machine or NULL (see above).
+ *
+ *  @return  Success indicator. if not S_OK, the machine object is invalid
+ */
+HRESULT Machine::init(VirtualBox *aParent,
+                      const Utf8Str &strConfigFile,
+                      const Guid *aId)
+{
+    LogFlowThisFuncEnter();
+    LogFlowThisFunc(("(Init_Registered) aConfigFile='%s\n", strConfigFile.raw()));
+
+    /* Enclose the state transition NotReady->InInit->Ready */
+    AutoInitSpan autoInitSpan(this);
+    AssertReturn(autoInitSpan.isOk(), E_FAIL);
+
+    HRESULT rc = initImpl(aParent, strConfigFile);
+    if (FAILED(rc)) return rc;
+
+    if (aId)
+    {
+        // loading a registered VM:
         unconst(mData->mUuid) = *aId;
-
+        mData->mRegistered = TRUE;
         // now load the settings from XML:
         rc = registeredInit();
+            // this calls initDataAndChildObjects() and loadSettings()
     }
     else
     {
-        if (aMode == Init_Import)
-        {
-            // Init_Import: called from VirtualBox::OpenMachine()
-
-            // we're reading the settings file below
-        }
-        else if (aMode == Init_New)
-        {
-            // Init_New: called from VirtualBox::CreateMachine() or VirtualBox::CreateLegacyMachine() to create an empty machine
-
-            /* check for the file existence */
-            RTFILE f = NIL_RTFILE;
-            int vrc = RTFileOpen(&f, mData->m_strConfigFileFull.c_str(), RTFILE_O_READ | RTFILE_O_OPEN | RTFILE_O_DENY_NONE);
-            if (    RT_SUCCESS(vrc)
-                 || vrc == VERR_SHARING_VIOLATION
-               )
-            {
-                if (RT_SUCCESS(vrc))
-                    RTFileClose(f);
-                if (!aOverride)
-                {
-                    rc = setError(VBOX_E_FILE_ERROR,
-                                  tr("Machine settings file '%s' already exists"),
-                                  mData->m_strConfigFileFull.raw());
-                }
-                else
-                {
-                    /* try to delete the config file, as otherwise the creation
-                     * of a new settings file will fail. */
-                    int vrc2 = RTFileDelete(mData->m_strConfigFileFull.c_str());
-                    if (RT_FAILURE(vrc2))
-                        rc = setError(VBOX_E_FILE_ERROR,
-                                      tr("Could not delete the settings file '%s' (%Rrc)"),
-                                      mData->m_strConfigFileFull.raw(), vrc2);
-                }
-            }
-            else
-            {
-                if (     vrc != VERR_FILE_NOT_FOUND
-                      && vrc != VERR_PATH_NOT_FOUND
-                   )
-                    rc = setError(VBOX_E_FILE_ERROR,
-                                  tr("Invalid machine settings file name '%s' (%Rrc)"),
-                                  mData->m_strConfigFileFull.raw(),
-                                  vrc);
-            }
-
-            // create an empty machine config
-            mData->m_pMachineConfigFile = new settings::MachineConfigFile(NULL);
-        }
-        else
-            AssertFailed();
-
-        if (SUCCEEDED(rc))
-            rc = initDataAndChildObjects();
+        // opening an unregistered VM (VirtualBox::OpenMachine()):
+        rc = initDataAndChildObjects();
 
         if (SUCCEEDED(rc))
         {
@@ -408,44 +441,7 @@ HRESULT Machine::init(VirtualBox *aParent,
              * uninitDataAndChildObjects() on failure */
             mData->mAccessible = TRUE;
 
-            if (aMode != Init_New)
-            {
-                rc = loadSettings(false /* aRegistered */);
-            }
-            else
-            {
-                /* create the machine UUID */
-                if (aId)
-                    unconst(mData->mUuid) = *aId;
-                else
-                    unconst(mData->mUuid).create();
-
-                /* memorize the provided new machine's name */
-                mUserData->mName = aName;
-                mUserData->mNameSync = aNameSync;
-
-                /* initialize the default snapshots folder
-                 * (note: depends on the name value set above!) */
-                rc = COMSETTER(SnapshotFolder)(NULL);
-                AssertComRC(rc);
-
-                if (aOsType)
-                {
-                    /* Store OS type */
-                    mUserData->mOSTypeId = aOsType->id();
-
-                    /* Apply BIOS defaults */
-                    mBIOSSettings->applyDefaults(aOsType);
-
-                    /* Apply network adapters defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); ++slot)
-                        mNetworkAdapters[slot]->applyDefaults(aOsType);
-
-                    /* Apply serial port defaults */
-                    for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); ++slot)
-                        mSerialPorts[slot]->applyDefaults(aOsType);
-                }
-            }
+            rc = loadSettings(false /* aRegistered */);
 
             /* commit all changes made during the initialization */
             if (SUCCEEDED(rc))
@@ -466,6 +462,44 @@ HRESULT Machine::init(VirtualBox *aParent,
                       "rc=%08X\n",
                       !!mUserData ? mUserData->mName.raw() : NULL,
                       mData->mRegistered, mData->mAccessible, rc));
+
+    LogFlowThisFuncLeave();
+
+    return rc;
+}
+
+/**
+ * Shared code between the various init() implementation.s
+ * @param aParent
+ * @return
+ */
+HRESULT Machine::initImpl(VirtualBox *aParent,
+                          const Utf8Str &strConfigFile)
+{
+    LogFlowThisFuncEnter();
+
+    AssertReturn(aParent, E_INVALIDARG);
+    AssertReturn(!strConfigFile.isEmpty(), E_INVALIDARG);
+
+    HRESULT rc = S_OK;
+
+    /* share the parent weakly */
+    unconst(mParent) = aParent;
+
+    /* allocate the essential machine data structure (the rest will be
+     * allocated later by initDataAndChildObjects() */
+    mData.allocate();
+
+    /* memorize the config file name (as provided) */
+    mData->m_strConfigFile = strConfigFile;
+
+    /* get the full file name */
+    int vrc1 = mParent->calculateFullPath(strConfigFile, mData->m_strConfigFileFull);
+    if (RT_FAILURE(vrc1))
+        return setError(VBOX_E_FILE_ERROR,
+                        tr("Invalid machine settings file name '%s' (%Rrc)"),
+                        strConfigFile.raw(),
+                        vrc1);
 
     LogFlowThisFuncLeave();
 
@@ -607,7 +641,7 @@ void Machine::uninit()
     alock.leave();
 
     // has machine been modified?
-    if (m_flModifications)
+    if (mData->flModifications)
     {
         LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
         rollback(false /* aNotify */);
@@ -664,12 +698,12 @@ STDMETHODIMP Machine::COMGETTER(Accessible)(BOOL *aAccessible)
         mParent->dumpAllBackRefs();
 #endif
 
-        if (mData->m_pMachineConfigFile)
+        if (mData->pMachineConfigFile)
         {
             // reset the XML file to force loadSettings() (called from registeredInit())
             // to parse it again; the file might have changed
-            delete mData->m_pMachineConfigFile;
-            mData->m_pMachineConfigFile = NULL;
+            delete mData->pMachineConfigFile;
+            mData->pMachineConfigFile = NULL;
         }
 
         rc = registeredInit();
@@ -1950,13 +1984,11 @@ STDMETHODIMP Machine::COMGETTER(SettingsModified)(BOOL *aModified)
     HRESULT rc = checkStateDependency(MutableStateDep);
     if (FAILED(rc)) return rc;
 
-    if (mData->mInitMode == Init_New)
-          /*
-           *  if this is a new machine then no config file exists yet, so always return TRUE
-           */
+    if (!mData->pMachineConfigFile->fileExists())
+        // this is a new machine, and no config file exists yet:
         *aModified = TRUE;
     else
-        *aModified = (m_flModifications != 0);
+        *aModified = (mData->flModifications != 0);
 
     return S_OK;
 }
@@ -3402,10 +3434,10 @@ STDMETHODIMP Machine::GetExtraDataKeys(ComSafeArrayOut(BSTR, aKeys))
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    com::SafeArray<BSTR> saKeys(mData->m_pMachineConfigFile->mapExtraDataItems.size());
+    com::SafeArray<BSTR> saKeys(mData->pMachineConfigFile->mapExtraDataItems.size());
     int i = 0;
-    for (settings::ExtraDataItemsMap::const_iterator it = mData->m_pMachineConfigFile->mapExtraDataItems.begin();
-         it != mData->m_pMachineConfigFile->mapExtraDataItems.end();
+    for (settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.begin();
+         it != mData->pMachineConfigFile->mapExtraDataItems.end();
          ++it, ++i)
     {
         const Utf8Str &strKey = it->first;
@@ -3433,8 +3465,8 @@ STDMETHODIMP Machine::GetExtraData(IN_BSTR aKey,
 
     AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS);
 
-    settings::ExtraDataItemsMap::const_iterator it = mData->m_pMachineConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
-    if (it != mData->m_pMachineConfigFile->mapExtraDataItems.end())
+    settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(Utf8Str(aKey));
+    if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
         // found:
         bstrResult = it->second; // source is a Utf8Str
 
@@ -3468,8 +3500,8 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
     // look up the old value first; if nothing's changed then we need not do anything
     {
         AutoReadLock alock(this COMMA_LOCKVAL_SRC_POS); // hold read lock only while looking up
-        settings::ExtraDataItemsMap::const_iterator it = mData->m_pMachineConfigFile->mapExtraDataItems.find(strKey);
-        if (it != mData->m_pMachineConfigFile->mapExtraDataItems.end())
+        settings::ExtraDataItemsMap::const_iterator it = mData->pMachineConfigFile->mapExtraDataItems.find(strKey);
+        if (it != mData->pMachineConfigFile->mapExtraDataItems.end())
             strOldValue = it->second;
     }
 
@@ -3506,9 +3538,9 @@ STDMETHODIMP Machine::SetExtraData(IN_BSTR aKey, IN_BSTR aValue)
         }
 
         if (strValue.isEmpty())
-            mData->m_pMachineConfigFile->mapExtraDataItems.erase(strKey);
+            mData->pMachineConfigFile->mapExtraDataItems.erase(strKey);
         else
-            mData->m_pMachineConfigFile->mapExtraDataItems[strKey] = strValue;
+            mData->pMachineConfigFile->mapExtraDataItems[strKey] = strValue;
                 // creates a new key if needed
 
         bool fNeedsGlobalSaveSettings = false;
@@ -3592,7 +3624,7 @@ STDMETHODIMP Machine::DeleteSettings()
                         tr("Cannot delete settings of a registered machine"));
 
     /* delete the settings only when the file actually exists */
-    if (mData->m_pMachineConfigFile->fileExists())
+    if (mData->pMachineConfigFile->fileExists())
     {
         int vrc = RTFileDelete(mData->m_strConfigFileFull.c_str());
         if (RT_FAILURE(vrc))
@@ -4812,7 +4844,7 @@ STDMETHODIMP Machine::ReadLog(ULONG /*aIdx*/, ULONG64 /*aOffset*/, ULONG64 /*aSi
  */
 void Machine::setModified(uint32_t fl)
 {
-    m_flModifications |= fl;
+    mData->flModifications |= fl;
 }
 
 /**
@@ -5758,8 +5790,8 @@ HRESULT Machine::trySetRegistered(BOOL argNewRegistered)
 
     // Ensure the settings are saved. If we are going to be registered and
     // no config file exists yet, create it by calling saveSettings() too.
-    if (    (m_flModifications)
-         || (argNewRegistered && !mData->m_pMachineConfigFile->fileExists())
+    if (    (mData->flModifications)
+         || (argNewRegistered && !mData->pMachineConfigFile->fileExists())
        )
     {
         rc = saveSettings(NULL);
@@ -6299,39 +6331,39 @@ HRESULT Machine::loadSettings(bool aRegistered)
 
     try
     {
-        Assert(mData->m_pMachineConfigFile == NULL);
+        Assert(mData->pMachineConfigFile == NULL);
 
         // load and parse machine XML; this will throw on XML or logic errors
-        mData->m_pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
+        mData->pMachineConfigFile = new settings::MachineConfigFile(&mData->m_strConfigFileFull);
 
         /* If the stored UUID is not empty, it means the registered machine
          * is being loaded. Compare the loaded UUID with the stored one taken
          * from the global registry. */
         if (!mData->mUuid.isEmpty())
         {
-            if (mData->mUuid != mData->m_pMachineConfigFile->uuid)
+            if (mData->mUuid != mData->pMachineConfigFile->uuid)
             {
                 throw setError(E_FAIL,
                                tr("Machine UUID {%RTuuid} in '%s' doesn't match its UUID {%s} in the registry file '%s'"),
-                               mData->m_pMachineConfigFile->uuid.raw(),
+                               mData->pMachineConfigFile->uuid.raw(),
                                mData->m_strConfigFileFull.raw(),
                                mData->mUuid.toString().raw(),
                                mParent->settingsFilePath().raw());
             }
         }
         else
-            unconst(mData->mUuid) = mData->m_pMachineConfigFile->uuid;
+            unconst(mData->mUuid) = mData->pMachineConfigFile->uuid;
 
         /* name (required) */
-        mUserData->mName = mData->m_pMachineConfigFile->strName;
+        mUserData->mName = mData->pMachineConfigFile->strName;
 
         /* nameSync (optional, default is true) */
-        mUserData->mNameSync = mData->m_pMachineConfigFile->fNameSync;
+        mUserData->mNameSync = mData->pMachineConfigFile->fNameSync;
 
-        mUserData->mDescription = mData->m_pMachineConfigFile->strDescription;
+        mUserData->mDescription = mData->pMachineConfigFile->strDescription;
 
         // guest OS type
-        mUserData->mOSTypeId = mData->m_pMachineConfigFile->strOsType;
+        mUserData->mOSTypeId = mData->pMachineConfigFile->strOsType;
         /* look up the object by Id to check it is valid */
         ComPtr<IGuestOSType> guestOSType;
         rc = mParent->GetGuestOSType(mUserData->mOSTypeId,
@@ -6339,37 +6371,37 @@ HRESULT Machine::loadSettings(bool aRegistered)
         if (FAILED(rc)) throw rc;
 
         // stateFile (optional)
-        if (mData->m_pMachineConfigFile->strStateFile.isEmpty())
+        if (mData->pMachineConfigFile->strStateFile.isEmpty())
             mSSData->mStateFilePath.setNull();
         else
         {
-            Utf8Str stateFilePathFull(mData->m_pMachineConfigFile->strStateFile);
+            Utf8Str stateFilePathFull(mData->pMachineConfigFile->strStateFile);
             int vrc = calculateFullPath(stateFilePathFull, stateFilePathFull);
             if (RT_FAILURE(vrc))
                 throw setError(E_FAIL,
                                 tr("Invalid saved state file path '%s' (%Rrc)"),
-                                mData->m_pMachineConfigFile->strStateFile.raw(),
+                                mData->pMachineConfigFile->strStateFile.raw(),
                                 vrc);
             mSSData->mStateFilePath = stateFilePathFull;
         }
 
         /* snapshotFolder (optional) */
-        rc = COMSETTER(SnapshotFolder)(Bstr(mData->m_pMachineConfigFile->strSnapshotFolder));
+        rc = COMSETTER(SnapshotFolder)(Bstr(mData->pMachineConfigFile->strSnapshotFolder));
         if (FAILED(rc)) throw rc;
 
         /* currentStateModified (optional, default is true) */
-        mData->mCurrentStateModified = mData->m_pMachineConfigFile->fCurrentStateModified;
+        mData->mCurrentStateModified = mData->pMachineConfigFile->fCurrentStateModified;
 
-        mData->mLastStateChange = mData->m_pMachineConfigFile->timeLastStateChange;
+        mData->mLastStateChange = mData->pMachineConfigFile->timeLastStateChange;
 
         /* teleportation */
-        mUserData->mTeleporterEnabled  = mData->m_pMachineConfigFile->fTeleporterEnabled;
-        mUserData->mTeleporterPort     = mData->m_pMachineConfigFile->uTeleporterPort;
-        mUserData->mTeleporterAddress  = mData->m_pMachineConfigFile->strTeleporterAddress;
-        mUserData->mTeleporterPassword = mData->m_pMachineConfigFile->strTeleporterPassword;
+        mUserData->mTeleporterEnabled  = mData->pMachineConfigFile->fTeleporterEnabled;
+        mUserData->mTeleporterPort     = mData->pMachineConfigFile->uTeleporterPort;
+        mUserData->mTeleporterAddress  = mData->pMachineConfigFile->strTeleporterAddress;
+        mUserData->mTeleporterPassword = mData->pMachineConfigFile->strTeleporterPassword;
 
         /* RTC */
-        mUserData->mRTCUseUTC = mData->m_pMachineConfigFile->fRTCUseUTC;
+        mUserData->mRTCUseUTC = mData->pMachineConfigFile->fRTCUseUTC;
 
         /*
          *  note: all mUserData members must be assigned prior this point because
@@ -6380,25 +6412,25 @@ HRESULT Machine::loadSettings(bool aRegistered)
 
         /* Snapshot node (optional) */
         size_t cRootSnapshots;
-        if ((cRootSnapshots = mData->m_pMachineConfigFile->llFirstSnapshot.size()))
+        if ((cRootSnapshots = mData->pMachineConfigFile->llFirstSnapshot.size()))
         {
             // there must be only one root snapshot
             Assert(cRootSnapshots == 1);
 
-            settings::Snapshot &snap = mData->m_pMachineConfigFile->llFirstSnapshot.front();
+            settings::Snapshot &snap = mData->pMachineConfigFile->llFirstSnapshot.front();
 
             rc = loadSnapshot(snap,
-                              mData->m_pMachineConfigFile->uuidCurrentSnapshot,
+                              mData->pMachineConfigFile->uuidCurrentSnapshot,
                               NULL);        // no parent == first snapshot
             if (FAILED(rc)) throw rc;
         }
 
         /* Hardware node (required) */
-        rc = loadHardware(mData->m_pMachineConfigFile->hardwareMachine);
+        rc = loadHardware(mData->pMachineConfigFile->hardwareMachine);
         if (FAILED(rc)) throw rc;
 
         /* Load storage controllers */
-        rc = loadStorageControllers(mData->m_pMachineConfigFile->storageMachine, aRegistered);
+        rc = loadStorageControllers(mData->pMachineConfigFile->storageMachine, aRegistered);
         if (FAILED(rc)) throw rc;
 
         /*
@@ -6409,7 +6441,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
          */
 
         /* set the machine state to Aborted or Saved when appropriate */
-        if (mData->m_pMachineConfigFile->fAborted)
+        if (mData->pMachineConfigFile->fAborted)
         {
             Assert(!mSSData->mStateFilePath.isEmpty());
             mSSData->mStateFilePath.setNull();
@@ -6424,7 +6456,7 @@ HRESULT Machine::loadSettings(bool aRegistered)
         }
 
         // after loading settings, we are no longer different from the XML on disk
-        m_flModifications = 0;
+        mData->flModifications = 0;
     }
     catch (HRESULT err)
     {
@@ -7149,7 +7181,7 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
     HRESULT rc = S_OK;
 
-    bool fSettingsFileIsNew = !mData->m_pMachineConfigFile->fileExists();
+    bool fSettingsFileIsNew = !mData->pMachineConfigFile->fileExists();
 
     /* attempt to rename the settings file if machine name is changed */
     if (    mUserData->mNameSync
@@ -7311,17 +7343,15 @@ HRESULT Machine::prepareSaveSettings(bool *pfNeedsGlobalSaveSettings)
 
         /* Note: open flags must correlate with RTFileOpen() in lockConfig() */
         path = Utf8Str(mData->m_strConfigFileFull);
-        vrc = RTFileOpen(&mData->mHandleCfgFile, path.c_str(),
+        RTFILE f = NIL_RTFILE;
+        vrc = RTFileOpen(&f, path.c_str(),
                          RTFILE_O_READWRITE | RTFILE_O_CREATE | RTFILE_O_DENY_WRITE);
         if (RT_FAILURE(vrc))
-        {
-            mData->mHandleCfgFile = NIL_RTFILE;
             return setError(E_FAIL,
                             tr("Could not create the settings file '%s' (%Rrc)"),
                             path.raw(),
                             vrc);
-        }
-        RTFileClose(mData->mHandleCfgFile);
+        RTFileClose(f);
     }
 
     return rc;
@@ -7379,14 +7409,14 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
     if (FAILED(rc)) return rc;
 
     // keep a pointer to the current settings structures
-    settings::MachineConfigFile *pOldConfig = mData->m_pMachineConfigFile;
+    settings::MachineConfigFile *pOldConfig = mData->pMachineConfigFile;
     settings::MachineConfigFile *pNewConfig = NULL;
 
     try
     {
         // make a fresh one to have everyone write stuff into
         pNewConfig = new settings::MachineConfigFile(NULL);
-        pNewConfig->copyBaseFrom(*mData->m_pMachineConfigFile);
+        pNewConfig->copyBaseFrom(*mData->pMachineConfigFile);
 
         // now go and copy all the settings data from COM to the settings structures
         // (this calles saveSettings() on all the COM objects in the machine)
@@ -7427,12 +7457,12 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
             // now spit it all out!
             pNewConfig->write(mData->m_strConfigFileFull);
 
-        mData->m_pMachineConfigFile = pNewConfig;
+        mData->pMachineConfigFile = pNewConfig;
         delete pOldConfig;
         commit();
 
         // after saving settings, we are no longer different from the XML on disk
-        m_flModifications = 0;
+        mData->flModifications = 0;
     }
     catch (HRESULT err)
     {
@@ -7441,7 +7471,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
 
         // restore old config
         delete pNewConfig;
-        mData->m_pMachineConfigFile = pOldConfig;
+        mData->pMachineConfigFile = pOldConfig;
     }
     catch (...)
     {
@@ -7484,7 +7514,7 @@ HRESULT Machine::saveSettings(bool *pfNeedsGlobalSaveSettings,
 void Machine::copyMachineDataToSettings(settings::MachineConfigFile &config)
 {
     // deep copy extradata
-    config.mapExtraDataItems = mData->m_pMachineConfigFile->mapExtraDataItems;
+    config.mapExtraDataItems = mData->pMachineConfigFile->mapExtraDataItems;
 
     config.uuid = mData->mUuid;
     config.strName = mUserData->mName;
@@ -7916,20 +7946,20 @@ HRESULT Machine::saveStateSettings(int aFlags)
 
     HRESULT rc = S_OK;
 
-    Assert(mData->m_pMachineConfigFile);
+    Assert(mData->pMachineConfigFile);
 
     try
     {
         if (aFlags & SaveSTS_CurStateModified)
-            mData->m_pMachineConfigFile->fCurrentStateModified = true;
+            mData->pMachineConfigFile->fCurrentStateModified = true;
 
         if (aFlags & SaveSTS_StateFilePath)
         {
             if (!mSSData->mStateFilePath.isEmpty())
                 /* try to make the file name relative to the settings file dir */
-                calculateRelativePath(mSSData->mStateFilePath, mData->m_pMachineConfigFile->strStateFile);
+                calculateRelativePath(mSSData->mStateFilePath, mData->pMachineConfigFile->strStateFile);
             else
-                mData->m_pMachineConfigFile->strStateFile.setNull();
+                mData->pMachineConfigFile->strStateFile.setNull();
         }
 
         if (aFlags & SaveSTS_StateTimeStamp)
@@ -7937,13 +7967,13 @@ HRESULT Machine::saveStateSettings(int aFlags)
             Assert(    mData->mMachineState != MachineState_Aborted
                     || mSSData->mStateFilePath.isEmpty());
 
-            mData->m_pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
+            mData->pMachineConfigFile->timeLastStateChange = mData->mLastStateChange;
 
-            mData->m_pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
-//@todo live migration             mData->m_pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
+            mData->pMachineConfigFile->fAborted = (mData->mMachineState == MachineState_Aborted);
+//@todo live migration             mData->pMachineConfigFile->fTeleported = (mData->mMachineState == MachineState_Teleported);
         }
 
-        mData->m_pMachineConfigFile->write(mData->m_strConfigFileFull);
+        mData->pMachineConfigFile->write(mData->m_strConfigFileFull);
     }
     catch (...)
     {
@@ -8639,7 +8669,7 @@ void Machine::rollback(bool aNotify)
         }
 
         /* rollback any changes to devices after restoring the list */
-        if (m_flModifications & IsModified_Storage)
+        if (mData->flModifications & IsModified_Storage)
         {
             StorageControllerList::const_iterator it = mStorageControllers->begin();
             while (it != mStorageControllers->end())
@@ -8654,28 +8684,28 @@ void Machine::rollback(bool aNotify)
 
     mHWData.rollback();
 
-    if (m_flModifications & IsModified_Storage)
+    if (mData->flModifications & IsModified_Storage)
         rollbackMedia();
 
     if (mBIOSSettings)
         mBIOSSettings->rollback();
 
 #ifdef VBOX_WITH_VRDP
-    if (mVRDPServer && (m_flModifications & IsModified_VRDPServer))
+    if (mVRDPServer && (mData->flModifications & IsModified_VRDPServer))
         mVRDPServer->rollback();
 #endif
 
     if (mAudioAdapter)
         mAudioAdapter->rollback();
 
-    if (mUSBController && (m_flModifications & IsModified_USB))
+    if (mUSBController && (mData->flModifications & IsModified_USB))
         mUSBController->rollback();
 
     ComPtr<INetworkAdapter> networkAdapters[RT_ELEMENTS(mNetworkAdapters)];
     ComPtr<ISerialPort> serialPorts[RT_ELEMENTS(mSerialPorts)];
     ComPtr<IParallelPort> parallelPorts[RT_ELEMENTS(mParallelPorts)];
 
-    if (m_flModifications & IsModified_NetworkAdapters)
+    if (mData->flModifications & IsModified_NetworkAdapters)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mNetworkAdapters); slot++)
             if (    mNetworkAdapters[slot]
                  && mNetworkAdapters[slot]->isModified())
@@ -8684,7 +8714,7 @@ void Machine::rollback(bool aNotify)
                 networkAdapters[slot] = mNetworkAdapters[slot];
             }
 
-    if (m_flModifications & IsModified_SerialPorts)
+    if (mData->flModifications & IsModified_SerialPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mSerialPorts); slot++)
             if (    mSerialPorts[slot]
                  && mSerialPorts[slot]->isModified())
@@ -8693,7 +8723,7 @@ void Machine::rollback(bool aNotify)
                 serialPorts[slot] = mSerialPorts[slot];
             }
 
-    if (m_flModifications & IsModified_ParallelPorts)
+    if (mData->flModifications & IsModified_ParallelPorts)
         for (ULONG slot = 0; slot < RT_ELEMENTS(mParallelPorts); slot++)
             if (    mParallelPorts[slot]
                  && mParallelPorts[slot]->isModified())
@@ -8707,7 +8737,7 @@ void Machine::rollback(bool aNotify)
         /* inform the direct session about changes */
 
         ComObjPtr<Machine> that = this;
-        uint32_t flModifications = m_flModifications;
+        uint32_t flModifications = mData->flModifications;
         alock.leave();
 
         if (flModifications & IsModified_SharedFolders)
@@ -9358,7 +9388,7 @@ void SessionMachine::uninit(Uninit::Reason aReason)
     }
 
     // any machine settings modified?
-    if (m_flModifications)
+    if (mData->flModifications)
     {
         LogWarningThisFunc(("Discarding unsaved settings changes!\n"));
         rollback(false /* aNotify */);

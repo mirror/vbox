@@ -512,11 +512,6 @@ HRESULT VirtualBox::initMachines()
         {
             rc = pMachine->init(this,
                                 xmlMachine.strSettingsFile,
-                                Machine::Init_Registered,
-                                NULL,
-                                NULL,
-                                FALSE, /* aOverride */
-                                FALSE, /* aNameSync */
                                 &uuid);
             if (SUCCEEDED(rc))
                 rc = registerMachine(pMachine);
@@ -1082,12 +1077,11 @@ STDMETHODIMP VirtualBox::CreateMachine(IN_BSTR aName,
     /* initialize the machine object */
     rc = machine->init(this,
                        strSettingsFile,
-                       Machine::Init_New,
-                       aName,
+                       Utf8Str(aName),
+                       id,
                        osType,
                        aOverride,
-                       TRUE /* aNameSync */,
-                       &id);
+                       TRUE /* aNameSync */);
     if (SUCCEEDED(rc))
     {
         /* set the return value */
@@ -1138,12 +1132,11 @@ STDMETHODIMP VirtualBox::CreateLegacyMachine(IN_BSTR aName,
     /* initialize the machine object */
     rc = machine->init(this,
                        settingsFile,
-                       Machine::Init_New,
-                       aName,
+                       Utf8Str(aName),
+                       id,
                        osType,
                        FALSE /* aOverride */,
-                       FALSE /* aNameSync */,
-                       &id);
+                       FALSE /* aNameSync */);
     if (SUCCEEDED(rc))
     {
         /* set the return value */
@@ -1173,7 +1166,7 @@ STDMETHODIMP VirtualBox::OpenMachine(IN_BSTR aSettingsFile,
         /* initialize the machine object */
         rc = machine->init(this,
                            aSettingsFile,
-                           Machine::Init_Import);
+                           NULL);       /* const Guid *aId */
         if (SUCCEEDED(rc))
         {
             /* set the return value */
