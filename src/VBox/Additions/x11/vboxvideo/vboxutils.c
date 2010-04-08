@@ -133,12 +133,18 @@ vbox_host_uses_hwcursor(ScrnInfoPtr pScrn)
      * to draw the pointer. */
     if (rc)
     {
-        if (fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+        if (   (fFeatures & VMMDEV_MOUSE_GUEST_CAN_ABSOLUTE)
+#if GET_ABI_MAJOR(ABI_VIDEODRV_VERSION) >= 5
+                /* As of this version (server 1.6) all major Linux releases
+                 * are known to handle USB tablets correctly. */
+            || (fFeatures & VMMDEV_MOUSE_HOST_HAS_ABS_DEV)
+#endif
+            )
             /* Assume this will never be unloaded as long as the X session is
              * running. */
-            pVBox->mouseDriverLoaded = TRUE;
+            pVBox->guestCanAbsolute = TRUE;
         if (   (fFeatures & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-            || !pVBox->mouseDriverLoaded
+            || !pVBox->guestCanAbsolute
             || !(fFeatures & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
            )
             rc = FALSE;
