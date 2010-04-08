@@ -108,6 +108,9 @@ VBGLR3DECL(int) VbglR3GuestCtrlDisconnect(uint32_t u32ClientId)
  */
 VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg, uint32_t *puNumParms)
 {
+    AssertPtr(puMsg);
+    AssertPtr(puNumParms);
+
     VBoxGuestCtrlHGCMMsgType Msg;
 
     Msg.hdr.result = VERR_WRONG_ORDER;
@@ -121,14 +124,12 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostMsg(uint32_t u32ClientId, uint32_t *puMsg,
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.hdr.result;
+        rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);
         if (RT_SUCCESS(rc))
-        {
-            rc = VbglHGCMParmUInt32Get(&Msg.msg, puMsg);
+            rc = VbglHGCMParmUInt32Get(&Msg.num_parms, puNumParms);
             if (RT_SUCCESS(rc))
-                rc = VbglHGCMParmUInt32Get(&Msg.num_parms, puNumParms);
-            /* Ok, so now we know what message type and how much parameters there are. */
-        }
+                rc = Msg.hdr.result;
+                /* Ok, so now we know what message type and how much parameters there are. */
     }
     return rc;
 }
@@ -175,7 +176,7 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
 
     Msg.hdr.result = VERR_WRONG_ORDER;
     Msg.hdr.u32ClientID = u32ClientId;
-    Msg.hdr.u32Function = GUEST_GET_HOST_MSG_DATA; /* Tell the host we want the actual data of a command. */
+    Msg.hdr.u32Function = GUEST_GET_HOST_MSG;
     Msg.hdr.cParms = uNumParms;
 
     VbglHGCMParmPtrSet(&Msg.cmd, pszCmd, cbCmd);
@@ -195,13 +196,19 @@ VBGLR3DECL(int) VbglR3GuestCtrlGetHostCmdExec(uint32_t u32ClientId, uint32_t uNu
     int rc = vbglR3DoIOCtl(VBOXGUEST_IOCTL_HGCM_CALL(sizeof(Msg)), &Msg, sizeof(Msg));
     if (RT_SUCCESS(rc))
     {
-        rc = Msg.hdr.result;
-
-        Msg.flags.GetUInt32(puFlags);
-        Msg.num_args.GetUInt32(puNumArgs);
-        Msg.num_env.GetUInt32(puNumEnvVars);
-        Msg.cb_env.GetUInt32(pcbEnv);
-        Msg.timeout.GetUInt32(puTimeLimit);        
+        int rc2 = Msg.hdr.result;
+        if (RT_FAILURE(rc2))
+        {
+            rc = rc2;
+        }
+        else
+        {
+            Msg.flags.GetUInt32(puFlags);
+            Msg.num_args.GetUInt32(puNumArgs);
+            Msg.num_env.GetUInt32(puNumEnvVars);
+            Msg.cb_env.GetUInt32(pcbEnv);
+            Msg.timeout.GetUInt32(puTimeLimit);
+        }
     }
     return rc;
 }
