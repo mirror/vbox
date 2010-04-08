@@ -1648,7 +1648,7 @@ DECLCALLBACK(int) Console::configConstructor(PVM pVM, void *pvConsole)
 
         for (it = llNics.begin(); it != llNics.end(); ++it)
         {
-            Assert(iter);
+            Assert(it);
 
             /* A NIC with priority 0 is only used if it's first in the list. */
             if (it->mBootPrio == 0 && uBootIdx != 0)
