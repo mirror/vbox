@@ -1688,6 +1688,7 @@ static int vdIOReadUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         }
 
         uOffset += cbTaskRead;
+        cbRead  -= cbTaskRead;
     }
 
     return rc;
@@ -1735,6 +1736,7 @@ static int vdIOWriteUserAsync(void *pvUser, PVDIOSTORAGE pIoStorage,
         }
 
         uOffset += cbTaskWrite;
+        cbWrite -= cbTaskWrite;
     }
 
     return rc;
