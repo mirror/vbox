@@ -972,7 +972,7 @@ static int kbd_write_mouse(KBDState *s, int val)
                 s->mouse_detect_state = 0;
             break;
         case 2:
-            if (val == 80)
+            if (val == 80 && s->mouse_type < MOUSE_PROT_IMEX)
             {
                 LogRelFlowFunc(("switching mouse device to IMPS/2 mode\n"));
                 s->mouse_type = MOUSE_PROT_IMPS2;
