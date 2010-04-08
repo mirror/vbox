@@ -2004,22 +2004,14 @@ static DECLCALLBACK(int) vmmdevSetMouseCapabilities(PPDMIVMMDEVPORT pInterface, 
     VMMDevState *pThis = IVMMDEVPORT_2_VMMDEVSTATE(pInterface);
     PDMCritSectEnter(&pThis->CritSect, VERR_SEM_BUSY);
 
-    bool bCapsChanged = ((capabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
-                         != (pThis->mouseCapabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE));
+    bool bNotify = (   (capabilities & VMMDEV_MOUSE_NOTIFY_GUEST_MASK)
+                    != (pThis->mouseCapabilities & VMMDEV_MOUSE_NOTIFY_GUEST_MASK));
 
-    Log(("vmmdevSetMouseCapabilities: bCapsChanged %d\n", bCapsChanged));
+    Log(("vmmdevSetMouseCapabilities: bNotify %d\n", bNotify));
 
-    if (capabilities & VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER)
-        pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
-    else
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_CANNOT_HWPOINTER;
-
-    if (capabilities & VMMDEV_MOUSE_HOST_CAN_ABSOLUTE)
-        pThis->mouseCapabilities |= VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
-    else
-        pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_CAN_ABSOLUTE;
-
-    if (bCapsChanged)
+    pThis->mouseCapabilities &= ~VMMDEV_MOUSE_HOST_MASK;
+    pThis->mouseCapabilities |= (capabilities & VMMDEV_MOUSE_HOST_MASK);
+    if (bNotify)
         VMMDevNotifyGuest (pThis, VMMDEV_EVENT_MOUSE_CAPABILITIES_CHANGED);
 
     PDMCritSectLeave(&pThis->CritSect);
