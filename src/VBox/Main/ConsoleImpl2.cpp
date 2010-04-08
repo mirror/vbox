@@ -47,6 +47,8 @@
 #endif
 #include <iprt/file.h>
 
+#include <limits.h>
+
 #include <VBox/vmapi.h>
 #include <VBox/err.h>
 #include <VBox/param.h>
