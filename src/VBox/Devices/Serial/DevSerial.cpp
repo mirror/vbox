@@ -273,10 +273,8 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
         if (s->lcr & UART_LCR_DLAB) {
             s->divider = (s->divider & 0xff00) | val;
             serial_update_parameters(s);
-        } else {
+        } else if (s->lsr & UART_LSR_THRE) {
             s->thr_ipending = 0;
-            s->lsr &= ~UART_LSR_THRE;
-            serial_update_irq(s);
             ch = val;
             if (RT_LIKELY(s->pDrvChar))
             {
@@ -285,10 +283,9 @@ static int serial_ioport_write(void *opaque, uint32_t addr, uint32_t val)
                 AssertRC(rc);
             }
             s->thr_ipending = 1;
-            s->lsr |= UART_LSR_THRE;
-            s->lsr |= UART_LSR_TEMT;
             serial_update_irq(s);
-        }
+        } else
+            Log(("serial: THR not EMPTY!\n"));
         break;
     case 1:
         if (s->lcr & UART_LCR_DLAB) {
@@ -504,6 +501,25 @@ static DECLCALLBACK(int) serialNotifyStatusLinesChanged(PPDMICHARPORT pInterface
 
     PDMCritSectLeave(&pThis->CritSect);
 
+    return VINF_SUCCESS;
+}
+
+static DECLCALLBACK(int) serialNotifyBufferFull(PPDMICHARPORT pInterface, bool fFull)
+{
+    SerialState *pThis = PDMICHARPORT_2_SERIALSTATE(pInterface);
+    PDMCritSectEnter(&pThis->CritSect, VERR_PERMISSION_DENIED);
+    if (fFull)
+    {
+        pThis->lsr &= ~UART_LSR_THRE;
+    }
+    else
+    {
+        pThis->thr_ipending = 1;
+        pThis->lsr |= UART_LSR_THRE;
+        pThis->lsr |= UART_LSR_TEMT;
+    }
+    serial_update_irq(pThis);
+    PDMCritSectLeave(&pThis->CritSect);
     return VINF_SUCCESS;
 }
 
@@ -797,6 +813,7 @@ static DECLCALLBACK(int) serialConstruct(PPDMDEVINS pDevIns,
     /* ICharPort */
     pThis->ICharPort.pfnNotifyRead               = serialNotifyRead;
     pThis->ICharPort.pfnNotifyStatusLinesChanged = serialNotifyStatusLinesChanged;
+    pThis->ICharPort.pfnNotifyBufferFull         = serialNotifyBufferFull;
     pThis->ICharPort.pfnNotifyBreak              = serialNotifyBreak;
 
 #ifdef VBOX_SERIAL_PCI

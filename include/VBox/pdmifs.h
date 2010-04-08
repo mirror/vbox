@@ -1504,6 +1504,16 @@ typedef struct PDMICHARPORT
      * @thread  Any thread.
      */
     DECLR3CALLBACKMEMBER(int, pfnNotifyStatusLinesChanged,(PPDMICHARPORT pInterface, uint32_t fNewStatusLines));
+    
+    /**
+     * Notify the device when the driver buffer is full.
+     *
+     * @returns VBox status code.
+     * @param   pInterface      Pointer to the interface structure containing the called function pointer.
+     * @param   fFull           Buffer full.
+     * @thread  Any thread.
+     */
+    DECLR3CALLBACKMEMBER(int, pfnNotifyBufferFull,(PPDMICHARPORT pInterface, bool fFull));
 
     /**
      * Notify the device/driver that a break occurred.
