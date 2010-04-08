@@ -363,12 +363,19 @@ public:
                  const Utf8Str &strConfigFile,
                  const Guid *aId);
 
+    // initializer for machine config in memory (OVF import)
+    HRESULT init(VirtualBox *aParent,
+                 const Utf8Str &strName,
+                 const settings::MachineConfigFile &config);
+
     void uninit();
 
 protected:
     HRESULT initImpl(VirtualBox *aParent,
                      const Utf8Str &strConfigFile);
     HRESULT initDataAndChildObjects();
+    HRESULT registeredInit();
+    HRESULT tryCreateMachineConfigFile(BOOL aOverride);
     void uninitDataAndChildObjects();
 
 public:
@@ -702,8 +709,6 @@ public:
 
 protected:
 
-    HRESULT registeredInit();
-
     HRESULT checkStateDependency(StateDependency aDepType);
 
     Machine *getMachine();
@@ -717,16 +722,15 @@ protected:
                              bool aSetError = false);
 
     HRESULT loadSettings(bool aRegistered);
+    HRESULT loadMachineDataFromSettings(const settings::MachineConfigFile &config);
     HRESULT loadSnapshot(const settings::Snapshot &data,
                          const Guid &aCurSnapshotId,
                          Snapshot *aParentSnapshot);
     HRESULT loadHardware(const settings::Hardware &data);
     HRESULT loadStorageControllers(const settings::Storage &data,
-                                   bool aRegistered,
                                    const Guid *aSnapshotId = NULL);
     HRESULT loadStorageDevices(StorageController *aStorageController,
                                const settings::StorageController &data,
-                               bool aRegistered,
                                const Guid *aSnapshotId = NULL);
 
     HRESULT findSnapshot(const Guid &aId, ComObjPtr<Snapshot> &aSnapshot,
