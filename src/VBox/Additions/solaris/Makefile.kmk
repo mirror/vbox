@@ -152,6 +152,7 @@ SOLARIS_ADD_STRIP_BINS = \
 	VBoxControl \
 	vboxfsmount	\
 	vboxfs \
+	$(if ($VBOX_WITH_PAM),pam_vbox.so,) \
 	$(if $(VBOX_OSE),,vboxfs_s10)
 
 SOLARIS_ADD_SYSLIBS = \
