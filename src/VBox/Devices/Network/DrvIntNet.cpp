@@ -32,6 +32,7 @@
 #include <VBox/vmm.h>
 #include <VBox/err.h>
 
+#include <VBox/param.h>
 #include <VBox/log.h>
 #include <iprt/asm.h>
 #include <iprt/assert.h>
@@ -1119,17 +1120,17 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
     if (fSharedMacOnWire)
         OpenReq.fFlags |= INTNET_OPEN_FLAGS_SHARED_MAC_ON_WIRE;
 
-    /** @cfgm{ReceiveBufferSize, uint32_t, 218 KB}
+    /** @cfgm{ReceiveBufferSize, uint32_t, 318 KB}
      * The size of the receive buffer.
      */
     rc = CFGMR3QueryU32(pCfg, "ReceiveBufferSize", &OpenReq.cbRecv);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbRecv = 218 * _1K ;
+        OpenReq.cbRecv = 318 * _1K ;
     else if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"ReceiveBufferSize\" value"));
 
-    /** @cfgm{SendBufferSize, uint32_t, 36 KB}
+    /** @cfgm{SendBufferSize, uint32_t, 196 KB}
      * The size of the send (transmit) buffer.
      * This should be more than twice the size of the larges frame size because
      * the ring buffer is very simple and doesn't support splitting up frames
@@ -1139,15 +1140,15 @@ static DECLCALLBACK(int) drvR3IntNetConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pCfg
      */
     rc = CFGMR3QueryU32(pCfg, "SendBufferSize", &OpenReq.cbSend);
     if (rc == VERR_CFGM_VALUE_NOT_FOUND)
-        OpenReq.cbSend = 36*_1K;
+        OpenReq.cbSend = RT_ALIGN_Z(VBOX_MAX_GSO_SIZE * 3, _1K);
     else if (RT_FAILURE(rc))
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: Failed to get the \"SendBufferSize\" value"));
-    if (OpenReq.cbSend < 32)
+    if (OpenReq.cbSend < 128)
         return PDMDRV_SET_ERROR(pDrvIns, rc,
                                 N_("Configuration error: The \"SendBufferSize\" value is too small"));
-    if (OpenReq.cbSend < 16384*2 + 64)
-        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, 16384*2 + 64));
+    if (OpenReq.cbSend < VBOX_MAX_GSO_SIZE * 4)
+        LogRel(("DrvIntNet: Warning! SendBufferSize=%u, Recommended minimum size %u butes.\n", OpenReq.cbSend, VBOX_MAX_GSO_SIZE * 4));
 
     /** @cfgm{IsService, boolean, true}
      * This alterns the way the thread is suspended and resumed. When it's being used by

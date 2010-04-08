@@ -155,6 +155,15 @@
 
 /** @} */
 
+
+/** @defgroup grp_vbox_param_misc  Misc
+ * @{ */
+
+#define VBOX_MAX_GSO_SIZE           0xfff0
+
+/** @} */
+
+
 /** @} */
 
 #endif
