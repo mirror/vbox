@@ -35,7 +35,6 @@
 #include <iprt/assert.h>
 #include <iprt/cpp/autores.h>
 #include <iprt/cpp/utils.h>
-#include <iprt/critsect.h>
 #include <iprt/err.h>
 #include <iprt/mem.h>
 #include <iprt/req.h>
@@ -117,7 +116,6 @@ private:
     CallList mGuestWaiters;
     /** The host command list */
     HostCmdList mHostCmds;
-    RTCRITSECT critsect;
 
 public:
     explicit Service(PVBOXHGCMSVCHELPERS pHelpers)
@@ -134,9 +132,6 @@ public:
                                 RTTHREADTYPE_MSG_PUMP, RTTHREADFLAGS_WAITABLE,
                                 "GuestCtrlReq");
 #endif
-        if (RT_SUCCESS(rc))
-            rc = RTCritSectInit(&critsect);
-
         if (RT_FAILURE(rc))
             throw rc;
     }
@@ -274,8 +269,6 @@ DECLCALLBACK(int) Service::reqThreadFn(RTTHREAD ThreadSelf, void *pvUser)
 /* Stores a HGCM request in an internal buffer (pEx). Needs to be freed later using execBufferFree(). */
 int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RTCritSectEnter(&critsect);
-
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
 
@@ -332,14 +325,12 @@ int Service::execBufferAllocate(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, 
             }
         }
     }
-    RTCritSectLeave(&critsect);
     return rc;
 }
 
 /* Frees a buffered HGCM request. */
 void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
 {
-    RTCritSectEnter(&critsect);
     AssertPtr(pBuf);
     for (uint32_t i = 0; i < pBuf->uParmCount; i++)
     {
@@ -356,14 +347,11 @@ void Service::execBufferFree(PVBOXGUESTCTRPARAMBUFFER pBuf)
         RTMemFree(pBuf->pParms);
         pBuf->uParmCount = 0;
     }
-    RTCritSectLeave(&critsect);
 }
 
 /* Assigns data from a buffered HGCM request to the current HGCM request. */
 int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    RTCritSectEnter(&critsect);
-
     AssertPtr(pBuf);
     int rc = VINF_SUCCESS;
     if (cParms != pBuf->uParmCount)
@@ -397,7 +385,6 @@ int Service::execBufferAssign(PVBOXGUESTCTRPARAMBUFFER pBuf, uint32_t cParms, VB
             }
         }
     }
-    RTCritSectLeave(&critsect);
     return rc;
 }
 
@@ -421,16 +408,14 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
 {
     int rc = VINF_SUCCESS;
 
-    /** @todo !!!!! LOCKING !!!!!!!!! */
-
     if (cParms < 2)
     {
         LogFlowFunc(("Parameter buffer is too small!\n"));
         rc = VERR_INVALID_PARAMETER;
     }
     else
-    {      
-        /* 
+    {
+        /*
          * If host command list is empty (nothing to do right now) just
          * defer the call until we got something to do (makes the client
          * wait, depending on the flags set).
@@ -465,7 +450,7 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
              }
              else
              {
-                 rc = execBufferAssign(&curCmd.parmBuf, cParms, paParms);                 
+                 rc = execBufferAssign(&curCmd.parmBuf, cParms, paParms);
                  if (RT_SUCCESS(rc))
                      mHostCmds.pop_front();
              }
@@ -486,10 +471,8 @@ int Service::guestGetHostMsg(VBOXHGCMCALLHANDLE callHandle, uint32_t cParms, VBO
  */
 int Service::hostNotifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    /** @todo !!!!! LOCKING !!!!!!!!! */
-
     AssertPtr(pCall);
-    int rc = VINF_SUCCESS;    
+    int rc = VINF_SUCCESS;
 
     int rc2 = guestGetHostMsg(pCall->mHandle, pCall->mNumParms, pCall->mParms);
     if (RT_SUCCESS(rc2))
@@ -501,8 +484,6 @@ int Service::hostNotifyGuest(GuestCall *pCall, uint32_t eFunction, uint32_t cPar
 
 int Service::hostProcessCmd(uint32_t eFunction, uint32_t cParms, VBOXHGCMSVCPARM paParms[])
 {
-    /** @todo !!!!! LOCKING !!!!!!!!! */
-
     int rc = VINF_SUCCESS;
 
     HostCmd newCmd;
@@ -548,7 +529,7 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
         {
             /* The guest asks the host for the next messsage to process. */
             case GUEST_GET_HOST_MSG:
-                LogFlowFunc(("GUEST_GET_HOST_MSG\n"));                
+                LogFlowFunc(("GUEST_GET_HOST_MSG\n"));
                 rc = guestGetHostMsg(callHandle, cParms, paParms);
                 break;
 
@@ -570,8 +551,8 @@ void Service::call(VBOXHGCMCALLHANDLE callHandle, uint32_t u32ClientID,
             default:
                 rc = VERR_NOT_IMPLEMENTED;
         }
-        /* 
-         * If current call is not deferred, call the completion function. 
+        /*
+         * If current call is not deferred, call the completion function.
          */
         if (rc != VINF_HGCM_ASYNC_EXECUTE)
         {
