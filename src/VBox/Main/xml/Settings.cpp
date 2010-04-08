@@ -3692,11 +3692,21 @@ void MachineConfigFile::buildSnapshotXML(xml::ElementNode &elmParent,
 
 /**
  * Builds the XML DOM tree for the machine config under the given XML element.
+ *
  * This has been separated out from write() so it can be called from elsewhere,
  * such as the OVF code, to build machine XML in an existing XML tree.
- * @param elmMachine
+ *
+ * As a result, this gets called from two locations:
+ *
+ *  --  MachineConfigFile::write();
+ *
+ *  --  Appliance::buildXMLForOneVirtualSystem()
+ *
+ * @param elmMachine XML <Machine> element to add attributes and elements to.
+ * @param fWriteSnapshots If false, we omit snapshots entirely (we don't recurse then).
  */
-void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine)
+void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine,
+                                        bool fIncludeSnapshots)
 {
     elmMachine.setAttribute("uuid", makeString(uuid));
     elmMachine.setAttribute("name", strName);
@@ -3707,7 +3717,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine)
     elmMachine.setAttribute("OSType", strOsType);
     if (strStateFile.length())
         elmMachine.setAttribute("stateFile", strStateFile);
-    if (!uuidCurrentSnapshot.isEmpty())
+    if (fIncludeSnapshots && !uuidCurrentSnapshot.isEmpty())
         elmMachine.setAttribute("currentSnapshot", makeString(uuidCurrentSnapshot));
     if (strSnapshotFolder.length())
         elmMachine.setAttribute("snapshotFolder", strSnapshotFolder);
@@ -3733,7 +3743,7 @@ void MachineConfigFile::buildMachineXML(xml::ElementNode &elmMachine)
 
     writeExtraData(elmMachine, mapExtraDataItems);
 
-    if (llFirstSnapshot.size())
+    if (fIncludeSnapshots && llFirstSnapshot.size())
         buildSnapshotXML(elmMachine, llFirstSnapshot.front());
 
     buildHardwareXML(elmMachine, hardwareMachine, storageMachine);
@@ -3900,7 +3910,8 @@ void MachineConfigFile::write(const com::Utf8Str &strFilename)
         createStubDocument();
 
         xml::ElementNode *pelmMachine = m->pelmRoot->createChild("Machine");
-        buildMachineXML(*pelmMachine);
+        buildMachineXML(*pelmMachine,
+                        true /* fIncludeSnapshots */);
 
         // now go write the XML
         xml::XmlFileWriter writer(*m->pDoc);
