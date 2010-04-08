@@ -164,6 +164,9 @@ static int drvdiskintWriteRecord(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsig
 {
     int rc = VINF_SUCCESS;
 
+    LogFlowFunc(("pThis=%#p paSeg=%#p cSeg=%u off=%llx cbWrite=%u\n",
+                 pThis, paSeg, cSeg, off, cbWrite));
+
     /* Update the segments */
     size_t cbLeft   = cbWrite;
     RTFOFF offCurr  = (RTFOFF)off;
@@ -276,6 +279,9 @@ static int drvdiskintReadVerify(PDRVDISKINTEGRITY pThis, PCRTSGSEG paSeg, unsign
                                 uint64_t off, size_t cbRead)
 {
     int rc = VINF_SUCCESS;
+
+    LogFlowFunc(("pThis=%#p paSeg=%#p cSeg=%u off=%llx cbRead=%u\n",
+                 pThis, paSeg, cSeg, off, cbRead));
 
     Assert(off % 512 == 0);
     Assert(cbRead % 512 == 0);
@@ -522,6 +528,8 @@ static DECLCALLBACK(int) drvdiskintAsyncTransferCompleteNotify(PPDMIMEDIAASYNCPO
     PDRVDISKAIOREQ pIoReq = (PDRVDISKAIOREQ)pvUser;
     int rc = VINF_SUCCESS;
 
+    LogFlowFunc(("pIoReq=%#p\n", pIoReq));
+
     if (pIoReq->fRead)
         rc = drvdiskintReadVerify(pThis, pIoReq->paSeg, pIoReq->cSeg, pIoReq->off, pIoReq->cbTransfer);
     else
@@ -547,7 +555,8 @@ static DECLCALLBACK(void *)  drvdiskintQueryInterface(PPDMIBASE pInterface, cons
 
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIBASE, &pDrvIns->IBase);
     PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIA, &pThis->IMedia);
-    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, pThis->pDrvMediaAsync ? &pThis->IMediaAsyncPort : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNC, pThis->pDrvMediaAsync ? &pThis->IMediaAsync : NULL);
+    PDMIBASE_RETURN_INTERFACE(pszIID, PDMIMEDIAASYNCPORT, &pThis->IMediaAsyncPort);
     return NULL;
 }
 
