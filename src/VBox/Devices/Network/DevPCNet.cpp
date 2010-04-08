@@ -4931,9 +4931,13 @@ static DECLCALLBACK(int) pcnetAttach(PPDMDEVINS pDevIns, unsigned iLUN, uint32_t
         AssertMsgStmt(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                       rc = VERR_PDM_MISSING_INTERFACE_BELOW);
     }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+             || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    {
+        /* This should never happen because this function is not called
+         * if there is no driver to attach! */
         Log(("#%d No attached driver!\n", PCNET_INST_NR));
-
+    }
 
     /*
      * Temporary set the link down if it was up so that the guest
@@ -5282,7 +5286,8 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
     rc = PDMDevHlpDriverAttach(pDevIns, PDM_STATUS_LUN, &pThis->IBase, &pBase, "Status Port");
     if (RT_SUCCESS(rc))
         pThis->pLedsConnector = PDMIBASE_QUERY_INTERFACE(pBase, PDMILEDCONNECTORS);
-    else if (rc != VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (   rc != VERR_PDM_NO_ATTACHED_DRIVER
+             && rc != VERR_PDM_CFG_MISSING_DRIVER_NAME)
     {
         AssertMsgFailed(("Failed to attach to status driver. rc=%Rrc\n", rc));
         return rc;
@@ -5308,8 +5313,12 @@ static DECLCALLBACK(int) pcnetConstruct(PPDMDEVINS pDevIns, int iInstance, PCFGM
         AssertMsgReturn(pThis->pDrvR3, ("Failed to obtain the PDMINETWORKUP interface!\n"),
                         VERR_PDM_MISSING_INTERFACE_BELOW);
     }
-    else if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    else if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+             || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
+    {
+        /* No error! */
         Log(("No attached driver!\n"));
+    }
     else
         return rc;
 

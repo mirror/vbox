@@ -326,7 +326,8 @@ static DECLCALLBACK(int) drvNetSnifferAttach(PPDMDRVINS pDrvIns, uint32_t fFlags
      */
     PPDMIBASE   pBaseDown;
     int rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
-    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+        || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
         pThis->pIBelowNet = NULL;
     else if (RT_SUCCESS(rc))
     {
@@ -459,7 +460,8 @@ static DECLCALLBACK(int) drvNetSnifferConstruct(PPDMDRVINS pDrvIns, PCFGMNODE pC
      */
     PPDMIBASE   pBaseDown;
     rc = PDMDrvHlpAttach(pDrvIns, fFlags, &pBaseDown);
-    if (rc == VERR_PDM_NO_ATTACHED_DRIVER)
+    if (   rc == VERR_PDM_NO_ATTACHED_DRIVER
+        || rc == VERR_PDM_CFG_MISSING_DRIVER_NAME)
         pThis->pIBelowNet = NULL;
     else if (RT_SUCCESS(rc))
     {
