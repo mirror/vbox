@@ -178,3 +178,4 @@ pciTag
 xf86sprintf
 sprintf
 FatalError
+xf86CrtcConfigPrivateIndex
